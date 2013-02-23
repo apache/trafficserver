@@ -1181,6 +1181,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.keep_alive_enabled_out, "proxy.config.http.keep_alive_enabled_out");
   HttpEstablishStaticConfigByte(c.oride.chunking_enabled, "proxy.config.http.chunking_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.http_chunking_size, "proxy.config.http.chunking.size");
+  HttpEstablishStaticConfigByte(c.oride.flow_control_enabled, "proxy.config.http.flow_control.enabled");
+  HttpEstablishStaticConfigLongLong(c.oride.flow_high_water_mark, "proxy.config.http.flow_control.high_water");
+  HttpEstablishStaticConfigLongLong(c.oride.flow_low_water_mark, "proxy.config.http.flow_control.low_water");
   HttpEstablishStaticConfigByte(c.session_auth_cache_keep_alive_enabled,
                                 "proxy.config.http.session_auth_cache_keep_alive_enabled");
   HttpEstablishStaticConfigLongLong(c.origin_server_pipeline, "proxy.config.http.origin_server_pipeline");
@@ -1456,6 +1459,22 @@ HttpConfig::reconfigure()
   params->oride.keep_alive_enabled_out = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);
   params->oride.chunking_enabled = INT_TO_BOOL(m_master.oride.chunking_enabled);
   params->oride.http_chunking_size = m_master.oride.http_chunking_size;
+
+  params->oride.flow_control_enabled = INT_TO_BOOL(m_master.oride.flow_control_enabled);
+  params->oride.flow_high_water_mark = m_master.oride.flow_high_water_mark;
+  params->oride.flow_low_water_mark = m_master.oride.flow_low_water_mark;
+  // If not set (zero) then make values the same.
+  if (params->oride.flow_low_water_mark <= 0)
+    params->oride.flow_low_water_mark = params->oride.flow_high_water_mark;
+  if (params->oride.flow_high_water_mark <= 0)
+    params->oride.flow_high_water_mark = params->oride.flow_low_water_mark;
+  if (params->oride.flow_high_water_mark < params->oride.flow_low_water_mark) {
+    Warning("Flow control low water mark is greater than high water mark, flow control disabled");
+    params->oride.flow_control_enabled = 0;
+    // zero means "hardwired default" when actually used.
+    params->oride.flow_high_water_mark = params->oride.flow_low_water_mark = 0;
+  }
+
   params->session_auth_cache_keep_alive_enabled = INT_TO_BOOL(m_master.session_auth_cache_keep_alive_enabled);
   params->origin_server_pipeline = m_master.origin_server_pipeline;
   params->user_agent_pipeline = m_master.user_agent_pipeline;

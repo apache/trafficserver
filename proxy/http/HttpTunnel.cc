@@ -37,8 +37,6 @@
 #include "HttpDebugNames.h"
 #include "ParseRules.h"
 
-
-static const int max_chunked_ahead_bytes = 1 << 15;
 static const int max_chunked_ahead_blocks = 128;
 static const int min_block_transfer_bytes = 256;
 static char const * const CHUNK_HEADER_FMT = "%" PRIx64"\r\n";
@@ -47,81 +45,18 @@ static char const * const CHUNK_HEADER_FMT = "%" PRIx64"\r\n";
 // a block in the input stream.
 static int const CHUNK_IOBUFFER_SIZE_INDEX = MIN_IOBUFFER_SIZE;
 
-static void
-chunked_reenable(HttpTunnelProducer * p, HttpTunnel * tunnel)
-{
-
-  // FIX ME: still need to deal with huge chunk sizes.  If a chunk
-  //    is 1GB, we will currently buffer the whole thing
-
-  if (p->chunked_handler.state != ChunkedHandler::CHUNK_FLOW_CONTROL) {
-    p->read_vio->reenable();
-  } else {
-    // If we are in are in the flow control, there's data in
-    //   the incoming buffer that we haven't processed yet
-    //   Only process it if we determine the client isn't overflowed
-    MIOBuffer *dbuf = p->chunked_handler.dechunked_buffer;
-
-    if (dbuf->max_read_avail() < max_chunked_ahead_bytes && dbuf->max_block_count() < max_chunked_ahead_blocks) {
-      // Flow control no longer needed.  We only initiate flow control
-      //  after completing a chunk so we know the next state is
-      //  CHUNK_READ_SIZE_START
-      Debug("http_chunk_flow", "Suspending flow control");
-      p->chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
-
-      // Call back the tunnel as if we've received more data from the server
-      int r = tunnel->main_handler(p->chunked_handler.last_server_event, p->read_vio);
-
-      // Only actually reenable the server if we've stayed out of the
-      //  flow control state.  The callout may have killed the vc
-      //  and/or the vio so check that the producer is still alive
-      //  (INKqa05512)
-      // Also, make sure the tunnel has not been deallocated on
-      //  the call to tunnel->main_handler
-      if (r == EVENT_CONT && p->alive && p->chunked_handler.state != ChunkedHandler::CHUNK_FLOW_CONTROL) {
-        // INKqa05737 - since we explicitly disabled the vc by setting
-        //  nbytes = ndone when going into flow control, we need
-        //  set nbytes up again here
-        p->read_vio->nbytes = INT64_MAX;
-        p->read_vio->reenable();
-      }
-    } else {
-      Debug("http_chunk_flow", "Blocking reenable - flow control in effect");
-    }
+char
+VcTypeCode(HttpTunnelType_t t) {
+  char zret = ' ';
+  switch (t) {
+  case HT_HTTP_CLIENT: zret = 'U'; break;
+  case HT_HTTP_SERVER: zret = 'S'; break;
+  case HT_TRANSFORM: zret = 'T'; break;
+  case HT_CACHE_READ: zret = 'R'; break;
+  case HT_CACHE_WRITE: zret = 'W'; break;
+  default: break;
   }
-}
-
-static void
-add_chunked_reenable(HttpTunnelProducer * p, HttpTunnel * tunnel)
-{
-  if (p->chunked_handler.state != ChunkedHandler::CHUNK_FLOW_CONTROL) {
-    p->read_vio->reenable();
-  } else {
-    // If we are in are in the flow control, there's data in
-    //   the incoming buffer that we haven't processed yet
-    //   Only process it if we determine the client isn't overflowed
-    MIOBuffer *cbuf = p->chunked_handler.chunked_buffer;
-    if (cbuf->max_read_avail() < max_chunked_ahead_bytes && cbuf->max_block_count() < max_chunked_ahead_blocks) {
-      // Flow control no longer needed.
-      Debug("http_chunk_flow", "Suspending flow control on enchunking");
-      p->chunked_handler.state = ChunkedHandler::CHUNK_WRITE_CHUNK;
-
-      // Call back the tunnel as if we've received more data from
-      //   the server
-      int r = tunnel->main_handler(p->chunked_handler.last_server_event, p->read_vio);
-
-      // Only actually reenable the server if we've stayed out of the
-      //  flow control state.  The callout may have killed the vc
-      //  and/or the vio so check that the producer is still alive
-      // Also, make sure the tunnel has not been deallocated on
-      //  the call to tunnel->main_handler
-      if (r == EVENT_CONT && p->alive && p->chunked_handler.state != ChunkedHandler::CHUNK_FLOW_CONTROL) {
-        p->read_vio->reenable();
-      }
-    } else {
-      Debug("http_chunk_flow", "Blocking reenable on enchunking - flow control in effect");
-    }
-  }
+  return zret;
 }
 
 ChunkedHandler::ChunkedHandler()
@@ -281,15 +216,7 @@ ChunkedHandler::read_chunk()
   if (bytes_left == 0) {
     Debug("http_chunk", "completed read of chunk of %" PRId64" bytes", cur_chunk_size);
 
-    // Check to see if we need to flow control the output
-    if (dechunked_buffer &&
-        (dechunked_buffer->max_read_avail() > max_chunked_ahead_bytes ||
-         dechunked_buffer->max_block_count() > max_chunked_ahead_blocks)) {
-      state = CHUNK_FLOW_CONTROL;
-      Debug("http_chunk_flow", "initiating flow control pause");
-    } else {
-      state = CHUNK_READ_SIZE_START;
-    }
+    state = CHUNK_READ_SIZE_START;
   } else if (bytes_left > 0) {
     Debug("http_chunk", "read %" PRId64" bytes of an %" PRId64" chunk", b, cur_chunk_size);
   }
@@ -301,7 +228,7 @@ ChunkedHandler::read_trailer()
   int64_t bytes_used;
   bool done = false;
 
-  while (chunked_reader->read_avail() > 0 && !done) {
+  while (chunked_reader->is_read_avail_more_than(0) && !done) {
     const char *tmp = chunked_reader->start();
     int64_t data_size = chunked_reader->block_read_avail();
 
@@ -341,7 +268,7 @@ ChunkedHandler::read_trailer()
 
 bool ChunkedHandler::process_chunked_content()
 {
-  while (chunked_reader->read_avail() > 0 && state != CHUNK_READ_DONE && state != CHUNK_READ_ERROR) {
+  while (chunked_reader->is_read_avail_more_than(0) && state != CHUNK_READ_DONE && state != CHUNK_READ_ERROR) {
     switch (state) {
     case CHUNK_READ_SIZE:
     case CHUNK_READ_SIZE_CRLF:
@@ -385,48 +312,36 @@ bool ChunkedHandler::generate_chunked_content()
   while ((r_avail = dechunked_reader->read_avail()) > 0 && state != CHUNK_WRITE_DONE) {
     int64_t write_val = MIN(max_chunk_size, r_avail);
 
-    // If the server is still alive, check to see if too much data is
-    //    pilling up on the client's buffer.  If the server is done, ignore
-    //    the flow control rules so that we don't have to bother with stopping
-    //    the io an coming a back and dealing with the server's data later
-    if (server_done == false &&
-        (chunked_buffer->max_read_avail() > max_chunked_ahead_bytes ||
-         chunked_buffer->max_block_count() > max_chunked_ahead_blocks)) {
-      state = CHUNK_FLOW_CONTROL;
-      Debug("http_chunk_flow", "initiating flow control pause on enchunking");
-      return false;
+    state = CHUNK_WRITE_CHUNK;
+    Debug("http_chunk", "creating a chunk of size %" PRId64 " bytes", write_val);
+
+    // Output the chunk size.
+    if (write_val != max_chunk_size) {
+      int len = snprintf(tmp, sizeof(tmp), CHUNK_HEADER_FMT, write_val);
+      chunked_buffer->write(tmp, len);
+      chunked_size += len;
     } else {
-      state = CHUNK_WRITE_CHUNK;
-      Debug("http_chunk", "creating a chunk of size %" PRId64" bytes", write_val);
-
-      // Output the chunk size.
-      if (write_val != max_chunk_size) {
-        int len = snprintf(tmp, sizeof(tmp), CHUNK_HEADER_FMT, write_val);
-        chunked_buffer->write(tmp, len);
-        chunked_size += len;
-      } else {
-        chunked_buffer->write(max_chunk_header, max_chunk_header_len);
-        chunked_size += max_chunk_header_len;
-      }
-
-      // Output the chunk itself.
-      //
-      // BZ# 54395 Note - we really should only do a
-      //   block transfer if there is sizable amount of
-      //   data (like we do for the case where we are
-      //   removing chunked encoding in ChunkedHandler::transfer_bytes()
-      //   However, I want to do this fix with as small a risk
-      //   as possible so I'm leaving this issue alone for
-      //   now
-      //
-      chunked_buffer->write(dechunked_reader, write_val);
-      chunked_size += write_val;
-      dechunked_reader->consume(write_val);
-
-      // Output the trailing CRLF.
-      chunked_buffer->write("\r\n", 2);
-      chunked_size += 2;
+      chunked_buffer->write(max_chunk_header, max_chunk_header_len);
+      chunked_size += max_chunk_header_len;
     }
+
+    // Output the chunk itself.
+    //
+    // BZ# 54395 Note - we really should only do a
+    //   block transfer if there is sizable amount of
+    //   data (like we do for the case where we are
+    //   removing chunked encoding in ChunkedHandler::transfer_bytes()
+    //   However, I want to do this fix with as small a risk
+    //   as possible so I'm leaving this issue alone for
+    //   now
+    //
+    chunked_buffer->write(dechunked_reader, write_val);
+    chunked_size += write_val;
+    dechunked_reader->consume(write_val);
+
+    // Output the trailing CRLF.
+    chunked_buffer->write("\r\n", 2);
+    chunked_size += 2;
   }
 
   if (server_done) {
@@ -445,9 +360,65 @@ HttpTunnelProducer::HttpTunnelProducer()
     vc(NULL), vc_handler(NULL), read_vio(NULL), read_buffer(NULL),
     buffer_start(NULL), vc_type(HT_HTTP_SERVER), chunking_action(TCA_PASSTHRU_DECHUNKED_CONTENT),
     do_chunking(false), do_dechunking(false), do_chunked_passthru(false),
-    init_bytes_done(0), nbytes(0), ntodo(0), bytes_read(0), handler_state(0), num_consumers(0), alive(false),
-    read_success(false), name(NULL)
+    init_bytes_done(0), nbytes(0), ntodo(0), bytes_read(0),
+    handler_state(0), num_consumers(0), alive(false),
+    read_success(false), flow_control_source(0), name(NULL)
 {
+}
+
+uint64_t
+HttpTunnelProducer::backlog(uint64_t limit) {
+  uint64_t zret = 0;
+  // Calculate the total backlog, the # of bytes inside ATS for this producer.
+  // We go all the way through each chain to the ending sink and take the maximum
+  // over those paths. Do need to be careful about loops which can occur.
+  for ( HttpTunnelConsumer* c = consumer_list.head ; c ; c = c->link.next ) {
+    if (c->alive && c->write_vio) {
+      uint64_t n = 0;
+      if (HT_TRANSFORM == c->vc_type) {
+        n += static_cast<TransformVCChain*>(c->vc)->backlog(limit);
+      } else {
+        IOBufferReader* r = c->write_vio->get_reader();
+        if (r) {
+          n += static_cast<uint64_t>(r->read_avail());
+        }
+      }
+      if (n >= limit) return n;
+
+      if (!c->is_sink()) {
+        HttpTunnelProducer* dsp = c->self_producer;
+        if (dsp) {
+          n += dsp->backlog();
+        }
+      }
+      if (n >= limit) return n;
+      if (n > zret) zret = n;
+    }
+  }
+
+  if (chunked_handler.chunked_reader) {
+    zret += static_cast<uint64_t>(chunked_handler.chunked_reader->read_avail());
+  }
+
+  return zret;
+}
+
+/*  We set the producers in a flow chain specifically rather than
+    using a tunnel level variable in order to handle bi-directional
+    tunnels correctly. In such a case the flow control on producers is
+    not related so a single value for the tunnel won't work.
+*/
+void
+HttpTunnelProducer::set_throttle_src(HttpTunnelProducer* srcp) {
+  HttpTunnelProducer* p = this;
+  p->flow_control_source = srcp;
+  for ( HttpTunnelConsumer* c = consumer_list.head ; c ; c = c->link.next ) {
+    if (!c->is_sink()) {
+      p = c->self_producer;
+      if (p)
+        p->set_throttle_src(srcp);
+    }
+  }
 }
 
 HttpTunnelConsumer::HttpTunnelConsumer()
@@ -463,14 +434,31 @@ HttpTunnel::HttpTunnel()
 }
 
 void
+HttpTunnel::init(HttpSM * sm_arg, ProxyMutex * amutex)
+{
+  HttpConfigParams* params = sm_arg->t_state.http_config_param;
+  sm = sm_arg;
+  active = false;
+  mutex = amutex;
+  SET_HANDLER(&HttpTunnel::main_handler);
+  flow_state.enabled_p = params->oride.flow_control_enabled;
+  if (params->oride.flow_low_water_mark > 0)
+    flow_state.low_water = params->oride.flow_low_water_mark;
+  if (params->oride.flow_high_water_mark > 0)
+    flow_state.high_water = params->oride.flow_high_water_mark;
+  // This should always be true, we handled default cases back in HttpConfig::reconfigure()
+  ink_assert(flow_state.low_water <= flow_state.high_water);
+}
+
+void
 HttpTunnel::reset()
 {
   ink_assert(active == false);
 #ifdef DEBUG
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
+  for (int i = 0; i < MAX_PRODUCERS; ++i) {
     ink_assert(producers[i].alive == false);
   }
-  for (int j = 0; j < MAX_CONSUMERS; j++) {
+  for (int j = 0; j < MAX_CONSUMERS; ++j) {
     ink_assert(consumers[j].alive == false);
   }
 #endif
@@ -484,7 +472,7 @@ HttpTunnel::reset()
 void
 HttpTunnel::kill_tunnel()
 {
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
+  for (int i = 0; i < MAX_PRODUCERS; ++i) {
     if (producers[i].vc != NULL) {
       chain_abort_all(&producers[i]);
     }
@@ -499,7 +487,7 @@ HttpTunnel::kill_tunnel()
 HttpTunnelProducer *
 HttpTunnel::alloc_producer()
 {
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
+  for (int i = 0; i < MAX_PRODUCERS; ++i) {
     if (producers[i].vc == NULL) {
       num_producers++;
       ink_assert(num_producers <= MAX_PRODUCERS);
@@ -529,7 +517,7 @@ HttpTunnel::deallocate_buffers()
 {
   int num = 0;
   ink_release_assert(active == false);
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
+  for (int i = 0; i < MAX_PRODUCERS; ++i) {
     if (producers[i].read_buffer != NULL) {
       ink_assert(producers[i].vc != NULL);
       free_MIOBuffer(producers[i].read_buffer);
@@ -678,6 +666,16 @@ HttpTunnel::add_consumer(VConnection * vc,
   return c;
 }
 
+void
+HttpTunnel::chain(HttpTunnelConsumer* c, HttpTunnelProducer* p)
+{
+  p->self_consumer = c;
+  c->self_producer = p;
+  // If the flow is already throttled update the chained producer.
+  if (c->producer->is_throttled())
+    p->set_throttle_src(c->producer->flow_control_source);
+}
+
 // void HttpTunnel::tunnel_run()
 //
 //    Makes the tunnel go
@@ -694,7 +692,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer * p_arg)
 
     ink_assert(active == false);
 
-    for (int i = 0; i < MAX_PRODUCERS; i++) {
+    for (int i = 0 ; i < MAX_PRODUCERS ; ++i) {
       p = producers + i;
       if (p->vc != NULL) {
         producer_run(p);
@@ -952,7 +950,6 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   p->buffer_start = NULL;
 }
 
-
 int
 HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer * p)
 {
@@ -966,7 +963,8 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer * p)
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   case VC_EVENT_EOS:
-    p->chunked_handler.last_server_event = event;
+    p->last_event =
+      p->chunked_handler.last_server_event = event;
     // TODO: Should we check the return code?
     p->chunked_handler.generate_chunked_content();
     break;
@@ -1001,7 +999,8 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
     return event;
   }
 
-  p->chunked_handler.last_server_event = event;
+  p->last_event =
+    p->chunked_handler.last_server_event = event;
   bool done = p->chunked_handler.process_chunked_content();
 
   // If we couldn't understand the encoding, return
@@ -1013,18 +1012,6 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
     //  the client to be reenabled.  ERROR makes more
     //  sense but no reenables follow
     return VC_EVENT_EOS;
-  }
-  // If we are in a flow control state, there is still data in
-  //   buffer so return READ_READY
-  if (p->read_vio && p->chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
-    // INKqa05737 - We need force the server vc to
-    //   disabled since the server may have sent the
-    //   last chunk.  When we go to process that last chunk,
-    //   we will move the server to a keep alive state.  Since
-    //   we are prohibited from changing the buffer, we need
-    //   make sure the iocore doesn't schedule a read
-    p->read_vio->nbytes = p->read_vio->ndone;
-    return VC_EVENT_READ_READY;
   }
 
   switch (event) {
@@ -1077,6 +1064,8 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     }
   } else if (p->do_dechunking || p->do_chunked_passthru) {
     event = producer_handler_chunked(event, p);
+  } else {
+    p->last_event = event;
   }
 
   //YTS Team, yamsat Plugin
@@ -1185,6 +1174,53 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
   return sm_callback;
 }
 
+bool
+HttpTunnel::consumer_reenable(HttpTunnelConsumer* c)
+{
+  HttpTunnelProducer* p = c->producer;
+  HttpTunnelProducer* srcp = p->flow_control_source;
+  if (p->alive
+#ifndef LAZY_BUF_ALLOC
+      && p->read_buffer->write_avail() > 0
+#endif
+    ) {
+    // Only do flow control if enabled and the producer is an external
+    // source.  Otherwise disable by making the backlog zero. Because
+    // the backlog short cuts quit when the value is equal (or
+    // greater) to the target, we use strict comparison only for
+    // checking low water, otherwise the flow control can stall out.
+    uint64_t backlog = (flow_state.enabled_p && p->is_source())
+      ? p->backlog(flow_state.high_water)
+      : 0;
+
+    if (backlog >= flow_state.high_water) {
+      if (is_debug_tag_set("http_tunnel"))
+        Debug("http_tunnel", "Throttle   %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+      p->throttle(); // p becomes srcp for future calls to this method
+    } else {
+      if (srcp && c->is_sink()) {
+        // Check if backlog is below low water - note we need to check
+        // against the source producer, not necessarily the producer
+        // for this consumer. We don't have to recompute the backlog
+        // if they are the same because we know low water <= high
+        // water so the value is sufficiently accurate.
+        if (srcp != p)
+          backlog = srcp->backlog(flow_state.low_water);
+        if (backlog < flow_state.low_water) {
+          if (is_debug_tag_set("http_tunnel"))
+            Debug("http_tunnel", "Unthrottle %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+          srcp->unthrottle();
+          srcp->read_vio->reenable();
+          // Kick source producer to get flow ... well, flowing.
+          this->producer_handler(VC_EVENT_READ_READY, srcp);
+        }
+      }
+      p->read_vio->reenable();
+    }
+  }
+  return p->is_throttled();
+}
+
 //
 // bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer* p)
 //
@@ -1200,6 +1236,7 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
 {
   bool sm_callback = false;
   HttpConsumerHandler jump_point;
+  HttpTunnelProducer* p = c->producer;
 
   Debug("http_tunnel", "[%" PRId64 "] consumer_handler [%s %s]", sm->sm_id, c->name, HttpDebugNames::get_event_name(event));
 
@@ -1207,31 +1244,7 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
 
   switch (event) {
   case VC_EVENT_WRITE_READY:
-    // Data consumed, reenable producer
-    if (c->producer->alive) {
-      if (c->producer->do_dechunking) {
-        // Because dechunking decouples the inbound and outbound
-        //  buffers, we have to run special code handle the
-        //  reenable
-        chunked_reenable(c->producer, this);
-      } else if (c->producer->do_chunking) {
-        add_chunked_reenable(c->producer, this);
-      } else {
-        /*
-         * Dont check for space availability. The
-         * net code adds more space if required.
-         */
-
-#ifndef LAZY_BUF_ALLOC
-        if (c->producer->read_buffer->write_avail() > 0) {
-          c->producer->read_vio->reenable();
-        }
-#else
-        c->producer->read_vio->reenable();
-#endif
-
-      }
-    }
+    this->consumer_reenable(c);
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
@@ -1262,13 +1275,20 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
     //    the SM since the reenabling has the side effect
     //    updating the buffer state for the VConnection
     //    that is being reenabled
-    if (c->producer->alive && c->producer->read_vio
+    if (p->alive && p->read_vio
 #ifndef LAZY_BUF_ALLOC
-        && c->producer->read_buffer->write_avail() > 0
+        && p->read_buffer->write_avail() > 0
 #endif
       ) {
-      c->producer->read_vio->reenable();
+      if (p->is_throttled())
+        this->consumer_reenable(c);
+      else
+        p->read_vio->reenable();
     }
+    // [amc] I don't think this happens but we'll leave a debug trap
+    // here just in case.
+    if (p->is_throttled())
+      Debug("http_tunnel", "Special event %s on %p with flow control on", HttpDebugNames::get_event_name(event), p);
     break;
 
   case VC_EVENT_READ_READY:

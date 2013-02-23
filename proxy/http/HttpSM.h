@@ -322,6 +322,9 @@ protected:
 
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;
+  /// Set if plugin client / user agents are active.
+  /// Need primarily for cleanup.
+  bool has_active_plugin_agents;
 
   HttpCacheSM cache_sm;
   HttpCacheSM transform_cache_sm;
@@ -397,6 +400,7 @@ protected:
   int tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer * p);
   int tunnel_handler_transform_write(int event, HttpTunnelConsumer * c);
   int tunnel_handler_transform_read(int event, HttpTunnelProducer * p);
+  int tunnel_handler_plugin_agent(int event, HttpTunnelConsumer * c);
 
   void do_hostdb_lookup();
   void do_hostdb_reverse_lookup();
@@ -458,6 +462,7 @@ protected:
   HttpTunnelProducer *setup_transfer_from_transform();
   HttpTunnelProducer *setup_cache_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform_to_cache_only();
+  void setup_plugin_agents(HttpTunnelProducer* p);
 
   HttpTransact::StateMachineAction_t last_action;
   int (HttpSM::*m_last_state) (int event, void *data);
@@ -517,6 +522,7 @@ protected:
   void update_stats();
   void transform_cleanup(TSHttpHookID hook, HttpTransformInfo * info);
   bool is_transparent_passthrough_allowed();
+  void plugin_agents_cleanup();
 
 public:
   LINK(HttpSM, debug_link);

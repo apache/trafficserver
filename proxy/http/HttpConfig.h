@@ -431,7 +431,7 @@ struct OverridableHttpConfigParams {
        freshness_fuzz_time(0), freshness_fuzz_min_time(0),
        max_cache_open_read_retries(0), cache_open_read_retry_time(0),
        background_fill_active_timeout(0),
-       http_chunking_size(0),
+       http_chunking_size(0), flow_high_water_mark(0), flow_low_water_mark(0),
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
@@ -506,6 +506,7 @@ struct OverridableHttpConfigParams {
   //  DOC IN CACHE NO DNS//
   //////////////////////
   MgmtByte doc_in_cache_skip_dns;
+  MgmtByte flow_control_enabled;
 
   MgmtInt negative_caching_lifetime;
 
@@ -567,6 +568,8 @@ struct OverridableHttpConfigParams {
   MgmtInt background_fill_active_timeout;
 
   MgmtInt http_chunking_size; // Maximum chunk size for chunked output.
+  MgmtInt flow_high_water_mark; ///< Flow control high water mark.
+  MgmtInt flow_low_water_mark; ///< Flow control low water mark.
 
   // IMPORTANT: Here comes all strings / floats configs.
 

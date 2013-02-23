@@ -210,8 +210,10 @@ extern "C"
       continuation for a particular hook are:
 
       TSHttpHookAdd: adds a global hook. You can globally add
-      any hook except for TS_HTTP_REQUEST_TRANSFORM_HOOK and
-      TS_HTTP_RESPONSE_TRANSFORM_HOOK.
+      any hook except for
+       - TS_HTTP_REQUEST_TRANSFORM_HOOK
+       - TS_HTTP_RESPONSE_TRANSFORM_HOOK
+       - TS_HTTP_RESPONSE_CLIENT_HOOK
 
       The following hooks can ONLY be added globally:
        - TS_HTTP_SELECT_ALT_HOOK
@@ -228,6 +230,7 @@ extern "C"
        - TS_HTTP_SEND_RESPONSE_HDR_HOOK
        - TS_HTTP_REQUEST_TRANSFORM_HOOK
        - TS_HTTP_RESPONSE_TRANSFORM_HOOK
+       - TS_HTTP_RESPONSE_CLIENT_HOOK
        - TS_HTTP_TXN_START_HOOK
        - TS_HTTP_TXN_CLOSE_HOOK
 
@@ -268,6 +271,7 @@ extern "C"
     TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
     TS_HTTP_PRE_REMAP_HOOK,
     TS_HTTP_POST_REMAP_HOOK,
+    TS_HTTP_RESPONSE_CLIENT_HOOK,
     TS_HTTP_LAST_HOOK
   } TSHttpHookID;
   #define TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK TS_HTTP_PRE_REMAP_HOOK  /* backwards compat */
@@ -612,7 +616,10 @@ extern "C"
     TS_CONFIG_NET_SOCK_PACKET_TOS_OUT,
     TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE,
     TS_CONFIG_HTTP_CHUNKING_SIZE,
-    TS_CONFIG_LAST_ENTRY
+    TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED,
+    TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK,
+    TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK,
+    TS_CONFIG_LAST_ENTRY,
   } TSOverridableConfigKey;
 
   /* The TASK pool of threads is the primary method of off-loading continuations from the

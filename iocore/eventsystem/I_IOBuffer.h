@@ -578,6 +578,12 @@ public:
   */
   int64_t read_avail();
 
+  /** Check if there is more than @a size bytes available to read.
+      @return @c true if more than @a size byte are available.
+  */
+  bool is_read_avail_more_than(int64_t size);
+
+
   /**
     Number of IOBufferBlocks with data in the block list. Returns the
     number of IOBufferBlocks on the block list with data remaining for
@@ -1071,6 +1077,7 @@ public:
     return !_writer;
   }
   int64_t max_read_avail();
+
   int max_block_count();
   void check_add_block();
 

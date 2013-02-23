@@ -59,7 +59,7 @@ public:
 };
 
 
-class TransformVConnection:public VConnection
+class TransformVConnection:public TransformVCChain
 {
 public:
   TransformVConnection(Continuation * cont, APIHook * hooks);
@@ -73,6 +73,11 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto);
 
   void reenable(VIO * vio);
+
+  /** Compute the backlog.
+      @return The actual backlog, or a value at least @a limit.
+  */
+  virtual uint64_t backlog(uint64_t limit = INTU64_MAX);
 
 public:
   VConnection * m_transform;

@@ -7583,6 +7583,17 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->http_chunking_size;
     break;
+  case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
+    ret = &sm->t_state.txn_conf->flow_control_enabled;
+    break;
+  case TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->flow_high_water_mark;
+    break;
+  case TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->flow_low_water_mark;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -7816,6 +7827,9 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'd':
       if (!strncmp(name, "proxy.config.http.server_tcp_init_cwnd", length))
         cnf = TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND;
+      else if (!strncmp(name, "proxy.config.http.flow_control.enabled", length))
+        cnf = TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED;
+      break;
       break;
     case 's':
       if (!strncmp(name, "proxy.config.http.send_http11_requests", length))
@@ -7856,6 +7870,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR;
       else if (!strncmp(name, "proxy.config.http.insert_request_via_str", length))
         cnf = TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR;
+      else if (!strncmp(name, "proxy.config.http.flow_control.low_water", length))
+        cnf = TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK;
       break;
     case 's':
       if (!strncmp(name, "proxy.config.http.origin_max_connections", length))
@@ -7887,6 +7903,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'r':
       if (!strncmp(name, "proxy.config.http.insert_response_via_str", length))
         cnf = TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR;
+      else if (!strncmp(name, "proxy.config.http.flow_control.high_water", length))
+        cnf = TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK;
       break;
     }
     break;

@@ -319,7 +319,8 @@ HttpSM::HttpSM()
     ua_raw_buffer_reader(NULL),
     server_entry(NULL), server_session(NULL), shared_session_retries(0),
     server_buffer_reader(NULL),
-    transform_info(), post_transform_info(), second_cache_sm(NULL),
+    transform_info(), post_transform_info(), has_active_plugin_agents(false),
+    second_cache_sm(NULL),
     default_handler(NULL), pending_action(NULL), historical_action(NULL),
     last_action(HttpTransact::STATE_MACHINE_ACTION_UNDEFINED),
     client_request_hdr_bytes(0), client_request_body_bytes(0),
@@ -2966,9 +2967,10 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
 
   // There must be another consumer for it to worthwhile to
   //  set up a background fill
-  if (c->producer->num_consumers > 1 &&
-      (c->producer->vc_type == HT_HTTP_SERVER  || c->producer->vc_type == HT_TRANSFORM) &&
+  if (((c->producer->num_consumers > 1 && c->producer->vc_type == HT_HTTP_SERVER) ||
+       (c->producer->num_consumers > 1 && c->producer->vc_type == HT_TRANSFORM)) &&
       c->producer->alive == true) {
+
     // If threshold is 0.0 or negative then do background
     //   fill regardless of the content length.  Since this
     //   is floating point just make sure the number is near zero
@@ -2988,7 +2990,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
       if (pDone <= 1.0 && pDone > t_state.txn_conf->background_fill_threshold) {
         return true;
       } else {
-        DebugSM("http", "[%" PRId64 "] no background.  Only %%%f done", sm_id, pDone);
+        DebugSM("http", "[%" PRId64 "] no background.  Only %%%f of %%%f done [%" PRId64 " / %" PRId64" ]", sm_id, pDone, t_state.txn_conf->background_fill_threshold, ua_body_done, ua_cl);
       }
 
     }
@@ -3027,8 +3029,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
 
       // There is another consumer (cache write) so
       //  detach the user agent
-      ink_assert(server_entry->vc == c->producer->vc);
-      ink_assert(server_session == c->producer->vc);
+      ink_assert(server_entry->vc == server_session);
+      ink_assert(c->is_downstream_from(server_session));
       server_session->get_netvc()->
         set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
     } else {
@@ -3690,6 +3692,35 @@ HttpSM::tunnel_handler_transform_read(int event, HttpTunnelProducer * p)
 }
 
 int
+HttpSM::tunnel_handler_plugin_agent(int event, HttpTunnelConsumer * c)
+{
+  STATE_ENTER(&HttpSM::tunnel_handler_plugin_client, event);
+
+  switch (event) {
+  case VC_EVENT_ERROR:
+    c->vc->do_io_close(EHTTP_ERROR); // close up
+    // Signal producer if we're the last consumer.
+    if (c->producer->alive && c->producer->num_consumers == 1) {
+      tunnel.producer_handler(HTTP_TUNNEL_EVENT_CONSUMER_DETACH, c->producer);
+    }
+    break;
+  case VC_EVENT_EOS:
+    if (c->producer->alive && c->producer->num_consumers == 1) {
+      tunnel.producer_handler(HTTP_TUNNEL_EVENT_CONSUMER_DETACH, c->producer);
+    }
+    // FALLTHROUGH
+  case VC_EVENT_WRITE_COMPLETE:
+    c->write_success = true;
+    c->vc->do_io(VIO::CLOSE);
+    break;
+  default:
+    ink_release_assert(0);
+  }
+
+  return 0;
+}
+
+int
 HttpSM::state_srv_lookup(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_srv_lookup, event);
@@ -4285,7 +4316,7 @@ HttpSM::do_cache_prepare_write()
 inline void
 HttpSM::do_cache_prepare_write_transform()
 {
-  if (cache_sm.cache_write_vc != NULL || tunnel.is_there_cache_write())
+  if (cache_sm.cache_write_vc != NULL || tunnel.has_cache_writer())
     do_cache_prepare_action(&transform_cache_sm, NULL, false, true);
   else
     do_cache_prepare_action(&transform_cache_sm, NULL, false);
@@ -4369,7 +4400,6 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
     historical_action = pending_action;
   }
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -4566,7 +4596,6 @@ HttpSM::do_http_server_open(bool raw)
     } else if (ua_session->f_outbound_transparent) {
       opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
       opt.local_ip = t_state.client_info.addr;
-
       /* If the connection is server side transparent, we can bind to the
          port that the client chose instead of randomly assigning one at
          the proxy.  This is controlled by the 'use_client_source_port'
@@ -5116,8 +5145,7 @@ HttpSM::setup_transform_to_server_transfer()
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,
                                               "post transform");
-  p->self_consumer = c;
-  c->self_producer = p;
+  tunnel.chain(c,p);
   post_transform_info.entry->in_tunnel = true;
 
   tunnel.add_consumer(server_entry->vc,
@@ -6000,13 +6028,14 @@ HttpSM::setup_transfer_from_transform()
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,
                                               "transform read");
-  p->self_consumer = c;
-  c->self_producer = p;
+  tunnel.chain(c, p);
 
   tunnel.add_consumer(ua_entry->vc, transform_info.vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
   transform_info.entry->in_tunnel = true;
   ua_entry->in_tunnel = true;
+
+  this->setup_plugin_agents(p);
 
   if ( t_state.client_info.receive_chunked_response ) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
@@ -6037,8 +6066,7 @@ HttpSM::setup_transfer_from_transform_to_cache_only()
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,
                                               "transform read");
-  p->self_consumer = c;
-  c->self_producer = p;
+  tunnel.chain(c, p);
 
   transform_info.entry->in_tunnel = true;
 
@@ -6108,7 +6136,10 @@ HttpSM::setup_server_transfer()
       action = TCA_PASSTHRU_DECHUNKED_CONTENT;
   } else {
     if (t_state.current.server->transfer_encoding != HttpTransact::CHUNKED_ENCODING)
-      action = TCA_CHUNK_CONTENT;
+      if (t_state.client_info.http_version == HTTPVersion(0, 9))
+        action = TCA_PASSTHRU_DECHUNKED_CONTENT; // send as-is
+      else
+        action = TCA_CHUNK_CONTENT;
     else
       action = TCA_PASSTHRU_CHUNKED_CONTENT;
   }
@@ -6140,6 +6171,8 @@ HttpSM::setup_server_transfer()
 
   ua_entry->in_tunnel = true;
   server_entry->in_tunnel = true;
+
+  this->setup_plugin_agents(p);
 
   // If the incoming server response is chunked and the client does not
   // expect a chunked response, then dechunk it.  Otherwise, if the
@@ -6257,15 +6290,27 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
                              &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER, "http server - tunnel");
 
   // Make the tunnel aware that the entries are bi-directional
-  p_os->self_consumer = c_os;
-  p_ua->self_consumer = c_ua;
-  c_ua->self_producer = p_ua;
-  c_os->self_producer = p_os;
+  tunnel.chain(c_os, p_os);
+  tunnel.chain(c_ua, p_ua);
 
   ua_entry->in_tunnel = true;
   server_entry->in_tunnel = true;
 
   tunnel.tunnel_run();
+}
+
+void
+HttpSM::setup_plugin_agents(HttpTunnelProducer* p)
+{
+  APIHook* agent = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
+  has_active_plugin_agents = agent != 0;
+  while (agent) {
+    INKVConnInternal* contp = static_cast<INKVConnInternal*>(agent->m_cont);
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "plugin agent");
+    // We don't put these in the SM VC table because the tunnel
+    // will clean them up in do_io_close().
+    agent = agent->next();
+  }
 }
 
 inline void
@@ -6278,6 +6323,22 @@ HttpSM::transform_cleanup(TSHttpHookID hook, HttpTransformInfo * info)
       t_vcon->do_io_close();
       t_hook = t_hook->m_link.next;
     } while (t_hook != NULL);
+  }
+}
+
+void
+HttpSM::plugin_agents_cleanup()
+{
+  // If this is set then all of the plugin agent VCs were put in
+  // the VC table and cleaned up there. This handles the case where
+  // something went wrong early.
+  if (!has_active_plugin_agents) {
+    APIHook* agent = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
+    while (agent) {
+      INKVConnInternal* contp = static_cast<INKVConnInternal*>(agent->m_cont);
+      contp->do_io_close();
+      agent = agent->next();
+    }
   }
 }
 
@@ -6326,6 +6387,7 @@ HttpSM::kill_this()
     if (hooks_set) {
       transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
       transform_cleanup(TS_HTTP_REQUEST_TRANSFORM_HOOK, &post_transform_info);
+      plugin_agents_cleanup();
     }
     // It's also possible that the plugin_tunnel vc was never
     //   executed due to not contacting the server

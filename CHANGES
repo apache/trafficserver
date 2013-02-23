@@ -6,6 +6,8 @@
 
   *) [TS-1942] Remove username.cache configs, they are obsolete and long gone.
 
+  *) [TS-1496] Enable per transaction flow control.
+
 
   Changes with Apache Traffic Server 3.3.4
 

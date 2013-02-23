@@ -633,6 +633,21 @@ IOBufferReader::read_avail()
   return t;
 }
 
+inline bool
+IOBufferReader::is_read_avail_more_than(int64_t size)
+{
+  int64_t t = -start_offset;
+  IOBufferBlock* b = block;
+  while (b) {
+    t += b->read_avail();
+    if (t > size) {
+      return true;
+    }
+    b = b->next;
+  }
+  return false;
+}
+
 TS_INLINE void
 IOBufferReader::consume(int64_t n)
 {

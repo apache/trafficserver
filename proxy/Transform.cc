@@ -398,7 +398,7 @@ TransformTerminus::reenable(VIO *vio)
   -------------------------------------------------------------------------*/
 
 TransformVConnection::TransformVConnection(Continuation *cont, APIHook *hooks)
-:VConnection(cont->mutex), m_cont(cont), m_terminus(this), m_closed(0)
+:TransformVCChain(cont->mutex), m_cont(cont), m_terminus(this), m_closed(0)
 {
   INKVConnInternal *xform;
 
@@ -506,6 +506,31 @@ TransformVConnection::reenable(VIO *vio)
   ink_assert(!"not reached");
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+uint64_t
+TransformVConnection::backlog(uint64_t limit)
+{
+  uint64_t b = 0; // backlog
+  VConnection* raw_vc = m_transform;
+  MIOBuffer* w;
+  while (raw_vc && raw_vc != &m_terminus) {
+    INKVConnInternal* vc = static_cast<INKVConnInternal*>(raw_vc);
+    if (0 != (w = vc->m_read_vio.buffer.writer()))
+      b += w->max_read_avail();
+    if (b >= limit) return b;
+    raw_vc = vc->m_output_vc;
+  }
+  if (0 != (w = m_terminus.m_read_vio.buffer.writer()))
+    b += w->max_read_avail();
+  if (b >= limit) return b;
+
+  IOBufferReader* r = m_terminus.m_write_vio.get_reader();
+  if (r)
+    b += r->read_avail();
+  return b;
+}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

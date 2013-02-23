@@ -5599,6 +5599,7 @@ typedef enum
   ORIG_TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
   ORIG_TS_HTTP_PRE_REMAP_HOOK,
   ORIG_TS_HTTP_POST_REMAP_HOOK,
+  ORIG_TS_HTTP_RESPONSE_CLIENT_HOOK,
   ORIG_TS_HTTP_LAST_HOOK
 } ORIG_TSHttpHookID;
 
@@ -7451,6 +7452,9 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.net.sock_packet_tos_out",
   "proxy.config.http.insert_age_in_response",
   "proxy.config.http.chunking.size",
+  "proxy.config.http.flow_control.enabled",
+  "proxy.config.http.flow_control.low_water",
+  "proxy.config.http.flow_control.high_water"
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, int *pstatus)
