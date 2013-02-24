@@ -54,7 +54,7 @@ plugins to build large scale web applications.
     libcap-devel
 	flex (optional)
     hwloc-devel (optional)
-    liblua-devel (optional)
+    lua-devel (optional)
 
   Fedora 8 EC2 (Kernel: 2.6.21.7-2.ec2.v1.2.fc8xen):
     FC8 on EC2 requires unique configure declarations, please see that section
