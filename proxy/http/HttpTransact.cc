@@ -5285,7 +5285,7 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
 
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT)) {
-      if (scheme == URL_WKSIDX_HTTP && !incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+      if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
         bool chunked_encoding = false;
 
         if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {

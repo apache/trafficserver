@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.1
 
 
+  *) [TS-1155] POST requests that are chunked encoding hang when going
+  forward to origin over SSL
+
   *) [TS-1634] reimplement Lua state management to support reload
 
   *) [TS-1716] authproxy fails to reserve an argument index in global mode
