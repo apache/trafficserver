@@ -39,7 +39,7 @@ tsapp_LDADD =  \
         $(top_builddir)/lib/ts/libtsutil.la \
 	  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
 	  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-	  @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ \
+	  @LIBEXPAT@ @LIBDEMANGLE@ \
 	  @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ @LIBEXECINFO@
 
 EXTRA_DIST = records.config.in
