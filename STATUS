@@ -65,11 +65,6 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
   +1: igalic, zwoop, jpeach, arno
 
-  Remove iconv as dependency
-  Jira: https://issues.apache.org/jira/browse/TS-1902
-  Patch: 8cbc7c87e5f44d47f7a96b27bbae5456f008e3f5
-  +1: igalic, zwoop, jpeach
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]

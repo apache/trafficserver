@@ -831,8 +831,13 @@ AC_CHECK_LIB([resolv],[__putlong],[AC_SUBST([LIBRESOLV],["-lresolv"])])
 AC_CHECK_LIB([pthread],[pthread_exit],[AC_SUBST([LIBTHREAD],["-lpthread"])])
 AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
 AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
-AC_CHECK_LIB([iconv],[iconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
-AC_CHECK_LIB([iconv],[libiconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
+
+#
+# The header_rewrite module depends on boost.
+AX_BOOST_BASE([1.50],
+  [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [true]) ],
+  [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [false]) ]
+)
 
 #
 # Check for SSL presence and usability

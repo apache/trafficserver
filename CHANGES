@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.5
 
+  *) [TS-1909] Remove iconv as dependency
+
   *) [TS-1900] Detect and link libhwloc on Ubuntu.
 
   *) [TS-1470] Fix cache sizes > 16TB (part 2 - Don't reset the cache after restart)
