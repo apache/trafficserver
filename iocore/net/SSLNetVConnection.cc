@@ -258,11 +258,11 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
     }
-
-  } while (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE);
+    ink_debug_assert(bytes >= 0);
+  } while ((ret == SSL_READ_READY && bytes == 0) || ret == SSL_READ_ERROR_NONE);
 
   if (bytes > 0) {
-    if (ret == SSL_READ_WOULD_BLOCK) {
+    if (ret == SSL_READ_WOULD_BLOCK || ret == SSL_READ_READY) {
       if (readSignalAndUpdate(VC_EVENT_READ_READY) != EVENT_CONT) {
         Debug("ssl", "ssl_read_from_net, readSignal != EVENT_CONT");
         return;
@@ -273,8 +273,8 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   switch (ret) {
   case SSL_READ_ERROR_NONE:
   case SSL_READ_READY:
-    // how did we exit the while loop above? should never happen.
-    ink_debug_assert(false);
+    readReschedule(nh);
+    return;
     break;
   case SSL_WRITE_WOULD_BLOCK:
   case SSL_READ_WOULD_BLOCK:
