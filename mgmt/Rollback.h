@@ -42,6 +42,14 @@
 #define ACTIVE_VERSION 0
 #define INVALID_VERSION -1
 
+#if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
+#define TS_ARCHIVE_STAT_MTIME(t)    ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
+#elif HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+#define TS_ARCHIVE_STAT_MTIME(t)    ((t).st_mtime * 1000000000 + (t).st_mtim.tv_nsec)
+#else
+#define TS_ARCHIVE_STAT_MTIME(t)    ((t).st_mtime * 1000000000)
+#endif
+
 typedef int version_t;
 
 enum RollBackCodes

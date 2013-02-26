@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+
+  *) [TS-1645] increase the file stat resolution on config files
+   Author: Yakov Kopel <ykopel@websense.com>
+
   *) [TS-1557] update ua_begin_write
    Author: Aidan McGurn <aidan.mcgurn@openwave.com>
 

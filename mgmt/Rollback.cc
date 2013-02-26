@@ -170,9 +170,9 @@ root_access_needed(root_access_needed_)
       // But if we can not get it, just give up, assume the error
       //   is transient and use the current time
       if (statFile(ACTIVE_VERSION, &fileInfo) < 0) {
-        fileLastModified = fileInfo.st_mtime;
+        fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
       } else {
-        fileLastModified = time(NULL) - ink_timezone();
+        fileLastModified = (time(NULL) - ink_timezone()) * 1000000000;
       }
 
     } else {
@@ -183,7 +183,7 @@ root_access_needed(root_access_needed_)
     }
   } else {
 
-    fileLastModified = fileInfo.st_mtime;
+    fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
     currentVersion = highestSeen + 1;
 
     // Make sure that we have a backup of the file
@@ -524,12 +524,12 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
 
   // Now we need to get the modification time off of the new active file
   if (statFile(ACTIVE_VERSION, &fileInfo) >= 0) {
-    fileLastModified = fileInfo.st_mtime;
+    fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
   } else {
     // We really shoudn't fail to stat the file since we just
     //  created it.  If we do, just punt and just use the current
     //  time.
-    fileLastModified = time(NULL) - ink_timezone();
+    fileLastModified = (time(NULL) - ink_timezone()) * 1000000000;
   }
 
   // Check to see if we need to delete an excess backup versions
@@ -995,7 +995,7 @@ Rollback::checkForUserUpdate()
     return false;
   }
 
-  if (fileLastModified < fileInfo.st_mtime) {
+  if (fileLastModified < TS_ARCHIVE_STAT_MTIME(fileInfo)) {
 
     // We've been modified, Roll a new version
     currentVersion_local = this->getCurrentVersion();

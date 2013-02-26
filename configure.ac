@@ -1387,6 +1387,11 @@ if test "x${enable_hwloc}" = "xyes"; then
   )
 fi
 
+# Check for high-resolution timestamps in struct stat
+AC_CHECK_MEMBERS([struct stat.st_mtimespec.tv_nsec])
+AC_CHECK_MEMBERS([struct stat.st_mtim.tv_nsec])
+
+
 #
 # Configure sockopt value for TPROXY. Look at the enable flag.
 # Value 'no' means user forced disable, don't check anything else.
