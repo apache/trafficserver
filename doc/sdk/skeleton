@@ -23,7 +23,6 @@ use 5.012;
 use warnings;
 use autodie;
 use Getopt::Long;
-use Data::dumper qw/Dumper/;
 
 sub slurp
 {
