@@ -4635,6 +4635,7 @@ HttpSM::do_api_callout_internal()
     break;
   case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
     cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
+    milestones.ua_begin_write = ink_get_hrtime();
     break;
   case HttpTransact::HTTP_API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
