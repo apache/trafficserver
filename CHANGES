@@ -2,6 +2,7 @@
 Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1557] update ua_begin_write
+   Author: Aidan McGurn <aidan.mcgurn@openwave.com>
 
   *) [TS-1320] Reading from SSL origin can starve sending data to client.
 
