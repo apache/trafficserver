@@ -80,6 +80,11 @@ public:
    * else FAILURE/SUCCESS is returned. */
   ReturnCode process(const char *&data, int &data_len);
 
+  /** Process the ESI document and flush processed data as much as 
+   * possible. Can be called when fetcher hasn't finished pulling 
+   * in all data. */
+  ReturnCode flush(std:: string &data, int &overall_len);
+ 
   /** returns packed version of document currently being processed */
   void packNodeList(std::string &buffer, bool retain_buffer_data) {
     return _node_list.pack(buffer, retain_buffer_data);
@@ -110,6 +115,9 @@ private:
   EsiParser _parser;
   EsiLib::DocNodeList _node_list;
   int _n_prescanned_nodes;
+  int _n_processed_nodes;
+  int _n_processed_try_nodes;
+  int _overall_len;
 
   HttpDataFetcher &_fetcher;
   EsiLib::StringHash _include_urls;
@@ -119,6 +127,7 @@ private:
   bool _processEsiNode(const EsiLib::DocNodeList::iterator &iter);
   bool _handleParseComplete();
   bool _getIncludeData(const EsiLib::DocNode &node, const char **content_ptr = 0, int *content_len_ptr = 0);
+  DataStatus _getIncludeStatus(const EsiLib::DocNode &node);
   bool _handleVars(const char *str, int str_len);
   bool _handleChoose(EsiLib::DocNodeList::iterator &curr_node);
   bool _handleTry(EsiLib::DocNodeList::iterator &curr_node);
