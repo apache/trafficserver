@@ -27,6 +27,9 @@
 #include <algorithm>
 #include <vector>
 #include <sys/param.h> // MAX
+#if !defined(MAX)
+# define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
 
 void
 spdy_send_reset_stream(

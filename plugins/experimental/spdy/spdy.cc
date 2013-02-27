@@ -341,7 +341,7 @@ extern "C" void
 TSPluginInit(int argc, const char * argv[])
 {
     static const struct option longopts[] = {
-        { "system-resolver", no_argument, NULL, 's' },
+        { const_cast<char *>("system-resolver"), no_argument, NULL, 's' },
         { NULL, 0, NULL, 0 }
     };
 
