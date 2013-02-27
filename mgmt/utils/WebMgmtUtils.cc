@@ -311,8 +311,13 @@ varFloatFromName(const char *varName, RecFloat * value)
   RecDataT varDataType = RECD_NULL;
   bool found = true;
 
-  // TODO: should we check for return code / error here?
-  RecGetRecordDataType((char *) varName, &varDataType);
+  int err = REC_ERR_FAIL;
+
+  err = RecGetRecordDataType((char *) varName, &varDataType);
+
+  if (err == REC_ERR_FAIL) {
+    return false;
+  }
 
   switch (varDataType) {
   case RECD_INT:{
@@ -324,7 +329,7 @@ varFloatFromName(const char *varName, RecFloat * value)
   case RECD_COUNTER:{
       RecCounter tempCounter = 0;
       RecGetRecordCounter((char *) varName, &tempCounter);
-      *value = (RecCounter) tempCounter;
+      *value = (RecFloat) tempCounter;
       break;
     }
   case RECD_FLOAT:{
