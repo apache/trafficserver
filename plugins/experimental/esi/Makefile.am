@@ -33,6 +33,7 @@ check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
 libesi_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
+	lib/EsiGzip.cc \
 	lib/EsiProcessor.cc \
 	lib/Expression.cc \
 	lib/FailureInfo.cc \
@@ -45,6 +46,7 @@ libesi_la_SOURCES = \
 libtest_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
+	lib/EsiGzip.cc \
 	lib/EsiProcessor.cc \
 	lib/Expression.cc \
 	lib/FailureInfo.cc \
