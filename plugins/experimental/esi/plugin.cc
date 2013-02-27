@@ -1513,10 +1513,10 @@ static int esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptio
   if (argc > 1) {
     int c;
     static const struct option longopts[] = {
-      { "packed-node-support", no_argument, NULL, 'n' },
-      { "private-response", no_argument, NULL, 'p' },
-      { "disable-gzip-output", no_argument, NULL, 'z' },
-      { "handler-filename", required_argument, NULL, 'f' },
+      { const_cast<char *>("packed-node-support"), no_argument, NULL, 'n' },
+      { const_cast<char *>("private-response"), no_argument, NULL, 'p' },
+      { const_cast<char *>("disable-gzip-output"), no_argument, NULL, 'z' },
+      { const_cast<char *>("handler-filename"), required_argument, NULL, 'f' },
       { NULL, 0, NULL, 0 }
     };
 
