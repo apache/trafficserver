@@ -25,7 +25,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define INVALID_INSTANCE_ID (unsigned int)(-1)
+#define INVALID_INSTANCE_ID (instanceid_t)(-1)
 
 typedef int (*LuaHookDemuxer)(TSHttpHookID, TSCont, TSEvent, void *);
 
