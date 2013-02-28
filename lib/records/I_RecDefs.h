@@ -75,8 +75,8 @@ enum RecDataT
   RECD_COUNTER,
 
 #if defined(STAT_PROCESSOR)
-  RECD_STAT_CONST,              // Added for the StatProcessor
-  RECD_STAT_FX,                 // Added for the StatProcessor
+  RECD_CONST,               // Added for the StatProcessor, store as RECD_FLOAT
+  RECD_FX,                  // Added for the StatProcessor, store as RECD_INT
 #endif
   RECD_MAX
 };

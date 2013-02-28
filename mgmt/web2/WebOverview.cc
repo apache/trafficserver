@@ -258,7 +258,6 @@ overviewRecord::checkAlarms()
 }
 
 //  overview::readCounter, overview::readInteger
-//  overview::readFloat, overview::readString
 //
 //  Accessor functions for node records.  For remote node,
 //    we get the value in the node_data array we maintain
@@ -364,6 +363,46 @@ overviewRecord::readString(const char *name, bool * found)
   } else {
     rec_status = RecGetRecordString_Xmalloc(name, &rec);
   }
+
+  if (found) {
+    *found = (rec_status == REC_ERR_OKAY);
+  } else {
+    mgmt_log(stderr, "node variables '%s' not found!\n");
+  }
+  return rec;
+}
+
+//  overview::readData, read RecData according varType
+//
+//  Accessor functions for node records.  For remote node,
+//    we get the value in the node_data array we maintain
+//    in this object.  For the node, we do not maintain any data
+//    and rely on lmgmt->record_data for both the retrieval
+//    code and the records array
+//
+//  Locking should be done by overviewPage::accessLock.
+//  CALLEE is responsible for obtaining and releasing the lock
+//
+RecData
+overviewRecord::readData(RecDataT varType, const char *name, bool * found)
+{
+  int rec_status = REC_ERR_OKAY;
+  int order = -1;
+  RecData rec;
+  RecDataClear(RECD_NULL, &rec);
+
+  if (localNode == false) {
+    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
+    if (rec_status == REC_ERR_OKAY) {
+      order -= node_rec_first_ix; // Offset
+      ink_release_assert(order < node_rec_data.num_recs);
+      ink_debug_assert(order < node_rec_data.num_recs);
+      RecDataSet(varType, &rec, &node_rec_data.recs[order].data);
+    } else {
+      Fatal("node variables '%s' not found!\n", name);
+    }
+  } else
+    rec_status = RecGetRecord_Xmalloc(name, varType, &rec, true);
 
   if (found) {
     *found = (rec_status == REC_ERR_OKAY);
@@ -1415,6 +1454,39 @@ overviewPage::clusterSumFloat(const char *nodeVar, RecFloat * sum)
   return numUsed;
 }
 
+// int overviewPage::clusterSumData(RecDataT varType, const char* nodeVar,
+//                                  RecData* sum)
+//
+//   Sums nodeVar for every up node in the cluster and stores the
+//     sum in *sum.  Returns the number of nodes summed over
+//
+//   CALLEE MUST HOLD this->accessLock
+//
+int
+overviewPage::clusterSumData(RecDataT varType, const char *nodeVar,
+                             RecData *sum)
+{
+  int numUsed = 0;
+  int numHosts_local = sortRecords.getNumEntries();
+  overviewRecord *current;
+  bool found;
+  RecData recTmp;
+
+  ink_assert(sum != NULL);
+  RecDataClear(varType, sum);
+
+  for (int i = 0; i < numHosts_local; i++) {
+    current = (overviewRecord *) sortRecords[i];
+    if (current->up == true) {
+      numUsed++;
+      recTmp = current->readData(varType, nodeVar, &found);
+      *sum = RecDataAdd(varType, *sum, recTmp);
+      if (found == false) {
+      }
+    }
+  }
+  return numUsed;
+}
 
 // void overviewPage::clusterAgFloat(const char* clusterVar, const char* nodeVar)
 //
@@ -1457,6 +1529,21 @@ overviewPage::varClusterFloatFromName(char *nodeVar, RecFloat * sum)
 
   *sum = tempFloat;
   ink_mutex_release(&accessLock);
+  return (status);
+}
+
+int
+overviewPage::varClusterDataFromName(RecDataT varType, char *nodeVar,
+                                     RecData *sum)
+{
+  int status = 0;
+
+  ink_mutex_acquire(&accessLock);
+
+  status = clusterSumData(varType, nodeVar, sum);
+
+  ink_mutex_release(&accessLock);
+
   return (status);
 }
 

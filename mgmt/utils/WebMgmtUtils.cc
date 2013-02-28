@@ -248,6 +248,49 @@ varSetInt(const char *varName, RecInt value, bool convert)
   return found;
 }
 
+// bool varSetData(RecDataT varType, const char *varName, RecData value)
+//
+//  Sets the variable specifed by varName to value. value and varName
+//   must be varType variables.
+//
+bool
+varSetData(RecDataT varType, const char *varName, RecData value)
+{
+  int err = REC_ERR_FAIL;
+
+  switch (varType) {
+  case RECD_INT:
+    err = RecSetRecordInt((char *)varName, value.rec_int);
+    break;
+  case RECD_COUNTER:
+    err = RecSetRecordCounter((char *)varName, value.rec_counter);
+    break;
+  case RECD_FLOAT:
+    err = RecSetRecordFloat((char *)varName, value.rec_float);
+    break;
+  default:
+    Fatal("unsupport type:%d\n", varType);
+  }
+  return (err == REC_ERR_OKAY);
+}
+
+// bool varDataFromName(RecDataT varType, const char *varName, RecData *value)
+//
+//   Sets the *value to value of the varName according varType.
+//
+//  return true if bufVal was succefully set
+//    and false otherwise
+//
+bool
+varDataFromName(RecDataT varType, const char *varName, RecData *value)
+{
+  int err;
+
+  err = RecGetRecord_Xmalloc(varName, varType, value, true);
+
+  return (err == REC_ERR_OKAY);
+}
+
 
 // bool varCounterFromName (const char*, RecFloat* )
 //

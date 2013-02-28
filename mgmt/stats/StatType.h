@@ -39,31 +39,29 @@
 
 #define BYTES_TO_MBIT_SCALE (8/1000000.0)
 
-#define ERROR_VALUE      0
-#define StatDataT        RecDataT
-#define StatFloat        RecFloat
-#define StatInt          RecInt
-#define StatCounter      RecCounter
-#define StatString       RecString
-
-#define STAT_INT         RECD_INT
-#define STAT_FLOAT       RECD_FLOAT
-#define STAT_STRING      RECD_STRING
-#define STAT_COUNTER     RECD_COUNTER
-#define STAT_CONST       RECD_STAT_CONST
-#define STAT_FX          RECD_STAT_FX
-
 /* Structs used in Average Statistics calculations */
-struct StatFloatSamples
+struct StatDataSamples
 {
   ink_hrtime previous_time;
   ink_hrtime current_time;
-  StatFloat previous_value;
-  StatFloat current_value;
+  RecDataT data_type;
+  RecData previous_value;
+  RecData current_value;
 
-  StatFloat diff_value()
+  RecData diff_value(const char *name)
   {
-    return (current_value - previous_value);
+    RecData tmp;
+
+    if (data_type == RECD_NULL) {
+      data_type = varType(name);
+    }
+
+    if (data_type != RECD_NULL)
+      return RecDataSub(data_type, current_value, previous_value);
+    else {
+      RecDataClear(RECD_NULL, &tmp);
+      return tmp;
+    }
   }
   ink_hrtime diff_time()
   {
@@ -93,11 +91,11 @@ public:
 
   char m_arith_symbol;
   char *m_token_name;
-  StatDataT m_token_type;
-  StatFloat m_token_value;
-  StatFloat m_token_value_max;
-  StatFloat m_token_value_min;
-  StatFloatSamples *m_token_value_delta;
+  RecDataT m_token_type;
+  RecData m_token_value;
+  RecData m_token_value_max;
+  RecData m_token_value_min;
+  StatDataSamples *m_token_value_delta;
   bool m_sum_var;
   bool m_node_var;
 
@@ -116,7 +114,7 @@ public:
   };
   void clean();
 
-  bool statVarSet(StatFloat);
+  bool statVarSet(RecData);
 };
 
 
@@ -172,8 +170,10 @@ public:
   ink_hrtime m_last_update;
   ink_hrtime m_current_time;
   ink_hrtime m_update_interval;
-  StatFloat m_stats_max;
-  StatFloat m_stats_min;
+  RecFloat m_stats_max;
+  RecFloat m_stats_min;
+  bool m_has_max;
+  bool m_has_min;
   bool m_has_delta;
   LINK(StatObject, link);
 
@@ -189,8 +189,8 @@ public:
   void assignExpr(char *);
 
   StatExprToken *StatBinaryEval(StatExprToken *, char, StatExprToken *, bool cluster = false);
-  StatFloat NodeStatEval(bool cluster);
-  StatFloat ClusterStatEval();
+  RecData NodeStatEval(bool cluster);
+  RecData ClusterStatEval();
   void setTokenValue(StatExprToken *, bool cluster = false);
 
 private:

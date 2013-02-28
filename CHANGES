@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.2
   
+  *) [TS-1740] Improve precision of stats values
+   Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-1742] Freelists to use 64bit version w/ Double Word Compare and Swap
 
   *) [TS-1744] ats run with 1 less event thread then it is supposed to, for

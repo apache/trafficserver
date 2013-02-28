@@ -77,6 +77,7 @@ bool varSetFromStr(const char *varName, const char *value);
 bool varIntFromName(const char *varName, RecInt * value);
 bool varFloatFromName(const char *varName, RecFloat * value);
 bool varCounterFromName(const char *varName, RecCounter * value);
+bool varDataFromName(RecDataT varType, const char *varName, RecData *value);
 
 // No conversion done.  varName must represnt a value of the appropriate
 //  type
@@ -84,6 +85,7 @@ bool varCounterFromName(const char *varName, RecCounter * value);
 bool varSetInt(const char *varName, RecInt value, bool convert = false);
 bool varSetCounter(const char *varName, RecCounter value, bool convert = false);
 bool varSetFloat(const char *varName, RecFloat value, bool convert = false);
+bool varSetData(RecDataT varType, const char *varName, RecData value);
 
 // Return the type of the variable named
 RecDataT varType(const char *varName);

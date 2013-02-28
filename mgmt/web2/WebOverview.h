@@ -106,6 +106,7 @@ public:
   RecInt readInteger(const char *name, bool * found);
   RecFloat readFloat(const char *name, bool * found);
   RecString readString(const char *name, bool * found);
+  RecData readData(RecDataT varType, const char *name, bool * found);
   bool varIntFromName(const char *varName, RecInt * value);
   bool varFloatFromName(const char *varName, RecFloat * value);
   bool varCounterFromName(const char *varName, RecCounter * value);
@@ -135,6 +136,7 @@ public:
   void addSelfRecord();
 
   int varClusterFloatFromName(char *, MgmtFloat *);
+  int varClusterDataFromName(RecDataT varType, char *nodeVar, RecData *sum);
 
 private:
   ink_mutex accessLock;
@@ -165,6 +167,7 @@ private:
   int clusterSumCounter(char *nodeVar, MgmtInt * sum);
   void clusterAgFloat(const char *clusterVar, const char *nodeVar);
   int clusterSumFloat(const char *nodeVar, MgmtFloat * sum);
+  int clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum);
   void agHostdbHitRate();
   void agCacheHitRate();
   void agCachePercentFree();
