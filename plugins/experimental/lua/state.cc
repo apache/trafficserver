@@ -22,9 +22,10 @@
 #include "hook.h"
 #include "lutil.h"
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
 
-#define INVALID_INSTANCE_ID (-1)
+#define INVALID_INSTANCE_ID (unsigned int)(-1)
 
 typedef int (*LuaHookDemuxer)(TSHttpHookID, TSCont, TSEvent, void *);
 
