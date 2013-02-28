@@ -37,6 +37,7 @@
 #include <arpa/inet.h>
 #include <sys/param.h>
 #include <ts/remap.h>
+#include <ink_config.h>
 
 using std::strlen;
 
@@ -369,7 +370,7 @@ StateAuthProxyResolve(AuthRequestContext * auth, void *)
     // If we are authorizing with a HEAD request we want to send that to the
     // origin; other requests we want to send to the authorization proxy.
     if (options->transform == AuthWriteHeadRequest) {
-        char        hostname[MAXHOSTNAMELEN * 2];
+        char        hostname[TS_MAX_HOST_NAME_LEN * 2];
         TSMBuffer   mbuf;
         TSMLoc      mhdr;
 

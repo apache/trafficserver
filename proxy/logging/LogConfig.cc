@@ -952,9 +952,6 @@ LogConfig::add_filters_to_search_log_object(const char *format_name)
 //
 // This function adds the pre-defined objects to the global_object_list.
 //
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
 
 void
 LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list, size_t num_filters,
