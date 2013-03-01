@@ -1388,6 +1388,7 @@ extern "C"
       call to TSmalloc(). It should be freed by a call to TSfree().
       The length parameter must present, providing storage for the URL
       string length value.
+      Note: To get the effective URL from a request, use TSHttpTxnEffectiveUrlStringGet
 
       @param bufp marshal buffer containing the URL you want to get.
       @param offset location of the URL within bufp.
