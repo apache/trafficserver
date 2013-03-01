@@ -3508,6 +3508,11 @@ HttpSM::tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer * c)
     c->write_success = true;
     if (c->self_producer->alive == true) {
       c->vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
+      if (!c->producer->alive) {
+        tunnel.close_vc(c);
+        tunnel.local_finish_all(c->self_producer);
+        break;
+      }
     } else {
       c->vc->do_io_close();
     }
