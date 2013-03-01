@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1300] Document the usage of TSUrlStringGet() and derivatives.
+   Author: Uri Shachar.
 
   *) [TS-1645] increase the file stat resolution on config files
    Author: Yakov Kopel <ykopel@websense.com>
