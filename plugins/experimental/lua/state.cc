@@ -69,6 +69,11 @@ template <typename T> struct is_integral_type<T *> {
   enum { value = 1, is_pointer = 1 };
 };
 
+template <> struct is_integral_type<int> { enum { value = 1, is_pointer = 0 }; };
+template <> struct is_integral_type<unsigned> { enum { value = 1, is_pointer = 0 }; };
+template <> struct is_integral_type<long> { enum { value = 1, is_pointer = 0 }; };
+template <> struct is_integral_type<unsigned long> { enum { value = 1, is_pointer = 0 }; };
+
 static unsigned
 nproc()
 {
