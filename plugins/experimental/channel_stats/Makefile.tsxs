@@ -17,7 +17,7 @@
 TSXS?=tsxs
 
 %.so: %.cc
-	$(TSXS) -o $@ %<
+	$(TSXS) -o $@ $<
 
 all: channel_stats.so
 

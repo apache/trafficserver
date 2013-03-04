@@ -69,11 +69,11 @@ compile() {
 	SRC=$1
 	extension=`echo $SRC | sed -e 's/^.*\.//g'`
 	case $extension in
-		c)
+		c|C)
 			MY_CFLAGS="$CPPFLAGS $CFLAGS"
 			MY_CC=$CC
 			;;
-		cpp|cxx|CPP|CXX|CC|C)
+		cpp|cxx|cc|CPP|CXX|CC)
 			MY_CFLAGS="$CPPFLAGS $CXXFLAGS"
 			MY_CC=$CXX
 			;;
@@ -138,6 +138,8 @@ case $host in
         ;;
 esac
 
+files=()
+
 LD=$MODULELD
 while getopts "hivl:L:I:c:C:o:" OPTION
 do
@@ -164,11 +166,17 @@ do
 	i)
 		INSTALL=1
 		;;
+	c)
+		files[${#files[@]}]="$OPTARG"
+		;;
+	C)
+		files[${#files[@]}]="$OPTARG"
+		;;
 	esac
 done
 shift $(( OPTIND - 1))
 
-for file in "$@"; do
+for file in "${files[@]}" "$@"; do
 	compile $file
 done
 
