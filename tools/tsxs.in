@@ -44,6 +44,53 @@ bail() {
 	exit 1
 }
 
+usage() {
+	cat <<EOF
+$0 : a tool to compile, link and install trafficserver plugins.
+
+compiling/linking:
+-o modulename.so                        ## the name of the module
+-I include                              ## add -Iinclude to CFLAGS
+-L library path				## add -Lpath to LDFLAGS
+-l library                              ## add -llib to the LDFLAGS
+
+installing:
+-o modulename.so                        ## the name of the module
+-i                                      ## install the object
+
+Example:
+  $0 -I/foo/include -L/foo/lib -lsomelib -o tsmodule.so src1.c src2.c ...
+
+EOF
+
+}
+
+compile() {
+	SRC=$1
+	extension=`echo $SRC | sed -e 's/^.*\.//g'`
+	case $extension in
+		c)
+			MY_CFLAGS="$CPPFLAGS $CFLAGS"
+			MY_CC=$CC
+			;;
+		cpp|cxx|CPP|CXX|CC|C)
+			MY_CFLAGS="$CPPFLAGS $CXXFLAGS"
+			MY_CC=$CXX
+			;;
+		*)
+			bail "Unrecognized input file: $SRC"
+			;;
+	esac
+
+	obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
+	echo "  compiling $SRC -> $obj"
+	debug "$MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj"
+	$MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj ||
+		bail "Compile failed: $MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj"
+	OBJS="$OBJS $obj"
+	BUILD=1
+}
+
 case $host in
 *-*-darwin*)
         PICFLAGS="-fPIC"
@@ -92,77 +139,37 @@ case $host in
 esac
 
 LD=$MODULELD
-for v in $* 
+while getopts "hivl:L:I:c:C:o:" OPTION
 do
-	case $v in 
-	-v)
-		shift
+	case $OPTION in 
+	v)
 		DEBUGECHO=1
 		;;
-	-h)
-		cat <<EOF
-$0 : a tool to compile, link and install trafficserver plugins.
-
- compiling/linking:
-	-c [ file1.c [ file2.c [ ... ] ] ]      ## compiles C files
-	-C [ file1.cc [ file2.C [ ... ] ] ]     ## compiles C++ files
-	-o modulename.so                        ## the name of the module
-	-I include                              ## add -Iinclude to the compile
-	-l lib                                  ## add -llib to the link
-
- installing:
-	-o modulename.so                        ## the name of the module
-	-i                                      ## install the object
-
-EOF
-		exit
+	h)
+		usage
+		exit 1
 		;;
-	-I)
-		CPPFLAGS="$CPPFLAGS -I$2"
-		shift 2
+	I)
+		CPPFLAGS="$CPPFLAGS -I$OPTARG"
 		;;
-	-l)
-		LIBS="$LIBS -l$2"
-		shift 2
+	L)
+		LDFLAGS="$LDFLAGS -L$OPTARG $RLDFLAG$OPTARG"
 		;;
-	-c)
-		shift
-		while [ -r "$1" ]; do
-			SRC=$1
-			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
-			echo "  compiling $SRC -> $obj"
-			debug "$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj"
-			$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj ||
-				bail "Compile failed: $CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj"
-			OBJS="$OBJS $obj"
-			BUILD=1
-			shift
-		done
+	l)
+		LIBS="$LIBS -l$OPTARG"
 		;;
-	-C)
-		shift
-		while [ -r "$1" ]; do
-			SRC=$1
-			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
-			echo "  compiling $SRC -> $obj"
-			debug "$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj"
-			$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj ||
-				bail "Compile failed: $CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj"
-			OBJS="$OBJS $obj"
-			LD=$MODULELDXX
-			BUILD=1
-			shift
-		done
+	o)
+		OBJ=$OPTARG
 		;;
-	-o)
-		OBJ=$2
-		shift 2
-		;;
-	-i)
+	i)
 		INSTALL=1
-		shift
 		;;
 	esac
+done
+shift $(( OPTIND - 1))
+
+for file in "$@"; do
+	compile $file
 done
 
 if [ "$BUILD" = "1" -a -n "$OBJ" ]; then

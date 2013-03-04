@@ -8,7 +8,7 @@ installation:
 make && sudo make install
 
 if no makefile is present, you can compile it using
-    tsxs -C *.cc -o gzip.so
+    tsxs -o gzip.so *.cc
 and then install it using 
     tsxs -i -o gzip.so
 

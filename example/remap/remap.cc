@@ -23,7 +23,7 @@
   @section description
   Build this sample remap plugin using tsxs:
 
-    $ tsxs -v -C remap.cc -o remap.so
+    $ tsxs -v -o remap.so remap.cc 
 
   To install it:
     # tsxs -i -o remap.so

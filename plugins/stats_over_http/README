@@ -1,5 +1,5 @@
 Compile:
-  tsxs -c stats_over_http.c -o stats_over_http.so
+  tsxs -o stats_over_http.so stats_over_http.c 
 Install:
   sudo tsxs -o stats_over_http.so -i
 

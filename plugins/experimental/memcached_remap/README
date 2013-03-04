@@ -26,12 +26,12 @@ sudo yum install memcached python-memcached
 2. Compile and Install the memcached_remap plugin
 
 [user@ memcached_remap]$ gmake
-/usr/local/bin/tsxs -C memcached_remap.cc -o memcached_remap.so
+/usr/local/bin/tsxs -o memcached_remap.so memcached_remap.cc
   compiling memcached_remap.cc -> memcached_remap.lo
   linking -> memcached_remap.so
 
 [user@ memcached_remap]$ sudo gmake install
-/usr/local/bin/tsxs -C memcached_remap.cc -o memcached_remap.so
+/usr/local/bin/tsxs -o memcached_remap.so memcached_remap.cc
   compiling memcached_remap.cc -> memcached_remap.lo
   linking -> memcached_remap.so
 /usr/local/bin/tsxs -i -o memcached_remap.so

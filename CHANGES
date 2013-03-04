@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1733] Retool tsxs so that it can compile multiple source files
+   Author: Dale Ghent <daleg@omniti.com>
+
   *) [TS-1738] proxy.cluster.cache_total_hits_mem is missing in RecordsConfig
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
