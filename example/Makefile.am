@@ -14,8 +14,54 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if STANDALONE_IOCORE
-SUBDIRS = app-template
-else
-SUBDIRS = . add-header append-transform basic-auth blacklist-0 blacklist-1 bnull-transform cache_scan file-1 hello null-transform output-header protocol query_remap redirect-1 remap replace-header response-header-1 server-transform session-1 thread-1 thread-pool
-endif
+pkglibdir = ${pkglibexecdir}
+
+AM_CPPFLAGS = -I$(top_srcdir)/proxy/api
+AM_LDFLAGS = -module -avoid-version -shared
+
+noinst_LTLIBRARIES = \
+	add-header.la \
+	append-transform.la \
+	basic-auth.la \
+	blacklist-0.la \
+	blacklist-1.la \
+	bnull-transform.la \
+	cache-scan.la \
+	file-1.la \
+	hello.la \
+	null-transform.la \
+	output-header.la \
+	protocol.la \
+	psi.la \
+	query-remap.la \
+	remap.la \
+	replace-header.la \
+	response-header-1.la \
+	server-transform.la \
+	thread-1.la
+
+add_header_la_SOURCES = add-header/add-header.c
+append_transform_la_SOURCES = append-transform/append-transform.c
+basic_auth_la_SOURCES = basic-auth/basic-auth.c
+blacklist_0_la_SOURCES = blacklist-0/blacklist-0.c
+blacklist_1_la_SOURCES = blacklist-1/blacklist-1.c
+bnull_transform_la_SOURCES = bnull-transform/bnull-transform.c
+cache_scan_la_SOURCES = cache-scan/cache-scan.cc
+file_1_la_SOURCES = file-1/file-1.c
+hello_la_SOURCES = hello/hello.c
+null_transform_la_SOURCES = null-transform/null-transform.c
+output_header_la_SOURCES = output-header/output-header.c
+protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
+query_remap_la_SOURCES = query-remap/query-remap.c
+remap_la_SOURCES = remap/remap.cc
+replace_header_la_SOURCES = replace-header/replace-header.c
+response_header_1_la_SOURCES = response-header-1/response-header-1.c
+server_transform_la_SOURCES = server-transform/server-transform.c
+thread_1_la_SOURCES = thread-1/thread-1.c
+psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
+
+# The following examples do not build:
+#
+# prefetch_eg1_la_SOURCES = prefetch/prefetch-plugin-eg1.c
+# redirect_1_la_SOURCES = redirect-1/redirect-1.c
+# session_1_la_SOURCES = session-1/session-1.c
