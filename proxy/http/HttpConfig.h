@@ -635,12 +635,6 @@ public:
   char *proxy_response_via_string;
   int proxy_response_via_string_len;
 
-  //////////////////
-  // WUTS headers //
-  //////////////////
-  MgmtByte wuts_enabled;
-  MgmtByte log_spider_codes;
-
   ///////////////////////////////////
   // URL expansions for DNS lookup //
   ///////////////////////////////////
@@ -914,8 +908,6 @@ HttpConfigParams::HttpConfigParams()
     proxy_request_via_string_len(0),
     proxy_response_via_string(0),
     proxy_response_via_string_len(0),
-    wuts_enabled(0),
-    log_spider_codes(0),
     url_expansions_string(0),
     url_expansions(0),
     num_url_expansions(0),

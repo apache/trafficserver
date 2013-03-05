@@ -26,15 +26,6 @@
 
 #define ink_time_t time_t
 
-struct WUTSCode
-{
-  SquidHitMissCode squid_hit_miss_code;
-  SquidLogCode squid_log_code[5];
-  SquidHierarchyCode squid_hier_code[5];
-  WUTSProxyId proxy_id[5];
-  WUTSProxyStatusCode proxy_status_code;
-};
-
 extern int nstrhex(char *d, unsigned int i);
 
 class HttpTransactHeaders
@@ -68,16 +59,9 @@ public:
   static bool does_server_allow_response_to_be_stored(HTTPHdr * resp);
   static bool downgrade_request(bool * origin_server_keep_alive, HTTPHdr * outgoing_request);
 
-  static bool get_wuts_code(HTTPHdr * hdr, WUTSCode * w);
-  static void set_wuts_codes(HTTPHdr * hdr, WUTSCode * code);
-  static void set_wuts_codes(HTTPHdr * hdr, SquidHitMissCode hit_miss_code,
-                             SquidLogCode log_code, SquidHierarchyCode hier_code,
-                             WUTSProxyId proxy_id, WUTSProxyStatusCode proxy_status_code);
-  static void generate_and_set_wuts_codes(HTTPHdr * header, char *via_string,
-                                          HttpTransact::SquidLogInfo * squid_codes,
-                                          int wuts_id, bool set_codes_in_hdr, bool log_spider_codes = false);
+  static void generate_and_set_squid_codes(HTTPHdr * header, char *via_string,
+                                          HttpTransact::SquidLogInfo * squid_codes);
 
-  static void convert_wuts_code_to_normal_reason(HTTPHdr * header);
   static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param,
                                     HTTPHdr *header, HTTPWarningCode code,

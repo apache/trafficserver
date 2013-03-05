@@ -1174,9 +1174,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.proxy_response_via_string, "proxy.config.http.response_via_str");
   c.proxy_response_via_string_len = -1;
 
-  HttpEstablishStaticConfigByte(c.wuts_enabled, "proxy.config.http.wuts_enabled");
-  HttpEstablishStaticConfigByte(c.log_spider_codes, "proxy.config.http.log_spider_codes");
-
   HttpEstablishStaticConfigStringAlloc(c.url_expansions_string, "proxy.config.dns.url_expansions");
   HttpEstablishStaticConfigLongLong(c.proxy_server_port, "proxy.config.http.server_port");
   HttpEstablishStaticConfigStringAlloc(c.proxy_server_other_ports, "proxy.config.http.server_other_ports");
@@ -1452,9 +1449,6 @@ HttpConfig::reconfigure()
   params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
   params->proxy_response_via_string = ats_strdup(m_master.proxy_response_via_string);
   params->proxy_response_via_string_len = (params->proxy_response_via_string) ? strlen(params->proxy_response_via_string) : 0;
-
-  params->wuts_enabled = INT_TO_BOOL(m_master.wuts_enabled);
-  params->log_spider_codes = INT_TO_BOOL(m_master.log_spider_codes);
 
   params->url_expansions_string = ats_strdup(m_master.url_expansions_string);
   params->url_expansions = parse_url_expansions(params->url_expansions_string, &params->num_url_expansions);

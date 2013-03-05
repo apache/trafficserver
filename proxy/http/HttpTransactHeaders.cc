@@ -492,176 +492,15 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
 
   return true;
 }
-bool
-HttpTransactHeaders::get_wuts_code(HTTPHdr *hdr, WUTSCode *w)
-{
-#define is_alnum(c)  (ParseRules::is_alnum (c))
-#define is_digit(c)  (ParseRules::is_digit (c))
-
-  const char *phrase;
-  int length;
-  int i, j;
-
-  phrase = hdr->reason_get(&length);
-  if (!phrase || (length == 0) || (phrase[0] != '!'))
-    return false;
-
-  if (length < 25)
-    return (false);
-
-  if (!is_alnum(phrase[1]))
-    return false;
-
-  w->squid_hit_miss_code = (SquidHitMissCode) phrase[1];
-
-  for (i = 0, j = 2; i < 5; i++) {
-    if (!is_alnum(phrase[1]))
-      return false;
-    w->squid_log_code[i] = (SquidLogCode) phrase[j];
-    j += 1;
-
-    if (!is_alnum(phrase[1]))
-      return false;
-    w->squid_hier_code[i] = (SquidHierarchyCode) phrase[j];
-    j += 1;
-  }
-
-  for (i = 0; i < 5; i++) {
-    if ((phrase[j] != '0') || (phrase[j + 1] != '0'))
-      return false;
-    w->proxy_id[i] = 0;
-    j += 2;
-  }
-
-  if (!is_digit(phrase[j + 0]) || !is_digit(phrase[j + 1]) || !is_digit(phrase[j + 2]))
-    return false;
-
-  w->proxy_status_code =
-    (WUTSProxyStatusCode) ((phrase[j + 0] - '0') * 100 + (phrase[j + 1] - '0') * 10 + (phrase[j + 2] - '0'));
-
-  return true;
-
-#undef is_alnum
-#undef is_digit
-}
-
 
 void
-HttpTransactHeaders::set_wuts_codes(HTTPHdr *hdr, WUTSCode *code)
-{
-#define is_digit(c)  (ParseRules::is_digit (c))
-#define is_hex(c)    (ParseRules::is_hex (c))
-
-  char phrase[1024];
-  const char *old_phrase;
-  int old_length;
-  int i, j, phrase_len;
-
-  old_phrase = hdr->reason_get(&old_length);
-  if (old_length > 0) {
-    if ((old_length >= 25) && (old_phrase[0] == '!') &&
-        is_hex(old_phrase[1]) && is_hex(old_phrase[2]) &&
-        is_hex(old_phrase[3]) && is_hex(old_phrase[4]) &&
-        is_hex(old_phrase[5]) && is_hex(old_phrase[6]) &&
-        is_hex(old_phrase[7]) && is_hex(old_phrase[8]) &&
-        is_hex(old_phrase[9]) && is_hex(old_phrase[10]) &&
-        is_hex(old_phrase[11]) && is_hex(old_phrase[12]) &&
-        is_hex(old_phrase[13]) && is_hex(old_phrase[14]) &&
-        is_hex(old_phrase[15]) && is_hex(old_phrase[16]) &&
-        is_hex(old_phrase[17]) && is_hex(old_phrase[18]) &&
-        is_hex(old_phrase[19]) && is_hex(old_phrase[20]) &&
-        is_hex(old_phrase[21]) && is_digit(old_phrase[22]) && is_digit(old_phrase[23]) && is_digit(old_phrase[24])) {
-      old_phrase += 25;
-      old_length -= 25;
-
-      if ((old_length >= 1) && (old_phrase[0] == ' ')) {
-        old_phrase += 1;
-        old_length -= 1;
-      }
-    }
-
-    if (old_length > (1023 - 25))
-      old_length = 1023 - 25;
-
-    phrase[0] = '!';
-    phrase[25] = ' ';
-    memcpy(&phrase[26], old_phrase, old_length);
-    phrase[26 + old_length] = '\0';
-    phrase_len = 26 + old_length;
-  } else {
-    phrase[0] = '!';
-    phrase[25] = '\0';
-    phrase_len = 25;
-  }
-
-  phrase[1] = code->squid_hit_miss_code;
-
-  for (i = 0, j = 2; i < 5; i++) {
-    phrase[j++] = code->squid_log_code[i];
-    phrase[j++] = code->squid_hier_code[i];
-  }
-
-  for (i = 0; i < 5; i++) {
-    phrase[j++] = ((code->proxy_id[i] / 10) % 10) + '0';
-    phrase[j++] = (code->proxy_id[i] % 10) + '0';
-  }
-
-  phrase[j++] = ((code->proxy_status_code / 100) % 10) + '0';
-  phrase[j++] = ((code->proxy_status_code / 10) % 10) + '0';
-  phrase[j++] = (code->proxy_status_code % 10) + '0';
-
-  hdr->reason_set(phrase, phrase_len);
-
-#undef is_hex
-#undef is_digit
-}
-
-
-void
-HttpTransactHeaders::set_wuts_codes(HTTPHdr *hdr,
-                                    SquidHitMissCode hit_miss_code,
-                                    SquidLogCode log_code,
-                                    SquidHierarchyCode hier_code,
-                                    WUTSProxyId proxy_id, WUTSProxyStatusCode proxy_status_code)
-{
-  WUTSCode code;
-  int i;
-
-  if (!get_wuts_code(hdr, &code)) {
-    for (i = 0; i < 5; i++) {
-      code.squid_log_code[i] = SQUID_LOG_EMPTY;
-      code.squid_hier_code[i] = SQUID_HIER_EMPTY;
-      code.proxy_id[i] = 0;
-    }
-  }
-
-  for (i = 0; i < 4; i++) {
-    if ((code.squid_log_code[i] == SQUID_LOG_EMPTY) &&
-        (code.squid_hier_code[i] == SQUID_HIER_EMPTY) && (code.proxy_id[i] == 0)) {
-      break;
-    }
-  }
-
-  code.squid_hit_miss_code = hit_miss_code;
-  code.squid_log_code[i] = log_code;
-  code.squid_hier_code[i] = hier_code;
-  code.proxy_id[i] = proxy_id;
-  code.proxy_status_code = proxy_status_code;
-
-  set_wuts_codes(hdr, &code);
-}
-
-
-void
-HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr *header,
+HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header,
                                                  char *via_string,
-                                                 HttpTransact::SquidLogInfo *squid_codes,
-                                                 int wuts_id, bool set_codes_in_hdr, bool log_spider_codes)
+                                                 HttpTransact::SquidLogInfo *squid_codes)
 {
   SquidLogCode log_code;
   SquidHierarchyCode hier_code;
   SquidHitMissCode hit_miss_code;
-  WUTSProxyStatusCode status_code = WUTS_PROXY_STATUS_UNKNOWN;
 
   /////////////////////////////
   // First the Hit-Miss Code //
@@ -757,61 +596,37 @@ HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr *header,
     hier_code = SQUID_HIER_DIRECT;
   }
 
-  if (log_spider_codes && hier_code == SQUID_HIER_DIRECT)
-    log_code = SQUID_LOG_TCP_SPIDER_BYPASS;
-
-  /////////////////////
-  // The Status Code //
-  /////////////////////
-  if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_IMS) {
-    if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) ||
-        (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
-      status_code = WUTS_PROXY_STATUS_IMS_RECEIVED_CACHE_HIT;
-    }
-  } else if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_SIMPLE) {
-    if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) ||
-        (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
-      status_code = WUTS_PROXY_STATUS_GET_RECEIVED_CACHE_HIT;
-    }
-  }
   // Errors may override the other codes, so check the via string error codes last
   switch (via_string[VIA_ERROR_TYPE]) {
   case VIA_ERROR_AUTHORIZATION:
-    status_code = WUTS_PROXY_STATUS_PROXY_AUTHORIZATION_FAILURE;
     // TODO decide which one?
     // log_code = SQUID_LOG_TCP_DENIED;
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
-    status_code = log_spider_codes ? WUTS_PROXY_STATUS_SPIDER_CONNECTION_FAILED : WUTS_PROXY_STATUS_CONNECT_FAILED;
     if (log_code == SQUID_LOG_TCP_MISS) {
-      log_code = log_spider_codes ? SQUID_LOG_ERR_SPIDER_CONNECT_FAILED : SQUID_LOG_ERR_CONNECT_FAIL;
+      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_DNS_FAILURE:
-    status_code = log_spider_codes ? WUTS_PROXY_STATUS_SPIDER_DNS_HOST_NOT_FOUND : WUTS_PROXY_STATUS_DNS_LOOKUP_FAILURE;
-    log_code = log_spider_codes ? SQUID_LOG_ERR_SPIDER_DNS_HOST_NOT_FOUND : SQUID_LOG_ERR_DNS_FAIL;
+    log_code = SQUID_LOG_ERR_DNS_FAIL;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_FORBIDDEN:
-    status_code = WUTS_PROXY_STATUS_FORBIDDEN;
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_HEADER_SYNTAX:
-    status_code = WUTS_PROXY_STATUS_INVALID_REQUEST;
     log_code = SQUID_LOG_ERR_INVALID_REQ;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_SERVER:
-    status_code = log_spider_codes ? WUTS_PROXY_STATUS_SPIDER_CONNECTION_FAILED : WUTS_PROXY_STATUS_CONNECT_FAILED;
     if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_MISS) {
-      log_code = log_spider_codes ? SQUID_LOG_ERR_SPIDER_CONNECT_FAILED : SQUID_LOG_ERR_CONNECT_FAIL;
+      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
     }
     break;
   case VIA_ERROR_TIMEOUT:
-    status_code = WUTS_PROXY_STATUS_READ_TIMEOUT;
     if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
-      log_code = log_spider_codes ? SQUID_LOG_ERR_SPIDER_GENERAL_TIMEOUT : SQUID_LOG_ERR_READ_TIMEOUT;
+      log_code = SQUID_LOG_ERR_READ_TIMEOUT;
     }
     if (hier_code == SQUID_HIER_SIBLING_HIT) {
       hier_code = SQUID_HIER_TIMEOUT_SIBLING_HIT;
@@ -822,12 +637,6 @@ HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr *header,
     }
     break;
   case VIA_ERROR_CACHE_READ:
-    // policy decision to call this a disk io error
-    // in the absence of a corresponding status code
-    // for TCP_SWAPFAIL. it seems as if disk io goes
-    // better with the ERR_DISK_IO log code, but
-    // beep it. i am sick of second guessing wuts codes.
-    status_code = WUTS_PROXY_STATUS_DISK_IO_ERROR;
     log_code = SQUID_LOG_TCP_SWAPFAIL;
     hier_code = SQUID_HIER_NONE;
     break;
@@ -835,13 +644,9 @@ HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr *header,
     break;
   }
 
-  if (status_code == WUTS_PROXY_STATUS_UNKNOWN) {
-    status_code = (WUTSProxyStatusCode) header->status_get();
-  }
-
   Debug("http_trans",
-        "[WUTS code generation] Hit/Miss: %d, Log: %d, Hier: %d, Status: %d",
-        hit_miss_code, log_code, hier_code, status_code);
+        "[Squid code generation] Hit/Miss: %d, Log: %d, Hier: %d",
+        hit_miss_code, log_code, hier_code);
   squid_codes->log_code = log_code;
   squid_codes->hier_code = hier_code;
 
@@ -854,32 +659,6 @@ HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr *header,
       hit_miss_code = squid_codes->hit_miss_code;
     }
   }
-
-  if (status_code != WUTS_PROXY_STATUS_UNKNOWN) {
-    squid_codes->wuts_proxy_status_code = status_code;
-  }
-
-  if (set_codes_in_hdr) {
-    set_wuts_codes(header, hit_miss_code, log_code, hier_code, wuts_id, status_code);
-  }
-}
-
-
-void
-HttpTransactHeaders::convert_wuts_code_to_normal_reason(HTTPHdr *hdr)
-{
-  const char *phrase;
-  int length;
-
-  if (hdr == NULL)
-    return;
-
-  phrase = hdr->reason_get(&length);
-  if (!phrase || (length == 0 || (phrase[0] != '!')))
-    return;
-
-  phrase = (const char *) http_hdr_reason_lookup(hdr->status_get());
-  hdr->reason_set(phrase, strlen(phrase));
 }
 
 

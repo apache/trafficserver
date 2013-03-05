@@ -4663,8 +4663,6 @@ HttpTransact::merge_and_update_headers_for_cache_update(State* s)
 
   s->cache_info.object_store.request_get()->field_delete(MIME_FIELD_VIA, MIME_LEN_VIA);
 
-  if (s->http_config_param->wuts_enabled)
-    HttpTransactHeaders::convert_wuts_code_to_normal_reason(s->cache_info.object_store.response_get());
 }
 
 void
@@ -4814,9 +4812,6 @@ HttpTransact::set_headers_for_cache_write(State* s, HTTPInfo* cache_info, HTTPHd
     // add one marker to the content in cache
    // cache_info->response_get()->value_set("@WWW-Auth", 9, "true", 4);
   //}
-  if (s->http_config_param->wuts_enabled)
-    HttpTransactHeaders::convert_wuts_code_to_normal_reason(cache_info->response_get());
-
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", cache_info->request_get(), s->state_machine_id, "Cached Request Hdr");
 }
@@ -5622,15 +5617,6 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
     s->client_info.pipeline_possible = true;
   }
 
-  if (s->http_config_param->log_spider_codes) {
-    HTTPVersion uver = s->client_info.http_version;
-    if (uver != HTTPVersion(1, 0) && uver != HTTPVersion(1, 1) && uver != HTTPVersion(0, 9)) {
-      // this probably will be overwriten later if the server accepts
-      // unsupported versions
-      s->squid_codes.wuts_proxy_status_code = WUTS_PROXY_STATUS_SPIDER_UNSUPPORTED_HTTP_VERSION;
-    }
-  }
-
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
     s->server_info.name = s->arena.str_store(host_name, host_len);
     s->server_info.port = incoming_request->port_get();
@@ -6203,10 +6189,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
             !response->get_last_modified()) {
           DebugTxn("http_trans", "[is_response_cacheable] " "last_modified, expires, or max-age is required");
 
-          // Set the WUTS code to NO_DLE or NO_LE only for 200 responses.
-          if (response_code == HTTP_STATUS_OK) {
-            s->squid_codes.hit_miss_code = ((response->get_date() == 0) ? (SQUID_MISS_HTTP_NO_DLE) : (SQUID_MISS_HTTP_NO_LE));
-          }
+          s->squid_codes.hit_miss_code = ((response->get_date() == 0) ? (SQUID_MISS_HTTP_NO_DLE) : (SQUID_MISS_HTTP_NO_LE));
           return (false);
         }
         break;
@@ -7985,16 +7968,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
   response_url_remap(outgoing_response);
 
   if (s->http_config_param->enable_http_stats) {
-    if (s->hdr_info.server_response.valid() && s->http_config_param->wuts_enabled) {
-      int reason_len;
-      const char *reason = s->hdr_info.server_response.reason_get(&reason_len);
-      if (reason != NULL && reason_len > 0)
-        outgoing_response->reason_set(reason, reason_len);
-    }
-
-    HttpTransactHeaders::generate_and_set_wuts_codes(outgoing_response, s->via_string, &s->squid_codes, WUTS_PROXY_ID,
-                                                     ((s->http_config_param->wuts_enabled) ? (true) : (false)),
-                                                     ((s->http_config_param->log_spider_codes) ? (true) : (false)));
+    HttpTransactHeaders::generate_and_set_squid_codes(outgoing_response, s->via_string, &s->squid_codes);
   }
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
@@ -8461,7 +8435,6 @@ HttpTransact::client_result_stat(State* s, ink_hrtime total_time, ink_hrtime req
 
   switch (s->squid_codes.log_code) {
   case SQUID_LOG_ERR_CONNECT_FAIL:
-  case SQUID_LOG_ERR_SPIDER_CONNECT_FAILED:
     HTTP_INCREMENT_TRANS_STAT(http_cache_miss_cold_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL;
     break;
@@ -8764,13 +8737,11 @@ HttpTransact::update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hr
     HTTP_SUM_TRANS_STAT(http_tcp_ims_miss_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_ERR_CLIENT_ABORT:
-  case SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED:
     HTTP_INCREMENT_TRANS_STAT(http_err_client_abort_count_stat);
     HTTP_SUM_TRANS_STAT(http_err_client_abort_user_agent_bytes_stat, user_agent_bytes);
     HTTP_SUM_TRANS_STAT(http_err_client_abort_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_ERR_CONNECT_FAIL:
-  case SQUID_LOG_ERR_SPIDER_CONNECT_FAILED:
     HTTP_INCREMENT_TRANS_STAT(http_err_connect_fail_count_stat);
     HTTP_SUM_TRANS_STAT(http_err_connect_fail_user_agent_bytes_stat, user_agent_bytes);
     HTTP_SUM_TRANS_STAT(http_err_connect_fail_origin_server_bytes_stat, origin_server_bytes);

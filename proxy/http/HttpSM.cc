@@ -695,11 +695,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
     // The user agent is hosed.  Close it &
     //   bail on the state machine
-    if (t_state.http_config_param->log_spider_codes) {
-      t_state.squid_codes.wuts_proxy_status_code = WUTS_PROXY_STATUS_SPIDER_TIMEOUT_WHILE_DRAINING;
-      t_state.squid_codes.log_code = SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING;
-      t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
-    }
     vc_table.cleanup_entry(ua_entry);
     ua_entry = NULL;
     t_state.client_info.abort = HttpTransact::ABORTED;
@@ -2735,16 +2730,12 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
   milestones.server_close = ink_get_hrtime();
 
   bool close_connection = false;
-  bool log_spider_codes = t_state.http_config_param->log_spider_codes != 0;
 
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
-    t_state.squid_codes.wuts_proxy_status_code =
-      log_spider_codes ? WUTS_PROXY_STATUS_SPIDER_TIMEOUT_WHILE_PASSING : WUTS_PROXY_STATUS_READ_TIMEOUT;
-    t_state.squid_codes.log_code =
-      log_spider_codes ? SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_PASSING : SQUID_LOG_ERR_READ_TIMEOUT;
+    t_state.squid_codes.log_code = SQUID_LOG_ERR_READ_TIMEOUT;
     t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
 
     switch (event) {
@@ -2776,11 +2767,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
       t_state.current.server->abort = HttpTransact::ABORTED;
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
-      if (t_state.http_config_param->log_spider_codes) {
-        t_state.squid_codes.wuts_proxy_status_code = WUTS_PROXY_STATUS_SPIDER_TIMEOUT_WHILE_DRAINING;
-        t_state.squid_codes.log_code = SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING;
-        t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
-      }
     } else {
       p->read_success = true;
       t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
@@ -3108,11 +3094,6 @@ HttpSM::tunnel_handler_ua_push(int event, HttpTunnelProducer * p)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     // Transfer terminated.  Bail on the cache write.
-    if (t_state.http_config_param->log_spider_codes) {
-      t_state.squid_codes.wuts_proxy_status_code = WUTS_PROXY_STATUS_SPIDER_TIMEOUT_WHILE_DRAINING;
-      t_state.squid_codes.log_code = SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING;
-      t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
-    }
     t_state.client_info.abort = HttpTransact::ABORTED;
     p->vc->do_io_close(EHTTP_ERROR);
     p->read_vio = NULL;
@@ -3151,9 +3132,6 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer * p)
     if (t_state.cache_info.object_read->object_size_get() != INT64_MAX || event == VC_EVENT_ERROR) {
       // Abnormal termination
       t_state.squid_codes.log_code = SQUID_LOG_TCP_SWAPFAIL;
-      t_state.squid_codes.wuts_proxy_status_code =
-        t_state.http_config_param->
-        log_spider_codes ? WUTS_PROXY_STATUS_SPIDER_GENERAL_TIMEOUT : WUTS_PROXY_STATUS_READ_TIMEOUT;
       p->vc->do_io_close(EHTTP_ERROR);
       p->read_vio = NULL;
       tunnel.chain_abort_all(p);
@@ -4737,16 +4715,12 @@ HttpSM::mark_host_failure(HostDBInfo * info, time_t time_down)
 void
 HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
 {
-  bool log_spider_codes = t_state.http_config_param->log_spider_codes != 0;
-
   t_state.client_info.abort = ua_abort;
 
   switch (ua_abort) {
   case HttpTransact::ABORTED:
   case HttpTransact::MAYBE_ABORTED:
-    t_state.squid_codes.wuts_proxy_status_code =
-      log_spider_codes ? WUTS_PROXY_STATUS_SPIDER_MEMBER_ABORTED : WUTS_PROXY_STATUS_CLIENT_ABORT;
-    t_state.squid_codes.log_code = log_spider_codes ? SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED : SQUID_LOG_ERR_CLIENT_ABORT;
+    t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_ABORT;
     break;
   default:
     // Handled here:

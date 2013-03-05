@@ -480,7 +480,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.keep_alive_no_activity_timeout_in
  proxy.config.http.keep_alive_no_activity_timeout_out
  proxy.config.http.keep_alive_post_out
- proxy.config.http.log_spider_codes
  proxy.config.http.negative_caching_enabled
  proxy.config.http.negative_caching_lifetime
  proxy.config.http.negative_revalidating_enabled
@@ -532,7 +531,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http_ui_enabled
  proxy.config.http.uncacheable_requests_bypass_parent
  proxy.config.http.user_agent_pipeline
- proxy.config.http.wuts_enabled
  proxy.config.icp.default_reply_port
  proxy.config.icp.enabled
  proxy.config.icp.icp_configuration

@@ -564,7 +564,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
   Ptr<LogFieldAliasTable> cache_code_map = NEW(new LogFieldAliasTable);
-  cache_code_map->init(62,
+  cache_code_map->init(49,
                        SQUID_LOG_EMPTY, "UNDEFINED",
                        SQUID_LOG_TCP_HIT, "TCP_HIT",
                        SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT",
@@ -580,7 +580,6 @@ Log::init_fields()
                        SQUID_LOG_TCP_SWAPFAIL, "TCP_SWAPFAIL_MISS",
                        SQUID_LOG_TCP_DENIED, "TCP_DENIED",
                        SQUID_LOG_TCP_WEBFETCH_MISS, "TCP_WEBFETCH_MISS",
-                       SQUID_LOG_TCP_SPIDER_BYPASS, "TCP_SPIDER_BYPASS",
                        SQUID_LOG_TCP_FUTURE_2, "TCP_FUTURE_2",
                        SQUID_LOG_TCP_HIT_REDIRECT, "TCP_HIT_REDIRECT",
                        SQUID_LOG_TCP_MISS_REDIRECT, "TCP_MISS_REDIRECT",
@@ -614,22 +613,7 @@ Log::init_fields()
                        SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
                        SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED",
                        SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1",
-                       SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED, "ERR_SPIDER_MEMBER_ABORTED",
-                       SQUID_LOG_ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION, "ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION",
-                       SQUID_LOG_ERR_SPIDER_UNSUPPORTED_HTTP_VERSION, "ERR_SPIDER_UNSUPPORTED_HTTP_VERSION",
-                       SQUID_LOG_ERR_SPIDER_UIF, "ERR_SPIDER_UIF",
-                       SQUID_LOG_ERR_SPIDER_FUTURE_USE_1, "ERR_SPIDER_FUTURE_USE_1",
-                       SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_PASSING, "ERR_SPIDER_TIMEOUT_WHILE_PASSING",
-                       SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING, "ERR_SPIDER_TIMEOUT_WHILE_DRAINING",
-                       SQUID_LOG_ERR_SPIDER_GENERAL_TIMEOUT, "ERR_SPIDER_GENERAL_TIMEOUT",
-                       SQUID_LOG_ERR_SPIDER_CONNECT_FAILED, "ERR_SPIDER_CONNECT_FAILED",
-                       SQUID_LOG_ERR_SPIDER_FUTURE_USE_2, "ERR_SPIDER_FUTURE_USE_2",
-                       SQUID_LOG_ERR_SPIDER_NO_RESOURCES, "ERR_SPIDER_NO_RESOURCES",
-                       SQUID_LOG_ERR_SPIDER_INTERNAL_ERROR, "ERR_SPIDER_INTERNAL_ERROR",
-                       SQUID_LOG_ERR_SPIDER_INTERNAL_IO_ERROR, "ERR_SPIDER_INTERNAL_IO_ERROR",
-                       SQUID_LOG_ERR_SPIDER_DNS_TEMP_ERROR, "ERR_SPIDER_DNS_TEMP_ERROR",
-                       SQUID_LOG_ERR_SPIDER_DNS_HOST_NOT_FOUND, "ERR_SPIDER_DNS_HOST_NOT_FOUND",
-                       SQUID_LOG_ERR_SPIDER_DNS_NO_ADDRESS, "ERR_SPIDER_DNS_NO_ADDRESS", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
+                       SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
 
   field = NEW(new LogField("cache_result_code", "crc",
                            LogField::sINT,
