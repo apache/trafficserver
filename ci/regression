@@ -44,14 +44,16 @@ mkdir -p $DSTROOT
 prog() {
   case $1 in
     cc)
-      case $(uname) in
-        Darwin) echo clang ;;
+      case $(uname -v) in
+        Darwin*) echo clang ;;
+        omnios*) echo /opt/gcc-4.6.3/bin/gcc ;;
         *) echo cc ;;
       esac
       ;;
     cxx)
-      case $(uname) in
-        Darwin) echo clang++ ;;
+      case $(uname -v) in
+        Darwin*) echo clang++ ;;
+        omnios*) echo /opt/gcc-4.6.3/bin/g++ ;;
         *) echo c++ ;;
       esac
       ;;
@@ -61,6 +63,12 @@ prog() {
         *) echo make ;;
       esac
       ;;
+  esac
+}
+
+extras() {
+  case $(uname -v) in
+    omnios*) echo --with-tcl=/opt/omni/lib/amd64 ;;
   esac
 }
 
@@ -78,6 +86,7 @@ configure() {
       --enable-debug \
       --enable-wccp \
       --enable-experimental-plugins \
+      $(extras) \
       CC=$CC \
       CXX=$CXX
   )
