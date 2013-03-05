@@ -69,11 +69,11 @@ compile() {
 	SRC=$1
 	extension=`echo $SRC | sed -e 's/^.*\.//g'`
 	case $extension in
-		c|C)
+		c)
 			MY_CFLAGS="$CPPFLAGS $CFLAGS"
 			MY_CC=$CC
 			;;
-		cpp|cxx|cc|CPP|CXX|CC)
+		cpp|cxx|cc|CPP|CXX|CC|C)
 			MY_CFLAGS="$CPPFLAGS $CXXFLAGS"
 			MY_CC=$CXX
 			;;
