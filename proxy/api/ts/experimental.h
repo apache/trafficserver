@@ -184,6 +184,7 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnCacheLookupSkip(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
+  tsapi TSReturnCode TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close);
 
   /****************************************************************************
    *  ??

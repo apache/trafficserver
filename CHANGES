@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+
+  *) [TS-1058] add TSHttpTxnCloseAfterResponse experimental API
+   Author: Yakov Kopel <ykopel@websense.com>
+
   *) [TS-1733] Retool tsxs so that it can compile multiple source files
    Author: Dale Ghent <daleg@omniti.com>
 
@@ -10,7 +14,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1739] Fix TODO within varFloatFromName()
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  *) [TS-1559] Server side termination not handled properly when a PluginVC 
+  *) [TS-1559] Server side termination not handled properly when a PluginVC
    Protocol Plugin is used. Author: Yossi Gottlieb.
 
   *) [TS-1300] Document the usage of TSUrlStringGet() and derivatives.
