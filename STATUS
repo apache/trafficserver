@@ -66,6 +66,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Patch: 5566ac76d6c4e4f5154421f1ac1077487b02d332
   +1: igalic
 
+  Fix gcc-4.8 build problems
+  Jira: https://issues.apache.org/jira/browse/TS-1714
+  Patch: dccdd5a44, 2bee0a2f0, dccdd5a44, b4d4f4a9a,
+         deb8253a, 44fff1b91
+  +1: zwoop
+
+
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
