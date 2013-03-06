@@ -676,7 +676,7 @@ LogAccess::marshal_record(char *record, char *buf)
       // conversion below, if this ever changes we should modify
       // accordingly
       //
-      ink_debug_assert(sizeof(int64_t) >= sizeof(LogInt) && sizeof(int64_t) >= sizeof(LogCounter));
+      ink_debug_assert(sizeof(int64_t) >= sizeof(RecInt) && sizeof(int64_t) >= sizeof(RecCounter));
 
       // so that a 64 bit integer will fit (including sign and eos)
       //
