@@ -17,8 +17,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Local Macros
-# http://www.gnu.org/software/automake/manual/automake.html#Local-Macros
-ACLOCAL_AMFLAGS = -I build
-
 bin_SCRIPTS = tsxs
+
+noinst_PROGRAMS = jtest/jtest
+
+jtest_jtest_SOURCES = jtest/jtest.cc
