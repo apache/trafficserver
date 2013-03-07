@@ -59,7 +59,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Addendum for, TS-1470: consistently use off_t for cache sizes
   Jira: https://issues.apache.org/jira/browse/TS-1319
   Patch: 61496440b65ee28c93bf77fa036c0424b33dc10c
-  +1: igalic (although cherry picking doesn't apply cleanly)
+  +1: igalic (although cherry picking doesn't apply cleanly), arno
 
   Fix FreeBSD block calculation (both RAW and directory)
   Jira: https://issues.apache.org/jira/browse/TS-1707
@@ -70,7 +70,9 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Jira: https://issues.apache.org/jira/browse/TS-1714
   Patch: dccdd5a44, 2bee0a2f0, dccdd5a44, b4d4f4a9a,
          deb8253a, 44fff1b91
-  +1: zwoop
+  (Patches do not apply cleanly, there is a merge conflict resolving patch in
+  https://issues.apache.org/jira/secure/attachment/12572264/TS-1714.diff)
+  +1: zwoop, arno
 
 
 RELEASE PROCESS
