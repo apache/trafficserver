@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.1
 
 
+  *) [TS-1743] Implement our own hash mechanism for traffic_logstats, since
+   C++11 does not provide a sensical hash<const char*>.
+
   *) [TS-1628] In validate_unmapped_url(), pristine_url can be invalid().
 
   *) [TS-1714] Fix some build problems for gcc v4.8.
