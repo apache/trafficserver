@@ -103,3 +103,8 @@ rc/trafficserver.service
 tools/http_load/
 plugins/experimental/stale_while_revalidate/stale_while_revalidate.conf
 plugins/experimental/tcp_info/tcp_info.config
+plugins/experimental/esi/docnode_test
+plugins/experimental/esi/parser_test
+plugins/experimental/esi/processor_test
+plugins/experimental/esi/utils_test
+plugins/experimental/esi/vars_test
