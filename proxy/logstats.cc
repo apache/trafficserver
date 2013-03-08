@@ -370,7 +370,7 @@ void  update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &
 class UrlLru
 {
   typedef list<UrlStats> LruStack;
-  typedef hash_map<const char *, LruStack::iterator, hash <const char *>, eqstr> LruHash;
+  typedef hash_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
 
 public:
   UrlLru(int size=1000000, int show_urls=0)
