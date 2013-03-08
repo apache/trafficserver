@@ -180,12 +180,14 @@ void
 LogAccessHttp::validate_unmapped_url(void)
 {
   if (m_client_req_unmapped_url_canon_len < 0) {
-    int unmapped_url_len;
-    char *unmapped_url = m_http_sm->t_state.pristine_url.string_get_ref(&unmapped_url_len);
+    if (m_http_sm->t_state.pristine_url.valid()) {
+      int unmapped_url_len;
+      char *unmapped_url = m_http_sm->t_state.pristine_url.string_get_ref(&unmapped_url_len);
 
-    if (unmapped_url && unmapped_url[0] != 0) {
-      m_client_req_unmapped_url_canon_str =
+      if (unmapped_url && unmapped_url[0] != 0) {
+        m_client_req_unmapped_url_canon_str =
         LogUtils::escapify_url(&m_arena, unmapped_url, unmapped_url_len, &m_client_req_unmapped_url_canon_len);
+      }
     } else {
       m_client_req_unmapped_url_canon_len = 0;
     }
