@@ -181,9 +181,9 @@ static int regex_compile(regex_info **buf, char *pattern, char *replacement) {
     return status;
 }
 
-static void load_config_file() {
+static void load_config_file(const char *config_file) {
     char buffer[1024];
-    char config_file[1024];
+    char default_config_file[1024];
     TSFile fh;
 
     /* locations in a config file line, end of line, split start, split end */
@@ -192,9 +192,11 @@ static void load_config_file() {
     int retval;
     regex_info *info = 0;
 
-    /* TODO - should this file be located in etc/ rather than the plugin dir?
-     * */
-    sprintf(config_file, "%s/cacheurl.config", TSPluginDirGet());
+    if (!config_file) {
+        /* Default config file of plugins/cacheurl.config */
+        sprintf(default_config_file, "%s/cacheurl.config", TSPluginDirGet());
+        config_file = (const char *)default_config_file;
+    }
     TSDebug(PLUGIN_NAME, "Opening config file: %s", config_file);
     fh = TSfopen(config_file, "r");
 
@@ -384,7 +386,7 @@ void TSPluginInit(int argc, const char *argv[]) {
         TSError("[%s] Error creating log file\n", PLUGIN_NAME);
     }
 
-    load_config_file();
+    load_config_file(argc > 1 ? argv[1] : NULL);
 
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK,
             TSContCreate((TSEventFunc)handle_hook, NULL));

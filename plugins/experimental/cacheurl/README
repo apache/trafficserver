@@ -43,5 +43,10 @@ Examples:
 
 Add the plugin to your plugins.conf file: `cacheurl.so`
 
+If you wish, you can specify an alternate location for the configuration file
+by adding it as a parameter in plugins.conf. For example:
+
+    cacheurl.so /etc/trafficserver/cacheurl.config
+
 Start traffic server. Any rewritten URLs will be written to cacheurl.log in
 the log directory by default.
