@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.2
 
+  *) [TS-1744] ats run with 1 less event thread then it is supposed to, for
+  both auto and manual thread config
+
   *) [TS-1356] Ability to set thread affinity with multiple modes
 
   
