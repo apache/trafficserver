@@ -16,7 +16,8 @@
 
 pkglibdir = ${pkglibexecdir}
 
-AM_CPPFLAGS = -I$(top_srcdir)/proxy/api
+AM_CPPFLAGS = -I$(top_srcdir)/proxy/api \
+    -I$(top_builddir)/proxy/api
 AM_LDFLAGS = -module -avoid-version -shared
 
 noinst_LTLIBRARIES = \
