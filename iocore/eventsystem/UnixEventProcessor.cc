@@ -168,10 +168,10 @@ EventProcessor::start(int n_event_threads)
   REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
   ink_cpuset_t cpuset;
   const hwloc_topology_t *topology = ink_get_topology();
+  int socket = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_SOCKET);
   int cu = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_CORE);
   int pu = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_PU);
-  int num_cpus = cu;
-  Debug("iocore_thread", "cu: %d pu: %d affinity: %d", cu, pu, affinity);
+  Debug("iocore_thread", "socket: %d core: %d logical processor: %d affinity: %d", socket, cu, pu, affinity);
 #endif
 
   for (i = first_thread; i < n_ethreads; i++) {
@@ -180,12 +180,30 @@ EventProcessor::start(int n_event_threads)
     (void)tid;
 
 #if TS_USE_HWLOC
-    if (affinity == 1) {
-      int cpu = (i - 1) % num_cpus;
-      set_cpu(&cpuset, cpu);
-      Debug("iocore_thread", "setaffinity tid: %" PTR_FMT ", net thread: %u, cpu: %d", tid, i, cpu);
+    if (affinity != 0) {
+      int logical_ratio;
+      switch(affinity) {
+      case 3:           // assgin threads to logical cores
+        logical_ratio = 1;
+        break;
+      case 2:           // assign threads to real cores
+        logical_ratio = pu / cu;
+        break;
+      case 1:           // assgin threads to sockets
+      default:
+        logical_ratio = pu / socket;
+      }
+
+      char debug_message[256];
+      int len = snprintf(debug_message, sizeof(debug_message), "setaffinity tid: %" PTR_FMT ", net thread: %u cpu:", tid, i);
+      for (int cpu_count = 0; cpu_count < logical_ratio; cpu_count++) {
+        int cpu = ((i - 1) * logical_ratio + cpu_count) % pu;
+        set_cpu(&cpuset, cpu);
+        len += snprintf(debug_message + len, sizeof(debug_message) - len, " %d", cpu);
+      }
+      Debug("iocore_thread", debug_message);
       if (!bind_cpu(&cpuset, tid)){
-        Debug("iocore_thread", "setaffinity for tid: %" PTR_FMT ", net thread: %u, cpu: %d failed with: %d", tid, i, cpu, errno);
+        Error("%s, failed with errno: %d", debug_message, errno);
       }
     }
 #endif

@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 3.3.1
+  Changes with Apache Traffic Server 3.3.2
 
+  *) [TS-1356] Ability to set thread affinity with multiple modes
+
+  
+  Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1743] Implement our own hash mechanism for traffic_logstats, since
    C++11 does not provide a sensical hash<const char*>.
