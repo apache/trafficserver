@@ -132,7 +132,6 @@ int fake_global_for_ink_queue = 0;
 #endif
 
 int fastmemtotal = 0;
-
 void *
 ink_freelist_new(InkFreeList * f)
 {
@@ -145,7 +144,7 @@ ink_freelist_new(InkFreeList * f)
   int result = 0;
 
   do {
-    INK_QUEUE_LD64(item, f->head);
+    INK_QUEUE_LD(item, f->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
       uint32_t type_size = f->type_size;
       uint32_t i;
@@ -202,7 +201,11 @@ ink_freelist_new(InkFreeList * f)
     } else {
       SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0),
                                    FREELIST_VERSION(item) + 1);
-      result = ink_atomic_cas((int64_t *) & f->head.data, item.data, next.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*)&f->head.data, item.data, next.data);
+#else
+       result = ink_atomic_cas((int64_t *) & f->head.data, item.data, next.data);
+#endif
 
 #ifdef SANITY
       if (result) {
@@ -263,7 +266,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 
   result = 0;
   do {
-    INK_QUEUE_LD64(h, f->head);
+    INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == item)
       ink_fatal(1, "ink_freelist_free: trying to free item twice");
@@ -275,7 +278,12 @@ ink_freelist_free(InkFreeList * f, void *item)
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
-    result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) & f->head, h.data, item_pair.data);
+#else
+       result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
+#endif
+
   }
   while (result == 0);
 
@@ -381,13 +389,17 @@ ink_atomiclist_pop(InkAtomicList * l)
   head_p next;
   int result = 0;
   do {
-    INK_QUEUE_LD64(item, l->head);
+    INK_QUEUE_LD(item, l->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset),
                                  FREELIST_VERSION(item) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) & l->head.data, item.data, next.data);
+#else
+       result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
+#endif
 #else
     l->head.data = next.data;
     result = 1;
@@ -414,12 +426,16 @@ ink_atomiclist_popall(InkAtomicList * l)
   head_p next;
   int result = 0;
   do {
-    INK_QUEUE_LD64(item, l->head);
+    INK_QUEUE_LD(item, l->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) & l->head.data, item.data, next.data);
+#else
+       result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
+#endif
 #else
     l->head.data = next.data;
     result = 1;
@@ -454,14 +470,18 @@ ink_atomiclist_push(InkAtomicList * l, void *item)
   int result = 0;
   volatile void *h = NULL;
   do {
-    INK_QUEUE_LD64(head, l->head);
+    INK_QUEUE_LD(head, l->head);
     h = FREELIST_POINTER(head);
     *adr_of_next = h;
     ink_assert(item != TO_PTR(h));
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
     INK_MEMORY_BARRIER;
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas((int64_t *) & l->head, head.data, item_pair.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) & l->head, head.data, item_pair.data);
+#else
+       result = ink_atomic_cas((int64_t *) & l->head, head.data, item_pair.data);
+#endif
 #else
     l->head.data = item_pair.data;
     result = 1;
@@ -490,12 +510,16 @@ ink_atomiclist_remove(InkAtomicList * l, void *item)
   /*
    * first, try to pop it if it is first
    */
-  INK_QUEUE_LD64(head, l->head);
+  INK_QUEUE_LD(head, l->head);
   while (TO_PTR(FREELIST_POINTER(head)) == item) {
     head_p next;
     SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas((int64_t *) & l->head.data, head.data, next.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) & l->head.data, head.data, next.data);
+#else
+       result = ink_atomic_cas((int64_t *) & l->head.data, head.data, next.data);
+#endif
 #else
     l->head.data = next.data;
     result = 1;
@@ -504,7 +528,7 @@ ink_atomiclist_remove(InkAtomicList * l, void *item)
       *addr_next = NULL;
       return item;
     }
-    INK_QUEUE_LD64(head, l->head);
+    INK_QUEUE_LD(head, l->head);
   }
 
   /*

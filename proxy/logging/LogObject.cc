@@ -415,10 +415,14 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
     head_p h;
     int result = 0;
     do {
-      INK_QUEUE_LD64(h, m_log_buffer);
+      INK_QUEUE_LD(h, m_log_buffer);
       head_p new_h;
       SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
-      result = ink_atomic_cas((int64_t*)&m_log_buffer.data, h.data, new_h.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) &m_log_buffer.data, h.data, new_h.data);
+#else
+       result = ink_atomic_cas((int64_t *) &m_log_buffer.data, h.data, new_h.data);
+#endif
     } while (!result);
     buffer = (LogBuffer*)FREELIST_POINTER(h);
     result_code = buffer->checkout_write(write_offset, bytes_needed);
@@ -440,10 +444,14 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       INK_WRITE_MEMORY_BARRIER;
       head_p old_h;
       do {
-        INK_QUEUE_LD64(old_h, m_log_buffer);
+        INK_QUEUE_LD(old_h, m_log_buffer);
         head_p tmp_h;
         SET_FREELIST_POINTER_VERSION(tmp_h, new_buffer, 0);
-        result = ink_atomic_cas((int64_t*)&m_log_buffer.data, old_h.data, tmp_h.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) &m_log_buffer.data, old_h.data, tmp_h.data);
+#else
+       result = ink_atomic_cas((int64_t *) &m_log_buffer.data, old_h.data, tmp_h.data);
+#endif
       } while (!result);
       if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h))
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
@@ -478,12 +486,16 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
     if (!decremented) {
       head_p old_h;
       do {
-        INK_QUEUE_LD64(old_h, m_log_buffer);
+        INK_QUEUE_LD(old_h, m_log_buffer);
         if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
           break;
         head_p tmp_h;
         SET_FREELIST_POINTER_VERSION(tmp_h, FREELIST_POINTER(h), FREELIST_VERSION(old_h) - 1);
-        result = ink_atomic_cas((int64_t*)&m_log_buffer.data, old_h.data, tmp_h.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) &m_log_buffer.data, old_h.data, tmp_h.data);
+#else
+       result = ink_atomic_cas((int64_t *) &m_log_buffer.data, old_h.data, tmp_h.data);
+#endif
       } while (!result);
       if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
         ink_atomic_increment(&buffer->m_references, -1);

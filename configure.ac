@@ -1105,6 +1105,32 @@ AC_MSG_RESULT([$msg])
 
 AC_SUBST(need_union_semun)
 
+
+
+has_128bit_cas=0
+__saved_CFLAGS="${CFLAGS}"
+CFLAGS=-mcx16
+AC_MSG_CHECKING(for 128bit CAS support)
+AC_LANG_PUSH([C])
+AC_RUN_IFELSE(
+  [
+    int main() { 
+      __int128_t x = 0;
+      __sync_bool_compare_and_swap(&x,0,10); 
+      return 0;
+    }
+  ],
+  [ has_128bit_cas="1" ]
+    AC_MSG_RESULT(yes)
+    CXXFLAGS+=" -mcx16"
+  ,
+  [ has_128bit_cas="0" ]
+    AC_MSG_RESULT(no)
+  )
+AC_LANG_POP
+CFLAGS="${__saved_CFLAGS}"
+AC_SUBST([has_128bit_cas])
+
 # Check for POSIX capabilities library.
 # If we don't find it, disable checking for header.
 use_posix_cap=0
