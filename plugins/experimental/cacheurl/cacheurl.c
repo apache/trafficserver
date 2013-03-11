@@ -429,6 +429,22 @@ TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf,
     return TS_SUCCESS;
 }
 
+
+void TSRemapDeleteInstance(void *ih) {
+    // Clean up
+    TSDebug(PLUGIN_NAME, "Deleting remap instance");
+    pr_list *prl = (pr_list *)ih;
+    int i=0;
+    while (prl->pr[i]) {
+        if (prl->pr[i]->tokens) TSfree(prl->pr[i]->tokens);
+        if (prl->pr[i]->tokenoffset) TSfree(prl->pr[i]->tokenoffset);
+        if (prl->pr[i]->re) pcre_free(prl->pr[i]->re);
+        TSfree(prl->pr[i]);
+        i++;
+    }
+    TSfree(prl);
+}
+
 TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri) {
     int ok;
     ok = rewrite_cacheurl((pr_list *)ih, rh);
