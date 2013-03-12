@@ -174,8 +174,8 @@ EventProcessor::start(int n_event_threads)
   Debug("iocore_thread", "socket: %d core: %d logical processor: %d affinity: %d", socket, cu, pu, affinity);
 #endif
 
-  for (i = 0; i < n_ethreads; i++) {
-    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i + 1);
+  for (i = first_thread; i < n_ethreads; i++) {
+    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
     ink_thread tid = all_ethreads[i]->start(thr_name);
     (void)tid;
 
@@ -197,7 +197,7 @@ EventProcessor::start(int n_event_threads)
       char debug_message[256];
       int len = snprintf(debug_message, sizeof(debug_message), "setaffinity tid: %" PTR_FMT ", net thread: %u cpu:", tid, i);
       for (int cpu_count = 0; cpu_count < logical_ratio; cpu_count++) {
-        int cpu = (i * logical_ratio + cpu_count) % pu;
+        int cpu = ((i - 1) * logical_ratio + cpu_count) % pu;
         set_cpu(&cpuset, cpu);
         len += snprintf(debug_message + len, sizeof(debug_message) - len, " %d", cpu);
       }

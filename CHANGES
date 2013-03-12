@@ -6,9 +6,6 @@
 
   *) [TS-1742] Freelists to use 64bit version w/ Double Word Compare and Swap
 
-  *) [TS-1744] ats run with 1 less event thread then it is supposed to, for
-  both auto and manual thread config
-
   *) [TS-1356] Ability to set thread affinity with multiple modes
 
   
