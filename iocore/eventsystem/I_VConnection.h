@@ -330,7 +330,7 @@ public:
   virtual void reenable_re(VIO *vio);
 
   /**
-    Convenience function to retreive information from VConnection.
+    Convenience function to retrieve information from VConnection.
 
     This function is provided as a convenience for state machines
     to transmit information from/to a VConnection without breaking

@@ -642,7 +642,7 @@ FileManager::copyFile(Rollback * rb, const char *snapPath)
   //
   // The Rollback lock is held by CALLEE
   if (rb->getVersion_ml(rb->getCurrentVersion(), &copyBuf) != OK_ROLLBACK) {
-    mgmt_log(stderr, "[FileManager::copyFile] Unable to retreive current version of %s\n", fileName);
+    mgmt_log(stderr, "[FileManager::copyFile] Unable to retrieve current version of %s\n", fileName);
     return SNAP_FILE_ACCESS_FAILED;
   }
   // Create the new file

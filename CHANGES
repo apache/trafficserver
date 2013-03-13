@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.2
-  
+
+
+  *) [TS-1745] fix typos
+   Author: Benjamin Kerensa <bkerensa@ubuntu.com>
+
   *) [TS-1671] remove AlarmListable from overviewRecord
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
