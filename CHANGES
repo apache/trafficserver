@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.2
   
+  *) [TS-1671] remove AlarmListable from overviewRecord
+   Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-1740] Improve precision of stats values
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 

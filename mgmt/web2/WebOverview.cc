@@ -99,70 +99,10 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
 overviewRecord::~overviewRecord()
 {
 
-  AlarmListable *a;
-
   delete[]hostname;
-
-  for (a = nodeAlarms.pop(); a != NULL; a = nodeAlarms.pop()) {
-    delete a;
-  }
 
   if (localNode == false) {
     delete[]node_rec_data.recs;
-  }
-}
-
-// void overviewRecord::getStatus(char**, PowerLampState* , bool*, bool*)
-// Retrieves information about the node
-//
-//  hostname - *hostname is set to point to a string containing the hostname
-//             for the node represented by the record The storage for
-//             this string belongs to this class instance and should
-//             not be freed by the caller
-//
-//  *up - set to true if the node's manager is up
-//            Set to false otherwise
-//
-//  *alarms -  set to true if there are any pending alarms for this
-//            this node.   Set to false if there are no pending
-//            alarms
-//
-//  *proxyUp - set to true is the proxy is up on the node and
-//            false otherwise
-//
-void
-overviewRecord::getStatus(char **hostnamePtr, bool * upPtr, bool * alarms, PowerLampState * proxyUpPtr)
-{
-  bool found;
-  *hostnamePtr = this->hostname;
-  *upPtr = this->up;
-
-  if (this->up != true) {
-    *proxyUpPtr = LAMP_OFF;
-  } else {
-    if (this->readInteger("proxy.node.proxy_running", &found) != 1) {
-      *proxyUpPtr = LAMP_OFF;
-    } else {
-      if (this->localNode == true) {
-        // For the local node, make sure all the cluster connections
-        //   are up.  If not issue a warning lamp
-        if (lmgmt->clusterOk() == false) {
-          *proxyUpPtr = LAMP_WARNING;
-        } else {
-          *proxyUpPtr = LAMP_ON;
-        }
-      } else {
-        // We can not currently check remote node
-        //  cluster info
-        *proxyUpPtr = LAMP_ON;
-      }
-    }
-  }
-
-  if (nodeAlarms.head == NULL) {
-    *alarms = false;
-  } else {
-    *alarms = true;
   }
 }
 
@@ -197,27 +137,6 @@ overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo * cpi)
   }
 }
 
-// adds a new alarm to the list of current alarms for the node
-void
-overviewRecord::addAlarm(alarm_t type, char *ip, char *desc)
-{
-
-  AlarmListable *alarm;
-
-  alarm = new AlarmListable;
-  alarm->ip = ip;
-  alarm->type = type;
-  alarm->desc = desc;
-  nodeAlarms.push(alarm);
-}
-
-// adds a new alarm to the list of current alarms for the node
-void
-overviewRecord::addAlarm(AlarmListable * newAlarm)
-{
-  nodeAlarms.push(newAlarm);
-}
-
 // bool overviewRecord::ipMatch(char* ipStr)
 //
 //   Returns true if the passed in string matches
@@ -229,31 +148,6 @@ overviewRecord::ipMatch(char *ipStr)
     return true;
   } else {
     return false;
-  }
-}
-
-// Runs throught the list of current alarms on the node
-//  and asks the Alarms class if it is valid.  If the alarm
-//  is expired it is removed from the alarm list
-void
-overviewRecord::checkAlarms()
-{
-
-  AlarmListable *current;
-  AlarmListable *next;
-
-  current = nodeAlarms.head;
-  while (current != NULL) {
-
-    next = current->link.next;
-
-    if (!lmgmt->alarm_keeper->isCurrentAlarm(current->type, current->ip)) {
-      // The alarm is no longer current.  Dispose of it
-      nodeAlarms.remove(current);
-      delete current;
-    }
-
-    current = next;
   }
 }
 
@@ -609,12 +503,6 @@ overviewPage::checkForUpdates()
   }
   ink_mutex_release(&lmgmt->ccom->mutex);
 
-  // Now check to see if our alarms up to date
-  for (int i = 0; i < numHosts; i++) {
-    current = (overviewRecord *) sortRecords[i];
-    current->checkAlarms();
-  }
-
   // If we added a new host we must resort sortRecords
   if (newHostAdded) {
     this->sortHosts();
@@ -648,36 +536,12 @@ overviewPage::addRecord(ClusterPeerInfo * cpi)
 
   overviewRecord *newRec;
 
-  AlarmListable *current;
-  AlarmListable *next;
-
   ink_assert(cpi != NULL);
 
   newRec = new overviewRecord(cpi->inet_address, false, cpi);
   newRec->updateStatus(time(NULL), cpi);
 
   ink_hash_table_insert(nodeRecords, (InkHashTableKey) cpi->inet_address, (InkHashTableEntry *) newRec);
-
-  // Check to see if we have alarms that need to be added
-  //
-  //  This an inefficient linear search, however there should
-  //    never be a large number of alarms that do not
-  //    nodes yet.  This should only happen at start up
-  //
-  current = notFoundAlarms.head;
-  while (current != NULL) {
-
-    next = current->link.next;
-
-    if (newRec->ipMatch(current->ip) == true) {
-      // The alarm belongs to this record, remove it and
-      //    add it to the record
-      notFoundAlarms.remove(current);
-      newRec->addAlarm(current);
-    }
-
-    current = next;
-  }
 
   sortRecords.addEntry(newRec);
   numHosts++;
@@ -693,8 +557,6 @@ overviewPage::addSelfRecord()
 {
 
   overviewRecord *newRec;
-  AlarmListable *current;
-  AlarmListable *next;
 
   ink_mutex_acquire(&accessLock);
 
@@ -710,69 +572,10 @@ overviewPage::addSelfRecord()
 
   ink_hash_table_insert(nodeRecords, (InkHashTableKey) this->ourAddr, (InkHashTableEntry *) newRec);
 
-  // Check to see if we have alarms that need to be added
-  //   They would be listed for IP zero since the alarm
-  //   manager knows ip address for the local node as NULL
-  //
-  current = notFoundAlarms.head;
-  while (current != NULL) {
-
-    next = current->link.next;
-
-    if (current->ip == NULL) {
-      // The alarm belongs to this record, remove it and
-      //    add it to the record
-      notFoundAlarms.remove(current);
-      newRec->addAlarm(current);
-    }
-
-    current = next;
-  }
-
   sortRecords.addEntry(newRec);
   numHosts++;
   ink_mutex_release(&accessLock);
 }
-
-// adds alarm to the node specified by the ip address
-//   if ip is NULL, the node is local machine
-void
-overviewPage::addAlarm(alarm_t type, char *ip, char *desc)
-{
-
-  unsigned long inetAddr;
-  InkHashTableValue lookup;
-  overviewRecord *node;
-  AlarmListable *alarm;
-
-  ink_mutex_acquire(&accessLock);
-
-  if (ip == NULL) {
-    inetAddr = ourAddr;
-  } else {
-    inetAddr = inet_addr(ip);
-  }
-
-  if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey) inetAddr, &lookup)) {
-    // We found our entry
-    node = (overviewRecord *) lookup;
-    node->addAlarm(type, ip, desc);
-  } else {
-
-    Debug("dashboard", "[overviewRecord::addAlarm] Alarm for node that we have not seen %s\n", ip);
-
-    // If we have not seen the node, queue the alarm.  The node
-    //  should appear eventually
-    alarm = new AlarmListable;
-    alarm->ip = ip;
-    alarm->type = type;
-    alarm->desc = desc;
-    notFoundAlarms.push(alarm);
-  }
-
-  ink_mutex_release(&accessLock);
-}
-
 
 // int overviewPage::getClusterHosts(Expanding Array* hosts)
 //
@@ -1608,70 +1411,6 @@ overviewPage::resolvePeerHostname_ml(const char *peerIP)
   }
 
   return returnName;
-}
-
-// resolveAlarm
-//
-//   Handles the form submission for alarm resolution
-//   uses the form arguments to call resolveAlarm.
-//
-//   Takes a hash-table returned by processFormSubmission
-//
-//   Note: resolving an alarm is asyncronous with the list of
-//      alarms maintained in overviewRecords.  That list
-//      is only updates when checkAlarms is called
-//
-void
-resolveAlarm(InkHashTable * post_data_ht)
-{
-
-  InkHashTableIteratorState htis;
-  InkHashTableEntry *hte;
-  char *name;
-  char *value;
-  Tokenizer colonTok(":");
-  const char *ipAddr;
-  alarm_t alarmType;
-
-  for (hte = ink_hash_table_iterator_first(post_data_ht, &htis);
-       hte != NULL; hte = ink_hash_table_iterator_next(post_data_ht, &htis)) {
-    name = (char *) ink_hash_table_entry_key(post_data_ht, hte);
-    value = (char *) ink_hash_table_entry_value(post_data_ht, hte);
-    if (strncmp(name, "alarm:", 6) != 0)
-      continue;
-    if (colonTok.Initialize(value) == 2) {
-      alarmType = atoi(colonTok[0]);
-      ipAddr = colonTok[1];
-      Debug("dashboard", "Resolving alarm %d for %s\n", alarmType, ipAddr);
-      if (strcmp("local", ipAddr) == 0)
-        ipAddr = NULL;
-      if (lmgmt->alarm_keeper->isCurrentAlarm(alarmType, (char *) ipAddr)) {
-        Debug("dashboard", "\t Before resolution the alarm is current\n");
-      } else {
-        Debug("dashboard", "\t Before resolution the alarm is NOT current\n");
-      }
-      lmgmt->alarm_keeper->resolveAlarm(alarmType, (char *) ipAddr);
-      if (lmgmt->alarm_keeper->isCurrentAlarm(alarmType, (char *) ipAddr)) {
-        Debug("dashboard", "\t After resolution the alarm is current\n");
-      } else {
-        Debug("dashboard", "\t After resolution the alarm is NOT current\n");
-      }
-    }
-  }
-  overviewGenerator->checkForUpdates();
-}
-
-//   wrapper for the Alarm Callback
-void
-overviewAlarmCallback(alarm_t newAlarm, char *ip, char *desc)
-{
-  overviewGenerator->addAlarm(newAlarm, ip, desc);
-}
-
-AlarmListable::~AlarmListable()
-{
-  ats_free(ip);
-  ats_free(desc);
 }
 
 // int hostSortFunc(const void* arg1, const void* arg2)

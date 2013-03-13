@@ -674,11 +674,6 @@ main(int argc, char **argv)
   }
 #endif /* MGMT_USE_SYSLOG */
 
-    /****************************
-     * Register Alarm Callbacks *
-     ****************************/
-  lmgmt->alarm_keeper->registerCallback(overviewAlarmCallback);
-
   // Find out our hostname so we can use it as part of the initialization
   setHostnameVar();
 

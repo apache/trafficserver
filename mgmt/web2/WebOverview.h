@@ -34,7 +34,6 @@
 #include "WebHttpMessage.h"
 #include "ExpandingArray.h"
 #include "ClusterCom.h"
-#include "Alarms.h"
 
 #include "P_RecCore.h"
 
@@ -71,16 +70,6 @@
 //    should be returned as a copy (or a const ptr)
 //    through an accessor function
 
-class AlarmListable
-{
-public:
-  ~AlarmListable();
-  alarm_t type;
-  char *ip;
-  char *desc;
-  LINK(AlarmListable, link);
-};
-
 enum PowerLampState
 { LAMP_ON, LAMP_OFF, LAMP_WARNING };
 
@@ -90,8 +79,6 @@ class overviewRecord
 public:
   overviewRecord(unsigned long inet_addr, bool local, ClusterPeerInfo * cpi = NULL);
    ~overviewRecord();
-  void addAlarm(alarm_t type, char *ip, char *desc);
-  void addAlarm(AlarmListable * newAlarm);
   void updateStatus(time_t currentTime, ClusterPeerInfo * cpi);
   void getStatus(char **hotsname, bool * up, bool * alarms, PowerLampState * proxyUp);
   bool ipMatch(char *ipStr);    // is this the ip address of this node
@@ -99,8 +86,6 @@ public:
   bool localNode;
   char *hostname;               // FQ hostname of the node
   unsigned long inetAddr;       // IP address of the node
-  DLL<AlarmListable> nodeAlarms;   // List of alarms for the node
-  void checkAlarms();
   bool varStrFromName(const char *varName, char *bufVal, int bufLen);
   RecCounter readCounter(const char *name, bool * found);
   RecInt readInteger(const char *name, bool * found);
@@ -125,7 +110,6 @@ public:
   overviewPage();
   ~overviewPage();
 
-  void addAlarm(alarm_t newAlarm, char *ip, char *desc);
   void checkForUpdates();
   char *resolvePeerHostname(const char *peerIP);
   char *resolvePeerHostname_ml(const char *peerIP);
@@ -156,7 +140,6 @@ private:
   unsigned long ourAddr;        // the IP address of this node
   ExpandingArray sortRecords;   // A second, sorted container for nodeRecords
   int numHosts;                 // number of peers we know about including ourself
-    DLL<AlarmListable> notFoundAlarms;       // List of alarms for nodes we haven't seen
 
   // Functions to do cluster aggregation
   //
@@ -178,8 +161,6 @@ private:
 extern overviewPage *overviewGenerator; // global handle to overiewPage?
                                         // defn found in WebOverview.cc
 
-void overviewAlarmCallback(alarm_t newAlarm, char *ip, char *desc);
-void resolveAlarm(InkHashTable * post_data_ht);
 int hostSortFunc(const void *arg1, const void *arg2);
 
 #endif
