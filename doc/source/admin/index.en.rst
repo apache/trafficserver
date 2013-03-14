@@ -1,4 +1,5 @@
-:title: Apache Traffic Server Title: Administrators's Guide - Overview
+Apache Traffic Server Title: Administrators's Guide - Overview
+**************************************************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

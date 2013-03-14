@@ -1,4 +1,5 @@
-:title: Event Logging Formats
+Event Logging Formats
+*********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

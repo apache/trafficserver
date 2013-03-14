@@ -1,4 +1,6 @@
-:title: GeoIP ACLs Plugin
+GeoIP ACLs Plugin
+*****************
+
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information

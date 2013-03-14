@@ -1,4 +1,5 @@
-:title: Traffic Server Cluster
+Traffic Server Cluster
+**********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -23,7 +24,8 @@ Traffic Server scales from a single node to multiple nodes that form a
 cluster allowing you to improve system performance and reliability. This
 chapter discusses the following topics:
 
-[TOC]
+.. toctree::
+   :maxdepth: 1
 
 Understanding Traffic Server Clusters
 =====================================

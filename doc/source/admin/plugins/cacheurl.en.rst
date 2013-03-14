@@ -1,4 +1,5 @@
-:title: CacheURL Plugin
+CacheURL Plugin
+***************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -25,8 +26,8 @@ request.
 It is designed so that multiple requests that have different URLs but
 the same content (for example, site mirrors) need be cached only once.
 
-Installation # {#Installation}
-==============================
+Installation
+============
 
 ::
     make
@@ -39,8 +40,8 @@ will need to specify the path to tsxs manually:
     make TSXS=/opt/ts/bin/tsxs
     sudo make TSXS=/opt/ts/bin/tsxs install
 
-Configuration # {#Configuration}
-================================
+Configuration
+=============
 
 Create a ``cacheurl.config`` file in the plugin directory with the url
 patterns to match. See the ``cacheurl.config.example`` file for what to

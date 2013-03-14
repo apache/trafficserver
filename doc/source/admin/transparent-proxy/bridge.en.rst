@@ -1,4 +1,5 @@
-:title: Inline on a Linux Bridge
+Inline on a Linux Bridge
+************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

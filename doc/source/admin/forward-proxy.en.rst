@@ -1,4 +1,5 @@
-:title: Forward Proxy
+Forward Proxy
+*************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -49,8 +50,8 @@ be pointed to the more dynamic
 This port will then serve a JavaScript like configuration that User
 Agents can use to determine where to send their requests to.
 
-Configuration # {#configuration}
-================================
+Configuration
+=============
 
 In order to configure Apache Traffic Server as forward proxy you will
 have to edit

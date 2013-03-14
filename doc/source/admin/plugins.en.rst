@@ -1,4 +1,5 @@
-:title: Apache Traffic Server Plugins
+Apache Traffic Server Plugins
+*****************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -58,8 +59,8 @@ Most plugins can be build by simply issueing
 in their source tree. Note that this requires you to have ``tsxs`` in
 your ``PATH``
 
-Plugins # {#plugins}
-====================
+Plugins
+=======
 
 .. toctree::
    :maxdepth: 2

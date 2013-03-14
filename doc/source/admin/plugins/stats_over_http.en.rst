@@ -1,4 +1,5 @@
-:title: Stats over HTTP Plugin
+Stats over HTTP Plugin (underdocumented)
+****************************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

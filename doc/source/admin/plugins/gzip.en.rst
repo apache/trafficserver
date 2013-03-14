@@ -1,4 +1,5 @@
-:title: gzip / deflate Plugin
+gzip / deflate Plugin
+*********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -21,8 +22,8 @@
 This plugin gzips or deflates responses, whichever is applicable. It can
 compress origin respones as well as cached responses.
 
-Installation # {#Installation}
-==============================
+Installation
+============
 
 First, run:
 

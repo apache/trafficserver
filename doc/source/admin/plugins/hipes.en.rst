@@ -1,5 +1,5 @@
-:title: HIPES system (undocumented)
-:title: Apache Traffic Server Plugins
+HIPES system (undocumented)
+***************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -21,8 +21,8 @@
 
 This plugin implements the HIPES system.
 
-Configuration # {#Configuration}
-================================
+Configuration
+=============
 
 ``server:<host>``
     Name of the server to send this request to
