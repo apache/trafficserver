@@ -32,7 +32,7 @@ the proxy cache by editing a configuration file.
 
 2. Add a line in the file ``ip_allow.config`` for each IP address or
    range of IP addresses allowed to access Traffic Server (refer to
-   `ip\_allow.config <configuration-files/ip_allow.config>`_).
+   `ip_allow.config <configuration-files/ip_allow.config>`_).
 3. Run the command ``traffic_line -x`` to apply the configuration
    changes.
 

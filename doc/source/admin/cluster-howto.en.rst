@@ -121,7 +121,7 @@ individually. You may following these instructions:
 
    The ``traffic_server`` and ``traffic_manager`` processes will need to
    restart after the change of 'proxy.local.cluster.type' and
-   'proxy.config.cluster.ethernet\_interface' have taken place.
+   'proxy.config.cluster.ethernet_interface' have taken place.
 
 Traffic Server will join the cluster in about 10 seconds, and you can
 run ``traffic_line -r proxy.process.cluster.nodes`` to check the hosts
@@ -150,7 +150,7 @@ connections:
    In the cluster env, the current performance of the Cluster threads
    will consume the same cpu usage as net threads, so you may adapt the
    ET_NET & ET_CLUSTER at about 1:1. For example, on a 24 cores
-   system, set ET_NET threads to 10, ET\_CLUSTER threads to 10.
+   system, set ET_NET threads to 10, ET_CLUSTER threads to 10.
 
    ::
        traffic_line -s proxy.config.cluster.threads -v 10
@@ -158,7 +158,7 @@ connections:
 -  Setup the Cluster connections:
 
    In the Cluster, the internal connections is TCP and limited by
-   ET\_CLUSTER threads and network performance, we can increase the
+   ET_CLUSTER threads and network performance, we can increase the
    connections to archive better performance.
 
    ::

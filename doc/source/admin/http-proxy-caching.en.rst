@@ -396,7 +396,7 @@ To configure Traffic Server to accept ``PUSH`` requests
 
 2. Edit the following variable in
    ```records.config`` <../configuration-files/records.config>`_, enable
-   the push\_method.
+   the push_method.
 
    -  `*``proxy.config.http.push_method_enabled``* <configuration-files/records.config#proxy.config.http.push_method_enabled>`_
 

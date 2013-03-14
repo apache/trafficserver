@@ -177,7 +177,7 @@ to Traffic Server and *not* to another origin server.
 
 To readdress redirects, Traffic Server uses reverse-map rules. Unless
 you have
-`proxy.config.url\_remap.pristine\_host\_hdr <configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_
+`proxy.config.url_remap.pristine_host_hdr <configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_
 enabled (the default) you should generally set up a reverse-map rule for
 each map rule.d To create reverse-map rules, refer to `Using Mapping
 Rules for HTTP Requests <#UsingMappingRulesHTTPRequests>`_.
