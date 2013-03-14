@@ -1,19 +1,42 @@
+:title: CacheURL Plugin
+
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
 This plugin allows you to change the key that is used for caching a request.
 It is designed so that multiple requests that have different URLs but the same
 content (for example, site mirrors) need be cached only once.
 
-# Installation
+Installation # {#Installation}
+==============================
 
+::
     make
     sudo make install
 
 If you don't have the traffic server binaries in your path, then you will need
 to specify the path to tsxs manually:
 
+::
     make TSXS=/opt/ts/bin/tsxs
     sudo make TSXS=/opt/ts/bin/tsxs install
 
-# Configuration
+# Configuration # {#Configuration}
+==================================
 
 Create a cacheurl.config file in the plugin directory with the url
 patterns to match.
@@ -26,6 +49,7 @@ from the pattern.
 
 Examples:
 
+::
     # Make files from s1.example.com, s2.example.com and s3.example.com all
     # be cached with the same key.
     # Adding a unique suffix (TSINTERNAL in this example) to the cache key
@@ -46,7 +70,10 @@ Add the plugin to your plugins.conf file: `cacheurl.so`
 If you wish, you can specify an alternate location for the configuration file
 by adding it as a parameter in plugins.conf. For example:
 
+::
     cacheurl.so /etc/trafficserver/cacheurl.config
 
 Start traffic server. Any rewritten URLs will be written to cacheurl.log in
 the log directory by default.
+
+.. vim: ft=rst
