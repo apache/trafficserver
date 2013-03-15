@@ -1793,8 +1793,9 @@ static void get_path_from_req(char * buf,char ** purl_start, char ** purl_end)
   *purl_end = url_end;
 }
 
-static int send_response (int sock) {
-  int err, towrite;
+static int send_response (int sock)
+{
+  int err = 0, towrite;
 
   if (fd[sock].req_pos >= 0) {
     char header[1024], *url_end = NULL, *url_start = NULL;
@@ -2118,7 +2119,7 @@ static int send_compd_response(int sock) {
     unsigned int code;
     unsigned int len;
   } compd_header;
-  if (fd[sock].req_pos < sizeof(compd_header)) {
+  if (fd[sock].req_pos < (int)sizeof(compd_header)) {
     compd_header.code = 0;
     compd_header.len = htonl((fd[sock].length * 2) / 3);
     do {
@@ -2142,7 +2143,7 @@ static int send_compd_response(int sock) {
     fd[sock].response = response_buffer + (((fd[sock].length * 2) / 3) % 256);
   }
  
-  if (fd[sock].req_pos < ((fd[sock].length * 2) / 3) + sizeof(compd_header)) {
+  if (fd[sock].req_pos < ((fd[sock].length * 2) / 3) + (int)sizeof(compd_header)) {
     int towrite = cbuffersize;
     int desired = ((fd[sock].length * 2) / 3) + sizeof (compd_header) - fd[sock].req_pos;
     if (towrite > desired) {
@@ -2656,7 +2657,7 @@ static int gen_bfc_dist(double f = 10.0) {
   }
 
   int class_no;
-  int file_no;
+  int file_no = 0;
 
   if(rand < 0.35){
     class_no = 0;
@@ -2913,7 +2914,6 @@ static void compose_all_urls( const char * tag, char * buf, char * start, char *
 //
 static void extract_urls(char * buf, int buflen, char * base_url) {
   //if (verbose) printf("EXTRACT<<%s\n>>", buf);
-  char old;
   char *start = NULL;
   char *end = NULL;
   char old_base[512];
@@ -2935,7 +2935,6 @@ static void extract_urls(char * buf, int buflen, char * base_url) {
                !(ParseRules::is_ws(*rover) || *rover == '\'' 
                  || *rover == '\"'))
           rover++;
-        old = *rover;
         *rover = 0;
         compose_url(base_url,old_base,start);
         // fixup unqualified hostnames (e.g. http://internal/foo)
@@ -2961,8 +2960,9 @@ static void extract_urls(char * buf, int buflen, char * base_url) {
     const char *tags[] = { "src", "image", "object", "archive", "background", 
                      // "location", "code" 
     };
-    for (int i = 0 ; i < sizeof(tags)/sizeof(tags[0]) ; i++)
+    for (unsigned i = 0 ; i < sizeof(tags)/sizeof(tags[0]) ; i++) {
       compose_all_urls(tags[i], buf, start, end, buflen, base_url);
+    }
   }
 } // extract_urls
 
@@ -3687,7 +3687,7 @@ void interval_report() {
   _x[1] = (_t >> 8) & 0xFF;  \
   _x[2] = _t & 0xFF;
 
-#define MASK_TAG(_x)  (_x & ((1U << (BYTES_PER_ENTRY * 8)))-1)
+#define MASK_TAG(_x)  (_x & ((1U << (BYTES_PER_ENTRY * 8)) - 1))
 
 #define BEGIN_HASH_LOOP                                            \
     unsigned int bucket = (i % BUCKETS);                           \
@@ -3961,8 +3961,16 @@ static int make_url_client(const char * url,const char * base_url, bool seen,
   if (show_before) printf("%s\n", curl);
   if (urlsdump_fp) fprintf(urlsdump_fp, "%s\n", curl);
   if (show_headers) printf("Request to Proxy: {\n%s}\n",fd[sock].req_header);
-  fd[sock].binary = 
-    !strncasecmp(path - 3, "gif", 3) || !strncasecmp(path - 3, "jpg", 3);
+
+  {
+    const char * ext = strrchr(path, '.');
+
+    fd[sock].binary = 0;
+    if (ext) {
+      fd[sock].binary = !strncasecmp(ext, ".gif", 4) || !strncasecmp(ext, ".jpg", 4);
+    }
+  }
+
   fd[sock].response_length = 0;
   fd[sock].length = strlen(fd[sock].req_header);
   if (!fd[sock].response)
@@ -5042,7 +5050,8 @@ static int ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_l
 {
   char *src = src_in;
   char *dest = dest_in;
-  char *c1, *c2;
+  const char *c1;
+  const char *c2;
   int quit = 0;
   int dcount = 0;
   int num = 0;
@@ -5306,7 +5315,7 @@ static void process_arg(ArgumentDescription * argument_descriptions,
 
 
 #if 0
-XXX this is not used; maybe it's just debugging? -- jpeach
+// XXX this is not used; maybe it's just debugging? -- jpeach
 static void show_argument_configuration(ArgumentDescription * argument_descriptions,
                                  int n_argument_descriptions) 
 {
