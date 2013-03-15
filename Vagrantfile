@@ -14,20 +14,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Vagrant::Config.run do |config|
+Vagrant.configure("2") do |config|
 
   # Default all VMs to 1GB.
-  config.vm.customize ["modifyvm", :id, "--memory", 1024]
+  config.vm.provider :virtualbox do |v|
+    v.customize ["modifyvm", :id, "--memory", 1024]
+  end
 
   # Mount the Traffic Server source code in a fixed location everywhere. Use NFS
   # because it's faster and vboxfs doesn't support links.
-  config.vm.share_folder "src", "/opt/src/trafficserver.git", ".", :nfs => true
+  config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => true
 
   # Ubuntu 12.04 LTS (Precise Pangolin)
   config.vm.define :precise64 do | config |
     config.vm.box = "precise64"
     config.vm.box_url = "http://files.vagrantup.com/precise64.box"
-    config.vm.network :hostonly, "192.168.100.3"
+    config.vm.network :private_network, ip: "192.168.100.3"
     config.vm.provision :puppet do |puppet|
       puppet.manifests_path = "contrib/manifests"
       puppet.manifest_file = "debian.pp"

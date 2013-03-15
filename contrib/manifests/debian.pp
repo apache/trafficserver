@@ -25,7 +25,7 @@ package {[
 
 # Development extras.
 package {[
-    'gdb', ,valgrind', 'git', 'ack-grep', 'curl', 'tmux', 'screen'
+    'gdb', 'valgrind', 'git', 'ack-grep', 'curl', 'tmux', 'screen'
   ]:
   ensure => latest
 }
