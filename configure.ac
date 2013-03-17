@@ -1108,8 +1108,7 @@ AC_SUBST(need_union_semun)
 AC_MSG_CHECKING(for 128bit CAS support)
 AC_LANG_PUSH([C++])
 
-TS_TRY_COMPILE_NO_WARNING(
-  [],[
+TS_TRY_COMPILE_NO_WARNING([],[
     __int128_t x = 0;
     __sync_bool_compare_and_swap(&x,0,10);
   ], [
@@ -1117,11 +1116,10 @@ TS_TRY_COMPILE_NO_WARNING(
     has_128bit_cas=1
   ], [
       dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
-      dnl clang doesn't; icc isunknown but presumed sane.
+      dnl clang doesn't; icc is unknown but presumed sane.
     __saved_CXXFLAGS="${CXXFLAGS}"
     TS_ADDTO(CXXFLAGS, [-mcx16])
-    TS_TRY_COMPILE_NO_WARNING(
-      [],[
+    TS_TRY_COMPILE_NO_WARNING([],[
         __int128_t x = 0;
         __sync_bool_compare_and_swap(&x,0,10);
       ], [

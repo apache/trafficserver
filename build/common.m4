@@ -171,6 +171,9 @@ dnl is false if the code doesn't compile cleanly.  For compilers
 dnl where it is not known how to activate a "fail-on-error" mode,
 dnl it is undefined which of the sets of actions will be run.
 dnl
+dnl We actually always try to link the resulting program, since gcc has
+dnl a nasty habit of compiling code that cannot subsequently be linked.
+dnl
 AC_DEFUN([TS_TRY_COMPILE_NO_WARNING],
 [ats_save_CFLAGS=$CFLAGS
  CFLAGS="$CFLAGS $CFLAGS_WARN"
@@ -178,14 +181,7 @@ AC_DEFUN([TS_TRY_COMPILE_NO_WARNING],
    CFLAGS="$CFLAGS -Werror"
  fi
  CFLAGS=$(echo $CFLAGS | sed -e 's/^-w$//' -e 's/^-w //' -e 's/ -w$//' -e 's/ -w / /')
- AC_COMPILE_IFELSE([AC_LANG_SOURCE([
-  [#include "confdefs.h"
-  ]
-  [[$1]]
-  [int main(int argc, const char *const *argv) {]
-  [[$2]]
-  [   return 0; }]])],
-  [$3], [$4])
+ AC_LINK_IFELSE([AC_LANG_PROGRAM([$1], [$2])], [$3], [$4])
  CFLAGS=$ats_save_CFLAGS
 ])
 
