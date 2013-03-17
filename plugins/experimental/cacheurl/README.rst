@@ -38,8 +38,23 @@ to specify the path to tsxs manually:
 # Configuration # {#Configuration}
 ==================================
 
-Create a cacheurl.config file in the plugin directory with the url
-patterns to match.
+Add the plugin to your plugins.conf file: `cacheurl.so`
+
+If you wish, you can specify a location for the cacheurl configuration file
+by adding it as a parameter in plugins.conf. For example:
+
+::
+    cacheurl.so /etc/trafficserver/cacheurl.config
+
+The default location for the config file is `cacheurl.config` in the plugins
+directory.
+
+Cacheurl can also be called as a remap plugin in `remap.config`. For example:
+
+::
+    map http://www.example.com/ http://origin.example.com/ @plugin=cacheurl.so @pparam=/path/to/cacheurl.config
+
+Next, create the configuration file with the url patterns to match.
 
 The configration file format is: `url_pattern cache_key_replacement`
 
@@ -64,14 +79,6 @@ Examples:
 
     # Completely ignore a query string for a specific page
     http://www.example.com/some/page.html(?:\?|$) http://www.example.com/some/page.html
-
-Add the plugin to your plugins.conf file: `cacheurl.so`
-
-If you wish, you can specify an alternate location for the configuration file
-by adding it as a parameter in plugins.conf. For example:
-
-::
-    cacheurl.so /etc/trafficserver/cacheurl.config
 
 Start traffic server. Any rewritten URLs will be written to cacheurl.log in
 the log directory by default.
