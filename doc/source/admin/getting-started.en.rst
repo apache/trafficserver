@@ -55,8 +55,8 @@ Please note that while we do have a `GitHub
 Mirror <https://github.com/apache/trafficserver>`_ that you can also use
 to submit pull requests, it may not be entirely up-to-date.
 
-Building Traffic Server {#Building}
-===================================
+Building Traffic Server
+=======================
 
 In order to build Traffic Server from source you will need the following
 (development) packages:
