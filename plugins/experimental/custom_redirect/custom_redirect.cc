@@ -160,7 +160,7 @@ TSPluginInit (int argc, const char *argv[])
         redirect_url_header_len = strlen(redirect_url_header);
     }
     /*
-    if (!TSPluginRegister (TS_SDK_VERSION_5_2 , &info)) {
+    if (TSPluginRegister (TS_SDK_VERSION_5_2 , &info) != TS_SUCCESS) {
         TSError ("[custom_redirect] Plugin registration failed.");
     }
     */
