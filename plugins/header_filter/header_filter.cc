@@ -104,7 +104,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = const_cast<char*>("Apache");
   info.support_email = const_cast<char*>("users@trafficserver.apache.org");
 
-  if (!TSPluginRegister(TS_SDK_VERSION_3_0 , &info)) {
+  if (TSPluginRegister(TS_SDK_VERSION_3_0 , &info) != TS_SUCCESS) {
     TSError("header_filter: plugin registration failed.\n"); 
   }
 
