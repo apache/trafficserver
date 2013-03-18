@@ -184,9 +184,9 @@ Layout::Layout(const char *_prefix)
 // TODO: Use a propper Debug logging
 //
 #define PrintSTR(var) \
-  fprintf(stdout, "%18s = '%s'\n", "--" #var, (var == NULL? "NULL" : var));
+  fprintf(stderr, "%18s = '%s'\n", "--" #var, (var == NULL? "NULL" : var));
 
-  fprintf(stdout, "Layout configuration\n");
+  fprintf(stderr, "Layout configuration\n");
   PrintSTR(prefix);
   PrintSTR(exec_prefix);
   PrintSTR(bindir);

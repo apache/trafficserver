@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1755] add basic logstats tests
+
   *) TS-1184 Additional whitespace in proxy.config.admin.user_id value results
    in error.
 
@@ -15,7 +17,6 @@
   compiler compliance.
 
   *) [TS-1826] Remove DumpStats/http_dump dead code.
-
 
 
   Changes with Apache Traffic Server 3.3.2
