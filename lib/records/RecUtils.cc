@@ -129,9 +129,17 @@ RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src)
       }
     } else if (((data_dst->rec_string) && (strcmp(data_dst->rec_string, data_src->rec_string) != 0)) ||
                ((data_dst->rec_string == NULL) && (data_src->rec_string != NULL))) {
-      if (data_dst->rec_string) ats_free(data_dst->rec_string);
+      if (data_dst->rec_string)
+        ats_free(data_dst->rec_string);
+
       data_dst->rec_string = ats_strdup(data_src->rec_string);
       rec_set = true;
+      // Chop trailing spaces
+      char *end = data_dst->rec_string + strlen(data_dst->rec_string) - 1;
+
+      while (end >= data_dst->rec_string && isspace(*end))
+        end--;
+      *(end + 1) = '\0';
     }
     break;
   case RECD_INT:

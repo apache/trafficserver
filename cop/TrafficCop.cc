@@ -46,6 +46,8 @@ union semun
 // For debugging, turn this on.
 // #define TRACE_LOG_COP 1
 
+static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+
 #define OPTIONS_MAX     32
 #define OPTIONS_LEN_MAX 1024
 
@@ -75,7 +77,7 @@ static char syslog_fac_str[PATH_NAME_MAX] = "LOG_DAEMON";
 static int killsig = SIGKILL;
 static int coresig = 0;
 
-static char admin_user[256];
+static char* admin_user;
 static uid_t admin_uid;
 static gid_t admin_gid;
 static bool admin_user_p = false;
@@ -202,12 +204,8 @@ void
 chown_file_to_admin_user(const char *file) {
   if (admin_user_p) {
     if (chown(file, admin_uid, admin_gid) < 0) {
-      cop_log(
-        COP_FATAL,
-        "cop couldn't chown the file: '%s' for '%s' (%d/%d) : [%d] %s\n",
-        file, admin_user, admin_uid, admin_gid,
-        errno, strerror(errno)
-      );
+      cop_log(COP_FATAL, "cop couldn't chown the file: '%s' for '%s' (%d/%d) : [%d] %s\n",
+              file, admin_user, admin_uid, admin_gid, errno, strerror(errno));
     }
   }
 }
@@ -600,13 +598,24 @@ ConfigIntFatalError:
 }
 
 
-bool
-get_admin_user() {
+void
+get_admin_user()
+{
   struct passwd *pwd = NULL;
 
-  read_config_string("proxy.config.admin.user_id", admin_user, sizeof(admin_user));
+  if (!admin_user)
+    admin_user = (char *)ats_malloc(MAX_LOGIN);
+
+  read_config_string("proxy.config.admin.user_id", admin_user, MAX_LOGIN);
 
   if (*admin_user) {
+    char *end = admin_user + strlen(admin_user) - 1;
+
+    // Trim trailing spaces.
+    while (end >= admin_user && isspace(*end))
+      end--;
+    *(end + 1) = '\0';
+
     if (*admin_user == '#') {
       int uid = atoi(admin_user + 1);
       if (uid == -1) {
@@ -627,7 +636,6 @@ get_admin_user() {
       exit(1);
     }
   }
-  return admin_user_p;
 }
 
 static void

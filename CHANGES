@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) TS-1184 Additional whitespace in proxy.config.admin.user_id value results
+   in error.
+
   *) [TS-1662] Remove remaining use of register storage class.
 
   *) [TS-846] Eliminate proxy.config.remap.use_remap_processor.

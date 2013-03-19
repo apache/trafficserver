@@ -113,6 +113,8 @@ extern "C" int plock(int);
 
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG    0
 
+static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
@@ -1422,15 +1424,11 @@ main(int argc, char **argv)
   if (!num_task_threads)
     TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
-  const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
-  char *user = (char *)ats_malloc(max_login);
+  char *user = (char *)ats_malloc(MAX_LOGIN);
 
   *user = '\0';
-  admin_user_p = 
-    (REC_ERR_OKAY ==
-      TS_ReadConfigString(user, "proxy.config.admin.user_id", max_login)
-    ) && user[0] != '\0' && 0 != strcmp(user, "#-1")
-    ;
+  admin_user_p = ((REC_ERR_OKAY == TS_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) &&
+                  (*user != '\0') && (0 != strcmp(user, "#-1")));
 
 # if TS_USE_POSIX_CAP
   // Change the user of the process.
