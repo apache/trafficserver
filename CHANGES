@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1758] Remove unused overviewPage aggregation functions.
+   Author: Yunkai Zhang.
+
   *) [TS-1748] add jtest to the build
 
   *) [TS-1730] Supporting First Byte Flush for ESI plugin
