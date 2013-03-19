@@ -1403,6 +1403,8 @@ RecordElement RecordsConfig[] = {
   //#
   //# <RECORD-TYPE> <NAME> <TYPE> <VALUE (till end of line)>
   //#
+  //# *NOTE*: All NODE Records must be placed continuously!
+  //#
   //# Add NODE       Records Here
   //##############################################################################
   {RECT_NODE, "proxy.node.num_processes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -1438,18 +1440,6 @@ RecordElement RecordsConfig[] = {
   {RECT_NODE, "proxy.node.version.manager.build_machine", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.version.manager.build_person", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
-  //#
-  //# SSL parent proxying info
-  //#
-  //# Set the value of this variable to 1 if this node
-  //#  is also the default parent for all ssl requests
-  //#  in a cluster. Setting the value to 1 will prevent
-  //#  SSL requests from this proxy to a parent from
-  //#  self-looping.
-  //#
-  {RECT_LOCAL, "proxy.local.http.parent_proxy.disable_connect_tunneling", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //#
@@ -1848,6 +1838,19 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CLUSTER, "proxy.cluster.current_server_connections", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+
+  //#
+  //# SSL parent proxying info
+  //#
+  //# Set the value of this variable to 1 if this node
+  //#  is also the default parent for all ssl requests
+  //#  in a cluster. Setting the value to 1 will prevent
+  //#  SSL requests from this proxy to a parent from
+  //#  self-looping.
+  //#
+  {RECT_LOCAL, "proxy.local.http.parent_proxy.disable_connect_tunneling", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+
   //# Add LOCAL Records Here
   {RECT_LOCAL, "proxy.local.incoming_ip_to_bind", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

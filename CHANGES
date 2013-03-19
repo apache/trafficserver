@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1749] Stats cluster values among nodes are not consistent.
+   Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-1758] Remove unused overviewPage aggregation functions.
    Author: Yunkai Zhang.
 

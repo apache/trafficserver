@@ -811,6 +811,10 @@ ClusterCom::handleMultiCastMessage(char *message)
     for (int j = 0; j < g_num_records; j++) {
       RecRecord *rec = &(g_records[j]);
 
+      /*
+       * The following code make sence only when RECT_NODE records
+       * defined in mgmt/RecordsConfig.cc are placed continuously.
+       */
       if (rec->rec_type == RECT_NODE) {
         p->node_rec_data.recs[cnt].rec_type = rec->rec_type;
         p->node_rec_data.recs[cnt].name = rec->name;
