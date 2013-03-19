@@ -1209,7 +1209,7 @@ ClusterHandler::protoZombieEvent(int event, Event * e)
   // after NO_RACE_DELAY
   //
   bool failed = false;
-  ink_hrtime delay = CLUSTER_RETRY;
+  ink_hrtime delay = CLUSTER_MEMBER_DELAY * 5;
   EThread *t = e ? e->ethread : this_ethread();
   head_p item;
 
