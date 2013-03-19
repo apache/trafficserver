@@ -43,10 +43,8 @@ union semun
 };
 #endif  // linux check
 
-// For debugging, turn this on.
-// #define TRACE_LOG_COP 1
-
 static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";
 
 #define OPTIONS_MAX     32
 #define OPTIONS_LEN_MAX 1024
@@ -142,7 +140,7 @@ dummy_cop_log_trace(const char *format, ...)
   (void)format;
 }
 
-#ifdef TRACE_LOG_COP
+#if TS_USE_COP_DEBUG
 #define cop_log_trace(...)              cop_log(COP_DEBUG, __VA_ARGS__)
 #else
 #define cop_log_trace(...)      if (0) dummy_cop_log_trace(__VA_ARGS__)
@@ -154,7 +152,7 @@ cop_log(int priority, const char *format, ...)
 {
   va_list args;
   char buffer[8192];
-#ifdef TRACE_LOG_COP
+#if TS_USE_COP_DEBUG
   static FILE *trace_file = NULL;
   struct timeval now;
   double now_f;
@@ -162,9 +160,11 @@ cop_log(int priority, const char *format, ...)
 
   va_start(args, format);
 
-#ifdef TRACE_LOG_COP
-  if (!trace_file)
-    trace_file = fopen("/tmp/traffic_cop.trace", "w");
+#if TS_USE_COP_DEBUG
+  if (!trace_file) {
+    if (!unlink(COP_TRACE_FILE))
+      trace_file = fopen(COP_TRACE_FILE, "w");
+  }
   if (trace_file) {
     gettimeofday(&now, NULL);
     now_f = now.tv_sec + now.tv_usec / 1000000.0f;

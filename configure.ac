@@ -336,11 +336,26 @@ AC_MSG_RESULT([$enable_hwloc])
 #
 AC_MSG_CHECKING([whether to enable ccache])
 AC_ARG_ENABLE([ccache],
-  [AS_HELP_STRING([--enable-ccache],[Enable ccache (can cause bad builds)])],
+  [AS_HELP_STRING([--enable-ccache],[Enable ccache (for developers)])],
   [],
   [enable_ccache="no"]
 )
 AC_MSG_RESULT([$enable_ccache])
+
+#
+# Enble traffic_cop debugging
+#
+AC_MSG_CHECKING([whether to enable traffic_cop debugging])
+AC_ARG_ENABLE([cop-debug],
+  [AS_HELP_STRING([--enable-cop-debug],[Enable Traffic Cop debugging (for developers)])],
+  [],
+  [enable_cop-debug="no"]
+)
+AC_MSG_RESULT([$enable_cop_debug])
+TS_ARG_ENABLE_VAR([use], [cop-debug])
+AC_SUBST(use_cop_debug)
+
+
 
 #
 # Use TPROXY for connection transparency.
