@@ -1575,14 +1575,12 @@ main(int argc, char **argv)
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   eventProcessor.start(num_of_net_threads);
 
-  int use_separate_thread = 0;
-  int num_remap_threads = 1;
-  TS_ReadConfigInteger(use_separate_thread, "proxy.config.remap.use_remap_processor");
+  int num_remap_threads = 0;
   TS_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
-  if (use_separate_thread && num_remap_threads < 1)
-    num_remap_threads = 1;
+  if (num_remap_threads < 1)
+    num_remap_threads = 0;
 
-  if (use_separate_thread) {
+  if (num_remap_threads > 0) {
     Note("using the new remap processor system with %d threads", num_remap_threads);
     remapProcessor.setUseSeparateThread();
   }

@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-846] Eliminate proxy.config.remap.use_remap_processor.
+
   *) [TS-1802] Remove proxy.config.net.accept_throttle.
 
   *) [TS-1752] Change type of "len" in jtest to off_t, for better

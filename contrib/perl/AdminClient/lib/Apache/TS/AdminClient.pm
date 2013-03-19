@@ -643,7 +643,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.proxy_binary_opts
  proxy.config.proxy_name
  proxy.config.remap.num_remap_threads
- proxy.config.remap.use_remap_processor
  proxy.config.res_track_memory
  proxy.config.reverse_proxy.enabled
  proxy.config.reverse_proxy.oldasxbehavior
