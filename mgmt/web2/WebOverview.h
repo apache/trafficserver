@@ -119,7 +119,6 @@ public:
   MgmtString readString(const char *nodeName, const char *name, bool * found = NULL);
   void addSelfRecord();
 
-  int varClusterFloatFromName(char *, MgmtFloat *);
   int varClusterDataFromName(RecDataT varType, char *nodeVar, RecData *sum);
 
 private:
@@ -141,21 +140,7 @@ private:
   ExpandingArray sortRecords;   // A second, sorted container for nodeRecords
   int numHosts;                 // number of peers we know about including ourself
 
-  // Functions to do cluster aggregation
-  //
-  void clusterAgInt(const char *clustVar, const char *nodeVar);
-  void clusterAgIntScale(const char *clustVar, const char *nodeVar, double factor);
-#define MB_SCALE (1/(1024*1024.0))
-  int clusterSumInt(const char *nodeVar, MgmtInt * sum);
-  int clusterSumCounter(char *nodeVar, MgmtInt * sum);
-  void clusterAgFloat(const char *clusterVar, const char *nodeVar);
-  int clusterSumFloat(const char *nodeVar, MgmtFloat * sum);
   int clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum);
-  void agHostdbHitRate();
-  void agCacheHitRate();
-  void agCachePercentFree();
-  void agBandwidthHitRate();
-  void agConnections();
 };
 
 extern overviewPage *overviewGenerator; // global handle to overiewPage?
