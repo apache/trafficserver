@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1662] Remove remaining use of register storage class.
+
   *) [TS-846] Eliminate proxy.config.remap.use_remap_processor.
 
   *) [TS-1802] Remove proxy.config.net.accept_throttle.

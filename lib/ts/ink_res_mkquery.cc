@@ -100,9 +100,9 @@ ink_res_mkquery(ink_res_state statp,
 	     u_char *buf,		/*!< buffer to put query  */
 	     int buflen)		/*!< size of buffer  */
 {
-	register HEADER *hp;
-	register u_char *cp, *ep;
-	register int n;
+	HEADER *hp;
+	u_char *cp, *ep;
+	int n;
 	u_char *dnptrs[20], **dpp, **lastdnptr;
 
 	NOWARN_UNUSED(newrr_in);

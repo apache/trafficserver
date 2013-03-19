@@ -1253,7 +1253,7 @@ handle_read(int cnum, struct timeval *nowP)
   int bytes_to_read, bytes_read, bytes_handled;
   float elapsed;
   ClientData client_data;
-  register long checksum;
+  long checksum;
 
   tmr_reset(nowP, connections[cnum].idle_timer);
 

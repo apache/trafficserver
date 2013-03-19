@@ -653,8 +653,8 @@ LogAccess::marshal_record(char *record, char *buf)
   ink_debug_assert(::strlen(record_not_found_msg) + 1 == record_not_found_chars);
 
   char ascii_buf[max_chars];
-  register const char *out_buf;
-  register unsigned int num_chars;
+  const char *out_buf;
+  unsigned int num_chars;
 
 #define LOG_INTEGER RECD_INT
 #define LOG_COUNTER RECD_COUNTER

@@ -67,7 +67,7 @@ escapify_url(const char *src, int src_len, char* dst, int dst_len)
     return -1;
 
   while (from < (src + src_len)) {
-    register unsigned char c = *from;
+    unsigned char c = *from;
 
     if (len >= dst_len)
       return -1; // Does not fit.... abort!

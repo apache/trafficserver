@@ -302,9 +302,9 @@ ink_res_init(
   const char *pSearchList, ///< Unknown
   const char *pResolvConf ///< Path to configuration file.
 ) {
-  register FILE *fp;
-  register char *cp, **pp;
-  register int n;
+  FILE *fp;
+  char *cp, **pp;
+  int n;
   char buf[BUFSIZ];
   size_t nserv = 0;
   int haveenv = 0;

@@ -202,7 +202,7 @@ parse_host_res_preferences(
 
 #ifndef NS_GET16
 #define NS_GET16(s, cp) do { \
-        register const u_char *t_cp = (const u_char *)(cp); \
+        const u_char *t_cp = (const u_char *)(cp); \
         (s) = ((u_int16_t)t_cp[0] << 8) \
             | ((u_int16_t)t_cp[1]) \
             ; \
@@ -212,7 +212,7 @@ parse_host_res_preferences(
 
 #ifndef NS_GET32
 #define NS_GET32(l, cp) do { \
-        register const u_char *t_cp = (const u_char *)(cp); \
+        const u_char *t_cp = (const u_char *)(cp); \
         (l) = ((u_int32_t)t_cp[0] << 24) \
             | ((u_int32_t)t_cp[1] << 16) \
             | ((u_int32_t)t_cp[2] << 8) \
@@ -224,8 +224,8 @@ parse_host_res_preferences(
 
 #ifndef NS_PUT16
 #define NS_PUT16(s, cp) do { \
-        register u_int16_t t_s = (u_int16_t)(s); \
-        register u_char *t_cp = (u_char *)(cp); \
+        u_int16_t t_s = (u_int16_t)(s); \
+        u_char *t_cp = (u_char *)(cp); \
         *t_cp++ = t_s >> 8; \
         *t_cp   = t_s; \
         (cp) += NS_INT16SZ; \
@@ -234,8 +234,8 @@ parse_host_res_preferences(
 
 #ifndef NS_PUT32
 #define NS_PUT32(l, cp) do { \
-        register u_int32_t t_l = (u_int32_t)(l); \
-        register u_char *t_cp = (u_char *)(cp); \
+        u_int32_t t_l = (u_int32_t)(l); \
+        u_char *t_cp = (u_char *)(cp); \
         *t_cp++ = t_l >> 24; \
         *t_cp++ = t_l >> 16; \
         *t_cp++ = t_l >> 8; \

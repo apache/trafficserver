@@ -398,7 +398,7 @@ static void
 PrintUsage(Tcl_Interp * interp, cli_CommandInfo * commandInfo)
 {
   NOWARN_UNUSED(interp);
-  register cli_ArgvInfo *infoPtr;
+  cli_ArgvInfo *infoPtr;
   cli_ArgvInfo *argTable = commandInfo->argtable;
   int width, numSpaces;
 
