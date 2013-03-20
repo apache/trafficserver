@@ -60,7 +60,7 @@ static char output_file[1024];
 extern int CacheClusteringEnabled;
 int auto_clear_cache_flag = 0;
 
-ArgumentDescription argument_descriptions[] = {
+static const ArgumentDescription argument_descriptions[] = {
 
   {"output_file", 'o', "Specify output file", "S1023", &output_file, NULL, NULL},
   {"auto_filenames", 'a', "Automatically generate output names",
@@ -77,7 +77,7 @@ ArgumentDescription argument_descriptions[] = {
   {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL,
    NULL}
 };
-int n_argument_descriptions = SIZE(argument_descriptions);
+static const int n_argument_descriptions = SIZE(argument_descriptions);
 
 static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-CEhS"
 #ifdef DEBUG
@@ -87,7 +87,7 @@ static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [
 
 
 
-int
+static int
 process_file(int in_fd, int out_fd)
 {
   char buffer[MAX_LOGBUFFER_SIZE];
@@ -185,7 +185,7 @@ process_file(int in_fd, int out_fd)
   }
 }
 
-int
+static int
 open_output_file(char *output_file)
 {
   int file_desc = 0;

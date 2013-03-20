@@ -157,10 +157,8 @@ static char error_tags[1024] = "";
 static char action_tags[1024] = "";
 static int show_statistics = 0;
 static int history_info_enabled = 1;
-//inkcoreapi Diags *diags = NULL;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
-static int diags_init = 0;             // used by process manager
 
 static char vingid_flag[255] = "";
 
@@ -1371,7 +1369,6 @@ main(int argc, char **argv)
   // re-start it again, TS will crash.
   diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, false));
   diags = diagsConfig->diags;
-  diags_init = 1;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();
@@ -1433,7 +1430,6 @@ main(int argc, char **argv)
   diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, true));
   diags = diagsConfig->diags;
   RecSetDiags(diags);
-  diags_init = 1;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();

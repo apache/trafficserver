@@ -14,10 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
-    -I$(top_builddir)/lib/ts -I$(top_srcdir)/lib/ts
-pkglibdir = ${pkglibexecdir}
+include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = gzip.la
 gzip_la_SOURCES = gzip.cc configuration.cc misc.cc
-gzip_la_LDFLAGS = -avoid-version -module -shared
+gzip_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

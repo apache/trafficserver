@@ -179,7 +179,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
 
   // set our diags
-  ink_atomic_swap(&g_diags, _diags);
+  RecSetDiags(_diags);
 
   g_records_tree = new RecTree(NULL);
   g_num_records = 0;

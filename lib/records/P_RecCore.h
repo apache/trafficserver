@@ -43,6 +43,8 @@ extern int g_num_update[];
 extern RecModeT g_mode_type;
 extern RecTree *g_records_tree;
 
+extern Diags *g_diags;
+
 // records.config items
 extern const char *g_rec_config_fpath;
 extern LLQ *g_rec_config_contents_llq;

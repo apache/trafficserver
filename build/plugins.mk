@@ -14,8 +14,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+# plugins.mk: Common automake build variables for Traffic Server plugins.
 
-pkglib_LTLIBRARIES = channel_stats.la
-channel_stats_la_SOURCES = channel_stats.cc
-channel_stats_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+TS_PLUGIN_LDFLAGS = \
+  -module \
+  -shared \
+  -avoid-version
+
+TS_PLUGIN_CPPFLAGS = \
+  -D__STDC_LIMIT_MACROS=1 \
+  -D__STDC_FORMAT_MACROS=1 \
+  -I$(top_builddir)/proxy/api \
+  -I$(top_srcdir)/proxy/api \
+  -I$(top_builddir)/lib/ts \
+  -I$(top_srcdir)/lib/ts
+
+# Provide a default AM_CPPFLAGS. Automake handles this correctly, but libtool
+# throws an error if we try to do the same with AM_LDFLAGS. Hence, we provide
+# TS_PLUGIN variables that can be used to construct the necessary automake
+# syntax.
+AM_CPPFLAGS = $(TS_PLUGIN_CPPFLAGS)
+pkglibdir = $(pkglibexecdir)

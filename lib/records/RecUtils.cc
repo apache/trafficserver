@@ -26,9 +26,6 @@
 #include "P_RecCore.h"
 #include "P_RecTree.h"
 
-// diags defined in RecCore.cc
-extern Diags *g_diags;
-
 //-------------------------------------------------------------------------
 // RecAlloc
 //-------------------------------------------------------------------------

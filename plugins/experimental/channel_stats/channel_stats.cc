@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ink_platform.h"
 #include "ink_defs.h"
 

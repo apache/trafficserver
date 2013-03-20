@@ -14,10 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
-              -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
+include $(top_srcdir)/build/plugins.mk
 
-pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = regex_remap.la
 regex_remap_la_SOURCES = regex_remap.cc
-regex_remap_la_LDFLAGS = -module -avoid-version -shared
+regex_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

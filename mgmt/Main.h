@@ -46,11 +46,6 @@ extern AppVersionInfo appVersionInfo;
 
 // Global strings
 extern char mgmt_path[];
-extern const char *recs_conf;
-//extern char *lm_conf;
-
-// Root of Traffic Server
-extern const char *ts_base_dir;
 
 // Global variable to replace ifdef MGMT_LAUNCH_PROXY so that
 // we can turn on/off proxy launch at runtime to facilitate

@@ -33,7 +33,10 @@
 #include "../../proxy/Main.h"
 #endif
 
+#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
+// diags_init defined in mgmt/Main.cc.
 extern int diags_init;
+#endif
 
 static int use_syslog = 0;
 

@@ -14,11 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
-    -I$(top_builddir)/lib/ts -I$(top_srcdir)/lib/ts
-
-pkglibdir = ${pkglibexecdir}
+include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = metalink.la
 metalink_la_SOURCES = metalink.cc
-metalink_la_LDFLAGS = -avoid-version -module -shared
+metalink_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

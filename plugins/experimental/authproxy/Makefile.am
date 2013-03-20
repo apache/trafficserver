@@ -14,13 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglibdir = ${pkglibexecdir}
-
-AM_CPPFLAGS = \
-  -I$(top_builddir)/proxy/api \
-  -I$(top_srcdir)/proxy/api
+include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = authproxy.la
 authproxy_la_SOURCES = authproxy.cc utils.cc utils.h
-authproxy_la_LDFLAGS = -module -avoid-version -shared
+authproxy_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
