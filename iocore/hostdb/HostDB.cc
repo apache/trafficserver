@@ -64,8 +64,7 @@ unsigned int hostdb_ip_fail_timeout_interval = HOST_DB_IP_FAIL_TIMEOUT;
 unsigned int hostdb_serve_stale_but_revalidate = 0;
 char hostdb_filename[PATH_NAME_MAX + 1] = DEFAULT_HOST_DB_FILENAME;
 int hostdb_size = DEFAULT_HOST_DB_SIZE;
-//int hostdb_timestamp = 0;
-int hostdb_sync_frequency = 60;
+int hostdb_sync_frequency = 120;
 int hostdb_disable_reverse_lookup = 0;
 
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
@@ -339,7 +338,7 @@ struct HostDBSyncer: public Continuation
   int sync_event(int event, void *edata);
   int wait_event(int event, void *edata);
 
-    HostDBSyncer();
+  HostDBSyncer();
 };
 
 
@@ -347,7 +346,6 @@ HostDBSyncer::HostDBSyncer():
 Continuation(new_ProxyMutex()), frequency(0), start_time(0)
 {
   SET_HANDLER(&HostDBSyncer::sync_event);
-  REC_EstablishStaticConfigInt32(hostdb_sync_frequency, "proxy.config.cache.hostdb.sync_frequency");
 }
 
 
@@ -364,8 +362,13 @@ HostDBSyncer::sync_event(int, void *)
 int
 HostDBSyncer::wait_event(int, void *)
 {
+  ink_hrtime next_sync = HRTIME_SECONDS(hostdb_sync_frequency) - (ink_get_hrtime() - start_time);
+
   SET_HANDLER(&HostDBSyncer::sync_event);
-  mutex->thread_holding->schedule_in_local(this, HRTIME_SECONDS(hostdb_sync_frequency));
+  if (next_sync > HRTIME_MSECONDS(100))
+    mutex->thread_holding->schedule_in_local(this, next_sync);
+  else
+    mutex->thread_holding->schedule_imm_local(this);
   return EVENT_DONE;
 }
 
@@ -480,13 +483,12 @@ HostDBProcessor::start(int)
   REC_EstablishStaticConfigInt32U(hostdb_ip_stale_interval, "proxy.config.hostdb.verify_after");
   REC_EstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
   REC_EstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
+  REC_EstablishStaticConfigInt32(hostdb_sync_frequency, "proxy.config.cache.hostdb.sync_frequency");
 
   //
   // Set up hostdb_current_interval
   //
-  hostdb_current_interval = (unsigned int)
-    (ink_get_based_hrtime() / HOST_DB_TIMEOUT_INTERVAL);
-  //hostdb_timestamp = time(NULL);
+  hostdb_current_interval = (unsigned int)(ink_get_based_hrtime() / HOST_DB_TIMEOUT_INTERVAL);
 
   HostDBContinuation *b = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(b, (HostDBContHandler) & HostDBContinuation::backgroundEvent);
@@ -494,9 +496,10 @@ HostDBProcessor::start(int)
   eventProcessor.schedule_every(b, HOST_DB_TIMEOUT_INTERVAL, ET_DNS);
 
   //
-  // Sync HostDB
+  // Sync HostDB, if we've asked for it.
   //
-  eventProcessor.schedule_imm(NEW(new HostDBSyncer));
+  if (hostdb_sync_frequency > 0)
+    eventProcessor.schedule_imm(NEW(new HostDBSyncer));
   return 0;
 }
 

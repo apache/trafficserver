@@ -40,10 +40,7 @@
 #include "P_EventSystem.h"      // FIXME: need to have this in I_* header files.
 #include "ink_file.h"
 
-//dxu: disable all Diags.h's functions
-//#define Note
-
-#define MULTI_CACHE_PAUSE_TIME       HRTIME_MSECONDS(1000)
+static const int MC_SYNC_MIN_PAUSE_TIME = HRTIME_MSECONDS(200); // Pause for at least 200ms
 
 MultiCacheBase::MultiCacheBase()
   : store(0), mapped_header(NULL), data(0), lowest_level_data(0), miss_stat(0), buckets_per_partitionF8(0)
@@ -987,6 +984,7 @@ MultiCacheBase::sync_all()
 //
 struct MultiCacheSync;
 typedef int (MultiCacheSync::*MCacheSyncHandler) (int, void *);
+
 struct MultiCacheSync: public Continuation
 {
   int partition;
@@ -1028,11 +1026,7 @@ struct MultiCacheSync: public Continuation
     partition++;
     mutex = e->ethread->mutex;
     SET_HANDLER((MCacheSyncHandler) & MultiCacheSync::pauseEvent);
-#ifdef MULTI_CACHE_PAUSE_TIME
-    e->schedule_in(MULTI_CACHE_PAUSE_TIME);
-#else
-    e->schedule_imm();
-#endif
+    e->schedule_in(MAX(MC_SYNC_MIN_PAUSE_TIME, HRTIME_SECONDS(hostdb_sync_frequency - 5) / MULTI_CACHE_PARTITIONS));
     return EVENT_CONT;
   }
 
@@ -1157,11 +1151,7 @@ struct MultiCacheHeapGC: public Continuation
         mutex = mc->locks[partition];
       else
         mutex = cont->mutex;
-#ifdef MULTI_CACHE_PAUSE_TIME
-      e->schedule_in(MULTI_CACHE_PAUSE_TIME);
-#else
-      e->schedule_imm();
-#endif
+      e->schedule_in(MAX(MC_SYNC_MIN_PAUSE_TIME, HRTIME_SECONDS(hostdb_sync_frequency - 5) / MULTI_CACHE_PARTITIONS));
       return EVENT_CONT;
     }
     mc->heap_used[mc->heap_halfspace ? 0 : 1] = 8;      // skip 0

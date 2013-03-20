@@ -522,7 +522,6 @@ extern unsigned int hostdb_ip_fail_timeout_interval;
 extern int hostdb_size;
 extern char hostdb_filename[PATH_NAME_MAX + 1];
 
-//extern int hostdb_timestamp;
 extern int hostdb_sync_frequency;
 extern int hostdb_disable_reverse_lookup;
 
