@@ -54,12 +54,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Fix SSL accept performance regression
   Jira: https://issues.apache.org/jira/browse/TS-1538
   Patch: ccc4b37b91f25c2e985f195b77369ce20e2e8e81
-  +1: jpeach
+  +1: jpeach, zwoop
 
   Addendum for, TS-1470: consistently use off_t for cache sizes
   Jira: https://issues.apache.org/jira/browse/TS-1319
   Patch: 61496440b65ee28c93bf77fa036c0424b33dc10c
-  +1: igalic (although cherry picking doesn't apply cleanly), arno
+  +1: igalic (although cherry picking doesn't apply cleanly), arno, zwoop
 
   Fix FreeBSD block calculation (both RAW and directory)
   Jira: https://issues.apache.org/jira/browse/TS-1707
