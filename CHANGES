@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1763] add Arch Linux config.layout
+   Author: Galen Sampson <galen.sampson@gmail.com>
+
   *) [TS-1749] Stats cluster values among nodes are not consistent.
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
