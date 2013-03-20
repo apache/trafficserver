@@ -64,7 +64,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Fix FreeBSD block calculation (both RAW and directory)
   Jira: https://issues.apache.org/jira/browse/TS-1707
   Patch: 5566ac76d6c4e4f5154421f1ac1077487b02d332
-  +1: igalic, zwoop [I double checked with John too]
+  +1: igalic, zwoop [I double checked with John too], jpeach
 
   Fix gcc-4.8 build problems
   Jira: https://issues.apache.org/jira/browse/TS-1714
@@ -72,7 +72,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
          deb8253a, 44fff1b91
   (Patches do not apply cleanly, there is a merge conflict resolving patch in
   https://issues.apache.org/jira/secure/attachment/12572264/TS-1714.diff)
-  +1: zwoop, arno
+  +1: zwoop, arno, jpeach
 
 
 RELEASE PROCESS
