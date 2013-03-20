@@ -64,7 +64,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Fix FreeBSD block calculation (both RAW and directory)
   Jira: https://issues.apache.org/jira/browse/TS-1707
   Patch: 5566ac76d6c4e4f5154421f1ac1077487b02d332
-  +1: igalic
+  +1: igalic, zwoop [I double checked with John too]
 
   Fix gcc-4.8 build problems
   Jira: https://issues.apache.org/jira/browse/TS-1714
