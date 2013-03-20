@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1660] Host field should not has c style terminator.
+
   *) [TS-1627] Support requests with payload
 
   *) [TS-1763] add Arch Linux config.layout
