@@ -1044,8 +1044,8 @@ ClusterHandler::startClusterEvent(int event, Event * e)
                 if (m->clusterHandlers[i])
                   m->clusterHandlers[i]->downing = true;
               }
-              m->num_connections = machine->num_connections;
               m->free_connections -= (m->num_connections - machine->num_connections);
+              m->num_connections = machine->num_connections;
               // delete_this
               failed = -2;
               MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
