@@ -5261,6 +5261,23 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
   int scheme = incoming_url->scheme_get_wksidx();
   int method = incoming_hdr->method_get_wksidx();
 
+  // Check for chunked encoding
+  if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
+    MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    HdrCsvIter enc_val_iter;
+    int enc_val_len;
+    const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
+
+    while (enc_value) {
+      const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+      if (wks_value == HTTP_VALUE_CHUNKED) {
+          s->client_info.transfer_encoding = CHUNKED_ENCODING;
+        break;
+      }
+        enc_value = enc_val_iter.get_next(&enc_val_len);
+    }
+  }
+
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS &&
         method != HTTP_WKSIDX_CONNECT) {
@@ -5278,33 +5295,13 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
       return BAD_CONNECT_PORT;
     }
 
+    // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
-        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT)) {
-      if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-        bool chunked_encoding = false;
+        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
+        ! incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) &&
+        ! s->client_info.transfer_encoding == CHUNKED_ENCODING) {
 
-        if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
-          MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-          HdrCsvIter enc_val_iter;
-          int enc_val_len;
-          const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
-
-          while (enc_value) {
-            const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
-
-            if (wks_value == HTTP_VALUE_CHUNKED) {
-              chunked_encoding = true;
-              break;
-            }
-            enc_value = enc_val_iter.get_next(&enc_val_len);
-          }
-        }
-
-        if (!chunked_encoding)
           return NO_POST_CONTENT_LENGTH;
-        else
-          s->client_info.transfer_encoding = CHUNKED_ENCODING;
-      }
     }
   }
   // Check whether a Host header field is missing in the request.
@@ -5656,12 +5653,10 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
     s->hdr_info.extension_method = true;
   }
 
-  ////////////////////////////////////////////////
-  // get request content length for POST or PUT //
-  ////////////////////////////////////////////////
-  if ((s->method != HTTP_WKSIDX_GET) &&
-      (s->method == HTTP_WKSIDX_POST || s->method == HTTP_WKSIDX_PUT ||
-       s->method == HTTP_WKSIDX_PUSH || s->hdr_info.extension_method)) {
+  //////////////////////////////////////////////////
+  // get request content length 									//
+  //////////////////////////////////////////////////
+  if (s->method != HTTP_WKSIDX_TRACE) {
     int64_t length = incoming_request->get_content_length();
     s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL;    // content length less than zero is invalid
 
@@ -5672,19 +5667,8 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
     s->hdr_info.request_content_length = 0;
   }
   // if transfer encoding is chunked content length is undefined
-  if (incoming_request->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
-    MIMEField *field = incoming_request->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-    HdrCsvIter enc_val_iter;
-    int enc_val_len;
-    const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
-
-    while (enc_value) {
-      const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
-
-      if (wks_value == HTTP_VALUE_CHUNKED)
-        s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
-      enc_value = enc_val_iter.get_next(&enc_val_len);
-    }
+  if (s->client_info.transfer_encoding == CHUNKED_ENCODING) {
+    s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
   }
   s->request_data.hdr = &s->hdr_info.client_request;
   s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
@@ -6699,126 +6683,100 @@ HttpTransact::will_this_request_self_loop(State* s)
 void
 HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* base)
 {
-  if (header->type_get() == HTTP_TYPE_RESPONSE) {
-    // This isn't used.
-    // int status_code = base->status_get();
-    int64_t cl = HTTP_UNDEFINED_CL;
-    if (base->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-      cl = base->get_content_length();
-      if (cl >= 0) {
-        // header->set_content_length(cl);
-        ink_debug_assert(header->get_content_length() == cl);
+  int64_t cl = HTTP_UNDEFINED_CL;
+  ink_debug_assert(header->type_get() == HTTP_TYPE_RESPONSE);
+  if (base->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+    cl = base->get_content_length();
+    if (cl >= 0) {
+      // header->set_content_length(cl);
+      ink_debug_assert(header->get_content_length() == cl);
 
-        switch (s->source) {
-        case SOURCE_HTTP_ORIGIN_SERVER:
-          // We made our decision about whether to trust the
-          //   response content length in init_state_vars_from_response()
-          if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED)
-            break;
-        case SOURCE_CACHE:
-          
-          // if we are doing a single Range: request, calculate the new
-          // C-L: header
-          if (s->range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
-            Debug("http_trans", "Partial content requested, re-calculating content-length");
-            change_response_header_because_of_range_request(s,header);
-            s->hdr_info.trust_response_cl = true;
-          }
-          ////////////////////////////////////////////////
-          //  Make sure that the cache's object size    //
-          //   agrees with the Content-Length           //
-          //   Otherwise, set the state's machine view  //
-          //   of c-l to undefined to turn off K-A      //
-          ////////////////////////////////////////////////
-          else if ((int64_t) s->cache_info.object_read->object_size_get() == cl) {
-            s->hdr_info.trust_response_cl = true;
-          } else {
-            DebugTxn("http_trans", "Content Length header and cache object size mismatch." "Disabling keep-alive");
-            s->hdr_info.trust_response_cl = false;
-          }
+      switch (s->source) {
+      case SOURCE_HTTP_ORIGIN_SERVER:
+        // We made our decision about whether to trust the
+        //   response content length in init_state_vars_from_response()
+        if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED)
           break;
-        case SOURCE_TRANSFORM:
-          if (s->hdr_info.transform_response_cl == HTTP_UNDEFINED_CL) {
-            s->hdr_info.trust_response_cl = false;
-          } else {
-            s->hdr_info.trust_response_cl = true;
-          }
-          break;
-        default:
-          ink_release_assert(0);
-          break;
-        }
-      } else {
-        header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-        s->hdr_info.trust_response_cl = false;
-      }
-      Debug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
-    } else {
-      // No content length header
-      if (s->source == SOURCE_CACHE) {
-        // If there is no content-length header, we can
-        //   insert one since the cache knows definately
-        //   how long the object is unless we're in a
-        //   read-while-write mode and object hasn't been
-        //   written into a cache completely.
-        cl = s->cache_info.object_read->object_size_get();
-        if (cl == INT64_MAX) { //INT64_MAX cl in cache indicates rww in progress
-          header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-          s->hdr_info.trust_response_cl = false;
-          s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
-          ink_assert(s->range_setup == RANGE_NONE);
-        } 
-        else if (s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
-          // if we are doing a single Range: request, calculate the new
-          // C-L: header
+      case SOURCE_CACHE:
+
+        // if we are doing a single Range: request, calculate the new
+        // C-L: header
+        if (s->range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
           Debug("http_trans", "Partial content requested, re-calculating content-length");
           change_response_header_because_of_range_request(s,header);
           s->hdr_info.trust_response_cl = true;
         }
-        else {
-          header->set_content_length(cl);
-          s->hdr_info.trust_response_cl = true;
-        }
-      } else {
-        // Check to see if there is no content length
-        //  header because the response precludes a
-        // body
-        if (is_response_body_precluded(header->status_get(), s->method)) {
-          // We want to be able to do keep-alive here since
-          //   there can't be body so we don't have any
-          //   issues about trusting the body length
+        ////////////////////////////////////////////////
+        //  Make sure that the cache's object size    //
+        //   agrees with the Content-Length           //
+        //   Otherwise, set the state's machine view  //
+        //   of c-l to undefined to turn off K-A      //
+        ////////////////////////////////////////////////
+        else if ((int64_t) s->cache_info.object_read->object_size_get() == cl) {
           s->hdr_info.trust_response_cl = true;
         } else {
+          DebugTxn("http_trans", "Content Length header and cache object size mismatch." "Disabling keep-alive");
           s->hdr_info.trust_response_cl = false;
         }
-        header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-        ink_assert(s->range_setup != RANGE_NOT_TRANSFORM_REQUESTED);
+        break;
+      case SOURCE_TRANSFORM:
+        if (s->hdr_info.transform_response_cl == HTTP_UNDEFINED_CL) {
+          s->hdr_info.trust_response_cl = false;
+        } else {
+          s->hdr_info.trust_response_cl = true;
+        }
+        break;
+      default:
+        ink_release_assert(0);
+        break;
       }
-    }
-  } else if (header->type_get() == HTTP_TYPE_REQUEST) {
-    int method = header->method_get_wksidx();
-
-    if (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_TRACE) {      /* No body, no content-length */
-
-      header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-      s->hdr_info.request_content_length = 0;
-
-    } else if (base && base->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-      /* Copy over the content length if its set */
-      ink_debug_assert(s->hdr_info.request_content_length == base->get_content_length());
-      ink_debug_assert(header->get_content_length() == base->get_content_length());
     } else {
-      /*
-       * Otherwise we are in a method with a potential cl, so unset
-       * the header and flag the cl as undefined for the state machine.
-       */
       header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-      s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
+      s->hdr_info.trust_response_cl = false;
     }
-    DebugTxn("http_trans", "[handle_content_length_header] cont len in hdr is %" PRId64", stat var is %" PRId64,
-          header->get_content_length(), s->hdr_info.request_content_length);
+    Debug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
+  } else {
+    // No content length header
+    if (s->source == SOURCE_CACHE) {
+      // If there is no content-length header, we can
+      //   insert one since the cache knows definately
+      //   how long the object is unless we're in a
+      //   read-while-write mode and object hasn't been
+      //   written into a cache completely.
+      cl = s->cache_info.object_read->object_size_get();
+      if (cl == INT64_MAX) { //INT64_MAX cl in cache indicates rww in progress
+        header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+        s->hdr_info.trust_response_cl = false;
+        s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
+        ink_assert(s->range_setup == RANGE_NONE);
+      }
+      else if (s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
+        // if we are doing a single Range: request, calculate the new
+        // C-L: header
+        Debug("http_trans", "Partial content requested, re-calculating content-length");
+        change_response_header_because_of_range_request(s,header);
+        s->hdr_info.trust_response_cl = true;
+      }
+      else {
+        header->set_content_length(cl);
+        s->hdr_info.trust_response_cl = true;
+      }
+    } else {
+      // Check to see if there is no content length
+      //  header because the response precludes a
+      // body
+      if (is_response_body_precluded(header->status_get(), s->method)) {
+        // We want to be able to do keep-alive here since
+        //   there can't be body so we don't have any
+        //   issues about trusting the body length
+        s->hdr_info.trust_response_cl = true;
+      } else {
+        s->hdr_info.trust_response_cl = false;
+      }
+      header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+      ink_assert(s->range_setup != RANGE_NOT_TRANSFORM_REQUESTED);
+    }
   }
-
   return;
 }                               /* End HttpTransact::handle_content_length_header */
 

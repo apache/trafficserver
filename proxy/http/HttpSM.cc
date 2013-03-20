@@ -783,7 +783,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
       ua_session->m_active = true;
       HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
     }
-    if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET) {
+    if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE ||
+         (t_state.hdr_info.request_content_length == 0 &&
+          t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
+
       // Enable further IO to watch for client aborts
       ua_entry->read_vio->reenable();
     } else {
@@ -1888,9 +1891,9 @@ HttpSM::state_send_server_request_header(int event, void *data)
     server_entry->write_buffer = NULL;
     method = t_state.hdr_info.server_request.method_get_wksidx();
     if (!t_state.api_server_request_body_set &&
-        (method != HTTP_WKSIDX_GET) &&
-        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUT ||
-         (t_state.hdr_info.extension_method && t_state.hdr_info.request_content_length > 0))) {
+         method != HTTP_WKSIDX_TRACE &&
+         (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
@@ -4900,7 +4903,9 @@ HttpSM::handle_http_server_open()
   }
 
   int method = t_state.hdr_info.server_request.method_get_wksidx();
-  if ((method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUT) && do_post_transform_open()) {
+  if (method != HTTP_WKSIDX_TRACE &&
+      (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
+       do_post_transform_open()) {
     do_setup_post_tunnel(HTTP_TRANSFORM_VC);
   } else {
     setup_server_send_request_api();
