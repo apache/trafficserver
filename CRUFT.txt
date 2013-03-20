@@ -1,0 +1,27 @@
+CRUFT
+*****
+
+This file is designated for tracking cruft in our code. That is, code paths
+or ugly hacks that were put into place for a reason: Getting stuff to work
+but which could either been done better, or which time will obsolete.
+
+Examples are crude workarounds for broken compilers, libraries, OSes, or
+hardware, or or massive ``#ifdef`` clusters, that are better abstracted away
+into autoconf and convenience wrappers.
+
+If you are new to the project this is a good place to look for explanations
+of why things are the way they are, or help us fix things and make the code
+easier to read and maintain.
+
+
+Store.cc
+========
+``iocore/cache/Store.cc`` contains three different ``#ifdef`` clusters with
+near identical code. Often you will read the same confused comment in three
+places, see for instance: http://issues.apache.org/jira/browse/TS-1707
+
+Web2
+====
+``mgmt/web2`` is very old, very broken, very deeply infested code that needs
+to be removed as it is no longer appropriate, or functional.
+Please see https://issues.apache.org/jira/browse/TS-641 for further refernece.
