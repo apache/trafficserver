@@ -5254,7 +5254,7 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
     return MISSING_HOST_FIELD;
   }
 
-  if (hostname_len >= MAXDNAME || hostname_len <= 0) {
+  if (hostname_len >= MAXDNAME || hostname_len <= 0 || memchr(hostname, '\0', hostname_len)) {
     return BAD_HTTP_HEADER_SYNTAX;
   }
 
