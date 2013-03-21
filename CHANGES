@@ -2,7 +2,7 @@
   Changes with Apache Traffic Server 3.3.2
 
 
-  *) [TS-1735] Remove dead code that invokes missing vmap_config tool
+  *) [TS-1734] Remove dead code that invokes missing vmap_config tool
    Author: John Kew <john.v.kew.ii@gmail.com>
 
   *) [TS-1660] Host field should not has c style terminator.
