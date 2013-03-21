@@ -9,6 +9,8 @@
 
 .deps
 
+.dirstamp
+
 !doc/Doxyfile.in
 
 /aclocal.m4
@@ -113,7 +115,6 @@ lib/tsconfig/test-tsconfig
 
 tools/http_load/http_load
 tools/jtest/jtest
-tools/jtest/.dirstamp
 
 BUILDS
 DEBUG
