@@ -40,7 +40,7 @@ AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman subdir-objects 1.9.2])
 AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
