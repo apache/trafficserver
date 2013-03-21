@@ -76,10 +76,6 @@ typedef int64_t ink_hrtime;
 
 #define MAX_URL_LEN 1024
 
-#if defined(freebsd)
-extern "C" int gethostname(char *name, int namelen);
-#endif
-
 //
 // Compilation Options
 //
