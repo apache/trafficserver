@@ -61,57 +61,6 @@ vmapEnableHandler(const char *tok, RecDataT data_type, RecData data, void *cooki
 }                               /* End vmapEnableHandler */
 
 
-/*
- * init()
- *   The code is used to be part of the VMap::VMap().
- *   Initialize the location of vaddrs.config.
- */
-void
-VMap::init()
-{
-//    int id;
-//    bool found;
-//    RecordType type;
-
-  if (enabled) {
-    ink_strlcpy(vip_conf, "vip_config", sizeof(vip_conf));
-    snprintf(absolute_vipconf_binary, sizeof(absolute_vipconf_binary), "%s/%s", lmgmt->bin_path, vip_conf);
-
-    /* Make sure vip_config is setuid root */
-    int vip_config_fd = open(absolute_vipconf_binary, O_RDONLY);
-    char msg_buffer[1024];
-
-    if (vip_config_fd < 0) {
-      snprintf(msg_buffer, sizeof(msg_buffer), "unable to open %s", absolute_vipconf_binary);
-      lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR, msg_buffer);
-    } else {
-      struct stat stat_buf;
-
-      int err = fstat(vip_config_fd, &stat_buf);
-      if (err < 0) {
-        snprintf(msg_buffer, sizeof(msg_buffer), "[VMap::VMap] fstat of %s failed, see syslog for more info.",
-                 absolute_vipconf_binary);
-        mgmt_elog(msg_buffer);
-        snprintf(msg_buffer, sizeof(msg_buffer), "fstat of %s failed, see syslog for more info.",
-                 absolute_vipconf_binary);
-        lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR, msg_buffer);
-      } else if (stat_buf.st_uid != 0 || !(stat_buf.st_mode & C_ISUID)) {
-        snprintf(msg_buffer, sizeof(msg_buffer),
-                 "[VMap::VMap] %s is not setuid root, manager will be unable to enable virtual ip addresses.",
-                 absolute_vipconf_binary);
-        mgmt_elog(msg_buffer);
-        snprintf(msg_buffer, sizeof(msg_buffer),
-                 "%s is not setuid root, traffic manager will be unable to enable virtual ip addresses.",
-                 absolute_vipconf_binary);
-        lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR, msg_buffer);
-      }
-      close(vip_config_fd);
-    }
-    enabled_init = true;
-  }
-}
-
-
 VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
 {
   bool found;
@@ -133,13 +82,9 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
 
 
   this->interface = ats_strdup(interface);
-  enabled_init = false;         // don't whether enabled, but definitely no init'd
   turning_off = false;          // we are not turning off VIP
 
   enabled = REC_readInteger("proxy.config.vmap.enabled", &found);
-
-  init();                       // Initialize VIP
-
   /*
    * Perpetuating a hack for the cluster interface. Here I want to loop
    * at startup(before any virtual ips have been brought up) and get the real
@@ -309,11 +254,6 @@ VMap::lt_runGambit()
   if (num_addrs == 0) {
     return;
   }
-  // Have we initialized yet? If not, VIP is turned from OFF to ON since last restart
-  // Let's initialize it
-  if (!enabled_init) {
-    this->init();
-  }
 
   ink_mutex_acquire(mutex);
   if (lmgmt->ccom->isMaster()) {        /* Are we the cluster master? */
@@ -327,10 +267,7 @@ VMap::lt_runGambit()
       }
     }
 
-    if (i == num_addrs) {       /* So, all addrs are mapped. Check if rebalance is needed */
-      rl_rebalance();
-    } else {                    /* Got one to map, find a candidate and map it */
-
+    if (i != num_addrs) {                /* Got one to map, find a candidate and map it */
       real_addr.s_addr = lmgmt->ccom->lowestPeer(&no);
       if (no != -1) {           /* Make sure we have peers to map interfaces to */
         init = true;
@@ -353,14 +290,10 @@ VMap::lt_runGambit()
     ink_strlcpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
 
     if ((conf_addr = rl_checkConflict(vaddr))) {
-      mgmt_log(stderr, "[VMap::lt_runGambit] Conflict w/addr: '%s'\n", vaddr);
+      mgmt_log(stderr, "[VMap::lt_runGambit] Conflict w/addr: '%s' - Unable to use virtual address.\n", vaddr);
+      ats_free(conf_addr);
       break;
     }
-  }
-
-  if (conf_addr) {              /* If there was a conflict, resolve it */
-    rl_resolveConflict(vaddr, conf_addr);
-    ats_free(conf_addr);
   }
 
   ink_mutex_release(mutex);
@@ -561,7 +494,8 @@ VMap::rl_remote_unmap(char *virt_ip, char *real_ip)
 /*
  * rl_map(...)
  *   Function maps a virt_ip to a real_ip, if real_ip is NULL it maps it
- * to the local node itself(actually bringing the interface up as well).
+ *   to the local node itself. Otherwise it means another node within
+ *   the multicast cluster has it.
  */
 bool
 VMap::rl_map(char *virt_ip, char *real_ip)
@@ -588,13 +522,8 @@ VMap::rl_map(char *virt_ip, char *real_ip)
   *entry = true;
 
   if (!real_ip) {
+    mgmt_elog("[VMap::rl_map] no real ip associated with virtual ip %s, mapping to local\n", buf);
     last_map_change = time(NULL);
-
-    if (!upAddr(virt_ip)) {
-      mgmt_elog(stderr, "[VMap::rl_map] upAddr failed\n");
-      ats_free(entry);
-      return false;
-    }
   }
   ink_hash_table_insert(tmp, buf, (void *) entry);
   return true;
@@ -622,10 +551,6 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
 
   if (!real_ip) {
     last_map_change = time(NULL);
-    if (!(downAddr(virt_ip))) {
-      mgmt_elog(stderr, "[VMap::rl_unmap] downAddr failed\n");
-      return false;
-    }
   }
   ink_hash_table_delete(tmp, buf);
   ats_free(hash_value);
@@ -722,29 +647,6 @@ VMap::rl_checkGlobConflict(char *virt_ip)
 
   return ret;
 }                               /* End VMap::rl_checkGlobConflict */
-
-
-/*
- * resolveConflict(...)
- *   This function is to be called after a conflict has been detected between
- * the local node and some peer. It will down the interface, pause for a bit,
- * determine who wins in the conflict and potentially attempt to bring the
- * interface up again.
- */
-void
-VMap::rl_resolveConflict(char *virt_ip, char *conf_ip)
-{
-
-  if (inet_addr(conf_ip) < our_ip) {    /* They win, bow out gracelfully */
-    rl_unmap(virt_ip);
-  } else {                      /* We win(don't gloat), down, timeout, up */
-    downAddr(virt_ip);          /* downAddr, to avoid possible re-assignment */
-    mgmt_sleep_sec(down_up_timeout);    /* FIX: SHOULD this be changed to a wait till no-ping? */
-    upAddr(virt_ip);
-  }
-  return;
-}                               /* End VMap::rl_resolveConflict */
-
 
 /*
  * remap(...)
@@ -922,203 +824,6 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
   return;
 }                               /* End VMap::constructVMapMessage */
 
-
-/*
- * rebalance()
- *   Advanced feature that initiates a re-balancing effort(if determined to be
- * necessary) of the addresses throughout the cluster.
- */
-void
-VMap::rl_rebalance()
-{
-  int naddr_low, naddr_high;
-  char low_ip[80], high_ip[80];
-  unsigned long low, high;
-  struct in_addr tmp_addr;
-
-  low = lmgmt->ccom->lowestPeer(&naddr_low);
-  high = lmgmt->ccom->highestPeer(&naddr_high);
-  tmp_addr.s_addr = high;
-  ink_strlcpy(high_ip, inet_ntoa(tmp_addr), sizeof(high_ip));
-  tmp_addr.s_addr = low;
-  ink_strlcpy(low_ip, inet_ntoa(tmp_addr), sizeof(low_ip));
-
-  if (naddr_low == -1 || naddr_high == -1) {
-    return;
-  }
-
-  if (naddr_low > num_interfaces || (naddr_low == num_interfaces && our_ip < low)) {
-    naddr_low = num_interfaces;
-    tmp_addr.s_addr = our_ip;
-    low = our_ip;
-    ink_strlcpy(low_ip, inet_ntoa(tmp_addr), sizeof(low_ip));
-  } else if (naddr_high<num_interfaces || (naddr_high == num_interfaces && our_ip> high)) {
-    naddr_high = num_interfaces;
-    tmp_addr.s_addr = our_ip;
-    high = our_ip;
-    ink_strlcpy(high_ip, inet_ntoa(tmp_addr), sizeof(high_ip));
-  }
-#ifdef DEBUG_VMAP
-  Debug("vmap",
-        "[VMap::rl_rebalance] Checking balance of virtual map low: %s, %d high: %s, %d\n",
-        low_ip, naddr_low, high_ip, naddr_high);
-#endif /* DEBUG_VMAP */
-
-  if (naddr_low < naddr_high && high != low && (naddr_high - naddr_low) != 1) {
-    InkHashTableEntry *entry;
-    InkHashTableIteratorState iterator_state;
-
-    mgmt_log(stderr, "[VMap::rl_rebalance] Attempting to rebalance virtual map\n");
-    if (high == our_ip) {
-      char *key, tmp_key[80];
-
-      entry = ink_hash_table_iterator_first(our_map, &iterator_state);
-      key = (char *) ink_hash_table_entry_key(ext_map, entry);
-      ink_strlcpy(tmp_key, key, sizeof(tmp_key));
-
-      mgmt_log(stderr, "[VMap::rl_rebalance] Remapping vaddr: '%s' from: '%s' to: '%s'\n", key, high_ip, low_ip);
-      if (!rl_remap(key, high_ip, low_ip, naddr_high, naddr_low)) {
-        mgmt_elog(stderr, "[VMap::rl_rebalance] Remap failed vaddr: '%s' from: '%s' to: '%s'\n", key, high_ip, low_ip);
-      }
-    } else {
-      for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state);
-           entry != NULL; entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
-        char *key = (char *) ink_hash_table_entry_key(ext_map, entry);
-
-        if (strstr(key, high_ip)) {
-          char vip[80], buf[80];
-          //coverity[secure_coding]
-          if (sscanf(key, "%79s %79s", vip, buf) != 2) {
-            mgmt_fatal("[VMap::rl_rebalance] Corrupt VMap entry('%s'), bailing\n", key);
-          }
-
-          mgmt_log(stderr, "[VMap::rl_rebalance] Remapping vaddr: '%s' from: '%s' to: '%s'\n", vip, high_ip, low_ip);
-          if (!rl_remap(vip, high_ip, low_ip, naddr_high, naddr_low)) {
-            mgmt_elog(stderr, "[VMap::lt_rebalance] Failed vaddr: '%s' from: '%s' to: '%s'\n", vip, high_ip, low_ip);
-          }
-          break;
-        }
-      }
-    }
-  }
-  return;
-}                               /* End VMap::rl_rebalance */
-
-
-bool
-VMap::upAddr(char *virt_ip)
-{
-  int status;
-  pid_t pid;
-  InkHashTableValue hash_value;
-
-  if (!enabled) {
-    mgmt_elog(stderr, "[VMap::upAddr] Called for '%s' though virtual addressing disabled\n", virt_ip);
-    return false;
-  }
-  mgmt_log(stderr, "[VMap::upAddr] Bringing up addr: '%s'\n", virt_ip);
-
-  if (ink_hash_table_lookup(id_map, (InkHashTableKey) virt_ip, &hash_value) == 0) {
-    mgmt_elog(stderr, "[VMap::upAddr] Called for '%s' which is not in our vaddr.config\n", virt_ip);
-    return false;
-  }
-#ifdef POSIX_THREAD
-  if ((pid = fork()) < 0)
-#else
-  if ((pid = fork1()) < 0)
-#endif
-  {
-    mgmt_elog(stderr, "[VMap::upAddr] Unable to fork1 process\n");
-    return false;
-  } else if (pid > 0) {         /* Parent */
-    waitpid(pid, &status, 0);
-
-    if (status != 0) {
-      return false;
-    }
-    num_interfaces++;
-    return true;
-  } else {
-    int res = 1;
-    char *interface, *sub_id;
-
-    interface = ((VIPInfo *) hash_value)->interface;
-    sub_id = ((VIPInfo *) hash_value)->sub_interface_id;
-
-#if defined(linux) || defined(freebsd) || defined(solaris) || defined(darwin)
-    res = execl(absolute_vipconf_binary, vip_conf, "up", virt_ip, "/sbin/ifconfig", interface, sub_id, (char*) NULL);
-#else
-    res = execl(absolute_vipconf_binary, vip_conf, "up", virt_ip, "/usr/sbin/ifconfig", interface, sub_id, NULL);
-#endif
-    _exit(res);
-  }
-
-
-  num_interfaces++;
-  ink_assert(num_interfaces > 0 && num_interfaces <= num_addrs);
-
-  return true;
-}                               /* End VMap::upAddr */
-
-
-bool
-VMap::downAddr(char *virt_ip)
-{
-  if (!enabled && !turning_off) {
-    mgmt_elog(stderr, "[VMap::downAddr] Called for '%s' though virtual addressing disabled\n", virt_ip);
-    return false;
-  }
-  mgmt_log(stderr, "[VMap::downAddr] Bringing down addr: '%s'\n", virt_ip);
-
-
-  int status;
-  pid_t pid;
-  InkHashTableValue hash_value;
-
-  if (ink_hash_table_lookup(id_map, (InkHashTableKey) virt_ip, &hash_value) == 0) {
-    mgmt_elog(stderr, "[VMap::downAddr] Called for '%s' which is not in our vaddr.config\n", virt_ip);
-    return false;
-  }
-#ifdef POSIX_THREAD
-  if ((pid = fork()) < 0)
-#else
-  if ((pid = fork1()) < 0)
-#endif
-  {
-    mgmt_elog(stderr, "[VMap::downAddr] Unable to fork1 process\n");
-    return false;
-  } else if (pid > 0) {         /* Parent */
-    waitpid(pid, &status, 0);
-    if (status != 0) {
-      return false;
-    }
-    num_interfaces--;
-    return true;
-  } else {
-    int res = 1;
-    char *interface, *sub_id;
-
-    interface = ((VIPInfo *) hash_value)->interface;
-    sub_id = ((VIPInfo *) hash_value)->sub_interface_id;
-
-#if defined(linux)|| defined(freebsd) || defined(solaris) || defined(darwin)
-    res = execl(absolute_vipconf_binary, vip_conf, "down", virt_ip, "/sbin/ifconfig", interface, sub_id, (char*)NULL);
-#else
-    res = execl(absolute_vipconf_binary, vip_conf, "down", virt_ip, "/usr/sbin/ifconfig", interface, sub_id, NULL);
-#endif
-    _exit(res);
-  }
-
-  num_interfaces--;
-
-  // whenever the manager starts up, it tries to remove all vip's
-  // and at that time num_interfaces was 0
-  ink_assert(num_interfaces >= 0 && num_interfaces < num_addrs);
-
-  return true;
-}                               /* End VMap::downAddr */
-
-
 void
 VMap::rl_downAddrs()
 {
@@ -1136,21 +841,9 @@ VMap::rl_downAddrs()
 void
 VMap::downAddrs()
 {
-
-
-  // Now for WIN32, we have to find the nte_context for the virtual ip address
-  // if its still bound to the machine
-  // BUGBUG:
-  // The way we are doing it is totally undocumented and can change...
-
   ink_mutex_acquire(mutex);
   for (int i = 0; i < num_addrs; i++) {
-    char str_addr[1024];
-    struct in_addr address;
-    address.s_addr = addr_list[i];
-    ink_strlcpy(str_addr, inet_ntoa(address), sizeof(str_addr));
-    downAddr(str_addr);
-    ink_hash_table_delete(our_map, str_addr);   /* Make sure removed */
+    removeAddressMapping(i);
   }
 
   // Reset On->Off flag
@@ -1183,14 +876,22 @@ VMap::downOurAddrs()
 
 
     for (int i = 0; i < num_addrs; i++) {
-      char str_addr[1024];
-      struct in_addr address;
-      address.s_addr = addr_list[i];
-      ink_strlcpy(str_addr, inet_ntoa(address), sizeof(str_addr));
-      downAddr(str_addr);
-      ink_hash_table_delete(our_map, str_addr); /* Make sure removed */
+      removeAddressMapping(i);
     }
   }
   num_interfaces = 0;
   ink_mutex_release(mutex);
 }                               /* End VMap::downOurAddrs */
+
+/*
+ * Remove a virtual address from our map
+ */
+void
+VMap::removeAddressMapping(int i)
+{
+  char str_addr[1024];
+  struct in_addr address;
+  address.s_addr = addr_list[i];
+  ink_strlcpy(str_addr, inet_ntoa(address), sizeof(str_addr));
+  ink_hash_table_delete(our_map, str_addr); /* Make sure removed */
+}
