@@ -752,24 +752,6 @@ main(int argc, char **argv)
   Debug("lm", "Created Web Agent thread (%"  PRId64 ")", (int64_t)webThrId);
   lmgmt->listenForProxy();
 
-  /* Check the permissions on vip_config */
-  if (lmgmt->virt_map->enabled) {
-    char absolute_vipconf_binary[1024];
-    struct stat buf;
-
-    snprintf(absolute_vipconf_binary, sizeof(absolute_vipconf_binary), "%s/vip_config", lmgmt->bin_path);
-    if (stat(absolute_vipconf_binary, &buf) < 0) {
-      mgmt_elog(stderr, "[main] Unable to stat vip_config for proper permissions\n");
-    } else if (!((buf.st_mode & S_ISUID) &&
-                 (buf.st_mode & S_IRWXU) &&
-                 (buf.st_mode & S_IRGRP) &&
-                 (buf.st_mode & S_IXGRP) && (buf.st_mode & S_IROTH) && (buf.st_mode & S_IXOTH))) {
-      lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
-                                       "Virtual IP Addressing enabled, but improper permissions on '/inktomi/bin/vip_config'"
-                                       "[requires: setuid root and at least a+rx]\n");
-    }
-  }
-
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 

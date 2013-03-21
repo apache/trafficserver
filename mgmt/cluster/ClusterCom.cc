@@ -63,16 +63,16 @@ drainIncomingChannel(void *arg)
   struct sockaddr_in cli_addr;
 
   // Fix for INKqa07688: There was a problem at Genuity where if you
-  // pulled out the cable on the cluser interface (or just ifconfig'd
-  // down/up the cluster interface), the fd assocated with that
-  // inteface would somehow get into a bad state... and the multicast
+  // pulled out the cable on the cluster interface (or just ifconfig'd
+  // down/up the cluster interface), the fd associated with that
+  // interface would somehow get into a bad state... and the multicast
   // packets from other nodes wouldn't be received anymore.
   //
   // The fix for the problem was to close() and re-open the multicast
-  // socket if we detected that no activity has occured for 30
+  // socket if we detected that no activity has occurred for 30
   // seconds.  30 seconds was based on the default peer_timeout
   // (proxy.config.cluster.peer_timeout) value.  davey showed that
-  // this value worked out well experiementally (though more testing
+  // this value worked out well experimentally (though more testing
   // and experimentation would be beneficial).
   //
   // traffic_manager running w/ no cop: In this case, our select()
@@ -1240,7 +1240,7 @@ ClusterCom::handleMultiCastAlarmPacket(char *last, char *ip)
 
 /*
  * handleMultiCastVMapPacket(...)
- *   Handles incoming reports from peers about which virtua interfaces
+ *   Handles incoming reports from peers about which virtual interfaces
  * they are servicing. This then updates the VMap class to indicate who
  * is holding what.
  */

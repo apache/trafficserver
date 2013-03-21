@@ -65,19 +65,13 @@ public:
   VMap(char *interface, unsigned long ip, ink_mutex * m);
    ~VMap();
 
-  void init();                  /* VIP is ON, initialize it */
-
-  bool upAddr(char *virt_ip);
-  bool downAddr(char *virt_ip);
   void downAddrs();
   void downOurAddrs();
   void rl_downAddrs();
-
+  void removeAddressMapping(int i);
   void lt_runGambit();
   void lt_readAListFile(char *data);
   void lt_constructVMapMessage(char *ip, char *message, int max);
-
-  void rl_rebalance();
 
   bool rl_remote_map(char *virt_ip, char *real_ip);
   bool rl_remote_unmap(char *virt_ip, char *real_ip);
@@ -88,7 +82,6 @@ public:
 
   char *rl_checkConflict(char *virt_ip);
   bool rl_checkGlobConflict(char *virt_ip);
-  void rl_resolveConflict(char *virt_ip, char *conf_ip);
 
   int rl_boundAddr(char *virt_ip);
   unsigned long rl_boundTo(char *virt_ip);
@@ -99,7 +92,6 @@ public:
   char absolute_vipconf_binary[PATH_NAME_MAX];
 
   int enabled;
-  bool enabled_init;            /* have we initialized VIP? Call when VIP is turned on */
   bool turning_off;             /* are we turning off VIP but haven't down'd the addr? */
   /* map_init has never been used, remove it to avoid coverity complain */
   int map_change_thresh;
@@ -116,7 +108,10 @@ public:
   unsigned long our_ip;
 
   ink_mutex *mutex;
+  // Map of virtual ip addresses assigned to the local node
   InkHashTable *our_map;
+  // Map of virtual ip addresses assigned to other nodes; as indicated through multicast messages; used
+  // to detect conflicts
   InkHashTable *ext_map;
   InkHashTable *id_map;
   InkHashTable *interface_realip_map;
