@@ -963,6 +963,20 @@ AC_CHECK_LIB([pthread],[pthread_exit],[AC_SUBST([LIBTHREAD],["-lpthread"])])
 AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
 AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 
+# Test for ncurses. We need to turn off -Werror because the C code in the
+# ncurses compile tests does not generate unused variable warnings.
+__saved_CFLAGS="$CFLAGS"
+TS_REMOVEFROM(CFLAGS, -Werror)
+AX_WITH_CURSES
+CFLAGS="$__saved_CFLAGS"
+
+AX_LIB_CURL([7.19], [
+    AM_CONDITIONAL([BUILD_TSTOP], [test "x$ax_cv_curses" = "xyes"])
+  ], [
+    AM_CONDITIONAL([BUILD_TSTOP], [false])
+  ]
+)
+
 #
 # The header_rewrite module depends on boost.
 AX_BOOST_BASE([1.50],

@@ -21,15 +21,16 @@
     limitations under the License.
 */
 
+#define __STDC_FORMAT_MACROS 1
+
 #include <curl/curl.h>
 #include <map>
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-//#include <ts/ts.h>
 #include <inttypes.h>
-#include <ts/mgmtapi.h>
+#include "mgmtapi.h"
 
 using namespace std;
 
@@ -111,7 +112,7 @@ public:
     lookup_table.insert(make_pair("ram_ratio", LookupItem("Ram Hit", "ram_hit", "ram_hit_miss", 4)));
     lookup_table.insert(make_pair("dns_ratio", LookupItem("DNS Hit", "dns_hits", "dns_lookups", 4)));
 
-    // percetage of requests
+    // percentage of requests
     lookup_table.insert(make_pair("fresh", LookupItem("Fresh", "proxy.process.http.transaction_counts.hit_fresh", 5)));
     lookup_table.insert(make_pair("reval", LookupItem("Revalidate", "proxy.process.http.transaction_counts.hit_revalidated", 5)));
     lookup_table.insert(make_pair("cold", LookupItem("Cold", "proxy.process.http.transaction_counts.miss_cold", 5)));
@@ -169,7 +170,7 @@ public:
   void getStats() {
 
     if (_host == "") {
-      int64_t value;
+      int64_t value = 0;
       if (_old_stats != NULL) {
         delete _old_stats;
         _old_stats = NULL;
@@ -195,7 +196,7 @@ public:
             assert(TSRecordGetInt(item.name, &value) == TS_ERR_OKAY);
             string key = item.name;
             char buffer[32];
-            sprintf(buffer, "%lld", value);
+            sprintf(buffer, "%" PRId64, value);
             string foo = buffer;
             (*_stats)[key] = foo;
           }
@@ -324,7 +325,7 @@ public:
     }
 
     if (type == 5) {
-      double denominator;
+      double denominator = 0;
       getStat("client_req", denominator);
       if (denominator == 0)
         value = 0;
