@@ -70,7 +70,7 @@ libmgmt_p_a_SOURCES = \
   RecordsConfig.h
 
 traffic_manager_SOURCES = \
-  $(top_srcdir)/proxy/Error.cc \
+  ../proxy/Error.cc \
   AddConfigFilesHere.cc \
   Alarms.cc \
   Alarms.h \
