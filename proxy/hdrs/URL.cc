@@ -1066,7 +1066,10 @@ url_parse_scheme(HdrHeap * heap, URLImpl * url, const char **start, const char *
     if ((end - cur >= 5) && (((cur[0] ^ 'h') | (cur[1] ^ 't') | (cur[2] ^ 't') | (cur[3] ^ 'p') | (cur[4] ^ ':')) == 0)) {
       scheme_end = cur + 4;                   // point to colon
       url_scheme_set(heap, url, scheme_start, URL_WKSIDX_HTTP, 4, copy_strings_p);
-    } else { // some other scheme, try to parse it.
+    } else if ('/' != *cur) {
+      // For forward transparent mode, the URL for the method can just be a path,
+      // so don't scan that for a scheme, as we could find a false positive if there
+      // is a URL in the parameters (which is legal).
       while (':' != *cur && ++cur < end)
         ;
       if (cur < end) { // found a colon

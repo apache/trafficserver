@@ -144,6 +144,8 @@ int HTTP_LEN_PUBLIC;
 int HTTP_LEN_S_MAXAGE;
 int HTTP_LEN_NEED_REVALIDATE_ONCE;
 
+Arena* const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena*>(1);
+
 /***********************************************************************
  *                                                                     *
  *                 U T I L I T Y    R O U T I N E S                    *
@@ -1510,6 +1512,11 @@ HTTPHdr::set_url_target_from_host_field(URL* url) {
 // need to either keep two versions of the URL (pristine
 // and effective) or URl would have to provide access to
 // the URL printer.
+
+// The use of a magic value for Arena to indicate the internal heap is
+// even uglier but it's less so than duplicating this entire method to
+// change that one thing.
+
 char*
 HTTPHdr::url_string_get(Arena* arena, int* length) {
   char *zret = 0;
@@ -1542,7 +1549,11 @@ HTTPHdr::url_string_get(Arena* arena, int* length) {
       should_reset_port = true;
     }
 
-    zret = m_url_cached.string_get(arena, length);
+    zret = (arena == USE_HDR_HEAP_MAGIC)
+      ? m_url_cached.string_get_ref(length)
+      : m_url_cached.string_get(arena, length)
+      ;
+
     if (should_reset_host) { ui->m_ptr_host = 0; ui->m_len_host = 0; }
     if (should_reset_port) { ui->m_ptr_port = 0; ui->m_len_port = 0; }
  }

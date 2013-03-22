@@ -567,10 +567,22 @@ public:
     Arena* arena = 0, ///< Arena to use, or @c malloc if NULL.
     int* length = 0 ///< Store string length here.
   );
+  /** Get a string with the effective URL in it.
+      This is automatically allocated if needed in the request heap.
 
-  void url_set(URL *url);
-  void url_set_as_server_url(URL *url);
-  void url_set(const char *str, int length);
+      @see url_string_get
+   */
+  char* url_string_get_ref(
+    int* length = 0 ///< Store string length here.
+  );
+
+  /** Get the URL path.
+      This is a reference, not allocated.
+      @return A pointer to the path or @c NULL if there is no valid URL.
+  */
+  char const* path_get(
+		       int* length ///< Storage for path length.
+		       );
 
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
@@ -586,6 +598,17 @@ public:
       @return The canonicalized target port.
   */
   int port_get();
+
+  /** Get the URL scheme.
+      This is a reference, not allocated.
+      @return A pointer to the scheme or @c NULL if there is no valid URL.
+  */
+  char const* scheme_get(
+		       int* length ///< Storage for path length.
+		       );
+  void url_set(URL *url);
+  void url_set_as_server_url(URL *url);
+  void url_set(const char *str, int length);
 
   /// Check location of target host.
   /// @return @c true if the host was in the URL, @c false otherwise.
@@ -635,6 +658,8 @@ protected:
       @ _fill_target_cache @b always does a cache fill.
   */
   void _test_and_fill_target_cache() const;
+
+  static Arena* const USE_HDR_HEAP_MAGIC;
 
 private:
   // No gratuitous copies!
@@ -1216,6 +1241,26 @@ HTTPHdr::is_pragma_no_cache_set()
 {
   ink_debug_assert(valid());
   return (get_cooked_pragma_no_cache());
+}
+
+inline char*
+HTTPHdr::url_string_get_ref(int* length)
+{
+  return this->url_string_get(USE_HDR_HEAP_MAGIC, length);
+}
+
+inline char const*
+HTTPHdr::path_get(int* length)
+{
+  URL* url = this->url_get();
+  return url ? url->path_get(length) : 0;
+}
+
+inline char const*
+HTTPHdr::scheme_get(int* length)
+{
+  URL* url = this->url_get();
+  return url ? url->scheme_get(length) : 0;
 }
 
 /*-------------------------------------------------------------------------
