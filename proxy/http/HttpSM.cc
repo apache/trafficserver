@@ -728,9 +728,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
   if (event == VC_EVENT_READ_READY &&
       state == PARSE_ERROR &&
-      is_transparent_passthrough_allowed()) {
+      is_transparent_passthrough_allowed() &&
+      ua_raw_buffer_reader != NULL) {
 
-      ink_assert(ua_raw_buffer_reader != NULL);
       DebugSM("http", "[%" PRId64 "] first request on connection failed parsing, switching to passthrough.", sm_id);
 
       t_state.transparent_passthrough = true;
@@ -773,6 +773,14 @@ HttpSM::state_read_client_request_header(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     } else {
+      if (is_transparent_passthrough_allowed() &&
+          ua_raw_buffer_reader != NULL &&
+          ua_raw_buffer_reader->get_current_block()->write_avail() <= 0) {
+        //Disable passthrough regardless of eventual parsing failure or success -- otherwise
+        //we either have to consume some data or risk blocking the writer.
+        ua_raw_buffer_reader->dealloc();
+        ua_raw_buffer_reader = NULL;
+      }
       ua_entry->read_vio->reenable();
       return VC_EVENT_CONT;
     }
