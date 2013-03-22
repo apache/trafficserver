@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1566] dynamic update for string vars does not work
+   Author: Aidan McGurn <aidan.mcgurn@openwave.com>
+
   *) [TS-1708] Using tr-pass port option causes requests with large headers to hang
 
   *) [TS-1734] Remove dead code that invokes missing vmap_config tool

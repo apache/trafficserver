@@ -143,29 +143,29 @@ link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
 }
 
 // mimic Config.cc::config_string_alloc_cb
+// cookie e.g. is the DEFAULT_xxx_str value which this functiion keeps up to date with
+// the latest default applied during a config update from records.config
 static int
 link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
 
-  RecString _ss = (RecString) cookie;
-  RecString _new_value = 0;
+  RecString _ss = data.rec_string;
+  RecString _new_value = NULL;
 
-  int len = -1;
   if (_ss) {
-    len = strlen(_ss);
-    _new_value = (RecString)ats_malloc(len + 1);
-    memcpy(_new_value, _ss, len + 1);
+    _new_value = ats_strdup(_ss);
   }
 
-  RecString _temp2 = data.rec_string;
-  data.rec_string = _new_value;
+  // set new string for DEFAULT_xxx_str tp point to
+  RecString _temp2 = *((RecString *)cookie);
+  *((RecString *)cookie) = _new_value;
+  // free previous string DEFAULT_xxx_str points to
   ats_free(_temp2);
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // RecCoreInit
