@@ -1233,6 +1233,8 @@ esac
 
 AC_SUBST(LUA_LUAJIT_LDFLAGS)
 
+# We should be able to build http_load if epoll(2) is available.
+AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
