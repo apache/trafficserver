@@ -52,8 +52,7 @@
 #include <ts/ts.h>
 
 #include "thread.h"
-
-#define MIN(x,y) ((x < y) ? x :y)
+#include "ink_defs.h"
 
 #define DBG_TAG "xpsi"
 

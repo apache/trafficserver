@@ -53,16 +53,10 @@
 #include <functional>
 #include <fcntl.h>
 
-#if (__GNUC__ >= 3)
 #define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
 #include <ext/hash_map>
 #include <ext/hash_set>
 #undef _BACKWARD_BACKWARD_WARNING_H
-#else
-#include <hash_map>
-#include <hash_set>
-#include <map>
-#endif
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600

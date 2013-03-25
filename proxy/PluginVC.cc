@@ -77,11 +77,6 @@
 #include "Regression.h"
 
 #define PVC_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
-#undef MIN
-#define MIN(x,y) (((x) <= (y)) ? (x) : (y))
-#undef MAX
-#define MAX(x,y) (((x) >= (y)) ? (x) : (y))
-
 #define PVC_DEFAULT_MAX_BYTES 32768
 #define MIN_BLOCK_TRANSFER_BYTES 128
 

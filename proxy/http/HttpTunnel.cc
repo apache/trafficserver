@@ -230,11 +230,6 @@ ChunkedHandler::read_size()
 //   Use block reference method when there is a sufficient
 //   size to move.  Otherwise, uses memcpy method
 //
-
-// We redefine MIN here, with our own funky implementation.  TODO: Do we need this ?
-#undef MIN
-#define MIN(x,y) ((x) <= (y)) ? (x) : (y);
-
 int64_t
 ChunkedHandler::transfer_bytes()
 {
@@ -444,8 +439,6 @@ bool ChunkedHandler::generate_chunked_content()
   }
   return false;
 }
-
-#undef MIN
 
 HttpTunnelProducer::HttpTunnelProducer()
   : consumer_list(), self_consumer(NULL),

@@ -42,9 +42,6 @@
 const int MUX_LOCK_RETRY = HRTIME_MSECONDS(10);
 const int MUX_MAX_DATA_SIZE = USHRT_MAX - sizeof(MuxMessage);
 
-#define MIN(x,y) (x <= y) ? x : y;
-#define MAX(x,y) (x >= y) ? x : y;
-
 #define MUX_MAX_BYTES_SLOT 32768
 #define MUX_MAX_BYTES_BANK 32768
 #define MUX_SMALL_BLOCK_SIZE 256
