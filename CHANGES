@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1766] integrate AIO test into the autotools test suite
+
   *) [TS-1753] Add remap support to the cacheurl plugin
    Author: Mark Harrison <mark@mivok.net>
 

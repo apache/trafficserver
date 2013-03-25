@@ -310,8 +310,8 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr * mh)
     signalMgmtEntity(MGMT_EVENT_ROLL_LOG_FILES);
     break;
   case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
-    if (data_raw != NULL && data_raw[0] != '\0') {
-      global_config_cbs->invoke(data_raw);
+    if (data_raw != NULL && data_raw[0] != '\0' && this->cbtable) {
+      this->cbtable->invoke(data_raw);
     }
     break;
   case MGMT_EVENT_HTTP_CLUSTER_DELTA:

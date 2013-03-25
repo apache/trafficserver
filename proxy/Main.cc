@@ -86,6 +86,7 @@ extern "C" int plock(int);
 #include "RemapProcessor.h"
 #include "XmlUtils.h"
 #include "I_Tasks.h"
+#include "InkAPIInternal.h"
 
 #include <ts/ink_cap.h>
 
@@ -1735,6 +1736,7 @@ main(int argc, char **argv)
 #else
     api_init();                 // we still need to initialize some of the data structure other module needs.
     // i.e. http_global_hooks
+    pmgmt->registerPluginCallbacks(global_config_cbs);
 #endif
 
     // "Task" processor, possibly with its own set of task threads

@@ -42,17 +42,18 @@
 
 #include "ink_apidefs.h"
 
+class ConfigUpdateCbTable;
+
 void *startProcessManager(void *arg);
 class ProcessManager:public BaseManager
 {
 
 public:
   ProcessManager(bool rlm, char *mpath);
-   ~ProcessManager()
+  ~ProcessManager()
   {
-      close_socket(local_manager_sockfd);
-    while (!queue_is_empty(mgmt_signal_queue))
-    {
+    close_socket(local_manager_sockfd);
+    while (!queue_is_empty(mgmt_signal_queue)) {
       char *sig = (char *) dequeue(mgmt_signal_queue);
       ats_free(sig);
     }
@@ -81,6 +82,10 @@ public:
   bool processEventQueue();
   bool processSignalQueue();
 
+  void registerPluginCallbacks(ConfigUpdateCbTable * _cbtable) {
+    cbtable = _cbtable;
+  }
+
   bool require_lm;
   time_t timeout;
   char pserver_path[1024];
@@ -93,11 +98,7 @@ public:
   int local_manager_sockfd;
 
 private:
-
-  /*
-   * You should not be concerned what is under the covers.
-   */
-
+  ConfigUpdateCbTable * cbtable;
 };                              /* End class ProcessManager */
 
 #ifndef _PROCESS_MANAGER
