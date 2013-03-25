@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1754] Remove unecessary wWarnings from stats evaluation.
+   Author: Yunkai Zhang.
+
   *) [TS-1724] Add tool to compare records.config files to contrib
    Author: Mark Harrison <mark@mivok.net>
 
