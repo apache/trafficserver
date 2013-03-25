@@ -98,7 +98,7 @@ build() {
 }
 
 regress() {
-  ( cd $OBJROOT && $MAKE check )
+  ( cd $OBJROOT && $MAKE check ) && \
   $DSTROOT/bin/traffic_server -R 1
 }
 

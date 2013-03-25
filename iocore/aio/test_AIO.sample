@@ -1,0 +1,2 @@
+#! /usr/bin/env sh
+exec ./test_AIO $srcdir/sample.cfg

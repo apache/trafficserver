@@ -150,7 +150,7 @@ SrcLoc():valid(false), file(NULL), func(NULL), line(0) {
 class Diags
 {
 public:
-  Diags(char *base_debug_tags, char *base_action_tags, FILE * _diags_log_fp = NULL);
+  Diags(const char *base_debug_tags, const char *base_action_tags, FILE * _diags_log_fp = NULL);
    ~Diags();
 
   FILE *diags_log_fp;
@@ -227,12 +227,12 @@ public:
 
   void dump(FILE * fp = stdout);
 
-  void activate_taglist(char *taglist, DiagsTagType mode = DiagsTagType_Debug);
+  void activate_taglist(const char *taglist, DiagsTagType mode = DiagsTagType_Debug);
 
   void deactivate_all(DiagsTagType mode = DiagsTagType_Debug);
 
-  char *base_debug_tags;        // internal copy of default debug tags
-  char *base_action_tags;       // internal copy of default action tags
+  const char *base_debug_tags;        // internal copy of default debug tags
+  const char *base_action_tags;       // internal copy of default action tags
 
 private:
   ink_mutex tag_table_lock;     // prevents reconfig/read races

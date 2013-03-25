@@ -27,13 +27,11 @@
 #ifdef LOCAL_MANAGER
 
 #include "../mgmt/Main.h"
-#define MGMT_PTR       lmgmt
 #define DIAGS_LOG_FILE "manager.log"
 
 #else
 #include "Main.h"
 #include "ProxyConfig.h"
-#define MGMT_PTR       pmgmt
 #define DIAGS_LOG_FILE "diags.log"
 
 #endif
