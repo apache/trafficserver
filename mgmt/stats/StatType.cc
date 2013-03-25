@@ -825,7 +825,6 @@ StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
 
   if (left->m_token_type == RECD_NULL
       && right->m_token_type == RECD_NULL) {
-    Warning("Both two token type are RECD_NULL.");
     return result;
   }
 
