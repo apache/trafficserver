@@ -4195,16 +4195,8 @@ HttpSM::do_cache_delete_all_alts(Continuation * cont)
   // Do not delete a non-existant object.
   ink_assert(t_state.cache_info.object_read);
 
-#ifdef DEBUG
-  INK_MD5 md5a;
-  INK_MD5 md5b;
-  t_state.hdr_info.client_request.url_get()->MD5_get(&md5a);
-  t_state.cache_info.lookup_url->MD5_get(&md5b);
-  ink_assert(md5a == md5b || t_state.txn_conf->maintain_pristine_host_hdr);
-#endif
-
   DebugSM("http_seq", "[HttpSM::do_cache_delete_all_alts] Issuing cache delete for %s",
-        t_state.cache_info.lookup_url->string_get_ref());
+          t_state.cache_info.lookup_url->string_get_ref());
 
   Action *cache_action_handle = NULL;
 
