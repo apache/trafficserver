@@ -72,7 +72,9 @@ extern "C"
 #endif
 
 #if TS_HAS_128BIT_CAS
-#define INK_QUEUE_LD(dst,src) *(__int128_t*)&(dst) = __sync_fetch_and_add((__int128_t*)&(src), 0)
+#define INK_QUEUE_LD(dst, src) do { \
+  *(__int128_t*)&(dst) = __sync_val_compare_and_swap((__int128_t*)&(src), 0, 0); \
+} while (0)
 #else
 #define INK_QUEUE_LD(dst,src) INK_QUEUE_LD64(dst,src)
 #endif
