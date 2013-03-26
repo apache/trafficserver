@@ -63,9 +63,6 @@ class UDPQueue
 public:
 
   void service(UDPNetHandler *);
-  // these are internal APIs
-  // BulkIOSend uses the BulkIO kernel module for bulk data transfer
-  void BulkIOSend();
   // In the absence of bulk-io, we are down sending packet after packet
   void SendPackets();
   void SendUDPPacket(UDPPacketInternal * p, int32_t pktLen);
@@ -378,9 +375,6 @@ struct InkSinglePipeInfo
 
 struct InkPipeInfo
 {
-  int numPipes;
-  double interfaceMbps;
-  double reliabilityMbps;
   InkSinglePipeInfo *perPipeInfo;
 };
 
