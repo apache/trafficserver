@@ -284,14 +284,6 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# Bandwith Management file
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.bandwidth_mgmt.filename", RECD_STRING, "bandwidth_mgmt_xml.config", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
-  //##############################################################################
-  //#
   //# Process Manager
   //#
   //##############################################################################
