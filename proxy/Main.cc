@@ -119,7 +119,6 @@ extern "C" int plock(int);
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG    0
 
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
-static bool xmlBandwidthSchemaRead(XMLNode * node);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
 
@@ -1522,27 +1521,17 @@ main(int argc, char **argv)
   TS_ReadConfigInteger(history_info_enabled, "proxy.config.history_info_enabled");
   TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
-  {
-    XMLDom schema;
-    //char *configPath = TS_ConfigReadString("proxy.config.config_dir");
-    char *filename = TS_ConfigReadString("proxy.config.bandwidth_mgmt.filename");
-    char bwFilename[PATH_NAME_MAX];
-
-    snprintf(bwFilename, sizeof(bwFilename), "%s/%s", system_config_directory, filename);
-    ats_free(filename);
-
-    Debug("bw-mgmt", "Looking to read: %s for bw-mgmt", bwFilename);
-    schema.LoadFile(bwFilename);
-    xmlBandwidthSchemaRead(&schema);
-  }
-
+  // This was the default when we had no bandwidth_mgmt.filename to load
+  // but I don't know for sure if we still need this.
+  G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[1]);
+  G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
+  G_inkPipeInfo.numPipes = 0;
+  G_inkPipeInfo.interfaceMbps = 0.0;
 
   init_http_header();
 
   // Sanity checks
-  //  if (!lock_process) check_for_root_uid();
   check_fd_limit();
-
   command_flag = command_flag || *command_string;
 
   // Set up store
@@ -1786,79 +1775,6 @@ main(int argc, char **argv)
 # endif
 
   this_thread()->execute();
-}
-
-
-static bool
-xmlBandwidthSchemaRead(XMLNode * node)
-{
-  XMLNode *child, *c2;
-  int i, j, k;
-  unsigned char *p;
-  char *ip;
-
-  // file doesn't exist
-  if (node->getNodeName() == NULL) {
-    // alloc 1-elt array to store stuff for best-effort traffic
-    G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[1]);
-    G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
-    G_inkPipeInfo.numPipes = 0;
-    G_inkPipeInfo.interfaceMbps = 0.0;
-    return true;
-  }
-
-  if (strcmp(node->getNodeName(), "interface") != 0) {
-    Debug("bw-mgmt", "Root node should be an interface tag!\n");
-    return false;
-  }
-  // First entry G_inkPipeInfo.perPipeInfo[0] is the one for "best-effort" traffic.
-  G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[node->getChildCount() + 1]);
-  G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
-  G_inkPipeInfo.numPipes = 0;
-  G_inkPipeInfo.reliabilityMbps = 1.0;
-  G_inkPipeInfo.interfaceMbps = 30.0;
-  for (i = 0; i < node->getChildCount(); i++) {
-    if ((child = node->getChildNode(i))) {
-      if (strcmp(child->getNodeName(), "pipe") == 0) {
-        G_inkPipeInfo.numPipes++;
-        for (k = 0; k < child->getChildCount(); k++) {
-          c2 = child->getChildNode(k);
-          for (int l = 0; l < c2->m_nACount; l++) {
-            if (strcmp(c2->m_pAList[l].pAName, "weight") == 0) {
-              G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].wt = atof(c2->m_pAList[l].pAValue);
-              G_inkPipeInfo.perPipeInfo[0].wt -= G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].wt;
-            } else if (strcmp(c2->m_pAList[l].pAName, "dest_ip") == 0) {
-              p = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].destIP);
-              ip = c2->m_pAList[l].pAValue;
-              for (j = 0; j < 4; j++) {
-                p[j] = atoi(ip);
-                while (ip && *ip && (*ip != '.'))
-                  ip++;
-                ip++;
-              }
-            }
-          }
-        }
-      } else if (strcmp(child->getNodeName(), "bandwidth") == 0) {
-        for (j = 0; j < child->m_nACount; j++) {
-          if (strcmp(child->m_pAList[j].pAName, "limit_mbps") == 0) {
-            G_inkPipeInfo.interfaceMbps = atof(child->m_pAList[j].pAValue);
-          } else if (strcmp(child->m_pAList[j].pAName, "reliability_mbps") == 0) {
-            G_inkPipeInfo.reliabilityMbps = atof(child->m_pAList[j].pAValue);
-          }
-        }
-      }
-    }
-  }
-  Debug("bw-mgmt", "Read in: limit_mbps = %lf\n", G_inkPipeInfo.interfaceMbps);
-  for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
-    G_inkPipeInfo.perPipeInfo[i].bwLimit =
-      (int64_t) (G_inkPipeInfo.perPipeInfo[i].wt * G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0);
-    p = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[i].destIP);
-    Debug("bw-mgmt", "Pipe [%d]: wt = %lf, dest ip = %d.%d.%d.%d\n",
-          i, G_inkPipeInfo.perPipeInfo[i].wt, p[0], p[1], p[2], p[3]);
-  }
-  return true;
 }
 
 
