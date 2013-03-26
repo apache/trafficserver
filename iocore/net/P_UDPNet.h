@@ -386,38 +386,4 @@ struct InkPipeInfo
 
 extern InkPipeInfo G_inkPipeInfo;
 
-class UDPWorkContinuation:public Continuation
-{
-public:
-  UDPWorkContinuation():cont(NULL), numPairs(0), 
-    sendbufsize(0), recvbufsize(0), udpConns(NULL), resultCode(NET_EVENT_DATAGRAM_OPEN)
-  {
-    memset(&local_ip, 0, sizeof(local_ip));
-    memset(&remote_ip, 0, sizeof(remote_ip));
-  };
-  ~UDPWorkContinuation() {
-  };
-  void init(Continuation * c, int num_pairs,
-    sockaddr const* local_ip,
-    sockaddr const* remote_ip,
-    int s_bufsize, int r_bufsize);
-  int StateCreatePortPairs(int event, void *data);
-  int StateDoCallback(int event, void *data);
-
-  Action action;
-
-private:
-  Continuation * cont;
-  int numPairs;
-  IpEndpoint local_ip; ///< replaces myIP.
-  IpEndpoint remote_ip; ///< replaces destIP.
-  int sendbufsize, recvbufsize;
-  UnixUDPConnection **udpConns;
-  int resultCode;
-};
-
-typedef int (UDPWorkContinuation::*UDPWorkContinuation_Handler) (int, void *);
-
-inkcoreapi extern ClassAllocator<UDPWorkContinuation> udpWorkContinuationAllocator;
-
 #endif //__P_UDPNET_H_
