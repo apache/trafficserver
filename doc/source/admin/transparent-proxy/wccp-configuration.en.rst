@@ -150,6 +150,6 @@ References
    This is not fundamentally impossible, as the packets are distinct in
    layer
 
-.. |important| image:: ../_static/images/docbook/important.png
-.. |image1| image:: ../_static/images/docbook/important.png
+.. |important| image:: ../../_static/images/docbook/important.png
+.. |image1| image:: ../../_static/images/docbook/important.png
 

@@ -69,7 +69,7 @@ less-reliable PC origin servers as backup servers. In fact, a single
 Traffic Server can act as the virtual origin server for multiple backup
 origin servers, as shown in the figure below.
 
-.. figure:: _static/images/admin/revproxy.jpg
+.. figure:: ../_static/images/admin/revproxy.jpg
    :align: center
    :alt: Traffic Server as reverse proxy for a pair of origin servers
 
@@ -129,7 +129,7 @@ In reverse proxy mode, Traffic Server serves HTTP requests on behalf of
 a web server. The figure below illustrates how Traffic Server in reverse
 proxy mode serves an HTTP request from a client browser.
 
-.. figure:: _static/images/admin/httprvs.jpg
+.. figure:: ../_static/images/admin/httprvs.jpg
    :align: center
    :alt: HTTP reverse proxy
 

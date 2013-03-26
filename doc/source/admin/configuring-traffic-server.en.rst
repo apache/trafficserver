@@ -75,7 +75,7 @@ to apply some of the configuration changes.
 The following is a sample portion of the
 ```records.config`` <../configuration-files/records.config>`_ file:
 
-.. figure:: _static/images/admin/records.jpg
+.. figure:: ../_static/images/admin/records.jpg
    :align: center
    :alt: Sample records.config file
 
