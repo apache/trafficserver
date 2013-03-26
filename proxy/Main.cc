@@ -1525,8 +1525,6 @@ main(int argc, char **argv)
   // but I don't know for sure if we still need this.
   G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[1]);
   G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
-  G_inkPipeInfo.numPipes = 0;
-  G_inkPipeInfo.interfaceMbps = 0.0;
 
   init_http_header();
 

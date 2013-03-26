@@ -166,8 +166,6 @@ int BulkIOSplitPkt(struct InkBulkIOState *bioCookie,
 int BulkIOAppendToReqBlock(struct InkBulkIOState *bioCookie,
                            struct InkBulkIOAggregator *bioAggregator, Ptr<IOBufferBlock> pkt);
 
-int BulkIOSend(struct InkBulkIOState *bioCookie, uint32_t blkId);
-
 void BulkIORequestComplete(struct InkBulkIOState *bioCookie, struct InkBulkIOAggregator *bioAggregator);
 
 void BulkIOFlush(struct InkBulkIOState *bioCookie, struct InkBulkIOAggregator *bioAggregator);
