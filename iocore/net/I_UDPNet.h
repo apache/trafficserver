@@ -81,9 +81,6 @@ public:
   */
   inkcoreapi Action *UDPBind(Continuation * c, sockaddr const* addr, int send_bufsize = 0, int recv_bufsize = 0);
 
-  // The mess again: the complier won't let me stick UDPConnection here.
-  void UDPClassifyConnection(Continuation * udpConn, IpAddr const& addr);
-
   // Regarding sendto_re, sendmsg_re, recvfrom_re:
   // * You may be called back on 'c' with completion or error status.
   // * 'token' is an opaque which can be used by caller to match up the I/O
