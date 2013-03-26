@@ -120,15 +120,6 @@ public:
   Action *recvfrom_re(Continuation * c, void *token, int fd,
                       sockaddr *fromaddr, socklen_t *fromaddrlen,
                       IOBufferBlock * buf, int len, bool useReadCont = true, int timeout = 0);
-  // Continuation is really a UDPConnection; due to the include mess, we stick in the
-  // base-class of UDPConnection.
-  bool AllocBandwidth(Continuation * udpConn, double desiredMbps);
-  bool ChangeBandwidth(Continuation * udpConn, double desiredMbps);
-  void FreeBandwidth(Continuation * udpConn);
-  double GetAvailableBandwidth();
-
-  virtual void UDPNetProcessor_is_abstract() = 0;
-
 };
 
 inkcoreapi extern UDPNetProcessor & udpNet;

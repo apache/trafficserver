@@ -100,7 +100,6 @@ UDPConnectionInternal::~UDPConnectionInternal()
   // TODO: This is not necessary, and should be removed with the
   // elimination of UDP bandwidth limiting (used by long since
   // removed UDP protocols). See bug TS-1067.
-  // udpNet.FreeBandwidth(this);
   continuation = NULL;
   mutex = NULL;
 }
