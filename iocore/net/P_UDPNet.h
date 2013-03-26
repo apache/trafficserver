@@ -52,9 +52,6 @@ struct UDPNetProcessorInternal : public UDPNetProcessor
 
   off_t pollCont_offset;
   off_t udpNetHandler_offset;
-
-public:
-  virtual void UDPNetProcessor_is_abstract() {  }
 };
 
 extern UDPNetProcessorInternal udpNetInternal;
