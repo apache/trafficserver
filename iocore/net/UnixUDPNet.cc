@@ -575,38 +575,6 @@ HardError:
   return false;
 }
 
-void
-UDPNetProcessor::UDPClassifyConnection(
-  Continuation * udpConn,
-  IpAddr const& destIP
-) {
-  int i;
-  UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(udpConn);
-
-  if (G_inkPipeInfo.numPipes == 0) {
-    p->pipe_class = 0;
-    return;
-  }
-  p->pipe_class = -1;
-  // find a match: 0 is best-effort
-  for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++)
-    if (G_inkPipeInfo.perPipeInfo[i].destIP == destIP)
-      p->pipe_class = i;
-  // no match; set it to the null class
-  if (p->pipe_class == -1) {
-    IpAddr null; // default constructed -> invalid value.
-    for (i = 0; i < G_inkPipeInfo.numPipes + 1; ++i)
-      if (G_inkPipeInfo.perPipeInfo[i].destIP == null) {
-        p->pipe_class = i;
-        break;
-      }
-  }
-  Debug("udpnet-pipe", "Pipe class = %d", p->pipe_class);
-  ink_debug_assert(p->pipe_class != -1);
-  if (p->pipe_class == -1)
-    p->pipe_class = 0;
-  G_inkPipeInfo.perPipeInfo[p->pipe_class].count++;
-}
 
 Action *
 UDPNetProcessor::UDPBind(Continuation * cont, sockaddr const* addr, int send_bufsize, int recv_bufsize)
