@@ -696,18 +696,9 @@ UDPQueue::service(UDPNetHandler * nh)
         minPktSpacing = 0.0;
         pktSendTime = p->delivery_time;
         p->pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
-        if (p->conn->flowRateBps > 25600.0)
-          Debug("udpnet-pkt", "Pkt size = %.1lf now = %" PRId64 ", send = %" PRId64 ", del = %" PRId64 ", Delay delta = %" PRId64 "; delta = %" PRId64 "",
-                p->conn->avgPktSize,
-                now, pktSendTime, p->delivery_time,
-                ink_hrtime_to_msec(p->pktSendStartTime - now),
-                ink_hrtime_to_msec(p->pktSendStartTime - p->conn->lastPktStartTime));
-
-        p->conn->avgPktSize = ((4.0 * p->conn->avgPktSize) / 5.0) + (pktSize / 5.0);
       }
       p->conn->lastPktStartTime = p->pktSendStartTime;
       p->delivery_time = p->pktSendStartTime;
-      p->conn->nBytesTodo += pktLen;
 
       g_udp_bytesPending += pktLen;
       G_inkPipeInfo.addPacket(p, now);
@@ -754,8 +745,6 @@ UDPQueue::SendPackets()
   while ((p = reliabilityPktQueue.dequeue()) != NULL) {
     pktLen = p->getPktLength();
     g_udp_bytesPending -= pktLen;
-
-    p->conn->nBytesTodo -= pktLen;
     p->conn->nBytesDone += pktLen;
 
     if (p->conn->shouldDestroy())
@@ -783,8 +772,6 @@ sendPackets:
     pktLen = p->getPktLength();
     g_udp_bytesPending -= pktLen;
 
-    p->conn->nBytesTodo -= pktLen;
-    p->conn->nBytesDone += pktLen;
     if (p->conn->shouldDestroy())
       goto next_pkt;
     if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum)
