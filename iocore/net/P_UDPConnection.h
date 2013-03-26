@@ -60,38 +60,17 @@ public:
   // the same as the lastSentPktStartTime.
   uint64_t lastSentPktStartTime;
   uint64_t lastPktStartTime;
-  int32_t pipe_class;
-  uint32_t nBytesDone;
-  uint32_t nBytesTodo;
-  // flow rate in Bytes per sec.
-  double flowRateBps;
-  double avgPktSize;
-  int64_t allocedbps;
-
-  //this class is abstract
 };
 
 TS_INLINE
 UDPConnectionInternal::UDPConnectionInternal()
-  : continuation(NULL)
-  , recvActive(0)
-  , refcount(0)
-  , fd(-1)
-  , binding_valid(0)
-  , tobedestroyed(0)
-  , nBytesDone(0)
-  , nBytesTodo(0)
+  : continuation(NULL), recvActive(0), refcount(0), fd(-1), binding_valid(0), tobedestroyed(0)
 {
   sendGenerationNum = 0;
   lastSentPktTSSeqNum = -1;
   lastSentPktStartTime = 0;
   lastPktStartTime = 0;
-  pipe_class = 0;
-  flowRateBps = 0.0;
-  avgPktSize = 0.0;
-  allocedbps = 0;
   memset(&binding, 0, sizeof binding);
-  //SET_HANDLER(&BaseUDPConnection::callbackHandler);
 }
 
 TS_INLINE
