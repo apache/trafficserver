@@ -422,7 +422,7 @@ EsiProcessor::flush(string &data, int &overall_len) {
           const Attribute &url = (*node_iter).attr_list.front();              
           string raw_url(url.value, url.value_len);
           attemptUrls.push_back(_expression.expand(raw_url));
-        if (!_getIncludeStatus(*node_iter) == STATUS_ERROR) {
+        if (_getIncludeStatus(*node_iter) != STATUS_DATA_AVAILABLE) {
           attempt_succeeded = false;
           _errorLog("[%s] attempt section errored; due to url [%s]", __FUNCTION__, raw_url.c_str());
           break;
