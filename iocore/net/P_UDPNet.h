@@ -75,7 +75,6 @@ public:
   ink_hrtime last_report;
   ink_hrtime last_service;
   ink_hrtime last_byteperiod;
-  int bytesSent;
   int packets;
   int added;
 
@@ -343,36 +342,6 @@ get_UDPNetHandler(EThread * t)
 }
 
 // All of this stuff is for UDP egress b/w management
-struct InkSinglePipeInfo
-{
-  InkSinglePipeInfo()
-  {
-    wt = 0.0;
-    bwLimit = 0;
-    count = 0;
-    bytesSent = pktsSent = 0;
-    bwAlloc = 0;
-    bwUsed = 0.0;
-    queue = NEW(new PacketQueue());
-  };
-
-  ~InkSinglePipeInfo() {
-    delete queue;
-  }
-
-  double wt;
-  // all are in bps (bits per sec.) so that we can do ink_atomic_increment
-  int64_t bwLimit;
-  int64_t bwAlloc;
-  // this is in Mbps
-  double bwUsed;
-  IpAddr destIP;
-  uint32_t count;
-  uint64_t bytesSent;
-  uint64_t pktsSent;
-  PacketQueue *queue;
-};
-
-extern InkSinglePipeInfo G_inkPipeInfo;
+extern PacketQueue G_inkPipeInfo;
 
 #endif //__P_UDPNET_H_
