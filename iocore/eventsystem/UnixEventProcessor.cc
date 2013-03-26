@@ -201,7 +201,7 @@ EventProcessor::start(int n_event_threads)
         set_cpu(&cpuset, cpu);
         len += snprintf(debug_message + len, sizeof(debug_message) - len, " %d", cpu);
       }
-      Debug("iocore_thread", debug_message);
+      Debug("iocore_thread", "%s", debug_message);
       if (!bind_cpu(&cpuset, tid)){
         Error("%s, failed with errno: %d", debug_message, errno);
       }

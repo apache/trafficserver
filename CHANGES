@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.2
 
+  *) [TS-1780] Fix Debuntu build with hardening flags
+
   *) [TS-1623, TS-1625] Fixes for logging where the host name was not handled
     correctly because it was not in the URL.
 
