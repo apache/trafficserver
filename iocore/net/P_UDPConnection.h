@@ -97,9 +97,6 @@ UDPConnectionInternal::UDPConnectionInternal()
 TS_INLINE
 UDPConnectionInternal::~UDPConnectionInternal()
 {
-  // TODO: This is not necessary, and should be removed with the
-  // elimination of UDP bandwidth limiting (used by long since
-  // removed UDP protocols). See bug TS-1067.
   continuation = NULL;
   mutex = NULL;
 }
@@ -125,13 +122,6 @@ UDPConnection::getBinding(struct sockaddr *s)
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
   ats_ip_copy(s, &p->binding);
   return p->binding_valid;
-}
-
-// return the b/w allocated to this UDPConnection in Mbps
-TS_INLINE double
-UDPConnection::get_allocatedBandwidth()
-{
-  return (((UDPConnectionInternal *) this)->flowRateBps * 8.0) / (1024.0 * 1024.0);
 }
 
 TS_INLINE void
