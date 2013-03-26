@@ -1521,10 +1521,6 @@ main(int argc, char **argv)
   TS_ReadConfigInteger(history_info_enabled, "proxy.config.history_info_enabled");
   TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
-  // This was the default when we had no bandwidth_mgmt.filename to load
-  // but I don't know for sure if we still need this.
-  G_inkPipeInfo.wt = 1.0;
-
   init_http_header();
 
   // Sanity checks

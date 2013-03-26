@@ -59,7 +59,7 @@ int32_t g_udp_numSendRetries;
 // Public functions
 // See header for documentation
 //
-InkSinglePipeInfo G_inkPipeInfo;
+PacketQueue G_inkPipeInfo;
 
 int G_bwGrapherFd;
 sockaddr_in6 G_bwGrapherLoc;
@@ -630,7 +630,7 @@ Lerror:
 
 // send out all packets that need to be sent out as of time=now
 UDPQueue::UDPQueue()
-  : last_report(0), last_service(0), last_byteperiod(0), bytesSent(0), packets(0), added(0)
+  : last_report(0), last_service(0), last_byteperiod(0), packets(0), added(0)
 {
 }
 
@@ -710,7 +710,7 @@ UDPQueue::service(UDPNetHandler * nh)
       p->conn->nBytesTodo += pktLen;
 
       g_udp_bytesPending += pktLen;
-      G_inkPipeInfo.queue->addPacket(p, now);
+      G_inkPipeInfo.addPacket(p, now);
     }
   }
 
@@ -722,27 +722,11 @@ UDPQueue::service(UDPNetHandler * nh)
     lastPrintTime = now;
   }
 
-  G_inkPipeInfo.queue->advanceNow(now);
+  G_inkPipeInfo.advanceNow(now);
   SendPackets();
 
   timeSpent = ink_hrtime_to_msec(now - last_report);
   if (timeSpent > 10000) {
-    double bw, totalBw;
-
-    if (bytesSent > 0)
-      totalBw = (bytesSent * 8.0 * 1000.0) / (timeSpent * 1024.0 * 1024.0);
-    else
-      totalBw = 1.0;
-
-    // bw is in Mbps
-    bw = (G_inkPipeInfo.bytesSent * 8.0 * 1000.0) / (timeSpent * 1024.0 * 1024.0);
-
-    // use a weighted estimator of current usage
-    G_inkPipeInfo.bwUsed = (4.0 * G_inkPipeInfo.bwUsed / 5.0) + (bw / 5.0);
-    G_inkPipeInfo.bytesSent = 0;
-    G_inkPipeInfo.pktsSent = 0;
-
-    bytesSent = 0;
     last_report = now;
     added = 0;
     packets = 0;
@@ -792,10 +776,10 @@ UDPQueue::SendPackets()
 sendPackets:
   sentOne = false;
   send_threshold_time = now + SLOT_TIME;
-  bytesThisPipe = (int32_t) (bytesThisSlot * G_inkPipeInfo.wt);
+  bytesThisPipe = (int32_t)bytesThisSlot;
 
-  while ((bytesThisPipe > 0) && (G_inkPipeInfo.queue->firstPacket(send_threshold_time))) {
-    p = G_inkPipeInfo.queue->getFirstPacket();
+  while ((bytesThisPipe > 0) && (G_inkPipeInfo.firstPacket(send_threshold_time))) {
+    p = G_inkPipeInfo.getFirstPacket();
     pktLen = p->getPktLength();
     g_udp_bytesPending -= pktLen;
 
@@ -806,7 +790,6 @@ sendPackets:
     if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum)
       goto next_pkt;
 
-    G_inkPipeInfo.bytesSent += pktLen;
     SendUDPPacket(p, pktLen);
     bytesUsed += pktLen;
     bytesThisPipe -= pktLen;
@@ -823,8 +806,8 @@ sendPackets:
   if ((bytesThisSlot > 0) && (sentOne)) {
     // redistribute the slack...
     now = ink_get_hrtime_internal();
-    if (G_inkPipeInfo.queue->firstPacket(now) == NULL) {
-      G_inkPipeInfo.queue->advanceNow(now);
+    if (G_inkPipeInfo.firstPacket(now) == NULL) {
+      G_inkPipeInfo.advanceNow(now);
     }
     goto sendPackets;
   }
@@ -834,7 +817,7 @@ sendPackets:
     uint64_t nbytes = g_udp_bytesPending;
     ink_hrtime startTime = ink_get_hrtime_internal(), endTime;
 
-    G_inkPipeInfo.queue->FreeCancelledPackets(g_udp_periodicCleanupSlots);
+    G_inkPipeInfo.FreeCancelledPackets(g_udp_periodicCleanupSlots);
     endTime = ink_get_hrtime_internal();
     Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %" PRId64 " m.sec",
           g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, (int64_t)ink_hrtime_to_msec(endTime - startTime));
@@ -864,7 +847,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32_t pktLen)
   msg.msg_name = (caddr_t) & p->to;
   msg.msg_namelen = sizeof(p->to);
   iov_len = 0;
-  bytesSent += pktLen;
+
   for (b = p->chain; b != NULL; b = b->next) {
     iov[iov_len].iov_base = (caddr_t) b->start();
     iov[iov_len].iov_len = b->size();
