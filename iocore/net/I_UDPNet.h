@@ -84,14 +84,6 @@ public:
   // The mess again: the complier won't let me stick UDPConnection here.
   void UDPClassifyConnection(Continuation * udpConn, IpAddr const& addr);
 
-  // create pairs of UDPConnections in which the first connection is
-  // on a even-#'ed port and the second connection is on the next
-  // odd-#'ed port.  Create "nPairs" of such connections.
-  Action *UDPCreatePortPairs(Continuation *, int nPairs,
-    sockaddr const* local_addr,
-    sockaddr const* remote_addr,
-    int send_bufsize = 0, int recv_bufsize = 0);
-
   // Regarding sendto_re, sendmsg_re, recvfrom_re:
   // * You may be called back on 'c' with completion or error status.
   // * 'token' is an opaque which can be used by caller to match up the I/O

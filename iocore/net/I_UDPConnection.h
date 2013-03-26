@@ -97,12 +97,11 @@ public:
   /**
      Put socket on net queue for read/write polling.
 
-     Not required for UDPConnections created with
-     UDPNetProcessor::UDPBind
+     Not required for UDPConnections created with UDPNetProcessor::UDPBind
 
-     Required for UDPNetProcessor::UDPCreatePortPairs  and
-     UDPNetProcessor::CreateUDPSocket.  They  don't do bindToThread()
-     automatically so that the sockets can be passed to other Continuations.
+     Required for  and UDPNetProcessor::CreateUDPSocket.  They  don't do
+     bindToThread() automatically so that the sockets can be passed to
+     other Continuations.
   */
   void bindToThread(Continuation * c);
 
