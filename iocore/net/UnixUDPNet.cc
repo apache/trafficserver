@@ -59,8 +59,7 @@ int32_t g_udp_numSendRetries;
 // Public functions
 // See header for documentation
 //
-
-InkPipeInfo G_inkPipeInfo;
+InkSinglePipeInfo G_inkPipeInfo;
 
 int G_bwGrapherFd;
 sockaddr_in6 G_bwGrapherLoc;
@@ -656,7 +655,6 @@ UDPQueue::service(UDPNetHandler * nh)
   double minPktSpacing;
   uint32_t pktSize;
   int64_t pktLen;
-  bool addToGuaranteedQ;
 
   (void) nh;
   static ink_hrtime lastPrintTime = ink_get_hrtime_internal();
@@ -690,21 +688,13 @@ UDPQueue::service(UDPNetHandler * nh)
       }
       // insert into our queue.
       Debug("udp-send", "Adding %p", p);
-      addToGuaranteedQ = ((p->conn->pipe_class > 0) && (p->conn->flowRateBps > 10.0));
       pktLen = p->getPktLength();
       if (p->conn->lastPktStartTime == 0) {
         p->pktSendStartTime = MAX(now, p->delivery_time);
       } else {
         pktSize = MAX(INK_ETHERNET_MTU_SIZE, pktLen);
-        if (addToGuaranteedQ) {
-          // NOTE: this is flow rate in Bytes per sec.; convert to milli-sec.
-          minPktSpacing = 1000.0 / (p->conn->flowRateBps / p->conn->avgPktSize);
-
-          pktSendTime = p->conn->lastPktStartTime + ink_hrtime_from_msec((uint32_t) minPktSpacing);
-        } else {
-          minPktSpacing = 0.0;
-          pktSendTime = p->delivery_time;
-        }
+        minPktSpacing = 0.0;
+        pktSendTime = p->delivery_time;
         p->pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
         if (p->conn->flowRateBps > 25600.0)
           Debug("udpnet-pkt", "Pkt size = %.1lf now = %" PRId64 ", send = %" PRId64 ", del = %" PRId64 ", Delay delta = %" PRId64 "; delta = %" PRId64 "",
@@ -720,14 +710,7 @@ UDPQueue::service(UDPNetHandler * nh)
       p->conn->nBytesTodo += pktLen;
 
       g_udp_bytesPending += pktLen;
-
-      if (addToGuaranteedQ)
-        G_inkPipeInfo.perPipeInfo[p->conn->pipe_class].queue->addPacket(p, now);
-      else {
-        // stick in the best-effort queue: either it was a best-effort flow or
-        // the thingy wasn't alloc'ed bandwidth
-        G_inkPipeInfo.perPipeInfo[0].queue->addPacket(p, now);
-      }
+      G_inkPipeInfo.queue->addPacket(p, now);
     }
   }
 
@@ -739,7 +722,7 @@ UDPQueue::service(UDPNetHandler * nh)
     lastPrintTime = now;
   }
 
-  G_inkPipeInfo.perPipeInfo[0].queue->advanceNow(now);
+  G_inkPipeInfo.queue->advanceNow(now);
   SendPackets();
 
   timeSpent = ink_hrtime_to_msec(now - last_report);
@@ -752,12 +735,12 @@ UDPQueue::service(UDPNetHandler * nh)
       totalBw = 1.0;
 
     // bw is in Mbps
-    bw = (G_inkPipeInfo.perPipeInfo[0].bytesSent * 8.0 * 1000.0) / (timeSpent * 1024.0 * 1024.0);
+    bw = (G_inkPipeInfo.bytesSent * 8.0 * 1000.0) / (timeSpent * 1024.0 * 1024.0);
 
     // use a weighted estimator of current usage
-    G_inkPipeInfo.perPipeInfo[0].bwUsed = (4.0 * G_inkPipeInfo.perPipeInfo[0].bwUsed / 5.0) + (bw / 5.0);
-    G_inkPipeInfo.perPipeInfo[0].bytesSent = 0;
-    G_inkPipeInfo.perPipeInfo[0].pktsSent = 0;
+    G_inkPipeInfo.bwUsed = (4.0 * G_inkPipeInfo.bwUsed / 5.0) + (bw / 5.0);
+    G_inkPipeInfo.bytesSent = 0;
+    G_inkPipeInfo.pktsSent = 0;
 
     bytesSent = 0;
     last_report = now;
@@ -809,10 +792,10 @@ UDPQueue::SendPackets()
 sendPackets:
   sentOne = false;
   send_threshold_time = now + SLOT_TIME;
-  bytesThisPipe = (int32_t) (bytesThisSlot * G_inkPipeInfo.perPipeInfo[0].wt);
+  bytesThisPipe = (int32_t) (bytesThisSlot * G_inkPipeInfo.wt);
 
-  while ((bytesThisPipe > 0) && (G_inkPipeInfo.perPipeInfo[0].queue->firstPacket(send_threshold_time))) {
-    p = G_inkPipeInfo.perPipeInfo[0].queue->getFirstPacket();
+  while ((bytesThisPipe > 0) && (G_inkPipeInfo.queue->firstPacket(send_threshold_time))) {
+    p = G_inkPipeInfo.queue->getFirstPacket();
     pktLen = p->getPktLength();
     g_udp_bytesPending -= pktLen;
 
@@ -823,7 +806,7 @@ sendPackets:
     if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum)
       goto next_pkt;
 
-    G_inkPipeInfo.perPipeInfo[0].bytesSent += pktLen;
+    G_inkPipeInfo.bytesSent += pktLen;
     SendUDPPacket(p, pktLen);
     bytesUsed += pktLen;
     bytesThisPipe -= pktLen;
@@ -840,8 +823,8 @@ sendPackets:
   if ((bytesThisSlot > 0) && (sentOne)) {
     // redistribute the slack...
     now = ink_get_hrtime_internal();
-    if (G_inkPipeInfo.perPipeInfo[0].queue->firstPacket(now) == NULL) {
-      G_inkPipeInfo.perPipeInfo[0].queue->advanceNow(now);
+    if (G_inkPipeInfo.queue->firstPacket(now) == NULL) {
+      G_inkPipeInfo.queue->advanceNow(now);
     }
     goto sendPackets;
   }
@@ -851,7 +834,7 @@ sendPackets:
     uint64_t nbytes = g_udp_bytesPending;
     ink_hrtime startTime = ink_get_hrtime_internal(), endTime;
 
-    G_inkPipeInfo.perPipeInfo[0].queue->FreeCancelledPackets(g_udp_periodicCleanupSlots);
+    G_inkPipeInfo.queue->FreeCancelledPackets(g_udp_periodicCleanupSlots);
     endTime = ink_get_hrtime_internal();
     Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %" PRId64 " m.sec",
           g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, (int64_t)ink_hrtime_to_msec(endTime - startTime));

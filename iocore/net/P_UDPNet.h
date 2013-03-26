@@ -373,11 +373,6 @@ struct InkSinglePipeInfo
   PacketQueue *queue;
 };
 
-struct InkPipeInfo
-{
-  InkSinglePipeInfo *perPipeInfo;
-};
-
-extern InkPipeInfo G_inkPipeInfo;
+extern InkSinglePipeInfo G_inkPipeInfo;
 
 #endif //__P_UDPNET_H_

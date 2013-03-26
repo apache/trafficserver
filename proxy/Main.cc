@@ -1523,8 +1523,7 @@ main(int argc, char **argv)
 
   // This was the default when we had no bandwidth_mgmt.filename to load
   // but I don't know for sure if we still need this.
-  G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[1]);
-  G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
+  G_inkPipeInfo.wt = 1.0;
 
   init_http_header();
 
