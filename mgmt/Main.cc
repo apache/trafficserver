@@ -1056,9 +1056,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "proxy.pac") == 0) {
     mgmt_log(stderr, "[fileUpdated] proxy.pac file has been modified\n");
 
-  } else if (strcmp(fname, "wpad.dat") == 0) {
-    mgmt_log(stderr, "[fileUpdated] wpad.dat file has been modified\n");
-
   } else if (strcmp(fname, "icp.config") == 0) {
     lmgmt->signalFileChange("proxy.config.icp.icp_configuration");
 

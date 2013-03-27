@@ -270,7 +270,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.admin.autoconf.pac_filename
  proxy.config.admin.autoconf_port
  proxy.config.admin.autoconf.doc_root
- proxy.config.admin.autoconf.wpad_filename
  proxy.config.admin.cli_path
  proxy.config.admin.number_config_bak
  proxy.config.admin.user_id

@@ -71,7 +71,6 @@ initializeRegistry()
   configFiles->addFile("storage.config", false);
   configFiles->addFile("socks.config", false);
   configFiles->addFile("proxy.pac", false);
-  configFiles->addFile("wpad.dat", false);
   configFiles->addFile("records.config", false);
   configFiles->addFile("vaddrs.config", false);
   configFiles->addFile("cache.config", false);
