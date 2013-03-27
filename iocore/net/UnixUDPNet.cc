@@ -48,7 +48,6 @@ EventType ET_UDP;
 UDPNetProcessorInternal udpNetInternal;
 UDPNetProcessor &udpNet = udpNetInternal;
 
-uint64_t g_udp_bytesPending;
 int32_t g_udp_periodicCleanupSlots;
 int32_t g_udp_periodicFreeCancelledPkts;
 int32_t g_udp_numSendRetries;
@@ -630,7 +629,7 @@ Lerror:
 
 // send out all packets that need to be sent out as of time=now
 UDPQueue::UDPQueue()
-  : last_report(0), last_service(0), last_byteperiod(0), packets(0), added(0)
+  : last_report(0), last_service(0), packets(0), added(0)
 {
 }
 
@@ -682,10 +681,6 @@ UDPQueue::service(UDPNetHandler * nh)
       p = stk.pop();
       ink_assert(p->link.prev == NULL);
       ink_assert(p->link.next == NULL);
-      if (p->isReliabilityPkt) {
-        reliabilityPktQueue.enqueue(p);
-        continue;
-      }
       // insert into our queue.
       Debug("udp-send", "Adding %p", p);
       pktLen = p->getPktLength();
@@ -700,13 +695,11 @@ UDPQueue::service(UDPNetHandler * nh)
       p->conn->lastPktStartTime = p->pktSendStartTime;
       p->delivery_time = p->pktSendStartTime;
 
-      g_udp_bytesPending += pktLen;
       G_inkPipeInfo.addPacket(p, now);
     }
   }
 
   if ((now - lastPrintTime) > ink_hrtime_from_sec(30)) {
-    Debug("udp-pending-packets", "udp bytes pending: %" PRId64 "", g_udp_bytesPending);
     Debug("udp-sched-jitter", "avg. udp sched jitter: %f", (double) schedJitter / numTimesSched);
     schedJitter = 0;
     numTimesSched = 0;
@@ -731,8 +724,6 @@ UDPQueue::SendPackets()
   UDPPacketInternal *p;
   static ink_hrtime lastCleanupTime = ink_get_hrtime_internal();
   ink_hrtime now = ink_get_hrtime_internal();
-  // ink_hrtime send_threshold_time = now + HRTIME_MSECONDS(5);
-  // send packets for SLOT_TIME per attempt
   ink_hrtime send_threshold_time = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
   int32_t bytesThisPipe, sentOne;
@@ -744,9 +735,6 @@ UDPQueue::SendPackets()
 
   while ((p = reliabilityPktQueue.dequeue()) != NULL) {
     pktLen = p->getPktLength();
-    g_udp_bytesPending -= pktLen;
-    p->conn->nBytesDone += pktLen;
-
     if (p->conn->shouldDestroy())
       goto next_pkt_3;
     if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum)
@@ -770,7 +758,6 @@ sendPackets:
   while ((bytesThisPipe > 0) && (G_inkPipeInfo.firstPacket(send_threshold_time))) {
     p = G_inkPipeInfo.getFirstPacket();
     pktLen = p->getPktLength();
-    g_udp_bytesPending -= pktLen;
 
     if (p->conn->shouldDestroy())
       goto next_pkt;
@@ -790,7 +777,7 @@ sendPackets:
 
   bytesThisSlot -= bytesUsed;
 
-  if ((bytesThisSlot > 0) && (sentOne)) {
+  if ((bytesThisSlot > 0) && sentOne) {
     // redistribute the slack...
     now = ink_get_hrtime_internal();
     if (G_inkPipeInfo.firstPacket(now) == NULL) {
@@ -799,15 +786,8 @@ sendPackets:
     goto sendPackets;
   }
 
-  if ((g_udp_periodicFreeCancelledPkts) &&
-      (now - lastCleanupTime > ink_hrtime_from_sec(g_udp_periodicFreeCancelledPkts))) {
-    uint64_t nbytes = g_udp_bytesPending;
-    ink_hrtime startTime = ink_get_hrtime_internal(), endTime;
-
+  if ((g_udp_periodicFreeCancelledPkts) && (now - lastCleanupTime > ink_hrtime_from_sec(g_udp_periodicFreeCancelledPkts))) {
     G_inkPipeInfo.FreeCancelledPackets(g_udp_periodicCleanupSlots);
-    endTime = ink_get_hrtime_internal();
-    Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %" PRId64 " m.sec",
-          g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, (int64_t)ink_hrtime_to_msec(endTime - startTime));
     lastCleanupTime = now;
   }
 }
@@ -821,11 +801,9 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32_t pktLen)
   int real_len = 0;
   int n, count, iov_len = 0;
 
-  if (!p->isReliabilityPkt) {
-    p->conn->lastSentPktStartTime = p->delivery_time;
-  }
-
+  p->conn->lastSentPktStartTime = p->delivery_time;
   Debug("udp-send", "Sending %p", p);
+
 #if !defined(solaris)
   msg.msg_control = 0;
   msg.msg_controllen = 0;
@@ -852,7 +830,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32_t pktLen)
       // send succeeded or some random error happened.
       break;
     if (errno == EAGAIN) {
-      count++;
+      ++count;
       if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
         // tried too many times; give up
         Debug("udpnet", "Send failed: too many retries");

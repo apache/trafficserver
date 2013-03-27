@@ -45,7 +45,6 @@ public:
   UDPPacketInternal();
   virtual ~ UDPPacketInternal();
 
-  void append_bytes(char *buf, int len);
   void append_block_internal(IOBufferBlock * block);
 
   virtual void free();
@@ -55,8 +54,6 @@ public:
   uint64_t pktSendStartTime;
   uint64_t pktSendFinishTime;
   uint64_t pktLength;
-
-  bool isReliabilityPkt;
 
   int reqGenerationNum;
   ink_hrtime delivery_time;   // when to deliver packet
@@ -78,7 +75,7 @@ inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 TS_INLINE
 UDPPacketInternal::UDPPacketInternal()
-  : pktSendStartTime(0), pktSendFinishTime(0), pktLength(0), isReliabilityPkt(false),
+  : pktSendStartTime(0), pktSendFinishTime(0), pktLength(0),
     reqGenerationNum(0), delivery_time(0), arrival_time(0), cont(NULL) , conn(NULL)
 #if defined(PACKETQUEUE_IMPL_AS_PQLIST) || defined(PACKETQUEUE_IMPL_AS_RING)
   ,in_the_priority_queue(0), in_heap(0)
@@ -103,24 +100,6 @@ UDPPacketInternal::free()
     conn->Release();
   conn = NULL;
   udpPacketAllocator.free(this);
-}
-
-TS_INLINE void
-UDPPacketInternal::append_bytes(char *buf, int len)
-{
-  IOBufferData *d = NULL;
-  if (buf) {
-    d = new_xmalloc_IOBufferData(buf, len);
-    append_block(new_IOBufferBlock(d, len));
-  }
-}
-
-TS_INLINE void
-UDPPacket::setReliabilityPkt()
-{
-  UDPPacketInternal *p = (UDPPacketInternal *) this;
-
-  p->isReliabilityPkt = true;
 }
 
 TS_INLINE void

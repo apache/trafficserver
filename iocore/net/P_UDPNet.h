@@ -63,7 +63,7 @@ class UDPQueue
 public:
 
   void service(UDPNetHandler *);
-  // In the absence of bulk-io, we are down sending packet after packet
+
   void SendPackets();
   void SendUDPPacket(UDPPacketInternal * p, int32_t pktLen);
 
@@ -74,7 +74,6 @@ public:
   InkAtomicList atomicQueue;
   ink_hrtime last_report;
   ink_hrtime last_service;
-  ink_hrtime last_byteperiod;
   int packets;
   int added;
 
@@ -89,24 +88,20 @@ public:
 #define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
 #define N_SLOTS 2048
 
-extern uint64_t g_udp_bytesPending;
-
 class PacketQueue
 {
 public:
   PacketQueue()
-  :nPackets(0)
-  , now_slot(0)
+    : nPackets(0), now_slot(0)
   {
     lastPullLongTermQ = 0;
     init();
   }
 
   virtual ~ PacketQueue()
-  {
-  }
-  int nPackets;
+  { }
 
+  int nPackets;
   ink_hrtime lastPullLongTermQ;
   Queue<UDPPacketInternal> longTermQ;
   Queue<UDPPacketInternal> bucket[N_SLOTS];
@@ -126,12 +121,12 @@ public:
     }
   }
 
-  void addPacket(UDPPacketInternal * e, ink_hrtime now = 0) {
+  void addPacket(UDPPacketInternal * e, ink_hrtime now = 0)
+  {
     int before = 0;
     int slot;
 
     if (IsCancelledPacket(e)) {
-      g_udp_bytesPending -= e->getPktLength();
       e->free();
       return;
     }
@@ -168,7 +163,8 @@ public:
     e->in_the_priority_queue = 1;
     e->in_heap = slot;
     bucket[slot].enqueue(e);
-  };
+  }
+
   UDPPacketInternal *firstPacket(ink_hrtime t)
   {
     if (t > delivery_time[now_slot]) {
@@ -176,23 +172,25 @@ public:
     } else {
       return NULL;
     }
-  };
+  }
+
   UDPPacketInternal *getFirstPacket()
   {
     nPackets--;
     return dequeue_ready(0);
-  };
+  }
+
   int size()
   {
     ink_assert(nPackets >= 0);
     return nPackets;
-  };
+  }
 
   bool IsCancelledPacket(UDPPacketInternal * p)
   {
     // discard packets that'll never get sent...
     return ((p->conn->shouldDestroy()) || (p->conn->GetSendGenerationNumber() != p->reqGenerationNum));
-  };
+  }
 
   void FreeCancelledPackets(int numSlots)
   {
@@ -204,7 +202,6 @@ public:
       s = (now_slot + i) % N_SLOTS;
       while (NULL != (p = bucket[s].dequeue())) {
         if (IsCancelledPacket(p)) {
-          g_udp_bytesPending -= p->getPktLength();
           p->free();
           continue;
         }
@@ -215,7 +212,7 @@ public:
         bucket[s].enqueue(p);
       }
     }
-  };
+  }
 
   void advanceNow(ink_hrtime t)
   {
@@ -254,7 +251,8 @@ public:
       Debug("udpnet-service", "Advancing by (%d slots): behind by %" PRId64 " ms",
             s - now_slot, ink_hrtime_to_msec(t - delivery_time[now_slot]));
     now_slot = s;
-  };
+  }
+
 private:
   void remove(UDPPacketInternal * e)
   {
@@ -265,7 +263,8 @@ private:
   }
 
 public:
-  UDPPacketInternal * dequeue_ready(ink_hrtime t) {
+  UDPPacketInternal *dequeue_ready(ink_hrtime t)
+  {
     (void) t;
     UDPPacketInternal *e = bucket[now_slot].dequeue();
     if (e) {
@@ -295,8 +294,7 @@ public:
 
 private:
   void kill_cancelled_events()
-  {
-  }
+  { }
 };
 #endif
 
@@ -331,17 +329,17 @@ struct PollCont;
 static inline PollCont *
 get_UDPPollCont(EThread * t)
 {
-  return (PollCont *) ETHREAD_GET_PTR(t, udpNetInternal.pollCont_offset);
+  return (PollCont *)ETHREAD_GET_PTR(t, udpNetInternal.pollCont_offset);
 }
 
 static inline UDPNetHandler *
 get_UDPNetHandler(EThread * t)
 {
-  return (UDPNetHandler *)
-    ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset);
+  return (UDPNetHandler *)ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset);
 }
 
 // All of this stuff is for UDP egress b/w management
+// ToDo: It'd be nice to eliminate this entirely.... But we have no working use of UDPNet afaik. /leif
 extern PacketQueue G_inkPipeInfo;
 
 #endif //__P_UDPNET_H_
