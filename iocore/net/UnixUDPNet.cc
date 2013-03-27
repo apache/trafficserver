@@ -136,8 +136,6 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler * nh,
     // create packet
     UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), buf, r);
     p->setConnection(uc);
-    // XXX: is this expensive?  I] really want to know this information
-    p->setArrivalTime(ink_get_hrtime_internal());
     // queue onto the UDPConnection
     ink_atomiclist_push(&uc->inQueue, p);
     iters++;
@@ -189,18 +187,21 @@ public:
   ~UDPReadContinuation();
   inline void free(void);
   inline void init_token(Event * completionToken);
+  inline void init_read(int fd, IOBufferBlock * buf, int len, struct sockaddr *fromaddr, socklen_t *fromaddrlen);
 
-  inline void init_read(int fd, IOBufferBlock * buf, int len, struct sockaddr *fromaddr, socklen_t *fromaddrlen);     // start up polling
   void set_timer(int seconds)
   {
     timeout_interval = HRTIME_SECONDS(seconds);
   }
+
   void cancel();
   int readPollEvent(int event, Event * e);
+
   Action *getAction()
   {
     return event;
   }
+
   void setupPollDescriptor();
 
 private:
@@ -222,8 +223,8 @@ ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator")
 #define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
 
 UDPReadContinuation::UDPReadContinuation(Event * completionToken)
-: Continuation(NULL), event(completionToken), readbuf(NULL),
-  readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
+  : Continuation(NULL), event(completionToken), readbuf(NULL), readlen(0), fromaddrlen(0), fd(-1),
+    ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
 {
   if (completionToken->continuation)
     this->mutex = completionToken->continuation->mutex;
@@ -232,10 +233,9 @@ UDPReadContinuation::UDPReadContinuation(Event * completionToken)
 }
 
 UDPReadContinuation::UDPReadContinuation()
-: Continuation(NULL), event(UNINITIALIZED_EVENT_PTR), readbuf(NULL),
-  readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
-{
-}
+  : Continuation(NULL), event(UNINITIALIZED_EVENT_PTR), readbuf(NULL), readlen(0), fromaddrlen(0), fd(-1),
+    ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
+{ }
 
 inline void
 UDPReadContinuation::free(void)
@@ -345,40 +345,39 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
   //ink_assert(ifd < 0 || event_ == EVENT_INTERVAL || (event_ == EVENT_POLL && pc->pollDescriptor->nfds > ifd && pc->pollDescriptor->pfd[ifd].fd == fd));
   //if (ifd < 0 || event_ == EVENT_INTERVAL || (pc->pollDescriptor->pfd[ifd].revents & POLLIN)) {
   ink_debug_assert(!"incomplete");
+  c = completionUtil::getContinuation(event);
+  // do read
+  socklen_t tmp_fromlen = *fromaddrlen;
+  int rlen = socketManager.recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
+
+  completionUtil::setThread(event, e->ethread);
+  // call back user with their event
+  if (rlen > 0) {
+    // do callback if read is successful
+    *fromaddrlen = tmp_fromlen;
+    completionUtil::setInfo(event, fd, readbuf, rlen, errno);
+    readbuf->fill(rlen);
+    // TODO: Should we deal with the return code?
+    c->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
+    e->cancel();
+    free();
+    // delete this;
+    return EVENT_DONE;
+  } else if (rlen < 0 && rlen != -EAGAIN) {
+    // signal error.
+    *fromaddrlen = tmp_fromlen;
+    completionUtil::setInfo(event, fd, (IOBufferBlock *) readbuf, rlen, errno);
     c = completionUtil::getContinuation(event);
-    // do read
-    socklen_t tmp_fromlen = *fromaddrlen;
-    int rlen = socketManager.recvfrom(fd, readbuf->end(), readlen,
-                                      0,        // default flags
-                                      ats_ip_sa_cast(fromaddr), &tmp_fromlen);
-    completionUtil::setThread(event, e->ethread);
-    // call back user with their event
-    if (rlen > 0) {
-      // do callback if read is successful
-      *fromaddrlen = tmp_fromlen;
-      completionUtil::setInfo(event, fd, readbuf, rlen, errno);
-      readbuf->fill(rlen);
-      // TODO: Should we deal with the return code?
-      c->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
-      e->cancel();
-      free();
-      // delete this;
-      return EVENT_DONE;
-    } else if (rlen < 0 && rlen != -EAGAIN) {
-      // signal error.
-      *fromaddrlen = tmp_fromlen;
-      completionUtil::setInfo(event, fd, (IOBufferBlock *) readbuf, rlen, errno);
-      c = completionUtil::getContinuation(event);
-      // TODO: Should we deal with the return code?
-      c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
-      e->cancel();
-      free();
-      //delete this;
-      return EVENT_DONE;
-    } else {
-      completionUtil::setThread(event, NULL);
-    }
-//}
+    // TODO: Should we deal with the return code?
+    c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
+    e->cancel();
+    free();
+    //delete this;
+    return EVENT_DONE;
+  } else {
+    completionUtil::setThread(event, NULL);
+  }
+
   if (event->cancelled) {
     e->cancel();
     free();
@@ -417,10 +416,11 @@ UDPNetProcessor::recvfrom_re(Continuation * cont,
   ink_assert(buf->write_avail() >= len);
   int actual;
   Event *event = completionUtil::create();
+
   completionUtil::setContinuation(event, cont);
   completionUtil::setHandle(event, token);
-  actual = socketManager.recvfrom(fd, buf->end(), len, 0,       // default flags
-                                  fromaddr, fromaddrlen);
+  actual = socketManager.recvfrom(fd, buf->end(), len, 0, fromaddr, fromaddrlen);
+
   if (actual > 0) {
     completionUtil::setThread(event, this_ethread());
     completionUtil::setInfo(event, fd, buf, actual, errno);
@@ -458,6 +458,7 @@ UDPNetProcessor::sendmsg_re(Continuation * cont, void *token, int fd, struct msg
 {
   int actual;
   Event *event = completionUtil::create();
+
   completionUtil::setContinuation(event, cont);
   completionUtil::setHandle(event, token);
 
@@ -489,13 +490,13 @@ UDPNetProcessor::sendmsg_re(Continuation * cont, void *token, int fd, struct msg
  *
  */
 Action *
-UDPNetProcessor::sendto_re(Continuation * cont,
-                           void *token, int fd, struct sockaddr const* toaddr, int toaddrlen, IOBufferBlock * buf, int len)
+UDPNetProcessor::sendto_re(Continuation * cont, void *token, int fd, struct sockaddr const* toaddr, int toaddrlen,
+                           IOBufferBlock * buf, int len)
 {
   (void) token;
   ink_assert(buf->read_avail() >= len);
-  int nbytes_sent = socketManager.sendto(fd, buf->start(), len, 0,
-                                         toaddr, toaddrlen);
+  int nbytes_sent = socketManager.sendto(fd, buf->start(), len, 0, toaddr, toaddrlen);
+
   if (nbytes_sent >= 0) {
     ink_assert(nbytes_sent == len);
     buf->consume(nbytes_sent);
@@ -509,14 +510,9 @@ UDPNetProcessor::sendto_re(Continuation * cont,
 
 
 bool
-UDPNetProcessor::CreateUDPSocket(
-  int *resfd,
-  sockaddr const* remote_addr,
-  sockaddr* local_addr,
-  int *local_addr_len,
-  Action ** status, 
-  int send_bufsize, int recv_bufsize
-) {
+UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const* remote_addr, sockaddr* local_addr,
+                                 int *local_addr_len, Action ** status, int send_bufsize, int recv_bufsize)
+{
   int res = 0, fd = -1;
 
   ink_assert(ats_ip_are_compatible(remote_addr, local_addr));
@@ -630,15 +626,10 @@ Lerror:
 // send out all packets that need to be sent out as of time=now
 UDPQueue::UDPQueue()
   : last_report(0), last_service(0), packets(0), added(0)
-{
-}
+{ }
 
 UDPQueue::~UDPQueue()
 {
-  UDPPacketInternal *p;
-
-  while ((p = reliabilityPktQueue.dequeue()) != NULL)
-    p->free();
 }
 
 /*
@@ -647,26 +638,18 @@ UDPQueue::~UDPQueue()
 void
 UDPQueue::service(UDPNetHandler * nh)
 {
+  (void) nh;
   ink_hrtime now = ink_get_hrtime_internal();
   uint64_t timeSpent = 0;
+  uint64_t pktSendStartTime;
   UDPPacketInternal *p;
   ink_hrtime pktSendTime;
   double minPktSpacing;
   uint32_t pktSize;
   int64_t pktLen;
 
-  (void) nh;
-  static ink_hrtime lastPrintTime = ink_get_hrtime_internal();
-  static ink_hrtime lastSchedTime = ink_get_hrtime_internal();
-  static uint32_t schedJitter = 0;
-  static uint32_t numTimesSched = 0;
-
-  schedJitter += ink_hrtime_to_msec(now - lastSchedTime);
-  numTimesSched++;
-
   p = (UDPPacketInternal *) ink_atomiclist_popall(&atomicQueue);
   if (p) {
-
     UDPPacketInternal *pnext = NULL;
     Queue<UDPPacketInternal> stk;
 
@@ -676,6 +659,7 @@ UDPQueue::service(UDPNetHandler * nh)
       stk.push(p);
       p = pnext;
     }
+
     // walk backwards down list since this is actually an atomic stack.
     while (stk.head) {
       p = stk.pop();
@@ -685,25 +669,18 @@ UDPQueue::service(UDPNetHandler * nh)
       Debug("udp-send", "Adding %p", p);
       pktLen = p->getPktLength();
       if (p->conn->lastPktStartTime == 0) {
-        p->pktSendStartTime = MAX(now, p->delivery_time);
+        pktSendStartTime = MAX(now, p->delivery_time);
       } else {
         pktSize = MAX(INK_ETHERNET_MTU_SIZE, pktLen);
         minPktSpacing = 0.0;
         pktSendTime = p->delivery_time;
-        p->pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
+        pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
       }
-      p->conn->lastPktStartTime = p->pktSendStartTime;
-      p->delivery_time = p->pktSendStartTime;
+      p->conn->lastPktStartTime = pktSendStartTime;
+      p->delivery_time = pktSendStartTime;
 
       G_inkPipeInfo.addPacket(p, now);
     }
-  }
-
-  if ((now - lastPrintTime) > ink_hrtime_from_sec(30)) {
-    Debug("udp-sched-jitter", "avg. udp sched jitter: %f", (double) schedJitter / numTimesSched);
-    schedJitter = 0;
-    numTimesSched = 0;
-    lastPrintTime = now;
   }
 
   G_inkPipeInfo.advanceNow(now);
@@ -732,21 +709,6 @@ UDPQueue::SendPackets()
 
   if (now > last_service)
     timeDelta = ink_hrtime_to_msec(now - last_service);
-
-  while ((p = reliabilityPktQueue.dequeue()) != NULL) {
-    pktLen = p->getPktLength();
-    if (p->conn->shouldDestroy())
-      goto next_pkt_3;
-    if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum)
-      goto next_pkt_3;
-
-    SendUDPPacket(p, pktLen);
-    bytesThisSlot -= pktLen;
-    if (bytesThisSlot < 0)
-      break;
-  next_pkt_3:
-    p->free();
-  }
 
   bytesThisSlot = INT_MAX;
 
