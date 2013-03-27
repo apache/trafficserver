@@ -97,11 +97,6 @@ extern "C" int plock(int);
 //
 // Global Data
 //
-#define DEFAULT_NUMBER_OF_THREADS         ink_number_of_processors()
-#define DEFAULT_NUMBER_OF_UDP_THREADS     1
-#define DEFAULT_NUMBER_OF_SSL_THREADS     0
-#define DEFAULT_NUM_ACCEPT_THREADS        0
-#define DEFAULT_NUM_TASK_THREADS          0
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
 #define DEFAULT_LOCK_PROCESS              0
@@ -123,11 +118,13 @@ static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static int version_flag = DEFAULT_VERSION_FLAG;
 
 static int const number_of_processors = ink_number_of_processors();
-static int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
+static int num_of_net_threads = number_of_processors;
+static int num_of_udp_threads = 0;
+static int num_accept_threads  = 0;
+static int num_task_threads = 0;
+
 extern int num_of_cluster_threads;
-static int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
-static int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
-static int num_task_threads = DEFAULT_NUM_TASK_THREADS;
+
 #if TS_HAS_TESTS
 static int run_test_hook = 0;
 #endif
@@ -1639,7 +1636,13 @@ main(int argc, char **argv)
     HttpProxyPort::loadDefaultIfEmpty();
 
     cacheProcessor.start();
-    udpNet.start(num_of_udp_threads);
+
+    // UDP net-threads are turned off by default.
+    if (!num_of_udp_threads)
+      TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.ssl.number.threads");
+    if (num_of_udp_threads)
+      udpNet.start(num_of_udp_threads);
+
     sslNetProcessor.start(getNumSSLThreads());
 
 #ifndef INK_NO_LOG
