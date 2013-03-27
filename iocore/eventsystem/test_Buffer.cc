@@ -22,13 +22,17 @@
  */
 
 #include "I_EventSystem.h"
+#include "I_Layout.h"
 
 #define TEST_TIME_SECOND 60
 #define TEST_THREADS     2
 
-int count;
 Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
+
+void syslog_thr_init(void)
+{
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -45,7 +49,6 @@ reconfigure_diags()
   int i;
   DiagsConfigState c;
 
-
   // initial value set to 0 or 1 based on command line tags
   c.enabled[DiagsTagType_Debug] = (diags->base_debug_tags != NULL);
   c.enabled[DiagsTagType_Action] = (diags->base_action_tags != NULL);
@@ -53,7 +56,6 @@ reconfigure_diags()
   c.enabled[DiagsTagType_Debug] = 1;
   c.enabled[DiagsTagType_Action] = 1;
   diags->show_location = 1;
-
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
@@ -91,10 +93,8 @@ reconfigure_diags()
 
 }
 
-
-
 static void
-init_diags(char *bdt, char *bat)
+init_diags(const char *bdt, const char *bat)
 {
   FILE *diags_log_fp;
   char diags_logpath[500];
@@ -113,41 +113,42 @@ init_diags(char *bdt, char *bat)
   diags = NEW(new Diags(bdt, bat, diags_log_fp));
 
   if (diags_log_fp == NULL) {
-    SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
-
-    diags->print(NULL, DL_Warning, NULL, &loc,
-                 "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    Warning("couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
   }
 
-  diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);
+  Status("opened %s", diags_logpath);
   reconfigure_diags();
 
 }
 
-
 int
-main()
+main(int argc, const char *argv[])
 {
   RecModeT mode_type = RECM_STAND_ALONE;
-  count = 0;
+
+  Layout::create();
+  init_diags("", NULL);
   RecProcessInit(mode_type);
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(TEST_THREADS);
 
-  for (int i = 0; i < 100; i++) {
+  for (unsigned i = 0; i < 100; ++i) {
     MIOBuffer *b1 = new_MIOBuffer(default_large_iobuffer_size);
     IOBufferReader *b1reader = b1->alloc_reader();
-    b1->fill(1024 * 3);
+    b1->fill(b1->write_avail());
+
     MIOBuffer *b2 = new_MIOBuffer(default_large_iobuffer_size);
     IOBufferReader *b2reader = b2->alloc_reader();
-    b2->fill(1024 * 3);
+    b2->fill(b2->write_avail());
+
     //b1->write(b2reader, 2*1024);
+
     free_MIOBuffer(b2);
-    /* leak this */
-    b1 = NULL;
-    if ((i % 20) == 0)
-      xdump_to_file(stderr);
+    free_MIOBuffer(b1);
+
+    NOWARN_UNUSED(b1reader);
+    NOWARN_UNUSED(b2reader);
   }
 
   exit(0);
