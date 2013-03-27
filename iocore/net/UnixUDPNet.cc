@@ -58,8 +58,6 @@ int32_t g_udp_numSendRetries;
 // Public functions
 // See header for documentation
 //
-PacketQueue G_inkPipeInfo;
-
 int G_bwGrapherFd;
 sockaddr_in6 G_bwGrapherLoc;
 
@@ -677,11 +675,11 @@ UDPQueue::service(UDPNetHandler * nh)
       p->conn->lastPktStartTime = pktSendStartTime;
       p->delivery_time = pktSendStartTime;
 
-      G_inkPipeInfo.addPacket(p, now);
+      pipeInfo.addPacket(p, now);
     }
   }
 
-  G_inkPipeInfo.advanceNow(now);
+  pipeInfo.advanceNow(now);
   SendPackets();
 
   timeSpent = ink_hrtime_to_msec(now - last_report);
@@ -715,8 +713,8 @@ sendPackets:
   send_threshold_time = now + SLOT_TIME;
   bytesThisPipe = (int32_t)bytesThisSlot;
 
-  while ((bytesThisPipe > 0) && (G_inkPipeInfo.firstPacket(send_threshold_time))) {
-    p = G_inkPipeInfo.getFirstPacket();
+  while ((bytesThisPipe > 0) && (pipeInfo.firstPacket(send_threshold_time))) {
+    p = pipeInfo.getFirstPacket();
     pktLen = p->getPktLength();
 
     if (p->conn->shouldDestroy())
@@ -740,14 +738,14 @@ sendPackets:
   if ((bytesThisSlot > 0) && sentOne) {
     // redistribute the slack...
     now = ink_get_hrtime_internal();
-    if (G_inkPipeInfo.firstPacket(now) == NULL) {
-      G_inkPipeInfo.advanceNow(now);
+    if (pipeInfo.firstPacket(now) == NULL) {
+      pipeInfo.advanceNow(now);
     }
     goto sendPackets;
   }
 
   if ((g_udp_periodicFreeCancelledPkts) && (now - lastCleanupTime > ink_hrtime_from_sec(g_udp_periodicFreeCancelledPkts))) {
-    G_inkPipeInfo.FreeCancelledPackets(g_udp_periodicCleanupSlots);
+    pipeInfo.FreeCancelledPackets(g_udp_periodicCleanupSlots);
     lastCleanupTime = now;
   }
 }

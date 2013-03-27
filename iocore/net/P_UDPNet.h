@@ -56,29 +56,7 @@ struct UDPNetProcessorInternal : public UDPNetProcessor
 
 extern UDPNetProcessorInternal udpNetInternal;
 
-class PacketQueue;
 
-class UDPQueue
-{
-public:
-
-  void service(UDPNetHandler *);
-
-  void SendPackets();
-  void SendUDPPacket(UDPPacketInternal * p, int32_t pktLen);
-
-  // Interface exported to the outside world
-  void send(UDPPacket * p);
-
-  InkAtomicList atomicQueue;
-  ink_hrtime last_report;
-  ink_hrtime last_service;
-  int packets;
-  int added;
-
-  UDPQueue();
-  ~UDPQueue();
-};
 
 // 20 ms slots; 2048 slots  => 40 sec. into the future
 #define SLOT_TIME_MSEC 20
@@ -87,16 +65,16 @@ public:
 
 class PacketQueue
 {
-public:
-  PacketQueue()
-    : nPackets(0), now_slot(0)
-  {
-    lastPullLongTermQ = 0;
-    init();
-  }
+ public:
+ PacketQueue()
+   : nPackets(0), now_slot(0)
+    {
+      lastPullLongTermQ = 0;
+      init();
+    }
 
   virtual ~ PacketQueue()
-  { }
+    { }
 
   int nPackets;
   ink_hrtime lastPullLongTermQ;
@@ -250,7 +228,7 @@ public:
     now_slot = s;
   }
 
-private:
+ private:
   void remove(UDPPacketInternal * e)
   {
     nPackets--;
@@ -259,7 +237,7 @@ private:
     bucket[e->in_heap].remove(e);
   }
 
-public:
+ public:
   UDPPacketInternal *dequeue_ready(ink_hrtime t)
   {
     (void) t;
@@ -289,10 +267,36 @@ public:
     return HRTIME_FOREVER;
   }
 
-private:
+ private:
   void kill_cancelled_events()
   { }
 };
+
+
+class UDPQueue
+{
+  PacketQueue pipeInfo;
+  ink_hrtime last_report;
+  ink_hrtime last_service;
+  int packets;
+  int added;
+
+
+public:
+  InkAtomicList atomicQueue;
+
+  void service(UDPNetHandler *);
+
+  void SendPackets();
+  void SendUDPPacket(UDPPacketInternal * p, int32_t pktLen);
+
+  // Interface exported to the outside world
+  void send(UDPPacket * p);
+
+  UDPQueue();
+  ~UDPQueue();
+};
+
 
 void initialize_thread_for_udp_net(EThread * thread);
 
@@ -333,9 +337,5 @@ get_UDPNetHandler(EThread * t)
 {
   return (UDPNetHandler *)ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset);
 }
-
-// All of this stuff is for UDP egress b/w management
-// ToDo: It'd be nice to eliminate this entirely.... But we have no working use of UDPNet afaik. /leif
-extern PacketQueue G_inkPipeInfo;
 
 #endif //__P_UDPNET_H_
