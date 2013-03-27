@@ -70,7 +70,6 @@ public:
   // Interface exported to the outside world
   void send(UDPPacket * p);
 
-  Queue<UDPPacketInternal> reliabilityPktQueue;
   InkAtomicList atomicQueue;
   ink_hrtime last_report;
   ink_hrtime last_service;
@@ -80,8 +79,6 @@ public:
   UDPQueue();
   ~UDPQueue();
 };
-
-#ifdef PACKETQUEUE_IMPL_AS_RING
 
 // 20 ms slots; 2048 slots  => 40 sec. into the future
 #define SLOT_TIME_MSEC 20
@@ -296,7 +293,6 @@ private:
   void kill_cancelled_events()
   { }
 };
-#endif
 
 void initialize_thread_for_udp_net(EThread * thread);
 
