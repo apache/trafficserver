@@ -69,16 +69,14 @@ initialize_thread_for_udp_net(EThread * thread)
   new((ink_dummy_for_new *) get_UDPPollCont(thread)) PollCont(thread->mutex);
   new((ink_dummy_for_new *) get_UDPNetHandler(thread)) UDPNetHandler;
 
-  // These are hidden variables that control the amount of memory used by UDP
-  // packets.  As usual, defaults are in RecordsConfig.cc
-
   // This variable controls how often we cleanup the cancelled packets.
   // If it is set to 0, then cleanup never occurs.
   REC_ReadConfigInt32(g_udp_periodicFreeCancelledPkts, "proxy.config.udp.free_cancelled_pkts_sec");
+
   // This variable controls how many "slots" of the udp calendar queue we cleanup.
   // If it is set to 0, then cleanup never occurs.  This value makes sense
   // only if the above variable is set.
-  REC_ReadConfigInt32(g_udp_periodicFreeCancelledPkts, "proxy.config.udp.periodic_cleanup");
+  REC_ReadConfigInt32(g_udp_periodicCleanupSlots, "proxy.config.udp.periodic_cleanup");
 
   // UDP sends can fail with errno=EAGAIN.  This variable determines the # of
   // times the UDP thread retries before giving up.  Set to 0 to keep trying forever.
