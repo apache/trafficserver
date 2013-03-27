@@ -480,7 +480,6 @@ WebHttpInit()
   // initialize allow files
   g_autoconf_allow_ht = ink_hash_table_create(InkHashTableKeyType_String);
   ink_hash_table_insert(g_autoconf_allow_ht, "/proxy.pac", NULL);
-  ink_hash_table_insert(g_autoconf_allow_ht, "/wpad.dat", NULL);
   ink_hash_table_insert(g_autoconf_allow_ht, "/public_key.der", NULL);
   ink_hash_table_insert(g_autoconf_allow_ht, "/synthetic.txt", NULL);
 
