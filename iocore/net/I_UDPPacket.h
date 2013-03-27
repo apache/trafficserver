@@ -55,7 +55,6 @@ public:
   UDPConnection *getConnection();
   void setArrivalTime(ink_hrtime t);
   IOBufferBlock *getIOBlockChain();
-  void setReliabilityPkt();
   int64_t getPktLength();
   /**
      Add IOBufferBlock (chain) to end of packet.
