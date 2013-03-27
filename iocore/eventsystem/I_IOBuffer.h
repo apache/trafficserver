@@ -793,7 +793,7 @@ public:
   the center of all IOCore data transfer. MIOBuffers are the data
   buffers used to transfer data to and from VConnections. A MIOBuffer
   points to a list of IOBufferBlocks which in turn point to IOBufferData
-  stucutres that in turn point to the actual data. MIOBuffer allows one
+  structures that in turn point to the actual data. MIOBuffer allows one
   producer and multiple consumers. The buffer fills up according the
   amount of data outstanding for the slowest consumer. Thus, MIOBuffer
   implements automatic flow control between readers of different speeds.

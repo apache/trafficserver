@@ -22,6 +22,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/ts
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
+TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = libinkevent.a
 
@@ -67,3 +68,34 @@ libinkevent_a_SOURCES = \
   Inline.cc \
   Tasks.cc \
   I_Tasks.h
+
+check_PROGRAMS = test_Buffer test_Event
+
+test_CXXFLAGS = \
+  $(iocore_include_dirs) \
+  -I$(top_builddir)/proxy \
+  -I$(top_builddir)/proxy/api/ts \
+  -I$(top_srcdir)/proxy/api \
+  -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/http \
+  -I$(top_srcdir)/proxy/logging \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/utils
+
+test_LDADD = \
+  libinkevent.a \
+  $(top_builddir)/lib/records/librecprocess.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/ts/libtsutil.la
+
+test_Buffer_SOURCES = ../../proxy/UglyLogStubs.cc test_Buffer.cc
+test_Event_SOURCES = ../../proxy/UglyLogStubs.cc test_Event.cc
+test_Buffer_CXXFLAGS = $(test_CXXFLAGS)
+test_Event_CXXFLAGS = $(test_CXXFLAGS)
+
+test_Buffer_LDADD = $(test_LDADD)
+test_Event_LDADD = $(test_LDADD)
+
