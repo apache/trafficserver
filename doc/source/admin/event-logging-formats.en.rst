@@ -115,19 +115,17 @@ The following list describes Traffic Server custom logging fields.
 
     In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
     (according to the rules in the
-    ```remap.config`` <../configuration-files/remap.config>`_ file), and
-    _not _ the pristine/unmapped URL. To configure Traffic Server to
-    log the original, unmapped URL, set the variable
-    `*``proxy.config.url_remap.pristine_host_hdr``* <../configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_
-    in the ```records.config`` <../configuration-files/records.config>`_
-    file to ``1`` .
+    ```remap.config`` <../configuration-files/remap.config>`_ file),
+    _not_ the pristine/unmapped URL.
 
 ``cqu``
     The universal resource identifier (URI) of the request from client
     to Traffic Server (subset of ``cqtx`` ).
 
-    See the description of ```cqtx`` <#cqtx>`_ for behaviour in reverse
-    proxy mode.
+    In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
+    (according to the rules in the
+    ```remap.config`` <../configuration-files/remap.config>`_ file),
+    _not_ the pristine/unmapped URL.
 
 ``cquc``
     The client request canonical URL. This differs from ``cqu`` in that
@@ -136,8 +134,7 @@ The following list describes Traffic Server custom logging fields.
     sequence is a percentage sign followed by the ASCII code number in
     hex.
 
-    See the description of ```cqtx`` <#cqtx>`_ for behaviour in reverse
-    proxy mode.
+    See `cquuc`_.
 
 ``cqup``
     The client request URL path; specifies the argument portion of the
@@ -145,16 +142,24 @@ The following list describes Traffic Server custom logging fields.
     ``http://www.company.com/images/x.gif``, then this field displays
     ``/images/x.gif``
 
+    See `cquup`_.
+
 ``cqus``
     The client request URL scheme.
+
+.. _cquuc:
 
 ``cquuc``
     The client request unmapped URL canonical. This field records a URL
     before it is remapped (reverse proxy mode).
 
+.. _cquup:
+
 ``cquup``
     The client request unmapped URL path. This field records a URL path
     before it is remapped (reverse proxy mode).
+
+.. _cquuh:
 
 ``cquuh``
     The client request unmapped URL host. This field records a URL's
