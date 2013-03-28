@@ -42,20 +42,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-PATCHES PROPOSED TO BACKPORT FROM TRUNK:
-  [ New proposals should be added at the end of the list ]
-
-  fix wccp's out of tree build
-  Jira: https://issues.apache.org/jira/browse/TS-1368
-  Patch: 682c4e3938b8aee288facdcfd0750571edcb20b0
-         72dcbdc58024abc6f67a592853e488d7f9eebd83
-  igalic says: This still needs some more patches I haven't identified.
-
-  Fix SSL accept performance regression
-  Jira: https://issues.apache.org/jira/browse/TS-1538
-  Patch: ccc4b37b91f25c2e985f195b77369ce20e2e8e81
-  +1: jpeach, zwoop
-
   Addendum for, TS-1470: consistently use off_t for cache sizes
   Jira: https://issues.apache.org/jira/browse/TS-1319
   Patch: 61496440b65ee28c93bf77fa036c0424b33dc10c
@@ -73,6 +59,25 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   (Patches do not apply cleanly, there is a merge conflict resolving patch in
   https://issues.apache.org/jira/secure/attachment/12572264/TS-1714.diff)
   +1: zwoop, arno, jpeach
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
+
+  fix wccp's out of tree build
+  Jira: https://issues.apache.org/jira/browse/TS-1368
+  Patch: 682c4e3938b8aee288facdcfd0750571edcb20b0
+         72dcbdc58024abc6f67a592853e488d7f9eebd83
+  igalic says: This still needs some more patches I haven't identified.
+
+  Fix SSL accept performance regression
+  Jira: https://issues.apache.org/jira/browse/TS-1538
+  Patch: ccc4b37b91f25c2e985f195b77369ce20e2e8e81
+  +1: jpeach, zwoop
+
+  Hardcoded FD_SET of 32 is too small.
+  Jira: https://issues.apache.org/jira/browse/TS-1483
+  Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
+  +1: igalic
 
 
 RELEASE PROCESS
