@@ -77,7 +77,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Hardcoded FD_SET of 32 is too small.
   Jira: https://issues.apache.org/jira/browse/TS-1483
   Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
-  +1: igalic
+  +1: igalic, zwoop
 
 
 RELEASE PROCESS
