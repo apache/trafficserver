@@ -44,6 +44,9 @@ test: check
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
 
+distclean-local:
+	-rm -f config.nice
+
 doxygen:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
@@ -73,17 +76,17 @@ install-data-hook:
 
 help:
 	@echo 'all              default target for building the package' && \
-   echo 'check            run the test suite, if any' && \
-   echo 'clean            remove whatever make created' && \
-   echo 'distclean        remove whatever configure created' && \
-   echo 'dist             DEPRECATED: recreate source package' && \
-   echo 'examples         make examples' && \
-   echo 'asf-dist         recreate source package' && \
-   echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
-   echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
-   echo 'doxygen          generate doxygen docs in doc/html dir' && \
-   echo 'help             display this list of make targets' && \
-   echo 'install          install by copying the built files to system-wide dirs' && \
-   echo 'install-strip    same as install but then strips debugging symbols' && \
-   echo 'install-examples install examples by copying the built files to system-wide dirs'
+	echo 'check            run the test suite, if any' && \
+	echo 'clean            remove whatever make created' && \
+	echo 'distclean        remove whatever configure created' && \
+	echo 'dist             DEPRECATED: recreate source package' && \
+	echo 'examples         make examples' && \
+	echo 'asf-dist         recreate source package' && \
+	echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
+	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
+	echo 'doxygen          generate doxygen docs in doc/html dir' && \
+	echo 'help             display this list of make targets' && \
+	echo 'install          install by copying the built files to system-wide dirs' && \
+	echo 'install-strip    same as install but then strips debugging symbols' && \
+	echo 'install-examples install examples by copying the built files to system-wide dirs'
 
