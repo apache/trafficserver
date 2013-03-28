@@ -43,17 +43,17 @@ A list of all bugs open for the next development release can be found at
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
   Addendum for, TS-1470: consistently use off_t for cache sizes
-  Jira: https://issues.apache.org/jira/browse/TS-1319
+  Jira: https://issues.apache.org/jira/browse/TS-1470
   Patch: 61496440b65ee28c93bf77fa036c0424b33dc10c
   +1: igalic (although cherry picking doesn't apply cleanly), arno, zwoop
 
   Fix FreeBSD block calculation (both RAW and directory)
-  Jira: https://issues.apache.org/jira/browse/TS-1707
+  Jira: https://issues.apache.org/jira/browse/TS-1784
   Patch: 5566ac76d6c4e4f5154421f1ac1077487b02d332
   +1: igalic, zwoop [I double checked with John too], jpeach
 
   Fix gcc-4.8 build problems
-  Jira: https://issues.apache.org/jira/browse/TS-1714
+  Jira: https://issues.apache.org/jira/browse/TS-1785
   Patch: dccdd5a44, 2bee0a2f0, dccdd5a44, b4d4f4a9a,
          deb8253a, 44fff1b91
   (Patches do not apply cleanly, there is a merge conflict resolving patch in
