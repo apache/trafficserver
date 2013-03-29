@@ -534,7 +534,7 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT 
 TSError
 ReadFile(TSFileNameT file, char **text, int *size, int *version)
 {
-  char *fname;
+  const char *fname;
   Rollback *file_rb;
   int ret, old_file_len;
   textBuffer *old_file_content;
@@ -551,10 +551,8 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   ret = configFiles->getRollbackObj(fname, &file_rb);
   if (ret != TRUE) {
     Debug("FileOp", "[get_lines_from_file] Can't get Rollback for file: %s\n", fname);
-    ats_free(fname);
     return TS_ERR_READ_FILE;
   }
-  ats_free(fname);
   ver = file_rb->getCurrentVersion();
   file_rb->getVersion(ver, &old_file_content);
   *version = ver;
@@ -586,7 +584,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
 TSError
 WriteFile(TSFileNameT file, char *text, int size, int version)
 {
-  char *fname;
+  const char *fname;
   Rollback *file_rb;
   textBuffer *file_content;
   int ret;
@@ -603,7 +601,6 @@ WriteFile(TSFileNameT file, char *text, int size, int version)
     mgmt_log(stderr, "[CfgFileIO::WriteFile] ERROR getting rollback object\n");
     //goto generate_error_msg;
   }
-  ats_free(fname);
 
   // if version < 0 then, just use next version in sequence;
   // otherwise check if trying to commit an old version

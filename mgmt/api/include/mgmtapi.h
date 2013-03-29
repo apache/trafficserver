@@ -368,7 +368,7 @@ extern "C"
     TS_FNAME_IP_ALLOW,         /* ip_allow.config */
     TS_FNAME_LOGS_XML,         /* logs_xml.config */
     TS_FNAME_PARENT_PROXY,     /* parent.config */
-    TS_FNAME_VOLUME,        /* volume.config */
+    TS_FNAME_VOLUME,           /* volume.config */
     TS_FNAME_PLUGIN,           /* plugin.config */
     TS_FNAME_REMAP,            /* remap.config */
     TS_FNAME_SOCKS,            /* socks.config */
