@@ -1384,8 +1384,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.plugin.plugin_mgmt_dir", RECD_STRING, TS_BUILD_SYSCONFDIR "/plugins_mgmt", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.plugin.extensions_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
 
   //##############################################################################
   //#

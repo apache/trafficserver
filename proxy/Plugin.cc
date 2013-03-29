@@ -35,7 +35,6 @@
 #include "InkAPIInternal.h"
 #include "Main.h"
 #include "Plugin.h"
-#include "PluginDB.h"
 
 // HPUX:
 //   LD_SHAREDCMD=ld -b
@@ -48,12 +47,8 @@
 
 
 static const char *plugin_dir = ".";
-static const char *extensions_dir = ".";
-static PluginDB *plugin_db = NULL;
 
 typedef void (*init_func_t) (int argc, char *argv[]);
-typedef void (*init_func_w_handle_t) (void *handle, int argc, char *argv[]);
-typedef int (*lic_req_func_t) (void);
 
 // Plugin registration vars
 //
@@ -75,11 +70,9 @@ PluginRegInfo::PluginRegInfo()
 { }
 
 static void *
-dll_open(char *fn, bool global)
+dll_open(const char *path)
 {
-  int global_flags = global ? RTLD_GLOBAL : 0;
-
-  return (void *) dlopen(fn, RTLD_NOW | global_flags);
+  return (void *) dlopen(path, RTLD_NOW);
 }
 
 static void *
@@ -101,21 +94,18 @@ dll_close(void *dlp)
   dlclose(dlp);
 }
 
-
 static void
-plugin_load(int argc, char *argv[], bool internal)
+plugin_load(int argc, char *argv[])
 {
   char path[PATH_NAME_MAX + 1];
   void *handle;
   init_func_t init;
-  lic_req_func_t lic_req;
   PluginRegInfo *plugin_reg_temp;
-  const char *pdir = internal ? extensions_dir : plugin_dir;
 
   if (argc < 1) {
     return;
   }
-  ink_filepath_make(path, sizeof(path), pdir, argv[0]);
+  ink_filepath_make(path, sizeof(path), plugin_dir, argv[0]);
 
   Note("loading plugin '%s'", path);
 
@@ -128,32 +118,17 @@ plugin_load(int argc, char *argv[], bool internal)
     plugin_reg_temp = (plugin_reg_temp->link).next;
   }
 
-  handle = dll_open(path, (internal ? true : false));
+  handle = dll_open(path);
   if (!handle) {
     Error("unable to load '%s': %s", path, dll_error(handle));
     abort();
   }
 
-  lic_req = (lic_req_func_t) dll_findsym(handle, "TSPluginLicenseRequired");
-  if (lic_req && lic_req() != 0) {
-    PluginDB::CheckLicenseResult result = plugin_db->CheckLicense(argv[0]);
-    if (result != PluginDB::license_ok) {
-      Error("unable to load '%s': %s", path, PluginDB::CheckLicenseResultStr[result]);
-      dll_close(handle);
-      abort();
-    }
-  }
   // Allocate a new registration structure for the
   //    plugin we're starting up
   ink_assert(plugin_reg_current == NULL);
   plugin_reg_current = new PluginRegInfo;
   plugin_reg_current->plugin_path = ats_strdup(path);
-
-  init_func_w_handle_t inith = (init_func_w_handle_t) dll_findsym(handle, "TSPluginInitwDLLHandle");
-  if (inith) {
-    inith(handle, argc, argv);
-    return;
-  }
 
   init = (init_func_t) dll_findsym(handle, "TSPluginInit");
   if (!init) {
@@ -268,7 +243,7 @@ plugins_exist(const char *config_dir)
 }
 
 void
-plugin_init(const char *config_dir, bool internal)
+plugin_init(const char *config_dir)
 {
   char path[PATH_NAME_MAX + 1];
   char line[1024], *p;
@@ -281,35 +256,14 @@ plugin_init(const char *config_dir, bool internal)
 
   if (INIT_ONCE) {
     api_init();
-    char *cfg = NULL;
-
     plugin_dir = TSPluginDirGet();
-
-    RecGetRecordString_Xmalloc("proxy.config.plugin.extensions_dir", (char**)&cfg);
-    if (cfg != NULL) {
-      extensions_dir = Layout::get()->relative(cfg);
-      ats_free(cfg);
-      cfg = NULL;
-    }
-    ink_filepath_make(path, sizeof(path), config_dir, "plugin.db");
-    plugin_db = new PluginDB(path);
     INIT_ONCE = false;
   }
 
-  ink_assert(plugin_db);
-
-  if (internal == false) {
-    ink_filepath_make(path, sizeof(path), config_dir, "plugin.config");
-  } else {
-    ink_filepath_make(path, sizeof(path), config_dir, "extensions.config");
-  }
-
+  ink_filepath_make(path, sizeof(path), config_dir, "plugin.config");
   fd = open(path, O_RDONLY);
   if (fd < 0) {
-    /* secret extensions dont complain */
-    if (internal == false) {
-      Warning("unable to open plugin config file '%s': %d, %s", path, errno, strerror(errno));
-    }
+    Warning("unable to open plugin config file '%s': %d, %s", path, errno, strerror(errno));
     return;
   }
 
@@ -362,7 +316,7 @@ plugin_init(const char *config_dir, bool internal)
       }
     }
 
-    plugin_load(argc, argv, internal);
+    plugin_load(argc, argv);
 
     for (i = 0; i < argc; i++)
       ats_free(vars[i]);

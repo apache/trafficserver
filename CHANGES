@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1778] Remove vestigal extensions.config support
+
   *) [TS-1806] bogus buffer sizing in CfgContextUtils.cc
 
   *) [TS-1805] Fix stats ExpressionEval in stats xml.
