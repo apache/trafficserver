@@ -106,8 +106,6 @@ traffic_server_SOURCES = \
   ParentSelection.h \
   Plugin.cc \
   Plugin.h \
-  PluginDB.cc \
-  PluginDB.h \
   PluginVC.cc \
   PluginVC.h \
   Prefetch.cc \
@@ -233,7 +231,6 @@ traffic_sac_SOURCES = \
   Prefetch.cc \
   Update.cc \
   Plugin.cc \
-  PluginDB.cc \
   InkAPI.cc \
   FetchSM.cc \
   InkIOCoreAPI.cc \

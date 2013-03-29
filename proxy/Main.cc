@@ -1650,10 +1650,6 @@ main(int argc, char **argv)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 #endif
 
-#if !defined(TS_NO_API)
-    plugin_init(system_config_directory, true); // extensions.config
-#endif
-
     //acc.init();
     //if (auto_clear_authdb_flag)
      // acc.clear_cache();
@@ -1717,7 +1713,7 @@ main(int argc, char **argv)
     }
 
 #ifndef TS_NO_API
-    plugin_init(system_config_directory, false);        // plugin.config
+    plugin_init(system_config_directory);        // plugin.config
 #else
     api_init();                 // we still need to initialize some of the data structure other module needs.
     // i.e. http_global_hooks
