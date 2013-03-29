@@ -461,8 +461,8 @@ StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
     status = TSHttpHdrStatusGet(auth->rheader.buffer, auth->rheader.header);
     AuthLogDebug("authorization proxy returned status %d", (int)status);
 
-    // Authorize the original request on a 200 response.
-    if (status == TS_HTTP_STATUS_OK) {
+    // Authorize the original request on a 2xx response.
+    if (status >= 200 && status < 300) {
         return TS_EVENT_IMMEDIATE;
     }
 
