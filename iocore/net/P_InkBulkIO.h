@@ -146,13 +146,6 @@ struct InkBulkIORequest
 #define INKBIO_SPLIT_REQUEST  0xf1
 
 /*
- * These 2 better be the same in user/kernel land
- */
-#ifndef MAX
-#define MAX(x, y) (x > y ? x : y)
-#endif
-
-/*
  * Purposely, under specify the size; we need to leave space for the "terminating" packet.
  * Every block contains at least 1 request.
  */

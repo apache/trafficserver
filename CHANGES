@@ -14,6 +14,9 @@
 
   *) [TS-1169] Eliminate bogus asserts. Credits to Conan Wang.
 
+  *) [TS-1764] Unify MAX/MIN definitions (in ink_defs.h). Also clean
+   up the checks of gcc prior to v3.x (which we no longer support).
+
   *) [TS-1724] Add tool to compare records.config files to contrib
    Author: Mark Harrison <mark@mivok.net>
 

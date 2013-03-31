@@ -36,13 +36,6 @@
 
 #include "P_Net.h"
 
-// Get rid of any previous MIN declaration, since we have our own
-// funky MIN here. /leif
-#if defined(MIN)
-#undef MIN
-#endif
-#define MIN(x,y) (x <= y) ? x : y;
-
 // Each test requires two definition entries.  One for the passive
 //   side of the connection and one for the active side
 //

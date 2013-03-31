@@ -24,16 +24,26 @@
 #ifndef _ink_defs_h
 #define	_ink_defs_h
 
-/* Defines
+/* Some popular defines
 */
 #define SIZE(x) (sizeof(x)/sizeof((x)[0]))
 #define SOCKOPT_ON ((char*)&on)
 #define SOCKOPT_OFF ((char*)&off)
+
 #ifndef ABS
-#define ABS(_x_) (((_x_) < 0) ? ( - (_x_)) : (_x_))
+#define ABS(x) (((x) < 0) ? ( - (x)) : (x))
 #endif
+
+#ifndef MAX
+#define MAX(x,y) (((x) >= (y)) ? (x) : (y))
+#endif
+
+#ifndef MIN
+#define MIN(x,y) (((x) <= (y)) ? (x) : (y))
+#endif
+
 #if TS_USE_HWLOC
-#include <hwloc.h>
+#  include <hwloc.h>
 #endif
 
 /* Debugging
@@ -82,8 +92,10 @@ const hwloc_topology_t* ink_get_topology();
 
 /** Constants.
  */
+#ifdef __cplusplus
 namespace ts {
   static const int NO_FD = -1; ///< No or invalid file descriptor.
 }
+#endif
 
 #endif /*__ink_defs_h*/
