@@ -118,6 +118,9 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
+  if (total->sum < 0) { // Assure that we stay positive
+    total->sum = 0;
+  }
 
   return REC_ERR_OKAY;
 }
@@ -141,6 +144,9 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     total.sum += tlp->sum;
     total.count += tlp->count;
+  }
+  if (total.sum < 0) { // Assure that we stay positive
+    total.sum = 0;
   }
 
   // lock so the setting of the globals and last values are atomic
