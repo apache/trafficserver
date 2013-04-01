@@ -892,12 +892,12 @@ SnapshotGetMlt(LLQ * snapshots)
  * stats are set back to defaults successfully.
  */
 TSError
-StatsReset(bool cluster)
+StatsReset(bool cluster, const char *name)
 {
   if (cluster)
-    lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_CLEAR_STATS);
+    lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_CLEAR_STATS, name);
   else
-    lmgmt->clearStats();
+    lmgmt->clearStats(name);
   return TS_ERR_OKAY;
 }
 

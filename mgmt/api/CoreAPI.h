@@ -95,7 +95,7 @@ TSError SnapshotRestore(char *snapshot_name);
 TSError SnapshotRemove(char *snapshot_name);
 TSError SnapshotGetMlt(LLQ * snapshots);
 
-TSError StatsReset(bool cluster);
+TSError StatsReset(bool cluster, const char* name = NULL);
 
 /***************************************************************************
  * Miscellaneous Utility

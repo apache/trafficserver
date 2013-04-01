@@ -77,7 +77,8 @@ typedef enum
   SNAPSHOT_REMOVE,
   SNAPSHOT_GET_MLT,
   DIAGS,
-  STATS_RESET,
+  STATS_RESET_NODE,
+  STATS_RESET_CLUSTER,
   ENCRYPT_TO_FILE,
   UNDEFINED_OP /* This must be last */
 } OpType;
