@@ -2,6 +2,10 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1632] In addition to the changes from TS-1674, also add
+   some safety measures assuring that the stats sums don't go
+   negative. Author: Yakov Kopel.
+
   *) [TS-1789] Script to compare RecordsConfig.cc default values with
    records.config.default.in: Author: Mark Harrison.
 
