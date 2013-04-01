@@ -567,7 +567,7 @@ free_CacheVC(CacheVC *cont)
       CACHE_INCREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_SUCCESS);
     }                             // else abort,cancel
   }
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
   if (cont->trigger)
     cont->trigger->cancel();
   ink_assert(!cont->is_io_in_progress());
@@ -618,7 +618,7 @@ TS_INLINE int
 CacheVC::calluser(int event)
 {
   recursive++;
-  ink_debug_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
   vio._cont->handleEvent(event, (void *) &vio);
   recursive--;
   if (closed) {
@@ -632,7 +632,7 @@ TS_INLINE int
 CacheVC::callcont(int event)
 {
   recursive++;
-  ink_debug_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
   _action.continuation->handleEvent(event, this);
   recursive--;
   if (closed)
@@ -776,7 +776,7 @@ Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   }
   if (open_dir.open_write(cont, allow_if_writers, max_writers)) {
 #ifdef CACHE_STAT_PAGES
-    ink_debug_assert(cont->mutex->thread_holding == this_ethread());
+    ink_assert(cont->mutex->thread_holding == this_ethread());
     ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
     stat_cache_vcs.enqueue(cont, cont->stat_link);
 #endif

@@ -106,7 +106,7 @@ obj_copy_data(HdrHeapObjImpl * s_obj, HdrHeapObjImpl * d_obj)
 {
   char *src, *dst;
 
-  ink_debug_assert((s_obj->m_length == d_obj->m_length) && (s_obj->m_type == d_obj->m_type));
+  ink_assert((s_obj->m_length == d_obj->m_length) && (s_obj->m_type == d_obj->m_type));
 
   int hdr_length = sizeof(HdrHeapObjImpl);
   src = (char *) s_obj + hdr_length;

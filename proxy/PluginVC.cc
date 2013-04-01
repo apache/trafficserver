@@ -111,8 +111,8 @@ PluginVC::main_handler(int event, void *data)
 
   ink_release_assert(event == EVENT_INTERVAL || event == EVENT_IMMEDIATE);
   ink_release_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_debug_assert(!deletable);
-  ink_debug_assert(data != NULL);
+  ink_assert(!deletable);
+  ink_assert(data != NULL);
 
   Event *call_event = (Event *) data;
   EThread *my_ethread = mutex->thread_holding;
@@ -288,7 +288,7 @@ PluginVC::reenable(VIO * vio)
 
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_debug_assert(vio->mutex->thread_holding == this_ethread());
+  ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Debug("pvc", "[%u] %s: reenable %s", PVC_ID, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
@@ -309,7 +309,7 @@ PluginVC::reenable_re(VIO * vio)
 
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_debug_assert(vio->mutex->thread_holding == this_ethread());
+  ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Debug("pvc", "[%u] %s: reenable_re %s", PVC_ID, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
@@ -420,7 +420,7 @@ PluginVC::transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from
 
   int64_t total_added = 0;
 
-  ink_debug_assert(act_on <= transfer_from->read_avail());
+  ink_assert(act_on <= transfer_from->read_avail());
 
   while (act_on > 0) {
     int64_t block_read_avail = transfer_from->block_read_avail();

@@ -221,7 +221,7 @@ struct Vol: public Continuation
   int increment_generation()
   {
     // this is stored in the offset field of the directory (!=0)
-    ink_debug_assert(mutex->thread_holding == this_ethread());
+    ink_assert(mutex->thread_holding == this_ethread());
     header->generation++;
     if (!header->generation)
       header->generation++;

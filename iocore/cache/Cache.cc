@@ -302,7 +302,7 @@ CacheVC::CacheVC():alternate_index(CACHE_ALT_INDEX_DEFAULT)
 HTTPInfo::FragOffset*
 CacheVC::get_frag_table()
 {
-  ink_debug_assert(alternate.valid());
+  ink_assert(alternate.valid());
   return alternate.valid() ? alternate.get_frag_table() : 0;
 }
 
@@ -363,7 +363,7 @@ CacheVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuf, bool
 void
 CacheVC::do_io_close(int alerrno)
 {
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
   int previous_closed = closed;
   closed = (alerrno == -1) ? 1 : -1;    // Stupid default arguments
   DDebug("cache_close", "do_io_close %p %d %d", this, alerrno, closed);
@@ -435,7 +435,7 @@ bool CacheVC::set_data(int i, void *data)
 {
   (void) i;
   (void) data;
-  ink_debug_assert(!"CacheVC::set_data should not be called!");
+  ink_assert(!"CacheVC::set_data should not be called!");
   return true;
 }
 
@@ -510,8 +510,8 @@ CacheVC::get_disk_io_priority()
 int
 Vol::begin_read(CacheVC *cont)
 {
-  ink_debug_assert(cont->mutex->thread_holding == this_ethread());
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(cont->mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
 #ifdef CACHE_STAT_PAGES
   ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
   stat_cache_vcs.enqueue(cont, cont->stat_link);
@@ -543,8 +543,8 @@ int
 Vol::close_read(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
-  ink_debug_assert(t == this_ethread());
-  ink_debug_assert(t == mutex->thread_holding);
+  ink_assert(t == this_ethread());
+  ink_assert(t == mutex->thread_holding);
   if (dir_is_empty(&cont->earliest_dir))
     return 1;
   int i = dir_evac_bucket(&cont->earliest_dir);
@@ -1950,7 +1950,7 @@ int
 CacheVC::handleReadDone(int event, Event *e) {
   NOWARN_UNUSED(e);
   cancel_trigger();
-  ink_debug_assert(this_ethread() == mutex->thread_holding);
+  ink_assert(this_ethread() == mutex->thread_holding);
 
   if (event == AIO_EVENT_DONE)
     set_io_not_in_progress();
@@ -2069,7 +2069,7 @@ CacheVC::handleRead(int event, Event *e)
   f.doc_from_ram_cache = false;
 
   // check ram cache
-  ink_debug_assert(vol->mutex->thread_holding == this_ethread());
+  ink_assert(vol->mutex->thread_holding == this_ethread());
   int64_t o = dir_offset(&dir);
   if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o))
     goto LramHit;
@@ -2231,7 +2231,7 @@ CacheVC::removeEvent(int event, Event *e)
     if (od)
       vol->close_write(this);
   }
-  ink_debug_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
   _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, (void *) -ECACHE_NO_DOC);
   goto Lfree;
 Lremoved:

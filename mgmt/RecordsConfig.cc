@@ -1956,7 +1956,7 @@ LibRecordsConfigInit()
         break;
 
       default:
-        ink_debug_assert(true);
+        ink_assert(true);
         break;
 
       }                         // switch
@@ -1983,7 +1983,7 @@ LibRecordsConfigInit()
         break;
 
       default:
-        ink_debug_assert(true);
+        ink_assert(true);
         break;
       }                         // switch
     }

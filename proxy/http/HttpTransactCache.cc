@@ -207,8 +207,8 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
     HTTPHdr *cached_response = obj->response_get();
 
     if (!(obj->object_key_get() == zero_key)) {
-      ink_debug_assert(cached_request->valid());
-      ink_debug_assert(cached_response->valid());
+      ink_assert(cached_request->valid());
+      ink_assert(cached_response->valid());
 
       Q = calculate_quality_of_match(http_config_params, client_request, cached_request, cached_response);
 
@@ -505,7 +505,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField * accept_field, M
   float wildcard_type_q = 1.0;
   float wildcard_subtype_q = 1.0;
 
-  ink_debug_assert((accept_field != NULL) && (content_field != NULL));
+  ink_assert((accept_field != NULL) && (content_field != NULL));
 
   // Extract the content-type field value before the semicolon.
   // This has to be done just once because assuming single
@@ -1004,7 +1004,7 @@ match_accept_content_language(const char *c_raw,
   StrList a_values_list;
   Str *a_value;
 
-  ink_debug_assert(accept_field != NULL);
+  ink_assert(accept_field != NULL);
 
   // loop over each language-range pattern //
   // TODO: Should we check the return value (count) here?
@@ -1147,10 +1147,10 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
 {
   //NOWARN_UNUSED(http_config_params);
 
-  ink_debug_assert(http_config_params != NULL);
-  ink_debug_assert(client_request != NULL);
-  ink_debug_assert(obj_client_request != NULL);
-  ink_debug_assert(obj_origin_server_response != NULL);
+  ink_assert(http_config_params != NULL);
+  ink_assert(client_request != NULL);
+  ink_assert(obj_client_request != NULL);
+  ink_assert(obj_origin_server_response != NULL);
 
   Variability_t variability = VARIABILITY_NONE;
 
@@ -1258,7 +1258,7 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
       // mean that the values DO NOT match.                            //
       ///////////////////////////////////////////////////////////////////
 
-      ink_debug_assert(strlen(field->str) == field->len);
+      ink_assert(strlen(field->str) == field->len);
 
       char *field_name_str = (char *) hdrtoken_string_to_wks(field->str, field->len);
       if (field_name_str == NULL)

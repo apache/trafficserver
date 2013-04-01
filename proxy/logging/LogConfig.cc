@@ -651,7 +651,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
       if (collation_mode == COLLATION_HOST) {
 #if defined(IOCORE_LOG_COLLATION)
 
-        ink_debug_assert(m_log_collation_accept == 0);
+        ink_assert(m_log_collation_accept == 0);
 
         if (prev_config && prev_config->m_log_collation_accept) {
           if (prev_config->collation_port == collation_port) {
@@ -698,7 +698,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
 void
 LogConfig::init(LogConfig * prev_config)
 {
-  ink_debug_assert(!initialized);
+  ink_assert(!initialized);
 
   setup_collation(prev_config);
 

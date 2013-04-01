@@ -429,7 +429,7 @@ ink_aio_read(AIOCallback *op, int fromAPI)
   op->aiocb.aio_lio_opcode = LIO_READ;
 
 #if (AIO_MODE == AIO_MODE_AIO)
-  ink_debug_assert(this_ethread() == op->thread);
+  ink_assert(this_ethread() == op->thread);
   op->thread->aio_ops.enqueue(op);
   if (aio_read(&op->aiocb) < 0) {
     Warning("failed aio_read: %s\n", strerror(errno));
@@ -452,7 +452,7 @@ ink_aio_write(AIOCallback *op, int fromAPI)
   op->aiocb.aio_lio_opcode = LIO_WRITE;
 
 #if (AIO_MODE == AIO_MODE_AIO)
-  ink_debug_assert(this_ethread() == op->thread);
+  ink_assert(this_ethread() == op->thread);
   op->thread->aio_ops.enqueue(op);
   if (aio_write(&op->aiocb) < 0) {
     Warning("failed aio_write: %s\n", strerror(errno));
@@ -572,7 +572,7 @@ Lagain:
   int num = 0;
   for (; num < MAX_AIO_EVENTS && ((op = ready_list.dequeue()) != NULL); ++num) {
     cbs[num] = &op->aiocb;
-    ink_debug_assert(op->action.continuation);
+    ink_assert(op->action.continuation);
   }
   if (num > 0) {
     int ret;
@@ -585,7 +585,7 @@ Lagain:
         perror("io_submit error");
       else {
         fprintf(stderr, "could not sumbit IOs");
-        ink_debug_assert(0);
+        ink_assert(0);
       }
     }
   }
@@ -632,7 +632,7 @@ ink_aio_readv(AIOCallback *op, int fromAPI) {
   }
 
   if (sz > 1) {
-    ink_debug_assert(op->action.continuation);
+    ink_assert(op->action.continuation);
     AIOVec *vec = new AIOVec(sz, op->action.continuation);
     vec->action = op->action.continuation;
     while (--sz >= 0) {
@@ -659,7 +659,7 @@ ink_aio_writev(AIOCallback *op, int fromAPI) {
   }
 
   if (sz > 1) {
-    ink_debug_assert(op->action.continuation);
+    ink_assert(op->action.continuation);
     AIOVec *vec = new AIOVec(sz, op->action.continuation);
     vec->action = op->action.continuation;
     while (--sz >= 0) {

@@ -383,7 +383,7 @@ int
 CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   // The evacuator vc shares the lock with the volition mutex
-  ink_debug_assert(vol->mutex->thread_holding == this_ethread());
+  ink_assert(vol->mutex->thread_holding == this_ethread());
   cancel_trigger();
   Doc *doc = (Doc *) buf->data();
 #ifdef HTTP_CACHE
@@ -447,7 +447,7 @@ Ldone:
 int
 CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
 {
-  ink_debug_assert(vol->mutex->thread_holding == this_ethread());
+  ink_assert(vol->mutex->thread_holding == this_ethread());
   Doc *doc = (Doc *) buf->data();
   DDebug("cache_evac", "evacuateDocDone %X o %d p %d new_o %d new_p %d",
         (int) key.word(0), (int) dir_offset(&overwrite_dir),
@@ -516,7 +516,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
           }
         } else {
           DDebug("cache_evac", "evacuating earliest: %X %d", (int) doc->key.word(0), (int) dir_offset(&overwrite_dir));
-          ink_debug_assert(dir_compare_tag(&overwrite_dir, &doc->key));
+          ink_assert(dir_compare_tag(&overwrite_dir, &doc->key));
           ink_assert(b->earliest_evacuator == this);
           total_len += doc->data_len();
           first_key = doc->first_key;
@@ -599,7 +599,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
     return EVENT_DONE;
   ink_assert(is_io_in_progress());
   set_io_not_in_progress();
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
   Doc *doc = (Doc *) doc_evacuator->buf->data();
   CacheKey next_key;
   EvacuationBlock *b = NULL;
@@ -733,7 +733,7 @@ agg_copy(char *p, CacheVC *vc)
 
     uint32_t len = vc->write_len + vc->header_len + vc->frag_len + sizeofDoc;
     ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeofDoc);
-    ink_debug_assert(vol->round_to_approx_size(len) == vc->agg_len);
+    ink_assert(vol->round_to_approx_size(len) == vc->agg_len);
     // update copy of directory entry for this document
     dir_set_approx_size(&vc->dir, vc->agg_len);
     dir_set_offset(&vc->dir, offset_to_vol_offset(vol, o));
@@ -785,12 +785,12 @@ agg_copy(char *p, CacheVC *vc)
 #endif
     // update the new_info object_key, and total_len and dirinfo
     if (vc->header_len) {
-      ink_debug_assert(vc->f.use_first_key);
+      ink_assert(vc->f.use_first_key);
 #ifdef HTTP_CACHE
       if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
-        ink_debug_assert(vc->write_vector->count() > 0);
+        ink_assert(vc->write_vector->count() > 0);
         if (!vc->f.update && !vc->f.evac_vector) {
-          ink_debug_assert(!(vc->first_key == zero_key));
+          ink_assert(!(vc->first_key == zero_key));
           CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
           http_info->object_size_set(vc->total_len);
         }
@@ -813,7 +813,7 @@ agg_copy(char *p, CacheVC *vc)
     if (vc->write_len) {
       {
         ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
-        ink_debug_assert(mutex->thread_holding == this_ethread());
+        ink_assert(mutex->thread_holding == this_ethread());
         CACHE_DEBUG_SUM_DYN_STAT(cache_write_bytes_stat, vc->write_len);
       }
 #ifdef HTTP_CACHE
@@ -853,8 +853,7 @@ agg_copy(char *p, CacheVC *vc)
     int l = vc->vol->round_to_approx_size(doc->len);
     {
       ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
-
-      ink_debug_assert(mutex->thread_holding == this_ethread());
+      ink_assert(mutex->thread_holding == this_ethread());
       CACHE_DEBUG_INCREMENT_DYN_STAT(cache_gc_frags_evacuated_stat);
       CACHE_DEBUG_SUM_DYN_STAT(cache_gc_bytes_evacuated_stat, l);
     }
@@ -1077,7 +1076,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
     if (!lock) {
       SET_HANDLER(&CacheVC::openWriteCloseDir);
-      ink_debug_assert(!is_io_in_progress());
+      ink_assert(!is_io_in_progress());
       VC_SCHED_LOCK_RETRY();
     }
     vol->close_write(this);
@@ -1118,7 +1117,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */
   }
   if (f.close_complete) {
     recursive++;
-    ink_debug_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+    ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
     vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, (void *) &vio);
     recursive--;
   }
@@ -1337,7 +1336,7 @@ CacheVC::openWriteMain(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
 {
   cancel_trigger();
   int called_user = 0;
-  ink_debug_assert(!is_io_in_progress());
+  ink_assert(!is_io_in_progress());
 Lagain:
   if (!vio.buffer.writer()) {
     if (calluser(VC_EVENT_WRITE_READY) == EVENT_DONE)
@@ -1498,7 +1497,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
         err = ECACHE_BAD_META_DATA;
         goto Lfailure;
       }
-      ink_debug_assert(write_vector->count() > 0);
+      ink_assert(write_vector->count() > 0);
       od->first_dir = dir;
       first_dir = dir;
       if (doc->single_fragment()) {
@@ -1720,7 +1719,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
     c->base_stat = cache_update_active_stat;
     DDebug("cache_update", "Update called");
     info->object_key_get(&c->update_key);
-    ink_debug_assert(!(c->update_key == zero_key));
+    ink_assert(!(c->update_key == zero_key));
     c->update_len = info->object_size_get();
   } else
     c->base_stat = cache_write_active_stat;

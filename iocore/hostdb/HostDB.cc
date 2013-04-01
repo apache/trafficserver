@@ -649,7 +649,7 @@ db_mark_for(sockaddr const* ip) {
 HostDBInfo *
 probe(ProxyMutex *mutex, HostDBMD5 const& md5, bool ignore_timeout)
 {
-  ink_debug_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets))->thread_holding);
+  ink_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets))->thread_holding);
   if (hostdb_enable) {
     uint64_t folded_md5 = fold_md5(md5.hash);
     HostDBInfo *r = hostDB.lookup_block(folded_md5, hostDB.levels);
@@ -724,7 +724,7 @@ HostDBContinuation::insert(unsigned int attl)
   uint64_t folded_md5 = fold_md5(md5.hash);
   int bucket = folded_md5 % hostDB.buckets;
 
-  ink_debug_assert(this_ethread() == hostDB.lock_for_bucket(bucket)->thread_holding);
+  ink_assert(this_ethread() == hostDB.lock_for_bucket(bucket)->thread_holding);
   // remove the old one to prevent buildup
   HostDBInfo *old_r = hostDB.lookup_block(folded_md5, 3);
   if (old_r)
@@ -875,7 +875,7 @@ Action *
 HostDBProcessor::getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info,
                                   const char *hostname, int len, Options const& opt)
 {
-  ink_debug_assert(cont->mutex->thread_holding == this_ethread());
+  ink_assert(cont->mutex->thread_holding == this_ethread());
   bool force_dns = false;
   EThread *thread = cont->mutex->thread_holding;
   ProxyMutex *mutex = thread->mutex;
@@ -949,7 +949,7 @@ Action *
 HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn process_hostdb_info,
                                const char *hostname, int len, Options const& opt)
 {
-  ink_debug_assert(cont->mutex->thread_holding == this_ethread());
+  ink_assert(cont->mutex->thread_holding == this_ethread());
   bool force_dns = false;
   EThread *thread = cont->mutex->thread_holding;
   ProxyMutex *mutex = thread->mutex;
@@ -1273,7 +1273,7 @@ HostDBContinuation::lookup_done(IpAddr const& ip, char const* aname, bool around
 {
   HostDBInfo *i = NULL;
 
-  ink_debug_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets))->thread_holding);
+  ink_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets))->thread_holding);
   if (!ip.isValid() || !aname || !aname[0]) {
     if (is_byname()) {
       Debug("hostdb", "lookup_done() failed for '%.*s'", md5.host_len, md5.host_name);
@@ -1322,7 +1322,7 @@ HostDBContinuation::lookup_done(IpAddr const& ip, char const* aname, bool around
       }
       i->is_srv = false;
     } else if (is_srv()) {
-      ink_debug_assert(srv && srv->srv_host_count > 0 && srv->srv_host_count <= 16 && around_robin);
+      ink_assert(srv && srv->srv_host_count > 0 && srv->srv_host_count <= 16 && around_robin);
 
       i->data.srv.srv_offset = srv->srv_host_count;
       i->reverse_dns = false;
@@ -1362,7 +1362,7 @@ HostDBContinuation::lookup_done(IpAddr const& ip, char const* aname, bool around
 int
 HostDBContinuation::dnsPendingEvent(int event, Event * e)
 {
-  ink_debug_assert(this_ethread() == hostDB.lock_for_bucket(fold_md5(md5.hash) % hostDB.buckets)->thread_holding);
+  ink_assert(this_ethread() == hostDB.lock_for_bucket(fold_md5(md5.hash) % hostDB.buckets)->thread_holding);
   if (timeout) {
     timeout->cancel(this);
     timeout = NULL;
@@ -1408,7 +1408,7 @@ restore_info(HostDBInfo * r, HostDBInfo * old_r, HostDBInfo & old_info, HostDBRo
 int
 HostDBContinuation::dnsEvent(int event, HostEnt * e)
 {
-  ink_debug_assert(this_ethread() == hostDB.lock_for_bucket(fold_md5(md5.hash) % hostDB.buckets)->thread_holding);
+  ink_assert(this_ethread() == hostDB.lock_for_bucket(fold_md5(md5.hash) % hostDB.buckets)->thread_holding);
   if (timeout) {
     timeout->cancel(this);
     timeout = NULL;
@@ -1519,7 +1519,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       r = lookup_done(md5.ip, e->ent.h_name, false, ttl_seconds, &e->srv_hosts);
     }
 
-    ink_debug_assert(!r || (r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0));
+    ink_assert(!r || (r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0));
 
     if (rr) {
       int s = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
@@ -1532,7 +1532,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
           int skip = 0;
           char *pos = (char *) rr_data + sizeof(HostDBRoundRobin) + n * sizeof(HostDBInfo);
           SRV *q[HOST_DB_MAX_ROUND_ROBIN_INFO];
-          ink_debug_assert(n <= HOST_DB_MAX_ROUND_ROBIN_INFO);
+          ink_assert(n <= HOST_DB_MAX_ROUND_ROBIN_INFO);
           // sort
           for (i = 0; i < n; ++i) {
             q[i] = &e->srv_hosts.hosts[i];
@@ -1558,7 +1558,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
             item.data.srv.srv_port = t->port;
             item.data.srv.key = t->key;
 
-            ink_debug_assert (skip + (int) t->host_len <= e->srv_hosts.srv_hosts_length);
+            ink_assert (skip + (int) t->host_len <= e->srv_hosts.srv_hosts_length);
 
             memcpy(pos + skip, t->host, t->host_len);
             item.data.srv.srv_offset = (pos - (char *) rr_data) + skip;

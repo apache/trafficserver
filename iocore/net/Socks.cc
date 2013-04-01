@@ -85,7 +85,7 @@ SocksEntry::findServer()
 
 #ifdef SOCKS_WITH_TS
   if (nattempts == 1) {
-    ink_debug_assert(server_result.r == PARENT_UNDEFINED);
+    ink_assert(server_result.r == PARENT_UNDEFINED);
     server_params->findParent(&req_data, &server_result);
   } else {
 
@@ -114,7 +114,7 @@ SocksEntry::findServer()
     break;
 
   default:
-    ink_debug_assert(!"Unexpected event");
+    ink_assert(!"Unexpected event");
   case PARENT_DIRECT:
   case PARENT_FAIL:
     memset(&server_addr, 0, sizeof(server_addr));
@@ -139,7 +139,7 @@ SocksEntry::free()
   if (!lock) {
     // Socks continuation share the user's lock
     // so acquiring a lock shouldn't fail
-    ink_debug_assert(0);
+    ink_assert(0);
     return;
   }
 
@@ -243,7 +243,7 @@ SocksEntry::mainEvent(int event, void *data)
     buf->reset();
     unsigned short ts;
     p = (unsigned char *) buf->start();
-    ink_debug_assert(netVConnection);
+    ink_assert(netVConnection);
 
     if (auth_handler) {
       n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_OPEN, p);
@@ -407,7 +407,7 @@ SocksEntry::mainEvent(int event, void *data)
       } else
         success = (p[0] == 0 && p[1] == SOCKS4_REQ_GRANTED);
 
-      //ink_debug_assert(*(p) == 0);
+      //ink_assert(*(p) == 0);
       if (!success) {           // SOCKS request failed
         Debug("Socks", "Socks request denied %d", (int) *(p + 1));
         lerrno = ESOCK_DENIED;
@@ -449,7 +449,7 @@ SocksEntry::mainEvent(int event, void *data)
     break;
   default:
     // BUGBUG:: could be active/inactivity timeout ...
-    ink_debug_assert(!"bad case value");
+    ink_assert(!"bad case value");
     Debug("Socks", "Bad Case/Net Error Event");
     lerrno = ESOCK_NO_SOCK_SERVER_CONN;
     free();
@@ -666,7 +666,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr) (void))
 
   default:
     //This should be inpossible
-    ink_debug_assert(!"bad case value");
+    ink_assert(!"bad case value");
     ret = -1;
     break;
   }
@@ -686,7 +686,7 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr) (void))
   case SOCKS_AUTH_OPEN:
     pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd;
     pass_len = netProcessor.socks_conf_stuff->user_name_n_passwd_len;
-    ink_debug_assert(pass_phrase);
+    ink_assert(pass_phrase);
 
     p[0] = 1;                   //version
     memcpy(&p[1], pass_phrase, pass_len);
@@ -724,7 +724,7 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr) (void))
     break;
 
   default:
-    ink_debug_assert(!"bad case value");
+    ink_assert(!"bad case value");
     ret = -1;
     break;
   }

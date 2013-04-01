@@ -1123,7 +1123,7 @@ Log::error(const char *format, ...)
   int ret_val = Log::SKIP;
 
   if (error_log) {
-    ink_debug_assert(format != NULL);
+    ink_assert(format != NULL);
     va_list ap;
     va_start(ap, format);
     ret_val = error_log->va_write(format, ap);
@@ -1143,7 +1143,7 @@ Log::va_error(char *format, va_list ap)
   int ret_val = Log::SKIP;
 
   if (error_log) {
-    ink_debug_assert(format != NULL);
+    ink_assert(format != NULL);
     ret_val = error_log->va_write(format, ap);
 
     if (ret_val == Log::LOG_OK) {

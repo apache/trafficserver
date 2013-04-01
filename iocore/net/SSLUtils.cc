@@ -62,7 +62,7 @@ SSL_locking_callback(int mode, int type, const char * file, int line)
   NOWARN_UNUSED(file);
   NOWARN_UNUSED(line);
 
-  ink_debug_assert(type < CRYPTO_num_locks());
+  ink_assert(type < CRYPTO_num_locks());
 
   if (mode & CRYPTO_LOCK) {
     MUTEX_TAKE_LOCK(sslMutexArray[type], this_ethread());
@@ -70,7 +70,7 @@ SSL_locking_callback(int mode, int type, const char * file, int line)
     MUTEX_UNTAKE_LOCK(sslMutexArray[type], this_ethread());
   } else {
     Debug("ssl", "invalid SSL locking mode 0x%x", mode);
-    ink_debug_assert(0);
+    ink_assert(0);
   }
 }
 

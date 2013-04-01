@@ -257,7 +257,7 @@ recv_message_cb(RecMessage * msg, RecMessageT msg_type, void */* cookie */)
     break;
 
   default:
-    ink_debug_assert(!"Unexpected RecG type");
+    ink_assert(!"Unexpected RecG type");
     return REC_ERR_FAIL;
 
   }
@@ -270,7 +270,7 @@ recv_message_cb(RecMessage * msg, RecMessageT msg_type, void */* cookie */)
 // RecRegisterStatXXX
 //-------------------------------------------------------------------------
 #define REC_REGISTER_STAT_XXX(A, B) \
-  ink_debug_assert((rec_type == RECT_NODE)    || \
+  ink_assert((rec_type == RECT_NODE)    || \
                    (rec_type == RECT_CLUSTER) || \
                    (rec_type == RECT_PROCESS) || \
                    (rec_type == RECT_LOCAL)   || \
@@ -340,7 +340,7 @@ RecRegisterConfigInt(RecT rec_type, const char *name,
                      RecInt data_default, RecUpdateT update_type,
                      RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
-  ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
+  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_int, RECD_INT);
 }
 
@@ -349,7 +349,7 @@ RecRegisterConfigFloat(RecT rec_type, const char *name,
                        RecFloat data_default, RecUpdateT update_type,
                        RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
-  ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
+  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_float, RECD_FLOAT);
 }
 
@@ -360,7 +360,7 @@ RecRegisterConfigString(RecT rec_type, const char *name,
                         RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
   RecString data_default = (RecString)data_default_tmp;
-  ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
+  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_string, RECD_STRING);
 }
 
@@ -369,7 +369,7 @@ RecRegisterConfigCounter(RecT rec_type, const char *name,
                          RecCounter data_default, RecUpdateT update_type,
                          RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
-  ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
+  ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_counter, RECD_COUNTER);
 }
 
@@ -835,7 +835,7 @@ RecSyncConfigToTB(textBuffer * tb)
               tb->copyFrom("LOCAL ", 6);
               break;
             default:
-              ink_debug_assert(!"Unexpected RecT type");
+              ink_assert(!"Unexpected RecT type");
               break;
             }
             // name
@@ -867,7 +867,7 @@ RecSyncConfigToTB(textBuffer * tb)
               tb->copyFrom(b, strlen(b));
               break;
             default:
-              ink_debug_assert(!"Unexpected RecD type");
+              ink_assert(!"Unexpected RecD type");
               break;
             }
             tb->copyFrom("\n", 1);

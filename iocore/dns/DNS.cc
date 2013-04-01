@@ -1357,7 +1357,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     u_char *cp = ((u_char *) h) + HFIXEDSZ;
     u_char *eom = (u_char *) h + len;
     int n;
-    ink_debug_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
+    ink_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
     buf->srv_hosts.srv_host_count = 0;
     buf->srv_hosts.srv_hosts_length = 0;
     int &num_srv = buf->srv_hosts.srv_host_count;

@@ -515,7 +515,7 @@ LogFieldList::marshal(LogAccess *lad, char *buf)
   for (LogField *f = first(); f; f = next(f)) {
     ptr = &buf[bytes];
     bytes += f->marshal(lad, ptr);
-    ink_debug_assert(bytes % INK_MIN_ALIGN == 0);
+    ink_assert(bytes % INK_MIN_ALIGN == 0);
   }
   return bytes;
 }

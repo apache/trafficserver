@@ -229,7 +229,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
   virt_map = NULL;
 
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
-  ink_debug_assert(found);
+  ink_assert(found);
   if (http_enabled && found) {
     HttpProxyPort::loadConfig(m_proxy_ports);
   }

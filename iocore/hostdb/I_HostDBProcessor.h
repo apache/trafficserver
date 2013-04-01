@@ -63,7 +63,7 @@ extern unsigned int hostdb_serve_stale_but_revalidate;
 static inline unsigned int
 makeHostHash(const char *string)
 {
-  ink_debug_assert(string && *string);
+  ink_assert(string && *string);
   if (!string || *string == 0)
     return 0;
 

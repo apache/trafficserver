@@ -172,7 +172,7 @@ overviewRecord::readCounter(const char *name, bool * found)
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
-      ink_debug_assert(order < node_rec_data.num_recs);
+      ink_assert(order < node_rec_data.num_recs);
       rec = node_rec_data.recs[order].data.rec_counter;
     } else {
       mgmt_log(stderr, "node variables '%s' not found!\n");
@@ -198,7 +198,7 @@ overviewRecord::readInteger(const char *name, bool * found)
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
-      ink_debug_assert(order < node_rec_data.num_recs);
+      ink_assert(order < node_rec_data.num_recs);
       rec = node_rec_data.recs[order].data.rec_int;
     }
   } else {
@@ -224,7 +224,7 @@ overviewRecord::readFloat(const char *name, bool * found)
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
-      ink_debug_assert(order < node_rec_data.num_recs);
+      ink_assert(order < node_rec_data.num_recs);
       rec = node_rec_data.recs[order].data.rec_float;
     }
   } else {
@@ -250,7 +250,7 @@ overviewRecord::readString(const char *name, bool * found)
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
-      ink_debug_assert(order < node_rec_data.num_recs);
+      ink_assert(order < node_rec_data.num_recs);
       rec = ats_strdup(node_rec_data.recs[order].data.rec_string);
     }
   } else {
@@ -289,7 +289,7 @@ overviewRecord::readData(RecDataT varType, const char *name, bool * found)
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
-      ink_debug_assert(order < node_rec_data.num_recs);
+      ink_assert(order < node_rec_data.num_recs);
       RecDataSet(varType, &rec, &node_rec_data.recs[order].data);
     } else {
       Fatal("node variables '%s' not found!\n", name);

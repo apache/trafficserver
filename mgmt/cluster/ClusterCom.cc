@@ -909,7 +909,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
           mgmt_elog("[ClusterCom::handleMultiCastStatPacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
           return;
         }
-        ink_debug_assert(i == tmp_id && rec->data_type == tmp_type);
+        ink_assert(i == tmp_id && rec->data_type == tmp_type);
         ink_release_assert(i == tmp_id && rec->data_type == tmp_type);
         if (!(i == tmp_id && rec->data_type == tmp_type)) {
           return;
@@ -930,7 +930,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
           mgmt_elog("[ClusterCom::handleMultiCastStatPacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
           return;
         }
-        ink_debug_assert(i == tmp_id && rec->data_type == tmp_type);
+        ink_assert(i == tmp_id && rec->data_type == tmp_type);
         ink_release_assert(i == tmp_id && rec->data_type == tmp_type);
         if (!(i == tmp_id && rec->data_type == tmp_type)) {
           return;
@@ -950,7 +950,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
           return;
         }
         tmp_msg_val = &line[ccons];
-        ink_debug_assert(i == tmp_id && rec->data_type == tmp_type);
+        ink_assert(i == tmp_id && rec->data_type == tmp_type);
         ink_release_assert(i == tmp_id && rec->data_type == tmp_type);
         if (!(i == tmp_id && rec->data_type == tmp_type)) {
           return;

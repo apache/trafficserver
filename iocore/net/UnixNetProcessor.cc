@@ -115,7 +115,7 @@ UnixNetProcessor::accept_internal(
     accept_ip.assign(opt.local_ip);
   else
     accept_ip.setToAnyAddr(opt.ip_family);
-  ink_debug_assert(0 < opt.local_port && opt.local_port < 65536);
+  ink_assert(0 < opt.local_port && opt.local_port < 65536);
   accept_ip.port() = htons(opt.local_port);
 
   na->accept_fn = net_accept; // All callers used this.
@@ -351,7 +351,7 @@ struct CheckConnect:public Continuation
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_TIMEOUT);
       break;
     default:
-      ink_debug_assert(!"unknown connect event");
+      ink_assert(!"unknown connect event");
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_FAILED);
 

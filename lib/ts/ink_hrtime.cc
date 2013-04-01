@@ -144,7 +144,7 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
 
   unsigned int num_chars_s;
   char *ts_s = int64_to_str(tmp_buf, tmp_buf_size - 4, timestamp_sec, &num_chars_s, 0, '0');
-  ink_debug_assert(ts_s);
+  ink_assert(ts_s);
 
   // convert milliseconds
   //
@@ -152,7 +152,7 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
   int ms = timestamp_usec / 1000;
   unsigned int num_chars_ms;
   char ATS_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4], 4, ms, &num_chars_ms, 4, '0');
-  ink_debug_assert(ts_ms && num_chars_ms == 4);
+  ink_assert(ts_ms && num_chars_ms == 4);
 
   unsigned int chars_to_write = num_chars_s + 3;        // no eos
 

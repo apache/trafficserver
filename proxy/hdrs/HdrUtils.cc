@@ -64,7 +64,7 @@ skip_leading_whitespace:
   }
   csv_start = cur;
 parse_value:
-  // ink_debug_assert((',' > '"') && (',' > ' ') && (',' > '\t'));
+  // ink_assert((',' > '"') && (',' > ' ') && (',' > '\t'));
   // Cookie/Set-Cookie use ';' as the separator
   if (m_separator == ',')
     while ((cur<end - 1) && (*cur> ',')) {

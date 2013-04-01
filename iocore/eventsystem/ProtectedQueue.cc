@@ -108,7 +108,7 @@ ProtectedQueue::enqueue(Event *e , bool fast_signal)
 void
 flush_signals(EThread * thr)
 {
-  ink_debug_assert(this_ethread() == thr);
+  ink_assert(this_ethread() == thr);
   int n = thr->n_ethreads_to_be_signalled;
   if (n > eventProcessor.n_ethreads)
     n = eventProcessor.n_ethreads;      // MAX

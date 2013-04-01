@@ -388,24 +388,24 @@ struct DummyVConnection: public VConnection
     (void) nbytes;
     (void) buf;
     (void) owner;
-    ink_debug_assert(!"VConnection::do_io_write -- " "cannot use default implementation");
+    ink_assert(!"VConnection::do_io_write -- " "cannot use default implementation");
     return NULL;
   }
   virtual VIO *do_io_read(Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) {
     (void) c;
     (void) nbytes;
     (void) buf;
-    ink_debug_assert(!"VConnection::do_io_read -- " "cannot use default implementation");
+    ink_assert(!"VConnection::do_io_read -- " "cannot use default implementation");
     return NULL;
   }
   virtual void do_io_close(int alerrno = -1) {
     (void) alerrno;
-    ink_debug_assert(!"VConnection::do_io_close -- " "cannot use default implementation");
+    ink_assert(!"VConnection::do_io_close -- " "cannot use default implementation");
   }
   virtual void do_io_shutdown(ShutdownHowTo_t howto)
   {
     (void) howto;
-    ink_debug_assert(!"VConnection::do_io_shutdown -- " "cannot use default implementation");
+    ink_assert(!"VConnection::do_io_shutdown -- " "cannot use default implementation");
   }
 DummyVConnection(ProxyMutex *m):VConnection(m) {
   }

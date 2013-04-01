@@ -554,7 +554,7 @@ LogCollationClientSM::client_open(int event, NetVConnection * net_vc)
     {
       IpEndpoint target;
       target.assign(m_log_host->ip_addr(), htons(m_log_host->port()));
-      ink_debug_assert(target.isValid());
+      ink_assert(target.isValid());
       Action *connect_action_handle = netProcessor.connect_re(this, &target.sa);
 
       if (connect_action_handle != ACTION_RESULT_DONE) {

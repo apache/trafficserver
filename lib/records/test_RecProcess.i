@@ -585,7 +585,7 @@ TreeTest01()
   int buf_len = 0;
   RecGetRecordList("proxy.config", &var_buf, &buf_len);
   for (int i = 0; i < buf_len; i++) {
-    ink_debug_assert(var_buf[i]);
+    ink_assert(var_buf[i]);
     diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree node: (proxy.config.*) %s", var_buf[i]);
   }
   delete[]var_buf;
@@ -614,7 +614,7 @@ TreeTest02()
   int buf_len = 0;
   RecGetRecordList("proxy.process", &var_buf, &buf_len);
   for (int i = 0; i < buf_len; i++) {
-    ink_debug_assert(var_buf[i]);
+    ink_assert(var_buf[i]);
     diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree (proxy.process.*) node: %s", var_buf[i]);
   }
   delete[]var_buf;

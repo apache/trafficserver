@@ -58,7 +58,7 @@ i_am_the_record_owner(RecT rec_type)
     case RECT_LOCAL:
       return false;
     default:
-      ink_debug_assert(!"Unexpected RecT type");
+      ink_assert(!"Unexpected RecT type");
       return false;
     }
   } else if (g_mode_type == RECM_STAND_ALONE) {
@@ -71,7 +71,7 @@ i_am_the_record_owner(RecT rec_type)
     case RECT_PLUGIN:
       return true;
     default:
-      ink_debug_assert(!"Unexpected RecT type");
+      ink_assert(!"Unexpected RecT type");
       return false;
     }
   }
@@ -505,7 +505,7 @@ RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDat
   Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d\n", name, rsb, id);
 
   // check to see if we're good to proceed
-  ink_debug_assert(id < rsb->max_stats);
+  ink_assert(id < rsb->max_stats);
 
   int err = REC_ERR_OKAY;
 

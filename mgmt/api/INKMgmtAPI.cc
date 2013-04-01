@@ -1910,8 +1910,8 @@ TSEncryptPassword(char *passwd, char **e_passwd)
   char *passwd_md5_str;
   int passwd_md5_str_len = 32;
 
-  ink_debug_assert(passwd);
-  ink_debug_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
+  ink_assert(passwd);
+  ink_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
 
   const size_t md5StringSize = (passwd_md5_str_len + 1) * sizeof(char);
   passwd_md5_str = (char *)ats_malloc(md5StringSize);

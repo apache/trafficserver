@@ -48,14 +48,10 @@ extern "C"
 
 #ifdef DEBUG
 #define ink_assert(EX) ( \
-            (void)(likely(EX) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)) \
-)
-#define ink_debug_assert(EX) ( \
-            (void)(likely(EX) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)) \
+            (void)(likely(EX) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__))\
 )
 #else
 #define ink_assert(EX) (void)(EX)
-#define ink_debug_assert(EX)
 #endif
 
 #define ink_release_assert(EX) ( \

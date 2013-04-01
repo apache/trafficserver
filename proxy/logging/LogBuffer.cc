@@ -201,7 +201,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
   // LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
   // was used to construct the object
   //
-  ink_debug_assert(m_unaligned_buffer);
+  ink_assert(m_unaligned_buffer);
 
   LB_ResultCode ret_val = LB_BUSY;
   LB_State old_s, new_s;
@@ -307,7 +307,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
   // LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
   // was used to construct the object
   //
-  ink_debug_assert(m_unaligned_buffer);
+  ink_assert(m_unaligned_buffer);
 
   LB_ResultCode ret_val = LB_OK;
   LB_State old_s, new_s;

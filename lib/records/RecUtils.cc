@@ -338,7 +338,7 @@ RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64_t data_int64)
     data_dst->rec_counter = data_int64;
     break;
   default:
-    ink_debug_assert(!"Unexpected RecD type");
+    ink_assert(!"Unexpected RecD type");
     return false;
   }
 
@@ -378,7 +378,7 @@ RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
     data_dst->rec_counter = (RecCounter) data_float;
     break;
   default:
-    ink_debug_assert(!"Unexpected RecD type");
+    ink_assert(!"Unexpected RecD type");
     return false;
   }
 
@@ -418,7 +418,7 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
     data_src.rec_counter = ink_atoi64(data_string);
     break;
   default:
-    ink_debug_assert(!"Unexpected RecD type");
+    ink_assert(!"Unexpected RecD type");
     return false;
   }
   rec_set = RecDataSet(data_type, data_dst, &data_src);

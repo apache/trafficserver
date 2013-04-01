@@ -142,7 +142,7 @@ TS_INLINE Event *
 EThread::schedule_local(Event * e)
 {
   if (tt != REGULAR) {
-    ink_debug_assert(tt == DEDICATED);
+    ink_assert(tt == DEDICATED);
     return eventProcessor.schedule(e, ET_CALL);
   }
   if (!e->mutex.m_ptr) {

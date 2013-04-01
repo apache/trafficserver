@@ -6832,7 +6832,7 @@ TSTextLogObjectWrite(TSTextLogObject the_object, const char *format, ...)
     retVal = TS_ERROR;
     break;
   default:
-    ink_debug_assert(!"invalid return code");
+    ink_assert(!"invalid return code");
   }
   va_end(ap);
 

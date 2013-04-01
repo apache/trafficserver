@@ -323,7 +323,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
 
 #ifdef DEBUG
   for (int i = 1; i < good; ++i) {
-    ink_debug_assert(info[i].data.srv.srv_priority >= info[i-1].data.srv.srv_priority);
+    ink_assert(info[i].data.srv.srv_priority >= info[i-1].data.srv.srv_priority);
   }
 #endif
 

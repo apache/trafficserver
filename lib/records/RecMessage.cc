@@ -162,7 +162,7 @@ RecMessageInit()
   case RECM_NULL:
   case RECM_STAND_ALONE:
   default:
-    ink_debug_assert(!"Unexpected RecModeT type");
+    ink_assert(!"Unexpected RecModeT type");
     break;
   }
 
@@ -435,7 +435,7 @@ RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** reco
     eh = itr->ele_hdr;
   }
 
-  ink_debug_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);
+  ink_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);
 
   // If the file is corrupt, ignore the the rest of the file.
   if (eh->magic != REC_MESSAGE_ELE_MAGIC) {

@@ -1230,7 +1230,7 @@ url_parse_internet(HdrHeap* heap, URLImpl* url,
     url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
   
   if (last_colon) {
-    ink_debug_assert(n_colon);
+    ink_assert(n_colon);
     port.set(last_colon+1, cur);
     if (!port._size)
       return PARSE_ERROR; // colon w/o port value.
@@ -1285,7 +1285,7 @@ parse_path2:
       goto parse_fragment1;
     }
   } else {
-    ink_debug_assert((*cur != ';') && (*cur != '?') && (*cur != '#'));
+    ink_assert((*cur != ';') && (*cur != '?') && (*cur != '#'));
   }
   GETNEXT(done);
   goto parse_path2;
@@ -1578,7 +1578,7 @@ url_MMH_get_fast(URLImpl * url, INK_MD5 * md5)
   *p++ = '?';
   // no query
 
-  ink_debug_assert(sizeof(url->m_port) == 2);
+  ink_assert(sizeof(url->m_port) == 2);
   uint16_t port = (uint16_t) url_canonicalize_port(url->m_url_type, url->m_port);
   *p++ = ((char *) &port)[0];
   *p++ = ((char *) &port)[1];

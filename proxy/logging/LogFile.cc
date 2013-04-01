@@ -135,7 +135,7 @@ LogFile::LogFile (const LogFile& copy)
     m_end_time (0L),
     m_bytes_written (0)
 {
-    ink_debug_assert(m_ascii_buffer_size >= m_max_line_size);
+    ink_assert(m_ascii_buffer_size >= m_max_line_size);
     m_ascii_buffer = NEW (new char[m_ascii_buffer_size]);
     m_overspill_buffer = NEW (new char[m_max_line_size]);
 
@@ -600,7 +600,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
     fmt_line_bytes = LogBuffer::to_ascii(entry_header, format_type,
                                          &fmt_line[0], LOG_MAX_FORMATTED_LINE,
                                          fieldlist_str, printf_str, buffer_header->version, alt_format);
-    ink_debug_assert(fmt_line_bytes > 0);
+    ink_assert(fmt_line_bytes > 0);
 
     if (fmt_line_bytes > 0) {
       if ((fmt_line_bytes + fmt_buf_bytes) >= LOG_MAX_FORMATTED_BUFFER) {
@@ -609,18 +609,18 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
         }
         fmt_buf_bytes = 0;
       }
-      ink_debug_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
-      ink_debug_assert(fmt_line_bytes < LOG_MAX_FORMATTED_BUFFER - fmt_buf_bytes);
+      ink_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
+      ink_assert(fmt_line_bytes < LOG_MAX_FORMATTED_BUFFER - fmt_buf_bytes);
       memcpy(&fmt_buf[fmt_buf_bytes], fmt_line, fmt_line_bytes);
       fmt_buf_bytes += fmt_line_bytes;
-      ink_debug_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
+      ink_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
       fmt_buf[fmt_buf_bytes] = '\n';    // keep entries separate
       fmt_buf_bytes += 1;
     }
   }
   if (fmt_buf_bytes > 0) {
     if (!Log::config->logging_space_exhausted) {
-      ink_debug_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
+      ink_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
       bytes += writeln(fmt_buf, fmt_buf_bytes, fd, path);
     }
   }
@@ -632,8 +632,8 @@ int
 LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format)
 {
   Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
-  ink_debug_assert(buffer_header != NULL);
-  ink_debug_assert(m_fd >= 0);
+  ink_assert(buffer_header != NULL);
+  ink_assert(m_fd >= 0);
 
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
