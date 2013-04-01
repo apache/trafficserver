@@ -1202,7 +1202,11 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
       // convert the comma-sep string from the config var into a list
       HttpCompat::parse_comma_list(&vary_list, (vary_values ? vary_values : ""));
     }
-    Debug("http_match", "Vary list of %d elements", vary_list.count);
+
+    if (is_debug_tag_set("http_match") && (vary_list.head)) {
+      Debug("http_match", "Vary list of %d elements", vary_list.count);
+      vary_list.dump(stderr);
+    }
 
     // for each field that varies, see if current & original hdrs match //
     Str *field;
