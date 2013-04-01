@@ -25,8 +25,7 @@
  * Inline Functions as globals for users using the public interface
  *
  */
-#define TS_INLINE
-#define INLINE_CC
 
+#define TS_INLINE
 #include "P_EventSystem.h"
 

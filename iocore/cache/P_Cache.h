@@ -24,11 +24,6 @@
 #ifndef _P_CACHE_H__
 #define _P_CACHE_H__
 
-#ifndef INLINE_CC
-#undef  TS_INLINE
-#define TS_INLINE inline
-#endif
-
 #include "libts.h"
 #include "P_EventSystem.h"
 #include "P_AIO.h"

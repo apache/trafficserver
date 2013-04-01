@@ -31,11 +31,6 @@
 #ifndef _P_AIO_h_
 #define _P_AIO_h_
 
-#ifndef INLINE_CC
-#undef  TS_INLINE
-#define TS_INLINE inline
-#endif
-
 #include "P_EventSystem.h"
 #include "I_AIO.h"
 
