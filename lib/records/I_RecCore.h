@@ -220,7 +220,7 @@ RecString REC_readString(const char *name, bool * found, bool lock = true);
 //------------------------------------------------------------------------
 // Clear Statistics
 //------------------------------------------------------------------------
-int RecResetStatRecord(char *name);
+int RecResetStatRecord(const char *name);
 int RecResetStatRecord(RecT type = RECT_NULL, bool all = false);
 
 

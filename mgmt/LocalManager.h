@@ -92,7 +92,7 @@ public:
   void processRestart();
   void processBounce();
   void rollLogFiles();
-  void clearStats();
+  void clearStats(const char *name = NULL);
 
   bool processRunning();
   bool clusterOk();

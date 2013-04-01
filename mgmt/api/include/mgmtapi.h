@@ -1145,7 +1145,8 @@ extern "C"
  * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
-  tsapi TSError TSStatsReset(bool cluster);
+  tsapi TSError TSStatsReset(bool cluster, const char *name = NULL);
+
 
 /*--- variable operations -------------------------------------------------*/
 /* TSRecordGet: gets a record

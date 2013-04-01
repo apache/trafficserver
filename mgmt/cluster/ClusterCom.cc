@@ -284,8 +284,13 @@ drainIncomingChannel(void *arg)
           mgmt_log("[ClusterCom::drainIncomingChannel] Received bounce process request\n");
           lmgmt->processBounce();
         } else if (strstr(message, "cmd: clear_stats")) {
+          char sname[1024];
           mgmt_log("[ClusterCom::drainIncomingChannel] Received clear stats request\n");
-          lmgmt->clearStats();
+          if (sscanf(message, "cmd: clear_stats %1023s", sname) != 1) {
+              lmgmt->clearStats(sname);
+          } else {
+              lmgmt->clearStats();
+          }
         } else if (!checkBackDoor(req_fd, message)) { /* Heh... */
           mgmt_log("[ClusterCom::drainIncomingChannel] Unexpected message on cluster" " port.  Possibly an attack\n");
           Debug("ccom", "Unknown message to rsport received: %s", message);
@@ -1736,28 +1741,32 @@ ClusterCom::sendOutgoingMessage(char *buf, int len)
 
 
 bool
-ClusterCom::sendClusterMessage(int msg_type)
+ClusterCom::sendClusterMessage(int msg_type, const char *args)
 {
   bool ret = true, tmp_ret;
-  const char *msg;
+  char msg[1124] = {0};
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
   switch (msg_type) {
   case CLUSTER_MSG_SHUTDOWN_MANAGER:
-    msg = "cmd: shutdown_manager";
+    ink_strlcpy(msg, "cmd: shutdown_manager", sizeof(msg));
     break;
   case CLUSTER_MSG_SHUTDOWN_PROCESS:
-    msg = "cmd: shutdown_process";
+    ink_strlcpy(msg, "cmd: shutdown_process", sizeof(msg));
     break;
   case CLUSTER_MSG_RESTART_PROCESS:
-    msg = "cmd: restart_process";
+    ink_strlcpy(msg, "cmd: restart_process", sizeof(msg));
     break;
   case CLUSTER_MSG_BOUNCE_PROCESS:
-    msg = "cmd: bounce_process";
+    ink_strlcpy(msg, "cmd: bounce_process", sizeof(msg));
     break;
   case CLUSTER_MSG_CLEAR_STATS:
-    msg = "cmd: clear_stats";
+    if (args) {
+      snprintf(msg, sizeof(msg), "cmd: clear_stats %1023s\n", args);
+    } else {
+      ink_strlcpy(msg, "cmd: clear_stats", sizeof(msg));
+    }
     break;
   default:
     mgmt_log(stderr, "[ClusterCom::sendClusterMessage] Invalid message type '%d'\n", msg_type);
@@ -1792,7 +1801,7 @@ ClusterCom::sendClusterMessage(int msg_type)
     lmgmt->processBounce();
     break;
   case CLUSTER_MSG_CLEAR_STATS:
-    lmgmt->clearStats();
+    lmgmt->clearStats(args);
     break;
   }
 
@@ -2384,6 +2393,7 @@ checkBackDoor(int req_fd, char *message)
     return true;
   } else if (strstr(message, "cluster: ")) {
     int msg_type;
+    char *args = NULL;
 
     if (strstr(message, "cluster: shutdown_manager")) {
       msg_type = CLUSTER_MSG_SHUTDOWN_MANAGER;
@@ -2394,11 +2404,14 @@ checkBackDoor(int req_fd, char *message)
     } else if (strstr(message, "cluster: bounce_process")) {
       msg_type = CLUSTER_MSG_BOUNCE_PROCESS;
     } else if (strstr(message, "cluster: clear_stats")) {
+      if (strlen(message) > sizeof("cluster: clear_stats") + 1) {
+        args =  message + sizeof("cluster: clear_stats") + 1;
+      }
       msg_type = CLUSTER_MSG_CLEAR_STATS;
     } else {
       return false;
     }
-    lmgmt->ccom->sendClusterMessage(msg_type);
+    lmgmt->ccom->sendClusterMessage(msg_type, args);
     return true;
   }
   return false;

@@ -73,6 +73,7 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 
   // we're now registered
   r->registered = true;
+  r->version = 0;
 
   return r;
 }

@@ -170,6 +170,34 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 
 
 //-------------------------------------------------------------------------
+// raw_stat_clear
+//-------------------------------------------------------------------------
+static int
+raw_stat_clear(RecRawStatBlock *rsb, int id)
+{
+  Debug("stats", "raw_stat_clear(): rsb pointer:%p id:%d\n", rsb, id);
+
+  // the globals need to be reset too
+  // lock so the setting of the globals and last values are atomic
+  ink_mutex_acquire(&(rsb->mutex));
+  ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
+  ink_mutex_release(&(rsb->mutex));
+
+  // reset the local stats
+  RecRawStat *tlp;
+  for (int i = 0; i < eventProcessor.n_ethreads; i++) {
+    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), (int64_t)0);
+    ink_atomic_swap(&(tlp->count), (int64_t)0);
+  }
+  return REC_ERR_OKAY;
+}
+
+
+//-------------------------------------------------------------------------
 // raw_stat_clear_sum
 //-------------------------------------------------------------------------
 static int
@@ -787,6 +815,7 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
         r->stat_meta.sync_rsb = rsb;
         r->stat_meta.sync_id = id;
         r->stat_meta.sync_cb = sync_cb;
+        r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
         err = REC_ERR_OKAY;
       } else {
         ink_release_assert(false); // We shouldn't register CBs twice...
@@ -815,7 +844,12 @@ RecExecRawStatSyncCbs()
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       if (r->stat_meta.sync_cb) {
-        (*(r->stat_meta.sync_cb)) (r->name, r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+        if (r->version && r->version != r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version) {
+          raw_stat_clear(r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+          r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
+        } else {
+          (*(r->stat_meta.sync_cb)) (r->name, r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+        }
         r->sync_required = REC_SYNC_REQUIRED;
       }
     }

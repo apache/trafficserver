@@ -116,6 +116,7 @@ struct RecRecord
   RecData data_default;
   RecMutex lock;
   unsigned char sync_required;
+  uint32_t version;
   bool registered;
   union
   {
@@ -144,7 +145,8 @@ enum RecMessageT
   RECG_REGISTER,
   RECG_PUSH,
   RECG_PULL_REQ,
-  RECG_PULL_ACK
+  RECG_PULL_ACK,
+  RECG_RESET
 };
 
 struct RecMessageHdr

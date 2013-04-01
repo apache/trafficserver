@@ -127,7 +127,7 @@ LocalManager::rollLogFiles()
 }
 
 void
-LocalManager::clearStats()
+LocalManager::clearStats(const char *name)
 {
   char *statsPath;
 
@@ -140,7 +140,11 @@ LocalManager::clearStats()
   //   stats getting cleared by progation of clearing the
   //   cluster stats
   //
-  RecResetStatRecord(RECT_NULL, true);
+  if (name) {
+      RecResetStatRecord(name);
+  } else {
+      RecResetStatRecord(RECT_NULL, true);
+  }
 
   // If the proxy is not running, sending the signal does
   //   not do anything.  Remove the stats file to make sure

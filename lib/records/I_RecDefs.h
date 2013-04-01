@@ -145,6 +145,7 @@ struct RecRawStat
   // possible, this should be revisted -bcall
   int64_t last_sum; // value from the last global sync
   int64_t last_count; // value from the last global sync
+  uint32_t version;
 };
 
 

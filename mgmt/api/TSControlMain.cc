@@ -381,8 +381,9 @@ ts_ctrl_main(void *arg)
               }
               break;
 
-            case STATS_RESET:
-              ret = handle_stats_reset(client_entry->sock_info, req);
+            case STATS_RESET_CLUSTER:
+            case STATS_RESET_NODE:
+              ret = handle_stats_reset(client_entry->sock_info, req, op_t);
               ats_free(req);
               if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR: stats_reset\n");
@@ -1000,24 +1001,15 @@ Lerror:
  * purpose: handles request to reset statistics to default values
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - should be NULL
+ *        op - reset type (cluster or node)
  * output: TS_ERR_xx
  *************************************************************************/
 TSError
-handle_stats_reset(struct SocketInfo sock_info, char *req)
+handle_stats_reset(struct SocketInfo sock_info, char *req, OpType op)
 {
-  int16_t cluster;
   TSError ret;
 
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;                 // shouldn't get here
-  }
-
-  // the req should be a boolean value - typecase it
-  memcpy(&cluster, req, SIZE_BOOL);
-
-  // call CoreAPI call on Traffic Manager side
-  ret = StatsReset(0 != cluster);
+  ret = StatsReset(op == STATS_RESET_CLUSTER, req);
   ret = send_reply(sock_info, ret);
 
   return ret;

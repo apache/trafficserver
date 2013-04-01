@@ -1444,9 +1444,9 @@ TSVirtIpAddrEleDestroy(TSVirtIpAddrEle * ele)
 
 /*--- statistics operations ----------------------------------------------- */
 tsapi TSError
-TSStatsReset(bool cluster)
+TSStatsReset(bool cluster, const char *name)
 {
-  return StatsReset(cluster);
+  return StatsReset(cluster, name);
 }
 
 /*--- variable operations ------------------------------------------------- */

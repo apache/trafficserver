@@ -71,7 +71,7 @@ void *socket_test_thread(void *arg);
  * Marshalling (create requests)
  *****************************************************************************/
 TSError send_request(int fd, OpType op);
-TSError send_request_name(int fd, OpType op, char *name);
+TSError send_request_name(int fd, OpType op, const char *name);
 TSError send_request_name_value(int fd, OpType op, const char *name, const char *value);
 TSError send_request_bool(int fd, OpType op, bool flag);
 
