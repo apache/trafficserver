@@ -358,5 +358,5 @@ new(size_t, ink_dummy_for_new *p)
 }
 #define ETHREAD_GET_PTR(thread, offset) ((void*)((char*)(thread)+(offset)))
 
-TS_INLINE EThread *this_ethread();
+extern EThread *this_ethread();
 #endif /*_EThread_h_*/

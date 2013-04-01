@@ -30,11 +30,6 @@
 #ifndef __P_NET_H__
 #define __P_NET_H__
 
-#ifndef INLINE_CC
-#undef  TS_INLINE
-#define TS_INLINE inline
-#endif
-
 // Net Stats
 
 enum Net_Stats

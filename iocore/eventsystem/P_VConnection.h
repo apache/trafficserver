@@ -83,7 +83,7 @@ VConnection()
 //
 //////////////////////////////////////////////////////////////////////////////
 
-static TS_INLINE VIO *
+TS_INLINE VIO *
 vc_do_io_write(VConnection * vc, Continuation * cont, int64_t nbytes, MIOBuffer * buf, int64_t offset)
 {
   IOBufferReader *reader = buf->alloc_reader();

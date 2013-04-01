@@ -24,10 +24,6 @@
 #ifndef _I_CACHE_H__
 #define _I_CACHE_H__
 
-#ifndef TS_INLINE
-#define TS_INLINE
-#endif
-
 #include "libts.h"
 #include "I_EventSystem.h"
 #include "I_AIO.h"

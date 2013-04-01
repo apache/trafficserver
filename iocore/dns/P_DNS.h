@@ -30,11 +30,6 @@
 #if !defined (_P_DNS_h_)
 #define _P_DNS_h_
 
-#ifndef INLINE_CC
-#undef  TS_INLINE
-#define TS_INLINE inline
-#endif
-
 #include "libts.h"
 #include "I_DNS.h"
 #include "P_EventSystem.h"

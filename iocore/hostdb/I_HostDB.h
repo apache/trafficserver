@@ -32,10 +32,6 @@
 #ifndef _I_HostDB_h_
 #define _I_HostDB_h_
 
-#ifndef TS_INLINE
-#define TS_INLINE
-#endif
-
 #include "I_EventSystem.h"
 #include "I_Net.h"
 #include "I_Cache.h"
