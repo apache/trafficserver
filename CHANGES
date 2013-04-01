@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1631] Mgmt API to clear stats does not actually clear it.
+   Author: Yakov Kopel.
+
   *) [TS-1772] Remove multiple TS_INLINE defines
 
   *) [TS-1771] add http_load to the build
