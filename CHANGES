@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1789] Script to compare RecordsConfig.cc default values with
+   records.config.default.in: Author: Mark Harrison.
+
   *) [TS-1631] Mgmt API to clear stats does not actually clear it.
    Author: Yakov Kopel.
 
