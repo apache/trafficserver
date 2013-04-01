@@ -764,12 +764,10 @@ LogBufferList::LogBufferList()
 LogBufferList::~LogBufferList()
 {
   LogBuffer *lb;
-  ink_mutex_acquire(&m_mutex);
-  m_size = 0;
   while ((lb = get()) != NULL) {
       delete lb;
   }
-  ink_mutex_release(&m_mutex);
+  m_size = 0;
   ink_mutex_destroy(&m_mutex);
 }
 
