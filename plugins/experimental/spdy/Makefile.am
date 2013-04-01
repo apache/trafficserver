@@ -24,6 +24,7 @@ check_PROGRAMS = zstream_test
 
 AM_CPPFLAGS = \
   -I$(srcdir)/lib \
+  -I$(top_srcdir)/lib/ts \
   -I$(top_builddir)/proxy/api \
   -D__STDC_FORMAT_MACROS=1
 
