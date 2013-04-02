@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1787] Eliminate old ink_time code (was probably only used by the
+   now obsolete Web UI). This fixes compiling with gcc 4.8 as well.
+
   *) [TS-1067] Remove unused config (and code) for bandwidth management.
 
   *) [TS-1736] Fatal() terminates process without a backtrace
