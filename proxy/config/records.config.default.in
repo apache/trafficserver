@@ -393,7 +393,7 @@ CONFIG proxy.config.dns.validate_query_name INT 0
    # note that in order to increase hostdb.size, hostdb.storage_size should
    # also be increase. These are best guesses, you will have to monitor this.
 CONFIG proxy.config.hostdb.size INT 120000
-CONFIG proxy.config.hostdb.storage_size INT 32M
+CONFIG proxy.config.hostdb.storage_size INT 200M
    # ttl modes:
    #   0 = obey
    #   1 = ignore

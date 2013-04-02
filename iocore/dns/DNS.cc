@@ -794,7 +794,6 @@ DNSHandler::recv_dns(int event, Event *e)
         if (dnsc->num == name_server)
           received_one(name_server);
       }
-      hostent_cache = protect_hostent.to_ptr();
     }
   }
 }
@@ -1358,8 +1357,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     u_char *cp = ((u_char *) h) + HFIXEDSZ;
     u_char *eom = (u_char *) h + len;
     int n;
-    unsigned char *srv[50];
-    int num_srv = 0;
+    ink_debug_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
+    buf->srv_hosts.srv_host_count = 0;
+    buf->srv_hosts.srv_hosts_length = 0;
+    int &num_srv = buf->srv_hosts.srv_host_count;
     int rname_len = -1;
 
     //
@@ -1518,31 +1519,37 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           buflen -= n;
         }
       } else if (type == T_SRV) {
+        if (num_srv >= HOST_DB_MAX_ROUND_ROBIN_INFO)
+          break;
         cp = here;              /* hack */
         int strlen = dn_skipname(cp, eom);
         cp += strlen;
-        srv[num_srv] = cp;
+        const unsigned char *srv_off = cp;
         cp += SRV_FIXEDSZ;
         cp += dn_skipname(cp, eom);
         here = cp;              /* hack */
-        char srvname[MAXDNAME];
-        int r = ink_ns_name_ntop(srv[num_srv] + SRV_SERVER, srvname, MAXDNAME);
+        SRV *srv = &buf->srv_hosts.hosts[num_srv];
+        int r = ink_ns_name_ntop(srv_off + SRV_SERVER, srv->host, MAXDNAME);
         if (r <= 0) {
           /* FIXME: is this really an error? or just a continue; */
           ++error;
           goto Lerror;
         }
         Debug("dns_srv", "Discovered SRV record [from NS lookup] with cost:%d weight:%d port:%d with host:%s",
-              ink_get16(srv[num_srv] + SRV_COST),
-              ink_get16(srv[num_srv] + SRV_WEIGHT), ink_get16(srv[num_srv] + SRV_PORT), srvname);
+            ink_get16(srv_off + SRV_COST),
+            ink_get16(srv_off + SRV_WEIGHT), ink_get16(srv_off + SRV_PORT), srv->host);
 
-        SRV *s = SRVAllocator.alloc();
-        s->setPort(ink_get16(srv[num_srv] + SRV_PORT));
-        s->setPriority(ink_get16(srv[num_srv] + SRV_COST));
-        s->setWeight(ink_get16(srv[num_srv] + SRV_WEIGHT));
-        s->setHost(srvname);
+        srv->port = ink_get16(srv_off + SRV_PORT);
+        srv->priority = ink_get16(srv_off + SRV_COST);
+        srv->weight = ink_get16(srv_off + SRV_WEIGHT);
+        srv->host_len = r;
+        srv->host[r-1] = '\0';
+        srv->key = makeHostHash(srv->host);
 
-        buf->srv_hosts.insert(s);
+        if (srv->host[0] != '\0')
+          buf->srv_hosts.srv_hosts_length += r;
+        else
+          continue;
         ++num_srv;
       } else if (is_addr_query(type)) {
         if (answer) {

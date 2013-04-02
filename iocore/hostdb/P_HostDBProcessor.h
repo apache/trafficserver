@@ -78,8 +78,8 @@ inline unsigned int HOSTDB_CLIENT_IP_HASH(
 #define CONFIGURATION_HISTORY_PROBE_DEPTH   1
 
 // Bump this any time hostdb format is changed
-#define HOST_DB_CACHE_MAJOR_VERSION         2
-#define HOST_DB_CACHE_MINOR_VERSION         2
+#define HOST_DB_CACHE_MAJOR_VERSION         3
+#define HOST_DB_CACHE_MINOR_VERSION         0
 // 2.2: IP family split 2.1 : IPv6
 
 #define DEFAULT_HOST_DB_FILENAME             "host.db"
@@ -175,7 +175,7 @@ struct HostDBCache: public MultiCache<HostDBInfo>
   }
 
   // This accounts for an average of 2 HostDBInfo per DNS cache (for round-robin etc.)
-  virtual size_t estimated_heap_bytes_per_entry() const { return sizeof(HostDBInfo) * 2; }
+  virtual size_t estimated_heap_bytes_per_entry() const { return sizeof(HostDBInfo) * 2 + 512; }
 
   Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 & md5);
@@ -216,6 +216,22 @@ HostDBRoundRobin::select_next(sockaddr const* ip) {
     }
   }
   return zret;
+}
+
+inline HostDBInfo *
+HostDBRoundRobin::find_target(const char *target) {
+  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  if (bad) {
+    ink_assert(!"bad round robin size");
+    return NULL;
+  }
+
+  uint32_t key = makeHostHash(target);
+  for (int i = 0; i < good; i++) {
+    if (info[i].data.srv.key == key && !strcmp(target, info[i].srvname(this)))
+      return &info[i];
+  }
+  return NULL;
 }
 
 inline HostDBInfo *
@@ -295,6 +311,63 @@ HostDBRoundRobin::select_best_http(sockaddr const* client_ip, ink_time_t now, in
   }
 }
 
+inline HostDBInfo *
+HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window)
+{
+  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+
+  if (bad) {
+    ink_assert(!"bad round robin size");
+    return NULL;
+  }
+
+#ifdef DEBUG
+  for (int i = 1; i < good; ++i) {
+    ink_debug_assert(info[i].data.srv.srv_priority >= info[i-1].data.srv.srv_priority);
+  }
+#endif
+
+  int i = 0, len = 0;
+  uint32_t weight = 0, p = INT32_MAX;
+  HostDBInfo *result = NULL;
+  HostDBInfo *infos[HOST_DB_MAX_ROUND_ROBIN_INFO];
+
+  do {
+    if (info[i].app.http_data.last_failure != 0 &&
+        (uint32_t) (now - fail_window) < info[i].app.http_data.last_failure) {
+      continue;
+    }
+
+    if (info[i].app.http_data.last_failure)
+      info[i].app.http_data.last_failure = 0;
+
+    if (info[i].data.srv.srv_priority <= p) {
+      p = info[i].data.srv.srv_priority;
+      weight += info[i].data.srv.srv_weight;
+      infos[len++] = &info[i];
+    } else
+      break;
+  } while (++i < good);
+
+  if (len == 0) { // all failed
+    result = &info[current++ % good];
+  } else if (weight == 0) { // srv weight is 0
+    result = &info[current++ % len];
+  } else {
+    uint32_t xx = rand->random() % weight;
+    for (i = 0; i < len && xx >= infos[i]->data.srv.srv_weight; ++i)
+      xx -= infos[i]->data.srv.srv_weight;
+
+    result = infos[i];
+  }
+
+  if (result) {
+    strcpy(target, result->srvname(this));
+    return result;
+  }
+  return NULL;
+}
+
 //
 // Types
 //
@@ -351,6 +424,7 @@ struct HostDBContinuation: public Continuation
   //  char name[MAXDNAME];
   //  int namelen;
   char md5_host_name_store[MAXDNAME+1]; // used as backing store for @a md5
+  char srv_target_name[MAXDNAME];
   void *m_pDS;
   Action *pending_action;
 

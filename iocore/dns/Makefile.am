@@ -52,7 +52,6 @@ libinkdns_a_SOURCES = \
   P_SplitDNS.h \
   P_SplitDNSProcessor.h \
   SplitDNS.cc \
-  SRV.cc \
   SRV.h \
   Inline.cc
 

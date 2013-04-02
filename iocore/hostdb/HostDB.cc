@@ -78,6 +78,15 @@ HostDBCache hostDB;
 static  Queue <HostDBContinuation > remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 #endif
 
+char *
+HostDBInfo::srvname(HostDBRoundRobin *rr)
+{
+  if (!is_srv || !data.srv.srv_offset)
+    return NULL;
+  ink_assert(this - rr->info >= 0 && this - rr->info < rr->n && data.srv.srv_offset < rr->length);
+  return (char *) rr + data.srv.srv_offset;
+}
+
 static inline int
 corrupt_debugging_callout(HostDBInfo * e, RebuildMC & r)
 {
@@ -562,24 +571,17 @@ make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char const* pDN
 
 
 static bool
-reply_to_cont(Continuation * cont, HostDBInfo * ar)
+reply_to_cont(Continuation * cont, HostDBInfo * ar, bool is_srv = false)
 {
   const char *reason = "none";
   HostDBInfo *r = ar;
 
-  if (r == NULL) {
-    cont->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
+  if (r == NULL || r->is_srv != is_srv || r->failed()) {
+    cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
     return false;
   }
 
-  if (r->failed()) {
-    if (r->is_srv && r->srv_count) {
-      cont->handleEvent(EVENT_SRV_LOOKUP, NULL);
-      return false;
-    }
-    cont->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
-    return false;
-  } else {
+  {
     if (r->reverse_dns) {
       if (!r->hostname()) {
         reason = "missing hostname";
@@ -588,7 +590,8 @@ reply_to_cont(Continuation * cont, HostDBInfo * ar)
       }
       Debug("hostdb", "hostname = %s", r->hostname());
     }
-    if (r->round_robin) {
+
+    if (!r->is_srv && r->round_robin) {
       if (!r->rr()) {
         reason = "missing round-robin";
         ink_assert(!"missing round-robin");
@@ -597,26 +600,15 @@ reply_to_cont(Continuation * cont, HostDBInfo * ar)
       ip_text_buffer ipb;
       Debug("hostdb", "RR of %d with %d good, 1st IP = %s", r->rr()->n, r->rr()->good, ats_ip_ntop(r->ip(), ipb, sizeof ipb));
     }
-    if (r->is_srv && r->srv_count) {
-      cont->handleEvent(EVENT_SRV_LOOKUP, r);
-      if (!r->full)
-        goto Ldelete;
-      return true;
-    } else if (r->is_srv) {
-      /* failure case where this is an SRV lookup, but we got no records back  -- this is handled properly in process_srv_info */
-      cont->handleEvent(EVENT_SRV_LOOKUP, r);
-      return true;
-    }
-    cont->handleEvent(EVENT_HOST_DB_LOOKUP, r);
+
+    cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, r);
+
     if (!r->full)
       goto Ldelete;
     return true;
   }
 Lerror:
-  if (r->is_srv && r->srv_count) {
-    cont->handleEvent(EVENT_SRV_LOOKUP, r);
-  }
-  cont->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
+  cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
 Ldelete:
   Warning("bogus entry deleted from HostDB: %s", reason);
   hostDB.delete_block(ar);
@@ -904,7 +896,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation * cont, process_srv_info_pfn proc
 
   md5.host_name = hostname;
   md5.host_len = hostname ? (len ? len : strlen(hostname)) : 0;
-  md5.port = opt.port;
+  md5.port = 0;
   md5.db_mark = HOSTDB_MARK_SRV;
   md5.refresh();
 
@@ -1040,20 +1032,33 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
 
 
 static void
-do_setby(HostDBInfo * r, HostDBApplicationInfo * app, const char *hostname, IpAddr const& ip)
+do_setby(HostDBInfo * r, HostDBApplicationInfo * app, const char *hostname, IpAddr const& ip, bool is_srv = false)
 {
   HostDBRoundRobin *rr = r->rr();
 
+  if (is_srv && (!r->is_srv || !rr))
+    return;
+
   if (rr) {
-    ink_assert(hostname);
-    for (int i = 0; i < rr->n; i++) {
-      if (rr->info[i].ip() == ip) {
-        Debug("hostdb", "immediate setby for %s", hostname ? hostname : "<addr>");
-        rr->info[i].app.allotment.application1 = app->allotment.application1;
-        rr->info[i].app.allotment.application2 = app->allotment.application2;
-        return;
+    if (is_srv) {
+      uint32_t key = makeHostHash(hostname);
+      for (int i = 0; i < rr->n; i++) {
+        if (key == rr->info[i].data.srv.key && !strcmp(hostname, rr->info[i].srvname(rr))) {
+          Debug("hostdb", "immediate setby for %s", hostname);
+          rr->info[i].app.allotment.application1 = app->allotment.application1;
+          rr->info[i].app.allotment.application2 = app->allotment.application2;
+          return;
+        }
       }
-    }
+    } else
+      for (int i = 0; i < rr->n; i++) {
+        if (rr->info[i].ip() == ip) {
+          Debug("hostdb", "immediate setby for %s", hostname ? hostname : "<addr>");
+          rr->info[i].app.allotment.application1 = app->allotment.application1;
+          rr->info[i].app.allotment.application2 = app->allotment.application2;
+          return;
+        }
+      }
   } else {
     if (r->reverse_dns || (!r->round_robin && ip == r->ip())) {
       Debug("hostdb", "immediate setby for %s", hostname ? hostname : "<addr>");
@@ -1100,7 +1105,30 @@ HostDBProcessor::setby(const char *hostname, int len, sockaddr const* ip, HostDB
   thread->schedule_in(c, MUTEX_RETRY_DELAY);
 }
 
+void
+HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, HostDBApplicationInfo * app)
+{
+  if (!hostdb_enable || !hostname || !target)
+      return;
 
+  HostDBMD5 md5;
+  md5.host_name = hostname;
+  md5.host_len = len ? len : strlen(hostname);
+  md5.port = 0;
+  md5.db_mark = HOSTDB_MARK_SRV;
+  md5.refresh();
+
+  // Create a continuation to do a deaper probe in the background
+
+  HostDBContinuation *c = hostDBContAllocator.alloc();
+  c->init(md5);
+  strncpy(c->srv_target_name, target, MAXDNAME);
+  c->app.allotment.application1 = app->allotment.application1;
+  c->app.allotment.application2 = app->allotment.application2;
+  SET_CONTINUATION_HANDLER(c,
+      (HostDBContHandler) & HostDBContinuation::setbyEvent);
+  eventProcessor.schedule_imm(c);
+}
 int
 HostDBContinuation::setbyEvent(int event, Event * e)
 {
@@ -1109,7 +1137,7 @@ HostDBContinuation::setbyEvent(int event, Event * e)
   HostDBInfo *r = probe(mutex, md5, false);
 
   if (r)
-    do_setby(r, &app, md5.host_name, md5.ip);
+    do_setby(r, &app, md5.host_name, md5.ip, is_srv());
 
   hostdb_cont_free(this);
   return EVENT_DONE;
@@ -1254,7 +1282,9 @@ HostDBContinuation::lookup_done(IpAddr const& ip, char const* aname, bool around
     }
     i = insert(hostdb_ip_fail_timeout_interval);        // currently ... 0
     i->round_robin = false;
+    i->is_srv = is_srv();
     i->reverse_dns = !is_byname() && !is_srv();
+
     i->set_failed();
   } else {
     switch (hostdb_ttl_mode) {
@@ -1289,22 +1319,12 @@ HostDBContinuation::lookup_done(IpAddr const& ip, char const* aname, bool around
       }
       i->is_srv = false;
     } else if (is_srv()) {
-      ats_ip_set(i->ip(), ip);
+      ink_debug_assert(srv && srv->srv_host_count > 0 && srv->srv_host_count <= 16 && around_robin);
+
+      i->data.srv.srv_offset = srv->srv_host_count;
       i->reverse_dns = false;
-
-      if (srv) {                //failed case: srv == NULL
-        i->srv_count = srv->getCount();
-      } else {
-        i->srv_count = 0;
-      }
-
-      if (i->srv_count <= 0) {
-        i->round_robin = false;
-      } else {
-        i->round_robin = true;
-      }
-
       i->is_srv = true;
+      i->round_robin = around_robin;
 
       if (md5.host_name != aname) {
         ink_strlcpy(md5_host_name_store, aname, sizeof(md5_host_name_store));
@@ -1420,7 +1440,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     pending_action = NULL;
 
     if (is_srv()) {
-      rr = !failed && (e->srv_hosts.getCount() > 0);
+      rr = !failed && (e->srv_hosts.srv_host_count > 0);
     } else if (!failed) {
       rr = 0 != e->ent.h_addr_list[1];
     } else {
@@ -1434,13 +1454,22 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     if (old_r)
       old_info = *old_r;
     HostDBRoundRobin *old_rr_data = old_r ? old_r->rr() : NULL;
-
+#ifdef DEBUG
+    if (old_rr_data) {
+      for (int i = 0; i < old_rr_data->n; ++i) {
+        if (old_r->md5_high != old_rr_data->info[i].md5_high ||
+            old_r->md5_low != old_rr_data->info[i].md5_low ||
+            old_r->md5_low_low != old_rr_data->info[i].md5_low_low)
+          ink_assert(0);
+      }
+    }
+#endif
     int n = 0, nn = 0;
     void* first = 0;
     uint8_t af = e ? e->ent.h_addrtype : AF_UNSPEC; // address family
     if (rr) {
       if (is_srv() && !failed) {
-        n = e->srv_hosts.getCount();
+        n = e->srv_hosts.srv_host_count;
       } else {
         void* ptr; // tmp for current entry.
         for (
@@ -1474,7 +1503,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       if (first) ip_addr_set(tip, af, first);
       r = lookup_done(tip, md5.host_name, rr, ttl_seconds, failed ? 0 : &e->srv_hosts);
     } else if (is_srv()) {
-      if (first) ip_addr_set(tip, af, first);
+      if (!failed)
+        tip._family = AF_INET; // force the tip valid, or else the srv will fail
       r = lookup_done(tip,  /* junk: FIXME: is the code in lookup_done() wrong to NEED this? */
                       md5.host_name,     /* hostname */
                       rr,       /* is round robin, doesnt matter for SRV since we recheck getCount() inside lookup_done() */
@@ -1486,41 +1516,79 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       r = lookup_done(md5.ip, e->ent.h_name, false, ttl_seconds, &e->srv_hosts);
     }
 
+    ink_debug_assert(!r || (r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0));
+
     if (rr) {
-      int s = HostDBRoundRobin::size(n, is_srv());
+      int s = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
       HostDBRoundRobin *rr_data = (HostDBRoundRobin *) hostDB.alloc(&r->app.rr.offset, s);
       Debug("hostdb", "allocating %d bytes for %d RR at %p %d", s, n, rr_data, r->app.rr.offset);
       if (rr_data) {
+        rr_data->length = s;
         int i = 0, ii = 0;
         if (is_srv()) {
-          SortableQueue<SRV> *q = e->srv_hosts.getHosts();
-          if (q) {
-            for (i = 0; i < n; ++i) {
-              SRV *t = q->dequeue();
-              HostDBInfo& item = rr_data->info[i];
+          int skip = 0;
+          char *pos = (char *) rr_data + sizeof(HostDBRoundRobin) + n * sizeof(HostDBInfo);
+          SRV *q[HOST_DB_MAX_ROUND_ROBIN_INFO];
+          ink_debug_assert(n <= HOST_DB_MAX_ROUND_ROBIN_INFO);
+          // sort
+          for (i = 0; i < n; ++i) {
+            q[i] = &e->srv_hosts.hosts[i];
+          }
+          for (i = 0; i < n; ++i) {
+            for (ii = i + 1; ii < n; ++ii) {
+              if (*q[ii] < *q[i]) {
+                SRV *tmp = q[i];
+                q[i] = q[ii];
+                q[ii] = tmp;
+              }
+            }
+          }
 
-              ats_ip_invalidate(item.ip());
-              item.round_robin = 0;
-              item.reverse_dns = 0;
+          for (i = 0; i < n; ++i) {
+            SRV *t = q[i];
+            HostDBInfo& item = rr_data->info[i];
+            item.round_robin = 0;
+            item.reverse_dns = 0;
+            item.is_srv = 1;
+            item.data.srv.srv_weight = t->weight;
+            item.data.srv.srv_priority = t->priority;
+            item.data.srv.srv_port = t->port;
+            item.data.srv.key = t->key;
 
-              item.srv_weight = t->getWeight();
-              item.srv_priority = t->getPriority();
-              item.srv_port = t->getPort();
+            ink_debug_assert (skip + (int) t->host_len <= e->srv_hosts.srv_hosts_length);
 
-              ink_strlcpy(rr_data->rr_srv_hosts[i], t->getHost(), MAXDNAME);
-              rr_data->rr_srv_hosts[i][MAXDNAME - 1] = '\0';
-              item.is_srv = true;
+            memcpy(pos + skip, t->host, t->host_len);
+            item.data.srv.srv_offset = (pos - (char *) rr_data) + skip;
 
-              item.full = 1;
-              item.md5_high = r->md5_high;
-              item.md5_low = r->md5_low;
-              item.md5_low_low = r->md5_low_low;
-              SRVAllocator.free(t);
-              Debug("dns_srv", "inserted SRV RR record into HostDB with TTL: %d seconds", ttl_seconds);
+            skip += t->host_len;
+
+            item.md5_high = r->md5_high;
+            item.md5_low = r->md5_low;
+            item.md5_low_low = r->md5_low_low;
+            item.full = 1;
+
+            item.app.allotment.application1 = 0;
+            item.app.allotment.application2 = 0;
+            Debug("dns_srv", "inserted SRV RR record [%s] into HostDB with TTL: %d seconds", t->host, ttl_seconds);
+          }
+          rr_data->good = rr_data->n = n;
+          rr_data->current = 0;
+
+          // restore
+          if (old_rr_data) {
+            for (i = 0; i < rr_data->n; ++i) {
+              for (ii = 0; ii < old_rr_data->n; ++ii) {
+                if (rr_data->info[i].data.srv.key == old_rr_data->info[ii].data.srv.key) {
+                  char *new_host = rr_data->info[i].srvname(rr_data);
+                  char *old_host = old_rr_data->info[ii].srvname(old_rr_data);
+                  if (!strcmp(new_host, old_host))
+                    rr_data->info[i].app = old_rr_data->info[ii].app;
+                }
+              }
             }
           }
         } else {
-          for (; ii < nn; ++ii) {
+          for (ii = 0; ii < nn; ++ii) {
             if (is_addr_valid(af, e->ent.h_addr_list[ii])) {
               HostDBInfo& item = rr_data->info[i];
               ip_addr_set(item.ip(), af, e->ent.h_addr_list[ii]);
@@ -1528,6 +1596,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
               item.full = 1;
               item.round_robin = 0;
               item.reverse_dns = 0;
+              item.is_srv = 0;
               item.md5_high = r->md5_high;
               item.md5_low = r->md5_low;
               item.md5_low_low = r->md5_low_low;
@@ -1538,16 +1607,16 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
               ++i;
             }
           }
+          rr_data->good = rr_data->n = n;
+          rr_data->current = 0;
         }
-        rr_data->good = rr_data->n = n;
-        rr_data->current = 0;
       } else {
         ink_assert(!"out of room in hostdb data area");
         Warning("out of room in hostdb for round-robin DNS data");
         r->round_robin = 0;
       }
     }
-    if (!failed && !rr)
+    if (!failed && !rr && !is_srv())
       restore_info(r, old_r, old_info, old_rr_data);
     ink_assert(!r || !r->round_robin || !r->reverse_dns);
     ink_assert(failed || !r->round_robin || r->app.rr.offset);
@@ -1579,7 +1648,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
         return EVENT_CONT;
       }
       if (!action.cancelled)
-        reply_to_cont(action.continuation, r);
+        reply_to_cont(action.continuation, r, is_srv());
     }
     // wake up everyone else who is waiting
     remove_trigger_pending_dns();
@@ -1738,7 +1807,7 @@ HostDBContinuation::do_put_response(ClusterMachine * m, HostDBInfo * r, Continua
 {
   // don't remote fill round-robin DNS entries
   // if configured not to cluster them
-  if (!c && r->round_robin && !hostdb_cluster_round_robin)
+  if (!hostdb_cluster || (!c && r->round_robin && !hostdb_cluster_round_robin))
     return;
 
   HostDB_put_message msg;
@@ -2181,8 +2250,7 @@ HostDBInfo::heap_size()
     HostDBRoundRobin *r = rr();
 
     if (r)
-      // this is a bit conservative, we might want to resurect them later
-      return HostDBRoundRobin::size(r->n, this->is_srv);
+      return r->length;
   }
   return 0;
 }
