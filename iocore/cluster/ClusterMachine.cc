@@ -146,7 +146,7 @@ clusterHandlers(0)
   else
     hostname_len = 0;
 
-  REC_ReadConfigInteger(num_connections, "proxy.config.cluster.num_of_cluster_connections");
+  num_connections = eventProcessor.n_threads_for_type[ET_CLUSTER];
   clusterHandlers = (ClusterHandler **)ats_calloc(num_connections, sizeof(ClusterHandler *));
 }
 
