@@ -9,6 +9,7 @@ proxy/config/
 **/*.la
 **/*.lai
 **/*.lo
+**/.dirstamp
 **/Makefile
 **/TODO
 .vimrc
@@ -18,6 +19,7 @@ proxy/config/
 .indent.pro
 aclocal.m4
 CHANGES
+CRUFT.txt
 autom4te.cache/
 build/
 LAYOUT
