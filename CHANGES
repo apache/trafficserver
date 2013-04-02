@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1713] SRV support refine. Now the srv option is able to enable, with
+   no crash. Be care, the hostdb.storage_size or ostdb.size need check.
+
   *) [TS-1632] In addition to the changes from TS-1674, also add
    some safety measures assuring that the stats sums don't go
    negative. Author: Yakov Kopel.
