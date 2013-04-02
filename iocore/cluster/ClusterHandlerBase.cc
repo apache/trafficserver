@@ -1038,28 +1038,13 @@ ClusterHandler::startClusterEvent(int event, Event * e)
             CLUSTER_INCREMENT_DYN_STAT(CLUSTER_NODES_STAT);
             this_cluster()->configurations.push(cconf);
           } else {
-            if (m->num_connections > machine->num_connections) {
-              // close old needlessness connection if new num_connections < old num_connections
-              for (int i = machine->num_connections; i < m->num_connections; i++) {
-                if (m->clusterHandlers[i])
-                  m->clusterHandlers[i]->downing = true;
-              }
-              m->free_connections -= (m->num_connections - machine->num_connections);
-              m->num_connections = machine->num_connections;
-              // delete_this
+            // close new connection if old connections is exist
+            if (id >= m->num_connections || m->clusterHandlers[id]) {
               failed = -2;
               MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
               goto failed;
-            } else {
-              m->num_connections = machine->num_connections;
-              // close new connection if old connections is exist
-              if (id >= m->num_connections || m->clusterHandlers[id]) {
-                failed = -2;
-                MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
-                goto failed;
-              }
-              machine = m;
             }
+            machine = m;
           }
           machine->now_connections++;
           machine->clusterHandlers[id] = this;
