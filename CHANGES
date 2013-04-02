@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1067] Remove unused config (and code) for bandwidth management.
+
   *) [TS-1736] Fatal() terminates process without a backtrace
     Author: Yunkai Zhang <yunkai.me@gmail.com>
 
