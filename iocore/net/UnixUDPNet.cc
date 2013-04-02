@@ -640,9 +640,6 @@ UDPQueue::service(UDPNetHandler * nh)
   uint64_t pktSendStartTime;
   UDPPacketInternal *p;
   ink_hrtime pktSendTime;
-  double minPktSpacing;
-  uint32_t pktSize;
-  int64_t pktLen;
 
   p = (UDPPacketInternal *) ink_atomiclist_popall(&atomicQueue);
   if (p) {
@@ -663,12 +660,9 @@ UDPQueue::service(UDPNetHandler * nh)
       ink_assert(p->link.next == NULL);
       // insert into our queue.
       Debug("udp-send", "Adding %p", p);
-      pktLen = p->getPktLength();
       if (p->conn->lastPktStartTime == 0) {
         pktSendStartTime = MAX(now, p->delivery_time);
       } else {
-        pktSize = MAX(INK_ETHERNET_MTU_SIZE, pktLen);
-        minPktSpacing = 0.0;
         pktSendTime = p->delivery_time;
         pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
       }
@@ -701,10 +695,6 @@ UDPQueue::SendPackets()
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
   int32_t bytesThisPipe, sentOne;
   int64_t pktLen;
-  ink_hrtime timeDelta = 0;
-
-  if (now > last_service)
-    timeDelta = ink_hrtime_to_msec(now - last_service);
 
   bytesThisSlot = INT_MAX;
 
