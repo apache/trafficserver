@@ -273,7 +273,7 @@ drainIncomingChannel(void *arg)
             delete buff;
         } else if (strstr(message, "cmd: shutdown_manager")) {
           mgmt_log("[ClusterCom::drainIncomingChannel] Received manager shutdown request\n");
-          lmgmt->mgmtShutdown(0);
+          lmgmt->mgmtShutdown();
         } else if (strstr(message, "cmd: shutdown_process")) {
           mgmt_log("[ClusterCom::drainIncomingChannel] Received process shutdown request\n");
           lmgmt->processShutdown();
@@ -1789,7 +1789,7 @@ ClusterCom::sendClusterMessage(int msg_type, const char *args)
 
   switch (msg_type) {
   case CLUSTER_MSG_SHUTDOWN_MANAGER:
-    lmgmt->mgmtShutdown(0);
+    lmgmt->mgmtShutdown();
     break;
   case CLUSTER_MSG_SHUTDOWN_PROCESS:
     lmgmt->processShutdown();

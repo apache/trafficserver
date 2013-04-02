@@ -87,7 +87,7 @@ public:
   void closeProxyPorts();
 
   void mgmtCleanup();
-  void mgmtShutdown(int status, bool mainThread = false);
+  void mgmtShutdown(bool mainThread = false);
   void processShutdown(bool mainThread = false);
   void processRestart();
   void processBounce();

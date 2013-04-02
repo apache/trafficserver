@@ -2,9 +2,12 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1736] Fatal() terminates process without a backtrace
+    Author: Yunkai Zhang <yunkai.me@gmail.com>
+
   *) [TS-1791] remove m_mutex acquire&release to avoid deadlock in
    ~LogBufferList(). Author: Gang Li <quehan@taobao.com>.
-   
+
   *) [TS-1713] SRV support refine. Now the srv option is able to enable, with
    no crash. Be care, the hostdb.storage_size or ostdb.size need check.
 

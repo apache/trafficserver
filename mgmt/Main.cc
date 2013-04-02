@@ -798,7 +798,8 @@ main(int argc, char **argv)
     }
 
     if (lmgmt->mgmt_shutdown_outstanding == true) {
-      lmgmt->mgmtShutdown(0, true);
+      lmgmt->mgmtShutdown(true);
+      _exit(0);
     }
 
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
