@@ -355,11 +355,12 @@ struct HostDBRoundRobin
   unsigned short length;
   ink_time_t timed_rr_ctime;
 
-  HostDBInfo info[];
+  HostDBInfo info[1];
 
   static int size(int nn, int srv_len = 0)
   {
-    return INK_ALIGN((int) (sizeof(HostDBRoundRobin) + nn * sizeof(HostDBInfo) + srv_len), 8);
+    ink_assert(nn > 0);
+    return INK_ALIGN((int) (sizeof(HostDBRoundRobin) + (nn-1) * sizeof(HostDBInfo) + srv_len), 8);
   }
 
   /** Find the index of @a addr in member @a info.
