@@ -473,7 +473,7 @@ mgmt_cleanup()
 {
 #if defined(LOCAL_MANAGER)
   if (lmgmt != NULL) {
-    lmgmt->mgmtShutdown(1, true);
+    lmgmt->mgmtShutdown(true);
   }
 #endif
 }

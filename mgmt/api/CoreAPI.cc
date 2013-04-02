@@ -256,7 +256,7 @@ Restart(bool cluster)
     // this will kill TM completely;traffic_cop will restart TM/TS
     lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_SHUTDOWN_MANAGER);
   } else {                      // just bounce local proxy
-    lmgmt->mgmtShutdown(0);
+    lmgmt->mgmtShutdown();
   }
 
   return TS_ERR_OKAY;
