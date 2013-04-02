@@ -465,6 +465,9 @@ struct ClusterHandler:public ClusterHandlerBase
     CLCON_READ_MSG,
     CLCON_READ_MSG_COMPLETE,
     CLCON_VALIDATE_MSG,
+    CLCON_CONN_BIND_CLEAR,
+    CLCON_CONN_BIND,
+    CLCON_CONN_BIND_OK,
     CLCON_ABORT_CONNECT,
     CLCON_DELETE_CONNECT
   } clcon_state_t;
