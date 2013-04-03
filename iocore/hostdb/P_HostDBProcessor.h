@@ -184,7 +184,7 @@ struct HostDBCache: public MultiCache<HostDBInfo>
 
 inline int
 HostDBRoundRobin::index_of(sockaddr const* ip) {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
   if (bad) {
     ink_assert(!"bad round robin size");
     return -1;
@@ -220,7 +220,7 @@ HostDBRoundRobin::select_next(sockaddr const* ip) {
 
 inline HostDBInfo *
 HostDBRoundRobin::find_target(const char *target) {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
   if (bad) {
     ink_assert(!"bad round robin size");
     return NULL;
@@ -237,7 +237,7 @@ HostDBRoundRobin::find_target(const char *target) {
 inline HostDBInfo *
 HostDBRoundRobin::select_best_http(sockaddr const* client_ip, ink_time_t now, int32_t fail_window)
 {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
 
   if (bad) {
     ink_assert(!"bad round robin size");
@@ -314,7 +314,7 @@ HostDBRoundRobin::select_best_http(sockaddr const* client_ip, ink_time_t now, in
 inline HostDBInfo *
 HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window)
 {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
 
   if (bad) {
     ink_assert(!"bad round robin size");

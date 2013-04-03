@@ -2026,7 +2026,7 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       // set the srv target`s last_failure
       if (t_state.dns_info.srv_lookup_success) {
         uint32_t last_failure = 0xFFFFFFFF;
-        for (int i = 0; i < rr->n && last_failure != 0; ++i) {
+        for (int i = 0; i < rr->rrcount && last_failure != 0; ++i) {
           if (last_failure > rr->info[i].app.http_data.last_failure)
             last_failure = rr->info[i].app.http_data.last_failure;
         }

@@ -1360,7 +1360,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     ink_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
     buf->srv_hosts.srv_host_count = 0;
     buf->srv_hosts.srv_hosts_length = 0;
-    int &num_srv = buf->srv_hosts.srv_host_count;
+    unsigned& num_srv = buf->srv_hosts.srv_host_count;
     int rname_len = -1;
 
     //

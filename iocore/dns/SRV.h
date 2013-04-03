@@ -58,11 +58,11 @@ operator<(const SRV &left, const SRV &right)
 
 struct SRVHosts
 {
-  int srv_host_count;
-  int srv_hosts_length;
+  unsigned srv_host_count;
+  unsigned srv_hosts_length;
   SRV hosts[HOST_DB_MAX_ROUND_ROBIN_INFO];
 
-   ~SRVHosts()
+  ~SRVHosts()
   {
   }
 

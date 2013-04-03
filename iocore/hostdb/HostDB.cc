@@ -82,7 +82,7 @@ HostDBInfo::srvname(HostDBRoundRobin *rr)
 {
   if (!is_srv || !data.srv.srv_offset)
     return NULL;
-  ink_assert(this - rr->info >= 0 && this - rr->info < rr->n && data.srv.srv_offset < rr->length);
+  ink_assert(this - rr->info >= 0 && this - rr->info < rr->rrcount && data.srv.srv_offset < rr->length);
   return (char *) rr + data.srv.srv_offset;
 }
 
@@ -239,8 +239,8 @@ HostDBCache::rebuild_callout(HostDBInfo * e, RebuildMC & r)
     HostDBRoundRobin *rr = (HostDBRoundRobin *) ptr(&e->app.rr.offset, r.partition);
     if (!rr)
       return corrupt_debugging_callout(e, r);
-    if (rr->n > HOST_DB_MAX_ROUND_ROBIN_INFO || rr->n <= 0 ||
-        rr->good > HOST_DB_MAX_ROUND_ROBIN_INFO || rr->good <= 0 || rr->good > rr->n)
+    if (rr->rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || rr->rrcount <= 0 ||
+        rr->good > HOST_DB_MAX_ROUND_ROBIN_INFO || rr->good <= 0 || rr->good > rr->rrcount)
       return corrupt_debugging_callout(e, r);
     for (int i = 0; i < rr->good; i++) {
       if (!valid_heap_pointer(((char *) &rr->info[i + 1]) - 1))
@@ -601,7 +601,7 @@ reply_to_cont(Continuation * cont, HostDBInfo * ar, bool is_srv = false)
         goto Lerror;
       }
       ip_text_buffer ipb;
-      Debug("hostdb", "RR of %d with %d good, 1st IP = %s", r->rr()->n, r->rr()->good, ats_ip_ntop(r->ip(), ipb, sizeof ipb));
+      Debug("hostdb", "RR of %d with %d good, 1st IP = %s", r->rr()->rrcount, r->rr()->good, ats_ip_ntop(r->ip(), ipb, sizeof ipb));
     }
 
     cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, r);
@@ -1045,7 +1045,7 @@ do_setby(HostDBInfo * r, HostDBApplicationInfo * app, const char *hostname, IpAd
   if (rr) {
     if (is_srv) {
       uint32_t key = makeHostHash(hostname);
-      for (int i = 0; i < rr->n; i++) {
+      for (int i = 0; i < rr->rrcount; i++) {
         if (key == rr->info[i].data.srv.key && !strcmp(hostname, rr->info[i].srvname(rr))) {
           Debug("hostdb", "immediate setby for %s", hostname);
           rr->info[i].app.allotment.application1 = app->allotment.application1;
@@ -1054,7 +1054,7 @@ do_setby(HostDBInfo * r, HostDBApplicationInfo * app, const char *hostname, IpAd
         }
       }
     } else
-      for (int i = 0; i < rr->n; i++) {
+      for (int i = 0; i < rr->rrcount; i++) {
         if (rr->info[i].ip() == ip) {
           Debug("hostdb", "immediate setby for %s", hostname ? hostname : "<addr>");
           rr->info[i].app.allotment.application1 = app->allotment.application1;
@@ -1389,7 +1389,7 @@ static int
 restore_info(HostDBInfo * r, HostDBInfo * old_r, HostDBInfo & old_info, HostDBRoundRobin * old_rr_data)
 {
   if (old_rr_data) {
-    for (int j = 0; j < old_rr_data->n; j++)
+    for (int j = 0; j < old_rr_data->rrcount; j++)
       if (ats_ip_addr_eq(old_rr_data->info[j].ip(), r->ip())) {
         r->app = old_rr_data->info[j].app;
         return true;
@@ -1459,7 +1459,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     HostDBRoundRobin *old_rr_data = old_r ? old_r->rr() : NULL;
 #ifdef DEBUG
     if (old_rr_data) {
-      for (int i = 0; i < old_rr_data->n; ++i) {
+      for (int i = 0; i < old_rr_data->rrcount; ++i) {
         if (old_r->md5_high != old_rr_data->info[i].md5_high ||
             old_r->md5_low != old_rr_data->info[i].md5_low ||
             old_r->md5_low_low != old_rr_data->info[i].md5_low_low)
@@ -1522,11 +1522,13 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     ink_assert(!r || (r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0));
 
     if (rr) {
-      int s = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
-      HostDBRoundRobin *rr_data = (HostDBRoundRobin *) hostDB.alloc(&r->app.rr.offset, s);
-      Debug("hostdb", "allocating %d bytes for %d RR at %p %d", s, n, rr_data, r->app.rr.offset);
+      const int rrsize = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
+      HostDBRoundRobin *rr_data = (HostDBRoundRobin *) hostDB.alloc(&r->app.rr.offset, rrsize);
+
+      Debug("hostdb", "allocating %d bytes for %d RR at %p %d", rrsize, n, rr_data, r->app.rr.offset);
+
       if (rr_data) {
-        rr_data->length = s;
+        rr_data->length = rrsize;
         int i = 0, ii = 0;
         if (is_srv()) {
           int skip = 0;
@@ -1550,6 +1552,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
           for (i = 0; i < n; ++i) {
             SRV *t = q[i];
             HostDBInfo& item = rr_data->info[i];
+
+            memset(&item, 0, sizeof(item));
             item.round_robin = 0;
             item.reverse_dns = 0;
             item.is_srv = 1;
@@ -1558,7 +1562,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
             item.data.srv.srv_port = t->port;
             item.data.srv.key = t->key;
 
-            ink_assert (skip + (int) t->host_len <= e->srv_hosts.srv_hosts_length);
+            ink_assert((skip + t->host_len) <= e->srv_hosts.srv_hosts_length);
 
             memcpy(pos + skip, t->host, t->host_len);
             item.data.srv.srv_offset = (pos - (char *) rr_data) + skip;
@@ -1574,13 +1578,13 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
             item.app.allotment.application2 = 0;
             Debug("dns_srv", "inserted SRV RR record [%s] into HostDB with TTL: %d seconds", t->host, ttl_seconds);
           }
-          rr_data->good = rr_data->n = n;
+          rr_data->good = rr_data->rrcount = n;
           rr_data->current = 0;
 
           // restore
           if (old_rr_data) {
-            for (i = 0; i < rr_data->n; ++i) {
-              for (ii = 0; ii < old_rr_data->n; ++ii) {
+            for (i = 0; i < rr_data->rrcount; ++i) {
+              for (ii = 0; ii < old_rr_data->rrcount; ++ii) {
                 if (rr_data->info[i].data.srv.key == old_rr_data->info[ii].data.srv.key) {
                   char *new_host = rr_data->info[i].srvname(rr_data);
                   char *old_host = old_rr_data->info[ii].srvname(old_rr_data);
@@ -1610,7 +1614,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
               ++i;
             }
           }
-          rr_data->good = rr_data->n = n;
+          rr_data->good = rr_data->rrcount = n;
           rr_data->current = 0;
         }
       } else {
@@ -2233,7 +2237,7 @@ HostDBInfo::rr()
 
   HostDBRoundRobin *r = (HostDBRoundRobin *) hostDB.ptr(&app.rr.offset, hostDB.ptr_to_partition((char *) this));
 
-  if (r && (r->n > HOST_DB_MAX_ROUND_ROBIN_INFO || r->n <= 0 || r->good > HOST_DB_MAX_ROUND_ROBIN_INFO || r->good <= 0)) {
+  if (r && (r->rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || r->rrcount <= 0 || r->good > HOST_DB_MAX_ROUND_ROBIN_INFO || r->good <= 0)) {
     ink_assert(!"bad round-robin");
     return NULL;
   }
@@ -2359,12 +2363,12 @@ struct ShowHostDB: public ShowCont
         HostDBRoundRobin *rr_data = r->rr();
         if (rr_data) {
           CHECK_SHOW(show("<table border=1>\n"));
-          CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Total", rr_data->n));
+          CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Total", rr_data->rrcount));
           CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Good", rr_data->good));
           CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Current", rr_data->current));
           CHECK_SHOW(show("</table>\n"));
 
-          for (int i = 0; i < rr_data->n; i++)
+          for (int i = 0; i < rr_data->rrcount; i++)
             showOne(&rr_data->info[i], true, event, e);
         }
       }
