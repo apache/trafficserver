@@ -332,3 +332,20 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
   ink_strlcpy(path, addpath, pathsz);
   return 0;
 }
+
+int
+ink_file_fd_zerofill(int fd, off_t size)
+{
+  // Clear the file by truncating it to zero and then to the desired size.
+  ftruncate(fd, 0);
+
+#if TS_HAS_POSIX_FALLOCATE
+  return posix_fallocate(fd, 0, size);
+#else
+  if (ftruncate(fd, size) < 0) {
+    return errno;
+  }
+
+  return 0;
+#endif
+}

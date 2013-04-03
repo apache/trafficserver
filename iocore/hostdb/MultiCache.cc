@@ -38,6 +38,7 @@
 
 #include "P_MultiCache.h"
 #include "P_EventSystem.h"      // FIXME: need to have this in I_* header files.
+#include "ink_file.h"
 
 //dxu: disable all Diags.h's functions
 //#define Note
@@ -299,82 +300,6 @@ MultiCacheBase::unmap_data()
   return 0;
 }
 
-struct zorch_info
-{
-  int fd;
-  int64_t size;
-  int64_t fsize;
-  int val;
-};
-
-static volatile int nzorchers = 0;
-
-#define MAX_ZORCH_BUFFER (1024 * 1024)
-
-static void *
-_zorch_file(void *arg)
-{
-  zorch_info *info = (zorch_info *) arg;
-  int64_t amount;
-  char *vals;
-
-  if (info) {
-    if ((vals = (char *)ats_malloc(MAX_ZORCH_BUFFER)) != NULL) {
-      memset(vals, info->val, MAX_ZORCH_BUFFER);
-      while (info->fsize < info->size) {
-        amount = MAX_ZORCH_BUFFER;
-        if (amount > (info->size - info->fsize))
-          amount = info->size - info->fsize;
-
-        if (pwrite(info->fd, vals, amount, info->fsize) < 0)
-          break;
-        info->fsize += amount;
-      }
-      ats_free(vals);
-    }
-    delete info;
-    ink_atomic_increment((int *) &nzorchers, -1);
-  }
-  return NULL;
-}
-
-static int
-zorch_file(char *path, int fd, int64_t size, int val)
-{
-  struct stat stat;
-  int64_t fsize;
-
-  if (fstat(fd, &stat) < 0) {
-    return -1;
-  }
-
-  fsize = stat.st_size;
-
-  if (fsize != size) {
-    Note("file '%s' size changed from %0.2fMB to %0.2fMB", path, fsize / (1024.0 * 1024.0), size / (1024.0 * 1024.0));
-  }
-
-  if (ftruncate(fd, size) < 0) {
-    return -1;
-  }
-
-  if (fsize < size) {
-    zorch_info *info;
-
-    info = new zorch_info;
-    info->fd = fd;
-    info->size = size;
-    info->fsize = fsize;
-    info->val = val;
-
-    ink_atomic_increment((int *) &nzorchers, 1);
-    // ink_thread_create (_zorch_file, (void*) info);
-    _zorch_file((void *) info);
-  }
-
-  return 0;
-}
-
 int
 MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
@@ -405,9 +330,11 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
         fds[n_fds] = 0;
       }
       if (!d->file_pathname) {
-        if (zorch_file(path, fds[n_fds], (int64_t) d->blocks * (int64_t) STORE_BLOCK_SIZE, 0)) {
+        int err;
+        err = ink_file_fd_zerofill(fds[n_fds], (off_t)(d->blocks * STORE_BLOCK_SIZE));
+        if (err != 0) {
           Warning("unable to set file '%s' size to %" PRId64 ": %d, %s",
-                  path, (int64_t) d->blocks * STORE_BLOCK_SIZE, errno, strerror(errno));
+                  path, (int64_t) d->blocks * STORE_BLOCK_SIZE, err, strerror(err));
           goto Lalloc;
         }
       }
