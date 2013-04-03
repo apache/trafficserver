@@ -1198,13 +1198,12 @@ AX_LIB_READLINE
 #
 # Check for Lua, at least version 5.1, sets LUA_CFLAGS and LUA_LIBS. We support both standard
 # Lua and LuaJIT, preferring LuaJIT if the user did not indicate a preference.
-AC_ARG_ENABLE([luajit], [
-  AS_HELP_STRING([--enable-luajit], [enable LuaJIT support @<:@default=check@:>@])
-], [
-  enable_luajit="${enableval}"
-], [
-  enable_luajit=check
-])
+AC_MSG_CHECKING([whether to enable Linux LuaJIT support])
+AC_ARG_ENABLE([luajit],
+  [AS_HELP_STRING([--enable-luajit], [enable LuaJIT support @<:@default=check@:>@])],
+  [enable_luajit="${enableval}"],
+  [enable_luajit=check]
+)
 
 PKG_CHECK_MODULES([luajit], [luajit], [have_luajit=yes], [have_luajit=no])
 CHECK_LUA([have_lua=yes], [have_lua=no])
