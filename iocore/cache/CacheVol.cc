@@ -365,7 +365,7 @@ Lread:
   offset = 0;
   ink_assert(ink_aio_read(&io) >= 0);
   Debug("cache_scan_truss", "read %p:scanObject %" PRId64 " %zu", this,
-        (int64_t)io.aiocb.aio_offset, io.aiocb.aio_nbytes);
+        (int64_t)io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
   return EVENT_CONT;
 
 Ldone:
