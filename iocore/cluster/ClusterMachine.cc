@@ -152,9 +152,16 @@ clusterHandlers(0)
 
 ClusterHandler *ClusterMachine::pop_ClusterHandler(int no_rr)
 {
+  int find = 0;
   int64_t now = rr_count;
   if (no_rr == 0) {
     ink_atomic_increment(&rr_count, 1);
+  }
+
+  /* will happen when ts start (cluster connection is not established) */
+  while (!clusterHandlers[now % this->num_connections] && (find < this->num_connections)) {
+    now++;
+    find++;
   }
   return this->clusterHandlers[now % this->num_connections];
 }
