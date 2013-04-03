@@ -66,6 +66,7 @@ Vagrant.configure("2") do |config|
   # Current OmniOS release, see http://omnios.omniti.com/wiki.php/Installation
   config.vm.define :omnios do | config |
     config.vm.box = "omnios"
+    config.vm.guest = :solaris
     config.vm.network :private_network, ip: "192.168.100.9"
     config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => false
     config.vm.box_url = "http://omnios.omniti.com/media/omnios-latest.box"
