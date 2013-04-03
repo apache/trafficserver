@@ -397,24 +397,27 @@ TS_ARG_ENABLE_VAR([use], [reclaimable_freelist])
 AC_SUBST(use_reclaimable_freelist)
 
 #
-# If the OS is linux, we can use '--use_linux_native_aio' option to
+# If the OS is linux, we can use the '--enable-linux-native-aio' option to
 # replace the aio thread mode. Effective only on the linux system.
 #
 
-if test "x${host_os_def}" = "xlinux"; then
-  AC_MSG_CHECKING([whether to use native aio or not])
-  AC_ARG_ENABLE([linux_native_aio],
-    [AS_HELP_STRING([--enable-linux-native-aio],
-      [turn on linux native aio, only effective on linux system])],
-    [],
-    [enable_linux_native_aio="yes"])
-  AC_MSG_RESULT([$enable_linux_native_aio])
-else
-  enable_linux_native_aio="no"
-fi
+AC_MSG_CHECKING([whether to enable Linux native AIO])
+AC_ARG_ENABLE([linux-native-aio],
+  [AS_HELP_STRING([--enable-linux-native-aio], [enable native Linux AIO support @<:@default=no@:>@])],
+  [enable_linux_native_aio="${enableval}"],
+  [enable_linux_native_aio=no]
+)
+
+case $host_os in
+  linux*);;
+  *) AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
+      AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
+    ])
+esac
+
+AC_MSG_RESULT([$enable_linux_native_aio])
 TS_ARG_ENABLE_VAR([use], [linux_native_aio])
 AC_SUBST(use_linux_native_aio)
-
 
 # Configure how many stats to allocate for plugins. Default is 512.
 #
