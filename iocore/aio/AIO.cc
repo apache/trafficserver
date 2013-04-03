@@ -27,6 +27,10 @@
 
 #include "P_AIO.h"
 
+#if AIO_MODE == AIO_MODE_NATIVE
+#define AIO_PERIOD                                -HRTIME_MSECONDS(4)
+#else
+
 #define MAX_DISKS_POSSIBLE 100
 
 // globals
@@ -36,23 +40,23 @@ int ts_config_with_inkdiskio = 0;
 AIO_Reqs *aio_reqs[MAX_DISKS_POSSIBLE];
 /* number of unique file descriptors in the aio_reqs array */
 volatile int num_filedes = 1;
-RecRawStatBlock *aio_rsb = NULL;
+
 // acquire this mutex before inserting a new entry in the aio_reqs array.
 // Don't need to acquire this for searching the array
 static ink_mutex insert_mutex;
-Continuation *aio_err_callbck = 0;
+
 RecInt cache_config_threads_per_disk = 12;
 RecInt api_config_threads_per_disk = 12;
 int thread_is_created = 0;
+#endif // AIO_MODE == AIO_MODE_NATIVE
 
-
+RecRawStatBlock *aio_rsb = NULL;
+Continuation *aio_err_callbck = 0;
 // AIO Stats
 uint64_t aio_num_read = 0;
 uint64_t aio_bytes_read = 0;
 uint64_t aio_num_write = 0;
 uint64_t aio_bytes_written = 0;
-
-static void aio_move(AIO_Reqs *req);
 
 /*
  * Stats
@@ -156,10 +160,12 @@ ink_aio_init(ModuleVersion v)
   RecRegisterRawStat(aio_rsb, RECT_PROCESS,
                      "proxy.process.cache.KB_write_per_sec",
                      RECD_FLOAT, RECP_NULL, (int) AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
+#if AIO_MODE != AIO_MODE_NATIVE
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex, NULL);
 
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
+#endif
 }
 
 int
@@ -172,6 +178,7 @@ ink_aio_start()
   return 0;
 }
 
+#if  AIO_MODE != AIO_MODE_NATIVE
 
 static void *aio_thread_main(void *arg);
 
@@ -534,3 +541,132 @@ aio_thread_main(void *arg)
   }
   return 0;
 }
+#else
+int
+DiskHandler::startAIOEvent(int event, Event *e) {
+  SET_HANDLER(&DiskHandler::mainAIOEvent);
+  e->schedule_every(AIO_PERIOD);
+  trigger_event = e;
+  return EVENT_CONT;
+}
+
+int
+DiskHandler::mainAIOEvent(int event, Event *e) {
+  AIOCallback *op = NULL;
+Lagain:
+  int ret = io_getevents(ctx, 0, MAX_AIO_EVENTS, events, NULL);
+  //printf("%d\n", ret);
+  for (int i = 0; i < ret; i++) {
+    op = (AIOCallback *) events[i].data;
+    op->aio_result = events[i].res;
+    ink_assert(op->action.continuation);
+    complete_list.enqueue(op);
+    //op->handleEvent(event, e);
+  }
+  if (ret == MAX_AIO_EVENTS)
+    goto Lagain;
+  if (ret < 0)
+    perror("io_getevents");
+
+  ink_aiocb_t *cbs[MAX_AIO_EVENTS];
+  int num = 0;
+  for (; num < MAX_AIO_EVENTS && ((op = ready_list.dequeue()) != NULL); ++num) {
+    cbs[num] = &op->aiocb;
+    ink_debug_assert(op->action.continuation);
+  }
+  if (num > 0) {
+    int ret;
+    do {
+      ret = io_submit(ctx, num, cbs);
+    } while (ret < 0 && errno == EAGAIN);
+
+    if (ret != num) {
+      if (ret < 0)
+        perror("io_submit error");
+      else {
+        fprintf(stderr, "could not sumbit IOs");
+        ink_debug_assert(0);
+      }
+    }
+  }
+
+  while ((op = complete_list.dequeue()) != NULL) {
+    op->handleEvent(event, e);
+  }
+  return EVENT_CONT;
+}
+
+int
+ink_aio_read(AIOCallback *op, int fromAPI) {
+  op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+  op->aiocb.aio_lio_opcode = IOCB_CMD_PREAD;
+  op->aiocb.aio_data = op;
+  this_ethread()->diskHandler->ready_list.enqueue(op);
+
+  return 1;
+}
+
+int
+ink_aio_write(AIOCallback *op, int fromAPI) {
+  op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+  op->aiocb.aio_lio_opcode = IOCB_CMD_PWRITE;
+  op->aiocb.aio_data = op;
+  this_ethread()->diskHandler->ready_list.enqueue(op);
+
+  return 1;
+}
+
+int
+ink_aio_readv(AIOCallback *op, int fromAPI) {
+  DiskHandler *dh = this_ethread()->diskHandler;
+  AIOCallback *io = op;
+  int sz = 0;
+
+  while (io) {
+    io->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+    io->aiocb.aio_lio_opcode = IOCB_CMD_PREAD;
+    io->aiocb.aio_data = io;
+    dh->ready_list.enqueue(io);
+    ++sz;
+    io = io->then;
+  }
+
+  if (sz > 1) {
+    ink_debug_assert(op->action.continuation);
+    AIOVec *vec = new AIOVec(sz, op->action.continuation);
+    vec->action = op->action.continuation;
+    while (--sz >= 0) {
+      op->action = vec;
+      op = op->then;
+    }
+  }
+  return 1;
+}
+
+int
+ink_aio_writev(AIOCallback *op, int fromAPI) {
+  DiskHandler *dh = this_ethread()->diskHandler;
+  AIOCallback *io = op;
+  int sz = 0;
+
+  while (io) {
+    io->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+    io->aiocb.aio_lio_opcode = IOCB_CMD_PWRITE;
+    io->aiocb.aio_data = io;
+    dh->ready_list.enqueue(io);
+    ++sz;
+    io = io->then;
+  }
+
+  if (sz > 1) {
+    ink_debug_assert(op->action.continuation);
+    AIOVec *vec = new AIOVec(sz, op->action.continuation);
+    vec->action = op->action.continuation;
+    while (--sz >= 0) {
+      op->action = vec;
+      op = op->then;
+    }
+  }
+  return 1;
+}
+#endif // AIO_MODE != AIO_MODE_NATIVE

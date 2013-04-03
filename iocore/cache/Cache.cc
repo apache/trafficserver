@@ -146,6 +146,51 @@ struct VolInitInfo
   }
 };
 
+#if AIO_MODE == AIO_MODE_NATIVE
+struct VolInit : public Continuation
+{
+  Vol *vol;
+  char *path;
+  off_t blocks;
+  int64_t offset;
+  bool vol_clear;
+
+  int mainEvent(int event, Event *e) {
+    vol->init(path, blocks, offset, vol_clear);
+    mutex.clear();
+    delete this;
+    return EVENT_DONE;
+  }
+
+  VolInit(Vol *v, char *p, off_t b, int64_t o, bool c) : Continuation(v->mutex),
+    vol(v), path(p), blocks(b), offset(o), vol_clear(c) {
+    SET_HANDLER(&VolInit::mainEvent);
+  }
+};
+
+struct DiskInit : public Continuation
+{
+  CacheDisk *disk;
+  char *s;
+  off_t blocks;
+  off_t askip;
+  int ahw_sector_size;
+  int fildes;
+  bool clear;
+
+  int mainEvent(int event, Event *e) {
+    disk->open(s, blocks, askip, ahw_sector_size, fildes, clear);
+    mutex.clear();
+    delete this;
+    return EVENT_DONE;
+  }
+
+  DiskInit(CacheDisk *d, char *str, off_t b, off_t skip, int sector, int f, bool c) : Continuation(d->mutex),
+      disk(d), s(str), blocks(b), askip(skip), ahw_sector_size(sector), fildes(f), clear(c) {
+    SET_HANDLER(&DiskInit::mainEvent);
+  }
+};
+#endif
 void cplist_init();
 static void cplist_update();
 int cplist_reconfigure();
@@ -530,6 +575,16 @@ CacheProcessor::start_internal(int flags)
   verify_cache_api();
 #endif
 
+#if AIO_MODE == AIO_MODE_NATIVE
+  int etype = ET_NET;
+  int n_netthreads = eventProcessor.n_threads_for_type[etype];
+  EThread **netthreads = eventProcessor.eventthread[etype];
+  for (int i = 0; i < n_netthreads; ++i) {
+    netthreads[i]->diskHandler = new DiskHandler();
+    netthreads[i]->schedule_imm(netthreads[i]->diskHandler);
+  }
+#endif
+
   start_internal_flags = flags;
   clear = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix = !!(flags & PROCESSOR_FIX);
@@ -593,7 +648,11 @@ CacheProcessor::start_internal(int flags)
         }
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
         blocks = blocks - ROUND_TO_STORE_BLOCK(sd->offset + skip);
+#if AIO_MODE == AIO_MODE_NATIVE
+        eventProcessor.schedule_imm(NEW(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear)));
+#else
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
+#endif
         gndisks++;
       }
     } else {
@@ -1109,8 +1168,11 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
     aio->thread = AIO_CALLBACK_THREAD_ANY;
     aio->then = (i < 3) ? &(init_info->vol_aio[i + 1]) : 0;
   }
-
+#if AIO_MODE == AIO_MODE_NATIVE
+  ink_assert(ink_aio_readv(init_info->vol_aio));
+#else
   ink_assert(ink_aio_read(init_info->vol_aio));
+#endif
   return 0;
 }
 
@@ -1440,7 +1502,11 @@ Ldone:{
     init_info->vol_aio[2].aiocb.aio_offset = ss + dirlen - footerlen;
 
     SET_HANDLER(&Vol::handle_recover_write_dir);
+#if AIO_MODE == AIO_MODE_NATIVE
+    ink_assert(ink_aio_writev(init_info->vol_aio));
+#else
     ink_assert(ink_aio_write(init_info->vol_aio));
+#endif
     return EVENT_CONT;
   }
 
@@ -1812,7 +1878,11 @@ Cache::open(bool clear, bool fix) {
             blocks = q->b->len;
 
             bool vol_clear = clear || d->cleared || q->new_block;
+#if AIO_MODE == AIO_MODE_NATIVE
+            eventProcessor.schedule_imm(NEW(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear)));
+#else
             cp->vols[vol_no]->init(d->path, blocks, q->b->offset, vol_clear);
+#endif
             vol_no++;
             cache_size += blocks;
           }
@@ -1926,7 +1996,7 @@ CacheVC::handleReadDone(int event, Event *e) {
         if (checksum != doc->checksum) {
           Note("cache: checksum error for [%" PRIu64 " %" PRIu64 "] len %d, hlen %d, disk %s, offset %" PRIu64 " size %zu",
                doc->first_key.b[0], doc->first_key.b[1],
-               doc->len, doc->hlen, vol->path, io.aiocb.aio_offset, io.aiocb.aio_nbytes);
+               doc->len, doc->hlen, vol->path, io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
           doc->magic = DOC_CORRUPT;
           okay = 0;
         }

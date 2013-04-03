@@ -122,6 +122,7 @@
 #define TS_USE_RECLAIMABLE_FREELIST    @use_reclaimable_freelist@
 #define TS_USE_TLS_NPN                 @use_tls_npn@
 #define TS_USE_TLS_SNI                 @use_tls_sni@
+#define TS_USE_LINUX_NATIVE_AIO        @use_linux_native_aio@
 
 /* OS API definitions */
 #define GETHOSTBYNAME_R_HOSTENT_DATA   @gethostbyname_r_hostent_data@

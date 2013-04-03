@@ -7324,10 +7324,14 @@ TSAIOWrite(int fd, off_t offset, char* buf, const size_t bufSize, TSCont contp)
 TSReturnCode
 TSAIOThreadNumSet(int thread_num)
 {
+#if AIO_MODE == AIO_MODE_NATIVE
+  return TS_SUCCESS;
+#else
   if (ink_aio_thread_num_set(thread_num))
     return TS_SUCCESS;
 
   return TS_ERROR;
+#endif
 }
 
 void
