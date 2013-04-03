@@ -1639,7 +1639,7 @@ main(int argc, char **argv)
 
     // UDP net-threads are turned off by default.
     if (!num_of_udp_threads)
-      TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.ssl.number.threads");
+      TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     if (num_of_udp_threads)
       udpNet.start(num_of_udp_threads);
 
