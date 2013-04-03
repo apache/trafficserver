@@ -384,10 +384,9 @@ AC_SUBST(use_freelist)
 #
 if test "x${enable_freelist}" = "xyes"; then
   AC_MSG_CHECKING([whether to enable reclaimable freelist])
-  AC_ARG_ENABLE([reclaimable_freelist],
+  AC_ARG_ENABLE([reclaimable-freelist],
 		[AS_HELP_STRING([--enable-reclaimable-freelist],
-				[turn on reclaimable freelist, this option is effective
-				 only when freelist is enable])],
+				[enable reclaimable freelist support (effective only when freelist is enabled)])],
 		[],
 		[enable_recalimable_freelist="yes"])
   AC_MSG_RESULT([$enable_reclaimable_freelist])
