@@ -47,7 +47,8 @@
 #define AIO_MODE_SYNC            1
 #define AIO_MODE_THREAD          2
 #define AIO_MODE_NATIVE          3
-#if use_linux_native_aio
+
+#if TS_USE_LINUX_NATIVE_AIO
 #define AIO_MODE                 AIO_MODE_NATIVE
 #else
 #define AIO_MODE                 AIO_MODE_THREAD
