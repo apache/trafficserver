@@ -15,13 +15,13 @@
 #  limitations under the License.
 
 $network = {
-  raring64: "192.168.100.1",
-  quantal4: "192.168.100.2",
-  precise64:"192.168.100.3",
-  lucid64:  "192.168.100.4",
-  centos63: "192.168.100.5",
-  freebsd:  "192.168.100.6",
-  omnios:   "192.168.100.7",
+  "raring64"  => "192.168.100.1",
+  "quantal64" => "192.168.100.2",
+  "precise64" => "192.168.100.3",
+  "lucid64"   => "192.168.100.4",
+  "centos63"  => "192.168.100.5",
+  "freebsd"   => "192.168.100.6",
+  "omnios"    => "192.168.100.7",
 }
 
 Vagrant.configure("2") do |config|
