@@ -14,6 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+$network = {
+  raring64: "192.168.100.1",
+  quantal4: "192.168.100.2",
+  precise64:"192.168.100.3",
+  lucid64:  "192.168.100.4",
+  centos63: "192.168.100.5",
+  freebsd:  "192.168.100.6",
+  omnios:   "192.168.100.7",
+}
+
 Vagrant.configure("2") do |config|
 
   # Default all VMs to 1GB.
@@ -25,37 +35,43 @@ Vagrant.configure("2") do |config|
   # because it's faster and vboxfs doesn't support links.
   config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => true
 
+  # Ubuntu 13.04 (Raring Ringtail)
+  # Ubuntu 12.10 (Quantal Quetzal)
   # Ubuntu 12.04 LTS (Precise Pangolin)
-  config.vm.define :precise64 do | config |
-    config.vm.box = "precise64"
-    config.vm.box_url = "http://files.vagrantup.com/precise64.box"
-    config.vm.network :private_network, ip: "192.168.100.3"
-    config.vm.provision :puppet do |puppet|
-      puppet.manifests_path = "contrib/manifests"
-      puppet.manifest_file = "debian.pp"
+  ['raring', 'quantal', 'precise'].each { |release|
+    config.vm.define "#{release}64" do | config |
+      config.vm.box = "#{release}64"
+      config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/%{release}/current/#{release}-server-cloudimg-amd64-vagrant-disk1.box"
+      config.vm.network :private_network, ip: $network["#{release}64"]
+      config.vm.provision :puppet do |puppet|
+        puppet.manifests_path = "contrib/manifests"
+        puppet.manifest_file = "debian.pp"
+      end
     end
-  end
+  }
 
   # Ubuntu 10.04 LTS (Lucid Lynx)
   config.vm.define :lucid64 do | config |
     config.vm.box = "lucid64"
-    config.vm.network :hostonly, "192.168.100.2"
+    config.vm.network :private_network, ip: $network["lucid64"]
     config.vm.box_url = "http://files.vagrantup.com/lucid64.box"
   end
 
   config.vm.define :freebsd do | config |
     config.vm.box = "freebsd"
-    config.vm.share_folder "src", "/opt/src", "src", :nfs => false
+    config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => false
     # Force the FreeBSD VM to use a network driver that actually works.
-    config.vm.customize ["modifyvm", :id, "--nictype1", "82543GC"]
-    config.vm.customize ["modifyvm", :id, "--nictype2", "82543GC"]
-    config.vm.network :hostonly, "192.168.100.6"
+    config.vm.provider :virtualbox do |v|
+      v.customize ["modifyvm", :id, "--nictype1", "82543GC"]
+      v.customize ["modifyvm", :id, "--nictype2", "82543GC"]
+    end
+    config.vm.network :private_network, ip: $network["freebsd"]
     config.vm.box_url = "https://github.com/downloads/xironix/freebsd-vagrant/freebsd_amd64_zfs.box"
   end
 
   config.vm.define :centos63 do |config|
     config.vm.box = "centos63"
-    config.vm.network :private_network, ip: "192.168.100.8"
+    config.vm.network :private_network, ip: $network["centos63"]
     config.vm.box_url = "https://dl.dropbox.com/u/7225008/Vagrant/CentOS-6.3-x86_64-minimal.box"
     config.vm.provision :puppet do |puppet|
       puppet.manifests_path = "contrib/manifests"
@@ -67,10 +83,10 @@ Vagrant.configure("2") do |config|
   config.vm.define :omnios do | config |
     config.vm.box = "omnios"
     config.vm.guest = :solaris
-    config.vm.network :private_network, ip: "192.168.100.9"
+    config.vm.network :private_network, ip: $network["omnios"]
     config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => false
     config.vm.box_url = "http://omnios.omniti.com/media/omnios-latest.box"
-    config.vm.provision :shell,  :path => "contrib/manifests/omnios.sh"
+    config.vm.provision :shell, :path => "contrib/manifests/omnios.sh"
   end
 
 end
