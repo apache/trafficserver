@@ -39,7 +39,6 @@ configure_net(void)
 {
   REC_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, NULL);
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
-  REC_ReadConfigInteger(throttle_enabled,"proxy.config.net.throttle_enabled");
 }
 
 

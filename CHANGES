@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1801] Remove proxy.config.net.throttle_enabled, it's an artifact
+   of a debugging case, and should not have been included upstream.
+
   *) [TS-1829] values exceed capacity of 'long' data type on 32-bit
 
   *) [TS-1755] add basic logstats tests
