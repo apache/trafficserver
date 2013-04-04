@@ -602,7 +602,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.xml_config_file
  proxy.config.manager_binary
  proxy.config.manager_name
- proxy.config.net.accept_throttle
  proxy.config.net.connections_throttle
  proxy.config.net.listen_backlog
  proxy.config.net_snapshot_filename

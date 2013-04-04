@@ -807,8 +807,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.net.listen_backlog", RECD_INT, "1024", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.net.accept_throttle", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   // This option takes different defaults depending on features / platform. TODO: This should use the
   // autoconf stuff probably ?
   {RECT_CONFIG, "proxy.config.net.defer_accept", RECD_INT,
