@@ -58,11 +58,11 @@ if test "$enable_jemalloc" != "no"; then
     TS_ADDTO(LDFLAGS, [-L${jemalloc_ldflags}])
     TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${jemalloc_ldflags}])
   fi
-  if test "`uname -s`" = "Darwin"; then
-    AC_CHECK_LIB(jemalloc, je_malloc_stats_print, [jemalloc_have_libs=1])
-  else
-    AC_CHECK_LIB(jemalloc, malloc_stats_print, [jemalloc_have_libs=1])
-  fi
+  # On Darwin, jemalloc symbols are prefixed with je_. Search for that first, then fall back
+  # to unadorned symbols.
+  AC_SEARCH_LIBS([je_malloc_stats_print], [jemalloc], [jemalloc_have_libs=1],
+    [AC_SEARCH_LIBS([malloc_stats_print], [jemalloc], [jemalloc_have_libs=1])]
+  )
   if test "$jemalloc_have_libs" != "0"; then
     TS_FLAG_HEADERS(jemalloc/jemalloc.h, [jemalloc_have_headers=1])
   fi

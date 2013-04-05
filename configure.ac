@@ -953,16 +953,27 @@ fi
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
 
-AC_CHECK_LIB([exc],[exc_capture_context],[AC_SUBST([LIBEXC],["-lexc"])])
-AC_CHECK_LIB([mld],[MLD_demangle_string],[AC_SUBST([LIBMLD],["-lmld"])])
-AC_CHECK_LIB([dl],[dlopen],[AC_SUBST([LIBDL],["-ldl"])])
-AC_CHECK_LIB([socket],[socket],[AC_SUBST([LIBSOCKET],["-lsocket"])])
-AC_CHECK_LIB([nsl],[gethostbyname],[AC_SUBST([LIBNSL],["-lnsl"])])
+AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
+AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
+AC_SEARCH_LIBS([dlopen], [dl], [], [])
+AC_SEARCH_LIBS([socket], [socket], [], [])
+AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
+
+dnl Linux has pthread symbol stubss in both libc ad libpthread, so it's important to test
+dnl specifically for pthread_create() here.
+AC_SEARCH_LIBS([pthread_create], [pthread], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
+AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+
+dnl XXX The following check incorrectly causes the build to succeed
+dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
+dnl actually present in libsystem. We are searching for the library
+dnl that contains the full Bind 9 API (which is acutally libresolv).
+dnl However, the resolv API uses macros to rename it's APIs to per-version
+dnl symbols, so standard autoconf macros cannot reasonably be used to
+dnl check for it. We need to write custom macros to detect it properly.
 AC_CHECK_LIB([resolv],[res_init],[AC_SUBST([LIBRESOLV],["-lresolv"])])
 AC_CHECK_LIB([resolv],[__putlong],[AC_SUBST([LIBRESOLV],["-lresolv"])])
-AC_CHECK_LIB([pthread],[pthread_exit],[AC_SUBST([LIBTHREAD],["-lpthread"])])
-AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
-AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 
 # Test for ncurses. We need to turn off -Werror because the C code in the
 # ncurses compile tests does not generate unused variable warnings.
@@ -1070,11 +1081,7 @@ has_backtrace=0
 TS_FLAG_HEADERS([execinfo.h], [has_backtrace=1],[])
 if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
-  AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes
-                                         AC_SUBST([LIBEXECINFO],["-lexecinfo"])])
-  if test "x${have_backtrace_lib}" = "xyes"; then
-    AC_MSG_NOTICE([Using backtrace library '-lexecinfo'])
-  fi
+  AC_SEARCH_LIBS([backtrace], [execinfo], [have_backtrace_lib=yes])
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
@@ -1105,7 +1112,7 @@ AC_SUBST(use_port)
 
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
-  AC_CHECK_LIB([profiler], [ProfilerStart],
+  AC_SEARCH_LIBS([ProfilerStart], [profiler],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      has_profiler=1
     ],
@@ -1121,7 +1128,7 @@ has_demangle=0
 #  check with the C++ compiler since we might be using
 #  SunPro CC for the C++ compiler and gcc for the C compiler
 AC_LANG_PUSH([C++])
-AC_CHECK_LIB([demangle],[cplus_demangle],
+AC_SEARCH_LIBS([cplus_demangle],[demangle],
   [LIBDEMANGLE="-ldemangle"
    has_demangle=1
   ]
@@ -1184,7 +1191,7 @@ AC_SUBST(has_128bit_cas)
 # If we don't find it, disable checking for header.
 use_posix_cap=0
 AS_IF([test "x$enable_posix_cap" != "xno"],
-  AC_CHECK_LIB([cap],[cap_set_proc],
+  AC_SEARCH_LIBS([cap_set_proc],[cap],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[
@@ -1232,7 +1239,6 @@ AC_SUBST(use_linux_native_aio)
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
 use_hwloc=0
-
 AS_IF([test "x$enable_hwloc" = "xyes"], [
   AC_CHECK_HEADERS([hwloc.h], [],
     [AC_MSG_WARN([hwloc.h header not found, try --disable-hwloc])], []

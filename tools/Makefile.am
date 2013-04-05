@@ -48,8 +48,6 @@ tstop_tstop_CXXFLAGS = \
 tstop_tstop_SOURCES = tstop/tstop.cc
 tstop_tstop_LDADD = \
   $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
-  @CURL_LIBS@ \
-  @CURSES_LIB@ \
-  @LIBTHREAD@
+  @CURL_LIBS@ @CURSES_LIB@
 
 endif

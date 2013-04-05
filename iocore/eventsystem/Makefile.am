@@ -90,7 +90,7 @@ test_LDADD = \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @LIBTHREAD@
+  @LIBTCL@
 
 test_Buffer_SOURCES = ../../proxy/UglyLogStubs.cc test_Buffer.cc
 test_Event_SOURCES = ../../proxy/UglyLogStubs.cc test_Event.cc

@@ -23,7 +23,7 @@ dnl TS_CHECK_CRYPTO: look for crypto libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO], [
   enable_crypto=no
-  AC_CHECK_LIB([crypt],[crypt],[AC_SUBST([LIBCRYPT],["-lcrypt"])])
+  AC_SEARCH_LIBS([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
 
   TS_CHECK_CRYPTO_OPENSSL
   dnl add checks for other varieties of ssl here
@@ -92,7 +92,8 @@ if test "$enable_openssl" != "no"; then
     TS_ADDTO(LDFLAGS, [-L${openssl_ldflags}])
     TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${openssl_ldflags}])
   fi
-  AC_CHECK_LIB(crypto, BN_init, AC_CHECK_LIB(ssl, SSL_accept, [openssl_have_libs=1],,-lcrypto))
+  AC_SEARCH_LIBS([BN_init],[crypto],
+      AC_SEARCH_LIBS([SSL_accept], [ssl], [openssl_have_libs=1], [], [-lcrypto]))
   if test "$openssl_have_libs" != "0"; then
       AC_CHECK_HEADERS(openssl/x509.h, [openssl_have_headers=1])
   fi

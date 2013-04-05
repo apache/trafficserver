@@ -95,7 +95,7 @@ if test "$enable_pcre" != "no"; then
     TS_ADDTO(LDFLAGS, [-L${pcre_ldflags}])
     TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${pcre_ldflags}])
   fi
-  AC_CHECK_LIB(pcre, pcre_exec, [pcre_have_libs=1])
+  AC_SEARCH_LIBS([pcre_exec], [pcre], [pcre_have_libs=1])
   if test "$pcre_have_libs" != "0"; then
     TS_FLAG_HEADERS(pcre.h, [pcre_have_headers=1])
     TS_FLAG_HEADERS(pcre/pcre.h, [pcre_have_headers=1])

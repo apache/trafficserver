@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1768] Prefer AC_SEARCH_LIBS to AC_CHECK_LIB to avoid unnecessary linking.
+
   *) [TS-1877] Fix multiple Lua remap plugin instance creation.
 
   *) [TS-1770] Unable to create remap rule for SSL sites when accessed as a
