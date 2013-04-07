@@ -156,10 +156,6 @@ bool StatExprToken::assignTokenType()
     m_token_type = RECD_FX;
   }
 
-  if (m_token_type == RECD_COUNTER) {
-    m_token_type = RECD_INT;
-  }
-
   if (m_token_value_delta) {
     m_token_value_delta->data_type = m_token_type;
   }
@@ -228,8 +224,10 @@ StatExprToken::precedence()
  * or larger than max, then the error value is assigned. If no
  * error value is assigned, either min. or max. is assigned.
  */
-bool StatExprToken::statVarSet(RecData value)
+bool StatExprToken::statVarSet(RecDataT type, RecData value)
 {
+  RecData converted_value;
+
   if (StatError) {
     /* fix this after librecords is done
        mgmt_log(stderr,
@@ -240,14 +238,47 @@ bool StatExprToken::statVarSet(RecData value)
     return varSetData(m_token_type, m_token_name, err_value);
   }
 
-  if (RecDataCmp(m_token_type, value, m_token_value_min) < 0) {
+  /*
+   * do conversion if necessary.
+   */
+  if (m_token_type != type) {
+    switch (m_token_type) {
+    case RECD_INT:
+    case RECD_COUNTER:
+      if (type == RECD_NULL)
+        converted_value = value;
+      else if (type == RECD_INT || type == RECD_COUNTER || type == RECD_FX)
+        converted_value.rec_int = value.rec_int;
+      else if (type == RECD_FLOAT || type == RECD_CONST)
+        converted_value.rec_int = (RecInt)value.rec_float;
+      else
+        Fatal("invalid value type:%d\n", m_token_type);
+      break;
+    case RECD_FLOAT:
+      if (type == RECD_NULL)
+        converted_value = value;
+      else if (type == RECD_INT || type == RECD_COUNTER || type == RECD_FX)
+        converted_value.rec_float = (RecFloat)value.rec_int;
+      else if (type == RECD_FLOAT || type == RECD_CONST)
+        converted_value.rec_float = value.rec_float;
+      else
+        Fatal("invalid value type:%d\n", m_token_type);
+      break;
+    default:
+      Fatal("unsupported token type:%d\n", m_token_type);
+    }
+  } else {
+    converted_value = value;
+  }
+
+  if (RecDataCmp(m_token_type, converted_value, m_token_value_min) < 0) {
     value = m_token_value_min;
   }
-  else if (RecDataCmp(m_token_type, value, m_token_value_max) > 0) {
+  else if (RecDataCmp(m_token_type, converted_value, m_token_value_max) > 0) {
     value = m_token_value_max;
   }
 
-  return varSetData(m_token_type, m_token_name, value);
+  return varSetData(m_token_type, m_token_name, converted_value);
 }
 
 
@@ -632,7 +663,7 @@ StatObject::infix2postfix()
  *
  *
  */
-RecData StatObject::NodeStatEval(bool cluster)
+RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
 {
   StatExprList stack;
   StatExprToken *left = NULL;
@@ -653,8 +684,10 @@ RecData StatObject::NodeStatEval(bool cluster)
     }
 
     if (src->m_token_type == RECD_CONST) {
+      *result_type = RECD_CONST;
       tempValue = src->m_token_value;
     } else if (src->m_token_value_delta) {
+      *result_type = src->m_token_type;
       tempValue = src->m_token_value_delta->diff_value(src->m_token_name);
     } else if (!cluster) {
       if (!varDataFromName(src->m_token_type, src->m_token_name, &tempValue)) {
@@ -704,6 +737,7 @@ RecData StatObject::NodeStatEval(bool cluster)
       ink_debug_assert(false);
     }
 
+    *result_type = stack.top()->m_token_type;
     tempValue = stack.top()->m_token_value;
   }
 
@@ -718,7 +752,7 @@ RecData StatObject::NodeStatEval(bool cluster)
  *
  *
  */
-RecData StatObject::ClusterStatEval()
+RecData StatObject::ClusterStatEval(RecDataT *result_type)
 {
   RecData tempValue;
 
@@ -727,11 +761,12 @@ RecData StatObject::ClusterStatEval()
 
   // what is this?
   if ((m_node_dest == NULL) || (m_cluster_dest->m_sum_var == false)) {
-    return NodeStatEval(true);
+    return NodeStatEval(result_type, true);
   } else {
     if (!overviewGenerator->varClusterDataFromName(m_node_dest->m_token_type,
                                                    m_node_dest->m_token_name,
                                                    &tempValue)) {
+      *result_type = RECD_NULL;
       RecDataClear(RECD_NULL, &tempValue);
     }
     return (tempValue);
@@ -986,6 +1021,7 @@ StatObjectList::Eval()
 {
   RecData tempValue;
   RecData result;
+  RecDataT result_type;
   ink_hrtime threshold = 0;
   ink_hrtime delta = 0;
   short count = 0;
@@ -1006,13 +1042,13 @@ StatObjectList::Eval()
       object->m_current_time = ink_get_hrtime_internal();
 
       if (object->m_node_dest) {
-        result = object->NodeStatEval(false);
-        object->m_node_dest->statVarSet(result);
+        result = object->NodeStatEval(&result_type, false);
+        object->m_node_dest->statVarSet(result_type, result);
       }
 
       if (object->m_cluster_dest) {
-        result = object->ClusterStatEval();
-        object->m_cluster_dest->statVarSet(result);
+        result = object->ClusterStatEval(&result_type);
+        object->m_cluster_dest->statVarSet(result_type, result);
       }
 
       object->m_last_update = object->m_current_time;
@@ -1051,13 +1087,13 @@ StatObjectList::Eval()
           }
 
           if (object->m_node_dest) {
-            result = object->NodeStatEval(false);
-            object->m_node_dest->statVarSet(result);
+            result = object->NodeStatEval(&result_type, false);
+            object->m_node_dest->statVarSet(result_type, result);
           }
 
           if (object->m_cluster_dest) {
-            result = object->ClusterStatEval();
-            object->m_cluster_dest->statVarSet(result);
+            result = object->ClusterStatEval(&result_type);
+            object->m_cluster_dest->statVarSet(result_type, result);
           }
 
           object->m_last_update = object->m_current_time;
@@ -1083,13 +1119,13 @@ StatObjectList::Eval()
 
           if (delta > threshold) {
             if (object->m_node_dest) {
-              result = object->NodeStatEval(false);
-              object->m_node_dest->statVarSet(result);
+              result = object->NodeStatEval(&result_type, false);
+              object->m_node_dest->statVarSet(result_type, result);
             }
 
             if (object->m_cluster_dest) {
-              result = object->ClusterStatEval();
-              object->m_cluster_dest->statVarSet(result);
+              result = object->ClusterStatEval(&result_type);
+              object->m_cluster_dest->statVarSet(result_type, result);
             }
 
             object->m_last_update = object->m_current_time;

@@ -312,11 +312,12 @@ StatProcessor::processStat()
 RecData
 ExpressionEval(char *exprString)
 {
+  RecDataT result_type;
   StatObject statObject;
 
   char content[BUFSIZ * 10];
   XML_extractContent(exprString, content, BUFSIZ * 10);
 
   statObject.assignExpr(content);
-  return statObject.NodeStatEval(false);
+  return statObject.NodeStatEval(&result_type, false);
 }

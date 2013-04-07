@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1805] Fix stats ExpressionEval in stats xml.
+   Author: Yunkai Zhang
+
   *) [TS-1783] Eliminate the wpad.dat configuration option (it's unused).
 
   *) [TS-1787] Eliminate old ink_time code (was probably only used by the
