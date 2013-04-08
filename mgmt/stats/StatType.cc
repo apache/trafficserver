@@ -252,7 +252,7 @@ bool StatExprToken::statVarSet(RecDataT type, RecData value)
       else if (type == RECD_FLOAT || type == RECD_CONST)
         converted_value.rec_int = (RecInt)value.rec_float;
       else
-        Fatal("invalid value type:%d\n", m_token_type);
+        Fatal("%s, invalid value type:%d\n", m_token_name, type);
       break;
     case RECD_FLOAT:
       if (type == RECD_NULL)
@@ -262,10 +262,10 @@ bool StatExprToken::statVarSet(RecDataT type, RecData value)
       else if (type == RECD_FLOAT || type == RECD_CONST)
         converted_value.rec_float = value.rec_float;
       else
-        Fatal("invalid value type:%d\n", m_token_type);
+        Fatal("%s, invalid value type:%d\n", m_token_name, type);
       break;
     default:
-      Fatal("unsupported token type:%d\n", m_token_type);
+      Fatal("%s, unsupported token type:%d\n", m_token_name, m_token_type);
     }
   } else {
     converted_value = value;
@@ -672,6 +672,8 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
   StatExprToken *curToken = NULL;
   RecData tempValue;
   RecDataClear(RECD_NULL, &tempValue);
+
+  *result_type = RECD_NULL;
 
   /* Express checkout lane -- Stat. object with on 1 source variable */
   if (m_postfix->count() == 1) {
