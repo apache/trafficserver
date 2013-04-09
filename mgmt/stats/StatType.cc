@@ -685,21 +685,20 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
       src->assignTokenType();
     }
 
+    *result_type = src->m_token_type;
     if (src->m_token_type == RECD_CONST) {
-      *result_type = RECD_CONST;
       tempValue = src->m_token_value;
     } else if (src->m_token_value_delta) {
-      *result_type = src->m_token_type;
       tempValue = src->m_token_value_delta->diff_value(src->m_token_name);
     } else if (!cluster) {
       if (!varDataFromName(src->m_token_type, src->m_token_name, &tempValue)) {
-        RecDataClear(RECD_NULL, &tempValue);
+        RecDataClear(src->m_token_type, &tempValue);
       }
     } else {
       if (!overviewGenerator->varClusterDataFromName(src->m_token_type,
                                                      src->m_token_name,
                                                      &tempValue)) {
-        RecDataClear(RECD_NULL, &tempValue);
+        RecDataClear(src->m_token_type, &tempValue);
       }
     }
   } else {
@@ -756,8 +755,6 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
  */
 RecData StatObject::ClusterStatEval(RecDataT *result_type)
 {
-  RecData tempValue;
-
   /* Sanity check */
   ink_debug_assert(m_cluster_dest && !m_cluster_dest->m_node_var);
 
@@ -765,12 +762,15 @@ RecData StatObject::ClusterStatEval(RecDataT *result_type)
   if ((m_node_dest == NULL) || (m_cluster_dest->m_sum_var == false)) {
     return NodeStatEval(result_type, true);
   } else {
+    RecData tempValue;
+
     if (!overviewGenerator->varClusterDataFromName(m_node_dest->m_token_type,
                                                    m_node_dest->m_token_name,
                                                    &tempValue)) {
       *result_type = RECD_NULL;
-      RecDataClear(RECD_NULL, &tempValue);
+      RecDataClear(*result_type, &tempValue);
     }
+
     return (tempValue);
   }
 }
