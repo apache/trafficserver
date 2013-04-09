@@ -344,13 +344,15 @@ port_list_to_string(PortList * ports, const char *delimiter)
     if (port_ele->port_b != TS_INVALID_PORT) { //. is this a range
       // add in range delimiter & end of range
       if (pos < sizeof(buf) &&
-          (psize = snprintf(buf + pos, sizeof(buf) - pos, "%c%d", RANGE_DELIMITER, port_ele->port_b)) > 0)
+          (psize = snprintf(buf + pos, sizeof(buf) - pos, "%c%d", RANGE_DELIMITER, port_ele->port_b)) > 0) {
         pos += psize;
+      }
     }
 
     if (i != num_ports - 1) {
-      if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf - pos), "%s", delimiter))> 0)
+      if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "%s", delimiter))> 0) {
         pos += psize;
+      }
     }
 
     enqueue((LLQ *) ports, port_ele);   // return TSPortEle to list
