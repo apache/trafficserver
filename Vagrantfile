@@ -42,7 +42,7 @@ Vagrant.configure("2") do |config|
   ['raring', 'quantal', 'precise'].each { |release|
     config.vm.define "#{release}64" do | config |
       config.vm.box = "#{release}64"
-      config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/%{release}/current/#{release}-server-cloudimg-amd64-vagrant-disk1.box"
+      config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/#{release}/current/#{release}-server-cloudimg-amd64-vagrant-disk1.box"
       config.vm.network :private_network, ip: $network["#{release}64"]
       config.vm.provision :puppet do |puppet|
         puppet.manifests_path = "contrib/manifests"
