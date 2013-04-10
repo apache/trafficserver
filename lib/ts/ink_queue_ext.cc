@@ -63,7 +63,7 @@ int64_t cfg_enable_reclaim = 0;
  */
 int64_t cfg_debug_filter;
 
-static uint32_t page_size;
+static const uint32_t page_size = ats_pagesize();
 static uint32_t nr_freelist;
 static uint64_t total_mem_in_byte;
 static __thread InkThreadCache *ThreadCaches[MAX_NUM_FREELIST];
@@ -452,9 +452,6 @@ reclaimable_freelist_init(InkFreeList **fl, const char *name,
 
   /* quick test for power of 2 */
   ink_assert(!(alignment & (alignment - 1)));
-
-  if (!page_size)
-    page_size = sysconf(_SC_PAGESIZE);
 
   /* NOTE: it's safe to operate on this global list because
    * ink_freelist_init() is only called from single-threaded

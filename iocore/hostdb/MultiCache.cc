@@ -516,7 +516,7 @@ Lalloc:
       free(data);
     char *cur = 0;
 
-    data = (char *)ats_memalign(sysconf(_SC_PAGESIZE), totalsize);
+    data = (char *)ats_memalign(ats_pagesize(), totalsize);
     cur = data + STORE_BLOCK_SIZE * blocks_in_level(0);
     if (levels > 1)
       cur = data + STORE_BLOCK_SIZE * blocks_in_level(1);

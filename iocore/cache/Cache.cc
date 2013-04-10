@@ -135,7 +135,7 @@ struct VolInitInfo
   VolInitInfo()
   {
     recover_pos = 0;
-    vol_h_f = (char *)ats_memalign(sysconf(_SC_PAGESIZE), 4 * STORE_BLOCK_SIZE);
+    vol_h_f = (char *)ats_memalign(ats_pagesize(), 4 * STORE_BLOCK_SIZE);
     memset(vol_h_f, 0, 4 * STORE_BLOCK_SIZE);
   }
 
@@ -1146,7 +1146,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   Debug("cache_init", "allocating %zu directory bytes for a %lld byte volume (%lf%%)",
     vol_dirlen(this), (long long)this->len, (double)vol_dirlen(this) / (double)this->len * 100.0);
-  raw_dir = (char *)ats_memalign(sysconf(_SC_PAGESIZE), vol_dirlen(this));
+  raw_dir = (char *)ats_memalign(ats_pagesize(), vol_dirlen(this));
   dir = (Dir *) (raw_dir + vol_headerlen(this));
   header = (VolHeaderFooter *) raw_dir;
   footer = (VolHeaderFooter *) (raw_dir + vol_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
@@ -1299,7 +1299,7 @@ Vol::handle_recover_from_data(int event, void *data)
       recover_wrapped = 1;
       recover_pos = start;
     }
-    io.aiocb.aio_buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), RECOVERY_SIZE);
+    io.aiocb.aio_buf = (char *)ats_memalign(ats_pagesize(), RECOVERY_SIZE);
     io.aiocb.aio_nbytes = RECOVERY_SIZE;
     if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;

@@ -256,7 +256,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   //////////////////////////////////////////////////
   // Place an invalid page in front of iovec data.
   //////////////////////////////////////////////////
-  size_t pagesize = (size_t) getpagesize();
+  size_t pagesize = ats_pagesize();
   size = ((MAX_TCOUNT + 1) * sizeof(IOVec)) + (2 * pagesize);
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   char *addr = (char *) align_pointer_forward(iob_iov->data(), pagesize);
@@ -292,7 +292,7 @@ ClusterState::~ClusterState()
 {
   mutex = 0;
 #if defined(__sparc)
-  int pagesize = getpagesize();
+  int pagesize = ats_pagesize();
 #endif
   if (iov) {
 #if defined(__sparc)

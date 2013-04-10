@@ -1016,7 +1016,7 @@ if test "x${enable_xml}" != "xyes"; then
 fi
 
 TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
-TS_FLAG_FUNCS([strlcpy strlcat])
+TS_FLAG_FUNCS([strlcpy strlcat sysconf getpagesize])
 
 AC_SUBST(has_clock_gettime)
 AC_SUBST(has_posix_memalign)
