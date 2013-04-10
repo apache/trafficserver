@@ -134,8 +134,7 @@ traffic_server_SOURCES = \
 if BUILD_TESTS
   traffic_server_SOURCES +=  InkAPITest.cc  \
     RegressionSM.h \
-    RegressionSM.cc \
-    TestHook.cc
+    RegressionSM.cc
 endif
 
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@

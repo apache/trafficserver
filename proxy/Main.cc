@@ -127,9 +127,6 @@ static int num_task_threads = 0;
 
 extern int num_of_cluster_threads;
 
-#if TS_HAS_TESTS
-static int run_test_hook = 0;
-#endif
 static char * http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
 static char core_file[255] = "";
@@ -171,10 +168,6 @@ static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dprintf function
 
 AppVersionInfo appVersionInfo;  // Build info for this application
-
-#if TS_HAS_TESTS
-extern int run_TestHook();
-#endif
 
 const Version version = {
   {CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION},     // cacheDB
@@ -219,14 +212,6 @@ static const ArgumentDescription argument_descriptions[] = {
    0,
 #endif
    "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
-  {"test_hook", 'H',
-#ifdef DEBUG
-   "Run Test Stub Instead of Server",
-#else
-   0,
-#endif
-   "T",
-   &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
 #endif //TS_HAS_TESTS
 #if TS_USE_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
@@ -1672,17 +1657,6 @@ main(int argc, char **argv)
     if (show_statistics)
       eventProcessor.schedule_every(NEW(new ShowStats), HRTIME_SECONDS(show_statistics), ET_CALL);
 
-
-    /////////////////////////////////////////////
-    // if in test hook mode, run the test hook //
-    /////////////////////////////////////////////
-
-#if TS_HAS_TESTS
-    if (run_test_hook) {
-      Note("Running TestHook Instead of Main Server");
-      run_TestHook();
-    }
-#endif
 
     //////////////////////////////////////
     // main server logic initiated here //
