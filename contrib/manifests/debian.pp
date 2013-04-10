@@ -16,7 +16,7 @@
 
 # Base ATS build dependencies.
 package {[
-    'gcc', 'g++', 'automake', 'autoconf', 'libtool',
+    'gcc', 'g++', 'automake', 'autoconf', 'libtool', 'pkg-config',
     'libssl-dev', 'tcl-dev', 'libexpat1-dev', 'libpcre3-dev',
     'libcap-dev', 'libcap2', 'bison', 'flex', 'make',
   ]:
