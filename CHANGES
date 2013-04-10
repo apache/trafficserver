@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-986] experimental.h has a dependency on netinet/net.h (for
+  struct in_addr).
+
   *) [TS-1794 Replace all usage of ts_debug_assert() with ts_assert().
 
   *) [TS-1834] Force absolute paths to fix logstats unit tests.
@@ -51,7 +54,6 @@
 
 
   Changes with Apache Traffic Server 3.3.2
-
 
   *) [TS-621] Allow caching of empty docs (currently only if a header
    Content-Length: 0 is in the response). New config option is named
