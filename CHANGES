@@ -2,6 +2,10 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-621] Allow caching of empty docs (currently only if a header
+   Content-Length: 0 is in the response). New config option is named
+   proxy.config.http.cache.allow_empty_doc, and is disabled by default.
+
   *) [TS-1778] Remove vestigal extensions.config support
 
   *) [TS-1806] bogus buffer sizing in CfgContextUtils.cc

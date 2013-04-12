@@ -779,7 +779,11 @@ agg_copy(char *p, CacheVC *vc)
     }
 
     if (vc->f.use_first_key) {
-      if (doc->data_len())
+      if (doc->data_len()
+#ifdef HTTP_CACHE
+                  || vc->f.allow_empty_doc
+#endif
+                  )
         doc->key = vc->earliest_key;
       else // the vector is being written by itself
         prev_CacheKey(&doc->key, &vc->earliest_key);
@@ -1122,7 +1126,11 @@ CacheVC::openWriteCloseDir(int event, Event *e)
   // one, two and three or more fragments. This is because for
   // updates we dont decrement the variable corresponding the old
   // size of the document
-  if ((closed == 1) && (total_len > 0)) {
+  if ((closed == 1) && (total_len > 0
+#ifdef HTTP_CACHE
+                  || f.allow_empty_doc
+#endif
+                  )) {
     DDebug("cache_stats", "Fragment = %d", fragment);
     switch (fragment) {
       case 0: CACHE_INCREMENT_DYN_STAT(cache_single_fragment_document_count_stat); break;
@@ -1270,10 +1278,14 @@ CacheVC::openWriteClose(int event, Event *e)
     if (!io.ok())
       return openWriteCloseDir(event, e);
   }
-  if (closed > 0) {
+  if (closed > 0
+#ifdef HTTP_CACHE
+                  || f.allow_empty_doc
+#endif
+                  ) {
     if (total_len == 0) {
 #ifdef HTTP_CACHE
-      if (f.update) {
+      if (f.update || f.allow_empty_doc) {
         return updateVector(event, e);
       } else {
         // If we've been CLOSE'd but nothing has been written then
