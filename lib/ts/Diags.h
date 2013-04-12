@@ -152,7 +152,7 @@ public:
    ~Diags();
 
   FILE *diags_log_fp;
-  unsigned int magic;
+  const unsigned int magic;
   volatile DiagsConfigState config;
   int show_location;
   DiagsCleanupFunc cleanup_func;
@@ -162,10 +162,11 @@ public:
   // conditional debugging //
   ///////////////////////////
 
-  bool on(DiagsTagType mode = DiagsTagType_Debug) {
+  bool on(DiagsTagType mode = DiagsTagType_Debug) const {
     return (config.enabled[mode]);
   }
-  bool on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) {
+
+  bool on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const {
     return (config.enabled[mode] && tag_activated(tag, mode));
   }
 
@@ -173,16 +174,16 @@ public:
   // low-level tag inquiry functions //
   /////////////////////////////////////
 
-  inkcoreapi bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug);
+  inkcoreapi bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
 
   /////////////////////////////
   // raw printing interfaces //
   /////////////////////////////
 
-  const char *level_name(DiagsLevel dl);
+  const char *level_name(DiagsLevel dl) const;
 
   inkcoreapi void print_va(const char *tag, DiagsLevel dl,
-                           SrcLoc *loc, const char *format_string, va_list ap);
+                           SrcLoc *loc, const char *format_string, va_list ap) const;
 
 
   //////////////////////////////
@@ -190,7 +191,7 @@ public:
   //////////////////////////////
 
   void print(const char *tag, DiagsLevel dl, const char *file, const char *func,
-             const int line, const char *format_string, ...) TS_PRINTFLIKE(7, 8)
+             const int line, const char *format_string, ...) const TS_PRINTFLIKE(7, 8)
   {
     va_list ap;
     va_start(ap, format_string);
@@ -217,13 +218,24 @@ public:
 
   void log(const char *tag, DiagsLevel dl,
            const char *file, const char *func, const int line,
-           const char *format_string, ...) TS_PRINTFLIKE(7, 8);
+           const char *format_string, ...) const TS_PRINTFLIKE(7, 8);
 
-  void error(DiagsLevel dl,
+  void error_va(DiagsLevel dl,
              const char *file, const char *func, const int line,
-             const char *format_string, ...) TS_PRINTFLIKE(6, 7);
+             const char *format_string, va_list ap) const;
 
-  void dump(FILE * fp = stdout);
+  void
+  error(DiagsLevel level,
+               const char *file, const char *func, const int line,
+               const char *format_string, ...) const TS_PRINTFLIKE(6, 7)
+  {
+    va_list ap;
+    va_start(ap, format_string);
+    error_va(level, file, func, line, format_string, ap);
+    va_end(ap);
+  }
+
+  void dump(FILE * fp = stdout) const;
 
   void activate_taglist(const char *taglist, DiagsTagType mode = DiagsTagType_Debug);
 
@@ -233,14 +245,14 @@ public:
   const char *base_action_tags;       // internal copy of default action tags
 
 private:
-  ink_mutex tag_table_lock;     // prevents reconfig/read races
-  DFA *activated_tags[2];       // 1 table for debug, 1 for action
+  mutable ink_mutex tag_table_lock;   // prevents reconfig/read races
+  DFA *activated_tags[2];             // 1 table for debug, 1 for action
 
-  void lock()
+  void lock() const
   {
     ink_mutex_acquire(&tag_table_lock);
   }
-  void unlock()
+  void unlock() const
   {
     ink_mutex_release(&tag_table_lock);
   }
@@ -283,6 +295,14 @@ dummy_debug(const char *tag, const char *fmt, ...)
 #define Fatal(...)     diags->error(DTA(DL_Fatal), __VA_ARGS__)
 #define Alert(...)     diags->error(DTA(DL_Alert), __VA_ARGS__)
 #define Emergency(...) diags->error(DTA(DL_Emergency), __VA_ARGS__)
+
+#define StatusV(fmt, ap)    diags->error_va(DTA(DL_Status), fmt, ap)
+#define NoteV(fmt, ap)      diags->error_va(DTA(DL_Note), fmt, ap)
+#define WarningV(fmt, ap)   diags->error_va(DTA(DL_Warning), fmt, ap)
+#define ErrorV(fmt, ap)     diags->error_va(DTA(DL_Error), fmt, ap)
+#define FatalV(fmt, ap)     diags->error_va(DTA(DL_Fatal), fmt, ap)
+#define AlertV(fmt, ap)     diags->error_va(DTA(DL_Alert), fmt, ap)
+#define EmergencyV(fmt, ap) diags->error_va(DTA(DL_Emergency), fmt, ap)
 
 #ifdef TS_USE_DIAGS
 #define Diag(tag, ...)      if (unlikely(diags->on())) diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
