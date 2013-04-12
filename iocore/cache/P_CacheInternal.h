@@ -485,6 +485,9 @@ struct CacheVC: public CacheVConnection
 #ifdef HIT_EVACUATE
       unsigned int hit_evacuate:1;
 #endif
+#ifdef HTTP_CACHE
+      unsigned int allow_empty_doc:1; // used for cache empty http document
+#endif
     } f;
   };
   // BTF optimization used to skip reading stuff in cache partition that doesn't contain any
