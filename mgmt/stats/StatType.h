@@ -114,7 +114,7 @@ public:
   };
   void clean();
 
-  bool statVarSet(RecData);
+  bool statVarSet(RecDataT, RecData);
 };
 
 
@@ -189,8 +189,8 @@ public:
   void assignExpr(char *);
 
   StatExprToken *StatBinaryEval(StatExprToken *, char, StatExprToken *, bool cluster = false);
-  RecData NodeStatEval(bool cluster);
-  RecData ClusterStatEval();
+  RecData NodeStatEval(RecDataT *result_type, bool cluster);
+  RecData ClusterStatEval(RecDataT *result_type);
   void setTokenValue(StatExprToken *, bool cluster = false);
 
 private:

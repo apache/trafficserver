@@ -423,7 +423,7 @@ Doc::data_len()
 TS_INLINE int
 Doc::single_fragment()
 {
-  return (total_len && (data_len() == total_len));
+  return (data_len() == total_len);
 }
 
 TS_INLINE char *

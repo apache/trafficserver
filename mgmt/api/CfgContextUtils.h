@@ -119,7 +119,7 @@ TSRrT string_to_round_robin_type(const char *rr);
 char *round_robin_type_to_string(TSRrT rr);
 
 /* TSFileNameT <==> string */
-char *filename_to_string(TSFileNameT file);
+const char *filename_to_string(TSFileNameT file);
 
 TSCongestionSchemeT string_to_congest_scheme_type(const char *scheme);
 
