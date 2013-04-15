@@ -110,3 +110,9 @@ plugins/experimental/esi/parser_test
 plugins/experimental/esi/processor_test
 plugins/experimental/esi/utils_test
 plugins/experimental/esi/vars_test
+iocore/aio/diags.log
+iocore/aio/test_AIO
+iocore/aio/test_AIO.sample
+iocore/eventsystem/diags.log
+iocore/eventsystem/test_Buffer
+iocore/eventsystem/test_Event
