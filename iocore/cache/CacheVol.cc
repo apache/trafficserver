@@ -260,7 +260,7 @@ CacheVC::scanObject(int event, Event * e)
       if (!vector.get(i)->valid())
         goto Lskip;
       if (!hostinfo_copied) {
-        memccpy(hname, vector.get(i)->request_get()->url_get()->host_get(&hlen), 0, 500);
+        memccpy(hname, vector.get(i)->request_get()->host_get(&hlen), 0, 500);
         hname[hlen] = 0;
         Debug("cache_scan", "hostname = '%s', hostlen = %d", hname, hlen);
         hostinfo_copied = 1;
