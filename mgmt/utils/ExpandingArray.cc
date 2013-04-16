@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 #include "ink_platform.h"
 #include "ExpandingArray.h"
 #include "ink_resource.h"

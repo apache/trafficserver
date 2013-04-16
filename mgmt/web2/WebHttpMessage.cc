@@ -26,7 +26,6 @@
 #include "ink_resource.h"
 #include "ink_string.h"
 #include "ink_time.h"
-#include "ink_unused.h"
 
 #include "WebUtils.h"
 #include "WebHttpMessage.h"

@@ -36,7 +36,6 @@
 
 #include "ink_platform.h"
 #include "ink_port.h"
-#include "ink_unused.h"
 #include "ink_error.h"
 #include "ink_assert.h"
 #include "ink_time.h"

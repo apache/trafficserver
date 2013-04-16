@@ -28,7 +28,6 @@
 #include <assert.h>
 #include <limits.h>
 
-#include "ink_unused.h" /* MAGIC_EDITING_TAG */
 #include "ink_llqueue.h"
 #include "errno.h"
 

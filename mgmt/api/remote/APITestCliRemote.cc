@@ -95,6 +95,7 @@
  */
 
 #include "ink_config.h"
+#include "ink_defs.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

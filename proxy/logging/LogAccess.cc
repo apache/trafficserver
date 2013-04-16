@@ -31,9 +31,6 @@
   to provide support for marshalling and unmarshalling support for the other
   LogAccess derived classes.
  */
-
-#include "ink_unused.h"
-
 #include "libts.h"
 
 #include "Error.h"

@@ -19,9 +19,6 @@
 // parser.cc: implementation of the config parser
 //
 //
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__parser_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <utility>
 #include <boost/tokenizer.hpp>
 

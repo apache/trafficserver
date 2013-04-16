@@ -27,8 +27,6 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
-
-#include "ink_unused.h"   /* MAGIC_EDITING_TAG */
 #include "libts.h"
 
 #include "P_Net.h"

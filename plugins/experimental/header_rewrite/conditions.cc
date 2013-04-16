@@ -19,10 +19,6 @@
 // conditions.cc: Implementation of the condition classes
 //
 //
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__conditions_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <unistd.h>
 #include <ts/ts.h>
 

@@ -63,6 +63,7 @@
 #include "definitions.h"
 #include "createArgument.h"
 #include "ink_string.h"
+#include "ink_defs.h"
 
 
 extern Tcl_Interp *interp;

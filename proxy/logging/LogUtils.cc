@@ -21,10 +21,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-
 #include "ink_config.h"
-#include "ink_unused.h"
 
 #include <assert.h>
 #include <stdio.h>

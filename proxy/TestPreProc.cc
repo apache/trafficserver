@@ -20,8 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 #include "TestPreProc.h"
 #include "IOBufferPool.h"
 #include "IOBuffer.h"

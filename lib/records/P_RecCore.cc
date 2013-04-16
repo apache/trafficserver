@@ -23,6 +23,7 @@
 
 #include "TextBuffer.h"
 #include "Tokenizer.h"
+#include "ink_defs.h"
 #include "ink_string.h"
 
 #include "P_RecCompatibility.h"

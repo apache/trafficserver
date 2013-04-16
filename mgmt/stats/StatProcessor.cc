@@ -32,7 +32,6 @@
 
 #include "ink_config.h"
 #include "StatProcessor.h"
-#include "ink_unused.h"
 
 #define STAT_CONFIG_FILE "stats.config.xml"
 

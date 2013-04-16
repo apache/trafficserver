@@ -46,7 +46,6 @@
 #include <time.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 
 static void
 add_field(HttpHeader * h, const char *name, const char *value)

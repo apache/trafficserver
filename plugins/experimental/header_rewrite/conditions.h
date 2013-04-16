@@ -22,9 +22,6 @@
 #ifndef __CONDITIONS_H__
 #define __CONDITIONS_H__ 1
 
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__conditions_h[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <string>
 #include <ts/ts.h>
 #include <boost/lexical_cast.hpp>

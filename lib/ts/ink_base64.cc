@@ -35,7 +35,6 @@
 #include "ink_bool.h"
 #include "ink_assert.h"
 #include "ink_resource.h"
-#include "ink_unused.h"
 
 // TODO: The code here seems a bit klunky, and could probably be improved a bit.
 

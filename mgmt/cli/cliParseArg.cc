@@ -27,9 +27,6 @@
   If arguments are are valid it converts string arguments to the proper type
  */
 
-
-
-
 #include <tcl.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,6 +34,7 @@
 #include "definitions.h"
 #include "CliDisplay.h"
 #include "ink_string.h"
+#include "ink_defs.h"
 
 int checkintrange(char *range, int value);
 int checkfloatrange(char *range, float value);

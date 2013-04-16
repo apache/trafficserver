@@ -29,9 +29,6 @@
 
 
  ****************************************************************************/
-
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
-
 #include "Main.h"
 #include "Error.h"
 #include <time.h>

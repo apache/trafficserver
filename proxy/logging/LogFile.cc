@@ -28,7 +28,6 @@
  ***************************************************************************/
 
 #include "libts.h"
-#include "ink_unused.h"
 
 #include <errno.h>
 #include <sys/types.h>

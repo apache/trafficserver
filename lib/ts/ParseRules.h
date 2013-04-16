@@ -26,7 +26,6 @@
 
 #include "ink_bool.h"
 #include "ink_port.h"
-#include "ink_unused.h"
 
 #include "Resource.h"
 #include <string.h>

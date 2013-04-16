@@ -21,8 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"  /* MAGIC_EDITING_TAG */
-
 /****************************************************************************
 
   ICPProcessor.cc

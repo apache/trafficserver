@@ -37,7 +37,6 @@
 #include "ink_platform.h"
 #include "ink_port.h"
 #include "ink_apidefs.h"
-#include "ink_unused.h"
 
 /*
   For information on the structure of the x86_64 memory map:

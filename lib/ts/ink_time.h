@@ -37,7 +37,6 @@
 #include "ink_platform.h"
 #include "ink_port.h"
 #include "ink_hrtime.h"
-#include "ink_unused.h"
 
 /*===========================================================================*
 

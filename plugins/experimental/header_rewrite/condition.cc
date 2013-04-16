@@ -19,10 +19,6 @@
 // condition.cc: Implementation of the condition base class
 //
 //
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__condition_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <ts/ts.h>
 #include <string>
 

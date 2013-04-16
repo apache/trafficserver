@@ -29,7 +29,6 @@
  ****************************************************************************/
 
 #include "libts.h"
-#include "ink_unused.h"
 #include "ink_platform.h"
 #if defined(linux) || defined(freebsd) || defined(darwin)
 #include <sys/types.h>

@@ -30,7 +30,6 @@
 #include "ink_atomic.h"
 #include "ink_queue.h"
 #include "ink_thread.h"
-#include "ink_unused.h" /* MAGIC_EDITING_TAG */
 
 
 #ifndef LONG_ATOMICLIST_TEST

@@ -29,5 +29,4 @@
 */
 
 #include "RawHashTable.h"
-#include "ink_unused.h"
 

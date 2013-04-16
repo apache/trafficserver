@@ -27,7 +27,6 @@
 #include <sys/types.h>
 
 #include "ink_atomic.h"
-#include "ink_unused.h"
 
 // Memory barriers on i386 / linux / gcc
 #if defined(__i386__)

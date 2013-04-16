@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 #include <iostream.h>
 #include <sys/types.h>
 #include <sys/socket.h>

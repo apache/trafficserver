@@ -114,7 +114,6 @@ libtsutil_la_SOURCES = \
   ink_time.cc \
   ink_time.h \
   inktomi++.h \
-  ink_unused.h \
   fastlz.h \
   fastlz.c \
   I_Version.h \

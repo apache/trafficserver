@@ -25,7 +25,6 @@
 #undef std  // FIXME: remove dependency on the STL
 #include "ink_config.h"
 #include "ink_file.h"
-#include "ink_unused.h"
 #include "I_Layout.h"
 #include "I_Version.h"
 

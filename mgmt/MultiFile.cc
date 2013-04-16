@@ -29,7 +29,6 @@
 #include "ink_file.h"
 #include "ink_string.h"
 #include "ink_time.h"
-#include "ink_unused.h"
 
 #include "Compatability.h"
 #include "MgmtUtils.h"

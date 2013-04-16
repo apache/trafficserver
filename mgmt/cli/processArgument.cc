@@ -25,6 +25,7 @@
 #include "hashtable.h"
 #include "definitions.h"
 #include "ink_error.h"
+#include "ink_defs.h"
 #include <string.h>
 
 // processArgForCommand

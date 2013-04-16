@@ -25,7 +25,6 @@
 #include <assert.h>
 
 #include "ink_atomic.h"
-#include "ink_unused.h"
 #include "ink_queue.h"
 
 /*

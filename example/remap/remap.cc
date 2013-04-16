@@ -44,10 +44,10 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ink_defs.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
 
-#include "ink_unused.h"
 
 class remap_entry
 {

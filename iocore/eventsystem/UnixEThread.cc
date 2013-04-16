@@ -26,7 +26,6 @@
 // The EThread Class
 //
 /////////////////////////////////////////////////////////////////////
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 #include "P_EventSystem.h"
 
 #if TS_HAS_EVENTFD

@@ -27,7 +27,6 @@
  *
  *
  ****************************************************************************/
-
 #include "libts.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
@@ -35,7 +34,6 @@
 #include "CongestionDB.h"
 #include "Congestion.h"
 #include "ProcessManager.h"
-#include "ink_unused.h"
 
 #define SCHEDULE_CONGEST_CONT_INTERVAL HRTIME_MSECONDS(5)
 int CONGESTION_DB_SIZE = 1024;

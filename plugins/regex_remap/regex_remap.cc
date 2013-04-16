@@ -20,10 +20,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ink_config.h"

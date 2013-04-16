@@ -37,6 +37,7 @@
  ***************************************************************************/
 
 #include "ink_config.h"
+#include "ink_defs.h"
 #include <strings.h>
 #include "ink_string.h"
 #include "I_Layout.h"

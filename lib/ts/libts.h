@@ -77,7 +77,6 @@
 #include "ink_syslog.h"
 #include "ink_thread.h"
 #include "ink_time.h"
-#include "ink_unused.h"
 #include "fastlz.h"
 
 #include "Allocator.h"

@@ -22,10 +22,10 @@
  */
 
 #include "ink_error.h"
+#include "ink_defs.h"
 #include <assert.h>
 #include "stdio.h"
 #include "ink_mutex.h"
-#include "ink_unused.h"     /* MAGIC_EDITING_TAG */
 
 x_pthread_mutexattr_t _g_mattr;
 

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 #include "HttpDebugNames.h"
 #include "P_EventSystem.h"
 #include "StatPages.h"

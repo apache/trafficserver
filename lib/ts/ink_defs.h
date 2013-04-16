@@ -42,6 +42,18 @@
 #define MIN(x,y) (((x) <= (y)) ? (x) : (y))
 #endif
 
+#define NOWARN_UNUSED_VAR __attribute__ ((unused))
+#define	NOWARN_UNUSED(x)	(void)(x)
+#define	NOWARN_UNUSED_RETURN(x)	if (x) {}
+
+#ifndef likely
+#define likely(x)	__builtin_expect (!!(x), 1)
+#endif
+#ifndef unlikely
+#define unlikely(x)	__builtin_expect (!!(x), 0)
+#endif
+
+
 #if TS_USE_HWLOC
 #  include <hwloc.h>
 #endif

@@ -27,8 +27,6 @@
  *
  *
  ****************************************************************************/
-#include "ink_unused.h"     /* MAGIC_EDITING_TAG */
-
 #include "libts.h"
 #include "HostLookup.h"
 #include "MatcherUtils.h"

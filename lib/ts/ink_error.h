@@ -37,15 +37,6 @@
 
 #include "ink_apidefs.h"
 
-
-/* Compiler Hints
- * XXX(igalic): This has been pulled from ink_defs.h because
- * Solaris CC compiler complained about hwloc. Don't. Ask.
- */
-#define	NOWARN_UNUSED(x)	(void)(x)
-#define	NOWARN_UNUSED_RETURN(x)	if (x) {}
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif                          /* __cplusplus */

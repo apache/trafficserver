@@ -34,7 +34,6 @@
 #include "ink_hash_table.h"
 #include "ink_memory.h"
 #include "ink_resource.h"
-#include "ink_unused.h"   /* MAGIC_EDITING_TAG */
 
 /*===========================================================================*
 

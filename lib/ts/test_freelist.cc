@@ -25,12 +25,9 @@
 #include <string.h>
 #include "ink_thread.h"
 #include "ink_queue.h"
-#include "ink_unused.h" /* MAGIC_EDITING_TAG */
 
 
 #define NTHREADS 64
-
-
 InkFreeList *flist = NULL;
 
 

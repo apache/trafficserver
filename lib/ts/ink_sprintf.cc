@@ -32,7 +32,6 @@
   ****************************************************************************/
 
 #include "ink_sprintf.h"
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 
 #define NUL '\0'
 

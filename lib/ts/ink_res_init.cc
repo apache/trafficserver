@@ -66,6 +66,7 @@
 
 
 #include "ink_platform.h"
+#include "ink_defs.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
