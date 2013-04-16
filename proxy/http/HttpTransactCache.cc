@@ -1202,12 +1202,7 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
       // convert the comma-sep string from the config var into a list
       HttpCompat::parse_comma_list(&vary_list, (vary_values ? vary_values : ""));
     }
-#ifdef DEBUG
-    if (vary_list.head) {
-      Debug("http_match", "Vary list of %d elements", vary_list.count);
-      vary_list.dump(stderr);
-    }
-#endif
+    Debug("http_match", "Vary list of %d elements", vary_list.count);
 
     // for each field that varies, see if current & original hdrs match //
     Str *field;
@@ -1221,12 +1216,9 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
       // but currently we just treat it equivalent to a '*'.     //
       /////////////////////////////////////////////////////////////
 
+      Debug("http_match", "Vary: %s", field->str);
       if (((field->str[0] == '*') && (field->str[1] == NUL))) {
-#ifdef DEBUG
-      if (diags->on("http_match")) {
-        Note("\"Vary: %s\" --- object not served from cache\n", field->str);
-      }
-#endif
+        Debug("http_match", "Wildcard variability --- object not served from cache\n");
         variability = VARIABILITY_ALL;
         break;
       }
