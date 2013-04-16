@@ -85,9 +85,10 @@ extern int on;
 */
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
 int ink_number_of_processors();
+
 #if TS_USE_HWLOC
 // Get the hardware topology
-const hwloc_topology_t* ink_get_topology();
+hwloc_topology_t ink_get_topology();
 #endif
 
 /** Constants.

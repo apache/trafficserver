@@ -167,10 +167,9 @@ EventProcessor::start(int n_event_threads)
   int affinity = 0;
   REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
   ink_cpuset_t cpuset;
-  const hwloc_topology_t *topology = ink_get_topology();
-  int socket = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_SOCKET);
-  int cu = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_CORE);
-  int pu = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_PU);
+  int socket = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_SOCKET);
+  int cu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
+  int pu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
   Debug("iocore_thread", "socket: %d core: %d logical processor: %d affinity: %d", socket, cu, pu, affinity);
 #endif
 
@@ -183,13 +182,13 @@ EventProcessor::start(int n_event_threads)
     if (affinity != 0) {
       int logical_ratio;
       switch(affinity) {
-      case 3:           // assgin threads to logical cores
+      case 3:           // assign threads to logical cores
         logical_ratio = 1;
         break;
       case 2:           // assign threads to real cores
         logical_ratio = pu / cu;
         break;
-      case 1:           // assgin threads to sockets
+      case 1:           // assign threads to sockets
       default:
         logical_ratio = pu / socket;
       }

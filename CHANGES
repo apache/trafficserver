@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1819] guarantee hwloc initialization
+
   *) [TS-1830] add getpagesize library function
 
   *) [TS-1801] Remove proxy.config.net.throttle_enabled, it's an artifact
