@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1817] Use the libaio interface to the Linux AIO system calls.
+
   *) [TS-1721] Integrate tstop into the autotools build.
 
   *) [TS-1706] Fix documentation for Config::Records.pm.

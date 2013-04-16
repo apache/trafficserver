@@ -599,8 +599,8 @@ Lagain:
 int
 ink_aio_read(AIOCallback *op, int fromAPI) {
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
-  op->aiocb.aio_lio_opcode = IOCB_CMD_PREAD;
-  op->aiocb.aio_data = op;
+  op->aiocb.aio_lio_opcode = IO_CMD_PREAD;
+  op->aiocb.data = op;
   this_ethread()->diskHandler->ready_list.enqueue(op);
 
   return 1;
@@ -609,8 +609,8 @@ ink_aio_read(AIOCallback *op, int fromAPI) {
 int
 ink_aio_write(AIOCallback *op, int fromAPI) {
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
-  op->aiocb.aio_lio_opcode = IOCB_CMD_PWRITE;
-  op->aiocb.aio_data = op;
+  op->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
+  op->aiocb.data = op;
   this_ethread()->diskHandler->ready_list.enqueue(op);
 
   return 1;
@@ -624,8 +624,8 @@ ink_aio_readv(AIOCallback *op, int fromAPI) {
 
   while (io) {
     io->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
-    io->aiocb.aio_lio_opcode = IOCB_CMD_PREAD;
-    io->aiocb.aio_data = io;
+    io->aiocb.aio_lio_opcode = IO_CMD_PREAD;
+    io->aiocb.data = io;
     dh->ready_list.enqueue(io);
     ++sz;
     io = io->then;
@@ -651,8 +651,8 @@ ink_aio_writev(AIOCallback *op, int fromAPI) {
 
   while (io) {
     io->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
-    io->aiocb.aio_lio_opcode = IOCB_CMD_PWRITE;
-    io->aiocb.aio_data = io;
+    io->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
+    io->aiocb.data = io;
     dh->ready_list.enqueue(io);
     ++sz;
     io = io->then;

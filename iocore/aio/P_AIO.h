@@ -78,7 +78,7 @@ AIOCallbackInternal::io_complete(int event, void *data)
 }
 
 TS_INLINE int
-AIOVec::mainEvent(int event, Event *e) {
+AIOVec::mainEvent(int /* event */, Event *) {
   ++completed;
   if (completed < size)
     return EVENT_CONT;
@@ -92,7 +92,9 @@ AIOVec::mainEvent(int event, Event *e) {
   ink_assert(!"AIOVec mainEvent err");
   return EVENT_ERROR;
 }
-#else
+
+#else /* AIO_MODE != AIO_MODE_NATIVE */
+
 struct AIO_Reqs;
 
 struct AIOCallbackInternal: public AIOCallback

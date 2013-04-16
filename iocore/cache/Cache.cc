@@ -1964,7 +1964,7 @@ CacheVC::handleReadDone(int event, Event *e) {
     if ((!dir_valid(vol, &dir)) || (!io.ok())) {
       if (!io.ok()) {
         Debug("cache_disk_error", "Read error on disk %s\n \
-	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n", vol->hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes, io.aiocb.aio_offset / 512, (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
+	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n", vol->hash_id, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes, (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
     }
@@ -2007,7 +2007,7 @@ CacheVC::handleReadDone(int event, Event *e) {
         if (checksum != doc->checksum) {
           Note("cache: checksum error for [%" PRIu64 " %" PRIu64 "] len %d, hlen %d, disk %s, offset %" PRIu64 " size %zu",
                doc->first_key.b[0], doc->first_key.b[1],
-               doc->len, doc->hlen, vol->path, io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
+               doc->len, doc->hlen, vol->path, (uint64_t)io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
           doc->magic = DOC_CORRUPT;
           okay = 0;
         }

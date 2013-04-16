@@ -330,9 +330,10 @@ Vol::aggWriteDone(int event, Event *e)
     // for fragments is this aggregation buffer
     Debug("cache_disk_error", "Write error on disk %s\n \
               write range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-          hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes,
-          io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
-          (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
+          hash_id, (uint64_t)io.aiocb.aio_offset,
+          (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+          (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
+          (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
     for (int done = 0; done < agg_buf_pos;) {

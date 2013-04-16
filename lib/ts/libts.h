@@ -43,7 +43,6 @@
 
 #include "ink_config.h"
 #include "ink_platform.h"
-#include "ink_aiocb.h"
 #include "ink_align.h"
 #include "ink_apidefs.h"
 #include "ink_args.h"
