@@ -3799,8 +3799,8 @@ UrlHashTable::UrlHashTable() {
       panic("zero size URL Hash Table\n");
     if (len != URL_HASH_BYTES) {
       fprintf(stderr, 
-              "FATAL: hash file length (%lu) != URL_HASH_BYTES (%lu)\n",
-              len, (unsigned long)URL_HASH_BYTES);
+              "FATAL: hash file length (%jd) != URL_HASH_BYTES (%jd)\n",
+              (intmax_t)len, (intmax_t)URL_HASH_BYTES);
       exit(1);
     }
     numbytes = len;
