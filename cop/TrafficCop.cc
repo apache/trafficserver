@@ -1056,7 +1056,7 @@ error:
 }
 
 static int
-read_manager_string(const char *variable, char *value, size_t val_len)
+read_manager_string(const char *variable, char *value, size_t) // UNUSED size_t val_len
 {
   char buffer[4096];
   char request[1024];

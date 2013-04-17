@@ -35,10 +35,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 static void
-replace_header(TSHttpTxn txnp, TSCont contp)
+replace_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 {
   TSMBuffer resp_bufp;
   TSMLoc resp_loc;
@@ -118,7 +120,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 

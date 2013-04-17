@@ -2453,7 +2453,7 @@ runInteractive()
  * clean up on exit, and gets the interactive command-line running
  */
 int
-main(int argc, char **argv)
+main(int, char **) // UNUSED int argc, char ** argv
 {
   TSError ret;
 

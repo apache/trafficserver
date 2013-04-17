@@ -32,6 +32,7 @@
 
 #include "ink_port.h"
 #include "ink_hrtime.h"
+#include "ink_defs.h"
 #include <sched.h>
 
 
@@ -315,7 +316,7 @@ ink_create_pipe( int pfd[2])
 // Linux specific... Feel free to add support for other platforms
 // that has a feature to give a thread specific name / tag.
 static inline void
-ink_set_thread_name(const char* name)
+ink_set_thread_name(const char* name ATS_UNUSED)
 {
 #if defined(HAVE_SYS_PRCTL_H) && defined(PR_SET_NAME)
   prctl(PR_SET_NAME, name, 0, 0, 0);

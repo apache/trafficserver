@@ -22,11 +22,13 @@
  * the origin server.
  */
 
-#include <ts/ts.h>
-#include <ts/remap.h>
 #include <stdio.h>
 #include <pcre.h>
 #include <string.h>
+
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_defs.h"
 
 #define TOKENCOUNT 10
 #define OVECOUNT 30
@@ -422,8 +424,8 @@ TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf,
     return TS_SUCCESS;
 }
 
-TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf,
-    int errbuf_size) {
+TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf ATS_UNUSED,
+                                int errbuf_size ATS_UNUSED) {
 
     *ih = load_config_file(argc > 2 ? argv[2] : NULL);
     return TS_SUCCESS;
@@ -445,7 +447,7 @@ void TSRemapDeleteInstance(void *ih) {
     TSfree(prl);
 }
 
-TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri) {
+TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri ATS_UNUSED) {
     int ok;
     ok = rewrite_cacheurl((pr_list *)ih, rh);
     if (ok) {

@@ -42,9 +42,13 @@
 #define MIN(x,y) (((x) <= (y)) ? (x) : (y))
 #endif
 
-#define NOWARN_UNUSED_VAR __attribute__ ((unused))
-#define	NOWARN_UNUSED(x)	(void)(x)
+#define ATS_UNUSED __attribute__ ((unused))
 #define	NOWARN_UNUSED_RETURN(x)	if (x) {}
+#define	ATS_UNUSED_RETURN(x)	if (x) {}
+
+#define	NOWARN_UNUSED(x)	(void)(x)
+
+#define ATS_WARN_IF_UNUSED __attribute__ ((warn_unused_result))
 
 #ifndef likely
 #define likely(x)	__builtin_expect (!!(x), 1)

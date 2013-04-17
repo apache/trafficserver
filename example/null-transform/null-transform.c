@@ -34,7 +34,9 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 // This gets the PRI*64 types
 # define __STDC_FORMAT_MACROS 1
@@ -194,7 +196,7 @@ handle_transform(TSCont contp)
 }
 
 static int
-null_transform(TSCont contp, TSEvent event, void *edata)
+null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 {
   /* Check to see if the transformation has been closed by a call to
    * TSVConnClose.
@@ -287,7 +289,7 @@ transform_add(TSHttpTxn txnp)
 }
 
 static int
-transform_plugin(TSCont contp, TSEvent event, void *edata)
+transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
 
@@ -335,7 +337,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 

@@ -39,7 +39,7 @@ static int redirect_url_header_len = 0;
 static int return_code = TS_HTTP_STATUS_NONE;
 
 static void
-handle_response (TSHttpTxn txnp,TSCont contp)
+handle_response (TSHttpTxn txnp, TSCont) // UNUSED TSCont contp
 {
     TSMBuffer resp_bufp;
     TSMLoc resp_loc;

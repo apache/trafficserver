@@ -660,7 +660,7 @@ isWriteable(TSMBuffer bufp)
 /* Allocators for field handles and standalone fields */
 /******************************************************/
 static MIMEFieldSDKHandle *
-sdk_alloc_field_handle(TSMBuffer bufp, MIMEHdrImpl *mh)
+sdk_alloc_field_handle(TSMBuffer, MIMEHdrImpl *mh) // UNUSED TSMBuffer bufp
 {
   MIMEFieldSDKHandle *handle = mHandleAllocator.alloc();
 
@@ -1979,7 +1979,7 @@ TSUrlCreate(TSMBuffer bufp, TSMLoc *locp)
 }
 
 TSReturnCode
-TSUrlDestroy(TSMBuffer bufp, TSMLoc url_loc)
+TSUrlDestroy(TSMBuffer, TSMLoc) // UNUSED TSMBuffer bufp, TSMLoc url_loc
 {
   return TS_SUCCESS;
 }
@@ -5889,7 +5889,7 @@ TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp, int *bytes)
+TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp, int *) // UNUSED int *bytes
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -8164,7 +8164,7 @@ TSPortDescriptorParse(const char * descriptor)
 }
 
 TSReturnCode
-TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
+TSPortDescriptorAccept(TSPortDescriptor descp, TSCont) // UNUSED TSCont contp
 {
   HttpProxyPort * port = (HttpProxyPort *)descp;
   return start_HttpProxyPort(*port, 0 /* nthreads */) ? TS_SUCCESS : TS_ERROR;

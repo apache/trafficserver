@@ -25,7 +25,9 @@
 #include "state.h"
 
 #include <memory> // placement new
-#include <ink_config.h>
+
+#include "ink_config.h"
+#include "ink_defs.h"
 
 const char *
 HttpHookName(TSHttpHookID hookid)
@@ -137,7 +139,7 @@ struct inline_tuple
 #endif
   }
 
-  static void free(void * ptr) {
+  static void free(void *ptr ATS_UNUSED) {
 #if defined(INLINE_LUA_HOOK_REFERENCE)
     // Nothing to do, because we never allocated.
 #else

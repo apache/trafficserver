@@ -286,7 +286,7 @@ SSLContextStorage::lookup(const char * name) const
 
 #if TS_HAS_TESTS
 
-REGRESSION_TEST(SSLWildcardMatch)(RegressionTest * t, int atype, int * pstatus)
+REGRESSION_TEST(SSLWildcardMatch)(RegressionTest * t, int, int * pstatus) // UNUSED atype int
 {
   TestBox box(t, pstatus);
   ats_wildcard_matcher wildcard;
@@ -300,7 +300,7 @@ REGRESSION_TEST(SSLWildcardMatch)(RegressionTest * t, int atype, int * pstatus)
   box.check(wildcard.match("") == false, "'' is not a wildcard");
 }
 
-REGRESSION_TEST(SSLReverseHostname)(RegressionTest * t, int atype, int * pstatus)
+REGRESSION_TEST(SSLReverseHostname)(RegressionTest * t, int, int * pstatus) // UNUSED atype int
 {
   TestBox box(t, pstatus);
 

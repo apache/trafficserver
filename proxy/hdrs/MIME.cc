@@ -1116,8 +1116,9 @@ static inline void relocate(MIMEField *field, MIMEFieldBlockImpl *dest_block, MI
   }
 }
 
+// UNUSED int block_count
 void
-mime_hdr_field_block_list_adjust(int block_count, MIMEFieldBlockImpl *old_list, MIMEFieldBlockImpl *new_list)
+mime_hdr_field_block_list_adjust(int, MIMEFieldBlockImpl *old_list, MIMEFieldBlockImpl *new_list)
 {
   for (MIMEFieldBlockImpl *new_blk = new_list; new_blk; new_blk = new_blk->m_next)
     for (MIMEField *field = new_blk->m_field_slots, *end=field + new_blk->m_freetop; field != end; ++field)

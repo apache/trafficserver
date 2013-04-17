@@ -21,11 +21,13 @@
   limitations under the License.
 */
 
-#include <ts/ts.h>
-#include <ts/remap.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_defs.h"
 
 #define PLUGIN_NAME "query_remap"
 
@@ -41,7 +43,8 @@ typedef struct _query_remap_info {
 
 
 int
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED,
+              int errbuf_size ATS_UNUSED)
 {
   /* Called at TS startup. Nothing needed for this plugin */
   TSDebug(PLUGIN_NAME , "remap plugin initialized");
@@ -50,7 +53,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
 
 int
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
   /* Called for each remap rule using this plugin. The parameters are parsed here */
   int i;
@@ -111,7 +114,7 @@ TSRemapDeleteInstance(void* ih)
 
 
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void* ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 {
   int hostidx = -1;
   query_remap_info *qri = (query_remap_info*)ih;

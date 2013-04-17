@@ -1128,7 +1128,7 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
 }
 
 static int
-cert_verify_callback(int ok, X509_STORE_CTX *ctx)
+cert_verify_callback(int ok __attribute__ ((unused)), X509_STORE_CTX *ctx __attribute__ ((unused)))
 {
   return 1;
 }
@@ -2765,7 +2765,7 @@ handle_read(int cnum, struct timeval *nowP)
 
 
 static void
-idle_connection(ClientData client_data, struct timeval *nowP)
+idle_connection(ClientData client_data, struct timeval *nowP __attribute__ ((unused)))
 {
   int cnum;
   struct timeval tv;
@@ -2793,7 +2793,7 @@ idle_connection(ClientData client_data, struct timeval *nowP)
 
 
 static void
-wakeup_connection(ClientData client_data, struct timeval *nowP)
+wakeup_connection(ClientData client_data, struct timeval *nowP __attribute__ ((unused)))
 {
   int cnum;
 
@@ -2889,7 +2889,7 @@ close_connection(int cnum)
 
 
 static void
-progress_report(ClientData client_data, struct timeval *nowP)
+progress_report(ClientData client_data  __attribute__ ((unused)), struct timeval *nowP __attribute__ ((unused)))
 {
   float elapsed;
 
@@ -2901,7 +2901,7 @@ progress_report(ClientData client_data, struct timeval *nowP)
 
 
 static void
-start_timer(ClientData client_data, struct timeval *nowP)
+start_timer(ClientData client_data __attribute__ ((unused)), struct timeval *nowP __attribute__ ((unused)))
 {
   start_connection(nowP);
   if (do_jitter)
@@ -2910,7 +2910,7 @@ start_timer(ClientData client_data, struct timeval *nowP)
 
 
 static void
-end_timer(ClientData client_data, struct timeval *nowP)
+end_timer(ClientData client_data __attribute__ ((unused)), struct timeval *nowP __attribute__ ((unused)))
 {
   finish(nowP);
 }

@@ -167,7 +167,7 @@ public:
   }
 
 protected:
-  void exec(const Resources& res) const { };
+  void exec(const Resources&) const { }; // UNUSED Resources &res
 
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorNoOp);

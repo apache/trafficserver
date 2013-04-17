@@ -35,7 +35,7 @@
 #include <signal.h>
 
 void
-ink_stack_trace_dump(int sighandler_frame)
+ink_stack_trace_dump(int) // UNUSED int sighandler_frame
 {
   int btl;
 

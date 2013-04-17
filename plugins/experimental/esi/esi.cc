@@ -494,7 +494,7 @@ ContData::~ContData()
   }
 }
 
-static int removeCacheHandler(TSCont contp, TSEvent event, void *edata) {
+static int removeCacheHandler(TSCont contp, TSEvent, void *) { // UNUSED: TSEvent event, void *edata
     //TSDebug(DEBUG_TAG, "[%s] event: %d", __FUNCTION__, (int)event);
     TSContDestroy(contp);
     //just ignore cache remove message
@@ -1783,7 +1783,7 @@ TSRemapDeleteInstance(void* ih)
 // Main entry point when used as a remap plugin.
 //
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *) // UNUSED TSRemapRequestInfo *rri
 {
   if (NULL != ih) {
     TSCont contp = static_cast<TSCont>(ih);

@@ -130,7 +130,8 @@ struct ConfigUpdateHandler
 
 private:
 
-  static int update(const char * name, RecDataT data_type, RecData data, void * cookie) {
+  // UNUSED RecDataT data_type, RecData data
+  static int update(const char * name, RecDataT, RecData, void * cookie) {
     ConfigUpdateHandler * self = static_cast<ConfigUpdateHandler *>(cookie);
     Debug("config", "%s(%s)", __PRETTY_FUNCTION__, name);
     return ConfigScheduleUpdate<UpdateClass>(self->mutex);

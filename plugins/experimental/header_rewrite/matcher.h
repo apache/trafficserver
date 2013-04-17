@@ -74,38 +74,29 @@ class Matchers : public Matcher
 {
 public:
   explicit Matchers<T>(const MatcherOps op)
-    : Matcher(op)
+  : Matcher(op)
   { }
 
   // Getters / setters
   const T get() const { return _data; };
  
- void setRegex(const std::string data)
- {
-     if(!helper.setRegexMatch(_data))
-     {
-         std::cout<<"Invalid regex:failed to precompile"<<std::endl;
-         abort();
-     }
-     TSDebug(PLUGIN_NAME,"Regex precompiled successfully");
+  void setRegex(const std::string) // UNUSED std::string data
+  {
+    if (!helper.setRegexMatch(_data)) {
+      std::cout<<"Invalid regex:failed to precompile"<<std::endl;
+      abort();
+    }
+    TSDebug(PLUGIN_NAME,"Regex precompiled successfully");
+  }
 
- }
-
- void setRegex(const unsigned int t)
- {
-     return;
- }
-
- void setRegex(const TSHttpStatus t)
- {
-     return;
- }
+  void setRegex(const unsigned int) { return; } // UNUSED unsigned int t
+  void setRegex(const TSHttpStatus) { return; } // UNUSED TSHttpStatus t
 
   void set (const T d)
   { 
-      _data = d;
-      if(_op == MATCH_REGULAR_EXPRESSION)
-        setRegex(d);
+    _data = d;
+    if(_op == MATCH_REGULAR_EXPRESSION)
+      setRegex(d);
   }
 
   // Evaluate this matcher
@@ -146,15 +137,15 @@ private:
     return t > _data;
   }
 
- bool test_reg(const unsigned int t) const {
-    // Not support
+  bool test_reg(const unsigned int) const { //  UNUSED usigned int t
+    // Not supported
     return false;
   }
 
-  bool test_reg(const TSHttpStatus t) const {
-    // Not support
-    return false;
-  }
+  bool test_reg(const TSHttpStatus) const { //  UNUSED TSHttpStatus t
+   // Not supported
+   return false;
+ }
   
   bool test_reg(const std::string t) const {
       TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());

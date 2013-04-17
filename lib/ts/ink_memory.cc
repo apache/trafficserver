@@ -144,7 +144,7 @@ ats_memalign_free(void *ptr)
 //
 // TODO: I think we might be able to get rid of this?
 int
-ats_mallopt(int param, int value)
+ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
 {
 #if TS_HAS_JEMALLOC
 // TODO: jemalloc code ?

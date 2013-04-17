@@ -25,7 +25,9 @@ if BUILD_LUA_SUPPORT
 lua_la_CPPFLAGS = \
   ${LUA_CFLAGS} \
   -I$(top_builddir)/proxy/api \
-  -I$(top_srcdir)/proxy/api
+  -I$(top_srcdir)/proxy/api \
+  -I$(top_builddir)/lib/ts \
+  -I$(top_srcdir)/lib/ts
 
 pkglib_LTLIBRARIES = lua.la
 

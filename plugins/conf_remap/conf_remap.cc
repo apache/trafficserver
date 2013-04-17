@@ -197,7 +197,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char* argv[], void** ih, char*, int) // UNUSED  char* errbuf, int errbuf_size)
 {
   if (argc < 3) {
     TSError("Unable to create remap instance, need configuration file");
@@ -234,7 +234,7 @@ TSRemapDeleteInstance(void* ih)
 // Main entry point when used as a remap plugin.
 //
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *) // UNUSED TSRemapRequestInfo *rri
 {
   if (NULL != ih) {
     RemapConfigs* conf = static_cast<RemapConfigs*>(ih);

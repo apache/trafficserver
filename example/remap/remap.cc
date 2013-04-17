@@ -141,7 +141,7 @@ store_my_error_message(TSReturnCode retcode, char *err_msg_buf, int buf_size, co
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
   info.plugin_name = (char*)"remap_plugin";
@@ -351,7 +351,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
 /* ----------------------- TSRemapOSResponse ----------------------------- */
 void
-TSRemapOSResponse(void* ih, TSHttpTxn rh, int os_response_type)
+TSRemapOSResponse(void* ih ATS_UNUSED, TSHttpTxn rh, int os_response_type)
 {
   int request_id = -1;
   void *data = TSHttpTxnArgGet((TSHttpTxn) rh, arg_index);  // read counter (we store it in TSRemapDoRemap function call)

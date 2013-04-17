@@ -51,7 +51,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 static int init_buffer_status;
 
@@ -66,7 +68,7 @@ static TSMLoc field_loc;
 static TSMLoc value_loc;
 
 static void
-modify_header(TSHttpTxn txnp, TSCont contp)
+modify_header(TSHttpTxn txnp, TSCont contp  ATS_UNUSED)
 {
   TSMBuffer resp_bufp;
   TSMBuffer cached_bufp;

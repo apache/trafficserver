@@ -267,7 +267,7 @@ AuthChainAuthorizationResponse(AuthRequestContext * auth)
 
 // Transform the client request into a HEAD request and write it out.
 static bool
-AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr * saddr)
+AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr *) // UNUSED const sockaddr * saddr
 {
     HttpHeader  rq;
     TSMBuffer   mbuf;
@@ -451,7 +451,7 @@ StateAuthProxyConnect(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
+StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void *) // UNUSED void *edata
 {
     TSHttpStatus status;
     unsigned nbytes;
@@ -490,7 +490,7 @@ StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxySendResponse(AuthRequestContext * auth, void * edata)
+StateAuthProxySendResponse(AuthRequestContext * auth, void *) // UNUSED void *edata
 {
     TSMBuffer mbuf;
     TSMLoc mhdr;
@@ -518,7 +518,7 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyReadHeaders(AuthRequestContext * auth, void * edata)
+StateAuthProxyReadHeaders(AuthRequestContext * auth, void *) // UNUSED void *edata
 {
     TSIOBufferBlock blk;
     ssize_t         consumed = 0;
@@ -567,7 +567,7 @@ StateAuthProxyReadHeaders(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyWriteComplete(AuthRequestContext * auth, void * edata)
+StateAuthProxyWriteComplete(AuthRequestContext * auth, void *) // UNUSED void *edata
 {
     // We finished writing the auth proxy request. Kick off a read to get the response.
     auth->iobuf.reset();
@@ -580,7 +580,7 @@ StateAuthProxyWriteComplete(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyReadContent(AuthRequestContext * auth, void * edata)
+StateAuthProxyReadContent(AuthRequestContext * auth, void *) // UNUSED void *edata
 {
     unsigned        needed;
     int64_t         avail = 0;
@@ -600,7 +600,7 @@ StateAuthProxyReadContent(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyCompleteContent(AuthRequestContext * auth, void * edata)
+StateAuthProxyCompleteContent(AuthRequestContext * auth, void *) // UNUSED void *edata
 {
     unsigned        needed;
     int64_t         avail;
@@ -665,7 +665,7 @@ AuthRequestIsTagged(TSHttpTxn txn)
 }
 
 static int
-AuthProxyGlobalHook(TSCont cont, TSEvent event, void * edata)
+AuthProxyGlobalHook(TSCont, TSEvent event, void * edata) // UNUSED TSCont cont
 {
     AuthRequestContext * auth;
     union {
@@ -808,7 +808,7 @@ TSRemapInit(TSRemapInterface * api, char * err, int errsz)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char * argv[], void ** instance, char * err, int errsz)
+TSRemapNewInstance(int argc, char * argv[], void ** instance, char *, int) // UNUSED  char * err, int errsz
 {
     AuthOptions * options;
 
@@ -833,7 +833,7 @@ TSRemapDeleteInstance(void * instance)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * rri)
+TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo *) // UNUSED TSRemapRequestInfo * rri
 {
     AuthOptions * options = (AuthOptions *)instance;
 

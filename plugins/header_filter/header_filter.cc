@@ -43,7 +43,7 @@ int arg_idx;
 // Continuation
 //
 static int
-cont_header_filter(TSCont contp, TSEvent event, void *edata)
+cont_header_filter(TSCont, TSEvent event, void *edata) // UNUSED TSCont contp
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
   TSHttpHookID hook = TS_HTTP_LAST_HOOK;
@@ -156,7 +156,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char* argv[], void** ih, char*, int) // UNUSED  char* errbuf, int errbuf_size
 {
   if (argc < 3) {
     TSError("Unable to create remap instance, need rules file");

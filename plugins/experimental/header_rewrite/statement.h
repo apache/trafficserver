@@ -76,7 +76,7 @@ class Statement
 
   const ResourceIDs get_resource_ids() const;
 
-  virtual void initialize(Parser& p) {
+  virtual void initialize(Parser&) { // Parser &p
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     _initialized = true;

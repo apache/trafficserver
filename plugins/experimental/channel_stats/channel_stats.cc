@@ -275,7 +275,7 @@ get_api_params(TSMBuffer   bufp,
 }
 
 static void
-handle_read_req(TSCont contp, TSHttpTxn txnp)
+handle_read_req(TSCont, TSHttpTxn txnp) // UNUSED TSCont contp
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc = NULL;
@@ -467,7 +467,7 @@ get_txn_user_speed(TSHttpTxn txnp, uint64_t body_bytes)
 }
 
 static void
-handle_txn_close(TSCont contp, TSHttpTxn txnp)
+handle_txn_close(TSCont, TSHttpTxn txnp) // UNUSED TSCont contp
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
@@ -623,10 +623,9 @@ stats_process_read(TSCont contp, TSEvent event, intercept_state * api_state)
     APPEND(b); \
 } while(0)
 
+// UNUSED: TSRecordType rec_type , int registered,
 static void
-json_out_stat(TSRecordType rec_type, void *edata, int registered,
-              const char *name, TSRecordDataType data_type,
-              TSRecordData *datum) {
+json_out_stat(TSRecordType, void *edata, int, const char *name, TSRecordDataType data_type, TSRecordData *datum) {
   intercept_state *api_state = (intercept_state *) edata;
 
   switch(data_type) {

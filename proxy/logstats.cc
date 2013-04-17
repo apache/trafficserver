@@ -2244,7 +2244,7 @@ open_main_log(ExitStatus& status)
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
-main(int argc, char *argv[])
+main(int, char *argv[]) // UNUSED int argc
 {
   ExitStatus exit_status;
   int res, cnt;

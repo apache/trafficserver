@@ -23,7 +23,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 #define MAX_NSITES 500
 #define RETRY_TIME 10
@@ -129,7 +131,7 @@ done:
 }
 
 static void
-handle_response(TSHttpTxn txnp, TSCont contp)
+handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
@@ -285,7 +287,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
 }
 
 static void
-handle_txn_start(TSCont contp, TSHttpTxn txnp)
+handle_txn_start(TSCont contp ATS_UNUSED, TSHttpTxn txnp)
 {
   TSCont txn_contp;
   cdata *cd;
@@ -331,7 +333,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   int i;
   TSPluginRegistrationInfo info;

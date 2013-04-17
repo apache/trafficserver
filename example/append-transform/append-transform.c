@@ -39,7 +39,9 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 #define ASSERT_SUCCESS(_x) TSAssert ((_x) == TS_SUCCESS)
 
@@ -196,7 +198,7 @@ handle_transform(TSCont contp)
 }
 
 static int
-append_transform(TSCont contp, TSEvent event, void *edata)
+append_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 {
   /* Check to see if the transformation has been closed by a call to
      TSVConnClose. */
@@ -292,7 +294,7 @@ transform_add(TSHttpTxn txnp)
 }
 
 static int
-transform_plugin(TSCont contp, TSEvent event, void *edata)
+transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
 

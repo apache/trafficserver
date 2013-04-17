@@ -224,8 +224,9 @@ ClusterProcessor::free_remote_data(char *p, int l)
   ccl->freeall();
 }
 
+// UNUSED ClusterMachine *m
 ClusterVConnection *
-ClusterProcessor::open_local(Continuation * cont, ClusterMachine * m, ClusterVCToken & token, int options)
+ClusterProcessor::open_local(Continuation * cont, ClusterMachine *, ClusterVCToken & token, int options)
 {
   //
   //  New connect protocol.

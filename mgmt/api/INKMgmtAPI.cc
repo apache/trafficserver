@@ -50,19 +50,19 @@ void init_pdss_format(TSPdSsFormat * info);
  * API Memory Management
  ***************************************************************************/
 void *
-_TSmalloc(unsigned int size, const char *path)
+_TSmalloc(unsigned int size, const char *) // UNUSED const char *path
 {
   return ats_malloc(size);
 }
 
 void *
-_TSrealloc(void *ptr, unsigned int size, const char *path)
+_TSrealloc(void *ptr, unsigned int size, const char *) // UNUSED const char *path
 {
   return ats_realloc(ptr, size);
 }
 
 char *
-_TSstrdup(const char *str, int length, const char *path)
+_TSstrdup(const char *str, int length, const char *) // UNUSED const char *path
 {
   return ats_strndup(str, length);
 }

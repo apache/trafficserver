@@ -404,7 +404,7 @@ void ats::api::SetRequestUrlPath(Transaction &t, const std::string &path) {
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
-static int GlobalContinuationHandler(TSCont contp, TSEvent event, void *edata) {
+static int GlobalContinuationHandler(TSCont contp, TSEvent, void *edata) { // UNUSED TSEvent event
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   Transaction transaction;
@@ -853,8 +853,9 @@ ats::api::headers::HeaderVector ats::api::headers::GetServerResponseHeaders(Tran
   return hv;
 }
 
-inline ats::api::headers::Header GetHeader(Transaction &t, const std::string& hdr_name,
-   const ats::api::headers::HeaderVector &hdrs) {
+// UNUSED Transaction &t
+inline ats::api::headers::Header GetHeader(Transaction &, const std::string& hdr_name,
+                                           const ats::api::headers::HeaderVector &hdrs) {
 
   ats::api::headers::Header hdr;
 
