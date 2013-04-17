@@ -2,7 +2,11 @@
   Changes with Apache Traffic Server 3.3.3
 
 
-  *) [TS-1826] Remove DumpStats/http_dump dead code
+  *) [TS-1752] Change type of "len" in jtest to off_t, for better
+  compiler compliance.
+
+  *) [TS-1826] Remove DumpStats/http_dump dead code.
+
 
 
   Changes with Apache Traffic Server 3.3.2
