@@ -1992,7 +1992,7 @@ static int send_ftp_data_when_ready(int sock) {
   return 0;
 }
 
-static int send_ftp_data(int sock, char * start, char * end) {
+static int send_ftp_data(int sock, char * start /*, char * end */) {
   int data_fd = fd[sock].ftp_data_fd;
   if (sscanf(start,"%d",&fd[data_fd].doc_length) != 1)
     return -1;
@@ -2396,7 +2396,7 @@ static int read_ftp_request(int sock) {
         }
         n = (char*)memchr(buffer,'\n',fd[sock].req_pos);
         if (!n) return 0;
-        if (send_ftp_data(sock, buffer+5, n)<0) {
+        if (send_ftp_data(sock, buffer+5 /*, n */)<0) {
           errors++;
           *n = 0;
           if (verbose)
@@ -3987,7 +3987,7 @@ static FILE * get_defered_urls(FILE * fp) {
   return fp;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc __attribute__((unused)), char *argv[]) {
   /* for QA -- we want to be able to tail an output file
    * during execution "nohup jtest -P pxy -p prt &"
    */

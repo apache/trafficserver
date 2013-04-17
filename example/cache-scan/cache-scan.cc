@@ -257,7 +257,7 @@ cleanup(TSCont contp)
 
 //----------------------------------------------------------------------------
 static int
-handle_io(TSCont contp, TSEvent event, void *) // UNUSED void* edata
+handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   cache_scan_state *cstate = (cache_scan_state *) TSContDataGet(contp);
 
@@ -491,7 +491,7 @@ cache_print_plugin(TSCont contp, TSEvent event, void *edata)
 
 //----------------------------------------------------------------------------
 void
-TSPluginInit(int, const char *[]) // UNUSED int argc, const char *argv[]
+TSPluginInit(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
   global_contp = TSContCreate(cache_print_plugin, TSMutexCreate());
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);

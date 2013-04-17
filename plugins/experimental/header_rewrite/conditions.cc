@@ -86,14 +86,14 @@ ConditionRandom::initialize(Parser& p)
 
 
 bool
-ConditionRandom::eval(const Resources&) { // UNUSED Resources &res
+ConditionRandom::eval(const Resources& /* res ATS_UNUSED */) {
   TSDebug(PLUGIN_NAME, "Evaluating RANDOM(%d)", _max);
   return static_cast<const Matchers<unsigned int>*>(_matcher)->test(rand_r(&_seed) % _max);
 }
 
 
 void
-ConditionRandom::append_value(std::string& s, const Resources&) // UNUSED Resources &res
+ConditionRandom::append_value(std::string& s, const Resources& /* res ATS_UNUSED */)
 {
   s += boost::lexical_cast<std::string>(rand_r(&_seed) % _max);
   TSDebug(PLUGIN_NAME, "Appending RANDOM(%d) to evaluation value -> %s", _max, s.c_str());
@@ -127,7 +127,7 @@ ConditionAccess::append_value(std::string& s, const Resources& res)
 
 
 bool
-ConditionAccess::eval(const Resources&) // UNUSED Resources &res
+ConditionAccess::eval(const Resources& /* res ATS_UNUSED */)
 {
   struct timeval tv;
 
@@ -282,7 +282,7 @@ ConditionQuery::eval(const Resources& res)
 
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
 void
-ConditionUrl::initialize(Parser&) // UNUSED: Parser &p
+ConditionUrl::initialize(Parser& /* p ATS_UNUSED */)
 {
 }
 
@@ -296,13 +296,13 @@ ConditionUrl::set_qualifier(const std::string& q) {
 
 
 void
-ConditionUrl::append_value(std::string&, const Resources&) // UNUSED std;:string &s, Resources &res
+ConditionUrl::append_value(std::string& /* s ATS_UNUSED */, const Resources& /* res ATS_UNUSED */)
 {
 }
 
 
 bool
-ConditionUrl::eval(const Resources&) // UNUSED Resources &res
+ConditionUrl::eval(const Resources& /* res ATS_UNUSED */)
 {
   bool ret = false;
 
@@ -338,7 +338,7 @@ ConditionDBM::initialize(Parser& p)
 
 
 void
-ConditionDBM::append_value(std::string&, const Resources&) // UNUSED std::string& s, Resources &res
+ConditionDBM::append_value(std::string& /* s ATS_UNUSED */, const Resources& /* res ATS_UNUSED */)
 {
   // std::string key;
 

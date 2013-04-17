@@ -53,9 +53,9 @@ LuaPluginRemap(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
   return rq->status;
 }
 
-// UNUSED: TSRemapInterface * api_info, char * errbuf, int errbuf_size
 TSReturnCode
-TSRemapInit(TSRemapInterface *, char *, int)
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */,
+            int /* errbuf_size ATS_UNUSED */)
 {
   LuaLogDebug("loading lua plugin");
 
@@ -66,7 +66,7 @@ TSRemapInit(TSRemapInterface *, char *, int)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char * argv[], void ** ih, char *, int) // UNUSED char * errbuf, int errsz
+TSRemapNewInstance(int argc, char * argv[], void ** ih, char * /* errbuf ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
   instanceid_t instanceid;
 

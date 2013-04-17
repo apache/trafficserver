@@ -80,7 +80,7 @@ public:
   // Getters / setters
   const T get() const { return _data; };
  
-  void setRegex(const std::string) // UNUSED std::string data
+  void setRegex(const std::string /* data ATS_UNUSED */)
   {
     if (!helper.setRegexMatch(_data)) {
       std::cout<<"Invalid regex:failed to precompile"<<std::endl;
@@ -89,8 +89,8 @@ public:
     TSDebug(PLUGIN_NAME,"Regex precompiled successfully");
   }
 
-  void setRegex(const unsigned int) { return; } // UNUSED unsigned int t
-  void setRegex(const TSHttpStatus) { return; } // UNUSED TSHttpStatus t
+  void setRegex(const unsigned int /* t ATS_UNUSED */) { return; }
+  void setRegex(const TSHttpStatus /* t ATS_UNUSED */) { return; }
 
   void set (const T d)
   { 
@@ -137,12 +137,12 @@ private:
     return t > _data;
   }
 
-  bool test_reg(const unsigned int) const { //  UNUSED usigned int t
+  bool test_reg(const unsigned int /* t ATS_UNUSED */) const {
     // Not supported
     return false;
   }
 
-  bool test_reg(const TSHttpStatus) const { //  UNUSED TSHttpStatus t
+  bool test_reg(const TSHttpStatus /* t ATS_UNUSED */) const {
    // Not supported
    return false;
  }

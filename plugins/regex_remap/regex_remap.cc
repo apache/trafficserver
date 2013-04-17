@@ -563,7 +563,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 // We don't have any specific "instances" here, at least not yet.
 //
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char*, int) // UNUSED char* errbuf, int errbuf_size
+TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED */, int /* errbuf_sizeATS_UNUSED */)
 {
   const char* error;
   int erroffset;

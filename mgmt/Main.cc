@@ -771,7 +771,7 @@ main(int argc, char **argv)
     }
     // Check for SIGUSR2
     if (sigUsr2Notifier != 0) {
-      xdump();
+      ink_stack_trace_dump();
       sigUsr2Notifier = 0;
     }
 

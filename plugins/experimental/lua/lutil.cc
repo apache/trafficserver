@@ -27,7 +27,7 @@ int LuaHttpArgIndex;
 
 #if !defined(LUAJIT_VERSION)
 static void *
-LuaAllocate(void * ud, void * ptr, size_t, size_t nsize) // UNUSED: size_t osize
+LuaAllocate(void * ud, void * ptr, size_t /* osize ATS_UNUSED */, size_t nsize)
 {
   TSReleaseAssert(ud == NULL);
 

@@ -8013,7 +8013,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
                                                                 &s->internal_msg_buffer_size,
                                                                 body_language, sizeof(body_language), 
                                                                 body_type, sizeof(body_type), 
-                                                                status_code, reason_phrase, format, ap);
+                                                                format, ap);
 
   s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
   s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
@@ -8059,7 +8059,6 @@ HttpTransact::build_redirect_response(State* s)
   const char *new_url = NULL;
   int new_url_len;
   char *to_free = NULL;
-
   char body_language[256], body_type[256];
 
   HTTPStatus status_code = HTTP_STATUS_MOVED_TEMPORARILY;
@@ -8101,13 +8100,10 @@ HttpTransact::build_redirect_response(State* s)
     free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
   }
   s->internal_msg_buffer_fast_allocator_size = -1;
-
   s->internal_msg_buffer = body_factory->fabricate_with_old_api_build_va("redirect#moved_temporarily", s, 8192,
                                                                          &s->internal_msg_buffer_size,
                                                                          body_language, sizeof(body_language),
                                                                          body_type, sizeof(body_type), 
-                                                                         status_code,
-                                                                         reason_phrase,
                                                                          "%s <a href=\"%s\">%s</a>.  %s.",
                                                                          "The document you requested is now",
                                                                          new_url, new_url,

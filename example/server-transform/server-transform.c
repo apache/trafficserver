@@ -86,23 +86,9 @@ typedef struct
   int content_length;
 } TransformData;
 
-static TSCont transform_create(TSHttpTxn txnp);
-static void transform_destroy(TSCont contp);
-static int transform_connect(TSCont contp, TransformData * data);
-static int transform_write(TSCont contp, TransformData * data);
-static int transform_read_status(TSCont contp, TransformData * data);
-static int transform_read(TSCont contp, TransformData * data);
-static int transform_bypass(TSCont contp, TransformData * data);
-static int transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
 static int transform_handler(TSCont contp, TSEvent event, void *edata);
 
 static in_addr_t server_ip;
-
 static int server_port;
 
 static TSCont
@@ -301,8 +287,7 @@ transform_bypass(TSCont contp, TransformData * data)
 }
 
 static int
-transform_buffer_event(TSCont contp, TransformData * data, TSEvent event ATS_UNUSED,
-                       void *edata ATS_UNUSED)
+transform_buffer_event(TSCont contp, TransformData * data, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
   TSVIO write_vio;
   int towrite;

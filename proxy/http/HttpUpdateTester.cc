@@ -43,7 +43,7 @@ private:
 #endif
 };
 
-UpTest::UpTest(FILE *, ProxyMutex * amutex) // UNUSED FILE *f
+UpTest::UpTest(FILE * /* f ATS_UNUSED */, ProxyMutex * amutex)
   : Continuation(amutex), active_req(0)
 #ifdef GO_AWAY
   , total_req(0), file(f)

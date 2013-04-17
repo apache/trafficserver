@@ -278,7 +278,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *, int) // UNUSED:  char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   TSDebug(PLUGIN_NAME, "initializing the remap plugin header_rewrite");
 

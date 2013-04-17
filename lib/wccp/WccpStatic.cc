@@ -155,7 +155,7 @@ ts::Errata
 log_errno(ts::Errata::Code code, char const* text) {
   static size_t const SIZE = 1024;
   char buffer[SIZE];
-  NOWARN_UNUSED_RETURN(strerror_r(errno, buffer, SIZE));
+  ATS_UNUSED_RETURN(strerror_r(errno, buffer, SIZE));
   return logf(code, "%s [%d] %s", text, errno, buffer);
 }
 
@@ -171,7 +171,7 @@ vlogf_errno(ts::Errata::Code code, char const* format, va_list& rest) {
   
   n = vsnprintf(t_buffer, T_SIZE, format, rest);
   if (0 <= n && n < T_SIZE) { // still have room.
-    NOWARN_UNUSED_RETURN(strerror_r(e, e_buffer, E_SIZE));
+    ATS_UNUSED_RETURN(strerror_r(e, e_buffer, E_SIZE));
     n += snprintf(t_buffer + n, T_SIZE - n, "[%d] %s", e, e_buffer);
   }
   err.push(ts::Errata::Id(0), code, t_buffer);

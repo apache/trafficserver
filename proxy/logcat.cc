@@ -222,7 +222,7 @@ open_output_file(char *output_file)
   -------------------------------------------------------------------------*/
 
 int
-main(int, char *argv[]) // UNUSED int argc
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   enum
   {

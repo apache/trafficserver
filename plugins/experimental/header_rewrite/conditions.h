@@ -46,10 +46,10 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue");
   }
 
-  void append_value(std::string& s, const Resources&) { s += "TRUE";  } // UNUSED Resources& res
+  void append_value(std::string& s, const Resources& /* res ATS_UNUSED */) { s += "TRUE";  }
 
 protected:
-  bool eval(const Resources&) { // UNUSED Resources &res
+  bool eval(const Resources& /* res ATS_UNUSED */) {
     TSDebug(PLUGIN_NAME, "Evaluating TRUE()");
     return true;
   }
@@ -67,10 +67,10 @@ public:
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionFalse");
   }
-  void append_value(std::string& s, const Resources&) { s += "FALSE"; } // UNUSED Resources &res
+  void append_value(std::string& s, const Resources& /* res ATS_UNUSED */) { s += "FALSE"; }
 
 protected:
-  bool eval(const Resources&) { // UNUSED Resources &res
+  bool eval(const Resources& /* res ATS_UNUSED */) {
     TSDebug(PLUGIN_NAME, "Evaluating FALSE()");
     return false;
   }

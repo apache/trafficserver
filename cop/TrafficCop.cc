@@ -1104,7 +1104,7 @@ read_manager_string(const char *variable, char *value, size_t val_len)
     return -1;
   }
 
-  ink_strlcpy(value, p, val_len);
+  ink_strlcpy(value, p, MIN((size_t)(e - p + 1), val_len));
 
   return 0;
 }

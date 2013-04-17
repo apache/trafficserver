@@ -2789,7 +2789,7 @@ ConfigTimezone(int index, int setvar)
     printf("can not open the file\n");
     return CLI_ERROR;
   }
-  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+  ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   while (!feof(fp)) {
     if (buffer[0] != '#') {
       strtok(buffer, " \t");
@@ -2800,15 +2800,15 @@ ConfigTimezone(int index, int setvar)
       }
       fprintf(tmp, "%s\n", zone);
     }
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   }
   fclose(fp);
   fclose(tmp);
   remove("/tmp/zonetab");
-  NOWARN_UNUSED_RETURN(system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab"));
+  ATS_UNUSED_RETURN(system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab"));
 
   fp = fopen("/tmp/zonetab", "r");
-  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+  ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   int i = 0;
   while (!feof(fp)) {
     zone = buffer;
@@ -2820,7 +2820,7 @@ ConfigTimezone(int index, int setvar)
         ink_strlcpy(new_zone, zone, sizeof(new_zone));
       }
     }
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
     i++;
   }
   fclose(fp);
@@ -2857,7 +2857,7 @@ ConfigTimezone(int index, int setvar)
 
     fp = fopen("/etc/sysconfig/clock", "r");
     tmp = fopen("/tmp/clock.tmp", "w");
-    NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
     while (!feof(fp)) {
       if (strstr(buffer, "ZONE") != NULL) {
         fprintf(tmp, "ZONE=\"%s\"\n", new_zone);
@@ -2866,7 +2866,7 @@ ConfigTimezone(int index, int setvar)
       } else {
         fputs(buffer, tmp);
       }
-      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+      ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
     }
     fclose(fp);
     fclose(tmp);
@@ -2901,7 +2901,7 @@ ConfigTimezoneList()
     printf("can not open the file\n");
     return CLI_ERROR;
   }
-  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+  ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   while (!feof(fp)) {
     if (buffer[0] != '#') {
       strtok(buffer, " \t");
@@ -2912,7 +2912,7 @@ ConfigTimezoneList()
       }
       fprintf(tmp, "%s\n", zone);
     }
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   }
   fclose(fp);
   fclose(tmp);
@@ -2923,7 +2923,7 @@ ConfigTimezoneList()
   }
 
   fp = fopen("/tmp/zonetab", "r");
-  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+  ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   int i = 0;
   while (!feof(fp)) {
     zone = buffer;
@@ -2935,7 +2935,7 @@ ConfigTimezoneList()
     } else {
       Cli_Printf("%d   %s\n", i, zone);
     }
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
     i++;
   }
   fclose(fp);
@@ -4920,7 +4920,7 @@ find_value(const char *pathname, const char *key, char *value, int value_len, co
   }
   // coverity[toctou]
   if ((fp = fopen(pathname, "r")) != NULL) {
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
     while (!feof(fp)) {
       if (strstr(buffer, key) != NULL) {
         if (counter != no) {
@@ -4944,7 +4944,7 @@ find_value(const char *pathname, const char *key, char *value, int value_len, co
           break;
         }
       }
-      NOWARN_UNUSED_RETURN(fgets(buffer, 80, fp));
+      ATS_UNUSED_RETURN(fgets(buffer, 80, fp));
     }
     fclose(fp);
   }

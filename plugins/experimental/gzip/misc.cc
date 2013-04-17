@@ -28,19 +28,19 @@
 #include "debug_macros.h"
 
 voidpf
-gzip_alloc(voidpf, uInt items, uInt size) // UNUSED voidpf opaque
+gzip_alloc(voidpf /* opaque ATS_UNUSED */, uInt items, uInt size)
 {
   return (voidpf) TSmalloc(items * size);
 }
 
 void
-gzip_free(voidpf, voidpf address) // UNUSED voidpf opaque
+gzip_free(voidpf /* opaque ATS_UNUSED */, voidpf address)
 {
   TSfree(address);
 }
 
 void
-normalize_accept_encoding(TSHttpTxn, TSMBuffer reqp, TSMLoc hdr_loc) // UNUSED TSHttpTxn txnp
+normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   int deflate = 0;
@@ -93,7 +93,7 @@ normalize_accept_encoding(TSHttpTxn, TSMBuffer reqp, TSMLoc hdr_loc) // UNUSED T
 }
 
 void
-hide_accept_encoding(TSHttpTxn, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name) //UNUSED TSHttpTxn txnp
+hide_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   while (field) {
@@ -106,7 +106,7 @@ hide_accept_encoding(TSHttpTxn, TSMBuffer reqp, TSMLoc hdr_loc, const char * hid
 }
 
 void
-restore_accept_encoding(TSHttpTxn, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name) //UNUSED TSHttpTxn txnp
+restore_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, hidden_header_name, -1);
 

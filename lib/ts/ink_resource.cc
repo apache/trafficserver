@@ -58,9 +58,3 @@ res_lookup(const char *path)
   NOWARN_UNUSED(path);
   return NULL;
 }
-
-void
-xdump(void)
-{
-  ink_stack_trace_dump();
-}

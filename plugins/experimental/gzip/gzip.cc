@@ -421,7 +421,7 @@ gzip_transform_do(TSCont contp)
 
 
 static int
-gzip_transform(TSCont contp, TSEvent event, void *) // UNUSED void *edata
+gzip_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (TSVConnClosedGet(contp)) {
     gzip_data_destroy((GzipData*)TSContDataGet(contp));
@@ -571,7 +571,7 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configur
 
 
 static void
-gzip_transform_add(TSHttpTxn txnp, int, HostConfiguration * hc, int compress_type) // UNUSED int server
+gzip_transform_add(TSHttpTxn txnp, int /* server ATS_UNUSED */, HostConfiguration * hc, int compress_type)
 {
   int *tmp = (int *) TSHttpTxnArgGet(txnp, arg_idx_hooked);
   if (tmp) {
@@ -624,7 +624,7 @@ cache_transformable(TSHttpTxn txnp)
 }
 
 HostConfiguration * 
-find_host_configuration(TSHttpTxn, TSMBuffer bufp, TSMLoc locp) // UNUSED TSHttpTxn txnp
+find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp)
 {
   TSMLoc fieldp = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
 
@@ -642,7 +642,7 @@ find_host_configuration(TSHttpTxn, TSMBuffer bufp, TSMLoc locp) // UNUSED TSHttp
 
 
 static int
-transform_plugin(TSCont, TSEvent event, void *edata) // UNUSED TSCont contp
+transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
   int compress_type = COMPRESSION_TYPE_DEFLATE;
@@ -751,7 +751,7 @@ read_configuration(TSCont contp) {
 }
 
 static int
-management_update(TSCont contp, TSEvent event, void *) // UNUSED void *edata
+management_update(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   TSReleaseAssert(event == TS_EVENT_MGMT_UPDATE);
   info("management update event received");

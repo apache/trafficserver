@@ -78,7 +78,7 @@ int n_argument_descriptions = SIZE(argument_descriptions);
   -------------------------------------------------------------------------*/
 
 int
-main(int, char *argv[]) // UNUSED int argc
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   // build the application information structure
   //

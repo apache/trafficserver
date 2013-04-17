@@ -633,9 +633,9 @@ SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet * s)
   this->npnSet = s;
 }
 
-// UNUSED void* arg
 int
-SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen, void *)
+SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen,
+                                           void * /*arg ATS_UNUSED */)
 {
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 

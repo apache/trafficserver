@@ -220,7 +220,7 @@ TSPluginInit(int argc, const char *argv[])
 }
 
 static int
-handleReadRequestHeader(TSCont contp, TSEvent event, void *edata)
+handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSAssert(event == TS_EVENT_HTTP_READ_REQUEST_HDR);
 
@@ -295,7 +295,7 @@ isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
 }
 
 static bool
-getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq)
+getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq)
 {
   LOG_DEBUG("In getDefaultBucket");
   TSMLoc field_loc;

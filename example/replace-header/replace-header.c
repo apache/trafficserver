@@ -40,7 +40,7 @@
 #include "ink_defs.h"
 
 static void
-replace_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
+replace_header(TSHttpTxn txnp)
 {
   TSMBuffer resp_bufp;
   TSMLoc resp_loc;
@@ -79,13 +79,13 @@ done:
 }
 
 static int
-replace_header_plugin(TSCont contp, TSEvent event, void *edata)
+replace_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    replace_header(txnp, contp);
+    replace_header(txnp);
     return 0;
   default:
     break;

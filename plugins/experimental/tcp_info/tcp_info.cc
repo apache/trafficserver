@@ -175,7 +175,7 @@ log_tcp_info(const char* event_name, const char* client_ip, const char* server_i
 
 
 static int
-tcp_info_hook(TSCont, TSEvent event, void *edata) // UNUSED TSCont contp
+tcp_info_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp = NULL;
   TSHttpTxn txnp = NULL;

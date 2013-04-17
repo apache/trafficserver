@@ -194,9 +194,8 @@ Lockfile::Close(void)
 // of the process just don't want to go away.
 //-------------------------------------------------------------------------
 
-// UNUSED const char *pname
 static void
-lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char *, int sig)
+lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char * /* pname ATS_UNUSED */, int sig)
 {
   int err;
   int status;

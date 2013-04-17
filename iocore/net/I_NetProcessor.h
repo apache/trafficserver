@@ -183,9 +183,10 @@ public:
       port becomes free immediately.
 
   */
-  // UNUSED: 
-  virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in, sockaddr *,
-                              int *, bool = false, bool localhost_only = false,
+  virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in,
+                              sockaddr * /* bound_sockaddr ATS_UNUSED  = NULL */,
+                              int */*bound_sockaddr_size ATS_UNUSED = NULL */,
+                              bool /* accept_only ATS_UNUSED = false */, bool localhost_only = false,
                               AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS)
   {
     AcceptOptions new_opt = opt;

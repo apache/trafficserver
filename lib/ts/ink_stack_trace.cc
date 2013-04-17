@@ -35,7 +35,7 @@
 #include <signal.h>
 
 void
-ink_stack_trace_dump(int) // UNUSED int sighandler_frame
+ink_stack_trace_dump()
 {
   int btl;
 
@@ -59,7 +59,7 @@ ink_stack_trace_dump(int) // UNUSED int sighandler_frame
 #else  /* !TS_HAS_BACKTRACE */
 
 void
-ink_stack_trace_dump(int sighandler_frame)
+ink_stack_trace_dump()
 {
   const char msg[] = "ink_stack_trace_dump not implemented on this operating system\n";
   if (write(2, msg, sizeof(msg) - 1) == -1)

@@ -50,19 +50,19 @@ void init_pdss_format(TSPdSsFormat * info);
  * API Memory Management
  ***************************************************************************/
 void *
-_TSmalloc(unsigned int size, const char *) // UNUSED const char *path
+_TSmalloc(unsigned int size, const char * /* path ATS_UNUSED */ )
 {
   return ats_malloc(size);
 }
 
 void *
-_TSrealloc(void *ptr, unsigned int size, const char *) // UNUSED const char *path
+_TSrealloc(void *ptr, unsigned int size, const char * /* path ATS_UNUSED */)
 {
   return ats_realloc(ptr, size);
 }
 
 char *
-_TSstrdup(const char *str, int length, const char *) // UNUSED const char *path
+_TSstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
 {
   return ats_strndup(str, length);
 }
@@ -2446,7 +2446,7 @@ closeAllFds()
     FILE *fd = popen(command, "r");
     if (fd) {
       while (!feof(fd)) {
-        NOWARN_UNUSED_RETURN(fgets(buffer, BUFFLEN, fd));
+        ATS_UNUSED_RETURN(fgets(buffer, BUFFLEN, fd));
         num = atoi(buffer);
         if (num != fileno(fd) && num != 0 && num != 1 && num != 2) {   // for out put
           //printf("closing fd (%d)\n", num); fflush(stdout);

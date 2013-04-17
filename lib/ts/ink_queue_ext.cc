@@ -192,8 +192,8 @@ mmap_align(size_t size, size_t alignment) {
                       MAP_PRIVATE|MAP_ANONYMOUS,
                       -1, 0);
   if (result == MAP_FAILED) {
-      xdump();
-      ink_fatal(1, "Failed to mmap %zu bytes, %s", size, strerror(errno));
+    ink_stack_trace_dump();
+    ink_fatal(1, "Failed to mmap %zu bytes, %s", size, strerror(errno));
   }
 
   /* adjust the return memory so it is aligned */
@@ -280,9 +280,8 @@ ink_chunk_delete(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
   pCache->nr_free_chunks--;
 
   if (unlikely(munmap(chunk_addr, f->chunk_byte_size))) {
-      xdump();
-      ink_fatal(1, "Failed to munmap %u bytes, %s", f->chunk_byte_size,
-                strerror(errno));
+    ink_stack_trace_dump()();
+    ink_fatal(1, "Failed to munmap %u bytes, %s", f->chunk_byte_size, strerror(errno));
   }
 
   ink_atomic_increment((int *)&f->count, -f->chunk_size);

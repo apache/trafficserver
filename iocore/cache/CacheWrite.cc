@@ -831,7 +831,7 @@ agg_copy(char *p, CacheVC *vc)
     // move data
     if (vc->write_len) {
       {
-        ProxyMutex ATS_UNUSED *mutex = vc->vol->mutex;
+        ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
         ink_debug_assert(mutex->thread_holding == this_ethread());
         CACHE_DEBUG_SUM_DYN_STAT(cache_write_bytes_stat, vc->write_len);
       }
@@ -870,7 +870,7 @@ agg_copy(char *p, CacheVC *vc)
     // for evacuated documents, copy the data, and update directory
     Doc *doc = (Doc *) vc->buf->data();
     int l = vc->vol->round_to_approx_size(doc->len);
-    ProxyMutex ATS_UNUSED *mutex = vc->vol->mutex;
+    ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
 
     ink_debug_assert(mutex->thread_holding == this_ethread());
     CACHE_DEBUG_INCREMENT_DYN_STAT(cache_gc_frags_evacuated_stat);

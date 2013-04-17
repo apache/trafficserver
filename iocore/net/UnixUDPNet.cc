@@ -741,7 +741,7 @@ sendPackets:
 }
 
 void
-UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t) // UNUSED int32_t pktLen
+UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
 {
   IOBufferBlock *b;
   struct msghdr msg;
