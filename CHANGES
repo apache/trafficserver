@@ -2,7 +2,7 @@
   Changes with Apache Traffic Server 3.3.3
 
 
-  *) [TS-1755] add basic logstats tests
+  *) [TS-1755] add basic logstats tests.
 
   *) TS-1184 Additional whitespace in proxy.config.admin.user_id value results
    in error.
@@ -26,9 +26,9 @@
    Content-Length: 0 is in the response). New config option is named
    proxy.config.http.cache.allow_empty_doc, and is disabled by default.
 
-  *) [TS-1778] Remove vestigal extensions.config support
+  *) [TS-1778] Remove vestigal extensions.config support.
 
-  *) [TS-1806] bogus buffer sizing in CfgContextUtils.cc
+  *) [TS-1806] bogus buffer sizing in CfgContextUtils.cc.
 
   *) [TS-1805] Fix stats ExpressionEval in stats xml.
    Author: Yunkai Zhang
@@ -40,7 +40,7 @@
 
   *) [TS-1067] Remove unused config (and code) for bandwidth management.
 
-  *) [TS-1736] Fatal() terminates process without a backtrace
+  *) [TS-1736] Fatal() terminates process without a backtrace.
     Author: Yunkai Zhang <yunkai.me@gmail.com>
 
   *) [TS-1791] remove m_mutex acquire&release to avoid deadlock in
@@ -50,7 +50,7 @@
    no crash. Be care, the hostdb.storage_size or ostdb.size need check.
 
   *) [TS-1632] In addition to the changes from TS-1674, also add
-   some safety measures assuring that the stats sums don't go
+   some safety measures assuring that the stats sums don't go.
    negative. Author: Yakov Kopel.
 
   *) [TS-1789] Script to compare RecordsConfig.cc default values with
@@ -59,18 +59,18 @@
   *) [TS-1631] Mgmt API to clear stats does not actually clear it.
    Author: Yakov Kopel.
 
-  *) [TS-1772] Remove multiple TS_INLINE defines
+  *) [TS-1772] Remove multiple TS_INLINE defines.
 
-  *) [TS-1771] add http_load to the build
+  *) [TS-1771] add http_load to the build.
 
-  *) [TS-1766] integrate AIO test into the autotools test suite
+  *) [TS-1766] integrate AIO test into the autotools test suite.
 
-  *) [TS-1753] Add remap support to the cacheurl plugin
+  *) [TS-1753] Add remap support to the cacheurl plugin.
    Author: Mark Harrison <mark@mivok.net>
 
-  *) [TS-1790] authproxy should accept 2xx as authorization success
+  *) [TS-1790] authproxy should accept 2xx as authorization success.
 
-  *) [TS-1780] Fix Debuntu build with hardening flags
+  *) [TS-1780] Fix Debuntu build with hardening flags.
 
   *) [TS-1623, TS-1625] Fixes for logging where the host name was not handled
     correctly because it was not in the URL.
@@ -83,22 +83,23 @@
   *) [TS-1764] Unify MAX/MIN definitions (in ink_defs.h). Also clean
    up the checks of gcc prior to v3.x (which we no longer support).
 
-  *) [TS-1724] Add tool to compare records.config files to contrib
+  *) [TS-1724] Add tool to compare records.config files to contrib.
    Author: Mark Harrison <mark@mivok.net>
 
-  *) [TS-1566] dynamic update for string vars does not work
+  *) [TS-1566] dynamic update for string vars does not work.
    Author: Aidan McGurn <aidan.mcgurn@openwave.com>
 
-  *) [TS-1708] Using tr-pass port option causes requests with large headers to hang
+  *) [TS-1708] Using tr-pass port option causes requests with large headers to
+   hang.
 
-  *) [TS-1734] Remove dead code that invokes missing vmap_config tool
+  *) [TS-1734] Remove dead code that invokes missing vmap_config tool.
    Author: John Kew <john.v.kew.ii@gmail.com>
 
   *) [TS-1660] Host field should not has c style terminator.
 
-  *) [TS-1627] Support requests with payload
+  *) [TS-1627] Support requests with payload.
 
-  *) [TS-1763] add Arch Linux config.layout
+  *) [TS-1763] Add Arch Linux config.layout.
    Author: Galen Sampson <galen.sampson@gmail.com>
 
   *) [TS-1749] Stats cluster values among nodes are not consistent.
@@ -107,23 +108,23 @@
   *) [TS-1758] Remove unused overviewPage aggregation functions.
    Author: Yunkai Zhang.
 
-  *) [TS-1748] add jtest to the build
+  *) [TS-1748] Add jtest to the build.
 
-  *) [TS-1730] Supporting First Byte Flush for ESI plugin
+  *) [TS-1730] Supporting First Byte Flush for ESI plugin.
    Author: Shu Kit Chan <chanshukit@gmail.com>
 
-  *) [TS-1745] fix typos
+  *) [TS-1745] Fix typos.
    Author: Benjamin Kerensa <bkerensa@ubuntu.com>
 
-  *) [TS-1671] remove AlarmListable from overviewRecord
+  *) [TS-1671] Remove AlarmListable from overviewRecord.
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  *) [TS-1740] Improve precision of stats values
+  *) [TS-1740] Improve precision of stats values.
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  *) [TS-1742] Freelists to use 64bit version w/ Double Word Compare and Swap
+  *) [TS-1742] Freelists to use 64bit version w/ Double Word Compare and Swap.
 
-  *) [TS-1356] Ability to set thread affinity with multiple modes
+  *) [TS-1356] Ability to set thread affinity with multiple modes.
 
 
   Changes with Apache Traffic Server 3.3.1
@@ -135,18 +136,18 @@
 
   *) [TS-1714] Fix some build problems for gcc v4.8.
 
-  *) [TS-1626] remove WUTS proxy code
+  *) [TS-1626] Remove WUTS proxy code.
    Author: Uri Shachar <ushachar@hotmail.com>
 
-  *) [TS-1741] add plugins examples to the build
+  *) [TS-1741] Add plugins examples to the build.
 
-  *) [TS-1058] add TSHttpTxnCloseAfterResponse experimental API
+  *) [TS-1058] Add TSHttpTxnCloseAfterResponse experimental API.
    Author: Yakov Kopel <ykopel@websense.com>
 
   *) [TS-1733] Retool tsxs so that it can compile multiple source files
    Author: Dale Ghent <daleg@omniti.com>
 
-  *) [TS-1738] proxy.cluster.cache_total_hits_mem is missing in RecordsConfig
+  *) [TS-1738] proxy.cluster.cache_total_hits_mem is missing in RecordsConfig.
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
   *) [TS-1739] Fix TODO within varFloatFromName()
@@ -211,7 +212,8 @@
 
   *) [TS-1672] Emergency throttling can continue forever.
 
-  *) [TS-1650] Inactivity cop should use TRY_LOCK instead of LOCK to avoid deadlock.
+  *) [TS-1650] Inactivity cop should use TRY_LOCK instead of LOCK to avoid
+   deadlock.
 
   *) [TS-1649] Don't use ink_bind if we're not specifying a local port.
 
@@ -221,8 +223,9 @@
 
   *) [TS-977] RecCore usage cleanup.
 
-  *) [TS-1574] [TS-1577] when read_from_writer, we should not do range acceleration.
-   Range request can invalidate cached copy if the server reponse is 304.
+  *) [TS-1574] [TS-1577] when read_from_writer, we should not do range
+   acceleration. Range request can invalidate cached copy if the server
+   reponse is 304.
 
   *) [TS-1609] Traffic Cop doesn't wait() for its children.
 
