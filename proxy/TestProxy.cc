@@ -390,21 +390,6 @@ TestAccept():Continuation(new_ProxyMutex()) {
   }
 };
 
-struct DumpStats:Continuation
-{
-  int mainEvent(int event, Event * e)
-  {
-    (void) event;
-    (void) e;
-    dump_stats();
-    return EVENT_CONT;
-  }
-  DumpStats():Continuation(NULL)
-  {
-    SET_HANDLER(mainEvent);
-  }
-};
-
 void
 redirect_test(Machine * m, void *data, int len)
 {
@@ -422,6 +407,5 @@ test()
 {
   ptest_ClusterFunction = redirect_test;
   netProcessor.proxy_accept(new TestAccept);
-  // eventProcessor.schedule_every(new DumpStats,HRTIME_SECONDS(30));
 }
 #endif

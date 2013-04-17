@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1862] Remove DumpStats/http_dump dead code
+
+
   Changes with Apache Traffic Server 3.3.2
 
 
