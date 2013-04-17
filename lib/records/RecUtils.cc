@@ -76,7 +76,7 @@ RecDataSetMax(RecDataT type, RecData * data)
 #endif
   case RECD_INT:
   case RECD_COUNTER:
-    data->rec_int = 0x7fffffffffffffff;
+    data->rec_int = INT64_MAX; // Assumes rec_int is int64_t, which it currently is
     break;
 #if defined(STAT_PROCESSOR)
   case RECD_CONST:
@@ -98,7 +98,7 @@ RecDataSetMin(RecDataT type, RecData * data)
 #endif
   case RECD_INT:
   case RECD_COUNTER:
-    data->rec_int = 0x8000000000000000;
+    data->rec_int = INT64_MIN; // Assumes rec_int is int64_t, which it currently is
     break;
 #if defined(STAT_PROCESSOR)
   case RECD_CONST:
