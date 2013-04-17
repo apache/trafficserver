@@ -3771,7 +3771,7 @@ UrlHashTable * uniq_urls = NULL;
 
 
 UrlHashTable::UrlHashTable() {
-  unsigned long len = 0;
+  off_t len = 0;
 
   if (!url_hash_entries)
     return;
@@ -3797,7 +3797,7 @@ UrlHashTable::UrlHashTable() {
     // size as the size
     if (!len) 
       panic("zero size URL Hash Table\n");
-    if (len != (unsigned long)URL_HASH_BYTES) {
+    if (len != URL_HASH_BYTES) {
       fprintf(stderr, 
               "FATAL: hash file length (%lu) != URL_HASH_BYTES (%lu)\n",
               len, (unsigned long)URL_HASH_BYTES);
