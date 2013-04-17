@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1706] Fix documentation for Config::Records.pm.
+
   *) [TS-1218] Make traffic_cop tracing configureable at build time.
 
   *) [TS-1846] Remove TestHook.
