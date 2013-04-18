@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+How to Activate Continuations
+*****************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,19 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+Continuations are activated when they receive an event or by
+``TSContSchedule`` (which schedules a continuation to receive an event).
+Continuations might receive an event because:
 
-Apache Traffic Server Documentation
+-  Your plugin calls ``TSContCall``
 
-Contents:
+-  The Traffic Server HTTP state machine sends an event corresponding to
+   a particular HTTP hook
 
-.. toctree::
-   :maxdepth: 2
+-  A Traffic Server IO processor (such as a cache processor or net
+   processor) is letting a continuation know there is data (cache or
+   network) available to read or write. These callbacks are a result of
+   using functions such ``TSVConnRead``/``Write`` or
+   ``TSCacheRead``/``Write``
 
-   admin/index.en
-   sdk/index.en
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

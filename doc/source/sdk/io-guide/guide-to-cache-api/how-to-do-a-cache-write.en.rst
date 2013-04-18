@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+How to Do a Cache Write
+***********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,17 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+Use ``TSCacheWrite`` to write to a cache (see the `sample Protocol
+plugin <../../new-protocol-plugins#AboutSampleProtocol>`__). Possible
+callback events include:
 
-Apache Traffic Server Documentation
+-  ``TS_EVENT_CACHE_WRITE_READ`` - indicates the lookup was successful.
+   The data passed back along with this event is a cache vconnection
+   that can be used to initiate a cache write.
 
-Contents:
+-  ``TS_EVENT_CACHE_OPEN_WRITE_FAILED`` - event returned when another
+   continuation is currently writing to this location in the cache. Data
+   payload for this event indicates the possible reason for the write
+   failing (``TSCacheError``).
 
-.. toctree::
-   :maxdepth: 2
 
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

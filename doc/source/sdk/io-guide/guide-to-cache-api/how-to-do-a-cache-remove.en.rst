@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+How to Do a Cache Remove
+************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,14 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+Use ``TSCacheRemove`` to remove items from the cache. Possible callback
+events include:
 
-Apache Traffic Server Documentation
+-  ``TS_EVENT_CACHE_REMOVE`` - the item was removed. There is no data
+   payload for this event.
 
-Contents:
+-  ``TS_EVENT_CACHE_REMOVE_FAILED`` - indicates the cache was unable to
+   remove the item identified by the cache key. ``TSCacheError`` data
+   indicates why the remove failed.
 
-.. toctree::
-   :maxdepth: 2
 
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

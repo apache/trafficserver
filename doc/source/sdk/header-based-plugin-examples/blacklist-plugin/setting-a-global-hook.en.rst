@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Setting a Global Hook
+*********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,20 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+Global hooks are always added in ``TSPluginInit`` using
+``TSHttpHookAdd``. The two arguments of ``TSHttpHookAdd`` are the hook
+ID and the continuation to call when processing the event corresponding
+to the hook. In ``blacklist-1.c``, the global hook is added as follows:
 
-Apache Traffic Server Documentation
+::
 
-Contents:
+    :::c
+    TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, contp);
 
-.. toctree::
-   :maxdepth: 2
+Above, ``TS_HTTP_OS_DNS_HOOK`` is the ID for the origin server DNS
+lookup hook and ``contp`` is the parent continuation created earlier.
 
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+This means that the Blacklist plugin is called at every origin server
+DNS lookup. When it is called, the handler functio ``blacklist_plugin``
+receives ``TS_EVENT_HTTP_OS_DNS`` and calls ``handle_dns`` to see if the
+request is forbidden.

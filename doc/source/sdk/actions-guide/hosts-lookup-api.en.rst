@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Hosts Lookup API
+****************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,11 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+The hosts lookup enables plugins to ask Traffic Server to do a host
+lookup of a host name, much like a DNS lookup.
 
-Apache Traffic Server Documentation
+The hosts lookup functions are as follows:
 
-Contents:
+-  ```TSHostLookup`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ab5bf6eea0ed883e5dc69253965935d12>`__
+-  ```TSHostLookupResultAddrGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aecac0767192746af1867f528e01d167b>`__
 
-.. toctree::
-   :maxdepth: 2
-
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

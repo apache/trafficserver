@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Net Vconnections
+****************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,14 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+A **network** **vconnection** (or*\* netvconnection*\ \*) is a wrapper
+around a TCP socket that enables the socket to work within the Traffic
+Server vconnection framework. See
+`vconnections <index.en.html#Vconnections>`__ for more information about
+the Traffic Server abstraction for doing asynchronous IO.
 
-Apache Traffic Server Documentation
+The netvconnection functions are listed below:
 
-Contents:
+-  [dox 'TSNetAccept'] in [dox "TSNetAccept" :src\_file]
+-  [dox %TSNetConnect%] in [dox :src\_file]
 
-.. toctree::
-   :maxdepth: 2
-
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

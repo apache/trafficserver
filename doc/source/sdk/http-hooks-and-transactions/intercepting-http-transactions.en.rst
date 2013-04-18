@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Intercepting HTTP Transactions
+******************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,13 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+The intercepting HTTP transaction functions enable plugins to intercept
+transactions either after the request is received or upon contact with
+the origin server. The plugin then acts as the origin server using the
+``TSVConn`` interface. The intercepting HTTP transaction function allow
+for reading ``POST`` bodies in plugins as well as using alternative
+transports to the origin server.The intercepting HTTP transaction
+functions are:
 
-Apache Traffic Server Documentation
+-  ```TSHttpTxnIntercept`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a3408017633f95161e2ab4fa175c44fa3>`__
 
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

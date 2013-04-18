@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Implementing the Handler and Getting a Handle to the Transaction
+****************************************************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,28 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+The handler function for the plugin's parent continuation is implemented
+as follows:
 
-Apache Traffic Server Documentation
+::
 
-Contents:
+    :::c
+    static int
+    auth_plugin (TSCont contp, TSEvent event, void *edata)
+    {
 
-.. toctree::
-   :maxdepth: 2
+         TSHttpTxn txnp = (TSHttpTxn) edata;
+         switch (event) {
+         case TS_EVENT_HTTP_OS_DNS:
+              handle_dns (txnp, contp);
+              return 0;
+         case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+              handle_response (txnp);
+              return 0;
+         default:
+              break;
+         }
 
-   admin/index.en
-   sdk/index.en
+         return 0;
+    }
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

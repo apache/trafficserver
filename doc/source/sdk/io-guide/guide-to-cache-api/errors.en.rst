@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Errors
+******
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,14 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+Errors pertaining to the failure of various cache operations are
+indicated by ``TSCacheError`` (enumeration). They are as follows:
 
-Apache Traffic Server Documentation
+-  ``TS_CACHE_ERROR_NO_DOC`` - the key does not match a cached resource
 
-Contents:
+-  ``TS_CACHE_ERROR_DOC_BUSY`` - e.g, another continuation could be
+   writing to the cache location
 
-.. toctree::
-   :maxdepth: 2
+-  ``TS_CACHE_ERROR_NOT_READY`` - the cache is not ready
 
-   admin/index.en
-   sdk/index.en
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

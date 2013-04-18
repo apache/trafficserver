@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Typographical Conventions
+*************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,19 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+This document uses the following typographic conventions:
 
-Apache Traffic Server Documentation
+\_italics \_ or *\* bold*\ \*
+    Used to introduce terms.
 
-Contents:
+``monospaced face``
+    Represents C language statements, commands, file content, and
+    computer output.
 
-.. toctree::
-   :maxdepth: 2
+*``monospaced italic``*
+    Represents variables for which you should substitute a value.
 
-   admin/index.en
-   sdk/index.en
+``...`` (ellipsis)
+    Indicates the omission of irrelevant or unimportant information.
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

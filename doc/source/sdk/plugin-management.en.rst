@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Plugin Management
+*****************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,11 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
-
-Apache Traffic Server Documentation
-
-Contents:
+This chapter covers the following topics:
 
 .. toctree::
    :maxdepth: 2
 
-   admin/index.en
-   sdk/index.en
+   plugin-management/reading-trafficserver-settings-and-statistics.en
+   plugin-management/guide-to-the-logging-api.en
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

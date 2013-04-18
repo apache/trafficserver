@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Unable to Load Plugins
+**********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,19 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+To load plugins, follow the steps below.
 
-Apache Traffic Server Documentation
+1. Make sure that your plugin source code contains an ``TSPluginInit``
+   initialization function.
 
-Contents:
+2. Compile your plugin source code, creating a shared library.
 
-.. toctree::
-   :maxdepth: 2
+3. Add an entry to the ``plugin.config`` file for your plugin.
 
-   admin/index.en
-   sdk/index.en
+4. Add the path to your plugin shared library to the ``records.config``
+   file.
 
-Indices and tables
-==================
+5. Restart Traffic Server.
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+For detailed information about each step above, refer to `A Simple
+Plugin <../getting-started/a-simple-plugin>`__.

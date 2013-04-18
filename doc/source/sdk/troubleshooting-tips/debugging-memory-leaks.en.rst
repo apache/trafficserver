@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Debugging Memory Leaks
+**********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,15 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+Memory leaks in a plugin can be detected using e.g. an MRTG graph
+related to memory - you can use memory dump information. Enable
+``mem dump`` in ``records.config`` as follows:
 
-Apache Traffic Server Documentation
+::
 
-Contents:
+      :::text
+      CONFIG proxy.config.dump_mem_info_frequency INT <value>
 
-.. toctree::
-   :maxdepth: 2
-
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+This causes Traffic Server to dump memory information to ``traffic.out``
+at ``<value>`` (intervals are in seconds). A zero value means that it is
+disabled.

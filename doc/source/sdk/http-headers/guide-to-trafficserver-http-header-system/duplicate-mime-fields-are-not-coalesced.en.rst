@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Duplicate MIME Fields Are Not Coalesced
+***************************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,13 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+MIME headers can contain more than one MIME field with the same name.
+Earlier versions of Traffic Server joined multiple fields with the same
+name into one field with composite values. This behavior came at a
+performance cost and caused interoperability problems with older clients
+and servers. Therefore, this version of Traffic Server does not coalesce
+duplicate fields.
 
-Apache Traffic Server Documentation
-
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+Properly-behaving plugins should check for the presence of duplicate
+fields and then iterate over the duplicate fields via
+```TSMimeHdrFieldNextDup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af2d776615afe959ed7c3639830a7061f>`__.

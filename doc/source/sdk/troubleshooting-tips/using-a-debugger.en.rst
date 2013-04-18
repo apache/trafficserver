@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Using a Debugger
+****************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,23 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+A debugger can set breakpoints in a plugin. Use a Traffic Server debug
+build and compile the plugin with the ``-g`` option. A debugger can also
+be used to analyze a core dump. To generate core, set the size limit of
+the core files in the ``records.config`` file to -1 as follows:
 
-Apache Traffic Server Documentation
+::
 
-Contents:
+    :::c
+    CONFIG proxy.config.core_limit INT -1
 
-.. toctree::
-   :maxdepth: 2
+This is the equivalent of setting ``ulimit -c unlimited``
 
-   admin/index.en
-   sdk/index.en
+Debugging Tips:
+~~~~~~~~~~~~~~~
 
-Indices and tables
-==================
+-  Use a Traffic Server debug version.
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+-  Use assertions in your plugin (``TSAssert``/``TSReleaseAssert``).
+
+

@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Viewing Statistics Using Traffic Line
+*************************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,16 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+.. XXX: This documentation seeems to be dupplicated from the admin docs.
 
-Apache Traffic Server Documentation
+To view statistics for your plugin, follow the steps below:
 
-Contents:
+1. Make sure you know the name of your statistic (i.e., the name used in
+   the ``TSStatCoupledGlobalAdd``, ``TSStatCreate``, or
+   ``TSStatCoupledGlobalCategoryCreate`` call).
 
-.. toctree::
-   :maxdepth: 2
+2. In your ``<Traffic Server>/bin`` directory, enter the following:
 
-   admin/index.en
-   sdk/index.en
+   ::::text ./traffic\_line -r the\_name
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Documentation
-******************************************
+Initiate HTTP Connection
+************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,20 +18,8 @@ Apache Traffic Server Title: Documentation
   specific language governing permissions and limitations
   under the License.
 
+This function enables plugins to initiate HTTP transactions. The
+initiate HTTP connection function is:
 
-Apache Traffic Server Documentation
+-  ```TSHttpConnect`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a2b45aa63ac1353b4c52123110197b61e>`__
 
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-   admin/index.en
-   sdk/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
