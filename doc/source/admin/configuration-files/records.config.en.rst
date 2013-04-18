@@ -594,14 +594,12 @@ HTTP Engine
     STRING 6060:X 9090:X would listen to ports ``6060``, ``9090``, and
     the port specified by *``proxy.config.http.server_port``*.
 
-*``proxy.config.http.ssl_ports``* {#proxy.config.http.ssl_ports}
+*``proxy.config.http.connect_ports``* {#proxy.config.http.connect_ports}
     ``STRING``
     Default: ``443 563``
-    DEPRECATED: 3.2
-    The range of ports used for tunneling. Traffic Server allows tunnels
-    only to the specified ports. For example: to retrieve an object
-    using HTTPS via Traffic Server, a tunnel must be established to an
-    origin server via Traffic Server.
+    The range of ports that can be used for tunneling. 
+    Traffic Server allows tunnels only to the specified ports. 
+    Supports both wildcards ('*') and ranges ("0-1023").
 
 *``proxy.config.http.insert_request_via_str``*
 {#proxy.config.http.insert_request_via_str}
@@ -614,7 +612,7 @@ HTTP Engine
     -  ``1`` = all extra information is added.
     -  ``2`` = some extra information is added.
 
-    Note: the Via: header string interpretation can be `docoded
+    Note: the Via: header string interpretation can be `decoded
     here. </tools/via>`_
 
 *``proxy.config.http.insert_response_via_str``*
