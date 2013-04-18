@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+#! /usr/bin/env bash
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,8 +18,8 @@
 
 set -e # exit on error
 
-TMPFILE=`mktemp -t logstats.XXXXXX` || exit 1
+tmpfile=$(mktemp -t logstats.XXXXXX)
 
-./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --summary > $TMPFILE
-diff -q $TMPFILE "$srcdir/tests/logstats.summary"
-rm -f $TMPFILE
+./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --summary > "$tmpfile"
+diff -q "$tmpfile" "$srcdir/tests/logstats.summary"
+rm -f -- "$tmpfile"

@@ -18,9 +18,9 @@
 
 set -e # exit on error
 
-TMPFILE=`mktemp -t logstats.XXXXXX` || exit 1
+tmpfile=$(mktemp -t logstats.XXXXXX)
 
 # Note that the JSON has a timestamp in it that we have to filter out ...
-./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --json | grep -v timestamp > $TMPFILE
-diff -q $TMPFILE "$srcdir/tests/logstats.json"
-rm -f $TMPFILE
+./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --json | grep -v timestamp > "$tmpfile"
+diff -q "$tmpfile" "$srcdir/tests/logstats.json"
+rm -f -- "$tmpfile"
