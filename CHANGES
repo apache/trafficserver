@@ -2,16 +2,18 @@
   Changes with Apache Traffic Server 3.3.3
 
 
-  *) [TS-1819] guarantee hwloc initialization
+  *) [TS-1792] Cleanup extremely verbvose debug text on Vary headers.
 
-  *) [TS-1830] add getpagesize library function
+  *) [TS-1819] Guarantee hwloc initialization.
+
+  *) [TS-1830] Add getpagesize library function.
 
   *) [TS-1801] Remove proxy.config.net.throttle_enabled, it's an artifact
    of a debugging case, and should not have been included upstream.
 
-  *) [TS-1829] values exceed capacity of 'long' data type on 32-bit
+  *) [TS-1829] Values exceed capacity of 'long' data type on 32-bit
 
-  *) [TS-1755] add basic logstats tests
+  *) [TS-1755] Add basic logstats tests.
 
   *) TS-1184 Additional whitespace in proxy.config.admin.user_id value results
    in error.
