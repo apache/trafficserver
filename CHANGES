@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1053] Make combo_handler compiler. Author: Conan Wang.
+
   *) [TS-1792] Cleanup extremely verbvose debug text on Vary headers.
 
   *) [TS-1819] Guarantee hwloc initialization.
