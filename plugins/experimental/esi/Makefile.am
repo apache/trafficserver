@@ -25,7 +25,7 @@ AM_CXXFLAGS = \
   -I$(top_srcdir)/proxy/api \
   -Wno-deprecated
 
-pkglib_LTLIBRARIES = esi.la
+pkglib_LTLIBRARIES = esi.la combo_handler.la
 lib_LTLIBRARIES = libesi.la libtest.la
 
 check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
@@ -57,12 +57,19 @@ libtest_la_SOURCES = \
 	lib/gzip.cc
 
 esi_la_SOURCES =  \
+	esi.cc \
 	fetcher/HttpDataFetcherImpl.cc \
-	plugin.cc \
 	serverIntercept.cc
+
+combo_handler_la_SOURCES = \
+	combo_handler.cc \
+	fetcher/HttpDataFetcherImpl.cc
 
 esi_la_LIBADD = libesi.la
 esi_la_LDFLAGS = -module -avoid-version -shared
+
+combo_handler_la_LIBADD = libesi.la
+combo_handler_la_LDFLAGS = -module -avoid-version -shared
 
 docnode_test_SOURCES = test/docnode_test.cc test/print_funcs.cc
 docnode_test_LDADD = libesi.la  @LIBDL@ -lz -lpthread

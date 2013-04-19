@@ -26,12 +26,13 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-#include <ts/ts.h>
-#include <ts/experimental.h>
+#include "ts/ts.h"
+#include "ts/experimental.h"
 
-#include <HttpDataFetcherImpl.h>
-#include <gzip.h>
-#include <Utils.h>
+#include "HttpDataFetcherImpl.h"
+#include "gzip.h"
+#include "Utils.h"
+
 
 using namespace std;
 using namespace EsiLib;
@@ -126,7 +127,7 @@ InterceptData::init(TSVConn vconn)
 
   input.buffer = TSIOBufferCreate();
   input.reader = TSIOBufferReaderAlloc(input.buffer);
-  input.vio = TSVConnRead(net_vc, contp, input.buffer, INT_MAX);
+  input.vio = TSVConnRead(net_vc, contp, input.buffer, INT64_MAX);
 
   req_hdr_bufp = TSMBufferCreate();
   req_hdr_loc = TSHttpHdrCreate(req_hdr_bufp);
@@ -145,7 +146,7 @@ InterceptData::setupWrite()
   TSAssert(output.buffer == 0);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
-  output.vio = TSVConnWrite(net_vc, contp, output.reader, INT_MAX);
+  output.vio = TSVConnWrite(net_vc, contp, output.reader, INT64_MAX);
 }
 
 InterceptData::~InterceptData()
@@ -269,7 +270,7 @@ isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
 
   if (!method) {
-    LOG_ERROR("Could not obtain method!", __FUNCTION__);
+    LOG_ERROR("Could not obtain method!");
   } else {
     if ((method_len != TS_HTTP_LEN_GET) || (strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) != 0)) {
       LOG_DEBUG("Unsupported method [%.*s]", method_len, method);
