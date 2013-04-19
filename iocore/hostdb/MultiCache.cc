@@ -566,8 +566,8 @@ MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, i
   // Set up cache
   {
     Store tStore;
-    int res = read_config(config_filename, tStore, t_db_filename,
-                          &t_db_size, &t_db_buckets);
+    int res = read_config(config_filename, tStore, t_db_filename, &t_db_size, &t_db_buckets);
+
     ink_assert(store_verify(&tStore));
     if (res < 0)
       goto LfailRead;
@@ -581,7 +581,6 @@ MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, i
         goto LfailMap;
       clear();
     } else {
-
       // don't know how to rebuild from this problem
       ink_assert(!db_filename || !strcmp(t_db_filename, db_filename));
       if (!db_filename)
@@ -599,6 +598,7 @@ MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, i
 
       // Try to get back our storage
       Store diff;
+
       s->try_realloc(cStore, diff);
       if (diff.n_disks && !reconfigure)
         goto LfailConfig;
@@ -606,8 +606,8 @@ MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, i
       // Do we need to do a reconfigure?
       if (diff.n_disks || change) {
         // find a new store to old the amount of space we need
-
         int delta = change;
+
         if (diff.n_disks)
           delta += diff.total_blocks();
 
@@ -674,6 +674,7 @@ MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, i
       }
     }
   }
+
   if (store)
     ink_assert(store_verify(store));
 Lcontinue:

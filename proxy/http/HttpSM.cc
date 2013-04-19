@@ -418,7 +418,8 @@ HttpSM::init()
   t_state.cache_info.config.cache_vary_default_other = t_state.http_config_param->cache_vary_default_other;
 
   t_state.init();
-  t_state.srv_lookup = HttpConfig::m_master.srv_enabled;
+  t_state.srv_lookup = hostdb_srv_enabled;
+
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
   // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   // TODO: This probably doesn't honor this as a per-transaction overridable config.

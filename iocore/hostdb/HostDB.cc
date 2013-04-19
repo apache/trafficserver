@@ -65,6 +65,7 @@ unsigned int hostdb_serve_stale_but_revalidate = 0;
 char hostdb_filename[PATH_NAME_MAX + 1] = DEFAULT_HOST_DB_FILENAME;
 int hostdb_size = DEFAULT_HOST_DB_SIZE;
 int hostdb_sync_frequency = 120;
+int hostdb_srv_enabled = 0;
 int hostdb_disable_reverse_lookup = 0;
 
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
@@ -379,7 +380,7 @@ HostDBCache::start(int flags)
   Store *hostDBStore;
   Span *hostDBSpan;
   char storage_path[PATH_NAME_MAX + 1];
-  int storage_size = 0;
+  int storage_size = 33554432; // 32MB default
 
   bool reconfigure = ((flags & PROCESSOR_RECONFIGURE) ? true : false);
   bool fix = ((flags & PROCESSOR_FIX) ? true : false);
@@ -390,12 +391,12 @@ HostDBCache::start(int flags)
   REC_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb");
   REC_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", PATH_NAME_MAX);
   REC_ReadConfigInt32(hostdb_size, "proxy.config.hostdb.size");
+  REC_ReadConfigInt32(hostdb_srv_enabled, "proxy.config.srv_enabled");
   REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
   REC_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
   if (storage_path[0] != '/') {
-    Layout::relative_to(storage_path, PATH_NAME_MAX,
-                        system_root_dir, storage_path);
+    Layout::relative_to(storage_path, PATH_NAME_MAX, system_root_dir, storage_path);
   }
 
   Debug("hostdb", "Storage path is %s", storage_path);
@@ -418,8 +419,7 @@ HostDBCache::start(int flags)
     Note("reconfiguring host database");
 
     char p[PATH_NAME_MAX + 1];
-    Layout::relative_to(p, PATH_NAME_MAX,
-                        system_config_directory, "internal/hostdb.config");
+    Layout::relative_to(p, PATH_NAME_MAX, system_config_directory, "internal/hostdb.config");
     if (unlink(p) < 0)
       Debug("hostdb", "unable to unlink %s", p);
 

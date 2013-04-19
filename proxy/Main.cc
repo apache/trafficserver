@@ -427,7 +427,7 @@ cmd_list(char *cmd)
   // show hostdb size
 
 #ifndef INK_NO_HOSTDB
-  int h_size = 0;
+  int h_size = 120000;
   TS_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
   printf("Host Database size:\t%d\n", h_size);
 #endif

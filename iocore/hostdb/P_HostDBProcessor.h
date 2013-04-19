@@ -30,6 +30,38 @@
 
 #include "I_HostDBProcessor.h"
 
+//
+// Data
+//
+
+extern int hostdb_enable;
+extern int hostdb_migrate_on_demand;
+extern int hostdb_cluster;
+extern int hostdb_cluster_round_robin;
+extern int hostdb_lookup_timeout;
+extern int hostdb_insert_timeout;
+extern int hostdb_re_dns_on_reload;
+
+// 0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
+enum
+  { TTL_OBEY, TTL_IGNORE, TTL_MIN, TTL_MAX };
+extern int hostdb_ttl_mode;
+
+extern unsigned int hostdb_current_interval;
+extern unsigned int hostdb_ip_stale_interval;
+extern unsigned int hostdb_ip_timeout_interval;
+extern unsigned int hostdb_ip_fail_timeout_interval;
+extern int hostdb_size;
+extern int hostdb_srv_enabled;
+extern char hostdb_filename[PATH_NAME_MAX + 1];
+
+//extern int hostdb_timestamp;
+extern int hostdb_sync_frequency;
+extern int hostdb_disable_reverse_lookup;
+
+// Static configuration information
+extern HostDBCache hostDB;
+
 /** Host DB record mark.
 
     The records in the host DB are de facto segregated by roughly the
@@ -175,7 +207,8 @@ struct HostDBCache: public MultiCache<HostDBInfo>
   }
 
   // This accounts for an average of 2 HostDBInfo per DNS cache (for round-robin etc.)
-  virtual size_t estimated_heap_bytes_per_entry() const { return sizeof(HostDBInfo) * 2 + 512; }
+  // In addition, we can do a padding for additional SRV records storage.
+  virtual size_t estimated_heap_bytes_per_entry() const { return sizeof(HostDBInfo) * 2 + 512 * hostdb_srv_enabled; }
 
   Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 & md5);
@@ -497,36 +530,6 @@ HostDBContinuation():
     SET_HANDLER((HostDBContHandler) & HostDBContinuation::probeEvent);
   }
 };
-
-//
-// Data
-//
-
-extern int hostdb_enable;
-extern int hostdb_migrate_on_demand;
-extern int hostdb_cluster;
-extern int hostdb_cluster_round_robin;
-extern int hostdb_lookup_timeout;
-extern int hostdb_insert_timeout;
-extern int hostdb_re_dns_on_reload;
-
-// 0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
-enum
-{ TTL_OBEY, TTL_IGNORE, TTL_MIN, TTL_MAX };
-extern int hostdb_ttl_mode;
-
-extern unsigned int hostdb_current_interval;
-extern unsigned int hostdb_ip_stale_interval;
-extern unsigned int hostdb_ip_timeout_interval;
-extern unsigned int hostdb_ip_fail_timeout_interval;
-extern int hostdb_size;
-extern char hostdb_filename[PATH_NAME_MAX + 1];
-
-extern int hostdb_sync_frequency;
-extern int hostdb_disable_reverse_lookup;
-
-// Static configuration information
-extern HostDBCache hostDB;
 
 //extern Queue<HostDBContinuation>  remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 

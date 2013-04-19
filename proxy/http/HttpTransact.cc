@@ -3527,9 +3527,6 @@ HttpTransact::handle_response_from_server(State* s)
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
       //    number of times, we should try another node
-
-      //bool use_srv_records = HttpConfig::m_master.srv_enabled;
-
       if (DNSLookupInfo::OS_ADDR_TRY_CLIENT == s->dns_info.os_addr_style) {
         // attempt was based on client supplied server address. Try again
         // using HostDB.

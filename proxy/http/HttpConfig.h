@@ -771,8 +771,6 @@ public:
   //  rather it is the time skew which the manager observes
   int32_t cluster_time_delta;
 
-  MgmtInt srv_enabled;          /* added by: ebalsa */
-
   //##############################################################################
   //#
   //# Redirection
@@ -955,7 +953,6 @@ HttpConfigParams::HttpConfigParams()
     default_buffer_water_mark(0),
     enable_http_info(0),
     cluster_time_delta(0),
-    srv_enabled(0),
     redirection_enabled(1),
     number_of_redirections(0),
     post_copy_size(2048),
