@@ -27,8 +27,9 @@
 #include <arpa/inet.h>
 
 #include <ts/ts.h>
+#include <ts/experimental.h>
 
-#include <HttpDataFetcherImpl.h> 
+#include <HttpDataFetcherImpl.h>
 #include <gzip.h>
 #include <Utils.h>
 
@@ -56,13 +57,12 @@ typedef list<string> StringList;
 
 struct ClientRequest {
   TSHttpStatus status;
-  unsigned int client_ip;
-  int client_port;
+  const sockaddr *client_addr;
   StringList file_urls;
   bool gzip_accepted;
   string defaultBucket;	//default Bucket is set to l
   ClientRequest()
-    : status(TS_HTTP_STATUS_OK), client_ip(0), client_port(0), gzip_accepted(false), defaultBucket("l") { };
+    : status(TS_HTTP_STATUS_OK), client_addr(NULL), gzip_accepted(false), defaultBucket("l") { };
 };
 
 struct InterceptData {
@@ -132,7 +132,7 @@ InterceptData::init(TSVConn vconn)
   req_hdr_loc = TSHttpHdrCreate(req_hdr_bufp);
   TSHttpHdrTypeSet(req_hdr_bufp, req_hdr_loc, TS_HTTP_TYPE_REQUEST);
 
-  fetcher = new HttpDataFetcherImpl(contp, creq.client_ip, creq.client_port, "combohandler_fetcher");
+  fetcher = new HttpDataFetcherImpl(contp, creq.client_addr, "combohandler_fetcher");
 
   initialized = true;
   LOG_DEBUG("InterceptData initialized!");
@@ -208,15 +208,12 @@ TSPluginInit(int argc, const char *argv[])
   LOG_DEBUG("Signature key is [%s]", SIG_KEY_NAME.c_str());
 
   TSCont rrh_contp = TSContCreate(handleReadRequestHeader, NULL);
-  if (!rrh_contp || (rrh_contp == TS_ERROR_PTR)) {
+  if (!rrh_contp) {
     LOG_ERROR("Could not create read request header continuation");
     return;
   }
-  if (TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, rrh_contp) == TS_ERROR) {
-    LOG_ERROR("Error while registering to read request hook");
-    TSContDestroy(rrh_contp);
-    return;
-  }
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, rrh_contp);
+
   Utils::init(&TSDebug, &TSError);
   LOG_DEBUG("Plugin started");
 }
@@ -232,28 +229,23 @@ handleReadRequestHeader(TSCont contp, TSEvent event, void *edata)
   TSMBuffer bufp;
   TSMLoc hdr_loc;
 
-  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
-    TSMLoc url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
-    if (url_loc && (url_loc != TS_ERROR_PTR)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+    TSMLoc url_loc;
+    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
       if (isComboHandlerRequest(bufp, hdr_loc, url_loc)) {
         TSCont contp = TSContCreate(handleServerEvent, TSMutexCreate());
-        if (!contp || (contp == TS_ERROR_PTR)) {
+        if (!contp) {
           LOG_ERROR("[%s] Could not create intercept request", __FUNCTION__);
           reenable_to_event = TS_EVENT_HTTP_ERROR;
         } else {
-          if (TSHttpTxnServerIntercept(contp, txnp) == TS_SUCCESS) {
-            InterceptData *int_data = new InterceptData(contp);
-            TSContDataSet(contp, int_data);
-            // todo: check if these two cacheable sets are required
-            TSHttpTxnSetReqCacheableSet(txnp);
-            TSHttpTxnSetRespCacheableSet(txnp);
-            getClientRequest(txnp, bufp, hdr_loc, url_loc, int_data->creq);
-            LOG_DEBUG("Setup server intercept to handle client request");
-          } else {
-            TSContDestroy(contp);
-            LOG_ERROR("Could not setup server intercept");
-            reenable_to_event = TS_EVENT_HTTP_ERROR;
-          }
+          TSHttpTxnServerIntercept(contp, txnp);
+          InterceptData *int_data = new InterceptData(contp);
+          TSContDataSet(contp, int_data);
+          // todo: check if these two cacheable sets are required
+          TSHttpTxnReqCacheableSet(txnp, 1);
+          TSHttpTxnRespCacheableSet(txnp, 1);
+          getClientRequest(txnp, bufp, hdr_loc, url_loc, int_data->creq);
+          LOG_DEBUG("Setup server intercept to handle client request");
         }
       }
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
@@ -276,7 +268,7 @@ isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
   bool retval = false;
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
 
-  if (method == TS_ERROR_PTR) {
+  if (!method) {
     LOG_ERROR("Could not obtain method!", __FUNCTION__);
   } else {
     if ((method_len != TS_HTTP_LEN_GET) || (strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) != 0)) {
@@ -284,19 +276,17 @@ isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
     } else {
       retval = true;
     }
-    TSHandleStringRelease(bufp, hdr_loc, method);
 
     if (retval) {
       int path_len;
       const char *path = TSUrlPathGet(bufp, url_loc, &path_len);
-      if (path == TS_ERROR_PTR) {
+      if (!path) {
         LOG_ERROR("Could not get path from request URL");
         retval = false;
       } else {
         retval = (path_len == COMBO_HANDLER_PATH_SIZE) &&
           (strncasecmp(path, COMBO_HANDLER_PATH.c_str(), COMBO_HANDLER_PATH_SIZE) == 0);
         LOG_DEBUG("Path [%.*s] is %s combo handler path", path_len, path, (retval ? "a" : "not a"));
-        TSHandleStringRelease(bufp, hdr_loc, path);
       }
     }
   }
@@ -312,20 +302,20 @@ getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &
   int host_len = 0;
   bool defaultBucketFound = false;
 
-  field_loc=TSMimeHdrFieldFind(bufp, hdr_obj, TS_MIME_FIELD_HOST, -1);
-  if (field_loc == TS_ERROR_PTR) {
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_obj, TS_MIME_FIELD_HOST, -1);
+  if (field_loc == TS_NULL_MLOC) {
     LOG_ERROR("Host field not found.");
     return false;
   }
 
-  host=TSMimeHdrFieldValueGet (bufp, hdr_obj, field_loc, 0, &host_len);
+  host = TSMimeHdrFieldValueStringGet(bufp, hdr_obj, field_loc, 0, &host_len);
   if (!host || host_len <= 0) {
     LOG_ERROR("Error Extracting Host Header");
     TSHandleMLocRelease (bufp, hdr_obj, field_loc);
     return false;
   }
 
-  LOG_DEBUG("host: %s", host);
+  LOG_DEBUG("host: %.*s", host_len, host);
   for(int i = 0 ; i < host_len; i++)
     {
       if (host[i] == '.')
@@ -337,7 +327,6 @@ getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &
     }
 
   TSHandleMLocRelease (bufp, hdr_obj, field_loc);
-  TSHandleStringRelease(bufp, field_loc, host);
 
   LOG_DEBUG("defaultBucket: %s", creq.defaultBucket.data());
   return defaultBucketFound;
@@ -349,23 +338,16 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
   int query_len;
   const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
 
-  if (query == TS_ERROR_PTR) {
+  if (!query) {
     LOG_ERROR("Could not get query from request URL");
   } else {
     if (!getDefaultBucket(txnp, bufp, hdr_loc, creq))
       {
         LOG_ERROR("failed getting Default Bucket for the request");
-        TSHandleStringRelease(bufp, url_loc, query);
         return;
       }
     parseQueryParameters(query, query_len, creq);
-    TSHandleStringRelease(bufp, url_loc, query);
-    creq.client_ip = ntohl(TSHttpTxnClientIPGet(txnp));
-    if (TSHttpTxnClientRemotePortGet(txnp, &creq.client_port) != TS_SUCCESS) {
-      creq.client_port = 0;
-    } else {
-      creq.client_port = ntohs(static_cast<uint16_t>(creq.client_port));
-    }
+    creq.client_addr = TSHttpTxnClientAddrGet(txnp);
     checkGzipAcceptance(bufp, hdr_loc, creq);
   }
 }
@@ -399,15 +381,15 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
               // TODO - really verify the signature
               LOG_DEBUG("Verified signature successfully");
               sig_verified = true;
-            } else {
+            }
+            if (!sig_verified) {
               LOG_DEBUG("Signature [%.*s] on query [%.*s] is invalid", param_len - 4, param + 4,
                         param_start_pos, query);
             }
+          } else {
+            LOG_DEBUG("Verification not configured; ignoring signature...");
           }
-        } else {
-          LOG_DEBUG("Verification not configured; ignoring signature...");
-        }
-        break; // nothing useful after the signature
+          break; // nothing useful after the signature
       }
       if ((param_len >= 2) && (param[0] == 'p') && (param[1] == '=')) {
         common_prefix_size = param_len - 2;
@@ -484,17 +466,17 @@ checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq)
   creq.gzip_accepted = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING,
                                           TS_MIME_LEN_ACCEPT_ENCODING);
-  if ((field_loc != TS_ERROR_PTR) && field_loc) {
+  if (field_loc != TS_NULL_MLOC) {
     const char *value;
     int value_len;
     int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
 
     for (int i = 0; i < n_values; ++i) {
-      if (TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value, &value_len) == TS_SUCCESS) {
+      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
+      if (value) {
         if ((value_len == TS_HTTP_LEN_GZIP) && (strncasecmp(value, TS_HTTP_VALUE_GZIP, value_len) == 0)) {
           creq.gzip_accepted = true;
         }
-        TSHandleStringRelease(bufp, hdr_loc, value);
       } else {
         LOG_DEBUG("Error while getting value # %d of header [%.*s]", i, TS_MIME_LEN_ACCEPT_ENCODING,
                   TS_MIME_FIELD_ACCEPT_ENCODING);
@@ -622,7 +604,7 @@ readInterceptRequest(InterceptData &int_data)
   
   int consumed = 0;
   if (avail > 0) {
-    int data_len;
+    int64_t data_len;
     const char *data;
     TSIOBufferBlock block = TSIOBufferReaderStart(int_data.input.reader);
     while (block != NULL) {
@@ -634,24 +616,14 @@ readInterceptRequest(InterceptData &int_data)
       }
       consumed += data_len;
       block = TSIOBufferBlockNext(block);
-      if (block == TS_ERROR_PTR) {
-        LOG_ERROR("Error while getting block from ioreader");
-        return false;
-      }
     }
   }
   LOG_DEBUG("Consumed %d bytes from input vio", consumed);
   
-  if (TSIOBufferReaderConsume(int_data.input.reader, consumed) == TS_ERROR) {
-    LOG_ERROR("Error while consuming data from input vio");
-    return false;
-  }
+  TSIOBufferReaderConsume(int_data.input.reader, consumed);
   
   // Modify the input VIO to reflect how much data we've completed.
-  if (TSVIONDoneSet(int_data.input.vio, TSVIONDoneGet(int_data.input.vio) + consumed) == TS_ERROR) {
-    LOG_ERROR("Error while setting ndone on input vio");
-    return false;
-  }
+  TSVIONDoneSet(int_data.input.vio, TSVIONDoneGet(int_data.input.vio) + consumed);
 
   if (!int_data.read_complete) {
     LOG_DEBUG("Re-enabling input VIO as request header not completely read yet");
@@ -719,15 +691,9 @@ writeResponse(InterceptData &int_data)
   }
     
   LOG_DEBUG("Wrote reply of size %d", n_bytes_written);
-  if (TSVIONBytesSet(int_data.output.vio, n_bytes_written) == TS_ERROR) {
-    LOG_ERROR("Error while setting nbytes to %d on output vio", n_bytes_written);
-    return false;
-  }
+  TSVIONBytesSet(int_data.output.vio, n_bytes_written);
   
-  if (TSVIOReenable(int_data.output.vio) == TS_ERROR) {
-    LOG_ERROR("Error while reenabling output VIO");
-    return false;
-  }
+  TSVIOReenable(int_data.output.vio);
   return true;
 }
 
@@ -750,20 +716,16 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
         }
         field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, TS_MIME_FIELD_EXPIRES,
                                         TS_MIME_LEN_EXPIRES);
-        if (field_loc && (field_loc != TS_ERROR_PTR)) {
+        if (field_loc != TS_NULL_MLOC) {
           time_t curr_field_expires_time;
           int n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
           if ((n_values != TS_ERROR) && (n_values > 0)) {
-            if (TSMimeHdrFieldValueDateGet(resp_data.bufp, resp_data.hdr_loc, field_loc,
-                                            &curr_field_expires_time) == TS_SUCCESS) {
-              if (!got_expires_time) {
-                expires_time = curr_field_expires_time;
-                got_expires_time = true;
-              } else if (curr_field_expires_time < expires_time) {
-                expires_time = curr_field_expires_time;
-              }
-            } else {
-              LOG_DEBUG("Error while getting date value");
+            curr_field_expires_time = TSMimeHdrFieldValueDateGet(resp_data.bufp, resp_data.hdr_loc, field_loc);
+            if (!got_expires_time) {
+              expires_time = curr_field_expires_time;
+              got_expires_time = true;
+            } else if (curr_field_expires_time < expires_time) {
+              expires_time = curr_field_expires_time;
             }
           }
           TSHandleMLocRelease(resp_data.bufp, resp_data.hdr_loc, field_loc);
@@ -806,24 +768,20 @@ getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
   bool retval = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE,
                                           TS_MIME_LEN_CONTENT_TYPE);
-  if (field_loc && (field_loc != TS_ERROR_PTR)) {
+  if (field_loc != TS_NULL_MLOC) {
     bool values_added = false;
     const char *value;
     int value_len;
     int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int i = 0; i < n_values; ++i) {
-      if (TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value, &value_len) == TS_SUCCESS) {
-        if (!values_added) {
-          resp_header_fields.append("Content-Type: ");
-          values_added = true;
-        } else {
-          resp_header_fields.append(", ");
-        }
-        resp_header_fields.append(value, value_len);
-        TSHandleStringRelease(bufp, hdr_loc, value);
+      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
+      if (!values_added) {
+        resp_header_fields.append("Content-Type: ");
+        values_added = true;
       } else {
-        LOG_DEBUG("Error while getting Content-Type value #%d", i);
+        resp_header_fields.append(", ");
       }
+      resp_header_fields.append(value, value_len);
     }
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     if (values_added) {
