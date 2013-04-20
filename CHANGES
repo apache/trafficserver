@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.3
 
+  *) [TS-1586] Fix the SPDY plugin build under clang on Linux.
 
   *) [TS-1053] Make combo_handler compiler. Author: Conan Wang.
 

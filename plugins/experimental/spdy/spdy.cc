@@ -35,7 +35,7 @@ static void
 recv_rst_stream(
         const spdy::message_header& header,
         spdy_io_control *           io,
-        const uint8_t __restrict *  ptr)
+        const uint8_t *  ptr)
 {
     spdy::rst_stream_message rst;
 
@@ -53,7 +53,7 @@ static void
 recv_syn_stream(
         const spdy::message_header& header,
         spdy_io_control *           io,
-        const uint8_t __restrict *  ptr)
+        const uint8_t *  ptr)
 {
     spdy::syn_stream_message    syn;
     spdy_io_stream *            stream;
@@ -125,7 +125,7 @@ static void
 recv_ping(
         const spdy::message_header& header,
         spdy_io_control *           io,
-        const uint8_t __restrict *  ptr)
+        const uint8_t *  ptr)
 {
     spdy::ping_message ping;
 
@@ -146,7 +146,7 @@ static void
 dispatch_spdy_control_frame(
         const spdy::message_header& header,
         spdy_io_control *           io,
-        const uint8_t __restrict *  ptr)
+        const uint8_t *  ptr)
 {
     switch (header.control.type) {
     case spdy::CONTROL_SYN_STREAM:
