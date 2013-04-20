@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "UrlMapping.h"
 
 /**

@@ -17,7 +17,7 @@
  */
 
 #include "ts/ts.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #include <spdy/spdy.h>
 #include <base/logging.h>

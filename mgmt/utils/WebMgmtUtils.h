@@ -25,7 +25,6 @@
 #define _WEB_MGMT_UTILS_
 
 #include "MgmtDefs.h"
-#include "ink_bool.h"
 
 /****************************************************************************
  *

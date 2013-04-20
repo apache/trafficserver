@@ -30,7 +30,6 @@
 #define _INK_THREAD_H
 
 
-#include "ink_port.h"
 #include "ink_hrtime.h"
 #include "ink_defs.h"
 #include <sched.h>

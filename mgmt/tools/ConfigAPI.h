@@ -26,10 +26,6 @@
 
 #include "../utils/XmlUtils.h"
 
-#if defined(solaris)
-#include "ink_bool.h"
-#endif
-
 class XmlObject
 {
   XMLDom xmlDom;

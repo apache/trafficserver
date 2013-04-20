@@ -36,7 +36,7 @@
 #include <openssl/sha.h>
 
 #include "ts/ts.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 typedef struct {
   TSVConn connp;

@@ -28,8 +28,7 @@
 #include <sys/types.h>
 #include "ink_assert.h"
 #include "ink_atomic.h"
-#include "ink_port.h"
-#include "ink_bool.h"
+#include "ink_defs.h"
 #include "ink_resource.h"
 #include "ink_string.h"
 #include "Allocator.h"

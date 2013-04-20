@@ -41,7 +41,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #include "ink_apidefs.h"
 #include "ink_mutex.h"

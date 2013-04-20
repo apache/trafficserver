@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-// ToDo: why does including ink_port break compiling the ESI plugin?
-#include "ink_port.h"   
+#include "ink_defs.h"   
 
 #include <stdio.h>
 #include <stdlib.h>

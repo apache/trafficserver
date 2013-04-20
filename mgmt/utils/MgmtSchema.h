@@ -24,8 +24,6 @@
 #ifndef __MGMT_SCHEMA_
 #define _MGMT_SCHEMA_
 
-#include "ink_bool.h"
-
 /****************************************************************************
  *
  *  MgmtSchema.h - Functions for interfacing to manage Traffic Server Schema

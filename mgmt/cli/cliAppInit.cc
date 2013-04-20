@@ -49,7 +49,7 @@
 #include "ShowCmd.h"
 #include "ConfigCmd.h"
 #include "CliCreateCommands.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #if HAVE_EDITLINE_READLINE_H
 #include <editline/readline.h>

@@ -24,7 +24,6 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include "ink_defs.h"
-#include "ink_port.h"
 
 #include "TxnSM.h"
 

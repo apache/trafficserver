@@ -35,7 +35,6 @@
 #define _MGMT_UTILS_H
 
 #include "ink_platform.h"
-#include "ink_bool.h"
 #include "Diags.h"
 
 #include "P_RecCore.h"

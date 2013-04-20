@@ -25,7 +25,7 @@
 
 #include "ink_assert.h"
 #include "ink_atomic.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_resource.h"
 #include "ink_stack_trace.h"
 

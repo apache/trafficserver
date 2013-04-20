@@ -100,7 +100,7 @@
 #include "DynArray.h"
 #include <ts/IpMap.h>
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "HTTP.h"
 #include "ink_apidefs.h"
 

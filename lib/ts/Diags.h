@@ -36,7 +36,6 @@
 #define __DIAGS_H___
 
 #include <stdarg.h>
-#include "ink_bool.h"
 #include "ink_error.h"
 #include "ink_mutex.h"
 #include "Regex.h"

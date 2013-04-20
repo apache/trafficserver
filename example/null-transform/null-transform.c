@@ -37,7 +37,6 @@
 
 #include "ts/ts.h"
 #include "ink_defs.h"
-#include "ink_port.h"
 
 typedef struct
 {

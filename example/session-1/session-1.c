@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include "ts/ts.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 static INKStat transaction_count;
 static INKStat session_count;

@@ -24,10 +24,6 @@
 #ifndef _SYS_API_H
 #define _SYS_API_H
 
-#if defined(solaris)
-#include "ink_bool.h"
-#endif
-
 #include <sys/types.h>
 
 extern int Net_GetHostname(char *hostname, size_t hostname_len);

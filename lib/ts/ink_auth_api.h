@@ -27,7 +27,7 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "ink_port.h"
+#include "ink_defs.h"
 
 typedef union
 {

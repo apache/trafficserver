@@ -25,9 +25,8 @@
 #define	_INK_MD5_h_
 #include "MMH.h"
 
-#include "ink_bool.h"
 #include "ink_code.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 // #define USE_MMH_FOR_MD5
 

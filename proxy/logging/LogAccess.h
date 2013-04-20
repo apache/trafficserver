@@ -89,8 +89,6 @@
 
   -------------------------------------------------------------------------*/
 
-#include "ink_bool.h"
-
 // DEFAULT_STR_LEN MUST be less than INK_MIN_ALIGN
 #define DEFAULT_STR	"-"
 #define DEFAULT_STR_LEN 1

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "libts.h"
 #include <assert.h>
 #include <stdio.h>
@@ -2506,7 +2506,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     mime_field_name_value_set(heap, mh, field,
                               field_name_wks_idx,
                               field_name_first, field_name_length,
-                              field_value_first, field_value_length, TRUE, total_line_length, 0);
+                              field_value_first, field_value_length, true, total_line_length, 0);
     mime_hdr_field_attach(mh, field, 1, NULL);
   }
 }

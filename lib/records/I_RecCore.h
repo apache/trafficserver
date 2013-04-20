@@ -24,7 +24,6 @@
 #ifndef _I_REC_CORE_H_
 #define _I_REC_CORE_H_
 
-#include "ink_bool.h"
 #include "Diags.h"
 
 #include "I_RecDefs.h"

@@ -22,7 +22,7 @@
  */
 
 #include "ink_platform.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_resource.h"
 #include "ink_string.h"
 #include "ink_time.h"

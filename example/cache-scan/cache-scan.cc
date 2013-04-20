@@ -33,7 +33,7 @@
 #include "ts/ts.h"
 #include "ts/experimental.h"
 
-#include "ink_port.h"
+#include "ink_defs.h"
 
 static TSCont global_contp;
 

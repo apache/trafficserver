@@ -25,7 +25,7 @@
 #define _MimeTable_h_
 
 #include <string.h>
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_string.h"
 
 struct MimeTableEntry

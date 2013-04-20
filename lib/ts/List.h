@@ -56,7 +56,6 @@
 
 #include <stdint.h>
 
-#include "ink_bool.h"
 #include "ink_assert.h"
 #include "ink_queue.h"
 #include "ink_resource.h"

@@ -18,7 +18,7 @@
 
 
 #include "ink_platform.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #include <cstdio>
 #include <cstring>

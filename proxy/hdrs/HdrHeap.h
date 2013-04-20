@@ -34,8 +34,7 @@
 #define _HDR_HEAP_H_
 
 #include "Ptr.h"
-#include "ink_port.h"
-#include "ink_bool.h"
+#include "ink_defs.h"
 #include "ink_assert.h"
 #include "Arena.h"
 #include "HdrToken.h"

@@ -26,9 +26,8 @@
 
 #ifndef USE_MD5_FOR_MMH
 
-#include "ink_bool.h"
 #include "ink_code.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 struct MMH_CTX
 {

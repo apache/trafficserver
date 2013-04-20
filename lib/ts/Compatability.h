@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <strings.h>
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_resource.h"
 
 // We can't use #define for min and max becuase it will conflict with

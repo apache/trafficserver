@@ -35,7 +35,7 @@
 #define	_ink_time_h_
 
 #include "ink_platform.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_hrtime.h"
 
 /*===========================================================================*

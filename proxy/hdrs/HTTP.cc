@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "libts.h"
 #include <assert.h>
 #include <stdio.h>

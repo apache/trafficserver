@@ -52,7 +52,6 @@ libtsutil_la_SOURCES = \
   ink_auth_api.h \
   ink_base64.cc \
   ink_base64.h \
-  ink_bool.h \
   ink_cap.cc ink_cap.h \
   ink_code.cc \
   ink_code.h \
@@ -80,7 +79,6 @@ libtsutil_la_SOURCES = \
   ink_mutex.h \
   ink_platform.h \
   InkPool.h \
-  ink_port.h \
   ink_queue.cc \
   ink_queue.h \
   ink_queue_ext.cc \
