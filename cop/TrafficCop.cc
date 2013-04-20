@@ -213,7 +213,6 @@ chown_file_to_admin_user(const char *file) {
 static void
 sig_child(int signum)
 {
-  NOWARN_UNUSED(signum);
   pid_t pid = 0;
   int status = 0;
 
@@ -304,7 +303,6 @@ sig_alarm_warn(int signum, siginfo_t * t, void *c)
 sig_alarm_warn(int signum)
 #endif
 {
-  NOWARN_UNUSED(signum);
   cop_log_trace("Entering sig_alarm_warn(%d)\n", signum);
   cop_log(COP_WARNING, "unable to kill traffic_server for the last" " %d seconds\n", kill_timeout);
 
@@ -316,7 +314,6 @@ sig_alarm_warn(int signum)
 static void
 sig_ignore(int signum)
 {
-  NOWARN_UNUSED(signum);
   cop_log_trace("Entering sig_ignore(%d)\n", signum);
   // No code here yet...
   cop_log_trace("Leaving sig_ignore(%d)\n", signum);

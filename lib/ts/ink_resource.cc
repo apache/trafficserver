@@ -34,9 +34,8 @@ volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
 char *
-_xstrdup(const char *str, int length, const char *path)
+_xstrdup(const char *str, int length, const char* /* path ATS_UNUSED */)
 {
-  NOWARN_UNUSED(path);
   char *newstr;
 
   if (likely(str)) {
@@ -53,8 +52,7 @@ _xstrdup(const char *str, int length, const char *path)
 typedef struct Resource Resource;
 
 Resource *
-res_lookup(const char *path)
+res_lookup(const char */* path ATS_UNUSED */)
 {
-  NOWARN_UNUSED(path);
   return NULL;
 }
