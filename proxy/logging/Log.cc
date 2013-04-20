@@ -271,7 +271,7 @@ Log::periodic_tasks(long time_now)
         num_rolled += global_scrap_object->roll_files(time_now);
       }
       num_rolled += Log::config->log_object_manager.roll_files(time_now);
-      Log::config->roll_log_files_now = FALSE;
+      Log::config->roll_log_files_now = false;
     } else {
       if (error_log) {
         num_rolled += error_log->roll_files(time_now);

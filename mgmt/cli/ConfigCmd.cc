@@ -57,7 +57,7 @@
 #include "SysAPI.h"
 
 
-int enable_restricted_commands = FALSE;
+bool enable_restricted_commands = false;
 
 static int find_value(const char *pathname, const char *key, char *value, int value_len, const char *delim, int no);
 
@@ -115,7 +115,7 @@ Cmd_Enable(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
   if (argc == 2) {
     switch (infoPtr->parsed_args) {
     case CMD_ENABLE_STATUS:
-      if (enable_restricted_commands == TRUE) {
+      if (enable_restricted_commands == true) {
         Cli_Printf("on\n");
         return CMD_OK;
       } else {
@@ -128,7 +128,7 @@ Cmd_Enable(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
     }
   }
 
-  if (enable_restricted_commands == TRUE) {
+  if (enable_restricted_commands == true) {
     Cli_Printf("Already Enabled\n");
     return CMD_OK;
   }
@@ -183,7 +183,7 @@ Cmd_Disable(ClientData clientData, Tcl_Interp * interp, int argc, const char *ar
     return 0;
   }
 
-  enable_restricted_commands = FALSE;
+  enable_restricted_commands = false;
   return 0;
 }
 
@@ -3921,7 +3921,7 @@ int
 StartBinary(char *abs_bin_path, char *bin_options, int isScript)
 {
   char ebuf[1024];
-  unsigned char ret_value = FALSE;
+  unsigned char ret_value = false;
   char output[1024];
 
 

@@ -2266,7 +2266,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State* s)
   ink_release_assert((s->request_sent_time == UNDEFINED_TIME) && (s->response_received_time == UNDEFINED_TIME));
   DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] Hit in cache");
 
-  if (delete_all_document_alternates_and_return(s, TRUE)) {
+  if (delete_all_document_alternates_and_return(s, true)) {
     DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] Delete and return");
     s->cache_info.action = CACHE_DO_DELETE;
     s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_DELETE;
@@ -2911,7 +2911,7 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
   DebugTxn("http_trans", "[HandleCacheOpenReadMiss] --- MISS");
   DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadMiss] " "Miss in cache");
 
-  if (delete_all_document_alternates_and_return(s, FALSE)) {
+  if (delete_all_document_alternates_and_return(s, false)) {
     DebugTxn("http_trans", "[HandleCacheOpenReadMiss] Delete and return");
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action = PROXY_INTERNAL_CACHE_NOOP;
@@ -5239,7 +5239,7 @@ HttpTransact::ResponseError_t HttpTransact::check_response_validity(State* s, HT
   }
   // If the response is 0.9 then there is no status
   //   code or date
-  if (did_forward_server_send_0_9_response(s) == TRUE) {
+  if (did_forward_server_send_0_9_response(s) == true) {
     return NO_RESPONSE_HEADER_ERROR;
   }
 
@@ -5290,9 +5290,9 @@ HttpTransact::did_forward_server_send_0_9_response(State* s)
 {
   if (s->hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
     s->current.server->http_version.set(0, 9);
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 bool
@@ -5341,7 +5341,7 @@ HttpTransact::handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr)
     // s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = TUNNELLING_PROXY;
     HTTP_INCREMENT_TRANS_STAT(http_tunnels_stat);
-    return FALSE;
+    return false;
   }
 
   int max_forwards = incoming_hdr->get_max_forwards();
@@ -5394,7 +5394,7 @@ HttpTransact::handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr)
       HttpTransactHeaders::insert_supported_methods_in_response(&s->hdr_info.client_response, s->scheme);
 
     }
-    return TRUE;
+    return true;
   } else {                      /* max-forwards != 0 */
 
     if ((max_forwards <= 0) || (max_forwards > INT_MAX)) {
@@ -5412,7 +5412,7 @@ HttpTransact::handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr)
     HTTP_INCREMENT_TRANS_STAT(http_tunnels_stat);
   }
 
-  return FALSE;
+  return false;
 }
 
 void
@@ -6203,7 +6203,7 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED, "Proxy Authentication Required",
                          "access#proxy_auth_required", "");
-    return FALSE;
+    return false;
   case NON_EXISTANT_REQUEST_HEADER:
     /* fall through */
   case BAD_HTTP_HEADER_SYNTAX:
@@ -6212,7 +6212,7 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error",
                            const_cast < char *>(URL_MSG));
-      return FALSE;
+      return false;
     }
 
   case MISSING_HOST_FIELD:
@@ -6268,7 +6268,7 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
                            "requires a hostname to be send as part of the url");
     }
 
-    return FALSE;
+    return false;
   case SCHEME_NOT_SUPPORTED:
   case NO_REQUEST_SCHEME:
     {
@@ -6276,13 +6276,13 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported URL Scheme", "request#scheme_unsupported",
                            const_cast < char *>(URL_MSG));
-      return FALSE;
+      return false;
     }
     /* fall through */
   case METHOD_NOT_SUPPORTED:
     DebugTxn("http_trans", "[is_request_valid]" "unsupported method");
     s->current.mode = TUNNELLING_PROXY;
-    return TRUE;
+    return true;
   case BAD_CONNECT_PORT:
     int port;
     port = url ? url->port_get() : 0;
@@ -6290,14 +6290,14 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_FORBIDDEN, "Tunnel Forbidden", "access#connect_forbidden",
                          "%d is not an allowed port for Tunnel connections", port);
-    return FALSE;
+    return false;
   case NO_POST_CONTENT_LENGTH:
     {
       DebugTxn("http_trans", "[is_request_valid] post request without content length");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Content Length Required", "request#no_content_length",
                            const_cast < char *>(URL_MSG));
-      return FALSE;
+      return false;
     }
   case UNACCEPTABLE_TE_REQUIRED:
     {
@@ -6305,13 +6305,13 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported",
                            const_cast < char *>(URL_MSG));
-      return FALSE;
+      return false;
     }
   default:
-    return TRUE;
+    return true;
   }
 
-  return TRUE;
+  return true;
 }
 
 // bool HttpTransact::is_request_retryable
@@ -6529,7 +6529,7 @@ HttpTransact::will_this_request_self_loop(State* s)
         }
         build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected",
                              "Your request is prohibited because it would cause a cycle.");
-        return TRUE;
+        return true;
       }
     }
 
@@ -6550,7 +6550,7 @@ HttpTransact::will_this_request_self_loop(State* s)
                 s->http_config_param->proxy_hostname, Machine::instance()->ip_hex_string, s->http_config_param->proxy_request_via_string);
           build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected",
                                "request#cycle_detected", "Your request is prohibited because it would cause a cycle.");
-          return TRUE;
+          return true;
         }
 
         via_field = via_field->m_next_dup;
@@ -6558,7 +6558,7 @@ HttpTransact::will_this_request_self_loop(State* s)
     }
   }
   s->request_will_not_selfloop = true;
-  return FALSE;
+  return false;
 }
 
 /*
@@ -6891,7 +6891,7 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
 bool
 HttpTransact::delete_all_document_alternates_and_return(State* s, bool cache_hit)
 {
-  if (cache_hit == TRUE) {
+  if (cache_hit == true) {
     if (s->cache_info.is_ram_cache_hit) {
       SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_RAM_CACHE_FRESH);
     } else {
@@ -6925,7 +6925,7 @@ HttpTransact::delete_all_document_alternates_and_return(State* s, bool cache_hit
       //    zero content length when setting up the transfer
       s->hdr_info.trust_response_cl = true;
       build_response(s, &s->hdr_info.client_response, s->client_info.http_version,
-                     (cache_hit == TRUE) ? HTTP_STATUS_OK : HTTP_STATUS_NOT_FOUND);
+                     (cache_hit == true) ? HTTP_STATUS_OK : HTTP_STATUS_NOT_FOUND);
 
       return true;
     } else {
@@ -7053,13 +7053,13 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     } else {
       last_modified_value = 0;
       if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
-        last_modified_set = TRUE;
+        last_modified_set = true;
         last_modified_value = response->get_last_modified();
         DebugTxn("http_match", "calculate_document_freshness_limit --- Last Modified header = %" PRId64,
                  (int64_t)last_modified_value);
 
         if (last_modified_value == UNDEFINED_TIME) {
-          last_modified_set = FALSE;
+          last_modified_set = false;
         } else if (last_modified_value > date_value) {
           last_modified_value = date_value;
           DebugTxn("http_match", "calculate_document_freshness_limit --- no last-modified, using sent time %" PRId64,

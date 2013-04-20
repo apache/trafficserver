@@ -83,7 +83,7 @@ Tcl_AppInit(Tcl_Interp * app_interp)
 
   // root users are automatically enabled
   if (getuid() == 0) {
-    enable_restricted_commands = TRUE;
+    enable_restricted_commands = true;
   }
 
 

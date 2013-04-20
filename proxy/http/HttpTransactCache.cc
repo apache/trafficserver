@@ -135,7 +135,7 @@ do_strings_match_weakly(const char *raw_tag_field,
     // current tag, then compare for equality with above tag.
     cur_tag = find_etag(tag->str, tag->len, &cur_tag_len);
     if ((cur_tag_len == etag_length) && (strncmp(cur_tag, etag_start, cur_tag_len) == 0))
-      return TRUE;
+      return true;
   }
   return false;
 }
@@ -500,8 +500,8 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField * accept_field, M
   char c_type[32], c_subtype[32];
   Str *a_value;
   StrList c_param_list, a_values_list;
-  bool wildcard_type_present = FALSE;
-  bool wildcard_subtype_present = FALSE;
+  bool wildcard_type_present = false;
+  bool wildcard_subtype_present = false;
   float wildcard_type_q = 1.0;
   float wildcard_subtype_q = 1.0;
 
@@ -551,10 +551,10 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField * accept_field, M
 
     // Is there a wildcard in the type or subtype?
     if (is_asterisk(a_type)) {
-      wildcard_type_present = TRUE;
+      wildcard_type_present = true;
       wildcard_type_q = HttpCompat::find_Q_param_in_strlist(&a_param_list);
     } else if (is_asterisk(a_subtype) && (strcasecmp(a_type, c_type) == 0)) {
-      wildcard_subtype_present = TRUE;
+      wildcard_subtype_present = true;
       wildcard_subtype_q = HttpCompat::find_Q_param_in_strlist(&a_param_list);
     } else {
 
@@ -574,11 +574,11 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField * accept_field, M
   // had wildcards, return the wildcard match q value.
 
   // No explicit match, but wildcard subtype match
-  if ((q == -1.0) && (wildcard_subtype_present == TRUE)) {
+  if ((q == -1.0) && (wildcard_subtype_present == true)) {
     q = wildcard_subtype_q;
   }
   // No explicit match, but wildcard type match.
-  if ((q == -1.0) && (wildcard_type_present == TRUE)) {
+  if ((q == -1.0) && (wildcard_type_present == true)) {
     q = wildcard_type_q;
   }
   return (q);
@@ -621,7 +621,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField * accept_
   char *a_charset;
   int a_charset_len;
   const char *default_charset = "utf-8";
-  bool wildcard_present = FALSE;
+  bool wildcard_present = false;
   float wildcard_q = 1.0;
 
   // prefer exact matches
@@ -667,7 +667,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField * accept_
 
     // dont match wildcards //
     if ((a_charset_len == 1) && (a_charset[0] == '*')) {
-      wildcard_present = TRUE;
+      wildcard_present = true;
       wildcard_q = HttpCompat::find_Q_param_in_strlist(&a_param_list);
     } else {
       // if type matches, get the Q factor //
@@ -680,7 +680,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField * accept_
   }
 
   // if no match and wildcard present, allow match //
-  if ((q == -1.0) && (wildcard_present == TRUE)) {
+  if ((q == -1.0) && (wildcard_present == true)) {
     q = wildcard_q;
   }
   // if no match, still allow default_charset //
@@ -803,7 +803,7 @@ match_accept_content_encoding(const char *c_raw,
       continue;
 
     if (is_asterisk(a_encoding)) {
-      *wildcard_present = TRUE;
+      *wildcard_present = true;
       *wildcard_q = HttpCompat::find_Q_param_in_strlist(&a_param_list);
       return true;
     } else if (does_encoding_match(a_encoding, c_raw)) {
@@ -827,10 +827,10 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
 {
 
   float q = -1.0;
-  bool is_identity_encoding = FALSE;
+  bool is_identity_encoding = false;
   const char *c_encoding;
   int c_encoding_len;
-  bool wildcard_present = FALSE;
+  bool wildcard_present = false;
   float wildcard_q = 1.0;
   StrList c_values_list;
   Str *c_value;
@@ -855,21 +855,21 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
   // if no Content-Encoding, treat as "identity" //
   if (!content_field) {
     Debug("http_match", "[calculate_quality_accept_encoding_match]: " "response hdr does not have content-encoding.");
-    is_identity_encoding = TRUE;
+    is_identity_encoding = true;
   } else {
     // TODO: Should we check the return value (count) here?
     content_field->value_get_comma_list(&c_values_list);
 
     c_encoding = content_field->value_get(&c_encoding_len);
     if (c_encoding_len == 0) {
-      is_identity_encoding = TRUE;
+      is_identity_encoding = true;
     } else {
       // does this document have the identity encoding? //
       for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
         c_encoding = c_value->str;
         c_encoding_len = c_value->len;
         if ((c_encoding_len >= 8) && (strncasecmp(c_encoding, "identity", 8) == 0)) {
-          is_identity_encoding = TRUE;
+          is_identity_encoding = true;
           break;
         }
       }
@@ -937,7 +937,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
 
 encoding_wildcard:
   // match the wildcard now //
-  if ((q == -1.0) && (wildcard_present == TRUE)) {
+  if ((q == -1.0) && (wildcard_present == true)) {
     q = wildcard_q;
   }
   /////////////////////////////////////////////////////////////////////////
@@ -1035,7 +1035,7 @@ match_accept_content_language(const char *c_raw,
     }
 
     if (is_asterisk(a_range)) {
-      *wildcard_present = TRUE;
+      *wildcard_present = true;
       *wildcard_q = HttpCompat::find_Q_param_in_strlist(&a_param_list);
       return true;
     } else if (does_language_range_match(a_range, c_raw)) {
@@ -1066,7 +1066,7 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField * accept
 {
   float q = -1.0;
   int a_range_length;
-  bool wildcard_present = FALSE;
+  bool wildcard_present = false;
   float wildcard_q = 1.0;
   float min_q = 1.0;
   bool match_found = false;
@@ -1125,7 +1125,7 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField * accept
 
 language_wildcard:
   // match the wildcard now //
-  if ((q == -1.0) && (wildcard_present == TRUE)) {
+  if ((q == -1.0) && (wildcard_present == true)) {
     q = wildcard_q;
   }
   return (q);
