@@ -23,6 +23,7 @@
 # include "WccpLocal.h"
 # include "WccpMeta.h"
 # include "ink_error.h"
+# include "ink_defs.h"
 
 /* Solaris considers SIOCGIFCONF obsolete and only defines it if
  * BSD compatibility activated. */

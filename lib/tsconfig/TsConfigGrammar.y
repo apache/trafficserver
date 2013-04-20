@@ -32,6 +32,7 @@
 # define YYFREE free
 
 # include "TsConfigParseEvents.h"
+# include "ink_defs.h"
 
 // Types we need for the lexer.
 typedef void* yyscan_t;
@@ -48,7 +49,7 @@ extern int tsconfiglex(YYSTYPE* yylval, yyscan_t lexer);
   }
 
 int tsconfigerror(
-  yyscan_t lexer,
+  yyscan_t lexer ATS_UNUSED,
   struct TsConfigHandlers* handlers,
   char const* text
 ) {

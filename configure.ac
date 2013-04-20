@@ -697,7 +697,7 @@ case $host_os in
     *) # gcc
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
-      common_opt="-pipe -Wall -Werror -Wunused-parameter"
+      common_opt="-pipe -Wall -Werror -Wno-error=unused-parameter -Wunused-parameter"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
