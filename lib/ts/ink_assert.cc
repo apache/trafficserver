@@ -29,7 +29,7 @@ Assertions
 #include "ink_platform.h"
 #include "ink_assert.h"
 #include "ink_error.h"
-#include "ink_string.h"       /* MAGIC_EDITING_TAG */
+#include "ink_string.h"
 
 void
 _ink_assert(const char *expression, const char *file, int line)
