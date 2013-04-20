@@ -70,7 +70,7 @@ test(void *d)
 
 
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, char */*argv ATS_UNUSED */[])
 {
   int i;
 

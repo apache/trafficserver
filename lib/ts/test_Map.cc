@@ -25,7 +25,7 @@
 
 typedef const char cchar;
 
-int main(int argc, char **argv) {
+int main(int /* argc ATS_UNUSED */, char **/*argv ATS_UNUSED */) {
   typedef Map<cchar *, cchar *> SSMap;
   typedef MapElem<cchar *, cchar *> SSMapElem;
 #define form_SSMap(_p, _v) form_Map(SSMapElem, _p, _v)

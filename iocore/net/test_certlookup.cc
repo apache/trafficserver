@@ -34,7 +34,7 @@ make_endpoint(const char * address)
   return ip;
 }
 
-REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int atype, int * pstatus)
+REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int /* atype ATS_UNUSED */, int * pstatus)
 {
   TestBox       box(t, pstatus);
   SSLCertLookup lookup;
@@ -78,7 +78,7 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int atype, int * pstatu
   box.check(lookup.findInfoInHash("www.bar.com") == NULL, "host lookup for www.bar.com");
 }
 
-REGRESSION_TEST(SSLAddressLookup)(RegressionTest* t, int atype, int * pstatus)
+REGRESSION_TEST(SSLAddressLookup)(RegressionTest* t, int /* atype ATS_UNUSED */, int * pstatus)
 {
   TestBox       box(t, pstatus);
   SSLCertLookup lookup;

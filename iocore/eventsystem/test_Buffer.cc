@@ -122,7 +122,7 @@ init_diags(const char *bdt, const char *bat)
 }
 
 int
-main(int argc, const char *argv[])
+main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
   RecModeT mode_type = RECM_STAND_ALONE;
 

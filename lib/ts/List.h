@@ -435,7 +435,7 @@ struct ConsCell {
   ConsCell(C acar) : car(acar), cdr(NULL) {}
   ConsCell(ConsCell *acdr) : cdr(acdr) {}
   static void *operator new(size_t size) { return A::alloc(size); }
-  static void operator delete(void *p, size_t size) { A::free(p); }
+  static void operator delete(void *p, size_t /* size ATS_UNUSED */) { A::free(p); }
 };
 
 template <class C, class A = DefaultAlloc>

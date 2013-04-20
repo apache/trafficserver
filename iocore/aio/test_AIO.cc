@@ -296,7 +296,7 @@ dump_summary(void)
 }
 
 int
-AIO_Device::do_hotset(int event, Event * e)
+AIO_Device::do_hotset(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   off_t max_offset = ((off_t) disk_size) * 1024 * 1024;
   io->aiocb.aio_lio_opcode = LIO_WRITE;
@@ -324,7 +324,7 @@ AIO_Device::do_hotset(int event, Event * e)
 }
 
 int
-AIO_Device::do_fd(int event, Event * e)
+AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   if (!time_start) {
     time_start = ink_get_hrtime();
@@ -473,7 +473,7 @@ read_config(const char *config_filename)
 }
 
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   int i;
 

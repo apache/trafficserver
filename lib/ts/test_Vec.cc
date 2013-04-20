@@ -121,7 +121,7 @@ static void test_basic()
   ink_assert(uf.find(1) == uf.find(3));
 }
 
-int main(int argc, char **argv)
+int main(int /* argc ATS_UNUSED */, char **/* argv ATS_UNUSED */)
 {
   test_append();
   test_basic();
