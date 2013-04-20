@@ -21,7 +21,9 @@
   limitations under the License.
  */
 
-#include <ts/ts.h>
+#include "ts/ts.h"
+#include "ink_port.h"
+
 #include "misc.h"
 #include <string.h>
 #include <inttypes.h>

@@ -21,13 +21,11 @@
   limitations under the License.
  */
 
-#define __STDC_FORMAT_MACROS
-
+#include "ink_port.h"
 #include "serverIntercept.h"
 
 #include <string>
 #include <limits.h>
-#include <inttypes.h>
 #include <strings.h>
 #include <stdio.h>
 

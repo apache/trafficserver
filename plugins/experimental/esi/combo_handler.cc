@@ -28,6 +28,7 @@
 
 #include "ts/ts.h"
 #include "ts/experimental.h"
+#include "ink_port.h"
 
 #include "HttpDataFetcherImpl.h"
 #include "gzip.h"

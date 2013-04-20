@@ -21,11 +21,6 @@
   limitations under the License.
  */
 
-//for INT64_MAX
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif
-
 #include <string>
 #include <string.h>
 #include <zlib.h>
@@ -33,6 +28,8 @@
 #include "debug_macros.h"
 #include "misc.h"
 #include "configuration.h"
+
+#include "ink_port.h"
 
 using namespace std;
 using namespace Gzip;

@@ -43,8 +43,6 @@ const char *DocNode::type_names_[] = { "UNKNOWN",
                                        "SPECIAL_INCLUDE"
 };
 
-const char DocNode::VERSION = 1;
-
 // helper functions 
 
 inline void
@@ -72,7 +70,7 @@ unpackItem(const char *&packed_data, T &item) {
 void
 DocNode::pack(string &buffer) const {
   int32_t orig_buf_size = buffer.size();
-  buffer += VERSION;
+  buffer += DOCNODE_VERSION;
   buffer.append(sizeof(int32_t), ' '); // reserve space for length
   buffer.append(reinterpret_cast<const char *>(&type), sizeof(type));
   packString(data, data_len, buffer);
@@ -94,9 +92,9 @@ DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len) {
     Utils::ERROR_LOG("[%s] Invalid arguments (%p, %d)", __FUNCTION__, packed_data, packed_data_len);
     return false;
   }
-  if (*packed_data != VERSION) {
+  if (*packed_data != DOCNODE_VERSION) {
     Utils::ERROR_LOG("[%s] Version %d not in supported set (%d)",
-                     __FUNCTION__, static_cast<int>(*packed_data), static_cast<int>(VERSION));
+                     __FUNCTION__, static_cast<int>(*packed_data), static_cast<int>(DOCNODE_VERSION));
     return false;
   }
   ++packed_data;

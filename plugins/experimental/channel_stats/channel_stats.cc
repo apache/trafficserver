@@ -17,10 +17,8 @@
 */
 
 
-// get INT64_MAX
-#define __STDC_LIMIT_MACROS
-
-#include "ts/ink_platform.h"
+#include "ink_platform.h"
+#include "ink_port.h"
 
 #include <cstdio>
 #include <cstring>

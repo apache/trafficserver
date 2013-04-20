@@ -16,15 +16,14 @@
   limitations under the License.
 */
 
-#define __STDC_FORMAT_MACROS
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_port.h"
 
-#include <ts/ts.h>
-#include <ts/remap.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <inttypes.h>
 
 static const char* PLUGIN_NAME = "conf_remap";
 // This makes the plugin depend on the version of traffic server installed, but that's

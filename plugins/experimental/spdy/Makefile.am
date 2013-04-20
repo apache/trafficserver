@@ -24,9 +24,10 @@ check_PROGRAMS = zstream_test
 
 AM_CPPFLAGS = \
   -I$(srcdir)/lib \
+  -I$(top_builddir)/lib/ts \
   -I$(top_srcdir)/lib/ts \
   -I$(top_builddir)/proxy/api \
-  -D__STDC_FORMAT_MACROS=1
+  -I$(top_srcdir)/proxy/api
 
 if BUILD_HAVE_LIBCXX
 AM_CXXFLAGS = -stdlib=libc++

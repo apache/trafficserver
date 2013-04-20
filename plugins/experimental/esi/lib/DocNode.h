@@ -106,9 +106,7 @@ public:
   bool unpack(const char *data, int data_len, int &node_len);
 
 private:
-
-  static const char VERSION;
-
+  static const char DOCNODE_VERSION = 1;
 };
 
 };

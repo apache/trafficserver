@@ -20,13 +20,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
+// ToDo: why does including ink_port break compiling the ESI plugin?
+#include "ink_port.h"   
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
-#include <stdint.h>
 #include <limits.h>
 #include <string.h>
 #include <string>
@@ -34,9 +32,10 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <getopt.h>
+
 #include "ts/ts.h"
 #include "ts/experimental.h"
-#include <ts/remap.h>
+#include "ts/remap.h"
 
 #include "lib/Utils.h"
 #include "lib/gzip.h"

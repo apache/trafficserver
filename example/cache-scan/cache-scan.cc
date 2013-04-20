@@ -29,13 +29,11 @@
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
-#define __STDC_LIMIT_MACROS
-#include <ts/ts.h>
-#include <ts/experimental.h>
 
-// This gets the PRI*64 types
-#define __STDC_FORMAT_MACROS 1
-#include <inttypes.h>
+#include "ts/ts.h"
+#include "ts/experimental.h"
+
+#include "ink_port.h"
 
 static TSCont global_contp;
 

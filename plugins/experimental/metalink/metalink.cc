@@ -35,9 +35,8 @@
 
 #include <openssl/sha.h>
 
-#define __STDC_LIMIT_MACROS
-
-#include <ts/ts.h>
+#include "ts/ts.h"
+#include "ink_port.h"
 
 typedef struct {
   TSVConn connp;

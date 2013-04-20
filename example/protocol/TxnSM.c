@@ -24,11 +24,9 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include "ink_defs.h"
-#include "TxnSM.h"
+#include "ink_port.h"
 
-// This gets the PRI*64 types
-# define __STDC_FORMAT_MACROS 1
-# include <inttypes.h>
+#include "TxnSM.h"
 
 extern TSTextLogObject protocol_plugin_log;
 

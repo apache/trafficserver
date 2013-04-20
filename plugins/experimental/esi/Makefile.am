@@ -23,6 +23,8 @@ AM_CXXFLAGS = \
   -I$(srcdir)/test \
   -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api \
+  -I$(top_builddir)/lib/ts \
+  -I$(top_srcdir)/lib/ts \
   -Wno-deprecated
 
 pkglib_LTLIBRARIES = esi.la combo_handler.la
