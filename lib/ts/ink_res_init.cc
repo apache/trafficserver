@@ -167,9 +167,8 @@ ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt) {
 }
 
 static void
-ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
+ink_res_setoptions(ink_res_state statp, const char *options, const char *source ATS_UNUSED)
 {
-  NOWARN_UNUSED(source);
   const char *cp = options;
   int i;
 

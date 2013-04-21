@@ -56,11 +56,8 @@ get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key)
 // of writing the vector even if the http state machine aborts.  This
 // makes it easier to handle situations where writers abort.
 int
-CacheVC::updateVector(int event, Event *e)
+CacheVC::updateVector(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
   if (od->reading_vec || od->writing_vec)
     VC_SCHED_LOCK_RETRY();
@@ -179,11 +176,8 @@ CacheVC::updateVector(int event, Event *e)
    */
 
 int
-CacheVC::handleWrite(int event, Event *e)
+CacheVC::handleWrite(int event, Event */* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   // plain write case
   ink_assert(!trigger);
   frag_len = 0;
@@ -311,9 +305,6 @@ Vol::scan_for_pinned_documents()
 int
 Vol::aggWriteDone(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
 
   // ensure we have the cacheDirSync lock if we intend to call it later
@@ -390,9 +381,6 @@ new_DocEvacuator(int nbytes, Vol *vol)
 int
 CacheVC::evacuateReadHead(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   // The evacuator vc shares the lock with the volition mutex
   ink_debug_assert(vol->mutex->thread_holding == this_ethread());
   cancel_trigger();
@@ -458,9 +446,6 @@ Ldone:
 int
 CacheVC::evacuateDocDone(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   ink_debug_assert(vol->mutex->thread_holding == this_ethread());
   Doc *doc = (Doc *) buf->data();
   DDebug("cache_evac", "evacuateDocDone %X o %d p %d new_o %d new_p %d",
@@ -591,9 +576,6 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Vol *vol)
 int
 Vol::evacuateWrite(CacheVC *evacuator, int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   // push to front of aggregation write list, so it is written first
 
   evacuator->agg_len = round_to_approx_size(((Doc *)evacuator->buf->data())->len);
@@ -611,8 +593,6 @@ Vol::evacuateWrite(CacheVC *evacuator, int event, Event *e)
 int
 Vol::evacuateDocReadDone(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-
   cancel_trigger();
   if (event != AIO_EVENT_DONE)
     return EVENT_DONE;
@@ -971,8 +951,6 @@ Vol::agg_wrap()
 int
 Vol::aggWrite(int event, void *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
   ink_assert(!is_io_in_progress());
 
   Que(CacheVC, link) tocall;
@@ -1093,9 +1071,6 @@ Lwait:
 int
 CacheVC::openWriteCloseDir(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
@@ -1152,7 +1127,6 @@ CacheVC::openWriteCloseDir(int event, Event *e)
 int
 CacheVC::openWriteCloseHeadDone(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
   if (event == AIO_EVENT_DONE)
     set_io_not_in_progress();
   else if (is_io_in_progress())
@@ -1197,8 +1171,6 @@ Lclose:
 int
 CacheVC::openWriteCloseHead(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-
   cancel_trigger();
   f.use_first_key = 1;
   if (io.ok())
@@ -1226,7 +1198,6 @@ CacheVC::openWriteCloseHead(int event, Event *e)
 int
 CacheVC::openWriteCloseDataDone(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
   int ret = 0;
 
   if (event == AIO_EVENT_DONE)
@@ -1271,7 +1242,6 @@ Lcallreturn:
 int
 CacheVC::openWriteClose(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
   cancel_trigger();
   if (is_io_in_progress()) {
     if (event != AIO_EVENT_DONE)
@@ -1314,8 +1284,6 @@ CacheVC::openWriteClose(int event, Event *e)
 int
 CacheVC::openWriteWriteDone(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-
   cancel_trigger();
   if (event == AIO_EVENT_DONE)
     set_io_not_in_progress();
@@ -1366,8 +1334,6 @@ static inline int target_fragment_size() {
 int
 CacheVC::openWriteMain(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
   cancel_trigger();
   int called_user = 0;
   ink_debug_assert(!is_io_in_progress());
@@ -1438,8 +1404,6 @@ Lagain:
 int
 CacheVC::openWriteOverwrite(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-
   cancel_trigger();
   if (event != AIO_EVENT_DONE) {
     if (event == EVENT_IMMEDIATE)
@@ -1483,8 +1447,6 @@ Lcallreturn:
 int
 CacheVC::openWriteStartDone(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-
   intptr_t err = ECACHE_NO_DOC;
   cancel_trigger();
   if (is_io_in_progress()) {
@@ -1599,9 +1561,6 @@ Lcallreturn:
 int
 CacheVC::openWriteStartBegin(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   intptr_t err;
   cancel_trigger();
   if (_action.cancelled)
@@ -1698,8 +1657,6 @@ Action *
 Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
                   CacheKey *key1, CacheFragType type, char *hostname, int host_len)
 {
-  NOWARN_UNUSED(key1);
-
   if (!CACHE_READY(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;

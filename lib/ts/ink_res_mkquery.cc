@@ -97,7 +97,7 @@ ink_res_mkquery(ink_res_state statp,
 	     int _class, int type,	/*!< _class and type of query  */
 	     const u_char *data,	/*!< resource record data  */
 	     int datalen,		/*!< length of data  */
-	     const u_char *newrr_in,	/*!< new rr for modify or append  */
+             const u_char */* newrr_in  ATS_UNUSED */,	/*!< new rr for modify or append  */
 	     u_char *buf,		/*!< buffer to put query  */
 	     int buflen)		/*!< size of buffer  */
 {
@@ -105,8 +105,6 @@ ink_res_mkquery(ink_res_state statp,
 	u_char *cp, *ep;
 	int n;
 	u_char *dnptrs[20], **dpp, **lastdnptr;
-
-	NOWARN_UNUSED(newrr_in);
 
 	/*
 	 * Initialize header fields.

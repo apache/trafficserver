@@ -411,17 +411,15 @@ _TSReleaseAssert(const char *text, const char *file, int line)
 
 // Assert only in debug
 int
+#ifdef DEBUG
 _TSAssert(const char *text, const char *file, int line)
 {
-#ifdef DEBUG
   _ink_assert(text, file, line);
 #else
-  NOWARN_UNUSED(text);
-  NOWARN_UNUSED(file);
-  NOWARN_UNUSED(line);
+_TSAssert(const char *, const char *, int)
+{
 #endif
-
-  return 0;
+ return 0;
 }
 
 // This assert is for internal API use only.
@@ -1141,9 +1139,8 @@ INKVConnInternal::do_io_shutdown(ShutdownHowTo_t howto)
 }
 
 void
-INKVConnInternal::reenable(VIO *vio)
+INKVConnInternal::reenable(VIO */* vio ATS_UNUSED */)
 {
-  NOWARN_UNUSED(vio);
   if (ink_atomic_increment((int *) &m_event_count, 1) < 0) {
     ink_assert(!"not reached");
   }
@@ -1652,16 +1649,14 @@ api_init()
 ////////////////////////////////////////////////////////////////////
 
 void *
-_TSmalloc(size_t size, const char *path)
+_TSmalloc(size_t size, const char */* path ATS_UNUSED */)
 {
-  NOWARN_UNUSED(path);
   return ats_malloc(size);
 }
 
 void *
-_TSrealloc(void *ptr, size_t size, const char *path)
+_TSrealloc(void *ptr, size_t size, const char */* path ATS_UNUSED */)
 {
-  NOWARN_UNUSED(path);
   return ats_realloc(ptr, size);
 }
 
@@ -2611,9 +2606,8 @@ TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc obj)
 // The following three helper functions should not be used in plugins! Since they are not used
 // by plugins, there's no need to validate the input.
 const char *
-TSMimeFieldValueGet(TSMBuffer bufp, TSMLoc field_obj, int idx, int *value_len_ptr)
+TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, int *value_len_ptr)
 {
-  NOWARN_UNUSED(bufp);
   MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
 
   if (idx >= 0) {
@@ -6517,10 +6511,9 @@ extern bool ssl_register_protocol(const char *, Continuation *);
 extern bool ssl_unregister_protocol(const char *, Continuation *);
 
 TSReturnCode
+#if TS_USE_TLS_NPN
 TSNetAcceptNamedProtocol(TSCont contp, const char * protocol)
 {
-#if TS_USE_TLS_NPN
-
   sdk_assert(protocol != NULL);
   sdk_assert(contp != NULL);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
@@ -6531,15 +6524,13 @@ TSNetAcceptNamedProtocol(TSCont contp, const char * protocol)
   }
 
   return TS_SUCCESS;
-
-#else /* TS_USE_TLS_NPN */
-
-  NOWARN_UNUSED(contp);
-  NOWARN_UNUSED(protocol);
-  return TS_ERROR;
-
-#endif /* TS_USE_TLS_NPN */
 }
+#else /* TS_USE_TLS_NPN */
+TSNetAcceptNamedProtocol(TSCont, const char *)
+{
+  return TS_ERROR;
+}
+#endif /* TS_USE_TLS_NPN */
 
 /* DNS Lookups */
 TSAction

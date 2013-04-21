@@ -29,6 +29,7 @@ Assertions
 #define _INK_ASSERT_H
 
 #include "ink_apidefs.h"
+#include "ink_error.h"
 
 #ifdef __cplusplus
 extern "C"

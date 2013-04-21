@@ -798,9 +798,8 @@ HostLookup::~HostLookup()
 }
 
 static void
-empty_print_fn(void *opaque_data)
+empty_print_fn(void */* opaque_data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(opaque_data);
 }
 
 void

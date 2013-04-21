@@ -118,7 +118,6 @@ ink_mutex_try_acquire(ink_mutex * m)
 
 /* process mutex */
 
-void ink_ProcessMutex_init(ProcessMutex *, const char *name);
 void ink_ProcessMutex_destroy(ProcessMutex *);
 void ink_ProcessMutex_acquire(ProcessMutex *);
 void ink_ProcessMutex_release(ProcessMutex *);

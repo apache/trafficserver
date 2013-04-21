@@ -183,10 +183,8 @@ send_pull_message(RecMessageT msg_type)
 // recv_message_cb
 //-------------------------------------------------------------------------
 int
-recv_message_cb(RecMessage * msg, RecMessageT msg_type, void *cookie)
+recv_message_cb(RecMessage * msg, RecMessageT msg_type, void */* cookie */)
 {
-  REC_NOWARN_UNUSED(cookie);
-
   RecRecord *r;
   RecMessageItr itr;
 
