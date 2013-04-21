@@ -870,11 +870,13 @@ agg_copy(char *p, CacheVC *vc)
     // for evacuated documents, copy the data, and update directory
     Doc *doc = (Doc *) vc->buf->data();
     int l = vc->vol->round_to_approx_size(doc->len);
-    ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
+    {
+      ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
 
-    ink_debug_assert(mutex->thread_holding == this_ethread());
-    CACHE_DEBUG_INCREMENT_DYN_STAT(cache_gc_frags_evacuated_stat);
-    CACHE_DEBUG_SUM_DYN_STAT(cache_gc_bytes_evacuated_stat, l);
+      ink_debug_assert(mutex->thread_holding == this_ethread());
+      CACHE_DEBUG_INCREMENT_DYN_STAT(cache_gc_frags_evacuated_stat);
+      CACHE_DEBUG_SUM_DYN_STAT(cache_gc_bytes_evacuated_stat, l);
+    }
 
     doc->sync_serial = vc->vol->header->sync_serial;
     doc->write_serial = vc->vol->header->write_serial;
