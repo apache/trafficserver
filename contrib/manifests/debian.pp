@@ -17,7 +17,7 @@
 # Base ATS build dependencies.
 package {[
     'gcc', 'g++', 'automake', 'autoconf', 'libtool', 'pkg-config',
-    'libssl-dev', 'tcl-dev', 'libexpat1-dev', 'libpcre3-dev',
+    'libssl-dev', 'tcl-dev', 'libexpat1-dev', 'libpcre3-dev', 'libhwloc-dev',
     'libcap-dev', 'libcap2', 'bison', 'flex', 'make',
   ]:
   ensure => latest
