@@ -18,7 +18,7 @@
 package {[
     'gcc', 'automake', 'autoconf', 'libtool',
     'openssl-devel', 'tcl-devel', 'expat-devel', 'pcre-devel',
-    'libcap-devel', 'bison', 'flex', 'make',
+    'hwloc-devel', 'libcap-devel', 'bison', 'flex', 'make',
   ]:
   ensure => latest
 }
