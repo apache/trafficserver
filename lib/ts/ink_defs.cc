@@ -119,17 +119,21 @@ int
 ink_number_of_processors()
 {
 #if TS_USE_HWLOC
-  int cu;
-  int pu;
 
-  cu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
-  pu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
-  if (pu > cu)
+  int cu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
+
+#if HAVE_HWLOC_OBJ_PU
+  int pu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
+
+  if (pu > cu) {
     return cu + (pu - cu)/4;
-  else
-    return cu;
-#else
-#if defined(freebsd)
+  }
+#endif
+
+  return cu;
+
+#elif defined(freebsd)
+
   int mib[2], n;
   mib[0] = CTL_HW;
   mib[1] = HW_NCPU;
@@ -137,9 +141,10 @@ ink_number_of_processors()
   if (sysctl(mib, 2, &n, &len, NULL, 0) == -1)
     return 1;
   return n;
-#else
-  return sysconf(_SC_NPROCESSORS_ONLN); // number of processing units (includes Hyper Threading)
-#endif /* freebsd */
 
-#endif /* TS_HAVE_HWLOC_H */
+#else
+
+  return sysconf(_SC_NPROCESSORS_ONLN); // number of processing units (includes Hyper Threading)
+
+#endif
 }

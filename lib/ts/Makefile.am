@@ -25,7 +25,18 @@ AM_CPPFLAGS = -I$(top_srcdir)/lib
 lib_LTLIBRARIES = libtsutil.la
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
-libtsutil_la_LIBADD = @LIBOBJS@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBRESOLV@ @LIBRT@ @LIBSOCKET@ @LIBNSL@ @LIBCAP@ @LIBHWLOC@ -lc
+libtsutil_la_LIBADD = \
+  @hwloc_LIBS@ \
+  @LIBOBJS@ \
+  @LIBPCRE@ \
+  @LIBSSL@ \
+  @LIBTCL@ \
+  @LIBRESOLV@ \
+  @LIBRT@ \
+  @LIBSOCKET@ \
+  @LIBNSL@ \
+  @LIBCAP@ \
+  -lc
 
 libtsutil_la_SOURCES = \
   Allocator.h \

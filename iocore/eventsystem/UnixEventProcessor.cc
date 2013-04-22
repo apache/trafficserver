@@ -169,7 +169,13 @@ EventProcessor::start(int n_event_threads)
   ink_cpuset_t cpuset;
   int socket = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_SOCKET);
   int cu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
-  int pu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
+  int pu = cu;
+
+  // Older versions of libhwloc (eg. Ubuntu 10.04) don't have pHWLOC_OBJ_PU.
+#if HAVE_HWLOC_OBJ_PU
+  pu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
+#endif
+
   Debug("iocore_thread", "socket: %d core: %d logical processor: %d affinity: %d", socket, cu, pu, affinity);
 #endif
 

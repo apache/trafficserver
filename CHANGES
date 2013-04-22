@@ -2,7 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
-  *) [TS-1858] Fix redefinition of timersub on Solaris
+  *) [TS-1843] Detect and link libhwloc on Ubuntu.
+
+  *) [TS-1858] Fix redefinition of timersub on Solaris.
 
   *) [TS-1861] Build fails with reclaimable freelist enabled.
 
