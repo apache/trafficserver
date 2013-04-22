@@ -64,6 +64,10 @@ Vagrant.configure("2") do |config|
     config.vm.box = "lucid64"
     config.vm.network :private_network, ip: $network["lucid64"]
     config.vm.box_url = "http://files.vagrantup.com/lucid64.box"
+    config.vm.provision :puppet do |puppet|
+      puppet.manifests_path = "contrib/manifests"
+      puppet.manifest_file = "debian.pp"
+    end
   end
 
   config.vm.define :freebsd do | config |
