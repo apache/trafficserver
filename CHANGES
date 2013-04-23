@@ -2,9 +2,11 @@
   Changes with Apache Traffic Server 3.3.3
 
 
-  *) [TS-1846] remove TestHook
+  *) [TS-1218] Make traffic_cop tracing configureable at build time.
 
-  *) [TS-1844] efficient HostDB file allocation
+  *) [TS-1846] Remove TestHook.
+
+  *) [TS-1844] Efficient HostDB file allocation.
 
   *) [TS-1586] Fix the SPDY plugin build under clang on Linux.
 
