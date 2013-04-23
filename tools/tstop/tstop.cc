@@ -70,7 +70,7 @@ static void prettyPrint(const int x, const int y, const double number, const int
   double my_number = number;
   short color;
   if (number > 1000000000000LL) {
-    my_number = number / 1000000000000;
+    my_number = number / 1000000000000LL;
     exp = 'T';
     color = colorPair::red;
   } else if (number > 1000000000) {
