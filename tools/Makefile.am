@@ -49,6 +49,7 @@ tstop_tstop_SOURCES = tstop/tstop.cc
 tstop_tstop_LDADD = \
   $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
   @CURL_LIBS@ \
-  @CURSES_LIB@
+  @CURSES_LIB@ \
+  @LIBTHREAD@
 
 endif
