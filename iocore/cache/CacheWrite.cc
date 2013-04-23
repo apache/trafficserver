@@ -380,7 +380,7 @@ new_DocEvacuator(int nbytes, Vol *vol)
 }
 
 int
-CacheVC::evacuateReadHead(int event, Event *e)
+CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   // The evacuator vc shares the lock with the volition mutex
   ink_debug_assert(vol->mutex->thread_holding == this_ethread());
@@ -445,7 +445,7 @@ Ldone:
 }
 
 int
-CacheVC::evacuateDocDone(int event, Event *e)
+CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
 {
   ink_debug_assert(vol->mutex->thread_holding == this_ethread());
   Doc *doc = (Doc *) buf->data();
@@ -950,7 +950,7 @@ Vol::agg_wrap()
    the eventProcessor to schedule events
 */
 int
-Vol::aggWrite(int event, void *e)
+Vol::aggWrite(int event, void */* e ATS_UNUSED */)
 {
   ink_assert(!is_io_in_progress());
 
@@ -1070,7 +1070,7 @@ Lwait:
 }
 
 int
-CacheVC::openWriteCloseDir(int event, Event *e)
+CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
 {
   cancel_trigger();
   {
@@ -1333,7 +1333,7 @@ static inline int target_fragment_size() {
 }
 
 int
-CacheVC::openWriteMain(int event, Event *e)
+CacheVC::openWriteMain(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
 {
   cancel_trigger();
   int called_user = 0;
@@ -1560,7 +1560,7 @@ Lcallreturn:
 
 // handle lock failures from main Cache::open_write entry points below
 int
-CacheVC::openWriteStartBegin(int event, Event *e)
+CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
 {
   intptr_t err;
   cancel_trigger();
@@ -1656,7 +1656,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
 // main entry point for writing of http documents
 Action *
 Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
-                  CacheKey *key1, CacheFragType type, char *hostname, int host_len)
+                  CacheKey */* key1 ATS_UNUSED */, CacheFragType type, char *hostname, int host_len)
 {
   if (!CACHE_READY(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
