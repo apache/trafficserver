@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1848] Fix MIMEHdr::field_value_set_int64() wrapper.
+   Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-986] experimental.h has a dependency on netinet/net.h (for
   struct in_addr).
 
