@@ -279,7 +279,6 @@ check_lockfile()
   pid_t holding_pid;
   int err;
 
-#ifndef _DLL_FOR_HNS
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
     fprintf(stderr,"unable to access() dir'%s': %d, %s\n",
             Layout::get()->runtimedir, errno, strerror(errno));
@@ -287,15 +286,6 @@ check_lockfile()
     _exit(1);
   }
   lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
-#else
-#define MAX_ENVVAR_LENGTH 128
-  char tempvar[MAX_ENVVAR_LENGTH + 1];
-  // TODO: Need an portable ink_file_tmppath()
-  // XXX:  What's the _DLL_FOR_HS?
-  //
-  ink_assert(GetEnvironmentVariable("TEMP", tempvar, MAX_ENVVAR_LENGTH + 1));
-  lockfile = Layout::relative_to(tempvar, SERVER_LOCK);
-#endif
 
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Get(&holding_pid);
@@ -305,11 +295,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-#if defined(solaris)
-      fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
-#else
-      fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
-#endif
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
