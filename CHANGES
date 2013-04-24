@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1850] Improve SSL certificate error reporting.
+
   *) [TS-1848] Fix MIMEHdr::field_value_set_int64() wrapper.
    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 

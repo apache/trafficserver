@@ -53,7 +53,7 @@ SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);
 void SSLInitializeLibrary();
 
 // Log an SSL error.
-void SSLError(const char *errStr, bool critical = true);
+void SSLError(const char * fmt, ...) TS_PRINTFLIKE(1, 2);
 
 // Log a SSL network buffer.
 void SSLDebugBufferPrint(const char * tag, const char * buffer, unsigned buflen, const char * message);
