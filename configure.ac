@@ -349,7 +349,7 @@ AC_MSG_CHECKING([whether to enable traffic_cop debugging])
 AC_ARG_ENABLE([cop-debug],
   [AS_HELP_STRING([--enable-cop-debug],[Enable Traffic Cop debugging (for developers)])],
   [],
-  [enable_cop-debug="no"]
+  [enable_cop_debug="no"]
 )
 AC_MSG_RESULT([$enable_cop_debug])
 TS_ARG_ENABLE_VAR([use], [cop-debug])
