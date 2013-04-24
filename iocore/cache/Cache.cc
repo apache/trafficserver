@@ -431,10 +431,8 @@ CacheVC::get_object_size()
   return ((CacheVC *) this)->doc_len;
 }
 
-bool CacheVC::set_data(int i, void *data)
+bool CacheVC::set_data(int /* i ATS_UNUSED */ , void * /* data */ )
 {
-  (void) i;
-  (void) data;
   ink_assert(!"CacheVC::set_data should not be called!");
   return true;
 }
@@ -1010,9 +1008,8 @@ CacheProcessor::db_check(bool afix)
 }
 
 int
-Vol::db_check(bool fix)
+Vol::db_check(bool /* fix ATS_UNUSED */ )
 {
-  (void) fix;
   char tt[256];
   printf("    Data for [%s]\n", hash_id);
   printf("        Length:          %" PRIu64 "\n", (uint64_t)len);
@@ -1278,9 +1275,8 @@ Vol::handle_dir_read(int event, void *data)
       */
 
 int
-Vol::handle_recover_from_data(int event, void *data)
+Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
 {
-  (void) data;
   uint32_t got_len = 0;
   uint32_t max_sync_serial = header->sync_serial;
   char *s, *e;
@@ -1530,10 +1526,8 @@ Lclear:
 }
 
 int
-Vol::handle_recover_write_dir(int event, void *data)
+Vol::handle_recover_write_dir(int /* event ATS_UNUSED */ , void * /* data ATS_UNUSED */ )
 {
-  (void) event;
-  (void) data;
   if (io.aiocb.aio_buf)
     free((char *) io.aiocb.aio_buf);
   delete init_info;
@@ -1600,10 +1594,8 @@ Vol::handle_header_read(int event, void *data)
 }
 
 int
-Vol::dir_init_done(int event, void *data)
+Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */ )
 {
-  (void) event;
-  (void) data;
   if (!cache->cache_read_done) {
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(5), ET_CALL);
     return EVENT_CONT;
@@ -1748,8 +1740,7 @@ Cache::vol_initialized(bool result) {
 }
 
 int
-AIO_Callback_handler::handle_disk_failure(int event, void *data) {
-  (void) event;
+AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data) {
   /* search for the matching file descriptor */
   if (!CacheProcessor::cache_ready)
     return EVENT_DONE;

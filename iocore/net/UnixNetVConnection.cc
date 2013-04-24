@@ -623,10 +623,8 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 }
 
 int
-OOB_callback::retry_OOB_send(int event, Event *e)
+OOB_callback::retry_OOB_send(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  (void) event;
-  (void) e;
   ink_assert(mutex->thread_holding == this_ethread());
   // the NetVC and the OOB_callback share a mutex
   server_vc->oob_ptr = NULL;
@@ -917,10 +915,8 @@ UnixNetVConnection::netActivity(EThread *lthread)
 }
 
 int
-UnixNetVConnection::startEvent(int event, Event *e)
+UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
-  (void) event;
-
   MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
   if (!lock) {
     e->schedule_in(NET_RETRY_DELAY);
@@ -936,7 +932,6 @@ UnixNetVConnection::startEvent(int event, Event *e)
 int
 UnixNetVConnection::acceptEvent(int event, Event *e)
 {
-  (void) event;
   thread = e->ethread;
 
   MUTEX_TRY_LOCK(lock, get_NetHandler(thread)->mutex, e->ethread);
