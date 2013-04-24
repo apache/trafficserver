@@ -997,16 +997,15 @@ MIOBuffer::write_avail()
 TS_INLINE void
 MIOBuffer::fill(int64_t len)
 {
-  IOBufferBlock *my_writer = _writer;
-  int64_t f = my_writer->write_avail();
+  int64_t f = _writer->write_avail();
   while (f < len) {
-    my_writer->fill(f);
+    _writer->fill(f);
     len -= f;
     if (len > 0)
-      my_writer = my_writer->next;
-    f = my_writer->write_avail();
+      _writer = _writer->next;
+    f = _writer->write_avail();
   }
-  my_writer->fill(len);
+  _writer->fill(len);
 }
 
 TS_INLINE int
