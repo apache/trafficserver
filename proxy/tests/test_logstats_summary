@@ -18,7 +18,11 @@
 
 set -e # exit on error
 
-tmpfile=$(mktemp -t logstats.XXXXXX)
+TMPDIR=${TMPDIR:-/tmp}
+tmpfile=$(mktemp "$TMPDIR/logstats.XXXXXX")
+
+# Automake sets $srcdir.
+srcdir=$(cd $srcdir && pwd)
 
 ./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --summary > "$tmpfile"
 diff -q "$tmpfile" "$srcdir/tests/logstats.summary"

@@ -18,7 +18,9 @@
 
 set -e # exit on error
 
-tmpfile=$(mktemp -t logstats.XXXXXX)
+TMPDIR=${TMPDIR:-/tmp}
+tmpfile=$(mktemp "$TMPDIR/logstats.XXXXXX")
+srcdir=$(cd $srcdir && pwd)
 
 # Note that the JSON has a timestamp in it that we have to filter out ...
 ./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --json | grep -v timestamp > "$tmpfile"
