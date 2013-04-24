@@ -2265,14 +2265,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   origin_set = NULL;
   parse_errors = 0;
 
-  // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-  if (-1 == access(system_log_dir, R_OK)) {
-    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
-    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    exit(1);
-  }
-
   // Command line parsing
   cl.parse_arguments(argv);
 
@@ -2355,15 +2347,21 @@ main(int /* argc ATS_UNUSED */, char *argv[])
       std::cout << "[" << std::endl;
   }
 
-  // Change directory to the log dir
-  if (chdir(system_log_dir) < 0) {
-    exit_status.set(EXIT_CRITICAL, " can't chdir to ");
-    exit_status.append(system_log_dir);
-    my_exit(exit_status);
-  }
-
+  // Do the incremental parse of the default squid log.
   if (cl.incremental) {
-    // Do the incremental parse of the default squid log.
+    // Get log directory
+    if (Layout::get()->logdir) {
+      exit_status.set(EXIT_CRITICAL, " missing log directory configuration");
+      my_exit(exit_status);
+    }
+
+    // Change directory to the log dir
+    if (chdir(system_log_dir) < 0) {
+      exit_status.set(EXIT_CRITICAL, " can't chdir to ");
+      exit_status.append(system_log_dir);
+      my_exit(exit_status);
+    }
+
     std::string sf_name(system_log_dir);
     struct stat stat_buf;
     int state_fd;
@@ -2396,7 +2394,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     lck.l_start = (off_t)0;
     lck.l_len = (off_t)0; /* till end of file*/
     cnt = 10;
-    // while (((res = flock(state_fd, LOCK_EX | LOCK_NB)) < 0) && --cnt) {
     while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {
       case EWOULDBLOCK:
