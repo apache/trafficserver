@@ -19,6 +19,7 @@
 lib_LTLIBRARIES = libtsconfig.la
 noinst_PROGRAMS = test-tsconfig
 libtsconfig_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
+CFLAGS = @CFLAGS@ @FLEX_CFLAGS@
 
 AM_YFLAGS = --yacc -d -p tsconfig
 
