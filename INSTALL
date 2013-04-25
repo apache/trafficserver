@@ -11,18 +11,18 @@ BUILD AND INSTALLATION
 Configure & Build from source:
     $ autoreconf -i  # generate the configure script and Makefile.in files
 
-On Linux, OSX and FreeBSD:
+On Linux, OSX:
     $ ./configure [--prefix=PREFIX]
     $ make
 
-On OpenSolaris:
+On OpenSolaris and FreeBSD:
     $ ./configure [--prefix=PREFIX]
     $ gmake
 
 To install:
     $ sudo make install
 
-* Building on FreeBSD required GNU make. This is the preferred make
+* Building on FreeBSD requires GNU make. This is the preferred make
   on all platforms.
 
 * Replace PREFIX with the filesystem path under which Traffic Server
