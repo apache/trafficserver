@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1852] Fix missing AC_PROG_SED on CentOS 5.9.
+
   *) [TS-1717] Fix the static build as much as possible.
 
   *) [TS-1851] Turn HostDBInfo back into a POD type.

@@ -577,13 +577,18 @@ if test "x$enable_ccache" = "xyes"; then
     fi
 fi
 
-dnl AC_PROG_SED is only avaliable in recent autoconf versions.
-dnl Use AC_CHECK_PROG instead if AC_PROG_SED is not present.
-ifdef([AC_PROG_SED],
-      [AC_PROG_SED],
-      [AC_CHECK_PROG(SED, sed, sed)])
+dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
+dnl 5.9 still has an ancient version, but we have macros that require
+dnl AC_PROG_SED. The actual AC_PROG_SED macro does functional checks, but here
+dnl we define a trivial local version for times when we are running on
+dnl obsoldete autoconf.
+ifdef([AC_PROG_SED], [], [
+  AC_DEFUN([AC_PROG_SED], [
+    AC_CHECK_PROG(SED, sed, sed)
+  ])
+])
 
-dnl Same with AM_PROG_AR, but it doesn't seem to be needed in older versions.
+dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
       [AM_PROG_AR])
 
@@ -592,6 +597,7 @@ AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
 AC_PROG_AWK
+AC_PROG_SED
 AC_PROG_LN_S
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
@@ -599,6 +605,7 @@ AC_CHECK_PROG(RM, rm, rm)
 AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
+
 # Do bison check by hand because we must do a version check.
 # Use YACC because it makes autotools shut up.
 BISON_MAJOR=2
