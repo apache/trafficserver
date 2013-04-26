@@ -1213,8 +1213,8 @@ public:
   int main_handler(int event, void *data);
 
 private:
-  int i;
-  int completions_received;
+  unsigned i;
+  unsigned completions_received;
 };
 
 PVCTestDriver::PVCTestDriver():
@@ -1245,8 +1245,8 @@ void
 PVCTestDriver::run_next_test()
 {
 
-  int a_index = i * 2;
-  int p_index = a_index + 1;
+  unsigned a_index = i * 2;
+  unsigned p_index = a_index + 1;
 
   if (p_index >= num_netvc_tests) {
     // We are done - // FIX - PASS or FAIL?
