@@ -3050,7 +3050,7 @@ static int get_zipf(double v) {
   if (zipf_bucket_size == 1)
     return m;
   double x = zipf_table[m], y = zipf_table[m+1];
-  m += (v - x) / (y - x);
+  m += static_cast<int> ((v - x) / (y - x));
   return m;
 }
 
