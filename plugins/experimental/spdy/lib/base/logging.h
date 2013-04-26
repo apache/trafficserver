@@ -34,10 +34,6 @@ void TSError(const char *, ...)
 int TSIsDebugTagSet(const char*);
 }
 
-template <typename T, unsigned N> unsigned countof(const T(&)[N]) {
-    return N;
-}
-
 template <typename T> std::string stringof(const T&);
 #define cstringof(x) stringof(x).c_str()
 

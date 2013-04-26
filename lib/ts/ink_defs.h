@@ -86,14 +86,14 @@
 #define NULL_PTR static_cast<void*>(0)
 
 // Determine the element count for an array.
-#define COUNTOF(x) ((unsigned)(sizeof(x)/sizeof((x)[0])))
-
 #ifdef __cplusplus
 template<typename T, unsigned N>
 static inline unsigned
 countof(const T (&)[N]) {
   return N;
 }
+#else
+#  define countof(x) ((unsigned)(sizeof(x)/sizeof((x)[0])))
 #endif
 
 #define SOCKOPT_ON ((char*)&on)
