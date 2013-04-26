@@ -23,7 +23,7 @@ AM_CPPFLAGS = -I$(top_builddir)/proxy/api/ts
 if BUILD_HAVE_CXX_11
 
 if BUILD_HAVE_LIBCXX
-AM_CXXFLAGS = -stdlib=libc++
+AM_CXXFLAGS += -stdlib=libc++
 endif
 
 lib_LTLIBRARIES = libatscpp11api.la

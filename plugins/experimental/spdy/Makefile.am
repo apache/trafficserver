@@ -26,7 +26,7 @@ AM_CPPFLAGS += \
   -I$(srcdir)/lib
 
 if BUILD_HAVE_LIBCXX
-AM_CXXFLAGS = -stdlib=libc++
+AM_CXXFLAGS += -stdlib=libc++
 endif
 
 spdy_la_SOURCES =  \

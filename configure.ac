@@ -728,7 +728,8 @@ case $host_os in
     *) # gcc
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
-      common_opt="-pipe -Wall -Werror -Wunused-parameter"
+      ts_am_common_flags="-Wunused-parameter"
+      common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -808,6 +809,11 @@ cc_oflag_opt=$release_opt
 cc_oflag_dbg=$debug_opt
 cxx_oflag_opt="$release_opt $cxx_opt $cxx_rel"
 cxx_oflag_dbg="$debug_opt $cxx_opt $cxx_dbg"
+
+AM_CFLAGS="$ts_am_common_flags"
+AM_CXXFLAGS="$ts_am_common_flags"
+AC_SUBST(AM_CFLAGS)
+AC_SUBST(AM_CXXFLAGS)
 
 AC_SUBST([FLEX_CFLAGS], $flex_cflags)
 
