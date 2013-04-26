@@ -658,8 +658,6 @@ static ArgumentDescription argument_descriptions[] = {
   {"version", 'V', "Print Version Id", "T", &cl.version, NULL, NULL},
 };
 
-static int n_argument_descriptions = SIZE(argument_descriptions);
-
 static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
@@ -667,7 +665,7 @@ void
 CommandLineArgs::parse_arguments(char** argv)
 {
   // process command-line arguments
-  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+  process_args(argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
 
   // Process as "CGI" ?
   if (strstr(argv[0], ".cgi") || cgi) {
@@ -720,7 +718,7 @@ CommandLineArgs::parse_arguments(char** argv)
 
   // check for help request
   if (help) {
-    usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+    usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
     _exit(0);
   }
 }
@@ -2302,7 +2300,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     fs.open(cl.origin_file, std::ios::in);
     if (!fs.is_open()) {
       std::cerr << "can't read " << cl.origin_file << std::endl;
-      usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+      usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
       _exit(0);
     }
 

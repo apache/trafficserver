@@ -859,7 +859,7 @@ CacheProcessor::cacheInitialized()
             break;
         }
       }
-      // let us cocalate the Size
+      // let us calculate the Size
       if (cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE) {
         Debug("cache_init", "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
         for (i = 0; i < gnvol; i++) {
@@ -1125,7 +1125,6 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   len = blocks * STORE_BLOCK_SIZE;
   ink_assert(len <= MAX_VOL_SIZE);
   skip = dir_skip;
-  int i;
   prev_recover_pos = 0;
 
   // successive approximation, directory/meta data eats up some storage
@@ -1167,7 +1166,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   init_info->vol_aio[2].aiocb.aio_offset = bs;
   init_info->vol_aio[3].aiocb.aio_offset = bs + footer_offset;
 
-  for (i = 0; i < 4; i++) {
+  for (unsigned i = 0; i < countof(init_info->vol_aio); i++) {
     AIOCallback *aio = &(init_info->vol_aio[i]);
     aio->aiocb.aio_fildes = fd;
     aio->aiocb.aio_buf = &(init_info->vol_h_f[i * STORE_BLOCK_SIZE]);

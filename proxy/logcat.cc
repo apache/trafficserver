@@ -77,7 +77,6 @@ static const ArgumentDescription argument_descriptions[] = {
   {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL,
    NULL}
 };
-static const int n_argument_descriptions = SIZE(argument_descriptions);
 
 static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-CEhS"
 #ifdef DEBUG
@@ -241,7 +240,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   // process command-line arguments
   //
   output_file[0] = 0;
-  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+  process_args(argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
 
   // check for the version number request
   //
@@ -252,7 +251,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   // check for help request
   //
   if (help) {
-    usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+    usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
     _exit(NO_ERROR);
   }
   // check that only one of the -o and -a options was specified

@@ -190,7 +190,7 @@ main(int argc, char **argv)
   };
 
   // Process command line arguments and dump into variables
-  process_args(argument_descriptions, SIZE(argument_descriptions), argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // check for the version number request
   if (VersionFlag) {

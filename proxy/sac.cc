@@ -70,8 +70,6 @@ ArgumentDescription argument_descriptions[] = {
 #endif
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
-int n_argument_descriptions = SIZE(argument_descriptions);
-
 
 /*-------------------------------------------------------------------------
   main
@@ -90,7 +88,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   // take care of command-line arguments
   //
   snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);
-  process_args(argument_descriptions, n_argument_descriptions, argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // Get log directory
   ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));

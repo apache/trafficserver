@@ -243,7 +243,6 @@ static const ArgumentDescription argument_descriptions[] = {
    NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
-static const unsigned n_argument_descriptions = SIZE(argument_descriptions);
 
 //
 // Initialize operating system related information/services
@@ -707,7 +706,7 @@ static int
 cmd_index(char *p)
 {
   p += strspn(p, " \t");
-  for (unsigned c = 0; c < SIZE(commands); c++) {
+  for (unsigned c = 0; c < countof(commands); c++) {
     const char *l = commands[c].n;
     while (l) {
       const char *s = strchr(l, '/');
@@ -729,7 +728,7 @@ cmd_help(char *cmd)
   printf("HELP\n\n");
   cmd = skip(cmd, true);
   if (!cmd) {
-    for (unsigned i = 0; i < SIZE(commands); i++) {
+    for (unsigned i = 0; i < countof(commands); i++) {
       printf("%15s  %s\n", commands[i].n, commands[i].d);
     }
   } else {
@@ -1336,7 +1335,7 @@ main(int argc, char **argv)
   ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
   chdir_root(); // change directory to the install root of traffic server.
 
-  process_args(argument_descriptions, n_argument_descriptions, argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // Check for version number request
   if (version_flag) {

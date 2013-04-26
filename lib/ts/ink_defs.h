@@ -85,9 +85,17 @@
 // interpreted as 32 bits
 #define NULL_PTR static_cast<void*>(0)
 
-/* Some popular defines
-*/
-#define SIZE(x) (sizeof(x)/sizeof((x)[0]))
+// Determine the element count for an array.
+#define COUNTOF(x) ((unsigned)(sizeof(x)/sizeof((x)[0])))
+
+#ifdef __cplusplus
+template<typename T, unsigned N>
+static inline unsigned
+countof(const T (&)[N]) {
+  return N;
+}
+#endif
+
 #define SOCKOPT_ON ((char*)&on)
 #define SOCKOPT_OFF ((char*)&off)
 

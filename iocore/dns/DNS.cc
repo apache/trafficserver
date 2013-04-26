@@ -569,7 +569,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
   char buffer[MAX_DNS_PACKET_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
   int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
-  try_servers = (try_servers + 1) % SIZE(try_server_names);
+  try_servers = (try_servers + 1) % countof(try_server_names);
   ink_assert(r >= 0);
   if (r >= 0) {                 // looking for a bounce
     int res = socketManager.send(con[ndx].fd, buffer, r, 0);
@@ -597,7 +597,7 @@ DNSHandler::try_primary_named(bool reopen)
     if (local_num_entries < DEFAULT_NUM_TRY_SERVER)
       try_servers = (try_servers + 1) % local_num_entries;
     else
-      try_servers = (try_servers + 1) % SIZE(try_server_names);
+      try_servers = (try_servers + 1) % countof(try_server_names);
     ink_assert(r >= 0);
     if (r >= 0) {               // looking for a bounce
       int res = socketManager.send(con[0].fd, buffer, r, 0);
@@ -1421,7 +1421,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     // e->qname_len, no ?
     if (local_num_entries >= DEFAULT_NUM_TRY_SERVER) {
       if ((attempt_num_entries % 50) == 0) {
-        try_servers = (try_servers + 1) % SIZE(try_server_names);
+        try_servers = (try_servers + 1) % countof(try_server_names);
         ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
         memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
         attempt_num_entries = 0;
