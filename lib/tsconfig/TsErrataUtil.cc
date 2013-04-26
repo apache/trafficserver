@@ -28,8 +28,8 @@
 # include <stdarg.h>
 # include <errno.h>
 # include <TsErrataUtil.h>
-# include "ink_string.h"
-# include "ink_defs.h"
+# include "ts/ink_string.h"
+# include "ts/ink_defs.h"
 
 namespace ts { namespace msg {
 

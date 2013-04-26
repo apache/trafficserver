@@ -23,7 +23,7 @@
 
 # include "TsValue.h"
 # include "TsBuilder.h"
-# include "ink_defs.h"
+# include "ts/ink_defs.h"
 
 # include <TsErrataUtil.h>
 # include <sys/stat.h>
