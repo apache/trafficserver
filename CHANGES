@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1853] Fix formatting in logstats to be consistenly 2 decimals.
+
   *) [TS-1852] Fix missing AC_PROG_SED on CentOS 5.9.
 
   *) [TS-1717] Fix the static build as much as possible.

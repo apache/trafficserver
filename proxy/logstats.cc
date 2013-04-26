@@ -1797,24 +1797,23 @@ format_elapsed_header()
 inline void
 format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json=false)
 {
-  static char buf[64];
-
   if (json) {
     std::cout << "    " << '"' << desc << "\" : " << "{ ";
     std::cout << "\"min\": \"" << stat.min << "\", ";
     std::cout << "\"max\": \"" << stat.max << "\", ";
     std::cout << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
-    std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" }," << std::endl;
+    std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" },";
+    std::cout << std::endl;
   } else {
     std::cout << std::left << std::setw(24) << desc;
     std::cout << std::right << std::setw(7);
     format_int(stat.min);
     std::cout << std::right << std::setw(13);
     format_int(stat.max);
-    snprintf(buf, sizeof(buf), "%17.3f", stat.avg);
-    std::cout << std::right << buf;
-    snprintf(buf, sizeof(buf), "%17.3f", stat.stddev);
-    std::cout << std::right << buf << std::endl;
+
+    std::cout << std::right << std::setw(17) << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg;
+    std::cout << std::right << std::setw(17) << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev;
+    std::cout << std::endl;
   }
 }
 

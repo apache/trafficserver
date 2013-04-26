@@ -147,16 +147,16 @@ other                                      0      0.00%      0.00KB      0.00%
 
 Elapsed time stats          Min          Max              Avg    Std Deviation
 ------------------------------------------------------------------------------
-Cache hit                     0            0            0.000            0.000
-Cache hit IMS                 0            0            0.000            0.000
-Cache hit refresh             0            0            0.000            0.000
-Cache hit other               0            0            0.000            0.000
-Cache hit total               0            0            0.000            0.000
-Cache miss                   88        1,059          449.643          199.972
-Cache miss IMS                0            0            0.000            0.000
-Cache miss refresh          168          491          278.800          117.469
-Cache miss other              0            0            0.000            0.000
-Cache miss total             88        1,059          423.758          199.431
+Cache hit                     0            0             0.00             0.00
+Cache hit IMS                 0            0             0.00             0.00
+Cache hit refresh             0            0             0.00             0.00
+Cache hit other               0            0             0.00             0.00
+Cache hit total               0            0             0.00             0.00
+Cache miss                   88        1,059           449.64           199.97
+Cache miss IMS                0            0             0.00             0.00
+Cache miss refresh          168          491           278.80           117.47
+Cache miss other              0            0             0.00             0.00
+Cache miss total             88        1,059           423.76           199.43
 
 ______________________________________________________________________________
 
