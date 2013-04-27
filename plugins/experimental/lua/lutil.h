@@ -24,6 +24,7 @@
 #include <string>
 #include <memory>
 #include <pthread.h>
+#include "ink_defs.h"
 
 // Global argument index for TSHttpSsnArgGet and TSHttpTxnArgGet.
 extern int LuaHttpArgIndex;
