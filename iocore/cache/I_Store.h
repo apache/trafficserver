@@ -162,7 +162,7 @@ struct Store
   Store();
   ~Store();
 
-  int n_disks;
+  unsigned n_disks;
   Span **disk;
 
   //
