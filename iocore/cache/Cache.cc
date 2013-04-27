@@ -597,6 +597,7 @@ CacheProcessor::start_internal(int flags)
   start_internal_flags = flags;
   clear = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix = !!(flags & PROCESSOR_FIX);
+  int i;
   start_done = 0;
   int diskok = 1;
 
@@ -609,7 +610,7 @@ CacheProcessor::start_internal(int flags)
   ink_aio_set_callback(new AIO_Callback_handler());
   Span *sd;
   config_volumes.read_config_file();
-  for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
+  for (i = 0; i < theCacheStore.n_disks; i++) {
     sd = theCacheStore.disk[i];
     char path[PATH_NAME_MAX];
     int opts = DEFAULT_CACHE_OPTIONS;
