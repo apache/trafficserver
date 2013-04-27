@@ -125,8 +125,6 @@ struct inline_tuple
 
   static void * allocate(const first_type first, const second_type second) {
 #if defined(INLINE_LUA_HOOK_REFERENCE)
-    typedef char __size_check[sizeof(this_type) == sizeof(void *) ? 0 : -1];
-
     this_type obj;
     obj.first() = first;
     obj.second() = second;
