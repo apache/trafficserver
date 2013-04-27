@@ -423,26 +423,6 @@ AC_ARG_ENABLE([linux-native-aio],
   [enable_linux_native_aio=no]
 )
 
-AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
-  case $host_os in
-    linux*) ;;
-    *) AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
-  esac
-
-  AC_CHECK_HEADERS([libaio.h], [],
-    [AC_MSG_ERROR([Linux native AIO requires libaio.h])]
-  )
-
-  AC_SEARCH_LIBS([io_submit], [aio], [],
-    [AC_MSG_ERROR([Linux native AIO requires libaio])]
-  )
-
-])
-
-AC_MSG_RESULT([$enable_linux_native_aio])
-TS_ARG_ENABLE_VAR([use], [linux_native_aio])
-AC_SUBST(use_linux_native_aio)
-
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
@@ -1231,6 +1211,26 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
   )
 )
 AC_SUBST(use_posix_cap)
+
+AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
+  case $host_os in
+    linux*) ;;
+    *) AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
+  esac
+
+  AC_CHECK_HEADERS([libaio.h], [],
+    [AC_MSG_ERROR([Linux native AIO requires libaio.h])]
+  )
+
+  AC_SEARCH_LIBS([io_submit], [aio], [],
+    [AC_MSG_ERROR([Linux native AIO requires libaio])]
+  )
+
+])
+
+AC_MSG_RESULT([$enable_linux_native_aio])
+TS_ARG_ENABLE_VAR([use], [linux_native_aio])
+AC_SUBST(use_linux_native_aio)
 
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
