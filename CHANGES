@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1839] We fail "make test" on some platforms, due to install
+   directory missing.
+
   *) [TS-1856] Replace SIZE() macro with COUNTOF() and countof().
 
   *) [TS-1853] Fix formatting in logstats to be consistenly 2 decimals.
