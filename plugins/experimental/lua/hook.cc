@@ -97,6 +97,10 @@ LuaPushEventData(lua_State * lua, TSEvent event, void * edata)
 }
 
 
+#if defined(INLINE_LUA_HOOK_REFERENCE)
+typedef char __size_check[sizeof(this_type) == sizeof(void *) ? 0 : -1];
+#endif
+
 // For 64-bit pointers, we can inline the LuaHookReference, otherwise we need an extra malloc.
 //
 #if SIZEOF_VOID_POINTER >= 8
@@ -125,8 +129,6 @@ struct inline_tuple
 
   static void * allocate(const first_type first, const second_type second) {
 #if defined(INLINE_LUA_HOOK_REFERENCE)
-    typedef char __size_check[sizeof(this_type) == sizeof(void *) ? 0 : -1];
-
     this_type obj;
     obj.first() = first;
     obj.second() = second;
