@@ -98,7 +98,7 @@ static int fds_limit;
 //       Thsis should just be #if defined(solaris)
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void SignalHandler(int sig, siginfo_t * t, void *f);
-void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
+static void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
 #else
 static void SignalHandler(int sig);
 static void SignalAlrmHandler(int sig);
