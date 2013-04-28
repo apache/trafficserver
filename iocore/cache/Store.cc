@@ -54,8 +54,9 @@ void
 Store::add(Store & s)
 {
   // assume on different disks
-  for (int i = 0; i < s.n_disks; i++)
+  for (unsigned i = 0; i < s.n_disks; i++) {
     add(s.disk[i]);
+  }
   s.n_disks = 0;
   s.delete_all();
 }
@@ -68,9 +69,9 @@ Store::add(Store & s)
 void
 Store::free(Store & s)
 {
-  for (int i = 0; i < s.n_disks; i++)
+  for (unsigned i = 0; i < s.n_disks; i++) {
     for (Span * sd = s.disk[i]; sd; sd = sd->link.next) {
-      for (int j = 0; j < n_disks; j++)
+      for (unsigned j = 0; j < n_disks; j++)
         for (Span * d = disk[j]; d; d = d->link.next)
           if (!strcmp(sd->pathname, d->pathname)) {
             if (sd->offset < d->offset)
@@ -81,6 +82,7 @@ Store::free(Store & s)
       ink_release_assert(!"Store::free failed");
     Lfound:;
     }
+  }
 }
 
 void
@@ -88,19 +90,18 @@ Store::sort()
 {
   Span **vec = (Span **) alloca(sizeof(Span *) * n_disks);
   memset(vec, 0, sizeof(Span *) * n_disks);
-  int i;
-  for (i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
     vec[i] = disk[i];
     disk[i] = NULL;
   }
 
   // sort by device
 
-  int n = 0;
-  for (i = 0; i < n_disks; i++) {
+  unsigned n = 0;
+  for (unsigned i = 0; i < n_disks; i++) {
     for (Span * sd = vec[i]; sd; sd = vec[i]) {
       vec[i] = vec[i]->link.next;
-      for (int d = 0; d < n; d++) {
+      for (unsigned d = 0; d < n; d++) {
         if (sd->disk_id == disk[d]->disk_id) {
           sd->link.next = disk[d];
           disk[d] = sd;
@@ -115,7 +116,7 @@ Store::sort()
 
   // sort by pathname x offset
 
-  for (i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
   Lagain:
     Span * prev = 0;
     for (Span * sd = disk[i]; sd;) {
@@ -141,7 +142,7 @@ Store::sort()
 
   // merge adjacent spans
 
-  for (i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
     for (Span * sd = disk[i]; sd;) {
       Span *next = sd->link.next;
       if (next && !strcmp(sd->pathname, next->pathname)) {
@@ -183,9 +184,10 @@ Span::path(char *filename, int64_t * aoffset, char *buf, int buflen)
 void
 Store::delete_all()
 {
-  for (int i = 0; i < n_disks; i++)
+  for (unsigned i = 0; i < n_disks; i++) {
     if (disk[i])
       delete disk[i];
+  }
   n_disks = 0;
   ats_free(disk);
   disk = NULL;
@@ -223,7 +225,7 @@ Store::remove(char *n)
 {
   bool found = false;
 Lagain:
-  for (int i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
     Span *p = NULL;
     for (Span * sd = disk[i]; sd; sd = sd->link.next) {
       if (!strcmp(n, sd->pathname)) {
@@ -357,7 +359,7 @@ Lfail:;
 int
 Store::write_config_data(int fd)
 {
-  for (int i = 0; i < n_disks; i++)
+  for (unsigned i = 0; i < n_disks; i++)
     for (Span * sd = disk[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
       snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname, (int64_t) sd->blocks * (int64_t) STORE_BLOCK_SIZE);
@@ -772,10 +774,11 @@ Span::init(char *filename, int64_t size)
 void
 Store::normalize()
 {
-  int ndisks = 0;
-  for (int i = 0; i < n_disks; i++)
+  unsigned ndisks = 0;
+  for (unsigned i = 0; i < n_disks; i++) {
     if (disk[i])
       disk[ndisks++] = disk[i];
+  }
   n_disks = ndisks;
 }
 
@@ -821,7 +824,7 @@ Store::spread_alloc(Store & s, unsigned int blocks, bool mmapable)
   // Count the eligable disks..
   //
   int mmapable_disks = 0;
-  for (int k = 0; k < n_disks; k++) {
+  for (unsigned k = 0; k < n_disks; k++) {
     if (disk[k]->is_mmapable()) {
       mmapable_disks++;
     }
@@ -838,7 +841,7 @@ Store::spread_alloc(Store & s, unsigned int blocks, bool mmapable)
 
   int disks_left = spread_over;
 
-  for (int i = 0; blocks && i < n_disks; i++) {
+  for (unsigned i = 0; blocks && i < n_disks; i++) {
     if (!(mmapable && !disk[i]->is_mmapable())) {
       unsigned int target = blocks / disks_left;
       if (blocks - target > total_blocks(i + 1))
@@ -852,11 +855,10 @@ Store::spread_alloc(Store & s, unsigned int blocks, bool mmapable)
 void
 Store::try_realloc(Store & s, Store & diff)
 {
-  int i = 0;
-  for (i = 0; i < s.n_disks; i++) {
+  for (unsigned i = 0; i < s.n_disks; i++) {
     Span *prev = 0;
     for (Span * sd = s.disk[i]; sd;) {
-      for (int j = 0; j < n_disks; j++)
+      for (unsigned j = 0; j < n_disks; j++)
         for (Span * d = disk[j]; d; d = d->link.next)
           if (!strcmp(sd->pathname, d->pathname)) {
             if (sd->offset >= d->offset && (sd->end() <= d->end())) {
@@ -908,7 +910,7 @@ void
 Store::alloc(Store & s, unsigned int blocks, bool one_only, bool mmapable)
 {
   unsigned int oblocks = blocks;
-  for (int i = 0; blocks && i < n_disks; i++) {
+  for (unsigned i = 0; blocks && i < n_disks; i++) {
     if (!(mmapable && !disk[i]->is_mmapable())) {
       blocks -= try_alloc(s, disk[i], blocks, one_only);
       if (one_only && oblocks != blocks)
@@ -960,11 +962,12 @@ Store::write(int fd, char *name)
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
-  for (int i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
     int n = 0;
     Span *sd = NULL;
-    for (sd = disk[i]; sd; sd = sd->link.next)
+    for (sd = disk[i]; sd; sd = sd->link.next) {
       n++;
+    }
 
     snprintf(buf, sizeof(buf), "%d\n", n);
     if (ink_file_fd_writestring(fd, buf) == -1)
@@ -1052,8 +1055,7 @@ Store::read(int fd, char *aname)
   if (!disk)
     return -1;
   memset(disk, 0, sizeof(Span *) * n_disks);
-  int i;
-  for (i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
     int n = 0;
 
     if (ink_file_fd_readline(fd, PATH_NAME_MAX, buf) <= 0)
@@ -1079,7 +1081,7 @@ Store::read(int fd, char *aname)
   }
   return 0;
 Lbail:
-  for (i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
     if (disk[i])
       delete disk[i];
   }
@@ -1101,8 +1103,9 @@ Store::dup(Store & s)
 {
   s.n_disks = n_disks;
   s.disk = (Span **)ats_malloc(sizeof(Span *) * n_disks);
-  for (int i = 0; i < n_disks; i++)
+  for (unsigned i = 0; i < n_disks; i++) {
     s.disk[i] = disk[i]->dup();
+  }
 }
 
 int
@@ -1110,7 +1113,7 @@ Store::clear(char *filename, bool clear_dirs)
 {
   char z[STORE_BLOCK_SIZE];
   memset(z, 0, STORE_BLOCK_SIZE);
-  for (int i = 0; i < n_disks; i++) {
+  for (unsigned i = 0; i < n_disks; i++) {
     Span *ds = disk[i];
     for (int j = 0; j < disk[i]->paths(); j++) {
       char path[PATH_NAME_MAX + 1];

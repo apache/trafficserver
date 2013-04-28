@@ -57,11 +57,12 @@ store_verify(Store *store)
 {
   if (!store)
     return 0;
-  for (int i = 0; i < store->n_disks; i++)
+  for (unsigned i = 0; i < store->n_disks; i++) {
     for (Span * sd = store->disk[i]; sd; sd = sd->link.next) {
       if (!sd->file_pathname && sd->offset)
         return 0;
     }
+  }
   return 1;
 }
 
@@ -231,7 +232,7 @@ MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, bool private_flag, 
     return cur;
   int p = 0;
   char *res = 0;
-  for (int i = 0; i < store->n_disks; i++) {
+  for (unsigned i = 0; i < store->n_disks; i++) {
     unsigned int target = blocks / (store->n_disks - i);
     unsigned int following = store->total_blocks(i + 1);
     if (blocks - target > following)
@@ -302,13 +303,12 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
   int fds[MULTI_CACHE_MAX_FILES] = { 0 };
   int n_fds = 0;
-  int i = 0;
 
   // open files
   //
   if (!store || !store->n_disks)
     goto Lalloc;
-  for (i = 0; i < store->n_disks; i++) {
+  for (unsigned i = 0; i < store->n_disks; i++) {
     Span *ds = store->disk[i];
     for (int j = 0; j < store->disk[i]->paths(); j++) {
       char path[PATH_NAME_MAX + 1];
@@ -430,14 +430,15 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
   }
 
 
-  for (i = 0; i < n_fds; i++)
+  for (int i = 0; i < n_fds; i++) {
     if (fds[i] >= 0)
       ink_assert(!socketManager.close(fds[i]));
+  }
+
   return 0;
 Lalloc:
   {
-    if (data)
-      free(data);
+    free(data);
     char *cur = 0;
 
     data = (char *)ats_memalign(ats_pagesize(), totalsize);
@@ -451,15 +452,20 @@ Lalloc:
       cur += bytes_to_blocks(heap_size) * STORE_BLOCK_SIZE;
     }
     mapped_header = (MultiCacheHeader *) cur;
-    for (i = 0; i < n_fds; i++)
+    for (int i = 0; i < n_fds; i++) {
       if (fds[i] >= 0)
         socketManager.close(fds[i]);
+    }
+
     return 0;
   }
+
 Labort:
-  for (i = 0; i < n_fds; i++)
+  for (int i = 0; i < n_fds; i++) {
     if (fds[i] >= 0)
       socketManager.close(fds[i]);
+  }
+
   return -1;
 }
 
@@ -1399,8 +1405,7 @@ stealStore(Store & s, int blocks)
   }
   // grab some end portion of some block... so as not to damage the
   // pool header
-  int d = 0;
-  while (d < s.n_disks) {
+  for (unsigned d = 0; d < s.n_disks; ) {
     Span *ds = s.disk[d];
     while (ds) {
       if (!blocks)
