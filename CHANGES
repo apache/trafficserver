@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1860] cacheurl doesn't compile on platforms with pcre/pcre.h
+   (e.g. solaris).
+
   *) [TS-1729] Fix channel_stats to compile on various Unixen. Note that this
    is still IPV4 only.
 

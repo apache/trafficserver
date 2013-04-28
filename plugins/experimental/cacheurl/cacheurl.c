@@ -23,8 +23,15 @@
  */
 
 #include <stdio.h>
-#include <pcre.h>
 #include <string.h>
+
+#include "ink_config.h"
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
 
 #include "ts/ts.h"
 #include "ts/remap.h"
