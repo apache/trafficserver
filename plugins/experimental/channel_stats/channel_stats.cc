@@ -112,39 +112,37 @@ typedef struct intercept_state_t
 } intercept_state;
 
 struct private_seg_t {
-  struct in_addr net;
-  struct in_addr mask;
+  const in_addr_t net;
+  const in_addr_t mask;
 };
 
 // don't put inet_addr("255.255.255.255"), see BUGS in 'man 3 inet_addr'
 static struct private_seg_t private_segs[] = {
-  {{inet_addr("10.0.0.0")}, {inet_addr("255.0.0.0")}},
-  {{inet_addr("127.0.0.0")}, {inet_addr("255.0.0.0")}},
-  {{inet_addr("172.16.0.0")}, {inet_addr("255.240.0.0")}},
-  {{inet_addr("192.168.0.0")}, {inet_addr("255.255.0.0")}}
+  {inet_addr("10.0.0.0"), inet_addr("255.0.0.0")},
+  {inet_addr("127.0.0.0"), inet_addr("255.0.0.0")},
+  {inet_addr("172.16.0.0"), inet_addr("255.240.0.0")},
+  {inet_addr("192.168.0.0"), inet_addr("255.255.0.0")}
 };
+
 static int num_private_segs = sizeof(private_segs) / sizeof(private_seg_t);
 
 // all parameters are in network byte order
-static int
-is_in_net (const struct in_addr * addr,
-           const struct in_addr * netaddr,
-           const struct in_addr * netmask)
+static bool
+is_in_net(const in_addr_t addr,
+          const in_addr_t netaddr,
+          const in_addr_t netmask)
 {
-   if ((addr->s_addr & netmask->s_addr) == (netaddr->s_addr & netmask->s_addr))
-      return 1;
-   return 0;
+  return (addr & netmask) == (netaddr & netmask);
 }
 
-static int
-is_private_ip(const struct in_addr * addr)
+static bool
+is_private_ip(const in_addr_t addr)
 {
-  int i;
-  for (i = 0; i < num_private_segs; i++) {
-    if (is_in_net(addr, &private_segs[i].net, &private_segs[i].mask))
-      return 1;
+  for (int i = 0; i < num_private_segs; i++) {
+    if (is_in_net(addr, private_segs[i].net, private_segs[i].mask))
+      return true;
   }
-  return 0;
+  return false;
 }
 
 static int handle_event(TSCont contp, TSEvent event, void *edata);
@@ -321,7 +319,7 @@ handle_read_req(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
   client_addr = (struct sockaddr *) TSHttpTxnClientAddrGet(txnp);
   if (client_addr->sa_family == AF_INET) {
     client_addr4 = (struct sockaddr_in *) client_addr;
-    if (!is_private_ip(&client_addr4->sin_addr)) {
+    if (!is_private_ip(client_addr4->sin_addr.s_addr)) {
       client_ip = (char *) TSmalloc(INET_ADDRSTRLEN);
       inet_ntop(AF_INET, &client_addr4->sin_addr, client_ip, INET_ADDRSTRLEN);
       debug_api("%s is not a private IP, request denied", client_ip);
