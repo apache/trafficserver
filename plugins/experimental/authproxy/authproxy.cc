@@ -706,12 +706,15 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void * edata)
 static AuthOptions *
 AuthParseOptions(int argc, const char ** argv)
 {
+  // The const_cast<> here is magic to work around a flaw in the definition of struct option
+  // on some platforms (e.g. Solaris / Illumos). On sane platforms (e.g. linux), it'll get
+  // automatically casted back to the const char*, as the struct is defined in <getopt.h>.
     static const struct option longopt[] =
     {
-        { "auth-host", required_argument, 0, 'h' },
-        { "auth-port", required_argument, 0, 'p' },
-        { "auth-transform", required_argument, 0, 't' },
-        { "force-cacheability", no_argument, 0, 'c' },
+        { const_cast<char *>("auth-host"), required_argument, 0, 'h' },
+        { const_cast<char *>("auth-port"), required_argument, 0, 'p' },
+        { const_cast<char *>("auth-transform"), required_argument, 0, 't' },
+        { const_cast<char *>("force-cacheability"), no_argument, 0, 'c' },
         {0, 0, 0, 0 }
     };
 
@@ -760,6 +763,7 @@ AuthParseOptions(int argc, const char ** argv)
 
     return options;
 }
+#undef LONGOPT_OPTION_CAST
 
 void
 TSPluginInit(int argc, const char *argv[])
