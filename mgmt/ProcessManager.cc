@@ -72,7 +72,7 @@ startProcessManager(void *arg)
 }                               /* End startProcessManager */
 
 ProcessManager::ProcessManager(bool rlm, char *mpath):
-BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0)
+BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0), cbtable(NULL)
 {
   NOWARN_UNUSED(mpath);
   ink_strlcpy(pserver_path, Layout::get()->runtimedir, sizeof(pserver_path));
