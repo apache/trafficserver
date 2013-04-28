@@ -135,7 +135,8 @@ Connection::close()
 }
 
 static int
-add_http_filter(int /* fd ATS_UNUSED */) {
+add_http_filter(int fd ATS_UNUSED)
+{
   int err = -1;
 #if defined(SOL_FILTER) && defined(FIL_ATTACH)
   err = setsockopt(fd, SOL_FILTER, FIL_ATTACH, "httpfilt", 9);
