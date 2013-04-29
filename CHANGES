@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1864] Illumos / OmniOS needs -m64 with gcc to compile properly on
+   64-bit platforms. We also only support ATS on 64-bit Illumos.
+
   *) [TS-1811] Make the HostDB sizes variable on the SRV enabled config.
    This restores compatibility with HostDB's prior to v3.3.1.
 
