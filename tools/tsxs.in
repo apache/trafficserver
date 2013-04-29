@@ -19,6 +19,7 @@
 host="@HOST_GUESS@"
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
+libdir="@libdir@"
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
 CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
