@@ -59,8 +59,8 @@
 #include "ink_assert.h"
 #include "INK_MD5.h"
 #include "ParseRules.h"
+#include "ink_time.h"
 
-typedef int64_t ink_hrtime;
 
 /*
  FTP - Traffic Server Template
@@ -471,17 +471,6 @@ void FD::close() {
 }
 
 
-#define HRTIME_FOREVER  (10*HRTIME_DECADE)
-#define HRTIME_DECADE   (10*HRTIME_YEAR)
-#define HRTIME_YEAR     (365*HRTIME_DAY+HRTIME_DAY/4)
-#define HRTIME_WEEK     (7*HRTIME_DAY)
-#define HRTIME_DAY      (24*HRTIME_HOUR)
-#define HRTIME_HOUR     (60*HRTIME_MINUTE)
-#define HRTIME_MINUTE   (60*HRTIME_SECOND)
-#define HRTIME_SECOND   (1000*HRTIME_MSECOND)
-#define HRTIME_MSECOND  (1000*HRTIME_USECOND)
-#define HRTIME_USECOND  (1000*HRTIME_NSECOND)
-#define HRTIME_NSECOND  (1LL)
 #define MAX_FILE_ARGUMENTS 100
 
 static const char * file_arguments[MAX_FILE_ARGUMENTS] = { 0 };
@@ -509,21 +498,6 @@ static void process_args(ArgumentDescription * argument_descriptions,
                   char **argv);
 
 
-
-#define min(_a,_b) ((_a)<(_b)?(_a):(_b))
-
-static inline ink_hrtime ink_get_hrtime()
-{
-#    if defined(FreeBSD)
-      timespec ts;
-      clock_gettime(CLOCK_REALTIME, &ts);
-      return (ts.tv_sec * HRTIME_SECOND + ts.tv_nsec * HRTIME_NSECOND);
-#    else
-      timeval tv;
-      gettimeofday(&tv,NULL);
-      return (tv.tv_sec * HRTIME_SECOND + tv.tv_usec * HRTIME_USECOND);
-#    endif
-}
 
 typedef struct {
   char sche[MAX_URL_LEN + 1];
@@ -639,7 +613,7 @@ static int max_limit_fd() {
   if (getrlimit(RLIMIT_NOFILE,&rl) >= 0) {
 #ifdef OPEN_MAX
     // Darwin
-    rl.rlim_cur = min(OPEN_MAX, rl.rlim_max);
+    rl.rlim_cur = MIN(OPEN_MAX, rl.rlim_max);
 #else
     rl.rlim_cur = rl.rlim_max;
 #endif
@@ -1541,7 +1515,7 @@ static int poll_loop() {
   }
   pollfd pfd[POLL_GROUP_SIZE];
   int ip = 0;
-  now = ink_get_hrtime();
+  now = ink_get_hrtime_internal();
   for (int i = 0 ; i <= last_fd ; i++) {
     if (fd[i].fd > 0 && (!fd[i].ready || now >= fd[i].ready)) {
       pfd[ip].fd = i;
@@ -1834,7 +1808,7 @@ static void compose_all_urls( const char * tag, char * buf, char * start, char *
   char old;
   while ((start = find_href_start(tag, end, buflen - (end - buf)))) {
     char newurl[512];
-    end = (char *) find_href_end(start, min(buflen - (start-buf), 512 - 10)); 
+    end = (char *) find_href_end(start, MIN(buflen - (start-buf), 512 - 10)); 
     if (!end) { 
       end = start + strlen(tag);
       continue;
@@ -2048,12 +2022,12 @@ static int read_response(int sock) {
 
     strcpy(fd[sock].response_header, fd[sock].req_header);
 
-    b1latency += ((ink_get_hrtime() - fd[sock].start) / HRTIME_MSECOND);
+    b1latency += ((ink_get_hrtime_internal() - fd[sock].start) / HRTIME_MSECOND);
     new_cbytes += err;
     new_tbytes += err;
     fd[sock].req_pos += err;
     fd[sock].bytes += err;
-    fd[sock].active = ink_get_hrtime();
+    fd[sock].active = ink_get_hrtime_internal();
     int total_read = fd[sock].req_pos;
     char * p = fd[sock].req_header;
     char * cl = NULL;
@@ -2226,7 +2200,7 @@ static int read_response(int sock) {
     follow_links(sock);
     if (fd[sock].length != INT_MAX)
       fd[sock].length -= err;
-    fd[sock].active = ink_get_hrtime();
+    fd[sock].active = ink_get_hrtime_internal();
     if (verbose) 
       printf("read %d got %d togo %d %d %d\n", sock, err, fd[sock].length,
              fd[sock].keepalive, fd[sock].drop_after_CL);
@@ -2247,13 +2221,13 @@ Ldone:
       printf("bad length %d wanted %d after %d ms: '%s'\n", 
              fd[sock].response_length - fd[sock].length,
              fd[sock].response_length,
-             (int)((ink_get_hrtime() - fd[sock].active)/HRTIME_MSECOND),
+             (int)((ink_get_hrtime_internal() - fd[sock].active)/HRTIME_MSECOND),
              fd[sock].base_url);
     return read_response_error(sock);
   }
   if (verbose) printf("read %d done\n", sock);
   new_ops++;
-  double thislatency =((ink_get_hrtime() - fd[sock].start) / HRTIME_MSECOND);
+  double thislatency =((ink_get_hrtime_internal() - fd[sock].start) / HRTIME_MSECOND);
   latency += (int)thislatency;
   lat_ops++;
   if (fd[sock].keepalive > 0) {
@@ -2292,7 +2266,7 @@ static int write_request(int sock) {
   new_tbytes += err;
   total_client_request_bytes += err;
   fd[sock].req_pos += err;
-  fd[sock].active = ink_get_hrtime();
+  fd[sock].active = ink_get_hrtime_internal();
   
   if (fd[sock].req_pos >= fd[sock].length) {
     if (verbose) printf("write complete %d %d\n", sock, fd[sock].length);
@@ -2564,7 +2538,7 @@ static void make_bfc_client (unsigned int addr, int port) {
 
 void interval_report() {
   static int here = 0;
-  now = ink_get_hrtime();
+  now = ink_get_hrtime_internal();
   if (!(here++ % 20))
     printf(
  " con  new     ops   1B  lat      bytes/per     svrs  new  ops      total   time  err\n");
@@ -2951,7 +2925,7 @@ int main(int argc __attribute__((unused)), char *argv[]) {
   int max_fds = max_limit_fd();
   if (verbose) printf ("maximum of %d connections\n",max_fds);
   signal(SIGPIPE,SIG_IGN);      
-  start_time = now = ink_get_hrtime();
+  start_time = now = ink_get_hrtime_internal();
   
   urls_mode = n_file_arguments || *urls_file;
   nclients = client_rate? 0 : nclients;
