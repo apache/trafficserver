@@ -529,6 +529,9 @@ _ts_saved_CXXFLAGS="${CXXFLAGS}"
 
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_CXXCPP
+AM_PROG_AS
 
 CFLAGS="${_ts_saved_CFLAGS}"
 CXXFLAGS="${_ts_saved_CXXFLAGS}"
@@ -568,14 +571,57 @@ ifdef([AC_PROG_SED], [], [
   ])
 ])
 
+
+# Various OS specific setup. Note that on Solaris, 32-bit is always the
+# default, even on a box that with 64-bit architecture.
+# This also sets up a "normalized" variable and define $host_os_def.
+defer_accept=1
+case $host_os in
+  linux*)
+    host_os_def="linux"
+    defer_accept=45
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    ;;
+  darwin*)
+    host_os_def="darwin"
+    ;;
+  freebsd*)
+    host_os_def="freebsd"
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
+    ;;
+  kfreebsd*)
+    host_os_def="freebsd"
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
+    TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
+    ;;
+  openbsd*)
+    host_os_def="openbsd"
+    ;;
+  solaris*)
+    host_os_def="solaris"
+    case "`isalist`" in
+      *amd64*)
+        TS_ADDTO(CFLAGS, -m64)
+        TS_ADDTO(CXXFLAGS, -m64)
+        ;;
+    esac
+    ;;
+  *)
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    host_os_def=unknown
+    ;;
+esac
+
+TS_ADDTO(CPPFLAGS, [-D$host_os_def])
+AC_SUBST(defer_accept)
+
+
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
       [AM_PROG_AR])
 
-
-AC_PROG_CPP
-AC_PROG_CXXCPP
-AM_PROG_AS
 AC_PROG_AWK
 AC_PROG_SED
 AC_PROG_LN_S
@@ -674,10 +720,10 @@ AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
 
 base_cc=`basename $CC`
 # These are shortcuts used in combination for the compiler options below
-case $host_os in
-  linux*)
+case $host_os_def in
+  linux)
     case $base_cc in
-    icc)
+    *icc*)
       # -Wall goes crazy, so turned these specific checks off for now:
       #
       #  111 is "statement is unrecahable"
@@ -700,7 +746,7 @@ case $host_os in
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
       ;;
-    clang)
+    *clang*)
       debug_opt="-ggdb3 $common_opt -Werror -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
@@ -717,10 +763,10 @@ case $host_os in
       flex_cflags="-Wno-unused-parameter"
       ;;
     esac
-    ;; # linux*)
-  darwin*)
+    ;; # linux)
+  darwin)
     case $base_cc in
-    clang)
+    *clang*)
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
@@ -738,10 +784,10 @@ case $host_os in
     # ToDo: This seems semi-kludgy, but useful for MacPort's I think.
     TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
     TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
-    ;; # darwin*)
-  freebsd*|kfreebsd*)
+    ;; # darwin)
+  freebsd|kfreebsd)
     case $base_cc in
-    clang)
+    *clang*)
       common_opt="-pipe -Wall -Werror -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
@@ -755,10 +801,11 @@ case $host_os in
       ;;
     esac
     TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
-    ;;
-  solaris*)
+    ;; # freebsd|kfreebsd)
+  solaris)
     if test "x${base_cc}" = "xcc"; then
-      common_opt="-mt -m64 -D__WORDSIZE=64" # FIXME: arch should be detected
+      # TODO: If we no longer support SunStudio, should this code go away?
+      common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags"
       cxx_opt="-library=stlport4"
@@ -771,11 +818,11 @@ case $host_os in
         postdeps_CXX="-library=Crun"
       fi
     else # gcc
-      common_opt="-pipe -Wall -Werror -m64"
+      common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-    fi
+    fi # solaris)
     ;;
   *)
     common_opt="-pipe -Wall -Werror"
@@ -802,24 +849,25 @@ SHARED_LDFLAGS=-shared
 SHARED_CXXFLAGS=-fPIC
 SHARED_CXXLINKFLAGS=-shared
 
-dnl Checks for pointer size
-AC_CHECK_SIZEOF(void*, 4)
+#
+# _Here_ is where we go ahead and add the _optimizations_ to already
+#  existing CFLAGS/CXXFLAGS if some special values had been set.
+#
+if test "x${enable_debug}" = "xyes"; then
+  TS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
+  TS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
+  TS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
+else
+  TS_ADDTO(CFLAGS, [${cc_oflag_opt}])
+  TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
+fi
+
+# Checks for pointer size
+AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
 AC_SUBST(ac_cv_sizeof_voidp)
-
-
-# Checks for TCP defer accept
-case $host_os in
-  linux*)
-    defer_accept=45
-    ;;
-  *)
-    defer_accept=1
-    ;;
-esac
-AC_SUBST(defer_accept)
 
 
 #
@@ -890,50 +938,8 @@ fi
 TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
 TS_ADDTO(CPPFLAGS, [-D_REENTRANT])
 
-case $host_os in
-  linux*)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=linux
-    ;;
-  darwin*)
-    host_os_def=darwin
-    ;;
-  freebsd*)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=freebsd
-    ;;
-  kfreebsd*)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=freebsd
-    TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
-    ;;
-  solaris*)
-    host_os_def=solaris
-    ;;
-  openbsd*)
-    host_os_def=openbsd
-    ;;
-  *)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=unknown
-   ;;
-esac
-TS_ADDTO(CPPFLAGS, [-D$host_os_def])
 
 AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
-
-#
-# _Here_ is where we go ahead and add the _optimizations_ to already
-#  existing CFLAGS/CXXFLAGS if some special values had been set.
-#
-if test "x${enable_debug}" = "xyes"; then
-  TS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
-  TS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
-  TS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
-else
-  TS_ADDTO(CFLAGS, [${cc_oflag_opt}])
-  TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
-fi
 
 #
 # Note:  These are site-specific macro's that do various tests
@@ -1023,20 +1029,11 @@ SC_PATH_TCLCONFIG
 SC_LOAD_TCLCONFIG
 
 # expect tclConfig.sh to populate TCL_LIB_FLAG and TCL_INCLUDE_SPEC
-case $host_os in
-  darwin*)
+if test "$host_os_def" == "darwin"; then
     TCL_LIB_SPEC="-ltcl" # OSX fails to populate this variable
-    ;;
-  *)
-   ;;
-esac
+fi
 AC_SUBST([LIBTCL],[$TCL_LIB_SPEC])
 
-case $host_os in
-  freebsd*|kfreebsd*)
-    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
-    ;;
-esac
 
 if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
    TS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
@@ -1213,10 +1210,9 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
 AC_SUBST(use_posix_cap)
 
 AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
-  case $host_os in
-    linux*) ;;
-    *) AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
-  esac
+  if test $host_os_def  != "linux"; then
+    AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
+  fi
 
   AC_CHECK_HEADERS([libaio.h], [],
     [AC_MSG_ERROR([Linux native AIO requires libaio.h])]
@@ -1310,7 +1306,7 @@ AC_MSG_RESULT([$enable_lua_support])
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
 case $host_os in
-  darwin*)
+  darwin)
     if test "x${have_luajit}" = "xyes"; then
       LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     fi
