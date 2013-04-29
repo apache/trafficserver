@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1865] Support DESTDIR in tsxs.
+
   *) [TS-1864] Illumos / OmniOS needs -m64 with gcc to compile properly on
    64-bit platforms. We also only support ATS on 64-bit Illumos.
 
