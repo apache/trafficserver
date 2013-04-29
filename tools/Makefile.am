@@ -18,10 +18,20 @@
 #  limitations under the License.
 
 bin_SCRIPTS = tsxs
-bin_PROGRAMS =
+bin_PROGRAMS = 
+
+AM_CPPFLAGS = $(iocore_include_dirs) \
+  -I$(top_srcdir)/lib -I$(top_builddir)/lib \
+  -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
+
 noinst_PROGRAMS = jtest/jtest
 
 jtest_jtest_SOURCES = jtest/jtest.cc
+jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la \
+    @LIBTOOL_LINK_FLAGS@ \
+    @LIBSOCKET@ @LIBNSL@ \
+    @LIBRT@ @LIBDL@
+
 
 if BUILD_HTTP_LOAD
 noinst_PROGRAMS += http_load/http_load
