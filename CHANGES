@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1879] Make the Ptr<> conversion constructor explicit.
+
   *) [TS-1768] Prefer AC_SEARCH_LIBS to AC_CHECK_LIB to avoid unnecessary linking.
 
   *) [TS-1877] Fix multiple Lua remap plugin instance creation.

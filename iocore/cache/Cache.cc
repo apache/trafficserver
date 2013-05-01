@@ -2245,7 +2245,7 @@ Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type,
 
   ink_assert(this);
 
-  Ptr<ProxyMutex> mutex = NULL;
+  Ptr<ProxyMutex> mutex;
   if (!cont)
     cont = new_CacheRemoveCont();
 

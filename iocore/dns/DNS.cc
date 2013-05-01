@@ -789,7 +789,7 @@ DNSHandler::recv_dns(int event, Event *e)
           }
         }
       }
-      Ptr<HostEnt> protect_hostent = buf;
+      Ptr<HostEnt> protect_hostent = make_ptr(buf);
       if (dns_process(this, buf, res)) {
         if (dnsc->num == name_server)
           received_one(name_server);
