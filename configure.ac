@@ -551,15 +551,6 @@ fi
 
 AC_LANG_POP()
 
-# Check for ccache (if explicitly enabled)
-if test "x$enable_ccache" = "xyes"; then
-    AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
-    if test "x${CCACHE}" = "xccache"; then
-	CC="$CCACHE $CC"
-	CXX="$CCACHE $CXX"
-    fi
-fi
-
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
 dnl 5.9 still has an ancient version, but we have macros that require
 dnl AC_PROG_SED. The actual AC_PROG_SED macro does functional checks, but here
@@ -719,7 +710,7 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
 
 base_cc=`basename $CC`
-# These are shortcuts used in combination for the compiler options below
+
 case $host_os_def in
   linux)
     case $base_cc in
@@ -767,7 +758,7 @@ case $host_os_def in
   darwin)
     case $base_cc in
     *clang*)
-      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
+      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations -Qunused-arguments"
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -960,6 +951,14 @@ AC_ARG_WITH([cpp11api],
 AC_MSG_RESULT([$cpp11api])
 AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
 
+# Check for ccache (if explicitly enabled)
+if test "x$enable_ccache" = "xyes"; then
+    AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
+    if test "x${CCACHE}" = "xccache"; then
+	CC="$CCACHE $CC"
+	CXX="$CCACHE $CXX"
+    fi
+fi
 
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
