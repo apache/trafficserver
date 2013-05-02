@@ -411,18 +411,6 @@ fi
 TS_ARG_ENABLE_VAR([use], [reclaimable_freelist])
 AC_SUBST(use_reclaimable_freelist)
 
-#
-# If the OS is linux, we can use the '--enable-linux-native-aio' option to
-# replace the aio thread mode. Effective only on the linux system.
-#
-
-AC_MSG_CHECKING([whether to enable Linux native AIO])
-AC_ARG_ENABLE([linux-native-aio],
-  [AS_HELP_STRING([--enable-linux-native-aio], [enable native Linux AIO support @<:@default=no@:>@])],
-  [enable_linux_native_aio="${enableval}"],
-  [enable_linux_native_aio=no]
-)
-
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
@@ -1207,6 +1195,18 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
   )
 )
 AC_SUBST(use_posix_cap)
+
+#
+# If the OS is linux, we can use the '--enable-linux-native-aio' option to
+# replace the aio thread mode. Effective only on the linux system.
+#
+
+AC_MSG_CHECKING([whether to enable Linux native AIO])
+AC_ARG_ENABLE([linux-native-aio],
+  [AS_HELP_STRING([--enable-linux-native-aio], [enable native Linux AIO support @<:@default=no@:>@])],
+  [enable_linux_native_aio="${enableval}"],
+  [enable_linux_native_aio=no]
+)
 
 AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
   if test $host_os_def  != "linux"; then
