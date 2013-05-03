@@ -699,15 +699,12 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
 
-base_cc=$ax_cv_c_compiler_vendor
-
 case $host_os_def in
   linux)
-    case $base_cc in
-    *intel*)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
       # -Wall goes crazy, so turned these specific checks off for now:
       #
-      #  111 is "statement is unrecahable"
+      #  111 is "statement is unreachable"
       #  279 is "controlling expression is constant", triggered by our asserts
       #  383 is "value copied to temporary, reference to temporary used"
       #  444 is "destructor for base class is not virtual"
@@ -726,13 +723,15 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    *clang*)
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       debug_opt="-ggdb3 $common_opt -Werror -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
-      ;;
-    *) # gnu
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
       ts_am_common_flags="-Wunused-parameter"
@@ -742,75 +741,85 @@ case $host_os_def in
       cxx_opt="-Wno-invalid-offsetof"
       # Special options for flex generated .c files
       flex_cflags="-Wno-unused-parameter"
-      ;;
-    esac
+    ])
+
     ;; # linux)
+
   darwin)
-    case $base_cc in
-    *clang*)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations -Qunused-arguments"
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      # clang on Darwin needs to use libc++ for any C++11 code.
-      AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
-      ;;
-    *) # gnu
-      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-      debug_opt="$common_opt"
-      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    esac
-    # ToDo: This seems semi-kludgy, but useful for MacPort's I think.
-    TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
-    TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
+    ], [
+      AC_MSG_ERROR([clang is the only supported on compiler on Darwin])
+    ])
+
+    # Darwin needs to use libc++ for any C++11 code.
+    AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
+
+    # NOTE: This seems semi-kludgy, but useful for MacPorts I think.
+    AS_IF([test -d /opt/local/include], [
+      TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
+    ])
+    AS_IF([test -d /opt/local/lib], [
+      TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
+    ])
+
     ;; # darwin)
+
   freebsd|kfreebsd)
-    case $base_cc in
-    *clang*)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       common_opt="-pipe -Wall -Werror -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
-      ;;
-    *) # gnu
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    esac
-    TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+    ])
+
+    AS_IF([test -d /usr/local/lib], [
+      TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+    ])
+
     ;; # freebsd|kfreebsd)
+
   solaris)
-    if test "x${base_cc}" = "xsun"; then
-      # TODO: If we no longer support SunStudio, should this code go away?
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xsun"], [
+      # XXX: Solaris Studio support is going away: https://issues.apache.org/jira/browse/TS-1486
       common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags"
       cxx_opt="-library=stlport4"
       cxx_dbg="+w2"
       cxx_rel="-erroff"
-      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS],1,
-       [posix thread semantics]
-      )
-      if test "$solaris_use_stlport4" != yes; then
-        postdeps_CXX="-library=Crun"
-      fi
-    else # gnu
+
+      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS], 1, [posix thread semantics])
+      AS_IF([test "x$solaris_use_stlport4" != "xyes"], [postdeps_CXX="-library=Crun"])
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-    fi # solaris)
-    ;;
+    ])
+
+    ;; # solaris)
+
   *)
-    common_opt="-pipe -Wall -Werror"
-    debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-    cxx_opt="-Wno-invalid-offsetof"
-    ;;
+    # Not sure what platform this is, but take a stab at some general GCC options ...
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
+      common_opt="-pipe -Wall -Werror"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+    ])
 esac
 
 cc_oflag_opt=$release_opt
