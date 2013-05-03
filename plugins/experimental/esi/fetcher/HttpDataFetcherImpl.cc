@@ -273,7 +273,7 @@ HttpDataFetcherImpl::getData(const string &url, ResponseData &resp_data) const
     return false;
   }
 
-  resp_data.set(req_data.body, req_data.body_len, req_data.bufp, req_data.hdr_loc);
+  resp_data.set(req_data.body, req_data.body_len, req_data.bufp, req_data.hdr_loc, req_data.resp_status);
   TSDebug(_debug_tag, "[%s] Found data for URL [%s] of size %d starting with [%.5s]",
            __FUNCTION__, url.data(), req_data.body_len, req_data.body);
   return true;

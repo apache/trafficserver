@@ -711,7 +711,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
     bool got_expires_time = false;
     for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end();
          ++iter) {
-      if (int_data.fetcher->getData(*iter, resp_data)) {
+      if (int_data.fetcher->getData(*iter, resp_data) && resp_data.status == TS_HTTP_STATUS_OK) {
         body_blocks.push_back(ByteBlock(resp_data.content, resp_data.content_len));
         if (!got_content_type) {
           got_content_type = getContentType(resp_data.bufp, resp_data.hdr_loc, resp_header_fields);
