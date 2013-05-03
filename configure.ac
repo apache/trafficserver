@@ -521,6 +521,8 @@ AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
 
+AX_COMPILER_VENDOR
+
 CFLAGS="${_ts_saved_CFLAGS}"
 CXXFLAGS="${_ts_saved_CXXFLAGS}"
 
@@ -697,12 +699,12 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
 
-base_cc=`basename $CC`
+base_cc=$ax_cv_c_compiler_vendor
 
 case $host_os_def in
   linux)
     case $base_cc in
-    *icc*)
+    *intel*)
       # -Wall goes crazy, so turned these specific checks off for now:
       #
       #  111 is "statement is unrecahable"
@@ -730,7 +732,7 @@ case $host_os_def in
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
       ;;
-    *) # gcc
+    *) # gnu
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
       ts_am_common_flags="-Wunused-parameter"
@@ -753,7 +755,7 @@ case $host_os_def in
       # clang on Darwin needs to use libc++ for any C++11 code.
       AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
       ;;
-    *) # gcc
+    *) # gnu
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
@@ -772,7 +774,7 @@ case $host_os_def in
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
       ;;
-    *) # gcc
+    *) # gnu
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
@@ -782,7 +784,7 @@ case $host_os_def in
     TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;; # freebsd|kfreebsd)
   solaris)
-    if test "x${base_cc}" = "xcc"; then
+    if test "x${base_cc}" = "xsun"; then
       # TODO: If we no longer support SunStudio, should this code go away?
       common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
       debug_opt="-g $common_opt"
@@ -796,7 +798,7 @@ case $host_os_def in
       if test "$solaris_use_stlport4" != yes; then
         postdeps_CXX="-library=Crun"
       fi
-    else # gcc
+    else # gnu
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
