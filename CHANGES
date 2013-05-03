@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1770]  Unable to create remap rule for SSL sites when accessed as a
+   forward proxy. Author: Mark Harrison.
+
   *) [TS-1867] The combo_handler plugin crashes when receiving non-200 responses.
     Author: Conan Wang <conanmind@gmail.com>
 
