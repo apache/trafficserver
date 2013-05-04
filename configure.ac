@@ -1342,6 +1342,7 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   sys/param.h \
                   sys/pset.h \
                   sched.h \
+                  pthread.h \
                   pthread_np.h \
                   machine/endian.h \
                   endian.h \
@@ -1476,6 +1477,68 @@ TS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
 
 AC_SUBST(netinet_iph)
 AC_SUBST(netinet_ip_icmph)
+
+# Test for additional pthread interfaces.
+
+# Darwin pthread_setname_np:
+AC_MSG_CHECKING([for 1-parameter version of pthread_setname_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_setname_np("conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SETNAME_NP_1, 1, [Whether the 1 parameter version of pthread_setname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
+
+# Linux pthread_setname_np:
+AC_MSG_CHECKING([for 2-parameter version of pthread_setname_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_setname_np(pthread_self(), "conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SETNAME_NP_2, 1, [Whether the 2 parameter version of pthread_setname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
+
+# BSD pthread_set_name_np:
+AC_MSG_CHECKING([for 2-parameter version of pthread_set_name_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_set_name_np(pthread_self(), "conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SET_NAME_NP_2, 1, [Whether the 2 parameter version of pthread_set_name_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
 
 # BSD-derived systems populate the socket length in the structure itself. It's
 # redundant to check all of these, but hey, I need the typing practice.

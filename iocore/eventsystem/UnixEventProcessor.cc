@@ -47,10 +47,6 @@ typedef cpuset_t ink_cpuset_t;
 #define PTR_FMT "p"
 #endif
 
-#if HAVE_PTHREAD_NP_H
-#include <pthread_np.h>
-#endif
-
 #if HAVE_SYS_PSET_H
 #include <sys/pset.h>
 typedef psetid_t ink_cpuset_t;
