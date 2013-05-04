@@ -40,6 +40,7 @@
 #include "ink_error.h"
 #include "ink_assert.h"
 #include "ink_resource.h"
+#include "ink_stack_trace.h"
 #include "ink_queue_ext.h"
 
 #if TS_USE_RECLAIMABLE_FREELIST
@@ -63,7 +64,7 @@ int64_t cfg_enable_reclaim = 0;
  */
 int64_t cfg_debug_filter;
 
-static uint32_t page_size;
+static const uint32_t page_size = ats_pagesize();
 static uint32_t nr_freelist;
 static uint64_t total_mem_in_byte;
 static __thread InkThreadCache *ThreadCaches[MAX_NUM_FREELIST];
@@ -74,25 +75,15 @@ static inline pthread_t thread_id(void)
 
   return tid?tid:(tid = pthread_self());
 }
-#define THREAD_ID thread_id()
 #define MAX_CHUNK_BYTE_SIZE (page_size << 8)
 
 /*
  * For debug
  */
-#if 1
 #define show_info(tag, f, pCache) \
   __show_info(stdout, __FILE__, __LINE__, tag, f, pCache)
-#else
-#define show_info(tag, f, pCache) \
-  __silent(__FILE__, __LINE__, tag, f, pCache)
-#endif
 #define error_info(tag, f, pCache) \
   __show_info(stderr, __FILE__, __LINE__, tag, f, pCache)
-
-static inline void
-__silent(const char *file, int line,
-         const char *tag, InkFreeList *f, InkThreadCache *pCache) {}
 
 static inline void
 __show_info(FILE *fp, const char *file, int line,
@@ -101,7 +92,7 @@ __show_info(FILE *fp, const char *file, int line,
 
   fprintf(fp, "[%lx:%02u][%s:%05d][%s] %6.2fM t:%-8uf:%-4u m:%-4u avg:%-6.1f"
           " M:%-4u csbase:%-4u csize:%-4u tsize:%-6u cbsize:%u\n",
-         (long)THREAD_ID, f->thread_cache_idx, file, line, tag,
+         (long)thread_id(), f->thread_cache_idx, file, line, tag,
          ((double)total_mem_in_byte/1024/1024),
          pCache->nr_total,
          pCache->nr_free,
@@ -192,8 +183,8 @@ mmap_align(size_t size, size_t alignment) {
                       MAP_PRIVATE|MAP_ANONYMOUS,
                       -1, 0);
   if (result == MAP_FAILED) {
-      xdump();
-      ink_fatal(1, "Failed to mmap %zu bytes, %s", size, strerror(errno));
+    ink_stack_trace_dump();
+    ink_fatal(1, "Failed to mmap %zu bytes, %s", size, strerror(errno));
   }
 
   /* adjust the return memory so it is aligned */
@@ -243,7 +234,7 @@ ink_chunk_create(InkFreeList *f, InkThreadCache *pCache)
   type_size = f->type_size;
   chunk_size = f->chunk_size;
 
-  pChunk->tid = THREAD_ID;
+  pChunk->tid = thread_id();
   pChunk->head = chunk_addr;
   pChunk->type_size = type_size;
   pChunk->chunk_size = chunk_size;
@@ -280,9 +271,8 @@ ink_chunk_delete(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
   pCache->nr_free_chunks--;
 
   if (unlikely(munmap(chunk_addr, f->chunk_byte_size))) {
-      xdump();
-      ink_fatal(1, "Failed to munmap %u bytes, %s", f->chunk_byte_size,
-                strerror(errno));
+    ink_stack_trace_dump();
+    ink_fatal(1, "Failed to munmap %u bytes, %s", f->chunk_byte_size, strerror(errno));
   }
 
   ink_atomic_increment((int *)&f->count, -f->chunk_size);
@@ -424,7 +414,7 @@ refresh_average_info(InkThreadCache *pCache)
 }
 
 static inline bool
-need_to_reclaim(InkFreeList *f, InkThreadCache *pCache, pthread_t tid)
+need_to_reclaim(InkFreeList *f, InkThreadCache *pCache)
 {
   if (!cfg_enable_reclaim)
     return false;
@@ -452,9 +442,6 @@ reclaimable_freelist_init(InkFreeList **fl, const char *name,
 
   /* quick test for power of 2 */
   ink_assert(!(alignment & (alignment - 1)));
-
-  if (!page_size)
-    page_size = sysconf(_SC_PAGESIZE);
 
   /* NOTE: it's safe to operate on this global list because
    * ink_freelist_init() is only called from single-threaded
@@ -572,7 +559,7 @@ reclaimable_freelist_new(InkFreeList *f)
     if ((pNextCache = ThreadCaches[i]) == NULL)
       continue;
 
-    if (need_to_reclaim(pNextCache->f, pNextCache, THREAD_ID)) {
+    if (need_to_reclaim(pNextCache->f, pNextCache)) {
       if (cfg_debug_filter & 0x1)
         show_info("F", pNextCache->f, pNextCache);
 

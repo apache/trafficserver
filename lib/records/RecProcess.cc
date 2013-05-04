@@ -58,7 +58,7 @@ i_am_the_record_owner(RecT rec_type)
     case RECT_LOCAL:
       return false;
     default:
-      ink_debug_assert(!"Unexpected RecT type");
+      ink_assert(!"Unexpected RecT type");
       return false;
     }
   } else if (g_mode_type == RECM_STAND_ALONE) {
@@ -71,7 +71,7 @@ i_am_the_record_owner(RecT rec_type)
     case RECT_PLUGIN:
       return true;
     default:
-      ink_debug_assert(!"Unexpected RecT type");
+      ink_assert(!"Unexpected RecT type");
       return false;
     }
   }
@@ -118,6 +118,9 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
+  if (total->sum < 0) { // Assure that we stay positive
+    total->sum = 0;
+  }
 
   return REC_ERR_OKAY;
 }
@@ -142,6 +145,9 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
+  if (total.sum < 0) { // Assure that we stay positive
+    total.sum = 0;
+  }
 
   // lock so the setting of the globals and last values are atomic
   ink_mutex_acquire(&(rsb->mutex));
@@ -165,6 +171,34 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 
   ink_mutex_release(&(rsb->mutex));
 
+  return REC_ERR_OKAY;
+}
+
+
+//-------------------------------------------------------------------------
+// raw_stat_clear
+//-------------------------------------------------------------------------
+static int
+raw_stat_clear(RecRawStatBlock *rsb, int id)
+{
+  Debug("stats", "raw_stat_clear(): rsb pointer:%p id:%d\n", rsb, id);
+
+  // the globals need to be reset too
+  // lock so the setting of the globals and last values are atomic
+  ink_mutex_acquire(&(rsb->mutex));
+  ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
+  ink_mutex_release(&(rsb->mutex));
+
+  // reset the local stats
+  RecRawStat *tlp;
+  for (int i = 0; i < eventProcessor.n_ethreads; i++) {
+    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), (int64_t)0);
+    ink_atomic_swap(&(tlp->count), (int64_t)0);
+  }
   return REC_ERR_OKAY;
 }
 
@@ -471,7 +505,7 @@ RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDat
   Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d\n", name, rsb, id);
 
   // check to see if we're good to proceed
-  ink_debug_assert(id < rsb->max_stats);
+  ink_assert(id < rsb->max_stats);
 
   int err = REC_ERR_OKAY;
 
@@ -787,6 +821,7 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
         r->stat_meta.sync_rsb = rsb;
         r->stat_meta.sync_id = id;
         r->stat_meta.sync_cb = sync_cb;
+        r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
         err = REC_ERR_OKAY;
       } else {
         ink_release_assert(false); // We shouldn't register CBs twice...
@@ -815,7 +850,12 @@ RecExecRawStatSyncCbs()
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       if (r->stat_meta.sync_cb) {
-        (*(r->stat_meta.sync_cb)) (r->name, r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+        if (r->version && r->version != r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version) {
+          raw_stat_clear(r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+          r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
+        } else {
+          (*(r->stat_meta.sync_cb)) (r->name, r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+        }
         r->sync_required = REC_SYNC_REQUIRED;
       }
     }

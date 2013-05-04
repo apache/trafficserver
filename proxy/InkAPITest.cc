@@ -7485,7 +7485,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
 //                    TSStringPercentDecode
 ////////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_ENCODING) (RegressionTest * test, int atype, int *pstatus)
+REGRESSION_TEST(SDK_API_ENCODING) (RegressionTest * test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   const char *url = "http://www.example.com/foo?fie= \"#%<>[]\\^`{}~&bar={test}&fum=Apache Traffic Server";
   const char *url_encoded =

@@ -21,11 +21,22 @@
   limitations under the License.
  */
 
-#include <iostream.h>
-#include <fstream.h>
+#include "P_AIO.h"
+#include "InkAPIInternal.h"
+#include "I_Layout.h"
+#include <iostream>
+#include <fstream>
+
+using std::cout;
+using std::endl;
 
 Diags *diags;
+int diags_init = 0;
 #define DIAGS_LOG_FILE "diags.log"
+
+void syslog_thr_init(void)
+{
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -42,7 +53,6 @@ reconfigure_diags()
   int i;
   DiagsConfigState c;
 
-
   // initial value set to 0 or 1 based on command line tags
   c.enabled[DiagsTagType_Debug] = (diags->base_debug_tags != NULL);
   c.enabled[DiagsTagType_Action] = (diags->base_action_tags != NULL);
@@ -50,7 +60,6 @@ reconfigure_diags()
   c.enabled[DiagsTagType_Debug] = 1;
   c.enabled[DiagsTagType_Action] = 1;
   diags->show_location = 1;
-
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
@@ -69,7 +78,7 @@ reconfigure_diags()
   diags->deactivate_all(DiagsTagType_Action);
 
   //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables 
+  //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
 
   if (diags->base_debug_tags)
@@ -88,10 +97,8 @@ reconfigure_diags()
 
 }
 
-
-
 static void
-init_diags(char *bdt, char *bat)
+init_diags(const char *bdt, const char *bat)
 {
   FILE *diags_log_fp;
   char diags_logpath[500];
@@ -110,13 +117,10 @@ init_diags(char *bdt, char *bat)
   diags = NEW(new Diags(bdt, bat, diags_log_fp));
 
   if (diags_log_fp == NULL) {
-    SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
-
-    diags->print(NULL, DL_Warning, NULL, &loc,
-                 "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    Warning("couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
   }
 
-  diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);
+  Status("opened %s", diags_logpath);
   reconfigure_diags();
 
 }
@@ -135,8 +139,7 @@ volatile int n_accessors = 0;
 int orig_n_accessors;
 AIO_Device *dev[MAX_DISK_THREADS];
 
-extern int cache_config_threads_per_disk;
-
+extern RecInt cache_config_threads_per_disk;
 
 int write_after = 0;
 int write_skip = 0;
@@ -193,7 +196,7 @@ struct AIO_Device:public Continuation
     else
       return RANDOM_READ_MODE;
   };
-  void do_touch_data(ink_off_t orig_len, ink_off_t orig_offset)
+  void do_touch_data(off_t orig_len, off_t orig_offset)
   {
     if (!touch_data)
       return;
@@ -201,22 +204,21 @@ struct AIO_Device:public Continuation
     unsigned int offset = (unsigned int) orig_offset;
     offset = offset % 1024;
     char *b = buf;
-    int *x = (int *) b;
-    int j;
-    for (j = 0; j < (int) (len / sizeof(int)); j++) {
+    unsigned *x = (unsigned *) b;
+    for (unsigned j = 0; j < (len / sizeof(int)); j++) {
       x[j] = offset;
       offset = (offset + 1) % 1024;
     }
   };
-  int do_check_data(ink_off_t orig_len, ink_off_t orig_offset)
+  int do_check_data(off_t orig_len, off_t orig_offset)
   {
     if (!touch_data)
       return 0;
     unsigned int len = (unsigned int) orig_len;
     unsigned int offset = (unsigned int) orig_offset;
     offset = offset % 1024;
-    int *x = (int *) buf;
-    for (int j = 0; j < (int) (len / sizeof(int)); j++) {
+    unsigned *x = (unsigned *) buf;
+    for (unsigned j = 0; j < (len / sizeof(int)); j++) {
       if (x[j] != offset)
         return 1;
       offset = (offset + 1) % 1024;
@@ -226,11 +228,7 @@ struct AIO_Device:public Continuation
   int do_hotset(int event, Event * e);
   int do_fd(int event, Event * e);
 
-
 };
-
-
-
 
 void
 dump_summary(void)
@@ -298,9 +296,9 @@ dump_summary(void)
 }
 
 int
-AIO_Device::do_hotset(int event, Event * e)
+AIO_Device::do_hotset(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  ink_off_t max_offset = ((ink_off_t) disk_size) * 1024 * 1024;
+  off_t max_offset = ((off_t) disk_size) * 1024 * 1024;
   io->aiocb.aio_lio_opcode = LIO_WRITE;
   io->aiocb.aio_fildes = fd;
   io->aiocb.aio_offset = MIN_OFFSET + hotset_idx * max_size;
@@ -326,7 +324,7 @@ AIO_Device::do_hotset(int event, Event * e)
 }
 
 int
-AIO_Device::do_fd(int event, Event * e)
+AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   if (!time_start) {
     time_start = ink_get_hrtime();
@@ -340,10 +338,10 @@ AIO_Device::do_fd(int event, Event * e)
     return 0;
   }
 
-  ink_off_t max_offset = ((ink_off_t) disk_size) * 1024 * 1024; // MB-GB
-  ink_off_t max_hotset_offset = ((ink_off_t) hotset_size) * 1024 * 1024;        // MB-GB
-  ink_off_t seq_read_point = ((ink_off_t) MIN_OFFSET);
-  ink_off_t seq_write_point = ((ink_off_t) MIN_OFFSET) + max_offset / 2 + write_after * 1024 * 1024;
+  off_t max_offset = ((off_t) disk_size) * 1024 * 1024; // MB-GB
+  off_t max_hotset_offset = ((off_t) hotset_size) * 1024 * 1024;        // MB-GB
+  off_t seq_read_point = ((off_t) MIN_OFFSET);
+  off_t seq_write_point = ((off_t) MIN_OFFSET) + max_offset / 2 + write_after * 1024 * 1024;
   seq_write_point += (id % n_disk_path) * (max_offset / (threads_per_disk * 4));
   if (seq_write_point > max_offset)
     seq_write_point = MIN_OFFSET;
@@ -386,11 +384,11 @@ AIO_Device::do_fd(int event, Event * e)
       double p, f;
       p = drand48();
       f = drand48();
-      ink_off_t o = 0;
+      off_t o = 0;
       if (f < hotset_frequency)
-        o = (ink_off_t) p *max_hotset_offset;
+        o = (off_t) p *max_hotset_offset;
       else
-        o = (ink_off_t) p *(max_offset - rand_read_size);
+        o = (off_t) p *(max_offset - rand_read_size);
       if (o < MIN_OFFSET)
         o = MIN_OFFSET;
       o = (o + (seq_read_size - 1)) & (~(seq_read_size - 1));
@@ -415,7 +413,7 @@ AIO_Device::do_fd(int event, Event * e)
 int
 read_config(const char *config_filename)
 {
-  ifstream fin(config_filename);
+  std::ifstream fin(config_filename);
   char field_name[256];
   char field_value[256];
 
@@ -451,7 +449,7 @@ read_config(const char *config_filename)
       else if (strcmp(field_name, "disk_path") == 0) {
       assert(n_disk_path < MAX_DISK_THREADS);
       fin >> field_value;
-      disk_path[n_disk_path] = xstrdup(field_value);
+      disk_path[n_disk_path] = strdup(field_value);
       cout << "reading disk_path = " << disk_path[n_disk_path] << endl;
       n_disk_path++;
     }
@@ -474,18 +472,16 @@ read_config(const char *config_filename)
   return (1);
 }
 
-
-
-
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   int i;
-  int num_net_threads = ink_number_of_processors();
+
+  Layout::create();
   init_diags("", NULL);
   RecProcessInit(RECM_STAND_ALONE);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
-  eventProcessor.start(num_net_threads);
+  eventProcessor.start(ink_number_of_processors());
   RecProcessStart();
   ink_aio_init(AIO_MODULE_VERSION);
   srand48(time(NULL));
@@ -499,7 +495,6 @@ main(int argc, char *argv[])
   if (rand_read_size > max_size)
     max_size = rand_read_size;
 
-
   cache_config_threads_per_disk = threads_per_disk;
   orig_n_accessors = n_disk_path * threads_per_disk;
 
@@ -511,7 +506,7 @@ main(int argc, char *argv[])
       dev[n_accessors]->seq_reads = 0;
       dev[n_accessors]->seq_writes = 0;
       dev[n_accessors]->rand_reads = 0;
-      dev[n_accessors]->fd = open(dev[n_accessors]->path, O_RDWR | O_CREAT);
+      dev[n_accessors]->fd = open(dev[n_accessors]->path, O_RDWR | O_CREAT, 0600);
       fchmod(dev[n_accessors]->fd, S_IRWXU | S_IRWXG);
       if (dev[n_accessors]->fd < 0) {
         perror(disk_path[i]);

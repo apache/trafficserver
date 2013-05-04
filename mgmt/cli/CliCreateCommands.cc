@@ -304,7 +304,7 @@ xsystem(const char * cmd)
 }
 
 int
-Cmd_Help(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_Help(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * /* interp ATS_UNUSED */, int argc, const char *argv[])
 {
   Cli_Debug("looking for online help in %s\n", Layout::get()->datadir);
 

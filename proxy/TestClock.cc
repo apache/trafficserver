@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 #include "ink_hrtime.h"
 #include <sys/time.h>
 

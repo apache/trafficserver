@@ -31,9 +31,6 @@
 #define SDBG_TAG "SockServer"
 #define CDBG_TAG "SockClient"
 
-#ifndef MIN
-#define MIN(_x, _y) ((_x < _y) ? _x : _y)
-#endif
 #define IP(a,b,c,d) htonl((a) << 24 | (b) << 16 | (c) << 8 | (d))
 
 #define SET_TEST_HANDLER(_d, _s) {_d = _s;}

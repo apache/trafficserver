@@ -16,11 +16,8 @@
   limitations under the License.
 */
 
-
-// get INT64_MAX
-#define __STDC_LIMIT_MACROS
-
-#include "ts/ink_platform.h"
+#include "ink_platform.h"
+#include "ink_defs.h"
 
 #include <cstdio>
 #include <cstring>
@@ -115,39 +112,37 @@ typedef struct intercept_state_t
 } intercept_state;
 
 struct private_seg_t {
-  struct in_addr net;
-  struct in_addr mask;
+  const in_addr_t net;
+  const in_addr_t mask;
 };
 
 // don't put inet_addr("255.255.255.255"), see BUGS in 'man 3 inet_addr'
 static struct private_seg_t private_segs[] = {
-  {{inet_addr("10.0.0.0")}, {inet_addr("255.0.0.0")}},
-  {{inet_addr("127.0.0.0")}, {inet_addr("255.0.0.0")}},
-  {{inet_addr("172.16.0.0")}, {inet_addr("255.240.0.0")}},
-  {{inet_addr("192.168.0.0")}, {inet_addr("255.255.0.0")}}
+  {inet_addr("10.0.0.0"), inet_addr("255.0.0.0")},
+  {inet_addr("127.0.0.0"), inet_addr("255.0.0.0")},
+  {inet_addr("172.16.0.0"), inet_addr("255.240.0.0")},
+  {inet_addr("192.168.0.0"), inet_addr("255.255.0.0")}
 };
+
 static int num_private_segs = sizeof(private_segs) / sizeof(private_seg_t);
 
 // all parameters are in network byte order
-static int
-is_in_net (const struct in_addr * addr,
-           const struct in_addr * netaddr,
-           const struct in_addr * netmask)
+static bool
+is_in_net(const in_addr_t addr,
+          const in_addr_t netaddr,
+          const in_addr_t netmask)
 {
-   if ((addr->s_addr & netmask->s_addr) == (netaddr->s_addr & netmask->s_addr))
-      return 1;
-   return 0;
+  return (addr & netmask) == (netaddr & netmask);
 }
 
-static int
-is_private_ip(const struct in_addr * addr)
+static bool
+is_private_ip(const in_addr_t addr)
 {
-  int i;
-  for (i = 0; i < num_private_segs; i++) {
-    if (is_in_net(addr, &private_segs[i].net, &private_segs[i].mask))
-      return 1;
+  for (int i = 0; i < num_private_segs; i++) {
+    if (is_in_net(addr, private_segs[i].net, private_segs[i].mask))
+      return true;
   }
-  return 0;
+  return false;
 }
 
 static int handle_event(TSCont contp, TSEvent event, void *edata);
@@ -275,7 +270,7 @@ get_api_params(TSMBuffer   bufp,
 }
 
 static void
-handle_read_req(TSCont contp, TSHttpTxn txnp)
+handle_read_req(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc = NULL;
@@ -324,7 +319,7 @@ handle_read_req(TSCont contp, TSHttpTxn txnp)
   client_addr = (struct sockaddr *) TSHttpTxnClientAddrGet(txnp);
   if (client_addr->sa_family == AF_INET) {
     client_addr4 = (struct sockaddr_in *) client_addr;
-    if (!is_private_ip(&client_addr4->sin_addr)) {
+    if (!is_private_ip(client_addr4->sin_addr.s_addr)) {
       client_ip = (char *) TSmalloc(INET_ADDRSTRLEN);
       inet_ntop(AF_INET, &client_addr4->sin_addr, client_ip, INET_ADDRSTRLEN);
       debug_api("%s is not a private IP, request denied", client_ip);
@@ -467,7 +462,7 @@ get_txn_user_speed(TSHttpTxn txnp, uint64_t body_bytes)
 }
 
 static void
-handle_txn_close(TSCont contp, TSHttpTxn txnp)
+handle_txn_close(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
@@ -624,9 +619,8 @@ stats_process_read(TSCont contp, TSEvent event, intercept_state * api_state)
 } while(0)
 
 static void
-json_out_stat(TSRecordType rec_type, void *edata, int registered,
-              const char *name, TSRecordDataType data_type,
-              TSRecordData *datum) {
+json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+              TSRecordDataType data_type, TSRecordData *datum) {
   intercept_state *api_state = (intercept_state *) edata;
 
   switch(data_type) {

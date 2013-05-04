@@ -218,6 +218,9 @@ CONFIG proxy.config.http.push_method_enabled INT 0
    # cache control #
    #################
 CONFIG proxy.config.http.cache.http INT 1
+   # Enabling this setting allows the proxy to cache empty documents. This currently
+   # requires that the response has a Content-Length: header, with a value of "0".
+CONFIG proxy.config.http.cache.allow_empty_doc INT 0
 CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
 CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 1
 CONFIG proxy.config.http.cache.ignore_server_no_cache INT 0

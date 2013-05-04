@@ -148,10 +148,10 @@ iobuffer_mem_inc(const char *_loc, int64_t _size_index)
   if (!_loc)
     _loc = "memory/IOBuffer/UNKNOWN-LOCATION";
   Resource *res = res_lookup(_loc);
-  ink_debug_assert(strcmp(_loc, res->path) == 0);
+  ink_assert(strcmp(_loc, res->path) == 0);
 #ifdef DEBUG  
   int64_t r = ink_atomic_increment(&res->value, index_to_buffer_size(_size_index));
-  ink_debug_assert(r >= 0);
+  ink_assert(r >= 0);
 #else
   ink_atomic_increment(&res->value, index_to_buffer_size(_size_index));
 #endif
@@ -168,10 +168,10 @@ iobuffer_mem_dec(const char *_loc, int64_t _size_index)
   if (!_loc)
     _loc = "memory/IOBuffer/UNKNOWN-LOCATION";
   Resource *res = res_lookup(_loc);
-  ink_debug_assert(strcmp(_loc, res->path) == 0);
+  ink_assert(strcmp(_loc, res->path) == 0);
 #ifdef DEBUG  
   int64_t r = ink_atomic_increment(&res->value, -index_to_buffer_size(_size_index));
-  ink_debug_assert(r >= index_to_buffer_size(_size_index));
+  ink_assert(r >= index_to_buffer_size(_size_index));
 #else
   ink_atomic_increment(&res->value, -index_to_buffer_size(_size_index));
 #endif
@@ -291,7 +291,7 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
       _data = (char *) ioBufAllocator[size_index].alloc_void();
     // coverity[dead_error_condition]
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(size_index))
-      _data = (char *)ats_memalign(sysconf(_SC_PAGESIZE), index_to_buffer_size(size_index));
+      _data = (char *)ats_memalign(ats_pagesize(), index_to_buffer_size(size_index));
     break;
   default:
   case DEFAULT_ALLOC:
@@ -411,7 +411,7 @@ IOBufferBlock::reset()
 TS_INLINE void
 IOBufferBlock::alloc(int64_t i)
 {
-  ink_debug_assert(BUFFER_SIZE_ALLOCATED(i));
+  ink_assert(BUFFER_SIZE_ALLOCATED(i));
 #ifdef TRACK_BUFFER_USER
   data = new_IOBufferData_internal(_location, i);
 #else
@@ -650,7 +650,7 @@ IOBufferReader::consume(int64_t n)
     block = block->next;
     r = block->read_avail();
   }
-  ink_debug_assert(read_avail() >= 0);
+  ink_assert(read_avail() >= 0);
 }
 
 TS_INLINE char &
@@ -926,7 +926,7 @@ MIOBuffer::append_block(IOBufferBlock * b)
 TS_INLINE void
 MIOBuffer::append_block(int64_t asize_index)
 {
-  ink_debug_assert(BUFFER_SIZE_ALLOCATED(asize_index));
+  ink_assert(BUFFER_SIZE_ALLOCATED(asize_index));
 #ifdef TRACK_BUFFER_USER
   IOBufferBlock *b = new_IOBufferBlock_internal(_location);
 #else

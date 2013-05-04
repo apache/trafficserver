@@ -221,7 +221,7 @@ struct Vol: public Continuation
   int increment_generation()
   {
     // this is stored in the offset field of the directory (!=0)
-    ink_debug_assert(mutex->thread_holding == this_ethread());
+    ink_assert(mutex->thread_holding == this_ethread());
     header->generation++;
     if (!header->generation)
       header->generation++;
@@ -256,7 +256,7 @@ struct Vol: public Continuation
       evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false),
       dir_sync_waiting(0), dir_sync_in_progress(0), writing_end_marker(0) {
     open_dir.mutex = mutex;
-    agg_buffer = (char *)ats_memalign(sysconf(_SC_PAGESIZE), AGG_SIZE);
+    agg_buffer = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
     memset(agg_buffer, 0, AGG_SIZE);
     SET_HANDLER(&Vol::aggWrite);
   }
@@ -423,7 +423,7 @@ Doc::data_len()
 TS_INLINE int
 Doc::single_fragment()
 {
-  return (total_len && (data_len() == total_len));
+  return (data_len() == total_len);
 }
 
 TS_INLINE char *

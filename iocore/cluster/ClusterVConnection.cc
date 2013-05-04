@@ -450,7 +450,7 @@ ClusterVConnection::set_type(int options)
 }
 
 // Overide functions in base class VConnection.
-bool ClusterVConnection::get_data(int id, void *data)
+bool ClusterVConnection::get_data(int id, void * /* data ATS_UNUSED */)
 {
   switch (id) {
   case CACHE_DATA_HTTP_INFO:

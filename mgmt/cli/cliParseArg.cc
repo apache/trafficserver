@@ -27,9 +27,6 @@
   If arguments are are valid it converts string arguments to the proper type
  */
 
-
-
-
 #include <tcl.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,6 +34,7 @@
 #include "definitions.h"
 #include "CliDisplay.h"
 #include "ink_string.h"
+#include "ink_defs.h"
 
 int checkintrange(char *range, int value);
 int checkfloatrange(char *range, float value);
@@ -56,11 +54,12 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
   cli_ArgvInfo *infoPtr, *prevMatchPtr = NULL, *prevPtr = NULL;
   cli_parsedArgInfo *parsedInfoPtr, *prev_parsedInfoPtr = NULL;
   int srcIndex = 1;
-  int gotMatch = 0, missing = 0, gotInt = 0;
+  bool gotMatch = false, gotInt = false;
+  int missing = 0;
   int length, i;
   char curArg[256], buf[256];
   char *endPtr;
-  int got_required;
+  bool got_required;
   cli_ArgvInfo *argTable = commandInfo->argtable;
   char **reqd_args = commandInfo->reqd_args;
   cli_parsedArgInfo *parsedArgTable = commandInfo->parsedArgTable;
@@ -90,16 +89,16 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
   if (reqd_args != (char **) NULL) {
     missing = 0;
     for (i = 0; reqd_args[i] != NULL; i++) {
-      got_required = FALSE;
+      got_required = false;
       srcIndex = 1;
       while (srcIndex <= argc) {
         if (!strcmp(reqd_args[i], argv[srcIndex])) {
-          got_required = TRUE;
+          got_required = true;
           break;
         }
         srcIndex++;
       }
-      if (got_required == FALSE) {
+      if (got_required == false) {
         missing++;
         if (missing == 1)
           Tcl_AppendResult(interp, reqd_args[i], (char *) NULL);
@@ -142,10 +141,10 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
     argc--;
     srcIndex++;
     length = strlen(curArg);
-    gotMatch = FALSE;
+    gotMatch = false;
     for (infoPtr = argTable; (infoPtr->key != NULL); infoPtr++) {
       if (!strcmp(infoPtr->key, curArg)) {
-        gotMatch = TRUE;
+        gotMatch = true;
         if (infoPtr->position != CLI_ARGV_NO_POS) {     /* Don't do position checking for
                                                            CLI_ARGV_NO_POS */
           /* check if the 1st position argument comes at 1st position */
@@ -203,7 +202,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
             Tcl_AppendResult(interp, infoPtr->key, " requires integer argument ", "\n", infoPtr->help, (char *) NULL);
             return TCL_ERROR;
           }
-          if (infoPtr->range_set == TRUE) {
+          if (infoPtr->range_set == true) {
             if (parsedInfoPtr->arg_int < infoPtr->l_range.int_r1 || parsedInfoPtr->arg_int > infoPtr->u_range.int_r2) {
               snprintf(buf, sizeof(buf), "value of %s is out of range %d - %d", infoPtr->key, infoPtr->l_range.int_r1,
                        infoPtr->u_range.int_r2);
@@ -228,7 +227,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
               break;
             }
             gotInt = 1;
-            if (infoPtr->range_set == TRUE) {
+            if (infoPtr->range_set == true) {
               if (parsedInfoPtr->arg_int < infoPtr->l_range.int_r1 || parsedInfoPtr->arg_int > infoPtr->u_range.int_r2) {
                 snprintf(buf, sizeof(buf), "value of %s is out of range %d - %d", infoPtr->key, infoPtr->l_range.int_r1,
                          infoPtr->u_range.int_r2);
@@ -272,7 +271,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
                              "\n", infoPtr->help, (char *) NULL);
             return TCL_ERROR;
           }
-          if (infoPtr->range_set == TRUE) {
+          if (infoPtr->range_set == true) {
             if (parsedInfoPtr->arg_float < infoPtr->l_range.float_r1 ||
                 parsedInfoPtr->arg_float > infoPtr->u_range.float_r2) {
               snprintf(buf, sizeof(buf), "value of %s out of range %f - %f", infoPtr->key, infoPtr->l_range.float_r1,
@@ -295,7 +294,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
               parsedInfoPtr->parsed_args = infoPtr->arg_ref;
               break;
             }
-            if (infoPtr->range_set == TRUE) {
+            if (infoPtr->range_set == true) {
               if (parsedInfoPtr->arg_float < infoPtr->l_range.float_r1 ||
                   parsedInfoPtr->arg_float > infoPtr->u_range.float_r2) {
                 snprintf(buf, sizeof(buf), "value of %s out of range %f - %f", infoPtr->key, infoPtr->l_range.float_r1,
@@ -326,11 +325,11 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
         }
         prevMatchPtr = infoPtr;
       }
-      if (gotMatch == TRUE)
+      if (gotMatch == true)
         break;
 
     }
-    if (gotMatch == FALSE) {
+    if (gotMatch == false) {
       if (prevMatchPtr != NULL) {
         /*if prev argument is of type CLI_ARGV_CONST_OPTION then this has to be valid
            argument so return error */
@@ -398,7 +397,7 @@ static void
 PrintUsage(Tcl_Interp * interp, cli_CommandInfo * commandInfo)
 {
   NOWARN_UNUSED(interp);
-  register cli_ArgvInfo *infoPtr;
+  cli_ArgvInfo *infoPtr;
   cli_ArgvInfo *argTable = commandInfo->argtable;
   int width, numSpaces;
 

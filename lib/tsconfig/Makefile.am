@@ -20,11 +20,11 @@ lib_LTLIBRARIES = libtsconfig.la
 noinst_PROGRAMS = test-tsconfig
 libtsconfig_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
+AM_CFLAGS += @FLEX_CFLAGS@
 AM_YFLAGS = --yacc -d -p tsconfig
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/ts
+  -I$(top_srcdir)/lib 
 
 BUILT_SOURCES = \
   TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \

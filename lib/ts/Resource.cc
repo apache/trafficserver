@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "Resource.h"
 
 

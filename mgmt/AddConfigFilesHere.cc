@@ -22,12 +22,10 @@
  */
 
 #include "ink_platform.h"
-#include "ink_unused.h"
 #include "Main.h"
 #include "MgmtUtils.h"
 #include "ConfigParse.h"
 #include "Diags.h"
-static char INK_UNUSED rcsId__AddConfigFilesHere_cc[] = "@(#)  built on " __DATE__ " " __TIME__;       /* MAGIC_EDITING_TAG */
 
 /****************************************************************************
  *
@@ -71,7 +69,6 @@ initializeRegistry()
   configFiles->addFile("storage.config", false);
   configFiles->addFile("socks.config", false);
   configFiles->addFile("proxy.pac", false);
-  configFiles->addFile("wpad.dat", false);
   configFiles->addFile("records.config", false);
   configFiles->addFile("vaddrs.config", false);
   configFiles->addFile("cache.config", false);

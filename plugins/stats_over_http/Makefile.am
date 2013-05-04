@@ -14,9 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api
+include $(top_srcdir)/build/plugins.mk
 
-pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = stats_over_http.la
 stats_over_http_la_SOURCES = stats_over_http.c
-stats_over_http_la_LDFLAGS = -module -avoid-version -shared
+stats_over_http_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

@@ -20,9 +20,6 @@
 // --------------
 //
 //
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__header_rewrite_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <fstream>
 #include <string>
 #include <boost/algorithm/string.hpp>
@@ -35,6 +32,9 @@ static char UNUSED rcsId__header_rewrite_cc[] = "@(#) $Id$ built on " __DATE__ "
 #include "resources.h"
 
 // "Defines"
+const char* PLUGIN_NAME = "header_rewrite";
+const char* PLUGIN_NAME_DBG = "header_rewrite_dbg";
+
 static const char* DEFAULT_CONF_PATH = "/usr/local/etc/header_rewrite/";
 
 
@@ -278,7 +278,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   TSDebug(PLUGIN_NAME, "initializing the remap plugin header_rewrite");
 

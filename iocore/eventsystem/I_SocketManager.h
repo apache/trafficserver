@@ -121,7 +121,7 @@ struct SocketManager
   int close(int sock);
   int ink_bind(int s, struct sockaddr const* name, int namelen, short protocol = 0);
 
-  int pagesize;
+  const size_t pagesize;
 
   virtual ~ SocketManager();
 

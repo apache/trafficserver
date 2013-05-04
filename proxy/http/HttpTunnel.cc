@@ -230,11 +230,6 @@ ChunkedHandler::read_size()
 //   Use block reference method when there is a sufficient
 //   size to move.  Otherwise, uses memcpy method
 //
-
-// We redefine MIN here, with our own funky implementation.  TODO: Do we need this ?
-#undef MIN
-#define MIN(x,y) ((x) <= (y)) ? (x) : (y);
-
 int64_t
 ChunkedHandler::transfer_bytes()
 {
@@ -377,7 +372,7 @@ bool ChunkedHandler::generate_chunked_content()
   bool server_done = false;
   int64_t r_avail;
 
-  ink_debug_assert(max_chunk_header_len);
+  ink_assert(max_chunk_header_len);
 
   switch (last_server_event) {
   case VC_EVENT_EOS:
@@ -444,8 +439,6 @@ bool ChunkedHandler::generate_chunked_content()
   }
   return false;
 }
-
-#undef MIN
 
 HttpTunnelProducer::HttpTunnelProducer()
   : consumer_list(), self_consumer(NULL),
@@ -799,7 +792,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
 
   int64_t read_start_pos = 0;
   if (p->vc_type == HT_CACHE_READ && sm->t_state.range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
-    ink_debug_assert(sm->t_state.num_range_fields == 1); // we current just support only one range entry
+    ink_assert(sm->t_state.num_range_fields == 1); // we current just support only one range entry
     read_start_pos = sm->t_state.ranges[0]._start;
     producer_n = (sm->t_state.ranges[0]._end - sm->t_state.ranges[0]._start)+1;
     consumer_n = (producer_n + sm->client_response_hdr_bytes);

@@ -21,12 +21,19 @@
   limitations under the License.
  */
 
+#include "I_EventSystem.h"
+#include "I_Layout.h"
+
 #define TEST_TIME_SECOND 60
 #define TEST_THREADS     2
 
 int count;
 Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
+
+void syslog_thr_init(void)
+{
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -43,7 +50,6 @@ reconfigure_diags()
   int i;
   DiagsConfigState c;
 
-
   // initial value set to 0 or 1 based on command line tags
   c.enabled[DiagsTagType_Debug] = (diags->base_debug_tags != NULL);
   c.enabled[DiagsTagType_Action] = (diags->base_action_tags != NULL);
@@ -51,7 +57,6 @@ reconfigure_diags()
   c.enabled[DiagsTagType_Debug] = 1;
   c.enabled[DiagsTagType_Action] = 1;
   diags->show_location = 1;
-
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
@@ -70,7 +75,7 @@ reconfigure_diags()
   diags->deactivate_all(DiagsTagType_Action);
 
   //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables 
+  //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
 
   if (diags->base_debug_tags)
@@ -89,10 +94,8 @@ reconfigure_diags()
 
 }
 
-
-
 static void
-init_diags(char *bdt, char *bat)
+init_diags(const char *bdt, const char *bat)
 {
   FILE *diags_log_fp;
   char diags_logpath[500];
@@ -111,13 +114,10 @@ init_diags(char *bdt, char *bat)
   diags = NEW(new Diags(bdt, bat, diags_log_fp));
 
   if (diags_log_fp == NULL) {
-    SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
-
-    diags->print(NULL, DL_Warning, NULL, &loc,
-                 "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    Warning("couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
   }
 
-  diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);
+  Status("opened %s", diags_logpath);
   reconfigure_diags();
 
 }
@@ -128,7 +128,7 @@ struct alarm_printer:public Continuation
   {
     SET_HANDLER(&alarm_printer::dummy_function);
   }
-  int dummy_function(int event, Event * e)
+  int dummy_function(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     ink_atomic_increment((int *) &count, 1);
     printf("Count = %d\n", count);
@@ -141,7 +141,7 @@ struct process_killer:public Continuation
   {
     SET_HANDLER(&process_killer::kill_function);
   }
-  int kill_function(int event, Event * e)
+  int kill_function(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     printf("Count is %d \n", count);
     if (count <= 0)
@@ -153,13 +153,14 @@ struct process_killer:public Continuation
   }
 };
 
-
-
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
   RecModeT mode_type = RECM_STAND_ALONE;
   count = 0;
+
+  Layout::create();
+  init_diags("", NULL);
   RecProcessInit(mode_type);
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
@@ -167,7 +168,7 @@ main(int argc, char *argv[])
 
   alarm_printer *alrm = new alarm_printer(new_ProxyMutex());
   process_killer *killer = new process_killer(new_ProxyMutex());
-  eventProcessor.schedule_in(killer, HRTIME_SECONDS(60));
+  eventProcessor.schedule_in(killer, HRTIME_SECONDS(10));
   eventProcessor.schedule_every(alrm, HRTIME_SECONDS(1));
   this_thread()->execute();
   return 0;

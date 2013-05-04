@@ -24,7 +24,6 @@
 
 #include "libts.h"
 #include "ink_platform.h"
-#include "ink_unused.h"       /* MAGIC_EDITING_TAG */
 #include "MgmtUtils.h"
 #include "I_Layout.h"
 #include "Compatability.h"
@@ -62,7 +61,7 @@ LocalManager::mgmtCleanup()
 
 
 void
-LocalManager::mgmtShutdown(int status, bool mainThread)
+LocalManager::mgmtShutdown(bool mainThread)
 {
   if (mainThread) {
     mgmt_log("[LocalManager::mgmtShutdown] Executing shutdown request.\n");
@@ -70,7 +69,7 @@ LocalManager::mgmtShutdown(int status, bool mainThread)
     // WCCP TBD: Send a shutdown message to routers.
 
     if (processRunning()) {
-      waitpid(watched_process_pid, &status, 0);
+      waitpid(watched_process_pid, NULL, 0);
 #if defined(linux)
       /* Avert race condition, wait for the thread to complete,
          before getting one more restart process */
@@ -78,9 +77,7 @@ LocalManager::mgmtShutdown(int status, bool mainThread)
       mgmt_sleep_msec(1);
 #endif
     }
-
     mgmtCleanup();
-    _exit(status);
   } else {
     mgmt_shutdown_outstanding = true;
   }
@@ -127,7 +124,7 @@ LocalManager::rollLogFiles()
 }
 
 void
-LocalManager::clearStats()
+LocalManager::clearStats(const char *name)
 {
   char *statsPath;
 
@@ -140,7 +137,11 @@ LocalManager::clearStats()
   //   stats getting cleared by progation of clearing the
   //   cluster stats
   //
-  RecResetStatRecord(RECT_NULL, true);
+  if (name) {
+      RecResetStatRecord(name);
+  } else {
+      RecResetStatRecord(RECT_NULL, true);
+  }
 
   // If the proxy is not running, sending the signal does
   //   not do anything.  Remove the stats file to make sure
@@ -228,7 +229,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
   virt_map = NULL;
 
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
-  ink_debug_assert(found);
+  ink_assert(found);
   if (http_enabled && found) {
     HttpProxyPort::loadConfig(m_proxy_ports);
   }

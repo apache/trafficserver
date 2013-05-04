@@ -75,8 +75,8 @@ enum RecDataT
   RECD_COUNTER,
 
 #if defined(STAT_PROCESSOR)
-  RECD_STAT_CONST,              // Added for the StatProcessor
-  RECD_STAT_FX,                 // Added for the StatProcessor
+  RECD_CONST,               // Added for the StatProcessor, store as RECD_FLOAT
+  RECD_FX,                  // Added for the StatProcessor, store as RECD_INT
 #endif
   RECD_MAX
 };
@@ -145,6 +145,7 @@ struct RecRawStat
   // possible, this should be revisted -bcall
   int64_t last_sum; // value from the last global sync
   int64_t last_count; // value from the last global sync
+  uint32_t version;
 };
 
 

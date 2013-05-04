@@ -40,7 +40,7 @@
 #ifndef _NETWORK_UTILS_H_
 #define _NETWORK_UTILS_H_
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "WebUtils.h"           // for SocketInfo, socket_read, socket_write
 
 #include "mgmtapi.h"

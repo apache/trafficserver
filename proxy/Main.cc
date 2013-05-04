@@ -86,6 +86,7 @@ extern "C" int plock(int);
 #include "RemapProcessor.h"
 #include "XmlUtils.h"
 #include "I_Tasks.h"
+#include "InkAPIInternal.h"
 
 #include <ts/ink_cap.h>
 
@@ -96,11 +97,6 @@ extern "C" int plock(int);
 //
 // Global Data
 //
-#define DEFAULT_NUMBER_OF_THREADS         ink_number_of_processors()
-#define DEFAULT_NUMBER_OF_UDP_THREADS     1
-#define DEFAULT_NUMBER_OF_SSL_THREADS     0
-#define DEFAULT_NUM_ACCEPT_THREADS        0
-#define DEFAULT_NUM_TASK_THREADS          0
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
 #define DEFAULT_LOCK_PROCESS              0
@@ -117,20 +113,20 @@ extern "C" int plock(int);
 
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG    0
 
+static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
-static bool xmlBandwidthSchemaRead(XMLNode * node);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
 
 static int const number_of_processors = ink_number_of_processors();
-static int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
+static int num_of_net_threads = number_of_processors;
+static int num_of_udp_threads = 0;
+static int num_accept_threads  = 0;
+static int num_task_threads = 0;
+
 extern int num_of_cluster_threads;
-static int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
-static int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
-static int num_task_threads = DEFAULT_NUM_TASK_THREADS;
-#if TS_HAS_TESTS
-static int run_test_hook = 0;
-#endif
+
 static char * http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
 static char core_file[255] = "";
@@ -161,10 +157,8 @@ static char error_tags[1024] = "";
 static char action_tags[1024] = "";
 static int show_statistics = 0;
 static int history_info_enabled = 1;
-//inkcoreapi Diags *diags = NULL;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
-static int diags_init = 0;             // used by process manager
 
 static char vingid_flag[255] = "";
 
@@ -172,10 +166,6 @@ static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dprintf function
 
 AppVersionInfo appVersionInfo;  // Build info for this application
-
-#if TS_HAS_TESTS
-extern int run_TestHook();
-#endif
 
 const Version version = {
   {CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION},     // cacheDB
@@ -220,14 +210,6 @@ static const ArgumentDescription argument_descriptions[] = {
    0,
 #endif
    "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
-  {"test_hook", 'H',
-#ifdef DEBUG
-   "Run Test Stub Instead of Server",
-#else
-   0,
-#endif
-   "T",
-   &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
 #endif //TS_HAS_TESTS
 #if TS_USE_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
@@ -261,7 +243,6 @@ static const ArgumentDescription argument_descriptions[] = {
    NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
-static const unsigned n_argument_descriptions = SIZE(argument_descriptions);
 
 //
 // Initialize operating system related information/services
@@ -295,7 +276,6 @@ check_lockfile()
   pid_t holding_pid;
   int err;
 
-#ifndef _DLL_FOR_HNS
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
     fprintf(stderr,"unable to access() dir'%s': %d, %s\n",
             Layout::get()->runtimedir, errno, strerror(errno));
@@ -303,15 +283,6 @@ check_lockfile()
     _exit(1);
   }
   lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
-#else
-#define MAX_ENVVAR_LENGTH 128
-  char tempvar[MAX_ENVVAR_LENGTH + 1];
-  // TODO: Need an portable ink_file_tmppath()
-  // XXX:  What's the _DLL_FOR_HS?
-  //
-  ink_assert(GetEnvironmentVariable("TEMP", tempvar, MAX_ENVVAR_LENGTH + 1));
-  lockfile = Layout::relative_to(tempvar, SERVER_LOCK);
-#endif
 
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Get(&holding_pid);
@@ -321,11 +292,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-#if defined(solaris)
-      fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
-#else
-      fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
-#endif
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -460,7 +427,7 @@ cmd_list(char *cmd)
   // show hostdb size
 
 #ifndef INK_NO_HOSTDB
-  int h_size = 0;
+  int h_size = 120000;
   TS_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
   printf("Host Database size:\t%d\n", h_size);
 #endif
@@ -739,7 +706,7 @@ static int
 cmd_index(char *p)
 {
   p += strspn(p, " \t");
-  for (unsigned c = 0; c < SIZE(commands); c++) {
+  for (unsigned c = 0; c < countof(commands); c++) {
     const char *l = commands[c].n;
     while (l) {
       const char *s = strchr(l, '/');
@@ -761,7 +728,7 @@ cmd_help(char *cmd)
   printf("HELP\n\n");
   cmd = skip(cmd, true);
   if (!cmd) {
-    for (unsigned i = 0; i < SIZE(commands); i++) {
+    for (unsigned i = 0; i < countof(commands); i++) {
       printf("%15s  %s\n", commands[i].n, commands[i].d);
     }
   } else {
@@ -1279,7 +1246,7 @@ change_uid_gid(const char *user)
   char *buf = (char *)ats_malloc(buflen);
 
   if (0 != geteuid() && 0 == getuid())
-    NOWARN_UNUSED_RETURN(seteuid(0)); // revert euid if possible.
+    ATS_UNUSED_RETURN(seteuid(0)); // revert euid if possible.
   if (0 != geteuid()) {
     // Not root so can't change user ID. Logging isn't operational yet so
     // we have to write directly to stderr. Perhaps this should be fatal?
@@ -1368,7 +1335,7 @@ main(int argc, char **argv)
   ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
   chdir_root(); // change directory to the install root of traffic server.
 
-  process_args(argument_descriptions, n_argument_descriptions, argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // Check for version number request
   if (version_flag) {
@@ -1401,7 +1368,6 @@ main(int argc, char **argv)
   // re-start it again, TS will crash.
   diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, false));
   diags = diagsConfig->diags;
-  diags_init = 1;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();
@@ -1425,15 +1391,11 @@ main(int argc, char **argv)
   if (!num_task_threads)
     TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
-  const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
-  char *user = (char *)ats_malloc(max_login);
+  char *user = (char *)ats_malloc(MAX_LOGIN);
 
   *user = '\0';
-  admin_user_p = 
-    (REC_ERR_OKAY ==
-      TS_ReadConfigString(user, "proxy.config.admin.user_id", max_login)
-    ) && user[0] != '\0' && 0 != strcmp(user, "#-1")
-    ;
+  admin_user_p = ((REC_ERR_OKAY == TS_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) &&
+                  (*user != '\0') && (0 != strcmp(user, "#-1")));
 
 # if TS_USE_POSIX_CAP
   // Change the user of the process.
@@ -1467,7 +1429,6 @@ main(int argc, char **argv)
   diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, true));
   diags = diagsConfig->diags;
   RecSetDiags(diags);
-  diags_init = 1;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();
@@ -1521,27 +1482,10 @@ main(int argc, char **argv)
   TS_ReadConfigInteger(history_info_enabled, "proxy.config.history_info_enabled");
   TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
-  {
-    XMLDom schema;
-    //char *configPath = TS_ConfigReadString("proxy.config.config_dir");
-    char *filename = TS_ConfigReadString("proxy.config.bandwidth_mgmt.filename");
-    char bwFilename[PATH_NAME_MAX];
-
-    snprintf(bwFilename, sizeof(bwFilename), "%s/%s", system_config_directory, filename);
-    ats_free(filename);
-
-    Debug("bw-mgmt", "Looking to read: %s for bw-mgmt", bwFilename);
-    schema.LoadFile(bwFilename);
-    xmlBandwidthSchemaRead(&schema);
-  }
-
-
   init_http_header();
 
   // Sanity checks
-  //  if (!lock_process) check_for_root_uid();
   check_fd_limit();
-
   command_flag = command_flag || *command_string;
 
   // Set up store
@@ -1595,14 +1539,12 @@ main(int argc, char **argv)
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   eventProcessor.start(num_of_net_threads);
 
-  int use_separate_thread = 0;
-  int num_remap_threads = 1;
-  TS_ReadConfigInteger(use_separate_thread, "proxy.config.remap.use_remap_processor");
+  int num_remap_threads = 0;
   TS_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
-  if (use_separate_thread && num_remap_threads < 1)
-    num_remap_threads = 1;
+  if (num_remap_threads < 1)
+    num_remap_threads = 0;
 
-  if (use_separate_thread) {
+  if (num_remap_threads > 0) {
     Note("using the new remap processor system with %d threads", num_remap_threads);
     remapProcessor.setUseSeparateThread();
   }
@@ -1656,16 +1598,18 @@ main(int argc, char **argv)
     HttpProxyPort::loadDefaultIfEmpty();
 
     cacheProcessor.start();
-    udpNet.start(num_of_udp_threads);
+
+    // UDP net-threads are turned off by default.
+    if (!num_of_udp_threads)
+      TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
+    if (num_of_udp_threads)
+      udpNet.start(num_of_udp_threads);
+
     sslNetProcessor.start(getNumSSLThreads());
 
 #ifndef INK_NO_LOG
     // initialize logging (after event and net processor)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
-#endif
-
-#if !defined(TS_NO_API)
-    plugin_init(system_config_directory, true); // extensions.config
 #endif
 
     //acc.init();
@@ -1695,17 +1639,6 @@ main(int argc, char **argv)
       eventProcessor.schedule_every(NEW(new ShowStats), HRTIME_SECONDS(show_statistics), ET_CALL);
 
 
-    /////////////////////////////////////////////
-    // if in test hook mode, run the test hook //
-    /////////////////////////////////////////////
-
-#if TS_HAS_TESTS
-    if (run_test_hook) {
-      Note("Running TestHook Instead of Main Server");
-      run_TestHook();
-    }
-#endif
-
     //////////////////////////////////////
     // main server logic initiated here //
     //////////////////////////////////////
@@ -1731,10 +1664,11 @@ main(int argc, char **argv)
     }
 
 #ifndef TS_NO_API
-    plugin_init(system_config_directory, false);        // plugin.config
+    plugin_init(system_config_directory);        // plugin.config
 #else
     api_init();                 // we still need to initialize some of the data structure other module needs.
     // i.e. http_global_hooks
+    pmgmt->registerPluginCallbacks(global_config_cbs);
 #endif
 
     // "Task" processor, possibly with its own set of task threads
@@ -1784,79 +1718,6 @@ main(int argc, char **argv)
 # endif
 
   this_thread()->execute();
-}
-
-
-static bool
-xmlBandwidthSchemaRead(XMLNode * node)
-{
-  XMLNode *child, *c2;
-  int i, j, k;
-  unsigned char *p;
-  char *ip;
-
-  // file doesn't exist
-  if (node->getNodeName() == NULL) {
-    // alloc 1-elt array to store stuff for best-effort traffic
-    G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[1]);
-    G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
-    G_inkPipeInfo.numPipes = 0;
-    G_inkPipeInfo.interfaceMbps = 0.0;
-    return true;
-  }
-
-  if (strcmp(node->getNodeName(), "interface") != 0) {
-    Debug("bw-mgmt", "Root node should be an interface tag!\n");
-    return false;
-  }
-  // First entry G_inkPipeInfo.perPipeInfo[0] is the one for "best-effort" traffic.
-  G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[node->getChildCount() + 1]);
-  G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
-  G_inkPipeInfo.numPipes = 0;
-  G_inkPipeInfo.reliabilityMbps = 1.0;
-  G_inkPipeInfo.interfaceMbps = 30.0;
-  for (i = 0; i < node->getChildCount(); i++) {
-    if ((child = node->getChildNode(i))) {
-      if (strcmp(child->getNodeName(), "pipe") == 0) {
-        G_inkPipeInfo.numPipes++;
-        for (k = 0; k < child->getChildCount(); k++) {
-          c2 = child->getChildNode(k);
-          for (int l = 0; l < c2->m_nACount; l++) {
-            if (strcmp(c2->m_pAList[l].pAName, "weight") == 0) {
-              G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].wt = atof(c2->m_pAList[l].pAValue);
-              G_inkPipeInfo.perPipeInfo[0].wt -= G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].wt;
-            } else if (strcmp(c2->m_pAList[l].pAName, "dest_ip") == 0) {
-              p = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].destIP);
-              ip = c2->m_pAList[l].pAValue;
-              for (j = 0; j < 4; j++) {
-                p[j] = atoi(ip);
-                while (ip && *ip && (*ip != '.'))
-                  ip++;
-                ip++;
-              }
-            }
-          }
-        }
-      } else if (strcmp(child->getNodeName(), "bandwidth") == 0) {
-        for (j = 0; j < child->m_nACount; j++) {
-          if (strcmp(child->m_pAList[j].pAName, "limit_mbps") == 0) {
-            G_inkPipeInfo.interfaceMbps = atof(child->m_pAList[j].pAValue);
-          } else if (strcmp(child->m_pAList[j].pAName, "reliability_mbps") == 0) {
-            G_inkPipeInfo.reliabilityMbps = atof(child->m_pAList[j].pAValue);
-          }
-        }
-      }
-    }
-  }
-  Debug("bw-mgmt", "Read in: limit_mbps = %lf\n", G_inkPipeInfo.interfaceMbps);
-  for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
-    G_inkPipeInfo.perPipeInfo[i].bwLimit =
-      (int64_t) (G_inkPipeInfo.perPipeInfo[i].wt * G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0);
-    p = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[i].destIP);
-    Debug("bw-mgmt", "Pipe [%d]: wt = %lf, dest ip = %d.%d.%d.%d\n",
-          i, G_inkPipeInfo.perPipeInfo[i].wt, p[0], p[1], p[2], p[3]);
-  }
-  return true;
 }
 
 

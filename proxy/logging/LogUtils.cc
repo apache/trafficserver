@@ -21,10 +21,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-
 #include "ink_config.h"
-#include "ink_unused.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -335,7 +332,7 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
   char *in_url_end = url + len_in;
 
   while (p < in_url_end) {
-    register unsigned char c = *p;
+    unsigned char c = *p;
     if (map[c / 8] & (1 << (7 - c % 8))) {
       ++count;
     }
@@ -380,7 +377,7 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
   char *to = new_url;
 
   while (from < in_url_end) {
-    register unsigned char c = *from;
+    unsigned char c = *from;
     if (map[c / 8] & (1 << (7 - c % 8))) {
       *to++ = '%';
       *to++ = hex_digit[c / 16];

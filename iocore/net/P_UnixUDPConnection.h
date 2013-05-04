@@ -104,7 +104,7 @@ UDPConnection::recv(Continuation * c)
   UnixUDPConnection *p = (UnixUDPConnection *) this;
   // register callback interest.
   p->continuation = c;
-  ink_debug_assert(c != NULL);
+  ink_assert(c != NULL);
   mutex = c->mutex;
   p->recvActive = 1;
   return ACTION_RESULT_NONE;

@@ -35,9 +35,8 @@
 #define	_ink_time_h_
 
 #include "ink_platform.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_hrtime.h"
-#include "ink_unused.h"
 
 /*===========================================================================*
 
@@ -46,14 +45,6 @@
  *===========================================================================*/
 
 typedef time_t ink_time_t;
-
-typedef int InkTimeDayID;
-
-typedef struct
-{
-  InkTimeDayID base;
-  unsigned int width;
-} InkTimeDayRange;
 
 /*===========================================================================*
 
@@ -69,65 +60,17 @@ typedef struct
 uint64_t ink_microseconds(int which);
 double ink_time_wall_seconds();
 
-int ink_time_gmt_string_to_tm(char *string, struct tm *bdt);
-int ink_time_gmt_tm_to_rfc1123_string(struct tm *t, char *string, int maxsize);
-
-InkTimeDayID ink_time_tm_to_dayid(struct tm *t);
-void ink_time_dump_dayid(FILE * fp, InkTimeDayID dayid);
-void ink_time_dayid_to_tm(InkTimeDayID dayid, struct tm *t);
-InkTimeDayRange ink_time_dayid_to_dayrange(InkTimeDayID dayid, unsigned int width);
-InkTimeDayRange ink_time_chomp_off_mouthful_of_dayrange(InkTimeDayRange * dayrange_ptr, unsigned int biggest_width);
-char *ink_time_dayrange_to_string(InkTimeDayRange * dayrange_ptr, char *buf);
-
-void ink_time_current_mdy(int *m, int *dom, int *y);
-void ink_time_tm_to_mdy(struct tm *t, int *m, int *dom, int *y);
-void ink_time_mdy_to_tm(int m, int dom, int y, struct tm *t);
-InkTimeDayID ink_time_mdy_to_dayid(int m, int dom, int y);
-InkTimeDayID ink_time_current_dayid();
-void ink_time_dayid_to_mdy(InkTimeDayID dayid, int *mp, int *dp, int *yp);
-int ink_time_mdy_to_doy(int m, int dom, int y);
-void ink_time_doy_to_mdy(int doy, int year, int *mon, int *dom, int *dow);
-int ink_time_mdy_to_dow(int month, int dom, int year);
-int ink_time_days_in_month(int month, int year);
-int ink_time_days_in_year(int year);
-int ink_time_first_day_of_year(int year);
-void ink_time_day_to_string(int day, char *buffer);
-void ink_time_month_to_string(int month, char *buffer);
-int ink_time_string_to_month(char *str);
-int ink_time_leap_year_correction(int year);
-
-/*===========================================================================*
-
-                              Inline Stuffage
-
- *===========================================================================*/
-
-static inline int
-ink_time_is_4th_year(int year)
-{
-  return ((year % 4) == 0);
-}                               /* End ink_time_is_4th_year */
-
-
-static inline int
-ink_time_is_100th_year(int year)
-{
-  return ((year % 100) == 0);
-}                               /* End ink_time_is_100th_year */
-
-
-static inline int
-ink_time_is_400th_year(int year)
-{
-  return ((year % 400) == 0);
-}                               /* End ink_time_is_400th_year */
-
 int cftime_replacement(char *s, int maxsize, const char *format, const time_t * clock);
 #define cftime(s, format, clock) cftime_replacement(s, 8192, format, clock)
 
-inkcoreapi int ink_gmtime_r(const ink_time_t * clock, struct tm *res);
 ink_time_t convert_tm(const struct tm *tp);
 
+inkcoreapi char *ink_ctime_r(const ink_time_t * clock, char *buf);
+inkcoreapi struct tm *ink_localtime_r(const ink_time_t * clock, struct tm *res);
+
+/*===========================================================================*
+                              Inline Stuffage
+ *===========================================================================*/
 #if defined(freebsd) || defined(openbsd)
 
 inline int
@@ -139,15 +82,6 @@ ink_timezone()
   return tzp.tz_minuteswest * 60;
 }
 
-/* vl: not used
-inline int ink_daylight() {
-  struct tm atm;
-  time_t t = time(NULL);
-  ink_assert(!localtime_r(&t, &atm));
-  return atm.tm_isdst;
-}
-*/
-
 #else  // non-freebsd, non-openbsd for the else
 
 inline int
@@ -156,10 +90,6 @@ ink_timezone()
   return timezone;
 }
 
-/* vl: not used - inline int ink_daylight() { return daylight; } */
-#endif
-
-inkcoreapi char *ink_ctime_r(const ink_time_t * clock, char *buf);
-inkcoreapi struct tm *ink_localtime_r(const ink_time_t * clock, struct tm *res);
+#endif /* #if defined(freebsd) || defined(openbsd) */
 
 #endif /* #ifndef _ink_time_h_ */

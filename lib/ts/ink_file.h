@@ -79,4 +79,10 @@ int ink_filepath_merge(char *buf, int bufsz, const char *rootpath,
 int ink_filepath_make(char *path, int pathsz, const char *rootpath,
                       const char *addpath);
 
+/**
+ Resize and zero-fill the given file.
+ Returns 0 on success, errno on failure.
+ */
+int ink_file_fd_zerofill(int fd, off_t size);
+
 #endif // _ink_file_h_

@@ -25,7 +25,6 @@
   Connections
 
 **************************************************************************/
-#include "ink_unused.h"       /* MAGIC_EDITING_TAG */
 #include "P_Net.h"
 
 #define SET_NO_LINGER

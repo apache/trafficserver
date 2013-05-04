@@ -24,16 +24,9 @@
 #ifndef __LULU_H__
 #define __LULU_H__ 1
 
-#include "ink_atomic.h"
-
-// Define UNUSED properly.
-#if ((__GNUC__ >= 3) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 7)))
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif /* #if ((__GNUC__ >= 3) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 7))) */
-
 #include <sys/types.h>
+
+#include "ink_atomic.h"
 
 // Memory barriers on i386 / linux / gcc
 #if defined(__i386__)

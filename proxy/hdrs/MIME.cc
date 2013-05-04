@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "libts.h"
 #include <assert.h>
 #include <stdio.h>
@@ -426,7 +426,7 @@ mime_hdr_presence_unset(MIMEHdrImpl *h, int well_known_str_index)
 inline uint32_t
 mime_hdr_get_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id)
 {
-  ink_debug_assert((slot_id != MIME_SLOTID_NONE) && (slot_id < 32));
+  ink_assert((slot_id != MIME_SLOTID_NONE) && (slot_id < 32));
 
   uint32_t word_index = slot_id / 8;      // 4 words of 8 slots
   uint32_t word = mh->m_slot_accelerators[word_index];    // 8 slots of 4 bits each
@@ -438,8 +438,8 @@ mime_hdr_get_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id)
 inline void
 mime_hdr_set_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id, uint32_t slot_num)
 {
-  ink_debug_assert((slot_id != MIME_SLOTID_NONE) && (slot_id < 32));
-  ink_debug_assert(slot_num < 16);
+  ink_assert((slot_id != MIME_SLOTID_NONE) && (slot_id < 32));
+  ink_assert(slot_num < 16);
 
   uint32_t word_index = slot_id / 8;      // 4 words of 8 slots
   uint32_t word = mh->m_slot_accelerators[word_index];    // 8 slots of 4 bits each
@@ -1044,7 +1044,7 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
     mime_hdr_destroy_field_block_list(d_heap, d_mh->m_first_fblock.m_next);
   }
 
-  ink_debug_assert(((char *) &(s_mh->m_first_fblock.m_field_slots[MIME_FIELD_BLOCK_SLOTS]) - (char *) s_mh) ==
+  ink_assert(((char *) &(s_mh->m_first_fblock.m_field_slots[MIME_FIELD_BLOCK_SLOTS]) - (char *) s_mh) ==
                    sizeof(struct MIMEHdrImpl));
 
   int top = s_mh->m_first_fblock.m_freetop;
@@ -1117,7 +1117,8 @@ static inline void relocate(MIMEField *field, MIMEFieldBlockImpl *dest_block, MI
 }
 
 void
-mime_hdr_field_block_list_adjust(int block_count, MIMEFieldBlockImpl *old_list, MIMEFieldBlockImpl *new_list)
+mime_hdr_field_block_list_adjust(int /* block_count ATS_UNUSED */, MIMEFieldBlockImpl *old_list,
+                                 MIMEFieldBlockImpl *new_list)
 {
   for (MIMEFieldBlockImpl *new_blk = new_list; new_blk; new_blk = new_blk->m_next)
     for (MIMEField *field = new_blk->m_field_slots, *end=field + new_blk->m_freetop; field != end; ++field)
@@ -1158,7 +1159,7 @@ _mime_hdr_field_list_search_by_wks(MIMEHdrImpl *mh, int wks_idx)
   MIMEFieldBlockImpl *fblock;
   MIMEField *field, *too_far_field;
 
-  ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
+  ink_assert(hdrtoken_is_valid_wks_idx(wks_idx));
 
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
     field = &(fblock->m_field_slots[0]);
@@ -1232,7 +1233,7 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
   int is_wks;
   HdrTokenHeapPrefix *token_info;
 
-  ink_debug_assert(field_name_len >= 0);
+  ink_assert(field_name_len >= 0);
 
   ////////////////////////////////////////////
   // do presence check and slot accelerator //
@@ -1260,7 +1261,7 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
 
       if (slotnum != MIME_FIELD_SLOTNUM_UNKNOWN) {
         MIMEField *f = _mime_hdr_field_list_search_by_slotnum(mh, slotnum);
-        ink_debug_assert((f == NULL) || f->is_live());
+        ink_assert((f == NULL) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
         Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to slot accelerators)\n",
               mh, field_name_len, field_name_str, (f ? "HIT" : "MISS"));
@@ -1280,7 +1281,7 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
 
   if (is_wks) {
     MIMEField *f = _mime_hdr_field_list_search_by_wks(mh, token_info->wks_idx);
-    ink_debug_assert((f == NULL) || f->is_live());
+    ink_assert((f == NULL) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
     Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to WKS list walk)\n",
           mh, field_name_len, field_name_str, (f ? "HIT" : "MISS"));
@@ -1289,7 +1290,7 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
   } else {
     MIMEField *f = _mime_hdr_field_list_search_by_string(mh, field_name_str, field_name_len);
 
-    ink_debug_assert((f == NULL) || f->is_live());
+    ink_assert((f == NULL) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
     Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to strcmp list walk)\n",
           mh, field_name_len, field_name_str, (f ? "HIT" : "MISS"));
@@ -1397,7 +1398,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
   if (field->m_readiness != MIME_FIELD_SLOT_READINESS_DETACHED)
     return;
 
-  ink_debug_assert(field->m_ptr_name != NULL);
+  ink_assert(field->m_ptr_name != NULL);
 
   //////////////////////////////////////////////////
   // if we don't know the head dup, or are given  //
@@ -1408,7 +1409,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
     int length;
     const char *name = mime_field_name_get(field, &length);
     prev_dup = mime_hdr_field_find(mh, name, length);
-    ink_debug_assert((prev_dup == NULL) || (prev_dup->is_dup_head()));
+    ink_assert((prev_dup == NULL) || (prev_dup->is_dup_head()));
   }
 
   field->m_readiness = MIME_FIELD_SLOT_READINESS_LIVE;
@@ -1435,7 +1436,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
     next_dup = prev_dup->m_next_dup;
     next_slotnum = (next_dup ? mime_hdr_field_slotnum(mh, next_dup) : -1);
 
-    ink_debug_assert(field_slotnum != prev_slotnum);
+    ink_assert(field_slotnum != prev_slotnum);
 
     while (prev_slotnum < field_slotnum)        // break if prev after field
     {
@@ -1468,10 +1469,10 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
       mime_hdr_set_accelerators_and_presence_bits(mh, field);
     } else                      // patch us after prev, and before next
     {
-      ink_debug_assert(prev_slotnum < field_slotnum);
-      ink_debug_assert((next_dup == NULL) || (next_slotnum > field_slotnum));
+      ink_assert(prev_slotnum < field_slotnum);
+      ink_assert((next_dup == NULL) || (next_slotnum > field_slotnum));
       field->m_flags = (field->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
-      ink_debug_assert((next_dup == NULL) || next_dup->is_live());
+      ink_assert((next_dup == NULL) || next_dup->is_live());
       prev_dup->m_next_dup = field;
       field->m_next_dup = next_dup;
     }
@@ -1481,7 +1482,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
   }
 
   // Now keep the cooked cache consistent
-  ink_debug_assert(field->is_live());
+  ink_assert(field->is_live());
   if (field->m_ptr_value && field->is_cooked())
     mh->recompute_cooked_stuff(field);
 
@@ -1493,7 +1494,7 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
 {
   MIMEField *next_dup = field->m_next_dup;
 
-  ink_debug_assert(field->is_live());
+  ink_assert(field->is_live());
 
   MIME_HDR_SANITY_CHECK(mh);
 
@@ -1632,7 +1633,7 @@ void
 mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field)
 {
   NOWARN_UNUSED(mh);
-  ink_debug_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
+  ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
 }
 
@@ -1651,7 +1652,7 @@ mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t na
                     const char *name, int length, bool must_copy_string)
 {
   NOWARN_UNUSED(mh);
-  ink_debug_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
+  ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   field->m_wks_idx = name_wks_idx_or_neg1;
   mime_str_u16_set(heap, name, length, &(field->m_ptr_name), &(field->m_len_name), must_copy_string);
@@ -1793,7 +1794,7 @@ mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrLis
     dest += cell->len;
     cell = cell->next;
   }
-  ink_debug_assert(dest - new_value == new_value_len);
+  ink_assert(dest - new_value == new_value_len);
 
   *new_str_len_return = new_value_len;
   return new_value;
@@ -1816,7 +1817,7 @@ mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh,
 
   // (3) mutate cell idx
   cell = list.get_idx(idx);
-  ink_debug_assert(cell != NULL);
+  ink_assert(cell != NULL);
   cell->str = new_piece_str;
   cell->len = new_piece_len;
 
@@ -1932,7 +1933,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 
   // (3) get the cell we want to modify
   cell = list.get_idx(idx);
-  ink_debug_assert(cell != NULL);
+  ink_assert(cell != NULL);
 
   // (4) trim quotes if any
   if ((cell->len >= 2) && (cell->str[0] == '\"') && (cell->str[cell->len - 1] == '\"')) {
@@ -1962,7 +1963,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   dest += new_piece_len;
   if (trimmed)
     *dest++ = '\"';
-  ink_debug_assert((size_t) (dest - temp_ptr) == extended_len);
+  ink_assert((size_t) (dest - temp_ptr) == extended_len);
 
   // (8) assign the new token to the cell
   cell->str = temp_ptr;
@@ -2041,7 +2042,7 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
 {
   unsigned int n_v_raw_pad = n_v_raw_length - (name_length + value_length);
 
-  ink_debug_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
+  ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   if (must_copy_strings) {
     mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, name_length, 1);
@@ -2238,8 +2239,8 @@ mime_scanner_get(MIMEScanner *S,
   // Need this for handling dangling CR.
   static char const RAW_CR = ParseRules::CHAR_CR;
 
-  ink_debug_assert((raw_input_s != NULL) && (*raw_input_s != NULL));
-  ink_debug_assert(raw_input_e != NULL);
+  ink_assert((raw_input_s != NULL) && (*raw_input_s != NULL));
+  ink_assert(raw_input_e != NULL);
 
   raw_input_c = *raw_input_s;
 
@@ -2505,7 +2506,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     mime_field_name_value_set(heap, mh, field,
                               field_name_wks_idx,
                               field_name_first, field_name_length,
-                              field_value_first, field_value_length, TRUE, total_line_length, 0);
+                              field_value_first, field_value_length, true, total_line_length, 0);
     mime_hdr_field_attach(mh, field, 1, NULL);
   }
 }
@@ -2643,8 +2644,8 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
     return 1;
   }
 
-  ink_debug_assert(buf_start != NULL);
-  ink_debug_assert(src_d != NULL);
+  ink_assert(buf_start != NULL);
+  ink_assert(src_d != NULL);
 
   if (*buf_chars_to_skip_inout > 0) {
     if (*buf_chars_to_skip_inout >= src_l) {
@@ -2825,7 +2826,7 @@ mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m
   /* convert the days */
   d = mday - d;
   if ((d<0) || (d> 366))
-    ink_debug_assert(!"bad date");
+    ink_assert(!"bad date");
   else {
     month = months[d];
     if (month > 1)
@@ -2920,10 +2921,10 @@ mime_format_date(char *buffer, time_t value)
 #endif
 
   /* arrange the date in the buffer */
-  ink_debug_assert((mday >= 0) && (mday <= 99));
-  ink_debug_assert((hour >= 0) && (hour <= 99));
-  ink_debug_assert((min >= 0) && (min <= 99));
-  ink_debug_assert((sec >= 0) && (sec <= 99));
+  ink_assert((mday >= 0) && (mday <= 99));
+  ink_assert((hour >= 0) && (hour <= 99));
+  ink_assert((min >= 0) && (min <= 99));
+  ink_assert((sec >= 0) && (sec <= 99));
 
   /* the day string */
   const char *three_char_day = daystrs[wday];
@@ -3142,9 +3143,9 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
 {
   unsigned int three_char_wday, three_char_mon;
 
-  ink_debug_assert(length >= 29);
-  ink_debug_assert(!is_ws(buf[0]));
-  ink_debug_assert(buf[3] == ',');
+  ink_assert(length >= 29);
+  ink_assert(!is_ws(buf[0]));
+  ink_assert(buf[3] == ',');
 
   ////////////////////////////
   // binary search for wday //

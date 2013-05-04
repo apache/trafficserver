@@ -150,8 +150,8 @@ public:
    ~LogBuffer();
   char &operator [] (int idx)
   {
-    ink_debug_assert(idx >= 0);
-    ink_debug_assert((size_t) idx < m_size);
+    ink_assert(idx >= 0);
+    ink_assert((size_t) idx < m_size);
     return m_buffer[idx];
   };
 
@@ -303,7 +303,7 @@ LogBufferIterator::LogBufferIterator(LogBufferHeader * header, bool in_network_o
   m_iter_entry_count(0),
   m_buffer_entry_count(0)
 {
-  ink_debug_assert(header);
+  ink_assert(header);
 
   switch (header->version) {
   case LOG_SEGMENT_VERSION:

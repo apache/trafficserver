@@ -69,7 +69,7 @@ struct NVC_test_def
 };
 
 extern NVC_test_def netvc_tests_def[];
-extern int num_netvc_tests;
+extern const unsigned num_netvc_tests;
 
 class NetTestDriver:public Continuation
 {

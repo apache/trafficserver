@@ -31,11 +31,6 @@
 #ifndef _P_EventSystem_h
 #define _P_EventSystem_h
 
-#ifndef INLINE_CC
-#undef  TS_INLINE
-#define TS_INLINE inline
-#endif
-
 #include "libts.h"
 
 #include "I_EventSystem.h"

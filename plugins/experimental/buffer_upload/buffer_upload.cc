@@ -1239,7 +1239,7 @@ TSPluginInit(int argc, const char *argv[])
     uconfig->use_disk_buffer = 0;
   }
 
-  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+  if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
     TSError("Plugin registration failed.");
   }
 

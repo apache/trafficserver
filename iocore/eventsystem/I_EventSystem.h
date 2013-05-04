@@ -25,10 +25,6 @@
 #ifndef _I_EventSystem_h
 #define _I_EventSystem_h
 
-#ifndef TS_INLINE
-#define TS_INLINE
-#endif
-
 #include "libts.h"
 
 #include "I_IOBuffer.h"

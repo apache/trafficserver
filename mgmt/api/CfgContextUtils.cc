@@ -344,13 +344,15 @@ port_list_to_string(PortList * ports, const char *delimiter)
     if (port_ele->port_b != TS_INVALID_PORT) { //. is this a range
       // add in range delimiter & end of range
       if (pos < sizeof(buf) &&
-          (psize = snprintf(buf + pos, sizeof(buf) - pos, "%c%d", RANGE_DELIMITER, port_ele->port_b)) > 0)
+          (psize = snprintf(buf + pos, sizeof(buf) - pos, "%c%d", RANGE_DELIMITER, port_ele->port_b)) > 0) {
         pos += psize;
+      }
     }
 
     if (i != num_ports - 1) {
-      if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf - pos), "%s", delimiter))> 0)
+      if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "%s", delimiter))> 0) {
         pos += psize;
+      }
     }
 
     enqueue((LLQ *) ports, port_ele);   // return TSPortEle to list
@@ -1411,57 +1413,25 @@ round_robin_type_to_string(TSRrT rr)
  *----------------------------------------------------------------------------
  * TSFileNameT ==> string
  */
-char *
+const char *
 filename_to_string(TSFileNameT file)
 {
   switch (file) {
-  case TS_FNAME_CACHE_OBJ:
-    return ats_strdup("cache.config");
-
-  case TS_FNAME_CONGESTION:
-    return ats_strdup("congestion.config");
-
-  case TS_FNAME_HOSTING:
-    return ats_strdup("hosting.config");
-
-  case TS_FNAME_ICP_PEER:
-    return ats_strdup("icp.config");
-
-  case TS_FNAME_IP_ALLOW:
-    return ats_strdup("ip_allow.config");
-
-
-  case TS_FNAME_LOGS_XML:
-    return ats_strdup("logs_xml.config");
-
-  case TS_FNAME_PARENT_PROXY:
-    return ats_strdup("parent.config");
-
-  case TS_FNAME_VOLUME:
-    return ats_strdup("volume.config");
-
-  case TS_FNAME_PLUGIN:
-    return ats_strdup("plugin.config");
-
-  case TS_FNAME_REMAP:
-    return ats_strdup("remap.config");
-
-  case TS_FNAME_SOCKS:
-    return ats_strdup("socks.config");
-
-  case TS_FNAME_SPLIT_DNS:
-    return ats_strdup("splitdns.config");
-
-  case TS_FNAME_STORAGE:
-    return ats_strdup("storage.config");
-
-  case TS_FNAME_UPDATE_URL:
-    return ats_strdup("update.config");
-
-  case TS_FNAME_VADDRS:
-    return ats_strdup("vaddrs.config");
-
-
+  case TS_FNAME_CACHE_OBJ:    return "cache.config";
+  case TS_FNAME_CONGESTION:   return "congestion.config";
+  case TS_FNAME_HOSTING:      return "hosting.config";
+  case TS_FNAME_ICP_PEER:     return "icp.config";
+  case TS_FNAME_IP_ALLOW:     return "ip_allow.config";
+  case TS_FNAME_LOGS_XML:     return "logs_xml.config";
+  case TS_FNAME_PARENT_PROXY: return "parent.config";
+  case TS_FNAME_VOLUME:       return "volume.config";
+  case TS_FNAME_PLUGIN:       return "plugin.config";
+  case TS_FNAME_REMAP:        return "remap.config";
+  case TS_FNAME_SOCKS:        return "socks.config";
+  case TS_FNAME_SPLIT_DNS:    return "splitdns.config";
+  case TS_FNAME_STORAGE:      return "storage.config";
+  case TS_FNAME_UPDATE_URL:   return "update.config";
+  case TS_FNAME_VADDRS:       return "vaddrs.config";
   default:                     /* no such config file */
     return NULL;
   }

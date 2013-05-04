@@ -37,6 +37,7 @@
  ***************************************************************************/
 
 #include "ink_config.h"
+#include "ink_defs.h"
 #include <strings.h>
 #include "ink_string.h"
 #include "I_Layout.h"
@@ -819,11 +820,15 @@ SnapshotGetMlt(LLQ * snapshots)
 }
 
 TSError
-StatsReset(bool cluster)
+StatsReset(bool cluster, const char* name)
 {
   TSError ret;
 
-  ret = send_request_bool(main_socket_fd, STATS_RESET, cluster);
+  if (cluster) {
+    ret = send_request_name(main_socket_fd, STATS_RESET_CLUSTER, name);
+  } else {
+    ret = send_request_name(main_socket_fd, STATS_RESET_NODE, name);
+  }
   if (ret != TS_ERR_OKAY)
     return ret;                 // networking error
 

@@ -44,24 +44,10 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ink_defs.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
 
-#if __GNUC__ >= 3
-#ifndef likely
-#define likely(x)   __builtin_expect (!!(x),1)
-#endif
-#ifndef unlikely
-#define unlikely(x) __builtin_expect (!!(x),0)
-#endif
-#else
-#ifndef likely
-#define likely(x)   (x)
-#endif
-#ifndef unlikely
-#define unlikely(x) (x)
-#endif
-#endif /* #if __GNUC__ >= 3 */
 
 class remap_entry
 {
@@ -155,7 +141,7 @@ store_my_error_message(TSReturnCode retcode, char *err_msg_buf, int buf_size, co
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
   info.plugin_name = (char*)"remap_plugin";
@@ -365,7 +351,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
 /* ----------------------- TSRemapOSResponse ----------------------------- */
 void
-TSRemapOSResponse(void* ih, TSHttpTxn rh, int os_response_type)
+TSRemapOSResponse(void* ih ATS_UNUSED, TSHttpTxn rh, int os_response_type)
 {
   int request_id = -1;
   void *data = TSHttpTxnArgGet((TSHttpTxn) rh, arg_index);  // read counter (we store it in TSRemapDoRemap function call)

@@ -30,8 +30,6 @@
 
 
  ***************************************************************************/
-#include "ink_unused.h"
-
 #include "libts.h"
 #include "Error.h"
 #include "LogAccessHttp.h"
@@ -51,7 +49,7 @@
   -------------------------------------------------------------------------*/
 
 LogAccessHttp::LogAccessHttp(HttpSM * sm)
-:m_http_sm(sm), m_arena(), m_url(NULL), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL), m_cache_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL), m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),      // undetermined
+:m_http_sm(sm), m_arena(), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL), m_cache_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL), m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),      // undetermined
   m_client_req_unmapped_url_path_str(NULL), m_client_req_unmapped_url_path_len(-1),     // undetermined
   m_client_req_unmapped_url_host_str(NULL), m_client_req_unmapped_url_host_len(-1),
   m_client_req_url_path_str(NULL),
@@ -91,15 +89,13 @@ LogAccessHttp::init()
 
   if (hdr->client_request.valid()) {
     m_client_request = &(hdr->client_request);
-    m_url = m_client_request->url_get();
-    if (m_url) {
-      m_client_req_url_str = m_url->string_get_ref(&m_client_req_url_len);
-      m_client_req_url_canon_str = LogUtils::escapify_url(&m_arena,
-                                                          m_client_req_url_str, m_client_req_url_len,
-                                                          &m_client_req_url_canon_len);
-      m_client_req_url_path_str = (char *) m_url->path_get(&m_client_req_url_path_len);
-    }
+    m_client_req_url_str = m_client_request->url_string_get_ref(&m_client_req_url_len);
+    m_client_req_url_canon_str = LogUtils::escapify_url(&m_arena,
+                                                        m_client_req_url_str, m_client_req_url_len,
+                                                        &m_client_req_url_canon_len);
+    m_client_req_url_path_str = m_client_request->path_get(&m_client_req_url_path_len);
   }
+
   if (hdr->client_response.valid()) {
     m_proxy_response = &(hdr->client_response);
     MIMEField *field = m_proxy_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
@@ -180,12 +176,14 @@ void
 LogAccessHttp::validate_unmapped_url(void)
 {
   if (m_client_req_unmapped_url_canon_len < 0) {
-    int unmapped_url_len;
-    char *unmapped_url = m_http_sm->t_state.pristine_url.string_get_ref(&unmapped_url_len);
+    if (m_http_sm->t_state.pristine_url.valid()) {
+      int unmapped_url_len;
+      char *unmapped_url = m_http_sm->t_state.pristine_url.string_get_ref(&unmapped_url_len);
 
-    if (unmapped_url && unmapped_url[0] != 0) {
-      m_client_req_unmapped_url_canon_str =
+      if (unmapped_url && unmapped_url[0] != 0) {
+        m_client_req_unmapped_url_canon_str =
         LogUtils::escapify_url(&m_arena, unmapped_url, unmapped_url_len, &m_client_req_unmapped_url_canon_len);
+      }
     } else {
       m_client_req_unmapped_url_canon_len = 0;
     }
@@ -380,17 +378,15 @@ LogAccessHttp::marshal_client_req_url_scheme(char *buf)
   int alen = 0;
   int plen = INK_MIN_ALIGN;
 
-  if (m_url) {
-    str = (char *) m_url->scheme_get(&alen);
+  str = (char *) m_client_request->scheme_get(&alen);
 
-    // calculate the the padded length only if the actual length
-    // is not zero. We don't want the padded length to be zero
-    // because marshal_mem should write the DEFAULT_STR to the
-    // buffer if str is nil, and we need room for this.
-    //
-    if (alen) {
-      plen = round_strlen(alen + 1);    // +1 for trailing 0
-    }
+  // calculate the the padded length only if the actual length
+  // is not zero. We don't want the padded length to be zero
+  // because marshal_mem should write the DEFAULT_STR to the
+  // buffer if str is nil, and we need room for this.
+  //
+  if (alen) {
+    plen = round_strlen(alen + 1);    // +1 for trailing 0
   }
 
   if (buf) {
@@ -704,25 +700,15 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
 int
 LogAccessHttp::marshal_server_host_name(char *buf)
 {
-  char *str = NULL;
+  char const* str = NULL;
   int padded_len = INK_MIN_ALIGN;
   int actual_len = 0;
 
   if (m_client_request) {
-    MIMEField *field = m_client_request->field_find(MIME_FIELD_HOST,
-                                                    MIME_LEN_HOST);
+    str = m_client_request->host_get(&actual_len);
 
-    if (field) {
-      str = (char *) field->value_get(&actual_len);
+    if (str)
       padded_len = round_strlen(actual_len + 1);        // +1 for trailing 0
-    } else if (m_url) {
-      str = (char *) m_url->host_get(&actual_len);
-      padded_len = round_strlen(actual_len + 1);        // +1 for trailing 0
-    } else {
-      str = NULL;
-      actual_len = 0;
-      padded_len = INK_MIN_ALIGN;
-    }
   }
   if (buf) {
     marshal_mem(buf, str, actual_len, padded_len);

@@ -31,7 +31,7 @@ inline std::ostream& operator << ( std::ostream& s, ts::ConstBuffer const& b ) {
   return s;
 }
 
-int main(int argc, char ** argv) {
+int main(int /* argc ATS_UNUSED */, char **/* argv ATS_UNUSED */) {
   printf("Testing TsConfig\n");
   ts::Rv<Configuration> cv = Configuration::loadFromPath("test-1.tsconfig");
   if (cv.isOK()) {

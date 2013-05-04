@@ -27,7 +27,6 @@
 #include <sys/time.h>
 
 #include "ink_assert.h"
-#include "ink_bool.h"
 #include "ink_apidefs.h"
 #include "ink_string++.h"
 #include "HdrHeap.h"
@@ -1265,7 +1264,7 @@ MIMEHdr::field_value_set_uint(MIMEField * field, uint32_t value)
 inline void
 MIMEHdr::field_value_set_int64(MIMEField * field, int64_t value)
 {
-  field->value_set_uint(m_heap, m_mime, (uint32_t)value);
+  field->value_set_int64(m_heap, m_mime, value);
 }
 
 inline void

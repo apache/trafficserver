@@ -71,16 +71,15 @@ FileManager *configFiles;
 StatProcessor *statProcessor;   // Statistics Processors
 AppVersionInfo appVersionInfo;  // Build info for this application
 
-inkcoreapi Diags *diags;
-inkcoreapi DiagsConfig *diagsConfig;
-char debug_tags[1024] = "";
-char action_tags[1024] = "";
 int diags_init = 0;
-bool proxy_on = true;
-bool forceProcessRecordsSnap = false;
 
-bool schema_on = false;
-char *schema_path = NULL;
+static inkcoreapi DiagsConfig *diagsConfig;
+static char debug_tags[1024] = "";
+static char action_tags[1024] = "";
+static bool proxy_on = true;
+
+static bool schema_on = false;
+static char *schema_path = NULL;
 
 // TODO: Check if really need those
 char system_root_dir[PATH_NAME_MAX + 1];
@@ -91,27 +90,25 @@ char system_log_dir[PATH_NAME_MAX + 1];
 char mgmt_path[PATH_NAME_MAX + 1];
 
 // By default, set the current directory as base
-const char *ts_base_dir = ".";
-const char *recs_conf = "records.config";
+static const char *recs_conf = "records.config";
 
-int fds_limit;
+static int fds_limit;
 
-typedef void (*PFV) (int);
 // TODO: Use positive instead negative selection
 //       Thsis should just be #if defined(solaris)
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-void SignalHandler(int sig, siginfo_t * t, void *f);
-void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
+static void SignalHandler(int sig, siginfo_t * t, void *f);
+static void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
 #else
-void SignalHandler(int sig);
-void SignalAlrmHandler(int sig);
+static void SignalHandler(int sig);
+static void SignalAlrmHandler(int sig);
 #endif
 
-volatile int sigHupNotifier = 0;
-volatile int sigUsr2Notifier = 0;
-void SigChldHandler(int sig);
+static volatile int sigHupNotifier = 0;
+static volatile int sigUsr2Notifier = 0;
+static void SigChldHandler(int sig);
 
-void
+static void
 check_lockfile()
 {
   char lockfile[PATH_NAME_MAX];
@@ -175,7 +172,7 @@ check_lockfile()
 }
 
 
-void
+static void
 initSignalHandlers()
 {
   struct sigaction sigHandler, sigChldHandler, sigAlrmHandler;
@@ -324,7 +321,7 @@ init_dirs(bool use_librecords = true)
 
 }
 
-void
+static void
 chdir_root()
 {
 
@@ -367,7 +364,7 @@ set_process_limits(int fds_throttle)
 }
 
 #if TS_HAS_WCCP
-void
+static void
 Errata_Logger(ts::Errata const& err) {
   size_t n;
   static size_t const SIZE = 4096;
@@ -385,7 +382,7 @@ Errata_Logger(ts::Errata const& err) {
   }
 }
 
-void
+static void
 Init_Errata_Logging() {
   ts::Errata::registerSink(&Errata_Logger);
 }
@@ -674,11 +671,6 @@ main(int argc, char **argv)
   }
 #endif /* MGMT_USE_SYSLOG */
 
-    /****************************
-     * Register Alarm Callbacks *
-     ****************************/
-  lmgmt->alarm_keeper->registerCallback(overviewAlarmCallback);
-
   // Find out our hostname so we can use it as part of the initialization
   setHostnameVar();
 
@@ -757,24 +749,6 @@ main(int argc, char **argv)
   Debug("lm", "Created Web Agent thread (%"  PRId64 ")", (int64_t)webThrId);
   lmgmt->listenForProxy();
 
-  /* Check the permissions on vip_config */
-  if (lmgmt->virt_map->enabled) {
-    char absolute_vipconf_binary[1024];
-    struct stat buf;
-
-    snprintf(absolute_vipconf_binary, sizeof(absolute_vipconf_binary), "%s/vip_config", lmgmt->bin_path);
-    if (stat(absolute_vipconf_binary, &buf) < 0) {
-      mgmt_elog(stderr, "[main] Unable to stat vip_config for proper permissions\n");
-    } else if (!((buf.st_mode & S_ISUID) &&
-                 (buf.st_mode & S_IRWXU) &&
-                 (buf.st_mode & S_IRGRP) &&
-                 (buf.st_mode & S_IXGRP) && (buf.st_mode & S_IROTH) && (buf.st_mode & S_IXOTH))) {
-      lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
-                                       "Virtual IP Addressing enabled, but improper permissions on '/inktomi/bin/vip_config'"
-                                       "[requires: setuid root and at least a+rx]\n");
-    }
-  }
-
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 
@@ -794,7 +768,7 @@ main(int argc, char **argv)
     }
     // Check for SIGUSR2
     if (sigUsr2Notifier != 0) {
-      xdump();
+      ink_stack_trace_dump();
       sigUsr2Notifier = 0;
     }
 
@@ -821,7 +795,8 @@ main(int argc, char **argv)
     }
 
     if (lmgmt->mgmt_shutdown_outstanding == true) {
-      lmgmt->mgmtShutdown(0, true);
+      lmgmt->mgmtShutdown(true);
+      _exit(0);
     }
 
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
@@ -867,10 +842,10 @@ main(int argc, char **argv)
 
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-void
+static void
 SignalAlrmHandler(int sig, siginfo_t * t, void *c)
 #else
-void
+static void
 SignalAlrmHandler(int sig)
 #endif
 {
@@ -900,10 +875,10 @@ SignalAlrmHandler(int sig)
 
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-void
+static void
 SignalHandler(int sig, siginfo_t * t, void *c)
 #else
-void
+static void
 SignalHandler(int sig)
 #endif
 {
@@ -984,23 +959,11 @@ SignalHandler(int sig)
 //    waitpid() blocks until all child are transformed into
 //    zombies which is bad for us
 //
-void
+static void
 SigChldHandler(int sig)
 {
   NOWARN_UNUSED(sig);
 }
-
-// void SigHupHandler(int sig,...)
-//
-//  Records that a sigHup was sent so that we can reread our
-//    config files on the next run through the main loop
-void
-SigHupHandler(int sig, ...)
-{
-  ink_assert(sig == SIGHUP);
-  Debug("lm", "[SigHupHandler] hup caught\n");
-  sigHupNotifier = 1;
-}                               /* End SigHupHandler */
 
 void
 printUsage()
@@ -1078,9 +1041,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "proxy.pac") == 0) {
     mgmt_log(stderr, "[fileUpdated] proxy.pac file has been modified\n");
 
-  } else if (strcmp(fname, "wpad.dat") == 0) {
-    mgmt_log(stderr, "[fileUpdated] wpad.dat file has been modified\n");
-
   } else if (strcmp(fname, "icp.config") == 0) {
     lmgmt->signalFileChange("proxy.config.icp.icp_configuration");
 
@@ -1092,9 +1052,6 @@ fileUpdated(char *fname)
 
   } else if (strcmp(fname, "hosting.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.hosting_filename");
-
-  } else if (strcmp(fname, "mgr.cnf") == 0) {
-    mgmt_log(stderr, "[fileUpdated] mgr.cnf file has been modified\n");
 
   } else if (strcmp(fname, "log_hosts.config") == 0) {
     lmgmt->signalFileChange("proxy.config.log.hosts_config_file");

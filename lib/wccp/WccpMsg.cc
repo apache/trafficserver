@@ -1703,11 +1703,11 @@ void
 ISeeYouMsg::fill(
   detail::router::GroupData const& group,
   SecurityOption sec_opt,
-  detail::Assignment& assign,
+  detail::Assignment& /* assign ATS_UNUSED */,
   size_t to_caches,
   size_t n_routers,
   size_t n_caches,
-  bool send_capabilities
+  bool /* send_capabilities ATS_UNUSED */
 ) {
   m_header.fill(m_buffer, I_SEE_YOU);
   m_security.fill(m_buffer, sec_opt);

@@ -36,7 +36,7 @@
 #include "P_RecProcess.h"
 
 #include "ink_hash_table.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "HttpTransact.h"
 #include "RemapPluginInfo.h"
 #include "UrlRewrite.h"

@@ -175,7 +175,7 @@ log_tcp_info(const char* event_name, const char* client_ip, const char* server_i
 
 
 static int
-tcp_info_hook(TSCont contp, TSEvent event, void *edata)
+tcp_info_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp = NULL;
   TSHttpTxn txnp = NULL;
@@ -287,7 +287,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int, const char *[]) // int argc, const char *argv[]
 {
   TSPluginRegistrationInfo info;
 

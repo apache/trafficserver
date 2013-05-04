@@ -36,44 +36,6 @@
 #include "Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
 
-#ifdef DEBUG
-extern "C"
-{
-  void http_dump();
-}
-///////////////////////////////////////////////////////////
-//
-//  http_dump()
-//
-///////////////////////////////////////////////////////////
-void
-http_dump()
-{
-//    if (diags->on("http_dump"))
-  {
-//      httpNetProcessor.dump();
-//      HttpStateMachine::dump_state_machines();
-  }
-
-  return;
-}
-#endif
-struct DumpStats: public Continuation
-{
-  int mainEvent(int event, void *e)
-  {
-    (void) event;
-    (void) e;
-    /* http_dump() */
-//     dump_stats();
-    return EVENT_CONT;
-  }
-  DumpStats():Continuation(NULL)
-  {
-    SET_HANDLER(&DumpStats::mainEvent);
-  }
-};
-
 HttpAccept *plugin_http_accept = NULL;
 HttpAccept *plugin_http_transparent_accept = 0;
 
@@ -212,14 +174,8 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
 void
 start_HttpProxyServer(int accept_threads)
 {
-  char *dump_every_str = 0;
   static bool called_once = false;
   NetProcessor::AcceptOptions opt;
-
-  if ((dump_every_str = getenv("PROXY_DUMP_STATS")) != 0) {
-    int dump_every_sec = atoi(dump_every_str);
-    eventProcessor.schedule_every(NEW(new DumpStats), HRTIME_SECONDS(dump_every_sec), ET_CALL);
-  }
 
   ///////////////////////////////////
   // start accepting connections   //
@@ -237,11 +193,6 @@ start_HttpProxyServer(int accept_threads)
     start_HttpProxyPort(HttpProxyPort::global()[i], accept_threads);
   }
 
-#ifdef DEBUG
-  if (diags->on("http_dump")) {
-//      HttpStateMachine::dump_state_machines();
-  }
-#endif
 #if TS_HAS_TESTS
   if (is_action_tag_set("http_update_test")) {
     init_http_update_test();

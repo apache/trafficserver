@@ -43,15 +43,12 @@
 
 #include "ink_config.h"
 #include "ink_platform.h"
-#include "ink_port.h"
-#include "ink_aiocb.h"
 #include "ink_align.h"
 #include "ink_apidefs.h"
 #include "ink_args.h"
 #include "ink_assert.h"
 #include "ink_atomic.h"
 #include "ink_base64.h"
-#include "ink_bool.h"
 #include "ink_code.h"
 #include "ink_defs.h"
 #include "ink_error.h"
@@ -77,7 +74,6 @@
 #include "ink_syslog.h"
 #include "ink_thread.h"
 #include "ink_time.h"
-#include "ink_unused.h"
 #include "fastlz.h"
 
 #include "Allocator.h"

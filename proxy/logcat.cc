@@ -20,10 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
 #include "ink_config.h"
 #include "ink_file.h"
-#include "ink_unused.h"
 #include "I_Layout.h"
 #include "I_Version.h"
 
@@ -62,7 +60,7 @@ static char output_file[1024];
 extern int CacheClusteringEnabled;
 int auto_clear_cache_flag = 0;
 
-ArgumentDescription argument_descriptions[] = {
+static const ArgumentDescription argument_descriptions[] = {
 
   {"output_file", 'o', "Specify output file", "S1023", &output_file, NULL, NULL},
   {"auto_filenames", 'a', "Automatically generate output names",
@@ -79,7 +77,6 @@ ArgumentDescription argument_descriptions[] = {
   {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL,
    NULL}
 };
-int n_argument_descriptions = SIZE(argument_descriptions);
 
 static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-CEhS"
 #ifdef DEBUG
@@ -89,7 +86,7 @@ static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [
 
 
 
-int
+static int
 process_file(int in_fd, int out_fd)
 {
   char buffer[MAX_LOGBUFFER_SIZE];
@@ -187,7 +184,7 @@ process_file(int in_fd, int out_fd)
   }
 }
 
-int
+static int
 open_output_file(char *output_file)
 {
   int file_desc = 0;
@@ -224,7 +221,7 @@ open_output_file(char *output_file)
   -------------------------------------------------------------------------*/
 
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   enum
   {
@@ -243,7 +240,7 @@ main(int argc, char *argv[])
   // process command-line arguments
   //
   output_file[0] = 0;
-  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+  process_args(argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
 
   // check for the version number request
   //
@@ -254,7 +251,7 @@ main(int argc, char *argv[])
   // check for help request
   //
   if (help) {
-    usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+    usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
     _exit(NO_ERROR);
   }
   // check that only one of the -o and -a options was specified

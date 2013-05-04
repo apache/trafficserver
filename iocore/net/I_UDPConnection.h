@@ -55,8 +55,6 @@ public:
 
   void destroy();
   int shouldDestroy();
-  /* Returns the b/w allocated to this UDP connection in Mbps */
-  double get_allocatedBandwidth();
   /**
      <p>
      <b>Callbacks:</b><br>
@@ -97,17 +95,16 @@ public:
   /**
      Put socket on net queue for read/write polling.
 
-     Not required for UDPConnections created with
-     UDPNetProcessor::UDPBind
+     Not required for UDPConnections created with UDPNetProcessor::UDPBind
 
-     Required for UDPNetProcessor::UDPCreatePortPairs  and
-     UDPNetProcessor::CreateUDPSocket.  They  don't do bindToThread()
-     automatically so that the sockets can be passed to other Continuations.
+     Required for  and UDPNetProcessor::CreateUDPSocket.  They  don't do
+     bindToThread() automatically so that the sockets can be passed to
+     other Continuations.
   */
   void bindToThread(Continuation * c);
 
   virtual void UDPConnection_is_abstract() = 0;
 };
 
-TS_INLINE UDPConnection *new_UDPConnection(int fd);
+extern UDPConnection *new_UDPConnection(int fd);
 #endif //__I_UDPCONNECTION_H_

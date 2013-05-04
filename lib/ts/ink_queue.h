@@ -35,9 +35,8 @@
 ***********************************************************************/
 
 #include "ink_platform.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_apidefs.h"
-#include "ink_unused.h"
 
 /*
   For information on the structure of the x86_64 memory map:
@@ -71,20 +70,38 @@ extern "C"
 #define INK_QUEUE_LD64(dst,src) (ink_queue_load_64((void *)&(dst), (void *)&(src)))
 #endif
 
+#if TS_HAS_128BIT_CAS
+#define INK_QUEUE_LD(dst, src) do { \
+  *(__int128_t*)&(dst) = __sync_val_compare_and_swap((__int128_t*)&(src), 0, 0); \
+} while (0)
+#else
+#define INK_QUEUE_LD(dst,src) INK_QUEUE_LD64(dst,src)
+#endif
+
 /*
  * Generic Free List Manager
  */
-
+  // Warning: head_p is read and written in multiple threads without a
+  // lock, use INK_QUEUE_LD to read safely.
   typedef union
   {
 #if (defined(__i386__) || defined(__arm__)) && (SIZEOF_VOIDP == 4)
     struct
     {
-      volatile void *pointer;
-      volatile int32_t version;
+      void *pointer;
+      int32_t version;
     } s;
+    int64_t data;
+#elif TS_HAS_128BIT_CAS
+    struct
+    {
+      void *pointer;
+      int64_t version;
+    } s;
+    __int128_t data;
+#else
+    int64_t data;
 #endif
-    volatile int64_t data;
   } head_p;
 
 /*
@@ -108,6 +125,11 @@ extern "C"
 #endif
 
 #if (defined(__i386__) || defined(__arm__)) && (SIZEOF_VOIDP == 4)
+#define FREELIST_POINTER(_x) (_x).s.pointer
+#define FREELIST_VERSION(_x) (_x).s.version
+#define SET_FREELIST_POINTER_VERSION(_x,_p,_v) \
+(_x).s.pointer = _p; (_x).s.version = _v
+#elif TS_HAS_128BIT_CAS
 #define FREELIST_POINTER(_x) (_x).s.pointer
 #define FREELIST_VERSION(_x) (_x).s.version
 #define SET_FREELIST_POINTER_VERSION(_x,_p,_v) \

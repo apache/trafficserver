@@ -29,8 +29,6 @@
 
 A simple linked list queue.
 ****************************************************************************/
-
-#include "ink_unused.h"
 #include "ink_mutex.h"
 #include "ink_thread.h"
 

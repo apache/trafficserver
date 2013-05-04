@@ -1208,7 +1208,7 @@ Config_FloppyNetRestore()
   }
 
   i = 0;
-  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, tmp_floppy_config));
+  ATS_UNUSED_RETURN(fgets(buffer, 1024, tmp_floppy_config));
   fclose(tmp_floppy_config);
   while (!isspace(buffer[i])) {
     mount_dir[i] = buffer[i];
@@ -1220,11 +1220,11 @@ Config_FloppyNetRestore()
   // Unmount floppy and then use /tmp/net_config.xml to restore the
   // settings. This is required as a restart of traffic_manager
   //  might hinder unmount of floppy
-  NOWARN_UNUSED_RETURN(system("rm -f /tmp/net_config.xml"));
+  ATS_UNUSED_RETURN(system("rm -f /tmp/net_config.xml"));
 
   char xml_temp_dir[256];
   snprintf(xml_temp_dir, sizeof(xml_temp_dir), "/bin/cp -f %s/net_config.xml /tmp/net_config.xml", mount_dir);
-  NOWARN_UNUSED_RETURN(system(xml_temp_dir));
+  ATS_UNUSED_RETURN(system(xml_temp_dir));
   uMountFloppy(net_floppy_config);      //umount the floppy
 
   //sprintf(floppy_config_file, "%s/net_config.xml", mount_dir);

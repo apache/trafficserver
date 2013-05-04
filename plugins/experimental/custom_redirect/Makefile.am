@@ -14,11 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
-              -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
+include $(top_srcdir)/build/plugins.mk
 
-pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = custom_redirect.la
 custom_redirect_la_SOURCES = custom_redirect.cc
-custom_redirect_la_LDFLAGS = -module -avoid-version -shared
+custom_redirect_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 

@@ -31,7 +31,7 @@
 #define _ink_sock_h_
 
 #include "ink_platform.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #include "ink_apidefs.h"
 

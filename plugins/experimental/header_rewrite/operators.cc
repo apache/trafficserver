@@ -19,10 +19,6 @@
 // operators.cc: implementation of the operator classes
 //
 //
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__operators_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <arpa/inet.h>
 #include <ts/ts.h>
 #include <string.h>

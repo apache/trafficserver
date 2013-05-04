@@ -33,6 +33,7 @@
  ***************************************************************************/
 
 #include "ink_config.h"
+#include "ink_defs.h"
 #include "ink_sock.h"
 #include "ink_string.h"
 #include "I_Layout.h"
@@ -525,7 +526,7 @@ send_request(int fd, OpType op)
  * note: format: <OpType> <str_len> <string>
  **********************************************************************/
 TSError
-send_request_name(int fd, OpType op, char *name)
+send_request_name(int fd, OpType op, const char *name)
 {
   char *msg_buf;
   int16_t op_t;

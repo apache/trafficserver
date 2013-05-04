@@ -583,7 +583,7 @@ find_value(const char *pathname, const char *key, char *value, size_t value_len,
   }
   // coverity[toctou]
   if ((fp = fopen(pathname, "r")) != NULL) {
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
 
     while (!feof(fp)) {
       if (!isLineCommented(buffer) &&   // skip if line is commented
@@ -629,7 +629,7 @@ find_value(const char *pathname, const char *key, char *value, size_t value_len,
           break;
         }
       }
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+      ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
     }
     fclose(fp);
   }
@@ -824,7 +824,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
 
     char *gw_start;
     bool find_UG = false;
-    NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
     while (!feof(fp)) {
       if (strstr(buffer, "UG") != NULL) {
         find_UG = true;
@@ -832,7 +832,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
         gw_start = strtok(NULL, " \t");
         break;
       }
-      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+      ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
     }
     if (find_UG) {
       ink_strlcpy(router, gw_start, router_len);
@@ -1019,7 +1019,7 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
       }
 
       char *pos, *addr_end, *addr_start = NULL;
-      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+      ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
       while (!feof(fp)) {
         if (strstr(buffer, "inet addr:") != NULL) {
           pos = strchr(buffer, ':');
@@ -1028,7 +1028,7 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
           *addr_end = '\0';
           break;
         }
-        NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+        ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
       }
 
       if (addr_start)
@@ -1077,7 +1077,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
       }
 
       char *pos, *mask_end, *mask_start = NULL;
-      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+      ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
       while (!feof(fp)) {
         if (strstr(buffer, "Mask:") != NULL) {
           pos = strstr(buffer, "Mask:");
@@ -1086,7 +1086,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
           *mask_end = '\0';
           break;
         }
-        NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+        ATS_UNUSED_RETURN(fgets(buffer, 256, fp));
       }
 
       if (mask_start)
@@ -1217,7 +1217,7 @@ Time_SortTimezone()
     DPRINTF(("[Time_SortTimezone] Can not open the file\n"));
     return -1;
   }
-  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+  ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   while (!feof(fp)) {
     if (buffer[0] != '#') {
       strtok(buffer, " \t");
@@ -1228,12 +1228,12 @@ Time_SortTimezone()
       }
       fprintf(tmp, "%s\n", zone);
     }
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   }
   fclose(fp);
   fclose(tmp);
   remove("/tmp/zonetab");
-  NOWARN_UNUSED_RETURN(system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab"));
+  ATS_UNUSED_RETURN(system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab"));
   remove("/tmp/zonetab.tmp");
 
   return 0;
@@ -1284,7 +1284,7 @@ Time_GetNTP_Status(char *status, size_t status_len)
   status[0] = 0;
 
   fp = popen("/etc/init.d/ntpd status", "r");
-  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+  ATS_UNUSED_RETURN(fgets(buffer, 1024, fp));
   if (strstr(buffer, "running") != NULL) {
     ink_strlcpy(status, "on", status_len);
   } else {

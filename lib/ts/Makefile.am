@@ -25,7 +25,18 @@ AM_CPPFLAGS = -I$(top_srcdir)/lib
 lib_LTLIBRARIES = libtsutil.la
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
-libtsutil_la_LIBADD = @LIBOBJS@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBRESOLV@ @LIBRT@ @LIBSOCKET@ @LIBNSL@ @LIBCAP@ @LIBHWLOC@ -lc
+libtsutil_la_LIBADD = \
+  @hwloc_LIBS@ \
+  @LIBOBJS@ \
+  @LIBPCRE@ \
+  @LIBSSL@ \
+  @LIBTCL@ \
+  @LIBRESOLV@ \
+  @LIBRT@ \
+  @LIBSOCKET@ \
+  @LIBNSL@ \
+  @LIBCAP@ \
+  -lc
 
 libtsutil_la_SOURCES = \
   Allocator.h \
@@ -52,7 +63,6 @@ libtsutil_la_SOURCES = \
   ink_auth_api.h \
   ink_base64.cc \
   ink_base64.h \
-  ink_bool.h \
   ink_cap.cc ink_cap.h \
   ink_code.cc \
   ink_code.h \
@@ -80,7 +90,6 @@ libtsutil_la_SOURCES = \
   ink_mutex.h \
   ink_platform.h \
   InkPool.h \
-  ink_port.h \
   ink_queue.cc \
   ink_queue.h \
   ink_queue_ext.cc \
@@ -114,7 +123,6 @@ libtsutil_la_SOURCES = \
   ink_time.cc \
   ink_time.h \
   inktomi++.h \
-  ink_unused.h \
   fastlz.h \
   fastlz.c \
   I_Version.h \

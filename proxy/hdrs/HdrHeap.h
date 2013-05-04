@@ -34,8 +34,7 @@
 #define _HDR_HEAP_H_
 
 #include "Ptr.h"
-#include "ink_port.h"
-#include "ink_bool.h"
+#include "ink_defs.h"
 #include "ink_assert.h"
 #include "Arena.h"
 #include "HdrToken.h"
@@ -107,7 +106,7 @@ obj_copy_data(HdrHeapObjImpl * s_obj, HdrHeapObjImpl * d_obj)
 {
   char *src, *dst;
 
-  ink_debug_assert((s_obj->m_length == d_obj->m_length) && (s_obj->m_type == d_obj->m_type));
+  ink_assert((s_obj->m_length == d_obj->m_length) && (s_obj->m_type == d_obj->m_type));
 
   int hdr_length = sizeof(HdrHeapObjImpl);
   src = (char *) s_obj + hdr_length;

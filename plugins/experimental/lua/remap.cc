@@ -16,8 +16,10 @@
   limitations under the License.
 */
 
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_defs.h"
+
 #include "lapi.h"
 #include "lutil.h"
 #include "state.h"
@@ -54,7 +56,8 @@ LuaPluginRemap(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */,
+            int /* errbuf_size ATS_UNUSED */)
 {
   LuaLogDebug("loading lua plugin");
 
@@ -65,7 +68,7 @@ TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errsz)
+TSRemapNewInstance(int argc, char * argv[], void ** ih, char * /* errbuf ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
   instanceid_t instanceid;
 

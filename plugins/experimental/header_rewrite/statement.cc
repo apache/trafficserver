@@ -20,9 +20,6 @@
 //
 //
 
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__statement_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <ts/ts.h>
 
 #include "statement.h"

@@ -77,11 +77,6 @@
 #include "Regression.h"
 
 #define PVC_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
-#undef MIN
-#define MIN(x,y) (((x) <= (y)) ? (x) : (y))
-#undef MAX
-#define MAX(x,y) (((x) >= (y)) ? (x) : (y))
-
 #define PVC_DEFAULT_MAX_BYTES 32768
 #define MIN_BLOCK_TRANSFER_BYTES 128
 
@@ -116,8 +111,8 @@ PluginVC::main_handler(int event, void *data)
 
   ink_release_assert(event == EVENT_INTERVAL || event == EVENT_IMMEDIATE);
   ink_release_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_debug_assert(!deletable);
-  ink_debug_assert(data != NULL);
+  ink_assert(!deletable);
+  ink_assert(data != NULL);
 
   Event *call_event = (Event *) data;
   EThread *my_ethread = mutex->thread_holding;
@@ -293,7 +288,7 @@ PluginVC::reenable(VIO * vio)
 
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_debug_assert(vio->mutex->thread_holding == this_ethread());
+  ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Debug("pvc", "[%u] %s: reenable %s", PVC_ID, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
@@ -314,7 +309,7 @@ PluginVC::reenable_re(VIO * vio)
 
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_debug_assert(vio->mutex->thread_holding == this_ethread());
+  ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Debug("pvc", "[%u] %s: reenable_re %s", PVC_ID, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
@@ -425,7 +420,7 @@ PluginVC::transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from
 
   int64_t total_added = 0;
 
-  ink_debug_assert(act_on <= transfer_from->read_avail());
+  ink_assert(act_on <= transfer_from->read_avail());
 
   while (act_on > 0) {
     int64_t block_read_avail = transfer_from->block_read_avail();
@@ -904,7 +899,7 @@ PluginVC::set_remote_addr()
 }
 
 int
-PluginVC::set_tcp_init_cwnd(int init_cwnd)
+PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
 {
   return -1;
 }
@@ -1218,8 +1213,8 @@ public:
   int main_handler(int event, void *data);
 
 private:
-  int i;
-  int completions_received;
+  unsigned i;
+  unsigned completions_received;
 };
 
 PVCTestDriver::PVCTestDriver():
@@ -1250,8 +1245,8 @@ void
 PVCTestDriver::run_next_test()
 {
 
-  int a_index = i * 2;
-  int p_index = a_index + 1;
+  unsigned a_index = i * 2;
+  unsigned p_index = a_index + 1;
 
   if (p_index >= num_netvc_tests) {
     // We are done - // FIX - PASS or FAIL?

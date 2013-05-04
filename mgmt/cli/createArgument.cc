@@ -71,7 +71,7 @@ createArgument(const char *argument, int position, int commandoption,
   aCliArgvTable->arg_ref = argumentRef;
 
   if (range != NULL) {
-    aCliArgvTable->range_set = TRUE;
+    aCliArgvTable->range_set = true;
     if (aCliArgvTable->type == CLI_ARGV_INT || aCliArgvTable->type == CLI_ARGV_OPTION_INT_VALUE) {
       getIntRange(range, &(aCliArgvTable->l_range.int_r1), &(aCliArgvTable->u_range.int_r2));
     }

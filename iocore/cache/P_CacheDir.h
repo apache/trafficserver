@@ -64,7 +64,7 @@ struct CacheVC;
 // Macros
 
 #ifdef DO_CHECK_DIR
-#define CHECK_DIR(_d) ink_debug_assert(check_dir(_d))
+#define CHECK_DIR(_d) ink_assert(check_dir(_d))
 #else
 #define CHECK_DIR(_d) ((void)0)
 #endif

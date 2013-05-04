@@ -27,8 +27,6 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
-
-#include "ink_unused.h"   /* MAGIC_EDITING_TAG */
 #include "libts.h"
 
 #include "P_Net.h"
@@ -137,7 +135,8 @@ Connection::close()
 }
 
 static int
-add_http_filter(int fd) {
+add_http_filter(int fd ATS_UNUSED)
+{
   int err = -1;
 #if defined(SOL_FILTER) && defined(FIL_ATTACH)
   err = setsockopt(fd, SOL_FILTER, FIL_ATTACH, "httpfilt", 9);

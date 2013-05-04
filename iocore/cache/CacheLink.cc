@@ -144,7 +144,7 @@ CacheVC::derefRead(int event, Event * e)
   if (!(doc->first_key == key))
     goto Lcollision;
 #ifdef DEBUG
-  ink_debug_assert(!memcmp(doc->data(), &doc->key, sizeof(doc->key)));
+  ink_assert(!memcmp(doc->data(), &doc->key, sizeof(doc->key)));
 #endif
   _action.continuation->handleEvent(CACHE_EVENT_DEREF, (void *) &doc->key);
   return free_CacheVC(this);

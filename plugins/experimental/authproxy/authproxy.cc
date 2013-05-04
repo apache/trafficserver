@@ -267,7 +267,7 @@ AuthChainAuthorizationResponse(AuthRequestContext * auth)
 
 // Transform the client request into a HEAD request and write it out.
 static bool
-AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr * saddr)
+AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr * /* saddr ATS_UNUSED */)
 {
     HttpHeader  rq;
     TSMBuffer   mbuf;
@@ -451,7 +451,7 @@ StateAuthProxyConnect(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
+StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     TSHttpStatus status;
     unsigned nbytes;
@@ -461,8 +461,8 @@ StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
     status = TSHttpHdrStatusGet(auth->rheader.buffer, auth->rheader.header);
     AuthLogDebug("authorization proxy returned status %d", (int)status);
 
-    // Authorize the original request on a 200 response.
-    if (status == TS_HTTP_STATUS_OK) {
+    // Authorize the original request on a 2xx response.
+    if (status >= 200 && status < 300) {
         return TS_EVENT_IMMEDIATE;
     }
 
@@ -490,7 +490,7 @@ StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxySendResponse(AuthRequestContext * auth, void * edata)
+StateAuthProxySendResponse(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     TSMBuffer mbuf;
     TSMLoc mhdr;
@@ -518,7 +518,7 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyReadHeaders(AuthRequestContext * auth, void * edata)
+StateAuthProxyReadHeaders(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     TSIOBufferBlock blk;
     ssize_t         consumed = 0;
@@ -567,7 +567,7 @@ StateAuthProxyReadHeaders(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyWriteComplete(AuthRequestContext * auth, void * edata)
+StateAuthProxyWriteComplete(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     // We finished writing the auth proxy request. Kick off a read to get the response.
     auth->iobuf.reset();
@@ -580,7 +580,7 @@ StateAuthProxyWriteComplete(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyReadContent(AuthRequestContext * auth, void * edata)
+StateAuthProxyReadContent(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     unsigned        needed;
     int64_t         avail = 0;
@@ -600,7 +600,7 @@ StateAuthProxyReadContent(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyCompleteContent(AuthRequestContext * auth, void * edata)
+StateAuthProxyCompleteContent(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     unsigned        needed;
     int64_t         avail;
@@ -665,7 +665,7 @@ AuthRequestIsTagged(TSHttpTxn txn)
 }
 
 static int
-AuthProxyGlobalHook(TSCont cont, TSEvent event, void * edata)
+AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void * edata)
 {
     AuthRequestContext * auth;
     union {
@@ -706,12 +706,15 @@ AuthProxyGlobalHook(TSCont cont, TSEvent event, void * edata)
 static AuthOptions *
 AuthParseOptions(int argc, const char ** argv)
 {
+  // The const_cast<> here is magic to work around a flaw in the definition of struct option
+  // on some platforms (e.g. Solaris / Illumos). On sane platforms (e.g. linux), it'll get
+  // automatically casted back to the const char*, as the struct is defined in <getopt.h>.
     static const struct option longopt[] =
     {
-        { "auth-host", required_argument, 0, 'h' },
-        { "auth-port", required_argument, 0, 'p' },
-        { "auth-transform", required_argument, 0, 't' },
-        { "force-cacheability", no_argument, 0, 'c' },
+        { const_cast<char *>("auth-host"), required_argument, 0, 'h' },
+        { const_cast<char *>("auth-port"), required_argument, 0, 'p' },
+        { const_cast<char *>("auth-transform"), required_argument, 0, 't' },
+        { const_cast<char *>("force-cacheability"), no_argument, 0, 'c' },
         {0, 0, 0, 0 }
     };
 
@@ -760,6 +763,7 @@ AuthParseOptions(int argc, const char ** argv)
 
     return options;
 }
+#undef LONGOPT_OPTION_CAST
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -808,7 +812,7 @@ TSRemapInit(TSRemapInterface * api, char * err, int errsz)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char * argv[], void ** instance, char * err, int errsz)
+TSRemapNewInstance(int argc, char * argv[], void ** instance, char * /* err ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
     AuthOptions * options;
 
@@ -833,7 +837,7 @@ TSRemapDeleteInstance(void * instance)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * rri)
+TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
     AuthOptions * options = (AuthOptions *)instance;
 

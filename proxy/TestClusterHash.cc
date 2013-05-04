@@ -21,12 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 /****************************************************************************
 
   TestClusterHash.cc
  ****************************************************************************/
-
 #include "Cluster.h"
 #include "libts.h"
 

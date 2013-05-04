@@ -27,13 +27,11 @@
 #ifdef LOCAL_MANAGER
 
 #include "../mgmt/Main.h"
-#define MGMT_PTR       lmgmt
 #define DIAGS_LOG_FILE "manager.log"
 
 #else
 #include "Main.h"
 #include "ProxyConfig.h"
-#define MGMT_PTR       pmgmt
 #define DIAGS_LOG_FILE "diags.log"
 
 #endif
@@ -400,7 +398,7 @@ DiagsConfig::register_diags_callbacks()
     total_status = total_status && status;
   }
 
-  if (total_status == FALSE) {
+  if (total_status == false) {
     diags->print(NULL, DTA(DL_Error), "couldn't setup all diags callbacks, diagnostics may misbehave");
     callbacks_established = false;
   } else {

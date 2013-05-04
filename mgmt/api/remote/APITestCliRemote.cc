@@ -95,6 +95,7 @@
  */
 
 #include "ink_config.h"
+#include "ink_defs.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -2346,7 +2347,7 @@ runInteractive()
     printf("api_cli-> ");
 
     // get input from command line
-    NOWARN_UNUSED_RETURN(fgets(buf, 512, stdin));
+    ATS_UNUSED_RETURN(fgets(buf, 512, stdin));
 
     // check status of 'stdin' after reading
     if (feof(stdin) != 0) {
@@ -2452,7 +2453,7 @@ runInteractive()
  * clean up on exit, and gets the interactive command-line running
  */
 int
-main(int argc, char **argv)
+main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
 {
   TSError ret;
 

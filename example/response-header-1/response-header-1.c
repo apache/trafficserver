@@ -51,7 +51,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 static int init_buffer_status;
 
@@ -66,7 +68,7 @@ static TSMLoc field_loc;
 static TSMLoc value_loc;
 
 static void
-modify_header(TSHttpTxn txnp, TSCont contp)
+modify_header(TSHttpTxn txnp)
 {
   TSMBuffer resp_bufp;
   TSMBuffer cached_bufp;
@@ -213,15 +215,14 @@ modify_header(TSHttpTxn txnp, TSCont contp)
 
 
 static int
-modify_response_header_plugin(TSCont contp, TSEvent event, void *edata)
+modify_response_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-
   TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     TSDebug("resphdr", "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
-    modify_header(txnp, contp);
+    modify_header(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     /*  fall through  */
 

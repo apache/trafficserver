@@ -19,10 +19,6 @@
 // resources.cc: Implementation of the resources class.
 //
 //
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__resources_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <ts/ts.h>
 
 #include "resources.h"

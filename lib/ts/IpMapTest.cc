@@ -38,7 +38,7 @@ IpMapTestPrint(IpMap& map) {
   printf("\n");
 }
 
-REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int atype, int* pstatus) {
+REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int /* atype ATS_UNUSED */, int*  pstatus) {
   TestBox tb(t, pstatus);
 
   IpMap map;
@@ -105,7 +105,7 @@ REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int atype, int* pstatus) {
   tb.check(map.getCount() == 1, "IpMap: Full range fill left extra ranges.");
 }
 
-REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int atype, int* pstatus) {
+REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int /* atype ATS_UNUSED */, int* pstatus) {
   TestBox tb(t, pstatus);
   IpMap map;
 //  ip_text_buffer ipb1, ipb2;
@@ -153,7 +153,7 @@ REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int atype, int* pstatus) {
   tb.check(map.contains(&a_0_0_0_17), "IpMap Unmark: Range unmark zero bounded range max+1 removed.");
 }
 
-REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
+REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* pstatus) {
   TestBox tb(t, pstatus);
   IpMap map;
   ip_text_buffer ipb1, ipb2;

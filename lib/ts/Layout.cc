@@ -159,10 +159,6 @@ Layout::Layout(const char *_prefix)
       ink_strlcpy(path, TS_BUILD_PREFIX, sizeof(path));
     }
 
-    if (access(path, R_OK) == -1) {
-      ink_error("unable to access() TS_ROOT '%s': %d, %s\n", path, errno, strerror(errno));
-      return;
-    }
     prefix = ats_strdup(path);
   }
   exec_prefix = layout_relative(prefix, TS_BUILD_EXEC_PREFIX);
@@ -184,9 +180,9 @@ Layout::Layout(const char *_prefix)
 // TODO: Use a propper Debug logging
 //
 #define PrintSTR(var) \
-  fprintf(stdout, "%18s = '%s'\n", "--" #var, (var == NULL? "NULL" : var));
+  fprintf(stderr, "%18s = '%s'\n", "--" #var, (var == NULL? "NULL" : var));
 
-  fprintf(stdout, "Layout configuration\n");
+  fprintf(stderr, "Layout configuration\n");
   PrintSTR(prefix);
   PrintSTR(exec_prefix);
   PrintSTR(bindir);
@@ -204,6 +200,9 @@ Layout::Layout(const char *_prefix)
   PrintSTR(cachedir);
 #endif
 
+  if (access(prefix, F_OK) == -1) {
+    ink_error("unable to access() TS_ROOT '%s': %d, %s\n", prefix, errno, strerror(errno));
+  }
 }
 
 Layout::~Layout()

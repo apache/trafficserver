@@ -27,7 +27,8 @@
 
 #include <unistd.h>
 
-#include <ts/ts.h>
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 
 static char base64_codes[256];
@@ -73,10 +74,13 @@ authorized(char *user, char *password)
   /*
    * This routine checks the validity of the user name and
    * password. UNIX systems, enter your own authorization code
-   * here.
+   * here. ToDO: This doesn't do anything useful now.
    */
-
-  return 1;
+  if (user && password) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 static void
@@ -232,7 +236,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   int i, cc;
   TSPluginRegistrationInfo info;

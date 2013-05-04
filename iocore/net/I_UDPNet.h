@@ -49,14 +49,8 @@ public:
 
   //this function was interanal intially.. this is required for public and
   //interface probably should change.
-  bool CreateUDPSocket(
-    int *resfd,
-    sockaddr const* remote_addr,
-    sockaddr* local_addr,
-    int* local_addr_len,
-    Action ** status,
-    int send_bufsize = 0, int recv_bufsize = 0
-  );
+  bool CreateUDPSocket(int *resfd, sockaddr const* remote_addr, sockaddr* local_addr, int* local_addr_len,
+                       Action ** status, int send_bufsize = 0, int recv_bufsize = 0);
 
   /**
      create UDPConnection
@@ -80,17 +74,6 @@ public:
      created successfuly, or ACTION_IO_ERROR if not.
   */
   inkcoreapi Action *UDPBind(Continuation * c, sockaddr const* addr, int send_bufsize = 0, int recv_bufsize = 0);
-
-  // The mess again: the complier won't let me stick UDPConnection here.
-  void UDPClassifyConnection(Continuation * udpConn, IpAddr const& addr);
-
-  // create pairs of UDPConnections in which the first connection is
-  // on a even-#'ed port and the second connection is on the next
-  // odd-#'ed port.  Create "nPairs" of such connections.
-  Action *UDPCreatePortPairs(Continuation *, int nPairs,
-    sockaddr const* local_addr,
-    sockaddr const* remote_addr,
-    int send_bufsize = 0, int recv_bufsize = 0);
 
   // Regarding sendto_re, sendmsg_re, recvfrom_re:
   // * You may be called back on 'c' with completion or error status.
@@ -120,15 +103,6 @@ public:
   Action *recvfrom_re(Continuation * c, void *token, int fd,
                       sockaddr *fromaddr, socklen_t *fromaddrlen,
                       IOBufferBlock * buf, int len, bool useReadCont = true, int timeout = 0);
-  // Continuation is really a UDPConnection; due to the include mess, we stick in the
-  // base-class of UDPConnection.
-  bool AllocBandwidth(Continuation * udpConn, double desiredMbps);
-  bool ChangeBandwidth(Continuation * udpConn, double desiredMbps);
-  void FreeBandwidth(Continuation * udpConn);
-  double GetAvailableBandwidth();
-
-  virtual void UDPNetProcessor_is_abstract() = 0;
-
 };
 
 inkcoreapi extern UDPNetProcessor & udpNet;

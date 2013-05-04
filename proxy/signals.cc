@@ -194,7 +194,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
   }
 #else
   snprintf(sig_msg, sizeof(sig_msg), "NOTE: Traffic Server received Sig %d: %s\n", sig, strsignal(sig));
-  NOWARN_UNUSED_RETURN(write(2, sig_msg, strlen(sig_msg)));
+  ATS_UNUSED_RETURN(write(2, sig_msg, strlen(sig_msg)));
   //syslog(LOG_ERR, sig_msg);
 #endif
 
@@ -218,11 +218,11 @@ signal_handler(int sig, siginfo_t * t, void *c)
   case SIGXCPU:
   case SIGXFSZ:
   case SIGSEGV:
-    ink_stack_trace_dump(2);
+    ink_stack_trace_dump();
     signal(sig, SIG_DFL);
     return;
   case SIGUSR2:
-    ink_stack_trace_dump(2);
+    ink_stack_trace_dump();
     return;
   case SIGABRT:
   case SIGUSR1:

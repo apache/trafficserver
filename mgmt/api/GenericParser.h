@@ -33,7 +33,6 @@
 #include "ink_assert.h"
 #include "Tokenizer.h"
 #include "List.h"
-#include "ink_bool.h"
 #include "ink_resource.h"
 #include "mgmtapi.h"         // INKFileNameT
 

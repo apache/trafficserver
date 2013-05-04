@@ -27,7 +27,7 @@
 #ifndef INK_LOCKFILE_INCLUDE_REDUCED
 #include "ink_resource.h"
 #endif
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_string.h"
 
 #ifndef INK_LOCKFILE_INCLUDE_REDUCED

@@ -23,9 +23,7 @@
 
 /***************************************/
 #include "ink_platform.h"
-#include "ink_unused.h"
 #include "Tokenizer.h"
-#include "ink_bool.h"
 #include "ink_assert.h"
 #include "ink_resource.h"
 

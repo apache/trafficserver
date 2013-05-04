@@ -78,6 +78,6 @@ public:
  *
  */
 
-MgmtFloat ExpressionEval(char *);
+RecData ExpressionEval(char *);
 
 #endif

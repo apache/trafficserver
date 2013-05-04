@@ -14,10 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglibdir = ${pkglibexecdir}
+include $(top_srcdir)/build/plugins.mk
 
-AM_CPPFLAGS = -I$(top_srcdir)/proxy/api
-AM_LDFLAGS = -module -avoid-version -shared
+AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 noinst_LTLIBRARIES = \
 	add-header.la \

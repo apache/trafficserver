@@ -43,8 +43,8 @@ extern "C" int madvise(caddr_t, size_t, int); // FIXME: why is this not being fo
 SocketManager socketManager;
 
 SocketManager::SocketManager()
+  : pagesize(ats_pagesize())
 {
-  pagesize = getpagesize();
 }
 
 SocketManager::~SocketManager()

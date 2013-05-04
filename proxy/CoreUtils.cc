@@ -107,7 +107,6 @@
 #include <math.h>
 #include "libts.h"
 #include "DynArray.h"
-#include "ink_bool.h"
 #include "CoreUtils.h"
 #include "Diags.h"
 #include "http/HttpSM.h"

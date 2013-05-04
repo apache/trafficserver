@@ -23,11 +23,9 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
-#include "TxnSM.h"
+#include "ink_defs.h"
 
-// This gets the PRI*64 types
-# define __STDC_FORMAT_MACROS 1
-# include <inttypes.h>
+#include "TxnSM.h"
 
 extern TSTextLogObject protocol_plugin_log;
 
@@ -154,7 +152,7 @@ TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port)
 
 /* This function starts to read incoming client request data from client_vc */
 int
-state_start(TSCont contp, TSEvent event, void *data)
+state_start(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
 {
   TxnSM *txn_sm = (TxnSM *) TSContDataGet(contp);
 
@@ -206,7 +204,7 @@ state_interface_with_client(TSCont contp, TSEvent event, TSVIO vio)
 /* Data is read from client_vc, if all data for the request is in,
    parse it and do cache lookup. */
 int
-state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio)
+state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED)
 {
   int bytes_read, parse_result;
   char *temp_buf;
@@ -350,7 +348,7 @@ load_buffer_cache_data(TxnSM * txn_sm)
    occurs, close the read_vc, open write_vc for writing the doc
    into the cache.*/
 int
-state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio)
+state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED)
 {
   TxnSM *txn_sm = (TxnSM *) TSContDataGet(contp);
 
@@ -425,7 +423,7 @@ state_handle_cache_prepare_for_write(TSCont contp, TSEvent event, TSVConn vc)
 /* Cache miss or error case. Start the process to send the request
    the origin server. */
 int
-state_build_and_send_request(TSCont contp, TSEvent event, void *data)
+state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
 {
   TxnSM *txn_sm = (TxnSM *) TSContDataGet(contp);
 
@@ -630,7 +628,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
    send the doc to the client. If reading is not done, reenable the
    read_vio. */
 int
-state_read_response_from_server(TSCont contp, TSEvent event, TSVIO vio)
+state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
   TxnSM *txn_sm = (TxnSM *) TSContDataGet(contp);
   int bytes_read = 0;
@@ -795,7 +793,7 @@ prepare_to_die(TSCont contp)
 }
 
 int
-state_done(TSCont contp, TSEvent event, TSVIO vio)
+state_done(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
   TxnSM *txn_sm = (TxnSM *) TSContDataGet(contp);
 

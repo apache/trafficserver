@@ -35,8 +35,6 @@
 
 #define EA_MIN_SIZE 4
 
-#include "ink_bool.h"
-
 class ExpandingArray
 {
 public:

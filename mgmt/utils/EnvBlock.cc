@@ -23,7 +23,6 @@
 
 /***************************************/
 #include "libts.h"
-#include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 #include "EnvBlock.h"
 #include "string.h"

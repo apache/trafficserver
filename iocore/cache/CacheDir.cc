@@ -68,7 +68,7 @@ OpenDir::OpenDir()
 int
 OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  ink_debug_assert(cont->vol->mutex->thread_holding == this_ethread());
+  ink_assert(cont->vol->mutex->thread_holding == this_ethread());
   unsigned int h = cont->first_key.word(0);
   int b = h % OPEN_DIR_BUCKETS;
   for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
@@ -132,7 +132,7 @@ OpenDir::signal_readers(int event, Event *e)
 int
 OpenDir::close_write(CacheVC *cont)
 {
-  ink_debug_assert(cont->vol->mutex->thread_holding == this_ethread());
+  ink_assert(cont->vol->mutex->thread_holding == this_ethread());
   cont->od->writers.remove(cont);
   cont->od->num_writers--;
   if (!cont->od->writers.head) {
@@ -162,7 +162,7 @@ OpenDir::open_read(INK_MD5 *key)
 int
 OpenDirEntry::wait(CacheVC *cont, int msec)
 {
-  ink_debug_assert(cont->vol->mutex->thread_holding == this_ethread());
+  ink_assert(cont->vol->mutex->thread_holding == this_ethread());
   cont->f.open_read_timeout = 1;
   ink_assert(!cont->trigger);
   cont->trigger = cont->vol->mutex->thread_holding->schedule_in_local(cont, HRTIME_MSECONDS(msec));
@@ -501,7 +501,7 @@ dir_free_entry(Dir *e, int s, Vol *d)
 int
 dir_probe(CacheKey *key, Vol *d, Dir *result, Dir ** last_collision)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments;
   int b = key->word(1) % d->buckets;
   Dir *seg = dir_segment(s, d);
@@ -517,7 +517,7 @@ Lagain:
   if (dir_offset(e))
     do {
       if (dir_compare_tag(e, key)) {
-        ink_debug_assert(dir_offset(e));
+        ink_assert(dir_offset(e));
         // Bug: 51680. Need to check collision before checking
         // dir_valid(). In case of a collision, if !dir_valid(), we
         // don't want to call dir_delete_entry.
@@ -565,7 +565,7 @@ Lagain:
 int
 dir_insert(CacheKey *key, Vol *d, Dir *to_part)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments, l;
   int bi = key->word(1) % d->buckets;
   ink_assert(dir_approx_size(to_part) <= MAX_FRAG_SIZE + sizeofDoc);
@@ -618,7 +618,7 @@ Lfill:
 int
 dir_overwrite(CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_overwrite)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments, l;
   int bi = key->word(1) % d->buckets;
   Dir *seg = dir_segment(s, d);
@@ -691,7 +691,7 @@ Lfill:
 int
 dir_delete(CacheKey *key, Vol *d, Dir *del)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments;
   int b = key->word(1) % d->buckets;
   Dir *seg = dir_segment(s, d);
@@ -730,7 +730,7 @@ dir_delete(CacheKey *key, Vol *d, Dir *del)
 int
 dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock ** eblock)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->word(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = d->lookaside[i].head;
   while (b) {
@@ -754,7 +754,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, Vol *d, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
   DDebug("dir_lookaside", "insert %X %X, offset %d phase %d", key->word(0), key->word(1), (int) dir_offset(to), (int) dir_phase(to));
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->word(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = new_EvacuationBlock(d->mutex->thread_holding);
   b->evac_frags.key = *key;
@@ -770,7 +770,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, Vol *d, Dir *to)
 int
 dir_lookaside_fixup(CacheKey *key, Vol *d)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->word(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = d->lookaside[i].head;
   while (b) {
@@ -793,7 +793,7 @@ dir_lookaside_fixup(CacheKey *key, Vol *d)
 void
 dir_lookaside_cleanup(Vol *d)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   for (int i = 0; i < LOOKASIDE_SIZE; i++) {
     EvacuationBlock *b = d->lookaside[i].head;
     while (b) {
@@ -816,7 +816,7 @@ dir_lookaside_cleanup(Vol *d)
 void
 dir_lookaside_remove(CacheKey *key, Vol *d)
 {
-  ink_debug_assert(d->mutex->thread_holding == this_ethread());
+  ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->word(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = d->lookaside[i].head;
   while (b) {
@@ -929,12 +929,12 @@ sync_cache_dir_on_shutdown(void)
       int r = pwrite(d->fd, d->agg_buffer, d->agg_buf_pos,
                      d->header->write_pos);
       if (r != d->agg_buf_pos) {
-        ink_debug_assert(!"flusing agg buffer failed");
+        ink_assert(!"flusing agg buffer failed");
         continue;
       }
       d->header->last_write_pos = d->header->write_pos;
       d->header->write_pos += d->agg_buf_pos;
-      ink_debug_assert(d->header->write_pos == d->header->agg_pos);
+      ink_assert(d->header->write_pos == d->header->agg_pos);
       d->agg_buf_pos = 0;
       d->header->write_serial++;
     }
@@ -942,7 +942,7 @@ sync_cache_dir_on_shutdown(void)
     if (buflen < dirlen) {
       if (buf)
         ats_memalign_free(buf);
-      buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), dirlen);
+      buf = (char *)ats_memalign(ats_pagesize(), dirlen);
       buflen = dirlen;
     }
 
@@ -957,7 +957,7 @@ sync_cache_dir_on_shutdown(void)
     size_t B = d->header->sync_serial & 1;
     off_t start = d->skip + (B ? dirlen : 0);
     B = pwrite(d->fd, buf, dirlen, start);
-    ink_debug_assert(B == dirlen);
+    ink_assert(B == dirlen);
     Debug("cache_dir_sync", "done syncing dir for vol %s", d->hash_id);
   }
   Debug("cache_dir_sync", "sync done");
@@ -1046,7 +1046,7 @@ Lrestart:
       if (buflen < dirlen) {
         if (buf)
           ats_memalign_free(buf);
-        buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), dirlen);
+        buf = (char *)ats_memalign(ats_pagesize(), dirlen);
         buflen = dirlen;
       }
       d->header->sync_serial++;

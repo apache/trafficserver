@@ -107,12 +107,12 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
         SSLDebugBufferPrint("ssl_buff", b->end() + offset, rres, "SSL Read");
 #endif
 
-        ink_debug_assert(rres);
+        ink_assert(rres);
 
         bytes_read += rres;
         offset += rres;
         block_write_avail -= rres;
-        ink_debug_assert(block_write_avail >= 0);
+        ink_assert(block_write_avail >= 0);
 
         continue;
 
@@ -207,7 +207,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
-  ink_debug_assert(buf.writer());
+  ink_assert(buf.writer());
 
   // This function will always return true unless
   // vc is an SSLNetVConnection.
@@ -258,7 +258,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
     }
-    ink_debug_assert(bytes >= 0);
+    ink_assert(bytes >= 0);
   } while ((ret == SSL_READ_READY && bytes == 0) || ret == SSL_READ_ERROR_NONE);
 
   if (bytes > 0) {
@@ -634,8 +634,8 @@ SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet * s)
 }
 
 int
-SSLNetVConnection::advertise_next_protocol(
-    SSL *ssl, const unsigned char **out, unsigned int *outlen, void *arg)
+SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen,
+                                           void * /*arg ATS_UNUSED */)
 {
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 

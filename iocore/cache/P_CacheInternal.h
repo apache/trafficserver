@@ -485,6 +485,9 @@ struct CacheVC: public CacheVConnection
 #ifdef HIT_EVACUATE
       unsigned int hit_evacuate:1;
 #endif
+#ifdef HTTP_CACHE
+      unsigned int allow_empty_doc:1; // used for cache empty http document
+#endif
     } f;
   };
   // BTF optimization used to skip reading stuff in cache partition that doesn't contain any
@@ -564,7 +567,7 @@ free_CacheVC(CacheVC *cont)
       CACHE_INCREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_SUCCESS);
     }                             // else abort,cancel
   }
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
   if (cont->trigger)
     cont->trigger->cancel();
   ink_assert(!cont->is_io_in_progress());
@@ -615,7 +618,7 @@ TS_INLINE int
 CacheVC::calluser(int event)
 {
   recursive++;
-  ink_debug_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
   vio._cont->handleEvent(event, (void *) &vio);
   recursive--;
   if (closed) {
@@ -629,7 +632,7 @@ TS_INLINE int
 CacheVC::callcont(int event)
 {
   recursive++;
-  ink_debug_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
   _action.continuation->handleEvent(event, this);
   recursive--;
   if (closed)
@@ -773,7 +776,7 @@ Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   }
   if (open_dir.open_write(cont, allow_if_writers, max_writers)) {
 #ifdef CACHE_STAT_PAGES
-    ink_debug_assert(cont->mutex->thread_holding == this_ethread());
+    ink_assert(cont->mutex->thread_holding == this_ethread());
     ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
     stat_cache_vcs.enqueue(cont, cont->stat_link);
 #endif
@@ -1100,10 +1103,9 @@ cache_hash(INK_MD5 & md5)
 #endif
 
 TS_INLINE Action *
-CacheProcessor::lookup(Continuation *cont, CacheKey *key, bool cluster_cache_local, bool local_only,
-                       CacheFragType frag_type, char *hostname, int host_len)
+CacheProcessor::lookup(Continuation *cont, CacheKey *key, bool cluster_cache_local ATS_UNUSED,
+                       bool local_only ATS_UNUSED, CacheFragType frag_type, char *hostname, int host_len)
 {
-  (void) local_only;
 #ifdef CLUSTER_CACHE
   // Try to send remote, if not possible, handle locally
   if ((cache_clustering_enabled > 0) && !cluster_cache_local && !local_only) {
@@ -1117,7 +1119,8 @@ CacheProcessor::lookup(Continuation *cont, CacheKey *key, bool cluster_cache_loc
 }
 
 TS_INLINE inkcoreapi Action *
-CacheProcessor::open_read(Continuation *cont, CacheKey *key, bool cluster_cache_local, CacheFragType frag_type, char *hostname, int host_len)
+CacheProcessor::open_read(Continuation *cont, CacheKey *key, bool cluster_cache_local ATS_UNUSED,
+                          CacheFragType frag_type, char *hostname, int host_len)
 {
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
@@ -1130,10 +1133,9 @@ CacheProcessor::open_read(Continuation *cont, CacheKey *key, bool cluster_cache_
 }
 
 TS_INLINE Action *
-CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key, CacheFragType frag_type,
+CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf ATS_UNUSED, CacheKey *key, CacheFragType frag_type,
                                  char *hostname, int host_len)
 {
-  (void) buf;
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0) {
     return open_read_internal(CACHE_OPEN_READ_BUFFER, cont, buf,
@@ -1146,11 +1148,10 @@ CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *k
 
 
 TS_INLINE inkcoreapi Action *
-CacheProcessor::open_write(Continuation *cont, CacheKey *key, bool cluster_cache_local, CacheFragType frag_type,
-                           int expected_size, int options, time_t pin_in_cache,
-                           char *hostname, int host_len)
+CacheProcessor::open_write(Continuation *cont, CacheKey *key, bool cluster_cache_local  ATS_UNUSED,
+                           CacheFragType frag_type, int expected_size ATS_UNUSED, int options,
+                           time_t pin_in_cache, char *hostname, int host_len)
 {
-  (void) expected_size;
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
@@ -1182,7 +1183,7 @@ CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *
 }
 
 TS_INLINE Action *
-CacheProcessor::remove(Continuation *cont, CacheKey *key, bool cluster_cache_local, CacheFragType frag_type,
+CacheProcessor::remove(Continuation *cont, CacheKey *key, bool cluster_cache_local ATS_UNUSED, CacheFragType frag_type,
                        bool rm_user_agents, bool rm_link, char *hostname, int host_len)
 {
   Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));

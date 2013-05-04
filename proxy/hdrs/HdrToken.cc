@@ -629,7 +629,7 @@ hdrtoken_init()
       wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_type_initializers[i].name,
                                       (int) strlen(_hdrtoken_strs_type_initializers[i].name));
 
-      ink_debug_assert((wks_idx >= 0) && (wks_idx < (int) SIZEOF(hdrtoken_strs)));
+      ink_assert((wks_idx >= 0) && (wks_idx < (int) SIZEOF(hdrtoken_strs)));
       // coverity[negative_returns]
       prefix = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_token_type = _hdrtoken_strs_type_initializers[i].type;
@@ -643,7 +643,7 @@ hdrtoken_init()
       wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name,
                                       (int) strlen(_hdrtoken_strs_field_initializers[i].name));
 
-      ink_debug_assert((wks_idx >= 0) && (wks_idx < (int) SIZEOF(hdrtoken_strs)));
+      ink_assert((wks_idx >= 0) && (wks_idx < (int) SIZEOF(hdrtoken_strs)));
       prefix = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_info.slotid = _hdrtoken_strs_field_initializers[i].slotid;
       prefix->wks_info.flags = _hdrtoken_strs_field_initializers[i].flags;
@@ -695,7 +695,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
   int wks_idx;
   HdrTokenHashBucket *bucket;
 
-  ink_debug_assert(string != NULL);
+  ink_assert(string != NULL);
 
   if (hdrtoken_is_wks(string)) {
     wks_idx = hdrtoken_wks_to_index(string);

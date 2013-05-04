@@ -20,9 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
-
 #include "libts.h"
 #include "MgmtUtils.h"
 #include "Diags.h"
@@ -36,7 +33,10 @@
 #include "../../proxy/Main.h"
 #endif
 
+#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
+// diags_init defined in mgmt/Main.cc.
 extern int diags_init;
+#endif
 
 static int use_syslog = 0;
 
@@ -473,7 +473,7 @@ mgmt_cleanup()
 {
 #if defined(LOCAL_MANAGER)
   if (lmgmt != NULL) {
-    lmgmt->mgmtShutdown(1, true);
+    lmgmt->mgmtShutdown(true);
   }
 #endif
 }

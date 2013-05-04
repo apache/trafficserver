@@ -14,18 +14,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglibdir = ${pkglibexecdir}
+include $(top_srcdir)/build/plugins.mk
 
-
-AM_CXXFLAGS = \
+AM_CPPFLAGS += \
   -I$(srcdir)/lib \
   -I$(srcdir)/fetcher \
-  -I$(srcdir)/test \
-  -I$(top_builddir)/proxy/api \
-  -I$(top_srcdir)/proxy/api \
+  -I$(srcdir)/test
+
+AM_CXXFLAGS = \
   -Wno-deprecated
 
-pkglib_LTLIBRARIES = esi.la
+pkglib_LTLIBRARIES = esi.la combo_handler.la
 lib_LTLIBRARIES = libesi.la libtest.la
 
 check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
@@ -33,6 +32,7 @@ check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
 libesi_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
+	lib/EsiGzip.cc \
 	lib/EsiProcessor.cc \
 	lib/Expression.cc \
 	lib/FailureInfo.cc \
@@ -45,6 +45,7 @@ libesi_la_SOURCES = \
 libtest_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
+	lib/EsiGzip.cc \
 	lib/EsiProcessor.cc \
 	lib/Expression.cc \
 	lib/FailureInfo.cc \
@@ -55,23 +56,30 @@ libtest_la_SOURCES = \
 	lib/gzip.cc
 
 esi_la_SOURCES =  \
+	esi.cc \
 	fetcher/HttpDataFetcherImpl.cc \
-	plugin.cc \
 	serverIntercept.cc
 
+combo_handler_la_SOURCES = \
+	combo_handler.cc \
+	fetcher/HttpDataFetcherImpl.cc
+
 esi_la_LIBADD = libesi.la
-esi_la_LDFLAGS = -module -avoid-version -shared
+esi_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+combo_handler_la_LIBADD = libesi.la
+combo_handler_la_LDFLAGS = -module -avoid-version -shared
 
 docnode_test_SOURCES = test/docnode_test.cc test/print_funcs.cc
-docnode_test_LDADD = libesi.la  @LIBDL@ -lz -lpthread
+docnode_test_LDADD = libesi.la  @LIBDL@ -lz @LIBTHREAD@
 parser_test_SOURCES = test/parser_test.cc test/print_funcs.cc
-parser_test_LDADD = libesi.la  @LIBDL@ -lz -lpthread
+parser_test_LDADD = libesi.la  @LIBDL@ -lz @LIBTHREAD@
 processor_test_SOURCES = test/processor_test.cc test/HandlerMap.cc test/StubIncludeHandler.cc test/print_funcs.cc
-processor_test_LDADD = libtest.la  @LIBDL@ -lz -lpthread
+processor_test_LDADD = libtest.la  @LIBDL@ -lz @LIBTHREAD@
 utils_test_SOURCES = test/utils_test.cc test/print_funcs.cc
-utils_test_LDADD = libesi.la  @LIBDL@ -lz -lpthread
+utils_test_LDADD = libesi.la  @LIBDL@ -lz @LIBTHREAD@
 vars_test_SOURCES = test/vars_test.cc test/print_funcs.cc
-vars_test_LDADD = libesi.la @LIBDL@ -lz -lpthread
+vars_test_LDADD = libesi.la @LIBDL@ -lz @LIBTHREAD@
 
 TESTS = $(check_PROGRAMS)
 

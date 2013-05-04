@@ -27,7 +27,7 @@
 using namespace EsiLib;
 
 void
-HandlerManager::loadObjects(const Utils::KeyValueMap &handlers) {
+HandlerManager::loadObjects(const Utils::KeyValueMap & /* handlers ATS_UNUSED */) {
 }
 
 SpecialIncludeHandler *

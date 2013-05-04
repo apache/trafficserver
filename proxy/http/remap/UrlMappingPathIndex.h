@@ -72,6 +72,15 @@ private:
   inline UrlMappingTrie *
   _GetTrie(URL *url, int &idx, int port, bool search = true) const {
     idx = url->scheme_get_wksidx();
+    // If the scheme is empty (e.g. because of a CONNECT method), guess it
+    // based on port
+    if (idx == -1) {
+        if (port == 80) {
+            idx = URL_WKSIDX_HTTP;
+        } else {
+            idx = URL_WKSIDX_HTTPS;
+        }
+    }
     UrlMappingGroup::const_iterator group_iter;
     if (search) { // normal search
       group_iter = m_tries.find(UrlMappingTrieKey(idx, port));

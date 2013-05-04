@@ -2533,7 +2533,7 @@ ObjectReloadCont::Init(Continuation * cont, char *url, int url_len,
 
   } else {
     // Unhandled case... TODO: Do we need to actually handle this?
-    ink_debug_assert(false);
+    ink_assert(false);
   }
   handleEvent(EVENT_IMMEDIATE, (void *) NULL);
 }

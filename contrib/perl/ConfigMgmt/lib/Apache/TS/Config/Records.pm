@@ -21,19 +21,10 @@
 # Traffic Server records.config file. The idea is that you would write a
 # simple script (like example below) to update a "stock" records.config with
 # the changes applicable to your application. This allows you to uprade to
-# a newer default config file from a new release, for example.
-#
-#
-# #!/usr/bin/perl
-#
-# use Apache::TS::Config::Records;
-#
-# my $recedit = new Apache::TS::Config::Records(file => "/tmp/records.config");
-# $recedit->set(conf => "proxy.config.log.extended_log_enabled",
-#               val => "123");
-# $recedit->write(file => "/tmp/records.config.new");
-#
+# a newer default config file from a new release. See the embedded
+# perldoc for more details.
 ############################################################################
+
 
 package Apache::TS::Config::Records;
 
@@ -99,13 +90,7 @@ sub load {
 
 
 #
-# Get an existing configuration line. This is useful for
-# detecting that a config exists or not, for example. The
-# return value is an anonymous array like
-#
-#    [<line string>, [value split into 4 fields, flag if changed]
-#
-# You probably shouldn't modify this array.
+# Get an existing configuration line, as an anon array.
 #
 sub get {
     my $self = shift;
@@ -165,9 +150,7 @@ sub remove {
 
 
 #
-# Append anything to the "end" of the configuration. We will assure that
-# no duplicated configurations are added. Note that this takes a single
-# line.
+# Append anything to the "end" of the configuration.
 #
 sub append {
     my $self = shift;
@@ -214,3 +197,107 @@ sub write {
         }
     }
 }
+1;
+
+__END__
+
+=head1 NAME
+
+Apache::TS::Config::Records - Manage the Apache Traffic Server records.config file
+
+=head1 SYNOPSIS
+
+  #!/usr/bin/perl
+
+  use Apache::TS::Config::Records;
+
+  my $r = new Apache::TS::Config::Records(file => "/tmp/records.config");
+  $r->set(conf => "proxy.config.log.extended_log_enabled",
+          val => "123");
+  $r->write(file => "/tmp/records.config.new");
+
+=head1 DESCRIPTION
+
+This module implements a convenient interface to read, modify and save
+the records.config file as used by Apache Traffic Server.
+
+Instantiating a new Config::Records class, with a file provided, will
+automatically load that configuration. Don't call the load() method
+explicitly in this case. 
+
+=head2 API Methods
+
+The following are methods in the Records class. 
+
+=over 8
+
+=item new
+
+Instantiate a new object. The file name is optionally provided, and if
+present that file is immediately loaded (see the load() method
+below). Example:
+
+  my $r = new Apache::TS::Config::Records(file => $fname);
+    
+=item load
+
+Explicitly load a configuration file, merging the items with any
+existing values. This is useful to for example merge multiple
+configuration into one single structure
+
+=item get
+
+Get an existing configuration line. This is useful for
+detecting that a config exists or not, for example. The
+return value is an anonymous array like
+
+  [<line string>, [value split into 4 fields, flag if changed]
+
+
+You probably shouldn't modify this array.
+
+=item set
+
+Modify one configuration value, with the provided value. Both the conf
+name and the value are required. Example:
+
+  $r->set(conf => "proxy.config.exec_thread.autoconfig",
+          val => "0");
+
+conf is short for "config", val is short for "value", and all are
+acceptable.
+
+=item remove
+
+Remove a specified configuration, the mandatory option is conf (or
+"config"). Example:
+
+  $r->remove(conf => "proxy.config.exec_thread.autoconfig");
+
+=item append
+
+Append a string to the "end" of the finished configuration file. We
+will assure that no duplicated configurations are added. The input is a
+single line, as per the normal records.config syntax. The purpose of
+this is to add new sections to the configuration, with appropriate
+comments etc. Example:
+
+  $r->append(line => "");
+  $r->append(line => "# My local stuff");
+  $r->set(conf => "proxy.config.dns.dedicated_thread",
+          val => "1");
+
+=item write
+
+Write the new configuration file to STDOUT, or a filename if
+provided. Example:
+
+  $r->write(file => "/etc/trafficserver/records.config");
+
+=back
+
+=head1 SEE ALSO
+
+L<Apache::TS::Config>
+
+=cut

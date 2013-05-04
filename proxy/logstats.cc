@@ -25,7 +25,6 @@
 #undef std  // FIXME: remove dependency on the STL
 #include "ink_config.h"
 #include "ink_file.h"
-#include "ink_unused.h"
 #include "I_Layout.h"
 #include "I_Version.h"
 
@@ -53,16 +52,10 @@
 #include <functional>
 #include <fcntl.h>
 
-#if (__GNUC__ >= 3)
 #define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
 #include <ext/hash_map>
 #include <ext/hash_set>
 #undef _BACKWARD_BACKWARD_WARNING_H
-#else
-#include <hash_map>
-#include <hash_set>
-#include <map>
-#endif
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
@@ -71,16 +64,6 @@
 #if defined(__GNUC__)
 using __gnu_cxx::hash_map;
 using __gnu_cxx::hash_set;
-
-// GCC 4.7 appears to want the std::hash implementation from <functional>, whereas previous gcc versions
-// use the __gnu_cxx::hash GNU extension. Clang (at least on OS X) is happy with the GNU extension as long
-// as it is using the GNU libstdc++.
-#if (__GNUC__ >= 4 && __GNUC_MINOR__ >= 7)
-using std::hash;
-#else
-using __gnu_cxx::hash;
-#endif
-
 #endif
 
 using namespace std;
@@ -119,13 +102,6 @@ const int RSSp_AS_INT = 728986482;      // For "RSS+"
 const int PLAI_AS_INT = 1767992432;     // For "plain"
 const int IMAG_AS_INT = 1734438249;     // For "image"
 const int HTTP_AS_INT = 1886680168;     // For "http" followed by "s://" or "://"
-
-/*
-#include <stdio.h>
-int main(int argc, char** argv) {
-  printf("%s is %d\n", argv[1], *((int*)argv[1]));
-}
-*/
 
 // Store our "state" (position in log file etc.)
 struct LastState
@@ -361,8 +337,24 @@ struct eqstr
   }
 };
 
-typedef hash_map <const char *, OriginStats *, hash <const char *>, eqstr> OriginStorage;
-typedef hash_set <const char *, hash <const char *>, eqstr> OriginSet;
+struct hash_fnv32 {
+  inline uint32_t operator()(const char* s) const 
+  {
+    uint32_t hval = (uint32_t)0x811c9dc5; /* FNV1_32_INIT */
+
+    if (s) {
+      while (*s) {
+        hval ^= (uint32_t)*s++;
+        hval *= (uint32_t)0x01000193;  /* FNV_32_PRIME */
+      }
+    }
+
+    return hval;
+  }
+};
+
+typedef hash_map <const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
+typedef hash_set <const char *, hash_fnv32, eqstr> OriginSet;
 
 
 // LRU class for the URL data
@@ -371,7 +363,7 @@ void  update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &
 class UrlLru
 {
   typedef list<UrlStats> LruStack;
-  typedef hash_map<const char *, LruStack::iterator, hash <const char *>, eqstr> LruHash;
+  typedef hash_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
 
 public:
   UrlLru(int size=1000000, int show_urls=0)
@@ -666,8 +658,6 @@ static ArgumentDescription argument_descriptions[] = {
   {"version", 'V', "Print Version Id", "T", &cl.version, NULL, NULL},
 };
 
-static int n_argument_descriptions = SIZE(argument_descriptions);
-
 static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
@@ -675,7 +665,7 @@ void
 CommandLineArgs::parse_arguments(char** argv)
 {
   // process command-line arguments
-  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+  process_args(argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
 
   // Process as "CGI" ?
   if (strstr(argv[0], ".cgi") || cgi) {
@@ -728,7 +718,7 @@ CommandLineArgs::parse_arguments(char** argv)
 
   // check for help request
   if (help) {
-    usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+    usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
     _exit(0);
   }
 }
@@ -1805,24 +1795,23 @@ format_elapsed_header()
 inline void
 format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json=false)
 {
-  static char buf[64];
-
   if (json) {
     std::cout << "    " << '"' << desc << "\" : " << "{ ";
     std::cout << "\"min\": \"" << stat.min << "\", ";
     std::cout << "\"max\": \"" << stat.max << "\", ";
     std::cout << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
-    std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" }," << std::endl;
+    std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" },";
+    std::cout << std::endl;
   } else {
     std::cout << std::left << std::setw(24) << desc;
     std::cout << std::right << std::setw(7);
     format_int(stat.min);
     std::cout << std::right << std::setw(13);
     format_int(stat.max);
-    snprintf(buf, sizeof(buf), "%17.3f", stat.avg);
-    std::cout << std::right << buf;
-    snprintf(buf, sizeof(buf), "%17.3f", stat.stddev);
-    std::cout << std::right << buf << std::endl;
+
+    std::cout << std::right << std::setw(17) << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg;
+    std::cout << std::right << std::setw(17) << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev;
+    std::cout << std::endl;
   }
 }
 
@@ -2252,7 +2241,7 @@ open_main_log(ExitStatus& status)
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   ExitStatus exit_status;
   int res, cnt;
@@ -2272,14 +2261,6 @@ main(int argc, char *argv[])
 
   origin_set = NULL;
   parse_errors = 0;
-
-  // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-  if (-1 == access(system_log_dir, R_OK)) {
-    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
-    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    exit(1);
-  }
 
   // Command line parsing
   cl.parse_arguments(argv);
@@ -2319,7 +2300,7 @@ main(int argc, char *argv[])
     fs.open(cl.origin_file, std::ios::in);
     if (!fs.is_open()) {
       std::cerr << "can't read " << cl.origin_file << std::endl;
-      usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+      usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
       _exit(0);
     }
 
@@ -2363,15 +2344,21 @@ main(int argc, char *argv[])
       std::cout << "[" << std::endl;
   }
 
-  // Change directory to the log dir
-  if (chdir(system_log_dir) < 0) {
-    exit_status.set(EXIT_CRITICAL, " can't chdir to ");
-    exit_status.append(system_log_dir);
-    my_exit(exit_status);
-  }
-
+  // Do the incremental parse of the default squid log.
   if (cl.incremental) {
-    // Do the incremental parse of the default squid log.
+    // Get log directory
+    if (Layout::get()->logdir) {
+      exit_status.set(EXIT_CRITICAL, " missing log directory configuration");
+      my_exit(exit_status);
+    }
+
+    // Change directory to the log dir
+    if (chdir(system_log_dir) < 0) {
+      exit_status.set(EXIT_CRITICAL, " can't chdir to ");
+      exit_status.append(system_log_dir);
+      my_exit(exit_status);
+    }
+
     std::string sf_name(system_log_dir);
     struct stat stat_buf;
     int state_fd;
@@ -2404,7 +2391,6 @@ main(int argc, char *argv[])
     lck.l_start = (off_t)0;
     lck.l_len = (off_t)0; /* till end of file*/
     cnt = 10;
-    // while (((res = flock(state_fd, LOCK_EX | LOCK_NB)) < 0) && --cnt) {
     while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {
       case EWOULDBLOCK:

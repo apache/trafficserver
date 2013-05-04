@@ -54,9 +54,10 @@
 #include <string.h>
 #include <stdio.h>
 
-#  include <netinet/in.h>
+#include <netinet/in.h>
 
-#include <ts/ts.h>
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 #define STATE_BUFFER       1
 #define STATE_CONNECT      2
@@ -85,23 +86,9 @@ typedef struct
   int content_length;
 } TransformData;
 
-static TSCont transform_create(TSHttpTxn txnp);
-static void transform_destroy(TSCont contp);
-static int transform_connect(TSCont contp, TransformData * data);
-static int transform_write(TSCont contp, TransformData * data);
-static int transform_read_status(TSCont contp, TransformData * data);
-static int transform_read(TSCont contp, TransformData * data);
-static int transform_bypass(TSCont contp, TransformData * data);
-static int transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
-static int transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
 static int transform_handler(TSCont contp, TSEvent event, void *edata);
 
 static in_addr_t server_ip;
-
 static int server_port;
 
 static TSCont
@@ -300,7 +287,7 @@ transform_bypass(TSCont contp, TransformData * data)
 }
 
 static int
-transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
+transform_buffer_event(TSCont contp, TransformData * data, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
   TSVIO write_vio;
   int towrite;
@@ -392,7 +379,7 @@ transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void 
 }
 
 static int
-transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
+transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
@@ -415,7 +402,7 @@ transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *e
 }
 
 static int
-transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
+transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_ERROR:
@@ -455,7 +442,7 @@ transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, v
 }
 
 static int
-transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
+transform_read_event(TSCont contp ATS_UNUSED, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_ERROR:
@@ -500,7 +487,7 @@ transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *ed
 }
 
 static int
-transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
+transform_bypass_event(TSCont contp ATS_UNUSED, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
@@ -564,7 +551,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-request_ok(TSHttpTxn txnp)
+request_ok(TSHttpTxn txnp ATS_UNUSED)
 {
   /* Is the initial client request OK for transformation. This is a
      good place to check accept headers to see if the client can
@@ -573,7 +560,7 @@ request_ok(TSHttpTxn txnp)
 }
 
 static int
-cache_response_ok(TSHttpTxn txnp)
+cache_response_ok(TSHttpTxn txnp ATS_UNUSED)
 {
   /* Is the response we're reading from cache OK for
    * transformation. This is a good place to check the cached
@@ -675,7 +662,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
   TSCont cont;

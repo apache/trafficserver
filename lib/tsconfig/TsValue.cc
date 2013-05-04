@@ -23,6 +23,7 @@
 
 # include "TsValue.h"
 # include "TsBuilder.h"
+# include "ts/ink_defs.h"
 
 # include <TsErrataUtil.h>
 # include <sys/stat.h>
@@ -31,8 +32,6 @@
 
 # if !defined(_MSC_VER)
 # define _fileno fileno
-# define __STDC_FORMAT_MACROS 1
-# include <inttypes.h>
 # endif
 
 // ---------------------------------------------------------------------------

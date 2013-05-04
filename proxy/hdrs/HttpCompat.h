@@ -24,7 +24,6 @@
 #ifndef __HTTP_COMPAT_H__
 #define __HTTP_COMPAT_H__
 
-#include "ink_bool.h"
 #include "ink_string++.h"
 #include "MIME.h"
 #include "RawHashTable.h"

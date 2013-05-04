@@ -19,14 +19,10 @@
 #ifndef _DBG_MACROS_H
 #define _DBG_MACROS_H
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
+#include "ink_defs.h"
 
 #define TAG PLUGIN_NAME
 #define API_TAG PLUGIN_NAME ".api"
-
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#define likely(x)   __builtin_expect(!!(x), 1)
 
 #define debug_tag(tag, fmt, ...) do { \
     if (unlikely(TSIsDebugTagSet(tag))) { \

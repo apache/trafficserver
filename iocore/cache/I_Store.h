@@ -132,22 +132,25 @@ struct Store
   void add(Store & s);
   void dup(Store & s);
   void sort();
-  void extend(int i)
+  void extend(unsigned i)
   {
     if (i > n_disks) {
       disk = (Span **)ats_realloc(disk, i * sizeof(Span *));
-      for (int j = n_disks; j < i; j++)
+      for (unsigned j = n_disks; j < i; j++) {
         disk[j] = NULL;
+      }
       n_disks = i;
     }
   }
 
   // Non Thread-safe operations
-  unsigned int total_blocks(int after = 0) {
+  unsigned int total_blocks(unsigned after = 0) {
     int64_t t = 0;
-    for (int i = after; i < n_disks; i++)
-      if (disk[i])
+    for (unsigned i = after; i < n_disks; i++) {
+      if (disk[i]) {
         t += disk[i]->total_blocks();
+      }
+    }
     return (unsigned int) t;
   }
   // 0 on success -1 on failure
@@ -162,7 +165,7 @@ struct Store
   Store();
   ~Store();
 
-  int n_disks;
+  unsigned n_disks;
   Span **disk;
 
   //

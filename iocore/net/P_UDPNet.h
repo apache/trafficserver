@@ -52,68 +52,31 @@ struct UDPNetProcessorInternal : public UDPNetProcessor
 
   off_t pollCont_offset;
   off_t udpNetHandler_offset;
-
-public:
-  virtual void UDPNetProcessor_is_abstract() {  }
 };
 
 extern UDPNetProcessorInternal udpNetInternal;
 
-class PacketQueue;
 
-class UDPQueue
-{
-public:
-
-  void service(UDPNetHandler *);
-  // these are internal APIs
-  // BulkIOSend uses the BulkIO kernel module for bulk data transfer
-  void BulkIOSend();
-  // In the absence of bulk-io, we are down sending packet after packet
-  void SendPackets();
-  void SendUDPPacket(UDPPacketInternal * p, int32_t pktLen);
-
-  // Interface exported to the outside world
-  void send(UDPPacket * p);
-
-  Queue<UDPPacketInternal> reliabilityPktQueue;
-  InkAtomicList atomicQueue;
-  ink_hrtime last_report;
-  ink_hrtime last_service;
-  ink_hrtime last_byteperiod;
-  int bytesSent;
-  int packets;
-  int added;
-
-  UDPQueue();
-  ~UDPQueue();
-};
-
-#ifdef PACKETQUEUE_IMPL_AS_RING
 
 // 20 ms slots; 2048 slots  => 40 sec. into the future
 #define SLOT_TIME_MSEC 20
 #define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
 #define N_SLOTS 2048
 
-extern uint64_t g_udp_bytesPending;
-
 class PacketQueue
 {
-public:
-  PacketQueue()
-  :nPackets(0)
-  , now_slot(0)
-  {
-    lastPullLongTermQ = 0;
-    init();
-  }
+ public:
+ PacketQueue()
+   : nPackets(0), now_slot(0)
+    {
+      lastPullLongTermQ = 0;
+      init();
+    }
 
   virtual ~ PacketQueue()
-  {
-  }
-  int nPackets;
+    { }
 
+  int nPackets;
   ink_hrtime lastPullLongTermQ;
   Queue<UDPPacketInternal> longTermQ;
   Queue<UDPPacketInternal> bucket[N_SLOTS];
@@ -133,12 +96,12 @@ public:
     }
   }
 
-  void addPacket(UDPPacketInternal * e, ink_hrtime now = 0) {
+  void addPacket(UDPPacketInternal * e, ink_hrtime now = 0)
+  {
     int before = 0;
     int slot;
 
     if (IsCancelledPacket(e)) {
-      g_udp_bytesPending -= e->getPktLength();
       e->free();
       return;
     }
@@ -175,7 +138,8 @@ public:
     e->in_the_priority_queue = 1;
     e->in_heap = slot;
     bucket[slot].enqueue(e);
-  };
+  }
+
   UDPPacketInternal *firstPacket(ink_hrtime t)
   {
     if (t > delivery_time[now_slot]) {
@@ -183,23 +147,25 @@ public:
     } else {
       return NULL;
     }
-  };
+  }
+
   UDPPacketInternal *getFirstPacket()
   {
     nPackets--;
     return dequeue_ready(0);
-  };
+  }
+
   int size()
   {
     ink_assert(nPackets >= 0);
     return nPackets;
-  };
+  }
 
   bool IsCancelledPacket(UDPPacketInternal * p)
   {
     // discard packets that'll never get sent...
     return ((p->conn->shouldDestroy()) || (p->conn->GetSendGenerationNumber() != p->reqGenerationNum));
-  };
+  }
 
   void FreeCancelledPackets(int numSlots)
   {
@@ -211,7 +177,6 @@ public:
       s = (now_slot + i) % N_SLOTS;
       while (NULL != (p = bucket[s].dequeue())) {
         if (IsCancelledPacket(p)) {
-          g_udp_bytesPending -= p->getPktLength();
           p->free();
           continue;
         }
@@ -222,7 +187,7 @@ public:
         bucket[s].enqueue(p);
       }
     }
-  };
+  }
 
   void advanceNow(ink_hrtime t)
   {
@@ -261,8 +226,9 @@ public:
       Debug("udpnet-service", "Advancing by (%d slots): behind by %" PRId64 " ms",
             s - now_slot, ink_hrtime_to_msec(t - delivery_time[now_slot]));
     now_slot = s;
-  };
-private:
+  }
+
+ private:
   void remove(UDPPacketInternal * e)
   {
     nPackets--;
@@ -271,8 +237,9 @@ private:
     bucket[e->in_heap].remove(e);
   }
 
-public:
-  UDPPacketInternal * dequeue_ready(ink_hrtime t) {
+ public:
+  UDPPacketInternal *dequeue_ready(ink_hrtime t)
+  {
     (void) t;
     UDPPacketInternal *e = bucket[now_slot].dequeue();
     if (e) {
@@ -300,12 +267,36 @@ public:
     return HRTIME_FOREVER;
   }
 
-private:
+ private:
   void kill_cancelled_events()
-  {
-  }
+  { }
 };
-#endif
+
+
+class UDPQueue
+{
+  PacketQueue pipeInfo;
+  ink_hrtime last_report;
+  ink_hrtime last_service;
+  int packets;
+  int added;
+
+
+public:
+  InkAtomicList atomicQueue;
+
+  void service(UDPNetHandler *);
+
+  void SendPackets();
+  void SendUDPPacket(UDPPacketInternal * p, int32_t pktLen);
+
+  // Interface exported to the outside world
+  void send(UDPPacket * p);
+
+  UDPQueue();
+  ~UDPQueue();
+};
+
 
 void initialize_thread_for_udp_net(EThread * thread);
 
@@ -338,89 +329,13 @@ struct PollCont;
 static inline PollCont *
 get_UDPPollCont(EThread * t)
 {
-  return (PollCont *) ETHREAD_GET_PTR(t, udpNetInternal.pollCont_offset);
+  return (PollCont *)ETHREAD_GET_PTR(t, udpNetInternal.pollCont_offset);
 }
 
 static inline UDPNetHandler *
 get_UDPNetHandler(EThread * t)
 {
-  return (UDPNetHandler *)
-    ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset);
+  return (UDPNetHandler *)ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset);
 }
-
-// All of this stuff is for UDP egress b/w management
-struct InkSinglePipeInfo
-{
-  InkSinglePipeInfo()
-  {
-    wt = 0.0;
-    bwLimit = 0;
-    count = 0;
-    bytesSent = pktsSent = 0;
-    bwAlloc = 0;
-    bwUsed = 0.0;
-    queue = NEW(new PacketQueue());
-  };
-
-  ~InkSinglePipeInfo() {
-    delete queue;
-  }
-
-  double wt;
-  // all are in bps (bits per sec.) so that we can do ink_atomic_increment
-  int64_t bwLimit;
-  int64_t bwAlloc;
-  // this is in Mbps
-  double bwUsed;
-  IpAddr destIP;
-  uint32_t count;
-  uint64_t bytesSent;
-  uint64_t pktsSent;
-  PacketQueue *queue;
-};
-
-struct InkPipeInfo
-{
-  int numPipes;
-  double interfaceMbps;
-  double reliabilityMbps;
-  InkSinglePipeInfo *perPipeInfo;
-};
-
-extern InkPipeInfo G_inkPipeInfo;
-
-class UDPWorkContinuation:public Continuation
-{
-public:
-  UDPWorkContinuation():cont(NULL), numPairs(0), 
-    sendbufsize(0), recvbufsize(0), udpConns(NULL), resultCode(NET_EVENT_DATAGRAM_OPEN)
-  {
-    memset(&local_ip, 0, sizeof(local_ip));
-    memset(&remote_ip, 0, sizeof(remote_ip));
-  };
-  ~UDPWorkContinuation() {
-  };
-  void init(Continuation * c, int num_pairs,
-    sockaddr const* local_ip,
-    sockaddr const* remote_ip,
-    int s_bufsize, int r_bufsize);
-  int StateCreatePortPairs(int event, void *data);
-  int StateDoCallback(int event, void *data);
-
-  Action action;
-
-private:
-  Continuation * cont;
-  int numPairs;
-  IpEndpoint local_ip; ///< replaces myIP.
-  IpEndpoint remote_ip; ///< replaces destIP.
-  int sendbufsize, recvbufsize;
-  UnixUDPConnection **udpConns;
-  int resultCode;
-};
-
-typedef int (UDPWorkContinuation::*UDPWorkContinuation_Handler) (int, void *);
-
-inkcoreapi extern ClassAllocator<UDPWorkContinuation> udpWorkContinuationAllocator;
 
 #endif //__P_UDPNET_H_

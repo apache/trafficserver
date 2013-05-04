@@ -23,8 +23,34 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/ts
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
+TESTS = test_AIO.sample
 
 noinst_LIBRARIES = libinkaio.a
+check_PROGRAMS = test_AIO
 
 libinkaio_a_SOURCES = AIO.cc I_AIO.h P_AIO.h Inline.cc
+test_AIO_SOURCES = \
+  test_AIO.cc \
+  ../../proxy/UglyLogStubs.cc
+
+test_AIO_CXXFLAGS = \
+  $(iocore_include_dirs) \
+  -I$(top_builddir)/proxy \
+  -I$(top_builddir)/proxy/api/ts \
+  -I$(top_srcdir)/proxy/api \
+  -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/http \
+  -I$(top_srcdir)/proxy/logging \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/utils
+
+test_AIO_LDADD = \
+  libinkaio.a \
+  $(top_builddir)/lib/records/librecprocess.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBTCL@ @LIBTHREAD@
 

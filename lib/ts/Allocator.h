@@ -42,7 +42,7 @@
 
 #include <stdlib.h>
 #include "ink_queue.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_resource.h"
 
 #define RND16(_x)               (((_x)+15)&~15)

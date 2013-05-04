@@ -38,10 +38,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "ink_bool.h"
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
-/*#include "libts.h"*/
+
 
 /***********************************************************************
  *

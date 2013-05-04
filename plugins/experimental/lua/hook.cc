@@ -25,7 +25,9 @@
 #include "state.h"
 
 #include <memory> // placement new
-#include <ink_config.h>
+
+#include "ink_config.h"
+#include "ink_defs.h"
 
 const char *
 HttpHookName(TSHttpHookID hookid)
@@ -95,6 +97,10 @@ LuaPushEventData(lua_State * lua, TSEvent event, void * edata)
 }
 
 
+#if defined(INLINE_LUA_HOOK_REFERENCE)
+typedef char __size_check[sizeof(this_type) == sizeof(void *) ? 0 : -1];
+#endif
+
 // For 64-bit pointers, we can inline the LuaHookReference, otherwise we need an extra malloc.
 //
 #if SIZEOF_VOID_POINTER >= 8
@@ -123,8 +129,6 @@ struct inline_tuple
 
   static void * allocate(const first_type first, const second_type second) {
 #if defined(INLINE_LUA_HOOK_REFERENCE)
-    typedef char __size_check[sizeof(this_type) == sizeof(void *) ? 0 : -1];
-
     this_type obj;
     obj.first() = first;
     obj.second() = second;
@@ -137,7 +141,7 @@ struct inline_tuple
 #endif
   }
 
-  static void free(void * ptr) {
+  static void free(void *ptr ATS_UNUSED) {
 #if defined(INLINE_LUA_HOOK_REFERENCE)
     // Nothing to do, because we never allocated.
 #else

@@ -19,9 +19,6 @@
 // ruleset.cc: implementation of the ruleset class
 //
 //
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__ruleset_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <string>
 
 #include "ruleset.h"

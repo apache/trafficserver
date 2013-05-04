@@ -34,7 +34,7 @@
 // Global Data
 /*************************************************************************/
 // Initialize clusterFunction[] size
-int SIZE_clusterFunction = SIZE(clusterFunction);
+unsigned SIZE_clusterFunction = countof(clusterFunction);
 
 // hook for testing
 ClusterFunction *ptest_ClusterFunction = NULL;

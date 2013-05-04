@@ -56,7 +56,7 @@ struct PluginRegInfo
 extern DLL<PluginRegInfo> plugin_reg_list;
 extern PluginRegInfo *plugin_reg_current;
 
-void plugin_init(const char *config_dir, bool internal_exts);
+void plugin_init(const char *config_dir);
 int plugins_exist(const char *config_dir);
 
 #endif /* __PLUGIN_H__ */

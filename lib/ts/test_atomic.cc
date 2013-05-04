@@ -30,7 +30,6 @@
 #include "ink_atomic.h"
 #include "ink_queue.h"
 #include "ink_thread.h"
-#include "ink_unused.h" /* MAGIC_EDITING_TAG */
 
 
 #ifndef LONG_ATOMICLIST_TEST
@@ -139,7 +138,7 @@ cycle_data(void *d)
 #endif // LONG_ATOMICLIST_TEST
 
 int
-main(int argc, const char *argv[])
+main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
 #ifndef LONG_ATOMICLIST_TEST
   int32_t m = 1, n = 100;

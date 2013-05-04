@@ -54,7 +54,9 @@ inkcoreapi extern int64_t max_iobuffer_size;
 extern int64_t default_small_iobuffer_size;
 extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 
-#define TRACK_BUFFER_USER
+#if !defined(TRACK_BUFFER_USER)
+#define TRACK_BUFFER_USER 1
+#endif
 
 enum AllocType
 { NO_ALLOC, FAST_ALLOCATED, XMALLOCED, MEMALIGNED,
@@ -791,7 +793,7 @@ public:
   the center of all IOCore data transfer. MIOBuffers are the data
   buffers used to transfer data to and from VConnections. A MIOBuffer
   points to a list of IOBufferBlocks which in turn point to IOBufferData
-  stucutres that in turn point to the actual data. MIOBuffer allows one
+  structures that in turn point to the actual data. MIOBuffer allows one
   producer and multiple consumers. The buffer fills up according the
   amount of data outstanding for the slowest consumer. Thus, MIOBuffer
   implements automatic flow control between readers of different speeds.
@@ -1204,7 +1206,7 @@ private:
   MIOBufferAccessor & operator =(const MIOBufferAccessor &);
 };
 
-TS_INLINE MIOBuffer * new_MIOBuffer_internal(
+extern MIOBuffer * new_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
                                           const char *loc,
 #endif
@@ -1226,11 +1228,11 @@ public:
 };
 #endif
 
-TS_INLINE MIOBuffer * new_empty_MIOBuffer_internal(
+extern MIOBuffer * new_empty_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
-                                                     const char *loc,
+  const char *loc,
 #endif
-                                                     int64_t size_index = default_large_iobuffer_size);
+  int64_t size_index = default_large_iobuffer_size);
 
 #ifdef TRACK_BUFFER_USER
 class Empty_MIOBuffer_tracker
@@ -1255,19 +1257,20 @@ public:
 #define new_MIOBuffer               new_MIOBuffer_internal
 #define new_empty_MIOBuffer         new_empty_MIOBuffer_internal
 #endif
-TS_INLINE void free_MIOBuffer(MIOBuffer * mio);
+extern void free_MIOBuffer(MIOBuffer * mio);
 //////////////////////////////////////////////////////////////////////
 
-TS_INLINE IOBufferBlock * new_IOBufferBlock_internal(
+extern IOBufferBlock * new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
-                                                       const char *loc
+  const char *loc
 #endif
-  );
-TS_INLINE IOBufferBlock * new_IOBufferBlock_internal(
+);
+
+extern IOBufferBlock * new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
-                                                       const char *loc,
+  const char *loc,
 #endif
-                                                       IOBufferData * d, int64_t len = 0, int64_t offset = 0);
+  IOBufferData * d, int64_t len = 0, int64_t offset = 0);
 
 #ifdef TRACK_BUFFER_USER
 class IOBufferBlock_tracker
@@ -1297,25 +1300,24 @@ public:
 #endif
 ////////////////////////////////////////////////////////////
 
-TS_INLINE IOBufferData *new_IOBufferData_internal(
+extern IOBufferData *new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
-                                                    const char *location,
+  const char *location,
 #endif
-                                                    int64_t size_index = default_large_iobuffer_size,
-                                                    AllocType type = DEFAULT_ALLOC);
+  int64_t size_index = default_large_iobuffer_size,
+  AllocType type = DEFAULT_ALLOC);
 
-TS_INLINE IOBufferData *new_xmalloc_IOBufferData_internal(
+extern IOBufferData *new_xmalloc_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
-                                                            const char *location,
+  const char *location,
 #endif
-                                                            void *b, int64_t size);
+  void *b, int64_t size);
 
-TS_INLINE IOBufferData *new_constant_IOBufferData_internal(
+extern IOBufferData *new_constant_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
-                                                             const char *loc,
+  const char *locaction,
 #endif
-                                                             void *b, int64_t size);
-
+  void *b, int64_t size);
 
 #ifdef TRACK_BUFFER_USER
 class IOBufferData_tracker
@@ -1323,7 +1325,7 @@ class IOBufferData_tracker
   const char *loc;
 
 public:
-    IOBufferData_tracker(const char *_loc):loc(_loc)
+  IOBufferData_tracker(const char *_loc):loc(_loc)
   {
   }
   IOBufferData *operator() (int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC) {
@@ -1347,8 +1349,8 @@ new_constant_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), \
 #define  new_constant_IOBufferData new_constant_IOBufferData_internal
 #endif
 
-TS_INLINE int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
-TS_INLINE int64_t index_to_buffer_size(int64_t idx);
+extern int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
+extern int64_t index_to_buffer_size(int64_t idx);
 /**
   Clone a IOBufferBlock chain. Used to snarf a IOBufferBlock chain
   w/o copy.
@@ -1359,7 +1361,7 @@ TS_INLINE int64_t index_to_buffer_size(int64_t idx);
   @return ptr to head of new IOBufferBlock chain.
 
 */
-TS_INLINE IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, int64_t offset, int64_t len);
+extern IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, int64_t offset, int64_t len);
 /**
   Skip over specified bytes in chain. Used for dropping references.
 
@@ -1371,5 +1373,5 @@ TS_INLINE IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, int64_t offset, 
   @return ptr to head of new IOBufferBlock chain.
 
 */
-TS_INLINE IOBufferBlock *iobufferblock_skip(IOBufferBlock * b, int64_t *poffset, int64_t *plen, int64_t write);
+extern IOBufferBlock *iobufferblock_skip(IOBufferBlock * b, int64_t *poffset, int64_t *plen, int64_t write);
 #endif

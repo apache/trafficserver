@@ -24,8 +24,6 @@
 #ifndef _P_REC_DEFS_H_
 #define _P_REC_DEFS_H_
 
-#include "ink_bool.h"
-
 #include "I_RecDefs.h"
 
 #define REC_CONFIG_FILE                "records.config"
@@ -116,6 +114,7 @@ struct RecRecord
   RecData data_default;
   RecMutex lock;
   unsigned char sync_required;
+  uint32_t version;
   bool registered;
   union
   {
@@ -144,7 +143,8 @@ enum RecMessageT
   RECG_REGISTER,
   RECG_PUSH,
   RECG_PULL_REQ,
-  RECG_PULL_ACK
+  RECG_PULL_ACK,
+  RECG_RESET
 };
 
 struct RecMessageHdr

@@ -290,7 +290,7 @@ done:
   }
 
   return 1;
-  ink_debug_assert(!"not reached");
+  ink_assert(!"not reached");
 }
 
 int
@@ -298,7 +298,7 @@ RemapPlugins::run_remap(int event, Event* e)
 {
   Debug("url_rewrite", "Inside RemapPlugins::run_remap with cur = %d", _cur);
 
-  ink_debug_assert(action.continuation);
+  ink_assert(action.continuation);
   ink_assert(action.continuation);
 
   int ret = 0;

@@ -65,9 +65,10 @@ public:
     int content_len;
     TSMBuffer bufp;
     TSMLoc hdr_loc;
-    ResponseData() { set(0, 0, 0, 0); }
-    inline void set(const char *c, int clen, TSMBuffer b, TSMLoc loc);
-    void clear() { set(0, 0, 0, 0); }
+    TSHttpStatus status;
+    ResponseData() { set(0, 0, 0, 0, TS_HTTP_STATUS_NONE); }
+    inline void set(const char *c, int clen, TSMBuffer b, TSMLoc loc, TSHttpStatus s);
+    void clear() { set(0, 0, 0, 0, TS_HTTP_STATUS_NONE); }
   };
 
   bool getData(const std::string &url, ResponseData &resp_data) const;
@@ -136,11 +137,12 @@ private:
 };
 
 inline void
-HttpDataFetcherImpl::ResponseData::set(const char *c, int clen, TSMBuffer b, TSMLoc loc) {
+HttpDataFetcherImpl::ResponseData::set(const char *c, int clen, TSMBuffer b, TSMLoc loc, TSHttpStatus s) {
   content = c;
   content_len = clen;
   bufp = b;
   hdr_loc = loc;
+  status = s;
 }
 
 #endif

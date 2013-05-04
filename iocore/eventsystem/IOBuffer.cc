@@ -21,12 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 /**************************************************************************
   UIOBuffer.cc
 
 **************************************************************************/
-
 #include "P_EventSystem.h"
 
 //

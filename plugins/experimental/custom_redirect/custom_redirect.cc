@@ -39,7 +39,7 @@ static int redirect_url_header_len = 0;
 static int return_code = TS_HTTP_STATUS_NONE;
 
 static void
-handle_response (TSHttpTxn txnp,TSCont contp)
+handle_response (TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
 {
     TSMBuffer resp_bufp;
     TSMLoc resp_loc;
@@ -160,7 +160,7 @@ TSPluginInit (int argc, const char *argv[])
         redirect_url_header_len = strlen(redirect_url_header);
     }
     /*
-    if (!TSPluginRegister (TS_SDK_VERSION_5_2 , &info)) {
+    if (TSPluginRegister (TS_SDK_VERSION_5_2 , &info) != TS_SUCCESS) {
         TSError ("[custom_redirect] Plugin registration failed.");
     }
     */

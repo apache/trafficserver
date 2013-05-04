@@ -35,13 +35,15 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 static TSMBuffer hdr_bufp;
 static TSMLoc hdr_loc;
 
 static void
-add_header(TSHttpTxn txnp, TSCont contp)
+add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 {
   TSMBuffer req_bufp;
   TSMLoc req_loc;

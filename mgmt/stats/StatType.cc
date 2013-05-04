@@ -45,11 +45,13 @@ bool StatDebug = false;         // global debug flag
 StatExprToken::StatExprToken()
   : m_arith_symbol('\0'),
     m_token_name(NULL),
-    m_token_type((StatDataT)RECD_NULL),
-    m_token_value(0.0),
-    m_token_value_max(FLT_MAX),
-    m_token_value_min(-1 * FLT_MAX), m_token_value_delta(NULL), m_sum_var(false), m_node_var(true)
+    m_token_type(RECD_NULL),
+    m_sum_var(false), m_node_var(true)
 {
+  RecDataClear(RECD_NULL, &m_token_value);
+  RecDataClear(RECD_NULL, &m_token_value_max);
+  RecDataClear(RECD_NULL, &m_token_value_min);
+  memset(&m_token_value_delta, 0, sizeof(m_token_value_delta));
 }
 
 
@@ -72,7 +74,7 @@ StatExprToken::copy(const StatExprToken & source)
   m_token_value_max = source.m_token_value_max;
 
   if (source.m_token_value_delta) {
-    m_token_value_delta = NEW(new StatFloatSamples());
+    m_token_value_delta = NEW(new StatDataSamples());
     m_token_value_delta->previous_time = source.m_token_value_delta->previous_time;
     m_token_value_delta->current_time = source.m_token_value_delta->current_time;
     m_token_value_delta->previous_value = source.m_token_value_delta->previous_value;
@@ -95,76 +97,42 @@ StatExprToken::assignTokenName(const char *name)
 {
 
   if (isdigit(name[0])) {
-
     // numerical constant
     m_token_name = ats_strdup("CONSTANT");
-    m_token_type = STAT_CONST;
-
+    m_token_type = RECD_CONST;
   } else {
-
     m_token_name = ats_strdup(name);
     assignTokenType();
   }
 
   switch (m_token_type) {
-  case STAT_INT:
-    if (StatDebug) {
-      StatInt tempInt;
-      if (!varIntFromName(m_token_name, &tempInt)) {
-        tempInt = (RecInt) ERROR_VALUE;
-      }
-      Debug(MODULE_INIT, "\tvar: %s, type: %d, value: %" PRId64 "\n", m_token_name, m_token_type, tempInt);
-    }
+  case RECD_INT:
+  case RECD_COUNTER:
+  case RECD_FLOAT:
     break;
-
-  case STAT_FLOAT:
-    if (StatDebug) {
-      StatFloat tempFloat;
-      if (!varFloatFromName(m_token_name, &tempFloat)) {
-        tempFloat = (RecFloat) ERROR_VALUE;
-      }
-      Debug(MODULE_INIT, "\tvar: %s, type: %d, value: %f\n", m_token_name, m_token_type, tempFloat);
-    }
-    break;
-
-  case STAT_CONST:
+  case RECD_CONST:
     // assign pre-defined constant in here
+    // constant will be stored as RecFloat type.
     if (!strcmp(m_token_name, "CONSTANT")) {
-      m_token_value = (StatFloat) atof(name);
+      m_token_value.rec_float = (RecFloat) atof(name);
     } else if (!strcmp(m_token_name, "$BYTES_TO_MB_SCALE")) {
-      m_token_value = (StatFloat) BYTES_TO_MB_SCALE;
+      m_token_value.rec_float = (RecFloat) BYTES_TO_MB_SCALE;
     } else if (!strcmp(m_token_name, "$MBIT_TO_KBIT_SCALE")) {
-      m_token_value = (StatFloat) MBIT_TO_KBIT_SCALE;
+      m_token_value.rec_float = (RecFloat) MBIT_TO_KBIT_SCALE;
     } else if (!strcmp(m_token_name, "$SECOND_TO_MILLISECOND_SCALE")) {
-      m_token_value = (StatFloat) SECOND_TO_MILLISECOND_SCALE;
+      m_token_value.rec_float = (RecFloat) SECOND_TO_MILLISECOND_SCALE;
     } else if (!strcmp(m_token_name, "$PCT_TO_INTPCT_SCALE")) {
-      m_token_value = (StatFloat) PCT_TO_INTPCT_SCALE;
+      m_token_value.rec_float = (RecFloat) PCT_TO_INTPCT_SCALE;
     } else if (!strcmp(m_token_name, "$HRTIME_SECOND")) {
-      m_token_value = (StatFloat) HRTIME_SECOND;
+      m_token_value.rec_float = (RecFloat) HRTIME_SECOND;
     } else if (!strcmp(m_token_name, "$BYTES_TO_MBIT_SCALE")) {
-      m_token_value = (StatFloat) BYTES_TO_MBIT_SCALE;
+      m_token_value.rec_float = (RecFloat) BYTES_TO_MBIT_SCALE;
     } else {
       mgmt_log(stderr, "[StatPro] ERROR: Undefined constant: %s\n", m_token_name);
       StatError = true;
     }
-
-    if (StatDebug) {
-      Debug(MODULE_INIT, "\tconst: %s, type: %d, value: %f\n", m_token_name, m_token_type, m_token_value);
-    }
-    break;
-
-  case STAT_FX:
-    if (StatDebug) {
-      Debug(MODULE_INIT, "\tfunction: %s, type: %d\n", m_token_name, m_token_type);
-    }
-    break;
-
+  case RECD_FX:
   default:
-    /*
-       mgmt_log(stderr, "[StatPro] ERROR: Undefined token: %s\n",
-       m_token_name);
-       StatError = true;
-     */
     break;
   }
 }
@@ -179,21 +147,22 @@ StatExprToken::assignTokenName(const char *name)
  */
 bool StatExprToken::assignTokenType()
 {
-  ink_debug_assert(m_token_name != NULL);
-  m_token_type = (StatDataT)varType(m_token_name);
+  ink_assert(m_token_name != NULL);
+  m_token_type = varType(m_token_name);
 
   if (m_token_name[0] == '$') {
-    m_token_type = STAT_CONST;
+    m_token_type = RECD_CONST;
   } else if (m_token_name[0] == '_') {
-    m_token_type = STAT_FX;
+    m_token_type = RECD_FX;
   }
 
-  if (m_token_type == STAT_COUNTER) {
-    m_token_type = STAT_INT;
+  if (m_token_value_delta) {
+    m_token_value_delta->data_type = m_token_type;
   }
+
   // I'm guessing here that we want to check if we're still RECD_NULL,
   // it used to be INVALID, which is not in the m_token_type's enum. /leif
-  return (m_token_type != (StatDataT)RECD_NULL);
+  return (m_token_type != RECD_NULL);
 }
 
 
@@ -255,31 +224,61 @@ StatExprToken::precedence()
  * or larger than max, then the error value is assigned. If no
  * error value is assigned, either min. or max. is assigned.
  */
-bool StatExprToken::statVarSet(StatFloat value)
+bool StatExprToken::statVarSet(RecDataT type, RecData value)
 {
+  RecData converted_value;
+
   if (StatError) {
     /* fix this after librecords is done
        mgmt_log(stderr,
        "[StatPro] ERROR in a statistics aggregation operations\n");
      */
-    return varSetFloat(m_token_name, ERROR_VALUE, true);
+    RecData err_value;
+    RecDataClear(m_token_type, &err_value);
+    return varSetData(m_token_type, m_token_name, err_value);
   }
 
-  if (value < m_token_value_min) {
-    if (StatDebug) {
-      Debug(MODULE, "[StatPro] Reset min. value: %f < %f\n", value, m_token_value_min);
+  /*
+   * do conversion if necessary.
+   */
+  if (m_token_type != type) {
+    switch (m_token_type) {
+    case RECD_INT:
+    case RECD_COUNTER:
+      if (type == RECD_NULL)
+        converted_value = value;
+      else if (type == RECD_INT || type == RECD_COUNTER || type == RECD_FX)
+        converted_value.rec_int = value.rec_int;
+      else if (type == RECD_FLOAT || type == RECD_CONST)
+        converted_value.rec_int = (RecInt)value.rec_float;
+      else
+        Fatal("%s, invalid value type:%d\n", m_token_name, type);
+      break;
+    case RECD_FLOAT:
+      if (type == RECD_NULL)
+        converted_value = value;
+      else if (type == RECD_INT || type == RECD_COUNTER || type == RECD_FX)
+        converted_value.rec_float = (RecFloat)value.rec_int;
+      else if (type == RECD_FLOAT || type == RECD_CONST)
+        converted_value.rec_float = value.rec_float;
+      else
+        Fatal("%s, invalid value type:%d\n", m_token_name, type);
+      break;
+    default:
+      Fatal("%s, unsupported token type:%d\n", m_token_name, m_token_type);
     }
+  } else {
+    converted_value = value;
+  }
+
+  if (RecDataCmp(m_token_type, converted_value, m_token_value_min) < 0) {
     value = m_token_value_min;
   }
-
-  if (value > m_token_value_max) {
-    if (StatDebug) {
-      Debug(MODULE, "[StatPro] Reset max. value: %f > %f\n", value, m_token_value_max);
-    }
+  else if (RecDataCmp(m_token_type, converted_value, m_token_value_max) > 0) {
     value = m_token_value_max;
   }
 
-  return varSetFloat(m_token_name, value, true);
+  return varSetData(m_token_type, m_token_name, converted_value);
 }
 
 
@@ -429,7 +428,9 @@ StatObject::StatObject()
    m_expression(NULL),
    m_postfix(NULL),
    m_last_update(-1),
-   m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(-1 * FLT_MAX), m_has_delta(false)
+   m_current_time(-1), m_update_interval(-1),
+   m_stats_max(FLT_MAX), m_stats_min(FLT_MIN),
+   m_has_max(false), m_has_min(false), m_has_delta(false)
 {
 }
 
@@ -443,7 +444,9 @@ StatObject::StatObject(unsigned identifier)
     m_expression(NULL),
     m_postfix(NULL),
     m_last_update(-1),
-    m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(-1 * FLT_MAX), m_has_delta(false)
+    m_current_time(-1), m_update_interval(-1),
+    m_stats_max(FLT_MAX), m_stats_min(FLT_MIN),
+    m_has_max(false), m_has_min(false), m_has_delta(false)
 {
 }
 
@@ -479,6 +482,24 @@ StatObject::assignDst(const char *str, bool m_node_var, bool m_sum_var)
   statToken->m_node_var = m_node_var;
   statToken->m_sum_var = m_sum_var;
 
+  // The type of dst token should be always not NULL
+  if (statToken->m_token_type == RECD_NULL) {
+    Fatal("token:%s, invalid token type!", statToken->m_token_name);
+  }
+
+  // Set max/min value
+  if (m_has_max)
+    RecDataSetFromFloat(statToken->m_token_type, &statToken->m_token_value_max,
+                        m_stats_max);
+  else
+    RecDataSetMax(statToken->m_token_type, &statToken->m_token_value_max);
+
+  if (m_has_min)
+    RecDataSetFromFloat(statToken->m_token_type, &statToken->m_token_value_min,
+                        m_stats_min);
+  else
+    RecDataSetMin(statToken->m_token_type, &statToken->m_token_value_min);
+
   if (m_node_var) {
     ink_assert(m_node_dest == NULL);
     m_node_dest = statToken;
@@ -501,7 +522,7 @@ StatObject::assignExpr(char *str)
   if (StatDebug) {
     Debug(MODULE_INIT, "EXPRESSION: %s\n", str);
   }
-  ink_debug_assert(m_expr_string == NULL);
+  ink_assert(m_expr_string == NULL);
   // We take ownership here
   m_expr_string = str;
 
@@ -510,7 +531,7 @@ StatObject::assignExpr(char *str)
   tok_iter_state exprTok_state;
   const char *token = exprTok.iterFirst(&exprTok_state);
 
-  ink_debug_assert(m_expression == NULL);
+  ink_assert(m_expression == NULL);
   m_expression = NEW(new StatExprList());
 
   while (token) {
@@ -520,7 +541,7 @@ StatObject::assignExpr(char *str)
     if (isOperator(token[0])) {
 
       statToken->m_arith_symbol = token[0];
-      ink_debug_assert(statToken->m_token_name == NULL);
+      ink_assert(statToken->m_token_name == NULL);
 
       if (StatDebug) {
         Debug(MODULE_INIT, "\toperator: ->%c<-\n", statToken->m_arith_symbol);
@@ -528,17 +549,18 @@ StatObject::assignExpr(char *str)
 
     } else {
 
-      ink_debug_assert(statToken->m_arith_symbol == '\0');
+      ink_assert(statToken->m_arith_symbol == '\0');
 
       // delta
       if (token[0] == '#') {
 
         token += 1;             // skip '#'
-        statToken->m_token_value_delta = NEW(new StatFloatSamples());
+        statToken->m_token_value_delta = NEW(new StatDataSamples());
         statToken->m_token_value_delta->previous_time = (ink_hrtime) 0;
         statToken->m_token_value_delta->current_time = (ink_hrtime) 0;
-        statToken->m_token_value_delta->previous_value = (StatFloat) 0.0;
-        statToken->m_token_value_delta->current_value = (StatFloat) 0.0;
+        statToken->m_token_value_delta->data_type = RECD_NULL;
+        RecDataClear(RECD_NULL, &statToken->m_token_value_delta->previous_value);
+        RecDataClear(RECD_NULL, &statToken->m_token_value_delta->current_value);
 
       }
 
@@ -584,7 +606,7 @@ StatObject::infix2postfix()
       m_postfix->enqueue(curToken);
 
     } else {
-      ink_debug_assert(curToken->m_arith_symbol != '\0');
+      ink_assert(curToken->m_arith_symbol != '\0');
 
       if (curToken->m_arith_symbol == '(') {
         stack.push(curToken);
@@ -641,42 +663,43 @@ StatObject::infix2postfix()
  *
  *
  */
-StatFloat StatObject::NodeStatEval(bool cluster)
+RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
 {
   StatExprList stack;
   StatExprToken *left = NULL;
   StatExprToken *right = NULL;
   StatExprToken *result = NULL;
   StatExprToken *curToken = NULL;
-  StatFloat tempValue = ERROR_VALUE;
+  RecData tempValue;
+  RecDataClear(RECD_NULL, &tempValue);
+
+  *result_type = RECD_NULL;
 
   /* Express checkout lane -- Stat. object with on 1 source variable */
   if (m_postfix->count() == 1) {
-    StatExprToken *
-      src = m_postfix->top();
+    StatExprToken * src = m_postfix->top();
 
     // in librecords, not all statistics are register at initialization
     // must assign proper type if it is undefined.
-    if (src->m_token_type == (StatDataT)RECD_NULL) {
+    if (src->m_token_type == RECD_NULL) {
       src->assignTokenType();
     }
 
-    if (src->m_token_type == STAT_CONST) {
+    *result_type = src->m_token_type;
+    if (src->m_token_type == RECD_CONST) {
       tempValue = src->m_token_value;
     } else if (src->m_token_value_delta) {
-      tempValue = src->m_token_value_delta->diff_value();;
+      tempValue = src->m_token_value_delta->diff_value(src->m_token_name);
     } else if (!cluster) {
-      if (!varFloatFromName(src->m_token_name, &tempValue)) {
-        tempValue = (RecFloat) ERROR_VALUE;
+      if (!varDataFromName(src->m_token_type, src->m_token_name, &tempValue)) {
+        RecDataClear(src->m_token_type, &tempValue);
       }
     } else {
-      if (!overviewGenerator->varClusterFloatFromName(src->m_token_name, &tempValue)) {
-        tempValue = (RecFloat) ERROR_VALUE;
+      if (!overviewGenerator->varClusterDataFromName(src->m_token_type,
+                                                     src->m_token_name,
+                                                     &tempValue)) {
+        RecDataClear(src->m_token_type, &tempValue);
       }
-    }
-
-    if (StatDebug) {
-      Debug(MODULE, "\tExpress checkout : %s:%f\n", src->m_token_name, tempValue);
     }
   } else {
 
@@ -689,14 +712,14 @@ StatFloat StatObject::NodeStatEval(bool cluster)
       if (!isOperator(curToken->m_arith_symbol)) {
         stack.push(curToken);
       } else {
-        ink_debug_assert(isOperator(curToken->m_arith_symbol));
+        ink_assert(isOperator(curToken->m_arith_symbol));
         right = stack.pop();
         left = stack.pop();
 
-        if (left->m_token_type == (StatDataT)RECD_NULL) {
+        if (left->m_token_type == RECD_NULL) {
           left->assignTokenType();
         }
-        if (right->m_token_type == (StatDataT)RECD_NULL) {
+        if (right->m_token_type == RECD_NULL) {
           right->assignTokenType();
         }
 
@@ -712,13 +735,14 @@ StatFloat StatObject::NodeStatEval(bool cluster)
     /* should only be 1 value left on stack -- the resulting value */
     if (stack.count() > 1) {
       stack.print("\t");
-      ink_debug_assert(false);
+      ink_assert(false);
     }
 
+    *result_type = stack.top()->m_token_type;
     tempValue = stack.top()->m_token_value;
   }
 
-  return (tempValue);
+  return tempValue;
 
 }
 
@@ -729,23 +753,24 @@ StatFloat StatObject::NodeStatEval(bool cluster)
  *
  *
  */
-StatFloat StatObject::ClusterStatEval()
+RecData StatObject::ClusterStatEval(RecDataT *result_type)
 {
-  StatFloat tempValue = ERROR_VALUE;
-
   /* Sanity check */
-  ink_debug_assert(m_cluster_dest && !m_cluster_dest->m_node_var);
+  ink_assert(m_cluster_dest && !m_cluster_dest->m_node_var);
 
   // what is this?
   if ((m_node_dest == NULL) || (m_cluster_dest->m_sum_var == false)) {
-    return NodeStatEval(true);
+    return NodeStatEval(result_type, true);
   } else {
-    if (!overviewGenerator->varClusterFloatFromName(m_node_dest->m_token_name, &tempValue)) {
-      tempValue = (RecFloat) ERROR_VALUE;
+    RecData tempValue;
+
+    if (!overviewGenerator->varClusterDataFromName(m_node_dest->m_token_type,
+                                                   m_node_dest->m_token_name,
+                                                   &tempValue)) {
+      *result_type = RECD_NULL;
+      RecDataClear(*result_type, &tempValue);
     }
-    if (StatDebug) {
-      Debug(MODULE, "Exp. chkout write: %s:%f\n", m_node_dest->m_token_name, tempValue);
-    }
+
     return (tempValue);
   }
 }
@@ -757,9 +782,9 @@ StatFloat StatObject::ClusterStatEval()
  * The logic of the following code segment is the following.
  * The objective is to extract the appropriate right->m_token_value.
  * If 'right' is an intermediate value, nothing to do.
- * If m_token_type is STAT_CONST, nothing to do.
- * If m_token_type is STAT_FX, right->m_token_value is the diff. in time.
- * If m_token_type is either STAT_INT or STAT_FLOAT, it can either
+ * If m_token_type is RECD_CONST, nothing to do.
+ * If m_token_type is RECD_FX, right->m_token_value is the diff. in time.
+ * If m_token_type is either RECD_INT or RECD_FLOAT, it can either
  * by a cluster variable or a node variable.
  *     If it is a cluster variable, just use varClusterFloatFromName
  *     to set right->m_token_value.
@@ -776,36 +801,32 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
     // it is NOT an intermediate value
 
     switch (token->m_token_type) {
-    case STAT_CONST:
+    case RECD_CONST:
       break;
 
-    case STAT_FX:
+    case RECD_FX:
       // only support time function
-      token->m_token_value = (StatFloat) (m_current_time - m_last_update);
-      if (StatDebug) {
-        Debug(MODULE, "m_current_time(%"  PRId64 ") - m_last_update(%"  PRId64 ") = %"  PRId64 "\n",
-              (int64_t)m_current_time, (int64_t)m_last_update, (int64_t)token->m_token_value);
-      }
+      // use rec_int to store time value
+      token->m_token_value.rec_int = (m_current_time - m_last_update);
       break;
 
-    case STAT_INT:             // fallthought
-    case STAT_FLOAT:
+    case RECD_INT:             // fallthought
+    case RECD_FLOAT:
       if (cluster) {
-        if (!overviewGenerator->varClusterFloatFromName(token->m_token_name, &(token->m_token_value))) {
-          token->m_token_value = (RecFloat) ERROR_VALUE;
+        if (!overviewGenerator->varClusterDataFromName(token->m_token_type,
+                                                       token->m_token_name,
+                                                       &(token->m_token_value)))
+        {
+          RecDataClear(token->m_token_type, &token->m_token_value);
         }
       } else {
         if (token->m_token_value_delta) {
-          token->m_token_value = token->m_token_value_delta->diff_value();
-
-          if (StatDebug) {
-            Debug(MODULE, "\tDelta value: %f %f %f\n",
-                  token->m_token_value_delta->previous_value,
-                  token->m_token_value_delta->current_value, token->m_token_value);
-          }
+          token->m_token_value =
+            token->m_token_value_delta->diff_value(token->m_token_name);
         } else {
-          if (!varFloatFromName(token->m_token_name, &(token->m_token_value))) {
-            token->m_token_value = (RecFloat) ERROR_VALUE;
+          if (!varDataFromName(token->m_token_type, token->m_token_name,
+                               &(token->m_token_value))) {
+            RecDataClear(token->m_token_type, &token->m_token_value);
           }
         }                       // delta?
       }                         // cluster?
@@ -813,7 +834,8 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
 
     default:
       if (StatDebug) {
-        Debug(MODULE, "Unrecognized token \"%s\" of type %d.\n", token->m_token_name, token->m_token_type);
+        Debug(MODULE, "Unrecognized token \"%s\" of type %d.\n",
+              token->m_token_name, token->m_token_type);
       }
     }                           // switch
   }                             // m_token_name?
@@ -831,43 +853,107 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
  * - (3) cluster variable
  * - (4) an immediate value
  */
-
-StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op, StatExprToken * right, bool cluster)
+StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
+                                          StatExprToken * right, bool cluster)
 {
+  RecData l, r;
   StatExprToken *result = NEW(new StatExprToken());
-  result->m_token_type = STAT_FLOAT;
+  result->m_token_type = RECD_INT;
 
-  setTokenValue(left, cluster);
-  setTokenValue(right, cluster);
+  if (left->m_token_type == RECD_NULL
+      && right->m_token_type == RECD_NULL) {
+    return result;
+  }
 
+  if (left->m_token_type != RECD_NULL) {
+    setTokenValue(left, cluster);
+    result->m_token_type = left->m_token_type;
+  }
+
+  if (right->m_token_type != RECD_NULL) {
+    setTokenValue(right, cluster);
+    switch (result->m_token_type) {
+    case RECD_NULL:
+      result->m_token_type = right->m_token_type;
+      break;
+    case RECD_FX:
+    case RECD_INT:
+    case RECD_COUNTER:
+      /*
+       * When types of left and right are different, select RECD_FLOAT
+       * as result type. It's may lead to loss of precision when do
+       * conversion, be careful!
+       */
+      if (right->m_token_type == RECD_FLOAT
+          || right->m_token_type == RECD_CONST) {
+        result->m_token_type = right->m_token_type;
+      }
+      break;
+    case RECD_CONST:
+    case RECD_FLOAT:
+      break;
+    default:
+      Fatal("Unexpected RecData Type:%d", result->m_token_type);
+      break;
+    }
+  }
+
+  /*
+   * We should make the operands with the same type before calculating.
+   */
+  RecDataClear(RECD_NULL, &l);
+  RecDataClear(RECD_NULL, &r);
+
+  if (left->m_token_type == right->m_token_type ) {
+    l = left->m_token_value;
+    r = right->m_token_value;
+  } else if (result->m_token_type != left->m_token_type) {
+    if (left->m_token_type != RECD_NULL) {
+      ink_assert(result->m_token_type == RECD_FLOAT
+                 || result->m_token_type == RECD_CONST);
+
+      l.rec_float = (RecFloat)left->m_token_value.rec_int;
+    }
+    r = right->m_token_value;
+    ink_assert(result->m_token_type == right->m_token_type);
+  } else {
+    l = left->m_token_value;
+    if (right->m_token_type != RECD_NULL) {
+      ink_assert(result->m_token_type == RECD_FLOAT
+                 || result->m_token_type == RECD_CONST);
+
+      r.rec_float = (RecFloat)right->m_token_value.rec_int;
+    }
+    ink_assert(result->m_token_type == left->m_token_type);
+  }
+
+  /*
+   * Start to calculate
+   */
   switch (op) {
   case '+':
-    result->m_token_value = (StatFloat) (left->m_token_value + right->m_token_value);
+    result->m_token_value = RecDataAdd(result->m_token_type, l, r);
     break;
 
   case '-':
-    result->m_token_value = (StatFloat) (left->m_token_value - right->m_token_value);
+    result->m_token_value = RecDataSub(result->m_token_type, l, r);
     break;
 
   case '*':
-    result->m_token_value = (StatFloat) (left->m_token_value * right->m_token_value);
+    result->m_token_value = RecDataMul(result->m_token_type, l, r);
     break;
 
   case '/':
-    result->m_token_value = (StatFloat) ((right->m_token_value == 0) ?
-                                         0.0 : (left->m_token_value / right->m_token_value));
+    RecData recTmp;
+    RecDataClear(RECD_NULL, &recTmp);
+    if (RecDataCmp(result->m_token_type, r, recTmp)) {
+      result->m_token_value = RecDataDiv(result->m_token_type, l, r);
+    }
     break;
 
   default:
     // should never reach here
     StatError = true;
-  }
-
-  if (StatDebug) {
-    Debug(MODULE, "%s(%f) %c %s(%f) = %f\n",
-          left->m_token_name ? left->m_token_name : "in stack",
-          left->m_token_value,
-          op, right->m_token_name ? right->m_token_name : "in stack", right->m_token_value, result->m_token_value);
   }
 
   return (result);
@@ -908,16 +994,6 @@ StatObjectList::enqueue(StatObject * object)
     }
   }
 
-  if (object->m_node_dest) {
-    object->m_node_dest->m_token_value_max = object->m_stats_max;
-    object->m_node_dest->m_token_value_min = object->m_stats_min;
-  }
-
-  if (object->m_cluster_dest) {
-    object->m_cluster_dest->m_token_value_max = object->m_stats_max;
-    object->m_cluster_dest->m_token_value_min = object->m_stats_min;
-  }
-
   m_statList.enqueue(object);
   m_size += 1;
 }
@@ -945,11 +1021,15 @@ StatObjectList::next(StatObject * current)
 short
 StatObjectList::Eval()
 {
-  StatFloat tempValue = ERROR_VALUE;
-  StatFloat result = ERROR_VALUE;
+  RecData tempValue;
+  RecData result;
+  RecDataT result_type;
   ink_hrtime threshold = 0;
   ink_hrtime delta = 0;
   short count = 0;
+
+  RecDataClear(RECD_NULL, &tempValue);
+  RecDataClear(RECD_NULL, &result);
 
   for (StatObject * object = first(); object; object = next(object)) {
     StatError = false;
@@ -964,19 +1044,13 @@ StatObjectList::Eval()
       object->m_current_time = ink_get_hrtime_internal();
 
       if (object->m_node_dest) {
-        result = object->NodeStatEval(false);
-        object->m_node_dest->statVarSet(result);
-        if (StatDebug) {
-          Debug(MODULE, "\t==>Result: %s -> %f\n", object->m_node_dest->m_token_name, result);
-        }
+        result = object->NodeStatEval(&result_type, false);
+        object->m_node_dest->statVarSet(result_type, result);
       }
 
       if (object->m_cluster_dest) {
-        result = object->ClusterStatEval();
-        object->m_cluster_dest->statVarSet(result);
-        if (StatDebug) {
-          Debug(MODULE, "\t==>Result: %s -> %f\n", object->m_cluster_dest->m_token_name, result);
-        }
+        result = object->ClusterStatEval(&result_type);
+        object->m_cluster_dest->statVarSet(result_type, result);
       }
 
       object->m_last_update = object->m_current_time;
@@ -1015,19 +1089,13 @@ StatObjectList::Eval()
           }
 
           if (object->m_node_dest) {
-            result = object->NodeStatEval(false);
-            object->m_node_dest->statVarSet(result);
-            if (StatDebug) {
-              Debug(MODULE, "\t==>Result: %s -> %f\n", object->m_node_dest->m_token_name, result);
-            }
+            result = object->NodeStatEval(&result_type, false);
+            object->m_node_dest->statVarSet(result_type, result);
           }
 
           if (object->m_cluster_dest) {
-            result = object->ClusterStatEval();
-            object->m_cluster_dest->statVarSet(result);
-            if (StatDebug) {
-              Debug(MODULE, "\t==>Result: %s -> %f\n", object->m_cluster_dest->m_token_name, result);
-            }
+            result = object->ClusterStatEval(&result_type);
+            object->m_cluster_dest->statVarSet(result_type, result);
           }
 
           object->m_last_update = object->m_current_time;
@@ -1039,8 +1107,9 @@ StatObjectList::Eval()
           // scroll old values
           for (StatExprToken * token = object->m_postfix->first(); token; token = object->m_expression->next(token)) {
             if (token->m_token_value_delta) {
-              if (!varFloatFromName(token->m_token_name, &tempValue)) {
-                tempValue = (RecFloat) ERROR_VALUE;
+              if (!varDataFromName(token->m_token_type, token->m_token_name,
+                                   &tempValue)) {
+                RecDataClear(RECD_NULL, &tempValue);
               }
 
               token->m_token_value_delta->previous_time = token->m_token_value_delta->current_time;
@@ -1052,19 +1121,13 @@ StatObjectList::Eval()
 
           if (delta > threshold) {
             if (object->m_node_dest) {
-              result = object->NodeStatEval(false);
-              object->m_node_dest->statVarSet(result);
-              if (StatDebug) {
-                Debug(MODULE, "\t==>Result: %s -> %f\n", object->m_node_dest->m_token_name, result);
-              }
+              result = object->NodeStatEval(&result_type, false);
+              object->m_node_dest->statVarSet(result_type, result);
             }
 
             if (object->m_cluster_dest) {
-              result = object->ClusterStatEval();
-              object->m_cluster_dest->statVarSet(result);
-              if (StatDebug) {
-                Debug(MODULE, "\t==>Result: %s -> %f\n", object->m_cluster_dest->m_token_name, result);
-              }
+              result = object->ClusterStatEval(&result_type);
+              object->m_cluster_dest->statVarSet(result_type, result);
             }
 
             object->m_last_update = object->m_current_time;

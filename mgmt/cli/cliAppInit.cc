@@ -35,12 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-// Not sure if we need to worry about old gcc compilers any more, but ... /leif
-#if (__GNUC__ >= 3)
 #include <iostream>
-#else
-#include <iostream.h>
-#endif
+
 //#include "tclExtend.h"
 #include "tcl.h"
 #include <unistd.h>
@@ -53,7 +49,7 @@
 #include "ShowCmd.h"
 #include "ConfigCmd.h"
 #include "CliCreateCommands.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #if HAVE_EDITLINE_READLINE_H
 #include <editline/readline.h>
@@ -87,7 +83,7 @@ Tcl_AppInit(Tcl_Interp * app_interp)
 
   // root users are automatically enabled
   if (getuid() == 0) {
-    enable_restricted_commands = TRUE;
+    enable_restricted_commands = true;
   }
 
 

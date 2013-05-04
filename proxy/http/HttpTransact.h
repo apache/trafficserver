@@ -770,12 +770,18 @@ public:
     char srv_hostname[MAXDNAME];
     LookingUp_t looking_up;
     bool round_robin;
+    bool srv_lookup_success;
+    short srv_port;
+    HostDBApplicationInfo srv_app;
 
     _DNSLookupInfo()
     : attempts(0), os_addr_style(OS_ADDR_TRY_DEFAULT),
-        lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP), round_robin(false)
+        lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP), round_robin(false),
+        srv_lookup_success(false), srv_port(0)
     {
-      memset(&srv_hostname, 0, sizeof(srv_hostname));
+      srv_hostname[0] = '\0';
+      srv_app.allotment.application1 = 0;
+      srv_app.allotment.application2 = 0;
     }
   } DNSLookupInfo;
 
@@ -913,7 +919,8 @@ public:
 
     // for negative caching
     bool negative_caching;
-
+    // for srv_lookup
+    bool srv_lookup;
     // for authenticated content caching
     CacheAuth_t www_auth_content;
 
@@ -1028,7 +1035,6 @@ public:
         next_hop_scheme(scheme),
         orig_scheme(scheme),
         method(0),
-        host_db_info(),
         cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
         client_request_time(UNDEFINED_TIME),
         request_sent_time(UNDEFINED_TIME),
@@ -1038,6 +1044,7 @@ public:
         first_stats(),
         current_stats(NULL),
         negative_caching(false),
+        srv_lookup(false),
         www_auth_content(CACHE_AUTH_NONE),
         client_connection_enabled(true),
         acl_filtering_performed(false),
@@ -1108,6 +1115,7 @@ public:
 
       memset(return_xbuf, 0, sizeof(return_xbuf));
       memset(user_args, 0, sizeof(user_args));
+      memset(&host_db_info, 0, sizeof(host_db_info));
     }
 
     void
@@ -1235,7 +1243,6 @@ public:
   static void handle_response_from_parent(State* s);
   static void handle_response_from_server(State* s);
   static void delete_server_rr_entry(State* s, int max_retries);
-  static void delete_srv_entry(State* s, int max_retries);
   static void retry_server_connection_not_open(State* s, ServerState_t conn_state, int max_retries);
   static void handle_server_connection_not_open(State* s);
   static void handle_forward_server_connection_open(State* s);
@@ -1349,7 +1356,7 @@ typedef void (*TransactEntryFunc_t) (HttpTransact::State* s);
 inline void
 HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
 {
-  ink_debug_assert(buffer);
+  ink_assert(buffer);
   if (size >= 0) {
     ioBufAllocator[size].free_void(buffer);
   } else {

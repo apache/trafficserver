@@ -60,47 +60,22 @@ public:
   // the same as the lastSentPktStartTime.
   uint64_t lastSentPktStartTime;
   uint64_t lastPktStartTime;
-  int32_t pipe_class;
-  uint32_t nBytesDone;
-  uint32_t nBytesTodo;
-  // flow rate in Bytes per sec.
-  double flowRateBps;
-  double avgPktSize;
-  int64_t allocedbps;
-
-  //this class is abstract
 };
 
 TS_INLINE
 UDPConnectionInternal::UDPConnectionInternal()
-  : continuation(NULL)
-  , recvActive(0)
-  , refcount(0)
-  , fd(-1)
-  , binding_valid(0)
-  , tobedestroyed(0)
-  , nBytesDone(0)
-  , nBytesTodo(0)
+  : continuation(NULL), recvActive(0), refcount(0), fd(-1), binding_valid(0), tobedestroyed(0)
 {
   sendGenerationNum = 0;
   lastSentPktTSSeqNum = -1;
   lastSentPktStartTime = 0;
   lastPktStartTime = 0;
-  pipe_class = 0;
-  flowRateBps = 0.0;
-  avgPktSize = 0.0;
-  allocedbps = 0;
   memset(&binding, 0, sizeof binding);
-  //SET_HANDLER(&BaseUDPConnection::callbackHandler);
 }
 
 TS_INLINE
 UDPConnectionInternal::~UDPConnectionInternal()
 {
-  // TODO: This is not necessary, and should be removed with the
-  // elimination of UDP bandwidth limiting (used by long since
-  // removed UDP protocols). See bug TS-1067.
-  // udpNet.FreeBandwidth(this);
   continuation = NULL;
   mutex = NULL;
 }
@@ -126,13 +101,6 @@ UDPConnection::getBinding(struct sockaddr *s)
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
   ats_ip_copy(s, &p->binding);
   return p->binding_valid;
-}
-
-// return the b/w allocated to this UDPConnection in Mbps
-TS_INLINE double
-UDPConnection::get_allocatedBandwidth()
-{
-  return (((UDPConnectionInternal *) this)->flowRateBps * 8.0) / (1024.0 * 1024.0);
 }
 
 TS_INLINE void

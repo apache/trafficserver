@@ -50,19 +50,19 @@ void init_pdss_format(TSPdSsFormat * info);
  * API Memory Management
  ***************************************************************************/
 void *
-_TSmalloc(unsigned int size, const char *path)
+_TSmalloc(unsigned int size, const char * /* path ATS_UNUSED */ )
 {
   return ats_malloc(size);
 }
 
 void *
-_TSrealloc(void *ptr, unsigned int size, const char *path)
+_TSrealloc(void *ptr, unsigned int size, const char * /* path ATS_UNUSED */)
 {
   return ats_realloc(ptr, size);
 }
 
 char *
-_TSstrdup(const char *str, int length, const char *path)
+_TSstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
 {
   return ats_strndup(str, length);
 }
@@ -1005,7 +1005,7 @@ TSIcpEleCreate()
   ele->peer_type = TS_ICP_UNDEFINED;
   ele->peer_proxy_port = TS_INVALID_PORT;
   ele->peer_icp_port = TS_INVALID_PORT;
-  ele->is_multicast = FALSE;
+  ele->is_multicast = false;
   ele->mc_ip_addr = TS_INVALID_IP_ADDR;
   ele->mc_ttl = TS_MC_TTL_SINGLE_SUBNET;       // default value
 
@@ -1444,9 +1444,9 @@ TSVirtIpAddrEleDestroy(TSVirtIpAddrEle * ele)
 
 /*--- statistics operations ----------------------------------------------- */
 tsapi TSError
-TSStatsReset(bool cluster)
+TSStatsReset(bool cluster, const char *name)
 {
-  return StatsReset(cluster);
+  return StatsReset(cluster, name);
 }
 
 /*--- variable operations ------------------------------------------------- */
@@ -1910,8 +1910,8 @@ TSEncryptPassword(char *passwd, char **e_passwd)
   char *passwd_md5_str;
   int passwd_md5_str_len = 32;
 
-  ink_debug_assert(passwd);
-  ink_debug_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
+  ink_assert(passwd);
+  ink_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
 
   const size_t md5StringSize = (passwd_md5_str_len + 1) * sizeof(char);
   passwd_md5_str = (char *)ats_malloc(md5StringSize);
@@ -2446,7 +2446,7 @@ closeAllFds()
     FILE *fd = popen(command, "r");
     if (fd) {
       while (!feof(fd)) {
-        NOWARN_UNUSED_RETURN(fgets(buffer, BUFFLEN, fd));
+        ATS_UNUSED_RETURN(fgets(buffer, BUFFLEN, fd));
         num = atoi(buffer);
         if (num != fileno(fd) && num != 0 && num != 1 && num != 2) {   // for out put
           //printf("closing fd (%d)\n", num); fflush(stdout);

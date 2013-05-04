@@ -25,10 +25,9 @@
 ** SUCH DAMAGE.
 */
 
-#ifdef linux
-#include <sys/epoll.h>
-#endif
+#include "ink_config.h"
 
+#include <sys/epoll.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -45,13 +44,10 @@
 #include <errno.h>
 #include <signal.h>
 
-#ifdef USE_SSL
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
-#endif
 
-#include "version.h"
 #include "port.h"
 #include "timers.h"
 
@@ -116,9 +112,7 @@ static int num_sips, max_sips;
 
 /* Protocol symbols. */
 #define PROTO_HTTP 0
-#ifdef USE_SSL
 #define PROTO_HTTPS 1
-#endif
 
 /* Connection states */
 typedef enum
@@ -222,9 +216,7 @@ typedef struct
   struct sockaddr_in sa;
   int sa_len;
   int conn_fd;
-#ifdef USE_SSL
   SSL *ssl;
-#endif
   connection_states conn_state;
   header_states header_state;
   int did_connect, did_response;
@@ -284,10 +276,8 @@ int total_timeouts, total_badbytes, total_badchecksums;
 
 static long start_interval, low_interval, high_interval, range_interval;
 
-#ifdef USE_SSL
 static SSL_CTX *ssl_ctx = (SSL_CTX *) 0;
 static char *cipher = (char *) 0;
-#endif
 
 /* Forwards. */
 static void usage(void);
@@ -332,9 +322,7 @@ main(int argc, char **argv)
 #ifdef RLIMIT_NOFILE
   struct rlimit limits;
 #endif /* RLIMIT_NOFILE */
-#ifdef linux
   struct epoll_event *events;
-#endif
   struct timeval now;
   int i, r, periodic_tmr;
 
@@ -464,7 +452,6 @@ main(int argc, char **argv)
       http_version = argv[++argn];
       is_http_1_1 = (strcmp(http_version, "1.1") == 0);
     }
-#ifdef USE_SSL
     else if (strncmp(argv[argn], "-cipher", strlen(argv[argn])) == 0 && argn + 1 < argc) {
       cipher = argv[++argn];
       if (strcasecmp(cipher, "fastsec") == 0)
@@ -474,7 +461,6 @@ main(int argc, char **argv)
       else if (strcasecmp(cipher, "paranoid") == 0)
         cipher = "AES256-SHA";
     }
-#endif /* USE_SSL */
     else if (strncmp(argv[argn], "-proxy", strlen(argv[argn])) == 0 && argn + 1 < argc) {
       char *colon;
       do_proxy = 1;
@@ -539,14 +525,12 @@ main(int argc, char **argv)
   total_badchecksums = 0;
 
   /* Initialize epoll() and kqueue() etc. */
-#ifdef linux
   epfd = epoll_create(max_connections);
   if (epfd == -1) {
     perror("epoll_create");
     exit(1);
   }
   events = malloc(sizeof(struct epoll_event) * max_connections);
-#endif
 
   /* Initialize the random number generator. */
 #ifdef HAVE_SRANDOMDEV
@@ -641,9 +625,7 @@ usage(void)
                  "		[-keep_alive num_reqs_per_conn] [-unique_id]\n"
                  "		[-max_connect_failures N] [-ignore_bytes] [ [-header str] ... ]\n",
                  argv0);
-#ifdef USE_SSL
   (void) fprintf(stderr, "	[-cipher str]\n");
-#endif /* USE_SSL */
   (void) fprintf(stderr, "	-parallel N | -rate N [-jitter]\n");
   (void) fprintf(stderr, "	-fetches N | -seconds N\n");
   (void) fprintf(stderr, "	url_file\n");
@@ -660,10 +642,8 @@ read_url_file(char *url_file)
   char line[5000], hostname[5000];
   char *http = "http://";
   int http_len = strlen(http);
-#ifdef USE_SSL
   char *https = "https://";
   int https_len = strlen(https);
-#endif
   int proto_len, host_len;
   char *cp;
 
@@ -718,12 +698,10 @@ read_url_file(char *url_file)
       proto_len = http_len;
       urls[num_urls].protocol = PROTO_HTTP;
     }
-#ifdef USE_SSL
     else if (strncmp(https, line, https_len) == 0) {
       proto_len = https_len;
       urls[num_urls].protocol = PROTO_HTTPS;
     }
-#endif
     else {
       (void) fprintf(stderr, "%s: unknown protocol - %s\n", argv0, line);
       exit(1);
@@ -739,14 +717,10 @@ read_url_file(char *url_file)
       while (*cp != '\0' && *cp != '/')
         ++cp;
     } else
-#ifdef USE_SSL
     if (urls[num_urls].protocol == PROTO_HTTPS)
       urls[num_urls].port = 443;
     else
       urls[num_urls].port = 80;
-#else
-      urls[num_urls].port = 80;
-#endif
     if (*cp == '\0')
       urls[num_urls].filename = strdup_check("/");
     else
@@ -760,14 +734,9 @@ read_url_file(char *url_file)
 
     /* Pregenereate the request string, major performance improvement. */
     if (do_proxy) {
-#ifdef USE_SSL
       req_bytes = snprintf(req_buf, sizeof(req_buf), "GET %s://%.500s:%d%.500s HTTP/%s\r\n",
                            urls[num_urls].protocol == PROTO_HTTPS ? "https" : "http",
                            urls[num_urls].hostname, (int) urls[num_urls].port, urls[num_urls].filename, http_version);
-#else
-      req_bytes = snprintf(req_buf, sizeof(req_buf), "GET http://%.500s:%d%.500s HTTP/%s\r\n",
-                           urls[num_urls].hostname, (int) urls[num_urls].port, urls[num_urls].filename, http_version);
-#endif
     } else
       req_bytes = snprintf(req_buf, sizeof(req_buf), "GET %.500s HTTP/%s\r\n", urls[num_urls].filename, http_version);
 
@@ -1072,9 +1041,7 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
 
   /* Make a socket. */
   if (!reusable) {
-#ifdef linux
     struct epoll_event ev;
-#endif
 
     connections[cnum].keep_alive = keep_alive;
     connections[cnum].conn_fd = socket(urls[url_num].sock_family, urls[url_num].sock_type, urls[url_num].sock_protocol);
@@ -1106,7 +1073,6 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
         return;
       }
     }
-#ifdef linux
     ev.events = EPOLLOUT;
     ev.data.u32 = cnum;
 #ifdef DEBUG
@@ -1117,7 +1083,6 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
       (void) close(connections[cnum].conn_fd);
       return;
     }
-#endif
     /* Connect to the host. */
     connections[cnum].sa_len = urls[url_num].sa_len;
     (void) memmove((void *) &connections[cnum].sa, (void *) &urls[url_num].sa, urls[url_num].sa_len);
@@ -1127,11 +1092,9 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
         connections[cnum].conn_state = CNST_CONNECTING;
         return;
       } else {
-#ifdef linux
         /* remove the FD from the epoll descriptor */
         if (epoll_ctl(epfd, EPOLL_CTL_DEL, connections[cnum].conn_fd, &ev) < 0)
           perror("epoll delete fd");
-#endif
         perror(urls[url_num].url_str);
         (void) close(connections[cnum].conn_fd);
         return;
@@ -1149,14 +1112,10 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
     connections[cnum].stats.requests_per_connection++;
     connections[cnum].request_at = *nowP;
 
-#ifdef USE_SSL
     if (urls[url_num].protocol == PROTO_HTTPS)
       r = SSL_write(connections[cnum].ssl, urls[url_num].buf, urls[url_num].buf_bytes);
     else
       r = write(connections[cnum].conn_fd, urls[url_num].buf, urls[url_num].buf_bytes);
-#else
-    r = write(connections[cnum].conn_fd, urls[url_num].buf, urls[url_num].buf_bytes);
-#endif
     if (r < 0) {
       perror(urls[url_num].url_str);
       connections[cnum].reusable = 0;
@@ -1168,13 +1127,11 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
   }
 }
 
-#ifdef USE_SSL
 static int
-cert_verify_callback(int ok, X509_STORE_CTX *ctx)
+cert_verify_callback(int ok __attribute__ ((unused)), X509_STORE_CTX *ctx __attribute__ ((unused)))
 {
   return 1;
 }
-#endif
 
 static void
 handle_connect(int cnum, struct timeval *nowP, int double_check)
@@ -1182,9 +1139,7 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
   static int connect_failures = 0;
   int url_num;
   int r;
-#ifdef linux
   struct epoll_event ev;
-#endif
 
 #ifdef DEBUG
   fprintf(stderr, "Entering handle_connect() for CNUM %d\n", cnum);
@@ -1218,7 +1173,7 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
       }
     }
   }
-#ifdef USE_SSL
+
   if (urls[url_num].protocol == PROTO_HTTPS) {
     int flags;
 
@@ -1260,10 +1215,10 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
       return;
     }
   }
-#endif
-#ifdef linux
+
   ev.events = EPOLLIN;
   ev.data.u32 = cnum;
+
 #ifdef DEBUG
   fprintf(stderr, "Mod FD %d to read for CNUM %d\n", connections[cnum].conn_fd, cnum);
 #endif
@@ -1272,19 +1227,14 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
     (void) close(connections[cnum].conn_fd);
     return;
   }
-#endif
   /* Send the request. */
   connections[cnum].did_connect = 1;
   connections[cnum].request_at = *nowP;
   connections[cnum].stats.requests++;
-#ifdef USE_SSL
   if (urls[url_num].protocol == PROTO_HTTPS)
     r = SSL_write(connections[cnum].ssl, urls[url_num].buf, urls[url_num].buf_bytes);
   else
     r = write(connections[cnum].conn_fd, urls[url_num].buf, urls[url_num].buf_bytes);
-#else
-  r = write(connections[cnum].conn_fd, urls[url_num].buf, urls[url_num].buf_bytes);
-#endif
   if (r < 0) {
     perror(urls[url_num].url_str);
     connections[cnum].reusable = 0;
@@ -1303,7 +1253,7 @@ handle_read(int cnum, struct timeval *nowP)
   int bytes_to_read, bytes_read, bytes_handled;
   float elapsed;
   ClientData client_data;
-  register long checksum;
+  long checksum;
 
   tmr_reset(nowP, connections[cnum].idle_timer);
 
@@ -1326,14 +1276,10 @@ handle_read(int cnum, struct timeval *nowP)
       num_ka_conns--;
     }
   }
-#ifdef USE_SSL
   if (urls[connections[cnum].url_num].protocol == PROTO_HTTPS)
     bytes_read = SSL_read(connections[cnum].ssl, buf, bytes_to_read - 1);
   else
     bytes_read = read(connections[cnum].conn_fd, buf, bytes_to_read - 1);
-#else
-  bytes_read = read(connections[cnum].conn_fd, buf, bytes_to_read - 1);
-#endif
   if (bytes_read <= 0) {
     connections[cnum].reusable = 0;
     close_connection(cnum);
@@ -2819,7 +2765,7 @@ handle_read(int cnum, struct timeval *nowP)
 
 
 static void
-idle_connection(ClientData client_data, struct timeval *nowP)
+idle_connection(ClientData client_data, struct timeval *nowP __attribute__ ((unused)))
 {
   int cnum;
   struct timeval tv;
@@ -2847,7 +2793,7 @@ idle_connection(ClientData client_data, struct timeval *nowP)
 
 
 static void
-wakeup_connection(ClientData client_data, struct timeval *nowP)
+wakeup_connection(ClientData client_data, struct timeval *nowP __attribute__ ((unused)))
 {
   int cnum;
 
@@ -2863,18 +2809,14 @@ close_connection(int cnum)
   int url_num;
 
   if (!connections[cnum].reusable) {
-#ifdef linux
     struct epoll_event ev;
 
     ev.events = EPOLLIN | EPOLLOUT;
     ev.data.u32 = cnum;
     if (epoll_ctl(epfd, EPOLL_CTL_DEL, connections[cnum].conn_fd, &ev) < 0)
       perror("epoll delete fd");
-#endif
-#ifdef USE_SSL
     if (urls[connections[cnum].url_num].protocol == PROTO_HTTPS)
       SSL_free(connections[cnum].ssl);
-#endif
     (void) close(connections[cnum].conn_fd);
   } else {
     --connections[cnum].keep_alive;
@@ -2947,7 +2889,7 @@ close_connection(int cnum)
 
 
 static void
-progress_report(ClientData client_data, struct timeval *nowP)
+progress_report(ClientData client_data  __attribute__ ((unused)), struct timeval *nowP __attribute__ ((unused)))
 {
   float elapsed;
 
@@ -2959,7 +2901,7 @@ progress_report(ClientData client_data, struct timeval *nowP)
 
 
 static void
-start_timer(ClientData client_data, struct timeval *nowP)
+start_timer(ClientData client_data __attribute__ ((unused)), struct timeval *nowP __attribute__ ((unused)))
 {
   start_connection(nowP);
   if (do_jitter)
@@ -2968,7 +2910,7 @@ start_timer(ClientData client_data, struct timeval *nowP)
 
 
 static void
-end_timer(ClientData client_data, struct timeval *nowP)
+end_timer(ClientData client_data __attribute__ ((unused)), struct timeval *nowP __attribute__ ((unused)))
 {
   finish(nowP);
 }
@@ -3021,10 +2963,8 @@ finish(struct timeval *nowP)
   }
 
   tmr_destroy();
-#ifdef USE_SSL
   if (ssl_ctx != (SSL_CTX *) 0)
     SSL_CTX_free(ssl_ctx);
-#endif
   exit(0);
 }
 

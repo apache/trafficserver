@@ -73,6 +73,7 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 
   // we're now registered
   r->registered = true;
+  r->version = 0;
 
   return r;
 }
@@ -143,29 +144,29 @@ link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
 }
 
 // mimic Config.cc::config_string_alloc_cb
+// cookie e.g. is the DEFAULT_xxx_str value which this functiion keeps up to date with
+// the latest default applied during a config update from records.config
 static int
 link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
 
-  RecString _ss = (RecString) cookie;
-  RecString _new_value = 0;
+  RecString _ss = data.rec_string;
+  RecString _new_value = NULL;
 
-  int len = -1;
   if (_ss) {
-    len = strlen(_ss);
-    _new_value = (RecString)ats_malloc(len + 1);
-    memcpy(_new_value, _ss, len + 1);
+    _new_value = ats_strdup(_ss);
   }
 
-  RecString _temp2 = data.rec_string;
-  data.rec_string = _new_value;
+  // set new string for DEFAULT_xxx_str tp point to
+  RecString _temp2 = *((RecString *)cookie);
+  *((RecString *)cookie) = _new_value;
+  // free previous string DEFAULT_xxx_str points to
   ats_free(_temp2);
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // RecCoreInit
@@ -178,7 +179,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
 
   // set our diags
-  ink_atomic_swap(&g_diags, _diags);
+  RecSetDiags(_diags);
 
   g_records_tree = new RecTree(NULL);
   g_num_records = 0;
@@ -336,7 +337,7 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
 
       new_callback->next = NULL;
 
-      ink_debug_assert(new_callback);
+      ink_assert(new_callback);
       if (!r->config_meta.update_cb_list) {
         r->config_meta.update_cb_list = new_callback;
       } else {
@@ -345,8 +346,8 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
         for (cur_callback = r->config_meta.update_cb_list; cur_callback; cur_callback = cur_callback->next) {
           prev_callback = cur_callback;
         }
-        ink_debug_assert(prev_callback);
-        ink_debug_assert(!prev_callback->next);
+        ink_assert(prev_callback);
+        ink_assert(!prev_callback->next);
         prev_callback->next = new_callback;
       }
       err = REC_ERR_OKAY;
@@ -549,7 +550,7 @@ RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
       *update_type = r->config_meta.update_type;
       err = REC_ERR_OKAY;
     } else {
-      ink_debug_assert(!"rec_type is not CONFIG");
+      ink_assert(!"rec_type is not CONFIG");
     }
     rec_mutex_release(&(r->lock));
   }
@@ -578,7 +579,7 @@ RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
       *check_type = r->config_meta.check_type;
       err = REC_ERR_OKAY;
     } else {
-      ink_debug_assert(!"rec_type is not CONFIG");
+      ink_assert(!"rec_type is not CONFIG");
     }
     rec_mutex_release(&(r->lock));
   }
@@ -607,7 +608,7 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
       *check_expr = r->config_meta.check_expr;
       err = REC_ERR_OKAY;
     } else {
-      ink_debug_assert(!"rec_type is not CONFIG");
+      ink_assert(!"rec_type is not CONFIG");
     }
     rec_mutex_release(&(r->lock));
   }
@@ -651,7 +652,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
       snprintf(*buf, 1023, "%" PRId64 "", r->data_default.rec_counter);
       break;
     default:
-      ink_debug_assert(!"Unexpected RecD type");
+      ink_assert(!"Unexpected RecD type");
       ats_free(*buf);
       *buf = NULL;
       break;
@@ -726,7 +727,7 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
   if ((r = register_record(rec_type, name, data_type, data_default)) != NULL) {
     r->stat_meta.persist_type = persist_type;
   } else {
-    ink_debug_assert(!"Can't register record!");
+    ink_assert(!"Can't register record!");
   }
   ink_rwlock_unlock(&g_records_rwlock);
 
@@ -1026,7 +1027,7 @@ REC_ConfigReadCounter(const char *name)
 RecInt
 REC_readInteger(const char *name, bool * found, bool lock)
 {
-  ink_debug_assert(name);
+  ink_assert(name);
   RecInt _tmp = 0;
   bool _found;
   _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
@@ -1038,7 +1039,7 @@ REC_readInteger(const char *name, bool * found, bool lock)
 RecFloat
 REC_readFloat(char *name, bool * found, bool lock)
 {
-  ink_debug_assert(name);
+  ink_assert(name);
   RecFloat _tmp = 0.0;
   bool _found;
   _found = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
@@ -1050,7 +1051,7 @@ REC_readFloat(char *name, bool * found, bool lock)
 RecCounter
 REC_readCounter(char *name, bool * found, bool lock)
 {
-  ink_debug_assert(name);
+  ink_assert(name);
   RecCounter _tmp = 0;
   bool _found;
   _found = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
@@ -1062,7 +1063,7 @@ REC_readCounter(char *name, bool * found, bool lock)
 RecString
 REC_readString(const char *name, bool * found, bool lock)
 {
-  ink_debug_assert(name);
+  ink_assert(name);
   RecString _tmp = NULL;
   bool _found;
   _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
@@ -1101,7 +1102,7 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
 void
 RecSignalManager(int id, const char *msg)
 {
-  ink_debug_assert(pmgmt);
+  ink_assert(pmgmt);
   pmgmt->signalManager(id, msg);
 }
 

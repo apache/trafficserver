@@ -23,9 +23,6 @@
 #ifndef __STATEMENT_H__
 #define __STATEMENT_H__ 1
 
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__statement_h[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <string>
 #include <vector>
 #include <ts/ts.h>
@@ -79,7 +76,7 @@ class Statement
 
   const ResourceIDs get_resource_ids() const;
 
-  virtual void initialize(Parser& p) {
+  virtual void initialize(Parser&) { // Parser &p
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     _initialized = true;

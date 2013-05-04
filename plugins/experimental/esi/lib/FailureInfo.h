@@ -27,7 +27,7 @@
 #include <vector>
 #include <map>
 #include <sys/time.h>
-#if defined(solaris)
+#if defined(solaris) && !defined(timersub)
 #define timersub(a, b, result) \
   do { \
     (result)->tv_sec = (a)->tv_sec - (b)->tv_sec; \

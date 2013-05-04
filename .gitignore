@@ -9,6 +9,8 @@
 
 .deps
 
+.dirstamp
+
 !doc/Doxyfile.in
 
 /aclocal.m4

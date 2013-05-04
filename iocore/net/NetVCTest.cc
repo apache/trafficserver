@@ -36,13 +36,6 @@
 
 #include "P_Net.h"
 
-// Get rid of any previous MIN declaration, since we have our own
-// funky MIN here. /leif
-#if defined(MIN)
-#undef MIN
-#endif
-#define MIN(x,y) (x <= y) ? x : y;
-
 // Each test requires two definition entries.  One for the passive
 //   side of the connection and one for the active side
 //
@@ -102,7 +95,7 @@ NVC_test_def netvc_tests_def[] = {
   {"overflow", 50, 50, 0, 35000, 1024, 35, EVENT_NONE, VC_EVENT_WRITE_COMPLETE}
 
 };
-int num_netvc_tests = SIZE(netvc_tests_def);
+const unsigned num_netvc_tests = countof(netvc_tests_def);
 
 
 NetVCTest::NetVCTest():

@@ -28,6 +28,10 @@
 
 #include "ink_config.h"
 
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
 /* TODO: Should this have a value ? */
@@ -51,6 +55,16 @@ extern "C"
   void* ats_free_null(void *ptr);
   void ats_memalign_free(void *ptr);
   int ats_mallopt(int param, int value);
+
+  static inline unsigned ats_pagesize(void) {
+#if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+    return (unsigned)sysconf(_SC_PAGESIZE);
+#elif defined(HAVE_GETPAGESIZE)
+    return (unsigned)getpagesize()
+#else
+    return 8192u;
+#endif
+  }
 
 #define ats_strdup(p)        _xstrdup((p), -1, NULL)
 #define ats_strndup(p,n)     _xstrdup((p), n, NULL)

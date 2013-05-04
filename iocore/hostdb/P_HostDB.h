@@ -31,11 +31,6 @@
 #ifndef _P_HostDB_h_
 #define _P_HostDB_h_
 
-#ifndef INLINE_CC
-#undef  TS_INLINE
-#define TS_INLINE inline
-#endif
-
 #include "libts.h"
 
 #ifdef SPLIT_DNS

@@ -29,7 +29,6 @@
  ****************************************************************************/
 
 #include "ink_config.h"
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 
 #include <sys/types.h>
 
@@ -203,7 +202,7 @@ getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableH
 }
 
 bool 
-getClusterCacheLocal(URL *url, char *hostname)
+getClusterCacheLocal(URL *url, char * /* hostname ATS_UNUSED */)
 {
   HttpRequestData rdata;
   CacheControlResult result;

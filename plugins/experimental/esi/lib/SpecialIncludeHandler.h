@@ -54,6 +54,7 @@ public:
   virtual bool getData(int include_id, const char *&data, int &data_len) = 0;
 
   virtual void getFooter(const char *&footer, int &footer_len) {
+    footer = NULL;
     footer_len = 0;
   }
 

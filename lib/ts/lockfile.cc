@@ -195,7 +195,7 @@ Lockfile::Close(void)
 //-------------------------------------------------------------------------
 
 static void
-lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char *pname, int sig)
+lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char * /* pname ATS_UNUSED */, int sig)
 {
   int err;
   int status;

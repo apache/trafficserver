@@ -28,12 +28,9 @@
  *
  *
  ****************************************************************************/
-
-
 #include "ink_platform.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_time.h"
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 
 #include "Main.h"
 #include "URL.h"
@@ -411,7 +408,7 @@ bool PrefixMod::check(HttpRequestData* req) const {
   return zret;
 }
 PrefixMod*
-PrefixMod::make(char * value, char const ** error ) {
+PrefixMod::make(char * value, char const ** /* error ATS_UNUSED */) {
   PrefixMod* mod = new PrefixMod;
   // strip leading slashes because get_path which is used later
   // doesn't include them from the URL.
@@ -439,7 +436,7 @@ bool SuffixMod::check(HttpRequestData* req) const {
     ;
 }
 SuffixMod*
-SuffixMod::make(char * value, char const ** error ) {
+SuffixMod::make(char * value, char const ** /* error ATS_UNUSED */) {
   SuffixMod* mod = new SuffixMod;
   mod->text.set(ats_strdup(value), strlen(value));
   return mod;
@@ -461,7 +458,7 @@ bool TagMod::check(HttpRequestData* req) const {
   return 0 == strcmp(req->tag, text.data());
 }
 TagMod*
-TagMod::make(char * value, char const ** error ) {
+TagMod::make(char * value, char const ** /* error ATS_UNUSED */) {
   TagMod* mod = new TagMod;
   mod->text.set(ats_strdup(value), strlen(value));
   return mod;

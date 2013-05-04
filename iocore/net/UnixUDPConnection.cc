@@ -146,11 +146,11 @@ UDPConnection::Release()
   p->ep.stop();
 
   if (ink_atomic_increment(&p->refcount, -1) == 1) {
-    ink_debug_assert(p->callback_link.next == NULL);
-    ink_debug_assert(p->callback_link.prev == NULL);
-    ink_debug_assert(p->polling_link.next == NULL);
-    ink_debug_assert(p->polling_link.prev == NULL);
-    ink_debug_assert(p->newconn_alink.next == NULL);
+    ink_assert(p->callback_link.next == NULL);
+    ink_assert(p->callback_link.prev == NULL);
+    ink_assert(p->polling_link.next == NULL);
+    ink_assert(p->polling_link.prev == NULL);
+    ink_assert(p->newconn_alink.next == NULL);
 
     delete this;
   }

@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include "ink_code.h"
 #include "ink_assert.h"
-#include "ink_unused.h"       /* MAGIC_EDITING_TAG */
 
 
 /**

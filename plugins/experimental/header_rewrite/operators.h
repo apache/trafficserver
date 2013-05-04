@@ -22,9 +22,6 @@
 #ifndef __OPERATORS_H__
 #define __OPERATORS_H__ 1
 
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__operators_h[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <string>
 #include <ts/ts.h>
 
@@ -170,7 +167,7 @@ public:
   }
 
 protected:
-  void exec(const Resources& res) const { };
+  void exec(const Resources& /* res ATS_UNUSED */) const { };
 
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorNoOp);

@@ -32,10 +32,6 @@
 #ifndef _I_DNS_h_
 #define _I_DNS_h_
 
-#ifndef TS_INLINE
-#define TS_INLINE
-#endif
-
 #include "I_EventSystem.h"
 #include "I_HostDB.h"
 #include "I_Net.h"

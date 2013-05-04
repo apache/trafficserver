@@ -103,7 +103,7 @@ char *
 ink_string_concatenate_strings(char *dest, ...)
 {
   va_list ap;
-  register char *s, *d;
+  char *s, *d;
 
   va_start(ap, dest);
 
@@ -138,7 +138,7 @@ char *
 ink_string_concatenate_strings_n(char *dest, int n, ...)
 {
   va_list ap;
-  register char *s, *d;
+  char *s, *d;
 
   va_start(ap, n);
 

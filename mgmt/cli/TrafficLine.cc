@@ -44,6 +44,8 @@ static int ShutdownMgmtCluster;
 static int ShutdownMgmtLocal;
 static int ClearCluster;
 static int ClearNode;
+static char ZeroCluster[1024];
+static char ZeroNode[1024];
 static int VersionFlag;
 
 static TSError
@@ -67,6 +69,17 @@ handleArgInvocation()
     return TSStatsReset(true);
   } else if (ClearNode == 1) {
     return TSStatsReset(false);
+  } else if (*ZeroNode != '\0' || *ZeroCluster != '\0') {
+    TSError err;
+    TSRecordEle *rec_ele = TSRecordEleCreate();
+    char *name = *ZeroNode ? ZeroNode : ZeroCluster;
+    if ((err = TSRecordGet(name, rec_ele)) != TS_ERR_OKAY) {
+      fprintf(stderr, "%s: %s\n", programName, TSGetErrorMessage(err));
+      TSRecordEleDestroy(rec_ele);
+      return err;
+    }
+    TSRecordEleDestroy(rec_ele);
+    return TSStatsReset(*ZeroCluster ? true : false, name);
   } else if (QueryDeadhosts == 1) {
     fprintf(stderr, "Query Deadhosts is not implemented, it requires support for congestion control.\n");
     fprintf(stderr, "For more details, examine the old code in cli/CLI.cc: QueryDeadhosts()\n");
@@ -147,6 +160,8 @@ main(int argc, char **argv)
   ShutdownMgmtLocal = 0;
   ClearCluster = 0;
   ClearNode = 0;
+  ZeroCluster[0] = '\0';
+  ZeroNode[0] = '\0';
   VersionFlag = 0;
 
   // build the application information structure
@@ -169,11 +184,13 @@ main(int argc, char **argv)
     {"bounce_local", 'b', "Bounce local traffic_server", "F", &BounceLocal, NULL, NULL},
     {"clear_cluster", 'C', "Clear Statistics (cluster wide)", "F", &ClearCluster, NULL, NULL},
     {"clear_node", 'c', "Clear Statistics (local node)", "F", &ClearNode, NULL, NULL},
+    {"zero_cluster", 'Z', "Zero Specific Statistic (cluster wide)", "S1024", &ZeroCluster, NULL, NULL},
+    {"zero_node", 'z', "Zero Specific Statistic (local node)", "S1024", &ZeroNode, NULL, NULL},
     {"version", 'V', "Print Version Id", "T", &VersionFlag, NULL, NULL},
   };
 
   // Process command line arguments and dump into variables
-  process_args(argument_descriptions, SIZE(argument_descriptions), argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // check for the version number request
   if (VersionFlag) {

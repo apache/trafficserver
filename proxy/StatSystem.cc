@@ -167,12 +167,12 @@ static int
 persistent_stat(int i)
 {
 #ifndef DEFAULT_PERSISTENT
-  for (int j = 0; j < (int) SIZE(persistent_stats); j++)
+  for (unsigned j = 0; j < countof(persistent_stats); j++)
     if (persistent_stats[j] == i)
       return 1;
   return 0;
 #else
-  for (int j = 0; j < (int) SIZE(non_persistent_stats); j++)
+  for (unsigned j = 0; j < countof(non_persistent_stats); j++)
     if (non_persistent_stats[j] == i)
       return 0;
   return 1;

@@ -151,7 +151,7 @@ ink_string_is_prefix(char *prefix, char *str)
 static inline char *
 ink_string_copy(char *dest, char *src, int n)
 {
-  register char *s, *d;
+  char *s, *d;
 
   s = src;
   d = dest;
@@ -178,9 +178,9 @@ ink_string_copy(char *dest, char *src, int n)
  *---------------------------------------------------------------------------*/
 
 static inline char *
-ink_string_concatenate_two_strings(char *dest, register char *s1, register char *s2)
+ink_string_concatenate_two_strings(char *dest, char *s1, char *s2)
 {
-  register char *d;
+  char *d;
 
   d = dest;
   while (*s1)

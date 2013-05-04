@@ -22,24 +22,15 @@
  */
 
 #include "ink_error.h"
+#include "ink_defs.h"
 #include <assert.h>
 #include "stdio.h"
 #include "ink_mutex.h"
-#include "ink_unused.h"     /* MAGIC_EDITING_TAG */
 
 x_pthread_mutexattr_t _g_mattr;
 
 ProcessMutex __global_death = PTHREAD_MUTEX_INITIALIZER;
 ProcessMutex *gobal_death_mutex = &__global_death;
-
-void
-ink_ProcessMutex_init(ProcessMutex * m, const char *name)
-{
-  NOWARN_UNUSED(name);
-  if (pthread_mutex_init(m, &_g_mattr.attr) != 0) {
-    abort();
-  }
-}
 
 void
 ink_ProcessMutex_destroy(ProcessMutex * m)

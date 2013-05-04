@@ -32,14 +32,14 @@
 #ifndef _ink_aiocb_h_
 #define _ink_aiocb_h_
 
-#include "ink_port.h"
+#include "ink_defs.h"
 
 /* TODO use native aiocb where possible */
 
 #define	LIO_READ	0x1
 #define	LIO_WRITE	0x2
 
-typedef struct ink_aiocb
+struct ink_aiocb
 {
   int aio_fildes;
 #if	defined(__STDC__)
@@ -58,6 +58,6 @@ typedef struct ink_aiocb
   //    aio_result_t    aio_resultp;    /* results */
   int aio_state;                /* state flag for List I/O */
   int aio__pad[1];              /* extension padding */
-} ink_aiocb_t;
+};
 
 #endif

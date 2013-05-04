@@ -29,13 +29,10 @@
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
-#define __STDC_LIMIT_MACROS
-#include <ts/ts.h>
-#include <ts/experimental.h>
 
-// This gets the PRI*64 types
-#define __STDC_FORMAT_MACROS 1
-#include <inttypes.h>
+#include "ts/ts.h"
+#include "ts/experimental.h"
+#include "ink_defs.h"
 
 static TSCont global_contp;
 
@@ -257,7 +254,7 @@ cleanup(TSCont contp)
 
 //----------------------------------------------------------------------------
 static int
-handle_io(TSCont contp, TSEvent event, void *edata)
+handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   cache_scan_state *cstate = (cache_scan_state *) TSContDataGet(contp);
 
@@ -491,7 +488,7 @@ cache_print_plugin(TSCont contp, TSEvent event, void *edata)
 
 //----------------------------------------------------------------------------
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
   global_contp = TSContCreate(cache_print_plugin, TSMutexCreate());
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);

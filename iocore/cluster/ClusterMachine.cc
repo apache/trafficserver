@@ -146,15 +146,22 @@ clusterHandlers(0)
   else
     hostname_len = 0;
 
-  REC_ReadConfigInteger(num_connections, "proxy.config.cluster.num_of_cluster_connections");
+  num_connections = eventProcessor.n_threads_for_type[ET_CLUSTER];
   clusterHandlers = (ClusterHandler **)ats_calloc(num_connections, sizeof(ClusterHandler *));
 }
 
 ClusterHandler *ClusterMachine::pop_ClusterHandler(int no_rr)
 {
+  int find = 0;
   int64_t now = rr_count;
   if (no_rr == 0) {
     ink_atomic_increment(&rr_count, 1);
+  }
+
+  /* will happen when ts start (cluster connection is not established) */
+  while (!clusterHandlers[now % this->num_connections] && (find < this->num_connections)) {
+    now++;
+    find++;
   }
   return this->clusterHandlers[now % this->num_connections];
 }

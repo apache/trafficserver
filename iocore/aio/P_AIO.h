@@ -31,11 +31,6 @@
 #ifndef _P_AIO_h_
 #define _P_AIO_h_
 
-#ifndef INLINE_CC
-#undef  TS_INLINE
-#define TS_INLINE inline
-#endif
-
 #include "P_EventSystem.h"
 #include "I_AIO.h"
 
@@ -46,6 +41,60 @@
 #define AIO_MODULE_VERSION        makeModuleVersion(AIO_MODULE_MAJOR_VERSION,\
 						    AIO_MODULE_MINOR_VERSION,\
 						    PRIVATE_MODULE_HEADER)
+
+TS_INLINE int
+AIOCallback::ok()
+{
+  return (off_t) aiocb.aio_nbytes == (off_t) aio_result;
+}
+
+#if AIO_MODE == AIO_MODE_NATIVE
+
+extern Continuation *aio_err_callbck;
+
+struct AIOCallbackInternal: public AIOCallback
+{
+  int io_complete(int event, void *data);
+  AIOCallbackInternal()
+  {
+    memset ((char *) &(this->aiocb), 0, sizeof(this->aiocb));
+    SET_HANDLER(&AIOCallbackInternal::io_complete);
+  }
+};
+
+TS_INLINE int
+AIOCallbackInternal::io_complete(int event, void *data)
+{
+  (void) event;
+  (void) data;
+
+  if (!ok() && aio_err_callbck)
+    eventProcessor.schedule_imm(aio_err_callbck, ET_CALL, AIO_EVENT_DONE);
+  mutex = action.mutex;
+  MUTEX_LOCK(lock, mutex, this_ethread());
+  if (!action.cancelled)
+    action.continuation->handleEvent(AIO_EVENT_DONE, this);
+  return EVENT_DONE;
+}
+
+TS_INLINE int
+AIOVec::mainEvent(int /* event */, Event *) {
+  ++completed;
+  if (completed < size)
+    return EVENT_CONT;
+  else if (completed == size) {
+    MUTEX_LOCK(lock, action.mutex, this_ethread());
+    if (!action.cancelled)
+      action.continuation->handleEvent(AIO_EVENT_DONE, this);
+    delete this;
+    return EVENT_DONE;
+  }
+  ink_assert(!"AIOVec mainEvent err");
+  return EVENT_ERROR;
+}
+
+#else /* AIO_MODE != AIO_MODE_NATIVE */
+
 struct AIO_Reqs;
 
 struct AIOCallbackInternal: public AIOCallback
@@ -64,12 +113,6 @@ struct AIOCallbackInternal: public AIOCallback
     // coverity[uninit_member]
   }
 };
-
-TS_INLINE int
-AIOCallback::ok()
-{
-  return (off_t) aiocb.aio_nbytes == (off_t) aio_result;
-}
 
 TS_INLINE int
 AIOCallbackInternal::io_complete(int event, void *data)
@@ -97,6 +140,7 @@ struct AIO_Reqs
   volatile int requests_queued;
 };
 
+#endif // AIO_MODE == AIO_MODE_NATIVE
 #ifdef AIO_STATS
 class AIOTestData:public Continuation
 {

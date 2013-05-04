@@ -85,7 +85,7 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
       m_last_roll_time(0),
       m_ref_count (0)
 {
-    ink_debug_assert (format != NULL);
+    ink_assert (format != NULL);
     m_format = new LogFormat(*format);
 
     if (file_format == BINARY_LOG) {
@@ -118,7 +118,7 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
 #endif // TS_MICRO
 
     LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
-    ink_debug_assert(b);
+    ink_assert(b);
     SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
     _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
@@ -164,7 +164,7 @@ LogObject::LogObject(LogObject& rhs)
     // copy gets a fresh log buffer
     //
     LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
-    ink_debug_assert(b);
+    ink_assert(b);
     SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
     Debug("log-config", "exiting LogObject copy constructor, "
@@ -210,7 +210,7 @@ LogObject::~LogObject()
 void
 LogObject::generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format)
 {
-  ink_debug_assert(log_dir && basename);
+  ink_assert(log_dir && basename);
 
   int i = -1, len = 0;
   char c;
@@ -241,7 +241,7 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
       ext_len = 5;
       break;
     default:
-      ink_debug_assert(!"unknown file format");
+      ink_assert(!"unknown file format");
     }
   }
 
@@ -415,10 +415,14 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
     head_p h;
     int result = 0;
     do {
-      INK_QUEUE_LD64(h, m_log_buffer);
+      INK_QUEUE_LD(h, m_log_buffer);
       head_p new_h;
       SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
-      result = ink_atomic_cas((int64_t*)&m_log_buffer.data, h.data, new_h.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) &m_log_buffer.data, h.data, new_h.data);
+#else
+       result = ink_atomic_cas((int64_t *) &m_log_buffer.data, h.data, new_h.data);
+#endif
     } while (!result);
     buffer = (LogBuffer*)FREELIST_POINTER(h);
     result_code = buffer->checkout_write(write_offset, bytes_needed);
@@ -440,10 +444,14 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       INK_WRITE_MEMORY_BARRIER;
       head_p old_h;
       do {
-        INK_QUEUE_LD64(old_h, m_log_buffer);
+        INK_QUEUE_LD(old_h, m_log_buffer);
         head_p tmp_h;
         SET_FREELIST_POINTER_VERSION(tmp_h, new_buffer, 0);
-        result = ink_atomic_cas((int64_t*)&m_log_buffer.data, old_h.data, tmp_h.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) &m_log_buffer.data, old_h.data, tmp_h.data);
+#else
+       result = ink_atomic_cas((int64_t *) &m_log_buffer.data, old_h.data, tmp_h.data);
+#endif
       } while (!result);
       if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h))
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
@@ -473,17 +481,21 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       break;
 
     default:
-      ink_debug_assert(false);
+      ink_assert(false);
     }
     if (!decremented) {
       head_p old_h;
       do {
-        INK_QUEUE_LD64(old_h, m_log_buffer);
+        INK_QUEUE_LD(old_h, m_log_buffer);
         if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
           break;
         head_p tmp_h;
         SET_FREELIST_POINTER_VERSION(tmp_h, FREELIST_POINTER(h), FREELIST_VERSION(old_h) - 1);
-        result = ink_atomic_cas((int64_t*)&m_log_buffer.data, old_h.data, tmp_h.data);
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) &m_log_buffer.data, old_h.data, tmp_h.data);
+#else
+       result = ink_atomic_cas((int64_t *) &m_log_buffer.data, old_h.data, tmp_h.data);
+#endif
       } while (!result);
       if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
         ink_atomic_increment(&buffer->m_references, -1);
@@ -822,7 +834,7 @@ TextLogObject::write(const char *format, ...)
 {
   int ret_val;
 
-  ink_debug_assert(format != NULL);
+  ink_assert(format != NULL);
   va_list ap;
   va_start(ap, format);
   ret_val = va_write(format, ap);
@@ -848,7 +860,7 @@ TextLogObject::va_write(const char *format, va_list ap)
   char entry[MAX_ENTRY];
   int len;
 
-  ink_debug_assert(format != NULL);
+  ink_assert(format != NULL);
   len = 0;
 
   if (m_timestamps) {

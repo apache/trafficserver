@@ -32,7 +32,7 @@ extern "C"
 {
 #endif
 /* dumps the current back trace to stderr */
-  void ink_stack_trace_dump(int sighandler_frame = 0);
+  void ink_stack_trace_dump();
 #ifdef __cplusplus
 }
 #endif

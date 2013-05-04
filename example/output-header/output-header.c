@@ -33,15 +33,15 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include <unistd.h>
 
-#include <ts/ts.h>
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 #define DEBUG_TAG "output-header"
 
 static void
-handle_dns(TSHttpTxn txnp, TSCont contp)
+handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
@@ -174,7 +174,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 

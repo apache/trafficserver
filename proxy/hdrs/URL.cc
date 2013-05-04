@@ -1066,7 +1066,10 @@ url_parse_scheme(HdrHeap * heap, URLImpl * url, const char **start, const char *
     if ((end - cur >= 5) && (((cur[0] ^ 'h') | (cur[1] ^ 't') | (cur[2] ^ 't') | (cur[3] ^ 'p') | (cur[4] ^ ':')) == 0)) {
       scheme_end = cur + 4;                   // point to colon
       url_scheme_set(heap, url, scheme_start, URL_WKSIDX_HTTP, 4, copy_strings_p);
-    } else { // some other scheme, try to parse it.
+    } else if ('/' != *cur) {
+      // For forward transparent mode, the URL for the method can just be a path,
+      // so don't scan that for a scheme, as we could find a false positive if there
+      // is a URL in the parameters (which is legal).
       while (':' != *cur && ++cur < end)
         ;
       if (cur < end) { // found a colon
@@ -1227,7 +1230,7 @@ url_parse_internet(HdrHeap* heap, URLImpl* url,
     url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
   
   if (last_colon) {
-    ink_debug_assert(n_colon);
+    ink_assert(n_colon);
     port.set(last_colon+1, cur);
     if (!port._size)
       return PARSE_ERROR; // colon w/o port value.
@@ -1282,7 +1285,7 @@ parse_path2:
       goto parse_fragment1;
     }
   } else {
-    ink_debug_assert((*cur != ';') && (*cur != '?') && (*cur != '#'));
+    ink_assert((*cur != ';') && (*cur != '?') && (*cur != '#'));
   }
   GETNEXT(done);
   goto parse_path2;
@@ -1575,7 +1578,7 @@ url_MMH_get_fast(URLImpl * url, INK_MD5 * md5)
   *p++ = '?';
   // no query
 
-  ink_debug_assert(sizeof(url->m_port) == 2);
+  ink_assert(sizeof(url->m_port) == 2);
   uint16_t port = (uint16_t) url_canonicalize_port(url->m_url_type, url->m_port);
   *p++ = ((char *) &port)[0];
   *p++ = ((char *) &port)[1];

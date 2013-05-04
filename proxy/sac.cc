@@ -23,7 +23,6 @@
 
 #include "ink_config.h"
 #include "ink_file.h"
-#include "ink_unused.h"
 #include "I_Layout.h"
 #include "I_Version.h"
 #include "P_Net.h"
@@ -71,15 +70,13 @@ ArgumentDescription argument_descriptions[] = {
 #endif
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
-int n_argument_descriptions = SIZE(argument_descriptions);
-
 
 /*-------------------------------------------------------------------------
   main
   -------------------------------------------------------------------------*/
 
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   // build the application information structure
   //
@@ -91,7 +88,7 @@ main(int argc, char *argv[])
   // take care of command-line arguments
   //
   snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);
-  process_args(argument_descriptions, n_argument_descriptions, argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // Get log directory
   ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));

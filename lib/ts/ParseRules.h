@@ -24,13 +24,10 @@
 #if !defined (_ParseRules_h_)
 #define _ParseRules_h_
 
-#include "ink_bool.h"
-#include "ink_port.h"
-#include "ink_unused.h"
-
 #include "Resource.h"
 #include <string.h>
 
+#include "ink_defs.h"
 #include "ink_apidefs.h"
 
 typedef unsigned int CTypeResult;

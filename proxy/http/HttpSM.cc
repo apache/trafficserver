@@ -155,7 +155,7 @@ HttpSM::_instantiate_func(HttpSM * prototype, HttpSM * new_instance)
     pd[to[j]] = val[j];
   }
 
-  ink_debug_assert((memcmp((char *) new_instance, (char *) prototype, pre_history_len) == 0) &&
+  ink_assert((memcmp((char *) new_instance, (char *) prototype, pre_history_len) == 0) &&
                    (memcmp(((char *) new_instance) + post_offset, ((char *) prototype) + post_offset, post_history_len) == 0));
 #else
   // memcpy(new_instance, prototype, total_len);
@@ -294,7 +294,7 @@ history[pos].fileline = __FILE__ ":" _REMEMBER (__LINE__);
 #undef STATE_ENTER
 #endif
 #define STATE_ENTER(state_name, event) { \
-    /*ink_debug_assert (magic == HTTP_SM_MAGIC_ALIVE); */ REMEMBER (event, reentrancy_count);  \
+    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE); */ REMEMBER (event, reentrancy_count);  \
         DebugSM("http", "[%" PRId64 "] [%s, %s]", sm_id, \
         #state_name, HttpDebugNames::get_event_name(event)); }
 
@@ -418,6 +418,8 @@ HttpSM::init()
   t_state.cache_info.config.cache_vary_default_other = t_state.http_config_param->cache_vary_default_other;
 
   t_state.init();
+  t_state.srv_lookup = hostdb_srv_enabled;
+
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
   // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   // TODO: This probably doesn't honor this as a per-transaction overridable config.
@@ -728,9 +730,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
   if (event == VC_EVENT_READ_READY &&
       state == PARSE_ERROR &&
-      is_transparent_passthrough_allowed()) {
+      is_transparent_passthrough_allowed() &&
+      ua_raw_buffer_reader != NULL) {
 
-      ink_assert(ua_raw_buffer_reader != NULL);
       DebugSM("http", "[%" PRId64 "] first request on connection failed parsing, switching to passthrough.", sm_id);
 
       t_state.transparent_passthrough = true;
@@ -773,6 +775,14 @@ HttpSM::state_read_client_request_header(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     } else {
+      if (is_transparent_passthrough_allowed() &&
+          ua_raw_buffer_reader != NULL &&
+          ua_raw_buffer_reader->get_current_block()->write_avail() <= 0) {
+        //Disable passthrough regardless of eventual parsing failure or success -- otherwise
+        //we either have to consume some data or risk blocking the writer.
+        ua_raw_buffer_reader->dealloc();
+        ua_raw_buffer_reader = NULL;
+      }
       ua_entry->read_vio->reenable();
       return VC_EVENT_CONT;
     }
@@ -783,7 +793,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
       ua_session->m_active = true;
       HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
     }
-    if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET) {
+    if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE ||
+         (t_state.hdr_info.request_content_length == 0 &&
+          t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
+
       // Enable further IO to watch for client aborts
       ua_entry->read_vio->reenable();
     } else {
@@ -837,7 +850,7 @@ HttpSM::state_drain_client_request_body(int event, void *data)
 
       // Since we are only reading what's needed to complete
       //   the post, there must be something left to do
-      ink_debug_assert(avail < left);
+      ink_assert(avail < left);
 
       client_request_body_bytes += avail;
       ua_buffer_reader->consume(avail);
@@ -851,7 +864,7 @@ HttpSM::state_drain_client_request_body(int event, void *data)
 
       ua_buffer_reader->consume(avail);
       client_request_body_bytes += avail;
-      ink_debug_assert(client_request_body_bytes == t_state.hdr_info.request_content_length);
+      ink_assert(client_request_body_bytes == t_state.hdr_info.request_content_length);
 
       ua_buffer_reader->mbuf->size_index = HTTP_HEADER_BUFFER_SIZE_INDEX;
       ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
@@ -1334,7 +1347,7 @@ HttpSM::state_api_callout(int event, void *data)
 
   switch (event) {
   case EVENT_INTERVAL:
-    ink_debug_assert(pending_action == data);
+    ink_assert(pending_action == data);
     pending_action = NULL;
     // FALLTHROUGH
   case EVENT_NONE:
@@ -1383,7 +1396,7 @@ HttpSM::state_api_callout(int event, void *data)
 
           if (!plugin_lock) {
             HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
-            ink_debug_assert(pending_action == NULL);
+            ink_assert(pending_action == NULL);
             pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
             return 0;
           }
@@ -1888,9 +1901,9 @@ HttpSM::state_send_server_request_header(int event, void *data)
     server_entry->write_buffer = NULL;
     method = t_state.hdr_info.server_request.method_get_wksidx();
     if (!t_state.api_server_request_body_set &&
-        (method != HTTP_WKSIDX_GET) &&
-        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUT ||
-         (t_state.hdr_info.extension_method && t_state.hdr_info.request_content_length > 0))) {
+         method != HTTP_WKSIDX_TRACE &&
+         (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
@@ -1964,51 +1977,34 @@ HttpSM::process_srv_info(HostDBInfo * r)
 {
   DebugSM("dns_srv", "beginning process_srv_info");
 
-  SRVHosts s(r);                /* handled by conversion constructor */
-  char new_host[MAXDNAME];
-
   /* we didnt get any SRV records, continue w normal lookup */
-  if (!r->srv_count) {
+  if (!r || !r->is_srv || !r->round_robin) {
+    t_state.dns_info.srv_hostname[0] = '\0';
+    t_state.dns_info.srv_lookup_success = false;
+    t_state.srv_lookup = false;
     DebugSM("dns_srv", "No SRV records were available, continuing to lookup %s", t_state.dns_info.lookup_name);
-    ink_strlcpy(new_host, t_state.dns_info.lookup_name, sizeof(new_host));
-    goto lookup;
-  }
-
-  s.getWeightedHost(&new_host[0]);
-
-  if (*new_host == '\0') {
-    DebugSM("dns_srv", "Weighted host returned was NULL or blank!, using %s as origin", t_state.dns_info.lookup_name);
-    ink_strlcpy(new_host, t_state.dns_info.lookup_name, sizeof(new_host));
   } else {
-    DebugSM("dns_srv", "Weighted host now: %s", new_host);
-  }
-
-  DebugSM("dns_srv", "ending process_srv_info SRV stuff; moving on to lookup origin host");
-
-lookup:
-  DebugSM("http_seq", "[HttpSM::process_srv_info] Doing DNS Lookup based on SRV %s", new_host);
-
-  int server_port = t_state.current.server ? t_state.current.server->port : t_state.server_info.port;
-
-  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_lookup);
-
-  HostDBProcessor::Options opt;
-  if (t_state.api_txn_dns_timeout_value != -1) {
-    opt.timeout = t_state.api_txn_dns_timeout_value;
-    DebugSM("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS", t_state.api_txn_dns_timeout_value);
-  }
-  opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
-  opt.port = server_port;
-  opt.host_res_style = ua_session->host_res_style;
-
-  Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn) & HttpSM::process_hostdb_info, &new_host[0], 0, opt);
-
-  if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
-    ink_assert(!pending_action);
-    pending_action = dns_lookup_action_handle;
-    historical_action = pending_action;
-  } else {
-    call_transact_and_set_next_state(NULL);
+    HostDBRoundRobin *rr = r->rr();
+    HostDBInfo *srv = NULL;
+    if (rr) {
+      srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex.m_ptr->thread_holding->generator,
+          ink_cluster_time(), (int) t_state.txn_conf->down_server_timeout);
+    }
+    if (!srv) {
+      t_state.dns_info.srv_lookup_success = false;
+      t_state.dns_info.srv_hostname[0] = '\0';
+      t_state.srv_lookup = false;
+      DebugSM("dns_srv", "SRV records empty for %s", t_state.dns_info.lookup_name);
+    } else {
+      ink_assert(r->md5_high == srv->md5_high && r->md5_low == srv->md5_low &&
+          r->md5_low_low == srv->md5_low_low);
+      t_state.dns_info.srv_lookup_success = true;
+      t_state.dns_info.srv_port = srv->data.srv.srv_port;
+      t_state.dns_info.srv_app = srv->app;
+      //t_state.dns_info.single_srv = (rr->good == 1);
+      ink_assert(srv->data.srv.key == makeHostHash(t_state.dns_info.srv_hostname));
+      DebugSM("dns_srv", "select SRV records %s", t_state.dns_info.srv_hostname);
+    }
   }
   return;
 }
@@ -2017,22 +2013,39 @@ void
 HttpSM::process_hostdb_info(HostDBInfo * r)
 {
   if (r && !r->failed()) {
-    HostDBInfo *rr = NULL;
+    ink_time_t now = ink_cluster_time();
+    HostDBInfo *ret = NULL;
     t_state.dns_info.lookup_success = true;
-
     if (r->round_robin) {
       // Since the time elapsed between current time and client_request_time
       // may be very large, we cannot use client_request_time to approximate
       // current time when calling select_best_http().
-      rr = r->rr()->select_best_http(&t_state.client_info.addr.sa, ink_cluster_time(), (int) t_state.txn_conf->down_server_timeout);
+      HostDBRoundRobin *rr = r->rr();
+      ret = rr->select_best_http(&t_state.client_info.addr.sa, now, (int) t_state.txn_conf->down_server_timeout);
       t_state.dns_info.round_robin = true;
+
+      // set the srv target`s last_failure
+      if (t_state.dns_info.srv_lookup_success) {
+        uint32_t last_failure = 0xFFFFFFFF;
+        for (int i = 0; i < rr->rrcount && last_failure != 0; ++i) {
+          if (last_failure > rr->info[i].app.http_data.last_failure)
+            last_failure = rr->info[i].app.http_data.last_failure;
+        }
+
+        if (last_failure != 0 && (uint32_t) (now - t_state.txn_conf->down_server_timeout) < last_failure) {
+          HostDBApplicationInfo app;
+          app.allotment.application1 = 0;
+          app.allotment.application2 = 0;
+          app.http_data.last_failure = last_failure;
+          hostDBProcessor.setby_srv(t_state.dns_info.lookup_name, 0, t_state.dns_info.srv_hostname, &app);
+        }
+      }
     } else {
-      rr = r;
+      ret = r;
       t_state.dns_info.round_robin = false;
     }
-    if (rr) {
-//                  m_s.host_db_info = m_updated_host_db_info = *rr;
-      t_state.host_db_info = *rr;
+    if (ret) {
+      t_state.host_db_info = *ret;
       ink_release_assert(!t_state.host_db_info.reverse_dns);
       ink_release_assert(ats_is_ip(t_state.host_db_info.ip()));
     }
@@ -2065,7 +2078,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_hostdb_lookup, event);
 
-//    ink_debug_assert (m_origin_server_vc == 0);
+//    ink_assert (m_origin_server_vc == 0);
   // REQ_FLAVOR_SCHEDULED_UPDATE can be transformed into
   // REQ_FLAVOR_REVPROXY
   ink_assert(t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
@@ -2076,6 +2089,35 @@ HttpSM::state_hostdb_lookup(int event, void *data)
     pending_action = NULL;
     process_hostdb_info((HostDBInfo *) data);
     call_transact_and_set_next_state(NULL);
+    break;
+    case EVENT_SRV_LOOKUP:
+    {
+      pending_action = NULL;
+      process_srv_info((HostDBInfo *) data);
+
+      char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
+      HostDBProcessor::Options opt;
+      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.port;
+      opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing)
+            ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS
+            : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD
+          ;
+      opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
+      opt.host_res_style = ua_session->host_res_style;
+
+      Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this,
+                                                                 (process_hostdb_info_pfn) & HttpSM::
+                                                                 process_hostdb_info,
+                                                                 host_name, 0,
+                                                                 opt);
+      if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
+        ink_assert(!pending_action);
+        pending_action = dns_lookup_action_handle;
+        historical_action = pending_action;
+      } else {
+        call_transact_and_set_next_state(NULL);
+      }
+    }
     break;
   case EVENT_HOST_DB_IP_REMOVED:
     ink_assert(!"Unexpected event from HostDB");
@@ -3128,7 +3170,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer * p)
   switch (event) {
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
-    ink_debug_assert(t_state.cache_info.object_read->valid());
+    ink_assert(t_state.cache_info.object_read->valid());
     if (t_state.cache_info.object_read->object_size_get() != INT64_MAX || event == VC_EVENT_ERROR) {
       // Abnormal termination
       t_state.squid_codes.log_code = SQUID_LOG_TCP_SWAPFAIL;
@@ -3679,7 +3721,7 @@ HttpSM::state_remap_request(int event, void *data)
   switch (event) {
   case EVENT_REMAP_ERROR:
     {
-      ink_debug_assert(!"this doesn't happen");
+      ink_assert(!"this doesn't happen");
       pending_action = NULL;
       Error("error remapping request [see previous errors]");
       call_transact_and_set_next_state(HttpTransact::HandleRequest);    //HandleRequest skips EndRemapRequest
@@ -3730,7 +3772,7 @@ HttpSM::do_remap_request(bool run_inline)
 
   if (remap_action_handle != ACTION_RESULT_DONE) {
     DebugSM("url_rewrite", "Still more remapping needed for [%" PRId64 "]", sm_id);
-    ink_debug_assert(!pending_action);
+    ink_assert(!pending_action);
     historical_action = pending_action = remap_action_handle;
   }
 
@@ -3756,16 +3798,15 @@ HttpSM::do_hostdb_lookup()
   ink_assert(pending_action == NULL);
 
   milestones.dns_lookup_begin = ink_get_hrtime();
-  bool use_srv_records = HttpConfig::m_master.srv_enabled;
+  bool use_srv_records = t_state.srv_lookup;
 
   if (use_srv_records) {
-    char* d = t_state.dns_info.srv_hostname;
+    char d[MAXDNAME];
 
     memcpy(d, "_http._tcp.", 11); // don't copy '\0'
     ink_strlcpy(d + 11, t_state.server_info.name, sizeof(d) - 11 ); // all in the name of performance!
 
     DebugSM("dns_srv", "Beginning lookup of SRV records for origin %s", d);
-    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_srv_lookup);
 
     HostDBProcessor::Options opt;
     if (t_state.api_txn_dns_timeout_value != -1)
@@ -3777,6 +3818,28 @@ HttpSM::do_hostdb_lookup()
       ink_assert(!pending_action);
       pending_action = srv_lookup_action_handle;
       historical_action = pending_action;
+    } else {
+      char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
+      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.port;
+      opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing)
+            ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS
+            : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD
+          ;
+      opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
+      opt.host_res_style = ua_session->host_res_style;
+
+      Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this,
+                                                                 (process_hostdb_info_pfn) & HttpSM::
+                                                                 process_hostdb_info,
+                                                                 host_name, 0,
+                                                                 opt);
+      if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
+        ink_assert(!pending_action);
+        pending_action = dns_lookup_action_handle;
+        historical_action = pending_action;
+      } else {
+        call_transact_and_set_next_state(NULL);
+      }
     }
     return;
   } else {                      /* we arent using SRV stuff... */
@@ -3811,7 +3874,7 @@ HttpSM::do_hostdb_lookup()
     }
     return;
   }
-  ink_debug_assert(!"not reached");
+  ink_assert(!"not reached");
   return;
 }
 
@@ -3880,6 +3943,14 @@ HttpSM::do_hostdb_update_if_necessary()
             sm_id,
             ats_ip_nptop(&t_state.current.server->addr.sa, addrbuf, sizeof(addrbuf)));
     }
+
+    if (t_state.dns_info.srv_lookup_success && t_state.dns_info.srv_app.http_data.last_failure != 0) {
+      t_state.dns_info.srv_app.http_data.last_failure = 0;
+      hostDBProcessor.setby_srv(t_state.dns_info.lookup_name, 0, t_state.dns_info.srv_hostname, &t_state.dns_info.srv_app);
+      DebugSM("http", "[%" PRId64 "] hostdb update marking SRV: %s as up",
+                  sm_id,
+                  t_state.dns_info.srv_hostname);
+    }
   }
 
   if (issue_update) {
@@ -3920,7 +3991,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
   RangeRecord *ranges = NULL;
   int64_t start, end;
 
-  ink_debug_assert(field != NULL && t_state.range_setup == HttpTransact::RANGE_NONE && t_state.ranges == NULL);
+  ink_assert(field != NULL && t_state.range_setup == HttpTransact::RANGE_NONE && t_state.ranges == NULL);
 
   if (content_length <= 0)
     return;
@@ -4020,7 +4091,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       goto Lfaild;
     }
 
-    ink_debug_assert(start >= 0 && end >= 0 && start < content_length && end < content_length);
+    ink_assert(start >= 0 && end >= 0 && start < content_length && end < content_length);
 
     prev_good_range = nr;
     ranges[nr]._start = start;
@@ -4053,7 +4124,7 @@ HttpSM::calculate_output_cl(int64_t content_length, int64_t num_chars)
       t_state.range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED)
     return;
 
-  ink_debug_assert(t_state.ranges);
+  ink_assert(t_state.ranges);
 
   if (t_state.num_range_fields == 1) {
     t_state.range_output_cl = t_state.ranges[0]._end - t_state.ranges[0]._start + 1;
@@ -4184,16 +4255,8 @@ HttpSM::do_cache_delete_all_alts(Continuation * cont)
   // Do not delete a non-existant object.
   ink_assert(t_state.cache_info.object_read);
 
-#ifdef DEBUG
-  INK_MD5 md5a;
-  INK_MD5 md5b;
-  t_state.hdr_info.client_request.url_get()->MD5_get(&md5a);
-  t_state.cache_info.lookup_url->MD5_get(&md5b);
-  ink_assert(md5a == md5b || t_state.txn_conf->maintain_pristine_host_hdr);
-#endif
-
   DebugSM("http_seq", "[HttpSM::do_cache_delete_all_alts] Issuing cache delete for %s",
-        t_state.cache_info.lookup_url->string_get_ref());
+          t_state.cache_info.lookup_url->string_get_ref());
 
   Action *cache_action_handle = NULL;
 
@@ -4292,7 +4355,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
     s_url->copy(c_url);
   }
 
-  ink_debug_assert(s_url != NULL && s_url->valid());
+  ink_assert(s_url != NULL && s_url->valid());
   DebugSM("http_cache_write", "[%" PRId64 "] writing to cache with URL %s", sm_id, s_url->string_get(&t_state.arena));
   Action *cache_action_handle = c_sm->open_write(s_url, &t_state.hdr_info.client_request,
                                                  object_read_info,
@@ -4458,7 +4521,7 @@ HttpSM::do_http_server_open(bool raw)
     // between the statement above and the check below.
     // If this happens, we might go over the max by 1 but this is ok.
     if (sum >= t_state.http_config_param->server_max_connections) {
-      ink_debug_assert(pending_action == NULL);
+      ink_assert(pending_action == NULL);
       pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
       httpSessionManager.purge_keepalives();
       return;
@@ -4473,7 +4536,7 @@ HttpSM::do_http_server_open(bool raw)
     if (connections->getCount((t_state.current.server->addr)) >= t_state.txn_conf->origin_max_connections) {
       DebugSM("http", "[%" PRId64 "] over the number of connection for this host: %s", sm_id,
         ats_ip_ntop(&t_state.current.server->addr.sa, addrbuf, sizeof(addrbuf)));
-      ink_debug_assert(pending_action == NULL);
+      ink_assert(pending_action == NULL);
       pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
       return;
     }
@@ -4900,7 +4963,9 @@ HttpSM::handle_http_server_open()
   }
 
   int method = t_state.hdr_info.server_request.method_get_wksidx();
-  if ((method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUT) && do_post_transform_open()) {
+  if (method != HTTP_WKSIDX_TRACE &&
+      (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
+       do_post_transform_open()) {
     do_setup_post_tunnel(HTTP_TRANSFORM_VC);
   } else {
     setup_server_send_request_api();
@@ -5074,7 +5139,7 @@ HttpSM::do_drain_request_body()
   client_request_body_bytes = act_on;
   ua_buffer_reader->consume(act_on);
 
-  ink_debug_assert(client_request_body_bytes <= post_bytes);
+  ink_assert(client_request_body_bytes <= post_bytes);
 
   if (client_request_body_bytes < post_bytes) {
     ua_buffer_reader->mbuf->size_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
@@ -6968,7 +7033,7 @@ HttpSM::set_next_state()
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
 
-      ink_debug_assert(t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
+      ink_assert(t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
 
       // TODO: This might not be optimal (or perhaps even correct), but it will 
       // effectively mark the host as down. What's odd is that state_mark_os_down
@@ -7290,7 +7355,7 @@ HttpSM::get_http_schedule(int event, void * data)
 
     if (!plugin_lock) {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::get_http_schedule);
-      ink_debug_assert(pending_action == NULL);
+      ink_assert(pending_action == NULL);
       pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
       return 0;
     }
