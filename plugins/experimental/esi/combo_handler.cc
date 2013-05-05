@@ -350,6 +350,8 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
 
   if (!query) {
     LOG_ERROR("Could not get query from request URL");
+    creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+    return;
   } else {
     if (!getDefaultBucket(txnp, bufp, hdr_loc, creq))
       {
