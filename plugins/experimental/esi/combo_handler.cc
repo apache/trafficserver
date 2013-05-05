@@ -377,7 +377,7 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
   int common_prefix_path_size = 0;
 
   for (int i = 0; i <= query_len; ++i) {
-    if ((i == query_len) || (query[i] == '&') || (query[i] == '?')) {
+    if ((i == query_len) || (query[i] == '&')) {
       int param_len = i - param_start_pos;
       if (param_len) {
         const char *param = query + param_start_pos;
