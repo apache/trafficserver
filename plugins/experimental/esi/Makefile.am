@@ -24,12 +24,12 @@ AM_CPPFLAGS += \
 AM_CXXFLAGS = \
   -Wno-deprecated
 
+noinst_LTLIBRARIES = libesicore.la libtest.la
 pkglib_LTLIBRARIES = esi.la combo_handler.la
-lib_LTLIBRARIES = libesi.la libtest.la
 
 check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
 
-libesi_la_SOURCES = \
+libesicore_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
 	lib/EsiGzip.cc \
@@ -43,17 +43,9 @@ libesi_la_SOURCES = \
 	lib/gzip.cc
 
 libtest_la_SOURCES = \
-	lib/DocNode.cc \
-	lib/EsiParser.cc \
-	lib/EsiGzip.cc \
-	lib/EsiProcessor.cc \
-	lib/Expression.cc \
-	lib/FailureInfo.cc \
-	test/TestHandlerManager.cc \
-	lib/Stats.cc \
-	lib/Utils.cc \
-	lib/Variables.cc \
-	lib/gzip.cc
+	$(libesicore_la_SOURCES) \
+	test/print_funcs.cc \
+	test/TestHandlerManager.cc
 
 esi_la_SOURCES =  \
 	esi.cc \
@@ -64,22 +56,34 @@ combo_handler_la_SOURCES = \
 	combo_handler.cc \
 	fetcher/HttpDataFetcherImpl.cc
 
-esi_la_LIBADD = libesi.la
+esi_la_LIBADD = libesicore.la
 esi_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-combo_handler_la_LIBADD = libesi.la
-combo_handler_la_LDFLAGS = -module -avoid-version -shared
+combo_handler_la_LIBADD = libesicore.la
+combo_handler_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-docnode_test_SOURCES = test/docnode_test.cc test/print_funcs.cc
-docnode_test_LDADD = libesi.la  -lz
-parser_test_SOURCES = test/parser_test.cc test/print_funcs.cc
-parser_test_LDADD = libesi.la  -lz
-processor_test_SOURCES = test/processor_test.cc test/HandlerMap.cc test/StubIncludeHandler.cc test/print_funcs.cc
+docnode_test_SOURCES = test/docnode_test.cc
+docnode_test_LDADD = libtest.la -lz
+
+
+parser_test_SOURCES = test/parser_test.cc
+parser_test_LDADD = libtest.la -lz
+
+
+processor_test_SOURCES = \
+  test/processor_test.cc \
+  test/HandlerMap.cc \
+  test/StubIncludeHandler.cc
 processor_test_LDADD = libtest.la -lz
-utils_test_SOURCES = test/utils_test.cc test/print_funcs.cc
-utils_test_LDADD = libesi.la -lz
-vars_test_SOURCES = test/vars_test.cc test/print_funcs.cc
-vars_test_LDADD = libesi.la -lz
+
+
+utils_test_SOURCES = test/utils_test.cc
+utils_test_LDADD = libtest.la -lz
+
+
+vars_test_SOURCES = test/vars_test.cc
+vars_test_LDADD = libtest.la -lz
+
 
 TESTS = $(check_PROGRAMS)
 
