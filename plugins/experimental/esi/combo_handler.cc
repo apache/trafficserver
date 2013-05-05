@@ -39,6 +39,9 @@ using namespace EsiLib;
 
 #define DEBUG_TAG "combo_handler"
 
+#define MAX_FILE_COUNT 30
+#define MAX_QUERY_LENGTH 3000
+
 static string SIG_KEY_NAME;
 
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
@@ -358,6 +361,11 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
         LOG_ERROR("failed getting Default Bucket for the request");
         return;
       }
+    if (query_len > MAX_QUERY_LENGTH) {
+      creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+      LOG_ERROR("querystring too long");
+      return;
+    }
     parseQueryParameters(query, query_len, creq);
     creq.client_addr = TSHttpTxnClientAddrGet(txnp);
     checkGzipAcceptance(bufp, hdr_loc, creq);
@@ -470,6 +478,13 @@ if (!creq.file_urls.size()) {
   creq.status = TS_HTTP_STATUS_FORBIDDEN;
   creq.file_urls.clear();
  }
+
+if (creq.file_urls.size() > MAX_FILE_COUNT) {
+  creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+  LOG_ERROR("too many files in url");
+  creq.file_urls.clear();
+}
+
 }
 
 static void
