@@ -34,7 +34,6 @@
 #include "gzip.h"
 #include "Utils.h"
 
-
 using namespace std;
 using namespace EsiLib;
 
@@ -103,8 +102,8 @@ struct InterceptData {
   bool read_complete;
   bool write_complete;
   string gzipped_data;
-  
-  InterceptData(TSCont cont) 
+
+  InterceptData(TSCont cont)
     : net_vc(0), contp(cont), input(), output(), req_hdr_bufp(0), req_hdr_loc(0), req_hdr_parsed(false),
       initialized(false), fetcher(0), read_complete(false), write_complete(false) {
     http_parser = TSHttpParserCreate();
@@ -123,7 +122,7 @@ InterceptData::init(TSVConn vconn)
     LOG_ERROR("InterceptData already initialized!");
     return false;
   }
-  
+
   net_vc = vconn;
 
   input.buffer = TSIOBufferCreate();
@@ -161,7 +160,7 @@ InterceptData::~InterceptData()
   if (fetcher) {
     delete fetcher;
   }
-  TSHttpParserDestroy(http_parser); 
+  TSHttpParserDestroy(http_parser);
   if (net_vc) {
     TSVConnClose(net_vc);
   }
@@ -184,6 +183,8 @@ static void prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks,
 static bool getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields);
 static bool getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq);
 
+// libesi TLS key.
+pthread_key_t threadKey = 0;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -208,6 +209,8 @@ TSPluginInit(int argc, const char *argv[])
 
   SIG_KEY_NAME = ((argc > 2) && (strcmp(argv[2], "-") != 0)) ? argv[2] : "";
   LOG_DEBUG("Signature key is [%s]", SIG_KEY_NAME.c_str());
+
+  TSReleaseAssert(pthread_key_create(&threadKey, NULL) == 0);
 
   TSCont rrh_contp = TSContCreate(handleReadRequestHeader, NULL);
   if (!rrh_contp) {
@@ -430,7 +433,7 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
             break;
           }
           file_url.append(param, colon_pos - param_start_pos); // appending pre ':' part first
-            
+
           // modify these to point to the "actual" file path
           param_start_pos = colon_pos + 1;
           param_len = i - param_start_pos;
@@ -603,7 +606,7 @@ readInterceptRequest(InterceptData &int_data)
     LOG_ERROR("Error while getting number of bytes available");
     return false;
   }
-  
+
   int consumed = 0;
   if (avail > 0) {
     int64_t data_len;
@@ -621,9 +624,9 @@ readInterceptRequest(InterceptData &int_data)
     }
   }
   LOG_DEBUG("Consumed %d bytes from input vio", consumed);
-  
+
   TSIOBufferReaderConsume(int_data.input.reader, consumed);
-  
+
   // Modify the input VIO to reflect how much data we've completed.
   TSVIONDoneSet(int_data.input.vio, TSVIONDoneGet(int_data.input.vio) + consumed);
 
@@ -645,7 +648,7 @@ static bool
 writeResponse(InterceptData &int_data)
 {
   int_data.setupWrite();
-  
+
   ByteBlockList body_blocks;
   string resp_header_fields;
   prepareResponse(int_data, body_blocks, resp_header_fields);
@@ -662,12 +665,12 @@ writeResponse(InterceptData &int_data)
       LOG_ERROR("Error while writing reply line");
       return false;
     }
-    
+
     if (!writeStandardHeaderFields(int_data, n_bytes_written)) {
       LOG_ERROR("Could not write standard header fields");
       return false;
     }
-    
+
     if (resp_header_fields.size()) {
       if (TSIOBufferWrite(int_data.output.buffer, resp_header_fields.data(),
                            resp_header_fields.size()) == TS_ERROR) {
@@ -676,13 +679,13 @@ writeResponse(InterceptData &int_data)
       }
       n_bytes_written += resp_header_fields.size();
     }
-    
+
     if (TSIOBufferWrite(int_data.output.buffer, "\r\n", 2) == TS_ERROR) {
       LOG_ERROR("Error while writing header terminator");
       return false;
     }
     n_bytes_written += 2;
-    
+
     for (ByteBlockList::iterator iter = body_blocks.begin(); iter != body_blocks.end(); ++iter) {
       if (TSIOBufferWrite(int_data.output.buffer, iter->data, iter->data_len) == TS_ERROR) {
         LOG_ERROR("Error while writing content");
@@ -691,10 +694,10 @@ writeResponse(InterceptData &int_data)
       n_bytes_written += iter->data_len;
     }
   }
-    
+
   LOG_DEBUG("Wrote reply of size %d", n_bytes_written);
   TSVIONBytesSet(int_data.output.vio, n_bytes_written);
-  
+
   TSVIOReenable(int_data.output.vio);
   return true;
 }
@@ -833,7 +836,7 @@ writeErrorResponse(InterceptData &int_data, int &n_bytes_written)
   default:
     response = &ERROR_REPLY_RESPONSE;
     break;
-  } 
+  }
   if (TSIOBufferWrite(int_data.output.buffer, response->data(), response->size()) == TS_ERROR) {
     LOG_ERROR("Error while writing error response");
     return false;
