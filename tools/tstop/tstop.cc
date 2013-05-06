@@ -46,6 +46,11 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
+// Solaris curses #defines wclear, which breaks std::string::wclear().
+#ifndef wclear
+#undef wclear
+#endif
+
 #include "stats.h"
 
 using namespace std;
