@@ -84,6 +84,10 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Patch: 7e417c4712e36c9c38cf60b98783b24ad2a1c4f3
   +1: zwoop, jpeach
 
+  Crach when using ssl_ca_name
+  Jira: https://issues.apache.org/jira/browse/TS-1779
+  Patch: see ticket
+  +1: jpeach
 
 RELEASE PROCESS
 
