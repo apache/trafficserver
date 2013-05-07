@@ -47,7 +47,7 @@
 #endif
 
 // Solaris curses #defines wclear, which breaks std::string::wclear().
-#ifndef wclear
+#ifdef wclear
 #undef wclear
 #endif
 
