@@ -42,8 +42,22 @@ libesicore_la_SOURCES = \
 	lib/Variables.cc \
 	lib/gzip.cc
 
+# NOTE: HandlerManager::getHandler() is implemented differently in
+# HandlerManager.cc and TestHandlerManager.cc. The unit tests depend
+# on the TestHandlerManager.cc implementation, so don't accidentally
+# link the wrong one into libtest.
+
 libtest_la_SOURCES = \
-	$(libesicore_la_SOURCES) \
+	lib/DocNode.cc \
+	lib/EsiParser.cc \
+	lib/EsiGzip.cc \
+	lib/EsiProcessor.cc \
+	lib/Expression.cc \
+	lib/FailureInfo.cc \
+	lib/Stats.cc \
+	lib/Utils.cc \
+	lib/Variables.cc \
+	lib/gzip.cc \
 	test/print_funcs.cc \
 	test/HandlerMap.cc \
 	test/StubIncludeHandler.cc \
@@ -67,22 +81,17 @@ combo_handler_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 docnode_test_SOURCES = test/docnode_test.cc
 docnode_test_LDADD = libtest.la -lz
 
-
 parser_test_SOURCES = test/parser_test.cc
 parser_test_LDADD = libtest.la -lz
-
 
 processor_test_SOURCES = test/processor_test.cc
 processor_test_LDADD = libtest.la -lz
 
-
 utils_test_SOURCES = test/utils_test.cc
 utils_test_LDADD = libtest.la -lz
 
-
 vars_test_SOURCES = test/vars_test.cc
 vars_test_LDADD = libtest.la -lz
-
 
 TESTS = $(check_PROGRAMS)
 
