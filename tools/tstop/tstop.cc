@@ -34,7 +34,8 @@
 
 // At least on solaris, the default ncurses defines macros such as
 // clear() that break stdlibc++.
-#define NCURSES_NOMACROS
+#define NOMACROS 1
+#define NCURSES_NOMACROS 1
 
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
