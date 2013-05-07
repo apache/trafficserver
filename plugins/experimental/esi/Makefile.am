@@ -45,6 +45,8 @@ libesicore_la_SOURCES = \
 libtest_la_SOURCES = \
 	$(libesicore_la_SOURCES) \
 	test/print_funcs.cc \
+	test/HandlerMap.cc \
+	test/StubIncludeHandler.cc \
 	test/TestHandlerManager.cc
 
 esi_la_SOURCES =  \
@@ -70,10 +72,7 @@ parser_test_SOURCES = test/parser_test.cc
 parser_test_LDADD = libtest.la -lz
 
 
-processor_test_SOURCES = \
-  test/processor_test.cc \
-  test/HandlerMap.cc \
-  test/StubIncludeHandler.cc
+processor_test_SOURCES = test/processor_test.cc
 processor_test_LDADD = libtest.la -lz
 
 
