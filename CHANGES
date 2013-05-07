@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.3
 
+  *) [TS-1444] [TS-1881] URL lookup with regex through the web interface was broken.
 
   *) [TS-1880] Use pthread_setname_np to set the thread name on multiple platforms.
 

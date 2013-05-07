@@ -576,6 +576,17 @@ public:
     int* length = 0 ///< Store string length here.
   );
 
+  /** Print the URL.
+      Output is not null terminated.
+      @return 0 on failure, non-zero on success.
+   */
+  int url_print(
+      char* buff, ///< Output buffer
+      int length, ///< Length of @a buffer
+      int* offset, ///< [in,out] ???
+      int* skip ///< [in,out] ???
+  );
+
   /** Get the URL path.
       This is a reference, not allocated.
       @return A pointer to the path or @c NULL if there is no valid URL.
@@ -665,6 +676,8 @@ private:
   // No gratuitous copies!
   HTTPHdr(const HTTPHdr & m);
   HTTPHdr & operator =(const HTTPHdr & m);
+
+  friend class UrlPrintHack; // don't ask.
 };
 
 
