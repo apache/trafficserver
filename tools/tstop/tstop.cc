@@ -32,6 +32,10 @@
 #include <unistd.h>
 #include <getopt.h>
 
+// At least on solaris, the default ncurses defines macros such as
+// clear() that break stdlibc++.
+#define NCURSES_NOMACROS
+
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
@@ -44,11 +48,6 @@
 #  include <curses.h>
 #else
 #  error "SysV or X/Open-compatible Curses header file required"
-#endif
-
-// Solaris curses #defines wclear, which breaks std::string::wclear().
-#ifdef wclear
-#undef wclear
 #endif
 
 #include "stats.h"
