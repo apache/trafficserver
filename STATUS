@@ -72,12 +72,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Fix SSL accept performance regression
   Jira: https://issues.apache.org/jira/browse/TS-1538
   Patch: ccc4b37b91f25c2e985f195b77369ce20e2e8e81
-  +1: jpeach, zwoop
+  +1: jpeach, zwoop, arno
 
   Hardcoded FD_SET of 32 is too small.
   Jira: https://issues.apache.org/jira/browse/TS-1483
   Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
-  +1: igalic, zwoop, jpeach
+  +1: igalic, zwoop, jpeach, arno
 
   Support older versions of HWLOC properly
   Jira: https://issues.apache.org/jira/browse/TS-1843
