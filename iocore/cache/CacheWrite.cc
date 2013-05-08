@@ -546,7 +546,11 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Vol *vol)
   while (dir_probe(key, vol, &dir, &last_collision)) {
     // next fragment cannot be a head...if it is, it must have been a
     // directory collision.
-    if (dir_head(&dir))
+    if (dir_head(&dir)
+#if TS_USE_INTERIM_CACHE == 1
+        || dir_ininterim(&dir)
+#endif
+        )
       continue;
     EvacuationBlock *b = evacuation_block_exists(&dir, vol);
     if (!b) {
@@ -738,6 +742,9 @@ agg_copy(char *p, CacheVC *vc)
     dir_set_approx_size(&vc->dir, vc->agg_len);
     dir_set_offset(&vc->dir, offset_to_vol_offset(vol, o));
     ink_assert(vol_offset(vol, &vc->dir) < (vol->skip + vol->len));
+#if TS_USE_INTERIM_CACHE == 1
+    dir_set_indisk(&vc->dir);
+#endif
     dir_set_phase(&vc->dir, vol->header->phase);
 
     // fill in document header
@@ -866,7 +873,9 @@ agg_copy(char *p, CacheVC *vc)
     vc->dir = vc->overwrite_dir;
     dir_set_offset(&vc->dir, offset_to_vol_offset(vc->vol, o));
     dir_set_phase(&vc->dir, vc->vol->header->phase);
-
+#if TS_USE_INTERIM_CACHE == 1
+    dir_set_indisk(&vc->dir);
+#endif
     return l;
   }
 }
@@ -1483,21 +1492,35 @@ CacheVC::openWriteStartDone(int event, Event *e)
       }
       if (!(doc->first_key == first_key))
         goto Lcollision;
-      if (doc->magic != DOC_MAGIC) {
-        err = ECACHE_BAD_META_DATA;
-        goto Lfailure;
-      }
-      if (!doc->hlen) {
-        err = ECACHE_BAD_META_DATA;
-        goto Lfailure;
-      }
-      ink_assert((((uintptr_t) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
-      if (write_vector->get_handles(doc->hdr(), doc->hlen, buf) != doc->hlen) {
+      if (doc->magic != DOC_MAGIC || !doc->hlen ||
+          write_vector->get_handles(doc->hdr(), doc->hlen, buf) != doc->hlen) {
         err = ECACHE_BAD_META_DATA;
+#if TS_USE_INTERIM_CACHE == 1
+        if (dir_ininterim(&dir)) {
+          dir_delete(&first_key, vol, &dir);
+          last_collision = NULL;
+          goto Lcollision;
+        }
+#endif
         goto Lfailure;
       }
       ink_assert(write_vector->count() > 0);
+#if TS_USE_INTERIM_CACHE == 1
+Lagain:
+      if (dir_ininterim(&dir)) {
+        dir_delete(&first_key, vol, &dir);
+        last_collision = NULL;
+        if (dir_probe(&first_key, vol, &dir, &last_collision)) {
+          goto Lagain;
+        } else {
+          if (f.update) {
+            // fail update because vector has been GC'd
+            goto Lfailure;
+          }
+        }
+      }
+#endif
       od->first_dir = dir;
       first_dir = dir;
       if (doc->single_fragment()) {
@@ -1783,4 +1806,155 @@ Lcallreturn:
     return ACTION_RESULT_DONE;
   return &c->_action;
 }
+
+#if TS_USE_INTERIM_CACHE == 1
+int
+InterimCacheVol::aggWrite(int event, void *e)
+{
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
+
+  ink_assert(!is_io_in_progress());
+  MigrateToInterimCache *mts;
+  Doc *doc;
+  uint64_t old_off, new_off;
+  ink_assert(this_ethread() == mutex.m_ptr->thread_holding
+      && vol->mutex.m_ptr == mutex.m_ptr);
+Lagain:
+
+  while ((mts = agg.head) != NULL) {
+    doc = (Doc *) mts->buf->data();
+    uint32_t agg_len = dir_approx_size(&mts->dir);
+    ink_assert(agg_len == mts->agg_len);
+    ink_assert(agg_len <= AGG_SIZE && agg_buf_pos <= AGG_SIZE);
+
+    if (agg_buf_pos + agg_len > AGG_SIZE
+        || header->agg_pos + agg_len > (skip + len))
+      break;
+    mts = agg.dequeue();
+
+    if (!mts->notMigrate) {
+      old_off = dir_get_offset(&mts->dir);
+      Dir old_dir = mts->dir;
+      memcpy(agg_buffer + agg_buf_pos, doc, doc->len);
+      off_t o = header->write_pos + agg_buf_pos;
+      dir_set_offset(&mts->dir, offset_to_vol_offset(this, o));
+      ink_assert(this == mts->interim_vol);
+      ink_assert(vol_offset(this, &mts->dir) < mts->interim_vol->skip + mts->interim_vol->len);
+      dir_set_phase(&mts->dir, header->phase);
+      dir_set_ininterim(&mts->dir);
+      dir_set_index(&mts->dir, (this - vol->interim_vols));
+
+      agg_buf_pos += agg_len;
+      header->agg_pos = header->write_pos + agg_buf_pos;
+      new_off = dir_get_offset(&mts->dir);
+
+      if (mts->rewrite)
+        dir_overwrite(&mts->key, vol, &mts->dir, &old_dir);
+      else
+        dir_insert(&mts->key, vol, &mts->dir);
+      DDebug("cache_insert", "InterimCache: WriteDone: key: %X, first_key: %X, write_len: %d, write_offset: %" PRId64 ", dir_last_word: %X",
+          doc->key.word(0), doc->first_key.word(0), mts->agg_len, o, mts->dir.w[4]);
+
+      if (mts->copy) {
+        mts->interim_vol->vol->ram_cache->fixup(&mts->key, (uint32_t)(old_off >> 32), (uint32_t)old_off,
+            (uint32_t)(new_off >> 32), (uint32_t)new_off);
+      } else {
+        mts->vc->f.ram_fixup = 1;
+        mts->vc->dir_off = new_off;
+      }
+      vol->set_migrate_done(mts);
+    } else
+      vol->set_migrate_failed(mts);
+
+    mts->buf = NULL;
+    migrateToInterimCacheAllocator.free(mts);
+  }
+
+  if (!agg_buf_pos) {
+    if (header->write_pos + AGG_SIZE > (skip + len)) {
+      header->write_pos = start;
+      header->phase = !(header->phase);
+
+      header->cycle++;
+      header->agg_pos = header->write_pos;
+      clean_interimvol(this);
+      goto Lagain;
+    }
+    return EVENT_CONT;
+  }
+
+  if (agg.head == NULL && agg_buf_pos < (AGG_SIZE / 2) && !sync
+      && header->write_pos + AGG_SIZE <= (skip + len))
+    return EVENT_CONT;
+
+  for (mts = agg.head; mts != NULL; mts = mts->link.next) {
+    if (!mts->copy) {
+      Ptr<IOBufferData> buf = mts->buf;
+      doc = (Doc *) buf->data();
+      mts->buf = new_IOBufferData(iobuffer_size_to_index(mts->agg_len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+      mts->copy = true;
+      memcpy(mts->buf->data(), buf->data(), doc->len);
+      buf = NULL;
+    }
+  }
+  // set write limit
+
+  io.aiocb.aio_fildes = fd;
+  io.aiocb.aio_offset = header->write_pos;
+  io.aiocb.aio_buf = agg_buffer;
+  io.aiocb.aio_nbytes = agg_buf_pos;
+  io.action = this;
+  /*
+    Callback on AIO thread so that we can issue a new write ASAP
+    as all writes are serialized in the volume.  This is not necessary
+    for reads proceed independently.
+   */
+  io.thread = AIO_CALLBACK_THREAD_AIO;
+  SET_HANDLER(&InterimCacheVol::aggWriteDone);
+  ink_aio_write(&io);
+  return EVENT_CONT;
+}
+
+int
+InterimCacheVol::aggWriteDone(int event, void *e)
+{
+  ink_release_assert(this_ethread() == mutex.m_ptr->thread_holding
+        && vol->mutex.m_ptr == mutex.m_ptr);
+  if (io.ok()) {
+     header->last_write_pos = header->write_pos;
+     header->write_pos += io.aiocb.aio_nbytes;
+     ink_assert(header->write_pos >= start);
+     DDebug("cache_agg", "Write: %" PRIu64 ", last Write: %" PRIu64 "\n",
+           header->write_pos, header->last_write_pos);
+     ink_assert(header->write_pos == header->agg_pos);
+     agg_buf_pos = 0;
+     header->write_serial++;
+   } else {
+     // delete all the directory entries that we inserted
+     // for fragments is this aggregation buffer
+     Debug("cache_disk_error", "Write error on disk %s\n \
+               write range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
+           "InterimCache ID", io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+           io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
+           (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
+     Dir del_dir;
+     dir_clear(&del_dir);
+     dir_set_ininterim(&del_dir);
+     dir_set_index(&del_dir, (this - vol->interim_vols));
+     for (int done = 0; done < agg_buf_pos;) {
+       Doc *doc = (Doc *) (agg_buffer + done);
+       dir_set_offset(&del_dir, header->write_pos + done);
+       dir_delete(&doc->key, vol, &del_dir);
+       done += this->round_to_approx_size(doc->len);
+     }
+     agg_buf_pos = 0;
+   }
+   set_io_not_in_progress();
+   sync = false;
+   if (agg.head)
+     aggWrite(event, e);
+   return EVENT_CONT;
+}
+#endif
 #endif

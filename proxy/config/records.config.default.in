@@ -370,6 +370,10 @@ CONFIG proxy.config.cache.threads_per_disk INT 8
    # this low can reduce latencies in some cases, but can consume more CPU.
    # If you experience CPU spinning, try increasing this setting.
 CONFIG proxy.config.cache.mutex_retry_delay INT 2
+   # The interim storage disks. Must use raw disks.
+   # Only support at most 8 interim disks now. e.g.
+   # proxy.config.cache.interim.storage STRING /dev/sda /dev/sdb/
+LOCAL proxy.config.cache.interim.storage STRING NULL
 ##############################################################################
 #
 # DNS

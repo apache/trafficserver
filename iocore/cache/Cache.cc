@@ -83,6 +83,10 @@ int cache_config_mutex_retry_delay = 2;
 static int enable_cache_empty_http_doc = 0;
 #endif
 
+#if TS_USE_INTERIM_CACHE == 1
+int migrate_threshold = 2;
+#endif
+
 // Globals
 
 RecRawStatBlock *cache_rsb = NULL;
@@ -104,13 +108,21 @@ int CacheProcessor::auto_clear_flag = 0;
 CacheProcessor cacheProcessor;
 Vol **gvol = NULL;
 volatile int gnvol = 0;
+#if TS_USE_INTERIM_CACHE == 1
+CacheDisk **g_interim_disks = NULL;
+int gn_interim_disks = 0;
+int good_interim_disks = 0;
+uint64_t total_cache_size = 0;
+#endif
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 int CacheVC::size_to_init = -1;
 CacheKey zero_key(0, 0);
-
+#if TS_USE_INTERIM_CACHE == 1
+ClassAllocator<MigrateToInterimCache> migrateToInterimCacheAllocator("migrateToInterimCache");
+#endif
 void verify_cache_api() {
   ink_assert((int)TS_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
   ink_assert((int)TS_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
@@ -516,6 +528,10 @@ Vol::begin_read(CacheVC *cont)
   // no need for evacuation as the entire document is already in memory
   if (cont->f.single_fragment)
     return 0;
+#if TS_USE_INTERIM_CACHE == 1
+  if (dir_ininterim(&cont->earliest_dir))
+    return 0;
+#endif
   int i = dir_evac_bucket(&cont->earliest_dir);
   EvacuationBlock *b;
   for (b = evacuate[i].head; b; b = b->link.next) {
@@ -598,7 +614,83 @@ CacheProcessor::start_internal(int flags)
   fix = !!(flags & PROCESSOR_FIX);
   start_done = 0;
   int diskok = 1;
+  Span *sd;
+#if TS_USE_INTERIM_CACHE == 1
+  gn_interim_disks = theCacheStore.n_interim_disks;
+  g_interim_disks = (CacheDisk **) ats_malloc(gn_interim_disks * sizeof(CacheDisk *));
 
+  gn_interim_disks = 0;
+
+  for (int i = 0; i < theCacheStore.n_interim_disks; i++) {
+    sd = theCacheStore.interim_disk[i];
+    char path[PATH_MAX];
+    int opts = O_RDWR;
+    ink_strlcpy(path, sd->pathname, sizeof(path));
+    if (!sd->file_pathname) {
+#if !defined(_WIN32)
+      if (config_volumes.num_http_volumes && config_volumes.num_stream_volumes) {
+        Warning(
+            "It is suggested that you use raw disks if streaming and http are in the same cache");
+      }
+#endif
+      ink_strlcat(path, "/cache.db", sizeof(path));
+      opts |= O_CREAT;
+    }
+    opts |= _O_ATTRIB_OVERLAPPED;
+#ifdef O_DIRECT
+    opts |= O_DIRECT;
+#endif
+#ifdef O_DSYNC
+    opts |= O_DSYNC;
+#endif
+
+    int fd = open(path, opts, 0644);
+    int blocks = sd->blocks;
+    if (fd > 0) {
+      if (!sd->file_pathname) {
+        if (ftruncate(fd, ((uint64_t) blocks) * STORE_BLOCK_SIZE) < 0) {
+          Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
+          diskok = 0;
+        }
+      }
+      if (diskok) {
+        CacheDisk *disk = NEW(new CacheDisk());
+        Debug("cache_hosting", "interim Disk: %d, blocks: %d", gn_interim_disks, blocks);
+        int sector_size = sd->hw_sector_size;
+        if (sector_size < cache_config_force_sector_size)
+          sector_size = cache_config_force_sector_size;
+        if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
+          Warning("bad hardware sector size %d, resetting to %d", sector_size,
+              STORE_BLOCK_SIZE);
+          sector_size = STORE_BLOCK_SIZE;
+        }
+        off_t
+            skip =
+                ROUND_TO_STORE_BLOCK((sd->offset * STORE_BLOCK_SIZE < START_POS ? START_POS + sd->alignment : sd->offset * STORE_BLOCK_SIZE));
+        blocks = blocks - (skip >> STORE_BLOCK_SHIFT);
+        disk->path = ats_strdup(path);
+        disk->hw_sector_size = sector_size;
+        disk->fd = fd;
+        disk->skip = skip;
+        disk->start = skip;
+        /* we can't use fractions of store blocks. */
+        disk->len = blocks;
+        disk->io.aiocb.aio_fildes = fd;
+        disk->io.aiocb.aio_reqprio = 0;
+        disk->io.action = disk;
+        disk->io.thread = AIO_CALLBACK_THREAD_ANY;
+        g_interim_disks[gn_interim_disks++] = disk;
+      }
+    } else
+      Warning("cache unable to open '%s': %s", path, strerror(errno));
+  }
+
+  if (gn_interim_disks == 0) {
+    Warning("unable to open cache disk(s): InterimCache Cache Disabled\n");
+  }
+  good_interim_disks = gn_interim_disks;
+  diskok = 1;
+#endif
   /* read the config file and create the data structures corresponding
      to the file */
   gndisks = theCacheStore.n_disks;
@@ -606,8 +698,13 @@ CacheProcessor::start_internal(int flags)
 
   gndisks = 0;
   ink_aio_set_callback(new AIO_Callback_handler());
-  Span *sd;
+
   config_volumes.read_config_file();
+#if TS_USE_INTERIM_CACHE == 1
+  total_cache_size = 0;
+  for (unsigned i = 0; i < theCacheStore.n_disks; i++)
+    total_cache_size += theCacheStore.disk[i]->blocks;
+#endif
   for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
     sd = theCacheStore.disk[i];
     char path[PATH_NAME_MAX];
@@ -864,6 +961,9 @@ CacheProcessor::cacheInitialized()
         for (i = 0; i < gnvol; i++) {
           vol = gvol[i];
           gvol[i]->ram_cache->init(vol_dirlen(vol), vol);
+#if TS_USE_INTERIM_CACHE == 1
+          gvol[i]->history.init(1<<20, 2097143);
+#endif
           ram_cache_bytes += vol_dirlen(gvol[i]);
           Debug("cache_init", "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
@@ -923,7 +1023,9 @@ CacheProcessor::cacheInitialized()
           }
           Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 i, ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-
+#if TS_USE_INTERIM_CACHE == 1
+          gvol[i]->history.init(1<<20, 2097143);
+#endif
           vol_total_cache_bytes = gvol[i]->len - vol_dirlen(gvol[i]);
           total_cache_bytes += vol_total_cache_bytes;
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
@@ -1151,6 +1253,19 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
     return clear_dir();
   }
 
+#if TS_USE_INTERIM_CACHE == 1
+  num_interim_vols = good_interim_disks;
+  ink_assert(num_interim_vols >= 0 && num_interim_vols <= 8);
+  for (int i = 0; i < num_interim_vols; i++) {
+    double r = (double) blocks / total_cache_size;
+    off_t vlen = off_t (r * g_interim_disks[i]->len * STORE_BLOCK_SIZE);
+    vlen = (vlen / STORE_BLOCK_SIZE) * STORE_BLOCK_SIZE;
+    off_t start = ink_atomic_increment(&g_interim_disks[i]->skip, vlen);
+    interim_vols[i].init(start, vlen, g_interim_disks[i], this);
+    ink_assert(interim_vols[i].start + interim_vols[i].len <= g_interim_disks[i]->len * STORE_BLOCK_SIZE);
+  }
+#endif
+
   init_info = new VolInitInfo();
   int footerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
   off_t footer_offset = vol_dirlen(this) - footerlen;
@@ -1231,6 +1346,10 @@ Vol::handle_dir_read(int event, void *data)
     return EVENT_DONE;
   }
   CHECK_DIR(this);
+#if TS_USE_INTERIM_CACHE == 1
+  if (gn_interim_disks > 0)
+    clear_interim_dir(this);
+#endif
   sector_size = header->sector_size;
   SET_HANDLER(&Vol::handle_recover_from_data);
   return handle_recover_from_data(EVENT_IMMEDIATE, 0);
@@ -1745,6 +1864,28 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
   int disk_no = 0;
   int good_disks = 0;
   AIOCallback *cb = (AIOCallback *) data;
+#if TS_USE_INTERIM_CACHE == 1
+  for (; disk_no < gn_interim_disks; disk_no++) {
+    CacheDisk *d = g_interim_disks[disk_no];
+
+    if (d->fd == cb->aiocb.aio_fildes) {
+      d->num_errors++;
+      if (!DISK_BAD(d)) {
+        char message[128];
+        snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
+        Warning("%s", message);
+        REC_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
+      } else if (!DISK_BAD_SIGNALLED(d)) {
+        char message[128];
+        snprintf(message, sizeof(message),
+            "too many errors accessing disk %s: declaring disk bad", d->path);
+        Warning("%s", message);
+        REC_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
+        good_interim_disks--;
+      }
+    }
+  }
+#endif
   for (; disk_no < gndisks; disk_no++) {
     CacheDisk *d = gdisks[disk_no];
 
@@ -1941,6 +2082,7 @@ CacheVC::handleReadDone(int event, Event *e) {
   cancel_trigger();
   ink_assert(this_ethread() == mutex->thread_holding);
 
+  Doc *doc = NULL;
   if (event == AIO_EVENT_DONE)
     set_io_not_in_progress();
   else
@@ -1971,7 +2113,7 @@ CacheVC::handleReadDone(int event, Event *e) {
       ink_assert(!memcmp(((Doc *) buf->data())->data(), x, ib - (x - xx)));
     }
 #endif
-    Doc *doc = (Doc *) buf->data();
+    doc = (Doc *) buf->data();
 
     if (is_debug_tag_set("cache_read")) {
       char xt[33];
@@ -2001,6 +2143,46 @@ CacheVC::handleReadDone(int event, Event *e) {
           okay = 0;
         }
       }
+#if TS_USE_INTERIM_CACHE == 1
+    ink_assert(vol->num_interim_vols >= good_interim_disks);
+    if (mts && !f.doc_from_ram_cache) {
+      int indx;
+      do {
+        indx = vol->interim_index++ % vol->num_interim_vols;
+      }while (good_interim_disks > 0 && DISK_BAD(vol->interim_vols[indx].disk));
+
+      if (good_interim_disks) {
+        if (f.write_into_interim) {
+          mts->interim_vol = interim_vol = &vol->interim_vols[indx];
+          mts->agg_len = interim_vol->round_to_approx_size(doc->len);
+          if (vol->sector_size != interim_vol->sector_size) {
+            dir_set_approx_size(&mts->dir, mts->agg_len);
+          }
+        }
+        if (f.transistor) {
+          mts->interim_vol = interim_vol;
+          mts->agg_len = interim_vol->round_to_approx_size(doc->len);
+          ink_assert(mts->agg_len == dir_approx_size(&mts->dir));
+        }
+
+        if (!interim_vol->is_io_in_progress()) {
+          mts->buf = buf;
+          mts->copy = false;
+          interim_vol->agg.enqueue(mts);
+          interim_vol->aggWrite(event, e);
+        } else {
+          mts->buf = new_IOBufferData(iobuffer_size_to_index(mts->agg_len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+          mts->copy = true;
+          memcpy(mts->buf->data(), buf->data(), doc->len);
+          interim_vol->agg.enqueue(mts);
+        }
+      } else {
+        vol->set_migrate_failed(mts);
+        migrateToInterimCacheAllocator.free(mts);
+      }
+      mts = NULL;
+    }
+#endif
       bool http_copy_hdr = false;
 #ifdef HTTP_CACHE
       http_copy_hdr = cache_config_ram_cache_compress && !f.doc_from_ram_cache &&
@@ -2023,15 +2205,31 @@ CacheVC::handleReadDone(int event, Event *e) {
                         || (doc_len && (int64_t)doc_len < cache_config_ram_cache_cutoff)
                         || !cache_config_ram_cache_cutoff);
         if (cutoff_check && !f.doc_from_ram_cache) {
+#if TS_USE_INTERIM_CACHE == 1
+          if (!f.ram_fixup) {
+            uint64_t o = dir_get_offset(&dir);
+            vol->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32_t)(o >> 32), (uint32_t)o);
+          } else {
+            vol->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32_t)(dir_off>>32), (uint32_t)dir_off);
+          }
+#else
           uint64_t o = dir_offset(&dir);
           vol->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32_t)(o >> 32), (uint32_t)o);
+#endif
         }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
           // update this document, we don't have to read it back in memory
           // again
           vol->first_fragment_key = *read_key;
+#if TS_USE_INTERIM_CACHE == 1
+          if (!f.ram_fixup)
+            vol->first_fragment_offset = dir_get_offset(&dir);
+          else
+            vol->first_fragment_offset = dir_off;
+#else
           vol->first_fragment_offset = dir_offset(&dir);
+#endif
           vol->first_fragment_data = buf;
         }
       }                           // end VIO::READ check
@@ -2041,8 +2239,18 @@ CacheVC::handleReadDone(int event, Event *e) {
         unmarshal_helper(doc, buf, okay);
 #endif
     }                             // end io.ok() check
+#if TS_USE_INTERIM_CACHE == 1
+Ldone:
+    if (mts) {
+      vol->set_migrate_failed(mts);
+      migrateToInterimCacheAllocator.free(mts);
+      mts = NULL;
+    }
+  }
+#else
   }
 Ldone:
+#endif
   POP_HANDLER;
   return handleEvent(AIO_EVENT_DONE, 0);
 }
@@ -2059,16 +2267,55 @@ CacheVC::handleRead(int event, Event *e)
 
   // check ram cache
   ink_assert(vol->mutex->thread_holding == this_ethread());
+#if TS_USE_INTERIM_CACHE == 1
+  uint64_t o = dir_get_offset(&dir);
+  if(f.read_from_interim && mts && mts->rewrite)
+    goto LinterimRead;
+#else
   int64_t o = dir_offset(&dir);
+#endif
   if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o))
     goto LramHit;
 
   // check if it was read in the last open_read call
+#if TS_USE_INTERIM_CACHE == 1
+  if (*read_key == vol->first_fragment_key && dir_get_offset(&dir) == vol->first_fragment_offset) {
+#else
   if (*read_key == vol->first_fragment_key && dir_offset(&dir) == vol->first_fragment_offset) {
+#endif
     buf = vol->first_fragment_data;
     goto LmemHit;
   }
+#if TS_USE_INTERIM_CACHE == 1
+LinterimRead:
+  if (f.read_from_interim) {
+    if (dir_agg_buf_valid(interim_vol, &dir)) {
+      int interim_agg_offset = vol_offset(interim_vol, &dir) - interim_vol->header->write_pos;
+      buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+      ink_assert((interim_agg_offset + io.aiocb.aio_nbytes) <= (unsigned) interim_vol->agg_buf_pos);
+      char *doc = buf->data();
+      char *agg = interim_vol->agg_buffer + interim_agg_offset;
+      memcpy(doc, agg, io.aiocb.aio_nbytes);
+      io.aio_result = io.aiocb.aio_nbytes;
+      SET_HANDLER(&CacheVC::handleReadDone);
+      return EVENT_RETURN;
+    }
 
+    io.aiocb.aio_fildes = interim_vol->fd;
+    io.aiocb.aio_offset = vol_offset(interim_vol, &dir);
+    if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(interim_vol->skip + interim_vol->len))
+      io.aiocb.aio_nbytes = interim_vol->skip + interim_vol->len - io.aiocb.aio_offset;
+    buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+    io.aiocb.aio_buf = buf->data();
+    io.action = this;
+    io.thread = mutex->thread_holding->tt == DEDICATED ? AIO_CALLBACK_THREAD_ANY : mutex->thread_holding;
+
+    SET_HANDLER(&CacheVC::handleReadDone);
+    ink_assert(ink_aio_read(&io) >= 0);
+    CACHE_DEBUG_INCREMENT_DYN_STAT(cache_pread_count_stat);
+    return EVENT_CONT;
+  }
+#endif
   // see if its in the aggregation buffer
   if (dir_agg_buf_valid(vol, &dir)) {
     int agg_offset = vol_offset(vol, &dir) - vol->header->write_pos;
@@ -2107,6 +2354,13 @@ LramHit: {
 LmemHit:
   f.doc_from_ram_cache = true;
   io.aio_result = io.aiocb.aio_nbytes;
+#if TS_USE_INTERIM_CACHE == 1
+  if (mts) { // for hit from memory, not migrate
+    vol->set_migrate_failed(mts);
+    migrateToInterimCacheAllocator.free(mts);
+    mts = NULL;
+  }
+#endif
   POP_HANDLER;
   return EVENT_RETURN; // allow the caller to release the volume lock
 }
@@ -2770,6 +3024,11 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   REG_INT("read.active", cache_read_active_stat);
   REG_INT("read.success", cache_read_success_stat);
   REG_INT("read.failure", cache_read_failure_stat);
+#if TS_USE_INTERIM_CACHE == 1
+  REG_INT("interim.read.success", cache_interim_read_success_stat);
+  REG_INT("disk.read.success", cache_disk_read_success_stat);
+  REG_INT("ram.read.success", cache_ram_read_success_stat);
+#endif
   REG_INT("write.active", cache_write_active_stat);
   REG_INT("write.success", cache_write_success_stat);
   REG_INT("write.failure", cache_write_failure_stat);
@@ -2883,6 +3142,11 @@ ink_cache_init(ModuleVersion v)
   REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
 #endif
 
+#if TS_USE_INTERIM_CACHE == 1
+  REC_EstablishStaticConfigInt32(migrate_threshold, "proxy.config.cache.interim.migrate_threshold");
+  Debug("cache_init", "proxy.config.cache.migrate_threshold = %d", migrate_threshold);
+#endif
+
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
 
@@ -2919,6 +3183,13 @@ ink_cache_init(ModuleVersion v)
     Warning("no cache disks specified in %s: cache disabled\n", p);
     //exit(1);
   }
+#if TS_USE_INTERIM_CACHE == 1
+  else {
+    theCacheStore.read_interim_config();
+    if (theCacheStore.n_interim_disks == 0)
+      Warning("no interim disks specified in %s: \n", "proxy.config.cache.interim.storage");
+  }
+#endif
 }
 
 #ifdef NON_MODULAR

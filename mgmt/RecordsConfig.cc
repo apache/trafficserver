@@ -940,6 +940,12 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cache.target_fragment_size", RECD_INT, "1048576", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  // # only be used when compiled with --enable-interim-cache
+  {RECT_LOCAL, "proxy.config.cache.interim.storage", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  // # only be used when compiled with --enable-interim-cache
+  {RECT_CONFIG, "proxy.config.cache.interim.migrate_threshold", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   //  # The maximum size of a document that will be stored in the cache.
   //  # (0 disables the maximum document size check)
   {RECT_CONFIG, "proxy.config.cache.max_doc_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}

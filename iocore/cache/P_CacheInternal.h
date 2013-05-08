@@ -130,6 +130,11 @@ enum
   cache_read_active_stat,
   cache_read_success_stat,
   cache_read_failure_stat,
+#if TS_USE_INTERIM_CACHE == 1
+  cache_interim_read_success_stat,
+  cache_disk_read_success_stat,
+  cache_ram_read_success_stat,
+#endif
   cache_write_active_stat,
   cache_write_success_stat,
   cache_write_failure_stat,
@@ -230,7 +235,9 @@ extern int cache_config_hit_evacuate_size_limit;
 extern int cache_config_force_sector_size;
 extern int cache_config_target_fragment_size;
 extern int cache_config_mutex_retry_delay;
-
+#if TS_USE_INTERIM_CACHE == 1
+extern int good_interim_disks;
+#endif
 // CacheVC
 struct CacheVC: public CacheVConnection
 {
@@ -458,7 +465,11 @@ struct CacheVC: public CacheVConnection
   int header_to_write_len;
   void *header_to_write;
   short writer_lock_retry;
-
+#if TS_USE_INTERIM_CACHE == 1
+  InterimCacheVol *interim_vol;
+  MigrateToInterimCache *mts;
+  uint64_t dir_off;
+#endif
   union
   {
     uint32_t flags;
@@ -484,6 +495,12 @@ struct CacheVC: public CacheVConnection
       unsigned int doc_from_ram_cache:1;
 #ifdef HIT_EVACUATE
       unsigned int hit_evacuate:1;
+#endif
+#if TS_USE_INTERIM_CACHE == 1
+      unsigned int read_from_interim:1;
+      unsigned int write_into_interim:1;
+      unsigned int ram_fixup:1;
+      unsigned int transistor:1;
 #endif
 #ifdef HTTP_CACHE
       unsigned int allow_empty_doc:1; // used for cache empty http document
@@ -520,7 +537,9 @@ struct CacheRemoveCont: public Continuation
 
 
 // Global Data
-
+#if TS_USE_INTERIM_CACHE == 1
+extern ClassAllocator<MigrateToInterimCache> migrateToInterimCacheAllocator;
+#endif
 extern ClassAllocator<CacheVC> cacheVConnectionAllocator;
 extern CacheKey zero_key;
 extern CacheSync *cacheDirSync;
@@ -565,6 +584,17 @@ free_CacheVC(CacheVC *cont)
     CACHE_DECREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_ACTIVE);
     if (cont->closed > 0) {
       CACHE_INCREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_SUCCESS);
+#if TS_USE_INTERIM_CACHE == 1
+      if (cont->vio.op == VIO::READ) {
+        if (cont->f.doc_from_ram_cache) {
+          CACHE_INCREMENT_DYN_STAT(cache_ram_read_success_stat);
+        } else if (cont->f.read_from_interim) {
+          CACHE_INCREMENT_DYN_STAT(cache_interim_read_success_stat);
+        } else {
+          CACHE_INCREMENT_DYN_STAT(cache_disk_read_success_stat);
+        }
+      }
+#endif
     }                             // else abort,cancel
   }
   ink_assert(mutex->thread_holding == this_ethread());
@@ -648,6 +678,36 @@ CacheVC::do_read_call(CacheKey *akey)
   doc_pos = 0;
   read_key = akey;
   io.aiocb.aio_nbytes = dir_approx_size(&dir);
+#if TS_USE_INTERIM_CACHE == 1
+  interim_vol = NULL;
+  ink_assert(mts == NULL);
+  mts = NULL;
+  f.write_into_interim = 0;
+  f.ram_fixup = 0;
+  f.transistor = 0;
+  f.read_from_interim = dir_ininterim(&dir);
+
+  if (!f.read_from_interim && vio.op == VIO::READ && good_interim_disks > 0){
+    vol->history.put_key(read_key);
+    if (vol->history.is_hot(read_key) && !vol->migrate_probe(read_key, NULL) && !od) {
+      f.write_into_interim = 1;
+    }
+  }
+  if (f.read_from_interim) {
+    interim_vol = &vol->interim_vols[dir_get_index(&dir)];
+    if (vio.op == VIO::READ && vol_transistor_range_valid(interim_vol, &dir)
+        && !vol->migrate_probe(read_key, NULL) && !od)
+      f.transistor = 1;
+  }
+  if (f.write_into_interim || f.transistor) {
+    mts = migrateToInterimCacheAllocator.alloc();
+    mts->vc = this;
+    mts->key = *read_key;
+    mts->rewrite = (f.transistor == 1);
+    dir_assign(&mts->dir, &dir);
+    vol->set_migrate_in_progress(mts);
+  }
+#endif
   PUSH_HANDLER(&CacheVC::handleRead);
   return handleRead(EVENT_CALL, 0);
 }
@@ -774,6 +834,12 @@ Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
     CACHE_INCREMENT_DYN_STAT(cache_write_backlog_failure_stat);
     return ECACHE_WRITE_FAIL;
   }
+#if TS_USE_INTERIM_CACHE == 1
+  MigrateToInterimCache *m_result = NULL;
+  if (vol->migrate_probe(&cont->first_key, &m_result)) {
+    m_result->notMigrate = true;
+  }
+#endif
   if (open_dir.open_write(cont, allow_if_writers, max_writers)) {
 #ifdef CACHE_STAT_PAGES
     ink_assert(cont->mutex->thread_holding == this_ethread());

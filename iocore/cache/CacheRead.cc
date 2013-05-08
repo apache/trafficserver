@@ -560,13 +560,31 @@ CacheVC::openReadReadDone(int event, Event * e)
           Warning("Middle: Doc checksum does not match for %s", key.string(tmpstring));
         else
           Warning("Middle: Doc magic does not match for %s", key.string(tmpstring));
+#if TS_USE_INTERIM_CACHE == 1
+        if (dir_ininterim(&dir)) {
+          dir_delete(&key, vol, &dir);
+          goto Lread;
+        }
+#endif
         goto Lerror;
       }
       if (doc->key == key)
         goto LreadMain;
+#if TS_USE_INTERIM_CACHE == 1
+      else if (dir_ininterim(&dir)) {
+          dir_delete(&key, vol, &dir);
+          last_collision = NULL;
+        }
+#endif
     }
+#if TS_USE_INTERIM_CACHE == 1
+    if (last_collision && dir_get_offset(&dir) != dir_get_offset(last_collision))
+      last_collision = 0;
+Lread:
+#else
     if (last_collision && dir_offset(&dir) != dir_offset(last_collision))
       last_collision = 0;       // object has been/is being overwritten
+#endif
     if (dir_probe(&key, vol, &dir, &last_collision)) {
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN)
@@ -576,7 +594,11 @@ CacheVC::openReadReadDone(int event, Event * e)
       if (writer_done()) {
         last_collision = NULL;
         while (dir_probe(&earliest_key, vol, &dir, &last_collision)) {
+#if TS_USE_INTERIM_CACHE == 1
+          if (dir_get_offset(&dir) == dir_get_offset(&earliest_dir)) {
+#else
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
+#endif
             DDebug("cache_read_agg", "%p: key: %X ReadRead complete: %d",
                   this, first_key.word(1), (int)vio.ndone);
             doc_len = vio.ndone;
@@ -831,7 +853,11 @@ CacheVC::openReadStartEarliest(int event, Event * e)
     vol->begin_read(this);
 #ifdef HIT_EVACUATE
     if (vol->within_hit_evacuate_window(&earliest_dir) &&
-        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
+        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)
+#if TS_USE_INTERIM_CACHE == 1
+        && !dir_ininterim(&dir)
+#endif
+        ) {
       DDebug("cache_hit_evac", "dir: %" PRId64", write: %" PRId64", phase: %d",
             dir_offset(&earliest_dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
@@ -843,6 +869,13 @@ Lread:
         dir_lookaside_probe(&key, vol, &earliest_dir, NULL))
     {
       dir = earliest_dir;
+#if TS_USE_INTERIM_CACHE == 1
+      if (dir_ininterim(&dir) && alternate.get_frag_offset_count() > 1) {
+        dir_delete(&key, vol, &dir);
+        last_collision = NULL;
+        goto Lread;
+      }
+#endif
       if ((ret = do_read_call(&key)) == EVENT_RETURN)
         goto Lcallreturn;
       return ret;
@@ -863,7 +896,12 @@ Lread:
           // finds that the directory entry has been overwritten
           // (cannot assert on the return value)
           dir_delete(&first_key, vol, &first_dir);
-        } else {
+        }
+#if TS_USE_INTERIM_CACHE == 1
+        else if (dir_ininterim(&first_dir))
+          dir_delete(&first_key, vol, &first_dir);
+#endif
+        else {
           buf = NULL;
           last_collision = NULL;
           write_len = 0;
@@ -1004,6 +1042,12 @@ CacheVC::openReadStartHead(int event, Event * e)
       // a directory entry which is nolonger valid may have been overwritten
       if (!dir_valid(vol, &dir))
         last_collision = NULL;
+#if TS_USE_INTERIM_CACHE == 1
+      if (dir_ininterim(&dir)) {
+        dir_delete(&key, vol, &dir);
+        last_collision = NULL;
+      }
+#endif
       goto Lread;
     }
     doc = (Doc *) buf->data();
@@ -1026,7 +1070,17 @@ CacheVC::openReadStartHead(int event, Event * e)
       goto Lread;
     }
     if (!(doc->first_key == key))
+#if TS_USE_INTERIM_CACHE == 1
+    {
+      if (dir_ininterim(&dir)) {
+        dir_delete(&key, vol, &dir);
+        last_collision = NULL;
+      }
       goto Lread;
+    }
+#else
+      goto Lread;
+#endif
     if (f.lookup)
       goto Lookup;
     earliest_dir = dir;
@@ -1100,7 +1154,11 @@ CacheVC::openReadStartHead(int event, Event * e)
 
 #ifdef HIT_EVACUATE
     if (vol->within_hit_evacuate_window(&dir) &&
-        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
+        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)
+#if TS_USE_INTERIM_CACHE == 1
+        && !f.read_from_interim
+#endif
+        ) {
       DDebug("cache_hit_evac", "dir: %" PRId64", write: %" PRId64", phase: %d",
             dir_offset(&dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;

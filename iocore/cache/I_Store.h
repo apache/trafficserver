@@ -168,7 +168,11 @@ struct Store
 
   unsigned n_disks;
   Span **disk;
-
+#if TS_USE_INTERIM_CACHE == 1
+  int n_interim_disks;
+  Span **interim_disk;
+  const char *read_interim_config();
+#endif
   //
   // returns NULL on success
   // if fd >= 0 then on failure it returns an error string
