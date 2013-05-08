@@ -849,12 +849,12 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     opt.addr_binding = NetVCOptions::INTF_ADDR;
     opt.local_ip = this_cluster_machine()->ip;
 
+    struct sockaddr_in addr;
+    ats_ip4_set(&addr, machine->ip,
+        htons(machine->cluster_port ? machine->cluster_port : cluster_port));
+
     // TODO: Should we check the Action* returned here?
-    netProcessor.connect_re(this, machine->ip,
-                            machine->cluster_port
-                            ? machine->cluster_port
-                            : cluster_port,
-                            &opt);
+    netProcessor.connect_re(this, ats_ip_sa_cast(&addr), &opt);
     return EVENT_DONE;
   } else {
     if (event == NET_EVENT_OPEN) {

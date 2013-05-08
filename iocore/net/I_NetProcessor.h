@@ -222,21 +222,6 @@ public:
   );
 
   /**
-    @deprecated preserve backward compatibility with non-IPv6 iocore
-  */
-  inkcoreapi Action *connect_re(
-    Continuation * cont,
-    unsigned int ip,
-    int port,
-    NetVCOptions * options = NULL
-  ) {
-    struct sockaddr_in addr;
-
-    ats_ip4_set(&addr, ip, htons(port));
-    return connect_re(cont, ats_ip_sa_cast(&addr), options);
-  }
-
-  /**
     Open a NetVConnection for connection oriented I/O. This call
     is simliar to connect method except that the cont is called
     back only after the connections has been established. In the
@@ -261,23 +246,6 @@ public:
     int timeout = NET_CONNECT_TIMEOUT,
     NetVCOptions * opts = NULL
   );
-
-  /**
-    @deprecated preserve backward compatibility with non-IPv6 iocore
-  */
-
-  Action *connect_s(
-    Continuation * cont,
-    unsigned int ip,
-    int port,
-    int timeout = NET_CONNECT_TIMEOUT,
-    NetVCOptions * opts = NULL
-  ) {
-    struct sockaddr_in addr;
-
-    ats_ip4_set(&addr, ip, htons(port));
-    return connect_s(cont, ats_ip_sa_cast(&addr), timeout, opts);
-  }
 
   /**
     Starts the Netprocessor. This has to be called before doing any
