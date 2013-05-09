@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1890] Authproxy plugin caching and reliability fixes.
+
   *) [TS-1868] TSREMAP_*_STOP does not stop remap plugin evaluation chain.
 
   *) [TS-1889] Refactor remap plugin request URL handling.
