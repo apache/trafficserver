@@ -101,15 +101,16 @@ ClusterAccept::ClusterAcceptEvent(int event, void *data)
           accept_action->cancel();
           accept_action = 0;
         }
-	NetProcessor::AcceptOptions opt;
-	opt.recv_bufsize = socket_recv_bufsize;
-	opt.send_bufsize = socket_send_bufsize;
-	opt.etype = ET_CLUSTER;
-	opt.local_port = cluster_port;
-	opt.ip_family = AF_INET;
-        accept_action = netProcessor.main_accept(this, NO_FD,
-                                                 NULL, NULL,
-                                                 false, false, opt);
+
+        NetProcessor::AcceptOptions opt;
+        opt.recv_bufsize = socket_recv_bufsize;
+        opt.send_bufsize = socket_send_bufsize;
+        opt.etype = ET_CLUSTER;
+        opt.local_port = cluster_port;
+        opt.ip_family = AF_INET;
+        opt.localhost_only = false;
+
+        accept_action = netProcessor.main_accept(this, NO_FD, opt);
         if (!accept_action) {
           Warning("Unable to accept cluster connections on port: %d", cluster_port);
         } else {
