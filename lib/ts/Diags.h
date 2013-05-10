@@ -105,26 +105,14 @@ class SrcLoc
 public:
   const char *file;
   const char *func;
-  int line;
-
-  void set(const char *_file, const char *_func, int _line) {
-    file = _file;
-    func = _func;
-    line = _line;
-  }
+  const int line;
 
   bool valid() const {
     return file && line;
   }
 
-  SrcLoc(const char *_file, const char *_func, int _line) {
-    set(_file, _func, _line);
-  }
-
-  SrcLoc(): file(NULL), func(NULL), line(0) {
-  }
-
-  ~SrcLoc() {
+  SrcLoc(const char *_file, const char *_func, int _line)
+    : file(_file), func(_func), line(_line) {
   }
 
   char * str(char *buf, int buflen) const;
