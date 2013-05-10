@@ -103,30 +103,31 @@ struct DiagsConfigState
 class SrcLoc
 {
 public:
-  bool valid;
   const char *file;
   const char *func;
   int line;
 
-  void set(const char *_file, const char *_func, int _line)
-  {
-    valid = true;
+  void set(const char *_file, const char *_func, int _line) {
     file = _file;
     func = _func;
     line = _line;
   }
 
-  SrcLoc(const char *_file, const char *_func, int _line)
-  {
+  bool valid() const {
+    return file && line;
+  }
+
+  SrcLoc(const char *_file, const char *_func, int _line) {
     set(_file, _func, _line);
   }
 
-SrcLoc():valid(false), file(NULL), func(NULL), line(0) {
+  SrcLoc(): file(NULL), func(NULL), line(0) {
   }
-  ~SrcLoc() {
-  };
 
-  char *str(char *buf, int buflen);
+  ~SrcLoc() {
+  }
+
+  char * str(char *buf, int buflen) const;
 };
 
 

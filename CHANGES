@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1887] Make diagnostic location logging more succinct.
+
   *) [TS-1884] Remove deprecated IPv4-only NetProcessor API.
 
   *) [TS-1444] [TS-1881] URL lookup with regex through the web interface was broken.
