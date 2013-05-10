@@ -1337,6 +1337,7 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
+AC_CHECK_HEADERS([sys/types.h sys/mman.h])
 TS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
                   sys/param.h \
