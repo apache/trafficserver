@@ -281,7 +281,7 @@ extern inkcoreapi NetProcessor& netProcessor;
 
 /**
   Global netProcessor singleton object for making ssl enabled net
-  calls. As far as the SM is concerned this behaves excatly like
+  calls. As far as the SM is concerned this behaves exactly like
   netProcessor. The only difference is that the connections are
   over ssl.
 
