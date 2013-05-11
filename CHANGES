@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1868] TSREMAP_*_STOP does not stop remap plugin evaluation chain.
+
   *) [TS-1889] Refactor remap plugin request URL handling.
 
   *) [TS-1887] Make diagnostic location logging more succinct.

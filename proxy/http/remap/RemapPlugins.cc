@@ -102,11 +102,11 @@ RemapPlugins::run_single_remap()
   TSRemapStatus       plugin_retcode = TSREMAP_NO_REMAP;
 
   if (unlikely(plugin == NULL)) {
-    Debug("url_rewrite", "There wasn't a plugin available for us to run. Completing all remap processing immediately");
+    Debug("url_rewrite", "no plugin available to run; completing all remap processing immediately");
     return 1;
   }
 
-  Debug("url_rewrite", "Running single remap rule id %d for the %d%s time",
+  Debug("url_rewrite", "running single remap rule id %d for the %d%s time",
       map->map_id, _cur, _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
 
   plugin_retcode = run_plugin(plugin);
@@ -129,6 +129,11 @@ RemapPlugins::run_single_remap()
     }
   }
 
+  if (TSREMAP_NO_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
+      Debug("url_rewrite", "breaking remap plugin chain since last plugin said we should stop");
+      return 1;
+  }
+
   if (_cur > MAX_REMAP_PLUGIN_CHAIN) {
     Error("called %s more than %u times; stopping this remap insanity now", __func__, MAX_REMAP_PLUGIN_CHAIN);
     return 1;
@@ -136,11 +141,11 @@ RemapPlugins::run_single_remap()
 
   if (_cur >= map->_plugin_count) {
     // Normally, we would callback into this function but we dont have anything more to do!
-    Debug("url_rewrite", "We completed all remap plugins for this rule");
+    Debug("url_rewrite", "completed all remap plugins for rule id %d", map->map_id);
     return 1;
   }
 
-  Debug("url_rewrite", "Completed single remap. Attempting another via immediate callback");
+  Debug("url_rewrite", "completed single remap, attempting another via immediate callback");
   return 0;
 }
 
