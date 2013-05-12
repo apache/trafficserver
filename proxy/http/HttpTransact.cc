@@ -8729,8 +8729,6 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
   MIMEField *field;
   char *reason_phrase;
 
-  ink_assert(header->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE) == NULL);
-
   header->status_set(HTTP_STATUS_PARTIAL_CONTENT);
   reason_phrase = (char *) (http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));
   header->reason_set(reason_phrase, strlen(reason_phrase));
