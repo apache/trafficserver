@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1891] Add double-free checking for reclaimable freelist
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-1926] Require Lua v5.1, by checking for lua_getfenv(). This is
    necessary since we are incompatible with Lua v5.2 (for now).
 
