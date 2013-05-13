@@ -307,14 +307,6 @@ ink_thread_exit(void *status)
   pthread_exit(status);
 }
 
-#if defined(USE_OLD_EVENTFD)
-static inline void
-ink_create_pipe( int pfd[2])
-{
-  ink_assert(pipe(pfd)==0);
-}
-#endif
-
 // This define is from Linux's <sys/prctl.h> and is most likely very
 // Linux specific... Feel free to add support for other platforms
 // that has a feature to give a thread specific name / tag.
