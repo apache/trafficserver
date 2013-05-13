@@ -117,8 +117,6 @@ struct EventIO
 #include "P_UnixUDPConnection.h"
 #include "P_UnixPollDescriptor.h"
 
-#define EVENTFD   5
-
 class UnixNetVConnection;
 class NetHandler;
 typedef int (NetHandler::*NetContHandler) (int, void *);
