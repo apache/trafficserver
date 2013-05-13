@@ -163,7 +163,7 @@ ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
 int
 ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
 {
-  unsigned pagesize = ats_pagesize();
+  size_t pagesize = ats_pagesize();
 
   // align start back to page boundary
   caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(pagesize - 1));
@@ -196,7 +196,7 @@ ats_madvise(caddr_t addr, size_t len, int flags)
   (void) flags;
   return 0;
 #else
-  unsigned pagesize = ats_pagesize();
+  size_t pagesize = ats_pagesize();
   caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(pagesize - 1));
   size_t l = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
   int res = 0;
@@ -208,7 +208,7 @@ ats_madvise(caddr_t addr, size_t len, int flags)
 int
 ats_mlock(caddr_t addr, size_t len)
 {
-  unsigned pagesize = ats_pagesize();
+  size_t pagesize = ats_pagesize();
 
   caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(pagesize - 1));
   size_t l = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);

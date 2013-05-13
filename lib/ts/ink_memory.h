@@ -88,13 +88,13 @@ extern "C" {
   int     ats_madvise(caddr_t addr, size_t len, int flags);
   int     ats_mlock(caddr_t addr, size_t len);
 
-  static inline unsigned ats_pagesize(void) {
+  static inline size_t ats_pagesize(void) {
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
-    return (unsigned)sysconf(_SC_PAGESIZE);
+    return (size_t)sysconf(_SC_PAGESIZE);
 #elif defined(HAVE_GETPAGESIZE)
-    return (unsigned)getpagesize()
+    return (size_t)getpagesize()
 #else
-    return 8192u;
+    return (size_t)8192;
 #endif
   }
 
