@@ -72,10 +72,6 @@ SessionBucket::session_handler(int event, void *data)
   HttpServerSession *s = NULL;
 
   switch (event) {
-  case EVENT_INTERVAL:
-    s = (HttpServerSession *)(((Event *)data)->cookie);
-    httpSessionManager.release_session(s);
-    return 0;
   case VC_EVENT_READ_READY:
     // The server sent us data.  This is unexpected so
     //   close the connection
@@ -305,10 +301,6 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
     bucket = g_l1_hash + l1_index;
   }
 
-  // Transfer control of the write side as well
-  to_release->do_io_write(bucket, 0, NULL);
-  to_release->do_io_read(bucket, 0, NULL);
-
   MUTEX_TRY_LOCK(lock, bucket->mutex, ethread);
   if (lock) {
     int l2_index = SECOND_LEVEL_HASH(&to_release->server_ip.sa);
@@ -326,6 +318,9 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
     //  to remove the connection from our lists
     to_release->do_io_read(bucket, INT64_MAX, to_release->read_buffer);
 
+    // Transfer control of the write side as well
+    to_release->do_io_write(bucket, 0, NULL);
+
     // we probably don't need the active timeout set, but will leave it for now
     to_release->get_netvc()->set_inactivity_timeout(to_release->get_netvc()->get_inactivity_timeout());
     to_release->get_netvc()->set_active_timeout(to_release->get_netvc()->get_active_timeout());
@@ -333,7 +328,6 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
 
     return HSM_DONE;
   } else {
-    eventProcessor.schedule_in(bucket, HRTIME_MSECONDS(5), ET_CALL, EVENT_INTERVAL, (void *) to_release);
     Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
   }
 
