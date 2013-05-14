@@ -50,7 +50,6 @@ struct CacheVC;
 #define DIR_SIZE_WITH_BLOCK(_i)         ((1<<DIR_SIZE_WIDTH) * DIR_BLOCK_SIZE(_i))
 #define DIR_OFFSET_BITS                 40
 #define DIR_OFFSET_MAX                  ((((off_t)1) << DIR_OFFSET_BITS) - 1)
-#define MAX_DOC_SIZE                    ((1<<DIR_SIZE_WIDTH)*(1<<B8K_SHIFT)) // 1MB
 
 #define SYNC_MAX_WRITE                  (2 * 1024 * 1024)
 #define SYNC_DELAY                      HRTIME_MSECONDS(500)
