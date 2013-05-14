@@ -85,6 +85,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Patch: see ticket
   +1: jpeach
 
+  Remove iconv as dependency
+  Jira: https://issues.apache.org/jira/browse/TS-1723
+  Patch: 8cbc7c87e5f44d47f7a96b27bbae5456f008e3f5
+  +1: igalic
+
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
