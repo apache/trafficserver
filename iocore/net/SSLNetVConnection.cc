@@ -133,7 +133,7 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          SSLError("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -145,14 +145,11 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
         Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
         break;
       case SSL_ERROR_SSL:
-      default: {
-        char err_string[4096];
-        ERR_error_string(ERR_get_error(), err_string);
+      default:
         event = SSL_READ_ERROR;
         ret = errno;
-        Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SSL %s", err_string);
+        SSLError("[SSL_NetVConnection::ssl_read_from_net]");
         break;
-      }
       }                         // switch
       break;
     }                           // while( block_write_avail > 0 )
