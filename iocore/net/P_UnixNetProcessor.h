@@ -56,7 +56,7 @@ public:
 
   // Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
   // nothing for NetProcessor
-  virtual void upgradeEtype(EventType & etype) { NOWARN_UNUSED(etype); };
+  virtual void upgradeEtype(EventType & /* etype ATS_UNUSED */) { };
 
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to

@@ -390,7 +390,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
     else if (vc->write.enabled && vc->write.triggered)
-      write_to_net(this, vc, pd, trigger_event->ethread);
+      write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
 #if defined(solaris)
@@ -415,7 +415,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
     else if (vc->write.enabled && vc->write.triggered)
-      write_to_net(this, vc, pd, trigger_event->ethread);
+      write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled)
       vc->ep.modify(-EVENTIO_WRITE);
   }

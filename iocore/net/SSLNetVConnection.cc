@@ -75,9 +75,8 @@ do_SSL_write(SSL * ssl, void *buf, int size)
 
 
 static int
-ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
+ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
 {
-  NOWARN_UNUSED(nh);
   NetState *s = &vc->read;
   SSLNetVConnection *sslvc = (SSLNetVConnection *) vc;
   MIOBufferAccessor & buf = s->vio.buffer;
@@ -251,7 +250,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (!buf.writer()->write_avail()) {
       buf.writer()->add_block();
     }
-    ret = ssl_read_from_net(nh, this, lthread, r);
+    ret = ssl_read_from_net(this, lthread, r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
     }

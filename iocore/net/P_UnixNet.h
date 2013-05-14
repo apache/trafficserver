@@ -553,7 +553,7 @@ TS_INLINE int EventIO::modify(int e) {
   }
   return 0;
 #else
-  NOWARN_UNUSED(e);
+  (void)e; // ATS_UNUSED
   return 0;
 #endif
 }
@@ -591,7 +591,7 @@ TS_INLINE int EventIO::refresh(int e) {
   }
   return 0;
 #else
-  NOWARN_UNUSED(e);
+  (void)e; // ATS_UNUSED
   return 0;
 #endif
 }
