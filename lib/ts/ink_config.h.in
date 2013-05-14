@@ -99,7 +99,6 @@
 #define TS_HAS_EVENTFD                 @has_eventfd@
 #define TS_HAS_CLOCK_GETTIME           @has_clock_gettime@
 #define TS_HAS_POSIX_MEMALIGN          @has_posix_memalign@
-#define TS_HAS_POSIX_FADVISE           @has_posix_fadvise@
 #define TS_HAS_LRAND48_R               @has_lrand48_r@
 #define TS_HAS_SRAND48_R               @has_srand48_r@
 #define TS_HAS_STRLCPY                 @has_strlcpy@

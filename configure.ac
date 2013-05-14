@@ -1056,12 +1056,13 @@ if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
 
-TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_fallocate lrand48_r srand48_r port_create])
-TS_FLAG_FUNCS([strlcpy strlcat sysconf getpagesize])
+TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate])
+TS_FLAG_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
 
 AC_SUBST(has_clock_gettime)
 AC_SUBST(has_posix_memalign)
 AC_SUBST(has_posix_fadvise)
+AC_SUBST(has_posix_madvise)
 AC_SUBST(has_posix_fallocate)
 AC_SUBST(has_lrand48_r)
 AC_SUBST(has_srand48_r)

@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1894] madvise() not found on Solaris. And some cleanup.
+
   *) [TS-1765] Make jtest build more like the rest of the code.
 
   *) [TS-1892] Move msync APIs to ink_memory.h.

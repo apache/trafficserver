@@ -200,7 +200,11 @@ ats_madvise(caddr_t addr, size_t len, int flags)
   caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(pagesize - 1));
   size_t l = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
   int res = 0;
+#if HAVE_POSIX_MADVISE
+  res = posix_madvise(a, l, flags);
+#else
   res = madvise(a, l, flags);
+#endif
   return res;
 #endif
 }
