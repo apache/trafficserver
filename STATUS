@@ -65,6 +65,11 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
   +1: igalic, zwoop, jpeach, arno
 
+  Support older versions of HWLOC properly
+  Jira: https://issues.apache.org/jira/browse/TS-1843
+  Patch: 7e417c4712e36c9c38cf60b98783b24ad2a1c4f3
+  +1: zwoop, jpeach, igalic
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -74,11 +79,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Patch: 682c4e3938b8aee288facdcfd0750571edcb20b0
          72dcbdc58024abc6f67a592853e488d7f9eebd83
   igalic says: This still needs some more patches I haven't identified.
-
-  Support older versions of HWLOC properly
-  Jira: https://issues.apache.org/jira/browse/TS-1843
-  Patch: 7e417c4712e36c9c38cf60b98783b24ad2a1c4f3
-  +1: zwoop, jpeach
 
   Crash when using ssl_ca_name
   Jira: https://issues.apache.org/jira/browse/TS-1779
