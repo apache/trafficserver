@@ -265,7 +265,8 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
             return TCL_ERROR;
           }
 
-          parsedInfoPtr->arg_float = strtod(argv[srcIndex], &endPtr);
+          // Solaris is messed up, in that strtod() does not honor C99/SUSv3 mode.
+          parsedInfoPtr->arg_float = strtold(argv[srcIndex], &endPtr);
           if ((endPtr == argv[srcIndex]) || (*endPtr != 0)) {
             Tcl_AppendResult(interp, infoPtr->key, " requires floating-point argument",
                              "\n", infoPtr->help, (char *) NULL);
@@ -288,7 +289,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
 
         case CLI_ARGV_OPTION_FLOAT_VALUE:
           if (argc > 0) {
-            parsedInfoPtr->arg_float = strtod(argv[srcIndex], &endPtr);
+            parsedInfoPtr->arg_float = strtold(argv[srcIndex], &endPtr);
             if ((endPtr == argv[srcIndex]) || (*endPtr != 0)) {
               parsedInfoPtr->arg_float = CLI_DEFAULT_INT_OR_FLOAT_VALUE;
               parsedInfoPtr->parsed_args = infoPtr->arg_ref;

@@ -352,7 +352,8 @@ getFloatRange(char *range, float *r1, float *r2)
       }
       buf[i] = 0;
       if (bound == NEG_BOUND) {
-        *r1 = strtod(buf, &endPtr);
+        // Solaris is messed up, in that strtod() does not honor C99/SUSv3 mode.
+        *r1 = strtold(buf, &endPtr);
         if ((endPtr == buf) || (*endPtr != 0)) {
           Tcl_AppendResult(interp, "negative range is not correct", (char *) NULL);
           ckfree(buf);
@@ -361,7 +362,7 @@ getFloatRange(char *range, float *r1, float *r2)
 
         }
       } else if (bound == POS_BOUND) {
-        *r2 = strtod(buf, &endPtr);
+        *r2 = strtold(buf, &endPtr);
         if ((endPtr == buf) || (*endPtr != 0)) {
           Tcl_AppendResult(interp, "positive range is not correct", (char *) NULL);
           ckfree(buf);
