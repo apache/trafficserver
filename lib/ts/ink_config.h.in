@@ -42,51 +42,6 @@
 #define BUILD_PERSON                   "@build_person@"
 #define BUILD_GROUP                    "@build_group@"
 
-/* Includes */
-#define TS_HAVE_SYS_EPOLL_H            @sys_epollh@
-#define TS_HAVE_SYS_EVENT_H            @sys_eventh@
-#define TS_HAVE_MACHINE_ENDIAN_H       @machine_endianh@
-#define TS_HAVE_ENDIAN_H               @endianh@
-#define TS_HAVE_NETINET_IN_H           @netinet_inh@
-#define TS_HAVE_NETINET_IN_SYSTM_H     @netinet_in_systmh@
-#define TS_HAVE_NETINET_TCP_H          @netinet_tcph@
-#define TS_HAVE_PTHREAD_NP_H           @pthread_nph@
-#define TS_HAVE_SYS_PARAM_H            @sys_paramh@
-#define TS_HAVE_SYS_CPUSET_H           @sys_cpuseth@
-#define TS_HAVE_SYS_PSET_H             @sys_pseth@
-#define TS_HAVE_SCHED_H                @schedh@
-#define TS_HAVE_SYS_IOCTL_H            @sys_ioctlh@
-#define TS_HAVE_SYS_BYTEORDER_H        @sys_byteorderh@
-#define TS_HAVE_SYS_SOCKIO_H           @sys_sockioh@
-#define TS_HAVE_SYS_SYSCTL_H           @sys_sysctlh@
-#define TS_HAVE_SYS_SYSINFO_H          @sys_sysinfoh@
-#define TS_HAVE_SYS_SYSTEMINFO_H       @sys_systeminfoh@
-#define TS_HAVE_ARPA_INET_H            @arpa_ineth@
-#define TS_HAVE_ARPA_NAMESER_H         @arpa_nameserh@
-#define TS_HAVE_ARPA_NAMESER_COMPAT_H  @arpa_nameser_compath@
-#define TS_HAVE_EXECINFO_H             @execinfoh@
-#define TS_HAVE_NETDB_H                @netdbh@
-#define TS_HAVE_CTYPE_H                @ctypeh@
-#define TS_HAVE_SIGINFO_H              @siginfoh@
-#define TS_HAVE_MALLOC_H               @malloch@
-#define TS_HAVE_WAIT_H                 @waith@
-#define TS_HAVE_FLOAT_H                @floath@
-#define TS_HAVE_LIBGEN_H               @libgenh@
-#define TS_HAVE_VALUES_H               @valuesh@
-#define TS_HAVE_ALLOCA_H               @allocah@
-#define TS_HAVE_CPIO_H                 @cpioh@
-#define TS_HAVE_STROPTS_H              @stroptsh@
-#define TS_HAVE_SYS_MOUNT_H            @sys_mounth@
-#define TS_HAVE_SYS_PARAM_H            @sys_paramh@
-#define TS_HAVE_SYS_SYSMACROS_H        @sys_sysmacrosh@
-#define TS_HAVE_MATH_H                 @mathh@
-#define TS_HAVE_NET_PPP_DEFS_H         @net_ppp_defsh@
-#define TS_HAVE_NETINET_IP_H           @netinet_iph@
-#define TS_HAVE_NETINET_IP_ICMP_H      @netinet_ip_icmph@
-#define TS_HAVE_EXECINFO_H             @execinfoh@
-#define TS_HAVE_IFADDRS_H              @ifaddrsh@
-#define TS_HAVE_READLINE_READLINE_H    @readline_readlineh@
-
 /* Libraries */
 #define TS_HAS_LIBZ                    @zlibh@
 #define TS_HAS_LZMA                    @lzmah@
@@ -96,13 +51,6 @@
 
 
 /* Features */
-#define TS_HAS_EVENTFD                 @has_eventfd@
-#define TS_HAS_CLOCK_GETTIME           @has_clock_gettime@
-#define TS_HAS_POSIX_MEMALIGN          @has_posix_memalign@
-#define TS_HAS_LRAND48_R               @has_lrand48_r@
-#define TS_HAS_SRAND48_R               @has_srand48_r@
-#define TS_HAS_STRLCPY                 @has_strlcpy@
-#define TS_HAS_STRLCAT                 @has_strlcat@
 #define TS_HAS_IN6_IS_ADDR_UNSPECIFIED @has_in6_is_addr_unspecified@
 
 #define TS_HAS_BACKTRACE               @has_backtrace@
@@ -127,7 +75,6 @@
 /* OS API definitions */
 #define GETHOSTBYNAME_R_HOSTENT_DATA   @gethostbyname_r_hostent_data@
 #define GETHOSTBYNAME_R_GLIBC2         @gethostbyname_r_glibc2@
-#define NEED_UNION_SEMUN               @need_union_semun@
 #define SIZEOF_VOID_POINTER            @ac_cv_sizeof_voidp@
 #define TS_IP_TRANSPARENT              @ip_transparent@
 #define TS_HAS_128BIT_CAS              @has_128bit_cas@
@@ -157,13 +104,13 @@
 # define USE_MD5_FOR_MMH                1
 #endif
 
-# define TS_MAX_THREADS_IN_EACH_THREAD_TYPE  @max_threads_per_type@
-# define TS_MAX_NUMBER_EVENT_THREADS  @max_event_threads@
+#define TS_MAX_THREADS_IN_EACH_THREAD_TYPE  @max_threads_per_type@
+#define TS_MAX_NUMBER_EVENT_THREADS  @max_event_threads@
 
-# define TS_MAX_HOST_NAME_LEN           @max_host_name_len@
+#define TS_MAX_HOST_NAME_LEN           @max_host_name_len@
 
 #if TS_HAS_INKAPI
-#define TS_MAX_API_STATS               @max_api_stats@
+# define TS_MAX_API_STATS               @max_api_stats@
 /* XXX: Should make those individually selectable ? */
 #else
 # define TS_NO_TRANSFORM                1

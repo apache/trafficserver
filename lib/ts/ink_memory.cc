@@ -84,7 +84,7 @@ ats_memalign(size_t alignment, size_t size)
 {
   void *ptr;
 
-#if TS_HAS_POSIX_MEMALIGN || TS_HAS_JEMALLOC
+#if HAVE_POSIX_MEMALIGN || TS_HAS_JEMALLOC
   if (alignment <= 8)
     return ats_malloc(size);
 

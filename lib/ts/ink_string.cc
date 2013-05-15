@@ -245,7 +245,7 @@ ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
 }                               /* End ink_string_find_dotted_extension */
 
 
-#if !TS_HAS_STRLCPY
+#if !HAVE_STRLCPY
 size_t
 ink_strlcpy(char *dst, const char *src, size_t siz)
 {
@@ -273,7 +273,7 @@ ink_strlcpy(char *dst, const char *src, size_t siz)
 }
 #endif
 
-#if !TS_HAS_STRLCAT
+#if !HAVE_STRLCAT
 size_t
 ink_strlcat(char *dst, const char *src, size_t siz)
 {

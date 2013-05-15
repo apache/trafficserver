@@ -1147,24 +1147,6 @@ AC_SUBST([LIBDEMANGLE])
 AC_LANG_POP
 AC_SUBST(has_demangle)
 
-need_union_semun=0
-# It's stupid, but not all platforms have union semun, even those that need it.
-AC_MSG_CHECKING(for union semun in sys/sem.h)
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-],[
-union semun arg;
-semctl(0, 0, 0, arg);
-], [union_semun=yes]
-msg=yes, [
-need_union_semun="1"
-msg=no ] )
-AC_MSG_RESULT([$msg])
-
-AC_SUBST(need_union_semun)
-
 AC_MSG_CHECKING(for 128bit CAS support)
 AC_LANG_PUSH([C++])
 

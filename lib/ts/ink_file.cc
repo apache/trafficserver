@@ -337,15 +337,16 @@ int
 ink_file_fd_zerofill(int fd, off_t size)
 {
   // Clear the file by truncating it to zero and then to the desired size.
-  ATS_UNUSED_RETURN(ftruncate(fd, 0));
+  if (ftruncate(fd, 0) < 0) {
+    return errno;
+  }
 
-#if TS_HAS_POSIX_FALLOCATE
+#if HAVE_POSIX_FALLOCATE
   return posix_fallocate(fd, 0, size);
 #else
   if (ftruncate(fd, size) < 0) {
     return errno;
   }
-
   return 0;
 #endif
 }

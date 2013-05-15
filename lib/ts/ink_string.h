@@ -62,7 +62,7 @@ inkcoreapi char *ink_string_find_dotted_extension(char *str, char *ext, int max_
  * will be copied.  Always NUL terminates (unless siz == 0).
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
-#if TS_HAS_STRLCPY
+#if HAVE_STRLCPY
 #define  ink_strlcpy strlcpy
 #else
 size_t ink_strlcpy(char *dst, const char *str, size_t siz);
@@ -74,7 +74,7 @@ size_t ink_strlcpy(char *dst, const char *str, size_t siz);
  * Returns strlen(src) + MIN(siz, strlen(initial dst)).
  * If retval >= siz, truncation occurred.
  */
-#if TS_HAS_STRLCAT
+#if HAVE_STRLCAT
 #define  ink_strlcat strlcat
 #else
 size_t ink_strlcat(char *dst, const char *str, size_t siz);

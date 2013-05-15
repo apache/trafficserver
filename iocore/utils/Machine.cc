@@ -24,9 +24,8 @@
 #include "libts.h"
 #include "I_Machine.h"
 
-# if TS_HAVE_IFADDRS_H
+#if HAVE_IFADDRS_H
 #include <ifaddrs.h>
-# else
 # endif
 
 // Singleton
@@ -68,10 +67,10 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
     }
     hostname = ats_strdup(the_hostname);
 
-#   if TS_HAVE_IFADDRS_H
+#if HAVE_IFADDRS_H
       ifaddrs* ifa_addrs = 0;
       status = getifaddrs(&ifa_addrs);
-#   else
+#else
       int s = socket(AF_INET, SOCK_DGRAM, 0);
       // This number is hard to determine, but needs to be much larger than
       // you would expect. On a normal system with just two interfaces and
@@ -88,7 +87,7 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
       } else {
         status = -1;
       }
-#   endif
+#endif
 
     if (0 != status) {
       Warning("Unable to determine local host '%s' address information - %s"
@@ -106,17 +105,17 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
       } spot_type = NA, ip4_type = NA, ip6_type = NA;
       sockaddr const* ifip;
       for (
-#     if TS_HAVE_IFADDRS_H
+#if HAVE_IFADDRS_H
         ifaddrs* spot = ifa_addrs ; spot ; spot = spot->ifa_next
-#     else
+#else
           ifreq* spot = req, *req_limit = req + (conf.ifc_len/sizeof(*req)) ; spot < req_limit ; ++spot
-#     endif
+#endif
       ) {
-#     if TS_HAVE_IFADDRS_H
+#if HAVE_IFADDRS_H
         ifip = spot->ifa_addr;
-#     else
+#else
         ifip = &spot->ifr_addr;
-#     endif
+#endif
 
         if (!ats_is_ip(ifip)) spot_type = NA;
         else if (ats_is_ip_loopback(ifip)) spot_type = LO;
@@ -139,9 +138,9 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
         }
       }
 
-#     if TS_HAVE_IFADDRS_H
+#if HAVE_IFADDRS_H
       freeifaddrs(ifa_addrs);
-#     endif
+#endif
 
       // What about the general address? Prefer IPv4?
       if (ip4_type >= ip6_type)

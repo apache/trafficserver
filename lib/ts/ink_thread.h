@@ -46,7 +46,7 @@
 #include <signal.h>
 #include <semaphore.h>
 
-#if TS_HAVE_PTHREAD_NP_H
+#if HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
 

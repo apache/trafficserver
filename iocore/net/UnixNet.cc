@@ -162,7 +162,7 @@ PollCont::pollEvent(int event, Event *e) {
 
 static void
 net_signal_hook_callback(EThread *thread) {
-#if TS_HAS_EVENTFD
+#if HAVE_EVENTFD
   uint64_t counter;
   ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
 #else
@@ -173,7 +173,7 @@ net_signal_hook_callback(EThread *thread) {
 
 static void
 net_signal_hook_function(EThread *thread) {
-#if TS_HAS_EVENTFD
+#if HAVE_EVENTFD
   uint64_t counter = 1;
   ATS_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64_t)));
 #else
@@ -203,7 +203,7 @@ initialize_thread_for_net(EThread *thread, int thread_index)
   thread->signal_hook = net_signal_hook_function;
   thread->ep = (EventIO*)ats_malloc(sizeof(EventIO));
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
-#if TS_HAS_EVENTFD
+#if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, 0, EVENTIO_READ);
 #else
   thread->ep->start(pd, thread->evpipe[0], 0, EVENTIO_READ);
