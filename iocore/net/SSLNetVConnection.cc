@@ -80,7 +80,7 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
   NetState *s = &vc->read;
   SSLNetVConnection *sslvc = (SSLNetVConnection *) vc;
   MIOBufferAccessor & buf = s->vio.buffer;
-  IOBufferBlock *b = buf.mbuf->_writer;
+  IOBufferBlock *b = buf.writer()->first_write_block();
   int event = SSL_READ_ERROR_NONE;
   int64_t bytes_read;
   int64_t block_write_avail;
@@ -282,7 +282,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         writeReschedule(nh);
       return;
     }
-    // reset the tigger and remove from the ready queue
+    // reset the trigger and remove from the ready queue
     // we will need to be retriggered to read from this socket again
     read.triggered = 0;
     nh->read_ready_list.remove(this);
@@ -327,8 +327,10 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
   ProxyMutex *mutex = this_ethread()->mutex;
   int64_t r = 0;
   int64_t l = 0;
-  int64_t offset = buf.entry->start_offset;
-  IOBufferBlock *b = buf.entry->block;
+
+  // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
+  int64_t offset = buf.reader()->start_offset;
+  IOBufferBlock *b = buf.reader()->block;
 
   do {
     // check if we have done this block

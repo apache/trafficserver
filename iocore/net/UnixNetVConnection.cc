@@ -240,7 +240,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   int niov = 0;
   IOVec tiovec[NET_MAX_IOV];
   if (toread) {
-    IOBufferBlock *b = buf.mbuf->_writer;
+    IOBufferBlock *b = buf.writer()->first_write_block();
     do {
       niov = 0;
       rattempted = 0;
@@ -825,8 +825,11 @@ int64_t
 UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf)
 {
   int64_t r = 0;
-  int64_t offset = buf.entry->start_offset;
-  IOBufferBlock *b = buf.entry->block;
+
+  // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
+  int64_t offset = buf.reader()->start_offset;
+  IOBufferBlock *b = buf.reader()->block;
+
   do {
     IOVec tiovec[NET_MAX_IOV];
     int niov = 0;

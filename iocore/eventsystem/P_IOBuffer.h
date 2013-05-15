@@ -1114,9 +1114,9 @@ TS_INLINE void
 MIOBuffer::dealloc_reader(IOBufferReader * e)
 {
   if (e->accessor) {
-    ink_assert(e->accessor->mbuf == this);
-    ink_assert(e->accessor->entry == e);
-    e->accessor->reset();
+    ink_assert(e->accessor->writer() == this);
+    ink_assert(e->accessor->reader() == e);
+    e->accessor->clear();
   }
   e->clear();
 }
@@ -1172,13 +1172,6 @@ MIOBufferAccessor::writer_for(MIOBuffer * abuf)
 {
   mbuf = abuf;
   entry = NULL;
-}
-
-TS_INLINE void
-MIOBufferAccessor::clear()
-{
-  entry = NULL;
-  mbuf = NULL;
 }
 
 TS_INLINE

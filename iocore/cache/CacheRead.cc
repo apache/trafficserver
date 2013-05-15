@@ -496,7 +496,7 @@ CacheVC::openReadFromWriterMain(int event, Event * e)
   }
   b = iobufferblock_clone(writer_buf, writer_offset, bytes);
   writer_buf = iobufferblock_skip(writer_buf, &writer_offset, &length, bytes);
-  vio.buffer.mbuf->append_block(b);
+  vio.buffer.writer()->append_block(b);
   vio.ndone += bytes;
   if (vio.ntodo() <= 0)
     return calluser(VC_EVENT_READ_COMPLETE);
@@ -694,7 +694,7 @@ CacheVC::openReadMain(int event, Event * e)
   }
   if (ntodo <= 0)
     return EVENT_CONT;
-  if (vio.buffer.mbuf->max_read_avail() > vio.buffer.writer()->water_mark && vio.ndone) // initiate read of first block
+  if (vio.buffer.writer()->max_read_avail() > vio.buffer.writer()->water_mark && vio.ndone) // initiate read of first block
     return EVENT_CONT;
   if ((bytes <= 0) && vio.ntodo() >= 0)
     goto Lread;
@@ -702,7 +702,7 @@ CacheVC::openReadMain(int event, Event * e)
     bytes = vio.ntodo();
   b = new_IOBufferBlock(buf, bytes, doc_pos);
   b->_buf_end = b->_end;
-  vio.buffer.mbuf->append_block(b);
+  vio.buffer.writer()->append_block(b);
   vio.ndone += bytes;
   doc_pos += bytes;
   if (vio.ntodo() <= 0)
