@@ -72,6 +72,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Patch: see ticket
   +1: jpeach, zwoop
 
+  More gcc-4.8 related fixes
+  Jira: https://issues.apache.org/jira/browse/TS-1904
+  Patch: ce893d72f9521dfea0d2b71b16c6a8186cec6453
+  +1: zwoop
+
 
 RELEASE PROCESS
 
