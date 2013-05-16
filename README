@@ -39,7 +39,7 @@ plugins to build large scale web applications.
 
   <https://cwiki.apache.org/confluence/display/TS/Building>.
 
-  Fedora 11,12, 13, 14, 15:
+  Fedora 12-19 / CentOS / RHEL:
     autoconf
     automake
     pkgconfig
@@ -51,8 +51,8 @@ plugins to build large scale web applications.
     expat-devel
     pcre
     pcre-devel
-    libcap-devel
-	flex (optional)
+    libcap-devel (optional)
+    flex (optional)
     hwloc-devel (optional)
     lua-devel (optional)
 
@@ -65,7 +65,6 @@ plugins to build large scale web applications.
           with ATS installed. Both of which are HIGHLY RECOMMENDED.
           See 'README-EC2' for further details.
 
-    Install these packages:
     autoconf
     automake
     pkgconfig
@@ -77,7 +76,7 @@ plugins to build large scale web applications.
     expat-devel
     pcre
 
-  Ubuntu 8.* ,9.*, 10.*, 11.*:
+  Ubuntu 8.* - 13.*:
     autoconf
     automake
     pkg-config
@@ -88,8 +87,8 @@ plugins to build large scale web applications.
     expat
     libexpat-dev
     libpcre3-dev
-    libcap-dev
-	flex (optional)
+    libcap-dev (optional)
+    flex (optional)
     libhwloc-dev (optional)
     liblua5.1-dev or libluajit-5.1-dev (optional)
 
@@ -110,7 +109,7 @@ plugins to build large scale web applications.
     expat
     libexpat-dev
     libpcre3-dev
-	flex (optional)
+    flex (optional)
     libhwloc-dev (optional)
     liblua-dev (optional)
 
@@ -178,7 +177,7 @@ the installation with
   cd ~/dev               # enter your development dir
   git clone ...          # get the source code from ASF Git repo
   cd trafficserver       # enter the checkout dir
-  autoreconf -i          # generate the configure script and Makefile.in files
+  autoreconf -if         # generate the configure script and Makefile.in files
   ./configure            # configure the build environment to create Makefiles
   make                   # execute the compile
 
