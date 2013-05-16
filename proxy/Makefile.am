@@ -163,9 +163,10 @@ traffic_server_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(which_libts) \
+  @hwloc_LIBS@ \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ @LIBCAP@ @LIBHWLOC@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ @LIBCAP@ \
   @LIBZ@ @LIBLZMA@ \
   @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ @LIBEXECINFO@
 

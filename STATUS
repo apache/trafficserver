@@ -65,11 +65,6 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
   +1: igalic, zwoop, jpeach, arno
 
-  Support older versions of HWLOC properly
-  Jira: https://issues.apache.org/jira/browse/TS-1895
-  Patch: 7e417c4712e36c9c38cf60b98783b24ad2a1c4f3
-  +1: zwoop, jpeach, igalic
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]

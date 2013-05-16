@@ -113,16 +113,17 @@ int
 ink_number_of_processors()
 {
 #if TS_USE_HWLOC
-  int cu;
-  int pu;
-
   setup_hwloc();
-  cu = hwloc_get_nbobjs_by_type(gTopology, HWLOC_OBJ_CORE);
-  pu = hwloc_get_nbobjs_by_type(gTopology, HWLOC_OBJ_PU);
-  if (pu > cu)
+  int cu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
+#if HAVE_HWLOC_OBJ_PU
+  int pu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
+
+  if (pu > cu) {
     return cu + (pu - cu)/4;
-  else
-    return cu;
+  }
+#endif
+
+  return cu;
 #else
 #if defined(freebsd)
   int mib[2], n;
