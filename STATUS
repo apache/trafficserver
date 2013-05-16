@@ -83,12 +83,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Remove iconv as dependency
   Jira: https://issues.apache.org/jira/browse/TS-1723
   Patch: 8cbc7c87e5f44d47f7a96b27bbae5456f008e3f5
-  +1: igalic, zwoop
+  +1: igalic, zwoop, jpeach
 
   Remove use of JEMALLOC_P (it's deprecated)
   Jira: https://issues.apache.org/jira/browse/TS-1624
   Patch: 544e64678eecb80a63b88b9efe573ecb42836c24
-  +1: zwoop
+  +1: zwoop, jpeach
 
 RELEASE PROCESS
 
