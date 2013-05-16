@@ -51,6 +51,7 @@ struct Span
   int64_t offset;                 // used only if (file == true)
   int alignment;
   int disk_id;
+  int vol_num;
   LINK(Span, link);
 
 private:

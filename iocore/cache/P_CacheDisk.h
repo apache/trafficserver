@@ -103,12 +103,14 @@ struct CacheDisk: public Continuation
   DiskVol *free_blocks;
   int num_errors;
   int cleared;
+  int forced_volume_num; // assuming zero is not a valid volume number
 
   CacheDisk()
     : Continuation(new_ProxyMutex()), header(NULL),
       path(NULL), header_len(0), len(0), start(0), skip(0),
       num_usable_blocks(0), fd(-1), free_space(0), wasted_space(0),
-      disk_vols(NULL), free_blocks(NULL), num_errors(0), cleared(0)
+      disk_vols(NULL), free_blocks(NULL), num_errors(0), cleared(0),
+      forced_volume_num(0)
   { }
 
    ~CacheDisk();

@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1728] Assign storage entries to volumes
+     Author: Justin Laue <justin@fp-x.com>
+
   *) [TS-1899] strtod() does not honor Hex strings on Solaris.
 
   *) [TS-1894] madvise() not found on Solaris. And some cleanup.
