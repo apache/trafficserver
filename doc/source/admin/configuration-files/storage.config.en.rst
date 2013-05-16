@@ -29,18 +29,21 @@ The format of the ``storage.config`` file is:
 
 ::
 
-    pathname size
+    pathname size volume=volume_number
 
-where *``pathname``* is the name of a partition, directory or file, and
-*``size``* is the size of the named partition, directory or file (in
-bytes). You must specify a size for directories or files; size is
-optional for raw partitions.
+where ``pathname`` is the name of a partition, directory or file, ``size``
+is the size of the named partition, directory or file (in bytes), and
+``volume`` is the volume number that is used in :doc:`volume.config.en`
+and :doc:`hosting.config.en`. You must specify a size for directories or
+files; size is optional for raw partitions. ``volume`` is optional.
 
 You can use any partition of any size. For best performance:
 
 -  Use raw disk partitions.
 -  For each disk, make all partitions the same size.
 -  For each node, use the same number of partitions on all disks.
+-  Group similar kinds of storage into different volumes. For example
+   split out SSD's or RAM drives into their own volume.
 
 Specify pathnames according to your operating system requirements. See
 the following examples. In the ``storage.config`` file, a formatted or
@@ -91,8 +94,8 @@ system:
 
 ::
 
-    /dev/sde
-    /dev/sdf
+    /dev/sde volume=1
+    /dev/sdf volume=2
 
 In order to make sure ``traffic_server`` will have access to this disk
 you can use ``udev`` to persistently set the right permissions. The
