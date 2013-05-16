@@ -88,7 +88,7 @@ RemapPlugins::run_plugin(remap_plugin_info* plugin)
   This is the equivalent of the old DoRemap().
 
   @return 1 when you are done doing crap (otherwise, you get re-called
-    with scheudle_imm and i hope you have something more to do), else
+    with schedule_imm and i hope you have something more to do), else
     0 if you have something more do do (this isnt strict and we check
     there actually *is* something to do).
 
@@ -101,15 +101,15 @@ RemapPlugins::run_single_remap()
   remap_plugin_info * plugin = map->get_plugin(_cur);    //get the nth plugin in our list of plugins
   TSRemapStatus       plugin_retcode = TSREMAP_NO_REMAP;
 
-  if (unlikely(plugin == NULL)) {
-    Debug("url_rewrite", "no plugin available to run; completing all remap processing immediately");
-    return 1;
-  }
-
   Debug("url_rewrite", "running single remap rule id %d for the %d%s time",
       map->map_id, _cur, _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
 
-  plugin_retcode = run_plugin(plugin);
+  // There might not be a plugin if we are a regular non-plugin map rule. In that case, we will fall through
+  // and do the default mapping and then stop.
+  if (plugin) {
+    plugin_retcode = run_plugin(plugin);
+  }
+
   _cur++;
 
   // If the plugin redirected, we need to end the remap chain now.
