@@ -23,7 +23,8 @@ libtsconfig_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 AM_YFLAGS = -d -p tsconfig
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/ts
 
 BUILT_SOURCES = \
   TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
