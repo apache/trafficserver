@@ -47,11 +47,6 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   Patch: 5566ac76d6c4e4f5154421f1ac1077487b02d332
   +1: igalic, zwoop [I double checked with John too], jpeach
 
-  Fix SSL accept performance regression
-  Jira: https://issues.apache.org/jira/browse/TS-1905
-  Patch: ccc4b37b91f25c2e985f195b77369ce20e2e8e81
-  +1: jpeach, zwoop, arno
-
   Hardcoded FD_SET of 32 is too small.
   Jira: https://issues.apache.org/jira/browse/TS-1483
   Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
