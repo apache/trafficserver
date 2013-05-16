@@ -995,7 +995,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
       loop = false; // loop only on explicit set for retry
       // find the partition lock
       ProxyMutex *bucket_mutex = hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets));
-      MUTEX_TRY_LOCK(lock, bucket_mutex, thread);
+      MUTEX_LOCK(lock, bucket_mutex, thread);
 
       if (lock) {
         // If we can get the lock do a level 1 probe for immediate result.
@@ -1028,7 +1028,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
   c->init(md5, copt);
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler) & HostDBContinuation::probeEvent);
 
-  thread->schedule_in(c, MUTEX_RETRY_DELAY);
+  thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
 
   return &c->action;
 }
