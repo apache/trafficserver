@@ -48,7 +48,7 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   +1: igalic, zwoop [I double checked with John too], jpeach
 
   Fix SSL accept performance regression
-  Jira: https://issues.apache.org/jira/browse/TS-1538
+  Jira: https://issues.apache.org/jira/browse/TS-1905
   Patch: ccc4b37b91f25c2e985f195b77369ce20e2e8e81
   +1: jpeach, zwoop, arno
 
