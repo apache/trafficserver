@@ -83,7 +83,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Remove use of JEMALLOC_P (it's deprecated)
   Jira: https://issues.apache.org/jira/browse/TS-1624
   Patch: 544e64678eecb80a63b88b9efe573ecb42836c24
-  +1: zwoop, jpeach
+  +1: zwoop, jpeach, igalic
 
 RELEASE PROCESS
 
