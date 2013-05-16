@@ -2230,7 +2230,7 @@ open_main_log(ExitStatus& status)
     status.append(" squid.blog not enabled");
     return -1;
   }
-#if TS_HAS_POSIX_FADVISE
+#if HAVE_POSIX_FADVISE
   posix_fadvise(main_fd, 0, 0, POSIX_FADV_DONTNEED);
 #endif
   return main_fd;

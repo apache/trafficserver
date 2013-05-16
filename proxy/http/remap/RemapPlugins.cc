@@ -31,8 +31,8 @@ RemapPlugins::run_plugin(remap_plugin_info* plugin)
   TSRemapStatus plugin_retcode;
   TSRemapRequestInfo rri;
   url_mapping *map = _s->url_map.getMapping();
-  URL *map_from = &(map->fromURL);
-  URL *map_to = _s->url_map.getToURL();
+  URL * map_from = _s->url_map.getFromURL();
+  URL * map_to = _s->url_map.getToURL();
 
   // This is the equivalent of TSHttpTxnClientReqGet(), which every remap plugin would
   // have to call.
@@ -96,201 +96,57 @@ RemapPlugins::run_plugin(remap_plugin_info* plugin)
 int
 RemapPlugins::run_single_remap()
 {
-  // I should patent this
-  Debug("url_rewrite", "Running single remap rule for the %d%s time", _cur, _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
 
-  remap_plugin_info *plugin = NULL;
-  TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
+  url_mapping *       map = _s->url_map.getMapping();
+  remap_plugin_info * plugin = map->get_plugin(_cur);    //get the nth plugin in our list of plugins
+  TSRemapStatus       plugin_retcode = TSREMAP_NO_REMAP;
 
-  const char *requestPath;
-  int requestPathLen;
-  url_mapping *map = _s->url_map.getMapping();
-  URL *map_from = &(map->fromURL);
-  URL *map_to = _s->url_map.getToURL();
-
-  int redirect_host_len;
-
-  // Debugging vars
-  bool debug_on = false;
-  int retcode = 0;              // 0 - no redirect, !=0 - redirected
-
-  debug_on = is_debug_tag_set("url_rewrite");
-
-  if (_request_header)
-    plugin = map->get_plugin(_cur);    //get the nth plugin in our list of plugins
-
-  if (plugin) {
-    Debug("url_rewrite", "Remapping rule id: %d matched; running it now", map->map_id);
-    plugin_retcode = run_plugin(plugin);
-  } else if (_cur > 0) {
-    _cur++;
-    Debug("url_rewrite", "There wasn't a plugin available for us to run. Completing all remap processing immediately");
+  if (unlikely(plugin == NULL)) {
+    Debug("url_rewrite", "no plugin available to run; completing all remap processing immediately");
     return 1;
   }
 
-  if (_s->remap_redirect)     //if redirect was set, we need to use that.
-    return 1;
+  Debug("url_rewrite", "running single remap rule id %d for the %d%s time",
+      map->map_id, _cur, _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
 
-  // skip the !plugin_modified_* stuff if we are on our 2nd plugin (or greater) and there's no more plugins
-  if (_cur > 0 && (_cur + 1) >= map->_plugin_count)
-    goto done;
+  plugin_retcode = run_plugin(plugin);
+  _cur++;
+
+  // If the plugin redirected, we need to end the remap chain now.
+  if (_s->remap_redirect) {
+    return 1;
+  }
 
   if (TSREMAP_NO_REMAP == plugin_retcode || TSREMAP_NO_REMAP_STOP == plugin_retcode) {
-    if (_cur > 0 ) {
-      //plugin didn't do anything for us, but maybe another will down the chain so lets assume there is something more for us to process
-      ++_cur;
-      Debug("url_rewrite", "Plugin didn't change anything, but we'll try the next one right now");
-      return 0;
+    // After running the first plugin, rewrite the request URL. This is doing the default rewrite rule
+    // to handle the case where no plugin ever rewrites.
+    //
+    // XXX we could probably optimize this a bit more by keeping a flag and only rewriting the request URL
+    // if no plugin has rewritten it already.
+    if (_cur == 1) {
+      Debug("url_rewrite", "plugin did not change host, port or path, copying from mapping rule");
+      url_rewrite_remap_request(_s->url_map, _request_url);
     }
-
-    Debug("url_rewrite", "plugin did not change host, port or path, copying from mapping rule");
-
-    int fromPathLen;
-    const char *toHost;
-    const char *toPath;
-    int toPathLen;
-    int toHostLen;
-
-    toHost = map_to->host_get(&toHostLen);
-    toPath = map_to->path_get(&toPathLen);
-
-    _request_url->host_set(toHost, toHostLen);
-
-    int to_port = map_to->port_get_raw();
-
-    if (to_port != _request_url->port_get_raw())
-      _request_url->port_set(to_port);
-
-    int to_scheme_len, from_scheme_len;
-    const char *to_scheme = map_to->scheme_get(&to_scheme_len);
-
-    if (to_scheme != map_from->scheme_get(&from_scheme_len))
-      _request_url->scheme_set(to_scheme, to_scheme_len);
-
-    map_from->path_get(&fromPathLen);
-    requestPath = _request_url->path_get(&requestPathLen);
-    // Extra byte is potentially needed for prefix path '/'.
-    // Added an extra 3 so that TS wouldn't crash in the field.
-    // Allocate a large buffer to avoid problems.
-    char newPathTmp[2048];
-    char *newPath;
-    char *newPathAlloc = NULL;
-    unsigned int newPathLen = 0;
-    unsigned int newPathLenNeed = (requestPathLen - fromPathLen) + toPathLen + 8; // 3 + some padding
-
-    if (newPathLenNeed > sizeof(newPathTmp)) {
-      newPath = (newPathAlloc = (char *)ats_malloc(newPathLenNeed));
-      if (debug_on) {
-        memset(newPath, 0, newPathLenNeed);
-      }
-    } else {
-      newPath = &newPathTmp[0];
-      if (debug_on) {
-        memset(newPath, 0, sizeof(newPathTmp));
-      }
-    }
-
-    *newPath = 0;
-
-    // Purify load run with QT in a reverse proxy indicated
-    // a UMR/ABR/MSE in the line where we do a *newPath == '/' and the ink_strlcpy
-    // that follows it.  The problem occurs if
-    // requestPathLen,fromPathLen,toPathLen are all 0; in this case, we never
-    // initialize newPath, but still de-ref it in *newPath == '/' comparison.
-    // The memset fixes that problem.
-    if (toPath) {
-      memcpy(newPath, toPath, toPathLen);
-      newPathLen += toPathLen;
-    }
-    // We might need to insert a trailing slash in the new portion of the path
-    // if more will be added and none is present and one will be needed.
-    if (!fromPathLen && requestPathLen && toPathLen && *(newPath + newPathLen - 1) != '/') {
-      *(newPath + newPathLen) = '/';
-      newPathLen++;
-    }
-
-    if (requestPath) {
-      //avoid adding another trailing slash if the requestPath already had one and so does the toPath
-      if (requestPathLen < fromPathLen) {
-        if (toPathLen && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
-          fromPathLen++;
-        }
-      } else {
-        if (toPathLen && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
-          fromPathLen++;
-        }
-      }
-      // copy the end of the path past what has been mapped
-      if ((requestPathLen - fromPathLen) > 0) {
-        memcpy(newPath + newPathLen, requestPath + fromPathLen, requestPathLen - fromPathLen);
-        newPathLen += (requestPathLen - fromPathLen);
-      }
-    }
-    // We need to remove the leading slash in newPath if one is
-    // present.
-    if (*newPath == '/') {
-      memmove(newPath, newPath + 1, --newPathLen);
-    }
-
-    _request_url->path_set(newPath, newPathLen);
-
-    // TODO: This is horribly wrong and broken, when can this trigger??? Check
-    // above, we already return on _s->remap_redirect ... XXX.
-    if (map->homePageRedirect && fromPathLen == requestPathLen && _s->remap_redirect) {
-      URL redirect_url;
-
-      redirect_url.create(NULL);
-      redirect_url.copy(_request_url);
-
-      ink_assert(fromPathLen > 0);
-
-      // Extra byte for trailing '/' in redirect
-      if (newPathLen > 0 && newPath[newPathLen - 1] != '/') {
-        newPath[newPathLen] = '/';
-        newPath[++newPathLen] = '\0';
-        redirect_url.path_set(newPath, newPathLen);
-      }
-      // If we have host header information,
-      //   put it back into redirect URL
-      //
-      if (_hh_ptr != NULL) {
-        redirect_url.host_set(_hh_ptr->request_host, _hh_ptr->host_len);
-        if (redirect_url.port_get() != _hh_ptr->request_port) {
-          redirect_url.port_set(_hh_ptr->request_port);
-        }
-      }
-      // If request came in without a host, send back
-      //  the redirect with the name the proxy is known by
-      if (redirect_url.host_get(&redirect_host_len) == NULL)
-        redirect_url.host_set(rewrite_table->ts_name, strlen(rewrite_table->ts_name));
-
-      if ((_s->remap_redirect = redirect_url.string_get(NULL)) != NULL)
-        retcode = strlen(_s->remap_redirect);
-      Debug("url_rewrite", "Redirected %.*s to %.*s", requestPathLen, requestPath, retcode, _s->remap_redirect);
-      redirect_url.destroy();
-    }
-
-    ats_free(newPathAlloc);
   }
 
-done:
+  if (TSREMAP_NO_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
+      Debug("url_rewrite", "breaking remap plugin chain since last plugin said we should stop");
+      return 1;
+  }
+
   if (_cur > MAX_REMAP_PLUGIN_CHAIN) {
-    Error("Called run_single_remap more than 10 times. Stopping this remapping insanity now");
-    Debug("url_rewrite", "Called run_single_remap more than 10 times. Stopping this remapping insanity now");
+    Error("called %s more than %u times; stopping this remap insanity now", __func__, MAX_REMAP_PLUGIN_CHAIN);
     return 1;
   }
 
-  if (++_cur >= map->_plugin_count) {
-    //normally, we would callback into this function but we dont have anything more to do!
-    Debug("url_rewrite", "We completed all remap plugins for this rule");
+  if (_cur >= map->_plugin_count) {
+    // Normally, we would callback into this function but we dont have anything more to do!
+    Debug("url_rewrite", "completed all remap plugins for rule id %d", map->map_id);
     return 1;
-  } else {
-    Debug("url_rewrite", "Completed single remap. Attempting another via immediate callback");
-    return 0;
   }
 
-  return 1;
-  ink_assert(!"not reached");
+  Debug("url_rewrite", "completed single remap, attempting another via immediate callback");
+  return 0;
 }
 
 int

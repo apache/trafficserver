@@ -310,7 +310,7 @@ static int rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp) {
 
     if (ok) {
         i=0;
-        while (i < PATTERNCOUNT && prl->pr[i]) {
+        while (i < prl->patterncount && prl->pr[i]) {
             retval = regex_substitute(&newurl, url, prl->pr[i]);
             if (retval) {
                 /* Successful match/substitution */

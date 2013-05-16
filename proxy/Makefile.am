@@ -67,7 +67,6 @@ else
    which_libts = $(top_builddir)/lib/ts/libtsutil.la
 endif
 
-
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
 traffic_server_SOURCES = \
@@ -162,11 +161,17 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(which_libts) \
   @hwloc_LIBS@ \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBCAP@ \
-  @LIBZ@ @LIBLZMA@ \
-  @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ @LIBEXECINFO@
+  @LIBPCRE@ \
+  @LIBSSL@ \
+  @LIBTCL@ \
+  @LIBEXPAT@ \
+  @LIBDEMANGLE@ \
+  @LIBCAP@ \
+  @LIBRESOLV@ \
+  @LIBZ@ \
+  @LIBLZMA@ \
+  @LIBPROFILER@ \
+  -lm
 
 if BUILD_LUA_SUPPORT
 traffic_server_LDFLAGS += @LUA_LUAJIT_LDFLAGS@
@@ -186,10 +191,8 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ \
-  @LIBEXECINFO@
+  @LIBRESOLV@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = \
   logstats.cc \
@@ -205,11 +208,8 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ \
-  @LIBEXECINFO@
-
+  @LIBRESOLV@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_sac_SOURCES = \
   sac.cc \
@@ -262,10 +262,8 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ \
-  @LIBZ@ @LIBLZMA@ @LIBEXECINFO@
+  @LIBRESOLV@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ -lm
 
 if BUILD_TESTS
   traffic_sac_SOURCES += RegressionSM.cc
@@ -312,4 +310,3 @@ install-exec-hook:
 	if [ `id -un` == "root" ]; then \
 		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkglibexecdir); \
 	fi
-

@@ -84,7 +84,7 @@ if test "$enable_zlib" != "no"; then
     TS_ADDTO(LDFLAGS, [-L${zlib_ldflags}])
     TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${zlib_ldflags}])
   fi
-  AC_CHECK_LIB(z, compressBound, [zlib_have_libs=1])
+  AC_SEARCH_LIBS([compressBound], [z], [zlib_have_libs=1])
   if test "$zlib_have_libs" != "0"; then
     TS_FLAG_HEADERS(zlib.h, [zlib_have_headers=1])
   fi

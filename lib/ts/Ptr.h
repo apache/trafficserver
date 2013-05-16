@@ -106,13 +106,14 @@ NonAtomicRefCountObj::refcount() const
 ////////////////////////////////////////////////////////////////////////
 template<class T> class NonAtomicPtr {
 public:
-  NonAtomicPtr(T * ptr = 0);
+  explicit NonAtomicPtr(T * ptr = 0);
   NonAtomicPtr(const NonAtomicPtr<T> &);
   ~NonAtomicPtr();
 
-  void clear();
   NonAtomicPtr<T> &operator =(const NonAtomicPtr<T> &);
   NonAtomicPtr<T> &operator =(T *);
+
+  void clear();
 
   operator  T *() const
   {
@@ -151,6 +152,11 @@ public:
 
   T *m_ptr;
 };
+
+template <typename T>
+NonAtomicPtr<T> make_nonatomic_ptr(T * p) {
+  return NonAtomicPtr<T>(p);
+}
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -296,7 +302,7 @@ RefCountObj::refcount() const
 ////////////////////////////////////////////////////////////////////////
 template<class T> class Ptr {
 public:
-  Ptr(T * p = 0);
+  explicit Ptr(T * p = 0);
   Ptr(const Ptr<T> &);
   ~Ptr();
 
@@ -350,6 +356,11 @@ public:
 
   T *m_ptr;
 };
+
+template <typename T>
+Ptr<T> make_ptr(T * p) {
+  return Ptr<T>(p);
+}
 
 ////////////////////////////////////////////////////////////////////////
 //

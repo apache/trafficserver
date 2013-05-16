@@ -358,7 +358,7 @@ Ldone:
 
 EXCLUSIVE_REGRESSION_TEST(Congestion_FailHistory) (RegressionTest * t, int atype, int *pstatus) {
   NOWARN_UNUSED(atype);
-  CCFailHistoryTestCont *test = new CCFailHistoryTestCont(new_ProxyMutex(), t);
+  CCFailHistoryTestCont *test = new CCFailHistoryTestCont(make_ptr(new_ProxyMutex()), t);
   eventProcessor.schedule_in(test, HRTIME_SECONDS(1));
   *pstatus = REGRESSION_TEST_INPROGRESS;
 }
@@ -538,7 +538,7 @@ CCCongestionDBTestCont::mainEvent(int event, Event * e)
 
 EXCLUSIVE_REGRESSION_TEST(Congestion_CongestionDB) (RegressionTest * t, int atype, int *pstatus) {
   NOWARN_UNUSED(atype);
-  CCCongestionDBTestCont *test = new CCCongestionDBTestCont(new_ProxyMutex(), t);
+  CCCongestionDBTestCont *test = new CCCongestionDBTestCont(make_ptr(new_ProxyMutex()), t);
   eventProcessor.schedule_in(test, HRTIME_SECONDS(1));
   *pstatus = REGRESSION_TEST_INPROGRESS;
 }

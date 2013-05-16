@@ -19,7 +19,7 @@ include $(top_srcdir)/build/plugins.mk
 if BUILD_HAVE_CXX_11
 
 pkglib_LTLIBRARIES = spdy.la
-lib_LTLIBRARIES = libspdy.la
+noinst_LTLIBRARIES = libspdycore.la
 check_PROGRAMS = zstream_test
 
 AM_CPPFLAGS += \
@@ -37,16 +37,16 @@ spdy_la_SOURCES =  \
   stream.cc \
   strings.cc
 
-libspdy_la_SOURCES = \
+libspdycore_la_SOURCES = \
   lib/base/logging.cc \
   lib/spdy/message.cc \
   lib/spdy/zstream.cc
 
-spdy_la_LIBADD = libspdy.la
+spdy_la_LIBADD = libspdycore.la
 spdy_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 zstream_test_SOURCES = tests/zstream_test.cc tests/stubs.cc
-zstream_test_LDADD = libspdy.la -lz
+zstream_test_LDADD = libspdycore.la -lz
 
 TESTS = $(check_PROGRAMS)
 

@@ -75,9 +75,8 @@ do_SSL_write(SSL * ssl, void *buf, int size)
 
 
 static int
-ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
+ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
 {
-  NOWARN_UNUSED(nh);
   NetState *s = &vc->read;
   SSLNetVConnection *sslvc = (SSLNetVConnection *) vc;
   MIOBufferAccessor & buf = s->vio.buffer;
@@ -133,7 +132,7 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          SSLError("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -145,14 +144,11 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
         Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
         break;
       case SSL_ERROR_SSL:
-      default: {
-        char err_string[4096];
-        ERR_error_string(ERR_get_error(), err_string);
+      default:
         event = SSL_READ_ERROR;
         ret = errno;
-        Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SSL %s", err_string);
+        SSLError("[SSL_NetVConnection::ssl_read_from_net]");
         break;
-      }
       }                         // switch
       break;
     }                           // while( block_write_avail > 0 )
@@ -254,7 +250,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (!buf.writer()->write_avail()) {
       buf.writer()->add_block();
     }
-    ret = ssl_read_from_net(nh, this, lthread, r);
+    ret = ssl_read_from_net(this, lthread, r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
     }

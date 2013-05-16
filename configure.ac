@@ -699,15 +699,12 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
 
-base_cc=$ax_cv_c_compiler_vendor
-
 case $host_os_def in
   linux)
-    case $base_cc in
-    *intel*)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
       # -Wall goes crazy, so turned these specific checks off for now:
       #
-      #  111 is "statement is unrecahable"
+      #  111 is "statement is unreachable"
       #  279 is "controlling expression is constant", triggered by our asserts
       #  383 is "value copied to temporary, reference to temporary used"
       #  444 is "destructor for base class is not virtual"
@@ -726,13 +723,15 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    *clang*)
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       debug_opt="-ggdb3 $common_opt -Werror -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
-      ;;
-    *) # gnu
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
       ts_am_common_flags="-Wunused-parameter"
@@ -742,75 +741,85 @@ case $host_os_def in
       cxx_opt="-Wno-invalid-offsetof"
       # Special options for flex generated .c files
       flex_cflags="-Wno-unused-parameter"
-      ;;
-    esac
+    ])
+
     ;; # linux)
+
   darwin)
-    case $base_cc in
-    *clang*)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations -Qunused-arguments"
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      # clang on Darwin needs to use libc++ for any C++11 code.
-      AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
-      ;;
-    *) # gnu
-      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-      debug_opt="$common_opt"
-      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    esac
-    # ToDo: This seems semi-kludgy, but useful for MacPort's I think.
-    TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
-    TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
+    ], [
+      AC_MSG_ERROR([clang is the only supported on compiler on Darwin])
+    ])
+
+    # Darwin needs to use libc++ for any C++11 code.
+    AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
+
+    # NOTE: This seems semi-kludgy, but useful for MacPorts I think.
+    AS_IF([test -d /opt/local/include], [
+      TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
+    ])
+    AS_IF([test -d /opt/local/lib], [
+      TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
+    ])
+
     ;; # darwin)
+
   freebsd|kfreebsd)
-    case $base_cc in
-    *clang*)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       common_opt="-pipe -Wall -Werror -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
-      ;;
-    *) # gnu
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    esac
-    TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+    ])
+
+    AS_IF([test -d /usr/local/lib], [
+      TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+    ])
+
     ;; # freebsd|kfreebsd)
+
   solaris)
-    if test "x${base_cc}" = "xsun"; then
-      # TODO: If we no longer support SunStudio, should this code go away?
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xsun"], [
+      # XXX: Solaris Studio support is going away: https://issues.apache.org/jira/browse/TS-1486
       common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags"
       cxx_opt="-library=stlport4"
       cxx_dbg="+w2"
       cxx_rel="-erroff"
-      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS],1,
-       [posix thread semantics]
-      )
-      if test "$solaris_use_stlport4" != yes; then
-        postdeps_CXX="-library=Crun"
-      fi
-    else # gnu
+
+      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS], 1, [posix thread semantics])
+      AS_IF([test "x$solaris_use_stlport4" != "xyes"], [postdeps_CXX="-library=Crun"])
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-    fi # solaris)
-    ;;
+    ])
+
+    ;; # solaris)
+
   *)
-    common_opt="-pipe -Wall -Werror"
-    debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-    cxx_opt="-Wno-invalid-offsetof"
-    ;;
+    # Not sure what platform this is, but take a stab at some general GCC options ...
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
+      common_opt="-pipe -Wall -Werror"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+    ])
 esac
 
 cc_oflag_opt=$release_opt
@@ -953,16 +962,27 @@ fi
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
 
-AC_CHECK_LIB([exc],[exc_capture_context],[AC_SUBST([LIBEXC],["-lexc"])])
-AC_CHECK_LIB([mld],[MLD_demangle_string],[AC_SUBST([LIBMLD],["-lmld"])])
-AC_CHECK_LIB([dl],[dlopen],[AC_SUBST([LIBDL],["-ldl"])])
-AC_CHECK_LIB([socket],[socket],[AC_SUBST([LIBSOCKET],["-lsocket"])])
-AC_CHECK_LIB([nsl],[gethostbyname],[AC_SUBST([LIBNSL],["-lnsl"])])
+AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
+AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
+AC_SEARCH_LIBS([dlopen], [dl], [], [])
+AC_SEARCH_LIBS([socket], [socket], [], [])
+AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
+
+dnl Linux has pthread symbol stubss in both libc ad libpthread, so it's important to test
+dnl specifically for pthread_create() here.
+AC_SEARCH_LIBS([pthread_create], [pthread], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
+AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+
+dnl XXX The following check incorrectly causes the build to succeed
+dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
+dnl actually present in libsystem. We are searching for the library
+dnl that contains the full Bind 9 API (which is acutally libresolv).
+dnl However, the resolv API uses macros to rename it's APIs to per-version
+dnl symbols, so standard autoconf macros cannot reasonably be used to
+dnl check for it. We need to write custom macros to detect it properly.
 AC_CHECK_LIB([resolv],[res_init],[AC_SUBST([LIBRESOLV],["-lresolv"])])
 AC_CHECK_LIB([resolv],[__putlong],[AC_SUBST([LIBRESOLV],["-lresolv"])])
-AC_CHECK_LIB([pthread],[pthread_exit],[AC_SUBST([LIBTHREAD],["-lpthread"])])
-AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
-AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 
 # Test for ncurses. We need to turn off -Werror because the C code in the
 # ncurses compile tests does not generate unused variable warnings.
@@ -1036,12 +1056,13 @@ if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
 
-TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_fallocate lrand48_r srand48_r port_create])
-TS_FLAG_FUNCS([strlcpy strlcat sysconf getpagesize])
+TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate])
+TS_FLAG_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
 
 AC_SUBST(has_clock_gettime)
 AC_SUBST(has_posix_memalign)
 AC_SUBST(has_posix_fadvise)
+AC_SUBST(has_posix_madvise)
 AC_SUBST(has_posix_fallocate)
 AC_SUBST(has_lrand48_r)
 AC_SUBST(has_srand48_r)
@@ -1070,11 +1091,7 @@ has_backtrace=0
 TS_FLAG_HEADERS([execinfo.h], [has_backtrace=1],[])
 if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
-  AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes
-                                         AC_SUBST([LIBEXECINFO],["-lexecinfo"])])
-  if test "x${have_backtrace_lib}" = "xyes"; then
-    AC_MSG_NOTICE([Using backtrace library '-lexecinfo'])
-  fi
+  AC_SEARCH_LIBS([backtrace], [execinfo], [have_backtrace_lib=yes])
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
@@ -1105,7 +1122,7 @@ AC_SUBST(use_port)
 
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
-  AC_CHECK_LIB([profiler], [ProfilerStart],
+  AC_SEARCH_LIBS([ProfilerStart], [profiler],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      has_profiler=1
     ],
@@ -1121,7 +1138,7 @@ has_demangle=0
 #  check with the C++ compiler since we might be using
 #  SunPro CC for the C++ compiler and gcc for the C compiler
 AC_LANG_PUSH([C++])
-AC_CHECK_LIB([demangle],[cplus_demangle],
+AC_SEARCH_LIBS([cplus_demangle],[demangle],
   [LIBDEMANGLE="-ldemangle"
    has_demangle=1
   ]
@@ -1184,7 +1201,7 @@ AC_SUBST(has_128bit_cas)
 # If we don't find it, disable checking for header.
 use_posix_cap=0
 AS_IF([test "x$enable_posix_cap" != "xno"],
-  AC_CHECK_LIB([cap],[cap_set_proc],
+  AC_SEARCH_LIBS([cap_set_proc],[cap],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[
@@ -1232,7 +1249,6 @@ AC_SUBST(use_linux_native_aio)
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
 use_hwloc=0
-
 AS_IF([test "x$enable_hwloc" = "xyes"], [
   AC_CHECK_HEADERS([hwloc.h], [],
     [AC_MSG_WARN([hwloc.h header not found, try --disable-hwloc])], []
@@ -1322,11 +1338,13 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
+AC_CHECK_HEADERS([sys/types.h sys/mman.h])
 TS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
                   sys/param.h \
                   sys/pset.h \
                   sched.h \
+                  pthread.h \
                   pthread_np.h \
                   machine/endian.h \
                   endian.h \
@@ -1461,6 +1479,68 @@ TS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
 
 AC_SUBST(netinet_iph)
 AC_SUBST(netinet_ip_icmph)
+
+# Test for additional pthread interfaces.
+
+# Darwin pthread_setname_np:
+AC_MSG_CHECKING([for 1-parameter version of pthread_setname_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_setname_np("conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SETNAME_NP_1, 1, [Whether the 1 parameter version of pthread_setname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
+
+# Linux pthread_setname_np:
+AC_MSG_CHECKING([for 2-parameter version of pthread_setname_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_setname_np(pthread_self(), "conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SETNAME_NP_2, 1, [Whether the 2 parameter version of pthread_setname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
+
+# BSD pthread_set_name_np:
+AC_MSG_CHECKING([for 2-parameter version of pthread_set_name_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_set_name_np(pthread_self(), "conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SET_NAME_NP_2, 1, [Whether the 2 parameter version of pthread_set_name_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
 
 # BSD-derived systems populate the socket length in the structure itself. It's
 # redundant to check all of these, but hey, I need the typing practice.

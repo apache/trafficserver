@@ -7392,6 +7392,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.net.sock_packet_mark_out",
   "proxy.config.net.sock_packet_tos_out",
   "proxy.config.http.insert_age_in_response",
+  "proxy.config.http.chunking.size",
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, int *pstatus)

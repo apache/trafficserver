@@ -162,13 +162,14 @@ struct AuthRequestContext
     TSHttpParser    hparser;// HTTP response header parser.
     HttpHeader      rheader;// HTTP response header.
     HttpIoBuffer    iobuf;
+    bool            is_head;// This is a HEAD request
     bool            read_body;
 
     const StateTransition * state;
 
     AuthRequestContext()
             : txn(NULL), cont(NULL), vconn(NULL), hparser(TSHttpParserCreate()),
-                rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K), read_body(true), state(NULL) {
+                rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K), is_head(false), read_body(true), state(NULL) {
         this->cont = TSContCreate(dispatch, TSMutexCreate());
         TSContDataSet(this->cont, this);
     }
@@ -252,6 +253,25 @@ pump:
     return TS_EVENT_NONE;
 }
 
+// Return whether the client request was a HEAD request.
+static bool
+AuthRequestIsHead(TSHttpTxn txn)
+{
+    TSMBuffer   mbuf;
+    TSMLoc      mhdr;
+    int         len;
+    bool        is_head;
+
+    TSReleaseAssert(
+        TSHttpTxnClientReqGet(txn, &mbuf, &mhdr) == TS_SUCCESS
+    );
+
+    is_head = (TSHttpHdrMethodGet(mbuf, mhdr, &len) == TS_HTTP_METHOD_HEAD);
+
+    TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
+    return is_head;
+}
+
 // Chain the response header hook to send the proxy's authorization response.
 static void
 AuthChainAuthorizationResponse(AuthRequestContext * auth)
@@ -288,6 +308,7 @@ AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr * /* saddr ATS_UN
     );
 
     HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CACHE_CONTROL, "no-cache");
 
     HttpDebugHeader(rq.buffer, rq.header);
 
@@ -350,6 +371,7 @@ AuthWriteRedirectedRequest(AuthRequestContext * auth, const sockaddr * saddr)
 
     HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_HOST, hostbuf);
     HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CACHE_CONTROL, "no-cache");
 
     HttpDebugHeader(rq.buffer, rq.header);
 
@@ -434,6 +456,9 @@ StateAuthProxyConnect(AuthRequestContext * auth, void * edata)
         break;
     }
 
+    auth->is_head = AuthRequestIsHead(auth->txn);
+    AuthLogDebug("client request %s a HEAD request", auth->is_head ? "is" : "is not");
+
     auth->vconn = TSHttpConnect(&addr.sa);
     if (auth->vconn == NULL) {
         return TS_EVENT_ERROR;
@@ -510,7 +535,12 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * /* edata ATS_UNUSED
         TSHttpHdrCopy(mbuf, mhdr, auth->rheader.buffer, auth->rheader.header) == TS_SUCCESS
     );
 
-    HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    // We must not whack the content length for HEAD responses, since the
+    // client already knows that there is no body. Forcing content length to
+    // zero breaks hdiutil(1) on Mac OS X.
+    if (!auth->is_head) {
+        HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    }
 
     TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_CONTINUE);
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
@@ -681,6 +711,11 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void * edata)
     case TS_EVENT_HTTP_OS_DNS:
         // Ignore internal requests since we generated them.
         if (TSHttpIsInternalRequest(ptr.txn) == TS_SUCCESS) {
+            // All our internal requests *must* hit the origin since it is the
+            // agent that needs to make the authorization decision. We can't
+            // allow that to be cached.
+            TSHttpTxnReqCacheableSet(ptr.txn, 0);
+
             AuthLogDebug("re-enabling internal transaction");
             TSHttpTxnReenable(ptr.txn, TS_EVENT_HTTP_CONTINUE);
             return TS_EVENT_NONE;

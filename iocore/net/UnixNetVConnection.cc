@@ -341,9 +341,8 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 // Rescheduling the UnixNetVConnection when necessary.
 //
 void
-write_to_net(NetHandler *nh, UnixNetVConnection *vc, PollDescriptor *pd, EThread *thread)
+write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  NOWARN_UNUSED(pd);
   ProxyMutex *mutex = thread->mutex;
 
   NET_DEBUG_COUNT_DYN_STAT(net_calls_to_writetonet_stat, 1);
@@ -766,7 +765,7 @@ UnixNetVConnection::reenable_re(VIO *vio)
       ep.modify(EVENTIO_WRITE);
       ep.refresh(EVENTIO_WRITE);
       if (write.triggered)
-        write_to_net(nh, this, NULL, t);
+        write_to_net(nh, this, t);
       else
         nh->write_ready_list.remove(this);
     }

@@ -170,12 +170,4 @@ EThread::free_event(Event * e)
   EVENT_FREE(e, eventAllocator, this);
 }
 
-#if defined(USE_OLD_EVENTFD)
-TS_INLINE int
-EThread::getEventFd()
-{
-  return EventQueueExternal.getReadFd();
-}
-#endif
-
 #endif /*_EThread_h_*/

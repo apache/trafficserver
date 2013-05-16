@@ -53,8 +53,7 @@ void
 ErrorClass::raise(va_list ap, const char *prefix)
 {
   NOWARN_UNUSED(prefix);
-  SrcLoc loc;
-  loc.set(filename, function_name, line_number);
+  SrcLoc loc(filename, function_name, line_number);
   diags->print_va(NULL, DL_Fatal, &loc, format_string, ap);
 }
 

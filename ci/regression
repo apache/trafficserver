@@ -108,6 +108,6 @@ MAKE=${MAKE:-$(prog make)}
 export CC CXX MAKE
 
 autogen
-configure
+configure "$@"
 build
 regress

@@ -117,7 +117,7 @@ check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret
   real accessing a directory (albeit a virtual one).
 
 */
-void
+static void
 SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 {
   int fromLen, toLen;
@@ -708,20 +708,17 @@ UrlRewrite::_tableLookup(InkHashTable *h_table, URL *request_url,
   return um;
 }
 
-
 // This is only used for redirects and reverse rules, and the homepageredirect flag
 // can never be set. The end result is that request_url is modified per remap container.
 void
-UrlRewrite::_doRemap(UrlMappingContainer &mapping_container, URL *request_url)
+url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *request_url)
 {
   const char *requestPath;
   int requestPathLen;
-
-  url_mapping *mapPtr = mapping_container.getMapping();
-  URL *map_from = &mapPtr->fromURL;
   int fromPathLen;
 
   URL *map_to = mapping_container.getToURL();
+  URL *map_from = mapping_container.getFromURL();
   const char *toHost;
   const char *toPath;
   const char *toScheme;
@@ -736,7 +733,7 @@ UrlRewrite::_doRemap(UrlMappingContainer &mapping_container, URL *request_url)
   toPath = map_to->path_get(&toPathLen);
   toScheme = map_to->scheme_get(&toSchemeLen);
 
-  Debug("url_rewrite", "_doRemap(): Remapping rule id: %d matched", mapPtr->map_id);
+  Debug("url_rewrite", "%s: Remapping rule id: %d matched", __func__, mapping_container.getMapping()->map_id);
 
   request_url->host_set(toHost, toHostLen);
   request_url->port_set(map_to->port_get_raw());
@@ -835,7 +832,7 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
     if (reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, reverse_mapping)) {
       if (i == 0)
         remap_found = true;
-      _doRemap(reverse_mapping, &location_url);
+      url_rewrite_remap_request(reverse_mapping, &location_url);
       new_loc_hdr = location_url.string_get_ref(&new_loc_length);
       response_header->value_set(url_headers[i].field, url_headers[i].len, new_loc_hdr, new_loc_length);
     }
@@ -990,7 +987,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
     redirect_url->copy(request_url);
 
     // Perform the actual URL rewrite
-    _doRemap(redirect_mapping, redirect_url);
+    url_rewrite_remap_request(redirect_mapping, redirect_url);
 
     return mappingType;
   }

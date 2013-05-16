@@ -877,7 +877,7 @@ createDefaultParent(char *val)
 //
 
 int SocksServerConfig::m_id = 0;
-static Ptr<ProxyMutex> socks_server_reconfig_mutex = NULL;
+static Ptr<ProxyMutex> socks_server_reconfig_mutex;
 void
 SocksServerConfig::startup()
 {

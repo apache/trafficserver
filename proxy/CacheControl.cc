@@ -71,7 +71,7 @@ static const char *CC_directive_str[CC_NUM_TYPES] = {
 typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
 
 // Global Ptrs
-static Ptr<ProxyMutex> reconfig_mutex = NULL;
+static Ptr<ProxyMutex> reconfig_mutex;
 CC_table *CacheControlTable = NULL;
 
 void

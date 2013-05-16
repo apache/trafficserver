@@ -318,9 +318,7 @@ public:
   unsigned int event_types;
   bool is_event_type(EventType et);
   void set_event_type(EventType et);
-#if defined(USE_OLD_EVENTFD)
-  int getEventFd();
-#endif
+
   // Private Interface
 
   void execute();

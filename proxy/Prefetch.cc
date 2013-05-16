@@ -315,7 +315,7 @@ public:
   int conf_update_handler(int event, void *edata);
 };
 
-static Ptr<ProxyMutex> prefetch_reconfig_mutex = NULL;
+static Ptr<ProxyMutex> prefetch_reconfig_mutex;
 
 /** Used to free old PrefetchConfiguration data. */
 struct PrefetchConfigFreerCont;

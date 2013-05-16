@@ -82,6 +82,7 @@ thread_freeup(ClassAllocator<C> &a, ProxyAllocator & l)
 }
 
 #if defined(TS_USE_FREELIST)
+
 #define THREAD_ALLOC(_a, _t) thread_alloc(::_a, _t->_a)
 #define THREAD_ALLOC_INIT(_a, _t) thread_alloc_init(::_a, _t->_a)
 #define THREAD_FREE_TO(_p, _a, _t, _m) do { \
@@ -91,12 +92,15 @@ thread_freeup(ClassAllocator<C> &a, ProxyAllocator & l)
   if (_t->_a.allocated > _m)                \
     thread_freeup(::_a, _t->_a);            \
 } while (0)
-#else
+
+#else /* !defined(TS_USE_FREELIST) */
+
 #define THREAD_ALLOC(_a, _t) ::_a.alloc()
 #define THREAD_ALLOC_INIT(_a, _t) ::_a.alloc()
 #define THREAD_FREE_TO(_p, _a, _t, _m) ::_a.free(_p)
-#endif
-#define THREAD_FREE(_p, _a, _t) \
-        THREAD_FREE_TO(_p, _a, _t, MAX_ON_THREAD_FREELIST)
+
+#endif /* defined(TS_USE_FREELIST */
+
+#define THREAD_FREE(_p, _a, _t) THREAD_FREE_TO(_p, _a, _t, MAX_ON_THREAD_FREELIST)
 
 #endif /* _ProxyAllocator_h_ */

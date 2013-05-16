@@ -55,9 +55,12 @@
 #include <sys/time.h>
 #include <stdlib.h>
 
-typedef int64_t ink_hrtime;
+#include "ink_defs.h"
+#include "ink_assert.h"
+#include "INK_MD5.h"
+#include "ParseRules.h"
+#include "ink_time.h"
 
-#define SIZE(x) (sizeof(x)/sizeof((x)[0]))
 
 /*
  FTP - Traffic Server Template
@@ -91,10 +94,10 @@ typedef int64_t ink_hrtime;
 //#define RETRY_CLIENT_WRITE_ERRORS
 #define VERSION_NUM "$Revision: 1.94 $"
 #if defined(BUILD_PERSON) && defined(BUILD_MACHINE)
-#define VERSION ("JTest Version %s - " __DATE__ " " __TIME__ \
+#define JTEST_VERSION ("JTest Version %s - " __DATE__ " " __TIME__ \
                  " (" BUILD_PERSON "@" BUILD_MACHINE ")\n" )
 #else
-#define VERSION ("JTest Version %s - " __DATE__ " " __TIME__ "\n")
+#define JTEST_VERSION ("JTest Version %s - " __DATE__ " " __TIME__ "\n")
 #endif
 // #define PRINT_LOCAL_PORT
 
@@ -129,7 +132,7 @@ typedef void ArgumentFunction(
   const char * arg);
 
 static void jtest_usage(ArgumentDescription * argument_descriptions, 
-                 int n_argument_descriptions, const char * arg);
+                        int n_argument_descriptions, const char * arg);
 
 static int read_request(int sock);
 static int write_request(int sock);
@@ -373,7 +376,7 @@ ArgumentDescription argument_descriptions[] = {
   {"debug",'d',"Debug Flag","F",&debug,"JTEST_DEBUG",NULL},
   {"help",'h',"Help",NULL,NULL,NULL,jtest_usage}
 };
-int n_argument_descriptions = SIZE(argument_descriptions);
+int n_argument_descriptions = countof(argument_descriptions);
 
 struct FD {
   int fd;
@@ -467,1068 +470,7 @@ void FD::close() {
   ftp_data_fd = 0;
 }
 
-// Library functions from libts
 
-const char * SPACES = "                                                                               ";
-int ink_code_md5(unsigned char *input, int input_length,
-                 unsigned char *sixteen_byte_hash_pointer);
-
-class           ParseRules
-{
-        public:
-        ParseRules();
-        enum {
-                CHAR_SP = 32,
-                CHAR_HT = 9,
-                CHAR_LF = 10,
-                CHAR_VT = 11,
-                CHAR_NP = 12,
-                CHAR_CR = 13
-        };
-        static int      is_char(char c);
-        static int      is_upalpha(char c);
-        static int      is_loalpha(char c);
-        static int      is_alpha(char c);
-        static int      is_digit(char c);
-        static int      is_ctl(char c);
-        static int      is_hex(char c);
-        static int      is_ws(char c);
-        static int      is_cr(char c);
-        static int      is_lf(char c);
-        static int      is_spcr(char c);
-        static int      is_splf(char c);
-        static int      is_wslfcr(char c);
-        static int      is_tspecials(char c);
-        static int      is_token(char c);
-        static int      is_extra(char c);
-        static int      is_safe(char c);
-        static int      is_unsafe(char c);
-        static int      is_national(char c);
-        static int      is_reserved(char c);
-        static int      is_unreserved(char c);
-        static int      is_punct(char c);
-        static int      is_end_of_url(char c);
-        static int      is_eow(char c);
-        static int      is_wildmat(char c);
-        static int      is_sep(char c);
-        static int      is_empty(char c);
-        static int      is_alnum(char c);
-        static int      is_space(char c);
-        static int      is_control(char c);
-        static int      is_mime_sep(char c);
-        static int      is_http_field_name(char c);
-        static int      is_http_field_value(char c);
-        static int      is_escape(const char *seq);
-        static int      is_uchar(const char *seq);
-        static int      is_pchar(const char *seq);
-        static int      strncasecmp_eow(const char *s1, const char *s2, int n);
-        static const char *strcasestr(const char *s1, const char *s2);
-        static int      strlen_eow(const char *s);
-        static const char *strstr_eow(const char *s1, const char *s2);
-        static char     ink_toupper(char c);
-        static char     ink_tolower(char c);
-        static const char *memchr(const char *s, char c, int max_length);
-        static const char *strchr(const char *s, char c);
-                        private:
-                        ParseRules(const ParseRules &);
-                        ParseRules & operator = (const ParseRules &);
-};
-
-static const unsigned int parseRulesCType[256] = {
-        0xD1210821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xBB130861,
-        0x5B390821,
-        0xD8010821,
-        0xD8010821,
-        0x5B350821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xD0010821,
-        0xAB1F0841,
-        0xC140C301,
-        0x20028801,
-        0xC2408801,
-        0xC0404501,
-        0xC0408801,
-        0xC040A101,
-        0xC040C301,
-        0xA002C301,
-        0xA002C301,
-        0xC0C0C301,
-        0xC040C501,
-        0x2102C301,
-        0xC040C501,
-        0xC040C501,
-        0xA002A001,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0xC4404191,
-        0x8102A101,
-        0xA002A001,
-        0xA0028801,
-        0xC002A101,
-        0xA0028801,
-        0xA082A001,
-        0xE002A101,
-        0xC440418B,
-        0xC440418B,
-        0xC440418B,
-        0xC440418B,
-        0xC440418B,
-        0xC440418B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xC440410B,
-        0xA082D101,
-        0xA082D101,
-        0xA002D101,
-        0xC040D101,
-        0xC040C501,
-        0xC040D101,
-        0xC440418D,
-        0xC440418D,
-        0xC440418D,
-        0xC440418D,
-        0xC440418D,
-        0xC440418D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xC440410D,
-        0xA002D101,
-        0xC040D101,
-        0xA002D101,
-        0xC040D101,
-        0xD0010821,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000,
-        0xC0000000
-};
-
-static const char      parseRulesCTypeToUpper[256] = {
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67,
-        68,
-        69,
-        70,
-        71,
-        72,
-        73,
-        74,
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,
-        81,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        91,
-        92,
-        93,
-        94,
-        95,
-        96,
-        65,
-        66,
-        67,
-        68,
-        69,
-        70,
-        71,
-        72,
-        73,
-        74,
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,
-        81,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        123,
-        124,
-        125,
-        126,
-        127,
-        -128,
-        -127,
-        -126,
-        -125,
-        -124,
-        -123,
-        -122,
-        -121,
-        -120,
-        -119,
-        -118,
-        -117,
-        -116,
-        -115,
-        -114,
-        -113,
-        -112,
-        -111,
-        -110,
-        -109,
-        -108,
-        -107,
-        -106,
-        -105,
-        -104,
-        -103,
-        -102,
-        -101,
-        -100,
-        -99,
-        -98,
-        -97,
-        -96,
-        -95,
-        -94,
-        -93,
-        -92,
-        -91,
-        -90,
-        -89,
-        -88,
-        -87,
-        -86,
-        -85,
-        -84,
-        -83,
-        -82,
-        -81,
-        -80,
-        -79,
-        -78,
-        -77,
-        -76,
-        -75,
-        -74,
-        -73,
-        -72,
-        -71,
-        -70,
-        -69,
-        -68,
-        -67,
-        -66,
-        -65,
-        -64,
-        -63,
-        -62,
-        -61,
-        -60,
-        -59,
-        -58,
-        -57,
-        -56,
-        -55,
-        -54,
-        -53,
-        -52,
-        -51,
-        -50,
-        -49,
-        -48,
-        -47,
-        -46,
-        -45,
-        -44,
-        -43,
-        -42,
-        -41,
-        -40,
-        -39,
-        -38,
-        -37,
-        -36,
-        -35,
-        -34,
-        -33,
-        -32,
-        -31,
-        -30,
-        -29,
-        -28,
-        -27,
-        -26,
-        -25,
-        -24,
-        -23,
-        -22,
-        -21,
-        -20,
-        -19,
-        -18,
-        -17,
-        -16,
-        -15,
-        -14,
-        -13,
-        -12,
-        -11,
-        -10,
-        -9,
-        -8,
-        -7,
-        -6,
-        -5,
-        -4,
-        -3,
-        -2,
-        -1
-};
-
-static const char      parseRulesCTypeToLower[256] = {
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        107,
-        108,
-        109,
-        110,
-        111,
-        112,
-        113,
-        114,
-        115,
-        116,
-        117,
-        118,
-        119,
-        120,
-        121,
-        122,
-        91,
-        92,
-        93,
-        94,
-        95,
-        96,
-        97,
-        98,
-        99,
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        107,
-        108,
-        109,
-        110,
-        111,
-        112,
-        113,
-        114,
-        115,
-        116,
-        117,
-        118,
-        119,
-        120,
-        121,
-        122,
-        123,
-        124,
-        125,
-        126,
-        127,
-        -128,
-        -127,
-        -126,
-        -125,
-        -124,
-        -123,
-        -122,
-        -121,
-        -120,
-        -119,
-        -118,
-        -117,
-        -116,
-        -115,
-        -114,
-        -113,
-        -112,
-        -111,
-        -110,
-        -109,
-        -108,
-        -107,
-        -106,
-        -105,
-        -104,
-        -103,
-        -102,
-        -101,
-        -100,
-        -99,
-        -98,
-        -97,
-        -96,
-        -95,
-        -94,
-        -93,
-        -92,
-        -91,
-        -90,
-        -89,
-        -88,
-        -87,
-        -86,
-        -85,
-        -84,
-        -83,
-        -82,
-        -81,
-        -80,
-        -79,
-        -78,
-        -77,
-        -76,
-        -75,
-        -74,
-        -73,
-        -72,
-        -71,
-        -70,
-        -69,
-        -68,
-        -67,
-        -66,
-        -65,
-        -64,
-        -63,
-        -62,
-        -61,
-        -60,
-        -59,
-        -58,
-        -57,
-        -56,
-        -55,
-        -54,
-        -53,
-        -52,
-        -51,
-        -50,
-        -49,
-        -48,
-        -47,
-        -46,
-        -45,
-        -44,
-        -43,
-        -42,
-        -41,
-        -40,
-        -39,
-        -38,
-        -37,
-        -36,
-        -35,
-        -34,
-        -33,
-        -32,
-        -31,
-        -30,
-        -29,
-        -28,
-        -27,
-        -26,
-        -25,
-        -24,
-        -23,
-        -22,
-        -21,
-        -20,
-        -19,
-        -18,
-        -17,
-        -16,
-        -15,
-        -14,
-        -13,
-        -12,
-        -11,
-        -10,
-        -9,
-        -8,
-        -7,
-        -6,
-        -5,
-        -4,
-        -3,
-        -2,
-        -1
-};
-
-inline int ParseRules::is_char(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 0)) ? (1) : (0));
-}
-inline int ParseRules::is_upalpha(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 1)) ? (1) : (0));
-}
-inline int ParseRules::is_loalpha(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 2)) ? (1) : (0));
-}
-inline int ParseRules::is_alpha(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 3)) ? (1) : (0));
-}
-inline int ParseRules::is_digit(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 4)) ? (1) : (0));
-}
-inline int ParseRules::is_alnum(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 26)) ? (1) : (0));
-}
-inline int ParseRules::is_ctl(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 5)) ? (1) : (0));
-}
-inline int ParseRules::is_ws(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 6)) ? (1) : (0));
-}
-inline int ParseRules::is_hex(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 7)) ? (1) : (0));
-}
-inline int ParseRules::is_cr(char c) {
-  return (c == CHAR_CR);
-}
-inline int ParseRules::is_lf(char c) {
-  return (c == CHAR_LF);
-}
-inline int ParseRules::is_splf(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 19)) ? (1) : (0));
-}
-inline int ParseRules::is_spcr(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 18)) ? (1) : (0));
-}
-inline int ParseRules::is_wslfcr(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 20)) ? (1) : (0));
-}
-inline int ParseRules::is_extra(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 9)) ? (1) : (0));
-}
-inline int ParseRules::is_safe(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 10)) ? (1) : (0));
-}
-inline int ParseRules::is_unsafe(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 11)) ? (1) : (0));
-}
-inline int ParseRules::is_reserved(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 13)) ? (1) : (0));
-}
-inline int ParseRules::is_national(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 12)) ? (1) : (0));
-}
-inline int ParseRules::is_unreserved(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 14)) ? (1) : (0));
-}
-inline int ParseRules::is_punct(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 15)) ? (1) : (0));
-}
-inline int ParseRules::is_end_of_url(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 16)) ? (1) : (0));
-}
-inline int ParseRules::is_escape(const char *seq) {
-  return (seq[0] == '%' && is_hex(seq[1]) && is_hex(seq[2]));
-}
-inline int ParseRules::is_uchar(const char *seq) {
-  return (is_unreserved(seq[0]) || is_escape(seq));
-}
-inline int ParseRules::is_pchar(const char *seq) {
-  if (*seq != '%')
-    return ((parseRulesCType[(unsigned char)*seq] & (1 << 8)) ? (1) : (0));
-  else
-    return is_hex(seq[1]) && is_hex(seq[2]);
-}
-inline int ParseRules::is_tspecials(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 17)) ? (1) : (0));
-}
-inline int ParseRules::is_token(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 22)) ? (1) : (0));
-}
-inline char ParseRules::ink_toupper(char c) {
-  return parseRulesCTypeToUpper[(unsigned char) c];
-}
-inline char ParseRules::ink_tolower(char c) {
-  return parseRulesCTypeToLower[(unsigned char) c];
-}
-inline int ParseRules::is_eow(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 21)) ? (1) : (0));
-}
-inline int ParseRules::is_wildmat(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 23)) ? (1) : (0));
-}
-inline int ParseRules::is_sep(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 24)) ? (1) : (0));
-}
-inline int ParseRules::is_empty(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 25)) ? (1) : (0));
-}
-inline int ParseRules::is_space(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 27)) ? (1) : (0));
-}
-inline int ParseRules::is_control(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 28)) ? (1) : (0));
-}
-inline int ParseRules::is_mime_sep(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 29)) ? (1) : (0));
-}
-inline int ParseRules::is_http_field_name(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (1 << 30)) ? (1) : (0));
-}
-inline int ParseRules::is_http_field_value(char c) {
-  return ((parseRulesCType[(unsigned char) c] & (((unsigned int)1) << 31)) ? (1) : (0));
-}
-inline int ParseRules::strncasecmp_eow(
-  const char *s1, const char *s2, int count)
-{
-  for (int i = 0; i < count; i++) {
-    const char &a = s1[i];
-    const char &b = s2[i];
-    if (ink_tolower(a) != ink_tolower(b))
-      return (is_eow(a) && is_eow(b));
-  }
-  return (1);
-}
-inline int ParseRules::strlen_eow(const char *s){
-  for (int i = 0; 1; i++) {
-    if (is_eow(s[i]))
-      return (i);
-  }
-}
-inline const char *ParseRules::strstr_eow(const char *s1, const char *s2) {
-  int i1;
-  int s2_len = strlen_eow(s2);
-  for (i1 = 0; !is_eow(s1[i1]); i1++)
-    if (ink_tolower(s1[i1]) == ink_tolower(s2[0]))
-      if (strncasecmp_eow(&s1[i1], &s2[0], s2_len))
-        return (&s1[i1]);
-  return (0);
-}
-inline const char *ParseRules::
-strcasestr(const char *s1, const char *s2) {
-  int i1;
-  int s2_len = strlen(s2);
-  for (i1 = 0; s1[i1] != '\0'; i1++)
-    if (ink_tolower(s1[i1]) == ink_tolower(s2[0]))
-      if (strncasecmp_eow(&s1[i1], &s2[0], s2_len))
-        return (&s1[i1]);
-  return (0);
-}
-inline const char *ParseRules::memchr(const char *s, char c, int max_length) {
-  for (int i = 0; i < max_length; i++)
-    if (s[i] == c)
-      return (&s[i]);
-  return (0);
-}
-inline const char *ParseRules::strchr(const char *s, char c) {
-  for (int i = 0; s[i] != '\0'; i++)
-    if (s[i] == c)
-      return (&s[i]);
-  return (0);
-}
-inline int
-ink_atoi(const char *str) {
-  int num = 0;
-  int negative = 0;
-  while (*str && ParseRules::is_wslfcr(*str))
-    str += 1;
-  if (*str == '-') {
-    negative = 1;
-    str += 1;
-  }
-  while (*str && ParseRules::is_digit(*str))
-    num = (num * 10) - (*str++ - '0');
-  if (!negative)
-    num = -num;
-  return num;
-}
-inline unsigned int
-ink_atoui(const char *str) {
-  unsigned int num = 0;
-  while (*str && ParseRules::is_wslfcr(*str))
-    str += 1;
-  while (*str && ParseRules::is_digit(*str))
-    num = (num * 10) + (*str++ - '0');
-  return num;
-}
-inline int64_t
-ink_atoll(const char *str) {
-  int64_t num = 0;
-  int negative = 0;
-  while (*str && ParseRules::is_wslfcr(*str))
-    str += 1;
-  if (*str == '-') {
-    negative = 1;
-    str += 1;
-  }
-  while (*str && ParseRules::is_digit(*str))
-    num = (num * 10) - (*str++ - '0');
-  if (!negative)
-    num = -num;
-  return num;
-}
-
-#define HRTIME_FOREVER  (10*HRTIME_DECADE)
-#define HRTIME_DECADE   (10*HRTIME_YEAR)
-#define HRTIME_YEAR     (365*HRTIME_DAY+HRTIME_DAY/4)
-#define HRTIME_WEEK     (7*HRTIME_DAY)
-#define HRTIME_DAY      (24*HRTIME_HOUR)
-#define HRTIME_HOUR     (60*HRTIME_MINUTE)
-#define HRTIME_MINUTE   (60*HRTIME_SECOND)
-#define HRTIME_SECOND   (1000*HRTIME_MSECOND)
-#define HRTIME_MSECOND  (1000*HRTIME_USECOND)
-#define HRTIME_USECOND  (1000*HRTIME_NSECOND)
-#define HRTIME_NSECOND  (1LL)
 #define MAX_FILE_ARGUMENTS 100
 
 static const char * file_arguments[MAX_FILE_ARGUMENTS] = { 0 };
@@ -1555,36 +497,7 @@ static void process_args(ArgumentDescription * argument_descriptions,
                   int n_argument_descriptions,
                   char **argv);
 
-#ifdef RELEASE
-#define ink_assert(EX) (void)(EX)
-#define ink_debug_assert(EX)
-#else
-#define ink_assert(EX) (\
-            void)((EX) || (_ink_assert(#EX, __FILE__, __LINE__)))
-#define ink_debug_assert(EX) \
-            (void)((EX) || (_ink_assert(#EX, __FILE__, __LINE__)))
-#endif
 
-#define ink_release_assert(EX) \
-            (void)((EX) || (_ink_assert(#EX, __FILE__, __LINE__)))
-
-static int _ink_assert(const char * a, const char * f, int l);
-static void ink_fatal(int return_code, const char *message_format, ...);
-static void ink_warning(const char *message_format, ...);
-#define min(_a,_b) ((_a)<(_b)?(_a):(_b))
-
-static inline ink_hrtime ink_get_hrtime()
-{
-#    if defined(FreeBSD)
-      timespec ts;
-      clock_gettime(CLOCK_REALTIME, &ts);
-      return (ts.tv_sec * HRTIME_SECOND + ts.tv_nsec * HRTIME_NSECOND);
-#    else
-      timeval tv;
-      gettimeofday(&tv,NULL);
-      return (tv.tv_sec * HRTIME_SECOND + tv.tv_usec * HRTIME_USECOND);
-#    endif
-}
 
 typedef struct {
   char sche[MAX_URL_LEN + 1];
@@ -1675,7 +588,7 @@ static void show_version() {
   char * v = strchr(b,':');
   v += 2;
   *strchr(v,'$') = 0;
-  printf(VERSION, v);
+  printf(JTEST_VERSION, v);
 }
 
 static void jtest_usage(ArgumentDescription * argument_descriptions, 
@@ -1700,7 +613,7 @@ static int max_limit_fd() {
   if (getrlimit(RLIMIT_NOFILE,&rl) >= 0) {
 #ifdef OPEN_MAX
     // Darwin
-    rl.rlim_cur = min(OPEN_MAX, rl.rlim_max);
+    rl.rlim_cur = MIN(OPEN_MAX, rl.rlim_max);
 #else
     rl.rlim_cur = rl.rlim_max;
 #endif
@@ -2602,7 +1515,7 @@ static int poll_loop() {
   }
   pollfd pfd[POLL_GROUP_SIZE];
   int ip = 0;
-  now = ink_get_hrtime();
+  now = ink_get_hrtime_internal();
   for (int i = 0 ; i <= last_fd ; i++) {
     if (fd[i].fd > 0 && (!fd[i].ready || now >= fd[i].ready)) {
       pfd[ip].fd = i;
@@ -2895,7 +1808,7 @@ static void compose_all_urls( const char * tag, char * buf, char * start, char *
   char old;
   while ((start = find_href_start(tag, end, buflen - (end - buf)))) {
     char newurl[512];
-    end = (char *) find_href_end(start, min(buflen - (start-buf), 512 - 10)); 
+    end = (char *) find_href_end(start, MIN(buflen - (start-buf), 512 - 10)); 
     if (!end) { 
       end = start + strlen(tag);
       continue;
@@ -3109,12 +2022,12 @@ static int read_response(int sock) {
 
     strcpy(fd[sock].response_header, fd[sock].req_header);
 
-    b1latency += ((ink_get_hrtime() - fd[sock].start) / HRTIME_MSECOND);
+    b1latency += ((ink_get_hrtime_internal() - fd[sock].start) / HRTIME_MSECOND);
     new_cbytes += err;
     new_tbytes += err;
     fd[sock].req_pos += err;
     fd[sock].bytes += err;
-    fd[sock].active = ink_get_hrtime();
+    fd[sock].active = ink_get_hrtime_internal();
     int total_read = fd[sock].req_pos;
     char * p = fd[sock].req_header;
     char * cl = NULL;
@@ -3287,7 +2200,7 @@ static int read_response(int sock) {
     follow_links(sock);
     if (fd[sock].length != INT_MAX)
       fd[sock].length -= err;
-    fd[sock].active = ink_get_hrtime();
+    fd[sock].active = ink_get_hrtime_internal();
     if (verbose) 
       printf("read %d got %d togo %d %d %d\n", sock, err, fd[sock].length,
              fd[sock].keepalive, fd[sock].drop_after_CL);
@@ -3308,13 +2221,13 @@ Ldone:
       printf("bad length %d wanted %d after %d ms: '%s'\n", 
              fd[sock].response_length - fd[sock].length,
              fd[sock].response_length,
-             (int)((ink_get_hrtime() - fd[sock].active)/HRTIME_MSECOND),
+             (int)((ink_get_hrtime_internal() - fd[sock].active)/HRTIME_MSECOND),
              fd[sock].base_url);
     return read_response_error(sock);
   }
   if (verbose) printf("read %d done\n", sock);
   new_ops++;
-  double thislatency =((ink_get_hrtime() - fd[sock].start) / HRTIME_MSECOND);
+  double thislatency =((ink_get_hrtime_internal() - fd[sock].start) / HRTIME_MSECOND);
   latency += (int)thislatency;
   lat_ops++;
   if (fd[sock].keepalive > 0) {
@@ -3353,7 +2266,7 @@ static int write_request(int sock) {
   new_tbytes += err;
   total_client_request_bytes += err;
   fd[sock].req_pos += err;
-  fd[sock].active = ink_get_hrtime();
+  fd[sock].active = ink_get_hrtime_internal();
   
   if (fd[sock].req_pos >= fd[sock].length) {
     if (verbose) printf("write complete %d %d\n", sock, fd[sock].length);
@@ -3625,7 +2538,7 @@ static void make_bfc_client (unsigned int addr, int port) {
 
 void interval_report() {
   static int here = 0;
-  now = ink_get_hrtime();
+  now = ink_get_hrtime_internal();
   if (!(here++ % 20))
     printf(
  " con  new     ops   1B  lat      bytes/per     svrs  new  ops      total   time  err\n");
@@ -4012,7 +2925,7 @@ int main(int argc __attribute__((unused)), char *argv[]) {
   int max_fds = max_limit_fd();
   if (verbose) printf ("maximum of %d connections\n",max_fds);
   signal(SIGPIPE,SIG_IGN);      
-  start_time = now = ink_get_hrtime();
+  start_time = now = ink_get_hrtime_internal();
   
   urls_mode = n_file_arguments || *urls_file;
   nclients = client_rate? 0 : nclients;
@@ -5202,73 +4115,6 @@ static int ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len
   return(quit);
 }
 
-//////////////////////////////////////////////////////////////////////////
-// imported from libts
-//////////////////////////////////////////////////////////////////////////
-
-static void ink_die_die_die(int retval)
-{
-    abort();
-    _exit(retval);
-    exit(retval);
-}
-    
-/*---------------------------------------------------------------------------*
-
-  void ink_fatal(int return_code, char *message_format, ...)
-
-  This routine prints/logs an error message given the printf
-  format string in <message_format>, and the optional arguments.
-  The program is then terminated with return code <return_code>.
-
- *---------------------------------------------------------------------------*/
-
-static void ink_fatal_va(int return_code, const char *message_format, va_list ap)
-{
-    char extended_format[4096],message[4096];
-
-    sprintf(extended_format,"FATAL: %s",message_format);
-    vsprintf(message,extended_format,ap);
-    fprintf(stderr,"%s\n",message);
-    ink_die_die_die(return_code);
-} /* End ink_fatal_va */
-
-
-static void ink_fatal(int return_code, const char *message_format, ...)
-{
-    va_list ap;
-    va_start(ap,message_format);
-    ink_fatal_va(return_code,message_format,ap);
-    va_end(ap);
-} /* End ink_fatal */
-
-static void ink_warning(const char *message_format, ...)
-{
-    va_list ap;
-    char extended_format[4096],message[4096];
-
-    va_start(ap,message_format);
-    sprintf(extended_format,"WARNING: %s",message_format);
-    vsprintf(message,extended_format,ap);
-    fprintf(stderr,"%s\n",message);
-    va_end(ap);
-} /* End ink_warning */
-
-static int _ink_assert(const char * a, const char * f, int l) {
-  char buf1[81];
-  char buf2[256];
-
-#ifndef NO_ASSERTS
-  strncpy( buf1, f,80);
-  sprintf(buf2,"%s:%d: failed assert `",buf1,l);
-  strncat(buf2,a,100);
-  strcat(buf2,"`");
-  ink_fatal(1,buf2);
-#endif /* NO_ASSERTS */
-
-  return (0);
-}
-
 
 static void process_arg(ArgumentDescription * argument_descriptions,
                         int n_argument_descriptions,
@@ -5294,7 +4140,7 @@ static void process_arg(ArgumentDescription * argument_descriptions,
           *(double *)argument_descriptions[i].location = atof(arg);
           break;
         case 'L':
-          *(int64_t *)argument_descriptions[i].location = ink_atoll(arg);
+          *(int64_t *)argument_descriptions[i].location = ink_atoi64(arg);
           break;
         case 'S': strncpy((char *)argument_descriptions[i].location,arg,
                           atoi(argument_descriptions[i].type+1));
@@ -5313,50 +4159,9 @@ static void process_arg(ArgumentDescription * argument_descriptions,
 }
 
 
-#if 0
-// XXX this is not used; maybe it's just debugging? -- jpeach
-static void show_argument_configuration(ArgumentDescription * argument_descriptions,
-                                 int n_argument_descriptions) 
-{
-  int i = 0;
-  printf("Argument Configuration\n"); 
-  for (i=0;i<n_argument_descriptions;i++) {
-    if (argument_descriptions[i].type) {
-      printf("  %s%s",argument_descriptions[i].description,
-             &SPACES[strlen(argument_descriptions[i].description)+45]);
-      switch (argument_descriptions[i].type[0]) {
-      case 'F':
-      case 'f':
-      case 'T':
-        printf(*(int*)argument_descriptions[i].location?"TRUE":"FALSE");
-        break;
-      case 'I':
-        printf("%d",*(int*)argument_descriptions[i].location);
-        break;
-      case 'D':
-        printf("%f",*(double*)argument_descriptions[i].location);
-        break;
-      case 'L':
-#if defined(FreeBSD)
-        printf("%" PRId64"",*(int64_t*)argument_descriptions[i].location);
-#else
-        printf("%" PRId64"",*(int64_t*)argument_descriptions[i].location);
-#endif
-        break;
-      case 'S':
-        printf("%s",(char*)argument_descriptions[i].location);
-          break;
-      default: ink_fatal(1,(char *)"bad argument description"); break;
-      }
-      printf("\n");
-    }
-  }
-}
-#endif
-
 static void process_args(ArgumentDescription * argument_descriptions,
-                  int n_argument_descriptions,
-                  char **argv) 
+                         int n_argument_descriptions,
+                         char **argv) 
 {
   int i = 0;
   //
@@ -5377,7 +4182,7 @@ static void process_args(ArgumentDescription * argument_descriptions,
         *(double *)argument_descriptions[i].location = atof(env);
         break;
       case 'L':
-        *(int64_t *)argument_descriptions[i].location = ink_atoll(env);
+        *(int64_t *)argument_descriptions[i].location = ink_atoi64(env);
         break;
       case 'S':
         strncpy((char *)argument_descriptions[i].location,env,
@@ -5420,9 +4225,12 @@ static void process_args(ArgumentDescription * argument_descriptions,
   }
 }
 
+// ToDo: This use of SPACES for formatting could probably be nicer done with STL streams...
+static const char * SPACES = "                                                                               ";
+
 static void usage(ArgumentDescription * argument_descriptions,
-           int n_argument_descriptions,
-           const char * dummy) 
+                  int n_argument_descriptions,
+                  const char * dummy) 
 {
   (void)argument_descriptions; (void)n_argument_descriptions; (void)dummy;
   fprintf(stderr,"Usage: %s [--SWITCH [ARG]]\n",program_name);
@@ -5480,290 +4288,3 @@ static void usage(ArgumentDescription * argument_descriptions,
   }
   _exit(1);
 }
-
-#define UINT4 unsigned int
-
-typedef struct {
-  UINT4 state[4];                                   /* state (ABCD) */
-  UINT4 count[2];        /* number of bits, modulo 2^64 (lsb first) */
-  unsigned char buffer[64];                         /* input buffer */
-} MD5_CTX;
-
-static void MD5Init (MD5_CTX *);
-static void MD5Update (MD5_CTX *, unsigned char *, unsigned int);
-static void MD5Final (unsigned char [16], MD5_CTX *);
-
-#define S11 7
-#define S12 12
-#define S13 17
-#define S14 22
-#define S21 5
-#define S22 9
-#define S23 14
-#define S24 20
-#define S31 4
-#define S32 11
-#define S33 16
-#define S34 23
-#define S41 6
-#define S42 10
-#define S43 15
-#define S44 21
-
-static void MD5Transform (UINT4 [4], unsigned char [64]);
-static void Encode (unsigned char *, UINT4 *, unsigned int);
-
-#define MD5_memcpy memcpy
-#define MD5_memset memset
-
-static unsigned char PADDING[64] = {
-  0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
-/* F, G, H and I are basic MD5 functions.
- */
-#define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
-#define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
-#define H(x, y, z) ((x) ^ (y) ^ (z))
-#define I(x, y, z) ((y) ^ ((x) | (~z)))
-
-/* ROTATE_LEFT rotates x left n bits.
- */
-#define ROTATE_LEFT(x, n) (((x) << (n)) | ((x) >> (32-(n))))
-
-/* FF, GG, HH, and II transformations for rounds 1, 2, 3, and 4.
-   Rotation is separate from addition to prevent recomputation.
- */
-#define FF(a, b, c, d, x, s, ac) { \
-    (a) += F ((b), (c), (d)) + (x) + (UINT4)(ac); \
-    (a) = ROTATE_LEFT ((a), (s)); \
-    (a) += (b); \
-  }
-#define GG(a, b, c, d, x, s, ac) { \
-    (a) += G ((b), (c), (d)) + (x) + (UINT4)(ac); \
-    (a) = ROTATE_LEFT ((a), (s)); \
-    (a) += (b); \
-  }
-#define HH(a, b, c, d, x, s, ac) { \
-    (a) += H ((b), (c), (d)) + (x) + (UINT4)(ac); \
-    (a) = ROTATE_LEFT ((a), (s)); \
-    (a) += (b); \
-  }
-#define II(a, b, c, d, x, s, ac) { \
-    (a) += I ((b), (c), (d)) + (x) + (UINT4)(ac); \
-    (a) = ROTATE_LEFT ((a), (s)); \
-    (a) += (b); \
-  }
-
-/* MD5 initialization. Begins an MD5 operation, writing a new context.
- */
-
-static void MD5Init (MD5_CTX *context) {
-  context->count[0] = context->count[1] = 0;
-
-  /* Load magic initialization constants.
-   */
-  context->state[0] = 0x67452301;
-  context->state[1] = 0xefcdab89;
-  context->state[2] = 0x98badcfe;
-  context->state[3] = 0x10325476;
-}
-
-/* POINTER defines a generic pointer type */
-typedef unsigned char *POINTER;
-
-/* MD5 block update operation. Continues an MD5 message-digest
-     operation, processing another message block, and updating the
-     context.
- */
-static void MD5Update (MD5_CTX *context, unsigned char * input, unsigned int inputLen) {
-  unsigned int i, index, partLen;
-
-  /* Compute number of bytes mod 64 */
-  index = (unsigned int)((context->count[0] >> 3) & 0x3F);
-
-  /* Update number of bits */
-  if ((context->count[0] += ((UINT4)inputLen << 3))
-      < ((UINT4)inputLen << 3))
-    context->count[1]++;
-  context->count[1] += ((UINT4)inputLen >> 29);
-
-  partLen = 64 - index;
-
-  /* Transform as many times as possible.
-   */
-  if (inputLen >= partLen) {
-    MD5_memcpy
-      ((POINTER)&context->buffer[index], (POINTER)input, partLen);
-    MD5Transform (context->state, context->buffer);
-
-    for (i = partLen; i + 63 < inputLen; i += 64)
-      MD5Transform (context->state, &input[i]);
-
-    index = 0;
-  }
-  else
-    i = 0;
-
-  /* Buffer remaining input */
-  MD5_memcpy
-    ((POINTER)&context->buffer[index], (POINTER)&input[i],
-     inputLen-i);
-}
-
-/* MD5 finalization. Ends an MD5 message-digest operation, writing the
-     the message digest and zeroizing the context.
- */
-static void MD5Final (unsigned char digest[16], MD5_CTX *context) {
-  unsigned char bits[8];
-  unsigned int index, padLen;
-
-  /* Save number of bits */
-  Encode (bits, context->count, 8);
-
-  /* Pad out to 56 mod 64.
-   */
-  index = (unsigned int)((context->count[0] >> 3) & 0x3f);
-  padLen = (index < 56) ? (56 - index) : (120 - index);
-  MD5Update (context, PADDING, padLen);
-
-  /* Append length (before padding) */
-  MD5Update (context, bits, 8);
-
-  /* Store state in digest */
-  Encode (digest, context->state, 16);
-
-  /* Zeroize sensitive information.
-   */
-  MD5_memset ((POINTER)context, 0, sizeof (*context));
-}
-
-/* MD5 basic transformation. Transforms state based on block.
- */
-static void MD5Transform (UINT4 state[4], unsigned char block[64]) {
-  UINT4 a, b, c, d, x[16];
-  unsigned int i, j;
-
-  /* Decode (x, block, 64); */
-  for (i = 0, j = 0; j < 64; i++, j += 4)
-    x[i] = (((UINT4) block[j]) |
-            (((UINT4) block[j+1]) << 8) |
-            (((UINT4) block[j+2]) << 16) |
-            (((UINT4) block[j+3]) << 24));
-  
-  a = state[0];
-  b = state[1];
-  c = state[2];
-  d = state[3];
-  
-  /* Round 1 */
-  FF (a, b, c, d, x[ 0], S11, 0xd76aa478); /* 1 */
-  FF (d, a, b, c, x[ 1], S12, 0xe8c7b756); /* 2 */
-  FF (c, d, a, b, x[ 2], S13, 0x242070db); /* 3 */
-  FF (b, c, d, a, x[ 3], S14, 0xc1bdceee); /* 4 */
-  FF (a, b, c, d, x[ 4], S11, 0xf57c0faf); /* 5 */
-  FF (d, a, b, c, x[ 5], S12, 0x4787c62a); /* 6 */
-  FF (c, d, a, b, x[ 6], S13, 0xa8304613); /* 7 */
-  FF (b, c, d, a, x[ 7], S14, 0xfd469501); /* 8 */
-  FF (a, b, c, d, x[ 8], S11, 0x698098d8); /* 9 */
-  FF (d, a, b, c, x[ 9], S12, 0x8b44f7af); /* 10 */
-  FF (c, d, a, b, x[10], S13, 0xffff5bb1); /* 11 */
-  FF (b, c, d, a, x[11], S14, 0x895cd7be); /* 12 */
-  FF (a, b, c, d, x[12], S11, 0x6b901122); /* 13 */
-  FF (d, a, b, c, x[13], S12, 0xfd987193); /* 14 */
-  FF (c, d, a, b, x[14], S13, 0xa679438e); /* 15 */
-  FF (b, c, d, a, x[15], S14, 0x49b40821); /* 16 */
-
-  /* Round 2 */
-  GG (a, b, c, d, x[ 1], S21, 0xf61e2562); /* 17 */
-  GG (d, a, b, c, x[ 6], S22, 0xc040b340); /* 18 */
-  GG (c, d, a, b, x[11], S23, 0x265e5a51); /* 19 */
-  GG (b, c, d, a, x[ 0], S24, 0xe9b6c7aa); /* 20 */
-  GG (a, b, c, d, x[ 5], S21, 0xd62f105d); /* 21 */
-  GG (d, a, b, c, x[10], S22,  0x2441453); /* 22 */
-  GG (c, d, a, b, x[15], S23, 0xd8a1e681); /* 23 */
-  GG (b, c, d, a, x[ 4], S24, 0xe7d3fbc8); /* 24 */
-  GG (a, b, c, d, x[ 9], S21, 0x21e1cde6); /* 25 */
-  GG (d, a, b, c, x[14], S22, 0xc33707d6); /* 26 */
-  GG (c, d, a, b, x[ 3], S23, 0xf4d50d87); /* 27 */
-  GG (b, c, d, a, x[ 8], S24, 0x455a14ed); /* 28 */
-  GG (a, b, c, d, x[13], S21, 0xa9e3e905); /* 29 */
-  GG (d, a, b, c, x[ 2], S22, 0xfcefa3f8); /* 30 */
-  GG (c, d, a, b, x[ 7], S23, 0x676f02d9); /* 31 */
-  GG (b, c, d, a, x[12], S24, 0x8d2a4c8a); /* 32 */
-
-  /* Round 3 */
-  HH (a, b, c, d, x[ 5], S31, 0xfffa3942); /* 33 */
-  HH (d, a, b, c, x[ 8], S32, 0x8771f681); /* 34 */
-  HH (c, d, a, b, x[11], S33, 0x6d9d6122); /* 35 */
-  HH (b, c, d, a, x[14], S34, 0xfde5380c); /* 36 */
-  HH (a, b, c, d, x[ 1], S31, 0xa4beea44); /* 37 */
-  HH (d, a, b, c, x[ 4], S32, 0x4bdecfa9); /* 38 */
-  HH (c, d, a, b, x[ 7], S33, 0xf6bb4b60); /* 39 */
-  HH (b, c, d, a, x[10], S34, 0xbebfbc70); /* 40 */
-  HH (a, b, c, d, x[13], S31, 0x289b7ec6); /* 41 */
-  HH (d, a, b, c, x[ 0], S32, 0xeaa127fa); /* 42 */
-  HH (c, d, a, b, x[ 3], S33, 0xd4ef3085); /* 43 */
-  HH (b, c, d, a, x[ 6], S34,  0x4881d05); /* 44 */
-  HH (a, b, c, d, x[ 9], S31, 0xd9d4d039); /* 45 */
-  HH (d, a, b, c, x[12], S32, 0xe6db99e5); /* 46 */
-  HH (c, d, a, b, x[15], S33, 0x1fa27cf8); /* 47 */
-  HH (b, c, d, a, x[ 2], S34, 0xc4ac5665); /* 48 */
-
-  /* Round 4 */
-  II (a, b, c, d, x[ 0], S41, 0xf4292244); /* 49 */
-  II (d, a, b, c, x[ 7], S42, 0x432aff97); /* 50 */
-  II (c, d, a, b, x[14], S43, 0xab9423a7); /* 51 */
-  II (b, c, d, a, x[ 5], S44, 0xfc93a039); /* 52 */
-  II (a, b, c, d, x[12], S41, 0x655b59c3); /* 53 */
-  II (d, a, b, c, x[ 3], S42, 0x8f0ccc92); /* 54 */
-  II (c, d, a, b, x[10], S43, 0xffeff47d); /* 55 */
-  II (b, c, d, a, x[ 1], S44, 0x85845dd1); /* 56 */
-  II (a, b, c, d, x[ 8], S41, 0x6fa87e4f); /* 57 */
-  II (d, a, b, c, x[15], S42, 0xfe2ce6e0); /* 58 */
-  II (c, d, a, b, x[ 6], S43, 0xa3014314); /* 59 */
-  II (b, c, d, a, x[13], S44, 0x4e0811a1); /* 60 */
-  II (a, b, c, d, x[ 4], S41, 0xf7537e82); /* 61 */
-  II (d, a, b, c, x[11], S42, 0xbd3af235); /* 62 */
-  II (c, d, a, b, x[ 2], S43, 0x2ad7d2bb); /* 63 */
-  II (b, c, d, a, x[ 9], S44, 0xeb86d391); /* 64 */
-
-  state[0] += a;
-  state[1] += b;
-  state[2] += c;
-  state[3] += d;
-
-  /* Zeroize sensitive information.
-   */
-  /* No need to zeroize "sensitive" information. This is just zeroing
-     out data on the stack. Totally unnecessary in traffic server. */
-  /* MD5_memset ((POINTER)x, 0, sizeof (x)); */
-}
-
-/* Encodes input (UINT4) into output (unsigned char). Assumes len is
-     a multiple of 4.
- */
-static void Encode (unsigned char *output, UINT4*input, unsigned int len) {
-  unsigned int i, j;
-
-  for (i = 0, j = 0; j < len; i++, j += 4) {
-    output[j] = (unsigned char)(input[i] & 0xff);
-    output[j+1] = (unsigned char)((input[i] >> 8) & 0xff);
-    output[j+2] = (unsigned char)((input[i] >> 16) & 0xff);
-    output[j+3] = (unsigned char)((input[i] >> 24) & 0xff);
-  }
-}
-
-int ink_code_md5(unsigned char *input,
-                 int input_length,
-                 unsigned char *sixteen_byte_hash_pointer) {
-  MD5_CTX context;
-
-  MD5Init(&context);
-  MD5Update(&context, input, input_length);
-  MD5Final(sixteen_byte_hash_pointer, &context);
-
-  return(0);
-} /* End ink_code_md5 */

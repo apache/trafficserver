@@ -493,7 +493,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqbl", field);
 
-  Ptr<LogFieldAliasTable> finish_status_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> finish_status_map = make_ptr(NEW(new LogFieldAliasTable));
   finish_status_map->init(N_LOG_FINISH_CODE_TYPES,
                           LOG_FINISH_FIN, "FIN",
                           LOG_FINISH_INTR, "INTR",
@@ -563,7 +563,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
-  Ptr<LogFieldAliasTable> cache_code_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> cache_code_map = make_ptr(NEW(new LogFieldAliasTable));
   cache_code_map->init(49,
                        SQUID_LOG_EMPTY, "UNDEFINED",
                        SQUID_LOG_TCP_HIT, "TCP_HIT",
@@ -665,7 +665,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsi", field);
 
-  Ptr<LogFieldAliasTable> hierarchy_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> hierarchy_map = make_ptr(NEW(new LogFieldAliasTable));
   hierarchy_map->init(36,
                       SQUID_HIER_EMPTY, "EMPTY",
                       SQUID_HIER_NONE, "NONE",
@@ -805,7 +805,7 @@ Log::init_fields()
 
   // cache write fields
 
-  Ptr<LogFieldAliasTable> cache_write_code_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> cache_write_code_map = make_ptr(NEW(new LogFieldAliasTable));
   cache_write_code_map->init(N_LOG_CACHE_WRITE_TYPES,
                              LOG_CACHE_WRITE_NONE, "-",
                              LOG_CACHE_WRITE_LOCK_MISSED, "WL_MISS",
@@ -852,7 +852,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
 
-  Ptr<LogFieldAliasTable> entry_type_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> entry_type_map = make_ptr(NEW(new LogFieldAliasTable));
   entry_type_map->init(N_LOG_ENTRY_TYPES,
                        LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP",
                        LOG_ENTRY_ICP, "LOG_ENTRY_ICP");

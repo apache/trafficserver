@@ -5,11 +5,18 @@ For complete installation documentation, see the on-line documentation at
 
     http://trafficserver.apache.org/docs
 
+
+Various popular platforms have up-to-date build instructions available
+online, at
+
+    https://cwiki.apache.org/confluence/display/TS/Building
+
+
 BUILD AND INSTALLATION
 ----------------------
 
 Configure & Build from source:
-    $ autoreconf -i  # generate the configure script and Makefile.in files
+    $ autoreconf -if  # generate the configure script and Makefile.in files
 
 On Linux, OSX:
     $ ./configure [--prefix=PREFIX]
@@ -37,17 +44,13 @@ To install:
 * The easiest way to find all of the configuration flags
   for Traffic Server is to run ./configure --help.
 
-To build the examples in example directory use
-    $ make examples
-
-To install the examples inside current layout libexecdir use the
-    $ sudo make install-examples
 
 By default the build will use the highest level of compiler
 optimization. To alter this, specify your own optimizer flags at
 configuration time:
 
     $ ./configure CXXFLAGS=-Os CFLAGS=-Os
+
 
 INITIAL CONFIGURATION
 
@@ -62,6 +65,7 @@ For example:
 
 To start the Traffic Server process stack (TC, TM, TS):
     $ sudo PREFIX/bin/trafficserver start
+
 
 INSTALLATION HELP
 

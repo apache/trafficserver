@@ -928,7 +928,7 @@ MultiCacheBase::sync_heap(int part)
 {
   if (heap_size) {
     int b_per_part = heap_size / MULTI_CACHE_PARTITIONS;
-    if (safe_msync(data + level_offset[2] + buckets * bucketsize[2] +
+    if (ats_msync(data + level_offset[2] + buckets * bucketsize[2] +
                    b_per_part * part, b_per_part, data + totalsize, MS_SYNC) < 0)
       return -1;
   }
@@ -950,16 +950,16 @@ MultiCacheBase::sync_partition(int partition)
   int n = buckets_of_partition(partition);
   // L3
   if (levels > 2) {
-    if (safe_msync(data + level_offset[2] + b * bucketsize[2], n * bucketsize[2], data + totalsize, MS_SYNC) < 0)
+    if (ats_msync(data + level_offset[2] + b * bucketsize[2], n * bucketsize[2], data + totalsize, MS_SYNC) < 0)
       res = -1;
   }
   // L2
   if (levels > 1) {
-    if (safe_msync(data + level_offset[1] + b * bucketsize[1], n * bucketsize[1], data + totalsize, MS_SYNC) < 0)
+    if (ats_msync(data + level_offset[1] + b * bucketsize[1], n * bucketsize[1], data + totalsize, MS_SYNC) < 0)
       res = -1;
   }
   // L1
-  if (safe_msync(data + b * bucketsize[0], n * bucketsize[0], data + totalsize, MS_SYNC) < 0)
+  if (ats_msync(data + b * bucketsize[0], n * bucketsize[0], data + totalsize, MS_SYNC) < 0)
     res = -1;
   return res;
 }
@@ -968,7 +968,7 @@ int
 MultiCacheBase::sync_header()
 {
   *mapped_header = *(MultiCacheHeader *) this;
-  return safe_msync((char *) mapped_header, STORE_BLOCK_SIZE, (char *) mapped_header + STORE_BLOCK_SIZE, MS_SYNC);
+  return ats_msync((char *) mapped_header, STORE_BLOCK_SIZE, (char *) mapped_header + STORE_BLOCK_SIZE, MS_SYNC);
 }
 
 int
@@ -1012,7 +1012,7 @@ struct MultiCacheSync: public Continuation
       return EVENT_CONT;
     }
     *mc->mapped_header = mc->header_snap;
-    ink_assert(!safe_msync((char *) mc->mapped_header, STORE_BLOCK_SIZE,
+    ink_assert(!ats_msync((char *) mc->mapped_header, STORE_BLOCK_SIZE,
                            (char *) mc->mapped_header + STORE_BLOCK_SIZE, MS_SYNC));
     partition = 0;
     SET_HANDLER((MCacheSyncHandler) & MultiCacheSync::mcEvent);
@@ -1137,8 +1137,8 @@ struct MultiCacheHeapGC: public Continuation
 
       if (after - before > 0)
       {
-        ink_assert(!safe_msync(before, after - before, mc->heap + mc->totalsize, MS_SYNC));
-        ink_assert(!safe_msync((char *) mc->mapped_header, STORE_BLOCK_SIZE,
+        ink_assert(!ats_msync(before, after - before, mc->heap + mc->totalsize, MS_SYNC));
+        ink_assert(!ats_msync((char *) mc->mapped_header, STORE_BLOCK_SIZE,
                                (char *) mc->mapped_header + STORE_BLOCK_SIZE, MS_SYNC));
       }
       // update table to point to new entries

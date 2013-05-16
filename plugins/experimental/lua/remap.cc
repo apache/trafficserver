@@ -79,6 +79,8 @@ TSRemapNewInstance(int argc, char * argv[], void ** ih, char * /* errbuf ATS_UNU
   *ih = (void *)(intptr_t)instanceid;
 
   pthread_mutex_unlock(&PluginInstanceLock);
+
+  LuaLogDebug("created Lua remap instance %u", instanceid);
   return TS_SUCCESS;
 }
 

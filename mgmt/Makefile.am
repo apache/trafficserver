@@ -102,9 +102,8 @@ traffic_manager_LDADD = \
   $(top_builddir)/mgmt/tools/libinksysapi.a \
   $(top_builddir)/mgmt/tools/libinkconfigapi.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ \
-  -lm @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTHREAD@ @LIBRT@ @LIBEXECINFO@ @LIBCAP@
+  @LIBRESOLV@ @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ \
+  -lm
 
 # Must do it this way or the dependencies aren't detected.
 if BUILD_WCCP

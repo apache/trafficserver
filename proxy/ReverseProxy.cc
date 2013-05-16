@@ -48,7 +48,7 @@
 #define URL_REWRITE_TIMEOUT            (HRTIME_SECOND*60)
 
 // Global Ptrs
-static Ptr<ProxyMutex> reconfig_mutex = NULL;
+static Ptr<ProxyMutex> reconfig_mutex;
 UrlRewrite *rewrite_table = NULL;
 remap_plugin_info *remap_pi_list; // We never reload the remap plugins, just append to 'em.
 

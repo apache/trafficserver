@@ -2,7 +2,38 @@
   Changes with Apache Traffic Server 3.3.3
 
 
-  *) [TS-1770]  Unable to create remap rule for SSL sites when accessed as a
+  *) [TS-1728] Assign storage entries to volumes
+     Author: Justin Laue <justin@fp-x.com>
+
+  *) [TS-1899] strtod() does not honor Hex strings on Solaris.
+
+  *) [TS-1894] madvise() not found on Solaris. And some cleanup.
+
+  *) [TS-1765] Make jtest build more like the rest of the code.
+
+  *) [TS-1892] Move msync APIs to ink_memory.h.
+
+  *) [TS-1890] Authproxy plugin caching and reliability fixes.
+
+  *) [TS-1868] TSREMAP_*_STOP does not stop remap plugin evaluation chain.
+
+  *) [TS-1889] Refactor remap plugin request URL handling.
+
+  *) [TS-1887] Make diagnostic location logging more succinct.
+
+  *) [TS-1884] Remove deprecated IPv4-only NetProcessor API.
+
+  *) [TS-1444] [TS-1881] URL lookup with regex through the web interface was broken.
+
+  *) [TS-1880] Use pthread_setname_np to set the thread name on multiple platforms.
+
+  *) [TS-1879] Make the Ptr<> conversion constructor explicit.
+
+  *) [TS-1768] Prefer AC_SEARCH_LIBS to AC_CHECK_LIB to avoid unnecessary linking.
+
+  *) [TS-1877] Fix multiple Lua remap plugin instance creation.
+
+  *) [TS-1770] Unable to create remap rule for SSL sites when accessed as a
    forward proxy. Author: Mark Harrison.
 
   *) [TS-1867] The combo_handler plugin crashes when receiving non-200 responses.

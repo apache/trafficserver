@@ -64,14 +64,20 @@ inkcoreapi Diags *diags = NULL;
 //////////////////////////////////////////////////////////////////////////////
 
 char *
-SrcLoc::str(char *buf, int buflen)
+SrcLoc::str(char *buf, int buflen) const
 {
-  if (!valid || buflen < 1)
+  const char * shortname;
+
+  if (!this->valid() || buflen < 1)
     return (NULL);
+
+  shortname = strrchr(file, '/');
+  shortname = shortname ? (shortname + 1) : file;
+
   if (func != NULL) {
-    snprintf(buf, buflen, "%s:%d (%s)", file, line, func);
+    snprintf(buf, buflen, "%s:%d (%s)", shortname, line, func);
   } else {
-    snprintf(buf, buflen, "%s:%d", file, line);
+    snprintf(buf, buflen, "%s:%d", shortname, line);
   }
   buf[buflen - 1] = NUL;
   return (buf);
@@ -220,7 +226,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level ,SrcLoc *loc,
   // append location, if any //
   /////////////////////////////
 
-  if (loc && loc->valid) {
+  if (loc && loc->valid()) {
     char *lp, buf[256];
     lp = loc->str(buf, sizeof(buf));
     if (lp) {
