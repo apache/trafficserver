@@ -1184,43 +1184,6 @@ Net_DisableInterface(char *interface)
 
 #endif /* linux */
 
-int
-Sys_User_Root(int *old_euid)
-{
-
-  *old_euid = getuid();
-  seteuid(0);
-  setreuid(0, 0);
-
-  return 0;
-}
-
-int
-Sys_User_Inktomi(int euid)
-{
-// bug 50394 - preserve saved uid as root,
-//             while changing effiective and real uid to input parameter value
-  setreuid(euid, 0);
-  seteuid(euid);
-  return 0;
-}
-
-int
-Sys_Grp_Root(int *old_egid)
-{
-  *old_egid = getegid();
-  setregid(0, *old_egid);
-  return 0;
-}
-
-int
-Sys_Grp_Inktomi(int egid)
-{
-  setregid(egid, egid);
-  return 0;
-}
-
-
 
 
 bool

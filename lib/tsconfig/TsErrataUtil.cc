@@ -126,7 +126,8 @@ Errata
 log_errno(Errata::Code code, char const* text) {
   static size_t const SIZE = 1024;
   char buffer[SIZE];
-  return logf(code, "%s [%d] %s", text, errno, strerror_r(errno, buffer, SIZE));
+  NOWARN_UNUSED_RETURN(strerror_r(errno, buffer, SIZE));
+  return logf(code, "%s [%d] %s", text, errno, buffer);
 }
 
 Errata
@@ -140,7 +141,7 @@ vlogf_errno(Errata& errata, Errata::Id id, Errata::Code code, char const* format
   
   n = vsnprintf(t_buffer, T_SIZE, format, rest);
   if (0 <= n && n < T_SIZE) { // still have room.
-    strerror_r(e, e_buffer, E_SIZE);
+    NOWARN_UNUSED_RETURN(strerror_r(e, e_buffer, E_SIZE));
     n += snprintf(t_buffer + n, T_SIZE - n, "[%d] %s", e, e_buffer);
   }
   errata.push(id, code, t_buffer);

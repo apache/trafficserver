@@ -1310,7 +1310,8 @@ change_uid_gid(const char *user)
 
   char *buf = (char *)ats_malloc(buflen);
 
-  if (0 != geteuid() && 0 == getuid()) seteuid(0); // revert euid if possible.
+  if (0 != geteuid() && 0 == getuid())
+    NOWARN_UNUSED_RETURN(seteuid(0)); // revert euid if possible.
   if (0 != geteuid()) {
     // Not root so can't change user ID. Logging isn't operational yet so
     // we have to write directly to stderr. Perhaps this should be fatal?

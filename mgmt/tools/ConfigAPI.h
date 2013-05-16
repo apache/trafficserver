@@ -85,9 +85,5 @@ extern int Config_GetXmlTagValue(char *XmlTagName, char **XmlTagValue, char *Xml
 extern int Config_SetSMTP_Server(char *server);
 extern int Config_GetSMTP_Server(char *server);
 extern int Config_FloppyNetRestore();
-extern int Config_User_Root(int *old_euid);
-extern int Config_User_Inktomi(int euid);
-extern int Config_Grp_Root(int *old_egid);
-extern int Config_Grp_Inktomi(int egid);
 extern int Config_DisableInterface(char *eth);
 #endif // _CONFIG_API_H

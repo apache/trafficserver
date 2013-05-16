@@ -636,30 +636,6 @@ Config_SetNTP_Off(void)
   return Time_SetNTP_Off();
 }
 
-int
-Config_User_Root(int *old_euid)
-{
-  return Sys_User_Root(old_euid);
-}
-
-int
-Config_User_Inktomi(int euid)
-{
-  return Sys_User_Inktomi(euid);
-}
-
-int
-Config_Grp_Root(int *old_egid)
-{
-  return Sys_Grp_Root(old_egid);
-}
-
-int
-Config_Grp_Inktomi(int egid)
-{
-  return Sys_Grp_Inktomi(egid);
-}
-
 #if defined(linux)
 int
 Config_DisableInterface(char *eth)
@@ -831,7 +807,8 @@ Config_RestoreNetConfig(char *file)
     ats_free(TagValue);
   }
 
-  setreuid(old_euid, old_euid); //happens only for floppy config
+  if(setreuid(old_euid, old_euid) != 0)
+    perror("Config_RestoreNetConfig set old uid failed: "); //happens only for floppy config
   return 0;
 }
 
