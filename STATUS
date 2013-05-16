@@ -78,7 +78,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Crash when using ssl_ca_name
   Jira: https://issues.apache.org/jira/browse/TS-1779
   Patch: see ticket
-  +1: jpeach
+  +1: jpeach, zwoop
 
   Remove iconv as dependency
   Jira: https://issues.apache.org/jira/browse/TS-1723
