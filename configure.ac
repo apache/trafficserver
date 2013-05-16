@@ -833,13 +833,6 @@ AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
 AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 
 #
-# The header_rewrite module depends on boost.
-AX_BOOST_BASE([1.50],
-  [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [true]) ],
-  [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [false]) ]
-)
-
-#
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
 if test "x${enable_crypto}" != "xyes"; then
