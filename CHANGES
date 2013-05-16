@@ -2,7 +2,7 @@
 Changes with Apache Traffic Server 3.2.5
 
 
-  *) [TS-1906] TS hangs (dead lock) on HTTPS POST/PROPFIND requests.
+  *) [TS-1905] TS hangs (dead lock) on HTTPS POST/PROPFIND requests.
 
   *) [TS-1785] Fixes to make it build with gcc-4.8.x.
 
