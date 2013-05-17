@@ -4,7 +4,7 @@ Changes with Apache Traffic Server 3.2.5
 
   *) [TS-1905] TS hangs (dead lock) on HTTPS POST/PROPFIND requests.
 
-  *) [TS-1785] Fixes to make it build with gcc-4.8.x.
+  *) [TS-1785, TS-1904] Fixes to make it build with gcc-4.8.x.
 
   *) [TS-1903] Remove JEMALLOC_P use, it seems to have been deprecated.
 
