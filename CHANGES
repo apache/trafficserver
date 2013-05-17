@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-374] Reduce lock contention in HostDB.
+
   *) [TS-1899] strtod() does not honor Hex strings on Solaris.
 
   *) [TS-1894] madvise() not found on Solaris. And some cleanup.
