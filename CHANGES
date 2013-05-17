@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1912] SSL hangs after origin handshake.
+
   *) [TS-1911] Enforce MIOBufferAccessor accessor API.
 
   *) [TS-1909] Remove duplicate listen socket conditioning.
