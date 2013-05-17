@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1896] Cleanup of unused defines, sometimes duplicated.
+
   *) [TS-374] Reduce lock contention in HostDB.
 
   *) [TS-1899] strtod() does not honor Hex strings on Solaris.
