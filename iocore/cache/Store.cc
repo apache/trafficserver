@@ -28,6 +28,31 @@
 // Global
 Store theStore;
 
+#define VOL_STR "volume="
+int getVolume(char* line) {
+  int v = 0;
+  if(!line) return 0;
+  char* str = strstr(line, VOL_STR);
+  char* vol_start = str;
+  if(!str) return 0;
+  while (*str && !ParseRules::is_digit(*str))
+    str++;
+  v = ink_atoi(str);
+
+  while (*str && ParseRules::is_digit(*str))
+    str++;
+  while(*str) {
+    *vol_start = *str;
+    vol_start++;
+    str++;
+  }
+  *vol_start = 0;
+  Debug("cache_init", "returning %d and '%s'", v, line);
+
+  if(v < 0) return 0;
+  return v;
+}
+
 
 //
 // Store
@@ -291,6 +316,8 @@ Store::read_config(int fd)
     if (!*n)
       continue;
 
+   int volume_id = getVolume(n);
+
     // parse
     Debug("cache_init", "Store::read_config: \"%s\"", n);
 
@@ -310,7 +337,9 @@ Store::read_config(int fd)
     n[len] = 0;
     char *pp = Layout::get()->relative(n);
     ns = NEW(new Span);
-    Debug("cache_init", "Store::read_config - ns = NEW (new Span); ns->init(\"%s\",%" PRId64 ")", pp, size);
+    ns->vol_num = volume_id;
+    Debug("cache_init", "Store::read_config - ns = NEW (new Span); ns->init(\"%s\",%" PRId64 "), ns->vol_num=%d",
+      pp, size, ns->vol_num);
     if ((err = ns->init(pp, size))) {
       char buf[4096];
       snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", pp, err);
