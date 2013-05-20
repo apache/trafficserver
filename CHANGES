@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1941] Configured socket buffer sizes are not applied.
+
   *) [TS-1912] SSL hangs after origin handshake.
 
   *) [TS-1911] Enforce MIOBufferAccessor accessor API.

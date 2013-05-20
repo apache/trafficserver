@@ -120,6 +120,11 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
   NetProcessor::AcceptOptions net;
   HttpAccept::Options         http;
 
+  REC_ReadConfigInteger(net.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
+  REC_ReadConfigInteger(net.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
+  REC_ReadConfigInteger(net.packet_mark, "proxy.config.net.sock_packet_mark_in");
+  REC_ReadConfigInteger(net.packet_tos, "proxy.config.net.sock_packet_tos_in");
+
   net.accept_threads = nthreads;
 
   net.f_inbound_transparent = port.m_inbound_transparent_p;
@@ -175,7 +180,6 @@ void
 start_HttpProxyServer(int accept_threads)
 {
   static bool called_once = false;
-  NetProcessor::AcceptOptions opt;
 
   ///////////////////////////////////
   // start accepting connections   //
@@ -183,12 +187,6 @@ start_HttpProxyServer(int accept_threads)
 
   ink_assert(!called_once);
 
-  opt.accept_threads = accept_threads;
-  REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
-  REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
-  REC_ReadConfigInteger(opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
-  REC_ReadConfigInteger(opt.packet_tos, "proxy.config.net.sock_packet_tos_in");
-  
   for ( int i = 0 , n = HttpProxyPort::global().length() ; i < n ; ++i ) {
     start_HttpProxyPort(HttpProxyPort::global()[i], accept_threads);
   }
