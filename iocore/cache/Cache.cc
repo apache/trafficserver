@@ -253,7 +253,7 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
     RecGetGlobalRawStatSum(rsb, (int) cache_bytes_total_stat, &total);
     percent_full = (float)used / (float)total * 100;
     // The perent_full float below gets rounded down
-    RecSetGlobalRawStatSum(rsb, (int) cache_percent_full_stat, percent_full);
+    RecSetGlobalRawStatSum(rsb, (int) cache_percent_full_stat, (int64_t) percent_full);
   }
 
   return 1;
