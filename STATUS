@@ -67,6 +67,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Patch: see ticket
   +1: jpeach, zwoop
 
+  Make it compile with certain versions of Clang. This also
+  backports some outright bugs that Clang finds.
+  Jira: https://issues.apache.org/jira/browse/TS-1910
+  Patches: see ticket for diff, selections from : b216afa3,
+           58205af1, dc3f8ffa, 81f9f418 and portions of a81681279.
+  +1: zwoop
+
 
 RELEASE PROCESS
 
