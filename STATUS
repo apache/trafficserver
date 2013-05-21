@@ -72,12 +72,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Jira: https://issues.apache.org/jira/browse/TS-1910
   Patches: see ticket for diff, selections from : b216afa3,
            58205af1, dc3f8ffa, 81f9f418 and portions of a81681279.
-  +1: zwoop
+  igalic says: The order here will be important so we don't mess up.. otherwise, +1
+  +1: zwoop, igalic
 
   SSL hangs after origin handshake
   Jira: https://issues.apache.org/jira/browse/TS-1912
   Patches: ca2c4833f8def0d130a3ab57cbd00b019d6de9c9
-  +1: jpeach
+  +1: jpeach, igalic
 
 
 RELEASE PROCESS
