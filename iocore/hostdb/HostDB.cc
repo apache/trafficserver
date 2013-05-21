@@ -37,11 +37,6 @@
 //#define Warning
 //#define Note
 
-//
-// Compilation Options
-//
-#define USE_MMH
-
 #include "ink_apidefs.h"
 
 HostDBProcessor hostDBProcessor;
@@ -545,19 +540,6 @@ HostDBContinuation::refresh_MD5() {
 void
 make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char const* pDNSServers, HostDBMark mark)
 {
-#ifdef USE_MMH
-  MMH_CTX ctx;
-  ink_code_incr_MMH_init(&ctx);
-  ink_code_incr_MMH_update(&ctx, hostname, len);
-  unsigned short p = port;
-  p = htons(p);
-  ink_code_incr_MMH_update(&ctx, (char *) &p, 2);
-  uint8_t m = static_cast<uint8_t>(mark);
-  ink_code_incr_MMH_update(&ctx, (char *) &m, sizeof(m));     /* FIXME: check this */
-  if (pDNSServers)
-    ink_code_incr_MMH_update(&ctx, pDNSServers, strlen(pDNSServers));
-  ink_code_incr_MMH_final((char *) &md5, &ctx);
-#else
   INK_DIGEST_CTX ctx;
   ink_code_incr_md5_init(&ctx);
   ink_code_incr_md5_update(&ctx, hostname, len);
@@ -569,9 +551,7 @@ make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char const* pDN
   if (pDNSServers)
     ink_code_incr_md5_update(&ctx, pDNSServers, strlen(pDNSServers));
   ink_code_incr_md5_final((char *) &md5, &ctx);
-#endif
 }
-
 
 static bool
 reply_to_cont(Continuation * cont, HostDBInfo * ar, bool is_srv = false)

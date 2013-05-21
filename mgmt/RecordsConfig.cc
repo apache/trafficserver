@@ -921,10 +921,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cache.vary_on_user_agent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  //  # 0 - MD5 hash
-  //  # 1 - MMH hash
-  {RECT_CONFIG, "proxy.config.cache.url_hash_method", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   //  # default the ram cache size to AUTO_SIZE (-1)
   //  # alternatively: 20971520 (20MB)
   {RECT_CONFIG, "proxy.config.cache.ram_cache.size", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
@@ -972,17 +968,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cache.mutex_retry_delay", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-
-  //##############################################################################
-  //  #
-  //  # UNIMPLEMENTED cache config
-  //  #
-  //
-  //# 0 - MD5 fingerprinting
-  //# 1 - MMH fingerprinting
-  //# 2 - No fingerprinting
-  //# UNIMPLEMENTED CONFIG proxy.config.cache.fingerprint_method INT 2
-  //# UNIMPLEMENTED: CONFIG proxy.config.cache.limits.http.quota FLOAT 1.0
 
   //##############################################################################
   //#

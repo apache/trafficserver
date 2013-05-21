@@ -134,8 +134,6 @@ libtsutil_la_SOURCES = \
   MatcherUtils.h \
   MimeTable.cc \
   MimeTable.h \
-  MMH.cc \
-  MMH.h \
   ParseRules.h \
   ParseRules.cc \
   Ptr.h \

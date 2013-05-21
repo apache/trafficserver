@@ -1521,8 +1521,8 @@ main(int argc, char **argv)
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_aio_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_cache_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_hostdb_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
+  ink_hostdb_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
+  ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   eventProcessor.start(num_of_net_threads);
 

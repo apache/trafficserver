@@ -101,7 +101,6 @@
 # define INK_NO_SOCKS                   1
 # define INK_NO_STAT_PAGES              1
 # define INK_USE_MUTEX_FOR_ATOMICLISTS  1
-# define USE_MD5_FOR_MMH                1
 #endif
 
 #define TS_MAX_THREADS_IN_EACH_THREAD_TYPE  @max_threads_per_type@

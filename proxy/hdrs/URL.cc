@@ -1541,22 +1541,17 @@ memcpy_tolower(char *d, const char *s, int n)
 
 #define BUFSIZE 512
 
-// fast path for MMH, HTTP, no user/password/params/query,
+// fast path for MD5, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
 
 static inline void
-url_MMH_get_fast(URLImpl * url, INK_MD5 * md5)
+url_MD5_get_fast(URLImpl * url, INK_MD5 * md5)
 {
-  union
-  {
-    INK_DIGEST_CTX md5_ctx;
-    MMH_CTX mmh_ctx;
-  } context;
-
+  INK_DIGEST_CTX md5_ctx;
   char buffer[BUFSIZE];
   char *p;
 
-  ink_code_incr_MMH_init(&context.mmh_ctx);
+  ink_code_incr_md5_init(&md5_ctx);
 
   p = buffer;
   memcpy_tolower(p, url->m_ptr_scheme, url->m_len_scheme);
@@ -1583,19 +1578,15 @@ url_MMH_get_fast(URLImpl * url, INK_MD5 * md5)
   *p++ = ((char *) &port)[0];
   *p++ = ((char *) &port)[1];
 
-  ink_code_incr_MMH_update(&context.mmh_ctx, buffer, p - buffer);
-  ink_code_incr_MMH_final((char *) md5, &context.mmh_ctx);
+  ink_code_incr_md5_update(&md5_ctx, buffer, p - buffer);
+  ink_code_incr_md5_final((char *) md5, &md5_ctx);
 }
 
 
 static inline void
 url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
 {
-  union
-  {
-    INK_DIGEST_CTX md5_ctx;
-    MMH_CTX mmh_ctx;
-  } context;
+  INK_DIGEST_CTX md5_ctx;
 
   char buffer[BUFSIZE];
   char *p, *e;
@@ -1636,11 +1627,7 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
   p = buffer;
   e = buffer + BUFSIZE;
 
-  if (url_hash_method == 0) {
-    ink_code_incr_md5_init(&context.md5_ctx);
-  } else {
-    ink_code_incr_MMH_init(&context.mmh_ctx);
-  }
+  ink_code_incr_md5_init(&md5_ctx);
 
   for (i = 0; i < 13; i++) {
     if (strs[i]) {
@@ -1655,11 +1642,7 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
         }
 
         if (p == e) {
-          if (url_hash_method == 0) {
-            ink_code_incr_md5_update(&context.md5_ctx, buffer, BUFSIZE);
-          } else {
-            ink_code_incr_MMH_update(&context.mmh_ctx, buffer, BUFSIZE);
-          }
+	  ink_code_incr_md5_update(&md5_ctx, buffer, BUFSIZE);
           p = buffer;
         }
       }
@@ -1667,22 +1650,13 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
   }
 
   if (p != buffer) {
-    if (url_hash_method == 0) {
-      ink_code_incr_md5_update(&context.md5_ctx, buffer, p - buffer);
-    } else {
-      ink_code_incr_MMH_update(&context.mmh_ctx, buffer, p - buffer);
-    }
+    ink_code_incr_md5_update(&md5_ctx, buffer, p - buffer);
   }
 
   port = url_canonicalize_port(url->m_url_type, url->m_port);
 
-  if (url_hash_method == 0) {
-    ink_code_incr_md5_update(&context.md5_ctx, (char *) &port, sizeof(port));
-    ink_code_incr_md5_final((char *) md5, &context.md5_ctx);
-  } else {
-    ink_code_incr_MMH_update(&context.mmh_ctx, (char *) &port, sizeof(port));
-    ink_code_incr_MMH_final((char *) md5, &context.mmh_ctx);
-  }
+  ink_code_incr_md5_update(&md5_ctx, (char *) &port, sizeof(port));
+  ink_code_incr_md5_final((char *) md5, &md5_ctx);
 }
 
 
@@ -1700,7 +1674,7 @@ url_MD5_get(URLImpl * url, INK_MD5 * md5)
        url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == NULL) &&
       (memchr(url->m_ptr_path, '%', url->m_len_path) == NULL)) {
-    url_MMH_get_fast(url, md5);
+    url_MD5_get_fast(url, md5);
 
 #ifdef DEBUG
     INK_MD5 md5_general;
@@ -1720,53 +1694,23 @@ url_MD5_get(URLImpl * url, INK_MD5 * md5)
 void
 url_host_MD5_get(URLImpl * url, INK_MD5 * md5)
 {
-  union
-  {
-    INK_DIGEST_CTX md5_ctx;
-    MMH_CTX mmh_ctx;
-  } context;
+  INK_DIGEST_CTX md5_ctx;
 
-  if (url_hash_method == 0) {
-    ink_code_incr_md5_init(&context.md5_ctx);
-  } else {
-    ink_code_incr_MMH_init(&context.mmh_ctx);
-  }
+  ink_code_incr_md5_init(&md5_ctx);
 
   if (url->m_ptr_scheme) {
-    if (url_hash_method == 0) {
-      ink_code_incr_md5_update(&context.md5_ctx, url->m_ptr_scheme, url->m_len_scheme);
-    } else {
-      ink_code_incr_MMH_update(&context.mmh_ctx, url->m_ptr_scheme, url->m_len_scheme);
-    }
+    ink_code_incr_md5_update(&md5_ctx, url->m_ptr_scheme, url->m_len_scheme);
   }
 
-  if (url_hash_method == 0) {
-    ink_code_incr_md5_update(&context.md5_ctx, "://", 3);
-  } else {
-    ink_code_incr_MMH_update(&context.mmh_ctx, "://", 3);
-  }
+  ink_code_incr_md5_update(&md5_ctx, "://", 3);
 
   if (url->m_ptr_host) {
-    if (url_hash_method == 0) {
-      ink_code_incr_md5_update(&context.md5_ctx, url->m_ptr_host, url->m_len_host);
-    } else {
-      ink_code_incr_MMH_update(&context.mmh_ctx, url->m_ptr_host, url->m_len_host);
-    }
+    ink_code_incr_md5_update(&md5_ctx, url->m_ptr_host, url->m_len_host);
   }
 
-  if (url_hash_method == 0) {
-    ink_code_incr_md5_update(&context.md5_ctx, ":", 1);
-  } else {
-    ink_code_incr_MMH_update(&context.mmh_ctx, ":", 1);
-  }
+  ink_code_incr_md5_update(&md5_ctx, ":", 1);
 
   int port = url_canonicalize_port(url->m_url_type, url->m_port);
-
-  if (url_hash_method == 0) {
-    ink_code_incr_md5_update(&context.md5_ctx, (char *) &port, sizeof(port));
-    ink_code_incr_md5_final((char *) md5, &context.md5_ctx);
-  } else {
-    ink_code_incr_MMH_update(&context.mmh_ctx, (char *) &port, sizeof(port));
-    ink_code_incr_MMH_final((char *) md5, &context.mmh_ctx);
-  }
+  ink_code_incr_md5_update(&md5_ctx, (char *) &port, sizeof(port));
+  ink_code_incr_md5_final((char *) md5, &md5_ctx);
 }

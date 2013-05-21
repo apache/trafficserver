@@ -2884,12 +2884,6 @@ ink_cache_init(ModuleVersion v)
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
 
 #ifdef HTTP_CACHE
-  extern int url_hash_method;
-
-  //  # 0 - MD5 hash
-  //  # 1 - MMH hash
-  REC_EstablishStaticConfigInt32(url_hash_method, "proxy.config.cache.url_hash_method");
-  Debug("cache_init", "proxy.config.cache.url_hash_method = %d", url_hash_method);
   REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
 #endif
 

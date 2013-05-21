@@ -143,10 +143,6 @@ extern int URL_LEN_MMS;
 extern int URL_LEN_MMSU;
 extern int URL_LEN_MMST;
 
-/* 0 = INK_MD5, 1 = MMH */
-extern int url_hash_method;
-
-
 /* Private */
 void url_adjust(MarshalXlate *str_xlate, int num_xlate);
 

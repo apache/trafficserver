@@ -172,7 +172,7 @@ inline void
 HttpServerSession::attach_hostname(const char *hostname)
 {
   if (!host_hash_computed) {
-    ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
+    ink_code_md5((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
     host_hash_computed = true;
   }
 }

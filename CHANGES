@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1925] Remove obsolete MMH hash API.
+
   *) [TS-1924] Add metalink plugin documentation.
     Author: Jack Bates <jack@nottheoilrig.com>
 

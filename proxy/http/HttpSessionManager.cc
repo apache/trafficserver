@@ -217,7 +217,7 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   NOWARN_UNUSED(cont);
   HttpServerSession *to_return = NULL;
 
-  //  We compute the mmh for matching the hostname as the last
+  //  We compute the hash for matching the hostname as the last
   //  check for a match between the session the HttpSM is looking
   //  for and the sessions we have. We have to use the hostname
   //  as part of the match because some stupid servers can't
@@ -228,7 +228,8 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   //  to server affinity so that we don't break certain types
   //  of authentication.
   INK_MD5 hostname_hash;
-  bool hash_computed = false;
+
+  ink_code_md5((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
 
   // First check to see if there is a server session bound
   //   to the user agent session
@@ -237,13 +238,7 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
     ua_session->attach_server_session(NULL);
 
     if (ats_ip_addr_eq(&to_return->server_ip.sa, ip) &&
-      ats_ip_port_cast(&to_return->server_ip) == ats_ip_port_cast(ip)
-    ) {
-      if (!hash_computed) {
-        ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
-        hash_computed = true;
-      }
-
+	ats_ip_port_cast(&to_return->server_ip) == ats_ip_port_cast(ip)) {
       if (hostname_hash == to_return->hostname_hash) {
         Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
         to_return->state = HSS_ACTIVE;
@@ -264,10 +259,6 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   EThread *ethread = this_ethread();
 
   ink_assert(l1_index < HSM_LEVEL1_BUCKETS);
-
-  // Will need the hash for this lookup for sure.
-  if (!hash_computed)
-    ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
 
   if (2 == sm->t_state.txn_conf->share_server_sessions) {
     ink_assert(ethread->l1_hash);
