@@ -235,10 +235,6 @@ Server::setup_fd_for_listen(
     goto Lerror;
   }
 
-  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
-    goto Lerror;
-  }
-
 #ifdef SET_TCP_NO_DELAY
   if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
@@ -313,6 +309,10 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
 
   res = setup_fd_for_listen(non_blocking, recv_bufsize, send_bufsize, transparent);
   if (res < 0) {
+    goto Lerror;
+  }
+
+  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
     goto Lerror;
   }
 
