@@ -20,7 +20,6 @@
 if STANDALONE_IOCORE
 noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
-noinst_PROGRAMS =
 else
 SUBDIRS = congest http logging config
 noinst_LIBRARIES =
@@ -31,9 +30,13 @@ bin_PROGRAMS = \
   traffic_sac
 endif
 
+noinst_PROGRAMS = \
+  test_xml_parser
+
 TESTS = \
   tests/test_logstats_json \
-  tests/test_logstats_summary
+  tests/test_logstats_summary \
+  test_xml_parser
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -54,9 +57,6 @@ AM_CPPFLAGS = \
 noinst_HEADERS = \
   ConfigParse.h \
   Show.h
-
-EXTRA_PROGRAMS = \
-  test_xml_parser
 
 EXTRA_LIBRARIES	= \
   libTrafficServerStandalone.a
@@ -279,7 +279,14 @@ libTrafficServerStandalone_a_SOURCES = \
   AbstractBuffer.cc \
   Initialize.cc
 
-test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc
+test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc
+test_xml_parser_LDADD = \
+  $(top_builddir)/lib/records/librecprocess.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBTCL@
 
 versiondir = $(pkgsysconfdir)
 

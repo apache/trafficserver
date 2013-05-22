@@ -34,7 +34,7 @@
   InkXmlAttr
   -------------------------------------------------------------------------*/
 
-InkXmlAttr::InkXmlAttr(char *tag, char *value)
+InkXmlAttr::InkXmlAttr(const char *tag, const char *value)
 {
   m_tag = ats_strdup(tag);
   m_value = ats_strdup(value);
@@ -56,7 +56,7 @@ InkXmlAttr::display(FILE * fd)
   InkXmlObject
   -------------------------------------------------------------------------*/
 
-InkXmlObject::InkXmlObject(char *object_name, bool dup_attrs_allowed)
+InkXmlObject::InkXmlObject(const char *object_name, bool dup_attrs_allowed)
 {
   m_object_name = ats_strdup(object_name);
   m_dup_attrs_allowed = dup_attrs_allowed;
@@ -78,7 +78,7 @@ InkXmlObject::clear_tags()
 }
 
 int
-InkXmlObject::add_tag(char *tag, char *value)
+InkXmlObject::add_tag(const char *tag, const char *value)
 {
   ink_assert(tag != NULL);
   ink_assert(value != NULL);
@@ -105,7 +105,7 @@ InkXmlObject::add_attr(InkXmlAttr * attr)
 }
 
 char *
-InkXmlObject::tag_value(char *tag_name)
+InkXmlObject::tag_value(const char *tag_name)
 {
   ink_assert(tag_name != NULL);
 
@@ -130,7 +130,7 @@ InkXmlObject::display(FILE * fd)
   InkXmlConfigFile
   -------------------------------------------------------------------------*/
 
-InkXmlConfigFile::InkXmlConfigFile(char *config_file):
+InkXmlConfigFile::InkXmlConfigFile(const char *config_file):
 m_line(0),
 m_col(0)
 {
@@ -199,7 +199,7 @@ InkXmlConfigFile::parse()
 }
 
 InkXmlObject *
-InkXmlConfigFile::find_object(char *object_name)
+InkXmlConfigFile::find_object(const char *object_name)
 {
   for (InkXmlObject * obj = first(); obj; obj = next(obj)) {
     if (!strcmp(object_name, obj->object_name())) {
@@ -305,12 +305,13 @@ InkXmlConfigFile::scan_object(int fd, char token)
   }
 
   ident[ident_len] = 0;
-  InkXmlObject *obj = new InkXmlObject(ident);
+  InkXmlObject *obj = NEW(new InkXmlObject(ident));
   ink_assert(obj != NULL);
 
   InkXmlAttr *attr;
   while ((attr = scan_attr(fd, ident)) != NULL) {
     if (attr == BAD_ATTR) {
+      delete obj;
       return parse_error();
     }
     obj->add_attr(attr);
@@ -320,7 +321,7 @@ InkXmlConfigFile::scan_object(int fd, char token)
 }
 
 InkXmlAttr *
-InkXmlConfigFile::scan_attr(int fd, char *id)
+InkXmlConfigFile::scan_attr(int fd, const char *id)
 {
   // this routine is called after the object identifier has been scannedm
   // and should attempt to scan for the next attribute set.  When we see
@@ -411,7 +412,7 @@ InkXmlConfigFile::scan_attr(int fd, char *id)
       if (next != '>')
         return BAD_ATTR;
       write_to[write_len] = 0;
-      attr = new InkXmlAttr(name, value);
+      attr = NEW(new InkXmlAttr(name, value));
       ink_assert(attr != NULL);
       return attr;
 

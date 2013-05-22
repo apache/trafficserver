@@ -44,14 +44,14 @@
 class InkXmlAttr
 {
 public:
-  InkXmlAttr(char *tag, char *value);
-   ~InkXmlAttr();
+  InkXmlAttr(const char *tag, const char *value);
+  ~InkXmlAttr();
 
-  char *tag()
+  char *tag() const
   {
     return m_tag;
   }
-  char *value()
+  char *value() const
   {
     return m_value;
   }
@@ -80,24 +80,24 @@ private:
 class InkXmlObject
 {
 public:
-  InkXmlObject(char *object_name, bool dup_attrs_allowed = true);
-   ~InkXmlObject();
+  InkXmlObject(const char *object_name, bool dup_attrs_allowed = true);
+  ~InkXmlObject();
 
   void clear_tags();
-  int add_tag(char *tag, char *value);
+  int add_tag(const char *tag, const char *value);
   int add_attr(InkXmlAttr * attr);
-  char *tag_value(char *tag_name);
+  char *tag_value(const char *tag_name);
   void display(FILE * fd = stdout);
 
-  char *object_name()
+  char *object_name() const
   {
     return m_object_name;
   }
-  InkXmlAttr *first()
+  InkXmlAttr *first() const
   {
     return m_tags.head;
   }
-  InkXmlAttr *next(InkXmlAttr * here)
+  InkXmlAttr *next(InkXmlAttr * here) const
   {
     return (here->link).next;
   }
@@ -131,8 +131,8 @@ class InkXmlConfigFile
 {
 
 public:
-  InkXmlConfigFile(char *config_file);
-   ~InkXmlConfigFile();
+  InkXmlConfigFile(const char *config_file);
+  ~InkXmlConfigFile();
 
   void clear_objects();
   /*                                                                     */
@@ -140,7 +140,7 @@ public:
   /*                                                                     */
   int parse();
   void add_object(InkXmlObject * object);
-  InkXmlObject *find_object(char *object_name);
+  InkXmlObject *find_object(const char *object_name);
   void display(FILE * fd = stdout);
 
   InkXmlObject *first()
@@ -156,7 +156,7 @@ private:
   InkXmlObject * get_next_xml_object(int fd);
   InkXmlObject *parse_error();
   InkXmlObject *scan_object(int fd, char token);
-  InkXmlAttr *scan_attr(int fd, char *ident);
+  InkXmlAttr *scan_attr(int fd, const char *ident);
   char next_token(int fd, bool eat_whitespace = true);
   char scan_comment(int fd);
 
@@ -187,7 +187,7 @@ private:
   };
 
 public:
-NameList():m_count(0) {
+  NameList():m_count(0) {
   }
   ~NameList() {
     clear();
