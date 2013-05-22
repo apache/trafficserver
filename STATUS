@@ -42,11 +42,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  Hardcoded FD_SET of 32 is too small.
-  Jira: https://issues.apache.org/jira/browse/TS-1483
-  Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057
-  +1: igalic, zwoop, jpeach, arno
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
