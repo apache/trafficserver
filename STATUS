@@ -42,10 +42,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  SSL hangs after origin handshake
-  Jira: https://issues.apache.org/jira/browse/TS-1918
-  Patches: ca2c4833f8def0d130a3ab57cbd00b019d6de9c9
-  +1: jpeach, igalic, zwoop
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
