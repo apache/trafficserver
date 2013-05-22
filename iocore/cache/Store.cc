@@ -28,10 +28,11 @@
 // Global
 Store theStore;
 
-int Store::getVolume(char* line) {
+#define VOL_STR "volume="
+int getVolume(char* line) {
   int v = 0;
   if(!line) return 0;
-  char* str = strstr(line, vol_str);
+  char* str = strstr(line, VOL_STR);
   char* vol_start = str;
   if(!str) return 0;
   while (*str && !ParseRules::is_digit(*str))

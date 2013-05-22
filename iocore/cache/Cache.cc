@@ -2329,10 +2329,10 @@ cplist_update()
 {
   /* go through cplist and delete volumes that are not in the volume.config */
   CacheVol *cp = cp_list.head;
-  ConfigVol *config_vol;
 
   while (cp) {
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    ConfigVol *config_vol = config_volumes.cp_queue.head;
+    for (; config_vol; config_vol = config_vol->link.next) {
       if (config_vol->number == cp->vol_number) {
         off_t size_in_blocks = config_vol->size << (20 - STORE_BLOCK_SHIFT);
         if ((cp->size <= size_in_blocks) && (cp->scheme == config_vol->scheme)) {
@@ -2377,7 +2377,7 @@ cplist_update()
   }
 }
 
-static int fillExclusiveDisks(CacheVol *cp) {
+int fillExclusiveDisks(CacheVol *cp) {
   int diskCount = 0;
   int volume_number = cp->vol_number;
   Debug("cache_init", "volume %d", volume_number);
@@ -2423,7 +2423,6 @@ cplist_reconfigure()
   int64_t size;
   int volume_number;
   off_t size_in_blocks;
-  ConfigVol *config_vol;
 
   gnvol = 0;
   if (config_volumes.num_volumes == 0) {
@@ -2481,7 +2480,8 @@ cplist_reconfigure()
       tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
 
     double percent_remaining = 100.00;
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    ConfigVol *config_vol = config_volumes.cp_queue.head;
+    for (; config_vol; config_vol = config_vol->link.next) {
       if (config_vol->in_percent) {
         if (config_vol->percent > percent_remaining) {
           Warning("total volume sizes added up to more than 100%%!");
@@ -2507,7 +2507,8 @@ cplist_reconfigure()
     cplist_update();
     /* go through volume config and grow and create volumes */
 
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    config_vol = config_volumes.cp_queue.head;
+    for (; config_vol; config_vol = config_vol->link.next) {
       // if volume is given exclusive disks, fill here and continue
       volume_number = config_vol->number;
       if (!config_vol->cachep) {
@@ -2516,7 +2517,8 @@ cplist_reconfigure()
       fillExclusiveDisks(config_vol->cachep);
     }
 
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    config_vol = config_volumes.cp_queue.head;
+    for (; config_vol; config_vol = config_vol->link.next) {
 
       size = config_vol->size;
       if (size < 128)
