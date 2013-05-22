@@ -206,17 +206,6 @@ check_lockfile(const char *config_dir, const char *pgm_name)
 }
 
 /*-------------------------------------------------------------------------
-  syslog_thr_init
-
-  For the DEC alpha, the syslog call must be made for each thread.
-  -------------------------------------------------------------------------*/
-
-void
-syslog_thr_init()
-{
-}
-
-/*-------------------------------------------------------------------------
   init_log_standalone
 
   This routine should be called from the main() function of the standalone

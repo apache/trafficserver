@@ -1046,19 +1046,6 @@ syslog_log_configure()
   ats_free(facility_str);
 }
 
-// void syslog_thr_init()
-//
-//   On the alpha, each thread must set its own syslog
-//     parameters.  This function is to be called by
-//     each thread at start up.  It inits syslog
-//     with stored facility information from system
-//     startup
-//
-void
-syslog_thr_init()
-{
-}
-
 static void
 check_system_constants()
 {

@@ -34,10 +34,6 @@ Diags *diags;
 int diags_init = 0;
 #define DIAGS_LOG_FILE "diags.log"
 
-void syslog_thr_init(void)
-{
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void reconfigure_diags()

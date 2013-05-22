@@ -38,8 +38,6 @@
  */
 inkcoreapi ProcessManager *pmgmt = NULL;
 
-void syslog_thr_init();
-
 /*
  * startProcessManager(...)
  *   The start function and thread loop for the process manager.
@@ -48,9 +46,6 @@ void *
 startProcessManager(void *arg)
 {
   void *ret = arg;
-
-
-  syslog_thr_init();
 
   while (!pmgmt) {              /* Avert race condition, thread spun during constructor */
     Debug("pmgmt", "[startProcessManager] Waiting for initialization of object...\n");

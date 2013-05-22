@@ -29,12 +29,6 @@ Diags *diags = NULL;
 
 void RecDumpRecordsHt(RecT rec_type);
 
-void
-syslog_thr_init()
-{
-  openlog("test_I_RecProcess", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_USER);
-}
-
 //-------------------------------------------------------------------------
 // Test01: Parse Tests
 //
