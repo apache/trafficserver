@@ -47,8 +47,10 @@ struct InactivityCop : public Continuation {
     ink_hrtime now = ink_get_hrtime();
     NetHandler *nh = get_NetHandler(this_ethread());
     // Copy the list and use pop() to catch any closes caused by callbacks.
-    forl_LL(UnixNetVConnection, vc, nh->open_list)
-      nh->cop_list.push(vc);
+    forl_LL(UnixNetVConnection, vc, nh->open_list) {
+      if (vc->thread == this_ethread())
+        nh->cop_list.push(vc);
+    }
     while (UnixNetVConnection *vc = nh->cop_list.pop()) {
       // If we cannot ge tthe lock don't stop just keep cleaning
       MUTEX_TRY_LOCK(lock, vc->mutex, this_ethread());

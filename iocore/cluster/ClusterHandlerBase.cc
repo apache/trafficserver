@@ -33,6 +33,7 @@ extern int cluster_send_buffer_size;
 extern uint32_t cluster_sockopt_flags;
 extern uint32_t cluster_packet_mark;
 extern uint32_t cluster_packet_tos;
+extern int num_of_cluster_threads;
 
 
 ///////////////////////////////////////////////////////////////
@@ -1028,31 +1029,45 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         machine->msg_proto_major = proto_major;
         machine->msg_proto_minor = proto_minor;
 
-        thread = eventProcessor.eventthread[ET_CLUSTER][id % eventProcessor.n_threads_for_type[ET_CLUSTER]];
+        if (eventProcessor.n_threads_for_type[ET_CLUSTER] != num_of_cluster_threads) {
+          cluster_connect_state = ClusterHandler::CLCON_ABORT_CONNECT;
+          break;
+        }
+
+        thread = eventProcessor.eventthread[ET_CLUSTER][id % num_of_cluster_threads];
         if (net_vc->thread == thread) {
           cluster_connect_state = CLCON_CONN_BIND_OK;
           break;
         } else { 
           cluster_connect_state = ClusterHandler::CLCON_CONN_BIND_CLEAR;
-          thread->schedule_in(this, CLUSTER_PERIOD);
-          return EVENT_DONE;
         }
       }
 
     case ClusterHandler::CLCON_CONN_BIND_CLEAR:
       {
-        //
         UnixNetVConnection *vc = (UnixNetVConnection *)net_vc; 
         MUTEX_TRY_LOCK(lock, vc->nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
         if (lock && lock1) {
           vc->ep.stop();
           vc->nh->open_list.remove(vc);
-          vc->nh = NULL;
           vc->thread = NULL;
+          if (vc->nh->read_ready_list.in(vc))
+            vc->nh->read_ready_list.remove(vc);
+          if (vc->nh->write_ready_list.in(vc))
+            vc->nh->write_ready_list.remove(vc);
+          if (vc->read.in_enabled_list)
+            vc->nh->read_enable_list.remove(vc);
+          if (vc->write.in_enabled_list)
+            vc->nh->write_enable_list.remove(vc);
+
+          // CLCON_CONN_BIND handle in bind vc->thread (bind thread nh)
           cluster_connect_state = ClusterHandler::CLCON_CONN_BIND;
-        } else {
           thread->schedule_in(this, CLUSTER_PERIOD);
+          return EVENT_DONE;
+        } else {
+          // CLCON_CONN_BIND_CLEAR handle in origin vc->thread (origin thread nh)
+          vc->thread->schedule_in(this, CLUSTER_PERIOD);
           return EVENT_DONE;
         }
       }
@@ -1065,14 +1080,21 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         MUTEX_TRY_LOCK(lock, nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
         if (lock && lock1) {
+          if (vc->read.in_enabled_list)
+            nh->read_enable_list.push(vc);
+          if (vc->write.in_enabled_list)
+            nh->write_enable_list.push(vc);
+
           vc->nh = nh;
-          vc->nh->open_list.enqueue(vc);
           vc->thread = e->ethread;
           PollDescriptor *pd = get_PollDescriptor(e->ethread);
           if (vc->ep.start(pd, vc, EVENTIO_READ|EVENTIO_WRITE) < 0) {
             cluster_connect_state = ClusterHandler::CLCON_DELETE_CONNECT;
             break;                // goto next state
           }
+
+          nh->open_list.enqueue(vc);
+          cluster_connect_state = ClusterHandler::CLCON_CONN_BIND_OK;
         } else {
           thread->schedule_in(this, CLUSTER_PERIOD);
           return EVENT_DONE;
@@ -1116,7 +1138,7 @@ failed:
         if (failed) {
           if (failed == -1) {
             if (++configLookupFails <= CONFIG_LOOKUP_RETRIES) {
-              eventProcessor.schedule_in(this, HRTIME_SECONDS(1), ET_CLUSTER);
+              thread->schedule_in(this, CLUSTER_PERIOD);
               return EVENT_DONE;
             }
           }
