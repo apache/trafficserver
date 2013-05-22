@@ -42,11 +42,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  Fix FreeBSD block calculation (both RAW and directory)
-  Jira: https://issues.apache.org/jira/browse/TS-1784
-  Patch: 5566ac76d6c4e4f5154421f1ac1077487b02d332
-  +1: igalic, zwoop [I double checked with John too], jpeach
-
   Hardcoded FD_SET of 32 is too small.
   Jira: https://issues.apache.org/jira/browse/TS-1483
   Patch: b76cae726e57acbd8254ae7a2c4832d3fcf8d057

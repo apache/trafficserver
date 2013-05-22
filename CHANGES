@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.5
 
+  *) [TS-1784] Fix FreeBSD block calculation (both RAW and directory)
 
   *) [TS-1905] TS hangs (dead lock) on HTTPS POST/PROPFIND requests.
 
