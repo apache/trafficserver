@@ -247,6 +247,7 @@ SSLCertLookup::buildTable()
           addr = NULL;
           sslCert = NULL;
           priKey = NULL;
+          sslCa = NULL;
         }
       }                         // else
     }                           // if(*line != '\0' && *line != '#')

@@ -42,11 +42,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  Crash when using ssl_ca_name
-  Jira: https://issues.apache.org/jira/browse/TS-1779
-  Patch: https://issues.apache.org/jira/secure/attachment/12584296/TS-1779.patch
-  +1: jpeach, zwoop, igalic
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
