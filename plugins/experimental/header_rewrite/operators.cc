@@ -212,7 +212,7 @@ OperatorSetDestination::exec(const Resources& res) const
         TSDebug(PLUGIN_NAME, "Would set destination PATH to an empty value, skipping");
       } else {
         const_cast<Resources&>(res).changed_url = true;
-        TSUrlHostSet(res._rri->requestBufp, res._rri->requestUrl, value.c_str(), value.size());
+        TSUrlPathSet(res._rri->requestBufp, res._rri->requestUrl, value.c_str(), value.size());
         TSDebug(PLUGIN_NAME, "OperatorSetHost::exec() invoked with PATH: %s", value.c_str());
       }
       break;
