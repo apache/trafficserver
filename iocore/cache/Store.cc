@@ -28,11 +28,10 @@
 // Global
 Store theStore;
 
-#define VOL_STR "volume="
-int getVolume(char* line) {
+int Store::getVolume(char* line) {
   int v = 0;
   if(!line) return 0;
-  char* str = strstr(line, VOL_STR);
+  char* str = strstr(line, vol_str);
   char* vol_start = str;
   if(!str) return 0;
   while (*str && !ParseRules::is_digit(*str))
@@ -58,7 +57,7 @@ int getVolume(char* line) {
 // Store
 //
 Ptr<ProxyMutex> tmp_p;
-Store::Store():n_disks(0), disk(NULL)
+Store::Store():n_disks(0), disk(NULL), vol_str("volume=")
 {
 }
 

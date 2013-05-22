@@ -176,6 +176,9 @@ struct Store
   //
   const char *read_config(int fd = -1);
   int write_config_data(int fd);
+private:
+  char const * const vol_str;
+  int getVolume(char* line);
 };
 
 extern Store theStore;
