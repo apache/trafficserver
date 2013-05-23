@@ -180,7 +180,7 @@ mmap_align(size_t size, size_t alignment) {
   }
   void* result = mmap(NULL, size + extra,
                       PROT_READ|PROT_WRITE,
-                      MAP_PRIVATE|MAP_ANONYMOUS,
+                      MAP_PRIVATE|MAP_ANON,
                       -1, 0);
   if (result == MAP_FAILED) {
     ink_stack_trace_dump();
