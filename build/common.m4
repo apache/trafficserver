@@ -529,21 +529,6 @@ do
 done
 ])
 
-dnl TS_FLAG_FUNCS(FUNC ... )
-dnl
-AC_DEFUN([TS_FLAG_FUNCS], [
-AC_CHECK_FUNCS($1)
-for tsc_j in $1
-do
-    tsc_3="has_$tsc_j"
-    if eval "test \"`echo '$ac_cv_func_'$tsc_j`\" = yes"; then
-       eval "$tsc_3=1"
-    else
-       eval "$tsc_3=0"
-    fi
-done
-])
-
 dnl
 dnl Support macro for AC_ARG_ENABLE
 dnl Arguments:

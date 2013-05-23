@@ -1056,27 +1056,17 @@ if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
 
-TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate])
-TS_FLAG_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
-
-AC_SUBST(has_clock_gettime)
-AC_SUBST(has_posix_memalign)
-AC_SUBST(has_posix_fadvise)
-AC_SUBST(has_posix_madvise)
-AC_SUBST(has_posix_fallocate)
-AC_SUBST(has_lrand48_r)
-AC_SUBST(has_srand48_r)
-AC_SUBST(has_strlcpy)
-AC_SUBST(has_strlcat)
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate])
+AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
-TS_FLAG_HEADERS([sys/eventfd.h], [has_eventfd=1], [has_eventfd=0], [])
-if test "x${has_eventfd}" = "xyes"; then
-  AS_IF([test "x$enable_eventfd" = "xyes"],
-    [TS_FLAG_FUNCS([eventfd])]
-  )
-fi
-AC_SUBST(has_eventfd)
+TS_FLAG_HEADERS([sys/eventfd.h], [
+  AS_IF([test "x$enable_eventfd" = "xyes"], [
+    AC_CHECK_FUNCS([eventfd])
+  ]
+)])
+
+AC_CHECK_FUNCS(has_eventfd)
 
 #
 # Check for pcre library
