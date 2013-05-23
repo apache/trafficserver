@@ -32,4 +32,4 @@ void start_HttpProxyServer(int accept_threads = 0);
 
 void start_HttpProxyServerBackDoor(int port, int accept_threads = 0);
 
-bool start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads);
+NetProcessor::AcceptOptions make_net_accept_options(const HttpProxyPort& port, unsigned nthreads);

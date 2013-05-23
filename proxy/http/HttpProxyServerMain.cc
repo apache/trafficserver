@@ -114,27 +114,16 @@ init_HttpProxyServer(void)
 #endif
 }
 
-bool
-start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
+NetProcessor::AcceptOptions
+make_net_accept_options(const HttpProxyPort& port, unsigned nthreads)
 {
   NetProcessor::AcceptOptions net;
-  HttpAccept::Options         http;
-
-  REC_ReadConfigInteger(net.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
-  REC_ReadConfigInteger(net.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
-  REC_ReadConfigInteger(net.packet_mark, "proxy.config.net.sock_packet_mark_in");
-  REC_ReadConfigInteger(net.packet_tos, "proxy.config.net.sock_packet_tos_in");
 
   net.accept_threads = nthreads;
 
   net.f_inbound_transparent = port.m_inbound_transparent_p;
   net.ip_family = port.m_family;
   net.local_port = port.m_port;
-
-  http.f_outbound_transparent = port.m_outbound_transparent_p;
-  http.transport_type = port.m_type;
-  http.setHostResPreference(port.m_host_res_preference);
-  http.setTransparentPassthrough(port.m_transparent_passthrough);
 
   if (port.m_inbound_ip.isValid()) {
     net.local_ip = port.m_inbound_ip;
@@ -143,6 +132,25 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
   } else if (AF_INET == port.m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
     net.local_ip = HttpConfig::m_master.inbound_ip4;
   }
+
+  return net;
+}
+
+static bool
+start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
+{
+  NetProcessor::AcceptOptions net(make_net_accept_options(port, nthreads));
+  HttpAccept::Options         http;
+
+  REC_ReadConfigInteger(net.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
+  REC_ReadConfigInteger(net.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
+  REC_ReadConfigInteger(net.packet_mark, "proxy.config.net.sock_packet_mark_in");
+  REC_ReadConfigInteger(net.packet_tos, "proxy.config.net.sock_packet_tos_in");
+
+  http.f_outbound_transparent = port.m_outbound_transparent_p;
+  http.transport_type = port.m_type;
+  http.setHostResPreference(port.m_host_res_preference);
+  http.setTransparentPassthrough(port.m_transparent_passthrough);
 
   if (port.m_outbound_ip4.isValid()) {
     http.outbound_ip4 = port.m_outbound_ip4;
@@ -161,11 +169,6 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
     SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(accept));
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, accept);
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, accept);
-
-#ifndef TS_NO_API
-    ink_scoped_mutex lock(ssl_plugin_mutex);
-    ssl_plugin_acceptors.push(ssl);
-#endif
 
     return sslNetProcessor.main_accept(ssl, port.m_fd, net) != NULL;
   } else {

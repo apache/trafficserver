@@ -8155,10 +8155,19 @@ TSPortDescriptorParse(const char * descriptor)
 }
 
 TSReturnCode
-TSPortDescriptorAccept(TSPortDescriptor descp, TSCont /* contp ATS_UNUSED */)
+TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
+  Action * action;
   HttpProxyPort * port = (HttpProxyPort *)descp;
-  return start_HttpProxyPort(*port, 0 /* nthreads */) ? TS_SUCCESS : TS_ERROR;
+  NetProcessor::AcceptOptions net(make_net_accept_options(*port, 0 /* nthreads */));
+
+  if (port->isSSL()) {
+    action = sslNetProcessor.main_accept((INKContInternal *)contp, port->m_fd, net);
+  } else {
+    action = netProcessor.main_accept((INKContInternal *)contp, port->m_fd, net);
+  }
+
+  return action ? TS_SUCCESS : TS_ERROR;
 }
 
 int

@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1825] TSPortDescriptorAccept does not use it's argument.
+
   *) [TS-1925] Remove obsolete MMH hash API.
 
   *) [TS-1924] Add metalink plugin documentation.
