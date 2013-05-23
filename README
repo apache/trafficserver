@@ -129,16 +129,16 @@ plugins to build large scale web applications.
     devel/hwloc (optional)
     lang/lua (optional, on x64 don't use LuaJIT!)
 
-  OpenSolaris osol0906:
-    GCC 4.3.2 compiler suite (dev collection)
-    autoconf
-    automake
-    pkgconfig
-    libtool
-    tcl
-    expat
-    openssl
-    pcre
+  OmniOS:
+    developer/gcc46
+    developer/build/gnu-make
+    developer/build/autoconf
+    developer/build/automake-111
+    developer/build/libtool
+    omniti/runtime/tcl-8
+    library/expat
+    library/security/openssl
+    library/pcre
 
   OSX 10.5:
     GCC 4.2.4 compiler suite (ports collection)
