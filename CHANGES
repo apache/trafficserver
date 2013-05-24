@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1913] Fix memory issue caused by resolve_logfield_string()
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-1915]  header_rewrite uses TSUrlHostSet() when using set-destination
    PATH. Author: Nick Berry.
 
