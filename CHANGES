@@ -1,9 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.5
 
-  *) [TS-1918] SSL hangs after origin handshake.
+  *) [TS-1923] Fix memory issue caused by resolve_logfield_string()
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  *) [TS-1779] Crash when using ssl_ca_name
+  *) [TS-1918] SSL hangs after origin handshake.
 
   *) [TS-1483] Manager uses hardcoded FD limit causing restarts
    forever on traffic_server.

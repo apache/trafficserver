@@ -1418,7 +1418,12 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
                                                             8191, LogUtils::timestamp(), 0,
                                                             LOG_SEGMENT_VERSION);
   ink_assert(bytes_resolved < 8192);
-  result[bytes_resolved] = 0; // NULL terminate
+
+  if (!bytes_resolved) {
+    ats_free(result);
+    result = NULL;
+  } else
+    result[bytes_resolved] = 0; // NULL terminate
 
   ats_free(printf_str);
   ats_free(fields_str);

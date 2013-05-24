@@ -42,11 +42,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  Fix crash in resolve_logfield_string()
-  Jira: https://issues.apache.org/jira/browse/TS-1923
-  Patches: a729aa63fcc7e7b5dcb8a19427067a8a20d4ed74
-  +1: igalic, sorber, zwoop
-
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
