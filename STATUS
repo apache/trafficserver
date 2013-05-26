@@ -60,6 +60,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   igalic says: The order here will be important so we don't mess up.. otherwise, +1
   +1: zwoop, igalic
 
+  Fix crash in resolve_logfield_string()
+  Jira: https://issues.apache.org/jira/browse/TS-1923
+  Patches: a729aa63fcc7e7b5dcb8a19427067a8a20d4ed74
+
+
 
 RELEASE PROCESS
 
