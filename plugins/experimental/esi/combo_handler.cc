@@ -28,6 +28,7 @@
 
 #include "ts/ts.h"
 #include "ts/experimental.h"
+#include "ts/remap.h"
 #include "ink_defs.h"
 
 #include "HttpDataFetcherImpl.h"
@@ -39,6 +40,10 @@ using namespace EsiLib;
 
 #define DEBUG_TAG "combo_handler"
 
+#define MAX_FILE_COUNT 30
+#define MAX_QUERY_LENGTH 3000
+
+int arg_idx;
 static string SIG_KEY_NAME;
 
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
@@ -61,7 +66,7 @@ struct ClientRequest {
   const sockaddr *client_addr;
   StringList file_urls;
   bool gzip_accepted;
-  string defaultBucket;	//default Bucket is set to l
+  string defaultBucket; // default Bucket will be set to HOST header
   ClientRequest()
     : status(TS_HTTP_STATUS_OK), client_addr(NULL), gzip_accepted(false), defaultBucket("l") { };
 };
@@ -217,19 +222,49 @@ TSPluginInit(int argc, const char *argv[])
     LOG_ERROR("Could not create read request header continuation");
     return;
   }
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, rrh_contp);
+
+  TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, rrh_contp);
+
+  if (TSHttpArgIndexReserve(DEBUG_TAG, "will save plugin-enable flag here", &arg_idx) != TS_SUCCESS) {
+    LOG_ERROR("failed to reserve private data slot");
+    return;
+  } else {
+    LOG_DEBUG("arg_idx: %d", arg_idx);
+  }
 
   Utils::init(&TSDebug, &TSError);
   LOG_DEBUG("Plugin started");
 }
 
+/*
+  Handle TS_EVENT_HTTP_OS_DNS event after TS_EVENT_HTTP_POST_REMAP and
+  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE in order to make this plugin
+  "per-remap configurable", that is, we enable combo for specific channels,
+  and disable for other channels.
+
+  In yahoo's original code, this function handle TS_EVENT_HTTP_READ_REQUEST_HDR.
+  Because TS_EVENT_HTTP_READ_REQUEST_HDR is before TSRemapDoRemap, we can not
+  read "plugin_enable" flag in the READ_REQUEST_HDR event.
+*/
 static int
 handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
-  TSAssert(event == TS_EVENT_HTTP_READ_REQUEST_HDR);
-
-  LOG_DEBUG("handling read request header event...");
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+
+  if (event != TS_EVENT_HTTP_OS_DNS) {
+    LOG_ERROR("unknown event for this plugin %d", event);
+    return 0;
+  }
+
+  if (1 != reinterpret_cast<intptr_t>(TSHttpTxnArgGet(txnp, arg_idx))) {
+    LOG_DEBUG("combo is disabled for this channel");
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    return 0;
+  }
+  
+  LOG_DEBUG("combo is enabled for this channel");
+  LOG_DEBUG("handling TS_EVENT_HTTP_OS_DNS event...");
+
   TSEvent reenable_to_event = TS_EVENT_HTTP_CONTINUE;
   TSMBuffer bufp;
   TSMLoc hdr_loc;
@@ -321,6 +356,10 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
   }
 
   LOG_DEBUG("host: %.*s", host_len, host);
+  creq.defaultBucket = string(host, host_len);
+  defaultBucketFound = true;
+
+  /*
   for(int i = 0 ; i < host_len; i++)
     {
       if (host[i] == '.')
@@ -330,6 +369,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
           break;
         }
     }
+  */
 
   TSHandleMLocRelease (bufp, hdr_obj, field_loc);
 
@@ -345,12 +385,19 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
 
   if (!query) {
     LOG_ERROR("Could not get query from request URL");
+    creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+    return;
   } else {
     if (!getDefaultBucket(txnp, bufp, hdr_loc, creq))
       {
         LOG_ERROR("failed getting Default Bucket for the request");
         return;
       }
+    if (query_len > MAX_QUERY_LENGTH) {
+      creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+      LOG_ERROR("querystring too long");
+      return;
+    }
     parseQueryParameters(query, query_len, creq);
     creq.client_addr = TSHttpTxnClientAddrGet(txnp);
     checkGzipAcceptance(bufp, hdr_loc, creq);
@@ -372,7 +419,7 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
   int common_prefix_path_size = 0;
 
   for (int i = 0; i <= query_len; ++i) {
-    if ((i == query_len) || (query[i] == '&') || (query[i] == '?')) {
+    if ((i == query_len) || (query[i] == '&')) {
       int param_len = i - param_start_pos;
       if (param_len) {
         const char *param = query + param_start_pos;
@@ -463,6 +510,13 @@ if (!creq.file_urls.size()) {
   creq.status = TS_HTTP_STATUS_FORBIDDEN;
   creq.file_urls.clear();
  }
+
+if (creq.file_urls.size() > MAX_FILE_COUNT) {
+  creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+  LOG_ERROR("too many files in url");
+  creq.file_urls.clear();
+}
+
 }
 
 static void
@@ -843,4 +897,49 @@ writeErrorResponse(InterceptData &int_data, int &n_bytes_written)
   }
   n_bytes_written += response->size();
   return true;
+}
+
+TSRemapStatus
+TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
+{
+  TSHttpTxnArgSet(rh, arg_idx, (void*)1); /* Save for later hooks */
+  return TSREMAP_NO_REMAP;  /* Continue with next remap plugin in chain */
+}
+
+/*
+  Initialize the plugin as a remap plugin.
+*/
+TSReturnCode
+TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
+{
+  if (!api_info) {
+    strncpy(errbuf, "[TSRemapInit] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    return TS_ERROR;
+  }
+
+  if (api_info->size < sizeof(TSRemapInterface)) {
+    strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
+    return TS_ERROR;
+  }
+
+  TSDebug(DEBUG_TAG, "%s plugin's remap part is initialized", DEBUG_TAG);
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf,
+                   int errbuf_size)
+{
+  *ih = NULL;
+
+  TSDebug(DEBUG_TAG, "%s Remap Instance for '%s' created", DEBUG_TAG, argv[0]);
+  return TS_SUCCESS;
+}
+
+
+void
+TSRemapDeleteInstance(void* ih)
+{
+  return;
 }
