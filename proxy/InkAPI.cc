@@ -5883,7 +5883,7 @@ TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp, int * /* bytes ATS_UNUSED */)
+TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 

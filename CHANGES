@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1824] TSHttpTxnPushedRespHdrBytesGet() takes an int argument in the
+   implementation, whereas the prototype does not have this.
+
   *) [TS-1928] False warning when setting log rotation size to exactly 10.
 
   *) [TS-1812] Remove obsolete syslog_thr_init calls.
