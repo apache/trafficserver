@@ -684,7 +684,7 @@ LogObject::_setup_rolling(int rolling_enabled, int rolling_interval_sec, int rol
 
     if (rolling_enabled == LogConfig::ROLL_ON_SIZE_ONLY ||
         rolling_enabled == LogConfig::ROLL_ON_TIME_OR_SIZE || rolling_enabled == LogConfig::ROLL_ON_TIME_AND_SIZE) {
-      if (rolling_size_mb <= 10) {
+      if (rolling_size_mb < 10) {
         m_rolling_size_mb = 10;
         Note("Rolling size invalid(%d) for %s, setting it to 10 MB", rolling_size_mb, m_filename);
       } else {
