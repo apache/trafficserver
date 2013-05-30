@@ -514,8 +514,9 @@ CONFIG proxy.config.ssl.compression INT 0
    # 1 client certificates optional
    # 2 client certificates required
 CONFIG proxy.config.ssl.client.certification_level INT 0
-   # Server cert chain filename is the name of the cert chain file
-   # for a single cert system.
+   # Server cert chain filename is the name of the global cert chain file
+   # that is added to every cert in ssl_multicert.config. This file is only
+   # loaded if there are configurations in ssl_multicert.config.
 CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
    # This is the path that SSL certificates files are relative to. Certificate
    # names specified in ssl_multicert.config will be located relative to this path.
