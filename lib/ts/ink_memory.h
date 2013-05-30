@@ -88,7 +88,7 @@ extern "C" {
   int     ats_madvise(caddr_t addr, size_t len, int flags);
   int     ats_mlock(caddr_t addr, size_t len);
 
-  static inline size_t ats_pagesize(void)
+  static inline size_t __attribute__((const)) ats_pagesize(void)
   {
     static size_t page_size;
 
