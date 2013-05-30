@@ -64,7 +64,6 @@ int64_t cfg_enable_reclaim = 0;
  */
 int64_t cfg_debug_filter;
 
-static const uint32_t page_size = ats_pagesize();
 static uint32_t nr_freelist;
 static uint64_t total_mem_in_byte;
 static __thread InkThreadCache *ThreadCaches[MAX_NUM_FREELIST];
@@ -75,7 +74,7 @@ static inline pthread_t thread_id(void)
 
   return tid?tid:(tid = pthread_self());
 }
-#define MAX_CHUNK_BYTE_SIZE (page_size << 8)
+#define MAX_CHUNK_BYTE_SIZE (ats_pagesize() << 8)
 
 /*
  * For debug
@@ -123,17 +122,17 @@ memory_alignment_init(InkFreeList *f, uint32_t type_size, uint32_t chunk_size,
    *    alignment = (2^N * page_size),
    *    alignment should not larger than MAX_CHUNK_BYTE_SIZE
    */
-  alignment = page_size;
-  chunk_byte_size = ROUND(type_size + sizeof(InkChunkInfo), page_size);
+  alignment = ats_pagesize();
+  chunk_byte_size = ROUND(type_size + sizeof(InkChunkInfo), ats_pagesize());
   if (chunk_byte_size <= MAX_CHUNK_BYTE_SIZE) {
 
     chunk_byte_size = ROUND(type_size * f->chunk_size_base
-                            + sizeof(InkChunkInfo), page_size);
+                            + sizeof(InkChunkInfo), ats_pagesize());
 
     if (chunk_byte_size > MAX_CHUNK_BYTE_SIZE) {
       chunk_size = (MAX_CHUNK_BYTE_SIZE - sizeof(InkChunkInfo)) / type_size;
       chunk_byte_size = ROUND(type_size * chunk_size + sizeof(InkChunkInfo),
-                              page_size);
+                              ats_pagesize());
     } else
       chunk_size = (chunk_byte_size - sizeof(InkChunkInfo)) / type_size;
 
@@ -146,7 +145,7 @@ memory_alignment_init(InkFreeList *f, uint32_t type_size, uint32_t chunk_size,
   }
 
   if (user_alignment > alignment) {
-    alignment = page_size;
+    alignment = ats_pagesize();
     while (alignment < user_alignment)
       alignment <<= 1;
   }
@@ -172,11 +171,11 @@ mmap_align(size_t size, size_t alignment) {
   uintptr_t ptr;
   size_t adjust, extra = 0;
 
-  ink_assert(size % page_size == 0);
+  ink_assert(size % ats_pagesize() == 0);
 
   /* ask for extra memory if alignment > page_size */
-  if (alignment > page_size) {
-    extra = alignment - page_size;
+  if (alignment > ats_pagesize()) {
+    extra = alignment - ats_pagesize();
   }
   void* result = mmap(NULL, size + extra,
                       PROT_READ|PROT_WRITE,

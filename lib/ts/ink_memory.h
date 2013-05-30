@@ -88,14 +88,22 @@ extern "C" {
   int     ats_madvise(caddr_t addr, size_t len, int flags);
   int     ats_mlock(caddr_t addr, size_t len);
 
-  static inline size_t ats_pagesize(void) {
+  static inline size_t ats_pagesize(void)
+  {
+    static size_t page_size;
+
+    if (page_size)
+      return page_size;
+
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
-    return (size_t)sysconf(_SC_PAGESIZE);
+    page_size = (size_t)sysconf(_SC_PAGESIZE);
 #elif defined(HAVE_GETPAGESIZE)
-    return (size_t)getpagesize()
+    page_size = (size_t)getpagesize()
 #else
-    return (size_t)8192;
+    page_size = (size_t)8192;
 #endif
+
+    return page_size;
   }
 
 #define ats_strdup(p)        _xstrdup((p), -1, NULL)

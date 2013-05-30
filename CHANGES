@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1921] Fix reclaimable freelist getting stuck in infinite loop.
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-1824] TSHttpTxnPushedRespHdrBytesGet() takes an int argument in the
    implementation, whereas the prototype does not have this.
 
