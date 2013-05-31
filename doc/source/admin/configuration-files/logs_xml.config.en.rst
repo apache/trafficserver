@@ -1,0 +1,363 @@
+logs_xml.config
+***************
+
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+
+The ``logs_xml.config`` file defines the custom log file formats,
+filters, and processing options. The format of this file is modeled
+after **XML**, the Extensible Markup Language.
+
+Format
+======
+
+The ``logs_xml.config`` file contains the specifications below:
+
+-  ``LogFormat`` specifies the fields to be gathered from each protocol
+   event access.
+-  ``LogFilter`` specifies the filters that are used to include or
+   exclude certain entries being logged based on the value of a field
+   within that entry.
+-  ``LogObject`` specifies an object that contains a particular format,
+   a local filename, filters, and collation servers.
+
+The ``logs_xml.config`` file ignores extra white space, blank lines, and
+all comments.
+
+LogFormat
+=========
+
+The following list shows **``LogFormat``** specifications.
+
+*``&lt;Name = "valid_format_name"/&gt;``* {#LogsXMLFormatName}
+    Required
+    Valid format names include any name except ``squid``, ``common``,
+    ``extended``, or ``extended2``, which are pre-defined formats. There
+    is no default for this tag.
+
+*``&lt;Format = "valid_format_specification"/&gt;``* {#LogsXMLFormat}
+    Required
+    A valid format specification is a printf-style string describing
+    each log entry when formatted for ASCII output. Use ``%<``
+    *``field``* ``>`` as a placeholder for valid field names. For more
+    information, refer to `Custom Logging
+    Fields <../event-logging-formats#CustomLoggingFields>`_.
+
+    The specified field can be one of the following types:
+
+    Simple. For example: ``%<cqu>``
+     A field within a container, such as an HTTP header or a statistic.
+    Fields of this type have the syntax:
+
+    ::
+
+         %<{ field } container>
+
+    Aggregates, such as ``COUNT``, ``SUM``, ``AVG``, ``FIRST``,
+    ``LAST``. Fields of this type have the syntax: ``%<operator (``
+    *``field``* ``)>``
+     **Note:** You cannot create a format specification that contains
+    both aggregate operators and regular fields.
+
+*``&lt;Interval = "aggregate_interval_secs"/&gt;``* {#LogsXMLInterval}
+    Optional
+    Use this tag when the format contains aggregate operators. The value
+    "``aggregate_interval_secs``\ " represents the number of seconds
+    between individual aggregate values being produced.
+
+    The valid set of aggregate operators are:
+
+    -  COUNT
+    -  SUM
+    -  AVG
+    -  FIRST
+    -  LAST
+
+LogFilters
+----------
+
+The following list shows the ``LogFilter`` specifications.
+
+*``&lt;Name = "valid_filter_name"/&gt;``* {#LogsXMLFilterName}
+    Required
+    All filters must be uniquely named.
+
+*``&lt;Condition = "valid_log_field valid_operator valid_comparison_value"/&gt;``*
+{#LogsXMLFilterCondition}
+    Required
+    This field contains the following elements:
+
+    **``valid_log_field``** - the field that will be compared against
+    the given value. For more information, refer to `Logging Format
+    Cross-Reference <../event-logging-formats#LoggingFormatCrossReference>`_.
+
+    **``valid_operator_field``** - any one of the following: ``MATCH``,
+    ``CASE_INSENSITIVE_MATCH``, ``CONTAIN``,
+    ``CASE_INSENSITIVE_CONTAIN``.
+
+    -  ``MATCH`` is true if the field and value are identical
+       (case-sensitive).
+    -  ``CASE_INSENSITIVE_MATCH`` is similar to ``MATCH``, except that
+       it is case-**insensitive**.
+    -  ``CONTAIN`` is true if the field contains the value (the value is
+       a substring of the field).
+    -  ``CASE_INSENSITIVE_CONTAIN`` is a case-insensitive version of
+       ``CONTAIN``.
+
+    **``valid_comparison_value``** - any string or integer matching the
+    field type. For integer values, all of the operators are equivalent
+    and mean that the field must be equal to the specified value.
+
+    **Note:** There are no negative comparison operators. If you want to
+    specify a negative condition, then use the ``Action`` field to
+    ``REJECT`` the record.
+
+*``&lt;Action = "valid_action_field"/&gt;``* {#LogsXMLFilterAction}
+    Required: ``ACCEPT`` or ``REJECT`` .
+    This instructs Traffic Server to either accept or reject records
+    that satisfy the filter condition.
+
+LogObject
+---------
+
+The following list shows the ``LogObject`` specifications.
+
+*``&lt;Format = "valid_format_name"/&gt;``* {#LogsXMLObjectFormat}
+    Required
+    Valid format names include the predefined logging formats:
+    ``squid``, ``common``, ``extended``, and ``extended2``, as well as
+    any previously-defined custom log formats. There is no default for
+    this tag.
+
+*``&lt;Filename = "file_name"/&gt;``* {#LogsXMLObjectFilename}
+    Required
+    The filename to which the given log file is written on the local
+    file system or on a remote collation server. No local log file will
+    be created if you fail to specify this tag. All filenames are
+    relative to the default logging directory.
+
+    If the name does not contain an extension (for example, ``squid``),
+    then the extension ``.log`` is automatically appended to it for
+    ASCII logs and ``.blog`` for binary logs (refer to `Mode =
+    "valid_logging_mode" <#LogsXMLOjbectMode>`_).
+
+    If you do not want an extension to be added, then end the filename
+    with a single (.) dot (for example: ``squid.`` ).
+
+*``&lt;Mode = "valid_logging_mode"/&gt;``* {#LogsXMLOjbectMode}
+    Optional
+    Valid logging modes include ``ascii`` , ``binary`` , and
+    ``ascii_pipe`` . The default is ``ascii`` .
+
+    -  Use ``ascii`` to create event log files in human-readable form
+       (plain ASCII).
+    -  Use ``binary`` to create event log files in binary format. Binary
+       log files generate lower system overhead and occupy less space on
+       the disk (depending on the information being logged). You must
+       use the ``logcat`` utility to translate binary log files to ASCII
+       format before you can read them.
+    -  Use ``ascii_pipe`` to write log entries to a UNIX named pipe (a
+       buffer in memory). Other processes can then read the data using
+       standard I/O functions. The advantage of using this option is
+       that Traffic Server does not have to write to disk, which frees
+       disk space and bandwidth for other tasks. In addition, writing to
+       a pipe does not stop when logging space is exhausted because the
+       pipe does not use disk space.
+
+    If you are using a collation server, then the log is written to a
+    pipe on the collation server. A local pipe is created even before a
+    transaction is processed, so you can see the pipe right after
+    Traffic Server starts. Pipes on a collation server, however, *are*
+    created when Traffic Server starts.
+
+*``&lt;Filters = "list_of_valid_filter_names"/&gt;``*
+{#LogsXMLObjectFilters}
+    Optional
+    A comma-separated list of names of any previously-defined log
+    filters. If more than one filter is specified, then all filters must
+    accept a record for the record to be logged.
+
+*``&lt;Protocols = "list_of_valid_protocols"/&gt;``*
+{#LogsXMLObjectProtocols}
+    Optional
+    A comma-separated list of the protocols this object should log.
+    Valid protocol names for this release are ``HTTP`` (FTP is
+    deprecated).
+
+*``&lt;ServerHosts = "list_of_valid_servers"/&gt;``*
+{#LogsXMLObjectServerHosts}
+    Optional
+    A comma-separated list of valid hostnames.This tag indicates that
+    only entries from the named servers will be included in the file.
+
+*``&lt;CollationHosts = "list_of_valid_hostnames"/&gt;``*
+{#LogsXMLObjectCollationHosts}
+    Optional
+    A comma-separated list of collation servers to which all log entries
+    (for this object) are forwarded. Collation servers can be specified
+    by name or IP address. Specify the collation port with a colon after
+    the name; for example, ``host:port`` .
+
+*``&lt;Header = "header"/&gt;``* {#LogsXMLObjectHeader}
+    Optional
+    The header text you want the log files to contain. The header text
+    appears at the beginning of the log file, just before the first
+    record.
+
+*``&lt;RollingEnabled = "truth value"/&gt;``*
+{#LogsXMLObjectRollingEnabled}
+    Optional
+    Enables or disables log file rolling for the ``LogObject``. This
+    setting overrides the value for the
+    *``proxy.config.log.rolling_enabled``* variable in the
+    ``records.config`` file. Set *``truth value``* to one of the
+    following values:
+
+    -  ``0`` to disable rolling for this particular ``LogObject``.
+    -  ``1`` to roll log files at specific intervals during the day (you
+       specify time intervals with the ``RollingIntervalSec`` and
+       ``RollingOffsetHr`` fields).
+    -  ``2`` to roll log files when they reach a certain size (you
+       specify the size with the\ ``RollingSizeMb`` field).
+    -  ``3`` to roll log files at specific intervals during the day or
+       when they reach a certain size (whichever occurs first).
+    -  ``4`` to roll log files at specific intervals during the day when
+       log files reach a specific size (at a specified time if the file
+       is of the specified size).
+
+*``&lt;RollingIntervalSec = "seconds"/&gt;``*
+{#LogsXMLObjectRollingIntervalSec}
+    Optional
+    The seconds between log file rolling for the ``LogObject``; enables
+    you to specify different rolling intervals for different
+    ``LogObjects``.
+
+    This setting overrides the value for
+    *``proxy.config.log.rolling_interval_sec``* in the
+    ``records.config`` file.
+
+*``&lt;RollingOffsetHr = "hour"/&gt;``* {#LogsXMLObjectRollingOffsetHr}
+    Optional
+    Specifies an hour (from 0 to 23) at which rolling is guaranteed to
+    align. Rolling might start before then, but a rolled file will be
+    produced only at that time. The impact of this setting is only
+    noticeable if the rolling interval is larger than one hour. This
+    setting overrides the configuration setting for
+    *``proxy.config.log.rolling_offset_hr``* in the ``records.config``
+    file.
+
+*``&lt;RollingSizeMb = "size_in_MB"/&gt;``*
+{#LogsXMLObjectRollingSizeMb}
+    Optional
+    The size at which log files are rolled.
+
+Examples
+========
+
+The following is an example of a **``LogFormat``** specification that
+collects information using three common fields:
+
+::
+
+         <LogFormat>
+             <Name="minimal"/>
+             <Format = "%<chi> : %<cqu> : %<pssc>"/>
+         </LogFormat>
+
+The following is an example of a **``LogFormat``** specification that
+uses aggregate operators:
+
+::
+
+         <LogFormat>
+             <Name = "summary"/>
+             <Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>"/>
+             <Interval = "10"/>
+         </LogFormat>
+
+The following is an example of a **``LogFilter``** that will cause only
+``REFRESH_HIT`` entries to be logged:
+
+::
+
+         <LogFilter>
+              <Name = "only_refresh_hits"/>
+              <Action = "ACCEPT"/>
+              <Condition = "%<pssc> MATCH REFRESH_HIT"/>
+         </LogFilter>
+
+**Note:** When specifying the field in the filter condition, you can
+omit the\ ``%<>``. This means that the filter below is equivalent to the
+example directly above:
+
+::
+
+         <LogFilter>
+             <Name = "only_refresh_hits"/>
+             <Action = "ACCEPT"/>
+             <Condition = "pssc MATCH REFRESH_HIT"/>
+         </LogFilter>
+
+The following is an example of a **``LogObject``** specification that
+creates a local log file for the minimal format defined earlier. The log
+filename will be ``minimal.log`` because this is an ASCII log file (the
+default).
+
+::
+
+         <LogObject>
+             <Format = "minimal"/>
+             <Filename = "minimal"/>
+         </LogObject>
+
+The following is an example of a **``LogObject``** specification that
+includes only HTTP requests served by hosts in the domain
+``company.com`` or by the specific server ``server.somewhere.com``. Log
+entries are sent to port 4000 of the collation host ``logs.company.com``
+and to port 5000 of the collation host ``209.131.52.129.``
+
+::
+
+         <LogObject>
+              <Format = "minimal"/>
+              <Filename = "minimal"/>
+              <ServerHosts = "company.com,server.somewhere.com"/>
+              <Protocols = "http"/>
+              <CollationHosts = "logs.company.com:4000,209.131.52.129:5000"/>
+         </LogObject>
+
+WELF
+====
+
+Traffic Server supports WELF (WebTrends Enhanced Log Format) so you can
+analyze Traffic Server log files with WebTrends reporting tools. A
+predefined ``<LogFormat>`` that is compatible with WELF is provided in
+the ``logs_xml.config`` file (shown below). To create a WELF format log
+file, create a ``<LogObject>`` that uses this predefined format.
+
+::
+
+         <LogFormat>
+             <Name = "welf"/>
+             <Format = "id=firewall time=\"%<cqtd> %<cqtt>\" fw=%<phn> pri=6
+                proto=%<cqus> duration=%<ttmsf> sent=%<psql> rcvd=%<cqhl>
+                src=%<chi> dst=%<shi> dstname=%<shn> user=%<caun> op=%<cqhm>
+                arg=\"%<cqup>\" result=%<pssc> ref=\"%<{Referer}cqh>\"
+                agent=\"%<{user-agent}cqh>\" cache=%<crc>"/>
+         </LogFormat>
+

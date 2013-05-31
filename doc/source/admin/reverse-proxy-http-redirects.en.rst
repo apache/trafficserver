@@ -1,0 +1,329 @@
+Reverse Proxy and HTTP Redirects
+********************************
+
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+
+Reverse Proxy and HTTP Redirects
+================================
+
+As a reverse proxy cache, Traffic Server serves requests on behalf of
+origin servers. Traffic Server is configured in such a way that it
+appears to clients like a normal origin server.
+
+This chapter discusses the following topics:
+
+.. toctree::
+   :maxdepth: 2
+
+
+Understanding Reverse Proxy Caching
+===================================
+
+With **forward proxy caching**, Traffic Server handles web requests to
+distant origin servers on behalf of the clients requesting the content.
+**Reverse proxy caching** (also known as \*\*server acceleration \*\*or
+**virtual web hosting**) is different because Traffic Server acts as a
+proxy cache on behalf of the origin servers that store the content.
+Traffic Server is configured to be *the* origin server which the client
+is trying to connect to. In a typical scenario the advertised hostname
+of the origin server resolves to Traffic Server, which acts as the real
+origin server.
+
+Reverse Proxy Solutions
+-----------------------
+
+There are many ways to use Traffic Server as a reverse proxy. Below are
+a few example scenarios.
+
+You can use Traffic Server in reverse proxy mode to:
+
+-  Offload heavily-used origin servers
+-  Deliver content efficiently in geographically distant areas
+-  Provide security for origin servers that contain sensitive
+   information
+
+Offloading Heavily-Used Origin Servers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Traffic Server can absorb requests to the main origin server and improve
+the speed & quality of web serving by reducing load and hot spots on
+backup origin servers. For example, a web hoster can maintain a scalable
+Traffic Server serving engine with a set of low-cost, low-performance,
+less-reliable PC origin servers as backup servers. In fact, a single
+Traffic Server can act as the virtual origin server for multiple backup
+origin servers, as shown in the figure below.
+
+.. figure:: ../_static/images/admin/revproxy.jpg
+   :align: center
+   :alt: Traffic Server as reverse proxy for a pair of origin servers
+
+   Traffic Server as reverse proxy for a pair of origin servers
+
+Delivering Content in Geographically-Dispersed Areas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Traffic Server can be used in reverse proxy mode to accelerate origin
+servers that provide content to areas not located within close
+geographical proximity. Caches are typically easier to manage and are
+more cost-effective than replicating data. For example, Traffic Server
+can be used as a mirror site on the far side of a trans-Atlantic link to
+serve users without having to fetch the request and content across
+expensive international connections. Unlike replication, for which
+hardware must be configured to replicate all data and to handle peak
+capacity, Traffic Server dynamically adjusts to optimally use the
+serving and storing capacity of the hardware. Traffic Server is also
+designed to keep content fresh automatically, thereby eliminating the
+complexity of updating remote origin servers.
+
+Providing Security for an Origin Server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Traffic Server can be used in reverse proxy mode to provide security for
+an origin server. If an origin server contains sensitive information
+that you want to keep secure inside your firewall, then you can use a
+Traffic Server outside the firewall as a reverse proxy for that origin
+server. When outside clients try to access the origin server, the
+requests instead go to Traffic Server. If the desired content is *not*
+sensitive, then it can be served from the cache. If the content is
+sensitive and not cacheable, then Traffic Server obtains the content
+from the origin server (the firewall allows only Traffic Server access
+to the origin server). The sensitive content resides on the origin
+server, safely inside the firewall.
+
+How Does Reverse Proxy Work?
+----------------------------
+
+When a browser makes a request, it normally sends that request directly
+to the origin server. When Traffic Server is in reverse proxy mode, it
+intercepts the request before it reaches the origin server. Typically,
+this is done by setting up the DNS entry for the origin server (i.e.,
+the origin server's 'advertised' hostname) so it resolves to the Traffic
+Server IP address. When Traffic Server is configured as the origin
+server, the browser connects to Traffic Server rather than the origin
+server. For additional information, see `HTTP Reverse
+Proxy <#HTTPReverseProxy>`_.
+
+**Note:** To avoid a DNS conflict, the origin server’s hostname and its
+advertised hostname must not be the same.
+
+HTTP Reverse Proxy
+==================
+
+In reverse proxy mode, Traffic Server serves HTTP requests on behalf of
+a web server. The figure below illustrates how Traffic Server in reverse
+proxy mode serves an HTTP request from a client browser.
+
+.. figure:: ../_static/images/admin/httprvs.jpg
+   :align: center
+   :alt: HTTP reverse proxy
+
+   HTTP reverse proxy
+
+The figure above demonstrates the following steps:
+
+1. A client browser sends an HTTP request addressed to a host called
+   ``www.host.com`` on port 80. Traffic Server receives the request
+   because it is acting as the origin server (the origin server’s
+   advertised hostname resolves to Traffic Server).
+2. Traffic Server locates a map rule in the ``remap.config`` file and
+   remaps the request to the specified origin server (``realhost.com``).
+3. Traffic Server opens an HTTP connection to the origin server. (This
+   step is optional)
+4. If the request is a cache hit and the content is fresh, then Traffic
+   Server sends the requested object to the client from the cache.
+   Otherwise, Traffic Server obtains the requested object from the
+   origin server, sends the object to the client, and saves a copy in
+   its cache.
+
+To configure HTTP reverse proxy, you must perform the following tasks:
+
+-  Create mapping rules in the ``remap.config`` file (refer to `Creating
+   Mapping Rules for HTTP
+   Requests <#CreatingMappingRulesHTTPRequests>`_).
+
+   :::text # remap.config map http://www.host.com http://realhost.com
+
+-  Enable the reverse proxy option (refer to `Enabling HTTP Reverse
+   Proxy <#EnablingHTTPReverseProxy>`_).
+
+In addition to the tasks above, you can also `Set Optional HTTP Reverse
+Proxy Options <#SettingOptionalHTTPReverseProxyOptions>`_.
+
+Handling Origin Server Redirect Responses
+-----------------------------------------
+
+Origin servers often send redirect responses back to browsers
+redirecting them to different pages. For example, if an origin server is
+overloaded, then it might redirect browsers to a less loaded server.
+Origin servers also redirect when web pages that have moved to different
+locations. When Traffic Server is configured as a reverse proxy, it must
+readdress redirects from origin servers so that browsers are redirected
+to Traffic Server and *not* to another origin server.
+
+To readdress redirects, Traffic Server uses reverse-map rules. Unless
+you have
+`proxy.config.url_remap.pristine_host_hdr <configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_
+enabled (the default) you should generally set up a reverse-map rule for
+each map rule.d To create reverse-map rules, refer to `Using Mapping
+Rules for HTTP Requests <#UsingMappingRulesHTTPRequests>`_.
+
+Using Mapping Rules for HTTP Requests
+-------------------------------------
+
+Traffic Server uses two types of mapping rules for HTTP reverse proxy.
+
+map rule
+~~~~~~~~
+
+A **map rule** translates the URL in client requests into the URL where
+the content is located. When Traffic Server is in reverse proxy mode and
+receives an HTTP client request, it first constructs a complete request
+URL from the relative URL and its headers. Traffic Server then looks for
+a match by comparing the complete request URL with its list of target
+URLs in the ```remap.config`` <../configuration-files/remap.config>`_
+file. For the request URL to match a target URL, the following
+conditions must be true:
+
+-  The scheme of both URLs must be the same
+-  The host in both URLs must be the same. If the request URL contains
+   an unqualified hostname, then it will never match a target URL with a
+   fully-qualified hostname.
+-  The ports in both URLs must be the same. If no port is specified in a
+   URL, then the default port for the scheme of the URL is used.
+-  The path portion of the target URL must match a prefix of the request
+   URL path
+
+If Traffic Server finds a match, then it translates the request URL into
+the replacement URL listed in the map rule: it sets the host and path of
+the request URL to match the replacement URL. If the URL contains path
+prefixes, then Traffic Server removes the prefix of the path that
+matches the target URL path and substitutes it with the path from the
+replacement URL. If two mappings match a request URL, then Traffic
+Server applies the first mapping listed in the
+```remap.config`` <configuration-files/remap.config>`_ file.
+
+reverse-map rule
+~~~~~~~~~~~~~~~~
+
+A **reverse-map rule** translates the URL in origin server redirect
+responses to point to Traffic Server so that clients are **redirected**
+to Traffic Server instead of accessing an origin server directly. For
+example, if there is a directory ``/pub`` on an origin server at
+``www.molasses.com`` and a client sends a request to that origin server
+for ``/pub``, then the origin server might reply with a redirect by
+sending the Header ``Location: http://www.test.com/pub/`` to let the
+client know that it was a directory it had requested, not a document (a
+common use of redirects is to normalize URLs so that clients can
+bookmark documents properly).
+
+Traffic Server uses ``reverse_map`` rules to prevent clients (that
+receive redirects from origin servers) from bypassing Traffic Server and
+directly accessing the origin servers. In many cases the client would be
+hitting a wall because ``realhost.com`` actually does not resolve for
+the client. (E.g.: Because it's running on a port shielded by a
+firewall, or because it's running on a non-routable LAN IP)
+
+Both map and reverse-map rules consist of a **target** (origin) URL and
+a **replacement** (destination) URL. In a **map rule**, the target URL
+points to Traffic Server and the replacement URL specifies where the
+original content is located. In a **reverse-map rule**, the target URL
+specifies where the original content is located and the replacement URL
+points to Traffic Server. Traffic Server stores mapping rules in the
+``remap.config`` file located in the Traffic Server ``config``
+directory.
+
+Creating Mapping Rules for HTTP Requests
+----------------------------------------
+
+To create mapping rules
+
+1. Enter the map and reverse-map rules into the
+   ```remap.config`` <configuration-files/remap.config>`_ file
+2. Run the command ``traffic_line -x`` to apply the configuration
+   changes.
+
+Enabling HTTP Reverse Proxy
+---------------------------
+
+To enable HTTP reverse proxy, follow the steps below.
+
+1. Edit the following variable in
+   ```records.config`` <configuration-files/records.config>`_
+
+   -  `*``proxy.config.reverse_proxy.enabled``* <configuration-files/records.config#proxy.config.reverse_proxy.enabled>`_
+
+2. Run the command ``traffic_line -x`` to apply the configuration
+   changes.
+
+Setting Optional HTTP Reverse Proxy Options
+-------------------------------------------
+
+Traffic Server provides several reverse proxy configuration options in
+```records.config`` <configuration-files/records.config>`_ that
+enable you to:
+
+-  Configure Traffic Server to retain the client host header information
+   in a request during translation
+   (`*``proxy.config.url_remap.pristine_host_hdr``* <configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_)
+
+-  Configure Traffic Server to serve requests only to the origin servers
+   listed in the mapping rules. As a result, requests to origin servers
+   not listed in the mapping rules are not served.
+   (`*``proxy.config.url_remap.remap_required``* <configuration-files/records.config#proxy.config.url_remap.remap_required>`_)
+-  Specify an alternate URL to which incoming requests from older
+   clients (i.e., ones that do not provide ``Host`` headers) are
+   directed
+   (`*``proxy.config.header.parse.no_host_url_reedirect``* <configuration-files/records.config#proxy.config.header.parse.no_host_url_redirect>`_)
+
+Don't forget to run the command ``traffic_line -x`` to apply the
+configuration changes.
+
+Redirecting HTTP Requests
+=========================
+
+You can configure Traffic Server to redirect HTTP requests without
+having to contact any origin servers. For example, if you redirect all
+requests for ``http://www.ultraseek.com`` to
+``http://www.server1.com/products/portal/search/``, then all HTTP
+requests for ``www.ultraseek.com`` go directly to
+``www.server1.com/products/portal/search``.
+
+You can configure Traffic Server to perform permanent or temporary
+redirects. **Permanent redirects** notify the browser of the URL change
+(by returning the HTTP status code **``301``**) so that the browser can
+update bookmarks. **Temporary redirects** notify the browser of the URL
+change for the current request only (by returning the HTTP status code
+**``307``** ).
+
+To set redirect rules
+
+1. For each redirect you want to set enter a mapping rule in the
+   ```remap.config`` <../configuration-files/remap.config>`_ file
+2. Run the command ``traffic_line -x`` to apply the configuration
+   changes.
+
+**Example**
+
+The following permanently redirects all HTTP requests for
+``www.server1.com`` to ``www.server2.com``:
+
+::
+    redirect http://www.server1.com http://www.server2.com
+
+
