@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1932] Use a more modern tar format so asf-dist can handle
+   file paths longer that 99 bytes
+
   *) [TS-1891] Add double-free checking for reclaimable freelist
     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
