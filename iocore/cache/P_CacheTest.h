@@ -76,7 +76,6 @@ struct CacheTestSM : public RegressionSM {
   MIOBuffer *buffer;
   IOBufferReader *buffer_reader;
 #ifdef HTTP_CACHE
-  CacheLookupHttpConfig params;
   CacheHTTPInfo info;
   char urlstr[1024];
 #endif

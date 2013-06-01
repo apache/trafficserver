@@ -90,7 +90,7 @@ Lcallreturn:
 #ifdef HTTP_CACHE
 Action *
 Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
-                 CacheLookupHttpConfig * params, CacheFragType type, char *hostname, int host_len)
+                 void * context, CacheFragType type, char *hostname, int host_len)
 {
 
   if (!CACHE_READY(type)) {
@@ -116,7 +116,7 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
       CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
       c->request.copy_shallow(request);
       c->frag_type = CACHE_FRAG_TYPE_HTTP;
-      c->params = params;
+      c->context = context;
       c->od = od;
     }
     if (!lock) {
@@ -243,7 +243,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     }
 #ifdef FIXME_NONMODULAR
     if (cache_config_select_alternate) {
-      alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, params);
+      alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, static_cast<HttpConfigParams*>(context));
       if (alternate_index < 0)
         return -ECACHE_ALT_MISS;
     } else
@@ -972,7 +972,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       if (od->move_resident_alt)
         dir_insert(&od->single_doc_key, vol, &od->single_doc_dir);
 #ifdef FIXME_NONMODULAR
-      int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, params);
+      int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, static_cast<HttpConfigParams*>(context));
 #else
       int alt_ndx = 0;
 #endif
@@ -1082,7 +1082,7 @@ CacheVC::openReadStartHead(int event, Event * e)
       }
       if (cache_config_select_alternate) {
 #ifdef FIXME_NONMODULAR
-        alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, params);
+        alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, static_cast<HttpConfigParams*>(context));
 #else
         alternate_index = 0;
 #endif

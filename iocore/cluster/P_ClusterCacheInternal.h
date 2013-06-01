@@ -30,6 +30,7 @@
 #define __P_CLUSTERCACHEINTERNAL_H__
 #include "P_ClusterCache.h"
 #include "I_OneWayTunnel.h"
+#include "HttpConfig.h"
 
 //
 // Compilation Options
@@ -164,10 +165,10 @@ struct CacheContinuation:public Continuation
   Arena ic_arena;
   CacheHTTPHdr ic_request;
   CacheHTTPHdr ic_response;
-  CacheLookupHttpConfig *ic_params;
+  HttpConfigParams *http_config_params;
   CacheHTTPInfo ic_old_info;
   CacheHTTPInfo ic_new_info;
-    Ptr<IOBufferData> ic_hostname;
+  Ptr<IOBufferData> ic_hostname;
   int ic_hostname_len;
 
   // debugging
@@ -246,11 +247,11 @@ struct CacheContinuation:public Continuation
     if (cache_vc_info.valid()) {
       cache_vc_info.destroy();
     }
-    // Deallocate unmarshaled data
-    if (ic_params) {
-      delete ic_params;
-      ic_params = 0;
+    if (http_config_params) {
+      HttpConfig::release(http_config_params);
+      http_config_params = 0;
     }
+
     if (ic_request.valid()) {
       ic_request.clear();
     }
@@ -311,7 +312,7 @@ CacheContinuation():
     lookup_open_write_vc_event(0),
     ic_arena(),
     ic_request(),
-    ic_response(), ic_params(0), ic_old_info(), ic_new_info(), ic_hostname_len(0), cache_op_ClusterFunction(0) {
+    ic_response(), http_config_params(0), ic_old_info(), ic_new_info(), ic_hostname_len(0), cache_op_ClusterFunction(0) {
     token.clear();
     SET_HANDLER((CacheContHandler) & CacheContinuation::remoteOpEvent);
   }

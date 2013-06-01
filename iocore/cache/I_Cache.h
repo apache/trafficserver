@@ -53,7 +53,6 @@
 
 struct CacheVC;
 #ifdef HTTP_CACHE
-class CacheLookupHttpConfig;
 class URL;
 class HTTPHdr;
 class HTTPInfo;
@@ -107,14 +106,10 @@ struct CacheProcessor:public Processor
 #ifdef HTTP_CACHE
   Action *lookup(Continuation *cont, URL *url, bool cluster_cache_local, bool local_only = false,
                  CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  inkcoreapi Action *open_read(Continuation *cont, URL *url,
-                               bool cluster_cache_local,
-                               CacheHTTPHdr *request,
-                               CacheLookupHttpConfig *params,
-                               time_t pin_in_cache = (time_t) 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *open_read_buffer(Continuation *cont, MIOBuffer *buf, URL *url,
-                           CacheHTTPHdr *request,
-                           CacheLookupHttpConfig *params, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+  inkcoreapi Action *open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
+                               void *context, time_t pin_in_cache = (time_t) 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+  Action *open_read_buffer(Continuation *cont, MIOBuffer *buf, URL *url, CacheHTTPHdr *request,
+                           void *context, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_write(Continuation *cont, int expected_size, URL *url, bool cluster_cache_local,
                      CacheHTTPHdr *request, CacheHTTPInfo *old_info,
                      time_t pin_in_cache = (time_t) 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
@@ -124,7 +119,7 @@ struct CacheProcessor:public Processor
   Action *remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
 
   Action *open_read_internal(int, Continuation *, MIOBuffer *, CacheURL *,
-                             CacheHTTPHdr *, CacheLookupHttpConfig *,
+                             CacheHTTPHdr *, void *,
                              CacheKey *, time_t, CacheFragType type, char *hostname, int host_len);
 #endif
   Action *link(Continuation *cont, CacheKey *from, CacheKey *to, bool cluster_cache_local,

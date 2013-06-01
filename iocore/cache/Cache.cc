@@ -3189,15 +3189,15 @@ ink_cache_init(ModuleVersion v)
 //----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
-                          CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType type)
+                          void *context, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    return open_read_internal(CACHE_OPEN_READ_LONG, cont, (MIOBuffer *) 0,
-                              url, request, params, (CacheKey *) 0, pin_in_cache, type, (char *) 0, 0);
+    return open_read_internal(CACHE_OPEN_READ_LONG, cont, (MIOBuffer *) 0, url, request, context,
+                              (CacheKey *) 0, pin_in_cache, type, (char *) 0, 0);
   }
 #endif
-  return caches[type]->open_read(cont, url, request, params, type);
+  return caches[type]->open_read(cont, url, request, context, type);
 }
 
 
