@@ -39,7 +39,6 @@ to do the global update, specify the category to be updated.
    :alt: [Note]
 
    [Note]
-**Note**
 
 The local statistic copy must have a duplicate set of statistics as that
 of the master copy. Local statistics must also be added to the local

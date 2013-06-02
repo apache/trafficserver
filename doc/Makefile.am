@@ -99,7 +99,7 @@ EXTRA_DIST = \
 
 clean-local:
 	-rm -rf html warn.log
-	-rm -rf $(BUILDDIR)/*
+	-rm -rf doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex
 
 doxygen: Doxyfile
 	$(DOXYGEN)
@@ -111,96 +111,64 @@ doxygen: Doxyfile
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = letter
-BUILDDIR      = build
+BUILDDIR      = .
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(SPHINXOPTS)
+ALLSPHINXOPTS   = $(SPHINXOPTS)
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(SPHINXOPTS)
 
 # The PAPER setting variables requires recursive make variable expansion, which automake
 # detects as non-portable. We bounce this through a shell script and do the expansion there.
 SBUILD = PAPEROPT_a4="$(PAPEROPT_a4)" PAPEROPT_letter="$(PAPEROPT_letter)" PAPER="$(PAPER)" \
-	 $(srcdir)/sbuild $(SPHINXBUILD) $(ALLSPHINXOPTS)
+	 $(srcdir)/sbuild $(SPHINXBUILD) -c $(srcdir) $(ALLSPHINXOPTS)
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
-	@echo "  pickle     to make pickle files"
-	@echo "  json       to make JSON files"
-	@echo "  htmlhelp   to make HTML files and a HTML help project"
-	@echo "  qthelp     to make HTML files and a qthelp project"
-	@echo "  devhelp    to make HTML files and a Devhelp project"
 	@echo "  epub       to make an epub"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
-	@echo "  text       to make text files"
 	@echo "  man        to make manual pages"
-	@echo "  texinfo    to make Texinfo files"
-	@echo "  info       to make Texinfo files and run them through makeinfo"
-	@echo "  gettext    to make PO message catalogs"
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
-	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 html-local:
-	$(SBUILD) -b html $(srcdir)/source $(BUILDDIR)/html
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b html $(srcdir)/admin $(BUILDDIR)/html/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b  html $(srcdir)/sdk $(BUILDDIR)/html/sdk
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 dirhtml:
-	$(SBUILD) -b dirhtml $(srcdir)/source $(BUILDDIR)/dirhtml
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b dirhtml $(srcdir)/admin $(BUILDDIR)/dirhtml/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b dirhtml $(srcdir)/sdk $(BUILDDIR)/dirhtml/sdk
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
 
 singlehtml:
-	$(SBUILD) -b singlehtml $(srcdir)/source $(BUILDDIR)/singlehtml
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b singlehtml $(srcdir)/admin $(BUILDDIR)/singlehtml/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b singlehtml $(srcdir)/sdk $(BUILDDIR)/singlehtml/sdk
 	@echo
 	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
 
-pickle:
-	$(SBUILD) -b pickle $(srcdir)/source $(BUILDDIR)/pickle
-	@echo
-	@echo "Build finished; now you can process the pickle files."
-
-json:
-	$(SBUILD) -b json $(srcdir)/source $(BUILDDIR)/json
-	@echo
-	@echo "Build finished; now you can process the JSON files."
-
-htmlhelp:
-	$(SBUILD) -b htmlhelp $(srcdir)/source $(BUILDDIR)/htmlhelp
-	@echo
-	@echo "Build finished; now you can run HTML Help Workshop with the" \
-	      ".hhp project file in $(BUILDDIR)/htmlhelp."
-
-qthelp:
-	$(SBUILD) -b qthelp $(srcdir)/source $(BUILDDIR)/qthelp
-	@echo
-	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
-	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/ApacheTrafficServer.qhcp"
-	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/ApacheTrafficServer.qhc"
-
-devhelp:
-	$(SBUILD) -b devhelp $(srcdir)/source $(BUILDDIR)/devhelp
-	@echo
-	@echo "Build finished."
-	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/ApacheTrafficServer"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/ApacheTrafficServer"
-	@echo "# devhelp"
-
 epub:
-	$(SBUILD) -b epub $(srcdir)/source $(BUILDDIR)/epub
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b epub $(srcdir)/admin $(BUILDDIR)/epub/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b epub $(srcdir)/admin $(BUILDDIR)/epub/sdk
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
 
 latex:
-	$(SBUILD) -b latex $(srcdir)/source $(BUILDDIR)/latex
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b latex $(srcdir)/admin $(BUILDDIR)/latex/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b latex $(srcdir)/sdk $(BUILDDIR)/latex/sdk
 	@echo
+	@echo "Build finished. The epub file is in $(BUILDDIR)/latex."
+
+changes:
+	@echo FIXME
+
+linkcheck:
+	@echo FIXME

@@ -38,6 +38,8 @@ patch <https://issues.apache.org/jira/secure/CreateIssue!default.jspa?pid=123109
 Or find out how to `find bugs <>`__, `create useful bug reports <>`__ or
 `patches <>`__.
 
+Contents:
+
 .. toctree::
    :maxdepth: 2
 
@@ -61,3 +63,9 @@ Or find out how to `find bugs <>`__, `create useful bug reports <>`__ or
     sample-source-code.en
     troubleshooting-tips.en
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
