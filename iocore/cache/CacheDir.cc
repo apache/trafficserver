@@ -360,7 +360,7 @@ void
 dir_clean_segment(int s, Vol *d)
 {
   Dir *seg = dir_segment(s, d);
-  for (int i = 0; i < d->buckets; i++) {
+  for (int64_t i = 0; i < d->buckets; i++) {
     dir_clean_bucket(dir_bucket(i, seg), s, d);
     ink_assert(!dir_next(dir_bucket(i, seg)) || dir_offset(dir_bucket(i, seg)));
   }
@@ -369,7 +369,7 @@ dir_clean_segment(int s, Vol *d)
 void
 dir_clean_vol(Vol *d)
 {
-  for (int i = 0; i < d->segments; i++)
+  for (int64_t i = 0; i < d->segments; i++)
     dir_clean_segment(i, d);
   CHECK_DIR(d);
 }

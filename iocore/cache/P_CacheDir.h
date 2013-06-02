@@ -316,7 +316,7 @@ dir_compare_tag(Dir *e, CacheKey *key)
 }
 
 TS_INLINE Dir *
-dir_from_offset(int i, Dir *seg)
+dir_from_offset(int64_t i, Dir *seg)
 {
 #if DIR_DEPTH < 5
   if (!i)
@@ -333,24 +333,24 @@ next_dir(Dir *d, Dir *seg)
   int i = dir_next(d);
   return dir_from_offset(i, seg);
 }
-TS_INLINE int
+TS_INLINE int64_t
 dir_to_offset(Dir *d, Dir *seg)
 {
 #if DIR_DEPTH < 5
   return (((char*)d) - ((char*)seg))/SIZEOF_DIR;
 #else
-  int i = (int)((((char*)d) - ((char*)seg))/SIZEOF_DIR);
+  int64_t i = (int64_t)((((char*)d) - ((char*)seg))/SIZEOF_DIR);
   i = i - (i / DIR_DEPTH);
   return i;
 #endif
 }
 TS_INLINE Dir *
-dir_bucket(int b, Dir *seg)
+dir_bucket(int64_t b, Dir *seg)
 {
   return dir_in_seg(seg, b * DIR_DEPTH);
 }
 TS_INLINE Dir *
-dir_bucket_row(Dir *b, int i)
+dir_bucket_row(Dir *b, int64_t i)
 {
   return dir_in_seg(b, i);
 }
