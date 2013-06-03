@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1857] On CentOS the Lua plugin is built whether Lua is found or not.
+
   *) [TS-1492]  Prevent net-throttling from locking out the health checks
    from traffic_cop.
 

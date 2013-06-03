@@ -1258,14 +1258,13 @@ AC_ARG_ENABLE([luajit],
   [enable_luajit="${enableval}"],
   [enable_luajit=check]
 )
+AC_MSG_RESULT([$enable_luajit])
 
 PKG_CHECK_MODULES([luajit], [luajit], [have_luajit=yes], [have_luajit=no])
 CHECK_LUA([have_lua=yes], [have_lua=no])
 
-AS_IF([ test "x$enable_luajit" = "xno" ], [
-  # LuaJIT disabled, just check for the regular Lua support.
-  enable_lua_support="${have_lua}"
-], [test "x$enable_luajit" = "xyes"], [
+case $enable_luajit in
+yes)
   # LuaJIT required. Fail if it's not available.
   AS_IF([ test "x${have_luajit}" = "xyes" ], [
     LUA_CFLAGS="${luajit_CFLAGS}"
@@ -1274,7 +1273,14 @@ AS_IF([ test "x$enable_luajit" = "xno" ], [
   ], [
     AC_MSG_ERROR([LuaJIT package not available])
   ])
-], [
+  ;;
+
+no)
+  # LuaJIT disabled, just check for the regular Lua support.
+  enable_lua_support="${have_lua}"
+  ;;
+
+*)
   # No user preference, prefer LuaJIT over standard Lua.
   AS_IF([ test "x${have_luajit}" = "xyes" ], [
     LUA_CFLAGS="${luajit_CFLAGS}"
@@ -1283,7 +1289,8 @@ AS_IF([ test "x$enable_luajit" = "xno" ], [
   ], [
     enable_lua_support="${have_lua}"
   ])
-])
+  ;;
+esac
 
 AC_SUBST(LUA_CFLAGS)
 AC_SUBST(LUA_LIBS)
@@ -1296,7 +1303,7 @@ AC_MSG_RESULT([$enable_lua_support])
 # http://luajit.org/install.html.
 case $host_os in
   darwin)
-    if test "x${have_luajit}" = "xyes"; then
+    if test "x${enable_lua_support}" = "xLuaJIT"; then
       LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     fi
     ;;
