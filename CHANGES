@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1827] Make combo_handler be enabled via remap.config, and
+   various other cleanup fixes. Author: Conan Wang and Leif.
+
   *) [TS-1932] Use a more modern tar format so asf-dist can handle
    file paths longer that 99 bytes
 
