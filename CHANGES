@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1492]  Prevent net-throttling from locking out the health checks
+   from traffic_cop.
+
   *) [TS-1827] Make combo_handler be enabled via remap.config, and
    various other cleanup fixes. Author: Conan Wang and Leif.
 
