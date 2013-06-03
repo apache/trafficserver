@@ -211,6 +211,7 @@ start_HttpProxyServerBackDoor(int port, int accept_threads)
   opt.accept_threads = accept_threads;
   opt.localhost_only = true;
   ha_opt.backdoor = true;
+  opt.backdoor = true;
   
   // The backdoor only binds the loopback interface
   netProcessor.main_accept(NEW(new HttpAccept(ha_opt)), NO_FD, opt);

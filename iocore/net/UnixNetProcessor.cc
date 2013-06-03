@@ -41,6 +41,7 @@ NetProcessor::AcceptOptions::reset()
   f_callback_on_open = false;
   localhost_only = false;
   frequent_accept = true;
+  backdoor = false;
   recv_bufsize = 0;
   send_bufsize = 0;
   sockopt_flags = 0;
@@ -146,6 +147,7 @@ UnixNetProcessor::accept_internal(
   na->packet_mark = opt.packet_mark;
   na->packet_tos = opt.packet_tos;
   na->etype = opt.etype;
+  na->backdoor = opt.backdoor;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (opt.frequent_accept) { // true

@@ -72,6 +72,7 @@ public:
     /// Are frequent accepts expected?
     /// Default: @c false.
     bool frequent_accept;
+    bool backdoor;
 
     /// Socket receive buffer size.
     /// 0 => OS default.
