@@ -14,18 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS = \
- lua \
- esi \
- rfc5861 \
- tcp_info \
- custom_redirect \
- header_rewrite \
- metalink \
- gzip \
- spdy \
- channel_stats \
- authproxy \
- geoip_acl
+include $(top_srcdir)/build/plugins.mk
+
+if BUILD_GEOIP_PLUGIN
+
+pkglib_LTLIBRARIES = geoip_acl.la
+geoip_acl_la_SOURCES = acl.cc geoip_acl.cc
+geoip_acl_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
 endif

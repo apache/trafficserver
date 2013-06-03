@@ -1241,6 +1241,22 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
 AC_SUBST(use_hwloc)
 
 #
+# Check for Maxmind APIs / includes. TODO: Long term, it might make sense to support
+# GeoIP as a "helper" plugin, which other plugins can then use. Such a plugin could
+# then manage which libraries to use via explicit dlopen()'s.
+#
+use_maxmind_geoip=0
+AC_SEARCH_LIBS([GeoIP_id_by_code], [GeoIP], [use_maxmind_geoip=1], [use_maxmind_geoip=0])
+AS_IF([test 1 -eq $use_maxmind_geoip], [
+  TS_FLAG_HEADERS([GeoIP.h], [], [
+    AC_MSG_ERROR([Can not locate GeoIP.h, perhaps install GeoIP-devel package?])
+  ])
+])
+
+AC_SUBST(use_maxmind_geoip)
+AM_CONDITIONAL([BUILD_GEOIP_PLUGIN], [ test 0 -ne $use_maxmind_geoip ])
+
+#
 # Check for tcmalloc and jemalloc
 TS_CHECK_JEMALLOC
 TS_CHECK_TCMALLOC
@@ -1808,6 +1824,7 @@ AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
 AC_CONFIG_FILES([plugins/experimental/spdy/Makefile])
 AC_CONFIG_FILES([plugins/experimental/channel_stats/Makefile])
 AC_CONFIG_FILES([plugins/experimental/authproxy/Makefile])
+AC_CONFIG_FILES([plugins/experimental/geoip_acl/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins

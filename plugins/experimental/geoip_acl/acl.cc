@@ -26,7 +26,7 @@
 
 
 // Global GeoIP object.
-#if MAXMIND_GEOIP
+#if TS_USE_MAXMIND_GEOIP
 #include <GeoIP.h>
 GeoIP* gGI;
 #endif
@@ -140,7 +140,7 @@ CountryAcl::add_token(const std::string& str)
   int iso = -1;
 
   Acl::add_token(str);
-#if MAXMIND_GEOIP
+#if TS_USE_MAXMIND_GEOIP
   iso = GeoIP_id_by_code(str.c_str());
 #endif
 
@@ -215,7 +215,7 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
     {
       uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
 
-#if MAXMIND_GEOIP
+#if TS_USE_MAXMIND_GEOIP
       iso = GeoIP_id_by_ipnum(gGI, ip);
       if (TSIsDebugTagSet(PLUGIN_NAME)) {
         const char* c = GeoIP_country_code_by_ipnum(gGI, ip);
