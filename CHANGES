@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.3
 
+
+  *) [TS-1936] Make traffic_logstats honor the log-directory as intended.
+
   *) [TS-1937] Prevent assert on SSL forward proxy connect.
 
   *) [TS-1907] Using the "ipv6" option for port configuration cancels the "ssl" option.

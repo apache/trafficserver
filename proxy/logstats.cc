@@ -754,6 +754,10 @@ struct ExitStatus
   void append(const char *n) {
     ink_strlcat(notice, n, sizeof(notice));
   }
+
+  void append(const std::string s) {
+    ink_strlcat(notice, s.c_str(), sizeof(notice));
+  }
 };
 
 
@@ -2211,10 +2215,12 @@ my_exit(const ExitStatus& status)
 int
 open_main_log(ExitStatus& status)
 {
+  std::string logfile(Layout::get()->logdir);
   int cnt = 3;
   int main_fd;
 
-  while (((main_fd = open("./squid.blog", O_RDONLY)) < 0) && --cnt) {
+  logfile.append("/squid.blog");
+  while (((main_fd = open(logfile.c_str(), O_RDONLY)) < 0) && --cnt) {
     switch (errno) {
     case ENOENT:
     case EACCES:
@@ -2346,20 +2352,14 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 
   // Do the incremental parse of the default squid log.
   if (cl.incremental) {
-    // Get log directory
-    if (Layout::get()->logdir) {
-      exit_status.set(EXIT_CRITICAL, " missing log directory configuration");
-      my_exit(exit_status);
-    }
-
     // Change directory to the log dir
-    if (chdir(system_log_dir) < 0) {
+    if (chdir(Layout::get()->logdir) < 0) {
       exit_status.set(EXIT_CRITICAL, " can't chdir to ");
-      exit_status.append(system_log_dir);
+      exit_status.append(Layout::get()->logdir);
       my_exit(exit_status);
     }
 
-    std::string sf_name(system_log_dir);
+    std::string sf_name(Layout::get()->logdir);
     struct stat stat_buf;
     int state_fd;
     sf_name.append("/logstats.state");
@@ -2381,7 +2381,8 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     }
 
     if ((state_fd = open(sf_name.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
-      exit_status.set(EXIT_CRITICAL, " can't open state file");
+      exit_status.set(EXIT_CRITICAL, " can't open state file ");
+      exit_status.append(sf_name);
       my_exit(exit_status);
     }
     // Get an exclusive lock, if possible. Try for up to 20 seconds.
@@ -2454,7 +2455,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
       last_state.st_ino = stat_buf.st_ino;
 
       // Find the old log file.
-      dirp = opendir(system_log_dir);
+      dirp = opendir(Layout::get()->logdir);
       if (NULL == dirp) {
         exit_status.set(EXIT_WARNING, " can't read log directory");
       } else {
