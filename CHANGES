@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.3
 
 
+  *) [TS-1927] Make ats_base64_decode able to handle the URL variant
+
   *) [TS-1207] Move cacheurl plugin out of experimental
 
   *) [TS-1857] On CentOS the Lua plugin is built whether Lua is found or not.
