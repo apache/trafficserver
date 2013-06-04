@@ -19,10 +19,6 @@
 // operators.cc: implementation of the operator classes
 //
 //
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__operators_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <arpa/inet.h>
 #include <ts/ts.h>
 #include <string.h>
@@ -216,7 +212,7 @@ OperatorSetDestination::exec(const Resources& res) const
         TSDebug(PLUGIN_NAME, "Would set destination PATH to an empty value, skipping");
       } else {
         const_cast<Resources&>(res).changed_url = true;
-        TSUrlHostSet(res._rri->requestBufp, res._rri->requestUrl, value.c_str(), value.size());
+        TSUrlPathSet(res._rri->requestBufp, res._rri->requestUrl, value.c_str(), value.size());
         TSDebug(PLUGIN_NAME, "OperatorSetHost::exec() invoked with PATH: %s", value.c_str());
       }
       break;

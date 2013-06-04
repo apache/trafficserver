@@ -1155,21 +1155,19 @@ public:
 */
 struct MIOBufferAccessor
 {
-  IOBufferReader *reader()
-  {
+  IOBufferReader * reader() {
     return entry;
   }
-  MIOBuffer *writer()
-  {
+
+  MIOBuffer * writer() {
     return mbuf;
   }
 
-  int64_t block_size()
-  {
+  int64_t block_size() const {
     return mbuf->block_size();
   }
-  int64_t total_size()
-  {
+
+  int64_t total_size() const {
     return block_size();
   }
 
@@ -1177,33 +1175,32 @@ struct MIOBufferAccessor
   void reader_for(MIOBuffer * abuf);
   void writer_for(MIOBuffer * abuf);
 
-  void clear();
-  void reset()
-  {
+  void clear() {
     mbuf = NULL;
     entry = NULL;
   }
 
-// private:
-
-  MIOBuffer *mbuf;
-  IOBufferReader *entry;
-
-MIOBufferAccessor():mbuf(NULL), entry(NULL)
+  MIOBufferAccessor():
 #ifdef DEBUG
-    , name(NULL)
+    name(NULL),
 #endif
+    mbuf(NULL), entry(NULL)
   {
   }
+
   ~MIOBufferAccessor();
 
 #ifdef DEBUG
-  const char *name;
+  const char * name;
 #endif
 
 private:
   MIOBufferAccessor(const MIOBufferAccessor &);
   MIOBufferAccessor & operator =(const MIOBufferAccessor &);
+
+  MIOBuffer *mbuf;
+  IOBufferReader *entry;
+
 };
 
 extern MIOBuffer * new_MIOBuffer_internal(

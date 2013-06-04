@@ -243,7 +243,7 @@ normalize_url(char *url, int *len)
           while (dir[0] == 0 && dir > root)
             dir--;
 
-          ink_debug_assert(dir[0] == '/');
+          ink_assert(dir[0] == '/');
           if (dir > root && dir[0] == '/') {
             do {
               dir[0] = 0;
@@ -315,7 +315,7 @@ public:
   int conf_update_handler(int event, void *edata);
 };
 
-static Ptr<ProxyMutex> prefetch_reconfig_mutex = NULL;
+static Ptr<ProxyMutex> prefetch_reconfig_mutex;
 
 /** Used to free old PrefetchConfiguration data. */
 struct PrefetchConfigFreerCont;
@@ -1567,7 +1567,7 @@ copy_header(MIOBuffer *buf, HTTPHdr *hdr, const char *hdr_tail)
 
     done = hdr->print(buf->end(), block_len, &index, &temp);
 
-    ink_debug_assert(done || index == block_len);
+    ink_assert(done || index == block_len);
 
     offset += index;
 
@@ -1575,7 +1575,7 @@ copy_header(MIOBuffer *buf, HTTPHdr *hdr, const char *hdr_tail)
       buf->fill(index);
       buf->add_block();
     } else {
-      ink_debug_assert(index >= 2);
+      ink_assert(index >= 2);
       if (hdr_tail && index >= 2) {
         /*This is a hack to be able to send headers beginning with @ */
         int len = strlen(hdr_tail);
@@ -2248,7 +2248,7 @@ KeepAliveConn::handleEvent(int event, void *data)
     break;
 
   default:
-    ink_debug_assert(!"not reached");
+    ink_assert(!"not reached");
     free();
   }
 

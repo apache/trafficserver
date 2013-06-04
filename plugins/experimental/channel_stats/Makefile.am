@@ -14,9 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api -I$(top_srcdir)/lib
+include $(top_srcdir)/build/plugins.mk
 
-pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = channel_stats.la
 channel_stats_la_SOURCES = channel_stats.cc
-channel_stats_la_LDFLAGS = -module -avoid-version -shared
+channel_stats_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

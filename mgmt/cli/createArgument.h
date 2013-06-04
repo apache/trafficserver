@@ -70,7 +70,7 @@ typedef struct cli_ArgvInfo
                                    refer to this argument */
   lower_range l_range;          /* lower_range */
   upper_range u_range;          /* upper_range */
-  int range_set;                /* flag which indicates if range is set by user */
+  bool range_set;                /* flag which indicates if range is set by user */
   int option;                   /* flag which indicates if argument is optional or required */
   char *help;                   /* Documentation message describing this  option. */
   char *def;                    /* default value */

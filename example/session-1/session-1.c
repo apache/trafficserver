@@ -30,11 +30,8 @@
  */
 
 #include <stdio.h>
-#include <ts/ts.h>
-
-// This gets the PRI*64 types
-# define __STDC_FORMAT_MACROS 1
-# include <inttypes.h>
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 static INKStat transaction_count;
 static INKStat session_count;

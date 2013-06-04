@@ -113,6 +113,8 @@ extern "C" int plock(int);
 
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG    0
 
+static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
@@ -125,9 +127,6 @@ static int num_task_threads = 0;
 
 extern int num_of_cluster_threads;
 
-#if TS_HAS_TESTS
-static int run_test_hook = 0;
-#endif
 static char * http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
 static char core_file[255] = "";
@@ -158,10 +157,8 @@ static char error_tags[1024] = "";
 static char action_tags[1024] = "";
 static int show_statistics = 0;
 static int history_info_enabled = 1;
-//inkcoreapi Diags *diags = NULL;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
-static int diags_init = 0;             // used by process manager
 
 static char vingid_flag[255] = "";
 
@@ -169,10 +166,6 @@ static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dprintf function
 
 AppVersionInfo appVersionInfo;  // Build info for this application
-
-#if TS_HAS_TESTS
-extern int run_TestHook();
-#endif
 
 const Version version = {
   {CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION},     // cacheDB
@@ -217,14 +210,6 @@ static const ArgumentDescription argument_descriptions[] = {
    0,
 #endif
    "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
-  {"test_hook", 'H',
-#ifdef DEBUG
-   "Run Test Stub Instead of Server",
-#else
-   0,
-#endif
-   "T",
-   &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
 #endif //TS_HAS_TESTS
 #if TS_USE_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
@@ -258,7 +243,6 @@ static const ArgumentDescription argument_descriptions[] = {
    NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
-static const unsigned n_argument_descriptions = SIZE(argument_descriptions);
 
 //
 // Initialize operating system related information/services
@@ -292,7 +276,6 @@ check_lockfile()
   pid_t holding_pid;
   int err;
 
-#ifndef _DLL_FOR_HNS
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
     fprintf(stderr,"unable to access() dir'%s': %d, %s\n",
             Layout::get()->runtimedir, errno, strerror(errno));
@@ -300,15 +283,6 @@ check_lockfile()
     _exit(1);
   }
   lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
-#else
-#define MAX_ENVVAR_LENGTH 128
-  char tempvar[MAX_ENVVAR_LENGTH + 1];
-  // TODO: Need an portable ink_file_tmppath()
-  // XXX:  What's the _DLL_FOR_HS?
-  //
-  ink_assert(GetEnvironmentVariable("TEMP", tempvar, MAX_ENVVAR_LENGTH + 1));
-  lockfile = Layout::relative_to(tempvar, SERVER_LOCK);
-#endif
 
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Get(&holding_pid);
@@ -318,11 +292,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-#if defined(solaris)
-      fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
-#else
-      fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
-#endif
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -457,7 +427,7 @@ cmd_list(char *cmd)
   // show hostdb size
 
 #ifndef INK_NO_HOSTDB
-  int h_size = 0;
+  int h_size = 120000;
   TS_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
   printf("Host Database size:\t%d\n", h_size);
 #endif
@@ -736,7 +706,7 @@ static int
 cmd_index(char *p)
 {
   p += strspn(p, " \t");
-  for (unsigned c = 0; c < SIZE(commands); c++) {
+  for (unsigned c = 0; c < countof(commands); c++) {
     const char *l = commands[c].n;
     while (l) {
       const char *s = strchr(l, '/');
@@ -758,7 +728,7 @@ cmd_help(char *cmd)
   printf("HELP\n\n");
   cmd = skip(cmd, true);
   if (!cmd) {
-    for (unsigned i = 0; i < SIZE(commands); i++) {
+    for (unsigned i = 0; i < countof(commands); i++) {
       printf("%15s  %s\n", commands[i].n, commands[i].d);
     }
   } else {
@@ -1076,19 +1046,6 @@ syslog_log_configure()
   ats_free(facility_str);
 }
 
-// void syslog_thr_init()
-//
-//   On the alpha, each thread must set its own syslog
-//     parameters.  This function is to be called by
-//     each thread at start up.  It inits syslog
-//     with stored facility information from system
-//     startup
-//
-void
-syslog_thr_init()
-{
-}
-
 static void
 check_system_constants()
 {
@@ -1276,7 +1233,7 @@ change_uid_gid(const char *user)
   char *buf = (char *)ats_malloc(buflen);
 
   if (0 != geteuid() && 0 == getuid())
-    NOWARN_UNUSED_RETURN(seteuid(0)); // revert euid if possible.
+    ATS_UNUSED_RETURN(seteuid(0)); // revert euid if possible.
   if (0 != geteuid()) {
     // Not root so can't change user ID. Logging isn't operational yet so
     // we have to write directly to stderr. Perhaps this should be fatal?
@@ -1365,7 +1322,7 @@ main(int argc, char **argv)
   ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
   chdir_root(); // change directory to the install root of traffic server.
 
-  process_args(argument_descriptions, n_argument_descriptions, argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // Check for version number request
   if (version_flag) {
@@ -1398,7 +1355,6 @@ main(int argc, char **argv)
   // re-start it again, TS will crash.
   diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, false));
   diags = diagsConfig->diags;
-  diags_init = 1;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();
@@ -1422,15 +1378,11 @@ main(int argc, char **argv)
   if (!num_task_threads)
     TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
-  const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
-  char *user = (char *)ats_malloc(max_login);
+  char *user = (char *)ats_malloc(MAX_LOGIN);
 
   *user = '\0';
-  admin_user_p = 
-    (REC_ERR_OKAY ==
-      TS_ReadConfigString(user, "proxy.config.admin.user_id", max_login)
-    ) && user[0] != '\0' && 0 != strcmp(user, "#-1")
-    ;
+  admin_user_p = ((REC_ERR_OKAY == TS_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) &&
+                  (*user != '\0') && (0 != strcmp(user, "#-1")));
 
 # if TS_USE_POSIX_CAP
   // Change the user of the process.
@@ -1464,7 +1416,6 @@ main(int argc, char **argv)
   diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, true));
   diags = diagsConfig->diags;
   RecSetDiags(diags);
-  diags_init = 1;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();
@@ -1570,19 +1521,17 @@ main(int argc, char **argv)
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_aio_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_cache_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_hostdb_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
+  ink_hostdb_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
+  ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   eventProcessor.start(num_of_net_threads);
 
-  int use_separate_thread = 0;
-  int num_remap_threads = 1;
-  TS_ReadConfigInteger(use_separate_thread, "proxy.config.remap.use_remap_processor");
+  int num_remap_threads = 0;
   TS_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
-  if (use_separate_thread && num_remap_threads < 1)
-    num_remap_threads = 1;
+  if (num_remap_threads < 1)
+    num_remap_threads = 0;
 
-  if (use_separate_thread) {
+  if (num_remap_threads > 0) {
     Note("using the new remap processor system with %d threads", num_remap_threads);
     remapProcessor.setUseSeparateThread();
   }
@@ -1676,17 +1625,6 @@ main(int argc, char **argv)
     if (show_statistics)
       eventProcessor.schedule_every(NEW(new ShowStats), HRTIME_SECONDS(show_statistics), ET_CALL);
 
-
-    /////////////////////////////////////////////
-    // if in test hook mode, run the test hook //
-    /////////////////////////////////////////////
-
-#if TS_HAS_TESTS
-    if (run_test_hook) {
-      Note("Running TestHook Instead of Main Server");
-      run_TestHook();
-    }
-#endif
 
     //////////////////////////////////////
     // main server logic initiated here //

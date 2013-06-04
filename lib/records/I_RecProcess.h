@@ -118,7 +118,7 @@ int64_t *RecGetGlobalRawStatCountPtr(RecRawStatBlock * rsb, int id);
 inline RecRawStat *
 raw_stat_get_tlp(RecRawStatBlock * rsb, int id, EThread * ethread)
 {
-  ink_debug_assert((id >= 0) && (id < rsb->max_stats));
+  ink_assert((id >= 0) && (id < rsb->max_stats));
   if (ethread == NULL) {
     ethread = this_ethread();
   }

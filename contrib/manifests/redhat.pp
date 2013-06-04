@@ -16,9 +16,10 @@
 
 # Base ATS build dependencies.
 package {[
-    'gcc', 'automake', 'autoconf', 'libtool',
+    'gcc', 'gcc-c++', 'automake', 'autoconf', 'libtool', 'pkgconfig',
     'openssl-devel', 'tcl-devel', 'expat-devel', 'pcre-devel',
-    'libcap-devel', 'bison', 'flex', 'make',
+    'ncurses-devel', 'libcurl-devel', 'libaio-devel',
+    'hwloc-devel', 'libcap-devel', 'bison', 'flex', 'make',
   ]:
   ensure => latest
 }

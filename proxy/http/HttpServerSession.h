@@ -85,8 +85,8 @@ public:
 
   void reset_read_buffer(void)
   {
-    ink_debug_assert(read_buffer->_writer);
-    ink_debug_assert(buf_reader != NULL);
+    ink_assert(read_buffer->_writer);
+    ink_assert(buf_reader != NULL);
     read_buffer->dealloc_all_readers();
     read_buffer->_writer = NULL;
     buf_reader = read_buffer->alloc_reader();
@@ -172,7 +172,7 @@ inline void
 HttpServerSession::attach_hostname(const char *hostname)
 {
   if (!host_hash_computed) {
-    ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
+    ink_code_md5((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
     host_hash_computed = true;
   }
 }

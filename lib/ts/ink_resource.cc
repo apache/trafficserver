@@ -25,7 +25,7 @@
 
 #include "ink_assert.h"
 #include "ink_atomic.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_resource.h"
 #include "ink_stack_trace.h"
 
@@ -34,9 +34,8 @@ volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
 char *
-_xstrdup(const char *str, int length, const char *path)
+_xstrdup(const char *str, int length, const char* /* path ATS_UNUSED */)
 {
-  NOWARN_UNUSED(path);
   char *newstr;
 
   if (likely(str)) {
@@ -53,14 +52,7 @@ _xstrdup(const char *str, int length, const char *path)
 typedef struct Resource Resource;
 
 Resource *
-res_lookup(const char *path)
+res_lookup(const char */* path ATS_UNUSED */)
 {
-  NOWARN_UNUSED(path);
   return NULL;
-}
-
-void
-xdump(void)
-{
-  ink_stack_trace_dump();
 }

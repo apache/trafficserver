@@ -56,5 +56,5 @@ load_http_hdr_SOURCES = \
 
 load_http_hdr_LDADD = -L. -lhdrs \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @LIBRT@ @LIBTHREAD@
+  @LIBTCL@
 load_http_hdr_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@

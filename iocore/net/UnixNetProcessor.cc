@@ -41,6 +41,7 @@ NetProcessor::AcceptOptions::reset()
   f_callback_on_open = false;
   localhost_only = false;
   frequent_accept = true;
+  backdoor = false;
   recv_bufsize = 0;
   send_bufsize = 0;
   sockopt_flags = 0;
@@ -115,7 +116,7 @@ UnixNetProcessor::accept_internal(
     accept_ip.assign(opt.local_ip);
   else
     accept_ip.setToAnyAddr(opt.ip_family);
-  ink_debug_assert(0 < opt.local_port && opt.local_port < 65536);
+  ink_assert(0 < opt.local_port && opt.local_port < 65536);
   accept_ip.port() = htons(opt.local_port);
 
   na->accept_fn = net_accept; // All callers used this.
@@ -146,6 +147,7 @@ UnixNetProcessor::accept_internal(
   na->packet_mark = opt.packet_mark;
   na->packet_tos = opt.packet_tos;
   na->etype = opt.etype;
+  na->backdoor = opt.backdoor;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (opt.frequent_accept) { // true
@@ -351,7 +353,7 @@ struct CheckConnect:public Continuation
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_TIMEOUT);
       break;
     default:
-      ink_debug_assert(!"unknown connect event");
+      ink_assert(!"unknown connect event");
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_FAILED);
 

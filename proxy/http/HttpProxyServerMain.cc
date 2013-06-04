@@ -36,44 +36,6 @@
 #include "Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
 
-#ifdef DEBUG
-extern "C"
-{
-  void http_dump();
-}
-///////////////////////////////////////////////////////////
-//
-//  http_dump()
-//
-///////////////////////////////////////////////////////////
-void
-http_dump()
-{
-//    if (diags->on("http_dump"))
-  {
-//      httpNetProcessor.dump();
-//      HttpStateMachine::dump_state_machines();
-  }
-
-  return;
-}
-#endif
-struct DumpStats: public Continuation
-{
-  int mainEvent(int event, void *e)
-  {
-    (void) event;
-    (void) e;
-    /* http_dump() */
-//     dump_stats();
-    return EVENT_CONT;
-  }
-  DumpStats():Continuation(NULL)
-  {
-    SET_HANDLER(&DumpStats::mainEvent);
-  }
-};
-
 HttpAccept *plugin_http_accept = NULL;
 HttpAccept *plugin_http_transparent_accept = 0;
 
@@ -152,22 +114,16 @@ init_HttpProxyServer(void)
 #endif
 }
 
-bool
-start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
+NetProcessor::AcceptOptions
+make_net_accept_options(const HttpProxyPort& port, unsigned nthreads)
 {
   NetProcessor::AcceptOptions net;
-  HttpAccept::Options         http;
 
   net.accept_threads = nthreads;
 
   net.f_inbound_transparent = port.m_inbound_transparent_p;
   net.ip_family = port.m_family;
   net.local_port = port.m_port;
-
-  http.f_outbound_transparent = port.m_outbound_transparent_p;
-  http.transport_type = port.m_type;
-  http.setHostResPreference(port.m_host_res_preference);
-  http.setTransparentPassthrough(port.m_transparent_passthrough);
 
   if (port.m_inbound_ip.isValid()) {
     net.local_ip = port.m_inbound_ip;
@@ -176,6 +132,25 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
   } else if (AF_INET == port.m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
     net.local_ip = HttpConfig::m_master.inbound_ip4;
   }
+
+  return net;
+}
+
+static bool
+start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
+{
+  NetProcessor::AcceptOptions net(make_net_accept_options(port, nthreads));
+  HttpAccept::Options         http;
+
+  REC_ReadConfigInteger(net.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
+  REC_ReadConfigInteger(net.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
+  REC_ReadConfigInteger(net.packet_mark, "proxy.config.net.sock_packet_mark_in");
+  REC_ReadConfigInteger(net.packet_tos, "proxy.config.net.sock_packet_tos_in");
+
+  http.f_outbound_transparent = port.m_outbound_transparent_p;
+  http.transport_type = port.m_type;
+  http.setHostResPreference(port.m_host_res_preference);
+  http.setTransparentPassthrough(port.m_transparent_passthrough);
 
   if (port.m_outbound_ip4.isValid()) {
     http.outbound_ip4 = port.m_outbound_ip4;
@@ -195,11 +170,6 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, accept);
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, accept);
 
-#ifndef TS_NO_API
-    ink_scoped_mutex lock(ssl_plugin_mutex);
-    ssl_plugin_acceptors.push(ssl);
-#endif
-
     return sslNetProcessor.main_accept(ssl, port.m_fd, net) != NULL;
   } else {
     return netProcessor.main_accept(NEW(new HttpAccept(http)), port.m_fd, net) != NULL;
@@ -212,14 +182,7 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
 void
 start_HttpProxyServer(int accept_threads)
 {
-  char *dump_every_str = 0;
   static bool called_once = false;
-  NetProcessor::AcceptOptions opt;
-
-  if ((dump_every_str = getenv("PROXY_DUMP_STATS")) != 0) {
-    int dump_every_sec = atoi(dump_every_str);
-    eventProcessor.schedule_every(NEW(new DumpStats), HRTIME_SECONDS(dump_every_sec), ET_CALL);
-  }
 
   ///////////////////////////////////
   // start accepting connections   //
@@ -227,21 +190,10 @@ start_HttpProxyServer(int accept_threads)
 
   ink_assert(!called_once);
 
-  opt.accept_threads = accept_threads;
-  REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
-  REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
-  REC_ReadConfigInteger(opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
-  REC_ReadConfigInteger(opt.packet_tos, "proxy.config.net.sock_packet_tos_in");
-  
   for ( int i = 0 , n = HttpProxyPort::global().length() ; i < n ; ++i ) {
     start_HttpProxyPort(HttpProxyPort::global()[i], accept_threads);
   }
 
-#ifdef DEBUG
-  if (diags->on("http_dump")) {
-//      HttpStateMachine::dump_state_machines();
-  }
-#endif
 #if TS_HAS_TESTS
   if (is_action_tag_set("http_update_test")) {
     init_http_update_test();
@@ -259,6 +211,7 @@ start_HttpProxyServerBackDoor(int port, int accept_threads)
   opt.accept_threads = accept_threads;
   opt.localhost_only = true;
   ha_opt.backdoor = true;
+  opt.backdoor = true;
   
   // The backdoor only binds the loopback interface
   netProcessor.main_accept(NEW(new HttpAccept(ha_opt)), NO_FD, opt);

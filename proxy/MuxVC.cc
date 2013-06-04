@@ -96,7 +96,7 @@ mux_move_data(MIOBuffer * copy_to, IOBufferReader * from, int nbytes)
       int64_t block_avail = from->block_read_avail();
       int act_on = MIN(block_avail, left);
       int r = copy_to->write(block_start, act_on);
-      ink_debug_assert(r == act_on);
+      ink_assert(r == act_on);
       from->consume(act_on);
       left -= act_on;
     }
@@ -134,8 +134,8 @@ void
 MuxClientVC::init(MuxVC * mvc, int32_t id_arg)
 {
 
-  ink_debug_assert(!closed);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(!closed);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   mux_vc = mvc;
   mutex = mux_vc->mutex;
@@ -155,9 +155,9 @@ void
 MuxClientVC::kill()
 {
 
-  ink_debug_assert(closed == true);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(closed == true);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(mutex->thread_holding == this_ethread());
 
   Debug("mux_alloc", "[%d,%d] Killing client id", mux_vc->id, id);
 
@@ -198,8 +198,8 @@ VIO *
 MuxClientVC::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
 {
 
-  ink_debug_assert(!closed);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(!closed);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   if (read_state.vio.op == VIO::READ) {
     Debug("mux_last", "do_io_read over nbytes %d ndone %d byte_bank %d",
@@ -237,9 +237,9 @@ VIO *
 MuxClientVC::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * abuffer, bool owner)
 {
 
-  ink_debug_assert(!closed);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
-  ink_debug_assert(owner == false);
+  ink_assert(!closed);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(owner == false);
 
   if (abuffer) {
     ink_assert(!owner);
@@ -273,17 +273,17 @@ void
 MuxClientVC::reenable(VIO * vio)
 {
 
-  ink_debug_assert(!closed);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(!closed);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   Debug("muxvc", "[%d,%d] MuxClientVC::reenable %s", mux_vc->id, id, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
   if (vio == &read_state.vio) {
-    ink_debug_assert(vio->op == VIO::READ);
+    ink_assert(vio->op == VIO::READ);
     read_state.enabled = 1;
   } else {
-    ink_debug_assert(vio == &write_state.vio);
-    ink_debug_assert(vio->op == VIO::WRITE);
+    ink_assert(vio == &write_state.vio);
+    ink_assert(vio->op == VIO::WRITE);
     write_state.enabled = 1;
   }
 
@@ -297,8 +297,8 @@ MuxClientVC::reenable_re(VIO * vio)
 {
   this->reenable(vio);
 /*
-    ink_debug_assert(!closed);
-    ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+    ink_assert(!closed);
+    ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
     Debug("muxvc", "[%d] reenable_re %s", id,
 	  (vio->op == VIO::WRITE) ? "Write" : "Read");
@@ -325,8 +325,8 @@ void
 MuxClientVC::do_io_close(int flag)
 {
 
-  ink_debug_assert(closed == false);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(closed == false);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   Debug("muxvc", "[%d, %d] do_io_close", mux_vc->id, id);
 
@@ -374,8 +374,8 @@ void
 MuxClientVC::do_io_shutdown(ShutdownHowTo_t howto)
 {
 
-  ink_debug_assert(closed == false);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(closed == false);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   switch (howto) {
   case IO_SHUTDOWN_READ:
@@ -402,8 +402,8 @@ void
 MuxClientVC::set_active_timeout(ink_hrtime timeout_in)
 {
 
-  ink_debug_assert(closed == false);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(closed == false);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   active_timeout = timeout_in;
 
@@ -427,8 +427,8 @@ void
 MuxClientVC::set_inactivity_timeout(ink_hrtime timeout_in)
 {
 
-  ink_debug_assert(closed == false);
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(closed == false);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   inactive_timeout = timeout_in;
 
@@ -475,7 +475,7 @@ MuxClientVC::get_inactivity_timeout()
 void
 MuxClientVC::update_inactive_timeout()
 {
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   if (inactive_event) {
     inactive_event->cancel();
@@ -541,7 +541,7 @@ MuxClientVC::main_handler(int event, void *data)
   Ptr<ProxyMutex> read_side_mutex = read_state.vio.mutex;
   Ptr<ProxyMutex> write_side_mutex = write_state.vio.mutex;
 
-  ink_debug_assert(mutex->thread_holding == my_ethread);
+  ink_assert(mutex->thread_holding == my_ethread);
 
   if (read_side_mutex) {
     read_mutex_held = MUTEX_TAKE_TRY_LOCK(read_side_mutex, my_ethread);
@@ -600,7 +600,7 @@ void
 MuxClientVC::process_timeout(int event_to_send)
 {
 
-  ink_debug_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
+  ink_assert(magic == MUX_VC_CLIENT_MAGIC_ALIVE);
 
   Debug("muxvc", "[%d,%d] process_timeout - event_to_send  %d", mux_vc->id, id, event_to_send);
 
@@ -695,8 +695,8 @@ void
 MuxClientVC::process_read_state()
 {
 
-  ink_debug_assert(read_state.vio.mutex->thread_holding == this_ethread());
-  ink_debug_assert(read_state.enabled);
+  ink_assert(read_state.vio.mutex->thread_holding == this_ethread());
+  ink_assert(read_state.enabled);
 
   if (read_byte_bank) {
     this->process_byte_bank();
@@ -783,8 +783,8 @@ MuxClientVC::process_write()
 {
   int bytes_written = 0;
 
-  ink_debug_assert(write_state.vio.mutex->thread_holding == this_ethread());
-  ink_debug_assert(write_state.enabled);
+  ink_assert(write_state.vio.mutex->thread_holding == this_ethread());
+  ink_assert(write_state.enabled);
 
   if (other_side_closed & MUX_OCLOSE_OUTBOUND_MASK) {
     if (other_side_closed & MUX_OCLOSE_NEED_WRITE_NOTIFY) {
@@ -793,7 +793,7 @@ MuxClientVC::process_write()
     return 0;
   } else {
 
-    ink_debug_assert(!closed);
+    ink_assert(!closed);
 
     int64_t ntodo = write_state.vio.ntodo();
     if (ntodo == 0 || write_state.shutdown) {
@@ -814,7 +814,7 @@ MuxClientVC::process_write()
     //
     // act_on = MIN(act_on, MUX_MAX_BYTES_SLOT);
 
-    ink_debug_assert(act_on >= 0);
+    ink_assert(act_on >= 0);
     if (act_on <= 0) {
       Debug("muxvc", "[process_write] disabling [%d,%d]" " due to zero bytes", mux_vc->id, id);
       write_state.enabled = 0;
@@ -879,10 +879,10 @@ void
 MuxClientVC::process_channel_close_for_read()
 {
 
-  ink_debug_assert(!closed);
-  ink_debug_assert(other_side_closed & MUX_OCLOSE_NEED_READ_NOTIFY);
-  ink_debug_assert(read_state.vio.mutex->thread_holding == this_ethread());
-  ink_debug_assert(read_byte_bank == NULL);
+  ink_assert(!closed);
+  ink_assert(other_side_closed & MUX_OCLOSE_NEED_READ_NOTIFY);
+  ink_assert(read_state.vio.mutex->thread_holding == this_ethread());
+  ink_assert(read_byte_bank == NULL);
 
   if (!read_state.shutdown && read_state.vio.ntodo() > 0) {
 
@@ -905,9 +905,9 @@ void
 MuxClientVC::process_channel_close_for_write()
 {
 
-  ink_debug_assert(!closed);
-  ink_debug_assert(other_side_closed & MUX_OCLOSE_NEED_WRITE_NOTIFY);
-  ink_debug_assert(write_state.vio.mutex->thread_holding == this_ethread());
+  ink_assert(!closed);
+  ink_assert(other_side_closed & MUX_OCLOSE_NEED_WRITE_NOTIFY);
+  ink_assert(write_state.vio.mutex->thread_holding == this_ethread());
 
   if (!write_state.shutdown && write_state.vio.ntodo() > 0) {
 
@@ -923,9 +923,9 @@ int
 MuxClientVC::send_write_shutdown_message()
 {
 
-  ink_debug_assert(!closed);
-  ink_debug_assert(write_state.shutdown & MUX_WRITE_SHUTUDOWN_SEND_MSG);
-  ink_debug_assert(this->mutex->thread_holding == this_ethread());
+  ink_assert(!closed);
+  ink_assert(write_state.shutdown & MUX_WRITE_SHUTUDOWN_SEND_MSG);
+  ink_assert(this->mutex->thread_holding == this_ethread());
 
   write_state.shutdown &= ~MUX_WRITE_SHUTUDOWN_SEND_MSG;
 
@@ -999,7 +999,7 @@ MuxVC::init_buffers()
 
   if (!read_buffer) {
     read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-    ink_debug_assert(read_buffer_reader == NULL);
+    ink_assert(read_buffer_reader == NULL);
     read_buffer_reader = read_buffer->alloc_reader();
   }
 
@@ -1040,9 +1040,9 @@ Action *
 MuxVC::do_connect(Continuation * c, unsigned int ip, int port)
 {
 
-  ink_debug_assert(magic == MUX_VC_MAGIC_ALIVE);
-  ink_debug_assert(return_connect_action.continuation == NULL);
-  ink_debug_assert(connect_state == MUX_NOT_CONNECTED);
+  ink_assert(magic == MUX_VC_MAGIC_ALIVE);
+  ink_assert(return_connect_action.continuation == NULL);
+  ink_assert(connect_state == MUX_NOT_CONNECTED);
 
   reentrancy_count++;
   connect_state = MUX_NET_CONNECT_ISSUED;
@@ -1091,7 +1091,7 @@ MuxVC::state_handle_connect(int event, void *data)
 {
 
   ink_release_assert(magic == MUX_VC_MAGIC_ALIVE);
-  ink_debug_assert(net_vc == NULL);
+  ink_assert(net_vc == NULL);
 
   Debug("muxvc", "MuxVC::connect_handler event %d", event);
   Debug("mux_open", "MuxVC::connect_handler event %d", event);
@@ -1126,7 +1126,7 @@ MuxVC::state_wait_for_ready(int event, void *data)
 {
 
   ink_release_assert(magic == MUX_VC_MAGIC_ALIVE);
-  ink_debug_assert(connect_state == MUX_WAIT_FOR_READY);
+  ink_assert(connect_state == MUX_WAIT_FOR_READY);
 
   Debug("muxvc", "MuxVC::state_wait_for_ready event %d", event);
   Debug("mux_open", "MuxVC::state_wait_for_ready event %d", event);
@@ -1135,7 +1135,7 @@ MuxVC::state_wait_for_ready(int event, void *data)
 
   switch (event) {
   case VC_EVENT_WRITE_READY:
-    ink_debug_assert(data == write_vio);
+    ink_assert(data == write_vio);
     connect_state = MUX_CONNECTED_ACTIVE;
     net_vc->cancel_inactivity_timeout();
     net_vc->do_io_write(this, 0, NULL);
@@ -1167,7 +1167,7 @@ int
 MuxVC::state_send_init_response(int event, void *data)
 {
 
-  ink_debug_assert(event == EVENT_NONE || (event == EVENT_INTERVAL && data == retry_event));
+  ink_assert(event == EVENT_NONE || (event == EVENT_INTERVAL && data == retry_event));
 
   if (event == EVENT_INTERVAL) {
     retry_event = NULL;
@@ -1237,7 +1237,7 @@ MuxVC::setup_connect_check()
   // FIX - ready timeout should be tunable
   net_vc->set_inactivity_timeout(HRTIME_SECONDS(30));
 
-  ink_debug_assert(write_vio == NULL);
+  ink_assert(write_vio == NULL);
   write_vio = net_vc->do_io_write(this, INT64_MAX, r);
 }
 
@@ -1253,8 +1253,8 @@ void
 MuxVC::kill()
 {
 
-  ink_debug_assert(mutex->thread_holding == this_ethread());
-  ink_debug_assert(reentrancy_count == 0);
+  ink_assert(mutex->thread_holding == this_ethread());
+  ink_assert(reentrancy_count == 0);
   ink_release_assert(num_clients == 0);
 
   Debug("mux_alloc", "[%d] Cleaning up MuxVC", id);
@@ -1298,7 +1298,7 @@ MuxVC::kill()
   }
 
   Debug("mux_alloc", "[%d] Killing MuxVC", id);
-  ink_debug_assert(on_mux_list == false);
+  ink_assert(on_mux_list == false);
   mutex = NULL;
   delete this;
 }
@@ -1307,9 +1307,9 @@ int
 MuxVC::state_remove_from_list(int event, void *data)
 {
 
-  ink_debug_assert(data == process_event);
-  ink_debug_assert(event == EVENT_INTERVAL);
-  ink_debug_assert(on_mux_list);
+  ink_assert(data == process_event);
+  ink_assert(event == EVENT_INTERVAL);
+  ink_assert(on_mux_list);
 
   process_event = NULL;
   if (try_processor_list_remove() == 0) {
@@ -1343,17 +1343,17 @@ MuxClientVC *
 MuxVC::new_client(int32_t id_arg)
 {
 
-  ink_debug_assert(magic == MUX_VC_MAGIC_ALIVE);
+  ink_assert(magic == MUX_VC_MAGIC_ALIVE);
   ink_release_assert(mutex->thread_holding == this_ethread());
 
   if (connect_state == MUX_CONNECTED_IDLE) {
-    ink_debug_assert(process_event != NULL);
+    ink_assert(process_event != NULL);
     process_event->cancel();
     process_event = NULL;
     connect_state = MUX_CONNECTED_ACTIVE;
     SET_HANDLER(MuxVC::state_handle_mux);
   }
-  ink_debug_assert(connect_state == MUX_CONNECTED_ACTIVE);
+  ink_assert(connect_state == MUX_CONNECTED_ACTIVE);
 
   MuxClientVC *new_client = NEW(new MuxClientVC);
 
@@ -1370,7 +1370,7 @@ MuxVC::new_client(int32_t id_arg)
   num_clients++;
   active_clients.push(new_client);
 
-  ink_debug_assert(on_list(new_client) == true);
+  ink_assert(on_list(new_client) == true);
 
   return new_client;
 }
@@ -1383,7 +1383,7 @@ void
 MuxVC::remove_client(MuxClientVC * client)
 {
 
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
 
   num_clients--;
   active_clients.remove(client);
@@ -1431,7 +1431,7 @@ int
 MuxVC::enqueue_control_message(int msg_id, int32_t cid, int data_size)
 {
 
-  ink_debug_assert(data_size + sizeof(MuxMessage) <= USHRT_MAX);
+  ink_assert(data_size + sizeof(MuxMessage) <= USHRT_MAX);
 
   MuxMessage mm;
   Debug("mux_cntl", "enqueue_control_message: %s for %d", control_msg_id_to_string(msg_id), cid);
@@ -1457,7 +1457,7 @@ void
 MuxVC::process_clients()
 {
 
-  ink_debug_assert(magic == MUX_VC_MAGIC_ALIVE);
+  ink_assert(magic == MUX_VC_MAGIC_ALIVE);
 
   EThread *my_ethread = this_ethread();
   MuxClientVC *current = active_clients.head;
@@ -1556,7 +1556,7 @@ MuxVC::process_read_msg_body()
   bool need_flow_control = false;
   MuxClientVC *client = NULL;
 
-  ink_debug_assert(read_msg_state == MUX_READ_MSG_BODY);
+  ink_assert(read_msg_state == MUX_READ_MSG_BODY);
 
   int avail = read_buffer_reader->read_avail();
   if (avail > 0) {
@@ -1663,7 +1663,7 @@ MuxVC::process_read_msg_body()
     // If the client isn't available or has closed or shutdown reading,
     //    discard the input data
     if (discard_read_data) {
-      ink_debug_assert(need_byte_bank == false);
+      ink_assert(need_byte_bank == false);
       int left_in_msg = current_msg_hdr.msg_len - read_msg_ndone;
       int act_on = MIN(avail, left_in_msg);
       read_buffer_reader->consume(act_on);
@@ -1672,7 +1672,7 @@ MuxVC::process_read_msg_body()
 
   ADD_TO_BYTE_BANK:
     if (need_byte_bank) {
-      ink_debug_assert(discard_read_data == false);
+      ink_assert(discard_read_data == false);
 
       // Either missed the lock or bytes sent exceeds the amount the client asked
       //  for.  Need to store in byte until client is ready for these bytes
@@ -1728,7 +1728,7 @@ MuxVC::process_read_data()
     if (read_msg_state == MUX_READ_MSG_HEADER) {
       char *copy_to = ((char *) (&current_msg_hdr)) + read_msg_ndone;
       int act_on = sizeof(MuxMessage) - read_msg_ndone;
-      ink_debug_assert(act_on > 0);
+      ink_assert(act_on > 0);
 
       int res = read_buffer_reader->read(copy_to, act_on);
       read_msg_ndone += res;
@@ -1917,7 +1917,7 @@ MuxVC::process_channel_inbound_shutdown(MuxClientVC * client)
 
   EThread *my_ethread = this_ethread();
 
-  ink_debug_assert(client->other_side_closed & MUX_OCLOSE_NEED_READ_NOTIFY);
+  ink_assert(client->other_side_closed & MUX_OCLOSE_NEED_READ_NOTIFY);
 
   if (client->read_state.vio.mutex) {
     MUTEX_TRY_LOCK(rlock, client->read_state.vio.mutex, my_ethread);
@@ -1980,7 +1980,7 @@ void
 MuxVC::cleanup_on_error()
 {
 
-  ink_debug_assert(connect_state == MUX_CONNECTION_DROPPED);
+  ink_assert(connect_state == MUX_CONNECTION_DROPPED);
 
   MuxClientVC *current = active_clients.head;
   MuxClientVC *next = NULL;
@@ -2042,7 +2042,7 @@ MuxVC::state_teardown(int event, void *data)
 
   switch (event) {
   case VC_EVENT_WRITE_COMPLETE:
-    ink_debug_assert(data == write_vio);
+    ink_assert(data == write_vio);
     terminate_vc = true;
     break;
   case VC_EVENT_WRITE_READY:
@@ -2067,8 +2067,8 @@ MuxVC::state_idle(int event, void *data)
   int r = EVENT_DONE;
 
   ink_release_assert(magic == MUX_VC_MAGIC_ALIVE);
-  ink_debug_assert(connect_state == MUX_CONNECTED_IDLE);
-  ink_debug_assert(num_clients == 0);
+  ink_assert(connect_state == MUX_CONNECTED_IDLE);
+  ink_assert(num_clients == 0);
 
   Debug("muxvc", "state_idle: event %d", event);
   reentrancy_count++;
@@ -2077,7 +2077,7 @@ MuxVC::state_idle(int event, void *data)
   case EVENT_INTERVAL:
   case EVENT_IMMEDIATE:
     {
-      ink_debug_assert(process_event == data);
+      ink_assert(process_event == data);
       process_event = NULL;
       connect_state = MUX_CONNECTED_TEARDOWN;
 
@@ -2139,7 +2139,7 @@ MuxVC::state_handle_mux_down(int event, void *data)
   switch (event) {
   case EVENT_INTERVAL:
   case EVENT_IMMEDIATE:
-    ink_debug_assert(process_event == data);
+    ink_assert(process_event == data);
     process_event = NULL;
     cleanup_on_error();
     break;
@@ -2168,13 +2168,13 @@ MuxVC::state_handle_mux(int event, void *data)
   switch (event) {
   case VC_EVENT_WRITE_COMPLETE:
     // We hit INT64_MAX bytes.  Reset the I/O
-    ink_debug_assert(data == write_vio);
-    ink_debug_assert(write_vio->ndone == INT64_MAX);
+    ink_assert(data == write_vio);
+    ink_assert(write_vio->ndone == INT64_MAX);
     write_bytes_added -= write_vio->ndone;
     write_vio = net_vc->do_io_write(this, INT64_MAX, write_vio->buffer.reader());
     // FALL THROUGH
   case VC_EVENT_WRITE_READY:
-    ink_debug_assert(data == write_vio);
+    ink_assert(data == write_vio);
     Debug("muxvc", "state_handle_mux: WRITE_READY, ndone: %d", write_vio->ndone);
 
     if (writes_blocked) {
@@ -2184,11 +2184,11 @@ MuxVC::state_handle_mux(int event, void *data)
     break;
   case VC_EVENT_READ_COMPLETE:
     // We hit INT64_MAX bytes.  Reset the I/O
-    ink_debug_assert(data == read_vio);
+    ink_assert(data == read_vio);
     read_vio = net_vc->do_io_read(this, INT64_MAX, read_buffer);
     // FALL THROUGH
   case VC_EVENT_READ_READY:
-    ink_debug_assert(data == read_vio);
+    ink_assert(data == read_vio);
     /*Debug("muxvc", "state_handle_mux: READ_READY, ndone: %d, "
        "avail %d, high_water %d",
        read_vio->ndone,
@@ -2205,7 +2205,7 @@ MuxVC::state_handle_mux(int event, void *data)
        read_buffer_reader->read_avail(),
        read_buffer->max_read_avail(),
        (int) read_buffer->high_water()); */
-    ink_debug_assert(process_event == data);
+    ink_assert(process_event == data);
     process_event = NULL;
     process_clients();
     read_vio->reenable();
@@ -2401,7 +2401,7 @@ return_action(), mux_action(NULL), mux_vc(NULL), retry_event(NULL), ip(0), port(
 
 MuxGetCont::~MuxGetCont()
 {
-  ink_debug_assert(mux_action == NULL);
+  ink_assert(mux_action == NULL);
 
   if (retry_event) {
     retry_event->cancel();
@@ -2460,15 +2460,15 @@ MuxGetCont::lock_miss_handler(int event, void *data)
   Event *call_event = (Event *) data;
 
   ink_release_assert(event == EVENT_INTERVAL);
-  ink_debug_assert(retry_event == call_event);
-  ink_debug_assert(this->mutex.m_ptr == return_action.mutex.m_ptr);
+  ink_assert(retry_event == call_event);
+  ink_assert(this->mutex.m_ptr == return_action.mutex.m_ptr);
 
   retry_event = NULL;
 
   // Note, we've already got the continuation's mutex
   //   since we set our mutex to it's mutex
   if (return_action.cancelled) {
-    ink_debug_assert(mux_action == NULL);
+    ink_assert(mux_action == NULL);
     retry_event = NULL;
     delete this;
     return EVENT_DONE;
@@ -2514,7 +2514,7 @@ MuxGetCont::new_mux_handler(int event, void *data)
   switch (event) {
   case MUX_EVENT_OPEN:
     {
-      ink_debug_assert(mux_vc->connect_state == MUX_CONNECTED_ACTIVE);
+      ink_assert(mux_vc->connect_state == MUX_CONNECTED_ACTIVE);
       Debug("mux_open", "[MuxGetCont::main_handler sending] adding to mux list");
 
 
@@ -2737,7 +2737,7 @@ int
 MuxPagesHandler::handle_mux_details(int event, void *data)
 {
 
-  ink_debug_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
+  ink_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
   Event *call_event = (Event *) data;
 
   int32_t mux_id = extract_id(request);
@@ -2790,7 +2790,7 @@ int
 MuxPagesHandler::handle_muxvc_list(int event, void *data)
 {
 
-  ink_debug_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
+  ink_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
   Event *call_event = (Event *) data;
 
   MUTEX_TRY_LOCK(lock, muxProcessor.list_mutex, call_event->ethread);
@@ -2983,7 +2983,7 @@ MUXTestDriver::start_next_test()
   Debug("mux_test", "Starting test %s", netvc_tests_def[next_index].test_name);
   completions_received = 0;
 
-  ink_debug_assert(pending_action == NULL);
+  ink_assert(pending_action == NULL);
   Action *tmp = muxProcessor.get_mux_re(this, inet_addr("127.0.0.1"), 9555);
 
   if (tmp != ACTION_RESULT_DONE) {

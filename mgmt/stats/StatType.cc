@@ -147,7 +147,7 @@ StatExprToken::assignTokenName(const char *name)
  */
 bool StatExprToken::assignTokenType()
 {
-  ink_debug_assert(m_token_name != NULL);
+  ink_assert(m_token_name != NULL);
   m_token_type = varType(m_token_name);
 
   if (m_token_name[0] == '$') {
@@ -522,7 +522,7 @@ StatObject::assignExpr(char *str)
   if (StatDebug) {
     Debug(MODULE_INIT, "EXPRESSION: %s\n", str);
   }
-  ink_debug_assert(m_expr_string == NULL);
+  ink_assert(m_expr_string == NULL);
   // We take ownership here
   m_expr_string = str;
 
@@ -531,7 +531,7 @@ StatObject::assignExpr(char *str)
   tok_iter_state exprTok_state;
   const char *token = exprTok.iterFirst(&exprTok_state);
 
-  ink_debug_assert(m_expression == NULL);
+  ink_assert(m_expression == NULL);
   m_expression = NEW(new StatExprList());
 
   while (token) {
@@ -541,7 +541,7 @@ StatObject::assignExpr(char *str)
     if (isOperator(token[0])) {
 
       statToken->m_arith_symbol = token[0];
-      ink_debug_assert(statToken->m_token_name == NULL);
+      ink_assert(statToken->m_token_name == NULL);
 
       if (StatDebug) {
         Debug(MODULE_INIT, "\toperator: ->%c<-\n", statToken->m_arith_symbol);
@@ -549,7 +549,7 @@ StatObject::assignExpr(char *str)
 
     } else {
 
-      ink_debug_assert(statToken->m_arith_symbol == '\0');
+      ink_assert(statToken->m_arith_symbol == '\0');
 
       // delta
       if (token[0] == '#') {
@@ -606,7 +606,7 @@ StatObject::infix2postfix()
       m_postfix->enqueue(curToken);
 
     } else {
-      ink_debug_assert(curToken->m_arith_symbol != '\0');
+      ink_assert(curToken->m_arith_symbol != '\0');
 
       if (curToken->m_arith_symbol == '(') {
         stack.push(curToken);
@@ -685,21 +685,20 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
       src->assignTokenType();
     }
 
+    *result_type = src->m_token_type;
     if (src->m_token_type == RECD_CONST) {
-      *result_type = RECD_CONST;
       tempValue = src->m_token_value;
     } else if (src->m_token_value_delta) {
-      *result_type = src->m_token_type;
       tempValue = src->m_token_value_delta->diff_value(src->m_token_name);
     } else if (!cluster) {
       if (!varDataFromName(src->m_token_type, src->m_token_name, &tempValue)) {
-        RecDataClear(RECD_NULL, &tempValue);
+        RecDataClear(src->m_token_type, &tempValue);
       }
     } else {
       if (!overviewGenerator->varClusterDataFromName(src->m_token_type,
                                                      src->m_token_name,
                                                      &tempValue)) {
-        RecDataClear(RECD_NULL, &tempValue);
+        RecDataClear(src->m_token_type, &tempValue);
       }
     }
   } else {
@@ -713,7 +712,7 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
       if (!isOperator(curToken->m_arith_symbol)) {
         stack.push(curToken);
       } else {
-        ink_debug_assert(isOperator(curToken->m_arith_symbol));
+        ink_assert(isOperator(curToken->m_arith_symbol));
         right = stack.pop();
         left = stack.pop();
 
@@ -736,7 +735,7 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
     /* should only be 1 value left on stack -- the resulting value */
     if (stack.count() > 1) {
       stack.print("\t");
-      ink_debug_assert(false);
+      ink_assert(false);
     }
 
     *result_type = stack.top()->m_token_type;
@@ -756,21 +755,22 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
  */
 RecData StatObject::ClusterStatEval(RecDataT *result_type)
 {
-  RecData tempValue;
-
   /* Sanity check */
-  ink_debug_assert(m_cluster_dest && !m_cluster_dest->m_node_var);
+  ink_assert(m_cluster_dest && !m_cluster_dest->m_node_var);
 
   // what is this?
   if ((m_node_dest == NULL) || (m_cluster_dest->m_sum_var == false)) {
     return NodeStatEval(result_type, true);
   } else {
+    RecData tempValue;
+
     if (!overviewGenerator->varClusterDataFromName(m_node_dest->m_token_type,
                                                    m_node_dest->m_token_name,
                                                    &tempValue)) {
       *result_type = RECD_NULL;
-      RecDataClear(RECD_NULL, &tempValue);
+      RecDataClear(*result_type, &tempValue);
     }
+
     return (tempValue);
   }
 }

@@ -71,7 +71,7 @@ createArgument(const char *argument, int position, int commandoption,
   aCliArgvTable->arg_ref = argumentRef;
 
   if (range != NULL) {
-    aCliArgvTable->range_set = TRUE;
+    aCliArgvTable->range_set = true;
     if (aCliArgvTable->type == CLI_ARGV_INT || aCliArgvTable->type == CLI_ARGV_OPTION_INT_VALUE) {
       getIntRange(range, &(aCliArgvTable->l_range.int_r1), &(aCliArgvTable->u_range.int_r2));
     }
@@ -352,7 +352,8 @@ getFloatRange(char *range, float *r1, float *r2)
       }
       buf[i] = 0;
       if (bound == NEG_BOUND) {
-        *r1 = strtod(buf, &endPtr);
+        // Solaris is messed up, in that strtod() does not honor C99/SUSv3 mode.
+        *r1 = strtold(buf, &endPtr);
         if ((endPtr == buf) || (*endPtr != 0)) {
           Tcl_AppendResult(interp, "negative range is not correct", (char *) NULL);
           ckfree(buf);
@@ -361,7 +362,7 @@ getFloatRange(char *range, float *r1, float *r2)
 
         }
       } else if (bound == POS_BOUND) {
-        *r2 = strtod(buf, &endPtr);
+        *r2 = strtold(buf, &endPtr);
         if ((endPtr == buf) || (*endPtr != 0)) {
           Tcl_AppendResult(interp, "positive range is not correct", (char *) NULL);
           ckfree(buf);

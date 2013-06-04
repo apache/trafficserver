@@ -576,6 +576,17 @@ public:
     int* length = 0 ///< Store string length here.
   );
 
+  /** Print the URL.
+      Output is not null terminated.
+      @return 0 on failure, non-zero on success.
+   */
+  int url_print(
+      char* buff, ///< Output buffer
+      int length, ///< Length of @a buffer
+      int* offset, ///< [in,out] ???
+      int* skip ///< [in,out] ???
+  );
+
   /** Get the URL path.
       This is a reference, not allocated.
       @return A pointer to the path or @c NULL if there is no valid URL.
@@ -665,6 +676,8 @@ private:
   // No gratuitous copies!
   HTTPHdr(const HTTPHdr & m);
   HTTPHdr & operator =(const HTTPHdr & m);
+
+  friend class UrlPrintHack; // don't ask.
 };
 
 
@@ -845,7 +858,7 @@ HTTPHdr::reset()
 inline void
 HTTPHdr::copy(const HTTPHdr *hdr)
 {
-  ink_debug_assert(hdr->valid());
+  ink_assert(hdr->valid());
 
   if (valid()) {
     http_hdr_copy_onto(hdr->m_http, hdr->m_heap, m_http, m_heap, (m_heap != hdr->m_heap) ? true : false);
@@ -862,7 +875,7 @@ HTTPHdr::copy(const HTTPHdr *hdr)
 inline void
 HTTPHdr::copy_shallow(const HTTPHdr *hdr)
 {
-  ink_debug_assert(hdr->valid());
+  ink_assert(hdr->valid());
 
   m_heap = hdr->m_heap;
   m_http = hdr->m_http;
@@ -878,7 +891,7 @@ HTTPHdr::copy_shallow(const HTTPHdr *hdr)
 inline int
 HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
 {
-  ink_debug_assert(valid());
+  ink_assert(valid());
   return http_hdr_print(m_heap, m_http, buf, bufsize, bufindex, dumpoffset);
 }
 
@@ -888,7 +901,7 @@ HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
 inline int
 HTTPHdr::length_get()
 {
-  ink_debug_assert(valid());
+  ink_assert(valid());
   return http_hdr_length_get(m_http);
 }
 
@@ -971,7 +984,7 @@ http_hdr_type_get(HTTPHdrImpl *hh)
 inline HTTPType
 HTTPHdr::type_get() const
 {
-  ink_debug_assert(valid());
+  ink_assert(valid());
   return http_hdr_type_get(m_http);
 }
 
@@ -990,7 +1003,7 @@ http_hdr_version_get(HTTPHdrImpl *hh)
 inline HTTPVersion
 HTTPHdr::version_get()
 {
-  ink_debug_assert(valid());
+  ink_assert(valid());
   return HTTPVersion(http_hdr_version_get(m_http));
 }
 
@@ -1000,7 +1013,7 @@ HTTPHdr::version_get()
 inline void
 HTTPHdr::version_set(HTTPVersion version)
 {
-  ink_debug_assert(valid());
+  ink_assert(valid());
   http_hdr_version_set(m_http, version.m_version);
 }
 
@@ -1010,8 +1023,8 @@ HTTPHdr::version_set(HTTPVersion version)
 inline const char *
 HTTPHdr::method_get(int *length)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   return http_hdr_method_get(m_http, length);
 }
@@ -1020,8 +1033,8 @@ HTTPHdr::method_get(int *length)
 inline int
 HTTPHdr::method_get_wksidx()
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   return (m_http->u.req.m_method_wks_idx);
 }
@@ -1033,8 +1046,8 @@ HTTPHdr::method_get_wksidx()
 inline void
 HTTPHdr::method_set(const char *value, int length)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   int method_wks_idx = hdrtoken_tokenize(value, length);
   http_hdr_method_set(m_heap, m_http, value, method_wks_idx, length, true);
@@ -1046,8 +1059,8 @@ HTTPHdr::method_set(const char *value, int length)
 inline URL *
 HTTPHdr::url_create(URL *u)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   u->set(this);
   u->create(m_heap);
@@ -1060,8 +1073,8 @@ HTTPHdr::url_create(URL *u)
 inline URL *
 HTTPHdr::url_get() const
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   // It's entirely possible that someone changed URL in our impl
   // without updating the cached copy in the C++ layer.  Check
@@ -1082,8 +1095,8 @@ HTTPHdr::url_get() const
 inline URL *
 HTTPHdr::url_get(URL *url)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   url->set(this);               // attach refcount
   url->m_url_impl = m_http->u.req.m_url_impl;
@@ -1096,8 +1109,8 @@ HTTPHdr::url_get(URL *url)
 inline void
 HTTPHdr::url_set(URL *url)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   URLImpl *url_impl = m_http->u.req.m_url_impl;
   ::url_copy_onto(url->m_url_impl, url->m_heap, url_impl, m_heap, true);
@@ -1109,8 +1122,8 @@ HTTPHdr::url_set(URL *url)
 inline void
 HTTPHdr::url_set_as_server_url(URL *url)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   URLImpl *url_impl = m_http->u.req.m_url_impl;
   ::url_copy_onto_as_server_url(url->m_url_impl, url->m_heap, url_impl, m_heap, true);
@@ -1124,8 +1137,8 @@ HTTPHdr::url_set(const char *str, int length)
 {
   URLImpl *url_impl;
 
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   url_impl = m_http->u.req.m_url_impl;
   ::url_clear(url_impl);
@@ -1138,7 +1151,7 @@ HTTPHdr::url_set(const char *str, int length)
 inline HTTPStatus
 http_hdr_status_get(HTTPHdrImpl *hh)
 {
-  ink_debug_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
   return (HTTPStatus) hh->u.resp.m_status;
 }
 
@@ -1148,8 +1161,8 @@ http_hdr_status_get(HTTPHdrImpl *hh)
 inline HTTPStatus
 HTTPHdr::status_get()
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   return (NULL == m_http) ? HTTP_STATUS_NONE : http_hdr_status_get(m_http);
 }
@@ -1160,8 +1173,8 @@ HTTPHdr::status_get()
 inline void
 HTTPHdr::status_set(HTTPStatus status)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   http_hdr_status_set(m_http, status);
 }
@@ -1172,8 +1185,8 @@ HTTPHdr::status_set(HTTPStatus status)
 inline const char *
 HTTPHdr::reason_get(int *length)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   return http_hdr_reason_get(m_http, length);
 }
@@ -1184,8 +1197,8 @@ HTTPHdr::reason_get(int *length)
 inline void
 HTTPHdr::reason_set(const char *value, int length)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, length, true);
 }
@@ -1196,8 +1209,8 @@ HTTPHdr::reason_set(const char *value, int length)
 inline MIMEParseResult
 HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   return http_parser_parse_req(parser, m_heap, m_http, start, end, true, eof);
 }
@@ -1208,8 +1221,8 @@ HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool
 inline MIMEParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   return http_parser_parse_resp(parser, m_heap, m_http, start, end, true, eof);
 }
@@ -1220,11 +1233,11 @@ HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, boo
 inline bool
 HTTPHdr::is_cache_control_set(const char *cc_directive_wks)
 {
-  ink_debug_assert(valid());
-  ink_debug_assert(hdrtoken_is_wks(cc_directive_wks));
+  ink_assert(valid());
+  ink_assert(hdrtoken_is_wks(cc_directive_wks));
 
   HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(cc_directive_wks);
-  ink_debug_assert(prefix->wks_token_type == HDRTOKEN_TYPE_CACHE_CONTROL);
+  ink_assert(prefix->wks_token_type == HDRTOKEN_TYPE_CACHE_CONTROL);
 
   uint32_t cc_mask = prefix->wks_type_specific.u.cache_control.cc_mask;
   if (get_cooked_cc_mask() & cc_mask)
@@ -1239,7 +1252,7 @@ HTTPHdr::is_cache_control_set(const char *cc_directive_wks)
 inline bool
 HTTPHdr::is_pragma_no_cache_set()
 {
-  ink_debug_assert(valid());
+  ink_assert(valid());
   return (get_cooked_pragma_no_cache());
 }
 

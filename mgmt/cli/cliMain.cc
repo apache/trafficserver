@@ -64,11 +64,10 @@ main(int argc, char *argv[])
     {"version", 'V', "Print Version Id", "T", &version_flag, NULL, NULL}
   };
 
-  int n_argument_descriptions = SIZE(argument_descriptions);
   NOWARN_UNUSED(argc);
 
   // Process command line arguments and dump into variables
-  process_args(argument_descriptions, n_argument_descriptions, argv);
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // check for the version number request
   if (version_flag) {

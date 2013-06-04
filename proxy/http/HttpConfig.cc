@@ -1351,9 +1351,6 @@ HttpConfig::startup()
   // Stat Page Info
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
 
-  // Support SRV records
-  HttpEstablishStaticConfigLongLong(c.srv_enabled, "proxy.config.srv_enabled");
-
   //##############################################################################
   //#
   //# Redirection

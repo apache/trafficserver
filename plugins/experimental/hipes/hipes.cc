@@ -18,10 +18,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__url_remap_cc[] = "@(#) $Id: yfor_remap.cc 218 2009-04-25 01:29:16Z leifh $ built on " __DATE__ " " __TIME__;
-
 #include <stdio.h>
 #include <sys/time.h>
 #include <string.h>
@@ -67,7 +63,7 @@ escapify_url(const char *src, int src_len, char* dst, int dst_len)
     return -1;
 
   while (from < (src + src_len)) {
-    register unsigned char c = *from;
+    unsigned char c = *from;
 
     if (len >= dst_len)
       return -1; // Does not fit.... abort!

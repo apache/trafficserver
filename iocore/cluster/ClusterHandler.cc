@@ -34,7 +34,7 @@
 // Global Data
 /*************************************************************************/
 // Initialize clusterFunction[] size
-int SIZE_clusterFunction = SIZE(clusterFunction);
+unsigned SIZE_clusterFunction = countof(clusterFunction);
 
 // hook for testing
 ClusterFunction *ptest_ClusterFunction = NULL;
@@ -349,13 +349,13 @@ ClusterHandler::vc_ok_write(ClusterVConnection * vc)
 {
   return (((vc->closed > 0)
            && (vc->write_list || vc->write_bytes_in_transit)) ||
-          (!vc->closed && vc->write.enabled && vc->write.vio.op == VIO::WRITE && vc->write.vio.buffer.mbuf));
+          (!vc->closed && vc->write.enabled && vc->write.vio.op == VIO::WRITE && vc->write.vio.buffer.writer()));
 }
 
 inline bool
 ClusterHandler::vc_ok_read(ClusterVConnection * vc)
 {
-  return (!vc->closed && vc->read.vio.op == VIO::READ && vc->read.vio.buffer.mbuf);
+  return (!vc->closed && vc->read.vio.op == VIO::READ && vc->read.vio.buffer.writer());
 }
 
 void
@@ -1539,7 +1539,7 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
       ink_assert(!((ProxyMutex *) vc->write_locked));
       MUTEX_TRY_LOCK_SPIN(lock, vc->write.vio.mutex, thread, WRITE_LOCK_SPIN_COUNT);
       if (lock) {
-        n = vc->write.vio.buffer.mbuf ? vc->write.vio.buffer.reader()->block_read_avail() : 0;
+        n = vc->write.vio.buffer.writer() ? vc->write.vio.buffer.reader()->block_read_avail() : 0;
       } else {
         n = 0;
       }

@@ -52,7 +52,7 @@ struct HttpIoBuffer
     void reset(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K) {
         TSIOBufferReaderFree(this->reader);
         TSIOBufferDestroy(this->buffer);
-        this->buffer = TSIOBufferCreate();
+        this->buffer = TSIOBufferSizedCreate(size);
         this->reader = TSIOBufferReaderAlloc(this->buffer);
     }
 

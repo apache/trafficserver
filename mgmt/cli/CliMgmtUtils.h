@@ -141,7 +141,7 @@ int Cli_RecordString_Action(int action, const char *record, char *string_val);
 //
 int Cli_ConfigFileURL_Action(TSFileNameT file, const char *filename, const char *url);
 
-extern int enable_restricted_commands;
+extern bool enable_restricted_commands;
 
 int cliCheckIfEnabled(const char *command);
 

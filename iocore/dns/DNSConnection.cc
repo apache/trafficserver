@@ -27,8 +27,6 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
-
-#include "ink_unused.h" /* MAGIC_EDITING_TAG */
 #include "P_DNS.h"
 #include "P_DNSConnection.h"
 #include "P_DNSProcessor.h"

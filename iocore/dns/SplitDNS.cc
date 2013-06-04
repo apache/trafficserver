@@ -79,7 +79,7 @@ static const char *SDNSResultStr[] = {
 int SplitDNSConfig::m_id = 0;
 int SplitDNSConfig::gsplit_dns_enabled = 0;
 int splitDNSFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
-Ptr<ProxyMutex> SplitDNSConfig::dnsHandler_mutex = 0;
+Ptr<ProxyMutex> SplitDNSConfig::dnsHandler_mutex;
 
 
 /* --------------------------------------------------------------

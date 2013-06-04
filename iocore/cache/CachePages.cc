@@ -562,7 +562,7 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
       char xx[501], m[501];
       int ib = 0, xd = 0, ml = 0;
 
-      alt->request_get()->url_get()->print(xx, 500, &ib, &xd);
+      alt->request_get()->url_print(xx, 500, &ib, &xd);
       xx[ib] = '\0';
 
       const char *mm = alt->request_get()->method_get(&ml);

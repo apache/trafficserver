@@ -69,7 +69,7 @@ stringof<spdy::error>(const spdy::error& e)
 // assembler.
 
 template <typename T> T
-extract(const uint8_t __restrict * &ptr) {
+extract(const uint8_t * &ptr) {
     T val;
     memcpy(&val, ptr, sizeof(val));
     std::advance(ptr, sizeof(val));
@@ -77,31 +77,31 @@ extract(const uint8_t __restrict * &ptr) {
 }
 
 template <> uint8_t
-extract<uint8_t>(const uint8_t __restrict * &ptr) {
+extract<uint8_t>(const uint8_t * &ptr) {
     return *ptr++;
 }
 
 template <typename T> void
-insert(const T& val, uint8_t __restrict * &ptr) {
+insert(const T& val, uint8_t * &ptr) {
     memcpy(ptr, &val, sizeof(val));
     std::advance(ptr, sizeof(val));
 }
 
 static inline uint32_t
-extract_stream_id(const uint8_t __restrict * &ptr)
+extract_stream_id(const uint8_t * &ptr)
 {
     return ntohl(extract<uint32_t>(ptr)) & 0x7fffffffu;
 }
 
 static inline void
-insert_stream_id(uint32_t stream_id, uint8_t __restrict * &ptr)
+insert_stream_id(uint32_t stream_id, uint8_t * &ptr)
 {
     insert<uint32_t>(htonl(stream_id & 0x7fffffffu), ptr);
 }
 
 spdy::message_header
 spdy::message_header::parse(
-        const uint8_t __restrict * ptr, size_t len)
+        const uint8_t * ptr, size_t len)
 {
     message_header header;
 
@@ -130,7 +130,7 @@ spdy::message_header::parse(
 
 size_t
 spdy::message_header::marshall(
-        const message_header& msg, uint8_t __restrict * ptr, size_t len)
+        const message_header& msg, uint8_t * ptr, size_t len)
 {
     if (len < message_header::size) {
         throw protocol_error(std::string("short message_header buffer"));
@@ -150,7 +150,7 @@ spdy::message_header::marshall(
 
 spdy::syn_stream_message
 spdy::syn_stream_message::parse(
-        const uint8_t __restrict * ptr, size_t len)
+        const uint8_t * ptr, size_t len)
 {
     syn_stream_message msg;
 
@@ -167,7 +167,7 @@ spdy::syn_stream_message::parse(
 
 spdy::goaway_message
 spdy::goaway_message::parse(
-        const uint8_t __restrict * ptr, size_t len)
+        const uint8_t * ptr, size_t len)
 {
     goaway_message msg;
 
@@ -182,7 +182,7 @@ spdy::goaway_message::parse(
 
 spdy::rst_stream_message
 spdy::rst_stream_message::parse(
-        const uint8_t __restrict * ptr, size_t len)
+        const uint8_t * ptr, size_t len)
 {
     rst_stream_message msg;
 
@@ -197,7 +197,7 @@ spdy::rst_stream_message::parse(
 
 size_t
 spdy::rst_stream_message::marshall(
-        const rst_stream_message& msg, uint8_t __restrict * ptr, size_t len)
+        const rst_stream_message& msg, uint8_t * ptr, size_t len)
 {
     if (len < rst_stream_message::size) {
         throw protocol_error(std::string("short rst_stream buffer"));
@@ -353,10 +353,10 @@ marshall_name_value_pairs_v2(
 
 static spdy::key_value_block
 parse_name_value_pairs_v2(
-        const uint8_t __restrict * ptr, size_t len)
+        const uint8_t * ptr, size_t len)
 {
     int32_t npairs;
-    const uint8_t __restrict * end = ptr + len;
+    const uint8_t * end = ptr + len;
 
     spdy::key_value_block kvblock;
 
@@ -419,7 +419,7 @@ spdy::key_value_block
 spdy::key_value_block::parse(
         protocol_version            version,
         zstream<decompress>&        decompressor,
-        const uint8_t __restrict *  ptr,
+        const uint8_t *  ptr,
         size_t                      len)
 {
     std::vector<uint8_t>    bytes;
@@ -508,7 +508,7 @@ spdy::key_value_block::insert(
 
 spdy::ping_message
 spdy::ping_message::parse(
-        const uint8_t __restrict * ptr, size_t len)
+        const uint8_t * ptr, size_t len)
 {
     ping_message msg;
 
@@ -522,7 +522,7 @@ spdy::ping_message::parse(
 
 size_t
 spdy::ping_message::marshall(
-        const ping_message& msg, uint8_t __restrict * ptr, size_t len)
+        const ping_message& msg, uint8_t * ptr, size_t len)
 {
     if (len < ping_message::size) {
         throw protocol_error(std::string("short ping_message buffer"));

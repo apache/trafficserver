@@ -60,6 +60,14 @@ extern "C"
     struct _InkThreadCache *pThreadCache;
 
     LINK(_InkChunkInfo, link);
+
+#ifdef DEBUG
+    /*
+     * magic code for each item,
+     * it's used to check double-free issue.
+     */
+    unsigned char item_magic[0];
+#endif
   } InkChunkInfo;
 
   typedef struct _InkThreadCache

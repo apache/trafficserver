@@ -37,7 +37,6 @@ char tparseRulesCTypeToLower[256];
 #include <stdio.h>
 #include <ctype.h>
 #include "ink_string.h"
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 
 static char *
 uint_to_binary(unsigned int u)

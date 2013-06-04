@@ -43,8 +43,8 @@
 #error "Define barriers"
 #endif
 
-static const char* PLUGIN_NAME UNUSED = "header_rewrite";
-static const char* PLUGIN_NAME_DBG UNUSED = "header_rewrite_dbg";
+extern const char* PLUGIN_NAME;
+extern const char* PLUGIN_NAME_DBG;
 
 
 // From google styleguide: http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml

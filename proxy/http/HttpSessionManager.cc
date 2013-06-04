@@ -72,10 +72,6 @@ SessionBucket::session_handler(int event, void *data)
   HttpServerSession *s = NULL;
 
   switch (event) {
-  case EVENT_INTERVAL:
-    s = (HttpServerSession *)(((Event *)data)->cookie);
-    httpSessionManager.release_session(s);
-    return 0;
   case VC_EVENT_READ_READY:
     // The server sent us data.  This is unexpected so
     //   close the connection
@@ -221,7 +217,7 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   NOWARN_UNUSED(cont);
   HttpServerSession *to_return = NULL;
 
-  //  We compute the mmh for matching the hostname as the last
+  //  We compute the hash for matching the hostname as the last
   //  check for a match between the session the HttpSM is looking
   //  for and the sessions we have. We have to use the hostname
   //  as part of the match because some stupid servers can't
@@ -232,7 +228,8 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   //  to server affinity so that we don't break certain types
   //  of authentication.
   INK_MD5 hostname_hash;
-  bool hash_computed = false;
+
+  ink_code_md5((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
 
   // First check to see if there is a server session bound
   //   to the user agent session
@@ -241,13 +238,7 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
     ua_session->attach_server_session(NULL);
 
     if (ats_ip_addr_eq(&to_return->server_ip.sa, ip) &&
-      ats_ip_port_cast(&to_return->server_ip) == ats_ip_port_cast(ip)
-    ) {
-      if (!hash_computed) {
-        ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
-        hash_computed = true;
-      }
-
+	ats_ip_port_cast(&to_return->server_ip) == ats_ip_port_cast(ip)) {
       if (hostname_hash == to_return->hostname_hash) {
         Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
         to_return->state = HSS_ACTIVE;
@@ -268,10 +259,6 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   EThread *ethread = this_ethread();
 
   ink_assert(l1_index < HSM_LEVEL1_BUCKETS);
-
-  // Will need the hash for this lookup for sure.
-  if (!hash_computed)
-    ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
 
   if (2 == sm->t_state.txn_conf->share_server_sessions) {
     ink_assert(ethread->l1_hash);
@@ -305,10 +292,6 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
     bucket = g_l1_hash + l1_index;
   }
 
-  // Transfer control of the write side as well
-  to_release->do_io_write(bucket, 0, NULL);
-  to_release->do_io_read(bucket, 0, NULL);
-
   MUTEX_TRY_LOCK(lock, bucket->mutex, ethread);
   if (lock) {
     int l2_index = SECOND_LEVEL_HASH(&to_release->server_ip.sa);
@@ -326,6 +309,9 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
     //  to remove the connection from our lists
     to_release->do_io_read(bucket, INT64_MAX, to_release->read_buffer);
 
+    // Transfer control of the write side as well
+    to_release->do_io_write(bucket, 0, NULL);
+
     // we probably don't need the active timeout set, but will leave it for now
     to_release->get_netvc()->set_inactivity_timeout(to_release->get_netvc()->get_inactivity_timeout());
     to_release->get_netvc()->set_active_timeout(to_release->get_netvc()->get_active_timeout());
@@ -333,7 +319,6 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
 
     return HSM_DONE;
   } else {
-    eventProcessor.schedule_in(bucket, HRTIME_MSECONDS(5), ET_CALL, EVENT_INTERVAL, (void *) to_release);
     Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
   }
 

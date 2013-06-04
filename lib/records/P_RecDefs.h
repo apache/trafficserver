@@ -24,8 +24,6 @@
 #ifndef _P_REC_DEFS_H_
 #define _P_REC_DEFS_H_
 
-#include "ink_bool.h"
-
 #include "I_RecDefs.h"
 
 #define REC_CONFIG_FILE                "records.config"

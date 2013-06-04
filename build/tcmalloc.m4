@@ -43,7 +43,7 @@ AC_ARG_WITH([tcmalloc], [AC_HELP_STRING([--with-tcmalloc=DIR], [use the tcmalloc
       TS_ADDTO(LDFLAGS, [-L${tcmalloc_ldflags}])
       TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${tcmalloc_ldflags}])
     fi
-    AC_CHECK_LIB(${with_tcmalloc_lib}, tc_cfree , [tcmalloc_have_lib=1])
+    AC_SEARCH_LIBS([tc_cfree], ${with_tcmalloc_lib}, [tcmalloc_have_lib=1])
     if test "$tcmalloc_have_lib" != "0"; then
       TS_ADDTO(LIBS, [-l${with_tcmalloc_lib}])
       has_tcmalloc=1      

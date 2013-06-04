@@ -1977,7 +1977,7 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
   ////////////////////////////////////////////////////////
 
   // Copy reply message data
-  Ptr<IOBufferData> iob = new_IOBufferData(iobuffer_size_to_index(l));
+  Ptr<IOBufferData> iob = make_ptr(new_IOBufferData(iobuffer_size_to_index(l)));
   memcpy(iob->data(), (char *) d, l);
   char *data = iob->data();
   int flen, len = l;

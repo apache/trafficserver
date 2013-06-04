@@ -1,0 +1,80 @@
+
+                             Metalink
+
+   Try not to download the same file twice.  Improve cache efficiency
+   and speed up downloads.
+
+   Take standard headers and knowledge about objects in the cache and
+   potentially rewrite those headers so that a client will use a URL
+   that is already cached instead of one that isn't.  The headers are
+   specified in [RFC 6429] (Metalink/HTTP: Mirrors and Hashes) and
+   [RFC 3230] (Instance Digests in HTTP) and are sent by various
+   download redirectors or content distribution networks.
+
+
+1.  Who Cares?
+
+   More important than saving a little bit of bandwidth, this saves
+   users from frustration.
+
+   A lot of download sites distribute the same files from many
+   different mirrors and users don't know which mirrors are already
+   cached.  These sites often present users with a simple download
+   button, but the button doesn't predictably access the same mirror,
+   or a mirror that is already cached.  To users it seems like the
+   download works sometimes (takes seconds) and not others (takes
+   hours), which is frustrating.
+
+   An extreme example of this happens when users share a limited,
+   possibly unreliable internet connection, as is common in parts of
+   Africa for example.
+
+   [How to cache openSUSE repositories with Squid] is another,
+   different example of a use case where picking a URL that's already
+   cached is important.
+
+
+2.  What it Does
+
+   When it sees a response with a "Location: ..." header and a
+   "Digest: SHA-256=..." header, it checks to see if the URL in the
+   Location header is already cached.  If it isn't, then it tries to
+   find a URL that is cached to use instead.  It looks in the cache
+   for some object that matches the digest in the Digest header and if
+   it finds something, then it rewites the Location header with the
+   URL from that object.
+
+   That way a client should get sent to a URL that's already cached
+   and the user won't end up downloading the file again.
+
+
+3.  How to Use it
+
+   Just build the plugin and then add it to your plugins.config file.
+
+   The code is distributed along with recent versions of Traffic
+   Server, in the "plugins/experimental" directory.  To build it, pass
+   the "--enable-experimental-plugins" option to the Traffic Server
+   configure script when you build Traffic Server:
+
+   <pre>$ ./configure --enable-experimental-plugins</pre>
+
+   When you're done building Traffic Server, add "metalink.so" to your
+   plugins.config file to start using the plugin.
+
+
+4.  Read More
+
+   More details are to be found on the [wiki page] in the Traffic
+   Server wiki.
+
+
+   [RFC 6429]  http://tools.ietf.org/html/rfc6249
+
+   [RFC 3230]  http://tools.ietf.org/html/rfc3230
+
+   [How to cache openSUSE repositories with Squid]
+               http://wiki.jessen.ch/index/How_to_cache_openSUSE_repositories_with_Squid
+
+   [wiki page]
+               https://cwiki.apache.org/confluence/display/TS/Metalink

@@ -22,9 +22,6 @@
 #ifndef __CONDITIONS_H__
 #define __CONDITIONS_H__ 1
 
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__conditions_h[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <string>
 #include <ts/ts.h>
 #include <boost/lexical_cast.hpp>
@@ -49,10 +46,10 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue");
   }
 
-  void append_value(std::string& s, const Resources& res) { s += "TRUE";  }
+  void append_value(std::string& s, const Resources& /* res ATS_UNUSED */) { s += "TRUE";  }
 
 protected:
-  bool eval(const Resources& res) {
+  bool eval(const Resources& /* res ATS_UNUSED */) {
     TSDebug(PLUGIN_NAME, "Evaluating TRUE()");
     return true;
   }
@@ -70,10 +67,10 @@ public:
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionFalse");
   }
-  void append_value(std::string& s, const Resources& res) { s += "FALSE"; }
+  void append_value(std::string& s, const Resources& /* res ATS_UNUSED */) { s += "FALSE"; }
 
 protected:
-  bool eval(const Resources& res) {
+  bool eval(const Resources& /* res ATS_UNUSED */) {
     TSDebug(PLUGIN_NAME, "Evaluating FALSE()");
     return false;
   }

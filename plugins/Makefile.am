@@ -14,4 +14,4 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http experimental
+SUBDIRS = conf_remap regex_remap header_filter stats_over_http experimental cacheurl

@@ -271,7 +271,7 @@ Log::periodic_tasks(long time_now)
         num_rolled += global_scrap_object->roll_files(time_now);
       }
       num_rolled += Log::config->log_object_manager.roll_files(time_now);
-      Log::config->roll_log_files_now = FALSE;
+      Log::config->roll_log_files_now = false;
     } else {
       if (error_log) {
         num_rolled += error_log->roll_files(time_now);
@@ -493,7 +493,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqbl", field);
 
-  Ptr<LogFieldAliasTable> finish_status_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> finish_status_map = make_ptr(NEW(new LogFieldAliasTable));
   finish_status_map->init(N_LOG_FINISH_CODE_TYPES,
                           LOG_FINISH_FIN, "FIN",
                           LOG_FINISH_INTR, "INTR",
@@ -563,7 +563,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
-  Ptr<LogFieldAliasTable> cache_code_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> cache_code_map = make_ptr(NEW(new LogFieldAliasTable));
   cache_code_map->init(49,
                        SQUID_LOG_EMPTY, "UNDEFINED",
                        SQUID_LOG_TCP_HIT, "TCP_HIT",
@@ -665,7 +665,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsi", field);
 
-  Ptr<LogFieldAliasTable> hierarchy_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> hierarchy_map = make_ptr(NEW(new LogFieldAliasTable));
   hierarchy_map->init(36,
                       SQUID_HIER_EMPTY, "EMPTY",
                       SQUID_HIER_NONE, "NONE",
@@ -805,7 +805,7 @@ Log::init_fields()
 
   // cache write fields
 
-  Ptr<LogFieldAliasTable> cache_write_code_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> cache_write_code_map = make_ptr(NEW(new LogFieldAliasTable));
   cache_write_code_map->init(N_LOG_CACHE_WRITE_TYPES,
                              LOG_CACHE_WRITE_NONE, "-",
                              LOG_CACHE_WRITE_LOCK_MISSED, "WL_MISS",
@@ -852,7 +852,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
 
-  Ptr<LogFieldAliasTable> entry_type_map = NEW(new LogFieldAliasTable);
+  Ptr<LogFieldAliasTable> entry_type_map = make_ptr(NEW(new LogFieldAliasTable));
   entry_type_map->init(N_LOG_ENTRY_TYPES,
                        LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP",
                        LOG_ENTRY_ICP, "LOG_ENTRY_ICP");
@@ -1123,7 +1123,7 @@ Log::error(const char *format, ...)
   int ret_val = Log::SKIP;
 
   if (error_log) {
-    ink_debug_assert(format != NULL);
+    ink_assert(format != NULL);
     va_list ap;
     va_start(ap, format);
     ret_val = error_log->va_write(format, ap);
@@ -1143,7 +1143,7 @@ Log::va_error(char *format, va_list ap)
   int ret_val = Log::SKIP;
 
   if (error_log) {
-    ink_debug_assert(format != NULL);
+    ink_assert(format != NULL);
     ret_val = error_log->va_write(format, ap);
 
     if (ret_val == Log::LOG_OK) {

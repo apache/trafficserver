@@ -93,7 +93,8 @@ private:
     if (str_size) {
       char *endp;
       const char *str_ptr = str.c_str();
-      value = strtod(str_ptr, &endp);
+      // Solaris is messed up, in that strtod() does not honor C99/SUSv3 mode.
+      value = strtold(str_ptr, &endp);
       return (static_cast<unsigned int>(endp - str_ptr) == str_size);
     }
     return false;

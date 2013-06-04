@@ -534,7 +534,7 @@ Cli_ConfigFileURL_Action(TSFileNameT file, const char *filename, const char *url
 int
 cliCheckIfEnabled(const char *command)
 {
-  if (enable_restricted_commands == FALSE) {
+  if (enable_restricted_commands == false) {
     Cli_Error("\n%s is a restricted command only accessible from enable mode\n\n", command);
     return CLI_ERROR;
   }

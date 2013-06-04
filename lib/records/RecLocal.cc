@@ -48,7 +48,7 @@ i_am_the_record_owner(RecT rec_type)
   case RECT_PLUGIN:
     return false;
   default:
-    ink_debug_assert(!"Unexpected RecT type");
+    ink_assert(!"Unexpected RecT type");
     return false;
   }
 }

@@ -21,8 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"
-
 #include "P_EventSystem.h"
 #include "Error.h"
 

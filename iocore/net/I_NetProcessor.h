@@ -72,6 +72,7 @@ public:
     /// Are frequent accepts expected?
     /// Default: @c false.
     bool frequent_accept;
+    bool backdoor;
 
     /// Socket receive buffer size.
     /// 0 => OS default.
@@ -158,47 +159,6 @@ public:
   );
 
   /**
-    @deprecated preserve backward compatibility with non-IPv6 iocore
-
-    @param cont Continuation to be called back with events this
-      continuation is not locked on callbacks and so the handler must
-      be re-entrant.
-    @param listen_socket_in if passed, used for listening.
-    @param port port to bind for accept.
-    @param bound_sockaddr returns the sockaddr for the listen fd.
-    @param bound_sockaddr_size size of the sockaddr returned.
-    @param accept_only can be used to customize accept, accept a
-      connection only if there is some data to be read. This works
-      only on supported platforms (NT & Win2K currently).
-    @param recv_bufsize used to set recv buffer size for accepted
-      connections (Works only on selected platforms ??).
-    @param send_bufsize used to set send buffer size for accepted
-      connections (Works only on selected platforms ??).
-    @param sockopt_flag can be used to define additional socket option.
-    @param etype Event Thread group to accept on.
-    @param callback_on_open if true, cont is called back with
-      NET_EVENT_ACCEPT_SUCCEED, or NET_EVENT_ACCEPT_FAILED on success
-      and failure resp.
-    @return Action, that can be cancelled to cancel the accept. The
-      port becomes free immediately.
-
-  */
-  virtual Action *main_accept(
-    Continuation * cont,
-    SOCKET listen_socket_in,
-    sockaddr * bound_sockaddr = NULL,
-    int *bound_sockaddr_size = NULL,
-    bool accept_only = false,
-    bool localhost_only = false,
-    AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
-  )
-  {
-    AcceptOptions new_opt = opt;
-    new_opt.localhost_only = localhost_only;
-    return main_accept(cont, listen_socket_in, new_opt);
-  }
-    
-  /**
     Open a NetVConnection for connection oriented I/O. Connects
     through sockserver if netprocessor is configured to use socks
     or is socks parameters to the call are set.
@@ -226,21 +186,6 @@ public:
   );
 
   /**
-    @deprecated preserve backward compatibility with non-IPv6 iocore
-  */
-  inkcoreapi Action *connect_re(
-    Continuation * cont,
-    unsigned int ip,
-    int port,
-    NetVCOptions * options = NULL
-  ) {
-    struct sockaddr_in addr;
-
-    ats_ip4_set(&addr, ip, htons(port));
-    return connect_re(cont, ats_ip_sa_cast(&addr), options);
-  }
-
-  /**
     Open a NetVConnection for connection oriented I/O. This call
     is simliar to connect method except that the cont is called
     back only after the connections has been established. In the
@@ -265,23 +210,6 @@ public:
     int timeout = NET_CONNECT_TIMEOUT,
     NetVCOptions * opts = NULL
   );
-
-  /**
-    @deprecated preserve backward compatibility with non-IPv6 iocore
-  */
-
-  Action *connect_s(
-    Continuation * cont,
-    unsigned int ip,
-    int port,
-    int timeout = NET_CONNECT_TIMEOUT,
-    NetVCOptions * opts = NULL
-  ) {
-    struct sockaddr_in addr;
-
-    ats_ip4_set(&addr, ip, htons(port));
-    return connect_s(cont, ats_ip_sa_cast(&addr), timeout, opts);
-  }
 
   /**
     Starts the Netprocessor. This has to be called before doing any
@@ -354,7 +282,7 @@ extern inkcoreapi NetProcessor& netProcessor;
 
 /**
   Global netProcessor singleton object for making ssl enabled net
-  calls. As far as the SM is concerned this behaves excatly like
+  calls. As far as the SM is concerned this behaves exactly like
   netProcessor. The only difference is that the connections are
   over ssl.
 

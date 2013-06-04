@@ -33,6 +33,8 @@
 
 #include <inttypes.h>
 
+#include "ink_defs.h"
+
 typedef struct stats_state_t
 {
   TSVConn net_vc;
@@ -122,7 +124,7 @@ stats_process_read(TSCont contp, TSEvent event, stats_state * my_state)
 } while(0)
 
 static void
-json_out_stat(TSRecordType rec_type, void *edata, int registered,
+json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED,
               const char *name, TSRecordDataType data_type,
               TSRecordData *datum) {
   stats_state *my_state = edata;
@@ -193,7 +195,7 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-stats_origin(TSCont contp, TSEvent event, void *edata)
+stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 {
   TSCont icontp;
   stats_state *my_state;
@@ -269,7 +271,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 

@@ -383,29 +383,20 @@ public:
 
 struct DummyVConnection: public VConnection
 {
-  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) {
-    (void) c;
-    (void) nbytes;
-    (void) buf;
-    (void) owner;
-    ink_debug_assert(!"VConnection::do_io_write -- " "cannot use default implementation");
+  virtual VIO *do_io_write(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, IOBufferReader * /* buf ATS_UNUSED */, bool /* owner ATS_UNUSED */) {
+    ink_assert(!"VConnection::do_io_write -- " "cannot use default implementation");
     return NULL;
   }
-  virtual VIO *do_io_read(Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) {
-    (void) c;
-    (void) nbytes;
-    (void) buf;
-    ink_debug_assert(!"VConnection::do_io_read -- " "cannot use default implementation");
+  virtual VIO *do_io_read(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, MIOBuffer * /* buf ATS_UNUSED */) {
+    ink_assert(!"VConnection::do_io_read -- " "cannot use default implementation");
     return NULL;
   }
-  virtual void do_io_close(int alerrno = -1) {
-    (void) alerrno;
-    ink_debug_assert(!"VConnection::do_io_close -- " "cannot use default implementation");
+  virtual void do_io_close(int /* alerrno ATS_UNUSED */) {
+    ink_assert(!"VConnection::do_io_close -- " "cannot use default implementation");
   }
-  virtual void do_io_shutdown(ShutdownHowTo_t howto)
+  virtual void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */ )
   {
-    (void) howto;
-    ink_debug_assert(!"VConnection::do_io_shutdown -- " "cannot use default implementation");
+    ink_assert(!"VConnection::do_io_shutdown -- " "cannot use default implementation");
   }
 DummyVConnection(ProxyMutex *m):VConnection(m) {
   }

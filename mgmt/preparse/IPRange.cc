@@ -28,8 +28,6 @@
   This file an IPRange object that reads a range of IPS, and does
   matching of a given IP address against those ranges.
  ****************************************************************************/
-
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>

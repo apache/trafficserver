@@ -29,8 +29,6 @@
 #include <stdlib.h>             //exit()
 #include <stdio.h>
 
-#define __STDC_FORMAT_MACROS
-
 //zlib stuff, see [deflateInit2] at http://www.zlib.net/manual.html
 static const int ZLIB_MEMLEVEL = 9;     //min=1 (optimize for memory),max=9 (optimized for speed)
 static const int WINDOW_BITS_DEFLATE = -15;

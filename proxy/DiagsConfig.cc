@@ -398,7 +398,7 @@ DiagsConfig::register_diags_callbacks()
     total_status = total_status && status;
   }
 
-  if (total_status == FALSE) {
+  if (total_status == false) {
     diags->print(NULL, DTA(DL_Error), "couldn't setup all diags callbacks, diagnostics may misbehave");
     callbacks_established = false;
   } else {

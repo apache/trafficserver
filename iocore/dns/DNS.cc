@@ -569,7 +569,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
   char buffer[MAX_DNS_PACKET_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
   int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
-  try_servers = (try_servers + 1) % SIZE(try_server_names);
+  try_servers = (try_servers + 1) % countof(try_server_names);
   ink_assert(r >= 0);
   if (r >= 0) {                 // looking for a bounce
     int res = socketManager.send(con[ndx].fd, buffer, r, 0);
@@ -597,7 +597,7 @@ DNSHandler::try_primary_named(bool reopen)
     if (local_num_entries < DEFAULT_NUM_TRY_SERVER)
       try_servers = (try_servers + 1) % local_num_entries;
     else
-      try_servers = (try_servers + 1) % SIZE(try_server_names);
+      try_servers = (try_servers + 1) % countof(try_server_names);
     ink_assert(r >= 0);
     if (r >= 0) {               // looking for a bounce
       int res = socketManager.send(con[0].fd, buffer, r, 0);
@@ -789,7 +789,7 @@ DNSHandler::recv_dns(int event, Event *e)
           }
         }
       }
-      Ptr<HostEnt> protect_hostent = buf;
+      Ptr<HostEnt> protect_hostent = make_ptr(buf);
       if (dns_process(this, buf, res)) {
         if (dnsc->num == name_server)
           received_one(name_server);
@@ -1357,10 +1357,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     u_char *cp = ((u_char *) h) + HFIXEDSZ;
     u_char *eom = (u_char *) h + len;
     int n;
-    ink_debug_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
+    ink_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
     buf->srv_hosts.srv_host_count = 0;
     buf->srv_hosts.srv_hosts_length = 0;
-    int &num_srv = buf->srv_hosts.srv_host_count;
+    unsigned& num_srv = buf->srv_hosts.srv_host_count;
     int rname_len = -1;
 
     //
@@ -1421,7 +1421,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     // e->qname_len, no ?
     if (local_num_entries >= DEFAULT_NUM_TRY_SERVER) {
       if ((attempt_num_entries % 50) == 0) {
-        try_servers = (try_servers + 1) % SIZE(try_server_names);
+        try_servers = (try_servers + 1) % countof(try_server_names);
         ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
         memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
         attempt_num_entries = 0;

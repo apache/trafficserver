@@ -32,15 +32,15 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[3.3.2-dev])
-m4_define([TS_VERSION_N],[3003002])
+m4_define([TS_VERSION_S],[3.3.3-dev])
+m4_define([TS_VERSION_N],[3003003])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])
+AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman 1.9.2])
 AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
@@ -336,11 +336,26 @@ AC_MSG_RESULT([$enable_hwloc])
 #
 AC_MSG_CHECKING([whether to enable ccache])
 AC_ARG_ENABLE([ccache],
-  [AS_HELP_STRING([--enable-ccache],[Enable ccache (can cause bad builds)])],
+  [AS_HELP_STRING([--enable-ccache],[Enable ccache (for developers)])],
   [],
   [enable_ccache="no"]
 )
 AC_MSG_RESULT([$enable_ccache])
+
+#
+# Enble traffic_cop debugging
+#
+AC_MSG_CHECKING([whether to enable traffic_cop debugging])
+AC_ARG_ENABLE([cop-debug],
+  [AS_HELP_STRING([--enable-cop-debug],[Enable Traffic Cop debugging (for developers)])],
+  [],
+  [enable_cop_debug="no"]
+)
+AC_MSG_RESULT([$enable_cop_debug])
+TS_ARG_ENABLE_VAR([use], [cop-debug])
+AC_SUBST(use_cop_debug)
+
+
 
 #
 # Use TPROXY for connection transparency.
@@ -395,29 +410,6 @@ else
 fi
 TS_ARG_ENABLE_VAR([use], [reclaimable_freelist])
 AC_SUBST(use_reclaimable_freelist)
-
-#
-# If the OS is linux, we can use the '--enable-linux-native-aio' option to
-# replace the aio thread mode. Effective only on the linux system.
-#
-
-AC_MSG_CHECKING([whether to enable Linux native AIO])
-AC_ARG_ENABLE([linux-native-aio],
-  [AS_HELP_STRING([--enable-linux-native-aio], [enable native Linux AIO support @<:@default=no@:>@])],
-  [enable_linux_native_aio="${enableval}"],
-  [enable_linux_native_aio=no]
-)
-
-case $host_os in
-  linux*);;
-  *) AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
-      AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
-    ])
-esac
-
-AC_MSG_RESULT([$enable_linux_native_aio])
-TS_ARG_ENABLE_VAR([use], [linux_native_aio])
-AC_SUBST(use_linux_native_aio)
 
 # Configure how many stats to allocate for plugins. Default is 512.
 #
@@ -525,6 +517,11 @@ _ts_saved_CXXFLAGS="${CXXFLAGS}"
 
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_CXXCPP
+AM_PROG_AS
+
+AX_COMPILER_VENDOR
 
 CFLAGS="${_ts_saved_CFLAGS}"
 CXXFLAGS="${_ts_saved_CXXFLAGS}"
@@ -544,30 +541,70 @@ fi
 
 AC_LANG_POP()
 
-# Check for ccache (if explicitly enabled)
-if test "x$enable_ccache" = "xyes"; then
-    AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
-    if test "x${CCACHE}" = "xccache"; then
-	CC="$CCACHE $CC"
-	CXX="$CCACHE $CXX"
-    fi
-fi
+dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
+dnl 5.9 still has an ancient version, but we have macros that require
+dnl AC_PROG_SED. The actual AC_PROG_SED macro does functional checks, but here
+dnl we define a trivial local version for times when we are running on
+dnl obsoldete autoconf.
+ifdef([AC_PROG_SED], [], [
+  AC_DEFUN([AC_PROG_SED], [
+    AC_CHECK_PROG(SED, sed, sed)
+  ])
+])
 
-dnl AC_PROG_SED is only avaliable in recent autoconf versions.
-dnl Use AC_CHECK_PROG instead if AC_PROG_SED is not present.
-ifdef([AC_PROG_SED],
-      [AC_PROG_SED],
-      [AC_CHECK_PROG(SED, sed, sed)])
 
-dnl Same with AM_PROG_AR, but it doesn't seem to be needed in older versions.
+# Various OS specific setup. Note that on Solaris, 32-bit is always the
+# default, even on a box that with 64-bit architecture.
+# This also sets up a "normalized" variable and define $host_os_def.
+defer_accept=1
+case $host_os in
+  linux*)
+    host_os_def="linux"
+    defer_accept=45
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    ;;
+  darwin*)
+    host_os_def="darwin"
+    ;;
+  freebsd*)
+    host_os_def="freebsd"
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
+    ;;
+  kfreebsd*)
+    host_os_def="freebsd"
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
+    TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
+    ;;
+  openbsd*)
+    host_os_def="openbsd"
+    ;;
+  solaris*)
+    host_os_def="solaris"
+    case "`isalist`" in
+      *amd64*)
+        TS_ADDTO(CFLAGS, -m64)
+        TS_ADDTO(CXXFLAGS, -m64)
+        ;;
+    esac
+    ;;
+  *)
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    host_os_def=unknown
+    ;;
+esac
+
+TS_ADDTO(CPPFLAGS, [-D$host_os_def])
+AC_SUBST(defer_accept)
+
+
+dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
       [AM_PROG_AR])
 
-
-AC_PROG_CPP
-AC_PROG_CXXCPP
-AM_PROG_AS
 AC_PROG_AWK
+AC_PROG_SED
 AC_PROG_LN_S
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
@@ -575,6 +612,7 @@ AC_CHECK_PROG(RM, rm, rm)
 AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
+
 # Do bison check by hand because we must do a version check.
 # Use YACC because it makes autotools shut up.
 BISON_MAJOR=2
@@ -661,15 +699,12 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
 
-base_cc=`basename $CC`
-# These are shortcuts used in combination for the compiler options below
-case $host_os in
-  linux*)
-    case $base_cc in
-    icc)
+case $host_os_def in
+  linux)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
       # -Wall goes crazy, so turned these specific checks off for now:
       #
-      #  111 is "statement is unrecahable"
+      #  111 is "statement is unreachable"
       #  279 is "controlling expression is constant", triggered by our asserts
       #  383 is "value copied to temporary, reference to temporary used"
       #  444 is "destructor for base class is not virtual"
@@ -688,87 +723,103 @@ case $host_os in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    clang)
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       debug_opt="-ggdb3 $common_opt -Werror -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
-      ;;
-    *) # gcc
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
+      ts_am_common_flags="-Wunused-parameter"
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    esac
-    ;; # linux*)
-  darwin*)
-    case $base_cc in
-    clang)
-      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
+      # Special options for flex generated .c files
+      flex_cflags="-Wno-unused-parameter"
+    ])
+
+    ;; # linux)
+
+  darwin)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
+      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations -Qunused-arguments"
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      # clang on Darwin needs to use libc++ for any C++11 code.
-      AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
-      ;;
-    *) # gcc
-      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-      debug_opt="$common_opt"
-      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    esac
-    # ToDo: This seems semi-kludgy, but useful for MacPort's I think.
-    TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
-    TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
-    ;; # darwin*)
-  freebsd*|kfreebsd*)
-    case $base_cc in
-    clang)
+    ], [
+      AC_MSG_ERROR([clang is the only supported on compiler on Darwin])
+    ])
+
+    # Darwin needs to use libc++ for any C++11 code.
+    AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
+
+    # NOTE: This seems semi-kludgy, but useful for MacPorts I think.
+    AS_IF([test -d /opt/local/include], [
+      TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
+    ])
+    AS_IF([test -d /opt/local/lib], [
+      TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
+    ])
+
+    ;; # darwin)
+
+  freebsd|kfreebsd)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       common_opt="-pipe -Wall -Werror -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
-      ;;
-    *) # gcc
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      ;;
-    esac
-    TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
-    ;;
-  solaris*)
-    if test "x${base_cc}" = "xcc"; then
-      common_opt="-mt -m64 -D__WORDSIZE=64" # FIXME: arch should be detected
+    ])
+
+    AS_IF([test -d /usr/local/lib], [
+      TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+    ])
+
+    ;; # freebsd|kfreebsd)
+
+  solaris)
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xsun"], [
+      # XXX: Solaris Studio support is going away: https://issues.apache.org/jira/browse/TS-1486
+      common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags"
       cxx_opt="-library=stlport4"
       cxx_dbg="+w2"
       cxx_rel="-erroff"
-      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS],1,
-       [posix thread semantics]
-      )
-      if test "$solaris_use_stlport4" != yes; then
-        postdeps_CXX="-library=Crun"
-      fi
-    else # gcc
+
+      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS], 1, [posix thread semantics])
+      AS_IF([test "x$solaris_use_stlport4" != "xyes"], [postdeps_CXX="-library=Crun"])
+    ])
+
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-    fi
-    ;;
+    ])
+
+    ;; # solaris)
+
   *)
-    common_opt="-pipe -Wall -Werror"
-    debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-    cxx_opt="-Wno-invalid-offsetof"
-    ;;
+    # Not sure what platform this is, but take a stab at some general GCC options ...
+    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
+      common_opt="-pipe -Wall -Werror"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+    ])
 esac
 
 cc_oflag_opt=$release_opt
@@ -776,29 +827,37 @@ cc_oflag_dbg=$debug_opt
 cxx_oflag_opt="$release_opt $cxx_opt $cxx_rel"
 cxx_oflag_dbg="$debug_opt $cxx_opt $cxx_dbg"
 
+AM_CFLAGS="$ts_am_common_flags"
+AM_CXXFLAGS="$ts_am_common_flags"
+AC_SUBST(AM_CFLAGS)
+AC_SUBST(AM_CXXFLAGS)
+
+AC_SUBST([FLEX_CFLAGS], $flex_cflags)
+
 SHARED_CFLAGS=-fPIC
 SHARED_LDFLAGS=-shared
 SHARED_CXXFLAGS=-fPIC
 SHARED_CXXLINKFLAGS=-shared
 
-dnl Checks for pointer size
-AC_CHECK_SIZEOF(void*, 4)
+#
+# _Here_ is where we go ahead and add the _optimizations_ to already
+#  existing CFLAGS/CXXFLAGS if some special values had been set.
+#
+if test "x${enable_debug}" = "xyes"; then
+  TS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
+  TS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
+  TS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
+else
+  TS_ADDTO(CFLAGS, [${cc_oflag_opt}])
+  TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
+fi
+
+# Checks for pointer size
+AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
 AC_SUBST(ac_cv_sizeof_voidp)
-
-
-# Checks for TCP defer accept
-case $host_os in
-  linux*)
-    defer_accept=45
-    ;;
-  *)
-    defer_accept=1
-    ;;
-esac
-AC_SUBST(defer_accept)
 
 
 #
@@ -869,50 +928,8 @@ fi
 TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
 TS_ADDTO(CPPFLAGS, [-D_REENTRANT])
 
-case $host_os in
-  linux*)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=linux
-    ;;
-  darwin*)
-    host_os_def=darwin
-    ;;
-  freebsd*)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=freebsd
-    ;;
-  kfreebsd*)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=freebsd
-    TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
-    ;;
-  solaris*)
-    host_os_def=solaris
-    ;;
-  openbsd*)
-    host_os_def=openbsd
-    ;;
-  *)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    host_os_def=unknown
-   ;;
-esac
-TS_ADDTO(CPPFLAGS, [-D$host_os_def])
 
 AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
-
-#
-# _Here_ is where we go ahead and add the _optimizations_ to already
-#  existing CFLAGS/CXXFLAGS if some special values had been set.
-#
-if test "x${enable_debug}" = "xyes"; then
-  TS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
-  TS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
-  TS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
-else
-  TS_ADDTO(CFLAGS, [${cc_oflag_opt}])
-  TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
-fi
 
 #
 # Note:  These are site-specific macro's that do various tests
@@ -933,20 +950,53 @@ AC_ARG_WITH([cpp11api],
 AC_MSG_RESULT([$cpp11api])
 AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
 
+# Check for ccache (if explicitly enabled)
+if test "x$enable_ccache" = "xyes"; then
+    AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
+    if test "x${CCACHE}" = "xccache"; then
+	CC="$CCACHE $CC"
+	CXX="$CCACHE $CXX"
+    fi
+fi
 
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
 
-AC_CHECK_LIB([exc],[exc_capture_context],[AC_SUBST([LIBEXC],["-lexc"])])
-AC_CHECK_LIB([mld],[MLD_demangle_string],[AC_SUBST([LIBMLD],["-lmld"])])
-AC_CHECK_LIB([dl],[dlopen],[AC_SUBST([LIBDL],["-ldl"])])
-AC_CHECK_LIB([socket],[socket],[AC_SUBST([LIBSOCKET],["-lsocket"])])
-AC_CHECK_LIB([nsl],[gethostbyname],[AC_SUBST([LIBNSL],["-lnsl"])])
+AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
+AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
+AC_SEARCH_LIBS([dlopen], [dl], [], [])
+AC_SEARCH_LIBS([socket], [socket], [], [])
+AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
+
+dnl Linux has pthread symbol stubss in both libc ad libpthread, so it's important to test
+dnl specifically for pthread_create() here.
+AC_SEARCH_LIBS([pthread_create], [pthread], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
+AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+
+dnl XXX The following check incorrectly causes the build to succeed
+dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
+dnl actually present in libsystem. We are searching for the library
+dnl that contains the full Bind 9 API (which is acutally libresolv).
+dnl However, the resolv API uses macros to rename it's APIs to per-version
+dnl symbols, so standard autoconf macros cannot reasonably be used to
+dnl check for it. We need to write custom macros to detect it properly.
 AC_CHECK_LIB([resolv],[res_init],[AC_SUBST([LIBRESOLV],["-lresolv"])])
 AC_CHECK_LIB([resolv],[__putlong],[AC_SUBST([LIBRESOLV],["-lresolv"])])
-AC_CHECK_LIB([pthread],[pthread_exit],[AC_SUBST([LIBTHREAD],["-lpthread"])])
-AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
-AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
+
+# Test for ncurses. We need to turn off -Werror because the C code in the
+# ncurses compile tests does not generate unused variable warnings.
+__saved_CFLAGS="$CFLAGS"
+TS_REMOVEFROM(CFLAGS, -Werror)
+AX_WITH_CURSES
+CFLAGS="$__saved_CFLAGS"
+
+AX_LIB_CURL([7.19], [
+    AM_CONDITIONAL([BUILD_TSTOP], [test "x$ax_cv_curses" = "xyes"])
+  ], [
+    AM_CONDITIONAL([BUILD_TSTOP], [false])
+  ]
+)
 
 #
 # The header_rewrite module depends on boost.
@@ -988,20 +1038,11 @@ SC_PATH_TCLCONFIG
 SC_LOAD_TCLCONFIG
 
 # expect tclConfig.sh to populate TCL_LIB_FLAG and TCL_INCLUDE_SPEC
-case $host_os in
-  darwin*)
+if test "$host_os_def" == "darwin"; then
     TCL_LIB_SPEC="-ltcl" # OSX fails to populate this variable
-    ;;
-  *)
-   ;;
-esac
+fi
 AC_SUBST([LIBTCL],[$TCL_LIB_SPEC])
 
-case $host_os in
-  freebsd*|kfreebsd*)
-    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
-    ;;
-esac
 
 if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
    TS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
@@ -1015,25 +1056,17 @@ if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
 
-TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
-TS_FLAG_FUNCS([strlcpy strlcat])
-
-AC_SUBST(has_clock_gettime)
-AC_SUBST(has_posix_memalign)
-AC_SUBST(has_posix_fadvise)
-AC_SUBST(has_lrand48_r)
-AC_SUBST(has_srand48_r)
-AC_SUBST(has_strlcpy)
-AC_SUBST(has_strlcat)
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate])
+AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
-TS_FLAG_HEADERS([sys/eventfd.h], [has_eventfd=1], [has_eventfd=0], [])
-if test "x${has_eventfd}" = "xyes"; then
-  AS_IF([test "x$enable_eventfd" = "xyes"],
-    [TS_FLAG_FUNCS([eventfd])]
-  )
-fi
-AC_SUBST(has_eventfd)
+TS_FLAG_HEADERS([sys/eventfd.h], [
+  AS_IF([test "x$enable_eventfd" = "xyes"], [
+    AC_CHECK_FUNCS([eventfd])
+  ]
+)])
+
+AC_CHECK_FUNCS(has_eventfd)
 
 #
 # Check for pcre library
@@ -1048,11 +1081,7 @@ has_backtrace=0
 TS_FLAG_HEADERS([execinfo.h], [has_backtrace=1],[])
 if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
-  AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes
-                                         AC_SUBST([LIBEXECINFO],["-lexecinfo"])])
-  if test "x${have_backtrace_lib}" = "xyes"; then
-    AC_MSG_NOTICE([Using backtrace library '-lexecinfo'])
-  fi
+  AC_SEARCH_LIBS([backtrace], [execinfo], [have_backtrace_lib=yes])
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
@@ -1083,7 +1112,7 @@ AC_SUBST(use_port)
 
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
-  AC_CHECK_LIB([profiler], [ProfilerStart],
+  AC_SEARCH_LIBS([ProfilerStart], [profiler],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      has_profiler=1
     ],
@@ -1099,7 +1128,7 @@ has_demangle=0
 #  check with the C++ compiler since we might be using
 #  SunPro CC for the C++ compiler and gcc for the C compiler
 AC_LANG_PUSH([C++])
-AC_CHECK_LIB([demangle],[cplus_demangle],
+AC_SEARCH_LIBS([cplus_demangle],[demangle],
   [LIBDEMANGLE="-ldemangle"
    has_demangle=1
   ]
@@ -1107,24 +1136,6 @@ AC_CHECK_LIB([demangle],[cplus_demangle],
 AC_SUBST([LIBDEMANGLE])
 AC_LANG_POP
 AC_SUBST(has_demangle)
-
-need_union_semun=0
-# It's stupid, but not all platforms have union semun, even those that need it.
-AC_MSG_CHECKING(for union semun in sys/sem.h)
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-],[
-union semun arg;
-semctl(0, 0, 0, arg);
-], [union_semun=yes]
-msg=yes, [
-need_union_semun="1"
-msg=no ] )
-AC_MSG_RESULT([$msg])
-
-AC_SUBST(need_union_semun)
 
 AC_MSG_CHECKING(for 128bit CAS support)
 AC_LANG_PUSH([C++])
@@ -1162,7 +1173,7 @@ AC_SUBST(has_128bit_cas)
 # If we don't find it, disable checking for header.
 use_posix_cap=0
 AS_IF([test "x$enable_posix_cap" != "xno"],
-  AC_CHECK_LIB([cap],[cap_set_proc],
+  AC_SEARCH_LIBS([cap_set_proc],[cap],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[
@@ -1176,17 +1187,57 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
 )
 AC_SUBST(use_posix_cap)
 
+#
+# If the OS is linux, we can use the '--enable-linux-native-aio' option to
+# replace the aio thread mode. Effective only on the linux system.
+#
+
+AC_MSG_CHECKING([whether to enable Linux native AIO])
+AC_ARG_ENABLE([linux-native-aio],
+  [AS_HELP_STRING([--enable-linux-native-aio], [enable native Linux AIO support @<:@default=no@:>@])],
+  [enable_linux_native_aio="${enableval}"],
+  [enable_linux_native_aio=no]
+)
+
+AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
+  if test $host_os_def  != "linux"; then
+    AC_MSG_ERROR([Linux native AIO can only be enabled on Linux systems])
+  fi
+
+  AC_CHECK_HEADERS([libaio.h], [],
+    [AC_MSG_ERROR([Linux native AIO requires libaio.h])]
+  )
+
+  AC_SEARCH_LIBS([io_submit], [aio], [],
+    [AC_MSG_ERROR([Linux native AIO requires libaio])]
+  )
+
+])
+
+AC_MSG_RESULT([$enable_linux_native_aio])
+TS_ARG_ENABLE_VAR([use], [linux_native_aio])
+AC_SUBST(use_linux_native_aio)
+
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
 use_hwloc=0
-AS_IF([test "x$enable_hwloc" = "xyes"],
-  AC_CHECK_LIB([hwloc],[hwloc_topology_init],
-    [AC_SUBST([LIBHWLOC], ["-lhwloc"])
-     use_hwloc=1
-    ],
-    [enable_hwloc=no]
+AS_IF([test "x$enable_hwloc" = "xyes"], [
+  AC_CHECK_HEADERS([hwloc.h], [],
+    [AC_MSG_WARN([hwloc.h header not found, try --disable-hwloc])], []
   )
-)
+
+  # Old versions of libhwloc don't have HWLOC_OBJ_PU.
+  AC_CHECK_DECL(HWLOC_OBJ_PU,
+    [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
+    [#include <hwloc.h>]
+  )
+
+  # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
+  PKG_CHECK_MODULES([hwloc], [hwloc], [use_hwloc=yes], [use_hwloc=no])
+  AC_SUBST([hwloc_CFLAGS])
+  AC_SUBST([hwloc_LIBS])
+])
+
 AC_SUBST(use_hwloc)
 
 #
@@ -1207,14 +1258,13 @@ AC_ARG_ENABLE([luajit],
   [enable_luajit="${enableval}"],
   [enable_luajit=check]
 )
+AC_MSG_RESULT([$enable_luajit])
 
 PKG_CHECK_MODULES([luajit], [luajit], [have_luajit=yes], [have_luajit=no])
 CHECK_LUA([have_lua=yes], [have_lua=no])
 
-AS_IF([ test "x$enable_luajit" = "xno" ], [
-  # LuaJIT disabled, just check for the regular Lua support.
-  enable_lua_support="${have_lua}"
-], [test "x$enable_luajit" = "xyes"], [
+case $enable_luajit in
+yes)
   # LuaJIT required. Fail if it's not available.
   AS_IF([ test "x${have_luajit}" = "xyes" ], [
     LUA_CFLAGS="${luajit_CFLAGS}"
@@ -1223,7 +1273,14 @@ AS_IF([ test "x$enable_luajit" = "xno" ], [
   ], [
     AC_MSG_ERROR([LuaJIT package not available])
   ])
-], [
+  ;;
+
+no)
+  # LuaJIT disabled, just check for the regular Lua support.
+  enable_lua_support="${have_lua}"
+  ;;
+
+*)
   # No user preference, prefer LuaJIT over standard Lua.
   AS_IF([ test "x${have_luajit}" = "xyes" ], [
     LUA_CFLAGS="${luajit_CFLAGS}"
@@ -1232,7 +1289,8 @@ AS_IF([ test "x$enable_luajit" = "xno" ], [
   ], [
     enable_lua_support="${have_lua}"
   ])
-])
+  ;;
+esac
 
 AC_SUBST(LUA_CFLAGS)
 AC_SUBST(LUA_LIBS)
@@ -1244,8 +1302,8 @@ AC_MSG_RESULT([$enable_lua_support])
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
 case $host_os in
-  darwin*)
-    if test "x${have_luajit}" = "xyes"; then
+  darwin)
+    if test "x${enable_lua_support}" = "xLuaJIT"; then
       LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     fi
     ;;
@@ -1259,11 +1317,13 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
+AC_CHECK_HEADERS([sys/types.h sys/mman.h])
 TS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
                   sys/param.h \
                   sys/pset.h \
                   sched.h \
+                  pthread.h \
                   pthread_np.h \
                   machine/endian.h \
                   endian.h \
@@ -1399,6 +1459,68 @@ TS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
 AC_SUBST(netinet_iph)
 AC_SUBST(netinet_ip_icmph)
 
+# Test for additional pthread interfaces.
+
+# Darwin pthread_setname_np:
+AC_MSG_CHECKING([for 1-parameter version of pthread_setname_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_setname_np("conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SETNAME_NP_1, 1, [Whether the 1 parameter version of pthread_setname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
+
+# Linux pthread_setname_np:
+AC_MSG_CHECKING([for 2-parameter version of pthread_setname_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_setname_np(pthread_self(), "conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SETNAME_NP_2, 1, [Whether the 2 parameter version of pthread_setname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
+
+# BSD pthread_set_name_np:
+AC_MSG_CHECKING([for 2-parameter version of pthread_set_name_np()])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        pthread_set_name_np(pthread_self(), "conftest");
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_SET_NAME_NP_2, 1, [Whether the 2 parameter version of pthread_set_name_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+])
+
 # BSD-derived systems populate the socket length in the structure itself. It's
 # redundant to check all of these, but hey, I need the typing practice.
 AC_CHECK_MEMBER([struct sockaddr.sa_len], [], [], [#include <netinet/in.h>])
@@ -1429,14 +1551,6 @@ if test "x${enable_posix_cap}" != "xno"; then
   AC_CHECK_HEADERS([sys/capability.h],
     [],
     [AC_MSG_FAILURE([Found POSIX capabilities library but not the header sys/capability.h. POSIX capabilities are not a required feature, you can disable then with --disable-posix-cap])],
-    []
-  )
-fi
-
-if test "x${enable_hwloc}" = "xyes"; then
-  AC_CHECK_HEADERS([hwloc.h],
-    [],
-    [AC_MSG_FAILURE([hwloc header not found. Try --disable-hwloc])],
     []
   )
 fi
@@ -1680,6 +1794,7 @@ AC_CONFIG_FILES([plugins/conf_remap/Makefile])
 AC_CONFIG_FILES([plugins/regex_remap/Makefile])
 AC_CONFIG_FILES([plugins/header_filter/Makefile])
 AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
+AC_CONFIG_FILES([plugins/cacheurl/Makefile])
 # experimental plugins
 AC_CONFIG_FILES([plugins/experimental/Makefile])
 AC_CONFIG_FILES([plugins/experimental/esi/Makefile])
@@ -1693,7 +1808,6 @@ AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
 AC_CONFIG_FILES([plugins/experimental/spdy/Makefile])
 AC_CONFIG_FILES([plugins/experimental/channel_stats/Makefile])
 AC_CONFIG_FILES([plugins/experimental/authproxy/Makefile])
-AC_CONFIG_FILES([plugins/experimental/cacheurl/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins

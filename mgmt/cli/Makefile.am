@@ -80,13 +80,12 @@ traffic_shell_LDADD = \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(LIBTCL) $(LIBREADLINE) \
-  @LIBDL@ -lm @LIBEXPAT@ @LIBSSL@ \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBRT@ @LIBEXECINFO@ @LIBPCRE@ @LIBREADLINE@
+  @LIBRESOLV@ @LIBEXPAT@ @LIBSSL@ \
+  @LIBPCRE@ @LIBREADLINE@ \
+  -lm
 
 traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_line_LDADD = \
   $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBRT@ @LIBDL@ \
-  @LIBEXECINFO@ @LIBSSL@ @LIBRESOLV@
+  @LIBRESOLV@ @LIBTCL@ @LIBSSL@

@@ -242,15 +242,15 @@ Impl::handleHereIAm(IpHeader const&, ts::Buffer const&) {
   return log(LVL_INFO, "Unanticipated WCCP2_HERE_I_AM message ignored");
 }
 ts::Errata
-Impl::handleISeeYou(IpHeader const&, ts::Buffer const& data) {
+Impl::handleISeeYou(IpHeader const&, ts::Buffer const& /* data ATS_UNUSED */) {
   return log(LVL_INFO, "Unanticipated WCCP2_I_SEE_YOU message ignored.");
 }
 ts::Errata
-Impl::handleRedirectAssign(IpHeader const&, ts::Buffer const& data) {
+Impl::handleRedirectAssign(IpHeader const&, ts::Buffer const& /* data ATS_UNUSED */) {
   return log(LVL_INFO, "Unanticipated WCCP2_REDIRECT_ASSIGN message ignored.");
 }
 ts::Errata
-Impl::handleRemovalQuery(IpHeader const&, ts::Buffer const& data) {
+Impl::handleRemovalQuery(IpHeader const&, ts::Buffer const& /* data ATS_UNUSED */) {
   return log(LVL_INFO, "Unanticipated WCCP2_REMOVAL_QUERY message ignored.");
 }
 // ------------------------------------------------------
@@ -676,7 +676,7 @@ CacheImpl::housekeeping() {
 }
 
 ts::Errata
-CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
+CacheImpl::handleISeeYou(IpHeader const& /* ip_hdr ATS_UNUSED */, ts::Buffer const& chunk) {
   ts::Errata zret;
   ISeeYouMsg msg;
   // Set if our view of the group changes enough to bump the
@@ -834,7 +834,7 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
 }
 
 ts::Errata
-CacheImpl::handleRemovalQuery(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
+CacheImpl::handleRemovalQuery(IpHeader const& /* ip_hdr ATS_UNUSED */, ts::Buffer const& chunk) {
   ts::Errata zret;
   RemovalQueryMsg msg;
   time_t now = time(0);

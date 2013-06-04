@@ -88,8 +88,8 @@ struct NetAccept:public Continuation
   void *alloc_cache;
   AcceptFunctionPtr accept_fn;
   int ifd;
-  int ifd_seq_num;
   bool callback_on_open;
+  bool backdoor;
   Ptr<NetAcceptAction> action_;
   int recv_bufsize;
   int send_bufsize;

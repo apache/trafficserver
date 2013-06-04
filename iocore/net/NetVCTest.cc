@@ -95,7 +95,7 @@ NVC_test_def netvc_tests_def[] = {
   {"overflow", 50, 50, 0, 35000, 1024, 35, EVENT_NONE, VC_EVENT_WRITE_COMPLETE}
 
 };
-int num_netvc_tests = SIZE(netvc_tests_def);
+const unsigned num_netvc_tests = countof(netvc_tests_def);
 
 
 NetVCTest::NetVCTest():

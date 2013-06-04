@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "libts.h"
 #include <assert.h>
 #include <stdio.h>
@@ -385,8 +385,8 @@ http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap)
 static inline char *
 http_hdr_version_to_string(int32_t version, char *buf9)
 {
-  ink_debug_assert(HTTP_MAJOR(version) < 10);
-  ink_debug_assert(HTTP_MINOR(version) < 10);
+  ink_assert(HTTP_MAJOR(version) < 10);
+  ink_assert(HTTP_MINOR(version) < 10);
 
   buf9[0] = 'H';
   buf9[1] = 'T';
@@ -429,7 +429,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
   char tmpbuf[32];
   char *p;
 
-  ink_debug_assert((hdr->m_polarity == HTTP_TYPE_REQUEST) || (hdr->m_polarity == HTTP_TYPE_RESPONSE));
+  ink_assert((hdr->m_polarity == HTTP_TYPE_REQUEST) || (hdr->m_polarity == HTTP_TYPE_RESPONSE));
 
   if (hdr->m_polarity == HTTP_TYPE_REQUEST) {
 
@@ -512,7 +512,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
         tmplen = 3;
       } else {
         tmplen = mime_format_int(p, hdrstat, (bufsize - (p - buf)));
-        ink_debug_assert(tmplen <= 6);
+        ink_assert(tmplen <= 6);
         p += tmplen;
       }
       *p++ = ' ';
@@ -669,7 +669,7 @@ http_hdr_method_get(HTTPHdrImpl *hh, int *length)
 {
   const char *str;
 
-  ink_debug_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   if (hh->u.req.m_method_wks_idx >= 0) {
     str = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
@@ -689,7 +689,7 @@ void
 http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
                     bool must_copy)
 {
-  ink_debug_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   hh->u.req.m_method_wks_idx = method_wks_idx;
   mime_str_u16_set(heap, method, method_length, &(hh->u.req.m_ptr_method), &(hh->u.req.m_len_method), must_copy);
@@ -701,7 +701,7 @@ http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t 
 void
 http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
 {
-  ink_debug_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
   if (hh->u.req.m_url_impl != url) {
     if (hh->u.req.m_url_impl != NULL) {
       heap->deallocate_obj(hh->u.req.m_url_impl);
@@ -717,7 +717,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
 void
 http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 {
-  ink_debug_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
   hh->u.resp.m_status = status;
 }
 
@@ -727,7 +727,7 @@ http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 const char *
 http_hdr_reason_get(HTTPHdrImpl *hh, int *length)
 {
-  ink_debug_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
   *length = hh->u.resp.m_len_reason;
   return (hh->u.resp.m_ptr_reason);
 }
@@ -738,7 +738,7 @@ http_hdr_reason_get(HTTPHdrImpl *hh, int *length)
 void
 http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy)
 {
-  ink_debug_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
   mime_str_u16_set(heap, value, length, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
 }
 
@@ -939,7 +939,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       int32_t version = HTTP_VERSION(end[-5] - '0', end[-3] - '0');
 
       http_hdr_method_set(heap, hh, &(cur[0]), hdrtoken_wks_to_index(HTTP_METHOD_GET), 3, must_copy_strings);
-      ink_debug_assert(hh->u.req.m_url_impl != NULL);
+      ink_assert(hh->u.req.m_url_impl != NULL);
       url = hh->u.req.m_url_impl;
       url_start = &(cur[4]);
       err =::url_parse(heap, url, &url_start, &(end[-11]), must_copy_strings);
@@ -1064,7 +1064,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     if (!url_start || !url_end)
       return PARSE_ERROR;
 
-    ink_debug_assert(hh->u.req.m_url_impl != NULL);
+    ink_assert(hh->u.req.m_url_impl != NULL);
 
     url = hh->u.req.m_url_impl;
     err =::url_parse(heap, url, &url_start, url_end, must_copy_strings);
@@ -1513,51 +1513,96 @@ HTTPHdr::set_url_target_from_host_field(URL* url) {
 // and effective) or URl would have to provide access to
 // the URL printer.
 
-// The use of a magic value for Arena to indicate the internal heap is
-// even uglier but it's less so than duplicating this entire method to
-// change that one thing.
+/// Hack the URL in the HTTP header to be 1.0 compliant, saving the
+/// original values so they can be restored.
+class UrlPrintHack {
+  friend class HTTPHdr;
+  UrlPrintHack(HTTPHdr* hdr) {
+    hdr->_test_and_fill_target_cache();
+    if (hdr->m_url_cached.valid()) {
+      URLImpl* ui = hdr->m_url_cached.m_url_impl;
+      char port_buff[10];
+
+      // Save values that can be modified.
+      m_hdr = hdr; // mark as having saved values.
+      m_len_host = ui->m_len_host;
+      m_ptr_host = ui->m_ptr_host;
+      m_len_port = ui->m_len_port;
+      m_ptr_port = ui->m_ptr_port;
+
+      /* Get dirty. We reach in to the URL implementation to
+         set the host and port if
+         1) They are not already set and
+         2) The values were in a HTTP header field.
+      */
+      if (!hdr->m_target_in_url && hdr->m_host_length && hdr->m_host_mime) {
+        assert(0 == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
+        ui->m_ptr_host = hdr->m_host_mime->m_ptr_value;
+        ui->m_len_host = hdr->m_host_length;
+      }
+
+      if (0 == hdr->m_url_cached.port_get_raw() && hdr->m_port_in_header) {
+        assert(0 == ui->m_ptr_port); // shouldn't be set if not in URL.
+        ui->m_ptr_port = port_buff;
+        ui->m_len_port = sprintf(port_buff, "%.5d", hdr->m_port);
+      }
+    } else {
+      m_hdr = 0;
+    }
+  }
+
+  /// Destructor.
+  /// If we have a valid header, write the original URL values back.
+  ~UrlPrintHack() {
+    if (m_hdr) {
+      URLImpl* ui = m_hdr->m_url_cached.m_url_impl;
+      ui->m_len_port = m_len_port;
+      ui->m_len_host = m_len_host;
+      ui->m_ptr_port = m_ptr_port;
+      ui->m_ptr_host = m_ptr_host;
+    }
+  }
+
+  /// Check if the hack worked
+  bool is_valid() const {
+    return 0 != m_hdr;
+  }
+   
+  /// Saved values.
+  ///@{
+  char const* m_ptr_host;
+  char const* m_ptr_port;
+  int m_len_host;
+  int m_len_port;
+  HTTPHdr* m_hdr;
+  ///@}
+};
 
 char*
 HTTPHdr::url_string_get(Arena* arena, int* length) {
-  char *zret = 0;
+  char* zret = 0;
+  UrlPrintHack hack(this);
 
-  if (length) *length = 0;
-  this->_test_and_fill_target_cache();
-  if (m_url_cached.valid()) {
-    URLImpl* ui = m_url_cached.m_url_impl;
-    bool should_reset_host = false;
-    bool should_reset_port = false;
-    char port_buff[10];
-
-    /* Get dirty. We reach in to the URL implementation to
-       set the host and port if
-       1) They are not already set and
-       2) The values were in a HTTP header field.
-    */
-
-    if (!m_target_in_url && m_host_length && m_host_mime) {
-      assert(0 == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
-      ui->m_ptr_host = m_host_mime->m_ptr_value;
-      ui->m_len_host = m_host_length;
-      should_reset_host = true;
-    }
-
-    if (0 == m_url_cached.port_get_raw() && m_port_in_header) {
-      assert(0 == ui->m_ptr_port); // shouldn't be set if not in URL.
-      ui->m_ptr_port = port_buff;
-      ui->m_len_port = sprintf(port_buff, "%.5d", m_port);
-      should_reset_port = true;
-    }
+  if (hack.is_valid()) {
+    // The use of a magic value for Arena to indicate the internal heap is
+    // even uglier but it's less so than duplicating this entire method to
+    // change that one thing.
 
     zret = (arena == USE_HDR_HEAP_MAGIC)
       ? m_url_cached.string_get_ref(length)
       : m_url_cached.string_get(arena, length)
       ;
+  }
+  return zret;
+}
 
-    if (should_reset_host) { ui->m_ptr_host = 0; ui->m_len_host = 0; }
-    if (should_reset_port) { ui->m_ptr_port = 0; ui->m_len_port = 0; }
- }
-
+int
+HTTPHdr::url_print(char* buff, int length, int* offset, int* skip) {
+  int zret = 0;
+  UrlPrintHack hack(this);
+  if (hack.is_valid()) {
+    zret = m_url_cached.print(buff, length, offset, skip);
+  }
   return zret;
 }
 
@@ -1790,10 +1835,10 @@ HTTPInfo::marshal(char *buf, int len)
   // marshalled along with the alt struct.
   int frag_len = (0 == m_alt->m_frag_offset_count || m_alt->m_frag_offsets == m_alt->m_integral_frag_offsets) ? 0 : sizeof(HTTPCacheAlt::FragOffset) * m_alt->m_frag_offset_count;
 
-  ink_debug_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
+  ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
 
   // Make sure the buffer is aligned
-//    ink_debug_assert(((intptr_t)buf) & 0x3 == 0);
+//    ink_assert(((intptr_t)buf) & 0x3 == 0);
 
   // If we have external fragment offsets, copy the initial ones
   // into the integral data.
@@ -2039,7 +2084,7 @@ HTTPInfo::get_handle(char *buf, int len)
 
 void
 HTTPInfo::push_frag_offset(FragOffset offset) {
-  ink_debug_assert(m_alt);
+  ink_assert(m_alt);
   if (0 == m_alt->m_frag_offsets) {
     m_alt->m_frag_offsets = m_alt->m_integral_frag_offsets;
   } else if (m_alt->m_frag_offset_count >= HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS && 0 == (m_alt->m_frag_offset_count & (m_alt->m_frag_offset_count-1))) {

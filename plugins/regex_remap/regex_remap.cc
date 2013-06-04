@@ -20,10 +20,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ink_config.h"
@@ -377,7 +373,7 @@ class RemapRegex
   // length of the string as written to dest (not including the trailing '0').
   int
   substitute(char dest[], const char *src, const int ovector[], const int lengths[],
-             TSRemapRequestInfo *rri, UrlComponents *req_url, struct sockaddr const* addr)
+             TSRemapRequestInfo *rri, UrlComponents *req_url)
   {
     if (_num_subs > 0) {
       char* p1 = dest;
@@ -567,7 +563,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 // We don't have any specific "instances" here, at least not yet.
 //
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED */, int /* errbuf_sizeATS_UNUSED */)
 {
   const char* error;
   int erroffset;
@@ -834,10 +830,9 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
       if (new_len > 0) {
         char* dest;
-        struct sockaddr const* addr = TSHttpTxnClientAddrGet(txnp);
 
         dest = (char*)alloca(new_len+8);
-        dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, addr);
+        dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
         TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);

@@ -81,7 +81,7 @@ createCommand(const char *cmdName, Tcl_CmdProc cmdFuncPtr,
   for (i = 0; i < 100; i++) {
     argtable[i].key = (char *) NULL;
     argtable[i].type = CLI_ARGV_END;
-    argtable[i].range_set = FALSE;
+    argtable[i].range_set = false;
     argtable[i].option = CLI_ARGV_OPTIONAL;
     argtable[i].def = (char *) NULL;
     argtable[i].help = (char *) NULL;

@@ -28,6 +28,18 @@
 
 #include "ink_config.h"
 
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#if HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
 /* TODO: Should this have a value ? */
@@ -39,18 +51,60 @@
 #endif // ! HAVE_MALLOC_H
 #endif // ! TS_HAS_JEMALLOC
 
+#ifndef MADV_NORMAL
+#define MADV_NORMAL 0
+#endif
+
+#ifndef MADV_RANDOM
+#define MADV_RANDOM 1
+#endif
+
+#ifndef MADV_SEQUENTIAL
+#define MADV_SEQUENTIAL 2
+#endif
+
+#ifndef MADV_WILLNEED
+#define MADV_WILLNEED 3
+#endif
+
+#ifndef MADV_DONTNEED
+#define MADV_DONTNEED 4
+#endif
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif                          /* __cplusplus */
-  void *ats_malloc(size_t size);
-  void *ats_calloc(size_t nelem, size_t elsize);
-  void *ats_realloc(void *ptr, size_t size);
-  void *ats_memalign(size_t alignment, size_t size);
-  void ats_free(void *ptr);
-  void* ats_free_null(void *ptr);
-  void ats_memalign_free(void *ptr);
-  int ats_mallopt(int param, int value);
+
+  void *  ats_malloc(size_t size);
+  void *  ats_calloc(size_t nelem, size_t elsize);
+  void *  ats_realloc(void *ptr, size_t size);
+  void *  ats_memalign(size_t alignment, size_t size);
+  void    ats_free(void *ptr);
+  void *  ats_free_null(void *ptr);
+  void    ats_memalign_free(void *ptr);
+  int     ats_mallopt(int param, int value);
+
+  int     ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
+  int     ats_madvise(caddr_t addr, size_t len, int flags);
+  int     ats_mlock(caddr_t addr, size_t len);
+
+  static inline size_t __attribute__((const)) ats_pagesize(void)
+  {
+    static size_t page_size;
+
+    if (page_size)
+      return page_size;
+
+#if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+    page_size = (size_t)sysconf(_SC_PAGESIZE);
+#elif defined(HAVE_GETPAGESIZE)
+    page_size = (size_t)getpagesize()
+#else
+    page_size = (size_t)8192;
+#endif
+
+    return page_size;
+  }
 
 #define ats_strdup(p)        _xstrdup((p), -1, NULL)
 #define ats_strndup(p,n)     _xstrdup((p), n, NULL)

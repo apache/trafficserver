@@ -39,7 +39,7 @@
 
 #define DebugSsn(tag, ...) DebugSpecific(debug_on, tag, __VA_ARGS__)
 #define STATE_ENTER(state_name, event, vio) { \
-    /*ink_debug_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */ \
+    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */ \
         DebugSsn("http_cs", "[%" PRId64 "] [%s, %s]", con_id, \
         #state_name, HttpDebugNames::get_event_name(event)); }
 

@@ -16,8 +16,10 @@
   limitations under the License.
 */
 
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_defs.h"
+
 #include "state.h"
 #include "hook.h"
 #include "lutil.h"
@@ -162,9 +164,10 @@ LuaPluginRegister(unsigned argc, const char ** argv)
   LuaPluginInstance * plugin;
 
   LuaLogDebug("registering plugin");
+
   // OK, first we try to find an unused instance slot.
   for (unsigned i = 0; i < LuaPluginStorage.size(); ++i) {
-    if (LuaPluginStorage[i]) {
+    if (LuaPluginStorage[i] == NULL) {
       // This slot looks ok, let's try to claim it.
       instanceid = i;
       break;
@@ -253,6 +256,7 @@ bool
 LuaThreadState::init(LuaPluginInstance * plugin)
 {
   for (LuaPluginInstance::pathlist_t::const_iterator p = plugin->paths.begin(); p < plugin->paths.end(); ++p) {
+    LuaLogDebug("loading Lua program from %s", p->c_str());
     if (access(p->c_str(), F_OK) != 0) {
       LuaLogError("%s: %s", p->c_str(), strerror(errno));
       continue;

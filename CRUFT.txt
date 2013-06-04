@@ -25,3 +25,10 @@ Web2
 ``mgmt/web2`` is very old, very broken, very deeply infested code that needs
 to be removed as it is no longer appropriate, or functional.
 Please see https://issues.apache.org/jira/browse/TS-641 for further refernece.
+
+Java
+====
+
+we should get rid of: ./example/protocol/test/*.java because, as zwoop says
+"friends don't let friends write code in Java".
+

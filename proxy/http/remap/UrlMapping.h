@@ -124,20 +124,25 @@ private:
 };
 
 
+/**
+ * UrlMappingContainer wraps a url_mapping object and allows a caller to rewrite the target URL.
+ * This is used while evaluating remap rules.
+**/
 class UrlMappingContainer {
 public:
  UrlMappingContainer()
    : _mapping(NULL), _toURLPtr(NULL), _heap(NULL)
     { }
 
-  UrlMappingContainer(HdrHeap *heap)
+  explicit UrlMappingContainer(HdrHeap *heap)
     : _mapping(NULL), _toURLPtr(NULL), _heap(heap)
   { }
 
-
   ~UrlMappingContainer() { deleteToURL(); }
   
-  URL *getToURL() const { return _toURLPtr; };
+  URL * getToURL() const { return _toURLPtr; };
+  URL * getFromURL() const { return _mapping ? &(_mapping->fromURL) : NULL; };
+
   url_mapping *getMapping() const { return _mapping; };
 
   void set(url_mapping *m) { 

@@ -170,7 +170,7 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response,
     outgoing_response->create(HTTP_TYPE_RESPONSE);
   }
 
-  ink_debug_assert(outgoing_response->type_get() == HTTP_TYPE_RESPONSE);
+  ink_assert(outgoing_response->type_get() == HTTP_TYPE_RESPONSE);
 
   outgoing_response->version_set(HTTPVersion(1, 1));
   outgoing_response->status_set(status);
@@ -277,8 +277,8 @@ void
 HttpTransactHeaders::convert_to_0_9_request_header(HTTPHdr *outgoing_request)
 {
   // These are required
-  ink_debug_assert(outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET);
-  ink_debug_assert(outgoing_request->url_get()->valid());
+  ink_assert(outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET);
+  ink_assert(outgoing_request->url_get()->valid());
 
   outgoing_request->version_set(HTTPVersion(0, 9));
 
@@ -293,7 +293,7 @@ void
 HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr *outgoing_request)
 {
   // These are required
-  ink_debug_assert(outgoing_request->url_get()->valid());
+  ink_assert(outgoing_request->url_get()->valid());
 
   // Set HTTP version to 1.0
   outgoing_request->version_set(HTTPVersion(1, 0));
@@ -318,8 +318,8 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
 {
 
   // These are required
-  ink_debug_assert(outgoing_request->url_get()->valid());
-  ink_debug_assert(outgoing_request->version_get() == HTTPVersion(1, 1));
+  ink_assert(outgoing_request->url_get()->valid());
+  ink_assert(outgoing_request->version_get() == HTTPVersion(1, 1));
 
   if (outgoing_request->get_cooked_pragma_no_cache() &&
       !(outgoing_request->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE)) {
@@ -354,8 +354,8 @@ void
 HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr *outgoing_response)
 {
 //     // These are required
-//     ink_debug_assert(outgoing_response->status_get());
-//     ink_debug_assert(outgoing_response->reason_get());
+//     ink_assert(outgoing_response->status_get());
+//     ink_assert(outgoing_response->reason_get());
 
   // Set HTTP version to 1.0
   outgoing_response->version_set(HTTPVersion(1, 0));
@@ -372,10 +372,10 @@ void
 HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response)
 {
   // These are required
-  ink_debug_assert(outgoing_response->status_get());
+  ink_assert(outgoing_response->status_get());
 
   // Set HTTP version to 1.1
-//    ink_debug_assert(outgoing_response->version_get() == HTTPVersion (1, 1));
+//    ink_assert(outgoing_response->version_get() == HTTPVersion (1, 1));
   outgoing_response->version_set(HTTPVersion(1, 1));
 }
 
@@ -416,10 +416,10 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
   // TODO solve this global clock problem
   now_value = max(now, response_time);
 
-  ink_debug_assert(response_time >= 0);
-  ink_debug_assert(request_time >= 0);
-  ink_debug_assert(response_time >= request_time);
-  ink_debug_assert(now_value >= response_time);
+  ink_assert(response_time >= 0);
+  ink_assert(request_time >= 0);
+  ink_assert(response_time >= request_time);
+  ink_assert(now_value >= response_time);
 
   if (date_value > 0) {
     apparent_age = max((time_t) 0, (response_time - date_value));

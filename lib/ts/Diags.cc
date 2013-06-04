@@ -35,8 +35,7 @@
  ****************************************************************************/
 
 #include "ink_platform.h"
-#include "ink_port.h"
-#include "ink_unused.h"
+#include "ink_defs.h"
 #include "ink_error.h"
 #include "ink_assert.h"
 #include "ink_time.h"
@@ -65,14 +64,20 @@ inkcoreapi Diags *diags = NULL;
 //////////////////////////////////////////////////////////////////////////////
 
 char *
-SrcLoc::str(char *buf, int buflen)
+SrcLoc::str(char *buf, int buflen) const
 {
-  if (!valid || buflen < 1)
+  const char * shortname;
+
+  if (!this->valid() || buflen < 1)
     return (NULL);
+
+  shortname = strrchr(file, '/');
+  shortname = shortname ? (shortname + 1) : file;
+
   if (func != NULL) {
-    snprintf(buf, buflen, "%s:%d (%s)", file, line, func);
+    snprintf(buf, buflen, "%s:%d (%s)", shortname, line, func);
   } else {
-    snprintf(buf, buflen, "%s:%d", file, line);
+    snprintf(buf, buflen, "%s:%d", shortname, line);
   }
   buf[buflen - 1] = NUL;
   return (buf);
@@ -100,12 +105,11 @@ SrcLoc::str(char *buf, int buflen)
 //////////////////////////////////////////////////////////////////////////////
 
 Diags::Diags(const char *bdt, const char *bat, FILE * _diags_log_fp)
-  : diags_log_fp(_diags_log_fp), show_location(0),
+  : diags_log_fp(_diags_log_fp), magic(DIAGS_MAGIC), show_location(0),
     base_debug_tags(NULL), base_action_tags(NULL)
 {
   int i;
 
-  magic = DIAGS_MAGIC;
   cleanup_func = NULL;
   ink_mutex_init(&tag_table_lock, "Diags::tag_table_lock");
 
@@ -182,7 +186,7 @@ Diags::~Diags()
 
 void
 Diags::print_va(const char *debug_tag, DiagsLevel diags_level ,SrcLoc *loc,
-                const char *format_string, va_list ap)
+                const char *format_string, va_list ap) const
 {
   struct timeval tp;
   const char *s;
@@ -222,7 +226,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level ,SrcLoc *loc,
   // append location, if any //
   /////////////////////////////
 
-  if (loc && loc->valid) {
+  if (loc && loc->valid()) {
     char *lp, buf[256];
     lp = loc->str(buf, sizeof(buf));
     if (lp) {
@@ -377,7 +381,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level ,SrcLoc *loc,
 //////////////////////////////////////////////////////////////////////////////
 
 bool
-Diags::tag_activated(const char *tag, DiagsTagType mode)
+Diags::tag_activated(const char *tag, DiagsTagType mode) const
 {
   bool activated = false;
 
@@ -451,7 +455,7 @@ Diags::deactivate_all(DiagsTagType mode)
 //////////////////////////////////////////////////////////////////////////////
 
 const char *
-Diags::level_name(DiagsLevel dl)
+Diags::level_name(DiagsLevel dl) const
 {
   switch (dl) {
   case DL_Diag:
@@ -485,7 +489,7 @@ Diags::level_name(DiagsLevel dl)
 //////////////////////////////////////////////////////////////////////////////
 
 void
-Diags::dump(FILE * fp)
+Diags::dump(FILE * fp) const
 {
   int i;
 
@@ -506,7 +510,7 @@ Diags::dump(FILE * fp)
 void
 Diags::log(const char *tag, DiagsLevel level,
            const char *file, const char *func, const int line,
-           const char *format_string ...)
+           const char *format_string ...) const
 {
   if (! on(tag))
     return;
@@ -523,15 +527,12 @@ Diags::log(const char *tag, DiagsLevel level,
 }
 
 void
-Diags::error(DiagsLevel level,
+Diags::error_va(DiagsLevel level,
              const char *file, const char *func, const int line,
-             const char *format_string ...)
+             const char *format_string, va_list ap) const
 {
-  va_list ap;
-  va_start(ap, format_string);
   if (show_location) {
     SrcLoc lp(file, func, line);
-
     print_va(NULL, level, &lp, format_string, ap);
   } else {
     print_va(NULL, level, NULL, format_string, ap);
@@ -540,7 +541,6 @@ Diags::error(DiagsLevel level,
   if (DiagsLevel_IsTerminal(level)) {
     if (cleanup_func)
       cleanup_func();
-    ink_fatal_va(1, (char *) format_string, ap);
+    ink_fatal_va(1, format_string, ap);
   }
-  va_end(ap);
 }

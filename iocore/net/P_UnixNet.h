@@ -117,8 +117,6 @@ struct EventIO
 #include "P_UnixUDPConnection.h"
 #include "P_UnixPollDescriptor.h"
 
-#define EVENTFD   5
-
 class UnixNetVConnection;
 class NetHandler;
 typedef int (NetHandler::*NetContHandler) (int, void *);
@@ -129,7 +127,6 @@ extern ink_hrtime last_shedding_warning;
 extern ink_hrtime emergency_throttle_time;
 extern int net_connections_throttle;
 extern int fds_throttle;
-extern bool throttle_enabled;
 extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
 extern int http_accept_port_number;
@@ -262,12 +259,8 @@ emergency_throttle(ink_hrtime now)
 TS_INLINE int
 check_net_throttle(ThrottleType t, ink_hrtime now)
 {
-  if(throttle_enabled == false) {
-    // added by Vijay to disable throttle. This is done find out if
-    // there any other problem other than the stats problem -- bug 3040824
-    return false;
-  }
   int connections = net_connections_to_throttle(t);
+
   if (connections >= net_connections_throttle)
     return true;
 
@@ -560,7 +553,7 @@ TS_INLINE int EventIO::modify(int e) {
   }
   return 0;
 #else
-  NOWARN_UNUSED(e);
+  (void)e; // ATS_UNUSED
   return 0;
 #endif
 }
@@ -598,7 +591,7 @@ TS_INLINE int EventIO::refresh(int e) {
   }
   return 0;
 #else
-  NOWARN_UNUSED(e);
+  (void)e; // ATS_UNUSED
   return 0;
 #endif
 }

@@ -74,7 +74,7 @@ private:
     inline Node* GetChild(char index) const { return children[static_cast<unsigned char>(index)]; }
     inline Node* AllocateChild(char index) {
       Node * &child = children[static_cast<unsigned char>(index)];
-      ink_debug_assert(child == NULL);
+      ink_assert(child == NULL);
       child = static_cast<Node*>(ats_malloc(sizeof(Node)));
       child->Clear();
       return child;

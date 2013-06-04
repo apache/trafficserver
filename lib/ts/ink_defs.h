@@ -24,9 +24,78 @@
 #ifndef _ink_defs_h
 #define	_ink_defs_h
 
-/* Some popular defines
-*/
-#define SIZE(x) (sizeof(x)/sizeof((x)[0]))
+
+#include "ink_config.h"
+#include <stddef.h>
+
+#ifdef HAVE_STDINT_H
+# ifndef __STDC_LIMIT_MACROS
+#  define __STDC_LIMIT_MACROS 1
+# endif
+# include <stdint.h>
+#else
+// TODO: Add "standard" int types?
+#endif
+
+#ifdef HAVE_INTTYPES_H
+# ifndef __STDC_FORMAT_MACROS
+#  define __STDC_FORMAT_MACROS 1
+# endif
+# include <inttypes.h>
+#else
+// TODO: add PRI*64 stuff?
+#endif
+
+#ifndef INT64_MIN
+#define INT64_MAX (9223372036854775807LL)
+#define INT64_MIN (-INT64_MAX -1LL)
+#define INTU32_MAX (4294967295U)
+#define INT32_MAX (2147483647)
+#define INT32_MIN (-2147483647-1)
+#endif
+// Hack for MacOSX, have to take this out of the group above.
+#ifndef INTU64_MAX
+#define INTU64_MAX (18446744073709551615ULL)
+#endif
+
+#define POSIX_THREAD
+#define POSIX_THREAD_10031c
+
+#ifndef ETIME
+#ifdef ETIMEDOUT
+#define ETIME ETIMEDOUT
+#endif
+#endif
+
+#ifndef ENOTSUP
+#ifdef EOPNOTSUPP
+#define ENOTSUP EOPNOTSUPP
+#endif
+#endif
+
+#if defined(darwin)
+#define RENTRENT_GETHOSTBYNAME
+#define RENTRENT_GETHOSTBYADDR
+#endif
+
+#define NUL '\0'
+
+// Need to use this to avoid problems when calling variadic functions
+// with many arguments. In such cases, a raw '0' or NULL can be
+// interpreted as 32 bits
+#define NULL_PTR static_cast<void*>(0)
+
+// Determine the element count for an array.
+#ifdef __cplusplus
+template<typename T, unsigned N>
+static inline unsigned
+countof(const T (&)[N]) {
+  return N;
+}
+#else
+#  define countof(x) ((unsigned)(sizeof(x)/sizeof((x)[0])))
+#endif
+
 #define SOCKOPT_ON ((char*)&on)
 #define SOCKOPT_OFF ((char*)&off)
 
@@ -41,6 +110,21 @@
 #ifndef MIN
 #define MIN(x,y) (((x) <= (y)) ? (x) : (y))
 #endif
+
+#define ATS_UNUSED __attribute__ ((unused))
+#define ATS_WARN_IF_UNUSED __attribute__ ((warn_unused_result))
+#define	ATS_UNUSED_RETURN(x)	if (x) {}
+
+#define	NOWARN_UNUSED(x)	(void)(x)
+
+
+#ifndef likely
+#define likely(x)	__builtin_expect (!!(x), 1)
+#endif
+#ifndef unlikely
+#define unlikely(x)	__builtin_expect (!!(x), 0)
+#endif
+
 
 #if TS_USE_HWLOC
 #  include <hwloc.h>
@@ -85,9 +169,10 @@ extern int on;
 */
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
 int ink_number_of_processors();
+
 #if TS_USE_HWLOC
 // Get the hardware topology
-const hwloc_topology_t* ink_get_topology();
+hwloc_topology_t ink_get_topology();
 #endif
 
 /** Constants.

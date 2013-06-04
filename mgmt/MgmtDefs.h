@@ -37,7 +37,7 @@
 /*
  * Type definitions.
  */
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_hrtime.h"
 
 typedef int64_t MgmtIntCounter;

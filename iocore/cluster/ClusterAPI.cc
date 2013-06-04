@@ -527,7 +527,7 @@ TSFreeRPCMsg(TSClusterRPCMsg_t * msg, int msg_data_len)
 TSClusterRPCMsg_t *
 TSAllocClusterRPCMsg(TSClusterRPCHandle_t * h, int data_size)
 {
-  ink_debug_assert(data_size >= 4);
+  ink_assert(data_size >= 4);
   if (data_size < 4) {
     /* Message must be at least 4 bytes in length */
     return (TSClusterRPCMsg_t *) 0;

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 #include "URL.h"
 #include <iostream.h>
 #include <fstream.h>

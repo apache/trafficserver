@@ -866,7 +866,7 @@ ClusterFunctionDescriptor clusterFunction[]
 #endif
 
 ;
-extern int SIZE_clusterFunction;        // clusterFunction[] entries
+extern unsigned SIZE_clusterFunction;        // clusterFunction[] entries
 
 //////////////////////////////////////////////////////////////
 // Map from Cluster Function code to send queue priority

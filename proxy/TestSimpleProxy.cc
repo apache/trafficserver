@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 #include <limits.h>
 #include "Net.h"
 #include "Disk.h"

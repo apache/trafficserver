@@ -52,9 +52,6 @@
 #define CLI_PARENT_ARGV                     1
 #define CLI_ARGV_NO_POS                     -1
 
-#define TRUE   1
-#define FALSE  0
-
 #define CLI_ARGV_OPTIONAL                   0x400
 #define CLI_ARGV_REQUIRED                   0x800
 

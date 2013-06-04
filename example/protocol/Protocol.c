@@ -23,6 +23,7 @@
 
 #include "Protocol.h"
 #include "TxnSM.h"
+#include "ink_defs.h"
 #include <math.h>
 
 /* global variable */
@@ -73,7 +74,7 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 static void
-protocol_init(int accept_port, int server_port)
+protocol_init(int accept_port, int server_port ATS_UNUSED)
 {
   TSCont contp;
   int ret_val;

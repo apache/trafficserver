@@ -146,7 +146,7 @@ RecordElement RecordsConfig[] = {
   //# Support for SRV records
   //#
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.srv_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.srv_enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
 
   //##############################################################################
@@ -803,11 +803,7 @@ RecordElement RecordsConfig[] = {
   //##############################################################################
   {RECT_CONFIG, "proxy.config.net.connections_throttle", RECD_INT, "30000", RECU_RESTART_TS, RR_REQUIRED, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.net.throttle_enabled", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.net.listen_backlog", RECD_INT, "1024", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.net.accept_throttle", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   // This option takes different defaults depending on features / platform. TODO: This should use the
   // autoconf stuff probably ?
@@ -925,10 +921,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cache.vary_on_user_agent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  //  # 0 - MD5 hash
-  //  # 1 - MMH hash
-  {RECT_CONFIG, "proxy.config.cache.url_hash_method", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   //  # default the ram cache size to AUTO_SIZE (-1)
   //  # alternatively: 20971520 (20MB)
   {RECT_CONFIG, "proxy.config.cache.ram_cache.size", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
@@ -976,17 +968,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cache.mutex_retry_delay", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-
-  //##############################################################################
-  //  #
-  //  # UNIMPLEMENTED cache config
-  //  #
-  //
-  //# 0 - MD5 fingerprinting
-  //# 1 - MMH fingerprinting
-  //# 2 - No fingerprinting
-  //# UNIMPLEMENTED CONFIG proxy.config.cache.fingerprint_method INT 2
-  //# UNIMPLEMENTED: CONFIG proxy.config.cache.limits.http.quota FLOAT 1.0
 
   //##############################################################################
   //#
@@ -1077,7 +1058,7 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.hostdb.timed_round_robin", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //       # how often should the hostdb be synced (seconds)
-  {RECT_CONFIG, "proxy.config.cache.hostdb.sync_frequency", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cache.hostdb.sync_frequency", RECD_INT, "120", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //##########################################################################
@@ -1899,9 +1880,7 @@ RecordElement RecordsConfig[] = {
   //# Eric's super cool remap processor
   //#
   //############
-  {RECT_CONFIG, "proxy.config.remap.use_remap_processor", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.remap.num_remap_threads", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.remap.num_remap_threads", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //##############################################################################
@@ -1962,7 +1941,7 @@ LibRecordsConfigInit()
         break;
 
       default:
-        ink_debug_assert(true);
+        ink_assert(true);
         break;
 
       }                         // switch
@@ -1989,7 +1968,7 @@ LibRecordsConfigInit()
         break;
 
       default:
-        ink_debug_assert(true);
+        ink_assert(true);
         break;
       }                         // switch
     }

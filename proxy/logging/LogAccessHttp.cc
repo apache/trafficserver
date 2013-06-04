@@ -30,8 +30,6 @@
 
 
  ***************************************************************************/
-#include "ink_unused.h"
-
 #include "libts.h"
 #include "Error.h"
 #include "LogAccessHttp.h"

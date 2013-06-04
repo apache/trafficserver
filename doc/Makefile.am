@@ -99,6 +99,76 @@ EXTRA_DIST = \
 
 clean-local:
 	-rm -rf html warn.log
+	-rm -rf doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex
 
 doxygen: Doxyfile
 	$(DOXYGEN)
+
+# Makefile for Sphinx documentation
+#
+
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+PAPER         = letter
+BUILDDIR      = .
+
+# Internal variables.
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = $(SPHINXOPTS)
+# the i18n builder cannot share the environment and doctrees with the others
+I18NSPHINXOPTS  = $(SPHINXOPTS)
+
+# The PAPER setting variables requires recursive make variable expansion, which automake
+# detects as non-portable. We bounce this through a shell script and do the expansion there.
+SBUILD = PAPEROPT_a4="$(PAPEROPT_a4)" PAPEROPT_letter="$(PAPEROPT_letter)" PAPER="$(PAPER)" \
+	 $(srcdir)/sbuild $(SPHINXBUILD) -c $(srcdir) $(ALLSPHINXOPTS)
+
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  html       to make standalone HTML files"
+	@echo "  dirhtml    to make HTML files named index.html in directories"
+	@echo "  singlehtml to make a single large HTML file"
+	@echo "  epub       to make an epub"
+	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
+	@echo "  man        to make manual pages"
+	@echo "  changes    to make an overview of all changed/added/deprecated items"
+	@echo "  linkcheck  to check all external links for integrity"
+
+html-local:
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b html $(srcdir)/admin $(BUILDDIR)/html/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b  html $(srcdir)/sdk $(BUILDDIR)/html/sdk
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+dirhtml:
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b dirhtml $(srcdir)/admin $(BUILDDIR)/dirhtml/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b dirhtml $(srcdir)/sdk $(BUILDDIR)/dirhtml/sdk
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
+
+singlehtml:
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b singlehtml $(srcdir)/admin $(BUILDDIR)/singlehtml/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b singlehtml $(srcdir)/sdk $(BUILDDIR)/singlehtml/sdk
+	@echo
+	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
+
+epub:
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b epub $(srcdir)/admin $(BUILDDIR)/epub/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b epub $(srcdir)/admin $(BUILDDIR)/epub/sdk
+	@echo
+	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
+
+latex:
+	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b latex $(srcdir)/admin $(BUILDDIR)/latex/admin
+	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b latex $(srcdir)/sdk $(BUILDDIR)/latex/sdk
+	@echo
+	@echo "Build finished. The epub file is in $(BUILDDIR)/latex."
+
+changes:
+	@echo FIXME
+
+linkcheck:
+	@echo FIXME

@@ -63,7 +63,7 @@ extern unsigned int hostdb_serve_stale_but_revalidate;
 static inline unsigned int
 makeHostHash(const char *string)
 {
-  ink_debug_assert(string && *string);
+  ink_assert(string && *string);
   if (!string || *string == 0)
     return 0;
 
@@ -217,25 +217,6 @@ struct HostDBInfo
   }
 
 
-  /**
-    These are the only fields which will be inserted into the
-    database. Any new user fields must be added to this function.
-
-  */
-  void set_from(HostDBInfo const& that)
-  {
-    memcpy(&data, &that.data, sizeof data);
-    ip_timestamp = that.ip_timestamp;
-    ip_timeout_interval = that.ip_timeout_interval;
-    is_srv = that.is_srv;
-    round_robin = that.round_robin;
-    reverse_dns = that.reverse_dns;
-
-    app.allotment.application1 = that.app.allotment.application1;
-    app.allotment.application2 = that.app.allotment.application2;
-  }
-
-
   //
   // Private
   //
@@ -321,32 +302,13 @@ struct HostDBInfo
   bool match(INK_MD5 &, int, int);
   int heap_size();
   int *heap_offset_ptr();
-
-HostDBInfo()
-  : ip_timestamp(0)
-  , ip_timeout_interval(0)
-  , full(0)
-  , backed(0)
-  , deleted(0)
-  , hits(0)
-  , is_srv(0)
-  , round_robin(0)
-  , reverse_dns(0)
-  , md5_low_low(0)
-  , md5_low(0), md5_high(0) {
-    app.allotment.application1 = 0;
-    app.allotment.application2 = 0;
-    ats_ip_invalidate(ip());
-
-    return;
-  }
 };
 
 
 struct HostDBRoundRobin
 {
   /** Total number (to compute space used). */
-  short n;
+  short rrcount;
 
   /** Number which have not failed a connect. */
   short good;
@@ -355,12 +317,14 @@ struct HostDBRoundRobin
   unsigned short length;
   ink_time_t timed_rr_ctime;
 
-  HostDBInfo info[1];
+  HostDBInfo info[];
 
-  static int size(int nn, int srv_len = 0)
+  // Return the allocation size of a HostDBRoundRobin struct suitable for storing
+  // "count" HostDBInfo records.
+  static unsigned size(unsigned count, unsigned srv_len = 0)
   {
-    ink_assert(nn > 0);
-    return INK_ALIGN((int) (sizeof(HostDBRoundRobin) + (nn-1) * sizeof(HostDBInfo) + srv_len), 8);
+    ink_assert(count > 0);
+    return INK_ALIGN((sizeof(HostDBRoundRobin) + (count * sizeof(HostDBInfo)) + srv_len), 8);
   }
 
   /** Find the index of @a addr in member @a info.
@@ -378,7 +342,7 @@ struct HostDBRoundRobin
   HostDBInfo *select_best_http(sockaddr const* client_ip, ink_time_t now, int32_t fail_window);
   HostDBInfo *select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window);
   HostDBRoundRobin()
-    : n(0), good(0), current(0), length(0), timed_rr_ctime(0)
+    : rrcount(0), good(0), current(0), length(0), timed_rr_ctime(0)
   { }
 
 };

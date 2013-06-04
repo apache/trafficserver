@@ -62,7 +62,7 @@
 #define __INK_RAND_H__
 
 
-#include "ink_port.h"
+#include "ink_defs.h"
 #include "ink_apidefs.h"
 
 

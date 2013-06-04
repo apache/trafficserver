@@ -25,9 +25,10 @@
 
 #include <stdio.h>
 #include <pthread.h>
-#include <ts/ts.h>
+#include "ts/ts.h"
 
 #include "thread.h"
+#include "ink_defs.h"
 
 #define DBGTAG  "xthread"
 
@@ -161,7 +162,7 @@ thread_init()
 }
 
 void
-thread_loop(void *arg)
+thread_loop(void *arg ATS_UNUSED)
 {
   Job *job_todo;
 

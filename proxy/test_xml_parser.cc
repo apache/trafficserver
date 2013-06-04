@@ -23,20 +23,33 @@
 
 #include <stdio.h>
 #include "InkXml.h"
+#include <ink_assert.h>
 
 int
 main()
 {
-  InkXmlAttr a1("Name", "Matt");
-  InkXmlAttr a2("Title", "Engineer");
-  InkXmlAttr a3("Company", "Inktomi");
-  InkXmlObject o1("Employee");
-  o1.add_attr(&a1);
-  o1.add_attr(&a2);
-  o1.add_attr(&a3);
-  o1.add_tag("Email", "");
+  InkXmlAttr *    a1 = new InkXmlAttr("Name", "Matt");
+  InkXmlAttr *    a2 = new InkXmlAttr("Title", "Engineer");
+  InkXmlAttr *    a3 = new InkXmlAttr("Company", "Inktomi");
+  InkXmlObject *  o1 = new InkXmlObject("Employee");
+
+  ink_release_assert(strcmp(o1->object_name(), "Employee") == 0);
+
+  o1->add_attr(a1);
+  ink_release_assert(o1->first() == a1);
+
+  o1->add_attr(a2);
+  ink_release_assert(o1->next(o1->first()) == a2);
+
+  o1->add_attr(a3);
+  ink_release_assert(o1->next(o1->next(o1->first())) == a3);
+
+  o1->add_tag("Email", "matt@inktomi");
+  ink_release_assert(strcmp(o1->tag_value("Email"), "matt@inktomi") == 0);
+
   InkXmlConfigFile f1("logs.config");
-  f1.add_object(&o1);
+  f1.add_object(o1);
   f1.display();
+
   return 0;
 }

@@ -34,9 +34,8 @@
 
 #include "ink_platform.h"
 #include "ink_mutex.h"
-#include "TextBuffer.h"
-#include "ink_bool.h"
 #include "ink_assert.h"
+#include "TextBuffer.h"
 #include "List.h"
 
 #define ACTIVE_VERSION 0

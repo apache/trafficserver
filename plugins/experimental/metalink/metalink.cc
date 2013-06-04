@@ -35,9 +35,8 @@
 
 #include <openssl/sha.h>
 
-#define __STDC_LIMIT_MACROS
-
-#include <ts/ts.h>
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 typedef struct {
   TSVConn connp;
@@ -83,7 +82,7 @@ typedef struct {
 } SendData;
 
 static int
-write_vconn_write_complete(TSCont contp, void *edata)
+write_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   WriteData *data = (WriteData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -168,7 +167,7 @@ cache_open_write(TSCont contp, void *edata)
 }
 
 static int
-cache_open_write_failed(TSCont contp, void *edata)
+cache_open_write_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   TransformData *data = (TransformData *) TSContDataGet(contp);
 
@@ -178,7 +177,7 @@ cache_open_write_failed(TSCont contp, void *edata)
 }
 
 static int
-vconn_write_ready(TSCont contp, void *edata)
+vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   const char *value;
   int64_t length;
@@ -263,7 +262,7 @@ vconn_write_ready(TSCont contp, void *edata)
 }
 
 static int
-transform_vconn_write_complete(TSCont contp, void *edata)
+transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   TransformData *data = (TransformData *) TSContDataGet(contp);
 
@@ -303,7 +302,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-rewrite_handler(TSCont contp, TSEvent event, void *edata)
+rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   const char *value;
   int length;
@@ -352,7 +351,7 @@ cache_open_read(TSCont contp, void *edata)
 }
 
 static int
-cache_open_read_failed(TSCont contp, void *edata)
+cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -370,7 +369,7 @@ cache_open_read_failed(TSCont contp, void *edata)
 }
 
 static int
-vconn_read_ready(TSCont contp, void *edata)
+vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   const char *value;
   int64_t length;
@@ -445,7 +444,7 @@ digest_handler(TSCont contp, TSEvent event, void *edata)
 /* Check if "Location: ..." URL already exist in cache */
 
 static int
-location_handler(TSCont contp, TSEvent event, void *edata)
+location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -501,7 +500,7 @@ location_handler(TSCont contp, TSEvent event, void *edata)
 /* Compute SHA-256 digest, write to cache, and store there the request URL */
 
 static int
-http_read_response_hdr(TSCont contp, void *edata)
+http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
 {
   TransformData *data = (TransformData *) TSmalloc(sizeof(TransformData));
   data->txnp = (TSHttpTxn) edata;
@@ -650,7 +649,7 @@ handler(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
   TSPluginRegistrationInfo info;
 

@@ -92,7 +92,7 @@ if test "$enable_expat" != "no"; then
     TS_ADDTO(LDFLAGS, [-L${expat_ldflags}])
     TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${expat_ldflags}])
   fi
-  AC_CHECK_LIB(expat, XML_SetUserData, [expat_have_libs=1])
+  AC_SEARCH_LIBS([XML_SetUserData], [expat], [expat_have_libs=1])
   if test "$expat_have_libs" != "0"; then
       TS_FLAG_HEADERS(expat.h, [expat_have_headers=1])
   fi

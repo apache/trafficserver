@@ -48,7 +48,7 @@ ats_malloc(size_t size)
   // ink_stack_trace_dump();
   if (likely(size > 0)) {
     if (unlikely((ptr = malloc(size)) == NULL)) {
-      xdump();
+      ink_stack_trace_dump();
       ink_fatal(1, "ats_malloc: couldn't allocate %zu bytes", size);
     }
   }
@@ -60,7 +60,7 @@ ats_calloc(size_t nelem, size_t elsize)
 {
   void *ptr = calloc(nelem, elsize);
   if (unlikely(ptr == NULL)) {
-    xdump();
+    ink_stack_trace_dump();
     ink_fatal(1, "ats_calloc: couldn't allocate %zu %zu byte elements", nelem, elsize);
   }
   return ptr;
@@ -71,7 +71,7 @@ ats_realloc(void *ptr, size_t size)
 {
   void *newptr = realloc(ptr, size);
   if (unlikely(newptr == NULL)) {
-    xdump();
+    ink_stack_trace_dump();
     ink_fatal(1, "ats_realloc: couldn't reallocate %zu bytes", size);
   }
   return newptr;
@@ -84,7 +84,7 @@ ats_memalign(size_t alignment, size_t size)
 {
   void *ptr;
 
-#if TS_HAS_POSIX_MEMALIGN || TS_HAS_JEMALLOC
+#if HAVE_POSIX_MEMALIGN || TS_HAS_JEMALLOC
   if (alignment <= 8)
     return ats_malloc(size);
 
@@ -144,7 +144,7 @@ ats_memalign_free(void *ptr)
 //
 // TODO: I think we might be able to get rid of this?
 int
-ats_mallopt(int param, int value)
+ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
 {
 #if TS_HAS_JEMALLOC
 // TODO: jemalloc code ?
@@ -158,4 +158,64 @@ ats_mallopt(int param, int value)
 #endif // ! TS_HAS_TCMALLOC
 #endif // ! TS_HAS_JEMALLOC
   return 0;
+}
+
+int
+ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
+{
+  size_t pagesize = ats_pagesize();
+
+  // align start back to page boundary
+  caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(pagesize - 1));
+  // align length to page boundry covering region
+  size_t l = (len + (addr - a) + (pagesize - 1)) & ~(pagesize - 1);
+  if ((a + l) > end)
+    l = end - a;                // strict limit
+#if defined(linux)
+/* Fix INKqa06500
+   Under Linux, msync(..., MS_SYNC) calls are painfully slow, even on
+   non-dirty buffers. This is true as of kernel 2.2.12. We sacrifice
+   restartability under OS in order to avoid a nasty performance hit
+   from a kernel global lock. */
+#if 0
+  // this was long long ago
+  if (flags & MS_SYNC)
+    flags = (flags & ~MS_SYNC) | MS_ASYNC;
+#endif
+#endif
+  int res = msync(a, l, flags);
+  return res;
+}
+
+int
+ats_madvise(caddr_t addr, size_t len, int flags)
+{
+#if defined(linux)
+  (void) addr;
+  (void) len;
+  (void) flags;
+  return 0;
+#else
+  size_t pagesize = ats_pagesize();
+  caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(pagesize - 1));
+  size_t l = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
+  int res = 0;
+#if HAVE_POSIX_MADVISE
+  res = posix_madvise(a, l, flags);
+#else
+  res = madvise(a, l, flags);
+#endif
+  return res;
+#endif
+}
+
+int
+ats_mlock(caddr_t addr, size_t len)
+{
+  size_t pagesize = ats_pagesize();
+
+  caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(pagesize - 1));
+  size_t l = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
+  int res = mlock(a, l);
+  return res;
 }

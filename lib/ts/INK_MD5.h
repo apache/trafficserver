@@ -23,13 +23,9 @@
 
 #ifndef _INK_MD5_h_
 #define	_INK_MD5_h_
-#include "MMH.h"
 
-#include "ink_bool.h"
 #include "ink_code.h"
-#include "ink_port.h"
-
-// #define USE_MMH_FOR_MD5
+#include "ink_defs.h"
 
 struct INK_MD5
 {
@@ -153,12 +149,5 @@ struct INK_MD5
     b[1] = a2;
   }
 };
-
-#ifdef USE_MMH_FOR_MD5
-#define INK_MD5 MMH
-#define ink_code_incr_MD5_init ink_code_incr_MMH_init
-#define ink_code_incr_MD5_update ink_code_incr_MMH_update
-#define ink_code_incr_MD5_final ink_code_incr_MMH_final
-#endif
 
 #endif

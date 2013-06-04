@@ -42,9 +42,7 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
-#define LOG_ReadConfigString REC_ReadConfigString
-
-#define HttpBodyFactory		int
+class HttpBodyFactory;
 
 // globals the rest of the system depends on
 extern int fds_limit;
@@ -69,7 +67,7 @@ char action_tags[1024] = "";
 char command_string[512] = "";
 
 
-Diags *diags = NULL;
+//Diags *diags = NULL;
 DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 AppVersionInfo appVersionInfo;
@@ -130,7 +128,7 @@ initialize_process_manager()
 
   pmgmt->reconfigure();
 
-  LOG_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+  REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
 
   //
   // Define version info records
@@ -205,17 +203,6 @@ check_lockfile(const char *config_dir, const char *pgm_name)
     _exit(1);
   }
   ats_free(lockfile);
-}
-
-/*-------------------------------------------------------------------------
-  syslog_thr_init
-
-  For the DEC alpha, the syslog call must be made for each thread.
-  -------------------------------------------------------------------------*/
-
-void
-syslog_thr_init()
-{
 }
 
 /*-------------------------------------------------------------------------

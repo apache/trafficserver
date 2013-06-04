@@ -56,7 +56,7 @@ public:
 
   // Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
   // nothing for NetProcessor
-  virtual void upgradeEtype(EventType & etype) { NOWARN_UNUSED(etype); };
+  virtual void upgradeEtype(EventType & /* etype ATS_UNUSED */) { };
 
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to
@@ -97,8 +97,6 @@ extern UnixNetProcessor unix_netProcessor;
 // accept such events by the EventProcesor.
 //
 extern void initialize_thread_for_net(EThread * thread, int thread_index);
-#if defined(USE_OLD_EVENTFD)
-extern void initialize_eventfd(EThread * thread);
-#endif
+
 //#include "UnixNet.h"
 #endif

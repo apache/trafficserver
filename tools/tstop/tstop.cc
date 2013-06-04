@@ -20,22 +20,42 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <ncurses.h>
+
+#include "ink_config.h"
+#include <map>
 #include <list>
-#include <string.h>
 #include <string>
+#include <string.h>
 #include <iostream>
 #include <assert.h>
-#include <map>
 #include <stdlib.h>
-#include "stats.h"
 #include <unistd.h>
 #include <getopt.h>
+
+// At least on solaris, the default ncurses defines macros such as
+// clear() that break stdlibc++.
+#define NOMACROS 1
+#define NCURSES_NOMACROS 1
+
+#if defined HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#elif defined HAVE_NCURSESW_H
+#  include <ncursesw.h>
+#elif defined HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#elif defined HAVE_NCURSES_H
+#  include <ncurses.h>
+#elif defined HAVE_CURSES_H
+#  include <curses.h>
+#else
+#  error "SysV or X/Open-compatible Curses header file required"
+#endif
+
+#include "stats.h"
 
 using namespace std;
 char curl_error[CURL_ERROR_SIZE];
 string response;
-
 
 namespace colorPair {
   const short red = 1;
@@ -48,35 +68,14 @@ namespace colorPair {
   const short border = 8;
 };
 
-
 //----------------------------------------------------------------------------
-int printGraphLabels(int x, int y, int width, list<const char*> lables) {
-  char buffer[256];
-  for (list<const char*>::const_iterator it = lables.begin();
-       it != lables.end(); ++it) {
-
-    char *pos = buffer;
-    pos += snprintf(buffer, 256, "%7s [", *it);
-    memset(pos, ' ', width);
-    pos += width - 1;
-    
-    strncat(pos, "]", buffer - pos);
-    
-    mvprintw(y++, x, buffer);
-  }
-  
-  //  mvprintw(x, y, 
-}
-
-
-//----------------------------------------------------------------------------
-void prettyPrint(const int x, const int y, const double number, const int type) {
+static void prettyPrint(const int x, const int y, const double number, const int type) {
   char buffer[32];
   char exp = ' ';
   double my_number = number;
   short color;
   if (number > 1000000000000LL) {
-    my_number = number / 1000000000000;
+    my_number = number / 1000000000000LL;
     exp = 'T';
     color = colorPair::red;
   } else if (number > 1000000000) {
@@ -120,12 +119,12 @@ void prettyPrint(const int x, const int y, const double number, const int type) 
 }
 
 //----------------------------------------------------------------------------
-void makeTable(const int x, const int y, const list<string> &items, Stats &stats) {
+static void makeTable(const int x, const int y, const list<string> &items, Stats &stats) {
   int my_y = y;
 
   for (list<string>::const_iterator it = items.begin(); it != items.end(); ++it) {
     string prettyName;
-    double value;
+    double value = 0;
     int type;
 
     stats.getStat(*it, value, prettyName, type);
@@ -135,7 +134,7 @@ void makeTable(const int x, const int y, const list<string> &items, Stats &stats
 }
 
 //----------------------------------------------------------------------------
-size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
+size_t write_data(void *ptr, size_t size, size_t nmemb, void * /* stream */)
 {
   response.append((char*)ptr, size * nmemb);
   //cout << "appending: " << size * nmemb << endl;
@@ -144,7 +143,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
 }
 
 //----------------------------------------------------------------------------
-void help(const string &host, const string &version) {
+static void help(const string &host, const string &version) {
 
   timeout(1000);
 
@@ -179,7 +178,7 @@ void help(const string &host, const string &version) {
   }
 }
 
-void usage(char **argv) {
+static void usage(char **argv) {
   fprintf(stderr, "Usage: %s [-s seconds] hostname|hostname:port\n", argv[0]);
   exit(1);
 }
@@ -359,7 +358,7 @@ int main(int argc, char **argv)
     curs_set(0);
     refresh();
     timeout(sleep_time);
-  loop:
+
     int x = getch();
     if (x == 'q')
       break;

@@ -549,7 +549,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
     return TS_ERR_READ_FILE;
 
   ret = configFiles->getRollbackObj(fname, &file_rb);
-  if (ret != TRUE) {
+  if (ret != true) {
     Debug("FileOp", "[get_lines_from_file] Can't get Rollback for file: %s\n", fname);
     return TS_ERR_READ_FILE;
   }

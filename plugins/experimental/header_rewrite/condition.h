@@ -22,9 +22,6 @@
 #ifndef __CONDITION_H__
 #define __CONDITION_H__ 1
 
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__condition_h[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <string>
 #include <ts/ts.h>
 

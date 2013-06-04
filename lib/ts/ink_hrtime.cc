@@ -30,6 +30,7 @@
 
 #include "ink_hrtime.h"
 #include "ink_assert.h"
+#include "ink_defs.h"
 
 #if defined(freebsd)
 #include <sys/types.h>
@@ -37,8 +38,6 @@
 #include <sys/sysctl.h>
 #endif
 #include <sys/time.h>
-
-#include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 char *
 int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width, char pad_char)
@@ -145,15 +144,15 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
 
   unsigned int num_chars_s;
   char *ts_s = int64_to_str(tmp_buf, tmp_buf_size - 4, timestamp_sec, &num_chars_s, 0, '0');
-  ink_debug_assert(ts_s);
+  ink_assert(ts_s);
 
   // convert milliseconds
   //
   tmp_buf[tmp_buf_size - 5] = '.';
   int ms = timestamp_usec / 1000;
   unsigned int num_chars_ms;
-  char RELEASE_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4], 4, ms, &num_chars_ms, 4, '0');
-  ink_debug_assert(ts_ms && num_chars_ms == 4);
+  char ATS_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4], 4, ms, &num_chars_ms, 4, '0');
+  ink_assert(ts_ms && num_chars_ms == 4);
 
   unsigned int chars_to_write = num_chars_s + 3;        // no eos
 
@@ -199,7 +198,7 @@ init_hrtime_basis()
 #endif
   do {
     t1 = ink_get_hrtime_internal();
-#if TS_HAS_CLOCK_GETTIME
+#if HAVE_CLOCK_GETTIME
     ink_assert(!clock_gettime(CLOCK_REALTIME, &timespec_basis));
 #else
     {

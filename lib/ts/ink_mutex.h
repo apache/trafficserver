@@ -34,7 +34,7 @@
 ***********************************************************************/
 #include <stdio.h>
 
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #if defined(POSIX_THREAD)
 #include <pthread.h>
@@ -118,7 +118,6 @@ ink_mutex_try_acquire(ink_mutex * m)
 
 /* process mutex */
 
-void ink_ProcessMutex_init(ProcessMutex *, const char *name);
 void ink_ProcessMutex_destroy(ProcessMutex *);
 void ink_ProcessMutex_acquire(ProcessMutex *);
 void ink_ProcessMutex_release(ProcessMutex *);

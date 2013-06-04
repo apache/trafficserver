@@ -1035,7 +1035,6 @@ public:
         next_hop_scheme(scheme),
         orig_scheme(scheme),
         method(0),
-        host_db_info(),
         cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
         client_request_time(UNDEFINED_TIME),
         request_sent_time(UNDEFINED_TIME),
@@ -1116,6 +1115,7 @@ public:
 
       memset(return_xbuf, 0, sizeof(return_xbuf));
       memset(user_args, 0, sizeof(user_args));
+      memset(&host_db_info, 0, sizeof(host_db_info));
     }
 
     void
@@ -1356,7 +1356,7 @@ typedef void (*TransactEntryFunc_t) (HttpTransact::State* s);
 inline void
 HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
 {
-  ink_debug_assert(buffer);
+  ink_assert(buffer);
   if (size >= 0) {
     ioBufAllocator[size].free_void(buffer);
   } else {

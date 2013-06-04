@@ -24,7 +24,6 @@
 
 #include "libts.h"
 #include "ink_platform.h"
-#include "ink_unused.h"       /* MAGIC_EDITING_TAG */
 #include "MgmtUtils.h"
 #include "I_Layout.h"
 #include "Compatability.h"
@@ -230,7 +229,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
   virt_map = NULL;
 
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
-  ink_debug_assert(found);
+  ink_assert(found);
   if (http_enabled && found) {
     HttpProxyPort::loadConfig(m_proxy_ports);
   }

@@ -36,6 +36,12 @@ else
     test_paths="${lua_path}"
 fi
 
+dnl
+dnl Note that we check for the existence of lua_getfenv (used to be
+dnl luaL_newstate). This is because Lua v5.2 and later deprecates
+dnl lua_getfenv() because of changes in how environements are handled.
+dnl Also see: https://issues.apache.org/jira/browse/TS-1931
+dnl
 AC_CHECK_LIB(m, pow, lib_m="-lm")
 AC_CHECK_LIB(m, sqrt, lib_m="-lm")
 for x in $test_paths ; do
@@ -45,13 +51,13 @@ for x in $test_paths ; do
         save_LDFLAGS=$LDFLAGS
         CFLAGS="$CFLAGS"
         LDFLAGS="$LDFLAGS $lib_m"
-        AC_CHECK_LIB(lua5.1, luaL_newstate, [
+        AC_CHECK_LIB(lua5.1, lua_getfenv, [
             LUA_LIBS="-llua5.1 $lib_m"
         ],[
-            AC_CHECK_LIB(lua-5.1, luaL_newstate, [
+            AC_CHECK_LIB(lua-5.1, lua_getfenv, [
                 LUA_LIBS="-llua-5.1 $lib_m"
             ],[
-                AC_CHECK_LIB(lua, luaL_newstate, [
+                AC_CHECK_LIB(lua, lua_getfenv, [
                     LUA_LIBS="-llua $lib_m"
                 ])
             ])
@@ -69,7 +75,7 @@ for x in $test_paths ; do
         save_LDFLAGS=$LDFLAGS
         CFLAGS="$CFLAGS"
         LDFLAGS="-L$x/lib $LDFLAGS $lib_m"
-        AC_CHECK_LIB(lua5.1, luaL_newstate, [
+        AC_CHECK_LIB(lua5.1, lua_getfenv, [
             LUA_LIBS="-L$x/lib -llua5.1 $lib_m"
             LUA_CFLAGS="-I$x/include/lua5.1"
             ])
@@ -86,7 +92,7 @@ for x in $test_paths ; do
         save_LDFLAGS=$LDFLAGS
         CFLAGS="$CFLAGS"
         LDFLAGS="-L$x/lib/lua51 $LDFLAGS $lib_m"
-        AC_CHECK_LIB(lua, luaL_newstate, [
+        AC_CHECK_LIB(lua, lua_getfenv, [
             LUA_LIBS="-L$x/lib/lua51 -llua $lib_m"
             LUA_CFLAGS="-I$x/include/lua51"
             ])
@@ -103,7 +109,7 @@ for x in $test_paths ; do
         save_LDFLAGS=$LDFLAGS
         CFLAGS="$CFLAGS"
         LDFLAGS="-L$x/lib $LDFLAGS $lib_m"
-        AC_CHECK_LIB(lua, luaL_newstate, [
+        AC_CHECK_LIB(lua, lua_getfenv, [
             LUA_LIBS="-L$x/lib -llua $lib_m"
             LUA_CFLAGS="-I$x/include"
             ])

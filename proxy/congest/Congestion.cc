@@ -448,23 +448,6 @@ uint64_t
 make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * record)
 {
   INK_MD5 md5;
-#ifdef USE_MMH
-  MMH_CTX ctx;
-  ink_code_incr_MMH_init(&ctx);
-  if (record->congestion_scheme == PER_HOST && len > 0)
-    ink_code_incr_MMH_update(&ctx, hostname, len);
-  else
-    ink_code_incr_MMH_update(&ctx, reinterpret_cast<char const*>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
-  if (record->port != 0) {
-    unsigned short p = port;
-    p = htons(p);
-    ink_code_incr_MMH_update(&ctx, (char *) &p, 2);
-  }
-  if (record->prefix != NULL) {
-    ink_code_incr_MMH_update(&ctx, record->prefix, record->prefix_len);
-  }
-  ink_code_incr_MMH_final((char *) &md5, &ctx);
-#else
   INK_DIGEST_CTX ctx;
   ink_code_incr_md5_init(&ctx);
   if (record->congestion_scheme == PER_HOST && len > 0)
@@ -480,7 +463,7 @@ make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * 
     ink_code_incr_md5_update(&ctx, record->prefix, record->prefix_len);
   }
   ink_code_incr_md5_final((char *) &md5, &ctx);
-#endif
+
   return md5.fold();
 }
 
@@ -489,23 +472,6 @@ make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int prelen, 
 {
   /* if the hostname != NULL, use hostname, else, use ip */
   INK_MD5 md5;
-#ifdef USE_MMH
-  MMH_CTX ctx;
-  ink_code_incr_MMH_init(&ctx);
-  if (hostname && len > 0)
-    ink_code_incr_MMH_update(&ctx, hostname, len);
-  else
-    ink_code_incr_MMH_update(&ctx, reinterpret_cast<char const*>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
-  if (port != 0) {
-    unsigned short p = port;
-    p = htons(p);
-    ink_code_incr_MMH_update(&ctx, (char *) &p, 2);
-  }
-  if (prefix != NULL) {
-    ink_code_incr_MMH_update(&ctx, prefix, prelen);
-  }
-  ink_code_incr_MMH_final((char *) &md5, &ctx);
-#else
   INK_DIGEST_CTX ctx;
   ink_code_incr_md5_init(&ctx);
   if (hostname && len > 0)
@@ -521,7 +487,7 @@ make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int prelen, 
     ink_code_incr_md5_update(&ctx, prefix, prelen);
   }
   ink_code_incr_md5_final((char *) &md5, &ctx);
-#endif
+
   return md5.fold();
 }
 

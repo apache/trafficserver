@@ -83,8 +83,6 @@ maintainance_mode()
   return (command_flag ? true : false);
 }
 
-void syslog_thr_init();
-
 extern const Version version;
 extern AppVersionInfo appVersionInfo;
 

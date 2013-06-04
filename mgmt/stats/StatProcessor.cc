@@ -32,7 +32,6 @@
 
 #include "ink_config.h"
 #include "StatProcessor.h"
-#include "ink_unused.h"
 
 #define STAT_CONFIG_FILE "stats.config.xml"
 
@@ -69,7 +68,7 @@ startElement(void *userData, const char *name, const char **atts)
     Debug(MODULE_INIT, "\nStat #: ----------------------- %d -----------------------\n", statCount);
 
     for (i = 0; atts[i]; i += 2) {
-      ink_debug_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
+      ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
 
       if (!strcmp(atts[i], "minimum")) {
         statObject->m_stats_min = (MgmtFloat) atof(atts[i + 1]);
@@ -97,7 +96,7 @@ startElement(void *userData, const char *name, const char **atts)
     sumClusterVar = true;       // Should only be used with cluster variable
 
     for (i = 0; atts[i]; i += 2) {
-      ink_debug_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
+      ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
       if (!strcmp(atts[i], "scope")) {
         nodeVar = (!strcmp(atts[i + 1], "node") ? true : false);
       } else if (!strcmp(atts[i], "operation")) {

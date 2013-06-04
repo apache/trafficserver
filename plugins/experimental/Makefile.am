@@ -26,6 +26,5 @@ SUBDIRS = \
  gzip \
  spdy \
  channel_stats \
- authproxy \
- cacheurl
+ authproxy
 endif

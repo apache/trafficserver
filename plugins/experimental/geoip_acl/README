@@ -10,13 +10,10 @@ Building
 ========
 
 The build and installation requires a full installation of Apache Traffic
-Server v3.0.0 or later. In particular, the include files must be available,
-and the tsxs build script should be in the path (or modify the Makefile).
+Server v3.0.0 or later. A prerequisite for this is an installation of the
+MaxMind GeoIP libraries and include files. E.g. GeoIP-devel.
 
-    % gmake
-    % sudo gmake install
-
-
+    
 Configuration
 =============
 

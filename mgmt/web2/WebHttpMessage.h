@@ -27,7 +27,6 @@
 #include <time.h>
 #include "Tokenizer.h"
 #include "WebUtils.h"
-#include "ink_bool.h"
 
 /****************************************************************************
  *

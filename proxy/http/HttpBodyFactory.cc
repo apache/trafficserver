@@ -59,11 +59,9 @@
 char *
 HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * context,
                                         int64_t max_buffer_length, int64_t *resulting_buffer_length,
-                                        char* content_language_out_buf,
-                                        size_t content_language_buf_size,
-                                        char* content_type_out_buf,
-                                        size_t content_type_buf_size,
-                                        HTTPStatus status_code, const char *reason_or_null, const char *format, va_list ap)
+                                        char* content_language_out_buf, size_t content_language_buf_size,
+                                        char* content_type_out_buf, size_t content_type_buf_size,
+                                        const char *format, va_list ap)
 {
   char *buffer = NULL;
   const char *lang_ptr = NULL;

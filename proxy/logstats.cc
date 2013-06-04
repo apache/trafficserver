@@ -25,7 +25,6 @@
 #undef std  // FIXME: remove dependency on the STL
 #include "ink_config.h"
 #include "ink_file.h"
-#include "ink_unused.h"
 #include "I_Layout.h"
 #include "I_Version.h"
 
@@ -659,8 +658,6 @@ static ArgumentDescription argument_descriptions[] = {
   {"version", 'V', "Print Version Id", "T", &cl.version, NULL, NULL},
 };
 
-static int n_argument_descriptions = SIZE(argument_descriptions);
-
 static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
@@ -668,7 +665,7 @@ void
 CommandLineArgs::parse_arguments(char** argv)
 {
   // process command-line arguments
-  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+  process_args(argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
 
   // Process as "CGI" ?
   if (strstr(argv[0], ".cgi") || cgi) {
@@ -721,7 +718,7 @@ CommandLineArgs::parse_arguments(char** argv)
 
   // check for help request
   if (help) {
-    usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+    usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
     _exit(0);
   }
 }
@@ -1798,24 +1795,23 @@ format_elapsed_header()
 inline void
 format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json=false)
 {
-  static char buf[64];
-
   if (json) {
     std::cout << "    " << '"' << desc << "\" : " << "{ ";
     std::cout << "\"min\": \"" << stat.min << "\", ";
     std::cout << "\"max\": \"" << stat.max << "\", ";
     std::cout << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
-    std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" }," << std::endl;
+    std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" },";
+    std::cout << std::endl;
   } else {
     std::cout << std::left << std::setw(24) << desc;
     std::cout << std::right << std::setw(7);
     format_int(stat.min);
     std::cout << std::right << std::setw(13);
     format_int(stat.max);
-    snprintf(buf, sizeof(buf), "%17.3f", stat.avg);
-    std::cout << std::right << buf;
-    snprintf(buf, sizeof(buf), "%17.3f", stat.stddev);
-    std::cout << std::right << buf << std::endl;
+
+    std::cout << std::right << std::setw(17) << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg;
+    std::cout << std::right << std::setw(17) << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev;
+    std::cout << std::endl;
   }
 }
 
@@ -2234,7 +2230,7 @@ open_main_log(ExitStatus& status)
     status.append(" squid.blog not enabled");
     return -1;
   }
-#if TS_HAS_POSIX_FADVISE
+#if HAVE_POSIX_FADVISE
   posix_fadvise(main_fd, 0, 0, POSIX_FADV_DONTNEED);
 #endif
   return main_fd;
@@ -2245,7 +2241,7 @@ open_main_log(ExitStatus& status)
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
-main(int argc, char *argv[])
+main(int /* argc ATS_UNUSED */, char *argv[])
 {
   ExitStatus exit_status;
   int res, cnt;
@@ -2265,14 +2261,6 @@ main(int argc, char *argv[])
 
   origin_set = NULL;
   parse_errors = 0;
-
-  // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-  if (-1 == access(system_log_dir, R_OK)) {
-    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
-    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    exit(1);
-  }
 
   // Command line parsing
   cl.parse_arguments(argv);
@@ -2312,7 +2300,7 @@ main(int argc, char *argv[])
     fs.open(cl.origin_file, std::ios::in);
     if (!fs.is_open()) {
       std::cerr << "can't read " << cl.origin_file << std::endl;
-      usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+      usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
       _exit(0);
     }
 
@@ -2356,15 +2344,21 @@ main(int argc, char *argv[])
       std::cout << "[" << std::endl;
   }
 
-  // Change directory to the log dir
-  if (chdir(system_log_dir) < 0) {
-    exit_status.set(EXIT_CRITICAL, " can't chdir to ");
-    exit_status.append(system_log_dir);
-    my_exit(exit_status);
-  }
-
+  // Do the incremental parse of the default squid log.
   if (cl.incremental) {
-    // Do the incremental parse of the default squid log.
+    // Get log directory
+    if (Layout::get()->logdir) {
+      exit_status.set(EXIT_CRITICAL, " missing log directory configuration");
+      my_exit(exit_status);
+    }
+
+    // Change directory to the log dir
+    if (chdir(system_log_dir) < 0) {
+      exit_status.set(EXIT_CRITICAL, " can't chdir to ");
+      exit_status.append(system_log_dir);
+      my_exit(exit_status);
+    }
+
     std::string sf_name(system_log_dir);
     struct stat stat_buf;
     int state_fd;
@@ -2397,7 +2391,6 @@ main(int argc, char *argv[])
     lck.l_start = (off_t)0;
     lck.l_len = (off_t)0; /* till end of file*/
     cnt = 10;
-    // while (((res = flock(state_fd, LOCK_EX | LOCK_NB)) < 0) && --cnt) {
     while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {
       case EWOULDBLOCK:

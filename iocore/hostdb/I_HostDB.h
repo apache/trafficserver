@@ -38,8 +38,10 @@
 
 #include "I_HostDBProcessor.h"
 
-#define HOSTDB_MODULE_MAJOR_VERSION 1
+// TS-1925: switch from MMH to MD5 hash; bumped to version 2
+#define HOSTDB_MODULE_MAJOR_VERSION 2
 #define HOSTDB_MODULE_MINOR_VERSION 0
+
 #define HOSTDB_MODULE_VERSION makeModuleVersion(                 \
                                     HOSTDB_MODULE_MAJOR_VERSION, \
                                     HOSTDB_MODULE_MINOR_VERSION, \

@@ -33,6 +33,7 @@ extern int cluster_send_buffer_size;
 extern uint32_t cluster_sockopt_flags;
 extern uint32_t cluster_packet_mark;
 extern uint32_t cluster_packet_tos;
+extern int num_of_cluster_threads;
 
 
 ///////////////////////////////////////////////////////////////
@@ -256,7 +257,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   //////////////////////////////////////////////////
   // Place an invalid page in front of iovec data.
   //////////////////////////////////////////////////
-  size_t pagesize = (size_t) getpagesize();
+  size_t pagesize = ats_pagesize();
   size = ((MAX_TCOUNT + 1) * sizeof(IOVec)) + (2 * pagesize);
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   char *addr = (char *) align_pointer_forward(iob_iov->data(), pagesize);
@@ -292,7 +293,7 @@ ClusterState::~ClusterState()
 {
   mutex = 0;
 #if defined(__sparc)
-  int pagesize = getpagesize();
+  int pagesize = ats_pagesize();
 #endif
   if (iov) {
 #if defined(__sparc)
@@ -849,12 +850,12 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     opt.addr_binding = NetVCOptions::INTF_ADDR;
     opt.local_ip = this_cluster_machine()->ip;
 
+    struct sockaddr_in addr;
+    ats_ip4_set(&addr, machine->ip,
+        htons(machine->cluster_port ? machine->cluster_port : cluster_port));
+
     // TODO: Should we check the Action* returned here?
-    netProcessor.connect_re(this, machine->ip,
-                            machine->cluster_port
-                            ? machine->cluster_port
-                            : cluster_port,
-                            &opt);
+    netProcessor.connect_re(this, ats_ip_sa_cast(&addr), &opt);
     return EVENT_DONE;
   } else {
     if (event == NET_EVENT_OPEN) {
@@ -1028,31 +1029,45 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         machine->msg_proto_major = proto_major;
         machine->msg_proto_minor = proto_minor;
 
-        thread = eventProcessor.eventthread[ET_CLUSTER][id % eventProcessor.n_threads_for_type[ET_CLUSTER]];
+        if (eventProcessor.n_threads_for_type[ET_CLUSTER] != num_of_cluster_threads) {
+          cluster_connect_state = ClusterHandler::CLCON_ABORT_CONNECT;
+          break;
+        }
+
+        thread = eventProcessor.eventthread[ET_CLUSTER][id % num_of_cluster_threads];
         if (net_vc->thread == thread) {
           cluster_connect_state = CLCON_CONN_BIND_OK;
           break;
         } else { 
           cluster_connect_state = ClusterHandler::CLCON_CONN_BIND_CLEAR;
-          thread->schedule_in(this, CLUSTER_PERIOD);
-          return EVENT_DONE;
         }
       }
 
     case ClusterHandler::CLCON_CONN_BIND_CLEAR:
       {
-        //
         UnixNetVConnection *vc = (UnixNetVConnection *)net_vc; 
         MUTEX_TRY_LOCK(lock, vc->nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
         if (lock && lock1) {
           vc->ep.stop();
           vc->nh->open_list.remove(vc);
-          vc->nh = NULL;
           vc->thread = NULL;
+          if (vc->nh->read_ready_list.in(vc))
+            vc->nh->read_ready_list.remove(vc);
+          if (vc->nh->write_ready_list.in(vc))
+            vc->nh->write_ready_list.remove(vc);
+          if (vc->read.in_enabled_list)
+            vc->nh->read_enable_list.remove(vc);
+          if (vc->write.in_enabled_list)
+            vc->nh->write_enable_list.remove(vc);
+
+          // CLCON_CONN_BIND handle in bind vc->thread (bind thread nh)
           cluster_connect_state = ClusterHandler::CLCON_CONN_BIND;
-        } else {
           thread->schedule_in(this, CLUSTER_PERIOD);
+          return EVENT_DONE;
+        } else {
+          // CLCON_CONN_BIND_CLEAR handle in origin vc->thread (origin thread nh)
+          vc->thread->schedule_in(this, CLUSTER_PERIOD);
           return EVENT_DONE;
         }
       }
@@ -1065,14 +1080,21 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         MUTEX_TRY_LOCK(lock, nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
         if (lock && lock1) {
+          if (vc->read.in_enabled_list)
+            nh->read_enable_list.push(vc);
+          if (vc->write.in_enabled_list)
+            nh->write_enable_list.push(vc);
+
           vc->nh = nh;
-          vc->nh->open_list.enqueue(vc);
           vc->thread = e->ethread;
           PollDescriptor *pd = get_PollDescriptor(e->ethread);
           if (vc->ep.start(pd, vc, EVENTIO_READ|EVENTIO_WRITE) < 0) {
             cluster_connect_state = ClusterHandler::CLCON_DELETE_CONNECT;
             break;                // goto next state
           }
+
+          nh->open_list.enqueue(vc);
+          cluster_connect_state = ClusterHandler::CLCON_CONN_BIND_OK;
         } else {
           thread->schedule_in(this, CLUSTER_PERIOD);
           return EVENT_DONE;
@@ -1116,7 +1138,7 @@ failed:
         if (failed) {
           if (failed == -1) {
             if (++configLookupFails <= CONFIG_LOOKUP_RETRIES) {
-              eventProcessor.schedule_in(this, HRTIME_SECONDS(1), ET_CLUSTER);
+              thread->schedule_in(this, CLUSTER_PERIOD);
               return EVENT_DONE;
             }
           }
@@ -1152,11 +1174,7 @@ failed:
         // Startup the periodic events to process entries in
         //  external_incoming_control.
 
-#if defined(freebsd)
-        int procs_online = 1;
-#else
-        int procs_online = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
+        int procs_online = ink_number_of_processors();
         int total_callbacks = min(procs_online, MAX_COMPLETION_CALLBACK_EVENTS);
         for (int n = 0; n < total_callbacks; ++n) {
           callout_cont[n] = NEW(new ClusterCalloutContinuation(this));

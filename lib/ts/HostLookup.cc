@@ -27,8 +27,6 @@
  *
  *
  ****************************************************************************/
-#include "ink_unused.h"     /* MAGIC_EDITING_TAG */
-
 #include "libts.h"
 #include "HostLookup.h"
 #include "MatcherUtils.h"
@@ -800,9 +798,8 @@ HostLookup::~HostLookup()
 }
 
 static void
-empty_print_fn(void *opaque_data)
+empty_print_fn(void */* opaque_data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(opaque_data);
 }
 
 void

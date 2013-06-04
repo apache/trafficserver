@@ -75,13 +75,12 @@ do_SSL_write(SSL * ssl, void *buf, int size)
 
 
 static int
-ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
+ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
 {
-  NOWARN_UNUSED(nh);
   NetState *s = &vc->read;
   SSLNetVConnection *sslvc = (SSLNetVConnection *) vc;
   MIOBufferAccessor & buf = s->vio.buffer;
-  IOBufferBlock *b = buf.mbuf->_writer;
+  IOBufferBlock *b = buf.writer()->first_write_block();
   int event = SSL_READ_ERROR_NONE;
   int64_t bytes_read;
   int64_t block_write_avail;
@@ -107,12 +106,12 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
         SSLDebugBufferPrint("ssl_buff", b->end() + offset, rres, "SSL Read");
 #endif
 
-        ink_debug_assert(rres);
+        ink_assert(rres);
 
         bytes_read += rres;
         offset += rres;
         block_write_avail -= rres;
-        ink_debug_assert(block_write_avail >= 0);
+        ink_assert(block_write_avail >= 0);
 
         continue;
 
@@ -133,7 +132,7 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          SSLError("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -145,14 +144,11 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
         Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
         break;
       case SSL_ERROR_SSL:
-      default: {
-        char err_string[4096];
-        ERR_error_string(ERR_get_error(), err_string);
+      default:
         event = SSL_READ_ERROR;
         ret = errno;
-        Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SSL %s", err_string);
+        SSLError("[SSL_NetVConnection::ssl_read_from_net]");
         break;
-      }
       }                         // switch
       break;
     }                           // while( block_write_avail > 0 )
@@ -207,7 +203,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
-  ink_debug_assert(buf.writer());
+  ink_assert(buf.writer());
 
   // This function will always return true unless
   // vc is an SSLNetVConnection.
@@ -254,11 +250,11 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (!buf.writer()->write_avail()) {
       buf.writer()->add_block();
     }
-    ret = ssl_read_from_net(nh, this, lthread, r);
+    ret = ssl_read_from_net(this, lthread, r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
     }
-    ink_debug_assert(bytes >= 0);
+    ink_assert(bytes >= 0);
   } while ((ret == SSL_READ_READY && bytes == 0) || ret == SSL_READ_ERROR_NONE);
 
   if (bytes > 0) {
@@ -286,7 +282,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         writeReschedule(nh);
       return;
     }
-    // reset the tigger and remove from the ready queue
+    // reset the trigger and remove from the ready queue
     // we will need to be retriggered to read from this socket again
     read.triggered = 0;
     nh->read_ready_list.remove(this);
@@ -331,8 +327,10 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
   ProxyMutex *mutex = this_ethread()->mutex;
   int64_t r = 0;
   int64_t l = 0;
-  int64_t offset = buf.entry->start_offset;
-  IOBufferBlock *b = buf.entry->block;
+
+  // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
+  int64_t offset = buf.reader()->start_offset;
+  IOBufferBlock *b = buf.reader()->block;
 
   do {
     // check if we have done this block
@@ -634,8 +632,8 @@ SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet * s)
 }
 
 int
-SSLNetVConnection::advertise_next_protocol(
-    SSL *ssl, const unsigned char **out, unsigned int *outlen, void *arg)
+SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen,
+                                           void * /*arg ATS_UNUSED */)
 {
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 

@@ -24,12 +24,10 @@
 #include <string>
 #include <memory>
 #include <pthread.h>
+#include "ink_defs.h"
 
 // Global argument index for TSHttpSsnArgGet and TSHttpTxnArgGet.
 extern int LuaHttpArgIndex;
-
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#define likely(x)   __builtin_expect(!!(x), 1)
 
 #define LuaLogDebug(fmt, ...) do { \
     if (unlikely(TSIsDebugTagSet("lua"))) { \
@@ -83,10 +81,5 @@ void LuaSetConstantField(lua_State * lua, const char * name, const char * value)
 // Allocate a new lua_State.
 lua_State * LuaNewState();
 lua_State * LuaPluginNewState(void);
-
-template <typename T, unsigned N> unsigned
-countof(const T (&)[N]) {
-  return N;
-}
 
 #endif // LUA_LUTIL_H_

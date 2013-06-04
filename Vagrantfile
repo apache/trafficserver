@@ -23,6 +23,11 @@ $network = {
   "centos63"  => "192.168.100.15",
   "freebsd"   => "192.168.100.16",
   "omnios"    => "192.168.100.17",
+
+  "raring32"  => "192.168.200.11",
+  "quantal32" => "192.168.200.12",
+  "precise32" => "192.168.200.13",
+  "lucid32"   => "192.168.200.14",
 }
 
 Vagrant.configure("2") do |config|
@@ -39,23 +44,30 @@ Vagrant.configure("2") do |config|
   # Ubuntu 13.04 (Raring Ringtail)
   # Ubuntu 12.10 (Quantal Quetzal)
   # Ubuntu 12.04 LTS (Precise Pangolin)
-  ['raring', 'quantal', 'precise'].each { |release|
-    config.vm.define "#{release}64" do | config |
-      config.vm.box = "#{release}64"
-      config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/#{release}/current/#{release}-server-cloudimg-amd64-vagrant-disk1.box"
-      config.vm.network :private_network, ip: $network["#{release}64"]
-      config.vm.provision :puppet do |puppet|
-        puppet.manifests_path = "contrib/manifests"
-        puppet.manifest_file = "debian.pp"
+  ["i386", "amd64"].each { |arch|
+    ['raring', 'quantal', 'precise'].each { |release|
+      n = { "i386" => "32", "amd64" => "64" }[arch]
+      config.vm.define "#{release}#{n}" do | config |
+        config.vm.box = "#{release}#{n}"
+        config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/#{release}/current/#{release}-server-cloudimg-#{arch}-vagrant-disk1.box"
+        config.vm.network :private_network, ip: $network["#{release}#{n}"]
+        config.vm.provision :puppet do |puppet|
+          puppet.manifests_path = "contrib/manifests"
+          puppet.manifest_file = "debian.pp"
+        end
       end
-    end
-  }
+    }
+    }
 
   # Ubuntu 10.04 LTS (Lucid Lynx)
   config.vm.define :lucid64 do | config |
     config.vm.box = "lucid64"
     config.vm.network :private_network, ip: $network["lucid64"]
     config.vm.box_url = "http://files.vagrantup.com/lucid64.box"
+    config.vm.provision :puppet do |puppet|
+      puppet.manifests_path = "contrib/manifests"
+      puppet.manifest_file = "debian.pp"
+    end
   end
 
   config.vm.define :freebsd do | config |

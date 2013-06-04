@@ -530,7 +530,7 @@ filters_are_equal(LogFilter * filt1, LogFilter * filt2)
     } else if (filt1->type() == LogFilter::STRING_FILTER) {
       ret = (*((LogFilterString *) filt1) == *((LogFilterString *) filt2));
     } else {
-      ink_debug_assert(!"invalid filter type");
+      ink_assert(!"invalid filter type");
     }
   } else {
     Debug("log-filter-compare", "type diff");

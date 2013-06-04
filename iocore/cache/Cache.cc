@@ -135,7 +135,7 @@ struct VolInitInfo
   VolInitInfo()
   {
     recover_pos = 0;
-    vol_h_f = (char *)ats_memalign(sysconf(_SC_PAGESIZE), 4 * STORE_BLOCK_SIZE);
+    vol_h_f = (char *)ats_memalign(ats_pagesize(), 4 * STORE_BLOCK_SIZE);
     memset(vol_h_f, 0, 4 * STORE_BLOCK_SIZE);
   }
 
@@ -215,24 +215,16 @@ int64_t
 cache_bytes_used(int volume)
 {
   uint64_t used = 0;
-  int start = 0; // These defaults are for volume 0, or volume 1 with volume.config
-  int end = 1;
 
-  if (-1 == volume) {
-    end = gnvol;
-  } else if (volume > 1) { // Special case when volume.config is used
-    start = volume - 1;
-    end = volume;
-  }
-
-  for (int i = start; i < end; i++) {
-    if (!DISK_BAD(gvol[i]->disk)) {
+  for (int i = 0; i < gnvol; i++) {
+    if (!DISK_BAD(gvol[i]->disk) && (volume == -1 || gvol[i]->cache_vol->vol_number == volume)) {
       if (!gvol[i]->header->cycle)
           used += gvol[i]->header->write_pos - gvol[i]->start;
       else
           used += gvol[i]->len - vol_dirlen(gvol[i]) - EVACUATION_SIZE;
     }
   }
+
   return used;
 }
 
@@ -240,18 +232,29 @@ int
 cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
   int volume = -1;
+  char *p;
 
   NOWARN_UNUSED(data_type);
   NOWARN_UNUSED(data);
 
   // Well, there's no way to pass along the volume ID, so extracting it from the stat name.
-  if (0 == strncmp(name+20, "volume_", 10))
-    volume = strtol(name+30, NULL, 10);
+  p = strstr((char *) name, "volume_");
+  if (p != NULL) {
+    // I'm counting on the compiler to optimize out strlen("volume_").
+    volume = strtol(p + strlen("volume_"), NULL, 10);
+  }
 
-  if (cacheProcessor.initialized == CACHE_INITIALIZED)
-    RecSetGlobalRawStatSum(rsb, id, cache_bytes_used(volume));
-
-  RecRawStatSyncSum(name, data_type, data, rsb, id);
+  if (cacheProcessor.initialized == CACHE_INITIALIZED) {
+    int64_t used, total =0;
+    float percent_full;
+    used =  cache_bytes_used(volume);
+    RecSetGlobalRawStatSum(rsb, id, used);
+    RecRawStatSyncSum(name, data_type, data, rsb, id);
+    RecGetGlobalRawStatSum(rsb, (int) cache_bytes_total_stat, &total);
+    percent_full = (float)used / (float)total * 100;
+    // The perent_full float below gets rounded down
+    RecSetGlobalRawStatSum(rsb, (int) cache_percent_full_stat, (int64_t) percent_full);
+  }
 
   return 1;
 }
@@ -302,7 +305,7 @@ CacheVC::CacheVC():alternate_index(CACHE_ALT_INDEX_DEFAULT)
 HTTPInfo::FragOffset*
 CacheVC::get_frag_table()
 {
-  ink_debug_assert(alternate.valid());
+  ink_assert(alternate.valid());
   return alternate.valid() ? alternate.get_frag_table() : 0;
 }
 
@@ -363,7 +366,7 @@ CacheVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuf, bool
 void
 CacheVC::do_io_close(int alerrno)
 {
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
   int previous_closed = closed;
   closed = (alerrno == -1) ? 1 : -1;    // Stupid default arguments
   DDebug("cache_close", "do_io_close %p %d %d", this, alerrno, closed);
@@ -431,11 +434,9 @@ CacheVC::get_object_size()
   return ((CacheVC *) this)->doc_len;
 }
 
-bool CacheVC::set_data(int i, void *data)
+bool CacheVC::set_data(int /* i ATS_UNUSED */ , void * /* data */ )
 {
-  (void) i;
-  (void) data;
-  ink_debug_assert(!"CacheVC::set_data should not be called!");
+  ink_assert(!"CacheVC::set_data should not be called!");
   return true;
 }
 
@@ -510,8 +511,8 @@ CacheVC::get_disk_io_priority()
 int
 Vol::begin_read(CacheVC *cont)
 {
-  ink_debug_assert(cont->mutex->thread_holding == this_ethread());
-  ink_debug_assert(mutex->thread_holding == this_ethread());
+  ink_assert(cont->mutex->thread_holding == this_ethread());
+  ink_assert(mutex->thread_holding == this_ethread());
 #ifdef CACHE_STAT_PAGES
   ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
   stat_cache_vcs.enqueue(cont, cont->stat_link);
@@ -543,8 +544,8 @@ int
 Vol::close_read(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
-  ink_debug_assert(t == this_ethread());
-  ink_debug_assert(t == mutex->thread_holding);
+  ink_assert(t == this_ethread());
+  ink_assert(t == mutex->thread_holding);
   if (dir_is_empty(&cont->earliest_dir))
     return 1;
   int i = dir_evac_bucket(&cont->earliest_dir);
@@ -599,7 +600,6 @@ CacheProcessor::start_internal(int flags)
   start_internal_flags = flags;
   clear = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix = !!(flags & PROCESSOR_FIX);
-  int i;
   start_done = 0;
   int diskok = 1;
 
@@ -612,7 +612,7 @@ CacheProcessor::start_internal(int flags)
   ink_aio_set_callback(new AIO_Callback_handler());
   Span *sd;
   config_volumes.read_config_file();
-  for (i = 0; i < theCacheStore.n_disks; i++) {
+  for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
     sd = theCacheStore.disk[i];
     char path[PATH_NAME_MAX];
     int opts = DEFAULT_CACHE_OPTIONS;
@@ -648,6 +648,7 @@ CacheProcessor::start_internal(int flags)
       }
       if (diskok) {
         gdisks[gndisks] = NEW(new CacheDisk());
+        gdisks[gndisks]->forced_volume_num = sd->vol_num;
         Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
         int sector_size = sd->hw_sector_size;
 
@@ -861,7 +862,7 @@ CacheProcessor::cacheInitialized()
             break;
         }
       }
-      // let us cocalate the Size
+      // let us calculate the Size
       if (cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE) {
         Debug("cache_init", "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
         for (i = 0; i < gnvol; i++) {
@@ -1010,9 +1011,8 @@ CacheProcessor::db_check(bool afix)
 }
 
 int
-Vol::db_check(bool fix)
+Vol::db_check(bool /* fix ATS_UNUSED */ )
 {
-  (void) fix;
   char tt[256];
   printf("    Data for [%s]\n", hash_id);
   printf("        Length:          %" PRIu64 "\n", (uint64_t)len);
@@ -1128,7 +1128,6 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   len = blocks * STORE_BLOCK_SIZE;
   ink_assert(len <= MAX_VOL_SIZE);
   skip = dir_skip;
-  int i;
   prev_recover_pos = 0;
 
   // successive approximation, directory/meta data eats up some storage
@@ -1146,7 +1145,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   Debug("cache_init", "allocating %zu directory bytes for a %lld byte volume (%lf%%)",
     vol_dirlen(this), (long long)this->len, (double)vol_dirlen(this) / (double)this->len * 100.0);
-  raw_dir = (char *)ats_memalign(sysconf(_SC_PAGESIZE), vol_dirlen(this));
+  raw_dir = (char *)ats_memalign(ats_pagesize(), vol_dirlen(this));
   dir = (Dir *) (raw_dir + vol_headerlen(this));
   header = (VolHeaderFooter *) raw_dir;
   footer = (VolHeaderFooter *) (raw_dir + vol_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
@@ -1170,7 +1169,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   init_info->vol_aio[2].aiocb.aio_offset = bs;
   init_info->vol_aio[3].aiocb.aio_offset = bs + footer_offset;
 
-  for (i = 0; i < 4; i++) {
+  for (unsigned i = 0; i < countof(init_info->vol_aio); i++) {
     AIOCallback *aio = &(init_info->vol_aio[i]);
     aio->aiocb.aio_fildes = fd;
     aio->aiocb.aio_buf = &(init_info->vol_h_f[i * STORE_BLOCK_SIZE]);
@@ -1278,9 +1277,8 @@ Vol::handle_dir_read(int event, void *data)
       */
 
 int
-Vol::handle_recover_from_data(int event, void *data)
+Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
 {
-  (void) data;
   uint32_t got_len = 0;
   uint32_t max_sync_serial = header->sync_serial;
   char *s, *e;
@@ -1299,7 +1297,7 @@ Vol::handle_recover_from_data(int event, void *data)
       recover_wrapped = 1;
       recover_pos = start;
     }
-    io.aiocb.aio_buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), RECOVERY_SIZE);
+    io.aiocb.aio_buf = (char *)ats_memalign(ats_pagesize(), RECOVERY_SIZE);
     io.aiocb.aio_nbytes = RECOVERY_SIZE;
     if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
@@ -1530,10 +1528,8 @@ Lclear:
 }
 
 int
-Vol::handle_recover_write_dir(int event, void *data)
+Vol::handle_recover_write_dir(int /* event ATS_UNUSED */ , void * /* data ATS_UNUSED */ )
 {
-  (void) event;
-  (void) data;
   if (io.aiocb.aio_buf)
     free((char *) io.aiocb.aio_buf);
   delete init_info;
@@ -1600,10 +1596,8 @@ Vol::handle_header_read(int event, void *data)
 }
 
 int
-Vol::dir_init_done(int event, void *data)
+Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */ )
 {
-  (void) event;
-  (void) data;
   if (!cache->cache_read_done) {
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(5), ET_CALL);
     return EVENT_CONT;
@@ -1748,8 +1742,7 @@ Cache::vol_initialized(bool result) {
 }
 
 int
-AIO_Callback_handler::handle_disk_failure(int event, void *data) {
-  (void) event;
+AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data) {
   /* search for the matching file descriptor */
   if (!CacheProcessor::cache_ready)
     return EVENT_DONE;
@@ -1950,7 +1943,7 @@ int
 CacheVC::handleReadDone(int event, Event *e) {
   NOWARN_UNUSED(e);
   cancel_trigger();
-  ink_debug_assert(this_ethread() == mutex->thread_holding);
+  ink_assert(this_ethread() == mutex->thread_holding);
 
   if (event == AIO_EVENT_DONE)
     set_io_not_in_progress();
@@ -1964,7 +1957,7 @@ CacheVC::handleReadDone(int event, Event *e) {
     if ((!dir_valid(vol, &dir)) || (!io.ok())) {
       if (!io.ok()) {
         Debug("cache_disk_error", "Read error on disk %s\n \
-	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n", vol->hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes, io.aiocb.aio_offset / 512, (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
+	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n", vol->hash_id, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes, (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
     }
@@ -2007,7 +2000,7 @@ CacheVC::handleReadDone(int event, Event *e) {
         if (checksum != doc->checksum) {
           Note("cache: checksum error for [%" PRIu64 " %" PRIu64 "] len %d, hlen %d, disk %s, offset %" PRIu64 " size %zu",
                doc->first_key.b[0], doc->first_key.b[1],
-               doc->len, doc->hlen, vol->path, io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
+               doc->len, doc->hlen, vol->path, (uint64_t)io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
           doc->magic = DOC_CORRUPT;
           okay = 0;
         }
@@ -2069,7 +2062,7 @@ CacheVC::handleRead(int event, Event *e)
   f.doc_from_ram_cache = false;
 
   // check ram cache
-  ink_debug_assert(vol->mutex->thread_holding == this_ethread());
+  ink_assert(vol->mutex->thread_holding == this_ethread());
   int64_t o = dir_offset(&dir);
   if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o))
     goto LramHit;
@@ -2231,7 +2224,7 @@ CacheVC::removeEvent(int event, Event *e)
     if (od)
       vol->close_write(this);
   }
-  ink_debug_assert(!vol || this_ethread() != vol->mutex->thread_holding);
+  ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
   _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, (void *) -ECACHE_NO_DOC);
   goto Lfree;
 Lremoved:
@@ -2256,7 +2249,7 @@ Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type,
 
   ink_assert(this);
 
-  Ptr<ProxyMutex> mutex = NULL;
+  Ptr<ProxyMutex> mutex;
   if (!cont)
     cont = new_CacheRemoveCont();
 
@@ -2336,10 +2329,10 @@ cplist_update()
 {
   /* go through cplist and delete volumes that are not in the volume.config */
   CacheVol *cp = cp_list.head;
+  ConfigVol *config_vol;
 
   while (cp) {
-    ConfigVol *config_vol = config_volumes.cp_queue.head;
-    for (; config_vol; config_vol = config_vol->link.next) {
+    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
       if (config_vol->number == cp->vol_number) {
         off_t size_in_blocks = config_vol->size << (20 - STORE_BLOCK_SHIFT);
         if ((cp->size <= size_in_blocks) && (cp->scheme == config_vol->scheme)) {
@@ -2347,11 +2340,19 @@ cplist_update()
         } else {
           /* delete this volume from all the disks */
           int d_no;
+          int clearCV = 1;
           for (d_no = 0; d_no < gndisks; d_no++) {
-            if (cp->disk_vols[d_no])
-              cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
+              if (cp->disk_vols[d_no]) {
+                 if(cp->disk_vols[d_no]->disk->forced_volume_num == cp->vol_number) {
+                    clearCV = 0;
+                    config_vol->cachep = cp;
+                 } else {
+                    cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
+                 }
+             }
           }
-          config_vol = NULL;
+          if (clearCV)
+              config_vol = NULL;
         }
         break;
       }
@@ -2376,12 +2377,53 @@ cplist_update()
   }
 }
 
+static int fillExclusiveDisks(CacheVol *cp) {
+  int diskCount = 0;
+  int volume_number = cp->vol_number;
+  Debug("cache_init", "volume %d", volume_number);
+
+   for (int i = 0; i < gndisks; i++) {
+     if(gdisks[i]->forced_volume_num != volume_number)
+       continue;
+     /* The user had created several volumes before - clear the disk
+        and create one volume for http */
+     for(int j = 0; j < (int)gdisks[i]->header->num_volumes; j++) {
+       if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
+         Note("Clearing Disk: %s", gdisks[i]->path);
+         gdisks[i]->delete_all_volumes();
+         break;
+       }
+     }
+
+     diskCount++;
+     int64_t size_diff = gdisks[i]->num_usable_blocks;
+     DiskVolBlock *dpb;
+     do {
+       dpb = gdisks[i]->create_volume(volume_number, size_diff, cp->scheme);
+       if (dpb) {
+         if (!cp->disk_vols[i]) {
+           cp->disk_vols[i] = gdisks[i]->get_diskvol(volume_number);
+         }
+         size_diff -= dpb->len;
+         cp->size += dpb->len;
+         cp->num_vols++;
+       } else {
+         Debug("cache_init", "create_volume failed");
+         break;
+       }
+     } while ((size_diff > 0));
+   }
+   return diskCount;
+}
+
+
 int
 cplist_reconfigure()
 {
   int64_t size;
   int volume_number;
   off_t size_in_blocks;
+  ConfigVol *config_vol;
 
   gnvol = 0;
   if (config_volumes.num_volumes == 0) {
@@ -2439,8 +2481,7 @@ cplist_reconfigure()
       tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
 
     double percent_remaining = 100.00;
-    ConfigVol *config_vol = config_volumes.cp_queue.head;
-    for (; config_vol; config_vol = config_vol->link.next) {
+    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
       if (config_vol->in_percent) {
         if (config_vol->percent > percent_remaining) {
           Warning("total volume sizes added up to more than 100%%!");
@@ -2466,9 +2507,16 @@ cplist_reconfigure()
     cplist_update();
     /* go through volume config and grow and create volumes */
 
-    config_vol = config_volumes.cp_queue.head;
+    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+      // if volume is given exclusive disks, fill here and continue
+      volume_number = config_vol->number;
+      if (!config_vol->cachep) {
+        continue;
+      }
+      fillExclusiveDisks(config_vol->cachep);
+    }
 
-    for (; config_vol; config_vol = config_vol->link.next) {
+    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
 
       size = config_vol->size;
       if (size < 128)
@@ -2477,6 +2525,11 @@ cplist_reconfigure()
       volume_number = config_vol->number;
 
       size_in_blocks = ((off_t) size * 1024 * 1024) / STORE_BLOCK_SIZE;
+
+      if(config_vol->cachep && config_vol->cachep->num_vols > 0) {
+        gnvol += config_vol->cachep->num_vols;
+        continue;
+      }
 
       if (!config_vol->cachep) {
         // we did not find a corresponding entry in cache vol...creat one
@@ -2588,6 +2641,13 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
   off_t to_create = size_in_blocks;
   off_t blocks_per_vol = VOL_BLOCK_SIZE >> STORE_BLOCK_SHIFT;
   int full_disks = 0;
+
+  cp->vol_number = volume_number;
+  cp->scheme = scheme;
+  if(fillExclusiveDisks(cp)) {
+    Debug("cache_init", "volume successfully filled from forced disks: volume_number=%d", volume_number);
+    return 0;
+  }
 
   int *sp = new int[gndisks];
   memset(sp, 0, gndisks * sizeof(int));
@@ -2824,12 +2884,6 @@ ink_cache_init(ModuleVersion v)
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
 
 #ifdef HTTP_CACHE
-  extern int url_hash_method;
-
-  //  # 0 - MD5 hash
-  //  # 1 - MMH hash
-  REC_EstablishStaticConfigInt32(url_hash_method, "proxy.config.cache.url_hash_method");
-  Debug("cache_init", "proxy.config.cache.url_hash_method = %d", url_hash_method);
   REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
 #endif
 

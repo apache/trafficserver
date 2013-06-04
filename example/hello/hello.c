@@ -22,7 +22,9 @@
  */
 
 #include <stdio.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 int
 check_ts_version()
@@ -50,7 +52,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 

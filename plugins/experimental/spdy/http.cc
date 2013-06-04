@@ -18,7 +18,9 @@
 
 // http.cc - Low level routines to write HTTP messages.
 
-#include <ts/ts.h>
+#include "ts/ts.h"
+#include "ink_defs.h"
+
 #include <spdy/spdy.h>
 #include <base/logging.h>
 #include "io.h"

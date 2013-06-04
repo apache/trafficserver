@@ -49,7 +49,7 @@
 #include "ShowCmd.h"
 #include "ConfigCmd.h"
 #include "CliCreateCommands.h"
-#include "ink_port.h"
+#include "ink_defs.h"
 
 #if HAVE_EDITLINE_READLINE_H
 #include <editline/readline.h>
@@ -83,7 +83,7 @@ Tcl_AppInit(Tcl_Interp * app_interp)
 
   // root users are automatically enabled
   if (getuid() == 0) {
-    enable_restricted_commands = TRUE;
+    enable_restricted_commands = true;
   }
 
 

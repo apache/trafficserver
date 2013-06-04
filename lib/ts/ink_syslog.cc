@@ -28,10 +28,6 @@
  *
  *
  ****************************************************************************/
-
-
-#include "ink_unused.h"  /* MAGIC_EDITING_TAG */
-
 #include "libts.h"
 
 struct syslog_fac

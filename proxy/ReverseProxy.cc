@@ -43,13 +43,12 @@
 #include "RemapProcessor.h"
 #include "UrlRewrite.h"
 #include "UrlMapping.h"
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 
 /** Time till we free the old stuff after a reconfiguration. */
 #define URL_REWRITE_TIMEOUT            (HRTIME_SECOND*60)
 
 // Global Ptrs
-static Ptr<ProxyMutex> reconfig_mutex = NULL;
+static Ptr<ProxyMutex> reconfig_mutex;
 UrlRewrite *rewrite_table = NULL;
 remap_plugin_info *remap_pi_list; // We never reload the remap plugins, just append to 'em.
 

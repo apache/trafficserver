@@ -284,7 +284,7 @@ NetAccept::do_blocking_accept(EThread * t)
 
     // Throttle accepts
 
-    while (check_net_throttle(ACCEPT, now)) {
+    while (!backdoor && check_net_throttle(ACCEPT, now)) {
       check_throttle_warning();
       if (!unix_netProcessor.throttle_error_message) {
         safe_delay(NET_THROTTLE_DELAY);
@@ -350,9 +350,9 @@ NetAccept::acceptEvent(int event, void *ep)
       return EVENT_DONE;
     }
 
-    //ink_debug_assert(ifd < 0 || event == EVENT_INTERVAL || (pd->nfds > ifd && pd->pfd[ifd].fd == server.fd));
+    //ink_assert(ifd < 0 || event == EVENT_INTERVAL || (pd->nfds > ifd && pd->pfd[ifd].fd == server.fd));
     //if (ifd < 0 || event == EVENT_INTERVAL || (pd->pfd[ifd].revents & (POLLIN | POLLERR | POLLHUP | POLLNVAL))) {
-    //ink_debug_assert(!"incomplete");
+    //ink_assert(!"incomplete");
       int res;
       if ((res = accept_fn(this, e, false)) < 0) {
         NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
@@ -386,7 +386,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   int loop = accept_till_done;
 
   do {
-    if (check_net_throttle(ACCEPT, ink_get_hrtime())) {
+    if (!backdoor && check_net_throttle(ACCEPT, ink_get_hrtime())) {
       ifd = -1;
       return EVENT_CONT;
     }
@@ -539,6 +539,7 @@ NetAccept::NetAccept()
     alloc_cache(0),
     ifd(-1),
     callback_on_open(false),
+    backdoor(false),
     recv_bufsize(0),
     send_bufsize(0),
     sockopt_flags(0),

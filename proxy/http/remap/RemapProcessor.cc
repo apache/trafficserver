@@ -300,7 +300,7 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
   if (!map) {
     Error("Could not find corresponding url_mapping for this transaction %p", s);
     Debug("url_rewrite", "Could not find corresponding url_mapping for this transaction");
-    ink_debug_assert(!"this should never happen -- call setup_for_remap first");
+    ink_assert(!"this should never happen -- call setup_for_remap first");
     cont->handleEvent(EVENT_REMAP_ERROR, NULL);
     return ACTION_RESULT_DONE;
   }
@@ -314,7 +314,7 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
     plugins->setHostHeaderInfo(hh_info);
 
     // Execute "inline" if not using separate remap threads.
-    ink_debug_assert(cont->mutex->thread_holding == this_ethread());
+    ink_assert(cont->mutex->thread_holding == this_ethread());
     plugins->mutex = cont->mutex;
     plugins->action = cont;
     SET_CONTINUATION_HANDLER(plugins, &RemapPlugins::run_remap);

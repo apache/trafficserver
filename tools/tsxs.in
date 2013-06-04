@@ -19,6 +19,7 @@
 host="@HOST_GUESS@"
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
+libdir="@libdir@"
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
 CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
@@ -191,8 +192,8 @@ if [ -n "$OBJ" ]; then
 	if [ -r "$OBJ" ]; then
 		if [ "$INSTALL" = "1" ]; then
 			echo "  installing $OBJ -> $INSTALLDIR/$OBJ"
-			cp $OBJ $INSTALLDIR/$OBJ
-			chmod 0755 $INSTALLDIR/$OBJ
+			cp $OBJ ${DESTDIR}${INSTALLDIR}/${OBJ}
+			chmod 0755 ${DESTDIR}${INSTALLDIR}/${OBJ}
 		fi
 	else
 		echo "No $OBJ"

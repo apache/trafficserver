@@ -53,8 +53,8 @@ HTTPHdr::parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, boo
   const char *end;
   int used;
 
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
   MIMEParseResult state = PARSE_CONT;
   *bytes_used = 0;
@@ -94,8 +94,8 @@ HTTPHdr::parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bo
   const char *end;
   int used;
 
-  ink_debug_assert(valid());
-  ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   MIMEParseResult state = PARSE_CONT;
   *bytes_used = 0;

@@ -168,7 +168,7 @@ public:
     size_t i = key - m_min;
     if (m_entries && key >= m_min && key <= m_max && m_table[i].valid)
     {
-      register size_t l = m_table[i].length;
+      size_t l = m_table[i].length;
       if (l < bufLen)
       {
         ink_strlcpy(buf, m_table[key - m_min].name, bufLen);

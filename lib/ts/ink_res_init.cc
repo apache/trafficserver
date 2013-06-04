@@ -66,6 +66,7 @@
 
 
 #include "ink_platform.h"
+#include "ink_defs.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -166,9 +167,8 @@ ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt) {
 }
 
 static void
-ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
+ink_res_setoptions(ink_res_state statp, const char *options, const char *source ATS_UNUSED)
 {
-  NOWARN_UNUSED(source);
   const char *cp = options;
   int i;
 
@@ -302,9 +302,9 @@ ink_res_init(
   const char *pSearchList, ///< Unknown
   const char *pResolvConf ///< Path to configuration file.
 ) {
-  register FILE *fp;
-  register char *cp, **pp;
-  register int n;
+  FILE *fp;
+  char *cp, **pp;
+  int n;
   char buf[BUFSIZ];
   size_t nserv = 0;
   int haveenv = 0;

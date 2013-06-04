@@ -366,7 +366,7 @@ Variables::_parseCookieString(const char *str, int str_len) {
 }
 
 void
-Variables::_parseUserAgentString(const char *str, int str_len) {
+Variables::_parseUserAgentString(const char */* str ATS_UNUSED */, int /* str_len ATS_UNUSED */) {
   /*
   string user_agent_str(str, str_len); // need NULL-terminated version
   // TODO - code was here

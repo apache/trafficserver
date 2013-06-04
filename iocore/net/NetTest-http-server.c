@@ -87,7 +87,7 @@ struct NetTesterSM:public Continuation
         Debug("net_test", "The request header is :\n%s\n", request);
         // parse and get the doc size
         SET_HANDLER(&NetTesterSM::handle_write);
-        ink_debug_assert(doc_len == resp_reader->read_avail());
+        ink_assert(doc_len == resp_reader->read_avail());
         vc->do_io_write(this, doc_len, resp_reader);
         //vc->set_inactivity_timeout(HRTIME_SECONDS(10));
       }

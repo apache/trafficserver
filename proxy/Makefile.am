@@ -20,7 +20,6 @@
 if STANDALONE_IOCORE
 noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
-noinst_PROGRAMS =
 else
 SUBDIRS = congest http logging config
 noinst_LIBRARIES =
@@ -30,6 +29,14 @@ bin_PROGRAMS = \
   traffic_logstats \
   traffic_sac
 endif
+
+noinst_PROGRAMS = \
+  test_xml_parser
+
+TESTS = \
+  tests/test_logstats_json \
+  tests/test_logstats_summary \
+  test_xml_parser
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -51,9 +58,6 @@ noinst_HEADERS = \
   ConfigParse.h \
   Show.h
 
-EXTRA_PROGRAMS = \
-  test_xml_parser
-
 EXTRA_LIBRARIES	= \
   libTrafficServerStandalone.a
 
@@ -62,7 +66,6 @@ if STATIC_LIBTS
 else
    which_libts = $(top_builddir)/lib/ts/libtsutil.la
 endif
-
 
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
@@ -130,8 +133,7 @@ traffic_server_SOURCES = \
 if BUILD_TESTS
   traffic_server_SOURCES +=  InkAPITest.cc  \
     RegressionSM.h \
-    RegressionSM.cc \
-    TestHook.cc
+    RegressionSM.cc
 endif
 
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
@@ -158,11 +160,18 @@ traffic_server_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(which_libts) \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBCAP@ @LIBHWLOC@ \
-  @LIBZ@ @LIBLZMA@ \
-  @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ @LIBEXECINFO@
+  @hwloc_LIBS@ \
+  @LIBPCRE@ \
+  @LIBSSL@ \
+  @LIBTCL@ \
+  @LIBEXPAT@ \
+  @LIBDEMANGLE@ \
+  @LIBCAP@ \
+  @LIBRESOLV@ \
+  @LIBZ@ \
+  @LIBLZMA@ \
+  @LIBPROFILER@ \
+  -lm
 
 if BUILD_LUA_SUPPORT
 traffic_server_LDFLAGS += @LUA_LUAJIT_LDFLAGS@
@@ -182,10 +191,8 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ \
-  @LIBEXECINFO@
+  @LIBRESOLV@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = \
   logstats.cc \
@@ -201,11 +208,8 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ \
-  @LIBEXECINFO@
-
+  @LIBRESOLV@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_sac_SOURCES = \
   sac.cc \
@@ -258,10 +262,8 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ \
-  @LIBZ@ @LIBLZMA@ @LIBEXECINFO@
+  @LIBRESOLV@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ -lm
 
 if BUILD_TESTS
   traffic_sac_SOURCES += RegressionSM.cc
@@ -277,7 +279,14 @@ libTrafficServerStandalone_a_SOURCES = \
   AbstractBuffer.cc \
   Initialize.cc
 
-test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc
+test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc
+test_xml_parser_LDADD = \
+  $(top_builddir)/lib/records/librecprocess.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBTCL@
 
 versiondir = $(pkgsysconfdir)
 
@@ -308,4 +317,3 @@ install-exec-hook:
 	if [ `id -un` == "root" ]; then \
 		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkglibexecdir); \
 	fi
-

@@ -191,7 +191,6 @@ public:
 
 private:
   bool _valid;
-  void _doRemap(UrlMappingContainer &mapping_container, URL *request_url);
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host,
                       int request_host_len, UrlMappingContainer &mapping_container);
   url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url, int request_port, char *request_host,
@@ -207,5 +206,7 @@ private:
   inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, char *src_host,
                           bool is_cur_mapping_regex, int &count);
 };
+
+void url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL * request_url);
 
 #endif

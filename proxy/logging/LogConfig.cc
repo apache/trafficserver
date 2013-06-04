@@ -112,33 +112,33 @@ LogConfig::setup_default_values()
   logfile_dir = ats_strdup(".");
 
   separate_icp_logs = 1;
-  separate_host_logs = FALSE;
+  separate_host_logs = false;
 
-  squid_log_enabled = TRUE;
-  xuid_logging_enabled = TRUE;
-  squid_log_is_ascii = TRUE;
+  squid_log_enabled = true;
+  xuid_logging_enabled = true;
+  squid_log_is_ascii = true;
   squid_log_name = ats_strdup("squid");
   squid_log_header = NULL;
 
-  common_log_enabled = FALSE;
-  common_log_is_ascii = TRUE;
+  common_log_enabled = false;
+  common_log_is_ascii = true;
   common_log_name = ats_strdup("common");
   common_log_header = NULL;
 
-  extended_log_enabled = FALSE;
-  extended_log_is_ascii = TRUE;
+  extended_log_enabled = false;
+  extended_log_is_ascii = true;
   extended_log_name = ats_strdup("extended");
   extended_log_header = NULL;
 
-  extended2_log_enabled = FALSE;
-  extended2_log_is_ascii = TRUE;
+  extended2_log_enabled = false;
+  extended2_log_is_ascii = true;
   extended2_log_name = ats_strdup("extended2");
   extended2_log_header = NULL;
 
   collation_mode = NO_COLLATION;
   collation_host = ats_strdup("none");
   collation_port = 0;
-  collation_host_tagged = FALSE;
+  collation_host_tagged = false;
   collation_secret = ats_strdup("foobar");
   collation_retry_sec = 0;
   collation_max_send_buffers = 0;
@@ -147,16 +147,16 @@ LogConfig::setup_default_values()
   rolling_interval_sec = 86400; // 24 hours
   rolling_offset_hr = 0;
   rolling_size_mb = 10;
-  auto_delete_rolled_files = TRUE;
-  roll_log_files_now = FALSE;
+  auto_delete_rolled_files = true;
+  roll_log_files_now = false;
 
-  custom_logs_enabled = FALSE;
+  custom_logs_enabled = false;
   xml_config_file = ats_strdup("logs_xml.config");
   hosts_config_file = ats_strdup("log_hosts.config");
 
 /* The default values for the search log                         */
 
-  search_log_enabled = FALSE;
+  search_log_enabled = false;
 /* Comma separated filter names. These Filetrs are defined in    */
 /* log_xml.config file. One such filter defines to reject URLs   */
 /* with .gif extension. These filters are added to search log    */
@@ -312,20 +312,14 @@ LogConfig::read_configuration_variables()
 
   // SQUID
   val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_enabled");
-  if (val == 0 || val == 1) {
-    squid_log_enabled = val;
-  }
+  squid_log_enabled = (val > 0);
 
   // X-UID logging enabled.
   val = (int) LOG_ConfigReadInteger("proxy.config.log.xuid_logging_enabled");
-  if (val == 0 || val == 1) {
-    xuid_logging_enabled = val;
-  }
+  xuid_logging_enabled = (val > 0);
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_is_ascii");
-  if (val == 0 || val == 1) {
-    squid_log_is_ascii = val;
-  }
+  squid_log_is_ascii = (val > 0);
 
   ptr = LOG_ConfigReadString("proxy.config.log.squid_log_name");
   if (ptr != NULL) {
@@ -341,14 +335,10 @@ LogConfig::read_configuration_variables()
 
   // COMMON
   val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_enabled");
-  if (val == 0 || val == 1) {
-    common_log_enabled = val;
-  }
+  common_log_enabled = (val > 0);
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_is_ascii");
-  if (val == 0 || val == 1) {
-    common_log_is_ascii = val;
-  }
+  common_log_is_ascii = (val > 0);
 
   ptr = LOG_ConfigReadString("proxy.config.log.common_log_name");
   if (ptr != NULL) {
@@ -364,14 +354,10 @@ LogConfig::read_configuration_variables()
 
   // EXTENDED
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_enabled");
-  if (val == 0 || val == 1) {
-    extended_log_enabled = val;
-  }
+  extended_log_enabled = (val > 0);
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_is_ascii");
-  if (val == 0 || val == 1) {
-    extended_log_is_ascii = val;
-  }
+  extended_log_is_ascii = (val > 0);
 
   ptr = LOG_ConfigReadString("proxy.config.log.extended_log_name");
   if (ptr != NULL) {
@@ -387,14 +373,10 @@ LogConfig::read_configuration_variables()
 
   // EXTENDED2
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_enabled");
-  if (val == 0 || val == 1) {
-    extended2_log_enabled = val;
-  }
+  extended2_log_enabled = (val > 0);
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_is_ascii");
-  if (val == 0 || val == 1) {
-    extended2_log_is_ascii = val;
-  }
+  extended2_log_is_ascii = (val > 0);
 
   ptr = LOG_ConfigReadString("proxy.config.log.extended2_log_name");
   if (ptr != NULL) {
@@ -415,14 +397,10 @@ LogConfig::read_configuration_variables()
   // for icp
   //   -1 means filter out (do not log and do not create split file)
   val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_icp_logs");
-  if (val == 0 || val == 1 || val == -1) {
-    separate_icp_logs = val;
-  }
+  separate_icp_logs = (val > 0);
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_host_logs");
-  if (val == 0 || val == 1) {
-    separate_host_logs = val;
-  }
+  separate_host_logs = (val > 0);
 
 
   // COLLATION
@@ -443,9 +421,7 @@ LogConfig::read_configuration_variables()
   }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_host_tagged");
-  if (val == 0 || val == 1) {
-    collation_host_tagged = val;
-  }
+  collation_host_tagged = (val > 0);
 
   ptr = LOG_ConfigReadString("proxy.config.log.collation_secret");
   if (ptr != NULL) {
@@ -475,15 +451,11 @@ LogConfig::read_configuration_variables()
   rolling_size_mb = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_size_mb");
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log." "auto_delete_rolled_files");
-  if (val == 0 || val == 1) {
-    auto_delete_rolled_files = val;
-  }
+  auto_delete_rolled_files = (val > 0);
 
   // CUSTOM LOGGING
   val = (int) LOG_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
-  if (val == 0 || val == 1) {
-    custom_logs_enabled = val;
-  }
+  custom_logs_enabled = (val > 0);
 
   ptr = LOG_ConfigReadString("proxy.config.log.xml_config_file");
   if (ptr != NULL) {
@@ -533,10 +505,8 @@ LogConfig::read_configuration_variables()
 /* variable values from records.config                           */
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.search_log_enabled");
-  if (val == 0 || val == 1) {
-    if (Log::logging_mode == Log::FULL_LOGGING)
-      search_log_enabled = val;
-  }
+  if (Log::logging_mode == Log::FULL_LOGGING)
+    search_log_enabled = (val > 0);
 
 /*                                                               */
 /* The following collects the filter names to be added to search */
@@ -681,7 +651,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
       if (collation_mode == COLLATION_HOST) {
 #if defined(IOCORE_LOG_COLLATION)
 
-        ink_debug_assert(m_log_collation_accept == 0);
+        ink_assert(m_log_collation_accept == 0);
 
         if (prev_config && prev_config->m_log_collation_accept) {
           if (prev_config->collation_port == collation_port) {
@@ -728,7 +698,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
 void
 LogConfig::init(LogConfig * prev_config)
 {
-  ink_debug_assert(!initialized);
+  ink_assert(!initialized);
 
   setup_collation(prev_config);
 

@@ -162,13 +162,14 @@ struct AuthRequestContext
     TSHttpParser    hparser;// HTTP response header parser.
     HttpHeader      rheader;// HTTP response header.
     HttpIoBuffer    iobuf;
+    bool            is_head;// This is a HEAD request
     bool            read_body;
 
     const StateTransition * state;
 
     AuthRequestContext()
             : txn(NULL), cont(NULL), vconn(NULL), hparser(TSHttpParserCreate()),
-                rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K), read_body(true), state(NULL) {
+                rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K), is_head(false), read_body(true), state(NULL) {
         this->cont = TSContCreate(dispatch, TSMutexCreate());
         TSContDataSet(this->cont, this);
     }
@@ -252,6 +253,25 @@ pump:
     return TS_EVENT_NONE;
 }
 
+// Return whether the client request was a HEAD request.
+static bool
+AuthRequestIsHead(TSHttpTxn txn)
+{
+    TSMBuffer   mbuf;
+    TSMLoc      mhdr;
+    int         len;
+    bool        is_head;
+
+    TSReleaseAssert(
+        TSHttpTxnClientReqGet(txn, &mbuf, &mhdr) == TS_SUCCESS
+    );
+
+    is_head = (TSHttpHdrMethodGet(mbuf, mhdr, &len) == TS_HTTP_METHOD_HEAD);
+
+    TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
+    return is_head;
+}
+
 // Chain the response header hook to send the proxy's authorization response.
 static void
 AuthChainAuthorizationResponse(AuthRequestContext * auth)
@@ -267,7 +287,7 @@ AuthChainAuthorizationResponse(AuthRequestContext * auth)
 
 // Transform the client request into a HEAD request and write it out.
 static bool
-AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr * saddr)
+AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr * /* saddr ATS_UNUSED */)
 {
     HttpHeader  rq;
     TSMBuffer   mbuf;
@@ -288,6 +308,7 @@ AuthWriteHeadRequest(AuthRequestContext * auth, const sockaddr * saddr)
     );
 
     HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CACHE_CONTROL, "no-cache");
 
     HttpDebugHeader(rq.buffer, rq.header);
 
@@ -350,6 +371,7 @@ AuthWriteRedirectedRequest(AuthRequestContext * auth, const sockaddr * saddr)
 
     HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_HOST, hostbuf);
     HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CACHE_CONTROL, "no-cache");
 
     HttpDebugHeader(rq.buffer, rq.header);
 
@@ -434,6 +456,9 @@ StateAuthProxyConnect(AuthRequestContext * auth, void * edata)
         break;
     }
 
+    auth->is_head = AuthRequestIsHead(auth->txn);
+    AuthLogDebug("client request %s a HEAD request", auth->is_head ? "is" : "is not");
+
     auth->vconn = TSHttpConnect(&addr.sa);
     if (auth->vconn == NULL) {
         return TS_EVENT_ERROR;
@@ -451,7 +476,7 @@ StateAuthProxyConnect(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
+StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     TSHttpStatus status;
     unsigned nbytes;
@@ -490,7 +515,7 @@ StateAuthProxyCompleteHeaders(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxySendResponse(AuthRequestContext * auth, void * edata)
+StateAuthProxySendResponse(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     TSMBuffer mbuf;
     TSMLoc mhdr;
@@ -510,7 +535,12 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * edata)
         TSHttpHdrCopy(mbuf, mhdr, auth->rheader.buffer, auth->rheader.header) == TS_SUCCESS
     );
 
-    HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    // We must not whack the content length for HEAD responses, since the
+    // client already knows that there is no body. Forcing content length to
+    // zero breaks hdiutil(1) on Mac OS X.
+    if (!auth->is_head) {
+        HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+    }
 
     TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_CONTINUE);
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
@@ -518,7 +548,7 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyReadHeaders(AuthRequestContext * auth, void * edata)
+StateAuthProxyReadHeaders(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     TSIOBufferBlock blk;
     ssize_t         consumed = 0;
@@ -567,7 +597,7 @@ StateAuthProxyReadHeaders(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyWriteComplete(AuthRequestContext * auth, void * edata)
+StateAuthProxyWriteComplete(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     // We finished writing the auth proxy request. Kick off a read to get the response.
     auth->iobuf.reset();
@@ -580,7 +610,7 @@ StateAuthProxyWriteComplete(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyReadContent(AuthRequestContext * auth, void * edata)
+StateAuthProxyReadContent(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     unsigned        needed;
     int64_t         avail = 0;
@@ -600,7 +630,7 @@ StateAuthProxyReadContent(AuthRequestContext * auth, void * edata)
 }
 
 static TSEvent
-StateAuthProxyCompleteContent(AuthRequestContext * auth, void * edata)
+StateAuthProxyCompleteContent(AuthRequestContext * auth, void * /* edata ATS_UNUSED */)
 {
     unsigned        needed;
     int64_t         avail;
@@ -665,7 +695,7 @@ AuthRequestIsTagged(TSHttpTxn txn)
 }
 
 static int
-AuthProxyGlobalHook(TSCont cont, TSEvent event, void * edata)
+AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void * edata)
 {
     AuthRequestContext * auth;
     union {
@@ -681,6 +711,11 @@ AuthProxyGlobalHook(TSCont cont, TSEvent event, void * edata)
     case TS_EVENT_HTTP_OS_DNS:
         // Ignore internal requests since we generated them.
         if (TSHttpIsInternalRequest(ptr.txn) == TS_SUCCESS) {
+            // All our internal requests *must* hit the origin since it is the
+            // agent that needs to make the authorization decision. We can't
+            // allow that to be cached.
+            TSHttpTxnReqCacheableSet(ptr.txn, 0);
+
             AuthLogDebug("re-enabling internal transaction");
             TSHttpTxnReenable(ptr.txn, TS_EVENT_HTTP_CONTINUE);
             return TS_EVENT_NONE;
@@ -706,12 +741,15 @@ AuthProxyGlobalHook(TSCont cont, TSEvent event, void * edata)
 static AuthOptions *
 AuthParseOptions(int argc, const char ** argv)
 {
+  // The const_cast<> here is magic to work around a flaw in the definition of struct option
+  // on some platforms (e.g. Solaris / Illumos). On sane platforms (e.g. linux), it'll get
+  // automatically casted back to the const char*, as the struct is defined in <getopt.h>.
     static const struct option longopt[] =
     {
-        { "auth-host", required_argument, 0, 'h' },
-        { "auth-port", required_argument, 0, 'p' },
-        { "auth-transform", required_argument, 0, 't' },
-        { "force-cacheability", no_argument, 0, 'c' },
+        { const_cast<char *>("auth-host"), required_argument, 0, 'h' },
+        { const_cast<char *>("auth-port"), required_argument, 0, 'p' },
+        { const_cast<char *>("auth-transform"), required_argument, 0, 't' },
+        { const_cast<char *>("force-cacheability"), no_argument, 0, 'c' },
         {0, 0, 0, 0 }
     };
 
@@ -760,6 +798,7 @@ AuthParseOptions(int argc, const char ** argv)
 
     return options;
 }
+#undef LONGOPT_OPTION_CAST
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -808,7 +847,7 @@ TSRemapInit(TSRemapInterface * api, char * err, int errsz)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char * argv[], void ** instance, char * err, int errsz)
+TSRemapNewInstance(int argc, char * argv[], void ** instance, char * /* err ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
     AuthOptions * options;
 
@@ -833,7 +872,7 @@ TSRemapDeleteInstance(void * instance)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * rri)
+TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
     AuthOptions * options = (AuthOptions *)instance;
 

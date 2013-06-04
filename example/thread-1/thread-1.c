@@ -33,7 +33,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ink_defs.h"
 
 static void *
 reenable_txn(void *data)
@@ -44,7 +46,7 @@ reenable_txn(void *data)
 }
 
 static int
-thread_plugin(TSCont contp, TSEvent event, void *edata)
+thread_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:
@@ -89,7 +91,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 

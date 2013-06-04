@@ -166,7 +166,7 @@ Mutex_trylock(
 {
 
   ink_assert(t != 0);
-  ink_debug_assert(t == (EThread*)this_thread());
+  ink_assert(t == (EThread*)this_thread());
   if (m->thread_holding != t) {
     if (!ink_mutex_try_acquire(&m->the_mutex)) {
 #ifdef DEBUG
@@ -231,7 +231,7 @@ Mutex_trylock_spin(
       return false;
     }
     m->thread_holding = t;
-    ink_debug_assert(m->thread_holding);
+    ink_assert(m->thread_holding);
 #ifdef DEBUG
     m->file = afile;
     m->line = aline;
@@ -266,7 +266,7 @@ Mutex_lock(
   if (m->thread_holding != t) {
     ink_mutex_acquire(&m->the_mutex);
     m->thread_holding = t;
-    ink_debug_assert(m->thread_holding);
+    ink_assert(m->thread_holding);
 #ifdef DEBUG
     m->file = afile;
     m->line = aline;
@@ -306,7 +306,7 @@ Mutex_unlock(ProxyMutex * m, EThread * t)
       m->line = 0;
       m->handler = NULL;
 #endif //DEBUG
-      ink_debug_assert(m->thread_holding);
+      ink_assert(m->thread_holding);
       m->thread_holding = 0;
       ink_mutex_release(&m->the_mutex);
     }

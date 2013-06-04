@@ -225,7 +225,7 @@ ClusterProcessor::free_remote_data(char *p, int l)
 }
 
 ClusterVConnection *
-ClusterProcessor::open_local(Continuation * cont, ClusterMachine * m, ClusterVCToken & token, int options)
+ClusterProcessor::open_local(Continuation * cont, ClusterMachine */* m ATS_UNUSED */, ClusterVCToken & token, int options)
 {
   //
   //  New connect protocol.

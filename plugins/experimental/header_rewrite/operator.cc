@@ -19,10 +19,6 @@
 // operator.cc: Implementation of the operator base class
 //
 //
-
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__operator_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <ts/ts.h>
 #include "operator.h"
 

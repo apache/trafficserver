@@ -142,7 +142,7 @@ TS_INLINE Event *
 EThread::schedule_local(Event * e)
 {
   if (tt != REGULAR) {
-    ink_debug_assert(tt == DEDICATED);
+    ink_assert(tt == DEDICATED);
     return eventProcessor.schedule(e, ET_CALL);
   }
   if (!e->mutex.m_ptr) {
@@ -169,13 +169,5 @@ EThread::free_event(Event * e)
   e->mutex = NULL;
   EVENT_FREE(e, eventAllocator, this);
 }
-
-#if defined(USE_OLD_EVENTFD)
-TS_INLINE int
-EThread::getEventFd()
-{
-  return EventQueueExternal.getReadFd();
-}
-#endif
 
 #endif /*_EThread_h_*/

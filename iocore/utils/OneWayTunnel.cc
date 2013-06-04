@@ -326,10 +326,13 @@ OneWayTunnel::close_source_vio(int result)
 {
 
   if (vioSource) {
-    if (last_connection() || !single_buffer)
-      free_MIOBuffer(vioSource->buffer.mbuf);
-    if (close_source && free_vcs)
+    if (last_connection() || !single_buffer) {
+      free_MIOBuffer(vioSource->buffer.writer());
+      vioSource->buffer.clear();
+    }
+    if (close_source && free_vcs) {
       vioSource->vc_server->do_io_close(result ? lerrno : -1);
+    }
     vioSource = NULL;
     n_connections--;
   }
@@ -341,10 +344,13 @@ OneWayTunnel::close_target_vio(int result, VIO * vio)
 
   (void) vio;
   if (vioTarget) {
-    if (last_connection() || !single_buffer)
-      free_MIOBuffer(vioTarget->buffer.mbuf);
-    if (close_target && free_vcs)
+    if (last_connection() || !single_buffer) {
+      free_MIOBuffer(vioTarget->buffer.writer());
+      vioTarget->buffer.clear();
+    }
+    if (close_target && free_vcs) {
       vioTarget->vc_server->do_io_close(result ? lerrno : -1);
+    }
     vioTarget = NULL;
     n_connections--;
   }

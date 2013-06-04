@@ -30,6 +30,38 @@
 
 #include "I_HostDBProcessor.h"
 
+//
+// Data
+//
+
+extern int hostdb_enable;
+extern int hostdb_migrate_on_demand;
+extern int hostdb_cluster;
+extern int hostdb_cluster_round_robin;
+extern int hostdb_lookup_timeout;
+extern int hostdb_insert_timeout;
+extern int hostdb_re_dns_on_reload;
+
+// 0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
+enum
+  { TTL_OBEY, TTL_IGNORE, TTL_MIN, TTL_MAX };
+extern int hostdb_ttl_mode;
+
+extern unsigned int hostdb_current_interval;
+extern unsigned int hostdb_ip_stale_interval;
+extern unsigned int hostdb_ip_timeout_interval;
+extern unsigned int hostdb_ip_fail_timeout_interval;
+extern int hostdb_size;
+extern int hostdb_srv_enabled;
+extern char hostdb_filename[PATH_NAME_MAX + 1];
+
+//extern int hostdb_timestamp;
+extern int hostdb_sync_frequency;
+extern int hostdb_disable_reverse_lookup;
+
+// Static configuration information
+extern HostDBCache hostDB;
+
 /** Host DB record mark.
 
     The records in the host DB are de facto segregated by roughly the
@@ -175,7 +207,8 @@ struct HostDBCache: public MultiCache<HostDBInfo>
   }
 
   // This accounts for an average of 2 HostDBInfo per DNS cache (for round-robin etc.)
-  virtual size_t estimated_heap_bytes_per_entry() const { return sizeof(HostDBInfo) * 2 + 512; }
+  // In addition, we can do a padding for additional SRV records storage.
+  virtual size_t estimated_heap_bytes_per_entry() const { return sizeof(HostDBInfo) * 2 + 512 * hostdb_srv_enabled; }
 
   Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 & md5);
@@ -184,7 +217,7 @@ struct HostDBCache: public MultiCache<HostDBInfo>
 
 inline int
 HostDBRoundRobin::index_of(sockaddr const* ip) {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
   if (bad) {
     ink_assert(!"bad round robin size");
     return -1;
@@ -220,7 +253,7 @@ HostDBRoundRobin::select_next(sockaddr const* ip) {
 
 inline HostDBInfo *
 HostDBRoundRobin::find_target(const char *target) {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
   if (bad) {
     ink_assert(!"bad round robin size");
     return NULL;
@@ -237,7 +270,7 @@ HostDBRoundRobin::find_target(const char *target) {
 inline HostDBInfo *
 HostDBRoundRobin::select_best_http(sockaddr const* client_ip, ink_time_t now, int32_t fail_window)
 {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
 
   if (bad) {
     ink_assert(!"bad round robin size");
@@ -314,7 +347,7 @@ HostDBRoundRobin::select_best_http(sockaddr const* client_ip, ink_time_t now, in
 inline HostDBInfo *
 HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window)
 {
-  bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
 
   if (bad) {
     ink_assert(!"bad round robin size");
@@ -323,7 +356,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
 
 #ifdef DEBUG
   for (int i = 1; i < good; ++i) {
-    ink_debug_assert(info[i].data.srv.srv_priority >= info[i-1].data.srv.srv_priority);
+    ink_assert(info[i].data.srv.srv_priority >= info[i-1].data.srv.srv_priority);
   }
 #endif
 
@@ -497,37 +530,6 @@ HostDBContinuation():
     SET_HANDLER((HostDBContHandler) & HostDBContinuation::probeEvent);
   }
 };
-
-//
-// Data
-//
-
-extern int hostdb_enable;
-extern int hostdb_migrate_on_demand;
-extern int hostdb_cluster;
-extern int hostdb_cluster_round_robin;
-extern int hostdb_lookup_timeout;
-extern int hostdb_insert_timeout;
-extern int hostdb_re_dns_on_reload;
-
-// 0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
-enum
-{ TTL_OBEY, TTL_IGNORE, TTL_MIN, TTL_MAX };
-extern int hostdb_ttl_mode;
-
-extern unsigned int hostdb_current_interval;
-extern unsigned int hostdb_ip_stale_interval;
-extern unsigned int hostdb_ip_timeout_interval;
-extern unsigned int hostdb_ip_fail_timeout_interval;
-extern int hostdb_size;
-extern char hostdb_filename[PATH_NAME_MAX + 1];
-
-//extern int hostdb_timestamp;
-extern int hostdb_sync_frequency;
-extern int hostdb_disable_reverse_lookup;
-
-// Static configuration information
-extern HostDBCache hostDB;
 
 //extern Queue<HostDBContinuation>  remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 

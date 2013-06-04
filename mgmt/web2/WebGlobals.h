@@ -28,7 +28,6 @@
 #include <time.h>
 #include <stdio.h>
 #include "ink_thread.h"
-#include "ink_bool.h"
 
 #ifdef MGMT_WEB_TUNE
 #include "ink_hrtime.h"

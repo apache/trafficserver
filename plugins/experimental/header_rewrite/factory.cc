@@ -19,9 +19,6 @@
 // factory.cc: Factory functions for operators, conditions and condition variables.
 //
 //
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__factory_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
-
 #include <string>
 
 #include "operators.h"

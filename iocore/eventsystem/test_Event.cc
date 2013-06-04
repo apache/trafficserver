@@ -31,10 +31,6 @@ int count;
 Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
 
-void syslog_thr_init(void)
-{
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void reconfigure_diags()
@@ -128,7 +124,7 @@ struct alarm_printer:public Continuation
   {
     SET_HANDLER(&alarm_printer::dummy_function);
   }
-  int dummy_function(int event, Event * e)
+  int dummy_function(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     ink_atomic_increment((int *) &count, 1);
     printf("Count = %d\n", count);
@@ -141,7 +137,7 @@ struct process_killer:public Continuation
   {
     SET_HANDLER(&process_killer::kill_function);
   }
-  int kill_function(int event, Event * e)
+  int kill_function(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     printf("Count is %d \n", count);
     if (count <= 0)
@@ -154,7 +150,7 @@ struct process_killer:public Continuation
 };
 
 int
-main(int argc, const char *argv[])
+main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
   RecModeT mode_type = RECM_STAND_ALONE;
   count = 0;

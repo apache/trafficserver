@@ -29,7 +29,6 @@
  ****************************************************************************/
 
 #include "ink_config.h"
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 
 #include <sys/types.h>
 
@@ -72,7 +71,7 @@ static const char *CC_directive_str[CC_NUM_TYPES] = {
 typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
 
 // Global Ptrs
-static Ptr<ProxyMutex> reconfig_mutex = NULL;
+static Ptr<ProxyMutex> reconfig_mutex;
 CC_table *CacheControlTable = NULL;
 
 void
@@ -203,7 +202,7 @@ getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableH
 }
 
 bool 
-getClusterCacheLocal(URL *url, char *hostname)
+getClusterCacheLocal(URL *url, char * /* hostname ATS_UNUSED */)
 {
   HttpRequestData rdata;
   CacheControlResult result;

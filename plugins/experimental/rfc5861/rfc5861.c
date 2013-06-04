@@ -27,13 +27,14 @@
 #include <string.h>
 #include <stdbool.h>
 #include <search.h>
-#include <ts/ts.h>
 #include <getopt.h>
 //#include <sys/socket.h>
 //#include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <ts/experimental.h>
+#include "ink_defs.h"
+#include "ts/ts.h"
+#include "ts/experimental.h"
 
 #define LOG_PREFIX "rfc5861"
 
@@ -303,7 +304,7 @@ parse_response(StateInfo *state)
 }
 
 static int
-consume_resource(TSCont cont, TSEvent event, void *edata)
+consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
     StateInfo *state;
     int64_t avail;
@@ -434,7 +435,7 @@ consume_resource(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-fetch_resource(TSCont cont, TSEvent event, void *edata)
+fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
     StateInfo *state;
     TSCont consume_cont;

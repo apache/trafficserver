@@ -85,7 +85,7 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
       m_last_roll_time(0),
       m_ref_count (0)
 {
-    ink_debug_assert (format != NULL);
+    ink_assert (format != NULL);
     m_format = new LogFormat(*format);
 
     if (file_format == BINARY_LOG) {
@@ -118,7 +118,7 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
 #endif // TS_MICRO
 
     LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
-    ink_debug_assert(b);
+    ink_assert(b);
     SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
     _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
@@ -164,7 +164,7 @@ LogObject::LogObject(LogObject& rhs)
     // copy gets a fresh log buffer
     //
     LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
-    ink_debug_assert(b);
+    ink_assert(b);
     SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
     Debug("log-config", "exiting LogObject copy constructor, "
@@ -210,7 +210,7 @@ LogObject::~LogObject()
 void
 LogObject::generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format)
 {
-  ink_debug_assert(log_dir && basename);
+  ink_assert(log_dir && basename);
 
   int i = -1, len = 0;
   char c;
@@ -241,7 +241,7 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
       ext_len = 5;
       break;
     default:
-      ink_debug_assert(!"unknown file format");
+      ink_assert(!"unknown file format");
     }
   }
 
@@ -481,7 +481,7 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       break;
 
     default:
-      ink_debug_assert(false);
+      ink_assert(false);
     }
     if (!decremented) {
       head_p old_h;
@@ -684,7 +684,7 @@ LogObject::_setup_rolling(int rolling_enabled, int rolling_interval_sec, int rol
 
     if (rolling_enabled == LogConfig::ROLL_ON_SIZE_ONLY ||
         rolling_enabled == LogConfig::ROLL_ON_TIME_OR_SIZE || rolling_enabled == LogConfig::ROLL_ON_TIME_AND_SIZE) {
-      if (rolling_size_mb <= 10) {
+      if (rolling_size_mb < 10) {
         m_rolling_size_mb = 10;
         Note("Rolling size invalid(%d) for %s, setting it to 10 MB", rolling_size_mb, m_filename);
       } else {
@@ -834,7 +834,7 @@ TextLogObject::write(const char *format, ...)
 {
   int ret_val;
 
-  ink_debug_assert(format != NULL);
+  ink_assert(format != NULL);
   va_list ap;
   va_start(ap, format);
   ret_val = va_write(format, ap);
@@ -860,7 +860,7 @@ TextLogObject::va_write(const char *format, va_list ap)
   char entry[MAX_ENTRY];
   int len;
 
-  ink_debug_assert(format != NULL);
+  ink_assert(format != NULL);
   len = 0;
 
   if (m_timestamps) {

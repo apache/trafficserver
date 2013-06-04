@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "P_Cluster.h"
 extern char cache_system_config_directory[PATH_NAME_MAX + 1];
+extern int num_of_cluster_threads;
 
 MachineList *machines_config = NULL;
 MachineList *cluster_config = NULL;
@@ -146,7 +147,7 @@ clusterHandlers(0)
   else
     hostname_len = 0;
 
-  num_connections = eventProcessor.n_threads_for_type[ET_CLUSTER];
+  num_connections = num_of_cluster_threads;
   clusterHandlers = (ClusterHandler **)ats_calloc(num_connections, sizeof(ClusterHandler *));
 }
 

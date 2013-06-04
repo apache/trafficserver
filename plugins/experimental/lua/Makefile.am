@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglibdir = ${pkglibexecdir}
+include $(top_srcdir)/build/plugins.mk
 
 if BUILD_LUA_SUPPORT
 
@@ -23,14 +23,13 @@ if BUILD_LUA_SUPPORT
 # (/opt/local/include) headers, then we need to make sure that we don't end up
 # building with the Lua headers but linking LuaJIT.
 lua_la_CPPFLAGS = \
-  ${LUA_CFLAGS} \
-  -I$(top_builddir)/proxy/api \
-  -I$(top_srcdir)/proxy/api
+  $(LUA_CFLAGS) \
+  $(AM_CPPFLAGS)
 
 pkglib_LTLIBRARIES = lua.la
 
-lua_la_LIBADD = ${LUA_LIBS}
+lua_la_LIBADD = $(LUA_LIBS)
 lua_la_SOURCES = remap.cc plugin.cc lapi.cc lutil.cc lconfig.cc hook.cc state.cc
-lua_la_LDFLAGS = -module -avoid-version -shared
+lua_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 endif
