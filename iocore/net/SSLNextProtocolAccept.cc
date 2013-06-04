@@ -66,8 +66,8 @@ ssl_netvc_cast(int event, void * edata)
 struct SSLNextProtocolTrampoline : public Continuation
 {
   explicit
-  SSLNextProtocolTrampoline(const SSLNextProtocolAccept * npn)
-    : Continuation(new_ProxyMutex()), npnParent(npn)
+  SSLNextProtocolTrampoline(const SSLNextProtocolAccept * npn, ProxyMutex* mutex)
+    : Continuation(mutex), npnParent(npn)
   {
     SET_HANDLER(&SSLNextProtocolTrampoline::ioCompletionEvent);
   }
@@ -124,7 +124,7 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
     // the endpoint that there is an accept to handle until the read completes
     // and we know which protocol was negotiated.
     netvc->registerNextProtocolSet(&this->protoset);
-    netvc->do_io(VIO::READ, NEW(new SSLNextProtocolTrampoline(this)), 0, this->buffer, 0);
+    netvc->do_io(VIO::READ, NEW(new SSLNextProtocolTrampoline(this, netvc->mutex)), 0, this->buffer, 0);
     return EVENT_CONT;
   default:
     netvc->do_io(VIO::CLOSE);
