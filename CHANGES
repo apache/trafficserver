@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.3
 
+  *) [TS-1937] Prevent assert on SSL forward proxy connect.
+
   *) [TS-1907] Using the "ipv6" option for port configuration cancels the "ssl" option.
 
   *) [TS-1927] Make ats_base64_decode able to handle the URL variant
