@@ -1794,6 +1794,7 @@ AC_CONFIG_FILES([plugins/conf_remap/Makefile])
 AC_CONFIG_FILES([plugins/regex_remap/Makefile])
 AC_CONFIG_FILES([plugins/header_filter/Makefile])
 AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
+AC_CONFIG_FILES([plugins/cacheurl/Makefile])
 # experimental plugins
 AC_CONFIG_FILES([plugins/experimental/Makefile])
 AC_CONFIG_FILES([plugins/experimental/esi/Makefile])
@@ -1807,7 +1808,6 @@ AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
 AC_CONFIG_FILES([plugins/experimental/spdy/Makefile])
 AC_CONFIG_FILES([plugins/experimental/channel_stats/Makefile])
 AC_CONFIG_FILES([plugins/experimental/authproxy/Makefile])
-AC_CONFIG_FILES([plugins/experimental/cacheurl/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins
