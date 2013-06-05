@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.4
 
 
+  *) [TS-1940] HostDB gets reinitialized on startup.
+
   *) [TS-1941] Make Linux native-AIO build cleanly.
 
   *) [TS-1938] Remove unnecessary thread_id() wrapper in reclaimable freelist.
