@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.4
 
 
+  *) [TS-1938] Remove unnecessary thread_id() wrapper in reclaimable freelist.
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   Changes with Apache Traffic Server 3.3.3
 
 
