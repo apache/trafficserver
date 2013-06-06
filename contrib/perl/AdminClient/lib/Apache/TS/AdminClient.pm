@@ -713,11 +713,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.url_remap.pristine_host_hdr
  proxy.config.url_remap.remap_required
  proxy.config.user_name
- proxy.config.username.cache.enabled
- proxy.config.username.cache.filename
- proxy.config.username.cache.size
- proxy.config.username.cache.storage_path
- proxy.config.username.cache.storage_size
  proxy.config.vmap.addr_file
  proxy.config.vmap.down_up_timeout
  proxy.config.vmap.enabled

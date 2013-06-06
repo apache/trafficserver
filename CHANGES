@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1942] Remove username.cache configs, they are obsolete and long gone.
+
+
   Changes with Apache Traffic Server 3.3.4
 
 

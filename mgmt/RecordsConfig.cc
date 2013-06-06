@@ -367,22 +367,6 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# userName Cache
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.username.cache.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.username.cache.filename", RECD_STRING, "username.db", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.username.cache.size", RECD_INT, "5000", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.username.cache.storage_path", RECD_STRING, TS_BUILD_CACHEDIR, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.username.cache.storage_size", RECD_INT, "15728640", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
-  //##############################################################################
-  //#
   //# HTTP Engine
   //#
   //##############################################################################
