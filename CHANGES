@@ -1,4 +1,7 @@
                                                          -*- coding: utf-8 -*-
+  Changes with Apache Traffic Server 3.3.5
+
+
   Changes with Apache Traffic Server 3.3.4
 
 
@@ -9,7 +12,7 @@
   *) [TS-1938] Remove unnecessary thread_id() wrapper in reclaimable freelist.
     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  Changes with Apache Traffic Server 3.3.3
+  Changes with Apache Traffic Server 3.3.3 (never released)
 
 
   *) [TS-1936] Make traffic_logstats honor the log-directory as intended.
