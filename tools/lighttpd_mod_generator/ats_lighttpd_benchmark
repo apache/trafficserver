@@ -1,0 +1,4 @@
+#!/bin/bash
+PREFIX=/usr/local
+
+for i in {1..24}; do echo $i; sudo $PREFIX/bin/lighttpd -f $PREFIX/etc/lighttpd/lighttpd_$i.conf; done

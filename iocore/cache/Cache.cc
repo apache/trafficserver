@@ -158,7 +158,7 @@ struct VolInit : public Continuation
   int64_t offset;
   bool vol_clear;
 
-  int mainEvent(int event, Event *e) {
+  int mainEvent(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */) {
     vol->init(path, blocks, offset, vol_clear);
     mutex.clear();
     delete this;
@@ -181,7 +181,7 @@ struct DiskInit : public Continuation
   int fildes;
   bool clear;
 
-  int mainEvent(int event, Event *e) {
+  int mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */) {
     disk->open(s, blocks, askip, ahw_sector_size, fildes, clear);
     mutex.clear();
     delete this;

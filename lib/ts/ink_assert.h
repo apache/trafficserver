@@ -46,7 +46,7 @@ extern "C"
 
   inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(__clang_analyzer__)
 #define ink_assert(EX) ( \
             (void)(likely(EX) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__))\
 )

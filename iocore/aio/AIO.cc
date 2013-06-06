@@ -543,7 +543,7 @@ aio_thread_main(void *arg)
 }
 #else
 int
-DiskHandler::startAIOEvent(int event, Event *e) {
+DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e) {
   SET_HANDLER(&DiskHandler::mainAIOEvent);
   e->schedule_every(AIO_PERIOD);
   trigger_event = e;
@@ -597,7 +597,7 @@ Lagain:
 }
 
 int
-ink_aio_read(AIOCallback *op, int fromAPI) {
+ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PREAD;
   op->aiocb.data = op;
@@ -607,7 +607,7 @@ ink_aio_read(AIOCallback *op, int fromAPI) {
 }
 
 int
-ink_aio_write(AIOCallback *op, int fromAPI) {
+ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
   op->aiocb.data = op;
@@ -617,7 +617,7 @@ ink_aio_write(AIOCallback *op, int fromAPI) {
 }
 
 int
-ink_aio_readv(AIOCallback *op, int fromAPI) {
+ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
   DiskHandler *dh = this_ethread()->diskHandler;
   AIOCallback *io = op;
   int sz = 0;
@@ -644,7 +644,7 @@ ink_aio_readv(AIOCallback *op, int fromAPI) {
 }
 
 int
-ink_aio_writev(AIOCallback *op, int fromAPI) {
+ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
   DiskHandler *dh = this_ethread()->diskHandler;
   AIOCallback *io = op;
   int sz = 0;

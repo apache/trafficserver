@@ -327,12 +327,22 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
         fds[n_fds] = 0;
       }
       if (!d->file_pathname) {
-        int err;
-        err = ink_file_fd_zerofill(fds[n_fds], (off_t)(d->blocks * STORE_BLOCK_SIZE));
-        if (err != 0) {
-          Warning("unable to set file '%s' size to %" PRId64 ": %d, %s",
-                  path, (int64_t) d->blocks * STORE_BLOCK_SIZE, err, strerror(err));
+        struct stat fd_stat;
+
+        if (fstat(fds[n_fds], &fd_stat) < 0) {
+          Warning("unable to stat file '%s'", path);
           goto Lalloc;
+        } else {
+          int64_t size = (off_t)(d->blocks * STORE_BLOCK_SIZE);
+
+          if (fd_stat.st_size != size) {
+            int err = ink_file_fd_zerofill(fds[n_fds], size);
+
+            if (err != 0) {
+              Warning("unable to set file '%s' size to %" PRId64 ": %d, %s", path, size, err, strerror(err));
+              goto Lalloc;
+            }
+          }
         }
       }
       n_fds++;

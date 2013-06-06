@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include "ink_thread.h"
 #include "ink_atomic.h"
 #include "ink_queue.h"
 #include "ink_memory.h"
@@ -69,12 +70,6 @@ static uint32_t nr_freelist;
 static uint64_t total_mem_in_byte;
 static __thread InkThreadCache *ThreadCaches[MAX_NUM_FREELIST];
 
-static inline pthread_t thread_id(void)
-{
-  static __thread pthread_t tid;
-
-  return tid?tid:(tid = pthread_self());
-}
 #define MAX_CHUNK_BYTE_SIZE (ats_pagesize() << 8)
 
 /*
@@ -92,7 +87,7 @@ __show_info(FILE *fp, const char *file, int line,
 
   fprintf(fp, "[%lx:%02u][%s:%05d][%s] %6.2fM t:%-8uf:%-4u m:%-4u avg:%-6.1f"
           " M:%-4u csbase:%-4u csize:%-4u tsize:%-6u cbsize:%u\n",
-         (long)thread_id(), f->thread_cache_idx, file, line, tag,
+         (long)ink_thread_self(), f->thread_cache_idx, file, line, tag,
          ((double)total_mem_in_byte/1024/1024),
          pCache->nr_total,
          pCache->nr_free,
@@ -302,7 +297,7 @@ ink_chunk_create(InkFreeList *f, InkThreadCache *pCache)
   type_size = f->type_size;
   chunk_size = f->chunk_size;
 
-  pChunk->tid = thread_id();
+  pChunk->tid = ink_thread_self();
   pChunk->head = chunk_addr;
   pChunk->type_size = type_size;
   pChunk->chunk_size = chunk_size;
