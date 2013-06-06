@@ -2404,8 +2404,9 @@ bool UpdateObj::isValid()
   }
   // recursion depth can only be specified for http
   if (m_ele->recursion_depth > 0) {
-    if (!strstr(m_ele->url, "http"))
+    if (!m_ele->url || !strstr(m_ele->url, "http")) {
       m_valid = false;
+    }
   }
 
   if (!m_valid)
