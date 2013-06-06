@@ -169,7 +169,8 @@ LogFile::~LogFile()
 
 bool LogFile::exists(const char *pathname)
 {
-  return (::access(pathname, F_OK) == 0);
+  ink_assert(pathname != NULL);
+  return (pathname && ::access(pathname, F_OK) == 0);
 }
 
 /*-------------------------------------------------------------------------
