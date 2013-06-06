@@ -60,7 +60,7 @@
 #include "INK_MD5.h"
 #include "ParseRules.h"
 #include "ink_time.h"
-
+#include "ink_args.h"
 
 /*
  FTP - Traffic Server Template
@@ -126,13 +126,9 @@ enum FTP_MODE {
 
 typedef int (*accept_fn_t)(int);
 typedef int (*poll_cb)(int);
-struct ArgumentDescription;
-typedef void ArgumentFunction(
-  ArgumentDescription * argument_descriptions, int n_argument_descriptions,
-  const char * arg);
 
-static void jtest_usage(ArgumentDescription * argument_descriptions, 
-                        int n_argument_descriptions, const char * arg);
+static void jtest_usage(const ArgumentDescription * argument_descriptions, 
+                        unsigned n_argument_descriptions, const char * arg);
 
 static int read_request(int sock);
 static int write_request(int sock);
@@ -148,121 +144,111 @@ static int is_done();
 static int open_server(unsigned short int port, accept_fn_t accept_fn);
 static int accept_ftp_data (int sock);
 
-char ** defered_urls = NULL; 
-int n_defered_urls = 0;
-int server_fd = 0;
-int server_port = 0;
-int proxy_port = 8080;
-unsigned int proxy_addr = 0;
-unsigned int local_addr = 0;
-char proxy_host[81] = "localhost";
-char local_host[81];
-int verbose = 0;
-int verbose_errors = 1;
-int debug = 0;
-int nclients = 100;
-int current_clients = 0;
-int client_speed = 0;
-int check_content = 0;
-int nocheck_length = 0;
-int obey_redirects = 1;
-int only_clients = 0;
-int only_server = 0;
-int drop_after_CL = 0;
-int server_speed = 0;
-int server_delay = 0;
-int interval = 1;
-int sbuffersize = SERVER_BUFSIZE;
-int cbuffersize = CLIENT_BUFSIZE;
-int test_time = 0;
-int last_fd = -1;
-char * response_buffer = NULL;
-int errors = 0;
-int clients = 0, running_clients = 0, new_clients = 0, total_clients = 0;
-int servers = 0, running_servers = 0, new_servers = 0, total_servers = 0;
-float running_ops = 0;
-int ops = 0, new_ops = 0;
-float total_ops = 0;
-int running_sops = 0, new_sops = 0, total_sops = 0;
-int running_latency = 0, latency = 0;
-int lat_ops = 0, b1_ops = 0, running_b1latency = 0, b1latency = 0;
-uint64_t running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
-uint64_t running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
-int average_over = 5;
-double hitrate = 0.4;
-int hotset = 1000;
-int keepalive = 4;
-int keepalive_cons = 4;
-int follow_arg = 0;
-int follow = 0;
-int follow_same_arg = 0;
-int follow_same = 0;
-char current_host[512];
-int fullpage = 0;
-int show_before = 0;
-int show_headers = 0;
-int server_keepalive = 4;
-int version = 0;
-int urls_mode = 0;
-int pipeline = 1;
-int hostrequest = 0;
-int ftp = 0;
-double ftp_mdtm_err_rate = 0.0;
-int ftp_mdtm_rate = 0;
-time_t ftp_mdtm_last_update = 0;
-char ftp_mdtm_str[64];
-int embed_url = 1;
-double ims_rate = 0.5;
-double client_abort_rate = 0.0;
-double server_abort_rate = 0.0;
-int compd_port = 0;
-int compd_suite = 0;
-int ka_cache_head[500];
-int ka_cache_tail[500];
-int n_ka_cache = 0;
-char urls_file[256] = "";
-FILE * urls_fp = NULL;
-char urlsdump_file[256] = "";
-FILE * urlsdump_fp = NULL;
-int drand_seed = 0;
-int docsize = -1;
-int url_hash_entries = 1000000;
-char url_hash_filename[256] = "";
-int bandwidth_test = 0;
-int bandwidth_test_to_go = 0;
-uint64_t total_client_request_bytes = 0;
-uint64_t total_proxy_request_bytes = 0;
-uint64_t total_server_response_body_bytes = 0;
-uint64_t total_server_response_header_bytes = 0;
-uint64_t total_proxy_response_body_bytes = 0;
-uint64_t total_proxy_response_header_bytes = 0;
-ink_hrtime now = 0, start_time = 0;
-int extra_headers = 0;
-int alternates = 0;
-int abort_retry_speed = 0;
-int abort_retry_bytes = 0;
-int abort_retry_secs = 5;
-int client_rate = 0;
-double reload_rate = 0;
-int vary_user_agent = 0;
-int server_content_type = 0;
-int request_extension = 0;
-int no_cache = 0;
-double evo_rate = 0.0;
-double zipf = 0.0;
-int zipf_bucket_size = 1;
+static char ** defered_urls = NULL; 
+static int n_defered_urls = 0;
+static int server_fd = 0;
+static int server_port = 0;
+static int proxy_port = 8080;
+static unsigned int proxy_addr = 0;
+static unsigned int local_addr = 0;
+static char proxy_host[81] = "localhost";
+static char local_host[81];
+static int verbose = 0;
+static int verbose_errors = 1;
+static int debug = 0;
+static int nclients = 100;
+static int current_clients = 0;
+static int client_speed = 0;
+static int check_content = 0;
+static int nocheck_length = 0;
+static int obey_redirects = 1;
+static int only_clients = 0;
+static int only_server = 0;
+static int drop_after_CL = 0;
+static int server_speed = 0;
+static int server_delay = 0;
+static int interval = 1;
+static int sbuffersize = SERVER_BUFSIZE;
+static int cbuffersize = CLIENT_BUFSIZE;
+static int test_time = 0;
+static int last_fd = -1;
+static char * response_buffer = NULL;
+static int errors = 0;
+static int clients = 0, running_clients = 0, new_clients = 0, total_clients = 0;
+static int servers = 0, running_servers = 0, new_servers = 0, total_servers = 0;
+static float running_ops = 0;
+static int new_ops = 0;
+static float total_ops = 0;
+static int running_sops = 0, new_sops = 0, total_sops = 0;
+static int running_latency = 0, latency = 0;
+static int lat_ops = 0, b1_ops = 0, running_b1latency = 0, b1latency = 0;
+static uint64_t running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
+static uint64_t running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
+static int average_over = 5;
+static double hitrate = 0.4;
+static int hotset = 1000;
+static int keepalive = 4;
+static int keepalive_cons = 4;
+static int follow_arg = 0;
+static int follow = 0;
+static int follow_same_arg = 0;
+static int follow_same = 0;
+static char current_host[512];
+static int fullpage = 0;
+static int show_before = 0;
+static int show_headers = 0;
+static int server_keepalive = 4;
+static int version = 0;
+static int urls_mode = 0;
+static int pipeline = 1;
+static int hostrequest = 0;
+static int ftp = 0;
+static double ftp_mdtm_err_rate = 0.0;
+static int ftp_mdtm_rate = 0;
+static time_t ftp_mdtm_last_update = 0;
+static char ftp_mdtm_str[64];
+static int embed_url = 1;
+static double ims_rate = 0.5;
+static double client_abort_rate = 0.0;
+static double server_abort_rate = 0.0;
+static int compd_port = 0;
+static int compd_suite = 0;
+static int ka_cache_head[500];
+static int ka_cache_tail[500];
+static int n_ka_cache = 0;
+static char urls_file[256] = "";
+static FILE * urls_fp = NULL;
+static char urlsdump_file[256] = "";
+static FILE * urlsdump_fp = NULL;
+static int drand_seed = 0;
+static int docsize = -1;
+static int url_hash_entries = 1000000;
+static char url_hash_filename[256] = "";
+static int bandwidth_test = 0;
+static int bandwidth_test_to_go = 0;
+static uint64_t total_client_request_bytes = 0;
+static uint64_t total_proxy_request_bytes = 0;
+static uint64_t total_server_response_body_bytes = 0;
+static uint64_t total_server_response_header_bytes = 0;
+static uint64_t total_proxy_response_body_bytes = 0;
+static uint64_t total_proxy_response_header_bytes = 0;
+static ink_hrtime now = 0, start_time = 0;
+static int extra_headers = 0;
+static int alternates = 0;
+static int abort_retry_speed = 0;
+static int abort_retry_bytes = 0;
+static int abort_retry_secs = 5;
+static int client_rate = 0;
+static double reload_rate = 0;
+static int vary_user_agent = 0;
+static int server_content_type = 0;
+static int request_extension = 0;
+static int no_cache = 0;
+static double evo_rate = 0.0;
+static double zipf = 0.0;
+static int zipf_bucket_size = 1;
 
-struct ArgumentDescription {
-  const char * name;
-  char   key;
-  const char * description;
-  const char * type;
-  const void * location;
-  const char * env;
-  ArgumentFunction * pfn;       
-};
-
-ArgumentDescription argument_descriptions[] = {
+static const ArgumentDescription argument_descriptions[] = {
   {"proxy_port",'p',"Proxy Port","I",&proxy_port,"JTEST_PROXY_PORT",NULL},
   {"proxy_host",'P',"Proxy Host","S80",&proxy_host,"JTEST_PROXY_HOST",NULL},
   {"server_port",'s',"Server Port (0:auto select)","I",&server_port,
@@ -473,32 +459,6 @@ void FD::close() {
 
 #define MAX_FILE_ARGUMENTS 100
 
-static const char * file_arguments[MAX_FILE_ARGUMENTS] = { 0 };
-static const char * program_name = "jtest";
-static int n_file_arguments = 0;
-
-static const char * argument_types_keys = "ISDfFTL";
-static const char * argument_types_descriptions[] = {
-  "int  ",
-  "str  ",
-  "dbl  ",
-  "off  ",
-  "on   ",
-  "tog  ",
-  "i64  ",
-  "     "
-};
-
-static void usage(ArgumentDescription * argument_descriptions,
-           int n_argument_descriptions,
-           const char * arg_unused);
-
-static void process_args(ArgumentDescription * argument_descriptions,
-                  int n_argument_descriptions,
-                  char **argv);
-
-
-
 typedef struct {
   char sche[MAX_URL_LEN + 1];
   char host[MAX_URL_LEN + 1];
@@ -591,8 +551,8 @@ static void show_version() {
   printf(JTEST_VERSION, v);
 }
 
-static void jtest_usage(ArgumentDescription * argument_descriptions, 
-                 int n_argument_descriptions, const char * arg) 
+static void jtest_usage(const ArgumentDescription * argument_descriptions,
+                 unsigned n_argument_descriptions, const char * arg) 
 {
   show_version();
   usage(argument_descriptions, n_argument_descriptions, arg);
@@ -2990,8 +2950,7 @@ int main(int argc __attribute__((unused)), char *argv[]) {
       else
         urls_fp = fp;
     }
-    int i;
-    for (i = 0; i < n_file_arguments; i++) {
+    for (unsigned i = 0; i < n_file_arguments; i++) {
       char sche[8],host[512],port[10],path[512],frag[512],quer[512],para[512];
       int xsche,xhost,xport,xpath,xfrag,xquer,xpar,rel,slash;
       ink_web_decompose_url(file_arguments[i],sche,host,port,
@@ -3002,8 +2961,9 @@ int main(int argc __attribute__((unused)), char *argv[]) {
         strcpy(current_host,host);
       }
     }
-    for (i = 0; i < n_file_arguments ; i++)
+    for (unsigned i = 0; i < n_file_arguments ; i++) {
       make_url_client(file_arguments[i]);
+    }
   }
 
   int t = now / HRTIME_SECOND;
@@ -4115,176 +4075,3 @@ static int ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len
   return(quit);
 }
 
-
-static void process_arg(ArgumentDescription * argument_descriptions,
-                        int n_argument_descriptions,
-                        int i, 
-                        char ***argv)
-{
-  char * arg = NULL;
-  if (argument_descriptions[i].type) {
-    char type = argument_descriptions[i].type[0];
-    if (type=='F'||type=='f') 
-      *(int *)argument_descriptions[i].location = type=='F'?1:0;
-    else if (type=='T')
-      *(int *)argument_descriptions[i].location = 
-        !*(int *)argument_descriptions[i].location;
-    else {
-      arg = *++(**argv) ? **argv : *++(*argv);
-      if (!arg) usage(argument_descriptions, n_argument_descriptions, NULL);
-      switch (type) {
-        case 'I': 
-          *(int *)argument_descriptions[i].location = atoi(arg);
-          break;
-        case 'D': 
-          *(double *)argument_descriptions[i].location = atof(arg);
-          break;
-        case 'L':
-          *(int64_t *)argument_descriptions[i].location = ink_atoi64(arg);
-          break;
-        case 'S': strncpy((char *)argument_descriptions[i].location,arg,
-                          atoi(argument_descriptions[i].type+1));
-          break;
-        default:
-          ink_fatal(1,(char *)"bad argument description");
-          break;
-      }
-      **argv += strlen(**argv)-1;
-    }
-  }
-  if (argument_descriptions[i].pfn) 
-    argument_descriptions[i].pfn(argument_descriptions, 
-                                 n_argument_descriptions,
-                                 arg);
-}
-
-
-static void process_args(ArgumentDescription * argument_descriptions,
-                         int n_argument_descriptions,
-                         char **argv) 
-{
-  int i = 0;
-  //
-  // Grab Environment Variables
-  //
-  for (i=0;i<n_argument_descriptions;i++)
-    if (argument_descriptions[i].env) {
-      char type = argument_descriptions[i].type[0];
-      char * env = getenv(argument_descriptions[i].env);
-      if (!env) continue;
-      switch (type) {
-      case 'f':
-      case 'F':
-      case 'I':
-        *(int *)argument_descriptions[i].location = atoi(env);
-        break;
-      case 'D':
-        *(double *)argument_descriptions[i].location = atof(env);
-        break;
-      case 'L':
-        *(int64_t *)argument_descriptions[i].location = ink_atoi64(env);
-        break;
-      case 'S':
-        strncpy((char *)argument_descriptions[i].location,env,
-                atoi(argument_descriptions[i].type+1));
-        break;
-      }
-    }
-
-  //
-  // Grab Command Line Arguments
-  //
-  program_name = argv[0];
-  while ( *++argv ) {
-    if ( **argv == '-' ) {
-      if ((*argv)[1] == '-') {
-        for (i=0;i<n_argument_descriptions;i++)
-          if (!strcmp(argument_descriptions[i].name,(*argv)+2)) {
-            *argv += strlen(*argv)-1;
-            process_arg(argument_descriptions,n_argument_descriptions,i,&argv);
-            break;
-          }
-          if (i>=n_argument_descriptions) 
-            usage(argument_descriptions,n_argument_descriptions,NULL);
-      } else {
-        while ( *++(*argv) ) 
-          for (i=0;i<n_argument_descriptions;i++) 
-            if (argument_descriptions[i].key==**argv) { 
-              process_arg(argument_descriptions,n_argument_descriptions,
-                          i,&argv);
-              break;
-            }
-            if (i>=n_argument_descriptions) 
-              usage(argument_descriptions,n_argument_descriptions,NULL);
-      }
-    } else {
-      if (n_file_arguments>MAX_FILE_ARGUMENTS) ink_fatal(1,(char *)"too many files");
-      file_arguments[n_file_arguments++] = *argv;
-      file_arguments[n_file_arguments] = NULL;
-    }
-  }
-}
-
-// ToDo: This use of SPACES for formatting could probably be nicer done with STL streams...
-static const char * SPACES = "                                                                               ";
-
-static void usage(ArgumentDescription * argument_descriptions,
-                  int n_argument_descriptions,
-                  const char * dummy) 
-{
-  (void)argument_descriptions; (void)n_argument_descriptions; (void)dummy;
-  fprintf(stderr,"Usage: %s [--SWITCH [ARG]]\n",program_name);
-  fprintf(stderr,"  switch__________________type__default___description\n");
-  for (int i=0;i<n_argument_descriptions;i++) {
-    fprintf(stderr,"  -%c, --%s%s%s",
-            argument_descriptions[i].key,
-            argument_descriptions[i].name,
-            (strlen(argument_descriptions[i].name) + 61 < 81) ?
-             &SPACES[strlen(argument_descriptions[i].name)+61] : "",
-            argument_types_descriptions[
-              argument_descriptions[i].type ?
-                strchr(argument_types_keys,
-                       argument_descriptions[i].type[0]) -
-                argument_types_keys :
-                strlen(argument_types_keys)
-            ]);
-    switch(argument_descriptions[i].type?argument_descriptions[i].type[0]:0) {
-      case 0: fprintf(stderr, "          "); break;
-      case 'L':
-        fprintf(stderr, 
-#if defined(FreeBSD)
-                " %-9" PRId64"",
-#else
-                " %-9" PRId64"",
-#endif
-                *(int64_t*)argument_descriptions[i].location);
-        break;
-      case 'S':
-        if (*(char*)argument_descriptions[i].location) {
-          if (strlen((char*)argument_descriptions[i].location) < 10)
-            fprintf(stderr, " %-9s", 
-                    (char*)argument_descriptions[i].location);
-          else {
-            ((char*)argument_descriptions[i].location)[7] = 0;
-            fprintf(stderr, " %-7s..", 
-                    (char*)argument_descriptions[i].location);
-          }
-        } else
-          fprintf(stderr, " (null)   ");
-        break;
-      case 'D':
-        fprintf(stderr, " %-9.3f",
-                *(double*)argument_descriptions[i].location);
-        break;
-      case 'I':
-        fprintf(stderr, " %-9d", *(int *)argument_descriptions[i].location);
-        break;
-      case 'T': case 'f': case 'F': 
-        fprintf(stderr, " %-9s",
-                *(int *)argument_descriptions[i].location?"true ":"false");
-        break;
-    }
-    fprintf(stderr," %s\n",argument_descriptions[i].description);
-  }
-  _exit(1);
-}
