@@ -224,7 +224,7 @@ SSLInitializeLibrary()
 }
 
 void
-SSLError(const char * fmt, ...)
+SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...)
 {
   unsigned long l;
   char buf[256];
@@ -234,13 +234,43 @@ SSLError(const char * fmt, ...)
 
   va_list ap;
   va_start(ap, fmt);
-  ErrorV(fmt, ap);
-  va_end(ap);
 
   es = CRYPTO_thread_id();
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
-    Error("SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+    if (debug) {
+      if (unlikely(diags->on())) {
+        diags->log("ssl", DL_Debug, loc.file, loc.func, loc.line,
+            "SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+      }
+    } else {
+      diags->error(DL_Error, loc.file, loc.func, loc.line,
+          "SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+    }
   }
+
+  va_end(ap);
+}
+
+const char *
+SSLErrorName(int ssl_error)
+{
+  static const char * names[] =  {
+    "SSL_ERROR_NONE",
+    "SSL_ERROR_SSL",
+    "SSL_ERROR_WANT_READ",
+    "SSL_ERROR_WANT_WRITE",
+    "SSL_ERROR_WANT_X509_LOOKUP",
+    "SSL_ERROR_SYSCALL",
+    "SSL_ERROR_ZERO_RETURN",
+    "SSL_ERROR_WANT_CONNECT",
+    "SSL_ERROR_WANT_ACCEPT"
+  };
+
+  if (ssl_error < 0 || ssl_error >= (int)countof(names)) {
+    return "unknown SSL error";
+  }
+
+  return names[ssl_error];
 }
 
 void

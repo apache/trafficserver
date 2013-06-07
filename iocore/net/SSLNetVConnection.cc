@@ -479,14 +479,22 @@ int
 SSLNetVConnection::sslServerHandShakeEvent(int &err)
 {
   int ret;
+  int ssl_error;
 
   ret = SSL_accept(ssl);
-  switch (SSL_get_error(ssl, ret)) {
+
+  ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error != SSL_ERROR_NONE) {
+    err = errno;
+    SSLDebug("SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
+  }
+
+  switch (ssl_error) {
   case SSL_ERROR_NONE:
-    Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, handshake completed successfully");
+    Debug("ssl", "handshake completed successfully");
     client_cert = SSL_get_peer_certificate(ssl);
     if (client_cert != NULL) {
-/*		str = X509_NAME_oneline (X509_get_subject_name (client_cert), 0, 0);
+/*	str = X509_NAME_oneline (X509_get_subject_name (client_cert), 0, 0);
 		Free (str);
 
 		str = X509_NAME_oneline (X509_get_issuer_name  (client_cert), 0, 0);
@@ -520,9 +528,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     return EVENT_DONE;
 
-  case SSL_ERROR_WANT_ACCEPT:
-    break;
-
   case SSL_ERROR_WANT_CONNECT:
     return SSL_HANDSHAKE_WANT_CONNECT;
 
@@ -531,30 +536,18 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   case SSL_ERROR_WANT_READ:
     return SSL_HANDSHAKE_WANT_READ;
+
+  case SSL_ERROR_WANT_ACCEPT:
   case SSL_ERROR_WANT_X509_LOOKUP:
-    Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, would block on read or write");
-    break;
+    return EVENT_CONT;
 
   case SSL_ERROR_ZERO_RETURN:
-    Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, EOS");
-    return EVENT_ERROR;
-    break;
-
   case SSL_ERROR_SYSCALL:
-    err = errno;
-    Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, syscall");
-    return EVENT_ERROR;
-    break;
-
   case SSL_ERROR_SSL:
   default:
-    err = errno;
-    Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, error");
-    SSLError("SSL_ServerHandShake");
     return EVENT_ERROR;
-    break;
   }
-  return EVENT_CONT;
+
 }
 
 

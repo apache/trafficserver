@@ -23,6 +23,7 @@
 #define __P_SSLUTILS_H__
 
 #include "ink_config.h"
+#include "Diags.h"
 
 #define OPENSSL_THREAD_DEFINES
 #include <openssl/opensslconf.h>
@@ -53,7 +54,14 @@ SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);
 void SSLInitializeLibrary();
 
 // Log an SSL error.
-void SSLError(const char * fmt, ...) TS_PRINTFLIKE(1, 2);
+#define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, fmt, ##__VA_ARGS__)
+// Log a SSL diagnostic using the "ssl" diagnostic tag.
+#define SSLDebug(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, fmt, ##__VA_ARGS__)
+
+void SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...) TS_PRINTFLIKE(3, 4);
+
+// Return a static string name for a SSL_ERROR constant.
+const char * SSLErrorName(int ssl_error);
 
 // Log a SSL network buffer.
 void SSLDebugBufferPrint(const char * tag, const char * buffer, unsigned buflen, const char * message);
