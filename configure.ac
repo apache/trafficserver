@@ -752,7 +752,7 @@ case $host_os_def in
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ], [
-      AC_MSG_ERROR([clang is the only supported on compiler on Darwin])
+      AC_MSG_ERROR([clang is the only supported compiler on Darwin])
     ])
 
     # Darwin needs to use libc++ for any C++11 code.
