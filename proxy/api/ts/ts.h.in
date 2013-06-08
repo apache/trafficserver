@@ -740,21 +740,6 @@ extern "C"
   extern tsapi void TSPluginInit(int argc, const char* argv[]);
 
   /* --------------------------------------------------------------------------
-     License */
-  /**
-      This function lets Traffic Server know that a license key is
-      required for the plugin. You implement this function to return the
-      necessary value. If a license is required, Traffic Server looks
-      at the plugin.db file for the license key. If this function is
-      not defined, a license is not required. Use the gen_key tool to
-      generate license keys.
-
-      @return Zero if no license is required. Returns 1 if a license
-        is required.
-  */
-  extern tsapi int TSPluginLicenseRequired(void);
-
-  /* --------------------------------------------------------------------------
      URL schemes */
   extern tsapi const char* TS_URL_SCHEME_FILE;
   extern tsapi const char* TS_URL_SCHEME_FTP;
