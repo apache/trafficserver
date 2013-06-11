@@ -5370,7 +5370,7 @@ REGRESSION_TEST(SDK_API_TSTextLog) (RegressionTest * test, int atype, int *pstat
   snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", tmp, logname);
   // ats_free(tmp);
 
-  unlink(TSstrdup(fullpath_logname));
+  unlink(fullpath_logname);
   retVal = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &log);
   if (retVal != TS_SUCCESS) {
     SDK_RPRINT(test, "TSTextLogObjectCreate", "TestCase1", TC_FAIL, "can not create log object");
