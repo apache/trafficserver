@@ -4638,7 +4638,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse) (RegressionTest * test, int atype, int *
 //                    TSHandleMLocRelease
 //////////////////////////////////////////////
 
-char *
+static char *
 convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSIOBuffer output_buffer;
@@ -5120,16 +5120,31 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse) (RegressionTest * test, int atype, int *
     SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMimeHdrDestroy returns TS_ERROR");
   }
 
-  if ((TSHandleMLocRelease(bufp1, TS_NULL_MLOC, mime_hdr_loc1) == TS_ERROR) ||
-      (TSHandleMLocRelease(bufp2, TS_NULL_MLOC, mime_hdr_loc2) == TS_ERROR) ||
-      (TSHandleMLocRelease(bufp3, TS_NULL_MLOC, mime_hdr_loc3) == TS_ERROR)) {
-    SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase11|12|13", TC_FAIL, "Unable to release handle to Mime Hdrs");
+  if (TSHandleMLocRelease(bufp1, TS_NULL_MLOC, mime_hdr_loc1) == TS_ERROR) {
+    SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase11|12|13", TC_FAIL, "Unable to release mime_hdr_loc1 to Mime Hdrs");
     test_passed_handle_mloc_release = false;
   }
 
-  if ((TSMBufferDestroy(bufp1) == TS_ERROR) ||
-      (TSMBufferDestroy(bufp2) == TS_ERROR) || (TSMBufferDestroy(bufp3) == TS_ERROR)) {
-    SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMBufferDestroy returns TS_ERROR");
+  if (TSHandleMLocRelease(bufp2, TS_NULL_MLOC, mime_hdr_loc2) == TS_ERROR) {
+    SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase11|12|13", TC_FAIL, "Unable to release mime_hdr_loc2 to Mime Hdrs");
+    test_passed_handle_mloc_release = false;
+  }
+
+  if (TSHandleMLocRelease(bufp3, TS_NULL_MLOC, mime_hdr_loc3) == TS_ERROR) {
+    SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase11|12|13", TC_FAIL, "Unable to release mime_hdr_loc3 to Mime Hdrs");
+    test_passed_handle_mloc_release = false;
+  }
+
+  if (TSMBufferDestroy(bufp1) == TS_ERROR) {
+    SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMBufferDestroy(bufp1) returns TS_ERROR");
+  }
+
+  if (TSMBufferDestroy(bufp2) == TS_ERROR) {
+    SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMBufferDestroy(bufp2) returns TS_ERROR");
+  }
+
+  if (TSMBufferDestroy(bufp3) == TS_ERROR) {
+    SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMBufferDestroy(bufp3) returns TS_ERROR");
   }
 
   if ((test_passed_parser_create != true) ||
