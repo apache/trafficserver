@@ -234,9 +234,6 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
   int volume = -1;
   char *p;
 
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-
   // Well, there's no way to pass along the volume ID, so extracting it from the stat name.
   p = strstr((char *) name, "volume_");
   if (p != NULL) {
@@ -329,7 +326,6 @@ CacheVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *abuf)
 VIO *
 CacheVC::do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *abuf, int64_t offset)
 {
-  NOWARN_UNUSED(nbytes);
   ink_assert(vio.op == VIO::READ);
   vio.buffer.writer_for(abuf);
   vio.set_continuation(c);

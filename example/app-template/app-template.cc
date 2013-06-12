@@ -122,7 +122,6 @@ int
 MyAccept::main_event(int event, void *data) {
   if (event == NET_EVENT_ACCEPT) {
     //NetVConnection *netvc = (NetVConnection*)data;
-    NOWARN_UNUSED(data);
     // allocate continuation to handle this connection/request
     //
     // ..handle request, etc
