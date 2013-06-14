@@ -32,7 +32,6 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-#include <grp.h>
 
 union semun
 {
@@ -42,6 +41,7 @@ union semun
   struct seminfo *__buf;        /* buffer for IPC_INFO */
 };
 #endif  // linux check
+#include <grp.h>
 
 static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
 static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";

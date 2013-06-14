@@ -116,7 +116,7 @@ log_tcp_info(const char* event_name, const char* client_ip, const char* server_i
 
   int bytes = 0;
   if (config.log_level == 2) {
-#if !defined(freebsd)
+#if !defined(freebsd) || defined(__GLIBC__)
     bytes = snprintf(buffer, sizeof(buffer), "%s %u %u %s %s %u %u %u %u %u %u %u %u %u %u %u %u\n",
                      event_name,
                      (uint32_t)now.tv_sec,
