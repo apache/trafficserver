@@ -81,6 +81,9 @@ thread_freeup(ClassAllocator<C> &a, ProxyAllocator & l)
   ink_assert(!l.allocated);
 }
 
+void* thread_alloc(Allocator &a, ProxyAllocator &l);
+void thread_freeup(Allocator &a, ProxyAllocator &l);
+
 #if defined(TS_USE_FREELIST)
 
 #define THREAD_ALLOC(_a, _t) thread_alloc(::_a, _t->_a)

@@ -41,6 +41,7 @@ libinkevent_a_SOURCES = \
   I_Processor.h \
   I_ProtectedQueue.h \
   I_ProxyAllocator.h \
+  ProxyAllocator.cc \
   I_SocketManager.h \
   I_Thread.h \
   I_VConnection.h \

@@ -102,6 +102,7 @@ traffic_manager_LDADD = \
   $(top_builddir)/mgmt/tools/libinksysapi.a \
   $(top_builddir)/mgmt/tools/libinkconfigapi.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
   @LIBRESOLV@ @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ \
   -lm
 

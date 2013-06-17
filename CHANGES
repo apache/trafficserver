@@ -1,13 +1,15 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.5
 
-
   *) [TS-1948] Remove obsolete TSPluginLicenseRequired and plugin.db.
 
   *) [TS-1942] Remove username.cache configs, they are obsolete and long gone.
 
   *) [TS-1496] Enable per transaction flow control.
 
+  *) [TS-1684] Added more ProxyAllocators for faster and local memory
+   allocation.  Have seen a doubling in performance depending on the benchmark.
+   Details in the ticket.  
 
   Changes with Apache Traffic Server 3.3.4
 

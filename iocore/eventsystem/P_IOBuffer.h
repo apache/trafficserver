@@ -203,7 +203,7 @@ new_IOBufferData_internal(
                            void *b, int64_t size, int64_t asize_index)
 {
   (void) size;
-  IOBufferData *d = ioDataAllocator.alloc();
+  IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_ethread());
   d->_size_index = asize_index;
   ink_assert(BUFFER_SIZE_INDEX_IS_CONSTANT(asize_index)
              || size <= d->block_size());
@@ -263,7 +263,7 @@ new_IOBufferData_internal(
 #endif
                            int64_t size_index, AllocType type)
 {
-  IOBufferData *d = ioDataAllocator.alloc();
+  IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_ethread());
 #ifdef TRACK_BUFFER_USER
   d->_location = loc;
 #endif
@@ -336,7 +336,7 @@ TS_INLINE void
 IOBufferData::free()
 {
   dealloc();
-  ioDataAllocator.free(this);
+  THREAD_FREE(this, ioDataAllocator, this_ethread());
 }
 
 //////////////////////////////////////////////////////////////////
@@ -352,7 +352,7 @@ new_IOBufferBlock_internal(
 #endif
   )
 {
-  IOBufferBlock *b = ioBlockAllocator.alloc();
+  IOBufferBlock *b = THREAD_ALLOC(ioBlockAllocator, this_ethread());
 #ifdef TRACK_BUFFER_USER
   b->_location = location;
 #endif
@@ -366,7 +366,7 @@ new_IOBufferBlock_internal(
 #endif
                             IOBufferData * d, int64_t len, int64_t offset)
 {
-  IOBufferBlock *b = ioBlockAllocator.alloc();
+  IOBufferBlock *b = THREAD_ALLOC(ioBlockAllocator, this_ethread());
 #ifdef TRACK_BUFFER_USER
   b->_location = location;
 #endif
@@ -468,7 +468,7 @@ TS_INLINE void
 IOBufferBlock::free()
 {
   dealloc();
-  ioBlockAllocator.free(this);
+  THREAD_FREE(this, ioBlockAllocator, this_ethread());
 }
 
 TS_INLINE void
@@ -777,7 +777,7 @@ TS_INLINE MIOBuffer * new_MIOBuffer_internal(
 #endif
                                                int64_t size_index)
 {
-  MIOBuffer *b = ioAllocator.alloc();
+  MIOBuffer *b = THREAD_ALLOC(ioAllocator, this_ethread());
 #ifdef TRACK_BUFFER_USER
   b->_location = location;
 #endif
@@ -790,7 +790,7 @@ free_MIOBuffer(MIOBuffer * mio)
 {
   mio->_writer = NULL;
   mio->dealloc_all_readers();
-  ioAllocator.free(mio);
+  THREAD_FREE(mio, ioAllocator, this_ethread());
 }
 
 TS_INLINE MIOBuffer * new_empty_MIOBuffer_internal(
@@ -799,7 +799,7 @@ TS_INLINE MIOBuffer * new_empty_MIOBuffer_internal(
 #endif
                                                      int64_t size_index)
 {
-  MIOBuffer *b = ioAllocator.alloc();
+  MIOBuffer *b = THREAD_ALLOC(ioAllocator, this_ethread());
   b->size_index = size_index;
 #ifdef TRACK_BUFFER_USER
   b->_location = location;
@@ -810,7 +810,7 @@ TS_INLINE MIOBuffer * new_empty_MIOBuffer_internal(
 TS_INLINE void
 free_empty_MIOBuffer(MIOBuffer * mio)
 {
-  ioAllocator.free(mio);
+  THREAD_FREE(mio, ioAllocator, this_ethread());
 }
 
 TS_INLINE IOBufferReader *
