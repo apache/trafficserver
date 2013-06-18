@@ -271,54 +271,35 @@ setup_coredump()
 }
 
 static void
-init_dirs(bool use_librecords = true)
+init_dirs()
 {
   char buf[PATH_NAME_MAX + 1];
 
-  ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
-  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-
+  REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
+  Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
   if (access(system_config_directory, R_OK) == -1) {
-    if (use_librecords) {
-      REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
-      Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
-    }
-    if (access(system_config_directory, R_OK) == -1) {
-      mgmt_elog("unable to access() config dir '%s': %d, %s\n",
-              system_config_directory, errno, strerror(errno));
-      mgmt_elog("please set config path via 'proxy.config.config_dir' \n");
-      _exit(1);
-    }
+    mgmt_elog("unable to access() config dir '%s': %d, %s\n", system_config_directory, errno, strerror(errno));
+    mgmt_elog("please set config path via 'proxy.config.config_dir' \n");
+    _exit(1);
   }
+
   ink_strlcpy(mgmt_path, system_config_directory, sizeof(mgmt_path));
 
-  if (access(system_runtime_dir, W_OK) == -1) {
-    if (use_librecords) {
-      REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
-      Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
-    }
-    if (access(system_runtime_dir, R_OK) == -1) {
-      mgmt_elog("unable to access() local state dir '%s': %d, %s\n",
-              system_runtime_dir, errno, strerror(errno));
-      mgmt_elog("please set 'proxy.config.local_state_dir'\n");
-      _exit(1);
-    }
+  REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
+  Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
+  if (access(system_runtime_dir, R_OK) == -1) {
+    mgmt_elog("unable to access() local state dir '%s': %d, %s\n", system_runtime_dir, errno, strerror(errno));
+    mgmt_elog("please set 'proxy.config.local_state_dir'\n");
+    _exit(1);
   }
 
+  REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
+  Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
   if (access(system_log_dir, W_OK) == -1) {
-    if (use_librecords) {
-      REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
-      Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
-    }
-    if (access(system_log_dir, W_OK) == -1) {
-      mgmt_elog("unable to access() log dir'%s': %d, %s\n",
-              system_log_dir, errno, strerror(errno));
-      mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
-      _exit(1);
-    }
+    mgmt_elog("unable to access() log dir'%s': %d, %s\n", system_log_dir, errno, strerror(errno));
+    mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
+    _exit(1);
   }
-
 }
 
 static void
@@ -576,7 +557,10 @@ main(int argc, char **argv)
   diags = diagsConfig->diags;
   diags->prefix_str = "Manager ";
 
-  init_dirs(false);// setup directories
+  RecLocalInit();
+  LibRecordsConfigInit();
+
+  init_dirs();// setup critical directories, needs LibRecords
 
   // Get the config info we need while we are still root
   extractConfigInfo(mgmt_path, recs_conf, userToRunAs, &fds_throttle);
@@ -600,8 +584,6 @@ main(int argc, char **argv)
 
 #endif
 
-  RecLocalInit();
-  LibRecordsConfigInit();
 #if TS_HAS_WCCP
   Init_Errata_Logging();
 #endif
