@@ -130,6 +130,10 @@ countof(const T (&)[N]) {
 #  include <hwloc.h>
 #endif
 
+#ifndef ROUNDUP
+#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#endif
+
 /* Debugging
 */
 #ifdef NDEBUG
