@@ -65,7 +65,7 @@ public:
   virtual void freeThread(UnixNetVConnection * vc, EThread * t);
   virtual NetAccept *createNetAccept();
 
-  virtual int start(int number_of_net_threads = 0 /* uses event threads */ );
+  virtual int start(int number_of_net_threads, size_t stacksize);
 
   char *throttle_error_message;
   Event *accept_thread_event;

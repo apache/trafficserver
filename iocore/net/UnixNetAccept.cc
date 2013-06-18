@@ -174,8 +174,11 @@ EventType NetAccept::getEtype()
 void
 NetAccept::init_accept_loop()
 {
+  size_t stacksize;
+
+  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
-  eventProcessor.spawn_thread(this, "[ACCEPT]");
+  eventProcessor.spawn_thread(this, "[ACCEPT]", stacksize);
 }
 
 

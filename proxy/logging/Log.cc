@@ -1020,6 +1020,9 @@ Log::init_when_enabled()
 void
 Log::create_threads()
 {
+  size_t stacksize;
+
+  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   if (!(init_status & THREADS_CREATED)) {
     // start the flush thread
     //
@@ -1028,7 +1031,7 @@ Log::create_threads()
     ink_mutex_init(&flush_mutex, "Flush thread mutex");
     ink_cond_init(&flush_cond);
     Continuation *flush_continuation = NEW(new LoggingFlushContinuation);
-    Event *flush_event = eventProcessor.spawn_thread(flush_continuation, "[LOGGING]");
+    Event *flush_event = eventProcessor.spawn_thread(flush_continuation, "[LOGGING]", stacksize);
     flush_thread = flush_event->ethread->tid;
 
 #if !defined(IOCORE_LOG_COLLATION)

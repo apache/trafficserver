@@ -93,13 +93,15 @@ public:
     processor, initializes their states and sets them running. On
     failure it returns a negative value.
 
-    @param number_of_threads Positive value indicating the number
-      of threads to spawn for the processor.
+    @param number_of_threads Positive value indicating the number of
+        threads to spawn for the processor.
+    @param stacksize The thread stack size to use for this processor.
 
   */
-  virtual int start(int number_of_threads)
+  virtual int start(int number_of_threads, size_t stacksize)
   {
     (void) number_of_threads;
+    (void) stacksize;
     return 0;
   }
 

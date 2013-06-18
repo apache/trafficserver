@@ -54,7 +54,7 @@ public:
   bool finish_remap(HttpTransact::State * s);
 
   Action *perform_remap(Continuation * cont, HttpTransact::State * s);
-  int start(int num_threads);
+  int start(int num_threads, size_t stacksize);
   bool LessThan(HttpTransact::State *, HttpTransact::State *);
   void setUseSeparateThread() { _use_separate_remap_thread = true; }
   bool using_separate_thread() { return _use_separate_remap_thread == true; }

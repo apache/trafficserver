@@ -730,8 +730,10 @@ ClusterProcessor::start()
   this_cluster_machine()->cluster_port = cluster_port;
 #endif
   if (cache_clustering_enabled && (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED)) {
+    size_t stacksize;
 
-    ET_CLUSTER = eventProcessor.spawn_event_threads(num_of_cluster_threads, "ET_CLUSTER");
+    REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+    ET_CLUSTER = eventProcessor.spawn_event_threads(num_of_cluster_threads, "ET_CLUSTER", stacksize);
     for (int i = 0; i < eventProcessor.n_threads_for_type[ET_CLUSTER]; i++) {
       initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i], i);
     }

@@ -127,7 +127,7 @@ main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
   RecProcessInit(mode_type);
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
-  eventProcessor.start(TEST_THREADS);
+  eventProcessor.start(TEST_THREADS, 1048576); // Hardcoded stacksize at 1MB
 
   for (unsigned i = 0; i < 100; ++i) {
     MIOBuffer *b1 = new_MIOBuffer(default_large_iobuffer_size);

@@ -477,8 +477,8 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   init_diags("", NULL);
   RecProcessInit(RECM_STAND_ALONE);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
-  eventProcessor.start(ink_number_of_processors());
-  RecProcessStart();
+  eventProcessor.start(ink_number_of_processors(), 1048576); // Hardcoded stack size to 1MB
+  RecProcessStart(1048576); // Hadcoded stack size to 1MB
   ink_aio_init(AIO_MODULE_VERSION);
   srand48(time(NULL));
 

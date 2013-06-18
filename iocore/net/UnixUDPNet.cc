@@ -86,12 +86,12 @@ initialize_thread_for_udp_net(EThread * thread)
 }
 
 int
-UDPNetProcessorInternal::start(int n_upd_threads)
+UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
 {
   if (n_upd_threads < 1)
     return -1;
 
-  ET_UDP = eventProcessor.spawn_event_threads(n_upd_threads, "ET_UDP");
+  ET_UDP = eventProcessor.spawn_event_threads(n_upd_threads, "ET_UDP", stacksize);
   if (ET_UDP < 0)               // Probably can't happen, maybe at some point EventType should be unsigned ?
     return -1;
 

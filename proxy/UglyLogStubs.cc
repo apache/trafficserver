@@ -39,8 +39,7 @@
 int fds_limit = 8000;
 
 class FakeUDPNetProcessor : public UDPNetProcessor {
-  virtual int start(int num) {
-    NOWARN_UNUSED(num);
+  virtual int start(int, size_t) {
     ink_release_assert(false);
     return 0;
   };
@@ -156,9 +155,8 @@ UnixNetProcessor unix_netProcessor;
 NetProcessor& netProcessor = unix_netProcessor;
 
 int
-UnixNetProcessor::start(int num)
+UnixNetProcessor::start(int, size_t)
 {
-  NOWARN_UNUSED(num);
   ink_release_assert(false);
   return 0;
 }

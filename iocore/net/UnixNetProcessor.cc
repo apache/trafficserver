@@ -53,6 +53,7 @@ NetProcessor::AcceptOptions::reset()
 
 
 int net_connection_number = 1;
+
 unsigned int
 net_next_connection_number()
 {
@@ -65,21 +66,17 @@ net_next_connection_number()
 }
 
 Action *
-NetProcessor::accept(Continuation* cont,
-  AcceptOptions const& opt
-) {
-  Debug("iocore_net_processor",
-        "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
-    opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+NetProcessor::accept(Continuation* cont, AcceptOptions const& opt)
+{
+  Debug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
+        opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
   return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, opt);
 }
 
 Action *
-NetProcessor::main_accept(Continuation *cont,
-  SOCKET fd,
-  AcceptOptions const& opt
-) {
+NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const& opt)
+{
   UnixNetProcessor* this_unp = static_cast<UnixNetProcessor*>(this);
   Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
         opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
@@ -87,11 +84,8 @@ NetProcessor::main_accept(Continuation *cont,
 }
 
 Action *
-UnixNetProcessor::accept_internal(
-  Continuation *cont,
-  int fd,
-  AcceptOptions const& opt
-) {
+UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const& opt)
+{
   EventType et = opt.etype; // setEtype requires non-const ref.
   NetAccept *na = createNetAccept();
   EThread *thread = this_ethread();
@@ -103,19 +97,21 @@ UnixNetProcessor::accept_internal(
   upgradeEtype(et);
 
   // Fill in accept thread from configuration if necessary.
-  if (opt.accept_threads < 0)
+  if (opt.accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+  }
 
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
 
   // We've handled the config stuff at start up, but there are a few cases
   // we must handle at this point.
-  if (opt.localhost_only)
+  if (opt.localhost_only) {
     accept_ip.setToLoopback(opt.ip_family);
-  else if (opt.local_ip.isValid())
+  } else if (opt.local_ip.isValid()) {
     accept_ip.assign(opt.local_ip);
-  else
+  } else {
     accept_ip.setToAnyAddr(opt.ip_family);
+  }
   ink_assert(0 < opt.local_port && opt.local_port < 65536);
   accept_ip.port() = htons(opt.local_port);
 
@@ -124,11 +120,7 @@ UnixNetProcessor::accept_internal(
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
   na->server.f_inbound_transparent = opt.f_inbound_transparent;
   if (opt.f_inbound_transparent) {
-    Debug(
-      "http_tproxy",
-      "Marking accept server %p on port %d as inbound transparent",
-      na, opt.local_port
-    );
+    Debug( "http_tproxy", "Marking accept server %p on port %d as inbound transparent", na, opt.local_port);
   }
 
   int should_filter_int = 0;
@@ -405,8 +397,9 @@ NetProcessor::connect_s(Continuation * cont, sockaddr const* target,
 
 struct PollCont;
 
+// This is a little odd, in that the actual threads are created before calling the processor.
 int
-UnixNetProcessor::start(int)
+UnixNetProcessor::start(int, size_t)
 {
   EventType etype = ET_NET;
 

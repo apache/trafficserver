@@ -32,7 +32,7 @@ extern EventType ET_TASK;
 class TasksProcessor: public Processor
 {
  public: 
-  int start(int task_threads = 0);
+  int start(int task_threads, size_t stacksize);
 };
 
 extern TasksProcessor tasksProcessor;

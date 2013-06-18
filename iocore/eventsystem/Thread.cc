@@ -91,12 +91,9 @@ spawn_thread_internal(void *a)
 }
 
 ink_thread
-Thread::start(const char* name, ThreadFunction f, void *a, size_t stacksize)
+Thread::start(const char* name, size_t stacksize, ThreadFunction f, void *a)
 {
   thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
-
-  if (0 == stacksize)
-    REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
 
   p->f = f;
   p->a = a;

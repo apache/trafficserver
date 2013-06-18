@@ -160,7 +160,7 @@ main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
   RecProcessInit(mode_type);
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
-  eventProcessor.start(TEST_THREADS);
+  eventProcessor.start(TEST_THREADS, 1048576); // Hardcoded stacksize at 1MB
 
   alarm_printer *alrm = new alarm_printer(new_ProxyMutex());
   process_killer *killer = new process_killer(new_ProxyMutex());

@@ -1517,6 +1517,9 @@ main(int argc, char **argv)
 
   adjust_num_of_net_threads();
 
+  size_t stacksize;
+  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+
   ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_aio_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
@@ -1524,7 +1527,7 @@ main(int argc, char **argv)
   ink_hostdb_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
   ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  eventProcessor.start(num_of_net_threads);
+  eventProcessor.start(num_of_net_threads, stacksize);
 
   int num_remap_threads = 0;
   TS_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
@@ -1535,9 +1538,9 @@ main(int argc, char **argv)
     Note("using the new remap processor system with %d threads", num_remap_threads);
     remapProcessor.setUseSeparateThread();
   }
-  remapProcessor.start(num_remap_threads);
+  remapProcessor.start(num_remap_threads, stacksize);
 
-  RecProcessStart();
+  RecProcessStart(stacksize);
 
   init_signals2();
   // log initialization moved down
@@ -1568,9 +1571,9 @@ main(int argc, char **argv)
       TS_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
 
     NetProcessor::accept_mss = accept_mss;
-    netProcessor.start();
+    netProcessor.start(0, stacksize);
 #ifndef INK_NO_HOSTDB
-    dnsProcessor.start();
+    dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
       SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
 #endif
@@ -1590,9 +1593,9 @@ main(int argc, char **argv)
     if (!num_of_udp_threads)
       TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     if (num_of_udp_threads)
-      udpNet.start(num_of_udp_threads);
+      udpNet.start(num_of_udp_threads, stacksize);
 
-    sslNetProcessor.start(getNumSSLThreads());
+    sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
 #ifndef INK_NO_LOG
     // initialize logging (after event and net processor)
@@ -1659,7 +1662,7 @@ main(int argc, char **argv)
 #endif
 
     // "Task" processor, possibly with its own set of task threads
-    tasksProcessor.start(num_task_threads);
+    tasksProcessor.start(num_task_threads, stacksize);
 
     int back_door_port = NO_FD;
     TS_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
