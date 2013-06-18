@@ -32,3 +32,8 @@ Java
 we should get rid of: ./example/protocol/test/*.java because, as zwoop says
 "friends don't let friends write code in Java".
 
+Plugins
+=======
+
+``geoip_acl`` should be a "helper plugin:, or a library/API which other
+plugins can use.
