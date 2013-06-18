@@ -13,6 +13,7 @@ proxy/config/
 **/Makefile
 **/TODO
 .vimrc
+.clang-format
 .gitignore
 **/.gitignore
 .git/
