@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1961] Add tsxs support for querying installation variables.
+
   *) [TS-1886] Allow users to attempt gcc builds on Mac OS X.
 
   *) [TS-1934] Make geoip_acl experimental plugin compile.

@@ -40,8 +40,9 @@ debug() {
 		echo $*
 	fi
 }
+
 bail() {
-	echo $*
+	echo tsxs: $*
 	exit 1
 }
 
@@ -49,21 +50,39 @@ usage() {
 	cat <<EOF
 $0 : a tool to compile, link and install trafficserver plugins.
 
-compiling/linking:
+Compilation and Linking Options:
 -o modulename.so                        ## the name of the module
 -I include                              ## add -Iinclude to CFLAGS
 -L library path				## add -Lpath to LDFLAGS
 -l library                              ## add -llib to the LDFLAGS
 
-installing:
+Installation Options:
 -o modulename.so                        ## the name of the module
 -i                                      ## install the object
+
+Query Options:
+-q varname                              ## query a Traffic Server build variable
 
 Example:
   $0 -I/foo/include -L/foo/lib -lsomelib -o tsmodule.so src1.c src2.c ...
 
 EOF
 
+}
+
+query() {
+  case $1 in
+    CC) echo @CC@ ;;
+    CXX) echo @CXX@ ;;
+    CFLAGS) echo @CFLAGS@ ;;
+    CXXFLAGS) echo @CXXFLAGS@ ;;
+    PREFIX) echo @prefix@ ;;
+    SYSCONFDIR) echo @sysconfdir@ ;;
+    INCLUDEDIR) echo @includedir@ ;;
+    LIBEXECDIR) echo @libexecdir@ ;;
+    BINDIR) echo @bindir@ ;;
+    *) bail "unrecognized query label: $1" ;;
+  esac
 }
 
 compile() {
@@ -79,7 +98,7 @@ compile() {
 			MY_CC=$CXX
 			;;
 		*)
-			bail "Unrecognized input file: $SRC"
+			bail "unrecognized input file: $SRC"
 			;;
 	esac
 
@@ -87,7 +106,7 @@ compile() {
 	echo "  compiling $SRC -> $obj"
 	debug "$MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj"
 	$MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj ||
-		bail "Compile failed: $MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj"
+		bail "compilation failed: $MY_CC $MY_CFLAGS $PICFLAGS -c $SRC -o $obj"
 	OBJS="$OBJS $obj"
 	BUILD=1
 }
@@ -142,7 +161,7 @@ esac
 files=()
 
 LD=$MODULELD
-while getopts "hivl:L:I:c:C:o:" OPTION
+while getopts "hivl:L:I:c:C:o:q:" OPTION
 do
 	case $OPTION in 
 	v)
@@ -152,6 +171,9 @@ do
 		usage
 		exit 1
 		;;
+  q)
+    query "$OPTARG"
+    ;;
 	I)
 		CPPFLAGS="$CPPFLAGS -I$OPTARG"
 		;;
@@ -185,7 +207,7 @@ if [ "$BUILD" = "1" -a -n "$OBJ" ]; then
 	echo "  linking -> $OBJ"
 	debug "$LD $LDFLAGS -o $OBJ $OBJS $LIBS"
 	$LD $LDFLAGS -o $OBJ $OBJS $LIBS ||
-		bail "Link failed: $LD $LDFLAGS -o $OBJ $OBJS $LIBS"
+		bail "link failed: $LD $LDFLAGS -o $OBJ $OBJS $LIBS"
 fi
 
 if [ -n "$OBJ" ]; then
