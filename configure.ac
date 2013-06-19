@@ -515,8 +515,12 @@ TS_SUBST([pkgdocdir])
 _ts_saved_CFLAGS="${CFLAGS}"
 _ts_saved_CXXFLAGS="${CXXFLAGS}"
 
-AC_PROG_CC
-AC_PROG_CXX
+# We force the compiler search list because the default GCC on Darwin cannot build
+# Traffic Server. On most (all?) platforms, cc and c++ should be the preferred default
+# compiler.
+AC_PROG_CC([cc gcc clang icc])
+AC_PROG_CXX([c++ g++ clang++ icpc])
+
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
@@ -752,7 +756,7 @@ case $host_os_def in
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ], [
-      AC_MSG_ERROR([clang is the only supported compiler on Darwin])
+      AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
 
     # Darwin needs to use libc++ for any C++11 code.
