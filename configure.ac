@@ -154,6 +154,24 @@ AC_ARG_ENABLE([debug],
 AC_MSG_RESULT([$enable_debug])
 
 #
+# Enable -Werror. We want this enabled by default for developers, but disabled by default
+# for end users (because we don't want released versions to suffer from compiler warning hell).
+#
+AC_MSG_CHECKING([whether to enable -Werror])
+AC_ARG_ENABLE([werror],
+  [AS_HELP_STRING([--enable-werror],[turn compiler warnings into errors @<:@default=auto@:>@])],
+  [],
+  [
+    case $TS_VERSION_STRING in
+      *dev) enable_werror=yes ;;
+      *) enable_werror=no ;;
+    esac
+  ]
+)
+AC_MSG_RESULT([$enable_werror])
+
+
+#
 # Fast SDK APIs, this disables the parameter checks (assert)
 # on all APIs.
 #
@@ -744,16 +762,16 @@ case $host_os_def in
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      debug_opt="-ggdb3 $common_opt -Werror -Qunused-arguments"
-      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
-      cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
+      debug_opt="-ggdb3 $common_opt -Qunused-arguments"
+      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
+      cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
-      #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
+      #    common_opt="-pipe -Wall -Wconversion -Wno-sign-conversion"
       ts_am_common_flags="-Wunused-parameter"
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -765,7 +783,7 @@ case $host_os_def in
 
   darwin)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations -Qunused-arguments"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -788,14 +806,14 @@ case $host_os_def in
 
   freebsd|kfreebsd)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Werror -Qunused-arguments"
+      common_opt="-pipe -Wall -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -822,7 +840,7 @@ case $host_os_def in
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -833,12 +851,19 @@ case $host_os_def in
   *)
     # Not sure what platform this is, but take a stab at some general GCC options ...
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ])
 esac
+
+# Only add -Werror if the user has requested it. We enable this by default for
+# development, disable it by default for release.
+AS_IF([test x"$enable_werror" = xyes], [
+  TS_ADDTO(release_opt, -Werror)
+  TS_ADDTO(debug_opt, -Werror)
+])
 
 cc_oflag_opt=$release_opt
 cc_oflag_dbg=$debug_opt
@@ -1158,6 +1183,12 @@ AC_SUBST(has_demangle)
 AC_MSG_CHECKING(for 128bit CAS support)
 AC_LANG_PUSH([C++])
 
+# We need to save and restore compiler flags around this whole block.
+# TS_TRY_COMPILE_NO_WARNING will save and restore flags, so if we do that in the
+# middle, then we can accidentally restore modified flags.
+__saved_CXXFLAGS="${CXXFLAGS}"
+__saved_CFLAGS="${CFLAGS}"
+
 TS_TRY_COMPILE_NO_WARNING([],[
     __int128_t x = 0;
     __sync_bool_compare_and_swap(&x,0,10);
@@ -1165,9 +1196,8 @@ TS_TRY_COMPILE_NO_WARNING([],[
     AC_MSG_RESULT(yes)
     has_128bit_cas=1
   ], [
-      dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
-      dnl clang doesn't; icc is unknown but presumed sane.
-    __saved_CXXFLAGS="${CXXFLAGS}"
+    dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
+    dnl clang doesn't; icc is unknown but presumed sane.
     TS_ADDTO(CXXFLAGS, [-mcx16])
     TS_TRY_COMPILE_NO_WARNING([],[
         __int128_t x = 0;
@@ -1180,10 +1210,11 @@ TS_TRY_COMPILE_NO_WARNING([],[
       ], [
         AC_MSG_RESULT(no)
         has_128bit_cas=0
-        CXXFLAGS="${__saved_CXXFLAGS}"
     ])
 ])
 
+CXXFLAGS="${__saved_CXXFLAGS}"
+CFLAGS="${__saved_CFLAGS}"
 AC_LANG_POP
 AC_SUBST(has_128bit_cas)
 
