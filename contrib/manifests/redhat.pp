@@ -14,6 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+package {'epel-release-6-8':
+    source => 'http://mirror.pnl.gov/epel/6/i386/epel-release-6-8.noarch.rpm',
+    provider => rpm,
+    ensure => present
+}
+
 # Base ATS build dependencies.
 package {[
     'gcc', 'gcc-c++', 'automake', 'autoconf', 'libtool', 'pkgconfig',
@@ -26,7 +32,8 @@ package {[
 
 # development extras.
 package {[
-    'gdb', 'valgrind', 'git', 'curl', 'screen'
+    'gdb', 'valgrind', 'git', 'curl', 'screen', 'ccache'
   ]:
-  ensure => latest
+  ensure => latest,
+  require => Package['epel-release-6-8']
 }

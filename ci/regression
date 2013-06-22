@@ -33,6 +33,8 @@ SRCROOT=${SRCROOT:-$(cd $(dirname $0)/.. && pwd)} # where the source lives
 OBJROOT=${OBJROOT:-"$TMPDIR/$BUILDID/obj"} # where we are building
 DSTROOT=${DSTROOT:-"$TMPDIR/$BUILDID/dst"} # where we are installing
 
+export CCACHE_BASEDIR="$SRCROOT"
+
 # Force low make parallelization so that the build can complete in a VM with
 # only a small amount of memory.
 NPROCS=${NPROCS:-2}
@@ -47,14 +49,14 @@ prog() {
       case $(uname -v) in
         Darwin*) echo clang ;;
         omnios*) echo /opt/gcc-4.6.3/bin/gcc ;;
-        *) echo cc ;;
+        *) echo ccache cc ;;
       esac
       ;;
     cxx)
       case $(uname -v) in
         Darwin*) echo clang++ ;;
         omnios*) echo /opt/gcc-4.6.3/bin/g++ ;;
-        *) echo c++ ;;
+        *) echo ccache c++ ;;
       esac
       ;;
     make)
@@ -87,8 +89,8 @@ configure() {
       --enable-wccp \
       --enable-experimental-plugins \
       $(extras) \
-      CC=$CC \
-      CXX=$CXX
+      CC="$CC" \
+      CXX="$CXX"
   )
 }
 
