@@ -4522,8 +4522,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse) (RegressionTest * test, int atype, int *
   bool test_passed_parse_resp = false;
   bool test_passed_parser_clear = false;
   bool test_passed_parser_destroy = false;
-  bool resp_run = true;
-
 
   //Create Parser
   parser = TSHttpParserCreate();
@@ -4564,8 +4562,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse) (RegressionTest * test, int atype, int *
         SDK_RPRINT(test, "TSHttpHdrParseResp", "TestCase1", TC_FAIL, "Parsing Error");
       }
     }
-  } else {
-    resp_run = false;
   }
 
   if (test_passed_parse_req == true) {
@@ -4602,16 +4598,17 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse) (RegressionTest * test, int atype, int *
   }
 
   TSMimeHdrDestroy(reqbufp, req_hdr_loc);
-  if (resp_run == true)
-    TSMimeHdrDestroy(respbufp, resp_hdr_loc);
-
   TSHandleMLocRelease(reqbufp, TS_NULL_MLOC, req_hdr_loc);
-  if (resp_run == true)
-    TSHandleMLocRelease(respbufp, TS_NULL_MLOC, resp_hdr_loc);
-
   TSMBufferDestroy(reqbufp);
-  if (resp_run == true)
+
+  if (resp_hdr_loc) {
+    TSMimeHdrDestroy(respbufp, resp_hdr_loc);
+    TSHandleMLocRelease(respbufp, TS_NULL_MLOC, resp_hdr_loc);
+  }
+
+  if (respbufp) {
     TSMBufferDestroy(respbufp);
+  }
 
   return;
 }
