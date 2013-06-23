@@ -38,8 +38,8 @@ Cacheurl can also be called as a remap plugin in ``remap.config``. For example::
   map http://www.example.com/ http://origin.example.com/ @plugin=cacheurl.so @pparam=/path/to/cacheurl.config
 
 Next, create the configuration file with the url patterns to match.
-The default location for the config file is ``cacheurl.config`` in the plugins
-directory.  The configration file format is::
+The default location for the config file is ``cacheurl.config`` in
+the plugins directory. The configuration file format is::
 
   PATTERN REPLACEMENT
 
