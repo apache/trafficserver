@@ -142,32 +142,27 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 
 html-local:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b html $(srcdir)/admin $(BUILDDIR)/html/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b  html $(srcdir)/sdk $(BUILDDIR)/html/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b html $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 dirhtml:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b dirhtml $(srcdir)/admin $(BUILDDIR)/dirhtml/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b dirhtml $(srcdir)/sdk $(BUILDDIR)/dirhtml/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b dirhtml $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
 
 singlehtml:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b singlehtml $(srcdir)/admin $(BUILDDIR)/singlehtml/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b singlehtml $(srcdir)/sdk $(BUILDDIR)/singlehtml/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b singlehtml $(srcdir) $(BUILDDIR)/singlehtml
 	@echo
 	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
 
 epub:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b epub $(srcdir)/admin $(BUILDDIR)/epub/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b epub $(srcdir)/admin $(BUILDDIR)/epub/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b epub $(srcdir) $(BUILDDIR)/epub
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
 
 latex:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b latex $(srcdir)/admin $(BUILDDIR)/latex/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b latex $(srcdir)/sdk $(BUILDDIR)/latex/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b latex $(srcdir) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/latex."
 
