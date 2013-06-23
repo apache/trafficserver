@@ -123,7 +123,11 @@ I18NSPHINXOPTS  = $(SPHINXOPTS)
 # The PAPER setting variables requires recursive make variable expansion, which automake
 # detects as non-portable. We bounce this through a shell script and do the expansion there.
 SBUILD = PAPEROPT_a4="$(PAPEROPT_a4)" PAPEROPT_letter="$(PAPEROPT_letter)" PAPER="$(PAPER)" \
-	 $(srcdir)/sbuild $(SPHINXBUILD) -c $(srcdir) $(ALLSPHINXOPTS)
+	 $(srcdir)/sbuild $(SPHINXBUILD) \
+	 -D version=$(TS_VERSION_STRING) \
+	 -D release=$(TS_VERSION_STRING) \
+	 -c $(srcdir) \
+	 $(ALLSPHINXOPTS)
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
