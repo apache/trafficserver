@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.5
 
+
+  *) [TS-1959] traffic_manager not honoring some records.config settings
+   necessary for e.g. logging.
+
   *) [TS-745] support interim caching in storage
    to eanble, use '--enable-interim-cache' configure option.
 
