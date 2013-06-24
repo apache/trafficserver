@@ -1189,6 +1189,8 @@ AC_LANG_PUSH([C++])
 __saved_CXXFLAGS="${CXXFLAGS}"
 __saved_CFLAGS="${CFLAGS}"
 
+has_128bit_cas=0
+
 TS_TRY_COMPILE_NO_WARNING([],[
     __int128_t x = 0;
     __sync_bool_compare_and_swap(&x,0,10);
@@ -1199,17 +1201,15 @@ TS_TRY_COMPILE_NO_WARNING([],[
     dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
     dnl clang doesn't; icc is unknown but presumed sane.
     TS_ADDTO(CXXFLAGS, [-mcx16])
+    TS_ADDTO(CFLAGS, [-mcx16])
     TS_TRY_COMPILE_NO_WARNING([],[
         __int128_t x = 0;
         __sync_bool_compare_and_swap(&x,0,10);
       ], [
         AC_MSG_RESULT(yes)
         has_128bit_cas=1
-        dnl Keep CFLAGS and CXXFLAGS in sync.
-        TS_ADDTO(CFLAGS, [-mcx16])
       ], [
         AC_MSG_RESULT(no)
-        has_128bit_cas=0
     ])
 ])
 
@@ -1217,6 +1217,11 @@ CXXFLAGS="${__saved_CXXFLAGS}"
 CFLAGS="${__saved_CFLAGS}"
 AC_LANG_POP
 AC_SUBST(has_128bit_cas)
+
+AS_IF([test "x$has_128bit_cas" = "x1"], [
+  TS_ADDTO(CFLAGS, [-mcx16])
+  TS_ADDTO(CXXFLAGS, [-mcx16])
+])
 
 # Check for POSIX capabilities library.
 # If we don't find it, disable checking for header.
