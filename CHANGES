@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1960] Decouple stacksize config from core, this fixes regressions.
+
   *) [TS-1959] traffic_manager not honoring some records.config settings
    necessary for e.g. logging.
 
