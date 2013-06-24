@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
   Changes with Apache Traffic Server 3.3.5
 
+  *) [TS-745] support interim caching in storage
+   to eanble, use '--enable-interim-cache' configure option.
+
   *) [TS-1968] Promote header_rewrite plugin from experimental
 
   *) [TS-1961] Add tsxs support for querying installation variables.
