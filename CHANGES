@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1970] Using ssl_ca_name= in ssl_multicert.config fails.
+
   *) [TS-1946] Reduce the verbosity of SSL handshake errors.
 
   *) [TS-1971] Switch jtest over to standard argument parsing.

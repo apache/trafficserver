@@ -49,22 +49,6 @@ typedef SSL_METHOD * ink_ssl_method_t;
 static ProxyMutex ** sslMutexArray;
 static bool open_ssl_initialized = false;
 
-struct ats_x509_certificate
-{
-  explicit ats_x509_certificate(X509 * x) : x509(x) {}
-  ~ats_x509_certificate() { if (x509) X509_free(x509); }
-
-  operator bool() const {
-      return x509 != NULL;
-  }
-
-  X509 * x509;
-
-private:
-  ats_x509_certificate(const ats_x509_certificate&);
-  ats_x509_certificate& operator=(const ats_x509_certificate&);
-};
-
 struct ats_file_bio
 {
     ats_file_bio(const char * path, const char * mode)
@@ -115,6 +99,7 @@ SSL_locking_callback(int mode, int type, const char * file, int line)
 static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
 {
+  X509 *cert;
   ats_file_bio bio(chainfile, "r");
 
   if (!bio) {
@@ -122,14 +107,16 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
   }
 
   for (;;) {
-    ats_x509_certificate certificate(PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL));
+    cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
 
-    if (!certificate) {
+    if (!cert) {
       // No more the certificates in this file.
       break;
     }
 
-    if (!SSL_CTX_add_extra_chain_cert(ctx, certificate.x509)) {
+    // This transfers ownership of the cert (X509) to the SSL context, if successful.
+    if (!SSL_CTX_add_extra_chain_cert(ctx, cert)) {
+      X509_free(cert);
       return false;
     }
   }
@@ -506,10 +493,10 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
   X509_NAME * subject = NULL;
 
   ats_file_bio bio(certfile, "r");
-  ats_x509_certificate certificate(PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL));
+  X509* cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
 
   // Insert a key for the subject CN.
-  subject = X509_get_subject_name(certificate.x509);
+  subject = X509_get_subject_name(cert);
   if (subject) {
     int pos = -1;
     for (;;) {
@@ -529,7 +516,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 
 #if HAVE_OPENSSL_TS_H
   // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(certificate.x509, NID_subject_alt_name, NULL, NULL);
+  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
   if (names) {
     unsigned count = sk_GENERAL_NAME_num(names);
     for (unsigned i = 0; i < count; ++i) {
@@ -546,7 +533,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
     GENERAL_NAMES_free(names);
   }
 #endif // HAVE_OPENSSL_TS_H
-
+  X509_free(cert);
 }
 
 static void
