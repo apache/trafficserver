@@ -90,7 +90,6 @@
 #define CLIENT_BUFSIZE             2048
 #define MAX_BUFSIZE                (65536 + 4096)
 
-
 //#define RETRY_CLIENT_WRITE_ERRORS
 #define VERSION_NUM "$Revision: 1.94 $"
 #if defined(BUILD_PERSON) && defined(BUILD_MACHINE)
@@ -127,7 +126,7 @@ enum FTP_MODE {
 typedef int (*accept_fn_t)(int);
 typedef int (*poll_cb)(int);
 
-static void jtest_usage(const ArgumentDescription * argument_descriptions, 
+static void jtest_usage(const ArgumentDescription * argument_descriptions,
                         unsigned n_argument_descriptions, const char * arg);
 
 static int read_request(int sock);
@@ -144,7 +143,7 @@ static int is_done();
 static int open_server(unsigned short int port, accept_fn_t accept_fn);
 static int accept_ftp_data (int sock);
 
-static char ** defered_urls = NULL; 
+static char ** defered_urls = NULL;
 static int n_defered_urls = 0;
 static int server_fd = 0;
 static int server_port = 0;
@@ -276,49 +275,49 @@ static const ArgumentDescription argument_descriptions[] = {
    "JTEST_KEEPALIVE",NULL},
   {"keepalive_cons",'K',"# Keep-Alive Connections (0:unlimit)","I",
    &keepalive_cons, "JTEST_KEEPALIVE_CONNECTIONS",NULL },
-  {"docsize", 'L', "Document Size (-1:varied)","I", &docsize, 
+  {"docsize", 'L', "Document Size (-1:varied)","I", &docsize,
    "JTEST_DOCSIZE",NULL},
   {"skeepalive",'j',"Server Keep-Alive (0:unlimit)","I",&server_keepalive,
    "JTEST_SERVER_KEEPALIVE",NULL},
-  {"show_urls", 'x', "Show URLs before they are accessed","F", &show_before, 
+  {"show_urls", 'x', "Show URLs before they are accessed","F", &show_before,
    "JTEST_SHOW_URLS",NULL},
-  {"show_headers", 'X', "Show Headers","F", &show_headers,      
+  {"show_headers", 'X', "Show Headers","F", &show_headers,
    "JTEST_SHOW_HEADERS",NULL},
   {"ftp",'f',"FTP Requests","F",&ftp, "JTEST_FTP",NULL},
   {"ftp_mdtm_err_rate", ' ', "FTP MDTM 550 Error Rate", "D",
    &ftp_mdtm_err_rate, "JTEST_FTP_MDTM_ERR_RATE", NULL},
   {"ftp_mdtm_rate", ' ', "FTP MDTM Update Rate (sec, 0:never)", "I",
    &ftp_mdtm_rate, "JTEST_FTP_MDTM_RATE", NULL},
-  {"fullpage",'l',"Full Page (Images)","F",&fullpage, 
+  {"fullpage",'l',"Full Page (Images)","F",&fullpage,
    "JTEST_FULLPAGE",NULL},
   {"follow",'F',"Follow Links","F",&follow_arg, "JTEST_FOLLOW",NULL},
-  {"same_host",'J',"Only follow URLs on same host","F",&follow_same_arg, 
+  {"same_host",'J',"Only follow URLs on same host","F",&follow_same_arg,
    "JTEST_FOLLOW_SAME",NULL},
-  {"test_time",'t',"run for N seconds (0:unlimited)","I", &test_time, 
+  {"test_time",'t',"run for N seconds (0:unlimited)","I", &test_time,
    "TEST_TIME",NULL},
   {"urls",'u',"URLs from File","S256", urls_file, "JTEST_URLS",NULL},
-  {"urlsdump", 'U', "URLs to File", "S256", urlsdump_file, 
+  {"urlsdump", 'U', "URLs to File", "S256", urlsdump_file,
    "JTEST_URLS_DUMP", NULL},
   {"hostrequest",'H',"Host Request(1=yes,2=transparent)","I", &hostrequest, "JTEST_HOST_REQUEST",
    NULL},
-  {"check_content",'C',"Check returned content", "F", 
+  {"check_content",'C',"Check returned content", "F",
    &check_content, "JTEST_CHECK_CONTENT", NULL},
-  {"nocheck_length",' ',"Don't check returned length", "F", 
+  {"nocheck_length",' ',"Don't check returned length", "F",
    &nocheck_length, "JTEST_NOCHECK_LENGTH", NULL},
-  {"obey_redirects",'m',"Obey Redirects", "f", &obey_redirects, 
+  {"obey_redirects",'m',"Obey Redirects", "f", &obey_redirects,
    "JTEST_OBEY_REDIRECTS", NULL},
-  {"embed URL",'M',"Embed URL in synth docs", "f", 
+  {"embed URL",'M',"Embed URL in synth docs", "f",
    &embed_url, "JTEST_EMBED_URL", NULL},
-  {"url_hash_entries",'q',"URL Hash Table Size (-1:use file size)", 
+  {"url_hash_entries",'q',"URL Hash Table Size (-1:use file size)",
    "I", &url_hash_entries, "JTEST_URL_HASH_ENTRIES", NULL},
-  {"url_hash_filename",'Q',"URL Hash Table Filename", "S256", 
+  {"url_hash_filename",'Q',"URL Hash Table Filename", "S256",
    url_hash_filename, "JTEST_URL_HASH_FILENAME", NULL},
   {"only_clients",'y',"Only Clients","F",&only_clients,
    "JTEST_ONLY_CLIENTS",NULL},
   {"only_server",'Y',"Only Server","F",&only_server,"JTEST_ONLY_SERVER",NULL},
   {"bandwidth_test",'A',"Bandwidth Test","I",&bandwidth_test,
    "JTEST_BANDWIDTH_TEST",NULL},
-  {"drop_after_CL",'T',"Drop after Content-Length","F", 
+  {"drop_after_CL",'T',"Drop after Content-Length","F",
    &drop_after_CL, "JTEST_DROP",NULL},
   {"version",'V',"Version","F",&version,"JTEST_VERSION",NULL},
   {"verbose",'v',"Verbose Flag","F",&verbose,"JTEST_VERBOSE",NULL},
@@ -326,9 +325,9 @@ static const ArgumentDescription argument_descriptions[] = {
    "JTEST_VERBOSE_ERRORS",NULL},
   {"drand",'D',"Random Number Seed","I",&drand_seed,"JTEST_DRAND",NULL},
   {"ims_rate",'I',"IMS Not-Changed Rate","D",&ims_rate, "JTEST_IMS_RATE",NULL},
-  {"client_abort_rate",'g',"Client Abort Rate","D",&client_abort_rate, 
+  {"client_abort_rate",'g',"Client Abort Rate","D",&client_abort_rate,
    "JTEST_CLIENT_ABORT_RATE",NULL},
-  {"server_abort_rate",'G',"Server Abort Rate","D",&server_abort_rate, 
+  {"server_abort_rate",'G',"Server Abort Rate","D",&server_abort_rate,
    "JTEST_SERVER_ABORT_RATE",NULL},
   {"extra_headers",'n',"Number of Extra Headers","I",&extra_headers,
    "JTEST_EXTRA_HEADERS",NULL},
@@ -336,11 +335,11 @@ static const ArgumentDescription argument_descriptions[] = {
    "JTEST_ALTERNATES",NULL},
   {"client_rate", 'e', "Clients Per Sec", "I", &client_rate,
    "JTEST_CLIENT_RATE",NULL},
-  {"abort_retry_speed", 'o', "Abort/Retry Speed", "I", 
+  {"abort_retry_speed", 'o', "Abort/Retry Speed", "I",
    &abort_retry_speed, "JTEST_ABORT_RETRY_SPEED",NULL},
-  {"abort_retry_bytes", ' ', "Abort/Retry Threshhold (bytes)", "I", 
+  {"abort_retry_bytes", ' ', "Abort/Retry Threshhold (bytes)", "I",
    &abort_retry_bytes, "JTEST_ABORT_RETRY_THRESHHOLD_BYTES",NULL},
-  {"abort_retry_secs", ' ', "Abort/Retry Threshhold (secs)", "I", 
+  {"abort_retry_secs", ' ', "Abort/Retry Threshhold (secs)", "I",
    &abort_retry_secs, "JTEST_ABORT_RETRY_THRESHHOLD_SECS",NULL},
   {"reload_rate", 'W', "Reload Rate", "D",
    &reload_rate, "JTEST_RELOAD_RATE",NULL},
@@ -429,19 +428,19 @@ struct FD {
     ftp_peer_addr = 0;
     ftp_peer_port = 0;
   }
-  
+
   void close();
-  FD() { 
-    req_header = 0; base_url = 0; keepalive = 0; 
-    response_header = 0; ftp_data_fd = 0; 
-    reset(); 
+  FD() {
+    req_header = 0; base_url = 0; keepalive = 0;
+    response_header = 0; ftp_data_fd = 0;
+    reset();
   }
 };
 
 FD *fd = NULL;
 
 void FD::close() {
-  if (verbose) 
+  if (verbose)
     printf("close: %d\n", fd);
   ::close(fd);
   if (is_done())
@@ -455,7 +454,6 @@ void FD::close() {
   if (urls_mode) undefer_url();
   ftp_data_fd = 0;
 }
-
 
 #define MAX_FILE_ARGUMENTS 100
 
@@ -494,19 +492,19 @@ static void ink_web_decompose_url(
   char *sche, char *host, char *port, char *path,
   char *frag, char *quer, char *para,
   int *real_sche_exists, int *real_host_exists,
-  int *real_port_exists, int *real_path_exists, 
+  int *real_port_exists, int *real_path_exists,
   int *real_frag_exists, int *real_quer_exists,
   int *real_para_exists,
   int *real_relative_url, int *real_leading_slash);
 
-static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
+static void ink_web_canonicalize_url(const char *base_url, const char *emb_url,
                                      char *dest_url, int max_dest_url_len);
 
-static void ink_web_decompose_url_into_structure(const char *url, 
+static void ink_web_decompose_url_into_structure(const char *url,
                                                  InkWebURLComponents *c);
 
 static void remove_last_seg(char *src, char *dest)
-{ 
+{
   char *ptr;
   for (ptr = src + strlen(src) - 1; ptr >= src; ptr--)
     if (*ptr == '/') break;
@@ -515,9 +513,9 @@ static void remove_last_seg(char *src, char *dest)
 }
 
 static inline void remove_multiple_slash(char *src, char *dest)
-{ 
+{
   char *ptr=NULL;
-  
+
   for (ptr = src; *ptr;) {
       *(dest++) = *ptr;
       if (*ptr == '/')  {
@@ -531,7 +529,7 @@ static inline void remove_multiple_slash(char *src, char *dest)
   *dest = '\0';
 }
 
-static inline void append_string(char *dest, const char *src, int *offset_ptr, 
+static inline void append_string(char *dest, const char *src, int *offset_ptr,
                                  int max_len)
 {
   int num = strlen(src);
@@ -552,7 +550,7 @@ static void show_version() {
 }
 
 static void jtest_usage(const ArgumentDescription * argument_descriptions,
-                 unsigned n_argument_descriptions, const char * arg) 
+                 unsigned n_argument_descriptions, const char * arg)
 {
   show_version();
   usage(argument_descriptions, n_argument_descriptions, arg);
@@ -598,14 +596,14 @@ static int read_ready(int fd) {
   return 0;
 }
 
-static void poll_init(int sock) { 
-  if (!fd[sock].req_header) 
+static void poll_init(int sock) {
+  if (!fd[sock].req_header)
     fd[sock].req_header = (char*)malloc(HEADER_SIZE * pipeline);
   if (!fd[sock].response_header)
     fd[sock].response_header = (char*)malloc(HEADER_SIZE);
   if (!fd[sock].base_url)
     fd[sock].base_url = (char*)malloc(HEADER_SIZE);
-  fd[sock].reset(); 
+  fd[sock].reset();
 }
 
 static void poll_set(int sock, poll_cb read_cb, poll_cb write_cb = NULL) {
@@ -661,7 +659,7 @@ static void get_path_from_req(char * buf,char ** purl_start, char ** purl_end)
       url_start += sizeof("http://")-1;
       url_start = (char*)memchr(url_start,'/',70);
     }
-  *purl_start = url_start;  
+  *purl_start = url_start;
   *purl_end = url_end;
 }
 
@@ -715,8 +713,8 @@ static int send_response (int sock)
           no_cache?"Pragma: no-cache\r\nCache-Control: no-cache\r\n":"",
           url_start ? url_start : "");
     } else
-      url_len = print_len = 
-        sprintf(header, "ftp://%s:%d/%12.10f/%d", 
+      url_len = print_len =
+        sprintf(header, "ftp://%s:%d/%12.10f/%d",
                 local_host, server_port,
                 fd[sock].doc, fd[sock].length);
     if (show_headers) printf("Response to Proxy: {\n%s}\n", header);
@@ -749,7 +747,7 @@ static int send_response (int sock)
   if (fd[sock].length < towrite)
     towrite = fd[sock].length;
   if (towrite > 0) {
-    if (fast(sock,server_speed,fd[sock].bytes)) 
+    if (fast(sock,server_speed,fd[sock].bytes))
       return 0;
     do {
       err = write (sock, fd[sock].response, towrite);
@@ -768,11 +766,11 @@ static int send_response (int sock)
     fd[sock].length -= err;
     fd[sock].bytes += err;
   }
-  
-  if (fast(sock,server_speed,fd[sock].bytes)) 
+
+  if (fast(sock,server_speed,fd[sock].bytes))
     return 0;
   if (fd[sock].length <= 0 || !err) {
-    if (fd[sock].response) 
+    if (fd[sock].response)
       new_sops++;
     if (verbose) printf("write %d done\n", sock);
     if (fd[sock].keepalive > 0 && !ftp) {
@@ -783,7 +781,7 @@ static int send_response (int sock)
     }
     return 1;
   }
-    
+
   return 0;
 }
 
@@ -792,7 +790,7 @@ static char * strncasestr (char *s, const char * find, int len) {
   char * e = s + len;
   while (1) {
     char * x = (char*)memchr(s,*find,e - s);
-    if (!x) { 
+    if (!x) {
       if (ParseRules::is_upalpha(*find))
         x = (char*)memchr(s,ParseRules::ink_tolower(*find),e - s);
       else
@@ -811,7 +809,7 @@ static char * check_keepalive(char * r, int length) {
     int l = length - (ka - r);
     char * e = (char*)memchr(ka,'\n',l);
     if (!e) e = (char*)memchr(ka,'\r',l);
-    if (strncasestr(ka,"close",e-ka)) 
+    if (strncasestr(ka,"close",e-ka))
       return NULL;
   }
   return ka;
@@ -828,7 +826,7 @@ static int check_alt(char * r, int length) {
     int l = length - (s - r);
     char * e = (char*)memchr(s, '\n', l);
     if (!e) e = (char*)memchr(s, '\r', l);
-    if (!(s = strncasestr(s, "jtest", e - s))) 
+    if (!(s = strncasestr(s, "jtest", e - s)))
       return 0;
     s = (char*)memchr(s, '-', l);
     if (!s)
@@ -885,10 +883,10 @@ static int read_request(int sock) {
   int maxleft = HEADER_SIZE - fd[sock].req_pos - 1;
 
   do {
-    err = read (sock, &fd[sock].req_header[fd[sock].req_pos], 
+    err = read (sock, &fd[sock].req_header[fd[sock].req_pos],
                 maxleft);
   } while ((err < 0) && (errno == EINTR));
-  
+
   if (err < 0) {
     if (errno == EAGAIN || errno == ENOTCONN) return 0;
     if (fd[sock].req_pos || errno != ECONNRESET)
@@ -904,8 +902,8 @@ static int read_request(int sock) {
     fd[sock].req_pos += err;
     fd[sock].req_header[fd[sock].req_pos] = 0;
     char *buffer = fd[sock].req_header;
-    for (i = fd[sock].req_pos - err; 
-         i < fd[sock].req_pos; i++) 
+    for (i = fd[sock].req_pos - err;
+         i < fd[sock].req_pos; i++)
     {
       switch (fd[sock].state) {
         case 0:
@@ -945,14 +943,14 @@ static int read_request(int sock) {
               fd[sock].close();
               return 0;
             }
-            if (verbose) 
+            if (verbose)
               printf("read_request %d got request %d\n", sock, length);
             char * ims = strncasestr(buffer,"If-Modified-Since:", i);
             if (drand48() > ims_rate) ims = NULL;
             fd[sock].ims = ims?1:0;
             if (!ims) {
               fd[sock].response_length = fd[sock].length = length;
-              fd[sock].nalternate = check_alt(fd[sock].req_header, 
+              fd[sock].nalternate = check_alt(fd[sock].req_header,
                                               strlen(fd[sock].req_header));
               fd[sock].response = response_buffer + length % 256 +
                 fd[sock].nalternate;
@@ -964,10 +962,10 @@ static int read_request(int sock) {
               fd[sock].response_length = fd[sock].length = 0;
             }
             fd[sock].req_pos = 0;
-            if (!check_keepalive(fd[sock].req_header, 
+            if (!check_keepalive(fd[sock].req_header,
                                  strlen(fd[sock].req_header)))
               fd[sock].keepalive = 0;
-            else 
+            else
               fd[sock].keepalive--;
             if (fd[sock].length && drand48() < server_abort_rate) {
               fd[sock].length = (int)(drand48() * (fd[sock].length -1));
@@ -995,7 +993,7 @@ static int send_compd_response(int sock) {
     compd_header.code = 0;
     compd_header.len = htonl((fd[sock].length * 2) / 3);
     do {
-      err = write(sock, (char*)&compd_header + fd[sock].req_pos, 
+      err = write(sock, (char*)&compd_header + fd[sock].req_pos,
                   sizeof(compd_header) - fd[sock].req_pos);
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
@@ -1014,7 +1012,7 @@ static int send_compd_response(int sock) {
     fd[sock].bytes += err;
     fd[sock].response = response_buffer + (((fd[sock].length * 2) / 3) % 256);
   }
- 
+
   if (fd[sock].req_pos < ((fd[sock].length * 2) / 3) + (int)sizeof(compd_header)) {
     int towrite = cbuffersize;
     int desired = ((fd[sock].length * 2) / 3) + sizeof (compd_header) - fd[sock].req_pos;
@@ -1039,9 +1037,9 @@ static int send_compd_response(int sock) {
     fd[sock].bytes += err;
   }
 
-  if (fd[sock].req_pos >= ((fd[sock].length * 2) / 3) + 4) 
+  if (fd[sock].req_pos >= ((fd[sock].length * 2) / 3) + 4)
     return -1;
-  
+
   return 0;
 Lerror:
   errors++;
@@ -1055,10 +1053,10 @@ static int read_compd_request(int sock) {
   if (fd[sock].req_pos < 4) {
     int maxleft = HEADER_SIZE - fd[sock].req_pos - 1;
     do {
-      err = read (sock, &fd[sock].req_header[fd[sock].req_pos], 
+      err = read (sock, &fd[sock].req_header[fd[sock].req_pos],
                   maxleft);
     } while ((err < 0) && (errno == EINTR));
-  
+
     if (err < 0) {
       if (errno == EAGAIN || errno == ENOTCONN) return 0;
       perror ("read");
@@ -1077,9 +1075,9 @@ static int read_compd_request(int sock) {
     }
   }
 
-  if (fd[sock].req_pos >= fd[sock].length + 4) 
+  if (fd[sock].req_pos >= fd[sock].length + 4)
     goto Lcont;
-  
+
   {
     char buf[MAX_BUFSIZE];
     int toread = cbuffersize;
@@ -1107,10 +1105,10 @@ static int read_compd_request(int sock) {
     new_tbytes += err;
     fd[sock].req_pos += err;
   }
-    
-  if (fd[sock].req_pos >= fd[sock].length + 4) 
+
+  if (fd[sock].req_pos >= fd[sock].length + 4)
     goto Lcont;
-    
+
   return 0;
 
 Lcont:
@@ -1128,10 +1126,10 @@ static int read_ftp_request(int sock) {
   int maxleft = HEADER_SIZE - fd[sock].req_pos - 1;
 
   do {
-    err = read (sock, &fd[sock].req_header[fd[sock].req_pos], 
+    err = read (sock, &fd[sock].req_header[fd[sock].req_pos],
                 maxleft);
   } while ((err < 0) && (errno == EINTR));
-  
+
   if (err < 0) {
     if (errno == EAGAIN || errno == ENOTCONN) return 0;
     perror ("read");
@@ -1166,7 +1164,7 @@ static int read_ftp_request(int sock) {
         make_response(sock,res);
         return 0;
     } else if (STREQ(buffer,"SIZE")) {
-        fd[sock].length = 
+        fd[sock].length =
           sprintf(fd[sock].req_header, "213 %d\r\n", atoi(buffer + 5));
         make_long_response(sock);
         return 0;
@@ -1209,7 +1207,7 @@ static int read_ftp_request(int sock) {
         fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
         if (verbose) printf("ftp PASV %d <-> %d\n", sock,fd[sock].ftp_data_fd);
         unsigned short p = fd[fd[sock].ftp_data_fd].name.sin_port;
-        fd[sock].length = 
+        fd[sock].length =
           sprintf(fd[sock].req_header, "227 (%u,%u,%u,%u,%u,%u)\r\n",
                   ((unsigned char*)&local_addr)[0],
                   ((unsigned char*)&local_addr)[1],
@@ -1236,7 +1234,7 @@ static int read_ftp_request(int sock) {
         start = ++stop;
         ((unsigned char*)&(fd[sock].ftp_peer_port))[1] =
           strtol(start, NULL, 10);
-        fd[sock].length = 
+        fd[sock].length =
           sprintf(fd[sock].req_header, "200 Okay\r\n");
         if (verbose) puts(fd[sock].req_header);
         make_long_response(sock);
@@ -1280,7 +1278,7 @@ static int read_ftp_request(int sock) {
           return 1;
         }
         fd[sock].response = fd[sock].req_header;
-        fd[sock].length = sprintf( fd[sock].req_header, "150 %d bytes\r\n", 
+        fd[sock].length = sprintf( fd[sock].req_header, "150 %d bytes\r\n",
                                    fd[fd[sock].ftp_data_fd].length);
         fd[sock].req_pos = 0;
         fd[sock].response_length = strlen(fd[sock].req_header);
@@ -1390,7 +1388,7 @@ static int accept_ftp_data (int sock) {
   fd[new_fd].state = STATE_FTP_DATA_READY;
   fd[new_fd].doc = fd[sock].doc;
   fd[new_fd].doc_length = fd[sock].doc_length;
-  if (verbose) 
+  if (verbose)
     printf("accept_ftp_data %d for %d\n", new_fd, sock);
   send_ftp_data_when_ready(new_fd);
   return 1;
@@ -1427,7 +1425,7 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
   }
 
   int addrlen = sizeof(name);
-  if ((err = getsockname(sock, (struct sockaddr *) &name, 
+  if ((err = getsockname(sock, (struct sockaddr *) &name,
 #if 0
                          &addrlen
 #else
@@ -1442,7 +1440,7 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
   /* Tell the socket not to linger on exit */
   lngr.l_onoff = 0;
   lngr.l_linger = 0;
-  if (setsockopt (sock, SOL_SOCKET, SO_LINGER, (char*) &lngr, 
+  if (setsockopt (sock, SOL_SOCKET, SO_LINGER, (char*) &lngr,
                   sizeof (struct linger)) < 0) {
     perror ("setsockopt");
     exit (EXIT_FAILURE);
@@ -1459,7 +1457,7 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
     exit (EXIT_FAILURE);
   }
 
-  if (verbose) 
+  if (verbose)
     printf("opening server on %d port %d\n", sock, name.sin_port);
 
   poll_init_set(sock, accept_fn);
@@ -1467,7 +1465,7 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
   return sock;
 }
 
-//   perform poll and invoke callbacks on active descriptors 
+//   perform poll and invoke callbacks on active descriptors
 static int poll_loop() {
   if (server_fd > 0) {
     while (read_ready(server_fd) > 0)
@@ -1541,7 +1539,7 @@ static int gen_bfc_dist(double f = 10.0) {
     class_no = 3;
     if (f_given) rand2 = (f * 113.0) - floor(f * 113.0);
   }
-  
+
   if(rand2 < 0.018){
     file_no=0;
   }else if(rand2 < 0.091){
@@ -1585,11 +1583,11 @@ static void build_response() {
 
 static void put_ka(int sock) {
   int i = 0;
-  for (; i < n_ka_cache; i++ ) 
-    if (!ka_cache_head[i] || fd[ka_cache_head[i]].ip == fd[sock].ip) 
+  for (; i < n_ka_cache; i++ )
+    if (!ka_cache_head[i] || fd[ka_cache_head[i]].ip == fd[sock].ip)
       goto Lpush;
   i = n_ka_cache++;
-Lpush:  
+Lpush:
   if (ka_cache_tail[i])
     fd[ka_cache_tail[i]].next = sock;
   else
@@ -1598,7 +1596,7 @@ Lpush:
 }
 
 static int get_ka(unsigned int ip) {
-  for (int i = 0; i < n_ka_cache; i++ ) 
+  for (int i = 0; i < n_ka_cache; i++ )
     if (fd[ka_cache_head[i]].ip == ip) {
       int res = ka_cache_head[i];
       ka_cache_head[i] = fd[ka_cache_head[i]].next;
@@ -1627,8 +1625,8 @@ static void done() {
   exit(0);
 }
 
-static int is_done() { 
-  return 
+static int is_done() {
+  return
     (urls_mode && !current_clients && !n_defered_urls) ||
     (bandwidth_test && bandwidth_test_to_go <= 0 && !current_clients);
 }
@@ -1639,7 +1637,7 @@ static void undefer_url(bool unthrottled) {
     char * url =  defered_urls[n_defered_urls];
     make_url_client(url,0,true,unthrottled);
     free(url);
-    if (verbose) 
+    if (verbose)
       printf("undefer_url: made client %d clients\n", current_clients);
   } else
     if (verbose) printf("undefer_url: throttle\n");
@@ -1678,7 +1676,7 @@ static char * find_href_end (char *start, int len)
 
   while (*end && len > 0) {
       if (*end == '\"') break;  /* " */
-      if (*end == '\'') break;                 
+      if (*end == '\'') break;
       if (*end == '>')  break;
       if (*end == ' ')  break;
       if (*end == '\t') break;
@@ -1689,7 +1687,7 @@ static char * find_href_end (char *start, int len)
       end++;
     }
 
-  if (*end == 0 || len == 0) 
+  if (*end == 0 || len == 0)
     return NULL;
   else
     return end;
@@ -1762,14 +1760,14 @@ static int compose_url(char * new_url, char * base, char *input) {
   return 0;
 } // compose_urls
 
-static void compose_all_urls( const char * tag, char * buf, char * start, char * end, 
+static void compose_all_urls( const char * tag, char * buf, char * start, char * end,
                        int buflen, char * base_url)
 {
   char old;
   while ((start = find_href_start(tag, end, buflen - (end - buf)))) {
     char newurl[512];
-    end = (char *) find_href_end(start, MIN(buflen - (start-buf), 512 - 10)); 
-    if (!end) { 
+    end = (char *) find_href_end(start, MIN(buflen - (start-buf), 512 - 10));
+    if (!end) {
       end = start + strlen(tag);
       continue;
     }
@@ -1798,19 +1796,19 @@ static void extract_urls(char * buf, int buflen, char * base_url) {
       char * rover = strncasestr(start, "href", end - start);
       if (rover) {
         rover += 4;
-        while (rover < end && 
-               (ParseRules::is_ws(*rover) || *rover == '=' || *rover == '\'' 
+        while (rover < end &&
+               (ParseRules::is_ws(*rover) || *rover == '=' || *rover == '\''
                 || *rover == '\"'))    /* " */
           rover++;
         start = rover;
-        while (rover < end && 
-               !(ParseRules::is_ws(*rover) || *rover == '\'' 
+        while (rover < end &&
+               !(ParseRules::is_ws(*rover) || *rover == '\''
                  || *rover == '\"'))
           rover++;
         *rover = 0;
         compose_url(base_url,old_base,start);
         // fixup unqualified hostnames (e.g. http://internal/foo)
-        char * he = strchr(base_url + 8, '/'); 
+        char * he = strchr(base_url + 8, '/');
         if (!memchr(base_url,'.',he-base_url)) {
           char t[512]; strcpy(t,base_url);
           char * old_he = strchr(old_base + 8, '.');
@@ -1829,8 +1827,8 @@ static void extract_urls(char * buf, int buflen, char * base_url) {
   if (follow)
     compose_all_urls("href", buf, start, end, buflen, base_url);
   if (fullpage) {
-    const char *tags[] = { "src", "image", "object", "archive", "background", 
-                     // "location", "code" 
+    const char *tags[] = { "src", "image", "object", "archive", "background",
+                     // "location", "code"
     };
     for (unsigned i = 0 ; i < sizeof(tags)/sizeof(tags[0]) ; i++) {
       compose_all_urls(tags[i], buf, start, end, buflen, base_url);
@@ -1873,7 +1871,7 @@ static int verify_content(int sock, char * buf, int done) {
         char *url_end = NULL, *url_start = NULL;
         get_path_from_req(fd[sock].base_url,&url_start,&url_end);
         if (url_end - url_start < done) {
-          if (memcmp(url_start,buf,url_end - url_start)) 
+          if (memcmp(url_start,buf,url_end - url_start))
             return 0;
         }
       }
@@ -1939,30 +1937,30 @@ static int read_response(int sock) {
   int err = 0;
 
   if (fd[sock].req_pos >= 0) {
-    if (!fd[sock].req_pos) 
+    if (!fd[sock].req_pos)
       memset(fd[sock].req_header,0,HEADER_SIZE);
     do {
       int l = HEADER_SIZE - fd[sock].req_pos - 1;
-      if (l <= 0) { 
-        if (verbose || verbose_errors) 
+      if (l <= 0) {
+        if (verbose || verbose_errors)
           printf("header too long '%s'", fd[sock].req_header);
         return read_response_error(sock);
       }
-      err = read(sock, fd[sock].req_header + fd[sock].req_pos, 
+      err = read(sock, fd[sock].req_header + fd[sock].req_pos,
                  HEADER_SIZE - fd[sock].req_pos - 1);
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
       if (!err) {
-        if (verbose_errors) 
+        if (verbose_errors)
           printf("read_response %d closed during header for '%s' after %d%s\n",
                  sock, fd[sock].base_url, fd[sock].req_pos,
-                 (keepalive && (fd[sock].keepalive != keepalive) 
+                 (keepalive && (fd[sock].keepalive != keepalive)
                   && !fd[sock].req_pos) ? " -- keepalive timeout" : "");
         return read_response_error(sock);
       }
       if (errno == EAGAIN || errno == ENOTCONN) return 0;
       if (errno == ECONNRESET) {
-        if (!fd[sock].req_pos && keepalive > 0 && 
+        if (!fd[sock].req_pos && keepalive > 0 &&
             fd[sock].keepalive != keepalive) {
           fd[sock].close();
           if (!urls_mode)
@@ -1975,8 +1973,8 @@ static int read_response(int sock) {
       }
       panic_perror("read");
     }
-    if (verbose) 
-      printf("read %d header %d [%s]\n", 
+    if (verbose)
+      printf("read %d header %d [%s]\n",
              sock, err, fd[sock].req_header);
     b1_ops++;
 
@@ -2000,7 +1998,7 @@ static int read_response(int sock) {
         strncpy(fd[sock].response_header, fd[sock].req_header, p - fd[sock].req_header);
         fd[sock].response_header[p - fd[sock].req_header] = '\0';
         int lbody =  fd[sock].req_pos - (p - fd[sock].req_header);
-        cl = strncasestr(fd[sock].req_header,"Content-Length:", 
+        cl = strncasestr(fd[sock].req_header,"Content-Length:",
                          p - fd[sock].req_header);
         if (cl) {
           cli = atoi(cl + 16);
@@ -2010,9 +2008,9 @@ static int read_response(int sock) {
                 fd[sock].jg_compressed = 1;
                 expected_length = (fd[sock].response_length * 2) / 3;
               }
-            } 
+            }
             if (fd[sock].response_length && verbose_errors &&
-                expected_length != cli && !nocheck_length) 
+                expected_length != cli && !nocheck_length)
               fprintf(stderr, "bad Content-Length expected %d got %d orig %d",
                       expected_length, cli, fd[sock].response_length);
             fd[sock].response_length = fd[sock].length = cli;
@@ -2030,7 +2028,7 @@ static int read_response(int sock) {
         fd[sock].req_pos = -1;
         if (fd[sock].length && drand48() < client_abort_rate) {
           fd[sock].client_abort = 1;
-          fd[sock].length = (int)(drand48() * (fd[sock].length -1)); 
+          fd[sock].length = (int)(drand48() * (fd[sock].length -1));
           fd[sock].keepalive = 0;
           fd[sock].drop_after_CL = 1;
         }
@@ -2047,10 +2045,10 @@ static int read_response(int sock) {
         putc(*c,stdout);
       printf("}\n");
     }
-    if (obey_redirects && urls_mode && 
+    if (obey_redirects && urls_mode &&
         fd[sock].req_header[9] == '3' &&
         fd[sock].req_header[10] == '0' &&
-        (fd[sock].req_header[11] == '1' || fd[sock].req_header[11] == '2')) 
+        (fd[sock].req_header[11] == '1' || fd[sock].req_header[11] == '2'))
     {
       char * redirect = strstr(fd[sock].req_header,"http://");
       char * e = redirect?(char*)memchr(redirect,'\n',hlen):0;
@@ -2073,7 +2071,7 @@ static int read_response(int sock) {
           if (e) *e = 0;
           else *p = 0;
         }
-        printf("error response %d: '%s':'%s'\n", sock, 
+        printf("error response %d: '%s':'%s'\n", sock,
                fd[sock].base_url, fd[sock].req_header);
       }
       return read_response_error(sock);
@@ -2083,7 +2081,7 @@ static int read_response(int sock) {
     char * ka = check_keepalive(r, length);
     if (urls_mode) {
       fd[sock].response_remaining = total_read - length;
-      if (fd[sock].response_remaining) 
+      if (fd[sock].response_remaining)
         memcpy(fd[sock].response,p,fd[sock].response_remaining);
       if (check_content && !cl) {
         if (verbose || verbose_errors)
@@ -2091,14 +2089,14 @@ static int read_response(int sock) {
         return read_response_error(sock);
       }
     } else
-      fd[sock].response = 0;      
+      fd[sock].response = 0;
     if (!cl || !ka)
       fd[sock].keepalive = -1;
     if (!cl)
       fd[sock].length = INT_MAX;
   }
-  
-  if (fd[sock].length <= 0 && 
+
+  if (fd[sock].length <= 0 &&
       (fd[sock].keepalive > 0 || fd[sock].drop_after_CL))
     goto Ldone;
 
@@ -2123,9 +2121,9 @@ static int read_response(int sock) {
     } else
       r = buf;
     if (fast(sock,client_speed,fd[sock].bytes)) return 0;
-    if (fd[sock].bytes > abort_retry_bytes && 
-        (((now - fd[sock].start + 1)/HRTIME_SECOND) > abort_retry_secs) && 
-        !faster_than(sock,abort_retry_speed,fd[sock].bytes)) 
+    if (fd[sock].bytes > abort_retry_bytes &&
+        (((now - fd[sock].start + 1)/HRTIME_SECOND) > abort_retry_secs) &&
+        !faster_than(sock,abort_retry_speed,fd[sock].bytes))
     {
       fd[sock].client_abort = 1;
       fd[sock].keepalive = 0;
@@ -2161,24 +2159,24 @@ static int read_response(int sock) {
     if (fd[sock].length != INT_MAX)
       fd[sock].length -= err;
     fd[sock].active = ink_get_hrtime_internal();
-    if (verbose) 
+    if (verbose)
       printf("read %d got %d togo %d %d %d\n", sock, err, fd[sock].length,
              fd[sock].keepalive, fd[sock].drop_after_CL);
   }
-  
-  if (fd[sock].length <= 0 && 
+
+  if (fd[sock].length <= 0 &&
       (fd[sock].keepalive > 0 || fd[sock].drop_after_CL))
     goto Ldone;
 
   return 0;
-  
+
 Ldone:
-  if (!fd[sock].client_abort && 
+  if (!fd[sock].client_abort &&
       !(server_abort_rate > 0) &&
-      fd[sock].length && fd[sock].length != INT_MAX) 
+      fd[sock].length && fd[sock].length != INT_MAX)
   {
-    if (verbose || verbose_errors) 
-      printf("bad length %d wanted %d after %d ms: '%s'\n", 
+    if (verbose || verbose_errors)
+      printf("bad length %d wanted %d after %d ms: '%s'\n",
              fd[sock].response_length - fd[sock].length,
              fd[sock].response_length,
              (int)((ink_get_hrtime_internal() - fd[sock].active)/HRTIME_MSECOND),
@@ -2204,12 +2202,12 @@ Ldone:
     make_bfc_client(proxy_addr, proxy_port);
   return 0;
 }
-  
+
 static int write_request(int sock) {
   int err = 0;
-  
+
   do {
-    err = write(sock, fd[sock].req_header + fd[sock].req_pos, 
+    err = write(sock, fd[sock].req_header + fd[sock].req_pos,
                 fd[sock].length - fd[sock].req_pos);
   } while ((err == -1) && (errno == EINTR));
   if (err <= 0) {
@@ -2227,7 +2225,7 @@ static int write_request(int sock) {
   total_client_request_bytes += err;
   fd[sock].req_pos += err;
   fd[sock].active = ink_get_hrtime_internal();
-  
+
   if (fd[sock].req_pos >= fd[sock].length) {
     if (verbose) printf("write complete %d %d\n", sock, fd[sock].length);
     fd[sock].req_pos = 0;
@@ -2251,12 +2249,12 @@ Lerror:
 
 static int write_ftp_response(int sock) {
   int err = 0;
-  
+
   do {
-    err = write(sock, fd[sock].req_header + fd[sock].req_pos, 
+    err = write(sock, fd[sock].req_header + fd[sock].req_pos,
                 fd[sock].length - fd[sock].req_pos);
   } while ((err == -1) && (errno == EINTR));
-  
+
   if (err <= 0) {
     if (!err) {
       if (verbose_errors) printf("write %d closed early\n", sock);
@@ -2270,7 +2268,7 @@ static int write_ftp_response(int sock) {
 
   new_tbytes += err;
   fd[sock].req_pos += err;
-  
+
   if (fd[sock].req_pos >= fd[sock].length) {
     if (verbose) printf("write complete %d %d\n", sock, fd[sock].length);
     fd[sock].req_pos = 0;
@@ -2313,7 +2311,7 @@ static int make_client (unsigned int addr, int port) {
   lngr.l_onoff = 1;
   lngr.l_linger = 0;
   if (!ftp) {  // this causes problems for PORT ftp -- ewong
-    if (setsockopt (sock, SOL_SOCKET, SO_LINGER, (char*) &lngr, 
+    if (setsockopt (sock, SOL_SOCKET, SO_LINGER, (char*) &lngr,
                     sizeof (struct linger)) < 0) {
       perror ("setsockopt");
       exit (EXIT_FAILURE);
@@ -2325,12 +2323,12 @@ static int make_client (unsigned int addr, int port) {
   name.sin_family = AF_INET;
   name.sin_port = htons(port);
   name.sin_addr.s_addr = addr;
-  
+
   if (verbose) printf("connecting to %u.%u.%u.%u:%d\n",
-                      ((unsigned char*)&addr)[0], ((unsigned char*)&addr)[1], 
+                      ((unsigned char*)&addr)[0], ((unsigned char*)&addr)[1],
                       ((unsigned char*)&addr)[2], ((unsigned char*)&addr)[3],
                       port);
-  
+
   while (connect (sock, (struct sockaddr *) &name, sizeof (name)) < 0) {
     if (errno == EINTR) continue;
     if (errno == EINPROGRESS)
@@ -2352,7 +2350,7 @@ static void make_bfc_client (unsigned int addr, int port) {
   int sock = -1;
   if (bandwidth_test && bandwidth_test_to_go-- <= 0)
     return;
-  if (keepalive) 
+  if (keepalive)
     sock = get_ka(addr);
   if (sock < 0) {
     sock = make_client(addr,port);
@@ -2362,7 +2360,7 @@ static void make_bfc_client (unsigned int addr, int port) {
     current_clients++;
     fd[sock].keepalive--;
   }
-  if (sock<0) 
+  if (sock<0)
     panic("unable to open client connection\n");
   double h = drand48();
   double dr = drand48();
@@ -2423,14 +2421,14 @@ static void make_bfc_client (unsigned int addr, int port) {
     sprintf(evo_str, ".%u", ((unsigned int)evo_index));
   }
   if (0 == hostrequest) {
-    sprintf(fd[sock].req_header, 
-            ftp ? 
+    sprintf(fd[sock].req_header,
+            ftp ?
             "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
             "%s"
             "%s"
             "%s"
             "%s"
-            "\r\n" 
+            "\r\n"
             :
             "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
             "%s"
@@ -2446,7 +2444,7 @@ static void make_bfc_client (unsigned int addr, int port) {
             eheaders, cookie
       );
   } else if (1 == hostrequest) {
-    sprintf(fd[sock].req_header, 
+    sprintf(fd[sock].req_header,
             "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
             "Host: %s:%d\r\n"
             "%s"
@@ -2461,7 +2459,7 @@ static void make_bfc_client (unsigned int addr, int port) {
             eheaders, cookie);
   } else if (2 == hostrequest) {
     /* Send a non-proxy client request i.e. for Transparency testing */
-    sprintf(fd[sock].req_header, 
+    sprintf(fd[sock].req_header,
             "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
             "%s"
             "%s"
@@ -2471,11 +2469,11 @@ static void make_bfc_client (unsigned int addr, int port) {
             dr, fd[sock].response_length, evo_str, extension,
             fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
-            eheaders, 
+            eheaders,
             cookie);
   }
   if (verbose) printf("request %d [%s]\n", sock, fd[sock].req_header);
-  fd[sock].length = strlen(fd[sock].req_header); 
+  fd[sock].length = strlen(fd[sock].req_header);
   {
     char * s = fd[sock].req_header;
     char * e = (char*)memchr(s, '\r', 512);
@@ -2517,9 +2515,9 @@ void interval_report() {
          running_clients,
          running_ops, running_b1latency, running_latency,
          running_cbytes, per,
-         running_servers, 
          running_servers,
-         running_sops, running_tbytes, 
+         running_servers,
+         running_sops, running_tbytes,
          t/((float)HRTIME_SECOND),
          errors);
   if (is_done()) {
@@ -2585,7 +2583,7 @@ struct UrlHashTable {
   unsigned int    numbytes;
   unsigned char * bytes;
   int fd;
-  
+
   void zero() { memset(bytes, 0, numbytes); }
 
   void alloc(unsigned int want);
@@ -2620,7 +2618,7 @@ struct UrlHashTable {
       }
     } END_HASH_LOOP;
 
-    fprintf(stderr, "url hash table entry to clear not found: %X, %X\n", 
+    fprintf(stderr, "url hash table entry to clear not found: %X, %X\n",
             (int)(base-bytes), tag);
   }
 
@@ -2638,13 +2636,12 @@ struct UrlHashTable {
     }
     return 0;
   }
-  
+
   UrlHashTable();
 
   ~UrlHashTable();
 };
 UrlHashTable * uniq_urls = NULL;
-
 
 UrlHashTable::UrlHashTable() {
   off_t len = 0;
@@ -2659,22 +2656,22 @@ UrlHashTable::UrlHashTable() {
 
   if (url_hash_entries > 0) {
     // if they specify the number of entries round it up
-    url_hash_entries = 
+    url_hash_entries =
       (url_hash_entries + ENTRIES_PER_BUCKET - 1) & ~(ENTRIES_PER_BUCKET - 1);
     numbytes = URL_HASH_BYTES;
 
     // ensure it is either a new file or the correct size
-    if (len != 0 && len != numbytes) 
+    if (len != 0 && len != numbytes)
       panic("specified size != file size\n");
 
   } else {
 
     // otherwise make sure the file is non-zero and then use its
     // size as the size
-    if (!len) 
+    if (!len)
       panic("zero size URL Hash Table\n");
     if (len != URL_HASH_BYTES) {
-      fprintf(stderr, 
+      fprintf(stderr,
               "FATAL: hash file length (%jd) != URL_HASH_BYTES (%jd)\n",
               (intmax_t)len, (intmax_t)URL_HASH_BYTES);
       exit(1);
@@ -2697,13 +2694,11 @@ UrlHashTable::UrlHashTable() {
   }
 } // UrlHashTable::UrlHashTable
 
-
 UrlHashTable::~UrlHashTable()
 {
   ink_assert(!munmap((char*)bytes, numbytes));
   ink_assert(!close(fd));
 } // UrlHashTable::~UrlHashTable
-
 
 static int seen_it(char * url) {
   if (!url_hash_entries)
@@ -2714,7 +2709,7 @@ static int seen_it(char * url) {
   } u;
   int l = 0;
   char * para = strrchr(url, '#');
-  if (para) 
+  if (para)
     l = para - url;
   else
     l = strlen(url);
@@ -2730,7 +2725,7 @@ static int seen_it(char * url) {
 }
 
 static int make_url_client(const char * url,const char * base_url, bool seen,
-                           bool unthrottled) 
+                           bool unthrottled)
 {
   int iport = 80;
   unsigned int ip = 0;
@@ -2767,19 +2762,19 @@ static int make_url_client(const char * url,const char * base_url, bool seen,
     ip = proxy_addr;
   } else {
     if (xport) iport = atoi(port);
-    if (!xhost) { 
-      if (verbose) fprintf(stderr, "bad url '%s'\n", curl); 
+    if (!xhost) {
+      if (verbose) fprintf(stderr, "bad url '%s'\n", curl);
       return -1;
     }
     ip = get_addr(host);
-    if ((int)ip == -1) { 
+    if ((int)ip == -1) {
       if (verbose || verbose_errors)
-        fprintf(stderr, "bad host '%s'\n", host); 
+        fprintf(stderr, "bad host '%s'\n", host);
       return -1;
     }
   }
   int sock = -1;
-  if (keepalive) 
+  if (keepalive)
     sock = get_ka(ip);
   if (sock < 0) {
     sock = make_client(ip, iport);
@@ -2813,18 +2808,18 @@ static int make_url_client(const char * url,const char * base_url, bool seen,
             "%s"
             "Accept: */*\r\n"
             "%s"
-            "\r\n", 
+            "\r\n",
             curl,
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
             fd[sock].keepalive?"Proxy-Connection: Keep-Alive\r\n":"",eheaders);
-  else 
+  else
     sprintf(fd[sock].req_header, "GET /%s%s%s%s%s HTTP/1.0\r\n"
             "Host: %s\r\n"
             "%s"
             "%s"
             "Accept: */*\r\n"
             "%s"
-            "\r\n", 
+            "\r\n",
             path,xquer?"?":"",quer,xpar?";":"",para,host,
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
             fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",eheaders);
@@ -2876,7 +2871,7 @@ int main(int argc __attribute__((unused)), char *argv[]) {
     show_version();
     exit(0);
   }
-  if (!drand_seed) 
+  if (!drand_seed)
     srand48((long)time(NULL));
   else
     srand48((long)drand_seed);
@@ -2884,9 +2879,9 @@ int main(int argc __attribute__((unused)), char *argv[]) {
     build_zipf();
   int max_fds = max_limit_fd();
   if (verbose) printf ("maximum of %d connections\n",max_fds);
-  signal(SIGPIPE,SIG_IGN);      
+  signal(SIGPIPE,SIG_IGN);
   start_time = now = ink_get_hrtime_internal();
-  
+
   urls_mode = n_file_arguments || *urls_file;
   nclients = client_rate? 0 : nclients;
 
@@ -2911,7 +2906,7 @@ int main(int argc __attribute__((unused)), char *argv[]) {
         for (int retry = 0 ; retry < 20 ; retry++) {
           server_fd = open_server(server_port + retry, accept_read);
           if (server_fd < 0) {
-            if (server_fd == -EADDRINUSE) { 
+            if (server_fd == -EADDRINUSE) {
               printf("here\n");
               continue;
             }
@@ -3000,37 +2995,36 @@ int main(int argc __attribute__((unused)), char *argv[]) {
   return 0;
 }
 
-
 /*---------------------------------------------------------------------------*
-  
+
   int ink_web_decompose_url(...)
-  
+
   This function takes an input URL in src_url and splits it into its
   component parts, including a scheme, host, port, path, fragment,
   query, and parameters. you must pass in buffers for each of these.
   If you pass in a NULL pointer for any of these, it will not be
   returned.
-  
+
   The flags "sche_exists", etc. tell you if that part of the URL was
   found. Each unfound part (with a non-NULL buffer) will also contain
   the empty string '\0'.
-  
+
   The flag "relative_url" indicates that the src_url did not start
   with a scheme. (This is kind of redundant with sche_exists but is
   the general way to do it.)
-  
+
   The flag "leading_slash" indicates that the path began with a
   leading slash.
-  
+
   mep - 4/15/96
-  
+
   *---------------------------------------------------------------------------*/
 
 static void ink_web_decompose_url(const char *src_url,
                            char *sche, char *host, char *port, char *path,
                            char *frag, char *quer, char *para,
                            int *real_sche_exists, int *real_host_exists,
-                           int *real_port_exists, int *real_path_exists, 
+                           int *real_port_exists, int *real_path_exists,
                            int *real_frag_exists, int *real_quer_exists,
                            int *real_para_exists,
                            int *real_relative_url, int *real_leading_slash)
@@ -3040,7 +3034,7 @@ static void ink_web_decompose_url(const char *src_url,
       *
       * You may pass in NULL pointers for any of: sche, host, port, path,
       * frag, quer, or para, and they will not be returned.
-      * 
+      *
       *
       * According to the HTML Sourcebook, a URL consists:
       *
@@ -3079,16 +3073,16 @@ static void ink_web_decompose_url(const char *src_url,
   const char *para1, *para2;
   bool fail = false;
   int num;
-  int sche_exists, host_exists, port_exists, path_exists, frag_exists, 
+  int sche_exists, host_exists, port_exists, path_exists, frag_exists,
     quer_exists, para_exists;
   int leading_slash;
-  
+
   sche_exists = host_exists = port_exists = path_exists = 0;
   frag_exists = quer_exists = para_exists = 0;
   sche1 = sche2 = host1 = host2 = port1 = port2 = NULL;
   path1 = path2 = frag1 = frag2 = quer1 = quer2 = para1 = para2 = NULL;
   leading_slash = 0;
-  
+
   temp2 = ptr;
   /* strip fragments "#" off the end */
   while (ptr < end) {
@@ -3124,7 +3118,7 @@ static void ink_web_decompose_url(const char *src_url,
   }
   if (sche_exists == 0)
     ptr = temp2;
-  
+
   /* find start of host */
   fail = false;
   temp2 = ptr;
@@ -3144,7 +3138,7 @@ static void ink_web_decompose_url(const char *src_url,
       ptr++;
     }
   }
-  
+
   /* find end of host */
   if (host_exists == 1) {
     while ((ptr < end) && (host2 == NULL)) {
@@ -3157,7 +3151,7 @@ static void ink_web_decompose_url(const char *src_url,
     }
     if (host2 == NULL)
       host2 = end;
-    
+
     if (host_exists == 1) {
       temp = host2-1;
       /* remove trailing dots from host */
@@ -3165,7 +3159,7 @@ static void ink_web_decompose_url(const char *src_url,
         temp--;
         host2--;
       }
-      
+
       /* find start & end of port */
       ptr2 = host1;
       temp = host2;
@@ -3182,7 +3176,7 @@ static void ink_web_decompose_url(const char *src_url,
   }
   if (host_exists == 0)
     ptr = temp2;
-  
+
   temp2 = ptr;
   /* strip query "?" off the end */
   while (ptr < end) {
@@ -3195,7 +3189,7 @@ static void ink_web_decompose_url(const char *src_url,
     ptr++;
   }
   ptr = temp2;
-  
+
   temp2 = ptr;
   /* strip parameters ";" off the end */
   while (ptr < end) {
@@ -3227,22 +3221,22 @@ static void ink_web_decompose_url(const char *src_url,
     path1 = end;
     path2 = end;
     path_exists = 0;
-  } 
-  
-  if (sche_exists != 1) 
-    *real_relative_url = 1; 
+  }
+
+  if (sche_exists != 1)
+    *real_relative_url = 1;
   else
     *real_relative_url = 0;
-  
+
   /* extract strings for scheme, host, port, path, etc */
-  
+
   if (sche != NULL) {
     if (sche_exists) {
       num = sche2-sche1;
       if (num > MAX_URL_LEN-1) num = MAX_URL_LEN-1;
       strncpy(sche,sche1,num+1);
       *(sche+num) = '\0';
-      
+
       /* make scheme lowercase */
       char * p = sche;
       while (*p) {
@@ -3253,14 +3247,14 @@ static void ink_web_decompose_url(const char *src_url,
       *sche = 0;
     }
   }
-  
+
   if (host != NULL) {
     if (host_exists) {
       num = host2-host1;
       if (num > MAX_URL_LEN-1) num = MAX_URL_LEN-1;
       strncpy(host,host1,num+1);
       *(host+num) = '\0';
-      
+
       /* make hostname lowercase */
       char * p = host;
       while (*p) {
@@ -3271,7 +3265,7 @@ static void ink_web_decompose_url(const char *src_url,
       *host = 0;
     }
   }
-  
+
   if (port != NULL) {
     if (port_exists) {
       num = port2-port1;
@@ -3282,7 +3276,7 @@ static void ink_web_decompose_url(const char *src_url,
       *port = 0;
     }
   }
-  
+
   if (path != NULL) {
     if (path_exists) {
       num = path2-path1;
@@ -3293,7 +3287,7 @@ static void ink_web_decompose_url(const char *src_url,
       *path = 0;
     }
   }
-  
+
   if (frag != NULL) {
     if (frag_exists) {
       num = frag2-frag1;
@@ -3304,7 +3298,7 @@ static void ink_web_decompose_url(const char *src_url,
       *frag = 0;
     }
   }
-  
+
   if (quer != NULL) {
     if (quer_exists) {
       num = quer2-quer1;
@@ -3315,7 +3309,7 @@ static void ink_web_decompose_url(const char *src_url,
       *quer = 0;
     }
   }
-  
+
   if (para != NULL) {
     if (para_exists) {
       num = para2-para1;
@@ -3333,18 +3327,17 @@ static void ink_web_decompose_url(const char *src_url,
   *real_frag_exists = frag_exists;
   *real_quer_exists = quer_exists;
   *real_para_exists = para_exists;
-  *real_leading_slash = leading_slash; 
+  *real_leading_slash = leading_slash;
 } /* End ink_web_decompose_url */
-
 
 #if 0 /* debugging */
 /*---------------------------------------------------------------------------*
-  
+
   void ink_web_dump_url_components(FILE *fp, InkWebURLComponents *c)
-  
+
   This routine writes a readable representation of the URL components
   pointed to by <c> on the file pointer <fp>.
-  
+
   *---------------------------------------------------------------------------*/
 
 static void ink_web_dump_url_components(FILE *fp, InkWebURLComponents *c)
@@ -3356,46 +3349,45 @@ static void ink_web_dump_url_components(FILE *fp, InkWebURLComponents *c)
   fprintf(fp,"quer:'%s', exists %d\n",c->quer,c->quer_exists);
   fprintf(fp,"frag:'%s', exists %d\n",c->frag,c->frag_exists);
   fprintf(fp,"para:'%s', exists %d\n",c->para,c->para_exists);
-  
+
   fprintf(fp,"rel_url:%d\n",c->rel_url);
   fprintf(fp,"leading_slash:%d\n",c->leading_slash);
-  
+
   fprintf(fp,"\n");
 } /* End ink_web_dump_url_components */
 
 #endif
 
 /*---------------------------------------------------------------------------*
-  
+
   int ink_web_canonicalize_url(...)
-  
+
   Inputs: base_url, emb_url, max_dest_url_len.
   Output: dest_url.
-  
+
   This function takes a base url and an embedded url, and produces an
   absolute url as specified in RFC 1808, "Relative Uniform Resource
   Locators".
-  
+
   A base url is often the url of a document and an embedded url is an
   incomplete reference to a secondary document, often in the same
   directory. Together they completely specify an absolute reference to
   the secondary document.
-  
-  For instance, 
+
+  For instance,
      base_url "http://inktomi.com/~mep"
      emb_url: "path1/path2/foo.html"
-  
+
   becomes
-  
+
      dest_url: "http://inktomi.com/~mep/path1/path2/foo.html"
-  
+
   This function also applies "ink_web_escapify()" to the dest_url.
-  
+
   You must supply the buffer dest_url and its size, max_dest_url_len.
-  
-  
+
   mep - 4/15/96
-  
+
   *---------------------------------------------------------------------------*/
 
 static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_url,
@@ -3407,37 +3399,37 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
   int leading_slash,use_base_sche,use_base_host,
     use_base_path,use_base_quer,use_base_para,use_base_frag;
   int host_last = 0;
-  
+
   doff = 0;
-  
+
   /* Initialize Component Values */
-  
+
   leading_slash = 0;
-  
+
   /* Decompose The Base And Embedded URLs */
-  
+
   ink_web_decompose_url_into_structure(base_url,&base);
   ink_web_decompose_url_into_structure(emb_url,&emb);
-  
+
   /* Print Out Components */
-  
+
   /* Select Which Components To Use From Base & Embedded URL */
-  
+
   dest_url[0] = '\0';
-  
+
   use_base_sche = 1;
   use_base_host = 1;
   use_base_path = 0;
   use_base_quer = 0;
   use_base_para = 0;
   use_base_frag = 0;
-  
-  if (!emb.sche_exists && !emb.path_exists && 
-      !emb.host_exists && !emb.quer_exists && 
+
+  if (!emb.sche_exists && !emb.path_exists &&
+      !emb.host_exists && !emb.quer_exists &&
       !emb.frag_exists && !emb.para_exists)
   {
     /* 2a: if the embedded URL is empty, take everything from the base */
-      
+
     use_base_sche = 1;
     use_base_host = 1;
     use_base_path = 1;
@@ -3459,10 +3451,10 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
   }
   else if (emb.sche_exists &&
            !(((strcasecmp(emb.sche,"http") == 0) && !emb.host_exists)))
-    
+
   {
     /* 2b: not good enough, because things like 'http:overview.html' */
-      
+
     use_base_sche = 0;
     use_base_host = 0;
     use_base_path = 0;
@@ -3473,9 +3465,9 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
   else
   {
     use_base_sche = 1;
-      
+
     /* step 3 - if emb_host non-empty, skip to 7 */
-      
+
     if (emb.host_exists)
     {
       use_base_host = 0;
@@ -3483,39 +3475,39 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
     else
     {
       use_base_host = 1;
-          
+
       /* step 4 - if emb_path preceeded by slash, skip to 7 */
-          
+
       if (emb.leading_slash != 1)
       {
         /* step 5 */
-              
+
         if (!emb.path_exists)
         {
           use_base_path = 1;
-                  
+
           if (emb.para_exists)
           {
             /* 5a - if emb_para non-empty, skip to 7 */
-                      
+
             use_base_para = 0;
           }
           else
           {
             /* otherwise use base_para */
-                      
+
             use_base_para = 1;
-                      
+
             if (emb.quer_exists)
             {
               /* 5b - if emb_quer non-empty, skip to 7 */
-                          
+
               use_base_quer = 0;
             }
             else
             {
               /* otherwise use base query */
-                          
+
               use_base_quer = 1;
             }
           }
@@ -3523,20 +3515,20 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
         else
         {
           use_base_path = 0;
-                  
+
           /* step 6 */
           /* create combined path */
           /* remove last segment of base_path */
-                  
+
           remove_last_seg(base.path, temp);
           remove_multiple_slash(temp, temp2);
-                  
+
           /* append emb_path */
-                  
+
           sprintf(temp2,"%s%s",temp2,emb.path);
 
           /* remove "." and ".." */
-                  
+
           ink_web_remove_dots(temp2,emb.path,
                               &leading_slash,MAX_URL_LEN);
           emb.path_exists = 1;
@@ -3545,9 +3537,9 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       } /* 4 */
     } /* 3 */
   }
-  
+
   /* step 7 - combine parts */
-  
+
   if (use_base_sche)
   {
     if (base.sche_exists)
@@ -3566,7 +3558,7 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       host_last = 0;
     }
   }
-  
+
   if (use_base_host)
   {
     if (base.host_exists)
@@ -3595,7 +3587,7 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       host_last = 1;
     }
   }
-  
+
   if (use_base_path)
   {
     if (base.path_exists)
@@ -3621,7 +3613,7 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       host_last = 0;
     }
   }
-  
+
   if (use_base_para)
   {
     if (base.para_exists)       {
@@ -3631,7 +3623,7 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
     }
   }
   else
-  { 
+  {
     if (emb.para_exists)
     {
       append_string(dest_url, ";", &doff, MAX_URL_LEN);
@@ -3639,7 +3631,7 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       host_last = 0;
     }
   }
-  
+
   if (use_base_quer)
   {
     if (base.quer_exists)
@@ -3658,7 +3650,7 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       host_last = 0;
     }
   }
-  
+
   if (use_base_frag)
   {
     if (base.frag_exists)
@@ -3667,7 +3659,7 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       append_string(dest_url, base.frag, &doff, MAX_URL_LEN);
       host_last = 0;
     }
-  } 
+  }
   else {
     if (emb.frag_exists)
     {
@@ -3676,19 +3668,19 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
       host_last = 0;
     }
   }
-  
+
   if (host_last) append_string(dest_url, "/", &doff, MAX_URL_LEN);
 }
 
 /*---------------------------------------------------------------------------*
-  
+
   int ink_web_decompose_url_into_structure(char *url, InkWebURLComponents *c)
-  
+
   This routine takes a URL and violently tears apart its molecular structure,
   placing the URL components in the InkWebURLComponents structure pointed to
   by <c>.  Flags in the structure indicate whether individual fields are
   valid or not.
-  
+
   *---------------------------------------------------------------------------*/
 
 static void ink_web_decompose_url_into_structure(const char *url, InkWebURLComponents *c)
@@ -3713,21 +3705,21 @@ static void ink_web_decompose_url_into_structure(const char *url, InkWebURLCompo
 } /* End ink_web_decompose_url_into_structure */
 
 /*---------------------------------------------------------------------------*
-  
+
   int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
                           int max_dest_len)
-  
+
   This routine takes a path and interprets "." and ".." segments, returning
   an appropriately parsed path. It is a warning to pass a path that resolves
   to a leading "..". Inputs are the src path and the length of the dest
-  buffer. Return values are a string written into the dest buffer and 
+  buffer. Return values are a string written into the dest buffer and
   the leadingslash flag, which indicates if the src (and the dest) have a
   leading slash, and are therefore not relative paths.
-  
+
   Basically, these sequences: "<a><path-segment>..<b>" and "<a>.<b>" both
   turn into "<a><b>" where <a> is beginning-or-string or a complete segment,
   and <b> is end-of-string or a complete segment.
-  
+
   e.g.
   path1/../path2  -> path2
   /path1/../path2 -> /path2
@@ -3737,12 +3729,12 @@ static void ink_web_decompose_url_into_structure(const char *url, InkWebURLCompo
   ./path1/path2   -> path1/path2
   ./path1         -> path1
   /./path1        -> /path1
-  
+
   It is also a warning to pass a path whose returned value needs to be
   truncated to fit into max_dest_len characters.
-  
+
   mep - 4/15/96
-  
+
   *---------------------------------------------------------------------------*/
 
 /* types of path segment */
@@ -3764,15 +3756,15 @@ static int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
   int scount, segstart, zapflag, doff, num;
   int temp, i;
   int error = 0;
-  
+
   /* offsets to each path segment */
   char **seg, *segstatic[STATIC_PATH_LEVELS];
-  
+
   /* type of each segment is a ".." */
   int *type, typestatic[STATIC_PATH_LEVELS];
-  
+
   *leadingslash = 0;
-  
+
   /* first quickly count the "/"s to get lower bound on # of path levels */
   ptr = src;
   end = src + strlen(src);
@@ -3781,7 +3773,7 @@ static int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
     if (*ptr++ == '/') scount++;
   }
   scount++; /* adding one to this makes it a lower bound for any case */
-  
+
   if (scount <= STATIC_PATH_LEVELS) {
     /* we can use the statically allocated ones */
     seg = segstatic;
@@ -3792,7 +3784,7 @@ static int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
     type = (int*)malloc(scount*sizeof(int));
     free_flag = 1;
   }
-  
+
   /* Determine starts of each path segment.
    * A segment is defined as:
    * "foo/" in the string "<a>foo/<b>", where:
@@ -3804,7 +3796,7 @@ static int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
    */
   ptr = src; scount = 0;
   /* a segstart starts with start-of-string or a '/' */
-  segstart = 1; 
+  segstart = 1;
   while (ptr < end) {
     if (*ptr == '/') {
       /* include leading '/' in first segment */
@@ -3821,7 +3813,7 @@ static int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
   }
   /* Now scount is an accurate count of the segments we have found, */
   /* not just that lower bound we quickly got before */
-  
+
   /* now figure out if segments are "..", ".", or normal */
   /* ZAP the "."s in place */
   for(i=0;i<scount;i++) {
@@ -3866,7 +3858,7 @@ static int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
       }
     }
   }
-  
+
   /* now write out the fixed path */
   doff = 0;
   *dest = 0;
@@ -3881,41 +3873,41 @@ static int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
       } else {
         num = (int)(seg[i+1]-seg[i]);
       }
-      
+
       /* truncate if nec. */
       if (doff+num > max_dest_len) {
         num = max_dest_len-doff;
       }
-      
+
       strncpy(dest+doff,seg[i],num+1);
       doff += num;
     } else if (type[i] == DOT) {
       /* if you get here, it indicates an algorithmic error in this routine */
-      panic("ink_web_remove_dots - single dot remaining in string"); 
+      panic("ink_web_remove_dots - single dot remaining in string");
     } else if (type[i] == DOTDOT) {
       /* if you get here, it indicates an algorithmic error in this routine */
-      panic("ink_web_remove_dots - double dot remaining in string"); 
+      panic("ink_web_remove_dots - double dot remaining in string");
     }
   }
-  
+
   if (free_flag) {
     free(seg);
     free(type);
   }
-  
+
   return(error);
 }
 
 /*---------------------------------------------------------------------------*
-  
+
   int ink_web_unescapify_string(...)
-  
+
   Takes a string that has has special characters turned to %AB format
   and converts them back to single special characters. See
   ink_web_escapify_string() above.
-  
+
   mep - 4/15/96
-  
+
   *---------------------------------------------------------------------------*/
 
 static int ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
@@ -3929,7 +3921,7 @@ static int ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_l
   int num = 0;
   int dig1 = 0;
   int dig2 = 0;
-  
+
   while ((*src != 0) && !quit) {
     if (*src == '%') {
       /* found start of an escape sequence, unescape it */
@@ -4005,30 +3997,30 @@ static int ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_l
     *dest = 0;
   else
     *(dest_in+max_dest_len) = 0;
-  
+
   return(quit);
 }
 
 /*---------------------------------------------------------------------------*
-  
+
   int ink_web_escapify_string(...)
-  
+
   This functions takes an input src_in and converts all special
-  characters to %<hexdigit><hexdigit> form. 
-  
+  characters to %<hexdigit><hexdigit> form.
+
   Special characters are everything that is not:
   #$-_.+!*'(),;/?:@=&   or
   <alpha-char>  or
   <digit-char>
-  
+
   e.g. "abcd fghi[klmn^" -> "abcd%20fghi%5Bklmn%5E"
-  
+
   You must supply the buffer dest_in, with a size of max_dest_len. If
   the unescapified string grows larger than this, it will be truncated
   and you will get a warning.
-  
+
   mep - 4/15/96
-  
+
   *---------------------------------------------------------------------------*/
 
 static int ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len) {
@@ -4054,7 +4046,7 @@ static int ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len
       d1 = *src/16;
       d2 = *src%16;
       if (dcount+3 < max_dest_len) {
-        *dest++ = '%'; 
+        *dest++ = '%';
         *dest++ = hexdigits[d1];
         *dest++ = hexdigits[d2];
         /*      fprintf(stderr,"%d %d  %c %c\n",d1,d2,hexdigits[d1],hexdigits[d2]);*/
@@ -4071,7 +4063,6 @@ static int ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len
     *dest = 0;
   else
     *(dest_in+max_dest_len-1) = 0;
-  
+
   return(quit);
 }
-
