@@ -1809,80 +1809,79 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
-AC_CONFIG_FILES([lib/ts/ink_config.h proxy/api/ts/ts.h])
-AC_CONFIG_FILES([tools/tsxs])
-AC_CONFIG_FILES([doc/Doxyfile])
-AC_CONFIG_FILES([doc/Makefile])
-AC_CONFIG_FILES([rc/Makefile])
-AC_CONFIG_FILES([rc/trafficserver])
-AC_CONFIG_FILES([rc/trafficserver.xml])
-AC_CONFIG_FILES([rc/trafficserver.conf])
-AC_CONFIG_FILES([rc/trafficserver.service])
-AC_CONFIG_FILES([iocore/aio/Makefile])
-AC_CONFIG_FILES([iocore/cache/Makefile])
-AC_CONFIG_FILES([iocore/cluster/Makefile])
-AC_CONFIG_FILES([iocore/dns/Makefile])
-AC_CONFIG_FILES([iocore/eventsystem/Makefile])
-AC_CONFIG_FILES([iocore/hostdb/Makefile])
-AC_CONFIG_FILES([iocore/Makefile])
-AC_CONFIG_FILES([iocore/net/Makefile])
-AC_CONFIG_FILES([iocore/utils/Makefile])
-AC_CONFIG_FILES([lib/Makefile])
-AC_CONFIG_FILES([lib/ts/Makefile])
-AC_CONFIG_FILES([lib/records/Makefile])
-AC_CONFIG_FILES([lib/cpp11api/Makefile])
-AC_CONFIG_FILES([lib/tsconfig/Makefile])
-AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([proxy/config/body_factory/default/Makefile])
-AC_CONFIG_FILES([proxy/config/body_factory/Makefile])
-AC_CONFIG_FILES([proxy/config/records.config.default proxy/config/storage.config.default])
-AC_CONFIG_FILES([proxy/config/Makefile])
-AC_CONFIG_FILES([proxy/congest/Makefile])
-AC_CONFIG_FILES([proxy/hdrs/Makefile])
-AC_CONFIG_FILES([proxy/http/Makefile])
-AC_CONFIG_FILES([proxy/http/remap/Makefile])
-AC_CONFIG_FILES([proxy/logging/Makefile])
-AC_CONFIG_FILES([proxy/Makefile])
-AC_CONFIG_FILES([mgmt/api/Makefile])
-AC_CONFIG_FILES([mgmt/api/remote/Makefile])
-AC_CONFIG_FILES([mgmt/api/include/Makefile])
-AC_CONFIG_FILES([mgmt/cli/Makefile])
-AC_CONFIG_FILES([mgmt/cluster/Makefile])
-AC_CONFIG_FILES([mgmt/Makefile])
-AC_CONFIG_FILES([mgmt/preparse/Makefile])
-AC_CONFIG_FILES([mgmt/stats/Makefile])
-AC_CONFIG_FILES([mgmt/tools/Makefile])
-AC_CONFIG_FILES([mgmt/utils/Makefile])
-AC_CONFIG_FILES([mgmt/web2/Makefile])
-AC_CONFIG_FILES([lib/wccp/Makefile])
-AC_CONFIG_FILES([proxy/api/ts/Makefile])
-# Traffic Cop
-AC_CONFIG_FILES([cop/Makefile])
-# production plugins
-AC_CONFIG_FILES([plugins/Makefile])
-AC_CONFIG_FILES([plugins/conf_remap/Makefile])
-AC_CONFIG_FILES([plugins/regex_remap/Makefile])
-AC_CONFIG_FILES([plugins/header_filter/Makefile])
-AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
-AC_CONFIG_FILES([plugins/cacheurl/Makefile])
-AC_CONFIG_FILES([plugins/header_rewrite/Makefile])
-# experimental plugins
-AC_CONFIG_FILES([plugins/experimental/Makefile])
-AC_CONFIG_FILES([plugins/experimental/esi/Makefile])
-AC_CONFIG_FILES([plugins/experimental/lua/Makefile])
-AC_CONFIG_FILES([plugins/experimental/rfc5861/Makefile])
-AC_CONFIG_FILES([plugins/experimental/tcp_info/Makefile])
-AC_CONFIG_FILES([plugins/experimental/custom_redirect/Makefile])
-AC_CONFIG_FILES([plugins/experimental/metalink/Makefile])
-AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
-AC_CONFIG_FILES([plugins/experimental/spdy/Makefile])
-AC_CONFIG_FILES([plugins/experimental/channel_stats/Makefile])
-AC_CONFIG_FILES([plugins/experimental/authproxy/Makefile])
-AC_CONFIG_FILES([plugins/experimental/geoip_acl/Makefile])
-# various tools
-AC_CONFIG_FILES([tools/Makefile])
-# example plugins
-AC_CONFIG_FILES([example/Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  cop/Makefile
+  doc/Doxyfile
+  doc/Makefile
+  example/Makefile
+  iocore/Makefile
+  iocore/aio/Makefile
+  iocore/cache/Makefile
+  iocore/cluster/Makefile
+  iocore/dns/Makefile
+  iocore/eventsystem/Makefile
+  iocore/hostdb/Makefile
+  iocore/net/Makefile
+  iocore/utils/Makefile
+  lib/Makefile
+  lib/cpp11api/Makefile
+  lib/records/Makefile
+  lib/ts/Makefile
+  lib/ts/ink_config.h
+  lib/tsconfig/Makefile
+  lib/wccp/Makefile
+  mgmt/Makefile
+  mgmt/api/Makefile
+  mgmt/api/include/Makefile
+  mgmt/api/remote/Makefile
+  mgmt/cli/Makefile
+  mgmt/cluster/Makefile
+  mgmt/preparse/Makefile
+  mgmt/stats/Makefile
+  mgmt/tools/Makefile
+  mgmt/utils/Makefile
+  mgmt/web2/Makefile
+  plugins/Makefile
+  plugins/cacheurl/Makefile
+  plugins/conf_remap/Makefile
+  plugins/experimental/Makefile
+  plugins/experimental/authproxy/Makefile
+  plugins/experimental/channel_stats/Makefile
+  plugins/experimental/custom_redirect/Makefile
+  plugins/experimental/esi/Makefile
+  plugins/experimental/geoip_acl/Makefile
+  plugins/experimental/gzip/Makefile
+  plugins/experimental/lua/Makefile
+  plugins/experimental/metalink/Makefile
+  plugins/experimental/rfc5861/Makefile
+  plugins/experimental/spdy/Makefile
+  plugins/experimental/tcp_info/Makefile
+  plugins/header_filter/Makefile
+  plugins/header_rewrite/Makefile
+  plugins/regex_remap/Makefile
+  plugins/stats_over_http/Makefile
+  proxy/Makefile
+  proxy/api/ts/Makefile
+  proxy/api/ts/ts.h
+  proxy/config/Makefile
+  proxy/config/body_factory/Makefile
+  proxy/config/body_factory/default/Makefile
+  proxy/config/records.config.default
+  proxy/config/storage.config.default
+  proxy/congest/Makefile
+  proxy/hdrs/Makefile
+  proxy/http/Makefile
+  proxy/http/remap/Makefile
+  proxy/logging/Makefile
+  rc/Makefile
+  rc/trafficserver
+  rc/trafficserver.conf
+  rc/trafficserver.service
+  rc/trafficserver.xml
+  tools/Makefile
+  tools/tsxs
+])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
