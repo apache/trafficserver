@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1971] Switch jtest over to standard argument parsing.
+
   *) [TS-1786] Only enable -Werror for development builds.
 
   *) [TS-1960] Decouple stacksize config from core, this fixes regressions.
