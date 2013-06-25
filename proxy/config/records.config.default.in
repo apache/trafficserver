@@ -604,7 +604,7 @@ CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 
   # Log the source code location of diagnostic messages.
-CONFIG proxy.config.diags.show_location 0
+CONFIG proxy.config.diags.show_location INT 0
 ##############################################################################
 #
 # Configuration for Reclaimable InkFreeList memory pool
