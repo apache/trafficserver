@@ -710,8 +710,9 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     // all template files have name of the form <type>#<subtype> //
     ///////////////////////////////////////////////////////////////
 
-    if (strchr(entry_buffer->d_name, '#') == NULL)
+    if ((strchr(entry_buffer->d_name, '#') == NULL) && (strcmp(entry_buffer->d_name, "default") != 0))
       continue;
+
     snprintf(path, sizeof(path), "%s/%s", tmpl_dir, entry_buffer->d_name);
     status = stat(path, &stat_buf);
     if (status != 0)

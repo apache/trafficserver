@@ -7869,6 +7869,10 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   char *url_string;
   char body_language[256], body_type[256];
 
+  if (NULL == error_body_type) {
+    error_body_type = "default";
+  }
+
   ////////////////////////////////////////////////////////////
   // get the url --- remember this is dynamically allocated //
   ////////////////////////////////////////////////////////////

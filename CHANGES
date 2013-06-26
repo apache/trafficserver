@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1978] Segfault when trying to set an error from (remap) plugin. This
+   also fixes a bug where the "default" template was not loaded upon startup.
+
   *) [TS-1977] Build issues on OSX / clang related to stacksize changes.
 
   *) [TS-1972] TSNetAcceptNamedProtocol does not receive connections.
