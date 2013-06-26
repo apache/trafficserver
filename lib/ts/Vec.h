@@ -159,8 +159,8 @@ class UnionFind : public Vec<int> {
   void unify(int n, int m);
 };
 
-extern uintptr_t prime2[];
-extern uintptr_t open_hash_primes[256];
+extern const uintptr_t prime2[];
+extern const uintptr_t open_hash_primes[256];
 
 /* IMPLEMENTATION */
 
