@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1977] Build issues on OSX / clang related to stacksize changes.
+
   *) [TS-1972] TSNetAcceptNamedProtocol does not receive connections.
 
   *) [TS-1970] Using ssl_ca_name= in ssl_multicert.config fails.

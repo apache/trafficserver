@@ -440,12 +440,12 @@ HostDBCache::start(int flags)
 
 // Start up the Host Database processor.
 // Load configuration, register configuration and statistics and
-// open the cache.
+// open the cache. This doesn't create any threads, so those
+// parameters are ignored.
 //
 int
-HostDBProcessor::start(int)
+HostDBProcessor::start(int, size_t)
 {
-  //bool found = false;
   hostDB.alloc_mutexes();
 
   if (hostDB.start(0) < 0)

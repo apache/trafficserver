@@ -98,7 +98,7 @@ public:
     @param stacksize The thread stack size to use for this processor.
 
   */
-  virtual int start(int number_of_threads, size_t stacksize)
+  virtual int start(int number_of_threads, size_t stacksize=DEFAULT_STACKSIZE)
   {
     (void) number_of_threads;
     (void) stacksize;

@@ -65,7 +65,7 @@ typedef HTTPInfo CacheHTTPInfo;
 
 struct CacheProcessor:public Processor
 {
-  virtual int start(int n_cache_threads = 0 /* cache uses event threads */ );
+  virtual int start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
   virtual int start_internal(int flags = 0);
   void stop();
 

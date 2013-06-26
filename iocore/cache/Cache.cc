@@ -585,7 +585,7 @@ Vol::close_read(CacheVC *cont)
 // Cache Processor
 
 int
-CacheProcessor::start(int)
+CacheProcessor::start(int, size_t)
 {
   return start_internal(0);
 }
@@ -660,13 +660,11 @@ CacheProcessor::start_internal(int flags)
         if (sector_size < cache_config_force_sector_size)
           sector_size = cache_config_force_sector_size;
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
-          Warning("bad hardware sector size %d, resetting to %d", sector_size,
-              STORE_BLOCK_SIZE);
+          Warning("bad hardware sector size %d, resetting to %d", sector_size, STORE_BLOCK_SIZE);
           sector_size = STORE_BLOCK_SIZE;
         }
-        off_t
-            skip =
-                ROUND_TO_STORE_BLOCK((sd->offset * STORE_BLOCK_SIZE < START_POS ? START_POS + sd->alignment : sd->offset * STORE_BLOCK_SIZE));
+        off_t skip = ROUND_TO_STORE_BLOCK((sd->offset * STORE_BLOCK_SIZE < START_POS ? START_POS + sd->alignment :
+                                           sd->offset * STORE_BLOCK_SIZE));
         blocks = blocks - (skip >> STORE_BLOCK_SHIFT);
         disk->path = ats_strdup(path);
         disk->hw_sector_size = sector_size;

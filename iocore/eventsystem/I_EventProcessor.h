@@ -246,7 +246,7 @@ public:
     @return 0 if successful, and a negative value otherwise.
 
   */
-  int start(int n_net_threads, size_t stacksize);
+  int start(int n_net_threads, size_t stacksize=DEFAULT_STACKSIZE);
 
   /**
     Stop the EventProcessor. Attempts to stop the EventProcessor and
