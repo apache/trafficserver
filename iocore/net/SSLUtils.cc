@@ -554,6 +554,10 @@ ssl_store_ssl_context(
     return;
   }
 
+#if TS_USE_TLS_NPN
+  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
+#endif /* TS_USE_TLS_NPN */
+
   certpath = Layout::relative_to(params->serverCertPathOnly, cert);
 
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.

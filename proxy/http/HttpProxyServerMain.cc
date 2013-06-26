@@ -170,6 +170,11 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, accept);
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, accept);
 
+#ifndef TS_NO_API
+    ink_scoped_mutex lock(ssl_plugin_mutex);
+    ssl_plugin_acceptors.push(ssl);
+#endif
+
     return sslNetProcessor.main_accept(ssl, port.m_fd, net) != NULL;
   } else {
     return netProcessor.main_accept(NEW(new HttpAccept(http)), port.m_fd, net) != NULL;
