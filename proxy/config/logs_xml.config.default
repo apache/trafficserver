@@ -157,8 +157,7 @@ Example2: do not log requests for domain unwanted.com
       binary: write log in a binary format that can later be read using 
       the logcat utility.
       ascii_pipe: do not write log to a regular file, but to a named UNIX
-      pipe (this option is not currently available in platforms other than
-      Solaris).
+      pipe (this option is only available on Linux and Solaris).
 
   <Filters = "list of valid filter names"/>
       A comma separated list of valid filter names to apply to this
