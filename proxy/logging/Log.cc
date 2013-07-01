@@ -502,7 +502,8 @@ Log::init_fields()
   field = NEW(new LogField("client_finish_status_code", "cfsc",
                            LogField::sINT,
                            &LogAccess::marshal_client_finish_status_code,
-                           &LogAccess::unmarshal_finish_status, (Ptr<LogFieldAliasMap>) finish_status_map));
+                           &LogAccess::unmarshal_finish_status,
+                           (Ptr<LogFieldAliasMap>) finish_status_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cfsc", field);
 
@@ -559,7 +560,8 @@ Log::init_fields()
   field = NEW(new LogField("proxy_finish_status_code", "pfsc",
                            LogField::sINT,
                            &LogAccess::marshal_proxy_finish_status_code,
-                           &LogAccess::unmarshal_finish_status, (Ptr<LogFieldAliasMap>) finish_status_map));
+                           &LogAccess::unmarshal_finish_status,
+                           (Ptr<LogFieldAliasMap>) finish_status_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
@@ -618,7 +620,8 @@ Log::init_fields()
   field = NEW(new LogField("cache_result_code", "crc",
                            LogField::sINT,
                            &LogAccess::marshal_cache_result_code,
-                           &LogAccess::unmarshal_cache_code, (Ptr<LogFieldAliasMap>) cache_code_map));
+                           &LogAccess::unmarshal_cache_code,
+                           (Ptr<LogFieldAliasMap>) cache_code_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "crc", field);
 
@@ -661,7 +664,7 @@ Log::init_fields()
   field = NEW(new LogField("proxy_req_server_ip", "pqsi",
                            LogField::IP,
                            &LogAccess::marshal_proxy_req_server_ip,
-      &LogAccess::unmarshal_ip_to_str));
+                           &LogAccess::unmarshal_ip_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsi", field);
 
@@ -707,7 +710,8 @@ Log::init_fields()
   field = NEW(new LogField("proxy_hierarchy_route", "phr",
                            LogField::sINT,
                            &LogAccess::marshal_proxy_hierarchy_route,
-                           &LogAccess::unmarshal_hierarchy, (Ptr<LogFieldAliasMap>) hierarchy_map));
+                           &LogAccess::unmarshal_hierarchy,
+                           (Ptr<LogFieldAliasMap>) hierarchy_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "phr", field);
 
@@ -739,67 +743,78 @@ Log::init_fields()
   field = NEW(new LogField("server_host_ip", "shi",
                            LogField::IP,
                            &LogAccess::marshal_server_host_ip,
-      &LogAccess::unmarshal_ip_to_str));
+                           &LogAccess::unmarshal_ip_to_str));
 
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "shi", field);
 
   field = NEW(new LogField("server_host_name", "shn",
-                           LogField::STRING, &LogAccess::marshal_server_host_name, &LogAccess::unmarshal_str));
+                           LogField::STRING,
+                           &LogAccess::marshal_server_host_name,
+                           &LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "shn", field);
 
   field = NEW(new LogField("server_resp_status_code", "sssc",
                            LogField::sINT,
-                           &LogAccess::marshal_server_resp_status_code, &LogAccess::unmarshal_http_status));
+                           &LogAccess::marshal_server_resp_status_code,
+                           &LogAccess::unmarshal_http_status));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sssc", field);
 
   field = NEW(new LogField("server_resp_content_len", "sscl",
                            LogField::sINT,
-                           &LogAccess::marshal_server_resp_content_len, &LogAccess::unmarshal_int_to_str));
+                           &LogAccess::marshal_server_resp_content_len,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sscl", field);
 
   field = NEW(new LogField("server_resp_header_len", "sshl",
                            LogField::sINT,
-                           &LogAccess::marshal_server_resp_header_len, &LogAccess::unmarshal_int_to_str));
+                           &LogAccess::marshal_server_resp_header_len,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sshl", field);
 
   field = NEW(new LogField("server_resp_http_version", "sshv",
                            LogField::dINT,
-                           &LogAccess::marshal_server_resp_http_version, &LogAccess::unmarshal_http_version));
+                           &LogAccess::marshal_server_resp_http_version,
+                           &LogAccess::unmarshal_http_version));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sshv", field);
 
   field = NEW(new LogField("cached_resp_status_code", "csssc",
                            LogField::sINT,
-                           &LogAccess::marshal_cache_resp_status_code, &LogAccess::unmarshal_http_status));
+                           &LogAccess::marshal_cache_resp_status_code,
+                           &LogAccess::unmarshal_http_status));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csssc", field);
 
   field = NEW(new LogField("cached_resp_content_len", "csscl",
                            LogField::sINT,
-                           &LogAccess::marshal_cache_resp_content_len, &LogAccess::unmarshal_int_to_str));
+                           &LogAccess::marshal_cache_resp_content_len,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csscl", field);
 
   field = NEW(new LogField("cached_resp_header_len", "csshl",
                            LogField::sINT,
-                           &LogAccess::marshal_cache_resp_header_len, &LogAccess::unmarshal_int_to_str));
+                           &LogAccess::marshal_cache_resp_header_len,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csshl", field);
 
   field = NEW(new LogField("cached_resp_http_version", "csshv",
                            LogField::dINT,
-                           &LogAccess::marshal_cache_resp_http_version, &LogAccess::unmarshal_http_version));
+                           &LogAccess::marshal_cache_resp_http_version,
+                           &LogAccess::unmarshal_http_version));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csshv", field);
 
   field = NEW(new LogField("client_retry_after_time", "crat",
                            LogField::sINT,
-                           &LogAccess::marshal_client_retry_after_time, &LogAccess::unmarshal_int_to_str));
+                           &LogAccess::marshal_client_retry_after_time,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "crat", field);
 
@@ -814,41 +829,53 @@ Log::init_fields()
   field = NEW(new LogField("cache_write_result", "cwr",
                            LogField::sINT,
                            &LogAccess::marshal_cache_write_code,
-                           &LogAccess::unmarshal_cache_write_code, (Ptr<LogFieldAliasMap>) cache_write_code_map));
+                           &LogAccess::unmarshal_cache_write_code,
+                           (Ptr<LogFieldAliasMap>) cache_write_code_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cwr", field);
 
   field = NEW(new LogField("cache_write_transform_result", "cwtr",
                            LogField::sINT,
                            &LogAccess::marshal_cache_write_transform_code,
-                           &LogAccess::unmarshal_cache_write_code, (Ptr<LogFieldAliasMap>) cache_write_code_map));
+                           &LogAccess::unmarshal_cache_write_code,
+                           (Ptr<LogFieldAliasMap>) cache_write_code_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cwtr", field);
 
   // other fields
 
   field = NEW(new LogField("transfer_time_ms", "ttms",
-                           LogField::sINT, &LogAccess::marshal_transfer_time_ms, &LogAccess::unmarshal_int_to_str));
+                           LogField::sINT,
+                           &LogAccess::marshal_transfer_time_ms,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ttms", field);
 
   field = NEW(new LogField("transfer_time_ms_hex", "ttmh",
-                           LogField::sINT, &LogAccess::marshal_transfer_time_ms, &LogAccess::unmarshal_int_to_str_hex));
+                           LogField::sINT,
+                           &LogAccess::marshal_transfer_time_ms,
+                           &LogAccess::unmarshal_int_to_str_hex));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ttmh", field);
 
   field = NEW(new LogField("transfer_time_ms_fractional", "ttmsf",
-                           LogField::sINT, &LogAccess::marshal_transfer_time_ms, &LogAccess::unmarshal_ttmsf));
+                           LogField::sINT,
+                           &LogAccess::marshal_transfer_time_ms,
+                           &LogAccess::unmarshal_ttmsf));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ttmsf", field);
 
   field = NEW(new LogField("transfer_time_sec", "tts",
-                           LogField::sINT, &LogAccess::marshal_transfer_time_s, &LogAccess::unmarshal_int_to_str));
+                           LogField::sINT,
+                           &LogAccess::marshal_transfer_time_s,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "tts", field);
 
   field = NEW(new LogField("file_size", "fsiz",
-                           LogField::sINT, &LogAccess::marshal_file_size, &LogAccess::unmarshal_int_to_str));
+                           LogField::sINT,
+                           &LogAccess::marshal_file_size,
+                           &LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
 
@@ -859,7 +886,8 @@ Log::init_fields()
   field = NEW(new LogField("log_entry_type", "etype",
                            LogField::sINT,
                            &LogAccess::marshal_entry_type,
-                           &LogAccess::unmarshal_entry_type, (Ptr<LogFieldAliasMap>) entry_type_map));
+                           &LogAccess::unmarshal_entry_type,
+                           (Ptr<LogFieldAliasMap>) entry_type_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "etype", field);
 
@@ -906,8 +934,7 @@ Log::init(int flags)
   //
   if (config_flags & LOGCAT) {
     logging_mode = LOG_NOTHING;
-  }
-  else {
+  } else {
     log_rsb = RecAllocateRawStatBlock((int) log_stat_count);
     LogConfig::register_stat_callbacks();
 
@@ -916,15 +943,13 @@ Log::init(int flags)
 
     if (config_flags & STANDALONE_COLLATOR) {
       logging_mode = LOG_TRANSACTIONS_ONLY;
-    }
-    else {
+    } else {
       int val = (int) LOG_ConfigReadInteger("proxy.config.log.logging_enabled");
       if (val < LOG_NOTHING || val > FULL_LOGGING) {
         logging_mode = FULL_LOGGING;
         Warning("proxy.config.log.logging_enabled has an invalid "
           "value, setting it to %d", logging_mode);
-      }
-      else {
+      } else {
         logging_mode = (LoggingMode) val;
       }
     }
@@ -934,12 +959,8 @@ Log::init(int flags)
   // be able to handle a logging mode change
   //
   if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-
-    LOG_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled",
-        &Log::handle_logging_mode_change, NULL);
-
-    LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode",
-        &Log::handle_logging_mode_change, NULL);
+    LOG_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, NULL);
+    LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode", &Log::handle_logging_mode_change, NULL);
 
     // we must create the flush thread since it takes care of the
     // periodic events (should this behavior be reversed ?)
@@ -959,8 +980,7 @@ Log::init(int flags)
 
   if (config_flags & LOGCAT) {
     init_fields();
-  }
-  else {
+  } else {
     Debug("log-config", "Log::init(): logging_mode = %d "
         "init status = %d", logging_mode, init_status);
     init_when_enabled();
@@ -990,14 +1010,9 @@ Log::init_when_enabled()
     // setup global scrap object
     //
     global_scrap_format = NEW(new LogFormat(TEXT_LOG));
-    global_scrap_object =
-      NEW(new LogObject(global_scrap_format,
-                        Log::config->logfile_dir,
-                        "scrapfile.log",
-                        BINARY_LOG, NULL,
-                        Log::config->rolling_enabled,
-                        Log::config->rolling_interval_sec,
-                        Log::config->rolling_offset_hr, Log::config->rolling_size_mb));
+    global_scrap_object = NEW(new LogObject(global_scrap_format, Log::config->logfile_dir, "scrapfile.log", BINARY_LOG,
+                                            NULL, Log::config->rolling_enabled, Log::config->rolling_interval_sec,
+                                            Log::config->rolling_offset_hr, Log::config->rolling_size_mb));
 
     // create the flush thread and the collation thread
     //
@@ -1262,7 +1277,6 @@ Log::collate_thread_main(void *args)
     }
 
     while (true) {
-
       if (!Log::config->am_collation_host()) {
         break;
       }
@@ -1343,12 +1357,10 @@ Log::match_logobject(LogBufferHeader * header)
   if (!obj) {
     // object does not exist yet, create it
     //
-    LogFormat *fmt = NEW(new LogFormat("__collation_format__",
-                                       header->fmt_fieldlist(),
-                                       header->fmt_printf()));
+    LogFormat *fmt = NEW(new LogFormat("__collation_format__", header->fmt_fieldlist(), header->fmt_printf()));
+
     if (fmt->valid()) {
-      LogFileFormat file_format =
-        header->log_object_flags & LogObject::BINARY ? BINARY_LOG :
+      LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ? BINARY_LOG :
         (header->log_object_flags & LogObject::WRITES_TO_PIPE ? ASCII_PIPE : ASCII_LOG);
 
       obj = NEW(new LogObject(fmt, Log::config->logfile_dir,
