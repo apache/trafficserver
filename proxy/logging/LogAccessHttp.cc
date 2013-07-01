@@ -652,12 +652,7 @@ LogAccessHttp::marshal_proxy_req_server_name(char *buf)
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
 {
-  return marshal_ip(
-    buf,
-    m_http_sm->t_state.current.server != NULL
-      ? &m_http_sm->t_state.current.server->addr.sa
-      : 0
-  );
+  return marshal_ip(buf, m_http_sm->t_state.current.server != NULL ? &m_http_sm->t_state.current.server->addr.sa : 0);
 }
 
 /*-------------------------------------------------------------------------
