@@ -56,3 +56,11 @@ Add the plugin to your
 Start traffic server. Any rewritten URLs will be written to
 ``cacheurl.log`` in the log directory by default.
 
+More docs
+=============
+
+There are some docs on cacheurl in Chinese, please find them in the following:
+
+```http://people.apache.org/~zym/trafficserver/cacheurl.html`` <http://people.apache.org/~zym/trafficserver/cacheurl.html>`_
+
+```https://blog.zymlinux.net/index.php/archives/195`` <https://blog.zymlinux.net/index.php/archives/195>`_
