@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1994] Increase default RAM cache size by a magnitude.
+
   *) [TS-1978] Segfault when trying to set an error from (remap) plugin. This
    also fixes a bug where the "default" template was not loaded upon startup.
 
