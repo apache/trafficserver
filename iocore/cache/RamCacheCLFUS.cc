@@ -645,7 +645,6 @@ int RamCacheCLFUSCompressor::mainEvent(int event, Event *e) {
 
 RamCache *new_RamCacheCLFUS() {
   RamCacheCLFUS *r = new RamCacheCLFUS;
-  eventProcessor.schedule_every(new RamCacheCLFUSCompressor(r), HRTIME_SECOND,
-    ET_TASK);
+  eventProcessor.schedule_every(new RamCacheCLFUSCompressor(r), HRTIME_SECOND, ET_TASK);
   return r;
 }

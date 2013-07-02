@@ -40,9 +40,11 @@
 #endif
 
 // Compilation Options
-
 #define USELESS_REENABLES       // allow them for now
 // #define VERIFY_JTEST_DATA
+
+static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk.
+
 
 #define DOCACHE_CLEAR_DYN_STAT(x) \
 do { \
@@ -937,9 +939,11 @@ CacheProcessor::cacheInitialized()
   }
 
   if (caches_ready) {
-    Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d",
-          (unsigned int) caches_ready, gnvol);
+    Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int) caches_ready,
+          gnvol);
+
     int64_t ram_cache_bytes = 0;
+
     if (gnvol) {
       // new ram_caches, with algorithm from the config
       for (i = 0; i < gnvol; i++) {
@@ -958,7 +962,7 @@ CacheProcessor::cacheInitialized()
         Debug("cache_init", "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
         for (i = 0; i < gnvol; i++) {
           vol = gvol[i];
-          gvol[i]->ram_cache->init(vol_dirlen(vol), vol);
+          gvol[i]->ram_cache->init(vol_dirlen(vol) * DEFAULT_RAM_CACHE_MULTIPLIER, vol);
 #if TS_USE_INTERIM_CACHE == 1
           gvol[i]->history.init(1<<20, 2097143);
 #endif
