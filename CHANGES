@@ -2,6 +2,8 @@
   Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1958] Web UI can crash doing a regex lookup.
+
   *) [TS-1994] Increase default RAM cache size by a magnitude.
 
   *) [TS-1978] Segfault when trying to set an error from (remap) plugin. This
