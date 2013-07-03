@@ -26,11 +26,6 @@
   SocketManager.cc
  ****************************************************************************/
 #include "libts.h"
-
-#if !defined(linux)
-#include <sys/filio.h>
-#endif
-
 #include "P_EventSystem.h"
 
 SocketManager socketManager;
