@@ -175,26 +175,18 @@ const Version version = {
 };
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"lock_memory", 'l', "Lock process in memory (must be root)",
-   "I", &lock_process, "PROXY_LOCK_PROCESS", NULL},
-  {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads,
-   "PROXY_NET_THREADS", NULL},
-  {"cluster_threads", 'Z', "Number of Cluster Threads", "I",
-   &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
-  {"udp_threads", 'U', "Number of UDP Threads", "I",
-   &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
-  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads,
-   "PROXY_ACCEPT_THREAD", NULL},
-  {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done,
-   "PROXY_ACCEPT_TILL_DONE", NULL},
-  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*",
-   &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", NULL},
-  {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number,
-   "PROXY_CLUSTER_PORT", NULL},
-  {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level,
-   "PROXY_DPRINTF_LEVEL", NULL},
-  {"version", 'V', "Print Version String", "T", &version_flag,
-   NULL, NULL},
+  {"lock_memory", 'l', "Lock process in memory (must be root)", "I", &lock_process, "PROXY_LOCK_PROCESS", NULL},
+  {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", NULL},
+  {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
+  {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
+  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads, "PROXY_ACCEPT_THREAD", NULL},
+  {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done, "PROXY_ACCEPT_TILL_DONE", NULL},
+  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor,
+   "PROXY_HTTP_ACCEPT_PORT", NULL},
+  {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number, "PROXY_CLUSTER_PORT", NULL},
+  {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", NULL},
+  {"version", 'V', "Print Version String", "T", &version_flag, NULL, NULL},
+
 #if TS_HAS_TESTS
   {"regression", 'R',
 #ifdef DEBUG
@@ -204,6 +196,7 @@ static const ArgumentDescription argument_descriptions[] = {
 #endif
    "I", &regression_level, "PROXY_REGRESSION", NULL},
   {"regression_test", 'r',
+
 #ifdef DEBUG
    "Run Specific Regression Test",
 #else
@@ -211,36 +204,25 @@ static const ArgumentDescription argument_descriptions[] = {
 #endif
    "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
 #endif //TS_HAS_TESTS
+
 #if TS_USE_DIAGS
-  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
-   "PROXY_DEBUG_TAGS", NULL},
-  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags,
-   "PROXY_BEHAVIOR_TAGS", NULL},
-#endif
-  {"interval", 'i', "Statistics Interval", "I", &show_statistics,
-   "PROXY_STATS_INTERVAL", NULL},
-  {"remote_management", 'M', "Remote Management", "T",
-   &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
-  {"management_dir", 'd', "Management Directory", "S255",
-   &management_directory, "PROXY_MANAGEMENT_DIRECTORY", NULL},
-  {"command", 'C', "Maintenance Command to Execute", "S511",
-   &command_string, "PROXY_COMMAND_STRING", NULL},
-//  {"clear_authdb", 'j', "Clear AuthDB on Startup", "F",
- //  &auto_clear_authdb_flag, "PROXY_CLEAR_AUTHDB", NULL},
-  {"clear_hostdb", 'k', "Clear HostDB on Startup", "F",
-   &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
-  {"clear_cache", 'K', "Clear Cache on Startup", "F",
-   &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
-  {"vingid", 'v', "Vingid Flag", "S255", vingid_flag, "PROXY_VINGID", NULL},
-#if defined(linux)
-  {"read_core", 'c', "Read Core file", "S255",
-   &core_file, NULL, NULL},
+  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags, "PROXY_DEBUG_TAGS", NULL},
+  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, "PROXY_BEHAVIOR_TAGS", NULL},
 #endif
 
-  {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss,
-   NULL, NULL},
-  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &net_config_poll_timeout,
-   NULL, NULL},
+  {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", NULL},
+  {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
+  {"management_dir", 'd', "Management Directory", "S255", &management_directory, "PROXY_MANAGEMENT_DIRECTORY", NULL},
+  {"command", 'C', "Maintenance Command to Execute", "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
+  {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
+  {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
+  {"vingid", 'v', "Vingid Flag", "S255", vingid_flag, "PROXY_VINGID", NULL},
+#if defined(linux)
+  {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
+#endif
+
+  {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss, NULL, NULL},
+  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &net_config_poll_timeout, NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
 
