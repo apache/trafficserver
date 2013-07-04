@@ -46,7 +46,7 @@ read_addr(char *line, int n, int *i, sockaddr* addr, char* err)
 
   // Allow enclosing brackets to be more consistent but
   // don't bother passing it to @c ntop.
-  if (*i < n && '[' == *src) {
+  if ((*i < n) && ('[' == *src)) {
     ++*i, ++src, bracketed_p = true;
   }
 
@@ -54,7 +54,7 @@ read_addr(char *line, int n, int *i, sockaddr* addr, char* err)
     dst[k] = *src;
   }
 
-  if (bracketed_p && (! *i < n || ']' != *src)) {
+  if (bracketed_p && (! (*i < n) || (']' != *src))) {
     snprintf(err, ERR_STRING_LEN, "Unclosed brackets");
     return EINVAL;
   }

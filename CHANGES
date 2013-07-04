@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
-  Changes with Apache Traffic Server 3.3.5
+Changes with Apache Traffic Server 3.3.5
 
+
+  *) [TS-1991] clang complaint: logical not is only applied to the left hand
+   side of this comparison.
 
   *) [TS-1958] Web UI can crash doing a regex lookup.
 
@@ -26,8 +29,8 @@
   *) [TS-1959] traffic_manager not honoring some records.config settings
    necessary for e.g. logging.
 
-  *) [TS-745] support interim caching in storage
-   to eanble, use '--enable-interim-cache' configure option.
+  *) [TS-745] support interim caching in storage to enable, use
+   '--enable-interim-cache' configure option. 
 
   *) [TS-1968] Promote header_rewrite plugin from experimental
 
@@ -47,8 +50,8 @@
    allocation.  Have seen a doubling in performance depending on the benchmark.
    Details in the ticket.
 
-  Changes with Apache Traffic Server 3.3.4
 
+Changes with Apache Traffic Server 3.3.4
 
   *) [TS-1940] HostDB gets reinitialized on startup.
 
@@ -57,8 +60,8 @@
   *) [TS-1938] Remove unnecessary thread_id() wrapper in reclaimable freelist.
     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  Changes with Apache Traffic Server 3.3.3 (never released)
 
+Changes with Apache Traffic Server 3.3.3 (never released)
 
   *) [TS-1936] Make traffic_logstats honor the log-directory as intended.
 
@@ -250,7 +253,7 @@
   *) [TS-1826] Remove DumpStats/http_dump dead code.
 
 
-  Changes with Apache Traffic Server 3.3.2
+Changes with Apache Traffic Server 3.3.2
 
   *) [TS-621] Allow caching of empty docs (currently only if a header
    Content-Length: 0 is in the response). New config option is named
@@ -359,7 +362,7 @@
   *) [TS-1356] Ability to set thread affinity with multiple modes.
 
 
-  Changes with Apache Traffic Server 3.3.1
+Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1743] Implement our own hash mechanism for traffic_logstats, since
    C++11 does not provide a sensical hash<const char*>.
