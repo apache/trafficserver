@@ -22,6 +22,8 @@
 */
 #include "I_EventSystem.h"
 
+int thread_freelist_size = 512;
+
 void*
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {

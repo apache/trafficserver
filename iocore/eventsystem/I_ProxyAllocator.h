@@ -35,7 +35,7 @@
 
 class EThread;
 
-#define MAX_ON_THREAD_FREELIST 512
+extern int thread_freelist_size;
 
 struct ProxyAllocator
 {
@@ -104,6 +104,6 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #endif /* defined(TS_USE_FREELIST */
 
-#define THREAD_FREE(_p, _a, _t) THREAD_FREE_TO(_p, _a, _t, MAX_ON_THREAD_FREELIST)
+#define THREAD_FREE(_p, _a, _t) THREAD_FREE_TO(_p, _a, _t, thread_freelist_size)
 
 #endif /* _ProxyAllocator_h_ */

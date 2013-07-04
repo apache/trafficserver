@@ -57,9 +57,9 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.manager_binary", RECD_STRING, "traffic_manager", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,                             // required for traffic_cop
   {RECT_CONFIG, "proxy.config.cli_binary", RECD_STRING, "traffic_line", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,                             // required for mrtg
+  ,
   {RECT_CONFIG, "proxy.config.watch_script", RECD_STRING, "traffic_cop", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,                             // required for mrtg
+  ,
   {RECT_CONFIG, "proxy.config.proxy_binary_opts", RECD_STRING, "-M", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.start_script", RECD_STRING, "start", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -1869,6 +1869,14 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.allocator.enable_reclaim", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.allocator.reclaim_factor", RECD_FLOAT, "0.3", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+
+  //############
+  //#
+  //# Per-thread freelist / allocator controls
+  //#
+  //############
+  {RECT_CONFIG, "proxy.config.allocator.thread_freelist_size", RECD_INT, "512", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //############

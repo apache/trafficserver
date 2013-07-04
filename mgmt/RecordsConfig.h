@@ -38,7 +38,7 @@ enum RecordRequiredType {
 // Retain this struct for ease of CVS merging
 struct RecordElement
 {
-  RecT type;                     // type of the record (CONFIG, PROCESS, etc)
+  RecT type;                    // type of the record (CONFIG, PROCESS, etc)
   const char *name;             // name of the record
   RecDataT value_type;          // type of the record value (INT, FLOAT, etc)
   const char *value;            // default value for the record
@@ -46,7 +46,7 @@ struct RecordElement
   RecordRequiredType required;  // is records required to be in records.config?
   RecCheckT check;
   const char *regex;
-  RecAccessT access;      // access level of the record
+  RecAccessT access;            // access level of the record
 };
 
 void LibRecordsConfigInit();    // initializes RecordsConfigIndex

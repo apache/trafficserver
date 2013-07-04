@@ -640,7 +640,7 @@ free_CacheVC(CacheVC *cont)
 #ifdef DEBUG
   SET_CONTINUATION_HANDLER(cont, &CacheVC::dead);
 #endif
-  THREAD_FREE_TO(cont, cacheVConnectionAllocator, this_ethread(), MAX_CACHE_VCS_PER_THREAD);
+  THREAD_FREE_TO(cont, cacheVConnectionAllocator, this_ethread(), thread_freelist_size);
   return EVENT_DONE;
 }
 

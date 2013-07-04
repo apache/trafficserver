@@ -275,9 +275,11 @@ public:
 extern ClassAllocator<Event> eventAllocator;
 
 #define EVENT_ALLOC(_a, _t) THREAD_ALLOC(_a, _t)
-#define EVENT_FREE(_p, _a, _t)               \
-  _p->mutex = NULL;                          \
-  if (_p->globally_allocated) ::_a.free(_p); \
-  else THREAD_FREE_TO(_p, _a, _t, MAX_EVENTS_PER_THREAD)
+#define EVENT_FREE(_p, _a, _t)   \
+  _p->mutex = NULL;              \
+  if (_p->globally_allocated)    \
+    ::_a.free(_p);               \
+  else                           \
+    THREAD_FREE_TO(_p, _a, _t, thread_freelist_size)
 
 #endif /*_Event_h_*/

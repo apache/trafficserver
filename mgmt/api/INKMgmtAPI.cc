@@ -2510,7 +2510,7 @@ TSSetHostname(TSString hostname)
   TSInt val = 0;
 
   /* Here we should handle these cases:
-   * rmserver.cfg - different API currently, records.config, mrtg, and hostname_FQ
+   * rmserver.cfg - different API currently, records.config, and hostname_FQ
    */
 
   if (TSRecordGetInt("proxy.local.cluster.type", &val) == TS_ERR_OKAY) {      //If error??
