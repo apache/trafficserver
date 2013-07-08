@@ -215,6 +215,34 @@ extern "C"
   tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
 
 
+  /**
+      Opens a network connection to the host specified by the 'to' sockaddr
+      spoofing the client addr to equal the 'from' sockaddr.
+      If the connection is successfully opened, contp
+      is called back with the event TS_EVENT_NET_CONNECT and the new
+      network vconnection will be passed in the event data parameter.
+      If the connection is not successful, contp is called back with
+      the event TS_EVENT_NET_CONNECT_FAILED.
+
+      Note: It is possible to receive TS_EVENT_NET_CONNECT
+      even if the connection failed, because of the implementation of
+      network sockets in the underlying operating system. There is an
+      exception: if a plugin tries to open a connection to a port on
+      its own host machine, then TS_EVENT_NET_CONNECT is sent only
+      if the connection is successfully opened. In general, however,
+      your plugin needs to look for an TS_EVENT_VCONN_WRITE_READY to
+      be sure that the connection is successfully opened.
+
+      @return TSAction which allows you to check if the connection is complete,
+        or cancel the attempt to connect.
+
+   */
+  tsapi TSAction TSNetConnectTransparent(TSCont contp, /**< continuation that is called back when the attempted net connection either succeeds or fails. */
+                                         struct sockaddr const* from, /**< Address to spoof as connection origin */
+                                         struct sockaddr const* to /**< Address to which to connect. */
+  );
+
+
   /* =====  Matcher Utils =====  */
 #define               TS_MATCHER_LINE_INVALID 0
   typedef struct tsapi_matcheline* TSMatcherLine;

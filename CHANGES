@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-2007] Add TSNetConnectTransparent API for transparent net connections
+
   *) [TS-1991] clang complaint: logical not is only applied to the left hand
    side of this comparison.
 
