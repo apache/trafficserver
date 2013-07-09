@@ -52,6 +52,7 @@
 #include <functional>
 #include <fcntl.h>
 
+#undef __DEPRECATED // XXX clang hack
 #define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
 #include <ext/hash_map>
 #include <ext/hash_set>
