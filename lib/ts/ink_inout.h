@@ -33,7 +33,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif                          /* __cplusplus */
-#include "/usr/include/arpa/nameser.h"
+#include <arpa/nameser.h>
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */

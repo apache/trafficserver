@@ -37,13 +37,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#if defined(solaris)
 #include <netdb.h>
-#else
-// XXX: This is just nonsense!!!
-#include "/usr/include/netdb.h" // need following instead of <netdb.h>
-#endif
-
 
 #include "P_RecProcess.h"
 #define LOG_SignalManager             REC_SignalManager
