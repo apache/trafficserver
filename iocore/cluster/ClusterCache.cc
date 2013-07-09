@@ -1950,10 +1950,15 @@ CacheContinuation::handleDisposeEvent(int event, CacheContinuation * cc)
 
       cc->tunnel->vioSource->nbytes = getObjectSize(cc->tunnel->vioSource->vc_server, cc->request_opcode, 0);
       cc->tunnel->vioSource->reenable_re();
-      cc->tunnel->vioTarget->reenable();
 
-      // Tell tunnel event we are gone
-      cc->tunnel_cont->action.continuation = 0;
+      // Tunnel may be closed by vioSource->reenable_re(),
+      // we should check it again here:
+      if (!cc->tunnel_closed) {
+        cc->tunnel->vioTarget->reenable();
+
+        // Tell tunnel event we are gone
+        cc->tunnel_cont->action.continuation = 0;
+      }
     }
     cacheContAllocator_free(cc);
     return EVENT_DONE;

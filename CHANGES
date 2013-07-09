@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1990] Fix core at CacheContinuation::handleDisposeEvent().
+
   *) [TS-2010] Build fixes for OS X 10.9 and Xcode 5.
 
   *) [TS-1957] fix If CacheContinuation timeout, timeout Event will be loop
