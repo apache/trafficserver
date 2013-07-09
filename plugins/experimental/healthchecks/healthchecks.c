@@ -4,19 +4,19 @@ This is an origin server / intercept plugin, which implements flexible health ch
 
 @section license
 
-Copyright 2012 Go Daddy Operating Company, LLC   
+Copyright 2012 Go Daddy Operating Company, LLC
 
-Licensed under the Apache License, Version 2.0 (the "License");    
-you may not use this file except in compliance with the License.    
-You may obtain a copy of the License at        
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0    
+http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software    
-distributed under the License is distributed on an "AS IS" BASIS,    
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.    
-See the License for the specific language governing permissions and    
-limitations under the License. 
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
  */
 
 #include <stdio.h>
@@ -43,7 +43,6 @@ static const char PLUGIN_NAME[] = "health_checks";
 #define MAX_FILENAME_LEN 2048
 #define MAX_BODY_LEN 16384
 #define FREELIST_TIMEOUT 300
-
 
 /* Some atomic stuff, from ATS core */
 typedef volatile void *vvoidp;
@@ -111,7 +110,6 @@ typedef struct HCState_t
   HCFileData *data;
 } HCState;
 
-
 /* Read / check the status files */
 static
 void
@@ -169,7 +167,7 @@ setup_watchers(int fd)
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_FILENAME_LEN - 1);
       dir->wd = inotify_add_watch(fd, dname, IN_CREATE|IN_MOVED_FROM|IN_MOVED_TO);
-      if (!head_dir) 
+      if (!head_dir)
         head_dir = dir;
       else
         last_dir->_next = dir;
@@ -181,7 +179,6 @@ setup_watchers(int fd)
 
   return head_dir;
 }
-
 
 /* Separate thread to monitor status files for reload */
 #define INOTIFY_BUFLEN (1024 * sizeof(struct inotify_event))
@@ -224,7 +221,7 @@ hc_thread(void *data ATS_UNUSED)
         }
       }
     }
-    
+
     /* Read the inotify events, blocking! */
     len  = read(fd, buffer, INOTIFY_BUFLEN);
     if (len >= 0) {
@@ -365,7 +362,6 @@ parse_configs(const char* fname)
 
   return head_finfo;
 }
-
 
 /* Cleanup after intercept has completed */
 static void
