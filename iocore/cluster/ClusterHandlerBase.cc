@@ -776,6 +776,7 @@ ClusterHandler::machine_down()
     ClusterConfiguration *cc = configuration_remove_machine(c, machine);
     CLUSTER_DECREMENT_DYN_STAT(CLUSTER_NODES_STAT);
     this_cluster()->configurations.push(cc);
+    machine->dead = true;
   }
   MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
   MachineList *cc = the_cluster_config();
