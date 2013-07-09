@@ -22,6 +22,7 @@
  */
 
 #include "libts.h"
+#include "ts/TestBox.h"
 
 #if defined(darwin)
 extern "C"
@@ -468,4 +469,27 @@ ats_ip_check_characters(ts::ConstBuffer text) {
     : found_colon ? AF_INET6
     : AF_INET
     ;
+}
+
+REGRESSION_TEST(Ink_Inet) (RegressionTest * t, int /* atype */, int * pstatus) {
+  TestBox box(t, pstatus);
+  IpEndpoint  ep;
+  IpAddr      addr;
+
+  box = REGRESSION_TEST_PASSED;
+
+  box.check(ats_ip_pton("76.14.64.156", &ep.sa) == 0, "ats_ip_pton()");
+  box.check(addr.load("76.14.64.156") == 0, "IpAddr::load()");
+  box.check(addr.family() == ep.family(), "mismatched address family");
+
+  switch (addr.family()) {
+  case AF_INET:
+    box.check(ep.sin.sin_addr.s_addr == addr._addr._ip4, "IPv4 address mismatch");
+    break;
+  case AF_INET6:
+    box.check(memcmp(&ep.sin6.sin6_addr, &addr._addr._ip6, sizeof(in6_addr)) == 0, "IPv6 address mismatch");
+    break;
+  default:
+    ;
+  }
 }

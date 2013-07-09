@@ -85,6 +85,8 @@ union IpEndpoint {
   /// Test for IPv6.
   bool isIp6() const;
 
+  uint16_t family() const;
+
   /// Set to be any address for family @a family.
   /// @a family must be @c AF_INET or @c AF_INET6.
   /// @return This object.
@@ -1210,6 +1212,7 @@ IpEndpoint::isValid() const {
 
 inline bool IpEndpoint::isIp4() const { return AF_INET == sa.sa_family; }
 inline bool IpEndpoint::isIp6() const { return AF_INET6 == sa.sa_family; }
+inline uint16_t IpEndpoint::family() const { return sa.sa_family; }
 
 inline IpEndpoint&
 IpEndpoint::setToAnyAddr(int family) {
