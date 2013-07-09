@@ -51,7 +51,7 @@ overview illustrates how Traffic Server serves a request.
    Server serves it to the client as a **cache hit** (see the figure
    below).
 
-   .. figure:: ../_static/images/admin/cache_hit.jpg
+   .. figure:: ../static/images/admin/cache_hit.jpg
       :align: center
       :alt: A cache hit
 
@@ -68,7 +68,7 @@ overview illustrates how Traffic Server serves a request.
    cache (see the figure below). Subsequent requests for the object can
    be served faster because the object is retrieved directly from cache.
 
-   .. figure:: ../_static/images/admin/cache_miss.jpg
+   .. figure:: ../static/images/admin/cache_miss.jpg
       :align: center
       :alt: A cache miss
 

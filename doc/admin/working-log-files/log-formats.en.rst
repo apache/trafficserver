@@ -83,7 +83,7 @@ Squid Format
 
 The following figure shows a sample log entry in a ``squid.log`` file.
 
-.. figure:: ../../_static/images/admin/squid_format.jpg
+.. figure:: ../../static/images/admin/squid_format.jpg
    :align: center
    :alt: Sample log entry in squid.log
 
@@ -213,7 +213,7 @@ Netscape Common
 The following figure shows a sample log entry in a ``common.log`` file,
 the list following describes the fields of the format.
 
-.. figure:: ../../_static/images/admin/netscape_common_format.jpg
+.. figure:: ../../static/images/admin/netscape_common_format.jpg
    :align: center
    :alt: Sample log entry in common.log
 
@@ -235,7 +235,7 @@ Netscape Extended
 The following figure shows a sample log entry in an ``extended.log``
 file.
 
-.. figure:: ../../_static/images/admin/netscape_extended_format.jpg
+.. figure:: ../../static/images/admin/netscape_extended_format.jpg
    :align: center
    :alt: sample log entry in extended.log
 
@@ -258,7 +258,7 @@ Netscape Extended2
 The following figure shows a sample log entry in an ``extended2.log``
 file.
 
-.. figure:: ../../_static/images/admin/netscape_extended2_format.jpg
+.. figure:: ../../static/images/admin/netscape_extended2_format.jpg
    :align: center
    :alt: sample log entry in extended2.log
 

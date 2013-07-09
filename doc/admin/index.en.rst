@@ -224,7 +224,7 @@ processes are described below:
 
 The figure below illustrates the three Traffic Server processes.
 
-.. figure:: ../_static/images/admin/process.jpg
+.. figure:: ../static/images/admin/process.jpg
    :align: center
    :alt: Illustration of the three Traffic Server Processes
 

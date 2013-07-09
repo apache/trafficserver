@@ -810,7 +810,7 @@ log collation server receives a log buffer from a client, it writes it
 to its own log file as if it was generated locally. For a visual
 representation of this, see the figure below.
 
-.. figure:: ../_static/images/admin/logcolat.jpg
+.. figure:: ../static/images/admin/logcolat.jpg
    :align: center
    :alt: Log collation
 
