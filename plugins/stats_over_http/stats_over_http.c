@@ -35,6 +35,10 @@
 
 #include "ink_defs.h"
 
+/* global holding the path used for access to this JSON data */
+static const char* url_path = "_stats";
+static int url_path_len;
+
 typedef struct stats_state_t
 {
   TSVConn net_vc;
@@ -216,7 +220,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   const char* path = TSUrlPathGet(reqp,url_loc,&path_len);
   TSDebug("istats","Path: %.*s",path_len,path);
   
-  if (! (path_len != 0 && path_len == 6 && !memcmp(path,"_stats",6)) ) {
+  if (! (path_len != 0 && path_len == url_path_len  && !memcmp(path,url_path,url_path_len)) ) {
     goto notforme;
   }
   
@@ -248,7 +252,6 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 int
 check_ts_version()
 {
-
   const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
@@ -271,7 +274,7 @@ check_ts_version()
 }
 
 void
-TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
+TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
@@ -286,6 +289,11 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
+
+  if (argc > 1) {
+    url_path = TSstrdup(argv[1] + ('/' == argv[1][0] ? 1 : 0)); /* Skip leading / */
+  }
+  url_path_len = strlen(url_path);
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
