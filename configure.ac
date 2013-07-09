@@ -1118,7 +1118,7 @@ if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
 
-AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate])
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
@@ -1328,6 +1328,9 @@ AS_IF([test 1 -eq $use_maxmind_geoip], [
 
 AC_SUBST(use_maxmind_geoip)
 AM_CONDITIONAL([BUILD_GEOIP_PLUGIN], [ test 0 -ne $use_maxmind_geoip ])
+
+# Right now, the healthcheck plugins requires inotify_init (and friends)
+AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 
 #
 # Check for tcmalloc and jemalloc
@@ -1859,6 +1862,7 @@ AC_CONFIG_FILES([
   plugins/experimental/rfc5861/Makefile
   plugins/experimental/spdy/Makefile
   plugins/experimental/tcp_info/Makefile
+  plugins/experimental/healthchecks/Makefile
   plugins/header_filter/Makefile
   plugins/header_rewrite/Makefile
   plugins/regex_remap/Makefile

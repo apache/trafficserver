@@ -4,6 +4,8 @@ Changes with Apache Traffic Server 3.3.5
 
   *) [TS-2012] Use standard C++11 containers in logstats.
 
+  *) [TS-1999] Merge in the healthcheck plugin from GoDaddy.
+
   *) [TS-1998] Make stats-over-http support configurable URL path.
 
   *) [TS-1990] Fix core at CacheContinuation::handleDisposeEvent().

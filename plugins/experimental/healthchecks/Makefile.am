@@ -14,18 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS = \
- lua \
- esi \
- rfc5861 \
- tcp_info \
- custom_redirect \
- metalink \
- gzip \
- spdy \
- channel_stats \
- authproxy \
- geoip_acl \
- healthchecks
+include $(top_srcdir)/build/plugins.mk
+
+if BUILD_TCPINFO_PLUGIN
+
+pkglib_LTLIBRARIES = healthchecks.la
+healthchecks_la_SOURCES = healthchecks.c
+healthchecks_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
 endif
