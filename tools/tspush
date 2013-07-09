@@ -24,7 +24,6 @@ use bytes;
 use IO::Socket qw( :crlf );
 use Getopt::Long;
 use URI;
-use File::MimeInfo::Magic;
 
 
 die ("Use --help for options\n") unless GetOptions (
@@ -52,7 +51,7 @@ die ("--file and --url must be given!" ) unless ( $f_name && $url) ;
 
 open (my $fh, '<', $f_name) or die $!;
 my $uri = URI->new($url);
-my $f_type = mimetype($f_name);
+my $f_type = `file -b --mime $f_name`;
 
 #
 # read the file in one go:
@@ -65,9 +64,10 @@ my $len_content = length($f) + 2;
 my $response = "HTTP/1.0 200 OK${CRLF}Content-type: ${f_type}${CRLF}Content-length: ${len_content}${CRLF}${CRLF}${f}${CRLF}";
 my $len_push = length $response;
 
-my $sock = IO::Socket::INET->new(PeerAddr => $uri->host, PeerPort => $uri->port, Proto => 'tcp') or die "Error creating socket: $!";
 my $push = "PUSH ${url} HTTP/1.0${CRLF}Content-Length: ${len_push}${CRLF}${CRLF}${response}";
 print $push if ($debug);
+
+my $sock = IO::Socket::INET->new(PeerAddr => $uri->host, PeerPort => $uri->port, Proto => 'tcp') or die "Error creating socket: $!";
 print $sock $push;
 print do { local $/; <$sock> };
 

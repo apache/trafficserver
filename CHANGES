@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-2013] Install the tspush script.
+
   *) [TS-2012] Use standard C++11 containers in logstats.
 
   *) [TS-1999] Merge in the healthcheck plugin from GoDaddy.

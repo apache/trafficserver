@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-bin_SCRIPTS = tsxs
+bin_SCRIPTS = tsxs tspush
 bin_PROGRAMS =
 
 AM_CPPFLAGS = $(iocore_include_dirs) \
@@ -28,7 +28,6 @@ noinst_PROGRAMS = jtest/jtest
 
 jtest_jtest_SOURCES = jtest/jtest.cc
 jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la
-
 
 if BUILD_HTTP_LOAD
 noinst_PROGRAMS += http_load/http_load
