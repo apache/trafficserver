@@ -575,6 +575,25 @@ if test "x${enable_cxx_11_support}" = "xyes" ; then
   AC_DEFINE(HAVE_CXX_11, 1, [Whether the compiler support C++11])
 fi
 
+# While we are in C++ mode, check for the GNU hash_map extension.
+TS_FLAG_HEADERS([unordered_map unordered_set])
+AC_MSG_CHECKING([for <ext/hash_map>])
+AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([
+    #include <string>
+    #include <ext/hash_map>
+    ], [
+     __gnu_cxx::hash_map<std::string, std::string> map;
+  ])],
+  [ have_gnu_cxx_hash_map=yes ],
+  [ have_gnu_cxx_hash_map=no ]
+)
+
+AC_MSG_RESULT([$have_gnu_cxx_hash_map])
+if test "x${have_gnu_cxx_hash_map}" = "xyes" ; then
+  AC_DEFINE(HAVE_GNU_CXX_HASH_MAP, 1, [whether __gnu_cxx::hash_map is available])
+fi
+
 AC_LANG_POP()
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS

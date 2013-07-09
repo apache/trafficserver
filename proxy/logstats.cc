@@ -52,19 +52,8 @@
 #include <functional>
 #include <fcntl.h>
 
-#undef __DEPRECATED // XXX clang hack
-#define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
-#include <ext/hash_map>
-#include <ext/hash_set>
-#undef _BACKWARD_BACKWARD_WARNING_H
-
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
-#endif
-
-#if defined(__GNUC__)
-using __gnu_cxx::hash_map;
-using __gnu_cxx::hash_set;
 #endif
 
 using namespace std;
@@ -327,7 +316,6 @@ struct UrlStats
   int64_t errors;
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Equal operator for char* (for the hash_map)
 struct eqstr
@@ -337,6 +325,42 @@ struct eqstr
     return 0 == strcmp(s1, s2);
   }
 };
+
+typedef std::list<UrlStats> LruStack;
+
+#if HAVE_CXX_11 && HAVE_UNORDERED_MAP && HAVE_UNORDERED_SET
+#include <unordered_map>
+#include <unordered_set>
+typedef std::unordered_map<const char *, OriginStats *, std::hash<const char *>, eqstr> OriginStorage;
+typedef std::unordered_set<const char *, std::hash<const char *>, eqstr> OriginSet;
+typedef std::unordered_map<const char *, LruStack::iterator, std::hash<const char *>, eqstr> LruHash;
+
+// Resize a hash-based container.
+template <class T, class N>
+void
+rehash(T& container, N size) {
+  container.rehash(size);
+}
+
+#elif HAVE_GNU_CXX_HASH_MAP
+#define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
+#include <ext/hash_map>
+#include <ext/hash_set>
+typedef __gnu_cxx::hash_map<const char *, OriginStats *, __gnu_cxx::hash<const char *>, eqstr> OriginStorage;
+typedef __gnu_cxx::hash_set<const char *, __gnu_cxx::hash<const char *>, eqstr> OriginSet;
+typedef __gnu_cxx::hash_map<const char *, LruStack::iterator, __gnu_cxx::hash<const char *>, eqstr> LruHash;
+
+// Resize a hash-based container.
+template <class T, class N>
+void
+rehash(T& container, N size) {
+  container.resize(size);
+}
+
+#undef _BACKWARD_BACKWARD_WARNING_H
+#else
+#error no supported hash container
+#endif
 
 struct hash_fnv32 {
   inline uint32_t operator()(const char* s) const 
@@ -354,17 +378,11 @@ struct hash_fnv32 {
   }
 };
 
-typedef hash_map <const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
-typedef hash_set <const char *, hash_fnv32, eqstr> OriginSet;
-
-
 // LRU class for the URL data
 void  update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter);
 
 class UrlLru
 {
-  typedef list<UrlStats> LruStack;
-  typedef hash_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
 
 public:
   UrlLru(int size=1000000, int show_urls=0)
@@ -541,7 +559,7 @@ private:
   {
     if (_size > 0) {
       _stack.resize(_size);
-      _hash.resize(_size);
+      rehash(_hash, _size);
     }
   }
 
