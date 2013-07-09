@@ -326,44 +326,8 @@ struct eqstr
   }
 };
 
-typedef std::list<UrlStats> LruStack;
-
-#if HAVE_CXX_11 && HAVE_UNORDERED_MAP && HAVE_UNORDERED_SET
-#include <unordered_map>
-#include <unordered_set>
-typedef std::unordered_map<const char *, OriginStats *, std::hash<const char *>, eqstr> OriginStorage;
-typedef std::unordered_set<const char *, std::hash<const char *>, eqstr> OriginSet;
-typedef std::unordered_map<const char *, LruStack::iterator, std::hash<const char *>, eqstr> LruHash;
-
-// Resize a hash-based container.
-template <class T, class N>
-void
-rehash(T& container, N size) {
-  container.rehash(size);
-}
-
-#elif HAVE_GNU_CXX_HASH_MAP
-#define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
-#include <ext/hash_map>
-#include <ext/hash_set>
-typedef __gnu_cxx::hash_map<const char *, OriginStats *, __gnu_cxx::hash<const char *>, eqstr> OriginStorage;
-typedef __gnu_cxx::hash_set<const char *, __gnu_cxx::hash<const char *>, eqstr> OriginSet;
-typedef __gnu_cxx::hash_map<const char *, LruStack::iterator, __gnu_cxx::hash<const char *>, eqstr> LruHash;
-
-// Resize a hash-based container.
-template <class T, class N>
-void
-rehash(T& container, N size) {
-  container.resize(size);
-}
-
-#undef _BACKWARD_BACKWARD_WARNING_H
-#else
-#error no supported hash container
-#endif
-
 struct hash_fnv32 {
-  inline uint32_t operator()(const char* s) const 
+  inline uint32_t operator()(const char* s) const
   {
     uint32_t hval = (uint32_t)0x811c9dc5; /* FNV1_32_INIT */
 
@@ -377,6 +341,42 @@ struct hash_fnv32 {
     return hval;
   }
 };
+
+typedef std::list<UrlStats> LruStack;
+
+#if HAVE_CXX_11 && HAVE_UNORDERED_MAP && HAVE_UNORDERED_SET
+#include <unordered_map>
+#include <unordered_set>
+typedef std::unordered_map<const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
+typedef std::unordered_set<const char *, hash_fnv32, eqstr> OriginSet;
+typedef std::unordered_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
+
+// Resize a hash-based container.
+template <class T, class N>
+void
+rehash(T& container, N size) {
+  container.rehash(size);
+}
+
+#elif HAVE_GNU_CXX_HASH_MAP
+#define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
+#include <ext/hash_map>
+#include <ext/hash_set>
+typedef __gnu_cxx::hash_map<const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
+typedef __gnu_cxx::hash_set<const char *, hash_fnv32, eqstr> OriginSet;
+typedef __gnu_cxx::hash_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
+
+// Resize a hash-based container.
+template <class T, class N>
+void
+rehash(T& container, N size) {
+  container.resize(size);
+}
+
+#undef _BACKWARD_BACKWARD_WARNING_H
+#else
+#error no supported hash container
+#endif
 
 // LRU class for the URL data
 void  update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter);
