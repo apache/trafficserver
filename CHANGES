@@ -66,6 +66,9 @@ Changes with Apache Traffic Server 3.3.5
    allocation.  Have seen a doubling in performance depending on the benchmark.
    Details in the ticket.
 
+  *) [TS-1962] Don't add POST server connections to the shared pool unless POST
+   keep-alive option is on
+
 
 Changes with Apache Traffic Server 3.3.4
 

@@ -3285,6 +3285,11 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
     // Completed successfully
+	if (t_state.txn_conf->keep_alive_post_out == 0) {
+      // don't share the session if keep-alive for post is not on
+      set_server_session_private(true);
+	}
+
     p->handler_state = HTTP_SM_POST_SUCCESS;
     p->read_success = true;
     ua_entry->in_tunnel = false;
