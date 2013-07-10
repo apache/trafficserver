@@ -16,6 +16,8 @@
 
 trafficshelldir = $(pkgdocdir)/trafficshell
 
+.PHONY: help dirhtml singlehtml epub latex man changes linkcheck doxygen
+
 dist_trafficshell_DATA = \
   man/config_alarms.1 \
   man/config_cache.1 \
@@ -99,7 +101,7 @@ EXTRA_DIST = \
 
 clean-local:
 	-rm -rf html warn.log
-	-rm -rf doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex
+	-rm -rf doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex $(BUILDDIR)/man
 
 doxygen: Doxyfile
 	$(DOXYGEN)
@@ -111,7 +113,7 @@ doxygen: Doxyfile
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = letter
-BUILDDIR      = .
+BUILDDIR      = docbuild
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -165,6 +167,11 @@ latex:
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b latex $(srcdir) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/latex."
+
+man:
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b man $(srcdir) $(BUILDDIR)/man
+	@echo
+	@echo "Build finished. The man pages are in $(BUILDDIR)/man."
 
 changes:
 	@echo FIXME

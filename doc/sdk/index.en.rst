@@ -41,27 +41,28 @@ Or find out how to `find bugs <>`__, `create useful bug reports <>`__ or
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+  :maxdepth: 2
 
-    preface.en
-    getting-started.en
-    how-to-create-trafficserver-plugins.en
-    remap-plugin.en
-    header-based-plugin-examples.en
-    http-transformation-plugin.en
-    new-protocol-plugins.en
-    http-hooks-and-transactions.en
-    misc-interface-guide.en
-    http-headers.en
-    mutex-guide.en
-    continuations.en
-    plugin-configurations.en
-    actions-guide.en
-    io-guide.en
-    plugin-management.en
-    adding-statistics.en
-    sample-source-code.en
-    troubleshooting-tips.en
+  preface.en
+  getting-started.en
+  how-to-create-trafficserver-plugins.en
+  remap-plugin.en
+  header-based-plugin-examples.en
+  http-transformation-plugin.en
+  new-protocol-plugins.en
+  http-hooks-and-transactions.en
+  misc-interface-guide.en
+  http-headers.en
+  mutex-guide.en
+  continuations.en
+  plugin-configurations.en
+  actions-guide.en
+  io-guide.en
+  plugin-management.en
+  adding-statistics.en
+  sample-source-code.en
+  troubleshooting-tips.en
+  man/index.en
 
 Indices and tables
 ==================
