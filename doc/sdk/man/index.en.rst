@@ -22,4 +22,5 @@ API Reference
   :maxdepth: 2
 
   TSAPI.en
+  TSDebug.en
 

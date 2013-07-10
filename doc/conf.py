@@ -213,7 +213,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('sdk/man/TSAPI', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts')
+    ('sdk/man/TSAPI.en', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts'),
+    ('sdk/man/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
 ]
 
 # If true, show URL addresses after external links.
