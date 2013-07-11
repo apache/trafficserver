@@ -16,7 +16,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-if BUILD_TCPINFO_PLUGIN
+if BUILD_HEALTHCHECK_PLUGIN
 
 pkglib_LTLIBRARIES = healthchecks.la
 healthchecks_la_SOURCES = healthchecks.c
