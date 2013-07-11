@@ -280,7 +280,7 @@ gen_header(char *status_str, char *mime, int *header_len)
   char * buf = NULL;
 
   status = atoi(status_str);
-  if (status > 0 && status < 999) {
+  if (status > TS_HTTP_STATUS_NONE && status < (TSHttpStatus)999) {
     const char* status_reason;
     int len = sizeof(HEADER_TEMPLATE) + 3 + 1;
 
