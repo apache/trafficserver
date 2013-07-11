@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1966] Add new configuration option to control ProxyAllocator size.
+
   *) [TS-1151] cop may crash due to uninitialized pointer val
 
   *) [TS-2013] Install the tspush script.
