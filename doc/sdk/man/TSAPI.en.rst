@@ -14,14 +14,16 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+.. default-domain:: c
+
 =========
 ``TSAPI``
 =========
 
 Synopsis
 ========
-| ``#include <ts/ts.h>``
-| ``#include <ts/remap.h>``
+| `#include <ts/ts.h>`
+| `#include <ts/remap.h>`
 
 Description
 ===========
@@ -71,23 +73,23 @@ Naming conventions
 The Traffic Server API adheres to the following naming conventions:
 
 * The TS prefix is used for all function and variable names defined
-  in the Traffic Server API. For example, `TS_EVENT_NONE`, `TSMutex`,
-  and `TSContCreate`.
-* Enumerated values are always written in all uppercase letters. For example,
-  `TS_EVENT_NONE` and `TS_VC_CLOSE_ABORT`.
+  in the Traffic Server API. For example, :data:`TS_EVENT_NONE`, :type:`TSMutex`,
+  and :func:`TSContCreate`.
+* Enumerated values are always written in all uppercase letters.
+  For example, :data:`TS_EVENT_NONE` and :data:`TS_VC_CLOSE_ABORT`.
 * Constant values are all uppercase; enumerated values can be seen
-  as a subset of constants. For example, `TS_URL_SCHEME_FILE` and
-  `TS_MIME_FIELD_ACCEPT`.
-* The names of defined types are mixed-case. For example, `TSHttpSsn`
-  and `TSHttpTxn`.
-* Function names are mixed-case. For example, ``TSUrlCreate``\(\)
-  and ``TSContDestroy``\(\).
+  as a subset of constants. For example, :data:`TS_URL_SCHEME_FILE` and
+  :data:`TS_MIME_FIELD_ACCEPT`.
+* The names of defined types are mixed-case. For example, :type:`TSHttpSsn`
+  and :func:`TSHttpTxn`. :func:`TSDebug`
+* Function names are mixed-case. For example, :func:`TSUrlCreate`
+  and :func:`TSContDestroy`.
 * Function names use the following subject-verb naming style:
   TS-<subject>-<verb>, where <subject> goes from general to specific.
   This makes it easier to determine what a function does by reading
   its name. For example, the function to retrieve the password field
   (the specific subject) from a URL (the general subject) is
-  `TSUrlPasswordGet`.
+  :func:`TSUrlPasswordGet`.
 * Common verbs like Create, Destroy, Get, Set, Copy, Find, Retrieve,
   Insert, Remove, and Delete are used only when appropriate.
 
@@ -98,19 +100,19 @@ When Traffic Server is first started, it consults the plugin.config
 file to determine the names of all shared plugin libraries that
 need to be loaded. The plugin.config file also defines arguments
 that are to be passed to each plugin's initialization function,
-``TSPluginInit``\(\). The records.config file defines the path to
+:func:`TSPluginInit`. The :file:`records.config` file defines the path to
 each plugin shared library.
 
-The sample plugin.config file below contains a comment line, a blank
+The sample :file:`plugin.config` file below contains a comment line, a blank
 line, and two plugin configurations::
 
     # This is a comment line.
     my-plugin.so www.junk.com www.trash.com www.garbage.com
     some-plugin.so arg1 arg2 $proxy.config.http.cache.on
 
-Each plugin configuration in the plugin.config file resembles a
-UNIX or DOS shell command; each line in plugin.config cannot exceed
-1023 characters.
+Each plugin configuration in the :file:`plugin.config` file resembles
+a UNIX or DOS shell command; each line in :file:`plugin.config`
+cannot exceed 1023 characters.
 
 The first plugin configuration is for a plugin named my-plugin.so.
 It contains three arguments that are to be passed to that plugin's
@@ -121,19 +123,20 @@ Traffic Server will look up the specified configuration variable
 and substitute its value.
 
 Plugins are loaded and initialized by Traffic Server in the order
-they appear in the plugin.config file.
+they appear in the :file:`plugin.config` file.
 
 Plugin initialization
 =====================
 
 Each plugin must define an initialization function named
-``TSPluginInit``\(\) that Traffic Server invokes when the plugin
-is loaded. ``TSPluginInit``\(\) is commonly used to read configuration
-information and register hooks for event notification.
+:func:`TSPluginInit` that Traffic Server invokes when the
+plugin is loaded. :func:`TSPluginInit` is commonly used to
+read configuration information and register hooks for event
+notification.
 
 Files
 =====
-${CONFIG_DIR}/plugin.config, ${CONFIG_DIR}/records.config
+:file:`$CONFIG_DIR/plugin.config`, :file:`$CONFIG_DIR/records.config`
 
 See also
 ========

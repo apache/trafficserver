@@ -14,20 +14,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-==========
-``TSDebug``
-==========
+.. default-domain:: c
 
-.Nm TSDebug,
-.Nm TSError,
-.Nm TSIsDebugTagSet,
-.Nm TSDebugSpecific,
-.Nm TSHttpTxnDebugSet,
-.Nm TSHttpSsnDebugSet,
-.Nm TSHttpTxnDebugGet,
-.Nm TSHttpSsnDebugGet,
-.Nm TSAssert,
-.Nm TSReleaseAssert
+==========
+`TSDebug`
+==========
 
 Library
 =======
@@ -35,68 +26,49 @@ Apache Traffic Server plugin API
 
 Synopsis
 ========
-| ``#include <ts/ts.h>``
-|
-| void
-| ``TSDebug``\(`const char * tag`, `const char * format`, `...`\)
-|
-| void
-| ``TSError``\(`const char * tag`, `const char * format`, `...`\)
-| 
-| int
-| ``TSIsDebugTagSet``\(`const char * tag`\)
-| 
-| void
-| ``TSDebugSpecific``\(`int debug_flag`, `const char * tag`, `const char * format`, `...`\)
-| 
-| void
-| ``TSHttpTxnDebugSet``\(`TSHttpTxn txnp`, `int on`\)
-| 
-| void
-| ``TSHttpSsnDebugSet``\(`TSHttpSsn ssn`, `int on`\)
-| 
-| int
-| ``TSHttpTxnDebugGet``\(`TSHttpTxn txnp`\)
-| 
-| int
-| ``TSHttpSsnDebugGet``\(`TSHttpSsn ssn`\)
-| 
-| void
-| ``TSAssert``\(`expression`\)
-| 
-| void
-| ``TSReleaseAssert``\(`expression`\)
+`#include <ts/ts.h>`
+
+.. function:: void TSDebug(const char * tag, const char * format, ...)
+.. function:: void TSError(const char * tag, const char * format, ...)
+.. function:: int TSIsDebugTagSet(const char * tag)
+.. function:: void TSDebugSpecific(int debug_flag, const char * tag, const char * format, ...)
+.. function:: void TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
+.. function:: void TSHttpSsnDebugSet(TSHttpSsn ssn, int on)
+.. function:: int TSHttpTxnDebugGet(TSHttpTxn txnp)
+.. function:: int TSHttpSsnDebugGet(TSHttpSsn ssn)
+.. function:: void TSAssert(expression)
+.. function:: void TSReleaseAssert(expression)
 
 Description
 ===========
 
-``TSError``\(\) is similar to ``printf``\(\) except that instead
+:func:`TSError` is similar to :func:`printf` except that instead
 of writing the output to the C standard output, it writes output
 to the Traffic Server error log.
 
-``TSDebug``\(\) is the same as ``TSError``\(\) except that it only
+:func:`TSDebug` is the same as :func:`TSError` except that it only
 logs the debug message if the given debug tag is enabled. It writes
 output to the Traffic Server debug log.
 
-``TSIsDebugSet``\(\) returns non-zero if the given debug tag is
+:func:`TSIsDebugTagSet` returns non-zero if the given debug tag is
 enabled.
 
-In debug mode, ``TSAssert``\(\) Traffic Server to prints the file
+In debug mode, :func:`TSAssert` Traffic Server to prints the file
 name, line number and expression, and then aborts. In release mode,
 the expression is not removed but the effects of printing an error
-message and aborting are.  ``TSReleaseAssert``\(\) prints an error
+message and aborting are.  :func:`TSReleaseAssert` prints an error
 message and aborts in both release and debug mode.
 
-``TSDebugSpecific``\(\) emits a debug line even if the debug tag
+:func:`TSDebugSpecific` emits a debug line even if the debug tag
 is turned off, as long as debug flag is enabled. This can be used
-in conjuction with ``TSHttpTxnDebugSet``\(\), ``TSHttpSsnDebugSet``\(\),
-``TSHttpTxnDebugGet``\(\) and ``TSHttpSsnDebugGet``\(\) to enable
+in conjuction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`,
+:func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable
 debugging on specific session and transaction objects.
 
 Examples
 ========
 
-This example uses ``TSDebugSpecific``\(\) to log a message when a specific
+This example uses :func:`TSDebugSpecific` to log a message when a specific
 debugging flag is enabled::
 
     #include <ts/ts.h>
@@ -108,4 +80,5 @@ debugging flag is enabled::
 
 SEE ALSO
 ========
-:manpage:`TSAPI(3ts)`
+:manpage:`TSAPI(3ts)`,
+:manpage:`printf(3)`
