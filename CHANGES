@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1997] Remove TSHttpTxnCachedUrlSet() API.
+
   *) [TS-2028] Config parse problems in healthchecks plugin.
 
   *) [TS-1966] Add new configuration option to control ProxyAllocator size.

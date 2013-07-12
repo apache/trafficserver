@@ -4877,31 +4877,6 @@ TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 }
 
 TSReturnCode
-TSHttpTxnCachedUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-  URL u, *s_url;
-
-  u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-  u.m_url_impl = (URLImpl *) obj;
-  if (!u.valid())
-    return TS_ERROR;
-
-  s_url = &(sm->t_state.cache_info.store_url);
-  if (!s_url->valid())
-    s_url->create(NULL);
-  s_url->copy(&u);
-  if (sm->decide_cached_url(&u))
-    return TS_SUCCESS;
-
-  return TS_ERROR;
-}
-
-TSReturnCode
 TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

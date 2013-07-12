@@ -4493,14 +4493,11 @@ HttpTransact::merge_and_update_headers_for_cache_update(State* s)
 
   s->cache_info.object_store.request_set(&s->hdr_info.server_request);
 
-  s_url = &s->cache_info.store_url;
-  if (!s_url->valid()) {
-    if (s->redirect_info.redirect_in_process)
-      s_url = &s->redirect_info.original_url;
-    else
-      s_url = &s->cache_info.original_url;
-    ink_assert(s_url != NULL);
-  }
+  if (s->redirect_info.redirect_in_process)
+    s_url = &s->redirect_info.original_url;
+  else
+    s_url = &s->cache_info.original_url;
+  ink_assert(s_url != NULL);
 
   s->cache_info.object_store.request_get()->url_set(s_url->valid()? s_url : s->hdr_info.client_request.url_get());
 
@@ -4657,9 +4654,7 @@ HttpTransact::set_headers_for_cache_write(State* s, HTTPInfo* cache_info, HTTPHd
 
   // Logic added to restore the orignal URL for multiple cache lookup
   // and automatic redirection
-  if ((temp_url = &(s->cache_info.store_url))->valid()) {
-    request->url_set(temp_url);
-  } else if (s->redirect_info.redirect_in_process) {
+  if (s->redirect_info.redirect_in_process) {
     temp_url = &s->redirect_info.original_url;
     ink_assert(temp_url->valid());
     request->url_set(temp_url);

@@ -632,7 +632,6 @@ public:
     URL *lookup_url;
     URL lookup_url_storage;
     URL original_url;
-    URL store_url;
     HTTPInfo *object_read;
     HTTPInfo *second_object_read;
     HTTPInfo object_store;
@@ -653,7 +652,6 @@ public:
         lookup_url(NULL),
         lookup_url_storage(),
         original_url(),
-        store_url(),
         object_read(NULL),
         second_object_read(NULL),
         object_store(),
@@ -1161,7 +1159,6 @@ public:
       hdr_info.cache_response.destroy();
       cache_info.lookup_url_storage.destroy();
       cache_info.original_url.destroy();
-      cache_info.store_url.destroy();
       cache_info.object_store.destroy();
       cache_info.transform_store.destroy();
       redirect_info.original_url.destroy();

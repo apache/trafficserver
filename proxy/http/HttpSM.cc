@@ -4361,10 +4361,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
   ink_assert(c_sm->cache_write_vc == NULL);
 
   if (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST) {
-    s_url = &(t_state.cache_info.store_url);
-    if (s_url->valid()) {
-      restore_client_request = true;
-    } else if (t_state.redirect_info.redirect_in_process) {
+    if (t_state.redirect_info.redirect_in_process) {
       o_url = &(t_state.redirect_info.original_url);
       ink_assert(o_url->valid());
       restore_client_request = true;
