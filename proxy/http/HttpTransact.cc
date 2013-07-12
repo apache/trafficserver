@@ -5178,7 +5178,7 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
         ! incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) &&
-        ! s->client_info.transfer_encoding == CHUNKED_ENCODING) {
+        s->client_info.transfer_encoding != CHUNKED_ENCODING) {
 
           return NO_POST_CONTENT_LENGTH;
     }
