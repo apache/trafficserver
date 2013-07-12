@@ -37,7 +37,8 @@ limitations under the License.
 #include "ts/ts.h"
 #include "ink_defs.h"
 
-static const char PLUGIN_NAME[] = "health_checks";
+static const char PLUGIN_NAME[] = "healthchecks";
+static const char SEPARATORS[] = " \t\n";
 
 #define MAX_PATH_LEN  4096
 #define MAX_FILENAME_LEN 2048
@@ -300,7 +301,7 @@ static HCFileInfo*
 parse_configs(const char* fname)
 {
   FILE *fd;
-  char buf[64*1024]; /* Way huge, but wth */
+  char buf[2*1024];
   HCFileInfo *head_finfo = NULL, *finfo = NULL, *prev_finfo = NULL;
 
   if (NULL == (fd = fopen(fname, "r")))
@@ -320,43 +321,45 @@ parse_configs(const char* fname)
     if (prev_finfo)
       prev_finfo->_next = finfo;
 
-    fread(buf, sizeof(buf), 1, fd);
-    str = strtok_r(buf, "\t", &save);
-    while (NULL != str) {
-      if (strlen(str) > 0) {
-        switch (state) {
-        case 0:
-          if ('/' == *str)
-            ++str;
-          strncpy(finfo->path, str, MAX_PATH_LEN - 1);
-          finfo->p_len = strlen(finfo->path);
-          break;
-        case 1:
-          strncpy(finfo->fname, str, MAX_FILENAME_LEN - 1);
-          finfo->basename = strrchr(finfo->fname, '/');
-          if (finfo->basename)
-            ++(finfo->basename);
-          break;
-        case 2:
-          mime = str;
-          break;
-        case 3:
-          ok = str;
-          break;
-        case 4:
-          miss = str;
-          break;
+    if (fgets(buf, sizeof(buf) - 1, fd)) {
+      str = strtok_r(buf, SEPARATORS, &save);
+      while (NULL != str) {
+        if (strlen(str) > 0) {
+          switch (state) {
+          case 0:
+            if ('/' == *str)
+              ++str;
+            strncpy(finfo->path, str, MAX_PATH_LEN - 1);
+            finfo->p_len = strlen(finfo->path);
+            break;
+          case 1:
+            strncpy(finfo->fname, str, MAX_FILENAME_LEN - 1);
+            finfo->basename = strrchr(finfo->fname, '/');
+            if (finfo->basename)
+              ++(finfo->basename);
+            break;
+          case 2:
+            mime = str;
+            break;
+          case 3:
+            ok = str;
+            break;
+          case 4:
+            miss = str;
+            break;
+          }
+          ++state;
         }
-        ++state;
+        str = strtok_r(NULL, SEPARATORS, &save);
       }
-      str = strtok_r(NULL, "\t", &save);
-    }
 
-    finfo->ok = gen_header(ok, mime, &finfo->o_len);
-    finfo->miss = gen_header(miss, mime, &finfo->m_len);
-    finfo->data = TSmalloc(sizeof(HCFileData));
-    memset(finfo->data, 0, sizeof(HCFileData));
-    reload_status_file(finfo, finfo->data);
+      finfo->ok = gen_header(ok, mime, &finfo->o_len);
+      finfo->miss = gen_header(miss, mime, &finfo->m_len);
+      finfo->data = TSmalloc(sizeof(HCFileData));
+      memset(finfo->data, 0, sizeof(HCFileData));
+      reload_status_file(finfo, finfo->data);
+      TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
+    }
   }
   fclose(fd);
 
