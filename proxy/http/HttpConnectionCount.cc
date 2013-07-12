@@ -25,4 +25,3 @@
 
 
 ConnectionCount ConnectionCount::_connectionCount;
-ink_mutex ConnectionCount::_mutex;

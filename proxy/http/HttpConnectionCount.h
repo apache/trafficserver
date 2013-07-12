@@ -83,12 +83,14 @@ public:
 
 private:
   // Hide the constructor and copy constructor
-  ConnectionCount() { }
+  ConnectionCount() {
+    ink_mutex_init(&_mutex, "ConnectionCountMutex");
+  }
   ConnectionCount(const ConnectionCount & x) { NOWARN_UNUSED(x); }
 
   static ConnectionCount _connectionCount;
   HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;
-  static ink_mutex _mutex;
+  ink_mutex _mutex;
 };
 
 #endif
