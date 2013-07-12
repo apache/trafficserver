@@ -1079,7 +1079,7 @@ struct RegressionCont: public Continuation
       printf("Regression waiting for the cache to be ready... %d\n", ++waits);
       return EVENT_CONT;
     }
-    char *rt = (char *) (regression_test[0] == '\0' ? '\0' : regression_test);
+    char *rt = (char *) (regression_test[0] == 0 ? "" : regression_test);
     if (!initialized && RegressionTest::run(rt) == REGRESSION_TEST_INPROGRESS) {
       initialized = 1;
       return EVENT_CONT;
