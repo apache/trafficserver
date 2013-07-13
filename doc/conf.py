@@ -215,6 +215,7 @@ latex_documents = [
 man_pages = [
     ('sdk/man/TSAPI.en', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts'),
     ('sdk/man/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
+    ('sdk/man/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
 ]
 
 # If true, show URL addresses after external links.
