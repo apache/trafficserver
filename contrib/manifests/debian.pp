@@ -26,7 +26,8 @@ package {[
 
 # Development extras.
 package {[
-    'gdb', 'valgrind', 'git', 'ack-grep', 'curl', 'tmux', 'screen', 'ccache'
+    'gdb', 'valgrind', 'git', 'ack-grep', 'curl', 'tmux', 'screen',
+    'ccache', 'python-sphinx',
   ]:
   ensure => latest
 }
