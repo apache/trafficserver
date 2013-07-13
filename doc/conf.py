@@ -217,6 +217,7 @@ man_pages = [
     ('sdk/man/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
     ('sdk/man/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
     ('sdk/man/TSHttpParserCreate.en', 'TSHttpParserCreate', u'Parse HTTP headers from memory buffers', None, u'3ts'),
+    ('sdk/man/TSHttpTxnMilestoneGet.en', 'TSHttpTxnMilestoneGet', u'Get a specified milestone timer value for the current transaction', None, u'3ts'),
 ]
 
 # If true, show URL addresses after external links.

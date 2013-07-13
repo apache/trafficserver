@@ -25,4 +25,4 @@ API Reference
   TSDebug.en
   TSHttpHookAdd.en
   TSHttpParserCreate.en
-
+  TSHttpTxnMilestoneGet.en
