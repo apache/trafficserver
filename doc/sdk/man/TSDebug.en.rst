@@ -36,8 +36,8 @@ Synopsis
 .. function:: void TSHttpSsnDebugSet(TSHttpSsn ssn, int on)
 .. function:: int TSHttpTxnDebugGet(TSHttpTxn txnp)
 .. function:: int TSHttpSsnDebugGet(TSHttpSsn ssn)
-.. function:: void TSAssert(expression)
-.. function:: void TSReleaseAssert(expression)
+.. macro:: void TSAssert(expression)
+.. macro:: void TSReleaseAssert(expression)
 
 Description
 ===========
@@ -53,10 +53,10 @@ output to the Traffic Server debug log.
 :func:`TSIsDebugTagSet` returns non-zero if the given debug tag is
 enabled.
 
-In debug mode, :func:`TSAssert` Traffic Server to prints the file
+In debug mode, :macro:`TSAssert` Traffic Server to prints the file
 name, line number and expression, and then aborts. In release mode,
 the expression is not removed but the effects of printing an error
-message and aborting are.  :func:`TSReleaseAssert` prints an error
+message and aborting are. :macro:`TSReleaseAssert` prints an error
 message and aborts in both release and debug mode.
 
 :func:`TSDebugSpecific` emits a debug line even if the debug tag
@@ -80,5 +80,4 @@ debugging flag is enabled::
 
 SEE ALSO
 ========
-:manpage:`TSAPI(3ts)`,
-:manpage:`printf(3)`
+:manpage:`TSAPI(3ts)`, :manpage:`printf(3)`
