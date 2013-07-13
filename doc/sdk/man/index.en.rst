@@ -24,4 +24,5 @@ API Reference
   TSAPI.en
   TSDebug.en
   TSHttpHookAdd.en
+  TSHttpParserCreate.en
 
