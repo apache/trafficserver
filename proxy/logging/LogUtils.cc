@@ -56,9 +56,8 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-LogUtils::LogUtils(DoNotConstruct object)
+LogUtils::LogUtils(DoNotConstruct /* object ATS_UNUSED */)
 {
-  NOWARN_UNUSED(object);
   ink_release_assert(!"you can't construct a LogUtils object");
 }
 

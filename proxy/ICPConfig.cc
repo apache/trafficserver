@@ -362,10 +362,8 @@ Continuation(new_ProxyMutex()), _data(d), _value(v)
 }
 
 int
-ICPConfigUpdateCont::RetryICPconfigUpdate(int event, Event * e)
+ICPConfigUpdateCont::RetryICPconfigUpdate(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   ICPConfiguration::icp_config_change_callback(_data, _value);
   delete this;
   return EVENT_DONE;
@@ -485,10 +483,9 @@ ICPConfiguration::UpdatePeerConfig()
 }
 
 int
-ICPConfiguration::mgr_icp_config_change_callback(const char *name, RecDataT data_type, RecData data, void *cookie)
+ICPConfiguration::mgr_icp_config_change_callback(const char * /* name ATS_UNUSED */,
+                                                 RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
   //*****************************************************************
   // Callout invoked by Configuration management when changes occur
   // to icp.config
@@ -973,9 +970,8 @@ ParentSiblingPeer::ValidSender(sockaddr* fr)
 }
 
 void
-ParentSiblingPeer::LogSendMsg(ICPMsg_t * m, sockaddr const* sa)
+ParentSiblingPeer::LogSendMsg(ICPMsg_t * m, sockaddr const* /* sa ATS_UNUSED */)
 {
-  NOWARN_UNUSED(sa);
   // Note: ICPMsg_t (m) is in network byte order
 
   // Note numerous stats on a per peer basis
@@ -1040,13 +1036,10 @@ MultiCastPeer::SendMsg_re(Continuation * cont, void *token, struct msghdr * msg,
 }
 
 Action *
-MultiCastPeer::RecvFrom_re(Continuation * cont, void *token,
-                           IOBufferBlock * bufblock, int len, struct sockaddr * from, socklen_t *fromlen)
+MultiCastPeer::RecvFrom_re(Continuation * cont, void *token, IOBufferBlock * /* bufblock ATS_UNUSED */,
+                           int len, struct sockaddr * from, socklen_t *fromlen)
 {
-  NOWARN_UNUSED(bufblock);
-  Action *a = udpNet.recvfrom_re(cont, token,
-                                 _recv_chan.fd, from, fromlen,
-                                 buf, len, true, 0);
+  Action *a = udpNet.recvfrom_re(cont, token, _recv_chan.fd, from, fromlen, buf, len, true, 0);
   return a;
 }
 
@@ -1191,10 +1184,8 @@ ICPPeriodicCont::ICPPeriodicCont(ICPProcessor * icpP)
 }
 
 int
-ICPPeriodicCont::PeriodicEvent(int event, Event * e)
+ICPPeriodicCont::PeriodicEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   int do_reconfig = 0;
   ICPConfiguration *C = _ICPpr->GetConfig();
 
@@ -1223,8 +1214,6 @@ ICPPeriodicCont::PeriodicEvent(int event, Event * e)
 int
 ICPPeriodicCont::DoReconfigAction(int event, Event * e)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   //************************************************************
   // Initiate reconfiguration action if any global or peer
   // configuration changes have occured.

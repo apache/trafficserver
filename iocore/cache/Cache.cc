@@ -293,12 +293,9 @@ validate_rww(int new_value)
 }
 
 static int
-update_cache_config(const char *name, RecDataT data_type, RecData data, void *cookie)
+update_cache_config(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                    void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(cookie);
-
   volatile int new_value = validate_rww(data.rec_int);
   cache_config_read_while_writer = new_value;
 
@@ -1990,8 +1987,7 @@ Cache::open_done() {
 }
 
 int
-Cache::open(bool clear, bool fix) {
-  NOWARN_UNUSED(fix);
+Cache::open(bool clear, bool /* fix ATS_UNUSED */) {
   int i;
   off_t blocks = 0;
   cache_read_done = 0;
@@ -2046,9 +2042,7 @@ Cache::close() {
 }
 
 int
-CacheVC::dead(int event, Event *e) {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
+CacheVC::dead(int /* event ATS_UNUSED */, Event * /*e ATS_UNUSED */) {
   ink_assert(0);
   return EVENT_DONE;
 }
@@ -2079,8 +2073,7 @@ static void unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay) {
 #endif
 
 int
-CacheVC::handleReadDone(int event, Event *e) {
-  NOWARN_UNUSED(e);
+CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */) {
   cancel_trigger();
   ink_assert(this_ethread() == mutex->thread_holding);
 
@@ -2097,7 +2090,9 @@ CacheVC::handleReadDone(int event, Event *e) {
     if ((!dir_valid(vol, &dir)) || (!io.ok())) {
       if (!io.ok()) {
         Debug("cache_disk_error", "Read error on disk %s\n \
-	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n", vol->hash_id, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes, (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
+	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
+              vol->hash_id, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+              (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
     }
@@ -2119,15 +2114,14 @@ CacheVC::handleReadDone(int event, Event *e) {
 
     if (is_debug_tag_set("cache_read")) {
       char xt[33];
-      Debug("cache_read"
-            , "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64" prefix=%d"
-            , doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len()
-        );
+      Debug("cache_read",
+            "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64" prefix=%d",
+            doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len());
     }
 
     // put into ram cache?
-    if (io.ok() &&
-        ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) && doc->magic == DOC_MAGIC) {
+    if (io.ok() && ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) &&
+        doc->magic == DOC_MAGIC) {
       int okay = 1;
       if (!f.doc_from_ram_cache)
         f.not_from_ram_cache = 1;
@@ -2151,7 +2145,7 @@ CacheVC::handleReadDone(int event, Event *e) {
       int indx;
       do {
         indx = vol->interim_index++ % vol->num_interim_vols;
-      }while (good_interim_disks > 0 && DISK_BAD(vol->interim_vols[indx].disk));
+      } while (good_interim_disks > 0 && DISK_BAD(vol->interim_vols[indx].disk));
 
       if (good_interim_disks) {
         if (f.write_into_interim) {
@@ -2259,10 +2253,8 @@ Ldone:
 
 
 int
-CacheVC::handleRead(int event, Event *e)
+CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   cancel_trigger();
 
   f.doc_from_ram_cache = false;
@@ -2408,11 +2400,8 @@ Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
 #endif
 
 int
-CacheVC::removeEvent(int event, Event *e)
+CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
   set_io_not_in_progress();
   {
@@ -2486,13 +2475,9 @@ Lfree:
 }
 
 Action *
-Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type,
-              bool user_agents, bool link,
-              char *hostname, int host_len)
+Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */,
+              bool /* link ATS_UNUSED */, char *hostname, int host_len)
 {
-  NOWARN_UNUSED(user_agents);
-  NOWARN_UNUSED(link);
-
   if (!CACHE_READY(type)) {
     if (cont)
       cont->handleEvent(CACHE_EVENT_REMOVE_FAILED, 0);

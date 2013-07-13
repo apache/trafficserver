@@ -53,11 +53,8 @@ Cache::scan(Continuation * cont, char *hostname, int host_len, int KB_per_second
 }
 
 int
-CacheVC::scanVol(int event, Event * e)
+CacheVC::scanVol(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   Debug("cache_scan_truss", "inside %p:scanVol", this);
   if (_action.cancelled)
     return free_CacheVC(this);
@@ -151,11 +148,8 @@ static char *make_vol_map(Vol *d)
 }
 
 int
-CacheVC::scanObject(int event, Event * e)
+CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   Debug("cache_scan_truss", "inside %p:scanObject", this);
 
   Doc *doc = NULL;
@@ -378,11 +372,8 @@ Lcancel:
 }
 
 int
-CacheVC::scanRemoveDone(int event, Event * e)
+CacheVC::scanRemoveDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   Debug("cache_scan_truss", "inside %p:scanRemoveDone", this);
   Debug("cache_scan", "remove done.");
 #ifdef HTTP_CACHE
@@ -393,10 +384,8 @@ CacheVC::scanRemoveDone(int event, Event * e)
 }
 
 int
-CacheVC::scanOpenWrite(int event, Event * e)
+CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
   Debug("cache_scan_truss", "inside %p:scanOpenWrite", this);
   cancel_trigger();
   // get volume lock
@@ -482,10 +471,8 @@ CacheVC::scanOpenWrite(int event, Event * e)
 }
 
 int
-CacheVC::scanUpdateDone(int event, Event * e)
+CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
   Debug("cache_scan_truss", "inside %p:scanUpdateDone", this);
   cancel_trigger();
   // get volume lock

@@ -2529,9 +2529,8 @@ ClusterHandler::mainClusterEvent(int event, Event * e)
 }
 
 int
-ClusterHandler::process_read(ink_hrtime now)
+ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
 {
-  NOWARN_UNUSED(now);
 #ifdef CLUSTER_STATS
   _process_read_calls++;
 #endif

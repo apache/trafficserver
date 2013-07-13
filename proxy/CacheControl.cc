@@ -89,10 +89,8 @@ typedef int (CC_FreerContinuation::*CC_FreerContHandler) (int, void *);
 struct CC_FreerContinuation: public Continuation
 {
   CC_table *p;
-  int freeEvent(int event, Event * e)
+  int freeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(e);
     Debug("cache_control", "Deleting old table");
     delete p;
     delete this;
@@ -112,10 +110,8 @@ struct CC_FreerContinuation: public Continuation
 //
 struct CC_UpdateContinuation: public Continuation
 {
-  int file_update_handler(int etype, void *data)
+  int file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    NOWARN_UNUSED(etype);
-    NOWARN_UNUSED(data);
     reloadCacheControl();
     delete this;
       return EVENT_DONE;
@@ -127,12 +123,9 @@ struct CC_UpdateContinuation: public Continuation
 };
 
 int
-cacheControlFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
+cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                    RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   eventProcessor.schedule_imm(NEW(new CC_UpdateContinuation(reconfig_mutex)), ET_CACHE);
   return 0;
 }

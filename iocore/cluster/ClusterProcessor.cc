@@ -198,10 +198,10 @@ ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn,
   return internal_invoke_remote(ch, cluster_fn, data, data_len, options, (void *) chdr);
 }
 
+// TODO: Why pass in the length here if not used ?
 void
-ClusterProcessor::free_remote_data(char *p, int l)
+ClusterProcessor::free_remote_data(char *p, int /* l ATS_UNUSED */)
 {
-  NOWARN_UNUSED(l);
   char *d = p - sizeof(int32_t);  // reset to ptr to function code
   int data_hdr = ClusterControl::DATA_HDR;
 
@@ -735,7 +735,7 @@ ClusterProcessor::start()
     REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
     ET_CLUSTER = eventProcessor.spawn_event_threads(num_of_cluster_threads, "ET_CLUSTER", stacksize);
     for (int i = 0; i < eventProcessor.n_threads_for_type[ET_CLUSTER]; i++) {
-      initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i], i);
+      initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i]);
     }
     REC_RegisterConfigUpdateFunc("proxy.config.cluster.cluster_configuration", machine_config_change, (void *) CLUSTER_CONFIG);
     do_machine_config_change((void *) CLUSTER_CONFIG, "proxy.config.cluster.cluster_configuration");

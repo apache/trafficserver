@@ -222,10 +222,10 @@ LogCollationClientSM::send(LogBuffer * log_buffer)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_auth(int event, VIO * vio)
+LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(vio);
+
   Debug("log-coll", "[%d]client::client_auth", m_id);
 
   switch (event) {
@@ -329,10 +329,10 @@ LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_done(int event, void *data)
+LogCollationClientSM::client_done(int event, void * /* data ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(data);
+
   Debug("log-coll", "[%d]client::client_done", m_id);
 
   switch (event) {
@@ -396,10 +396,10 @@ LogCollationClientSM::client_done(int event, void *data)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_fail(int event, void *data)
+LogCollationClientSM::client_fail(int event, void * /* data ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(data);
+
   Debug("log-coll", "[%d]client::client_fail", m_id);
 
   switch (event) {
@@ -449,9 +449,8 @@ LogCollationClientSM::client_fail(int event, void *data)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_idle(int event, void *data)
+LogCollationClientSM::client_idle(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   Debug("log-coll", "[%d]client::client_idle", m_id);
 
   switch (event) {
@@ -477,9 +476,8 @@ LogCollationClientSM::client_idle(int event, void *data)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_init(int event, void *data)
+LogCollationClientSM::client_init(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   Debug("log-coll", "[%d]client::client_init", m_id);
 
   switch (event) {
@@ -602,10 +600,10 @@ LogCollationClientSM::client_open(int event, NetVConnection * net_vc)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_send(int event, VIO * vio)
+LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(vio);
+
   Debug("log-coll", "[%d]client::client_send", m_id);
 
   switch (event) {

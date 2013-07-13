@@ -324,10 +324,8 @@ typedef int (PrefetchConfigFreerCont::*PrefetchConfigFreerContHandler) (int, voi
 struct PrefetchConfigFreerCont: public Continuation
 {
   PrefetchConfiguration *p;
-  int freeEvent(int event, Event * e)
+  int freeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(e);
     Debug("Prefetch", "Deleting old Prefetch config after change");
     delete p;
     delete this;
@@ -340,10 +338,8 @@ struct PrefetchConfigFreerCont: public Continuation
 };
 
 int
-PrefetchConfigCont::conf_update_handler(int event, void *edata)
+PrefetchConfigCont::conf_update_handler(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(edata);
   Debug("Prefetch", "Handling Prefetch config change");
 
   PrefetchConfiguration *new_prefetch_config = NEW(new PrefetchConfiguration);
@@ -362,13 +358,9 @@ PrefetchConfigCont::conf_update_handler(int event, void *edata)
 }
 
 static int
-prefetch_config_cb(const char *name, RecDataT data_type, RecData data, void *cookie)
+prefetch_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                   RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
-
   INK_MEMORY_BARRIER;
 
   eventProcessor.schedule_in(NEW(new PrefetchConfigCont(prefetch_reconfig_mutex)), HRTIME_SECONDS(1), ET_TASK);
@@ -762,9 +754,8 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
 
 
 static int
-PrefetchPlugin(TSCont contp, TSEvent event, void *edata)
+PrefetchPlugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
-  NOWARN_UNUSED(contp);
   HttpSM *sm = (HttpSM *) edata;
   HTTPHdr *resp = 0;
   bool from_cache = false;
@@ -1651,9 +1642,8 @@ PrefetchBlaster::httpClient(int event, void *data)
 }
 
 int
-PrefetchBlaster::bufferObject(int event, void *data)
+PrefetchBlaster::bufferObject(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   switch (event) {
 
   case EVENT_INTERVAL:
@@ -2256,9 +2246,8 @@ KeepAliveConn::handleEvent(int event, void *data)
 }
 
 int
-KeepAliveLockHandler::handleEvent(int event, void *data)
+KeepAliveLockHandler::handleEvent(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   if (event == EVENT_INTERVAL)
     g_conn_table->append(ip, buf, reader);
 

@@ -99,12 +99,9 @@ init_reverse_proxy()
 // odd ball configs, for example if you use the "CONNECT" method, or if you set
 // set proxy.config.url_remap.url_remap_mode to "2" (which is a completely undocumented "feature").
 bool
-request_url_remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, unsigned int filter_mask)
+request_url_remap(HttpTransact::State * /* s ATS_UNUSED */, HTTPHdr * /* request_header ATS_UNUSED */,
+                  char ** /* redirect_url ATS_UNUSED */, unsigned int /* filter_mask ATS_UNUSED */)
 {
-  NOWARN_UNUSED(s);
-  NOWARN_UNUSED(request_header);
-  NOWARN_UNUSED(redirect_url);
-  NOWARN_UNUSED(filter_mask);
   return false;
   // return rewrite_table ? rewrite_table->Remap(s, request_header, redirect_url, orig_url, tag, filter_mask) : false;
 }
@@ -136,11 +133,8 @@ struct UR_UpdateContinuation;
 typedef int (UR_UpdateContinuation::*UR_UpdContHandler) (int, void *);
 struct UR_UpdateContinuation: public Continuation
 {
-  int file_update_handler(int etype, void *data)
+  int file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    NOWARN_UNUSED(etype);
-    NOWARN_UNUSED(data);
-
     reloadUrlRewrite();
     delete this;
     return EVENT_DONE;
@@ -159,10 +153,8 @@ typedef int (UR_FreerContinuation::*UR_FreerContHandler) (int, void *);
 struct UR_FreerContinuation: public Continuation
 {
   UrlRewrite *p;
-  int freeEvent(int event, Event * e)
+  int freeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(e);
     Debug("url_rewrite", "Deleting old remap.config table");
     delete p;
     delete this;
@@ -200,10 +192,8 @@ reloadUrlRewrite()
 }
 
 int
-url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
+url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
   int my_token = (int) (long) cookie;
 
   switch (my_token) {

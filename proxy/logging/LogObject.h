@@ -312,7 +312,7 @@ private:
 
   int _manage_object(LogObject * log_object, bool is_api_object, int maxConflicts);
 #ifndef TS_MICRO
-  static bool _has_internal_filename_conflict(char *filename, uint64_t signature, LogObject ** objects, int numObjects);
+  static bool _has_internal_filename_conflict(char *filename, LogObject ** objects, int numObjects);
 #endif                          // TS_MICRO
   int _solve_filename_conflicts(LogObject * log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject * log_obj, int maxConflicts, int fileNum = 0);

@@ -310,9 +310,8 @@ ClusterVConnectionCache::lookup(INK_MD5 * key)
 }
 
 int
-ClusterVConnectionCacheEvent::eventHandler(int event, Event * e)
+ClusterVConnectionCacheEvent::eventHandler(int /* event ATS_UNUSED */, Event * e)
 {
-  NOWARN_UNUSED(event);
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_CACHE_SCANS_STAT);
   MUTEX_TRY_LOCK(lock, cache->hash_lock[hash_index], this_ethread());
   if (!lock) {
@@ -794,9 +793,8 @@ CacheContinuation::lookupOpenWriteVCEvent(int event, Event * e)
 }
 
 int
-CacheContinuation::remove_and_delete(int event, Event * e)
+CacheContinuation::remove_and_delete(int /* event ATS_UNUSED */, Event * e)
 {
-  NOWARN_UNUSED(event);
   unsigned int hash = FOLDHASH(target_ip, seq_number);
   MUTEX_TRY_LOCK(queuelock, remoteCacheContQueueMutex[hash], this_ethread());
   if (queuelock) {
@@ -1851,9 +1849,8 @@ CacheContinuation::setupReadBufTunnel(VConnection * cache_read_vc, VConnection *
 // Tunnnel exited event handler, used for readahead on open read.
 ///////////////////////////////////////////////////////////////////////
 int
-CacheContinuation::tunnelClosedEvent(int event, void *c)
+CacheContinuation::tunnelClosedEvent(int /* event ATS_UNUSED */, void *c)
 {
-  NOWARN_UNUSED(event);
   ink_assert(magicno == (int) MagicNo);
   // Note: We are called with the tunnel_mutex held.
   CacheContinuation *tc = (CacheContinuation *) c;
@@ -1937,9 +1934,8 @@ CacheContinuation::disposeOfDataBuffer(void *d)
 }
 
 int
-CacheContinuation::handleDisposeEvent(int event, CacheContinuation * cc)
+CacheContinuation::handleDisposeEvent(int /* event ATS_UNUSED */, CacheContinuation * cc)
 {
-  NOWARN_UNUSED(event);
   ink_assert(cc->magicno == (int) MagicNo);
   MUTEX_TRY_LOCK(lock, cc->tunnel_mutex, this_ethread());
   if (lock) {
@@ -2474,9 +2470,8 @@ retry:
 //////////////////////////////////////////////////////////////////////////
 
 int
-CacheContinuation::probeLookupEvent(int event, void *d)
+CacheContinuation::probeLookupEvent(int event, void * /* d ATS_UNUSED */)
 {
-  NOWARN_UNUSED(d);
   ink_assert(magicno == (int) MagicNo);
   callback_user(event, 0);
   return EVENT_DONE;
@@ -2487,10 +2482,8 @@ CacheContinuation::probeLookupEvent(int event, void *d)
 //   Result of a local lookup for PROBE_LOCAL_CACHE_FIRST
 ///////////////////////////////////////////////////////////
 int
-CacheContinuation::lookupEvent(int event, void *d)
+CacheContinuation::lookupEvent(int /* event ATS_UNUSED */, void * /* d ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(d);
   ink_release_assert(!"Invalid call CacheContinuation::lookupEvent");
   return EVENT_DONE;
 
@@ -2680,9 +2673,8 @@ cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
 //   It packages up the result and sends it back to the calling machine.
 /////////////////////////////////////////////////////////////////////////
 int
-CacheContinuation::replyLookupEvent(int event, void *d)
+CacheContinuation::replyLookupEvent(int event, void * /* d ATS_UNUSED */)
 {
-  NOWARN_UNUSED(d);
   ink_hrtime now;
   now = ink_get_hrtime();
   CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_CALLBACK_TIME_STAT, now - start_time);
@@ -2778,10 +2770,8 @@ CacheContinuation::insert_cache_callback_user(ClusterVConnection * vc, int res, 
 }
 
 int
-CacheContinuation::insertCallbackEvent(int event, Event * e)
+CacheContinuation::insertCallbackEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   if (GlobalOpenWriteVCcache->insert(&url_md5, (ClusterVConnection *)
                                      callback_data_2)) {
     // Inserted
@@ -2832,10 +2822,8 @@ CacheContinuation::defer_callback_result(int r, void *e)
 }
 
 int
-CacheContinuation::callbackResultEvent(int event, Event * e)
+CacheContinuation::callbackResultEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   if (!action.cancelled)
     action.continuation->handleEvent(result, callback_data);
   cacheContAllocator_free(this);
@@ -2910,10 +2898,8 @@ CacheContinuation::callback_failure(Action * a, int result, int err, CacheContin
 //  Invoke callback and deallocate continuation.
 ///////////////////////////////////////////////////////////////////////
 int
-CacheContinuation::callbackEvent(int event, Event * e)
+CacheContinuation::callbackEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   if (!action.cancelled)
     action.continuation->handleEvent(result, (void *)(intptr_t)result_error);
   cacheContAllocator_free(this);

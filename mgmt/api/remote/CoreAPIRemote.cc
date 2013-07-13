@@ -649,10 +649,8 @@ WriteFile(TSFileNameT file, char *text, int size, int version)
  * LAN - need to implement
  */
 TSError
-EventSignal(char *event_name, va_list ap)
+EventSignal(char */* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event_name);
-  NOWARN_UNUSED(ap);
   return TS_ERR_FAIL;
 }
 

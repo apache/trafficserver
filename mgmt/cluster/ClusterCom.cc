@@ -314,11 +314,9 @@ drainIncomingChannel(void *arg)
  * the manager.
  */
 int
-cluster_com_port_watcher(const char *name, RecDataT data_type, RecData data, void *cookie)
+cluster_com_port_watcher(const char *name, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                         void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(cookie);
-
   ink_assert(!name);
 
   ink_mutex_acquire(&(lmgmt->ccom->mutex));     /* Grab cluster lock */

@@ -1011,10 +1011,9 @@ static int passes;
 static int fails;
 
 // Parenting Tests
-EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_level, int *pstatus)
+EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * /* t ATS_UNUSED */,
+                                            int /* intensity_level ATS_UNUSED */, int *pstatus)
 {
-  NOWARN_UNUSED(t);
-  NOWARN_UNUSED(intensity_level);
   // first, set everything up
   *pstatus = REGRESSION_TEST_INPROGRESS;
   ParentConfig config;

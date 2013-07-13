@@ -672,27 +672,6 @@ int Cmd_ConfigSsl(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 //
 int CmdArgs_ConfigSsl();
 
-
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigNetwork
-//
-// This is the callback function for the "config:network" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int Cmd_ConfigNetwork(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigNetwork
-//
-// Register "config:network" arguments with the Tcl interpreter.
-//
-int CmdArgs_ConfigNetwork();
-
 ////////////////////////////////////////////////////////////////
 // Functions to implement network settings
 //

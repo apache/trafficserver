@@ -502,9 +502,8 @@ CmdCacheCont(bool check, bool fix = false):Continuation(new_ProxyMutex()) {
 };
 
 static int
-cmd_check_internal(char *cmd, bool fix = false)
+cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 {
-  NOWARN_UNUSED(cmd);
   const char *n = fix ? "REPAIR" : "CHECK";
 
   printf("%s\n\n", n);
@@ -778,15 +777,12 @@ check_for_root_uid()
 #endif
 
 static int
-set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_token)
+set_core_size(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+              RecData data, void * /* opaque_token ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
   RecInt size = data.rec_int;
   struct rlimit lim;
   bool failed = false;
-
-  NOWARN_UNUSED(opaque_token);
 
   if (getrlimit(RLIMIT_CORE, &lim) < 0) {
     failed = true;
@@ -1277,16 +1273,12 @@ change_uid_gid(const char *user)
 //
 
 int
-main(int argc, char **argv)
+main(int /* argc ATS_UNUSED */, char **argv)
 {
 #if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
   bool admin_user_p = false;
-
-  NOWARN_UNUSED(argc);
-
-  //init_logging();
 
 #ifdef HAVE_MCHECK
   mcheck_pedantic(NULL);
@@ -1708,9 +1700,8 @@ REGRESSION_TEST(Hdrs) (RegressionTest * t, int atype, int *pstatus) {
 #endif
 
 static void *
-mgmt_restart_shutdown_callback(void *, char *, int data_len)
+mgmt_restart_shutdown_callback(void *, char *, int /* data_len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data_len);
   sync_cache_dir_on_shutdown();
   return NULL;
 }

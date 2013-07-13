@@ -756,9 +756,8 @@ CacheVC::die()
 }
 
 TS_INLINE int
-CacheVC::handleWriteLock(int event, Event *e)
+CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
 {
-  NOWARN_UNUSED(event);
   cancel_trigger();
   int ret = 0;
   {
@@ -1090,9 +1089,8 @@ Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 }
 
 TS_INLINE void
-Cache::generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr *request)
+Cache::generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr */* request ATS_UNUSED */)
 {
-  NOWARN_UNUSED(request);
 #ifdef BROKEN_HACK_FOR_VARY_ON_UA
   // We probably should make this configurable, both enabling it and what
   // MIME types we want to treat differently. // Leif
@@ -1236,7 +1234,7 @@ CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *
                                   CacheFragType frag_type, int options, time_t pin_in_cache,
                                   char *hostname, int host_len)
 {
-  NOWARN_UNUSED(pin_in_cache);
+  (void)pin_in_cache;
   (void)cont;
   (void)buf;
   (void)key;

@@ -180,18 +180,16 @@ Log::add_to_inactive(LogObject * object)
 struct PeriodicWakeup;
 typedef int (PeriodicWakeup::*PeriodicWakeupHandler)(int, void *);
 struct PeriodicWakeup : Continuation {
+  int wakeup (int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  {
+    ink_cond_signal (&Log::flush_cond);
+    return EVENT_CONT;
+  }
 
-    int wakeup (int event, Event *e)
-    {
-        NOWARN_UNUSED (event); NOWARN_UNUSED (e);
-        ink_cond_signal (&Log::flush_cond);
-        return EVENT_CONT;
-    }
-
-    PeriodicWakeup () : Continuation (new_ProxyMutex())
-    {
-        SET_HANDLER ((PeriodicWakeupHandler)&PeriodicWakeup::wakeup);
-    }
+  PeriodicWakeup () : Continuation (new_ProxyMutex())
+  {
+    SET_HANDLER ((PeriodicWakeupHandler)&PeriodicWakeup::wakeup);
+  }
 };
 
 
@@ -290,10 +288,8 @@ Log::periodic_tasks(long time_now)
   -------------------------------------------------------------------------*/
 struct LoggingFlushContinuation: public Continuation
 {
-  int mainEvent(int event, void *data)
+  int mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(data);
     Log::flush_thread_main(NULL);
     return 0;
   }
@@ -306,10 +302,8 @@ struct LoggingFlushContinuation: public Continuation
 
 struct LoggingCollateContinuation: public Continuation
 {
-  int mainEvent(int event, void *data)
+  int mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(data);
     Log::collate_thread_main(NULL);
     return 0;
   }
@@ -901,12 +895,9 @@ Log::init_fields()
 
   -------------------------------------------------------------------------*/
 int
-Log::handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie)
+Log::handle_logging_mode_change(const char */* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                                RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   Debug("log-config", "Enabled status changed");
   logging_mode_changed = true;
   return 0;
@@ -1181,9 +1172,8 @@ Log::va_error(char *format, va_list ap)
   -------------------------------------------------------------------------*/
 
 void *
-Log::flush_thread_main(void *args)
+Log::flush_thread_main(void * /* args ATS_UNUSED */)
 {
-  NOWARN_UNUSED (args);
   time_t now, last_time = 0;
   size_t buffers_flushed;
 
@@ -1231,9 +1221,8 @@ Log::flush_thread_main(void *args)
   -------------------------------------------------------------------------*/
 
 void *
-Log::collate_thread_main(void *args)
+Log::collate_thread_main(void * /* args ATS_UNUSED */)
 {
-  NOWARN_UNUSED(args);
   LogSock *sock;
   LogBufferHeader *header;
   LogFormat *format;

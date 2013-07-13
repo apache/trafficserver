@@ -1113,10 +1113,8 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
   eventProcessor.schedule_imm(c);
 }
 int
-HostDBContinuation::setbyEvent(int event, Event * e)
+HostDBContinuation::setbyEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   HostDBInfo *r = probe(mutex, md5, false);
 
   if (r)
@@ -1216,9 +1214,8 @@ HostDBProcessor::failed_connect_on_ip_for_name(Continuation * cont, sockaddr con
 #endif
 
 int
-HostDBContinuation::removeEvent(int event, Event * e)
+HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event * e)
 {
-  NOWARN_UNUSED(event);
   Continuation *cont = action.continuation;
 
   MUTEX_TRY_LOCK(lock, cont ? (ProxyMutex *) cont->mutex : (ProxyMutex *) NULL, e->ethread);
@@ -1688,20 +1685,18 @@ HostDBContinuation::make_get_message(char *buf, int size)
 //
 // Make and send a get message
 //
-bool HostDBContinuation::do_get_response(Event * e)
+bool HostDBContinuation::do_get_response(Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
   if (!hostdb_cluster)
     return false;
 
   // find an appropriate Machine
   //
-  ClusterMachine *
-    m = NULL;
+  ClusterMachine *m = NULL;
 
-  if (hostdb_migrate_on_demand)
+  if (hostdb_migrate_on_demand) {
     m = cluster_machine_at_depth(master_hash(md5.hash), &probe_depth, past_probes);
-  else {
+  } else {
     if (probe_depth)
       return false;
     m = cluster_machine_at_depth(master_hash(md5.hash));
@@ -1713,11 +1708,10 @@ bool HostDBContinuation::do_get_response(Event * e)
 
   // Make message
   //
-  HostDB_get_message
-    msg;
+  HostDB_get_message msg;
+
   memset(&msg, 0, sizeof(msg));
-  int
-    len = make_get_message((char *) &msg, sizeof(HostDB_get_message));
+  int len = make_get_message((char *) &msg, sizeof(HostDB_get_message));
 
   // Setup this continuation, with a timeout
   //
@@ -1810,9 +1804,8 @@ HostDBContinuation::do_put_response(ClusterMachine * m, HostDBInfo * r, Continua
 // Probe state
 //
 int
-HostDBContinuation::probeEvent(int event, Event * e)
+HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event * e)
 {
-  NOWARN_UNUSED(event);
   ink_assert(!link.prev && !link.next);
   EThread *t = e ? e->ethread : this_ethread();
 
@@ -1968,9 +1961,8 @@ HostDBContinuation::do_dns()
 // Handle the response (put message)
 //
 int
-HostDBContinuation::clusterResponseEvent(int event, Event * e)
+HostDBContinuation::clusterResponseEvent(int/*  event ATS_UNUSED */, Event * e)
 {
-  NOWARN_UNUSED(event);
   if (from_cont) {
     HostDBContinuation *c;
     for (c = (HostDBContinuation *) remoteHostDBQueue[key_partition()].head; c; c = (HostDBContinuation *) c->link.next)
@@ -2084,9 +2076,8 @@ HostDBContinuation::failed_cluster_request(Event * e)
 
 
 void
-get_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int len)
+get_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(len);
   HostDBMD5 md5;
   HostDB_get_message *msg = (HostDB_get_message *) data;
 
@@ -2131,9 +2122,8 @@ get_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int len)
 
 
 void
-put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int len)
+put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(len);
   HostDB_put_message *msg = (HostDB_put_message *) data;
   HostDBContinuation *c = hostDBContAllocator.alloc();
   HostDBContinuation::Options copt;
@@ -2165,18 +2155,15 @@ put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int len)
 // here, like move records to the current position in the cluster.
 //
 int
-HostDBContinuation::backgroundEvent(int event, Event * e)
+HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   hostdb_current_interval++;
 
   return EVENT_CONT;
 }
 
-bool HostDBInfo::match(INK_MD5 & md5, int bucket, int buckets)
+bool HostDBInfo::match(INK_MD5 & md5, int /* bucket ATS_UNUSED */, int buckets)
 {
-  NOWARN_UNUSED(bucket);
   if (md5[1] != md5_high)
     return false;
 
@@ -2291,10 +2278,8 @@ struct ShowHostDB: public ShowCont
   }
 
 
-  int showLookup(int event, Event * e)
+  int showLookup(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(e);
     SET_HANDLER(&ShowHostDB::showLookupDone);
     if (name)
       hostDBProcessor.getbyname_re(this, name, 0, HostDBProcessor::Options().setFlags(force ? HostDBProcessor::HOSTDB_FORCE_DNS_ALWAYS : 0));

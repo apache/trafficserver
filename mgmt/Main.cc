@@ -825,13 +825,12 @@ main(int argc, char **argv)
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void
-SignalAlrmHandler(int sig, siginfo_t * t, void *c)
+SignalAlrmHandler(int /* sig ATS_UNUSED */, siginfo_t * t, void * /* c ATS_UNUSED */)
 #else
 static void
-SignalAlrmHandler(int sig)
+SignalAlrmHandler(int /* sig ATS_UNUSED */)
 #endif
 {
-  NOWARN_UNUSED(sig);
   /*
      fprintf(stderr,"[TrafficManager] ==> SIGALRM received\n");
      mgmt_elog(stderr,"[TrafficManager] ==> SIGALRM received\n");
@@ -942,9 +941,8 @@ SignalHandler(int sig)
 //    zombies which is bad for us
 //
 static void
-SigChldHandler(int sig)
+SigChldHandler(int /* sig ATS_UNUSED */)
 {
-  NOWARN_UNUSED(sig);
 }
 
 void

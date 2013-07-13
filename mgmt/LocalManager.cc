@@ -35,11 +35,8 @@
 #endif
 
 bool
-LocalManager::SetForDup(void *hIOCPort, long lTProcId, void *hTh)
+LocalManager::SetForDup(void * /* hIOCPort ATS_UNUSED */, long /* lTProcId ATS_UNUSED */, void * /* hTh ATS_UNUSED */)
 {
-  NOWARN_UNUSED(hIOCPort);
-  NOWARN_UNUSED(lTProcId);
-  NOWARN_UNUSED(hTh);
   return true;
 }
 
@@ -202,10 +199,9 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(char *mpath, bool proxy_on)
+LocalManager::LocalManager(char * /* mpath ATS_UNUSED */, bool proxy_on)
   : BaseManager(), run_proxy(proxy_on)
 {
-  NOWARN_UNUSED(mpath);
   bool found;
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;

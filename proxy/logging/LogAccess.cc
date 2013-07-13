@@ -544,11 +544,9 @@ LogAccess::marshal_file_size(char *buf)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
-LogAccess::marshal_http_header_field(LogField::Container container, char *field, char *buf)
+LogAccess::marshal_http_header_field(LogField::Container /* container ATS_UNUSED */,
+                                     char * /* field ATS_UNUSED */, char *buf)
 {
-  NOWARN_UNUSED(container);
-  NOWARN_UNUSED(field);
-  NOWARN_UNUSED(buf);
   DEFAULT_STR_FIELD;
 }
 
@@ -557,11 +555,9 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
 
   -------------------------------------------------------------------------*/
 int
-LogAccess::marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf)
+LogAccess::marshal_http_header_field_escapify(LogField::Container /* container ATS_UNUSED */,
+                                              char * /* field ATS_UNUSED */, char *buf)
 {
-  NOWARN_UNUSED(container);
-  NOWARN_UNUSED(field);
-  NOWARN_UNUSED(buf);
   DEFAULT_STR_FIELD;
 }
 
@@ -806,7 +802,6 @@ LogAccess::marshal_str(char *dest, const char *source, int padded_len)
 void
 LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padded_len)
 {
-  NOWARN_UNUSED(padded_len);
   if (source == NULL || source[0] == 0 || actual_len == 0) {
     source = DEFAULT_STR;
     actual_len = DEFAULT_STR_LEN;

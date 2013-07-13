@@ -164,17 +164,14 @@ shutdown_system()
   -------------------------------------------------------------------------*/
 
 static void
-check_lockfile(const char *config_dir, const char *pgm_name)
+check_lockfile()
 {
-  NOWARN_UNUSED(config_dir);
-  NOWARN_UNUSED(pgm_name);
   int err;
   pid_t holding_pid;
   char *lockfile = NULL;
 
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
-    fprintf(stderr,"unable to access() dir'%s': %d, %s\n",
-            Layout::get()->runtimedir, errno, strerror(errno));
+    fprintf(stderr,"unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
     fprintf(stderr," please set correct path in env variable TS_ROOT \n");
     _exit(1);
   }
@@ -218,7 +215,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
   // ensure that only one copy of the sac is running
   //
   if (one_copy) {
-    check_lockfile(system_config_directory, pgm_name);
+    check_lockfile();
   }
   // set stdin/stdout to be unbuffered
   //

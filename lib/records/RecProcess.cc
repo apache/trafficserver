@@ -285,8 +285,6 @@ struct raw_stat_sync_cont: public Continuation
 
   int exec_callbacks(int event, Event *e)
   {
-    REC_NOWARN_UNUSED(event);
-    REC_NOWARN_UNUSED(e);
     while (true) {
       RecExecRawStatSyncCbs();
       Debug("statsproc", "raw_stat_sync_cont() processed");
@@ -310,8 +308,6 @@ struct config_update_cont: public Continuation
 
   int exec_callbacks(int event, Event *e)
   {
-    REC_NOWARN_UNUSED(event);
-    REC_NOWARN_UNUSED(e);
     while (true) {
       RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
       Debug("statsproc", "config_update_cont() processed");
@@ -346,8 +342,6 @@ struct sync_cont: public Continuation
 
   int sync(int event, Event *e)
   {
-    REC_NOWARN_UNUSED(event);
-    REC_NOWARN_UNUSED(e);
     while (true) {
       send_push_message();
       RecSyncStatsFile();
@@ -547,7 +541,6 @@ Ldone:
 int
 RecRawStatSyncSum(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  REC_NOWARN_UNUSED(name);
   RecRawStat total;
 
   Debug("stats", "raw sync:sum for %s", name);
@@ -562,7 +555,6 @@ RecRawStatSyncSum(const char *name, RecDataT data_type, RecData *data, RecRawSta
 int
 RecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  REC_NOWARN_UNUSED(name);
   RecRawStat total;
 
   Debug("stats", "raw sync:count for %s", name);
@@ -577,7 +569,6 @@ RecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawS
 int
 RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  REC_NOWARN_UNUSED(name);
   RecRawStat total;
   RecFloat avg = 0.0f;
 
@@ -594,7 +585,6 @@ RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawSta
 int
 RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  REC_NOWARN_UNUSED(name);
   RecRawStat total;
   RecFloat r;
 
@@ -615,7 +605,6 @@ RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Rec
 int
 RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  REC_NOWARN_UNUSED(name);
   RecRawStat total;
   RecFloat r;
 
@@ -635,7 +624,6 @@ RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecDa
 int
 RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  REC_NOWARN_UNUSED(name);
   RecRawStat total;
   RecFloat r;
 
@@ -658,11 +646,9 @@ RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Re
 // RecIncrRawStatXXX
 //-------------------------------------------------------------------------
 int
-RecIncrRawStatBlock(RecRawStatBlock *rsb, EThread *ethread, RecRawStat *stat_array)
+RecIncrRawStatBlock(RecRawStatBlock */* rsb ATS_UNUSED */, EThread */* ethread ATS_UNUSED */,
+                    RecRawStat */* stat_array ATS_UNUSED */)
 {
-  REC_NOWARN_UNUSED(rsb);
-  REC_NOWARN_UNUSED(ethread);
-  REC_NOWARN_UNUSED(stat_array);
   return REC_ERR_FAIL;
 }
 
@@ -687,10 +673,8 @@ RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
 }
 
 int
-RecSetRawStatBlock(RecRawStatBlock *rsb, RecRawStat *stat_array)
+RecSetRawStatBlock(RecRawStatBlock */* rsb ATS_UNUSED */, RecRawStat */* stat_array ATS_UNUSED */)
 {
-  REC_NOWARN_UNUSED(rsb);
-  REC_NOWARN_UNUSED(stat_array);
   return REC_ERR_FAIL;
 }
 

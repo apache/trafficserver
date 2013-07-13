@@ -108,9 +108,9 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
 
-  virtual void setSSLHandshakeWantsRead(bool flag) { NOWARN_UNUSED(flag); return; }
+  virtual void setSSLHandshakeWantsRead(bool /* flag */) { return; }
   virtual bool getSSLHandshakeWantsRead() { return false; }
-  virtual void setSSLHandshakeWantsWrite(bool flag) { NOWARN_UNUSED(flag); return; }
+  virtual void setSSLHandshakeWantsWrite(bool /* flag */) { return; }
 
   virtual bool getSSLHandshakeWantsWrite() { return false; }
 

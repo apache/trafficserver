@@ -188,11 +188,9 @@ LogConfig::setup_default_values()
 }
 
 void *
-LogConfig::reconfigure_mgmt_variables(void *token, char *data_raw, int data_len)
+LogConfig::reconfigure_mgmt_variables(void * /* token ATS_UNUSED */, char * /* data_raw ATS_UNUSED */,
+                                      int /* data_len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(token);
-  NOWARN_UNUSED(data_raw);
-  NOWARN_UNUSED(data_len);
   Note("[TrafficServer:LogConfig] : Roll_Log_Files event received. rolling now");
   Log::config->roll_log_files_now = true;
   return NULL;
@@ -1204,12 +1202,9 @@ LogConfig::setup_log_objects()
   -------------------------------------------------------------------------*/
 
 int
-LogConfig::reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie)
+LogConfig::reconfigure(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                       RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   Debug("log-config", "Reconfiguration request accepted");
   Log::config->reconfiguration_needed = true;
   return 0;

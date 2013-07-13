@@ -65,9 +65,8 @@ StatPagesManager::register_http(const char *module, StatPagesFunc func)
 }
 
 Action *
-StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_ip)
+StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header)
 {
-  NOWARN_UNUSED(client_ip);
   URL *url = header->url_get();
 
   if (((m_enabled == 1 || m_enabled == 3) && is_cache_inspector_page(url)) ||

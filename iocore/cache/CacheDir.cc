@@ -102,11 +102,8 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 }
 
 int
-OpenDir::signal_readers(int event, Event *e)
+OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
   EThread *t = mutex->thread_holding;
   CacheVC *c = NULL;
@@ -1089,9 +1086,6 @@ sync_cache_dir_on_shutdown(void)
 int
 CacheSync::mainEvent(int event, Event *e)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   if (trigger) {
     trigger->cancel_action();
     trigger = NULL;
@@ -1220,9 +1214,8 @@ Ldone:
 
 #define HIST_DEPTH 8
 int
-Vol::dir_check(bool fix)
+Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
-  NOWARN_UNUSED(fix);
   int hist[HIST_DEPTH + 1] = { 0 };
   int *shist = (int*)ats_malloc(segments * sizeof(int));
   memset(shist, 0, segments * sizeof(int));
@@ -1400,8 +1393,7 @@ dir_corrupt_bucket(Dir *b, int s, Vol *d)
   dir_set_next(e, dir_to_offset(e, seg));
 }
 
-EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status) {
-  NOWARN_UNUSED(atype);
+EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int /* atype ATS_UNUSED */, int *status) {
   ink_hrtime ttime;
   int ret = REGRESSION_TEST_PASSED;
 

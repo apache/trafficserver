@@ -43,7 +43,6 @@
   (((rec_type) == RECT_CONFIG) || \
    ((rec_type) == RECT_LOCAL))
 
-#define REC_NOWARN_UNUSED(a) NOWARN_UNUSED(a)
 
 //-------------------------------------------------------------------------
 // RecData Utils

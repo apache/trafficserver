@@ -56,10 +56,8 @@ ClusterCalloutContinuation::~ClusterCalloutContinuation()
 }
 
 int
-ClusterCalloutContinuation::CalloutHandler(int event, Event * e)
+ClusterCalloutContinuation::CalloutHandler(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   return _ch->process_incoming_callouts(this->mutex);
 }
 
@@ -788,9 +786,8 @@ ClusterHandler::machine_down()
 }
 
 int
-ClusterHandler::zombify(Event * e)
+ClusterHandler::zombify(Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
   //
   // Node associated with *this is declared down, setup the event to cleanup
   // and defer deletion of *this
@@ -1228,9 +1225,8 @@ failed:
 }
 
 int
-ClusterHandler::beginClusterEvent(int event, Event * e)
+ClusterHandler::beginClusterEvent(int /* event ATS_UNUSED */, Event * e)
 {
-  NOWARN_UNUSED(event);
   // Establish the main periodic Cluster event
 #ifdef CLUSTER_IMMEDIATE_NETIO
   build_poll(false);
@@ -1254,9 +1250,8 @@ ClusterHandler::zombieClusterEvent(int event, Event * e)
 }
 
 int
-ClusterHandler::protoZombieEvent(int event, Event * e)
+ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event * e)
 {
-  NOWARN_UNUSED(event);
   //
   // Node associated with *this is declared down.
   // After cleanup is complete, setup handler to delete *this

@@ -1811,9 +1811,6 @@ Lcallreturn:
 int
 InterimCacheVol::aggWrite(int event, void *e)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
-
   ink_assert(!is_io_in_progress());
   MigrateToInterimCache *mts;
   Doc *doc;

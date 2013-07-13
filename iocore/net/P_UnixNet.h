@@ -199,7 +199,7 @@ public:
   int startNetEvent(int event, Event * data);
   int mainNetEvent(int event, Event * data);
   int mainNetEventExt(int event, Event * data);
-  void process_enabled_list(NetHandler *, EThread *);
+  void process_enabled_list(NetHandler *);
 
   NetHandler();
 };

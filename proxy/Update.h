@@ -135,13 +135,13 @@ public:
 
   void Init(int derived_url = 0);
   int ValidURL(char *, char *);
-  int ValidHeaders(char *, char *);
+  int ValidHeaders(char *);
   int BuildHttpRequest();
   int ValidHeaderNameChar(char);
   int ValidSeparatorChar(char);
-  int ValidHour(char *, char *);
-  int ValidInterval(char *, char *);
-  int ValidDepth(char *, char *);
+  int ValidHour(char *);
+  int ValidInterval(char *);
+  int ValidDepth(char *);
   int TerminalURL();
   void SetTerminalStatus(int);
 

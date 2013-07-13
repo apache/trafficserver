@@ -1492,9 +1492,8 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
 }
 
 void
-url_describe(HdrHeapObjImpl * raw, bool recurse)
+url_describe(HdrHeapObjImpl * raw, bool /* recurse ATS_UNUSED */)
 {
-  NOWARN_UNUSED(recurse);
   URLImpl *obj = (URLImpl *) raw;
 
   Debug("http", "[URLTYPE: %d, SWKSIDX: %d,\n", obj->m_url_type, obj->m_scheme_wks_idx);

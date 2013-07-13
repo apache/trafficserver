@@ -457,9 +457,8 @@ HttpClientSession::state_keep_alive(int event, void *data)
 }
 
 int
-HttpClientSession::state_api_callout(int event, void *data)
+HttpClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   switch (event) {
   case EVENT_NONE:
   case EVENT_INTERVAL:

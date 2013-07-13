@@ -85,8 +85,6 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 static int
 link_int(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
   RecInt *rec_int = (RecInt *) cookie;
   ink_atomic_swap(rec_int, data.rec_int);
   return REC_ERR_OKAY;
@@ -95,8 +93,6 @@ link_int(const char *name, RecDataT data_type, RecData data, void *cookie)
 static int
 link_int32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
   *((int32_t *) cookie) = (int32_t) data.rec_int;
   return REC_ERR_OKAY;
 }
@@ -104,8 +100,6 @@ link_int32(const char *name, RecDataT data_type, RecData data, void *cookie)
 static int
 link_uint32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
   *((uint32_t *) cookie) = (uint32_t) data.rec_int;
   return REC_ERR_OKAY;
 }
@@ -113,8 +107,6 @@ link_uint32(const char *name, RecDataT data_type, RecData data, void *cookie)
 static int
 link_float(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
   *((RecFloat *) cookie) = data.rec_float;
   return REC_ERR_OKAY;
 }
@@ -122,8 +114,6 @@ link_float(const char *name, RecDataT data_type, RecData data, void *cookie)
 static int
 link_counter(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
   RecCounter *rec_counter = (RecCounter *) cookie;
   ink_atomic_swap(rec_counter, data.rec_counter);
   return REC_ERR_OKAY;
@@ -134,8 +124,6 @@ link_counter(const char *name, RecDataT data_type, RecData data, void *cookie)
 static int
 link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
   RecByte *rec_byte = (RecByte *) cookie;
   RecByte byte = static_cast<RecByte>(data.rec_int);
 
@@ -149,9 +137,6 @@ link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
 static int
 link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
-
   RecString _ss = data.rec_string;
   RecString _new_value = NULL;
 
@@ -624,7 +609,6 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
 int
 RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 {
-  REC_NOWARN_UNUSED(lock);
   int err;
   RecRecord *r = NULL;
 
@@ -857,9 +841,6 @@ RecForceInsert(RecRecord * record)
 static void
 debug_record_callback(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum)
 {
-  NOWARN_UNUSED(edata);
-  NOWARN_UNUSED(rec_type);
-
   switch(data_type) {
   case RECD_INT:
     RecDebug(DL_Note, "  ([%d] '%s', '%" PRId64 "')", registered, name, datum->rec_int);
@@ -1083,10 +1064,8 @@ REC_readString(const char *name, bool * found, bool lock)
 #include "LocalManager.h"
 
 void
-RecSignalManager(int id, const char *msg)
+RecSignalManager(int /* id ATS_UNUSED */, const char */* msg ATS_UNUSED */)
 {
-  REC_NOWARN_UNUSED(id);
-  REC_NOWARN_UNUSED(msg);
 }
 
 int
@@ -1117,9 +1096,8 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
 #else
 
 void
-RecSignalManager(int id, const char *msg)
+RecSignalManager(int /* id ATS_UNUSED */, const char *msg)
 {
-  REC_NOWARN_UNUSED(id);
   RecLog(DL_Warning, msg);
 }
 

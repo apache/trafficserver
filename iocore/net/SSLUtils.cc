@@ -79,11 +79,8 @@ SSL_pthreads_thread_id()
 }
 
 static void
-SSL_locking_callback(int mode, int type, const char * file, int line)
+SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int /* line ATS_UNUSED */)
 {
-  NOWARN_UNUSED(file);
-  NOWARN_UNUSED(line);
-
   ink_assert(type < CRYPTO_num_locks());
 
   if (mode & CRYPTO_LOCK) {
@@ -181,8 +178,8 @@ ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * lookup)
     SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
   }
 #else
-  NOWARN_UNUSED(ctx);
-  NOWARN_UNUSED(lookup);
+  (void)ctx;
+  (void)lookup;
 #endif /* TS_USE_TLS_SNI */
 
   return ctx;

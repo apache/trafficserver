@@ -508,9 +508,8 @@ HttpSM::do_api_callout()
 }
 
 int
-HttpSM::state_add_to_list(int event, void *data)
+HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   // The list if for stat pages and general debugging
   //   The config variable exists mostly to allow us to
   //   measure an performance drop during benchmark runs
@@ -536,9 +535,8 @@ HttpSM::state_add_to_list(int event, void *data)
 }
 
 int
-HttpSM::state_remove_from_list(int event, void *data)
+HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   // The config parameters are guranteed not change
   //   across the life of a transaction so it safe to
   //   check the config here and use it detrmine
@@ -564,10 +562,8 @@ HttpSM::state_remove_from_list(int event, void *data)
 }
 
 int
-HttpSM::kill_this_async_hook(int event, void *data)
+HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(data);
   // In the base HttpSM, we don't have anything to
   //   do here.  subclasses can overide this function
   //   to do their own asyncronous cleanup
@@ -3319,9 +3315,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 //Copy partial POST data to buffers. Check for the various parameters including
 //the maximum configured post data size
 int
-HttpSM::tunnel_handler_for_partial_post(int event, void *data)
+HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpSM::tunnel_handler_for_partial_post, event);
   tunnel.deallocate_buffers();
   tunnel.reset();
@@ -3749,9 +3744,8 @@ HttpSM::state_srv_lookup(int event, void *data)
 }
 
 int
-HttpSM::state_remap_request(int event, void *data)
+HttpSM::state_remap_request(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpSM::state_remap_request, event);
 
   switch (event) {
@@ -6531,12 +6525,6 @@ HttpSM::update_stats()
     ua_write_time = -1;
   }
 
-/*   DebugSM("ARMStatsCache", "ua_begin_write: %d ua_close: %d ua_write_time:%d",
-     (int) ink_hrtime_to_msec(milestones.ua_begin_write),
-     (int) ink_hrtime_to_msec(milestones.ua_close),
-     (int) ink_hrtime_to_msec(ua_write_time));
- */
-
   ink_hrtime os_read_time;
   if (milestones.server_read_header_done != 0 && milestones.server_close != 0) {
     os_read_time = milestones.server_close - milestones.server_read_header_done;
@@ -6544,28 +6532,21 @@ HttpSM::update_stats()
     os_read_time = -1;
   }
 
+  // TS-2032: This code is never used, but leaving it here in case we want to add these
+  // to the metrics code.
+#if 0
   ink_hrtime cache_lookup_time;
   if (milestones.cache_open_read_end != 0 && milestones.cache_open_read_begin != 0) {
     cache_lookup_time = milestones.cache_open_read_end - milestones.cache_open_read_begin;
   } else {
     cache_lookup_time = -1;
   }
+#endif
 
-  HttpTransact::update_size_and_time_stats(&t_state,
-                                           total_time,
-                                           ua_write_time,
-                                           os_read_time,
-                                           cache_lookup_time,
-                                           client_request_hdr_bytes,
-                                           client_request_body_bytes,
-                                           client_response_hdr_bytes,
-                                           client_response_body_bytes,
-                                           server_request_hdr_bytes,
-                                           server_request_body_bytes,
-                                           server_response_hdr_bytes,
-                                           server_response_body_bytes,
-                                           pushed_response_hdr_bytes,
-                                           pushed_response_body_bytes, t_state.cache_info.action);
+  HttpTransact::update_size_and_time_stats(&t_state, total_time, ua_write_time, os_read_time, client_request_hdr_bytes,
+                                           client_request_body_bytes, client_response_hdr_bytes, client_response_body_bytes,
+                                           server_request_hdr_bytes, server_request_body_bytes, server_response_hdr_bytes,
+                                           server_response_body_bytes, pushed_response_hdr_bytes, pushed_response_body_bytes);
 /*
     if (is_action_tag_set("http_handler_times")) {
 	print_all_http_handler_times();
@@ -7081,9 +7062,7 @@ HttpSM::set_next_state()
   case HttpTransact::PROXY_INTERNAL_REQUEST:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_handle_stat_page);
-      Action *action_handle = statPagesManager.handle_http(this,
-                                                           &t_state.hdr_info.client_request,
-                                                           ua_session->get_netvc()->get_remote_ip());
+      Action *action_handle = statPagesManager.handle_http(this, &t_state.hdr_info.client_request);
 
       if (action_handle != ACTION_RESULT_DONE) {
         pending_action = action_handle;
@@ -7408,9 +7387,8 @@ HttpSM::set_http_schedule(Continuation *contp)
 }
 
 int
-HttpSM::get_http_schedule(int event, void * data)
+HttpSM::get_http_schedule(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   bool plugin_lock;
   Ptr <ProxyMutex> plugin_mutex;
   if (schedule_cont->mutex) {

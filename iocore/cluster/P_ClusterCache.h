@@ -188,17 +188,6 @@ machine_in_vector(ClusterMachine * m, ClusterMachine ** mm, int len)
 }
 
 //
-//   Return a machine list based on the given hash which is ordered from
-//   now to the past.  Returned list contains no duplicates and depth_list[0]
-//   entry (current configuration) is always valid.  Entries following
-//   depth_list[0] are considered online.
-//   Returns 0 on Success else non-zero on error.
-//
-int
-cluster_machine_depth_list(unsigned int hash, ClusterMachine ** depth_list,
-                           int depth_list_size = (CONFIGURATION_HISTORY_PROBE_DEPTH + 1));
-
-//
 // Returns either a machine or NULL.
 // Finds a machine starting at probe_depth going up to
 //    CONFIGURATION_HISTORY_PROBE_DEPTH
@@ -770,24 +759,18 @@ ClusterFunctionDescriptor clusterFunction[]
   {false, true, CMSG_LOW_PRI, ping_reply_ClusterFunction, 0},
   {false, true, CMSG_LOW_PRI, machine_list_ClusterFunction, 0},
   {false, true, CMSG_LOW_PRI, close_channel_ClusterFunction, 0},
-  {false, false, CMSG_LOW_PRI,
-   get_hostinfo_ClusterFunction, 0},    // in HostDB.cc
-  {false, false, CMSG_LOW_PRI,
-   put_hostinfo_ClusterFunction, 0},    // in HostDB.cc
-  {false, true, CMSG_LOW_PRI,
-   cache_lookup_ClusterFunction, 0},    // in CacheCont.cc
+  {false, false, CMSG_LOW_PRI, get_hostinfo_ClusterFunction, 0},    // in HostDB.cc
+  {false, false, CMSG_LOW_PRI, put_hostinfo_ClusterFunction, 0},    // in HostDB.cc
+  {false, true, CMSG_LOW_PRI, cache_lookup_ClusterFunction, 0},    // in CacheCont.cc
   {true, true, CMSG_LOW_PRI, cache_op_malloc_ClusterFunction, 0},
   {false, true, CMSG_LOW_PRI, cache_op_ClusterFunction, 0},
   {false, false, CMSG_LOW_PRI, cache_op_result_ClusterFunction, 0},
   {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
   {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
   {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
-  {false, true, CMSG_MAX_PRI, set_channel_data_ClusterFunction,
-   post_setchan_send_ClusterFunction},
-  {false, true, CMSG_MAX_PRI, set_channel_pin_ClusterFunction,
-   post_setchan_pin_ClusterFunction},
-  {false, true, CMSG_MAX_PRI, set_channel_priority_ClusterFunction,
-   post_setchan_priority_ClusterFunction},
+  {false, true, CMSG_MAX_PRI, set_channel_data_ClusterFunction, post_setchan_send_ClusterFunction},
+  {false, true, CMSG_MAX_PRI, set_channel_pin_ClusterFunction, post_setchan_pin_ClusterFunction},
+  {false, true, CMSG_MAX_PRI, set_channel_priority_ClusterFunction, post_setchan_priority_ClusterFunction},
    /********************************************
     * RESERVED for future cluster internal use *
     ********************************************/

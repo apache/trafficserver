@@ -1099,10 +1099,8 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 
 #ifndef TS_MICRO
 bool
-  LogObjectManager::_has_internal_filename_conflict(char *filename, uint64_t signature, LogObject ** objects,
-                                                    int numObjects)
+LogObjectManager::_has_internal_filename_conflict(char *filename, LogObject ** objects, int numObjects)
 {
-  NOWARN_UNUSED(signature);
   for (int i = 0; i < numObjects; i++) {
     LogObject *obj = objects[i];
 
@@ -1128,10 +1126,9 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int 
 
 #ifndef TS_MICRO
   char *filename = log_object->get_full_filename();
-  uint64_t signature = log_object->get_signature();
 
-  if (_has_internal_filename_conflict(filename, signature, _objects, _numObjects) ||
-      _has_internal_filename_conflict(filename, signature, _APIobjects, _numAPIobjects)) {
+  if (_has_internal_filename_conflict(filename, _objects, _numObjects) ||
+      _has_internal_filename_conflict(filename, _APIobjects, _numAPIobjects)) {
     if (fileNum < maxConflicts) {
       char new_name[MAXPATHLEN];
 

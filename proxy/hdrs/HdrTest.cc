@@ -49,11 +49,9 @@
 //////////////////////
 
 int
-HdrTest::go(RegressionTest * t, int atype)
+HdrTest::go(RegressionTest * t, int /* atype ATS_UNUSED */)
 {
-  NOWARN_UNUSED(atype);
   HdrTest::rtest = t;
-
   int status = 1;
 
   hdrtoken_init();

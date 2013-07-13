@@ -131,7 +131,6 @@ int Cmd_ShowAlarms(ClientData clientData, Tcl_Interp * interp, int argc, const c
 int Cmd_ShowRadius(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowNtlm(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowNtlmStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowNetwork(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_None();
 
 int getnameserver(char *nameserver, int len);

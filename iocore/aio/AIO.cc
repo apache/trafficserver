@@ -63,9 +63,8 @@ uint64_t aio_bytes_written = 0;
  */
 
 static int
-aio_stats_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
+aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  NOWARN_UNUSED(name);
   (void) data_type;
   (void) rsb;
   int64_t new_val = 0;

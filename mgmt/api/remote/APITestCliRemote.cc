@@ -2017,10 +2017,8 @@ try_resolve(char *event_name)
  * of the event that was signalled
  */
 void
-eventCallbackFn(char *name, char *msg, int pri, void *data)
+eventCallbackFn(char *name, char *msg, int /* pri ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(pri);
-  NOWARN_UNUSED(data);
   printf("[eventCallbackFn] EVENT: %s, %s\n", name, msg);
   return;
 }

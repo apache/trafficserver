@@ -989,9 +989,8 @@ mime_hdr_init(MIMEHdrImpl *mh)
 }
 
 MIMEFieldBlockImpl *
-_mime_field_block_copy(MIMEFieldBlockImpl *s_fblock, HdrHeap *s_heap, HdrHeap *d_heap)
+_mime_field_block_copy(MIMEFieldBlockImpl *s_fblock, HdrHeap * /* s_heap ATS_UNUSED */, HdrHeap *d_heap)
 {
-  NOWARN_UNUSED(s_heap);
   MIMEFieldBlockImpl *d_fblock;
 
   d_fblock = (MIMEFieldBlockImpl *)
@@ -1630,9 +1629,8 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name,
 }
 
 void
-mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field)
+mime_field_destroy(MIMEHdrImpl */* mh ATS_UNUSED */, MIMEField *field)
 {
-  NOWARN_UNUSED(mh);
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
 }
@@ -1648,10 +1646,9 @@ mime_field_name_get(MIMEField *field, int *length)
 }
 
 void
-mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1,
+mime_field_name_set(HdrHeap *heap, MIMEHdrImpl */* mh ATS_UNUSED */, MIMEField *field, int16_t name_wks_idx_or_neg1,
                     const char *name, int length, bool must_copy_string)
 {
-  NOWARN_UNUSED(mh);
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   field->m_wks_idx = name_wks_idx_or_neg1;
@@ -2536,9 +2533,8 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
 }
 
 void
-mime_field_block_describe(HdrHeapObjImpl *raw, bool recurse)
+mime_field_block_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
-  NOWARN_UNUSED(recurse); // TODO: This is here only to be compatible with http_hdr_...
   unsigned int i;
   static const char *readiness_names[] = { "EMPTY", "DETACHED", "LIVE", "DELETED" };
 
@@ -2570,10 +2566,9 @@ mime_field_block_describe(HdrHeapObjImpl *raw, bool recurse)
 }
 
 int
-mime_hdr_print(HdrHeap *heap, MIMEHdrImpl *mh, char *buf_start, int buf_length, int *buf_index_inout,
+mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start, int buf_length, int *buf_index_inout,
                int *buf_chars_to_skip_inout)
 {
-  NOWARN_UNUSED(heap);
   MIMEFieldBlockImpl *fblock;
   MIMEField *field;
   uint32_t index;

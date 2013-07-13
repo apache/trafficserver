@@ -1145,8 +1145,6 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
                                    HTTPHdr * client_request,
                                    HTTPHdr * obj_client_request, HTTPHdr * obj_origin_server_response)
 {
-  //NOWARN_UNUSED(http_config_params);
-
   ink_assert(http_config_params != NULL);
   ink_assert(client_request != NULL);
   ink_assert(obj_client_request != NULL);

@@ -179,9 +179,8 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
 
 /* Modified from TrafficCop.cc (open_socket) */
 int
-connectDirect(const char *host, int port, uint64_t timeout)
+connectDirect(const char *host, int port, uint64_t /* timeout ATS_UNUSED */)
 {
-  NOWARN_UNUSED(timeout);
   int sock;
 
   // Create a socket

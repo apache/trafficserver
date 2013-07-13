@@ -120,18 +120,16 @@ public:
     return complete_error(event, e);
   }
 
-  virtual int done(int e, int event, void *data)
+  virtual int done(int /* e ATS_UNUSED */, int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    NOWARN_UNUSED(e);
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(data);
     delete this;
     return EVENT_DONE;
   }
 
-  ShowCont(Continuation * c, HTTPHdr * h): Continuation(NULL), sarg(0) {
+  ShowCont(Continuation * c, HTTPHdr * /* h ATS_UNUSED */)
+    : Continuation(NULL), sarg(0) {
     size_t sz = ats_pagesize();
-    NOWARN_UNUSED(h);
+
     mutex = c->mutex;
     action = c;
     buf = (char *)ats_malloc(sz);

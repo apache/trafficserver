@@ -231,9 +231,9 @@ update_current_info(HttpTransact::CurrentInfo* into, HttpTransact::ConnectionAtt
 }
 
 inline static void
-update_dns_info(HttpTransact::DNSLookupInfo* dns, HttpTransact::CurrentInfo* from, int attempts, Arena* arena)
+update_dns_info(HttpTransact::DNSLookupInfo* dns, HttpTransact::CurrentInfo* from, int attempts,
+                Arena* /* arena ATS_UNUSED */)
 {
-  NOWARN_UNUSED(arena);
   dns->looking_up = from->request_to;
   dns->lookup_name = from->server->name;
   dns->attempts = attempts;
@@ -300,7 +300,7 @@ find_server_and_update_current_info(HttpTransact::State* s)
     s->parent_result.r = PARENT_DIRECT;
   } else if (s->http_config_param->uncacheable_requests_bypass_parent &&
              s->http_config_param->no_dns_forward_to_parent == 0 &&
-             !HttpTransact::is_request_cache_lookupable(s, &s->hdr_info.client_request)) {
+             !HttpTransact::is_request_cache_lookupable(s)) {
     // request not lookupable and cacheable, so bypass parent
     // Note that the configuration of the proxy as well as the request
     // itself affects the result of is_request_cache_lookupable();
@@ -1177,7 +1177,7 @@ HttpTransact::HandleRequest(State* s)
 
   // We still need to decide whether or not to do a cache lookup since
   // the scheduled update code depends on this info.
-  if (is_request_cache_lookupable(s, &s->hdr_info.client_request))
+  if (is_request_cache_lookupable(s))
     s->cache_info.action = CACHE_DO_LOOKUP;
 
   // If the hostname is "$internal$" then this is a request for
@@ -1795,7 +1795,7 @@ HttpTransact::DecideCacheLookup(State* s)
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = GENERIC_PROXY;
   } else {
-    if (is_request_cache_lookupable(s, &s->hdr_info.client_request)) {
+    if (is_request_cache_lookupable(s)) {
       s->cache_info.action = CACHE_DO_LOOKUP;
       s->current.mode = GENERIC_PROXY;
     } else {
@@ -2295,7 +2295,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State* s)
   if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
     // is the document still fresh enough to be served back to
     // the client without revalidation?
-    Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->request_get(), obj->response_get());
+    Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get());
     switch (freshness) {
     case FRESHNESS_FRESH:
       DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] " "Fresh copy");
@@ -4873,10 +4873,9 @@ HttpTransact::merge_warning_header(HTTPHdr* cached_header, HTTPHdr* response_hea
 }
 
 void
-HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info, ConnectionAttributes *client_info,
-                                       HostDBInfo *host_db_info)
+HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info,
+                                       ConnectionAttributes * /* client_info ATS_UNUSED */, HostDBInfo *host_db_info)
 {
-  NOWARN_UNUSED(client_info);
   ////////////////////////////////////////////////////////
   // Set the keep-alive and version flags for later use //
   // in request construction                            //
@@ -5289,9 +5288,8 @@ HttpTransact::did_forward_server_send_0_9_response(State* s)
 }
 
 bool
-HttpTransact::handle_internal_request(State* s, HTTPHdr* incoming_hdr)
+HttpTransact::handle_internal_request(State* /* s ATS_UNUSED */, HTTPHdr* incoming_hdr)
 {
-  NOWARN_UNUSED(s);
 #ifdef INK_NO_STAT_PAGES
   return false;
 #else
@@ -5621,7 +5619,6 @@ HttpTransact::initialize_state_variables_from_response(State* s, HTTPHdr* incomi
       s->hdr_info.trust_response_cl = false;
     }
   }
-  initialize_bypass_variables(s);
 
   if (incoming_response->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
     MIMEField *field = incoming_response->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
@@ -5851,9 +5848,8 @@ HttpTransact::url_looks_dynamic(URL* url)
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool
-HttpTransact::is_request_cache_lookupable(State* s, HTTPHdr* incoming)
+HttpTransact::is_request_cache_lookupable(State* s)
 {
-  NOWARN_UNUSED(incoming);
   // ummm, someone has already decided that proxy should tunnel
   if (s->current.mode == TUNNELLING_PROXY) {
     return false;
@@ -5965,8 +5961,6 @@ response_cacheable_indicated_by_cc(HTTPHdr* response)
 bool
 HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* response)
 {
-  NOWARN_UNUSED(s->http_config_param);
-
   // if method is not GET or HEAD, do not cache.
   // Note: POST is also cacheable with Expires or Cache-control.
   // but due to INKqa11567, we are not caching POST responses.
@@ -5981,7 +5975,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   // If the request was not looked up in the cache, the response
   // should not be cached (same subsequent requests will not be
   // looked up, either, so why cache this).
-  if (!(is_request_cache_lookupable(s, request))) {
+  if (!(is_request_cache_lookupable(s))) {
     DebugTxn("http_trans", "[is_response_cacheable] " "request is not cache lookupable, response is not cachable");
     return (false);
   }
@@ -6415,9 +6409,8 @@ HttpTransact::is_response_valid(State* s, HTTPHdr* incoming_response)
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool
-HttpTransact::service_transaction_in_proxy_only_mode(State* s)
+HttpTransact::service_transaction_in_proxy_only_mode(State* /* s ATS_UNUSED */)
 {
-  NOWARN_UNUSED(s);
   return false;
 }
 
@@ -6937,8 +6930,6 @@ bool
 HttpTransact::does_client_request_permit_cached_response(const OverridableHttpConfigParams *p, CacheControlResult *c,
                                                          HTTPHdr *h, char *via_string)
 {
-  NOWARN_UNUSED(p);
-
   ////////////////////////////////////////////////////////////////////////
   // If aren't ignoring client's cache directives, meet client's wishes //
   ////////////////////////////////////////////////////////////////////////
@@ -7156,10 +7147,8 @@ HttpTransact::calculate_freshness_fuzz(State* s, int fresh_limit)
 //
 //////////////////////////////////////////////////////////////////////////////
 HttpTransact::Freshness_t
-HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTPHdr* cached_obj_request,
-                                         HTTPHdr* cached_obj_response)
+HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTPHdr* cached_obj_response)
 {
-  NOWARN_UNUSED(cached_obj_request);
   bool heuristic, do_revalidate = false;
   int age_limit;
   // These aren't used.
@@ -7657,7 +7646,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
     if (is_request_likely_cacheable(s, base_request)) {
       if (s->txn_conf->cache_when_to_revalidate != 4) {
         DebugTxn("http_trans", "[build_request] " "request like cacheable and conditional headers removed");
-        HttpTransactHeaders::remove_conditional_headers(base_request, outgoing_request);
+        HttpTransactHeaders::remove_conditional_headers(outgoing_request);
       } else
         DebugTxn("http_trans", "[build_request] " "request like cacheable but keep conditional headers");
     } else {
@@ -8487,15 +8476,13 @@ HttpTransact::origin_server_connection_speed(State* s, ink_hrtime transfer_time,
 
 void
 HttpTransact::update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
-                                         ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
-                                         int user_agent_request_header_size, int64_t user_agent_request_body_size,
-                                         int user_agent_response_header_size, int64_t user_agent_response_body_size,
-                                         int origin_server_request_header_size, int64_t origin_server_request_body_size,
-                                         int origin_server_response_header_size, int64_t origin_server_response_body_size,
-                                         int pushed_response_header_size, int64_t pushed_response_body_size, CacheAction_t cache_action)
+                                         ink_hrtime origin_server_read_time, int user_agent_request_header_size,
+                                         int64_t user_agent_request_body_size, int user_agent_response_header_size,
+                                         int64_t user_agent_response_body_size, int origin_server_request_header_size,
+                                         int64_t origin_server_request_body_size, int origin_server_response_header_size,
+                                         int64_t origin_server_response_body_size, int pushed_response_header_size,
+                                         int64_t pushed_response_body_size)
 {
-  NOWARN_UNUSED(cache_action);
-  NOWARN_UNUSED(cache_lookup_time);
   int64_t user_agent_request_size = user_agent_request_header_size + user_agent_request_body_size;
   int64_t user_agent_response_size = user_agent_response_header_size + user_agent_response_body_size;
   int64_t user_agent_bytes = user_agent_request_size + user_agent_response_size;
@@ -8635,18 +8622,6 @@ HttpTransact::update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hr
   return;
 }
 
-void
-HttpTransact::initialize_bypass_variables(State* s)
-{
-  NOWARN_UNUSED(s);
-  //////////////////////////////////////////
-  // Handle potential transparency errors //
-  //////////////////////////////////////////
-
-  /*
-   * NOTE: Removed ARM code from here
-   */
-}
 
 // void HttpTransact::add_new_stat_block(State* s)
 //

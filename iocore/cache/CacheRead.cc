@@ -170,11 +170,8 @@ CacheVC::openReadFromWriterFailure(int event, Event * e)
 }
 
 int
-CacheVC::openReadChooseWriter(int event, Event * e)
+CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   intptr_t err = ECACHE_DOC_BUSY;
   CacheVC *w = NULL;
 
@@ -458,11 +455,8 @@ CacheVC::openReadFromWriter(int event, Event * e)
 }
 
 int
-CacheVC::openReadFromWriterMain(int event, Event * e)
+CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
   if (seek_to) {
     vio.ndone = seek_to;
@@ -505,11 +499,8 @@ CacheVC::openReadFromWriterMain(int event, Event * e)
 }
 
 int
-CacheVC::openReadClose(int event, Event * e)
+CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
   if (is_io_in_progress()) {
     if (event != AIO_EVENT_DONE)
@@ -631,11 +622,8 @@ LreadMain:
 }
 
 int
-CacheVC::openReadMain(int event, Event * e)
+CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
   Doc *doc = (Doc *) buf->data();
   int64_t ntodo = vio.ntodo();
@@ -798,11 +786,8 @@ Lcallreturn:
   if you change this you might have to change that.
 */
 int
-CacheVC::openReadStartEarliest(int event, Event * e)
+CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   int ret = 0;
   Doc *doc = NULL;
   cancel_trigger();
@@ -961,11 +946,8 @@ Lsuccess:
 // the volume lock has been taken when this function is called
 #ifdef HTTP_CACHE
 int
-CacheVC::openReadVecWrite(int event, Event * e)
+CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
   cancel_trigger();
   set_io_not_in_progress();
   ink_assert(od);

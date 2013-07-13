@@ -86,7 +86,7 @@ private:
   ConnectionCount() {
     ink_mutex_init(&_mutex, "ConnectionCountMutex");
   }
-  ConnectionCount(const ConnectionCount & x) { NOWARN_UNUSED(x); }
+  ConnectionCount(const ConnectionCount & /* x ATS_UNUSED */) { }
 
   static ConnectionCount _connectionCount;
   HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;

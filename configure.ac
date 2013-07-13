@@ -1844,7 +1844,6 @@ AC_CONFIG_FILES([
   mgmt/cluster/Makefile
   mgmt/preparse/Makefile
   mgmt/stats/Makefile
-  mgmt/tools/Makefile
   mgmt/utils/Makefile
   mgmt/web2/Makefile
   plugins/Makefile

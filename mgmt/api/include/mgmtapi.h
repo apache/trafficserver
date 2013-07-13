@@ -1419,38 +1419,6 @@ extern "C"
 
   tsapi TSError TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString * list);
 
-/* These functions support the network configuration functionality
- * For each change of hostname, gateway, dns servers, and nick configurations
- * we should use these APIs to accomodate for it in TS, TM
- ******************************************************************/
-  /* rmserver.cfg */
-
-  tsapi TSError rm_change_ip(int, char **);
-
-  tsapi TSError rm_change_hostname(char *);
-
-  tsapi TSError rm_start_proxy();
-
-  tsapi TSError rm_remove_ip(int, char **);
-
-
-/* Net config functions */
-
-  tsapi TSError TSSetHostname(TSString hostname);
-
-  tsapi TSError TSSetGateway(TSString gateway_ip);
-
-  tsapi TSError TSSetDNSServers(TSString dns_ips);
-
-  tsapi TSError TSSetNICUp(TSString nic_name, bool static_ip, TSString ip, TSString old_ip, TSString netmask,
-                           bool onboot, TSString gateway_ip);
-
-  tsapi TSError TSSetProxyPort(TSString proxy_port);
-
-  tsapi TSError TSSetNICDown(TSString nic_name, TSString ip_addrr);
-
-  tsapi TSError TSSetSearchDomain(const char *search_name);
-
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */

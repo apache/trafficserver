@@ -335,9 +335,8 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
 ////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing response header and make it HTTP/0.9
 void
-HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr *outgoing_response)
+HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * /* outgoing_response ATS_UNUSED */)
 {
-  NOWARN_UNUSED(outgoing_response);
   // Http 0.9 does not require a response header.
 
   // There used to be clear header here, but the state machine
@@ -1043,11 +1042,10 @@ HttpTransactHeaders::_process_xxx_connection_field_in_outgoing_header(const char
 
 
 void
-HttpTransactHeaders::remove_conditional_headers(HTTPHdr *base, HTTPHdr *outgoing)
+HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
-  NOWARN_UNUSED(base);
-  if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE |
-                         MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH)) {
+  if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_UNMODIFIED_SINCE |
+                         MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH)) {
 
     outgoing->field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
     outgoing->field_delete(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE);

@@ -66,8 +66,8 @@ private:
 
   // make copy-constructor and assignment operator private
   // till we properly implement them
-  UrlMappingPathIndex(const UrlMappingPathIndex &rhs) { NOWARN_UNUSED(rhs); };
-  UrlMappingPathIndex &operator =(const UrlMappingPathIndex &rhs) { NOWARN_UNUSED(rhs); return *this; }
+  UrlMappingPathIndex(const UrlMappingPathIndex & /* rhs ATS_UNUSED */) { };
+  UrlMappingPathIndex &operator =(const UrlMappingPathIndex & /* rhs ATS_UNUSED */) { return *this; }
 
   inline UrlMappingTrie *
   _GetTrie(URL *url, int &idx, int port, bool search = true) const {

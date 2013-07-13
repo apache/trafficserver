@@ -273,9 +273,8 @@ HttpPagesHandler::dump_sm(HttpSM * sm)
 }
 
 int
-HttpPagesHandler::handle_smdetails(int event, void *data)
+HttpPagesHandler::handle_smdetails(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   EThread *ethread = this_ethread();
   HttpSM *sm = NULL;
 
@@ -350,9 +349,8 @@ HttpPagesHandler::handle_smdetails(int event, void *data)
 }
 
 int
-HttpPagesHandler::handle_smlist(int event, void *data)
+HttpPagesHandler::handle_smlist(int event, void */* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   EThread *ethread = this_ethread();
   HttpSM *sm;
 
@@ -431,10 +429,8 @@ HttpPagesHandler::handle_smlist(int event, void *data)
 }
 
 int
-HttpPagesHandler::handle_callback(int event, void *edata)
+HttpPagesHandler::handle_callback(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(edata);
   MUTEX_TRY_LOCK(trylock, action.mutex, this_ethread());
   if (!trylock) {
     SET_HANDLER(&HttpPagesHandler::handle_callback);

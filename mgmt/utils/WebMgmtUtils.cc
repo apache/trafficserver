@@ -1283,13 +1283,10 @@ fileCheckSum(char *buffer, int size, char *checksum, const size_t checksumSize)
 //  Attempts to spawn out a process by given a list of arguments
 //
 int
-processSpawn(const char *args[],
-             EnvBlock * env,
-             textBuffer * input_buf, textBuffer * output_buf, bool nowait, bool run_as_root, bool * truncated)
+processSpawn(const char *args[], EnvBlock * env, textBuffer * input_buf, textBuffer * output_buf, bool nowait,
+             bool run_as_root, bool * truncated)
 {
-  NOWARN_UNUSED(run_as_root);
   int status = 0;
-
   char buffer[1024];
   int nbytes;
   int stdinPipe[2];
@@ -1320,6 +1317,7 @@ processSpawn(const char *args[],
     lmgmt->closeProxyPorts();
 
 #if TS_USE_POSIX_CAP
+    (void)run_as_root;
     /* There is no point in saving the current euid in order to
        restore it because at this point the process will either exec
        or exit. The thread of execution will neither linger nor return

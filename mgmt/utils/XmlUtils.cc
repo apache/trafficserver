@@ -416,9 +416,8 @@ elementStart(void *pObj, const char *el, const char **attr)
 }
 
 void /*XMLDom:: */
-elementEnd(void *pObj, const char *el)
+elementEnd(void *pObj, const char * /* el ATS_UNUSED */)
 {
-  NOWARN_UNUSED(el);
   /*ASSERT(strcmp(el, pCur->pNodeName) == 0); */
   XMLDom *pDom = (XMLDom *) pObj;
   pDom->m_pCur = pDom->m_pCur->m_pParentNode;

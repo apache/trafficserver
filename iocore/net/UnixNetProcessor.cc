@@ -271,12 +271,9 @@ UnixNetProcessor::connect_re_internal(
 }
 
 Action *
-UnixNetProcessor::connect(Continuation * cont,
-                          UnixNetVConnection ** avc,
-                          sockaddr const* target,
+UnixNetProcessor::connect(Continuation * cont, UnixNetVConnection ** /* avc */, sockaddr const* target,
                           NetVCOptions * opt)
 {
-  NOWARN_UNUSED(avc);
   return connect_re(cont, target, opt);
 }
 
@@ -413,7 +410,7 @@ UnixNetProcessor::start(int, size_t)
   n_netthreads = eventProcessor.n_threads_for_type[etype];
   netthreads = eventProcessor.eventthread[etype];
   for (int i = 0; i < n_netthreads; ++i) {
-    initialize_thread_for_net(netthreads[i], i);
+    initialize_thread_for_net(netthreads[i]);
 #ifndef STANDALONE_IOCORE
     extern void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
     initialize_thread_for_http_sessions(netthreads[i], i);

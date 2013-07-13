@@ -267,9 +267,8 @@ newTcpSocket(int port)
 static volatile int32_t numServiceThr = 0;
 
 void *
-serviceThrReaper(void *arg)
+serviceThrReaper(void * /* arg ATS_UNUSED */)
 {
-  NOWARN_UNUSED(arg);
   int numJoined;
 
   lmgmt->syslogThrInit();
@@ -321,7 +320,7 @@ serviceThrReaper(void *arg)
 }                               // END serviceThrReaper()
 
 void *
-webIntr_main(void *x)
+webIntr_main(void *)
 {
   fd socketFD = -1;             // FD for incoming HTTP connections
   fd autoconfFD = -1;           // FD for incoming autoconf connections
@@ -350,8 +349,6 @@ webIntr_main(void *x)
 
   int addrLen;
   int i;
-  // No Warning
-  NOWARN_UNUSED(x);
 
 #if !defined(linux)
   // Start by blocking all signals

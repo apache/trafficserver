@@ -446,9 +446,8 @@ Rule::ip_allowParse(char *rule)
  * logsParse
  **/
 TokenList *
-Rule::logsParse(char *rule)
+Rule::logsParse(char * /* rule ATS_UNUSED */)
 {
-  NOWARN_UNUSED(rule);
   return NULL;
 }
 
@@ -476,9 +475,8 @@ Rule::log_hostsParse(char *rule)
  * logs_xmlParse
  **/
 TokenList *
-Rule::logs_xmlParse(char *rule)
+Rule::logs_xmlParse(char * /* rule ATS_UNUSED */)
 {
-  NOWARN_UNUSED(rule);
   return NULL;
 }
 

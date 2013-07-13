@@ -935,10 +935,8 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
  * output: TS_ERR_xx
  *************************************************************************/
 void
-handle_diags(struct SocketInfo sock_info, char *req)
+handle_diags(struct SocketInfo /* sock_info ATS_UNUSED */, char *req)
 {
-  NOWARN_UNUSED(sock_info);
-  NOWARN_UNUSED(req);
   TSError ret;
   TSDiagsT mode;
   char *diag_msg = NULL;

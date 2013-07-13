@@ -245,11 +245,9 @@ HttpBodyFactory::dump_template_tables(FILE * fp)
 ////////////////////////////////////////////////////////////////////////
 
 static int
-config_callback(const char *name, RecDataT data_type, RecData data, void *cookie)
+config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                RecData /* data ATS_UNUSED */, void *cookie)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
   HttpBodyFactory *body_factory = (HttpBodyFactory *) cookie;
   body_factory->reconfigure();
   return (0);

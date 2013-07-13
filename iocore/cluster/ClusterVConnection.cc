@@ -87,39 +87,29 @@ ClusterVConnectionBase::do_io_read(Continuation * acont, int64_t anbytes, MIOBuf
 }
 
 VIO *
-ClusterVConnectionBase::do_io_pread(Continuation * acont, int64_t anbytes, MIOBuffer * abuffer, int64_t off)
+ClusterVConnectionBase::do_io_pread(Continuation * /* acont ATS_UNUSED */, int64_t /* anbytes ATS_UNUSED */,
+                                    MIOBuffer * /* abuffer ATS_UNUSED */, int64_t /* off ATS_UNUSED */)
 {
-  NOWARN_UNUSED(acont);
-  NOWARN_UNUSED(anbytes);
-  NOWARN_UNUSED(abuffer);
-  NOWARN_UNUSED(off);
-  ink_assert(!"implemented");
   return 0;
 }
 
 int
-ClusterVConnection::get_header(void **ptr, int *len)
+ClusterVConnection::get_header(void ** /* ptr ATS_UNUSED */, int * /*len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(ptr);
-  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
 
 int
-ClusterVConnection::set_header(void *ptr, int len)
+ClusterVConnection::set_header(void * /* ptr ATS_UNUSED */, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(ptr);
-  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
 
 int
-ClusterVConnection::get_single_data(void **ptr, int *len)
+ClusterVConnection::get_single_data(void ** /* ptr ATS_UNUSED */, int * /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(ptr);
-  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }

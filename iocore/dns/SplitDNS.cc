@@ -556,9 +556,8 @@ SplitDNSRecord::Init(matcher_line * line_info)
     SplitDNSRecord::UpdateMatch()
    -------------------------------------------------------------- */
 void
-SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RD * rdata)
+SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RD * /* rdata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(rdata);
   int last_number = result->m_line_number;
 
   if ((last_number<0) || (last_number> this->line_num)) {
