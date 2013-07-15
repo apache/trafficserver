@@ -2,6 +2,12 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1820] Cleanup UNUSED / INK_UNUSED / RELEASE_UNUSED. This also removes
+   the entire mgmt/tools directory, and relevant support in traffic_shell for
+   managing network interfaces.
+
+  *) [TS-2033] Remove EncryptToFile() and mgmt API.
+
   *) [TS-2027] Initialize the ConnectionCount`s mutex.
 
   *) [TS-1997] Remove TSHttpTxnCachedUrlSet() API.
