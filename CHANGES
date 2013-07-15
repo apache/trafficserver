@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-2037] Fix start-stop-daemon typo in debian init script.
+
   *) [TS-2003] Fix RAM cache stats when using cluster. Author: Yunkai Zhang.
 
   *) [TS-1820] Cleanup UNUSED / INK_UNUSED / RELEASE_UNUSED. This also removes
