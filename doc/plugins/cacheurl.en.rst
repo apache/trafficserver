@@ -1,5 +1,5 @@
-Cacheurl: alter the cache key for URLs
-**************************************
+CacheURL Plugin
+***************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,53 +18,49 @@ Cacheurl: alter the cache key for URLs
   specific language governing permissions and limitations
   under the License.
 
-The cacheurl plugin allows you to change the key that is used for
-caching a request.  It is designed so that multiple requests that
-have different URLs but the same content (for example, site mirrors)
-need be cached only once.
 
-The cacheurl plugin can operate both as a global plugin or as a remap plugin.
-To install it as a global plugin, add it to your ``plugins.conf`` file::
 
-  cacheurl.so
+This plugin allows you to change the key that is used for caching a
+request.
 
-If you wish, you can specify a location for the cacheurl configuration file
-by adding it as a parameter in ``plugins.conf``. For example::
+It is designed so that multiple requests that have different URLs but
+the same content (for example, site mirrors) need be cached only once.
 
-  cacheurl.so /etc/trafficserver/cacheurl.config
+Installation
+============
 
-Cacheurl can also be called as a remap plugin in ``remap.config``. For example::
+::
+    make
+    sudo make install
 
-  map http://www.example.com/ http://origin.example.com/ @plugin=cacheurl.so @pparam=/path/to/cacheurl.config
+If you don't have the traffic server binaries in your path, then you
+will need to specify the path to tsxs manually:
 
-Next, create the configuration file with the url patterns to match.
-The default location for the config file is ``cacheurl.config`` in
-the plugins directory. The configuration file format is::
+::
+    make TSXS=/opt/ts/bin/tsxs
+    sudo make TSXS=/opt/ts/bin/tsxs install
 
-  PATTERN REPLACEMENT
+Configuration
+=============
 
-The ``PATTERN`` is a `PCRE <http://www.pcre.org>`_ regular expression.
-The replacement can contain ``$1``, ``$2`` and so on, which will
-be replaced with the appropriate matching group from the pattern.
+Create a ``cacheurl.config`` file in the plugin directory with the url
+patterns to match. See the ``cacheurl.config.example`` file for what to
+put in this file.
 
-Examples::
+Add the plugin to your
+```plugins.config`` <../../configuration-files/plugins.config>`_ file:
 
-  # Make files from s1.example.com, s2.example.com and s3.example.com all
-  # be cached with the same key.
-  # Adding a unique suffix (TSINTERNAL in this example) to the cache key
-  # guarantees that it won't clash with a real URL should s.example.com
-  # exist.
-  http://s[123].example.com/(.*)  http://s.example.com.TSINTERNAL/$1
+::
+    cacheurl.so
 
-  # Cache based on only some parts of a query string (e.g. ignore session
-  # information). This plucks out the id and format query string variables and
-  # only considers those when making the cache key.
-  http://www.example.com/video\?.*?\&?(id=[0-9a-f]*).*?\&(format=[a-z]*) http://video-srv.example.com.ATSINTERNAL/$1&$2
+Start traffic server. Any rewritten URLs will be written to
+``cacheurl.log`` in the log directory by default.
 
-  # Completely ignore a query string for a specific page
-  http://www.example.com/some/page.html(?:\?|$) http://www.example.com/some/page.html
+More docs
+=============
 
-Any rewritten URLs will be written to ``cacheurl.log`` in
-the log directory by default.
+There are some docs on cacheurl in Chinese, please find them in the following:
 
-.. vim: ft=rst
+```http://people.apache.org/~zym/trafficserver/cacheurl.html`` <http://people.apache.org/~zym/trafficserver/cacheurl.html>`_
+
+```https://blog.zymlinux.net/index.php/archives/195`` <https://blog.zymlinux.net/index.php/archives/195>`_

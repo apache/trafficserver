@@ -47,7 +47,6 @@ Contents:
    traffic-line-commands.en
    traffic-server-error-messages.en
    faqs.en
-   plugins.en
 
 
 What Is Apache Traffic Server?

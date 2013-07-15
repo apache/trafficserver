@@ -18,7 +18,55 @@ Plugin Reference
   specific language governing permissions and limitations
   under the License.
 
+Overview
+========
+
+One of the key features of Apache Traffic Server is modularity.
+Features that aren't needed in the core simply aren't there. This
+is a good thing, because it guarantees that our core can remain
+fast by concentrating on the things that we always provide: Caching
+and proxying.
+
+All other things can be moved into plugins, by opening up a consistent
+C API, everyone can implement their own functionality, without
+having to touch the core.
+
+Stable plugins
+==============
+
+Plugins that are considered stable are installed by default in
+Apache Traffic Server releases.
+
 .. toctree::
   :maxdepth: 1
 
   cacheurl.en
+  header_filter.en
+  regex_remap.en
+  stats_over_http.en
+
+Experimental plugins
+====================
+
+Plugins that are considered experimental are located in the
+```plugins/experimental`` <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_
+directory in the Apache Traffic Server source tree. Exmperimental plugins can be compiled by passing the
+`--enable-experimental-plugins` option to `configure`::
+
+    $ autoconf -i
+    $ ./configure --enable-experimental-plugins
+    $ make
+
+.. toctree::
+  :maxdepth: 1
+
+  balancer.en
+  buffer_upload.en
+  cacheurl.en
+  combo_handler.en
+  esi.en
+  geoip_acl.en
+  gzip.en
+  hipes.en
+  mysql_remap.en
+  stale_while_revalidate.en
