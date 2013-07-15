@@ -1627,11 +1627,11 @@ main(int /* argc ATS_UNUSED */, char **argv)
 #endif
     }
 
-#ifndef TS_NO_API
-    plugin_init(system_config_directory);        // plugin.config
-#else
+#ifdef TS_NO_API
     api_init();                 // we still need to initialize some of the data structure other module needs.
     // i.e. http_global_hooks
+#else
+    plugin_init(system_config_directory);        // plugin.config
     pmgmt->registerPluginCallbacks(global_config_cbs);
 #endif
 
