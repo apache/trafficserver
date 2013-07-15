@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-2003] Fix RAM cache stats when using cluster. Author: Yunkai Zhang.
+
   *) [TS-1820] Cleanup UNUSED / INK_UNUSED / RELEASE_UNUSED. This also removes
    the entire mgmt/tools directory, and relevant support in traffic_shell for
    managing network interfaces.
