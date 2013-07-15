@@ -570,8 +570,8 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
     MAX_VERSION = 1,
     CACHE_OP_SHORT_2_MESSAGE_VERSION = MAX_VERSION
   };
-    CacheOpMsg_short_2(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
-:  ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0) {
+  CacheOpMsg_short_2(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
+    :  ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0) {
     memset(moi, 0, sizeof(moi));
   }
   //////////////////////////////////////////////////////////////////////////
@@ -606,6 +606,7 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
   uint32_t seq_number;
   int32_t result;
   ClusterVCToken token;
+  bool is_ram_cache_hit;          // Entire object was from ram cache
   uint8_t moi[4];                 // Used by CACHE_OPEN_READ & CACHE_LINK reply
   enum
   {
@@ -613,8 +614,8 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
     MAX_VERSION = 1,
     CACHE_OP_REPLY_MESSAGE_VERSION = MAX_VERSION
   };
-  CacheOpReplyMsg(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION):
-  ClusterMessageHeader(vers), seq_number(0), result(0) {
+  CacheOpReplyMsg(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION)
+    : ClusterMessageHeader(vers), seq_number(0), result(0), is_ram_cache_hit(false) {
     memset(moi, 0, sizeof(moi));
   }
 

@@ -539,6 +539,7 @@ struct ClusterVConnection: public ClusterVConnectionBase
   int n_recv_set_data_msgs;     // # set_data() msgs received on VC
   volatile int pending_remote_fill;     // Remote fill pending on connection
   Ptr<IOBufferBlock> read_block;   // Hold current data for open read
+  bool remote_ram_cache_hit;    // Entire object was from remote ram cache
   bool have_all_data;           // All data in read_block
   int initial_data_bytes;       // bytes in open_read buffer
   Ptr<IOBufferBlock> remote_write_block;   // Write side data for remote fill
@@ -565,6 +566,10 @@ struct ClusterVConnection: public ClusterVConnectionBase
   int disk_io_priority;
   void set_remote_fill_action(Action *);
 
+  // Indicates whether a cache hit was from an peering cluster cache
+  bool is_ram_cache_hit() const { return remote_ram_cache_hit; };
+  void set_ram_cache_hit(bool remote_hit) { remote_ram_cache_hit = remote_hit; }
+
   // For VC(s) established via OPEN_READ, we are passed a CacheHTTPInfo
   //  in the reply.
   virtual bool get_data(int id, void *data);    // backward compatibility
@@ -581,10 +586,6 @@ struct ClusterVConnection: public ClusterVConnectionBase
   virtual time_t get_pin_in_cache();
   virtual bool set_disk_io_priority(int priority);
   virtual int get_disk_io_priority();
-  bool is_ram_cache_hit()
-  {
-    return 0;
-  }
   virtual int get_header(void **ptr, int *len);
   virtual int set_header(void *ptr, int len);
   virtual int get_single_data(void **ptr, int *len);

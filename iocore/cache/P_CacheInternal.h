@@ -252,7 +252,7 @@ struct CacheVC: public CacheVConnection
   bool get_data(int i, void *data);
   bool set_data(int i, void *data);
 
-  bool is_ram_cache_hit()
+  bool is_ram_cache_hit() const
   {
     ink_assert(vio.op == VIO::READ);
     return !f.not_from_ram_cache;

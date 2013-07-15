@@ -1720,6 +1720,8 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
     if (cache_read) {
       int res;
 
+      msg->is_ram_cache_hit = ((CacheVC *)cache_vc)->is_ram_cache_hit();
+
       if (!cache_vc_info.valid()) {
         (void) getObjectSize(cache_vc, request_opcode, &cache_vc_info);
       }
@@ -2058,6 +2060,11 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
         ci.destroy();
       return;
     }
+
+    // Update remote ram cache hit flag
+    if (msg->result == CACHE_EVENT_OPEN_READ)
+      c->read_cluster_vc->set_ram_cache_hit(msg->is_ram_cache_hit);
+
     // Try to send the message
 
     MUTEX_TRY_LOCK(lock, c->mutex, thread);

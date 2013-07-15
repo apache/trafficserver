@@ -659,7 +659,10 @@ public:
         config(),
         directives(),
         open_read_retries(0),
-        open_write_retries(0), write_lock_state(CACHE_WL_INIT), lookup_count(0), is_ram_cache_hit(false)
+        open_write_retries(0),
+      write_lock_state(CACHE_WL_INIT),
+      lookup_count(0),
+      is_ram_cache_hit(false)
     { }
   } CacheLookupInfo;
 
