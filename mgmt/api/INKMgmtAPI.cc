@@ -1896,7 +1896,6 @@ TSGetErrorMessage(TSError err_id)
 tsapi TSError
 TSEncryptPassword(char *passwd, char **e_passwd)
 {
-
   INK_DIGEST_CTX md5_context;
   char passwd_md5[16];
   char *passwd_md5_str;
@@ -1918,12 +1917,6 @@ TSEncryptPassword(char *passwd, char **e_passwd)
   *e_passwd = passwd_md5_str;
 
   return TS_ERR_OKAY;
-}
-
-tsapi TSError
-TSEncryptToFile(const char *passwd, const char *filepath)
-{
-  return EncryptToFile(passwd, filepath);
 }
 
 /*--- direct file operations ----------------------------------------------*/

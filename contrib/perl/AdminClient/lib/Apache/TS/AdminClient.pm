@@ -48,8 +48,7 @@ use constant {
     TS_SNAPSHOT_REMOVE      => 17,
     TS_SNAPSHOT_GET_MLT     => 18,
     TS_DIAGS                => 19,
-    TS_STATS_RESET          => 20,
-    TS_ENCRYPT_TO_FILE      => 21
+    TS_STATS_RESET          => 20
 };
 
 # We treat both REC_INT and REC_COUNTER the same here

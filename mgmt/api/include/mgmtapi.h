@@ -1047,15 +1047,6 @@ extern "C"
  */
   tsapi TSError TSEncryptPassword(char *passwd, char **e_passwd);
 
-/* TSEncryptToFile: Given the plain text password, this function will
- *                   encrypt the password and stores it to the specified file
- * Input: passwd - the plain text password
- *        filepath - the file location to store the encyrpted password
- * Output: TSError
- * Note: Uses certificate in ACL module for encryption.
- */
-  tsapi TSError TSEncryptToFile(const char *passwd, const char *filepath);
-
 /*--- direct file operations ----------------------------------------------*/
 /* TSConfigFileRead: reads a config file into a buffer
  * Input:  file - the config file to read

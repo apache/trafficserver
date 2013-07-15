@@ -832,26 +832,3 @@ StatsReset(bool cluster, const char* name)
 
   return parse_reply(main_socket_fd);
 }
-
-/*-------------------------------------------------------------------------
- * EncryptToFile
- *-------------------------------------------------------------------------
- * Encrypts the password and stores the encrypted password in the
- * location specified by "filepath"
- */
-TSError
-EncryptToFile(const char *passwd, const char *filepath)
-{
-  TSError err;
-
-  if (!passwd || !filepath)
-    return TS_ERR_PARAMS;
-
-  err = send_request_name_value(main_socket_fd, ENCRYPT_TO_FILE, passwd, filepath);
-  if (err != TS_ERR_OKAY)
-    return err;
-
-  err = parse_reply(main_socket_fd);
-
-  return err;
-}

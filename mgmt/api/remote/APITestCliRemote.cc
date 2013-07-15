@@ -2320,14 +2320,6 @@ sync_test()
   print_err("stop_TS", ret);
 }
 
-void
-test_encrypt_password(char *pwd)
-{
-  if (TSEncryptToFile(pwd, "/export/workareas/lant/tsunami/traffic/sun_dbg/etc/trafficserver/LAN_pwd") != TS_ERR_OKAY)
-    printf("[TSEncryptToFile] could not encrypt %s", pwd);
-}
-
-
 /* ########################################################################*/
 /* ------------------------------------------------------------------------
  * runInteractive
@@ -2430,8 +2422,6 @@ runInteractive()
       set_stats();
     } else if (strstr(buf, "print_stats")) {
       print_stats();
-    } else if (strstr(buf, "encrypt:")) {
-      test_encrypt_password(buf);
     } else {
       sync_test();
     }

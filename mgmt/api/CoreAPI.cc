@@ -895,28 +895,6 @@ StatsReset(bool cluster, const char *name)
   return TS_ERR_OKAY;
 }
 
-/*-------------------------------------------------------------------------
- * EncryptToFile
- *-------------------------------------------------------------------------
- * Encrypts the password and stores the encrypted password in the
- * location specified by "filepath"
- */
-TSError
-EncryptToFile(const char * /* passwd ATS_UNUSED */, const char * /* filepath ATS_UNUSED */)
-{
-  //AuthString fileAuthStr(filepath);
-  //AuthString passwdAuthStr(passwd);
-  /*if (!AccCrypto::encryptToFile(fileAuthStr, passwdAuthStr)) {
-    Debug("config", "[EncryptToFile] Failed to encrypt password");
-    return TS_ERR_FAIL;
-  }*/
-
-  return TS_ERR_OKAY;
-}
-
-
-/* Network conifguration functions */
-
 /*-------------------------------------------------------------
  * rmserver.cfg
  *-------------------------------------------------------------*/
