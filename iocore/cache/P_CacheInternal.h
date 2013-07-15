@@ -1263,11 +1263,13 @@ CacheProcessor::remove(Continuation *cont, CacheKey *key, bool cluster_cache_loc
   return caches[frag_type]->remove(cont, key, frag_type, rm_user_agents, rm_link, hostname, host_len);
 }
 
+# if 0
 TS_INLINE Action *
 scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = 2500)
 {
   return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, host_len, KB_per_second);
 }
+# endif
 
 #ifdef HTTP_CACHE
 TS_INLINE Action *
