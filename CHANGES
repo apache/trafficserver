@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
+  *) [TS-2036] Enable mgmt update (traffic_line -x) for plugins.
 
   *) [TS-2037] Fix start-stop-daemon typo in debian init script.
 
