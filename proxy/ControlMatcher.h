@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  ControlMatcher.h - Interface to genernal purpose matcher
+ *  ControlMatcher.h - Interface to general purpose matcher
  *
  *
  *
