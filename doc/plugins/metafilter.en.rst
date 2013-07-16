@@ -26,9 +26,7 @@ Take standard headers and knowledge about objects in the cache and
 potentially rewrite those headers so that a client will use a URL
 that is already cached instead of one that isn't.
 
-The `metalink` headers are specified in
-`RFC 6429 <http://tools.ietf.org/html/rfc6249>`_ and
-`RFC 3230 <http://tools.ietf.org/html/rfc3230>`_
+The `metalink` headers are specified in :rfc:`6429` and :rfc:`3230` 
 and are sent by various download redirectors or content distribution
 networks.
 
@@ -101,8 +99,7 @@ headers.
 
 The ``Digest: SHA-256=...`` header is also more efficient than ``Link:
 <...>; rel=duplicate`` headers because it involves a constant number
-of cache lookups. `RFC 6249 <http://tools.ietf.org/html/rfc6249>`_
-requires a ``Digest: SHA-256=...`` header
+of cache lookups. :rfc:`6249` requires a ``Digest: SHA-256=...`` header
 or ``Link: <...>; rel=duplicate`` headers MUST be ignored:
 
     If Instance Digests are not provided by the Metalink servers, the
