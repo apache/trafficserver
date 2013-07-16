@@ -46,6 +46,7 @@ Contents:
    configuration-files.en
    traffic-line-commands.en
    traffic-server-error-messages.en
+   commands/index.en
    faqs.en
 
 
