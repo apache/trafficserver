@@ -41,6 +41,7 @@ Apache Traffic Server releases.
   :maxdepth: 1
 
   cacheurl.en
+  conf_remap.en
   header_filter.en
   regex_remap.en
   stats_over_http.en
@@ -68,5 +69,7 @@ directory in the Apache Traffic Server source tree. Exmperimental plugins can be
   geoip_acl.en
   gzip.en
   hipes.en
+  metafilter.en
   mysql_remap.en
   stale_while_revalidate.en
+
