@@ -35,7 +35,7 @@ URL, evaluation is stopped and the rewrite rule is applied. If none of
 the regular expressions are a match, the default destination URL is
 applied (``http://b.com`` in the example above).
 
-An optional argument (``@@pparam``) with the string "``profile``\ " will
+An optional argument (``@pparam``) with the string "``profile``\ " will
 enable profiling of this regex remap rule, e.g.
 
 ::
