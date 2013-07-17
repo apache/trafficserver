@@ -4876,6 +4876,7 @@ TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   return TS_ERROR;
 }
 
+// TS-1996: This API will be removed after v3.4.0 is cut. Do not use it!
 TSReturnCode
 TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
 {
@@ -4929,6 +4930,7 @@ TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
   return TS_SUCCESS;
 }
 
+// TS-1996: This API will be removed after v3.4.0 is cut. Do not use it!
 TSReturnCode
 TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp)
 {
