@@ -28,6 +28,13 @@ To use this plugin, configure a remap.config rule like
 ::
     map http://a.com http://b.com @plugin=regex_remap.so @pparam=maps.reg
 
+The parameter with the file name is always required, and the regular
+expressions within are evaluated sequentially from the first to the
+last. When a regular expression is positively matched against a request
+URL, evaluation is stopped and the rewrite rule is applied. If none of
+the regular expressions are a match, the default destination URL is
+applied (``http://b.com`` in the example above).
+
 An optional argument (``@@pparam``) with the string "``profile``\ " will
 enable profiling of this regex remap rule, e.g.
 
@@ -35,14 +42,16 @@ enable profiling of this regex remap rule, e.g.
     ... @pparam=maps.reg @pparam=profile
 
 Profiling is very low overhead, and the information is dumped to
-``traffic.out``, located in the log directory. In order to force a
+``traffic.out``, located in the log directory. This information is
+useful to optimize the order of your regular expression, such that the
+most common matches appears early in the file. In order to force a
 profile dump, you can do
 
 ::
     $ sudo touch remap.config
     $ sudo traffic_line -x
 
-By default, only the path and query string of the URL is provided for
+By default, only the path and query string of the URL are provided for
 the regular expressions to match. The following optional parameters can
 be used to modify the plugin instance behavior:
 
@@ -96,16 +105,9 @@ the option 'matrix-parameters', e.g.
 ::
     ... @pparam=maps.reg @pparam=matrix-parameters
 
-Note that the path to the plugin must be absolute, and by default it is
-
-.. XXX why?
-
-::
-    /usr/local/libexec/trafficserver/regex_remap.so
 
 The config file (``maps.reg`` above) can be placed anywhere, but unless
-you specify an absolute path (as above), it will default to the
-directory
+you specify an absolute path (as above), it will default to
 
 ::
     /usr/local/etc/regex_remap
@@ -120,7 +122,7 @@ The regular expression must not contain any white spaces!
 When the regular expression is matched, only the URL path + query string
 is matched (without any of the optional configuration options). The path
 will always start with a "/". Various substitution strings are allowed
-on the right hand side:
+on the right hand side during evaluation:
 
 ::
     $0     - The entire matched string
@@ -157,6 +159,5 @@ Or, to force a 302 redirect
 ::
     ^/oldurl/(.*)$      http://news.example.com/new/$1 @status=302
 
-Note: Setting the status to 301 or 302 will force the new URL to be used
+Setting the status to 301 or 302 will force the new URL to be used
 as a redirect (Location:).
-
