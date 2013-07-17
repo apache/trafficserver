@@ -23,7 +23,7 @@ This allows you to configure mapping rules based on regular expressions.
 This is similar to what you can accomplish using mod_rewrite in Apache
 httpd, but obviously not as flexible or sophisticated (yet).
 
-To use this plugin, configure a remap.config rule like::
+To use this plugin, configure a remap.config rule like ::
 
     map http://a.com http://b.com @plugin=regex_remap.so @pparam=maps.reg
 
@@ -35,7 +35,7 @@ the regular expressions are a match, the default destination URL is
 applied (``http://b.com`` in the example above).
 
 An optional argument (``@pparam``) with the string "``profile``\ " will
-enable profiling of this regex remap rule, e.g.::
+enable profiling of this regex remap rule, e.g. ::
 
     ... @pparam=maps.reg @pparam=profile
 
@@ -43,14 +43,14 @@ Profiling is very low overhead, and the information is dumped to
 ``traffic.out``, located in the log directory. This information is
 useful to optimize the order of your regular expression, such that the
 most common matches appears early in the file. In order to force a
-profile dump, you can do::
+profile dump, you can do ::
 
     $ sudo touch remap.config
     $ sudo traffic_line -x
 
 By default, only the path and query string of the URL are provided for
 the regular expressions to match. The following optional parameters can
-be used to modify the plugin instance behavior::
+be used to modify the plugin instance behavior ::
 
     @pparam=[no-]full-url            [default: off]
     @pparam=[no-]method              [default: off]
@@ -58,26 +58,26 @@ be used to modify the plugin instance behavior::
     @pparam=[no-]matrix-parameters   [default: off]
 
 If you want the full (original) URL, use the parameter
-``@pparam=full-url``. e.g.::
+``@pparam=full-url``. e.g. ::
 
     ... @pparam=maps.reg @pparam=full-url
 
-The string that you will need to match against looks like::
+The string that you will need to match against looks like ::
 
     http://server/path?query=bar
 
 If you also wish to match on the HTTP method used (e.g. "``GET``\ "),
-you must use the option ``@pparam=method``. e.g.::
+you must use the option ``@pparam=method``. e.g. ::
 
     ... @pparam=maps.reg @pparam=method
 
 With this enabled, the string that you will need to match will look
-like::
+like ::
 
     GET/path?query=bar
 
 The "``method``\ " parameter can also be used in combination with
-"``full-url``\ ", and the string to match against will then look like::
+"``full-url``\ ", and the string to match against will then look like ::
 
     GET http://server.com/path?query=bar
 
@@ -86,21 +86,21 @@ space. There is no space between the method and the rest of the URL (or
 URI path).
 
 By default, the query string is part of the string that is matched
-again, to turn this off use the option 'no-query-string', e.g.::
+again, to turn this off use the option 'no-query-string', e.g. ::
 
     ... @pparam=maps.reg @pparam=no-query-string
 
 Finally, you can also include the matrix parameters in the string, using
-the option 'matrix-parameters', e.g.::
+the option 'matrix-parameters', e.g. ::
 
     ... @pparam=maps.reg @pparam=matrix-parameters
 
 The config file (``maps.reg`` above) can be placed anywhere, but unless
-you specify an absolute path (as above), it will default to::
+you specify an absolute path (as above), it will default to ::
 
     /usr/local/etc/regex_remap
 
-A typical regex would look like::
+A typical regex would look like ::
 
     ^/(ogre.*)/more     http://www.ogre.com/$h/$0/$1
 
@@ -109,7 +109,7 @@ The regular expression must not contain any white spaces!
 When the regular expression is matched, only the URL path + query string
 is matched (without any of the optional configuration options). The path
 will always start with a "/". Various substitution strings are allowed
-on the right hand side during evaluation::
+on the right hand side during evaluation ::
 
     $0     - The entire matched string
     $1-9   - Regular expression groups ($1 first group etc.)
@@ -125,7 +125,7 @@ on the right hand side during evaluation::
     $i     - The client IP for this request
 
 You can also provide options, similar to how you configure your
-remap.config. The following options are available::
+remap.config. The following options are available ::
 
     @status=<nnn>               - Force the response code to <nnn>
     @active_timeout=<nnn>       - Active timeout (in ms)
@@ -133,11 +133,11 @@ remap.config. The following options are available::
     @connect_timeout=<nnn>      - Connect timeouts (in ms)
     @dns_timeout=<nnn>          - Connect timeouts (in ms)
 
-This can be useful to force a particular response for some URLs, e.g.::
+This can be useful to force a particular response for some URLs, e.g. ::
 
     ^/(ogre.*)/bad      http://www.examle.com/  @status=404
 
-Or, to force a 302 redirect::
+Or, to force a 302 redirect ::
 
     ^/oldurl/(.*)$      http://news.example.com/new/$1 @status=302
 
