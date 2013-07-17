@@ -1896,8 +1896,6 @@ RecordElement RecordsConfig[] = {
 };
 
 
-#ifndef FOR_INSTALL
-
 //-------------------------------------------------------------------------
 // LibRecordsConfigInit
 //-------------------------------------------------------------------------
@@ -1990,4 +1988,3 @@ test_librecords()
   RecRegisterStatCounter(RECT_LOCAL, "proxy.local.librecords.testing.counter", (RecCounter) 99, RECP_NON_PERSISTENT);
 }
 
-#endif
