@@ -10,7 +10,8 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    3.2.5           : Released on XXX XX, 2013
+    3.2.6           : Released on XXX XX, 2013
+    3.2.5           : Released on July 17, 2013
     3.2.4           : Released on January 25, 2013
     3.2.0           : Released on June 19, 2012
     3.0.5           : Released on June 6, 2012
@@ -38,7 +39,7 @@ RELEASE SHOWSTOPPERS:
 
 A list of all bugs open for the next development release can be found at
 
-  http://s.apache.org/ts-3.2.5
+  http://s.apache.org/ts-3.2.6
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
