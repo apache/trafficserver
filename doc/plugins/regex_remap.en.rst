@@ -50,7 +50,7 @@ profile dump, you can do::
 
 By default, only the path and query string of the URL are provided for
 the regular expressions to match. The following optional parameters can
-be used to modify the plugin instance behavior:::
+be used to modify the plugin instance behavior::
 
     @pparam=[no-]full-url            [default: off]
     @pparam=[no-]method              [default: off]
@@ -58,7 +58,7 @@ be used to modify the plugin instance behavior:::
     @pparam=[no-]matrix-parameters   [default: off]
 
 If you want the full (original) URL, use the parameter
-``@pparam=full-url``. For example:::
+``@pparam=full-url``. e.g.::
 
     ... @pparam=maps.reg @pparam=full-url
 
@@ -67,7 +67,7 @@ The string that you will need to match against looks like::
     http://server/path?query=bar
 
 If you also wish to match on the HTTP method used (e.g. "``GET``\ "),
-you must use the option ``@pparam=method``. For example:::
+you must use the option ``@pparam=method``. e.g.::
 
     ... @pparam=maps.reg @pparam=method
 
@@ -109,7 +109,7 @@ The regular expression must not contain any white spaces!
 When the regular expression is matched, only the URL path + query string
 is matched (without any of the optional configuration options). The path
 will always start with a "/". Various substitution strings are allowed
-on the right hand side during evaluation:::
+on the right hand side during evaluation::
 
     $0     - The entire matched string
     $1-9   - Regular expression groups ($1 first group etc.)
@@ -133,8 +133,7 @@ remap.config. The following options are available::
     @connect_timeout=<nnn>      - Connect timeouts (in ms)
     @dns_timeout=<nnn>          - Connect timeouts (in ms)
 
-For example, this can be useful to force a particular response for some
-URLs, e.g.::
+This can be useful to force a particular response for some URLs, e.g.::
 
     ^/(ogre.*)/bad      http://www.examle.com/  @status=404
 
