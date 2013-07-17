@@ -116,6 +116,7 @@ close_channel_ClusterFunction(ClusterHandler *ch, void *data, int len)
   if (VALID_CHANNEL(vc) && vc->token.sequence_number == m->sequence_number) {
     vc->remote_closed = m->status;
     vc->remote_lerrno = m->lerrno;
+    ch->vcs_push(vc, vc->type);
   }
 }
 

@@ -410,9 +410,13 @@ ClusterProcessor::init()
                      RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_SLOW_CTRL_MSGS_SENT_STAT, RecRawStatSyncCount);
   CLUSTER_CLEAR_DYN_STAT(CLUSTER_SLOW_CTRL_MSGS_SENT_STAT);
   RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
-                     "proxy.process.cluster.connections_locked",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_CONNECTIONS_LOCKED_STAT, RecRawStatSyncSum);
-  CLUSTER_CLEAR_DYN_STAT(CLUSTER_CONNECTIONS_LOCKED_STAT);
+                     "proxy.process.cluster.connections_read_locked",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_CONNECTIONS_READ_LOCKED_STAT, RecRawStatSyncSum);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_CONNECTIONS_READ_LOCKED_STAT);
+  RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
+                     "proxy.process.cluster.connections_write_locked",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_CONNECTIONS_WRITE_LOCKED_STAT, RecRawStatSyncSum);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_CONNECTIONS_WRITE_LOCKED_STAT);
   RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
                      "proxy.process.cluster.reads",
                      RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_READ_BYTES_STAT, RecRawStatSyncCount);
@@ -647,6 +651,14 @@ ClusterProcessor::init()
                      "proxy.process.cluster.write_lock_misses",
                      RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_WRITE_LOCK_MISSES_STAT, RecRawStatSyncCount);
   CLUSTER_CLEAR_DYN_STAT(CLUSTER_WRITE_LOCK_MISSES_STAT);
+  RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
+                     "proxy.process.cluster.vc_read_list_len",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_VC_READ_LIST_LEN_STAT, RecRawStatSyncAvg);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_VC_READ_LIST_LEN_STAT);
+  RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
+                     "proxy.process.cluster.vc_write_list_len",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_VC_WRITE_LIST_LEN_STAT, RecRawStatSyncAvg);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_VC_WRITE_LIST_LEN_STAT);
   CLUSTER_CLEAR_DYN_STAT(CLUSTER_NODES_STAT);   // clear sum and count
   // INKqa08033: win2k: ui: cluster warning light on
   // Used to call CLUSTER_INCREMENT_DYN_STAT here; switch to SUM_GLOBAL_DYN_STAT

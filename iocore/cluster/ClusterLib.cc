@@ -35,52 +35,15 @@
 // scheduling only occurs after they move into the data_bucket.
 //
 void
-cluster_set_priority(ClusterHandler * nh, ClusterVConnState * ns, int new_priority)
-{
-  //
-  // Note: Only sets priority.  No scheduling action.
-  //
-  if (new_priority >= CLUSTER_BUCKETS)
-    ns->priority = CLUSTER_BUCKETS - 1;
-  else
-    ns->priority = new_priority;
-
-  if (ns->priority < nh->min_priority)
-    ns->priority = nh->min_priority;
-}
-
-void
-cluster_lower_priority(ClusterHandler * ch, ClusterVConnState * ns)
-{
-  //
-  // Note: Only computes priority.  No scheduling action.
-  //
-  int offset = ns->priority / 8;
-  if (!offset)
-    offset = 1;
-  cluster_set_priority(ch, ns, ns->priority + offset);
-}
-
-void
-cluster_raise_priority(ClusterHandler * ch, ClusterVConnState * ns)
-{
-  //
-  // Note: Only computes priority.  No scheduling action.
-  //
-  int offset = ns->priority / 2;
-  if (!offset)
-    offset = 1;
-  cluster_set_priority(ch, ns, ns->priority - offset);
-}
-
-void
 cluster_schedule(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState * ns)
 {
   //
   // actually schedule into new bucket
   //
-  int new_bucket = ch->cur_vcs + ns->priority;
-  new_bucket %= CLUSTER_BUCKETS;
+  int new_bucket = ch->cur_vcs;
+
+  if (vc->type == VC_NULL)
+    vc->type = VC_CLUSTER;
   if (ns == &vc->read) {
     ClusterVC_enqueue_read(ch->read_vcs[new_bucket], vc);
   } else {
@@ -89,99 +52,16 @@ cluster_schedule(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState
 }
 
 void
-cluster_reschedule(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState * ns)
+cluster_reschedule_offset(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState * ns, int offset)
 {
-  //
-  // Remove from bucket, computer priority and schedule into target bucket
-  //
-  if (ns == &vc->read)
-    ClusterVC_remove_read(vc);
-  else
-    ClusterVC_remove_write(vc);
-  cluster_set_priority(ch, ns, ns->priority);
-  cluster_schedule(ch, vc, ns);
-}
-
-void
-cluster_disable(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState * ns)
-{
-  //
-  // disable inactivity timeout, recompute priority, remove from current
-  //   bucket and reschedule into new bucket based on new priority.
-  //
-  ns->enabled = 0;
-  if (vc->inactivity_timeout) {
-    bool disable_timeout = false;
-    if (ns == &vc->read) {
-      disable_timeout = !vc->write.enabled;
-    } else {
-      disable_timeout = !vc->read.enabled;
-    }
-    if (disable_timeout) {
-      vc->inactivity_timeout->cancel();
-      vc->inactivity_timeout = NULL;
-    }
-  }
-  cluster_lower_priority(ch, ns);
-  if (ns == &vc->read)
-    ClusterVC_remove_read(vc);
-  else
-    ClusterVC_remove_write(vc);
-  cluster_schedule(ch, vc, ns);
-}
-
-void
-cluster_update_priority(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState * ns, int64_t ndone, int64_t ntodo)
-{
-  //
-  // Enable inactivity timeout, recompute priority based on latest transfer.
-  //
-  if (!ns->enabled) {
-    cluster_lower_priority(ch, ns);
-    return;
-  }
-  if (vc->inactivity_timeout) {
-    vc->inactivity_timeout->schedule_every(vc->inactivity_timeout->period);
-  } else {
-    if (vc->inactivity_timeout_in)
-      vc->inactivity_timeout = vc->thread->schedule_in(vc, vc->inactivity_timeout_in);
-  }
-
-  int64_t tsize = ns->vio.buffer.total_size();
-
-  if (tsize > ntodo) {
-    tsize = ntodo;
-  }
-  if (ndone > tsize / 2) {
-    cluster_raise_priority(ch, ns);
-  } else {
-    if (ndone < tsize / 4)
-      cluster_lower_priority(ch, ns);
-  }
-  //
-  // Otherwise, do not change priority
-  //
-}
-
-void
-cluster_bump(ClusterHandler * ch, ClusterVConnectionBase * vc, ClusterVConnState * ns, int this_bucket)
-{
-  //
-  // Remove from current bucket and place in
-  // current bucket + CLUSTER_BUMP_LENGTH
-  //
-  int new_bucket = (ch->cur_vcs + CLUSTER_BUMP_LENGTH) % CLUSTER_BUCKETS;
-
   if (ns == &vc->read) {
-    if (this_bucket != CLUSTER_BUMP_NO_REMOVE) {
+    if (vc->read.queue)
       ClusterVC_remove_read(vc);
-    }
-    ClusterVC_enqueue_read(ch->read_vcs[new_bucket], vc);
+    ClusterVC_enqueue_read(ch->read_vcs[(ch->cur_vcs + offset) % CLUSTER_BUCKETS], vc);
   } else {
-    if (this_bucket != CLUSTER_BUMP_NO_REMOVE) {
+    if (vc->write.queue)
       ClusterVC_remove_write(vc);
-    }
-    ClusterVC_enqueue_write(ch->write_vcs[new_bucket], vc);
+    ClusterVC_enqueue_write(ch->write_vcs[(ch->cur_vcs + offset) % CLUSTER_BUCKETS], vc);
   }
 }
 

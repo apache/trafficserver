@@ -468,6 +468,15 @@ private:
   Ptr<IOBufferBlock> block;  // holder of bank bytes
 };
 
+enum TypeVConnection
+{
+  VC_NULL,
+  VC_CLUSTER,
+  VC_CLUSTER_READ,
+  VC_CLUSTER_WRITE,
+  VC_CLUSTER_CLOSED
+};
+
 //
 // ClusterVConnection
 //
@@ -505,6 +514,9 @@ struct ClusterVConnection: public ClusterVConnectionBase
   void free();                  // Destructor actions (we are using ClassAllocator)
 
   virtual void do_io_close(int lerrno = -1);
+  virtual VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
+  virtual VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
+  virtual void reenable(VIO *vio);
 
   ClusterHandler *ch;
   //
@@ -525,6 +537,9 @@ struct ClusterVConnection: public ClusterVConnectionBase
   volatile int remote_closed;
   volatile int remote_close_disabled;
   volatile int remote_lerrno;
+  volatile uint32_t in_vcs;
+  volatile uint32_t type;
+  SLINK(ClusterVConnection, ready_alink);
   int was_closed();
   void allow_close();
   void disable_close();

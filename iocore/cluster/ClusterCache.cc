@@ -1700,7 +1700,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
 
       if (have_all_data) {
         msg->token.clear();     // Tell sender no conn established
-
+        write_cluster_vc->type = VC_CLUSTER_WRITE;
       } else {
         msg->token = token;     // Tell sender conn established
         setupReadBufTunnel(cache_vc, write_cluster_vc);

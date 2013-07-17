@@ -480,6 +480,8 @@ struct ClusterHandler:public ClusterHandlerBase
   Event *cluster_periodic_event;
   Queue<OutgoingControl> outgoing_control[CLUSTER_CMSG_QUEUES];
   Queue<IncomingControl> incoming_control;
+  InkAtomicList read_vcs_ready;
+  InkAtomicList write_vcs_ready;
   ClusterState read;
   ClusterState write;
 
@@ -617,7 +619,7 @@ struct ClusterHandler:public ClusterHandlerBase
   void finish_delayed_reads();
   // returns: false if the channel was closed
 
-  void update_channels_written(bool);
+  void update_channels_written();
 
   int build_write_descriptors();
   int build_freespace_descriptors();
@@ -643,6 +645,7 @@ struct ClusterHandler:public ClusterHandlerBase
   int zombieClusterEvent(int event, Event * e);
   int protoZombieEvent(int event, Event * e);
 
+  void vcs_push(ClusterVConnection * vc, int type);
   bool vc_ok_read(ClusterVConnection *);
   bool vc_ok_write(ClusterVConnection *);
   int do_open_local_requests();

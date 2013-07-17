@@ -492,6 +492,7 @@ extern void cluster_lower_priority(ClusterHandler *, ClusterVConnState *);
 extern void cluster_raise_priority(ClusterHandler *, ClusterVConnState *);
 extern void cluster_schedule(ClusterHandler *, ClusterVConnection *, ClusterVConnState *);
 extern void cluster_reschedule(ClusterHandler *, ClusterVConnection *, ClusterVConnState *);
+extern void cluster_reschedule_offset(ClusterHandler *, ClusterVConnection *, ClusterVConnState *, int);
 extern void cluster_disable(ClusterHandler *, ClusterVConnection *, ClusterVConnState *);
 extern void cluster_update_priority(ClusterHandler *, ClusterVConnection *, ClusterVConnState *, int64_t, int64_t);
 #define CLUSTER_BUMP_NO_REMOVE    -1
