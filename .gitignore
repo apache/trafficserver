@@ -33,7 +33,9 @@ config.nice
 config.h
 doc/Doxyfile
 doc/html/
+doc/docbuild/
 doc/warn.log
+
 
 lib/ts/ink_autoconf.h
 lib/ts/ink_config.h

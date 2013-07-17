@@ -49,6 +49,7 @@ example/thread-pool/TESTPLAN.txt
 example/thread-pool/test/SynTest/
 example/thread-pool/test/SDKTest/SDKtest_server.config
 example/app-template/records.config
+doc/docbuild/
 doc/dot/
 doc/Doxyfile
 doc/Doxyfile.in
