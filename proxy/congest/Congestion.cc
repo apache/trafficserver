@@ -264,7 +264,7 @@ CongestionControlRecord::Init(matcher_line * line_info)
 }
 
 void
-CongestionControlRecord::UpdateMatch(CongestionControlRule * pRule, RD * rdata)
+CongestionControlRecord::UpdateMatch(CongestionControlRule * pRule, RequestData * rdata)
 {
 /*
  * Select the first matching rule specified in congestion.config
@@ -414,7 +414,7 @@ CongestionMatcherTable::reconfigure()
 }
 
 CongestionControlRecord *
-CongestionControlled(RD * rdata)
+CongestionControlled(RequestData * rdata)
 {
   if (congestionControlEnabled) {
     CongestionControlRule result;

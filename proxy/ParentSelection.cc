@@ -476,7 +476,7 @@ ParentConfigParams::nextParent(HttpRequestData * rdata, ParentResult * result)
 //
 
 void
-ParentRecord::FindParent(bool first_call, ParentResult * result, RD * rdata, ParentConfigParams * config)
+ParentRecord::FindParent(bool first_call, ParentResult * result, RequestData * rdata, ParentConfigParams * config)
 {
   Debug("cdn", "Entering FindParent (the inner loop)");
   int cur_index = 0;
@@ -815,13 +815,13 @@ ParentRecord::Init(matcher_line * line_info)
   return NULL;
 }
 
-// void ParentRecord::UpdateMatch(ParentResult* result, RD* rdata);
+// void ParentRecord::UpdateMatch(ParentResult* result, RequestData* rdata);
 //
 //    Updates the record ptr in result if the this element
 //     appears later in the file
 //
 void
-ParentRecord::UpdateMatch(ParentResult * result, RD * rdata)
+ParentRecord::UpdateMatch(ParentResult * result, RequestData * rdata)
 {
   if (this->CheckForMatch((HttpRequestData *) rdata, result->line_number) == true) {
     result->rec = this;

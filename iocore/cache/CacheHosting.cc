@@ -98,7 +98,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
   num_el = 0;
 }
 
-// void CacheHostMatcher::Match(RD* rdata, Result* result)
+// void CacheHostMatcher::Match(RequestData* rdata, Result* result)
 //
 //  Searches our tree and updates argresult for each element matching
 //    arg hostname
@@ -234,7 +234,7 @@ CacheHostTable::Print()
 }
 
 
-// void ControlMatcher<Data, Result>::Match(RD* rdata
+// void ControlMatcher<Data, Result>::Match(RequestData* rdata
 //                                          Result* result)
 //
 //   Queries each table for the Result*

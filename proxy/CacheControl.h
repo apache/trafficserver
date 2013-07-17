@@ -36,7 +36,6 @@
 #include "ControlBase.h"
 
 struct RequestData;
-typedef RequestData RD;
 
 const int CC_UNSET_TIME = -1;
 
@@ -134,7 +133,7 @@ public:
   int time_arg;
   int cache_responses_to_cookies;
   char *Init(matcher_line * line_info);
-  inkcoreapi void UpdateMatch(CacheControlResult * result, RD * rdata);
+  inkcoreapi void UpdateMatch(CacheControlResult * result, RequestData * rdata);
   void Print();
 };
 

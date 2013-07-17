@@ -403,13 +403,13 @@ CacheControlRecord::Init(matcher_line * line_info)
   return NULL;
 }
 
-// void CacheControlRecord::UpdateMatch(CacheControlResult* result, RD* rdata)
+// void CacheControlRecord::UpdateMatch(CacheControlResult* result, RequestData* rdata)
 //
 //    Updates the parameters in result if the this element
 //     appears later in the file
 //
 void
-CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
+CacheControlRecord::UpdateMatch(CacheControlResult * result, RequestData * rdata)
 {
   bool match = false;
   HttpRequestData *h_rdata = (HttpRequestData *) rdata;
@@ -529,7 +529,7 @@ CacheControlRecord::Init(matcher_line * line_info)
 }
 
 void
-CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
+CacheControlRecord::UpdateMatch(CacheControlResult * result, RequestData * rdata)
 {
 }
 #endif // INK_NO_ACL

@@ -228,7 +228,7 @@ SplitDNS::getDNSRecord(const char *hostname)
    SplitDNS::findServer()
    -------------------------------------------------------------- */
 void
-SplitDNS::findServer(RD * rdata, SplitDNSResult * result)
+SplitDNS::findServer(RequestData * rdata, SplitDNSResult * result)
 {
   DNS_table *tablePtr = m_DNSSrvrTable;
   SplitDNSRecord *rec;
@@ -556,7 +556,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
     SplitDNSRecord::UpdateMatch()
    -------------------------------------------------------------- */
 void
-SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RD * /* rdata ATS_UNUSED */)
+SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RequestData * /* rdata ATS_UNUSED */)
 {
   int last_number = result->m_line_number;
 

@@ -41,7 +41,6 @@
 #include "P_RecProcess.h"
 
 struct RequestData;
-typedef RequestData RD;
 
 struct matcher_line;
 struct ParentResult;
@@ -88,7 +87,7 @@ struct ParentConfigParams:public ConfigInfo
   ParentConfigParams();
   ~ParentConfigParams();
 
-  // void findParent(RD* rdata, ParentResult* result)
+  // void findParent(RequestData* rdata, ParentResult* result)
   //
   //   Does initial parent lookup
   //
@@ -107,7 +106,7 @@ struct ParentConfigParams:public ConfigInfo
   //
   void recordRetrySuccess(ParentResult *result);
 
-  // void nextParent(RD* rdata, ParentResult* result);
+  // void nextParent(RequestData* rdata, ParentResult* result);
   //
   //    Marks the parent pointed to by result as down and attempts
   //      to find the next parent
@@ -188,8 +187,8 @@ public:
 
   char *Init(matcher_line *line_info);
   bool DefaultInit(char *val);
-  void UpdateMatch(ParentResult *result, RD *rdata);
-  void FindParent(bool firstCall, ParentResult *result, RD *rdata, ParentConfigParams *config);
+  void UpdateMatch(ParentResult *result, RequestData *rdata);
+  void FindParent(bool firstCall, ParentResult *result, RequestData *rdata, ParentConfigParams *config);
   void Print();
   pRecord *parents;
   int num_parents;

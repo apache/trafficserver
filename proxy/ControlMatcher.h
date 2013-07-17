@@ -131,7 +131,6 @@ public:
     return RD_NULL;
   }
 };
-typedef RequestData RD;
 
 class HttpRequestData:public RequestData
 {
@@ -164,7 +163,7 @@ template<class Data, class Result> class RegexMatcher {
 public:
   RegexMatcher(const char *name, const char *filename);
   ~RegexMatcher();
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();
@@ -191,14 +190,14 @@ protected:
 template<class Data, class Result> class HostRegexMatcher:public RegexMatcher<Data, Result> {
 public:
   HostRegexMatcher(const char *name, const char *filename);
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
 };
 
 template<class Data, class Result> class HostMatcher {
 public:
   HostMatcher(const char *name, const char *filename);
   ~HostMatcher();
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();
@@ -230,7 +229,7 @@ template<class Data, class Result> class IpMatcher {
 public:
   IpMatcher(const char *name, const char *filename);
   ~IpMatcher();
-  void Match(sockaddr const* ip_addr, RD * rdata, Result * result);
+  void Match(sockaddr const* ip_addr, RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();
@@ -244,7 +243,7 @@ public:
   };
 
   //private:
-  //void MatchArray(in_addr_t addr, RD* rdata, Result* result, void* array);
+  //void MatchArray(in_addr_t addr, RequestData* rdata, Result* result, void* array);
   static void PrintFunc(void *opaque_data);
   IpMap ip_map;          // Data structure to do lookups
   Data *data_array;             // array of the data lements with in the table
@@ -269,7 +268,7 @@ public:
   ~ControlMatcher();
   int BuildTable();
   int BuildTableFromString(char *str);
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
   void Print();
   char *config_file_var;        // temporary: until config is integerated
   int getEntryCount()

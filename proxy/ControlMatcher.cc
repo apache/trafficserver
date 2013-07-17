@@ -140,12 +140,12 @@ template<class Data, class Result> void HostMatcher<Data, Result>::AllocateSpace
   num_el = 0;
 }
 
-// void HostMatcher<Data,Result>::Match(RD* rdata, Result* result)
+// void HostMatcher<Data,Result>::Match(RequestData* rdata, Result* result)
 //
 //  Searches our tree and updates argresult for each element matching
 //    arg hostname
 //
-template<class Data, class Result> void HostMatcher<Data, Result>::Match(RD * rdata, Result * result)
+template<class Data, class Result> void HostMatcher<Data, Result>::Match(RequestData * rdata, Result * result)
 {
 
   void *opaque_ptr;
@@ -339,12 +339,12 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
 }
 
 //
-// void RegexMatcher<Data,Result>::Match(RD* rdata, Result* result)
+// void RegexMatcher<Data,Result>::Match(RequestData* rdata, Result* result)
 //
 //   Coduncts a linear search through the regex array and
 //     updates arg result for each regex that matches arg URL
 //
-template<class Data, class Result> void RegexMatcher<Data, Result>::Match(RD * rdata, Result * result)
+template<class Data, class Result> void RegexMatcher<Data, Result>::Match(RequestData * rdata, Result * result)
 {
   char *url_str;
   int r;
@@ -395,12 +395,12 @@ Result > (name, filename)
 }
 
 //
-// void HostRegexMatcher<Data,Result>::Match(RD* rdata, Result* result)
+// void HostRegexMatcher<Data,Result>::Match(RequestData* rdata, Result* result)
 //
 //   Conducts a linear search through the regex array and
 //     updates arg result for each regex that matches arg host_regex
 //
-template<class Data, class Result> void HostRegexMatcher<Data, Result>::Match(RD * rdata, Result * result)
+template<class Data, class Result> void HostRegexMatcher<Data, Result>::Match(RequestData * rdata, Result * result)
 {
   const char *url_str;
   int r;
@@ -524,10 +524,10 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
 }
 
 //
-// void IpMatcherData,Result>::Match(in_addr_t addr, RD* rdata, Result* result)
+// void IpMatcherData,Result>::Match(in_addr_t addr, RequestData* rdata, Result* result)
 //
 template<class Data, class Result>
-  void IpMatcher<Data, Result>::Match(sockaddr const* addr, RD * rdata, Result * result)
+  void IpMatcher<Data, Result>::Match(sockaddr const* addr, RequestData * rdata, Result * result)
 {
   void* raw;
   if (ip_map.contains(addr, &raw)) {
@@ -619,12 +619,12 @@ template<class Data, class Result> void ControlMatcher<Data, Result>::Print()
 }
 
 
-// void ControlMatcher<Data, Result>::Match(RD* rdata
+// void ControlMatcher<Data, Result>::Match(RequestData* rdata
 //                                          Result* result)
 //
 //   Queries each table for the Result*
 //
-template<class Data, class Result> void ControlMatcher<Data, Result>::Match(RD * rdata, Result * result)
+template<class Data, class Result> void ControlMatcher<Data, Result>::Match(RequestData * rdata, Result * result)
 {
 
   if (hostMatch != NULL) {
