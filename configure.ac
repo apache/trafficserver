@@ -1855,13 +1855,13 @@ AC_CONFIG_FILES([
   plugins/experimental/custom_redirect/Makefile
   plugins/experimental/esi/Makefile
   plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/gzip/Makefile
   plugins/experimental/lua/Makefile
   plugins/experimental/metalink/Makefile
   plugins/experimental/rfc5861/Makefile
   plugins/experimental/spdy/Makefile
   plugins/experimental/tcp_info/Makefile
   plugins/experimental/healthchecks/Makefile
+  plugins/gzip/Makefile
   plugins/header_filter/Makefile
   plugins/header_rewrite/Makefile
   plugins/regex_remap/Makefile

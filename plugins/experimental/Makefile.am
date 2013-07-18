@@ -22,7 +22,6 @@ SUBDIRS = \
  tcp_info \
  custom_redirect \
  metalink \
- gzip \
  spdy \
  channel_stats \
  authproxy \
