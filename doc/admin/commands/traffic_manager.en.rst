@@ -37,7 +37,6 @@ Description
 .. option:: -tsArgs ARGUMENTS
 .. option:: -proxyPort PORT
 .. option:: -proxyBackDoor PORT
-.. option:: -vingid VG
 .. option:: -schema FILE
 .. option:: -version
 

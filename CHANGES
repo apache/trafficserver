@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
+  *) [TS-2042] Remove remnants of unused vingid command line option.
+
   *) [TS-1898] improve cluster read/write performance.
 
   *) [TS-2036] Enable mgmt update (traffic_line -x) for plugins.

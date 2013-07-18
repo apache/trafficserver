@@ -519,12 +519,6 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-proxyBackDoor") == 0) {
             ++i;
             proxy_backdoor = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-vingid") == 0) {
-            // smanager/cnp integration, this argument is
-            // really just a dummy argument used so that
-            // smanager can find all instances of a
-            // particular TM process.
-            ++i;
           } else if (strcmp(argv[i], "-schema") == 0) {
             // hidden option
             ++i;
@@ -981,7 +975,6 @@ printUsage()
   fprintf(stderr, "     -debug         <tags>  Enable the given debug tags\n");
   fprintf(stderr, "     -action        <tags>  Enable the given action tags.\n");
   fprintf(stderr, "     -version or -V         Print version id and exit.\n");
-  fprintf(stderr, "     -vingid        <id>    Vingid Flag\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "   [...] can be one+ of: [config process node cluster local all]\n");
   fprintf(stderr, "----------------------------------------------------------------------------\n");

@@ -160,8 +160,6 @@ static int history_info_enabled = 1;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 
-static char vingid_flag[255] = "";
-
 static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dprintf function
 
@@ -216,7 +214,6 @@ static const ArgumentDescription argument_descriptions[] = {
   {"command", 'C', "Maintenance Command to Execute", "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
   {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
   {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
-  {"vingid", 'v', "Vingid Flag", "S255", vingid_flag, "PROXY_VINGID", NULL},
 #if defined(linux)
   {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
 #endif
