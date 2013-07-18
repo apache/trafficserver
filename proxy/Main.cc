@@ -99,7 +99,6 @@ extern "C" int plock(int);
 //
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
-#define DEFAULT_LOCK_PROCESS              0
 
 #define DEFAULT_VERBOSE_FLAG              0
 #define DEFAULT_VERSION_FLAG              0
@@ -136,7 +135,6 @@ int command_flag = DEFAULT_COMMAND_FLAG;
 static char regression_test[1024] = "";
 #endif
 int auto_clear_hostdb_flag = 0;
-int lock_process = DEFAULT_LOCK_PROCESS;
 extern int fds_limit;
 extern int cluster_port_number;
 extern int cache_clustering_enabled;
@@ -173,7 +171,6 @@ const Version version = {
 };
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"lock_memory", 'l', "Lock process in memory (must be root)", "I", &lock_process, "PROXY_LOCK_PROCESS", NULL},
   {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", NULL},
   {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
   {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
