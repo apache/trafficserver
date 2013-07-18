@@ -34,6 +34,7 @@ $network = {
   "centos64"  => "192.168.200.17",
   "debian7"   => "192.168.200.18",
   "sles11"    => "192.168.200.19",
+  "oel63"     => "192.168.200.20",
 }
 
 $vmspec = {
@@ -58,6 +59,9 @@ $vmspec = {
   "sles11" => [
     "http://puppet-vagrant-boxes.puppetlabs.com/sles-11sp1-x64-vbox4210.box", "redhat.pp",
   ],
+  "oel63" => [
+    "http://ats.boot.org/vagrant/vagrant-oel63-x64.box", "redhat.pp",
+  ]
 }
 
 Vagrant.configure("2") do |config|
