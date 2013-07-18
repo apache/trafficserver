@@ -116,7 +116,6 @@ HttpUpdateSM::handle_api_return()
   }
 
   switch (t_state.next_action) {
-#ifndef TS_NO_TRANSFORM
   case HttpTransact::TRANSFORM_READ:
     {
       if (t_state.cache_info.transform_action == HttpTransact::CACHE_DO_WRITE) {
@@ -154,7 +153,6 @@ HttpUpdateSM::handle_api_return()
       }
       break;
     }
-#endif //TS_NO_TRANSFORM
   case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
   case HttpTransact::SERVER_READ:
   case HttpTransact::PROXY_INTERNAL_CACHE_NOOP:

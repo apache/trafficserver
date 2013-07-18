@@ -4617,7 +4617,6 @@ HttpTransact::handle_transform_ready(State* s)
 void
 HttpTransact::set_header_for_transform(State* s, HTTPHdr* base_header)
 {
-#ifndef TS_NO_TRANSFORM
   s->hdr_info.transform_response.create(HTTP_TYPE_RESPONSE);
   s->hdr_info.transform_response.copy(base_header);
 
@@ -4628,9 +4627,6 @@ HttpTransact::set_header_for_transform(State* s, HTTPHdr* base_header)
 
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", &s->hdr_info.transform_response, s->state_machine_id, "Header To Transform");
-#else
-  ink_assert(!"transformation not supported\n");
-#endif // TS_NO_TRANSFORM
 }
 
 void

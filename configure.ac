@@ -279,19 +279,6 @@ AC_MSG_RESULT([$enable_remote_cov_commit])
 AC_SUBST([enable_remote_cov_commit])
 
 #
-# API
-#
-AC_MSG_CHECKING([whether to enable API and plugin support])
-AC_ARG_ENABLE([api],
-  [AS_HELP_STRING([--disable-api],[do not enable API and plugin support])],
-  [],
-  [enable_api=yes]
-)
-AC_MSG_RESULT([$enable_api])
-AS_IF([test "x$enable_api" = "xyes"], [has_inkapi=1], [has_inkapi=0])
-AC_SUBST(has_inkapi)
-
-#
 # WCCP
 #
 AC_MSG_CHECKING([whether to enable WCCP v2 support])

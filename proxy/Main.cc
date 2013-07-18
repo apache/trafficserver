@@ -159,7 +159,12 @@ static inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 
 static int accept_mss = 0;
-static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dprintf function
+static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
+
+// 1: delay listen, wait for cache.
+// 0: Do not delay, start listen ASAP.
+// -1: cache is already initialized, don't delay.
+static volatile int delay_listen_for_cache_p = 0;
 
 AppVersionInfo appVersionInfo;  // Build info for this application
 
@@ -435,6 +440,26 @@ skip(char *cmd, int null_ok = 0)
   return cmd;
 }
 
+// Handler for things that need to wait until the cache is initialized.
+static void
+CB_After_Cache_Init()
+{
+  APIHook* hook;
+  int start;
+
+  start = ink_atomic_swap(&delay_listen_for_cache_p, -1);
+  if (1 == start) {
+    Debug("http_listen", "Delayed listen enable, cache initialization finished");
+    start_HttpProxyServer();
+  }
+  // Alert the plugins the cache is initialized.
+  hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_LIFECYCLE_CACHE_READY, NULL);
+    hook = hook->next();
+  }
+}
+
 struct CmdCacheCont: public Continuation
 {
 
@@ -485,7 +510,7 @@ struct CmdCacheCont: public Continuation
     return EVENT_CONT;
   }
 
-CmdCacheCont(bool check, bool fix = false):Continuation(new_ProxyMutex()) {
+  CmdCacheCont(bool check, bool fix = false):Continuation(new_ProxyMutex()) {
     cache_fix = fix;
     if (check)
       SET_HANDLER(&CmdCacheCont::CheckEvent);
@@ -550,7 +575,6 @@ cmd_repair(char *cmd)
   return cmd_check_internal(cmd, true);
 }
 #endif
-
 
 static int
 cmd_clear(char *cmd)
@@ -1555,6 +1579,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
       HttpProxyPort::loadConfig();
     HttpProxyPort::loadDefaultIfEmpty();
 
+    cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);
     cacheProcessor.start();
 
     // UDP net-threads are turned off by default.
@@ -1601,11 +1626,13 @@ main(int /* argc ATS_UNUSED */, char **argv)
     // main server logic initiated here //
     //////////////////////////////////////
 
-#ifndef TS_NO_TRANSFORM
-    transformProcessor.start();
-#endif
+    plugin_init(system_config_directory);        // plugin.config
+    pmgmt->registerPluginCallbacks(global_config_cbs);
 
-    init_HttpProxyServer();
+    transformProcessor.start();
+
+    init_HttpProxyServer(num_accept_threads);
+
     int http_enabled = 1;
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
@@ -1614,20 +1641,28 @@ main(int /* argc ATS_UNUSED */, char **argv)
       int icp_enabled = 0;
       TS_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
 #endif
-      start_HttpProxyServer(num_accept_threads);
+      // call the ready hooks before we start accepting connections.
+      APIHook* hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
+      while (hook) {
+        hook->invoke(TS_EVENT_LIFECYCLE_PORTS_INITIALIZED, NULL);
+        hook = hook->next();
+      }
+
+      int delay_p = 0;
+      TS_ReadConfigInteger(delay_p, "proxy.config.http.wait_for_cache");
+
+      // Delay only if config value set and flag value is zero
+      // (-1 => cache already initialized)
+      if (delay_p && ink_atomic_cas(&delay_listen_for_cache_p, 0, 1)) {
+        Debug("http_listen", "Delaying listen, waiting for cache initialization");
+      } else {
+        start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
+      }
 #ifndef INK_NO_ICP
       if (icp_enabled)
         icpProcessor.start();
 #endif
     }
-
-#ifdef TS_NO_API
-    api_init();                 // we still need to initialize some of the data structure other module needs.
-    // i.e. http_global_hooks
-#else
-    plugin_init(system_config_directory);        // plugin.config
-    pmgmt->registerPluginCallbacks(global_config_cbs);
-#endif
 
     // "Task" processor, possibly with its own set of task threads
     tasksProcessor.start(num_task_threads, stacksize);

@@ -85,7 +85,6 @@
 /* API */
 #define TS_IS_MICRO_BUILD              @is_micro_build@
 #define TS_HAS_STANDALONE_IOCORE       @has_standalone_iocore@
-#define TS_HAS_INKAPI                  @has_inkapi@
 #define TS_HAS_DEMANGLE                @has_demangle@
 #define TS_HAS_TESTS                   @has_tests@
 #define TS_HAS_WCCP                    @has_wccp@
@@ -111,13 +110,7 @@
 
 #define TS_MAX_HOST_NAME_LEN           @max_host_name_len@
 
-#if TS_HAS_INKAPI
 # define TS_MAX_API_STATS               @max_api_stats@
-/* XXX: Should make those individually selectable ? */
-#else
-# define TS_NO_TRANSFORM                1
-# define TS_NO_API                      1
-#endif
 
 #if TS_HAS_STANDALONE_IOCORE
 # define STANDALONE_IOCORE              1

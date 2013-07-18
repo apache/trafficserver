@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
+  *) [TS-1487] [TS-2035] Moved plugin init, added plugin lifecycle hooks, added delay listen for cache. Removed TS_NO_API defined/build option.
+
   *) [TS-2047] Schedule RamCacheCLFUSCompressor in RamCacheCLFUS::init instead
    of immediatly after instantiation.
 

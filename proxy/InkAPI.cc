@@ -21,8 +21,6 @@
   limitations under the License.
  */
 
-#ifndef TS_NO_API
-
 // Avoid complaining about the deprecated APIs.
 // #define TS_DEPRECATED
 
@@ -369,6 +367,7 @@ tsapi const char * TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";   // upcoming
 tsapi const TSMLoc TS_NULL_MLOC = (TSMLoc)NULL;
 
 HttpAPIHooks *http_global_hooks = NULL;
+LifecycleAPIHooks* lifecycle_hooks = NULL;
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
 static char traffic_server_version[128] = "";
@@ -630,6 +629,13 @@ sdk_sanity_check_hook_id(TSHttpHookID id)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+sdk_sanity_check_lifecycle_hook_id(TSLifecycleHookID id)
+{
+  if (id<TS_LIFECYCLE_PORTS_INITIALIZED_HOOK || id> TS_LIFECYCLE_LAST_HOOK)
+    return TS_ERROR;
+  return TS_SUCCESS;
+}
 
 TSReturnCode
 sdk_sanity_check_null_ptr(void *ptr)
@@ -1241,57 +1247,14 @@ APIHooks::get()
   return m_hooks.head;
 }
 
-
-HttpAPIHooks::HttpAPIHooks():
-hooks_set(0)
-{
-}
-
-HttpAPIHooks::~HttpAPIHooks()
-{
-  clear();
-}
-
-
-
 void
-HttpAPIHooks::clear()
+APIHooks::clear()
 {
-  APIHook *api_hook;
-  APIHook *next_hook;
-  int i;
-
-  for (i = 0; i < TS_HTTP_LAST_HOOK; i++) {
-    api_hook = m_hooks[i].get();
-    while (api_hook) {
-      next_hook = api_hook->m_link.next;
-      apiHookAllocator.free(api_hook);
-      api_hook = next_hook;
-    }
+  APIHook* hook;
+  while (0 != (hook = m_hooks.pop())) {
+    apiHookAllocator.free(hook);
   }
-  hooks_set = 0;
 }
-
-void
-HttpAPIHooks::prepend(TSHttpHookID id, INKContInternal *cont)
-{
-  hooks_set = 1;
-  m_hooks[id].prepend(cont);
-}
-
-void
-HttpAPIHooks::append(TSHttpHookID id, INKContInternal *cont)
-{
-  hooks_set = 1;
-  m_hooks[id].append(cont);
-}
-
-APIHook *
-HttpAPIHooks::get(TSHttpHookID id)
-{
-  return m_hooks[id].get();
-}
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -1616,6 +1579,7 @@ api_init()
     TS_HTTP_LEN_S_MAXAGE = HTTP_LEN_S_MAXAGE;
 
     http_global_hooks = NEW(new HttpAPIHooks);
+    lifecycle_hooks = NEW(new LifecycleAPIHooks);
     global_config_cbs = NEW(new ConfigUpdateCbTable);
 
     if (TS_MAX_API_STATS > 0) {
@@ -4413,6 +4377,15 @@ TSHttpHookAdd(TSHttpHookID id, TSCont contp)
   sdk_assert(sdk_sanity_check_hook_id(id) == TS_SUCCESS);
 
   http_global_hooks->append(id, (INKContInternal *)contp);
+}
+
+void
+TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
+{
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_lifecycle_hook_id(id) == TS_SUCCESS);
+
+  lifecycle_hooks->append(id, (INKContInternal *)contp);
 }
 
 void
@@ -8193,5 +8166,3 @@ TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
 
   return (s->background_fill == BACKGROUND_FILL_STARTED);
 }
-
-#endif //TS_NO_API

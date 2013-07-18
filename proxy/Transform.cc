@@ -59,8 +59,6 @@
 
 */
 
-#ifndef TS_NO_TRANSFORM
-
 #include "ProxyConfig.h"
 #include "P_Net.h"
 #include "MimeTable.h"
@@ -1040,5 +1038,3 @@ RangeTransform::change_response_header()
 }
 
 #undef RANGE_NUMBERS_LENGTH
-
-#endif // TS_NO_TRANSFORM

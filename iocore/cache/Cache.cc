@@ -1084,6 +1084,9 @@ CacheProcessor::cacheInitialized()
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     Note("cache disabled");
   }
+  // Fire callback to signal initialization finished.
+  if (cb_after_init)
+    cb_after_init();
 }
 
 void

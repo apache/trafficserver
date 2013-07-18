@@ -34,7 +34,6 @@
 #include "Main.h"
 #include "hdrs/HTTP.h"
 #include "ts/IpMap.h"
-#include "vector"
 #include "ts/Vec.h"
 #include "ProxyConfig.h"
 

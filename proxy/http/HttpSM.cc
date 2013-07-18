@@ -612,7 +612,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
 
   // Record api hook set state
-  hooks_set = http_global_hooks->hooks_set | client_vc->hooks_set;
+  hooks_set = http_global_hooks->has_hooks() || client_vc->hooks_set;
 
   // Setup for parsing the header
   ua_buffer_reader = buffer_reader;
