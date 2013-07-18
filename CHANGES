@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
+  *) [TS-2047] Schedule RamCacheCLFUSCompressor in RamCacheCLFUS::init instead
+   of immediatly after instantiation.
+
   *) [TS-2042] Remove remnants of unused vingid command line option.
 
   *) [TS-1898] improve cluster read/write performance.
