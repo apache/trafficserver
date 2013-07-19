@@ -23,7 +23,7 @@
 
 #include "libts.h"
 
-#include "P_RecCompatibility.h"
+#include "P_RecFile.h"
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
 #include "P_RecTree.h"

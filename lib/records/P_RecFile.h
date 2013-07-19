@@ -21,10 +21,8 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_COMPATIBILITY_H_
-#define _P_REC_COMPATIBILITY_H_
-
-#include "ink_platform.h"
+#ifndef _P_REC_FILE_H_
+#define _P_REC_FILE_H_
 
 //-------------------------------------------------------------------------
 // types/defines
@@ -42,7 +40,6 @@ RecHandle RecFileOpenW(const char *file);
 void RecFileClose(RecHandle h_file);
 int RecFileRead(RecHandle h_file, char *buf, int size, int *bytes_read);
 int RecFileWrite(RecHandle h_file, char *buf, int size, int *bytes_written);
-int RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size);
 int RecFileGetSize(RecHandle h_file);
 int RecFileExists(const char *file);
 

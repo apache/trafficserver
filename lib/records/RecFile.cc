@@ -22,7 +22,7 @@
  */
 
 #include "libts.h"
-#include "P_RecCompatibility.h"
+#include "P_RecFile.h"
 #include "P_RecDefs.h"
 #include "P_RecUtils.h"
 
@@ -89,38 +89,6 @@ RecFileWrite(RecHandle h_file, char *buf, int size, int *bytes_written)
     return REC_ERR_FAIL;
   }
   return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// RecFileImport_Xmalloc
-//-------------------------------------------------------------------------
-
-int
-RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
-{
-  int err = REC_ERR_FAIL;
-  RecHandle h_file;
-  int bytes_read;
-
-  if (file && file_buf && file_size) {
-    *file_buf = 0;
-    *file_size = 0;
-    if ((h_file = RecFileOpenR(file)) != REC_HANDLE_INVALID) {
-      *file_size = RecFileGetSize(h_file);
-      *file_buf = (char *)ats_malloc(*file_size + 1);
-      if (RecFileRead(h_file, *file_buf, *file_size, &bytes_read) != REC_ERR_FAIL && bytes_read == *file_size) {
-        (*file_buf)[*file_size] = '\0';
-        err = REC_ERR_OKAY;
-      } else {
-        ats_free(*file_buf);
-        *file_buf = 0;
-        *file_size = 0;
-      }
-      RecFileClose(h_file);
-    }
-  }
-
-  return err;
 }
 
 //-------------------------------------------------------------------------
