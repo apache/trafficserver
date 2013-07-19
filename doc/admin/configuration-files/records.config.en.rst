@@ -66,6 +66,27 @@ to 10 seconds.
 
     CONFIG proxy.config.cluster.startup_timeout INT 10
 
+Environment Overrides
+=====================
+
+Every :file:`records.config` configuration variable can be overridden
+by a corresponding environment variable. This can be useful in
+situations where you need a static :file:`records.config` but still
+want to tweak one or two settings. The override variable is formed
+by converting the :file:`records.config` variable name to upper
+case, and replacing any dot separators with an underscore.
+
+Overriding a variable from the environment is permanent and will
+not be affected by future configuration changes made in
+:file:`records.config` or applied with :program:`traffic_line`.
+
+For example, we could override the ``proxy.config.product_company`` variable
+like this::
+
+    $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
+    $ traffic_line -r proxy.config.product_company
+    example
+
 Configuration Variables
 =======================
 
