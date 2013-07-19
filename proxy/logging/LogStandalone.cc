@@ -117,7 +117,9 @@ initialize_process_manager()
 
   if (!remote_management_flag) {
     LibRecordsConfigInit();
+    RecordsConfigOverrideFromEnvironment();
   }
+
   //
   // Start up manager
   pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory));

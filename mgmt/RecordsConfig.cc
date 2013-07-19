@@ -1897,6 +1897,37 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, NULL, RECD_NULL, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
 };
 
+//-------------------------------------------------------------------------
+// RecordsConfigOverrideFromEnvironment
+//-------------------------------------------------------------------------
+
+// We process environment variable overrides when we parse the records.config configuration file, but the
+// operator might choose to override a variable that is not present in records.config so we have to post-
+// process the full set of configuration valriables as well.
+void
+RecordsConfigOverrideFromEnvironment()
+{
+  ink_mutex_acquire(&g_rec_config_lock);
+
+  for (const RecordElement * record = RecordsConfig; record->value_type != RECD_NULL; ++record) {
+    const char * value;
+    RecData data = {0};
+
+    if (record->type != RECT_CONFIG && record->type != RECT_LOCAL) {
+      continue;
+    }
+
+    if ((value = RecConfigOverrideFromEnvironment(record->name, NULL))) {
+      if (RecDataSetFromString(record->value_type, &data, value)) {
+          RecSetRecord(record->type, record->name, record->value_type, &data, NULL, false);
+          RecDataClear(record->value_type, &data);
+      }
+    }
+  }
+
+  ink_mutex_release(&g_rec_config_lock);
+}
+
 
 //-------------------------------------------------------------------------
 // LibRecordsConfigInit

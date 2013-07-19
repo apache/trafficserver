@@ -227,9 +227,7 @@ RecConfigFileParse(const char * path, RecConfigEntryCallback handler)
     }
 
     // OK, we parsed the record, send it to the handler ...
-    //
-    // set the record
-    handler(rec_type, data_type, name_str, data_str);
+    handler(rec_type, data_type, name_str, RecConfigOverrideFromEnvironment(name_str, data_str));
 
     // update our g_rec_config_contents_xxx
     cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));

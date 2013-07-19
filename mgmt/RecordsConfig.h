@@ -49,7 +49,8 @@ struct RecordElement
   RecAccessT access;            // access level of the record
 };
 
-void LibRecordsConfigInit();    // initializes RecordsConfigIndex
+void LibRecordsConfigInit();                  // initializes RecordsConfigIndex
+void RecordsConfigOverrideFromEnvironment();  // Override records from the environment
 void test_librecords();
 
 #endif

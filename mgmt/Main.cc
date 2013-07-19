@@ -553,6 +553,7 @@ main(int argc, char **argv)
 
   RecLocalInit();
   LibRecordsConfigInit();
+  RecordsConfigOverrideFromEnvironment();
 
   init_dirs();// setup critical directories, needs LibRecords
 

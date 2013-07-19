@@ -362,6 +362,7 @@ initialize_process_manager()
 
   if (!remote_management_flag) {
     LibRecordsConfigInit();
+    RecordsConfigOverrideFromEnvironment();
   }
   //
   // Start up manager
