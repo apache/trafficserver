@@ -493,11 +493,11 @@ register_config_variable(RecT rec_type, RecDataT data_type, const char * name, c
 }
 
 static void
-read_config_string(const char *str, char *val, size_t val_len, bool miss_ok = false)
+read_config_string(const char *name, char *val, size_t val_len, bool miss_ok = false)
 {
   ConfigValueTable::const_iterator config;
 
-  config = configTable.find(str);
+  config = configTable.find(name);
   if (config == configTable.end()) {
     if (miss_ok)
       return;
@@ -509,20 +509,20 @@ read_config_string(const char *str, char *val, size_t val_len, bool miss_ok = fa
     goto ConfigStrFatalError;
   }
 
-  ink_strlcpy(val, config->second.data_value.c_str(), val_len);
+  ink_strlcpy(val, RecConfigOverrideFromEnvironment(name, config->second.data_value.c_str()), val_len);
   return;
 
 ConfigStrFatalError:
-  cop_log(COP_FATAL, "could not find string variable %s in records.config\n", str);
+  cop_log(COP_FATAL, "could not find string variable %s in records.config\n", name);
   exit(1);
 }
 
 static void
-read_config_int(const char *str, int *val, bool miss_ok = false)
+read_config_int(const char *name, int *val, bool miss_ok = false)
 {
   ConfigValueTable::const_iterator config;
 
-  config = configTable.find(str);
+  config = configTable.find(name);
   if (config == configTable.end()) {
     if (miss_ok)
       return;
@@ -534,11 +534,11 @@ read_config_int(const char *str, int *val, bool miss_ok = false)
     goto ConfigIntFatalError;
   }
 
-  *val = atoi(config->second.data_value.c_str());
+  *val = atoi(RecConfigOverrideFromEnvironment(name, config->second.data_value.c_str()));
   return;
 
 ConfigIntFatalError:
-  cop_log(COP_FATAL, "could not find integer variable %s in records.config\n", str);
+  cop_log(COP_FATAL, "could not find integer variable %s in records.config\n", name);
   exit(1);
 }
 
