@@ -79,6 +79,31 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 }
 
 //-------------------------------------------------------------------------
+// RecConfigOverrideFromEnvironment
+//-------------------------------------------------------------------------
+const char *
+RecConfigOverrideFromEnvironment(const char * name, const char * value)
+{
+  xptr<char> envname(ats_strdup(name));
+  const char * envval = NULL;
+
+  // Munge foo.bar.config into FOO_BAR_CONFIG.
+  for (char * c = envname; *c != '\0'; ++c) {
+    switch (*c) {
+      case '.': *c = '_'; break;
+      default: *c = ParseRules::ink_toupper(*c); break;
+    }
+  }
+
+  envval = getenv((const char *)envname);
+  if (envval) {
+    return envval;
+  }
+
+  return value;
+}
+
+//-------------------------------------------------------------------------
 // RecParseConfigFile
 //-------------------------------------------------------------------------
 int
