@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
+
+  *) [TS-2046] Move perl contribs to lib/perl, and have make / make install
+   build and install the modules as appropriate.
+
   *) [TS-954] Better calculation of blocks in volume. Bumped cache DB version.
 
   *) [TS-2050] Cleanup ink_config.h.in, removing unused symbols.
