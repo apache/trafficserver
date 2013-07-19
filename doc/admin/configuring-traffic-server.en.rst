@@ -65,15 +65,15 @@ Configure Traffic Server Using Configuration Files
 As an alternative to using Traffic Line or Traffic Shell, you can change
 Traffic Server configuration options by manually editing specific
 variables in the
-```records.config`` <../configuration-files/records.config>`_ file.
+`:file:`records.config` <../configuration-files/records.config>`_ file.
 After modifying the
-```records.config`` <../configuration-files/records.config>`_ file,
+`:file:`records.config` <../configuration-files/records.config>`_ file,
 Traffic Server must reread the configuration files: enter the Traffic
 Line command ``traffic_line -x``. You may need to restart Traffic Server
 to apply some of the configuration changes.
 
 The following is a sample portion of the
-```records.config`` <../configuration-files/records.config>`_ file:
+`:file:`records.config` <../configuration-files/records.config>`_ file:
 
 .. figure:: ../static/images/admin/records.jpg
    :align: center
@@ -82,7 +82,7 @@ The following is a sample portion of the
    Sample records.config file
 
 In addition to the
-```records.config`` <../configuration-files/records.config>`_ file,
+`:file:`records.config` <../configuration-files/records.config>`_ file,
 Traffic Server provides other configuration files that are used to
 configure specific features. You can manually edit all configuration
 files as described in `Configuration Files <../configuration-files>`_.

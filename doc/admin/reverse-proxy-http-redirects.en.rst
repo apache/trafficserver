@@ -264,7 +264,7 @@ Enabling HTTP Reverse Proxy
 To enable HTTP reverse proxy, follow the steps below.
 
 1. Edit the following variable in
-   ```records.config`` <configuration-files/records.config>`_
+   `:file:`records.config` <configuration-files/records.config>`_
 
    -  `*``proxy.config.reverse_proxy.enabled``* <configuration-files/records.config#proxy.config.reverse_proxy.enabled>`_
 
@@ -275,7 +275,7 @@ Setting Optional HTTP Reverse Proxy Options
 -------------------------------------------
 
 Traffic Server provides several reverse proxy configuration options in
-```records.config`` <configuration-files/records.config>`_ that
+`:file:`records.config` <configuration-files/records.config>`_ that
 enable you to:
 
 -  Configure Traffic Server to retain the client host header information

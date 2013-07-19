@@ -319,7 +319,7 @@ Accessing the Cache Inspector Utility
 
 To access the Cache Inspector utility, follow the steps below:
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file add the following variable:
 2. `*``CONFIG proxy.config.http_ui_enabled INT 1``* <../configuration-files/records.config#proxy.config.http_ui_enabled>`_
 3. To access the cache inspector in reverse proxy mode, you must add a

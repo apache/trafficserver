@@ -219,7 +219,7 @@ When acting as a reverse proxy for multiple servers, Traffic Server is
 unable to route to URLs from older browsers that do not send the
 ``Host:`` header. As a solution, set the variable
 *``proxy.config.header.parse.no_host_url_redirect``* in the
-``records.config`` file to the URL to which Traffic Server will redirect
+:file:`records.config` file to the URL to which Traffic Server will redirect
 requests without host headers.
 
 Redirect Mapping Rules

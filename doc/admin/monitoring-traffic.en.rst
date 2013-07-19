@@ -57,7 +57,7 @@ Configuring Traffic Server to Email Alarms
 To configure Traffic Server to send an email to a specific address
 whenever an alarm occurs, follow the steps below:
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file
 2. Set the
    `*``proxy.config.alarm_email``* <../configuration-files/records.config#proxy.config.alarm_email>`_

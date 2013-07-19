@@ -167,7 +167,7 @@ only. If you specify no tags in the rule, then Traffic Server uses the
 default values.
 
 You can override any of the default tag values by adding configuration
-variables at the end of ``records.config`` as follows:
+variables at the end of :file:`records.config` as follows:
 
 ::
 

@@ -157,7 +157,7 @@ When Traffic Server is first started, it consults the ``plugin.config``
 file to determine the names of all shared plugin libraries that need to
 be loaded. The ``plugin.config`` file also defines arguments that are to
 be passed to each plugin's initialization function, ``TSPluginInit``.
-The ``records.config`` file defines the path to each plugin shared
+The :file:`records.config` file defines the path to each plugin shared
 library, as described in `Specify the Plugin's
 Location <SpecifyingPluginLocation.html>`__.
 

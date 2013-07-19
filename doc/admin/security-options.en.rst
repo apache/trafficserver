@@ -59,7 +59,7 @@ To do this, we
 
 2. Add rules to the ``splitdns.config`` file. (Refer to
    ```splitdns.config`` <../configuration-files/splitdns.config>`_.
-3. In the file ``records.config`` the variable
+3. In the file :file:`records.config` the variable
    `*``proxy.process.dns.splitDNS.enabled``* <configuration-files/records.config#proxy.process.dns.splitDNS.enabled>`_
    to ``1`` to enable split DNS.
 4. Run the command ``traffic_line -x`` to apply the configuration
@@ -156,7 +156,7 @@ client/Traffic Server connections, you must do the following:
 In order to accomplish this, we
 
 2. Edit the following variables in the ``SSL Termination`` section of
-   the ``records.config`` file:
+   the :file:`records.config` file:
 
    -  `*``proxy.config.ssl.enabled``* <configuration-files/records.config#proxy.config.ssl.enabled>`_
    -  `*``proxy.config.ssl.server_port``* <configuration-files/records.config#proxy.config.ssl.server_port>`_
@@ -229,7 +229,7 @@ Traffic Server and origin server connections, you must do the following:
 In order to accomplish this, we:
 
 2. Edit the following variables in the ``SSL Termination`` section of
-   the ``records.config`` file:
+   the :file:`records.config` file:
 
    -  `*``proxy.config.ssl.auth.enabled``* <configuration-files/records.config#proxy.config.ssl.auth.enabled>`_
    -  ```proxy.config.ssl.server_port`` <configuration-files/records.config#proxy.config.ssl.server_port>`_

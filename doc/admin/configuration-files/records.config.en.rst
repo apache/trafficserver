@@ -18,11 +18,11 @@ records.config
   specific language governing permissions and limitations
   under the License.
 
-The ``records.config`` file is a list of configurable variables used by
+The :file:`records.config` file is a list of configurable variables used by
 the Traffic Server software. Many of the variables in the
-``records.config`` file are set automatically when you set configuration
+:file:`records.config` file are set automatically when you set configuration
 options in Traffic Line or Traffic Shell. After you modify the
-``records.config`` file, navigate to the Traffic Server\ ``bin``
+:file:`records.config` file, navigate to the Traffic Server\ ``bin``
 directory and run the command ``traffic_line -x`` to apply the changes.
 When you apply changes to one node in a cluster, Traffic Server
 automatically applies the changes to all other nodes in the cluster.
@@ -70,7 +70,7 @@ Configuration Variables
 =======================
 
 The following list describes the configuration variables available in
-the ``records.config`` file.
+the :file:`records.config` file.
 
 System Variables
 ================

@@ -27,7 +27,7 @@ To load plugins, follow the steps below.
 
 3. Add an entry to the ``plugin.config`` file for your plugin.
 
-4. Add the path to your plugin shared library to the ``records.config``
+4. Add the path to your plugin shared library to the :file:`records.config`
    file.
 
 5. Restart Traffic Server.

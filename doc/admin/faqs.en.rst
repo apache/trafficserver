@@ -123,7 +123,7 @@ does *not* serve requests that fail to match a map rule), then you must
 set the configuration variable
 `proxy.config.url_remap.remap_required <../configuration-files/records.config#proxy.config.url_remap.remap_required>`_
 to ``1`` in the
-```records.config`` <../configuration-files/records.config>`_ file.
+`:file:`records.config` <../configuration-files/records.config>`_ file.
 
 How do I enable forward proxy mode
 ----------------------------------

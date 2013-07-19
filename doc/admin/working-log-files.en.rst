@@ -72,7 +72,7 @@ keeps three types of log files:
 By default, Traffic Server creates both error and event log files and
 records system information in system log files. You can disable event
 logging and/or error logging by setting the configuration variable
-``_proxy.config.log.logging_enabled_`` (in the ``records.config`` file)
+``_proxy.config.log.logging_enabled_`` (in the :file:`records.config` file)
 to one of the following values:
 
 -  ``0`` to disable both event and error logging
@@ -201,7 +201,7 @@ Setting Log File Management Options
 
 To set log management options, follow the steps below:
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file, edit the following variables
 
    -  `*``proxy.config.log.logfile_dir``* <../configuration-files/records.config#proxy.config.log.logfile_dir>`_
@@ -241,7 +241,7 @@ Custom Format <#UsingCustomFormat>`_.
 
 Set standard log file format options by following the steps below:
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file, edit the following variables
 2. Edit the following variables to use the Squid format:
 
@@ -333,7 +333,7 @@ for each ``LogObject`` definition).
 In order to accomplish this, we
 
 1. edit the following variables in the
-   ```records.config`` <../configuration-files/records.config>`_ file:
+   `:file:`records.config` <../configuration-files/records.config>`_ file:
 2. `*``proxy.config.log.custom_logs_enabled``* <../configuration-files/records.config#proxy.config.log.custom_logs_enabled>`_
 3. In the
    ```logs_xml.config`` <../configuration-files/logs_xml.config>`_ file
@@ -658,7 +658,7 @@ Setting Log File Rolling Options
 To set log file rolling options and/or configure Traffic Server to roll
 log files when they reach a certain size, follow the steps below:
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file, edit the following variables
 
    -  `*``proxy.config.log.rolling_enabled``* <../configuration-files/records.config#proxy.config.log.rolling_enabled>`_
@@ -676,7 +676,7 @@ specification in the
 The custom log file uses the rolling settings in its
 ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_,
 which override the default settings you specify in Traffic Manager or
-the ```records.config`` <../configuration-files/records.config>`_ file
+the `:file:`records.config` <../configuration-files/records.config>`_ file
 described above.
 
 Splitting Event Log Files
@@ -746,7 +746,7 @@ Setting Log Splitting Options
 
 To set log splitting options, follow the steps below:
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file, edit the following variables
 
    -  `*``proxy.config.log.separate_icp_logs``* <../configuration-files/records.config#proxy.config.log.separate_icp_logs>`_
@@ -848,7 +848,7 @@ Configuring Traffic Server to Be a Collation Server
 To configure a Traffic Server node to be a collation server, simply edit
 a configuration file via the steps below.
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file, edit the following variables
 
    -  `*``proxy.config.log.collation_mode``* <../configuration-files/records.config#proxy.config.log.collation_mode>`_
@@ -885,14 +885,14 @@ To install and configure a standalone collator:
 5. Create a directory called *``internal``* in the ``config`` directory
    you created in Step 4 (above). This directory is used internally by
    the standalone collator to store lock files.
-6. Copy the ``records.config`` file from a Traffic Server node
+6. Copy the :file:`records.config` file from a Traffic Server node
    configured to be a log collation client to the ``config`` directory
    you created in Step 4 on the standalone collator.
-    The ``records.config`` file contains the log collation secret and
+    The :file:`records.config` file contains the log collation secret and
    the port you specified when configuring Traffic Server nodes to be
    collation clients. The collation port and secret must be the same for
    all collation clients and servers.
-7. In the ```records.config`` <../configuration-files/records.config>`_
+7. In the `:file:`records.config` <../configuration-files/records.config>`_
    file, edit the following variable
 
    -  `*``proxy.config.log.logfile_dir``* <../configuration-files/records.config#proxy.config.log.logfile_dir>`_
@@ -912,7 +912,7 @@ steps below. If you modify the ``collation_port`` or ``secret`` after
 connections between the collation clients and the collation server have
 been established, then you must restart Traffic Server.
 
-1. In the ```records.config`` <../configuration-files/records.config>`_
+1. In the `:file:`records.config` <../configuration-files/records.config>`_
    file, edit the following variables:
 
    -  `*``proxy.config.log.collation_mode``* <../configuration-files/records.config#proxy.config.log.collation_mode>`_:

@@ -225,7 +225,7 @@ The following list shows the ``LogObject`` specifications.
     Enables or disables log file rolling for the ``LogObject``. This
     setting overrides the value for the
     *``proxy.config.log.rolling_enabled``* variable in the
-    ``records.config`` file. Set *``truth value``* to one of the
+    :file:`records.config` file. Set *``truth value``* to one of the
     following values:
 
     -  ``0`` to disable rolling for this particular ``LogObject``.
@@ -249,7 +249,7 @@ The following list shows the ``LogObject`` specifications.
 
     This setting overrides the value for
     *``proxy.config.log.rolling_interval_sec``* in the
-    ``records.config`` file.
+    :file:`records.config` file.
 
 *``&lt;RollingOffsetHr = "hour"/&gt;``* {#LogsXMLObjectRollingOffsetHr}
     Optional
@@ -258,7 +258,7 @@ The following list shows the ``LogObject`` specifications.
     produced only at that time. The impact of this setting is only
     noticeable if the rolling interval is larger than one hour. This
     setting overrides the configuration setting for
-    *``proxy.config.log.rolling_offset_hr``* in the ``records.config``
+    *``proxy.config.log.rolling_offset_hr``* in the :file:`records.config`
     file.
 
 *``&lt;RollingSizeMb = "size_in_MB"/&gt;``*

@@ -40,7 +40,7 @@ SSL private key. If the private key is located in the certificate file,
 then you do not need to specify the name of the private key.
 Additionally *``ssl_ca_name``* can be used to specify the location of a
 Certification Authorithy change in case that differs from what is
-specified under ```records.config`` <../records.config>`_'s
+specified under `:file:`records.config` <../records.config>`_'s
 ```proxy.config.ssl.CA.cert.filename`` <../records.config#proxy.config.ssl.CA.cert.filename>`_.
 
 Traffic Server will try to find the files specified in

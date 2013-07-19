@@ -134,7 +134,7 @@ The marking used is arbitrary but it must be consistent between
 1..253.
 
 To configure Traffic Server set the following values in
-``records.config``
+:file:`records.config`
 
 ``proxy.config.http.server_port``
     ``STRING``

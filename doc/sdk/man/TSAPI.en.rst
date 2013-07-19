@@ -16,9 +16,9 @@
 
 .. default-domain:: c
 
-=========
-``TSAPI``
-=========
+=======
+`TSAPI`
+=======
 
 Synopsis
 ========
@@ -136,7 +136,7 @@ notification.
 
 Files
 =====
-:file:`$CONFIG_DIR/plugin.config`, :file:`$CONFIG_DIR/records.config`
+:file:`{CONFIG_DIR}/plugin.config`, :file:`{CONFIG_DIR}/records.config`
 
 See also
 ========
