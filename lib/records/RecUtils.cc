@@ -387,7 +387,7 @@ RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
 // RecDataSetFromString
 //-------------------------------------------------------------------------
 bool
-RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
+RecDataSetFromString(RecDataT data_type, RecData * data_dst, const char *data_string)
 {
   bool rec_set;
   RecData data_src;
@@ -406,10 +406,12 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
     data_src.rec_float = atof(data_string);
     break;
   case RECD_STRING:
-    if (strcmp((data_string), "NULL") == 0)
+    if (strcmp((data_string), "NULL") == 0) {
       data_src.rec_string = NULL;
-    else
-      data_src.rec_string = data_string;
+    } else {
+      // It's OK to cast away the const here, because RecDataSet will copy the string.
+      data_src.rec_string = (char *)data_string;
+    }
     break;
   case RECD_COUNTER:
     data_src.rec_counter = ink_atoi64(data_string);

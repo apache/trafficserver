@@ -38,11 +38,6 @@ InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
 
-const char *g_rec_config_fpath = NULL;
-LLQ *g_rec_config_contents_llq = NULL;
-InkHashTable *g_rec_config_contents_ht = NULL;
-ink_mutex g_rec_config_lock;
-
 const char *g_stats_snap_fpath = NULL;
 int g_num_update[RECT_MAX];
 
@@ -165,6 +160,9 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
   // set our diags
   RecSetDiags(_diags);
+
+  // Initialize config file parsing data structures.
+  RecConfigFileInit();
 
   g_records_tree = new RecTree(NULL);
   g_num_records = 0;

@@ -37,6 +37,13 @@
 //-------------------------------------------------------------------------
 int RecSetDiags(Diags * diags);
 
+//-------------------------------------------------------------------------
+// Config File Parsing
+//-------------------------------------------------------------------------
+typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char * name, const char * value);
+
+void RecConfigFileInit(void);
+int RecConfigFileParse(const char * path, RecConfigEntryCallback handler);
 
 //-------------------------------------------------------------------------
 // Stat Registration

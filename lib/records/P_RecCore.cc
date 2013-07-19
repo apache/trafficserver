@@ -595,162 +595,32 @@ RecSyncStatsFile()
 //-------------------------------------------------------------------------
 // RecReadConfigFile
 //-------------------------------------------------------------------------
+
+// Consume a parsed record, pushing it into the records hash table.
+static void
+RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char * name, const char * value)
+{
+    RecData data;
+
+    memset(&data, 0, sizeof(RecData));
+    RecDataSetFromString(data_type, &data, value);
+    RecSetRecord(rec_type, name, data_type, &data, NULL, false);
+    RecDataClear(data_type, &data);
+}
+
 int
 RecReadConfigFile()
 {
-  char *fbuf;
-  int fsize;
-
-  const char *line;
-  int line_num;
-
-  char *rec_type_str, *name_str, *data_type_str, *data_str;
-  RecT rec_type;
-  RecDataT data_type;
-  RecData data;
-
-  Tokenizer line_tok("\r\n");
-  tok_iter_state line_tok_state;
-
-  RecConfigFileEntry *cfe;
-
   RecDebug(DL_Note, "Reading '%s'", g_rec_config_fpath);
-
-  // watch out, we're altering our g_rec_config_xxx structures
-  ink_mutex_acquire(&g_rec_config_lock);
-
-  if (RecFileImport_Xmalloc(g_rec_config_fpath, &fbuf, &fsize) == REC_ERR_FAIL) {
-    RecLog(DL_Warning, "Could not import '%s'", g_rec_config_fpath);
-    ink_mutex_release(&g_rec_config_lock);
-    return REC_ERR_FAIL;
-  }
-  // clear our g_rec_config_contents_xxx structures
-  while (!queue_is_empty(g_rec_config_contents_llq)) {
-    cfe = (RecConfigFileEntry *) dequeue(g_rec_config_contents_llq);
-    ats_free(cfe->entry);
-    ats_free(cfe);
-  }
-  ink_hash_table_destroy(g_rec_config_contents_ht);
-  g_rec_config_contents_ht = ink_hash_table_create(InkHashTableKeyType_String);
 
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
 
-  memset(&data, 0, sizeof(RecData));
-  line_tok.Initialize(fbuf, SHARE_TOKS);
-  line = line_tok.iterFirst(&line_tok_state);
-  line_num = 1;
-  while (line) {
-    char *lc = ats_strdup(line);
-    char *lt = lc;
-    char *ln;
-
-    while (isspace(*lt))
-      lt++;
-    rec_type_str = ink_strtok_r(lt, " \t", &ln);
-
-    // check for blank lines and comments
-    if ((!rec_type_str) || (rec_type_str && (*rec_type_str == '#'))) {
-      goto L_next_line;
-    }
-
-    name_str = ink_strtok_r(NULL, " \t", &ln);
-    data_type_str = ink_strtok_r(NULL, " \t", &ln);
-
-    // extract the string data (a little bit tricker since it can have spaces)
-    if (ln) {
-      // 'ln' will point to either the next token or a bunch of spaces
-      // if the user didn't supply a value (e.g. 'STRING   ').  First
-      // scan past all of the spaces.  If we hit a '\0', then we we
-      // know we didn't have a valid value.  If not, set 'data_str' to
-      // the start of the token and scan until we find the end.  Once
-      // the end is found, back-peddle to remove any trailing spaces.
-      while (isspace(*ln))
-        ln++;
-      if (*ln == '\0') {
-        data_str = NULL;
-      } else {
-        data_str = ln;
-        while (*ln != '\0')
-          ln++;
-        ln--;
-        while (isspace(*ln) && (ln > data_str))
-          ln--;
-        ln++;
-        *ln = '\0';
-      }
-    } else {
-      data_str = NULL;
-    }
-
-    // check for errors
-    if (!(rec_type_str && name_str && data_type_str && data_str)) {
-      RecLog(DL_Warning, "Could not parse line at '%s:%d' -- skipping line: '%s'", g_rec_config_fpath, line_num, line);
-      goto L_next_line;
-    }
-    // record type
-    rec_type = RECT_NULL;
-    if (strcmp(rec_type_str, "CONFIG") == 0) {
-      rec_type = RECT_CONFIG;
-    } else if (strcmp(rec_type_str, "PROCESS") == 0) {
-      rec_type = RECT_PROCESS;
-    } else if (strcmp(rec_type_str, "NODE") == 0) {
-      rec_type = RECT_NODE;
-    } else if (strcmp(rec_type_str, "CLUSTER") == 0) {
-      rec_type = RECT_CLUSTER;
-    } else if (strcmp(rec_type_str, "LOCAL") == 0) {
-      rec_type = RECT_LOCAL;
-    } else {
-      RecLog(DL_Warning, "Unknown record type '%s' at '%s:%d' -- skipping line", rec_type_str, g_rec_config_fpath, line_num);
-      goto L_next_line;
-    }
-
-    // data_type
-    data_type = RECD_NULL;
-    if (strcmp(data_type_str, "INT") == 0) {
-      data_type = RECD_INT;
-    } else if (strcmp(data_type_str, "FLOAT") == 0) {
-      data_type = RECD_FLOAT;
-    } else if (strcmp(data_type_str, "STRING") == 0) {
-      data_type = RECD_STRING;
-    } else if (strcmp(data_type_str, "COUNTER") == 0) {
-      data_type = RECD_COUNTER;
-    } else {
-      RecLog(DL_Warning, "Unknown data type '%s' at '%s:%d' -- skipping line", data_type_str, g_rec_config_fpath, line_num);
-      goto L_next_line;
-    }
-
-    // set the record
-    RecDataSetFromString(data_type, &data, data_str);
-    RecSetRecord(rec_type, name_str, data_type, &data, NULL, false);
-    RecDataClear(data_type, &data);
-
-    // update our g_rec_config_contents_xxx
-    cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
-    cfe->entry_type = RECE_RECORD;
-    cfe->entry = ats_strdup(name_str);
-    enqueue(g_rec_config_contents_llq, (void *) cfe);
-    ink_hash_table_insert(g_rec_config_contents_ht, name_str, NULL);
-    goto L_done;
-
-  L_next_line:
-    // store this line into g_rec_config_contents_llq so that we can
-    // write it out later
-    cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
-    cfe->entry_type = RECE_COMMENT;
-    cfe->entry = ats_strdup(line);
-    enqueue(g_rec_config_contents_llq, (void *) cfe);
-
-  L_done:
-    line = line_tok.iterNext(&line_tok_state);
-    line_num++;
-    ats_free(lc);
-  }
+  // Parse the actual fileand hash the values.
+  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry);
 
   // release our hash table
   ink_rwlock_unlock(&g_records_rwlock);
-  ink_mutex_release(&g_rec_config_lock);
-  ats_free(fbuf);
 
   return REC_ERR_OKAY;
 }
