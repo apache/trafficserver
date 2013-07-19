@@ -24,8 +24,12 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "I_Version.h"
+#include "I_RecCore.h"
 #include "mgmtapi.h"
 #include "ClusterCom.h"
+
+#include <string>
+#include <map>
 
 #if defined(linux) || defined (solaris)
 #include "sys/utsname.h"
@@ -56,6 +60,8 @@ static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";
 #define COP_FATAL    LOG_ALERT
 #define COP_WARNING  LOG_ERR
 #define COP_DEBUG    LOG_DEBUG
+
+Diags * g_diags; // link time dependency
 
 static const char *root_dir;
 static const char *runtime_dir;
@@ -100,7 +106,6 @@ static int manager_failures = 0;
 static int server_failures = 0;
 static int server_not_found = 0;
 
-
 static const int sleep_time = 10;       // 10 sec
 static const int manager_timeout = 3 * 60;      //  3 min
 static const int server_timeout = 3 * 60;       //  3 min
@@ -127,12 +132,27 @@ static int child_status = 0;
 static int sem_id = 11452;
 
 AppVersionInfo appVersionInfo;
-static InkHashTable *configTable = NULL;
 
 static char const localhost[] = "127.0.0.1";
 
 static void cop_log(int priority, const char *format, ...) TS_PRINTFLIKE(2, 3);
 inline static void dummy_cop_log_trace(const char *format, ...) TS_PRINTFLIKE(1, 2);
+
+static void get_admin_user(void);
+
+struct ConfigValue
+{
+  ConfigValue(RecT _t, RecDataT _d, const std::string& _v)
+    : config_type(_t), data_type(_d), data_value(_v) {
+    }
+
+  RecT        config_type;
+  RecDataT    data_type;
+  std::string data_value;
+};
+
+typedef std::map<std::string, ConfigValue> ConfigValueTable;
+static ConfigValueTable configTable;
 
 inline static void
 dummy_cop_log_trace(const char *format, ...)
@@ -467,130 +487,58 @@ transient_error(int error, int wait_ms)
 }
 
 static void
-build_config_table(FILE * fp)
+register_config_variable(RecT rec_type, RecDataT data_type, const char * name, const char * value)
 {
-  int i;
-  char *p;
-  char buffer[4096], varname[1024];
-
-  cop_log_trace("Entering build_config_table(%p)\n", fp);
-  if (configTable != NULL) {
-    ink_hash_table_destroy_and_free_values(configTable);
-  }
-  configTable = ink_hash_table_create(InkHashTableKeyType_String);
-
-  while (!feof(fp)) {
-
-    if (!fgets(buffer, 4096, fp)) {
-      break;
-    }
-    // replace newline with null termination
-    p = strchr(buffer, '\n');
-    if (p) {
-      *p = '\0';
-    }
-    // skip beginning line spaces
-    p = buffer;
-    while (*p != '\0' && isspace(*p)) {
-      p++;
-    }
-
-    // skip blank or comment lines
-    if (*p == '#' || *p == '\0') {
-      continue;
-    }
-    // skip the first word
-    while (*p != '\0' && !isspace(*p)) {
-      p++;
-    }
-
-    while (*p != '\0' && isspace(*p)) {
-      p++;
-    }
-
-    for (i = 0; *p != '\0' && !isspace(*p); i++, p++) {
-      varname[i] = *p;
-    }
-    varname[i] = '\0';
-
-    ink_hash_table_insert(configTable, varname, ats_strdup(buffer));
-  }
-  cop_log_trace("Leaving build_config_table(%p)\n", fp);
+  configTable.insert(std::make_pair(std::string(name), ConfigValue(rec_type, data_type, value)));
 }
 
 static void
 read_config_string(const char *str, char *val, size_t val_len, bool miss_ok = false)
 {
-  InkHashTableValue hval;
-  char *p, *buf;
+  ConfigValueTable::const_iterator config;
 
-  if (!ink_hash_table_lookup(configTable, str, &hval)) {
+  config = configTable.find(str);
+  if (config == configTable.end()) {
     if (miss_ok)
       return;
     else
       goto ConfigStrFatalError;
   }
-  buf = (char *) hval;
 
-  p = strstr(buf, str);
-  if (!p) {
+  if (config->second.data_type != RECD_STRING) {
     goto ConfigStrFatalError;
   }
 
-  p += strlen(str);
-  p = strstr(p, "STRING");
-  if (!p) {
-    goto ConfigStrFatalError;
-  }
-
-  p += sizeof("STRING") - 1;
-  while (*p && isspace(*p)) {
-    p += 1;
-  }
-
-  ink_strlcpy(val, p, val_len);
+  ink_strlcpy(val, config->second.data_value.c_str(), val_len);
   return;
 
 ConfigStrFatalError:
-  cop_log(COP_FATAL, "could not find variable string %s in records.config\n", str);
+  cop_log(COP_FATAL, "could not find string variable %s in records.config\n", str);
   exit(1);
 }
 
 static void
 read_config_int(const char *str, int *val, bool miss_ok = false)
 {
-  InkHashTableValue hval;
-  char *p, *buf;
+  ConfigValueTable::const_iterator config;
 
-  if (!ink_hash_table_lookup(configTable, str, &hval)) {
+  config = configTable.find(str);
+  if (config == configTable.end()) {
     if (miss_ok)
       return;
     else
       goto ConfigIntFatalError;
   }
-  buf = (char *) hval;
 
-  p = strstr(buf, str);
-  if (!p) {
+  if (config->second.data_type != RECD_INT) {
     goto ConfigIntFatalError;
   }
 
-  p += strlen(str);
-  p = strstr(p, "INT");
-  if (!p) {
-    goto ConfigIntFatalError;
-  }
-
-  p += sizeof("INT") - 1;
-  while (*p && isspace(*p)) {
-    p += 1;
-  }
-
-  *val = atoi(p);
+  *val = atoi(config->second.data_value.c_str());
   return;
 
 ConfigIntFatalError:
-  cop_log(COP_FATAL, "could not find variable integer %s in records.config\n", str);
+  cop_log(COP_FATAL, "could not find integer variable %s in records.config\n", str);
   exit(1);
 }
 
@@ -638,7 +586,6 @@ get_admin_user()
 static void
 read_config()
 {
-  FILE *fp;
   struct stat stat_buf;
   static time_t last_mod = 0;
   char log_dir[PATH_NAME_MAX];
@@ -658,16 +605,12 @@ read_config()
     last_mod = stat_buf.st_mtime;
   }
 
-  // we stat the file to get the mtime and only open a read if it has changed, so disable the toctou coverity check
-  // coverity[toctou]
-  fp = fopen(config_file, "r");
-  if (!fp) {
-    cop_log(COP_FATAL, "could not open \"%s\"\n", config_file);
+  configTable.clear();
+
+  if (RecConfigFileParse(config_file, register_config_variable) != REC_ERR_OKAY) {
+    cop_log(COP_FATAL, "could not parse \"%s\"\n", config_file);
     exit(1);
   }
-
-  build_config_table(fp);
-  fclose(fp);
 
   read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary), true);
   read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary), true);
@@ -1820,6 +1763,8 @@ static void
 init()
 {
   cop_log_trace("Entering init()\n");
+
+  RecConfigFileInit();
 
   init_signals();
   init_syslog();
