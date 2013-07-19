@@ -58,6 +58,7 @@ libreclocal_a_SOURCES = \
   I_RecHttp.h \
   RecHttp.cc \
   RecUtils.cc \
+  RecDebug.cc \
   RecConfigParse.cc
 
 librecprocess_a_CXXFLAGS = $(ink_with_modules_process)
@@ -87,5 +88,6 @@ librecprocess_a_SOURCES = \
   I_RecHttp.h \
   RecHttp.cc \
   RecUtils.cc \
+  RecDebug.cc \
   RecConfigParse.cc
 
