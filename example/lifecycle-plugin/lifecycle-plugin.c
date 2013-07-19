@@ -105,6 +105,8 @@ TSPluginInit(int argc, const char *argv[])
   TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_READY_HOOK, cb);
   TSLifecycleHookAdd(TS_LIFECYCLE_CACHE_READY_HOOK, cb);
 
+  TSDebug("lifecycle-plugin", "online");
+
   return;
 
 Lerror:

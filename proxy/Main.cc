@@ -1574,6 +1574,10 @@ main(int /* argc ATS_UNUSED */, char **argv)
     clusterProcessor.init();
 #endif
 
+    // Plugins can get callbacks for very early events, so initialize even earlier.
+    plugin_init(system_config_directory);        // plugin.config
+    pmgmt->registerPluginCallbacks(global_config_cbs);
+
     // Load HTTP port data. getNumSSLThreads depends on this.
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
       HttpProxyPort::loadConfig();
@@ -1625,9 +1629,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
     //////////////////////////////////////
     // main server logic initiated here //
     //////////////////////////////////////
-
-    plugin_init(system_config_directory);        // plugin.config
-    pmgmt->registerPluginCallbacks(global_config_cbs);
 
     transformProcessor.start();
 
