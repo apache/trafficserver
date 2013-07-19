@@ -1170,7 +1170,6 @@ if test "x${with_profiler}" = "xyes"; then
 fi
 AC_SUBST(has_profiler)
 
-has_demangle=0
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in lib/ts.  Because this
 #  library is part of the SunPro distribution, we need
@@ -1179,12 +1178,10 @@ has_demangle=0
 AC_LANG_PUSH([C++])
 AC_SEARCH_LIBS([cplus_demangle],[demangle],
   [LIBDEMANGLE="-ldemangle"
-   has_demangle=1
   ]
 )
 AC_SUBST([LIBDEMANGLE])
 AC_LANG_POP
-AC_SUBST(has_demangle)
 
 AC_MSG_CHECKING(for 128bit CAS support)
 AC_LANG_PUSH([C++])

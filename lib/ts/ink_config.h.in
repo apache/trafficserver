@@ -45,14 +45,12 @@
 /* Libraries */
 #define TS_HAS_LIBZ                    @zlibh@
 #define TS_HAS_LZMA                    @lzmah@
-#define TS_HAS_EXPAT                   @expath@
 #define TS_HAS_JEMALLOC                @jemalloch@
 #define TS_HAS_TCMALLOC                @has_tcmalloc@
 
 
 /* Features */
 #define TS_HAS_IN6_IS_ADDR_UNSPECIFIED @has_in6_is_addr_unspecified@
-
 #define TS_HAS_BACKTRACE               @has_backtrace@
 #define TS_HAS_PROFILER                @has_profiler@
 #define TS_USE_FAST_SDK                @use_fast_sdk@
@@ -72,11 +70,10 @@
 #define TS_USE_LINUX_NATIVE_AIO        @use_linux_native_aio@
 #define TS_USE_COP_DEBUG               @use_cop_debug@
 #define TS_USE_MAXMIND_GEOIP           @use_maxmind_geoip@
-#define TS_USE_INTERIM_CACHE            @has_interim_cache@
+#define TS_USE_INTERIM_CACHE           @has_interim_cache@
 
 
 /* OS API definitions */
-#define GETHOSTBYNAME_R_HOSTENT_DATA   @gethostbyname_r_hostent_data@
 #define GETHOSTBYNAME_R_GLIBC2         @gethostbyname_r_glibc2@
 #define SIZEOF_VOID_POINTER            @ac_cv_sizeof_voidp@
 #define TS_IP_TRANSPARENT              @ip_transparent@
@@ -85,7 +82,6 @@
 /* API */
 #define TS_IS_MICRO_BUILD              @is_micro_build@
 #define TS_HAS_STANDALONE_IOCORE       @has_standalone_iocore@
-#define TS_HAS_DEMANGLE                @has_demangle@
 #define TS_HAS_TESTS                   @has_tests@
 #define TS_HAS_WCCP                    @has_wccp@
 
@@ -99,7 +95,6 @@
 # define INK_NO_HOSTDB                  1
 # define INK_NO_ICP                     1
 # define INK_NO_LOG                     1
-# define INK_NO_REVERSE                 1
 # define INK_NO_SOCKS                   1
 # define INK_NO_STAT_PAGES              1
 # define INK_USE_MUTEX_FOR_ATOMICLISTS  1
