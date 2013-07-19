@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
+  *) [TS-954] Better calculation of blocks in volume. Bumped cache DB version.
 
   *) [TS-2050] Cleanup ink_config.h.in, removing unused symbols.
 
@@ -8,7 +9,7 @@ Changes with Apache Traffic Server 3.3.5
    added delay listen for cache. Removed TS_NO_API defined/build option. 
 
   *) [TS-2047] Schedule RamCacheCLFUSCompressor in RamCacheCLFUS::init instead
-   of immediatly after instantiation.
+   of immediately after instantiation.
 
   *) [TS-2042] Remove remnants of unused vingid command line option.
 

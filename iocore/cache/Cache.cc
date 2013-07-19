@@ -749,7 +749,7 @@ CacheProcessor::start_internal(int flags)
           sector_size = STORE_BLOCK_SIZE;
         }
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
-        blocks = blocks - ROUND_TO_STORE_BLOCK(sd->offset + skip);
+        blocks = blocks - ROUND_TO_STORE_BLOCK(skip);
 #if AIO_MODE == AIO_MODE_NATIVE
         eventProcessor.schedule_imm(NEW(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear)));
 #else
