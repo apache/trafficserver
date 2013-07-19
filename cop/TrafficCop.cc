@@ -487,13 +487,13 @@ transient_error(int error, int wait_ms)
 }
 
 static void
-register_config_variable(RecT rec_type, RecDataT data_type, const char * name, const char * value)
+config_register_variable(RecT rec_type, RecDataT data_type, const char * name, const char * value)
 {
   configTable.insert(std::make_pair(std::string(name), ConfigValue(rec_type, data_type, value)));
 }
 
 static void
-read_config_string(const char *name, char *val, size_t val_len, bool miss_ok = false)
+config_read_string(const char *name, char *val, size_t val_len, bool miss_ok = false)
 {
   ConfigValueTable::const_iterator config;
 
@@ -518,7 +518,7 @@ ConfigStrFatalError:
 }
 
 static void
-read_config_int(const char *name, int *val, bool miss_ok = false)
+config_read_int(const char *name, int *val, bool miss_ok = false)
 {
   ConfigValueTable::const_iterator config;
 
@@ -542,8 +542,85 @@ ConfigIntFatalError:
   exit(1);
 }
 
+static void
+config_reload_records()
+{
+  struct stat stat_buf;
+  static time_t last_mod = 0;
+  char log_dir[PATH_NAME_MAX];
+  char log_filename[PATH_NAME_MAX];
+  int tmp_int;
 
-void
+  cop_log_trace("Entering %s()\n", __func__);
+  // coverity[fs_check_call]
+  if (stat(config_file, &stat_buf) == -1) {
+    cop_log(COP_FATAL, "could not stat \"%s\"\n", config_file);
+    exit(1);
+  }
+
+  if (stat_buf.st_mtime <= last_mod) {  // no change, no need to re-read
+    return;
+  } else {
+    last_mod = stat_buf.st_mtime;
+  }
+
+  configTable.clear();
+
+  if (RecConfigFileParse(config_file, config_register_variable) != REC_ERR_OKAY) {
+    cop_log(COP_FATAL, "could not parse \"%s\"\n", config_file);
+    exit(1);
+  }
+
+  config_read_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary), true);
+  config_read_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary), true);
+  get_admin_user();
+
+  config_read_string("proxy.config.bin_path", bin_path, sizeof(bin_path), true);
+  Layout::get()->relative(bin_path, sizeof(bin_path), bin_path);
+  if (access(bin_path, R_OK) == -1) {
+    ink_strlcpy(bin_path, Layout::get()->bindir, sizeof(bin_path));
+    if (access(bin_path, R_OK) == -1) {
+      cop_log(COP_FATAL, "could not access() \"%s\"\n", bin_path);
+      cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
+      exit(1);
+    }
+  }
+  config_read_string("proxy.config.log.logfile_dir", log_dir, sizeof(log_dir));
+  Layout::get()->relative(log_dir, sizeof(log_dir), log_dir);
+  if (access(log_dir, W_OK) == -1) {
+    ink_strlcpy(log_dir, Layout::get()->logdir, sizeof(log_dir));
+    if (access(log_dir, W_OK) == -1) {
+      cop_log(COP_FATAL, "could not access() \"%s\"\n", log_dir);
+      cop_log(COP_FATAL, "please set 'proxy.config.log.logfile_dir' \n");
+      exit(1);
+    }
+  }
+  config_read_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));
+  Layout::relative_to(log_file, sizeof(log_file), log_dir, log_filename);
+  config_read_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port, true);
+  config_read_int("proxy.config.admin.autoconf_port", &autoconf_port, true);
+  config_read_int("proxy.config.cluster.rsport", &rs_port, true);
+  config_read_int("proxy.config.lm.sem_id", &sem_id, true);
+
+#if defined(linux)
+  // TS-1075 : auto-port ::connect DoS on high traffic linux systems
+  config_read_int("proxy.config.cop.source_port", &source_port, true);
+#endif
+
+  config_read_int("proxy.local.cluster.type", &tmp_int);
+  cluster_type = static_cast<MgmtClusterType>(tmp_int);
+
+  config_read_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str), true);
+  process_syslog_config();
+  config_read_int("proxy.config.cop.core_signal", &coresig, true);
+
+  config_read_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb, true);
+  config_read_int("proxy.config.cop.linux_min_memfree_kb", &check_memory_min_memfree_kb, true);
+
+  cop_log_trace("Leaving %s()\n", __func__);
+}
+
+static void
 get_admin_user()
 {
   struct passwd *pwd = NULL;
@@ -551,7 +628,7 @@ get_admin_user()
   if (!admin_user)
     admin_user = (char *)ats_malloc(MAX_LOGIN);
 
-  read_config_string("proxy.config.admin.user_id", admin_user, MAX_LOGIN);
+  config_read_string("proxy.config.admin.user_id", admin_user, MAX_LOGIN);
 
   if (*admin_user) {
     char *end = admin_user + strlen(admin_user) - 1;
@@ -581,84 +658,6 @@ get_admin_user()
       exit(1);
     }
   }
-}
-
-static void
-read_config()
-{
-  struct stat stat_buf;
-  static time_t last_mod = 0;
-  char log_dir[PATH_NAME_MAX];
-  char log_filename[PATH_NAME_MAX];
-  int tmp_int;
-
-  cop_log_trace("Entering read_config()\n");
-  // coverity[fs_check_call]
-  if (stat(config_file, &stat_buf) == -1) {
-    cop_log(COP_FATAL, "could not stat \"%s\"\n", config_file);
-    exit(1);
-  }
-
-  if (stat_buf.st_mtime <= last_mod) {  // no change, no need to re-read
-    return;
-  } else {
-    last_mod = stat_buf.st_mtime;
-  }
-
-  configTable.clear();
-
-  if (RecConfigFileParse(config_file, register_config_variable) != REC_ERR_OKAY) {
-    cop_log(COP_FATAL, "could not parse \"%s\"\n", config_file);
-    exit(1);
-  }
-
-  read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary), true);
-  read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary), true);
-  get_admin_user();
-
-  read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path), true);
-  Layout::get()->relative(bin_path, sizeof(bin_path), bin_path);
-  if (access(bin_path, R_OK) == -1) {
-    ink_strlcpy(bin_path, Layout::get()->bindir, sizeof(bin_path));
-    if (access(bin_path, R_OK) == -1) {
-      cop_log(COP_FATAL, "could not access() \"%s\"\n", bin_path);
-      cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
-      exit(1);
-    }
-  }
-  read_config_string("proxy.config.log.logfile_dir", log_dir, sizeof(log_dir));
-  Layout::get()->relative(log_dir, sizeof(log_dir), log_dir);
-  if (access(log_dir, W_OK) == -1) {
-    ink_strlcpy(log_dir, Layout::get()->logdir, sizeof(log_dir));
-    if (access(log_dir, W_OK) == -1) {
-      cop_log(COP_FATAL, "could not access() \"%s\"\n", log_dir);
-      cop_log(COP_FATAL, "please set 'proxy.config.log.logfile_dir' \n");
-      exit(1);
-    }
-  }
-  read_config_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));
-  Layout::relative_to(log_file, sizeof(log_file), log_dir, log_filename);
-  read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port, true);
-  read_config_int("proxy.config.admin.autoconf_port", &autoconf_port, true);
-  read_config_int("proxy.config.cluster.rsport", &rs_port, true);
-  read_config_int("proxy.config.lm.sem_id", &sem_id, true);
-
-#if defined(linux)
-  // TS-1075 : auto-port ::connect DoS on high traffic linux systems
-  read_config_int("proxy.config.cop.source_port", &source_port, true);
-#endif
-
-  read_config_int("proxy.local.cluster.type", &tmp_int);
-  cluster_type = static_cast<MgmtClusterType>(tmp_int);
-
-  read_config_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str), true);
-  process_syslog_config();
-  read_config_int("proxy.config.cop.core_signal", &coresig, true);
-
-  read_config_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb, true);
-  read_config_int("proxy.config.cop.linux_min_memfree_kb", &check_memory_min_memfree_kb, true);
-
-  cop_log_trace("Leaving read_config()\n");
 }
 
 static void
@@ -1579,7 +1578,7 @@ check(void *arg)
     }
 
     // Re-read the config file information
-    read_config();
+    config_reload_records();
 
     // Check to make sure the programs are running
     check_programs();
