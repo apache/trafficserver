@@ -1,8 +1,16 @@
-Apache-TS-AdminClient version 0.01
+Apache-TS version 3.4.0
 ==================================
 
-Apache::TS::AdminClient - a perl interface to the statistics and configuration settings 
-stored within Apache Traffic Server.  
+Apache::TS - a set of perl interfaces to manage an Apache Traffic Server
+             instance. This includes the following sub-modules
+
+    Apache::TS::AdminClient - access the statistics and configuration
+     			      settings stored within Apache Traffic Server
+
+    Apache::TS::Config - Manage Apache Traffic Server configs
+
+    Apache::TS::Config::Records - Manage records.config settings.
+
 
 INSTALLATION
 ==================================
@@ -13,6 +21,7 @@ To install this module type the following:
    make
    make test
    make install
+
 
 DEPENDENCIES
 ==================================
@@ -40,9 +49,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-
-HISTORY
-==================================
-See 'Changes' for historic updates and revision numbers
-

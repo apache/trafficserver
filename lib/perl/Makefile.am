@@ -16,13 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = ts records perl
+all: Makefile.PL
+	-[ $(srcdir) != $(builddir) ] && cp -rsu $(abs_srcdir)/. $(builddir)/.
+	perl Makefile.PL INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix)
 
-# TsConfig is only built for WCCP until the bugs are worked out.
-if BUILD_WCCP
-SUBDIRS += tsconfig wccp
-endif
-
-if BUILD_CPP11API
-SUBDIRS += cpp11api
-endif
+install-exec-local: Makefile.PL
+	perl Makefile.PL INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) install

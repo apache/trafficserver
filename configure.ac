@@ -1820,6 +1820,7 @@ AC_CONFIG_FILES([
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
   lib/wccp/Makefile
+  lib/perl/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
