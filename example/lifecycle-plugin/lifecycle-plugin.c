@@ -29,10 +29,6 @@
 #include <unistd.h>
 #include <ts/ts.h>
 
-// This gets the PRI*64 types
-# define __STDC_FORMAT_MACROS 1
-# include <inttypes.h>
-
 int
 CallbackHandler(TSCont this, TSEvent id, void* no_data) {
   (void) this;
