@@ -23,7 +23,7 @@ Makefile-pl: $(srcdir)/Makefile.PL
 install-exec-local: Makefile-pl
 	$(MAKE) -f Makefile-pl INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR) install
 
-test: check
+#test: check
 
-check-local: Makefile-pl
-	$(MAKE) -f Makefile-pl INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR) test
+#check-local: Makefile-pl
+#	$(MAKE) -f Makefile-pl INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR) test
