@@ -22,6 +22,7 @@ WriteMakefile(
     NAME              => 'Apache::TS',
     VERSION_FROM      => 'lib/Apache/TS.pm', # finds $VERSION
     PREREQ_PM         => {}, # e.g., Module::Name => 1.1
+    FIRST_MAKEFILE    => 'Makefile-pl',
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Apache/TS.pm', # retrieve abstract from module
        AUTHOR         => 'Traffic Server Dev Team <dev@trafficserver.apache.org>') : ()),
