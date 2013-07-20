@@ -62,6 +62,7 @@ plugins to build large scale web applications.
     automake
     pkgconfig
     libtool
+    perl-ExtUtils-MakeMaker
     gcc-c++
     glibc-devel
     openssl-devel
@@ -87,6 +88,7 @@ plugins to build large scale web applications.
     automake
     pkgconfig
     libtool
+    perl-ExtUtils-MakeMaker
     gcc-c++
     glibc-devel
     openssl-devel
@@ -99,6 +101,7 @@ plugins to build large scale web applications.
     automake
     pkg-config
     libtool
+    libmodule-install-perl
     g++
     libssl-dev
     tcl-dev
@@ -121,6 +124,7 @@ plugins to build large scale web applications.
     automake
     pkg-config
     libtool
+    libmodule-install-perl
     g++
     libssl-dev
     tcl-dev
