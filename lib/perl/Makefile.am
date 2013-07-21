@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Makefile-pl: $(srcdir)/Makefile.PL
+all-local: $(srcdir)/Makefile.PL
 	-[ $(srcdir) != $(builddir) ] && cp -r $(abs_srcdir)/. $(builddir)/.
 	$(PERL) $(srcdir)/Makefile.PL INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix)
 
