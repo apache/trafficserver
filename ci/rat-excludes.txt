@@ -89,8 +89,10 @@ lib/ts/ink_rand.cc
 lib/tsconfig/BisonHeaderToC++.sed
 README-EC2
 REVIEWERS
-contrib/perl/AdminClient/Changes
-contrib/perl/AdminClient/MANIFEST
+lib/perl/AdminClient/MANIFEST
+lib/perl/Makefile-pl
+lib/perl/blib/
+lib/perl/pm_to_blib
 ats-install/
 cop/traffic_cop
 mgmt/api/remote/traffic_api_cli_remote
