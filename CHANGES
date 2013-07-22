@@ -6,7 +6,7 @@ Changes with Apache Traffic Server 3.3.5
     Author: bettydramit <b13621367396 at gmail dot com>
 
   *) [TS-1943] Rename mcport and rsport parameters to make them more readable.
-    uthor: Yunkai Zhang <qiushu.zyk@taobao.com>
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
   *) [TS-2046] Move perl contribs to lib/perl, and have make / make install
    build and install the modules as appropriate.
@@ -16,7 +16,7 @@ Changes with Apache Traffic Server 3.3.5
   *) [TS-2050] Cleanup ink_config.h.in, removing unused symbols.
 
   *) [TS-1487] [TS-2035] Moved plugin init, added plugin lifecycle hooks,
-   added delay listen for cache. Removed TS_NO_API defined/build option. 
+   added delay listen for cache. Removed TS_NO_API defined/build option.
 
   *) [TS-2047] Schedule RamCacheCLFUSCompressor in RamCacheCLFUS::init instead
    of immediately after instantiation.
