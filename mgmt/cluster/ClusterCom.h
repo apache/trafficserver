@@ -94,7 +94,7 @@ class ClusterCom
 {
 public:
 
-  ClusterCom(unsigned long oip, char *hname, int port, char *group, int sport, char *p);
+  ClusterCom(unsigned long oip, char *hname, int mcport, char *group, int rsport, char *p);
    ~ClusterCom()
   {
   };

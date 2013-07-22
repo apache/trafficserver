@@ -391,7 +391,7 @@ main(int argc, char **argv)
 
   bool found = false;
   int just_started = 0;
-  int cluster_port = -1, cluster_server_port = -1;
+  int cluster_mcport = -1, cluster_rsport = -1;
   // TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
   char* proxy_port = 0;
@@ -414,12 +414,12 @@ main(int argc, char **argv)
     aconf_port_arg = atoi(envVar);
   }
 
-  if ((envVar = getenv("MGMT_CLUSTER_PORT")) != NULL) {
-    cluster_port = atoi(envVar);
+  if ((envVar = getenv("MGMT_CLUSTER_MC_PORT")) != NULL) {
+    cluster_mcport = atoi(envVar);
   }
 
   if ((envVar = getenv("MGMT_CLUSTER_RS_PORT")) != NULL) {
-    cluster_server_port = atoi(envVar);
+    cluster_rsport = atoi(envVar);
   }
 
   if ((envVar = getenv("MGMT_GROUP_ADDR")) != NULL) {
@@ -443,15 +443,15 @@ main(int argc, char **argv)
           if (strcmp(argv[i], "-aconfPort") == 0) {
             ++i;
             aconf_port_arg = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-clusterPort") == 0) {
+          } else if (strcmp(argv[i], "-clusterMCPort") == 0) {
             ++i;
-            cluster_port = atoi(argv[i]);
+            cluster_mcport = atoi(argv[i]);
           } else if (strcmp(argv[i], "-groupAddr") == 0) {
             ++i;
             group_addr = argv[i];
           } else if (strcmp(argv[i], "-clusterRSPort") == 0) {
             ++i;
-            cluster_server_port = atoi(argv[i]);
+            cluster_rsport = atoi(argv[i]);
 #if TS_USE_DIAGS
           } else if (strcmp(argv[i], "-debug") == 0) {
             ++i;
@@ -680,13 +680,13 @@ main(int argc, char **argv)
     RecSetRecordInt("proxy.config.process_manager.mgmt_port", proxy_backdoor);
   }
 
-  if (cluster_server_port == -1) {
-    cluster_server_port = REC_readInteger("proxy.config.cluster.rsport", &found);
+  if (cluster_rsport == -1) {
+    cluster_rsport = REC_readInteger("proxy.config.cluster.rsport", &found);
     ink_assert(found);
   }
 
-  if (cluster_port == -1) {
-    cluster_port = REC_readInteger("proxy.config.cluster.mcport", &found);
+  if (cluster_mcport == -1) {
+    cluster_mcport = REC_readInteger("proxy.config.cluster.mcport", &found);
     ink_assert(found);
   }
 
@@ -713,7 +713,7 @@ main(int argc, char **argv)
   }
 
   /* TODO: Do we really need to init cluster communication? */
-  lmgmt->initCCom(cluster_port, group_addr, cluster_server_port);       /* Setup cluster communication */
+  lmgmt->initCCom(cluster_mcport, group_addr, cluster_rsport);       /* Setup cluster communication */
 
   lmgmt->initMgmtProcessServer();       /* Setup p-to-p process server */
 

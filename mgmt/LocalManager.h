@@ -67,7 +67,7 @@ public:
   };
 
   void initAlarm();
-  void initCCom(int port, char *addr, int sport);
+  void initCCom(int mcport, char *addr, int rsport);
   void initMgmtProcessServer();
   void pollMgmtProcessServer();
   void handleMgmtMsgFromProcesses(MgmtMessageHdr * mh);

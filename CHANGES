@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1943] Rename mcport and rsport parameters to make them more readable.
+    uthor: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-2046] Move perl contribs to lib/perl, and have make / make install
    build and install the modules as appropriate.
 

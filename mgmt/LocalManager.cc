@@ -321,7 +321,7 @@ LocalManager::initAlarm()
  *   Function initializes cluster communication structure held by local manager.
  */
 void
-LocalManager::initCCom(int port, char *addr, int sport)
+LocalManager::initCCom(int mcport, char *addr, int rsport)
 {
   bool found;
   IpEndpoint cluster_ip;    // ip addr of the cluster interface
@@ -368,7 +368,7 @@ LocalManager::initCCom(int port, char *addr, int sport)
   ink_strlcat(envBuf, clusterAddrStr, envBuf_size);
   ink_release_assert(putenv(envBuf) == 0);
 
-  ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, port, addr, sport, pserver_path);
+  ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, mcport, addr, rsport, pserver_path);
   virt_map = new VMap(intrName, ats_ip4_addr_cast(&cluster_ip), &lmgmt->ccom->mutex);
   virt_map->downAddrs();        // Just to be safe
   ccom->establishChannels();
