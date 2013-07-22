@@ -46,7 +46,6 @@
 #include "LocalManager.h"
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
-#include "EnvBlock.h"
 #include "CfgContextUtils.h"
 
 // Ugly hack - define HEAP_H and STACK_H to prevent stuff from the

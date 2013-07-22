@@ -40,8 +40,6 @@ noinst_LIBRARIES = libutils_lm.a libutils_p.a
 
 libutils_lm_a_CPPFLAGS = $(ink_with_modules_local) $(AM_CPPFLAGS)
 libutils_lm_a_SOURCES = \
-  EnvBlock.cc \
-  EnvBlock.h \
   ExpandingArray.cc \
   ExpandingArray.h \
   MgmtSchema.cc \

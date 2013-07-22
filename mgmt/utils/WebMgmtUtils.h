@@ -36,7 +36,6 @@
 
 #include "ink_hash_table.h"
 #include "TextBuffer.h"
-#include "EnvBlock.h"
 #include "ExpandingArray.h"
 
 #include "P_RecCore.h"
@@ -101,9 +100,6 @@ InkHashTable *processFormSubmission_noSubstitute(char *submission);
 
 // Shutdown the proxy
 bool ProxyShutdown();
-int processSpawn(const char *args[], EnvBlock * env, textBuffer * input_buf, textBuffer * output_buf, bool nowait,
-                 bool runAsRoot, bool * truncated = NULL);
-
 int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
 
