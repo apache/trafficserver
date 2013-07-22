@@ -27,7 +27,7 @@ Description
 .. option:: proxyOff
 .. option:: -nosyslog
 .. option:: -aconfPort PORT
-.. option:: -clusterPort PORT
+.. option:: -clusterMCPort PORT
 .. option:: -groupAddr ADDRESS
 .. option:: -clusterRSPort PORT
 .. option:: -debug TAGS
@@ -44,7 +44,7 @@ Environment
 ===========
 
 .. envvar:: MGMT_ACONF_PORT
-.. envvar:: MGMT_CLUSTER_PORT
+.. envvar:: MGMT_CLUSTER_MC_PORT
 .. envvar:: MGMT_CLUSTER_RS_PORT
 .. envvar:: MGMT_GROUP_ADDR
 
