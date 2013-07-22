@@ -16,12 +16,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-all-local: $(srcdir)/Makefile.PL
-	-[ $(srcdir) != $(builddir) ] && cp -r $(abs_srcdir)/. $(builddir)/.
-	$(PERL) $(srcdir)/Makefile.PL INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix)
+all-local: Makefile-pl
+	$(MAKE) -f Makefile-pl INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR)
 
 install-exec-local: Makefile-pl
 	$(MAKE) -f Makefile-pl INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR) install
+
+Makefile-pl: Makefile.PL
+	-[ $(srcdir) != $(builddir) ] && cp -rf $(abs_srcdir)/. $(builddir)/.
+	$(PERL) Makefile.PL INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix)
 
 #test: check
 
