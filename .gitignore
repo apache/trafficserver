@@ -6,6 +6,7 @@
 *.tar.gz
 *.lo
 *.la
+*.log
 
 .deps
 
@@ -27,14 +28,16 @@ build/ltversion.m4
 build/lt~obsolete.m4
 
 Makefile
-config.log
+Makefile-pl
 config.status
 config.nice
 config.h
 doc/Doxyfile
 doc/html/
 doc/docbuild/
-doc/warn.log
+
+MYMETA.*
+pm_to_blib
 
 
 lib/ts/ink_autoconf.h
@@ -102,6 +105,8 @@ example/app-template/records.config
 */.svn/
 
 tsxs
+
+blib/
 
 GPATH
 GRTAGS
