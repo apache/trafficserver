@@ -2139,25 +2139,6 @@ URL Remap Rules
 SSL Termination
 ===============
 
-``proxy.config.ssl.accelerator_required``
-{#proxy.config.ssl.accelerator_required}
-    ``INT``
-    Default: ``0``
-    Indicates if an accelerator card is required for operation. Traffic
-    Server supports Cavium accelerator cards.
-
-    You can specify:
-
-    -  ``0`` - not required
-    -  ``1`` - accelerator card is required and Traffic Server will not
-       enable SSL unless an accelerator card is present.
-    -  ``2`` - accelerator card is required and Traffic Server will not
-       start unless an accelerator card is present.
-
-    You can verify operation by
-    running\ ``/home/y/bin/openssl_accelerated`` (this comes as part of
-    ``openssl_engines_init``).
-
 ``proxy.config.ssl.enabled`` {#proxy.config.ssl.enabled}
     ``INT``
     Default: ``0``
@@ -2178,19 +2159,6 @@ SSL Termination
     ``INT``
     Default: ``1``
     Enables (``1``) or disables (``0``) TLSv1.
-
-``proxy.confg.ssl.accelerator.type``
-{#proxy.confg.ssl.accelerator.type}
-    ``INT``
-    Default: ``0``
-    Specifies if the Cavium SSL accelerator card is installed on (and
-    required by) your Traffic Server machine:
-
-    -  ``0`` = none (no SSL accelerator card is installed on the Traffic
-       Server machine, so the Traffic Server's CPU determines the number
-       of requests served per second)
-    -  ``1`` = accelerator card is present and required by Traffic
-       Server
 
 ``proxy.config.ssl.server_port`` {#proxy.config.ssl.server_port}
     ``INT``
