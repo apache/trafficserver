@@ -1932,9 +1932,9 @@ InterimCacheVol::aggWriteDone(int event, void *e)
      // for fragments is this aggregation buffer
      Debug("cache_disk_error", "Write error on disk %s\n \
                write range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-           "InterimCache ID", io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes,
-           io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
-           (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
+           "InterimCache ID", (uint64_t)io.aiocb.aio_offset, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes),
+           (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
+           (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
      Dir del_dir;
      dir_clear(&del_dir);
      dir_set_ininterim(&del_dir);
