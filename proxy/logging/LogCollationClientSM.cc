@@ -742,5 +742,8 @@ LogCollationClientSM::flush_to_orphan()
     m_log_host->orphan_write_and_delete(log_buffer);
   }
 
+  // Now send_list is empty, let's update m_flow to ALLOW status
+  Debug("log-coll", "[%d]client::client_send - m_flow = ALLOW", m_id);
+  m_flow = LOG_COLL_FLOW_ALLOW;
 }
 #endif // TS_MICRO

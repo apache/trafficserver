@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-2044] Avoid logging client running into DENY status infinitely.
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
   *) [TS-2030] Build error with --enable-interim-cache on fedora19 x86_64.
     Author: bettydramit <b13621367396 at gmail dot com>
 
