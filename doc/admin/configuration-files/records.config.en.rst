@@ -1191,8 +1191,7 @@ Cache Control
     Reloadable.
     Enables (``1``) or disables (``0``) ability to a read cached object
     while the another connection is completing the write to cache for
-    the same object. This must be enabled for connection collapsing to
-    work
+    the same object.
 
 ``proxy.config.cache.force_sector_size``
 {#proxy.config.cache.force_sector_size}
@@ -1337,32 +1336,7 @@ Cache Control
     Default: ``0``
     Enables (``1``) or disables (``0``) the ability to read a cached
     object while another connection is completing a write to cache for
-    the same object. If you want connection collapsing to work, then
-    this option must be enabled.
-
-``proxy.config.connection_collapsing.hashtable_enabled``
-{#proxy.config.connection_collapsing.hashtable_enabled}
-    ``INT``
-    Default: ``0``
-    Enables (``1``) or disables (``0``) whether requests will first
-    search the hashtable to see if another similar request is already
-    being served.
-
-``proxy.config.connection_collapsing.rww_wait_time``
-{#proxy.config.connection_collapsing.rww_wait_time}
-    ``INT``
-    Default: ``0``
-    When enabled (``1``) while the write configuration parameter is also
-    enabled, secondary clients will wait this amount of time (in msec)
-    before cache lookup is retried.
-
-``proxy.config.connection_collapsing.revalidate_window_period``
-{#proxy.config.connection_collapsing.revalidate_window_period}
-    ``INT``
-    Default: ``0``
-    The amount of time (msec) secondary clients for the same URL will be
-    served the stale object when revalidation of a cached object is in
-    progress.
+    the same object.
 
 ``proxy.config.http.cache.fuzz.min_time``
 {#proxy.config.http.cache.fuzz.min_time}
