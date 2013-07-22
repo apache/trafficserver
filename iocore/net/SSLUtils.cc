@@ -317,19 +317,19 @@ SSLInitServerContext(
   }
 
   // First, load any CA chains from the global chain file.
-  if (params->serverCertChainPath) {
-    xptr<char> completeServerCaCertPath(Layout::relative_to(params->serverCACertPath, params->serverCertChainPath));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCaCertPath)) {
-      SSLError("failed to load global certificate chain from %s", (const char *)completeServerCaCertPath);
+  if (params->serverCertChainFilename) {
+    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
+    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+      SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
       goto fail;
     }
   }
 
   // Now, load any additional certificate chains specified in this entry.
   if (serverCaCertPtr) {
-    xptr<char> completeServerCaCertPath(Layout::relative_to(params->serverCACertPath, serverCaCertPtr));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCaCertPath)) {
-      SSLError("failed to load certificate chain from %s", (const char *)completeServerCaCertPath);
+    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, serverCaCertPtr));
+    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+      SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
       goto fail;
     }
   }

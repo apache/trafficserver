@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1993] SSL certificate chains are loaded from the wrong directory.
+
   *) [TS-2059] Remove dead code in EnvBlock.cc and processSpawn().
 
   *) [TS-2057] Removed deprecated proxy port configuration values from records.config.
