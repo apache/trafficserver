@@ -161,7 +161,6 @@ In order to accomplish this, we
    -  `*``proxy.config.ssl.enabled``* <configuration-files/records.config#proxy.config.ssl.enabled>`_
    -  `*``proxy.config.ssl.server_port``* <configuration-files/records.config#proxy.config.ssl.server_port>`_
    -  `*``proxy.config.ssl.client.certification_level``* <configuration-files/records.config#proxy.config.ssl.client.certification_level>`_
-   -  `*``proxy.config.ssl.server.cert.filename``* <configuration-files/records.config#proxy.config.ssl.server.cert.filename>`_
    -  `*``proxy.config.ssl.server.cert.path``* <configuration-files/records.config#proxy.config.ssl.server.cert.path>`_
    -  `*``proxy.config.ssl.server.private_key.filename``* <configuration-files/records.config#proxy.config.ssl.server.private_key.filename>`_
    -  `*``proxy.config.ssl.server.private_key.path``* <configuration-files/records.config#proxy.config.ssl.server.private_key.path>`_

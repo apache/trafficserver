@@ -2186,41 +2186,42 @@ SSL Termination
        authenticated during the SSL handshake. Clients without a
        certificate are not allowed to access Traffic Server.
 
-``proxy.config.ssl.server.cert.filename``
-{#proxy.config.ssl.server.cert.filename}
-    ``STRING``
-    Default: ``server.pem``
-    The filename of the Traffic Server SSL certificate (the server
-    certificate).
-
-``proxy.config.ssl.server.cert_chain.filename``
-{#proxy.config.ssl.server.cert_chain.filename}
-    ``STRING``
-    Default: ``NULL``
-    The file, in a chain of certificates, that is the root certificate
-    recognized by your website.
-
 ``proxy.config.ssl.server.cert.path``
 {#proxy.config.ssl.server.cert.path}
     ``STRING``
     Default: ``/config``
-    The location of the Traffic Server SSL certificate (the server
-    certificate).
-
-``proxy.config.ssl.server.private_key.filename``
-{#proxy.config.ssl.server.private_key.filename}
-    ``STRING``
-    Default: ``NULL``
-    The filename of the Traffic Server private key. Change this variable
-    only if the private key is not located in the Traffic Server SSL
-    certificate file.
+    The location of the SSL certificates and chains used for accepting
+    and validation new SSL sessions. If this is a relative path,
+    it is appended to the Traffic Server installation PREFIX. All
+    certificates and certificate chains listed in
+    :file:`ssl_multicert.config` will be loaded relative to this
+    path.
 
 ``proxy.config.ssl.server.private_key.path``
 {#proxy.config.ssl.server.private_key.path}
     ``STRING``
     Default: ``NULL``
-    The location of the Traffic Server private key. Change this variable
-    only if the private key is not located in the SSL certificate file.
+    The location of the SSL certificate private keys. Change this
+    variable only if the private key is not located in the SSL
+    certificate file. All private keys listed in
+    :file:`ssl_multicert.config` will be loaded relative to this
+    path.
+
+``proxy.config.ssl.server.cert_chain.filename``
+{#proxy.config.ssl.server.cert_chain.filename}
+    ``STRING``
+    Default: ``NULL``
+    The name of a file containing a global certificate chain that
+    should be used with every server certificate. This file is only
+    used if there are certificates defined in :file:`ssl_multicert.conf`.
+    Unless this is an absolute path, it is loaded relative to the
+    path specified by ``proxy.config.ssl.server.cert.path``.
+
+``proxy.config.ssl.CA.cert.path`` {#proxy.config.ssl.CA.cert.path}
+    ``STRING``
+    Default: ``NULL``
+    The location of the certificate authority file that client
+    certificates will be verified against.
 
 ``proxy.config.ssl.CA.cert.filename``
 {#proxy.config.ssl.CA.cert.filename}
@@ -2228,12 +2229,6 @@ SSL Termination
     Default: ``NULL``
     The filename of the certificate authority that client certificates
     will be verified against.
-
-``proxy.config.ssl.CA.cert.path`` {#proxy.config.ssl.CA.cert.path}
-    ``STRING``
-    Default: ``NULL``
-    The location of the certificate authority file that client
-    certificates will be verified against.
 
 Client-Related Configuration
 ----------------------------
