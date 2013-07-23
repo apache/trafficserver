@@ -727,6 +727,8 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
       } else {
         if (bytes_written < fmt_buf_bytes) {
           m_overspill_bytes = fmt_buf_bytes - bytes_written;
+          if (m_overspill_bytes > m_max_line_size)
+            m_overspill_bytes = m_max_line_size;
           memcpy(m_overspill_buffer, &m_ascii_buffer[bytes_written], m_overspill_bytes);
           m_overspill_written = 0;
         }
