@@ -19,8 +19,23 @@ Combohandler Plugin
   under the License.
 
 
-This plugin provides that functionality (and more) with the same
-interface but with these differences in configuration:
+This plugin provides an intelligent way to combine multiple URLs into a single
+URL, and have Apache Traffic Server combine the components into one
+response. This is useful for example to create URLs that combine multiple CSS
+or Javascript files into one.
+
+Installation
+============
+
+This plugin is only built if the configure option ::
+
+    --enable-experimental-plugins
+
+is given at build time. Note that this plugin is built and installed in
+combination with the ESI module, since they share common code.
+
+Configuration
+=============
 
 The arguments in the
 ```plugin.config`` <../../configuration-files/plugin.config>`_ line in
@@ -38,14 +53,12 @@ default value be applied.
 Also, just like the original combohandler, this plugin generates URLs of
 the form ``http://localhost/<dir>/<file-path>``. ``<dir>`` here defaults
 to ``l`` unless specified by the file path in the query parameter using
-a colon. For example:
+a colon. For example::
 
-::
     http://combo.com/admin/v1/combo?filepath1&dir1:filepath2&filepath3
 
-Will result in these three pages being fetched:
+Will result in these three pages being fetched::
 
-::
     http://localhost/l/filepath1
     http://localhost/dir1/filepath2
     http://localhost/l/filepath3
@@ -57,14 +70,11 @@ The plugin also supports a prefix parameter. Common parts of successive
 file paths can be extracted and specified separately using a 'p' query
 parameter. Successive file path parameters are appended to this prefix
 to create complete file paths. The prefix will remain active until
-changed or cleared (set to an empty string). For example, the query
-
-::
+changed or cleared (set to an empty string). For example, the query ::
     "/file1&p=/path1/&file2&file3&p=&/file4&p=/dir:path2/&file5&file6"
 
-results in these file paths being "reconstructed":
+results in these file paths being "reconstructed"::
 
-::
     /file1
     /path1/file2
     /path1/file3
