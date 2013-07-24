@@ -23,8 +23,16 @@ CacheURL Plugin
 This plugin allows you to change the key that is used for caching a
 request. It is designed so that multiple requests that have different
 URLs but the same content (for example, site mirrors) need be cached
-only once. The plugin is built and installed as part of the normal Apache
-Traffic Server installation process.
+only once.
+
+Installation
+============
+
+This plugin is only built if the configure option ::
+
+    --enable-experimental-plugins
+
+is given at build time.
 
 Configuration
 =============
