@@ -71,7 +71,7 @@ const char *processDurationString(char *str, int *seconds);
 // The first class types we support matching on
 enum matcher_type
 { MATCH_NONE, MATCH_HOST, MATCH_DOMAIN,
-  MATCH_IP, MATCH_REGEX, MATCH_HOST_REGEX
+  MATCH_IP, MATCH_REGEX, MATCH_URL, MATCH_HOST_REGEX
 };
 extern const char *matcher_type_str[];
 
@@ -94,6 +94,7 @@ struct matcher_tags
   const char *match_domain;
   const char *match_ip;
   const char *match_regex;
+  const char *match_url;
   const char *match_host_regex;
   bool dest_error_msg;          // whether to use src or destination in any error messages
 
@@ -102,6 +103,7 @@ struct matcher_tags
       this->match_domain == NULL &&
       this->match_ip == NULL &&
       this->match_regex == NULL &&
+      this->match_url == NULL &&
       this->match_host_regex == NULL;
   }
 

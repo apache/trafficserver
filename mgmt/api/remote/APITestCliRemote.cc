@@ -301,6 +301,9 @@ print_pd_sspec(TSPdSsFormat info)
   case TS_PD_URL_REGEX:
     printf("Prime Url regex: url_regex=%s\n", info.pd_val);
     break;
+  case TS_PD_URL:
+    printf("Prime Url: url=%s\n", info.pd_val);
+    break;
   default:
     break;
   }
@@ -458,6 +461,9 @@ print_hosting_ele(TSHostingEle * ele)
     break;
   case TS_PD_URL_REGEX:
     printf("url_regex=%s\n", ele->pd_val);
+    break;
+  case TS_PD_URL:
+    printf("url=%s\n", ele->pd_val);
     break;
   default:
     printf("INVALID Prime Dest specifier\n");
@@ -696,6 +702,9 @@ print_split_dns_ele(TSSplitDnsEle * ele)
     break;
   case TS_PD_URL_REGEX:
     pd_name = ats_strdup("url_regex");
+    break;
+  case TS_PD_URL:
+    pd_name = ats_strdup("url");
     break;
   default:
     pd_name = ats_strdup("?????");

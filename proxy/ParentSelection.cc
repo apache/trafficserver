@@ -1025,7 +1025,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * /* t ATS_UNUSED */,
   params->ParentEnable = true;
   char tbl[2048];
 #define T(x) ink_strlcat(tbl,x, sizeof(tbl));
-#define REBUILD params->ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags, ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); params->ParentTable->BuildTableFromString(tbl);
+#define REBUILD params->ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags, ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); params->ParentTable->BuildTableFromString(tbl);
   HttpRequestData *request = NULL;
   ParentResult *result = NULL;
 #define REINIT delete request; delete result; request = new HttpRequestData(); result = new ParentResult(); if (!result || !request) { (void)printf("Allocation failed\n"); return; }

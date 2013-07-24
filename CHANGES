@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1280] add url match token about cache control rule.
+
   *) [TS-2064] Fix the authproxy plugin to send an error body.
 
   *) [TS-2041] Allow environment values to override records.config settings.

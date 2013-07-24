@@ -239,6 +239,7 @@ extern "C"
     TS_PD_HOST,                /* hostname */
     TS_PD_IP,                  /* ip address */
     TS_PD_URL_REGEX,           /* regular expression in url */
+    TS_PD_URL,           /* regular expression in url */
     TS_PD_UNDEFINED
   } TSPrimeDestT;
 

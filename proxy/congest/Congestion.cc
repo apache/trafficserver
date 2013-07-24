@@ -45,6 +45,7 @@ static const matcher_tags congest_dest_tags = {
   "dest_domain",
   "dest_ip",
   NULL,
+  NULL,
   "host_regex",
   true
 };

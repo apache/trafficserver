@@ -2015,6 +2015,13 @@ SplitDnsObj::SplitDnsObj(TokenList * tokens)
       }
       m_ele->pd_type = TS_PD_URL_REGEX;
       m_ele->pd_val = ats_strdup(tok->value);
+    } else if (strcmp(tok->name, "url") == 0) {
+      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
+        // fields are already defined!!
+        goto FORMAT_ERR;
+      }
+      m_ele->pd_type = TS_PD_URL;
+      m_ele->pd_val = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "named") == 0) {
       if ((m_ele->dns_servers_addrs != NULL) || (!tok->value)) {
         // fields are already defined!!
@@ -2073,6 +2080,9 @@ SplitDnsObj::formatEleToRule()
     break;
   case TS_PD_URL_REGEX:
     pd_name = ats_strdup("url_regex");
+    break;
+  case TS_PD_URL:
+    pd_name = ats_strdup("url");
     break;
   default:
     pd_name = ats_strdup("");      // lv: just to make this junk workable

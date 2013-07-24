@@ -159,6 +159,36 @@ public:
 };
 
 
+template<class Data, class Result> class UrlMatcher {
+public:
+  UrlMatcher(const char *name, const char *filename);
+  ~UrlMatcher();
+  void Match(RequestData * rdata, Result * result);
+  void AllocateSpace(int num_entries);
+  char *NewEntry(matcher_line * line_info);
+  void Print();
+  int getNumElements()
+  {
+    return num_el;
+  };
+  Data *getDataArray()
+  {
+    return data_array;
+  };
+#ifndef TS_MICRO
+protected:
+#endif
+  InkHashTable *url_ht;
+  char **url_str;                // array of url strings
+  int  *url_value;                // array of posion of url strings
+  Data *data_array;             // data array.  Corresponds to re_array
+  int array_len;                // length of the arrays (all three are the same length)
+  int num_el;                   // number of elements in the table
+  const char *matcher_name;     // Used for Debug/Warning/Error messages
+  const char *file_name;        // Used for Debug/Warning/Error messages
+};
+
+
 template<class Data, class Result> class RegexMatcher {
 public:
   RegexMatcher(const char *name, const char *filename);
@@ -258,13 +288,14 @@ public:
 #define ALLOW_IP_TABLE     1 << 1
 #define ALLOW_REGEX_TABLE  1 << 2
 #define ALLOW_HOST_REGEX_TABLE 1 << 3
-#define DONT_BUILD_TABLE     1 << 4     // for testing
+#define ALLOW_URL_TABLE 1 << 4
+#define DONT_BUILD_TABLE     1 << 5     // for testing
 
 template<class Data, class Result> class ControlMatcher {
 public:
   // Parameter name must not be deallocated before this
   //  object is
-  ControlMatcher(const char *file_var, const char *name, const matcher_tags * tags, int flags_in = 0xf);
+  ControlMatcher(const char *file_var, const char *name, const matcher_tags * tags, int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE));
   ~ControlMatcher();
   int BuildTable();
   int BuildTableFromString(char *str);
@@ -281,6 +312,9 @@ public:
   RegexMatcher<Data, Result> *getReMatcher() {
     return reMatch;
   }
+  UrlMatcher<Data, Result> *getUrlMatcher() {
+    return urlMatch;
+  }
   IpMatcher<Data, Result> *getIPMatcher() {
     return ipMatch;
   }
@@ -290,6 +324,7 @@ public:
 
   //private:
   RegexMatcher<Data, Result> *reMatch;
+  UrlMatcher<Data, Result> *urlMatch;
   HostMatcher<Data, Result> *hostMatch;
   IpMatcher<Data, Result> *ipMatch;
   HostRegexMatcher<Data, Result> *hrMatch;

@@ -55,7 +55,7 @@ static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator")
    cases.
    -------------------------------------------------------------- */
 const matcher_tags sdns_dest_tags = {
-  "dest_host", "dest_domain", NULL, "url_regex", NULL, true
+  "dest_host", "dest_domain", NULL, "url_regex", "url", NULL, true
 };
 
 

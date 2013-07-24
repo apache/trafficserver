@@ -275,6 +275,7 @@ const char *matcher_type_str[] = {
   "domain",
   "ip",
   "url_regex",
+  "url",
   "host_regex"
 };
 
@@ -381,7 +382,7 @@ processDurationString(char *str, int *seconds)
 }
 
 const matcher_tags http_dest_tags = {
-  "dest_host", "dest_domain", "dest_ip", "url_regex", "host_regex", true
+  "dest_host", "dest_domain", "dest_ip", "url_regex", "url", "host_regex", true
 };
 
 const matcher_tags ip_allow_tags = {
@@ -552,6 +553,8 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
         type = MATCH_DOMAIN;
       } else if (tags->match_regex && strcasecmp(tags->match_regex, label) == 0) {
         type = MATCH_REGEX;
+      } else if (tags->match_url && strcasecmp(tags->match_url, label) == 0) {
+        type = MATCH_URL;
       } else if (tags->match_host_regex && strcasecmp(tags->match_host_regex, label) == 0) {
         type = MATCH_HOST_REGEX;
       }
