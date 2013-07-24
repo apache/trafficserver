@@ -21,19 +21,9 @@ GeoIP ACLs Plugin
 This is a simple ATS plugin for denying (or allowing) requests based on
 the source IP geo-location. Currently only the Maxmind APIs are
 supported, but we'd be happy to other other (open) APIs if you let us
-know.
+know. This plugin comes with the standard distribution of Apache Traffic
+Server, and should be installed as part of the normal build process.
 
-Building
-========
-
-The build and installation requires a full installation of Apache
-Traffic Server v3.0.0 or later. In particular, the include files must be
-available, and the tsxs build script should be in the path (or modify
-the Makefile).
-
-::
-    % gmake
-    % sudo gmake install
 
 Configuration
 =============
@@ -42,9 +32,8 @@ Once installed, there are three primary use cases, which we will discuss
 in details. Note that in all configurations, the first plugin parameter
 must specify what the matches should be applied to. Currently, only one
 rule set is supported, for Country ISO codes. This is specified with a
-parameter of
+parameter of ::
 
-::
     @pparam=country
 
 Future additions to this plugin could include other regions, such as
@@ -57,27 +46,23 @@ The three typical use cases are as follows:
    paths should be filtered. For example, lets assume that
    http://example.com/music is restricted to US customers only, and
    everything else is world wide accessible. In remap.config, you would
-   have something like
+   have something like ::
 
-   ::
-   map http://example.com/music http://music.example.com \
-    @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam=US
-
-   map http://example.com http://other.example.com
+    map http://example.com/music http://music.example.com \
+      @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam=US
+    map http://example.com http://other.example.com
 
 2. If you can not partition the data with a path prefix, you can specify
    a separate regex mapping filter. The remap.config file might then
-   look like
+   look like ::
 
-   ::
-   map http://example.com http://music.example.com \
-       @plugin=geoip_acl.so @pparam=country \
-       @pparam=regex::/etc/music.regex
+    map http://example.com http://music.example.com \
+      @plugin=geoip_acl.so @pparam=country \
+      @pparam=regex::/etc/music.regex
 
 where music.regex is a format with PCRE (perl compatible) regular
-expressions, and unique rules for match. E.g.
+expressions, and unique rules for match. E.g.::
 
-::
     .*\.mp3  allow  US
     .*\.ogg  deny   US
 
@@ -89,19 +74,17 @@ use case.
    remap.config configuration, which then applies for the cases where no
    regular expressions matches at all. This would be useful to override
    the default which is to allow all requests that don't match. For
-   example
+   example ::
 
-   ::
-   map http://example.com http://music.example.com \
-    @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam= US
-    @pparam=regex::/etc/music.regex
+    map http://example.com http://music.example.com \
+      @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam= US
+      @pparam=regex::/etc/music.regex
 
 This tells the plugin that in the situation where there is no matching
 regular expression, only allow requests originating from the US.
 
-Finally, there's one additional parameter option that can be used:
+Finally, there's one additional parameter option that can be used ::
 
-::
     @pparam=html::/some/path.html
 
 This will override the default reponse body for the denied responses
