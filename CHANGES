@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
+
+
+  *) [TS-2059] Remove dead code in EnvBlock.cc and processSpawn().
+
   *) [TS-2057] Removed deprecated proxy port configuration values from records.config.
 
   *) [TS-1280] Add url match token about cache control rule.
