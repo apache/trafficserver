@@ -7,7 +7,7 @@ Changes with Apache Traffic Server 3.3.5
   *) [TS-2064] Fix the authproxy plugin to send an error body.
 
   *) [TS-2061] Avoid writing outside buffer boundaries in LogFile overfill
-   buffers (for ASCII logging).
+   buffers (for ASCII logging). Author: quehan.
 
   *) [TS-2041] Allow environment values to override records.config settings.
 
