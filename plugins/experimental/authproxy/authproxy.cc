@@ -519,12 +519,12 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * /* edata ATS_UNUSED
 {
     TSMBuffer mbuf;
     TSMLoc mhdr;
+    TSHttpStatus status;
+    char msg[128];
 
     // The auth proxy denied this request. We need to copy the auth proxy
     // response header to the client response header, then read any available
     // body data and copy that as well.
-
-    AuthLogDebug("sending auth proxy response");
 
     // There's only a client response if the auth proxy sent one. There
     TSReleaseAssert(
@@ -535,12 +535,19 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * /* edata ATS_UNUSED
         TSHttpHdrCopy(mbuf, mhdr, auth->rheader.buffer, auth->rheader.header) == TS_SUCCESS
     );
 
+    status = TSHttpHdrStatusGet(mbuf, mhdr),
+    snprintf(msg, sizeof(msg), "%d %s\n", status, TSHttpHdrReasonLookup(status));
+
+    TSHttpTxnErrorBodySet(auth->txn, TSstrdup(msg), strlen(msg), NULL);
+
     // We must not whack the content length for HEAD responses, since the
     // client already knows that there is no body. Forcing content length to
     // zero breaks hdiutil(1) on Mac OS X.
     if (!auth->is_head) {
         HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
     }
+
+    AuthLogDebug("sending auth proxy response for status %d", status);
 
     TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_CONTINUE);
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
@@ -654,14 +661,10 @@ StateAuthProxyCompleteContent(AuthRequestContext * auth, void * /* edata ATS_UNU
 static TSEvent
 StateUnauthorized(AuthRequestContext * auth, void *)
 {
-    AuthLogDebug("request denied");
+    static const char msg[] = "authorization denied\n";
 
     TSHttpTxnSetHttpRetStatus(auth->txn, TS_HTTP_STATUS_FORBIDDEN);
-
-    // XXX ATS doesn't actually send the response body when you set it like
-    // this. This is the pattern you would use for a remap plugin; seems like a
-    // bug ...
-    TSHttpTxnSetHttpRetBody(auth->txn, "authorization denied", 1 /* is plain text */);
+    TSHttpTxnErrorBodySet(auth->txn, TSstrdup(msg), sizeof(msg) - 1, NULL);
 
     TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_ERROR);
     return TS_EVENT_CONTINUE;
