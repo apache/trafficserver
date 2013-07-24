@@ -23,14 +23,12 @@ This is a basic plugin for doing dynamic "remaps" from a database. It
 essentially rewrites the incoming request's Host header / origin server
 connection to one retrieved from a database.
 
-The generic proxying setup is the following:
+The generic proxying setup is the following::
 
-::
     UA ----> Traffic Server ----> Origin Server
 
-Without the plugin a request like:
+Without the plugin a request like::
 
-::
     GET /path/to/something HTTP/1.1
     Host: original.host.com
 
@@ -47,21 +45,17 @@ higher, up to the MySQL's max queries / second.
 Installation
 ============
 
-::
-    % make install
+This plugin is only built if the configure option ::
 
-should do it, assuming ``tsxs`` script in your search path. This script
-is installed with your installation of Apache Traffic Server.
+    --enable-experimental-plugins
 
-NOTE: you may need to open the Makefile and adjust the paths to MySQL
-client includes & libraries
+is given at build time.
 
 Configuration
 =============
 
-Import the default schema to a database you create:
+Import the default schema to a database you create::
 
-::
     mysql -u root -p -e "CREATE DATABASE mysql_remap;"   # create a new database
     mysql -u root -p mysql_remap < schema/import.sql     # import the provided schema
 
@@ -69,14 +63,12 @@ insert some interesting values in mysql_remap.hostname &
 mysql_remap.map
 
 Traffic Server plugin configuration is done inside a global
-configuration file: ``/etc/trafficserver/plugin.config``:
+configuration file: ``/etc/trafficserver/plugin.config``::
 
-::
     mysql_remap.so /etc/trafficserver/mysql_remap.ini
 
-The INI file should contain the following values:
+The INI file should contain the following values::
 
-::
     [mysql_remap]
     mysql_host     = localhost   #default
     mysql_port     = 3306        #default
@@ -84,10 +76,8 @@ The INI file should contain the following values:
     mysql_password = 
     mysql_database = mysql_remap #default
 
-To debug errors, start trafficserver manually using:
+To debug errors, start trafficserver manually using::
 
-::
     traffic_server -T "mysql_remap"
 
 And resolve any errors or warnings displayed.
-
