@@ -21,24 +21,10 @@ CacheURL Plugin
 
 
 This plugin allows you to change the key that is used for caching a
-request.
-
-It is designed so that multiple requests that have different URLs but
-the same content (for example, site mirrors) need be cached only once.
-
-Installation
-============
-
-::
-    make
-    sudo make install
-
-If you don't have the traffic server binaries in your path, then you
-will need to specify the path to tsxs manually:
-
-::
-    make TSXS=/opt/ts/bin/tsxs
-    sudo make TSXS=/opt/ts/bin/tsxs install
+request. It is designed so that multiple requests that have different
+URLs but the same content (for example, site mirrors) need be cached
+only once. The plugin is built and installed as part of the normal Apache
+Traffic Server installation process.
 
 Configuration
 =============
@@ -48,9 +34,8 @@ patterns to match. See the ``cacheurl.config.example`` file for what to
 put in this file.
 
 Add the plugin to your
-```plugins.config`` <../../configuration-files/plugins.config>`_ file:
+```plugins.config`` <../../configuration-files/plugins.config>`_ file::
 
-::
     cacheurl.so
 
 Start traffic server. Any rewritten URLs will be written to
