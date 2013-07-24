@@ -386,11 +386,11 @@ const matcher_tags http_dest_tags = {
 };
 
 const matcher_tags ip_allow_tags = {
-  NULL, NULL, "src_ip", NULL, NULL, false
+  NULL, NULL, "src_ip", NULL, NULL, NULL, false
 };
 
 const matcher_tags socks_server_tags = {
-  NULL, NULL, "dest_ip", NULL, NULL, false
+  NULL, NULL, "dest_ip", NULL, NULL, NULL, false
 };
 
 // char* parseConfigLine(char* line, matcher_line* p_line,
