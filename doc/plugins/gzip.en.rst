@@ -20,20 +20,16 @@ gzip / deflate Plugin
 
 
 This plugin gzips or deflates responses, whichever is applicable. It can
-compress origin respones as well as cached responses.
+compress origin respones as well as cached responses. The plugin is built
+and installed as part of the normal Apache Traffic Server installation
+process.
 
 Installation
 ============
 
-First, run:
+Add the following line to
+```plugin.config`` <../../configuration-files/plugin.config>`_::
 
-::
-    make && sudo make install
-
-Then, add the following line to
-```plugin.config`` <../../configuration-files/plugin.config>`_:
-
-::
     gzip.so
 
 In this case, the plugin will use the default behaviour:
@@ -47,9 +43,8 @@ In this case, the plugin will use the default behaviour:
 Configuration
 =============
 
-Alternatively, a configuration can also be specified:
+Alternatively, a configuration can also be specified::
 
-::
     gzip.so <path-to-plugin>/sample.gzip.config
 
 After modifying plugin.cofnig, restart traffic server (sudo
@@ -79,9 +74,8 @@ compressible content types.
 
 ``disallow``: Wildcard pattern for disabling compression on urls.
 
-Options can be set globally or on a per-site basis, as such:
+Options can be set globally or on a per-site basis, as such::
 
-::
     # Set some global options first
     cache true
     enabled true
@@ -95,4 +89,3 @@ Options can be set globally or on a per-site basis, as such:
     disallow /notthis/*.js
 
 See example.gzip.config for example configurations.
-
