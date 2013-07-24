@@ -243,11 +243,6 @@ public:
   );
 
   static char const* const PORTS_CONFIG_NAME; ///< New unified port descriptor.
-  static char const* const PORT_CONFIG_NAME; ///< Old port only entry.
-  static char const* const ATTR_CONFIG_NAME; ///< Old attribute only entry.
-  static char const* const OTHER_PORTS_CONFIG_NAME; ///< Old "other" ports.
-  static char const* const SSL_ENABLED_CONFIG_NAME; ///< SSL enable flag.
-  static char const* const SSL_PORT_CONFIG_NAME; ///< Old style SSL port.
 
   /// Default value if no other values can be found.
   static char const* const DEFAULT_VALUE;
@@ -265,7 +260,7 @@ public:
   static char const* const OPT_SSL; ///< SSL (experimental)
   static char const* const OPT_BLIND_TUNNEL; ///< Blind tunnel.
   static char const* const OPT_COMPRESSED; ///< Compressed.
-  static char const* const OPT_HOST_RES; ///< Set DNS family preference.
+  static char const* const OPT_HOST_RES_PREFIX; ///< Set DNS family preference.
 
   static Vec<self>& m_global; ///< Global ("default") data.
 
