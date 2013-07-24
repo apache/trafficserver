@@ -52,21 +52,11 @@ By default, only the path and query string of the URL are provided for
 the regular expressions to match. The following optional parameters can
 be used to modify the plugin instance behavior ::
 
-    @pparam=[no-]full-url            [default: off]
     @pparam=[no-]method              [default: off]
     @pparam=[no-]query-string        [default: on]
     @pparam=[no-]matrix-parameters   [default: off]
 
-If you want the full (original) URL, use the parameter
-``@pparam=full-url``. e.g. ::
-
-    ... @pparam=maps.reg @pparam=full-url
-
-The string that you will need to match against looks like ::
-
-    http://server/path?query=bar
-
-If you also wish to match on the HTTP method used (e.g. "``GET``\ "),
+If you wish to match on the HTTP method used (e.g. "``GET``\ "),
 you must use the option ``@pparam=method``. e.g. ::
 
     ... @pparam=maps.reg @pparam=method
@@ -76,10 +66,6 @@ like ::
 
     GET/path?query=bar
 
-The "``method``\ " parameter can also be used in combination with
-"``full-url``\ ", and the string to match against will then look like ::
-
-    GET http://server.com/path?query=bar
 
 The methods are always all upper-case, and always followed by one single
 space. There is no space between the method and the rest of the URL (or
