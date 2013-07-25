@@ -274,52 +274,45 @@ Description: The location of the Traffic Server ``bin`` directory.
 Network
 =======
 
-``proxy.local.incoming_ip_to_bind``
-{#proxy.local.incoming_ip_to_bind}
-    ``STRING``
-    Default: ANY address (0.0.0.0 and ::)
-    This variable can be used to bind to a specific IP addresses in a
-    multi-interface setup. It sets a global default which is used for
-    all ports unless specifically overridden in a port configuration
-    descriptor. To specify addresses for both IPv4 and IPv6 list both
-    addresses in this value. The defaults for the IP addresses families
-    are handled independently.
+.. _proxy.local.incoming_ip_to_bind:
 
-    Specify the IPv4 address to use for the local address of client
-    (listening) connections.
+:Name: proxy.local.incoming_ip_to_bind
+:Type: STRING
+:Default: ``0.0.0.0 ::``
+:Description: This controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
 
-    ::
+Unless explicitly specified in `proxy.config.http.server_ports`_ the server port will be bound to one of these addresses, selected by IP address family. The built in default is any address. This is used if no address for a family is specified. This setting is useful if most or all server ports should be bound to the same address.
+
+.. topic:: Example
+
+    Set the global default for IPv4 to ``192.168.101.18`` and leave the global default for IPv6 as any address.::
 
         LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18
+    
+.. topic:: Example
 
-    Specify the IPv4 and IPv6 addresses to use for the local address of
-    client (listening) connections.
+    Set the global default for IPv4 to ``191.68.101.18`` and the global default for IPv6 to ``fc07:192:168:101::17``.::
+    
+        LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18 fc07:192:168:101::17
+    
+.. _proxy.local.incoming_ip_to_bind:
 
-    ::
+:Name: proxy.local.outgoing_ip_to_bind
+:Type: STRING
+:Default: ``0.0.0.0 ::``
+:Description: This controls the global default for the local IP address for outbound connections to origin servers. The value is a list of space separated IP addresses, one per supported IP address family (currently IPv4 and IPv6).
 
-        LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.17 fc07:192:168:101::17
+Unless explicitly specified in `proxy.config.http.server_ports`_ one of these addresses, selected by IP address family, will be used as the local address for outbound connections. This setting is useful if most or all of the server ports should use the same outbound IP addresses.
 
-``proxy.local.outgoing_ip_to_bind``
-{#proxy.local.outgoing_ip_to_bind}
-    ``STRING``
-    Default: ANY address (0.0.0.0 and ::)
-    This sets the default IP address used for the local address when
-    connecting to an origin server. It is used unless specifically
-    overridden in a port configuration descriptor. To specify addresses
-    for both IPv4 and IPv6 list both addresses in this value. The
-    defaults for the IP addresses families are handled independently.
+.. topic:: Example
 
-    Specify the IPv4 address to use for the local address of origin
-    server connections.
-
-    ::
+    Set the default local outbound IP address for IPv4 connectionsn to ``192.168.101.18``.::
 
         LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.18
 
-    Specify the IPv4 and IPv6 addresses to use for the local address of
-    origin server connections.
+.. topic:: Example
 
-    ::
+    Set the default local outbound IP address to ``192.168.101.17`` for IPv4 and ``fc07:192:168:101::17`` for IPv6.::
 
         LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.17 fc07:192:168:101::17
 
@@ -420,228 +413,109 @@ Alarm Configuration
 HTTP Engine
 ===========
 
-``proxy.config.http.server_ports`` {#proxy.config.http.server_ports}
-    ``STRING``
-    Default: ``8080``
-    Ports used for proxying HTTP traffic. This is a list, separated by
-    space or comma, of port descriptors. Each descriptor is a sequence
-    of keywords and values separated by colons. Not all keywords have
-    values, those that do are specifically noted. Keywords with values
-    can have an optional '=' character separating the keyword and value.
-    The case of keywords is ignored. The order of keywords is irrelevant
-    unless keywords conflict (e.g. ``tr-full`` and ``ssl``) in which
-    case the right most keyword dominates, although in such cases odd
-    behavior may result.
-
-    .. raw:: html
-
-       <table><tr><td>
-
-    Keyword
-
-    .. raw:: html
-
-       </td><td>
-
-    Meaning
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    number
-
-    .. raw:: html
-
-       </td><td>
-
-    IP port. Required.
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    ipv6
-
-    .. raw:: html
-
-       </td><td>
-
-    Use IPv6.
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    ipv4
-
-    .. raw:: html
-
-       </td><td>
-
-    Use IPv4. Default.
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    tr-in
-
-    .. raw:: html
-
-       </td><td>
-
-    Use inbound transparency (to client).
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    tr-out
-
-    .. raw:: html
-
-       </td><td>
-
-    Use outbound transparency (to server).
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    tr-full
-
-    .. raw:: html
-
-       </td><td>
-
-    Full transparency, both inbound and outbound.
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    ssl
-
-    .. raw:: html
-
-       </td><td>
-
-    Use SSL termination.
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    blind
-
-    .. raw:: html
-
-       </td><td>
-
-    Use as a blind tunnel (for ``CONNECT``).
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    ip-in
-
-    .. raw:: html
-
-       </td><td>
-
-    Use the keyword value as the local inbound (listening) address. This
-    will also set the address family if not explicitly specified. If the
-    IP address family is specified by ``ipv4`` or ``ipv6`` it must agree
-    with this address.
-
-    .. raw:: html
-
-       </td></tr>
-       <tr><td>
-
-    ip-out
-
-    .. raw:: html
-
-       </td><td>
-
-    Use the value as the local address when connecting to a server. This
-    may be specified twice, once for IPv4 and once for IPv6. The actual
-    address used will be determined by the family of the origin server
-    address.
-
-    .. raw:: html
-
-       </td></tr>
-       </table>
-
-    Examples -
-
-     80 80:ipv6
-
-    Listen on port 80 on any address for IPv4 and IPv6.
-
-     IPv4:8080:tr-FULL TR-full:IP-in=[fc02:10:10:1::1]:8080
+.. _proxy.config.http.server_ports:
+
+:Name: proxy.config.http.server_ports
+:Type: STRING
+:Default: ``8080``
+:Description: Ports used for proxying HTTP traffic.
+
+This is a list, separated by space or comma, of :index:`port descriptors`. Each descriptor is a sequence of keywords and values separated by colons. Not all keywords have values, those that do are specifically noted. Keywords with values can have an optional '=' character separating the keyword and value. The case of keywords is ignored. The order of keywords is irrelevant but unspecified results may occur if incompatible options are used (noted below). Options without values are idempotent. Options with values use the last (right most) value specified, except for ``ip-out`` as detailed later.
+
+Quick reference chart.
+
+=========== =============== ========================================
+Name        Note            Definition 
+=========== =============== ========================================
+*number*    **Required**    The local port.
+ipv4        **Default**     Bind to IPv4 address family.
+ipv6                        Bind to IPv6 address family.
+tr-in                       Inbound transparent.
+tr-out                      Outbound transparent.
+tr-full                     Fully transparent (inbound and outbound)
+tr-pass                     Pass through enabled.
+ssl                         SSL terminated.
+ip-in       **Value**       Local inbound IP address.
+ip-out      **Value**       Local outbound IP address.
+ip-resolve  **Value**       IP address resolution style.
+blind                       Blind (``CONNECT``) port.
+compress    **N/I**         Compressed. Not implemented.
+=========== =============== ========================================
+
+*number*
+    Local IP port to bind. This is the port to which ATS clients will connect.
+    
+ipv4
+    Use IPv4. This is the default and is included primarily for completeness. This forced if the ``ip-in`` option is used with an IPv4 address.
+    
+ipv6
+    Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 address.
+    
+tr-in
+    Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides `proxy.local.incoming_ip_to_bind`_.
+    
+    Not compatible with: ``ip-in``, ``ssl``, ``blind``
+    
+tr-out
+    Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides `proxy.local.outgoing_ip_to_bind`_.
+    
+    Not compatible with: ``ip-out``, ``ssl``
+    
+tr-full
+    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
+    
+    Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``.
+    
+tr-pass
+    Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables `proxy.config.http.use_client_target_addr`_ for the transaction as there is no other place to obtain the origin server address.
+
+ip-in
+    Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this is omitted `proxy.local.incoming_ip_to_bind`_ is used.
+    
+    Not compatible with: ``tr-in``.
+    
+ip-out
+    Set the local IP address for outbound connections. This is the address used by ATS locally when it connects to an origin server for transactions on this port. If this is omitted `proxy.local.outgoing_ip_to_bind`_ is used.
+    
+    This option can used multiple times, once for each IP address family. The address used is selected by the IP address family of the origin server address.
+    
+    Not compatible with: ``tr-out``.
+    
+ip-resolve
+    Set the IP address resolution style for the origin server for transactions on this proxy port.
+    
+ssl
+    Require SSL termination for inbound connections. SSL must be configured for this option to provide a functional server port.
+    
+    Not compatible with: ``tr-in``, ``tr-out``, ``blind``.
+    
+blind
+    Accept only ``CONNECT`` transactions on this port.
+    
+    Not compatible with: ``tr-in``, ``ssl``.
+
+compress
+    Compress the connection. Retained only by inertia, should be considered "not implemented".
+
+.. topic:: Example
+
+    Listen on port 80 on any address for IPv4 and IPv6.::
+    
+        80 80:ipv6
+
+.. topic:: Example
 
     Listen transparently on any IPv4 address on port 8080, and
     transparently on port 8080 on local address ``fc01:10:10:1::1``
-    (which implies ``ipv6``).
+    (which implies ``ipv6``).::
+    
+        IPv4:tr-FULL:8080 TR-full:IP-in=[fc02:10:10:1::1]:8080
 
-     8080:ipv6:tr-full 443:ssl
-    80:ip-in=192.168.17.1:ip-out=[fc01:10:10:1::1]:ip-out=10.10.10.1
+.. topic:: Example
 
-    Listen on port 8080 any address for IPv6, fully transparent. Set up
-    an SSL port on 443. Listen on IP address 192.168.17.1, port 80,
-    IPv4, and connect to origin servers using the local address
-    10.10.10.1 for IPv4 and fc01:10:10:1::1 for IPv6.
-
-    Note: All IPv6 addresses must be enclosed in square brackets.
-
-    Note: For SSL you must still configure the certificates, this option
-    handles only the port configuration.
-
-    Note: old style configuration of ports should still work but support
-    for that will be removed at some point in the future.
-
-``proxy.config.http.server_port`` {#proxy.config.http.server_port}
-    ``INT``
-    Default: ``8080``
-    DEPRECATED: 3.2
-    The port that Traffic Server uses when acting as a web proxy server
-    for web traffic.
-
-``proxy.config.http.server_port_attr``
-{#proxy.config.http.server_port_attr}
-    ``STRING``
-    Default: ``X``
-    DEPRECATED: 3.2
-    The server port options. You can specify one of the following:
-
-    -  C=SERVER_PORT_COMPRESSED
-    -  X=SERVER_PORT_DEFAULT
-    -  T=SERVER_PORT_BLIND_TUNNEL
-
-``proxy.config.http.server_other_ports``
-{#proxy.config.http.server_other_ports}
-    ``STRING``
-    Default: ``NULL``
-    DEPRECATED: 3.2
-    The ports other than the port specified by the variable
-    ``proxy.config.http.server_port`` to bind for incoming HTTP
-    requests. Example: CONFIG proxy.config.http.server_other_ports
-    STRING 6060:X 9090:X would listen to ports ``6060``, ``9090``, and
-    the port specified by ``proxy.config.http.server_port``.
+    Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from ``local.proxy.incoming_ip_to_bind``_.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
+    
+        8080:ipv6:tr-full 443:ssl ip-in=192.168.17.1:80:ip-out=[fc01:10:10:1::1]:ip-out=10.10.10.1
 
 ``proxy.config.http.connect_ports`` {#proxy.config.http.connect_ports}
     ``STRING``
@@ -756,65 +630,59 @@ HTTP Engine
     Enables (``1``) or disables (``0``) ``traffic_cop`` heartbeat
     logging.
 
-``proxy.config.http.use_client_target_addr``
-{#proxy.config.http.use_client_target_addr}
-    ``INT``
-    Default: ``0``
-    Reloadable.
-    Avoid DNS lookup for forward transparent requests:
+.. _proxy.config.http.use_client_target_addr:
 
-    -  ``0`` Never.
-    -  ``1`` Avoid DNS lookup if possible.
+:Name: proxy.config.http.use_client_target_addr
+:Type: INT
+:Default: 0
+:Description: For fully transparent ports use the same origin server address as the client.
 
-    This option causes Traffic Server to avoid where possible doing DNS
-    lookups in forward transparent proxy mode. The option is only
-    effective if the following three conditions are true -
+This option causes Traffic Server to avoid where possible doing DNS
+lookups in forward transparent proxy mode. The option is only
+effective if the following three conditions are true -
 
-    -  Traffic Server is in forward proxy mode.
-    -  Traffic Server is using client side transparency.
-    -  The target URL has not been modified by either remapping or a
-       plugin.
+*  Traffic Server is in forward proxy mode.
+*  The proxy port is inbound transparent.
+*  The target URL has not been modified by either remapping or a plugin.
 
-    If any of these conditions are not true, then normal DNS processing
-    is done for the connection.
+If any of these conditions are not true, then normal DNS processing
+is done for the connection.
 
-    If all of these conditions are met, then the origin server IP
-    address is retrieved from the original client connection, rather
-    than through HostDB or DNS lookup. In effect, client DNS resolution
-    is used instead of Traffic Server DNS.
+If all of these conditions are met, then the origin server IP
+address is retrieved from the original client connection, rather
+than through HostDB or DNS lookup. In effect, client DNS resolution
+is used instead of Traffic Server DNS.
 
-    This can be used to be a little more efficient (looking up the
-    target once by the client rather than by both the client and Traffic
-    Server) but the primary use is when client DNS resolution can differ
-    from that of Traffic Server. Two known uses cases are:
+This can be used to be a little more efficient (looking up the
+target once by the client rather than by both the client and Traffic
+Server) but the primary use is when client DNS resolution can differ
+from that of Traffic Server. Two known uses cases are:
 
-    1. Embedded IP addresses in a protocol with DNS load sharing. In
-       this case, even though Traffic Server and the client both make
-       the same request to the same DNS resolver chain, they may get
-       different origin server addresses. If the address is embedded in
-       the protocol then the overall exchange will fail. One current
-       example is Microsoft Windows update, which presumably embeds the
-       address as a security measure.
+#. Embedded IP addresses in a protocol with DNS load sharing. In
+   this case, even though Traffic Server and the client both make
+   the same request to the same DNS resolver chain, they may get
+   different origin server addresses. If the address is embedded in
+   the protocol then the overall exchange will fail. One current
+   example is Microsoft Windows update, which presumably embeds the
+   address as a security measure.
 
-    2. The client has access to local DNS zone information which is not
-       available to Traffic Server. There are corporate nets with local
-       DNS information for internal servers which, by design, is not
-       propagated outside the core corporate network. Depending a
-       network topology it can be the case that Traffic Server can
-       access the servers by IP address but cannot resolve such
-       addresses by name. In such as case the client supplied target
-       address must be used.
+#. The client has access to local DNS zone information which is not
+   available to Traffic Server. There are corporate nets with local
+   DNS information for internal servers which, by design, is not
+   propagated outside the core corporate network. Depending a
+   network topology it can be the case that Traffic Server can
+   access the servers by IP address but cannot resolve such
+   addresses by name. In such as case the client supplied target
+   address must be used.
 
-    Additional Notes:
-
-    This solution must be considered interim. In the longer term, it
-    should be possible to arrange for much finer grained control of DNS
-    lookup so that wildcard domain can be set to use Traffic Server or
-    client resolution. In both known use cases, marking specific domains
-    as client determined (rather than a single global switch) would
-    suffice. It is possible to do this crudely with this flag by
-    enabling it and then use identity URL mappings to re-disable it for
-    specific domains.
+This solution must be considered interim. In the longer term, it
+should be possible to arrange for much finer grained control of DNS
+lookup so that wildcard domain can be set to use Traffic Server or
+client resolution. In both known use cases, marking specific domains
+as client determined (rather than a single global switch) would
+suffice. It is possible to do this crudely with this flag by
+enabling it and then use identity URL mappings to re-disable it for
+specific domains.
 
 Parent Proxy Configuration
 ==========================
@@ -2160,12 +2028,6 @@ URL Remap Rules
 SSL Termination
 ===============
 
-``proxy.config.ssl.enabled`` {#proxy.config.ssl.enabled}
-    ``INT``
-    Default: ``0``
-    Enables (``1``) or disables (``0``) the ``SSL
-    Termination <../security-options#UsingSSLTermination>``_ option.
-
 ``proxy.config.ssl.SSLv2`` {#proxy.config.ssl.SSLv2}
     ``INT``
     Default: ``1``
@@ -2180,11 +2042,6 @@ SSL Termination
     ``INT``
     Default: ``1``
     Enables (``1``) or disables (``0``) TLSv1.
-
-``proxy.config.ssl.server_port`` {#proxy.config.ssl.server_port}
-    ``INT``
-    Default: ``443``
-    The port used for SSL communication.
 
 ``proxy.config.ssl.client.certification_level``
 {#proxy.config.ssl.client.certification_level}
