@@ -649,7 +649,7 @@ public:
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
   MgmtInt proxy_server_port;
-  char *proxy_server_other_ports;
+  MgmtByte session_auth_cache_keep_alive_enabled;
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
   MgmtInt transaction_active_timeout_in;
@@ -908,7 +908,7 @@ HttpConfigParams::HttpConfigParams()
     url_expansions(0),
     num_url_expansions(0),
     proxy_server_port(0),
-    proxy_server_other_ports(0),
+    session_auth_cache_keep_alive_enabled(0),
     origin_server_pipeline(0),
     user_agent_pipeline(0),
     transaction_active_timeout_in(0),
@@ -967,7 +967,6 @@ HttpConfigParams::~HttpConfigParams()
   ats_free(proxy_request_via_string);
   ats_free(proxy_response_via_string);
   ats_free(url_expansions_string);
-  ats_free(proxy_server_other_ports);
   ats_free(anonymize_other_header_list);
   ats_free(global_user_agent_header);
   ats_free(oride.proxy_response_server_string);

@@ -718,7 +718,6 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
       return (ConfigPortsGet(argtable[0].parsed_args));
     } else {                    // set
       switch (argtable->parsed_args) {
-      case CMD_CONFIG_PORTS_HTTP_OTHER:
       case CMD_CONFIG_PORTS_CONNECT:
         return (ConfigPortsSet(argtable[0].parsed_args, argtable[0].data));
         break;
@@ -748,8 +747,6 @@ CmdArgs_ConfigPorts()
 {
   createArgument("http-server", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_HTTP_SERVER, "Set Ports for http-server", (char *) NULL);
-  createArgument("http-other", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_HTTP_OTHER, "Set Ports for http-other", (char *) NULL);
   createArgument("cluster", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER, "Set Ports for cluster", (char *) NULL);
   createArgument("cluster-rs", 1, CLI_ARGV_OPTION_INT_VALUE,
@@ -1165,58 +1162,6 @@ CmdArgs_ConfigIcp()
   createArgument("peers", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_ICP_PEERS, "URL for ICP Peers config file <url>", (char *) NULL);
   return 0;
-}
-
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigPortTunnels
-//
-// This is the callback function for the "config:port-tunnels" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigPortTunnels(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  if (cliCheckIfEnabled("config:port-tunnel") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-  Cli_Debug("Cmd_ConfigPortTunnles argc %d\n", argc);
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-
-  if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
-    switch (argtable->parsed_args) {
-    case CMD_CONFIG_PORT_TUNNELS_SERVER_OTHER_PORTS:
-      int status = Cli_RecordInt_Action((argc == 3),
-                                        "proxy.config.http.server_other_ports",
-                                        argtable->arg_int);
-      Cli_Printf("\n");
-      Cli_Printf("Use config:remap to add rules to the remap.config file as follows:\n");
-      Cli_Printf("map tunnel://<proxy_ip>:<port_num>/tunnel://<dest_server>:<dest_port>\n");
-      Cli_Printf("\n");
-      return status;
-    }
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2438,7 +2383,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
 {
 
   switch (arg_ref) {
-  case CMD_CONFIG_PORTS_HTTP_OTHER:
   case CMD_CONFIG_PORTS_CONNECT:
     Cli_Debug("ConfigPortsSet: arg_ref %d value %s\n", arg_ref, (char *) valuePtr);
     break;
@@ -2453,9 +2397,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   switch (arg_ref) {
   case CMD_CONFIG_PORTS_HTTP_SERVER:
     status = Cli_RecordSetInt("proxy.config.http.server_port", *(TSInt *) valuePtr, &action_need);
-    break;
-  case CMD_CONFIG_PORTS_HTTP_OTHER:
-    status = Cli_RecordSetString("proxy.config.http.server_other_ports", (TSString) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordSetInt("proxy.config.cluster.cluster_port", *(TSInt *) valuePtr, &action_need);
@@ -2504,17 +2445,6 @@ ConfigPortsGet(int arg_ref)
       return status;
     }
     Cli_Printf("%d\n", int_val);
-    break;
-  case CMD_CONFIG_PORTS_HTTP_OTHER:
-    status = Cli_RecordGetString("proxy.config.http.server_other_ports", &str_val);
-    if (status) {
-      return status;
-    }
-    if (str_val) {
-      Cli_Printf("%s\n", str_val);
-    } else {
-      Cli_Printf("none\n");
-    }
     break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordGetInt("proxy.config.cluster.cluster_port", &int_val);

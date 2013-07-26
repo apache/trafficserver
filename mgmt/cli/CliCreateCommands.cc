@@ -91,9 +91,6 @@ CliCreateCommands()
   createCommand("show:socks", Cmd_ShowSocks, CmdArgs_ShowSocks, CLI_COMMAND_EXTERNAL,
                 "show:socks", "SOCKS configuration");
 
-  createCommand("show:port-tunnels", Cmd_ShowPortTunnels, NULL, CLI_COMMAND_EXTERNAL,
-                "show:port-tunnels", "Port tunnels configuration");
-
   createCommand("show:scheduled-update", Cmd_ShowScheduledUpdate, CmdArgs_ShowScheduledUpdate, CLI_COMMAND_EXTERNAL,
                 "show:scheduled-update", "Scheduled update configuration");
 
@@ -178,9 +175,6 @@ CliCreateCommands()
                 "config:icp port <int>\n"
                 "config:icp multicast <on | off>\n"
                 "config:icp query-timeout <seconds>\n" "config:icp peers <url-config-file>", "Configure ICP");
-
-  createCommand("config:port-tunnels", Cmd_ConfigPortTunnels, CmdArgs_ConfigPortTunnels, CLI_COMMAND_EXTERNAL,
-                "config:port-tunnels server-other-ports <port>", "Configure Port Tunnels");
 
   createCommand("config:scheduled-update", Cmd_ConfigScheduledUpdate, CmdArgs_ConfigScheduledUpdate,
                 CLI_COMMAND_EXTERNAL,

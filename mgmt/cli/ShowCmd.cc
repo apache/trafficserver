@@ -701,35 +701,6 @@ CmdArgs_ShowSocks()
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowPortTunnels
-//
-// This is the callback function for the "show:port-tunnels" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowPortTunnels(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowPortTunnels\n");
-
-  return (ShowPortTunnels());
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowScheduledUpdate
 //
 // This is the callback function for the "show:scheduled-update" command.
@@ -1216,7 +1187,6 @@ ShowHttp()
   Cli_RecordGetInt("proxy.config.http.anonymize_insert_client_ip", &insert_client_ip);
   Cli_RecordGetInt("proxy.config.http.anonymize_remove_client_ip", &remove_client_ip);
   Cli_RecordGetInt("proxy.config.http.server_port", &http_server);
-  Cli_RecordGetString("proxy.config.http.server_other_ports", &http_other);
 
   Cli_RecordGetString("proxy.config.http.global_user_agent_header", &global_user_agent);
 
@@ -1854,27 +1824,6 @@ ShowSocksRules()
   Cli_Printf("\n");
 
   return status;
-}
-
-// show port-tunnels sub-command
-int
-ShowPortTunnels()
-{
-  TSString str_val = NULL;
-  TSError status = TS_ERR_OKAY;
-
-  status = Cli_RecordGetString("proxy.config.http.server_other_ports", &str_val);
-  if (status) {
-    return status;
-  }
-  Cli_Printf("\n");
-  Cli_Printf("server-other-ports -- %s\n", str_val);
-  Cli_Printf("\n");
-  Cli_Printf("To view the corresponding rule of the remap.config file in the following format\n");
-  Cli_Printf("map tunnel://<proxy_ip>:<port_num>/tunnel://<dest_server>:<dest_port>\n");
-  Cli_Printf("Use show:remap\n");
-  Cli_Printf("\n");
-  return CLI_OK;
 }
 
 // show scheduled-update sub-command

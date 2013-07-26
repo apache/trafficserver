@@ -357,7 +357,6 @@ http			HTTP Configuration
     ts> show:http
     HTTP Caching ------------------ on      (proxy.config.http.cache.http)
     HTTP Server Port -------------- 14980   (proxy.config.http.server_port)
-    HTTP Other Ports -------------- NULL    (proxy.config.http.server_other_ports)
 
     Keep-Alive Timeout Inbound ---- 10 s    (proxy.config.http.keep_alive_no_activity_timeout_in)
     Keep-Alive Timeout Outbound --- 10 s    (proxy.config.http.keep_alive_no_activity_timeout_out)
@@ -1398,7 +1397,6 @@ ports			Ports used by Traffic Server
                         ssl | socks-server | icp> <port | ports>
   args:   some variables are single-port while other can be a list of ports
           <http-server>     (proxy.config.http.server_port) single
-          <http-other>      (proxy.config.http.server_other_ports) list
           <cluster>         (proxy.config.cluster_port) single
           <cluster-rs>      (proxy.config.cluster.rsport) single
           <cluster-mc>      (proxy.config.cluster.mcport) single
@@ -1425,17 +1423,6 @@ socks			SOCKS Configuration
   ts#
   ts# config:socks accept-port 1080 
   ts#
-
-port-tunnels		Port Tunnelling Configuration
-
-  syntax: config:port-tunnels server-other-ports <port>
-  args:   other-ports  (proxy.config.http.server_other_ports)
-
-  ts# config:port-tunnels 
-  ts# NULL
-  ts# config:port-tunnels other-ports 5678
-  ts# 
-
 
 
 

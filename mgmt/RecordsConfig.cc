@@ -377,9 +377,6 @@ RecordElement RecordsConfig[] = {
   //       # The main server_port is listed here, other server ports is a
   //       # string of ports, separated by whitespace.
   //       #
-  //       # The port attributes should be set to X(default behavior). For
-  //       # example ...server_other_ports STRING 1234:X 12345:X
-  //       #
   {RECT_CONFIG, "proxy.config.http.enabled", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.server_ports", RECD_STRING, NULL, RECU_RESTART_TM, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -387,8 +384,6 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.http.server_port", RECD_INT, "-1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-65535]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.server_port_attr", RECD_STRING, "X", RECU_RESTART_TM, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.server_other_ports", RECD_STRING, NULL, RECU_RESTART_TM, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.wait_for_cache", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,

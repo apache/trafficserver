@@ -48,7 +48,6 @@ typedef enum
   CMD_CONFIG_RESTART_CLUSTER,
   CMD_CONFIG_PORTS,
   CMD_CONFIG_PORTS_HTTP_SERVER,
-  CMD_CONFIG_PORTS_HTTP_OTHER,
   CMD_CONFIG_PORTS_CLUSTER,
   CMD_CONFIG_PORTS_CLUSTER_RS,
   CMD_CONFIG_PORTS_CLUSTER_MC,
@@ -412,19 +411,6 @@ int Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const 
 // Register "config:ports" arguments with the Tcl interpreter.
 //
 int CmdArgs_ConfigPorts();
-
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigPortTunnles
-//
-// This is the callback function for the "config:port-tunnels" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int Cmd_ConfigPortTunnels(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 
 ////////////////////////////////////////////////////////////////
 // CmdArgs_ConfigPortTunnles

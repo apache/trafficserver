@@ -1171,7 +1171,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigStringAlloc(c.url_expansions_string, "proxy.config.dns.url_expansions");
   HttpEstablishStaticConfigLongLong(c.proxy_server_port, "proxy.config.http.server_port");
-  HttpEstablishStaticConfigStringAlloc(c.proxy_server_other_ports, "proxy.config.http.server_other_ports");
   HttpEstablishStaticConfigByte(c.oride.keep_alive_enabled_in, "proxy.config.http.keep_alive_enabled_in");
   HttpEstablishStaticConfigByte(c.oride.keep_alive_enabled_out, "proxy.config.http.keep_alive_enabled_out");
   HttpEstablishStaticConfigByte(c.oride.chunking_enabled, "proxy.config.http.chunking_enabled");
@@ -1445,7 +1444,6 @@ HttpConfig::reconfigure()
   params->url_expansions = parse_url_expansions(params->url_expansions_string, &params->num_url_expansions);
 
   params->proxy_server_port = m_master.proxy_server_port;
-  params->proxy_server_other_ports = ats_strdup(m_master.proxy_server_other_ports);
   params->oride.keep_alive_enabled_in = INT_TO_BOOL(m_master.oride.keep_alive_enabled_in);
   params->oride.keep_alive_enabled_out = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);
   params->oride.chunking_enabled = INT_TO_BOOL(m_master.oride.chunking_enabled);
