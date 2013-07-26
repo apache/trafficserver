@@ -674,11 +674,7 @@ public:
   char *global_user_agent_header;
   size_t global_user_agent_header_size;
 
-  /////////////////////
-  // Benchmark hacks //
-  /////////////////////
-  MgmtByte avoid_content_spoofing;
-  MgmtByte enable_http_stats;
+  MgmtByte enable_http_stats; // Can be "slow"
 
   ///////////////////
   // ICP variables //
@@ -925,7 +921,6 @@ HttpConfigParams::HttpConfigParams()
     anonymize_other_header_list(NULL),
     global_user_agent_header(NULL),
     global_user_agent_header_size(0),
-    avoid_content_spoofing(1),
     enable_http_stats(1),
     icp_enabled(0),
     stale_icp_enabled(0),

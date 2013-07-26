@@ -1015,10 +1015,9 @@ HttpTransact::ModifyRequest(State* s)
   if (!request->is_target_in_url())
     s->hdr_info.client_req_is_server_style = true;
 
-  // If the incoming request is proxy-style AND contains a Host header,
-  // then remove the Host header to prevent content spoofing.
-
-  // Do not delete the Host header if Max-Forwards is 0
+  // If the incoming request is proxy-style make sure the Host: header
+  // matches the incoming request URL. The exception is if we have
+  // Max-Fowards set to 0 in the request (ToDo: why??)
   max_forwards_f = s->hdr_info.client_request.field_find(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS);
   if (max_forwards_f) {
     max_forwards = max_forwards_f->value_get_int();
@@ -1033,6 +1032,7 @@ HttpTransact::ModifyRequest(State* s)
     int port = url->port_get_raw();
     char *buf = NULL;
 
+    // Form the host:port string if not a default port (e.g. 80)
     if (port > 0) {
       buf = (char *)alloca(host_val_len + 15);
       memcpy(buf, hostname, host_val_len);
@@ -1041,20 +1041,17 @@ HttpTransact::ModifyRequest(State* s)
     }
 
     if (!host_field ||
-        (s->http_config_param->avoid_content_spoofing &&
-         ((req_host_val = host_field->value_get(&req_host_val_len)) == NULL ||
-          host_val_len != req_host_val_len || strncasecmp(*host_val, req_host_val, host_val_len) != 0))) {
-      // instead of deleting the Host: header, set it to URL host for all requests (including HTTP/1.0)
+        ((req_host_val = host_field->value_get(&req_host_val_len)) == NULL) ||
+        (host_val_len != req_host_val_len) ||
+        (strncasecmp(*host_val, req_host_val, host_val_len) != 0)) {
 
-      if (!host_field) {
+      if (!host_field) { // Assure we have a Host field, before setting it
         host_field = s->hdr_info.client_request.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
         s->hdr_info.client_request.field_attach(host_field);
       }
-
       s->hdr_info.client_request.field_value_set(host_field, *host_val, host_val_len);
+      request->mark_target_dirty();
     }
-
-    request->mark_target_dirty();
   }
 
   if (s->http_config_param->normalize_ae_gzip) {
