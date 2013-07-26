@@ -6217,20 +6217,14 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     // Transparent client side, but client did not provide any HOST information
     // (neither in the URL nor a HOST header).
     if (s->http_config_param->client_transparency_enabled) {
-      build_error_response(
-        s,
-        HTTP_STATUS_BAD_REQUEST,
-        "Host Header Required",
-        "interception#no_host",
-        // This is all one long string
-        "An attempt was made to transparently proxy your request, "
-        "but this attempt failed because your browser did not "
-        "send an HTTP 'Host' header.<p>Please manually configure "
-        "your browser to use 'http://%s:%d' as an HTTP proxy. "
-        "Please refer to your browser's documentation for details. ",
-        s->http_config_param->proxy_hostname,
-        s->http_config_param->proxy_server_port
-      );
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required",
+                           "interception#no_host", 
+                           "An attempt was made to transparently proxy your request, "
+                           "but this attempt failed because your browser did not "
+                           "send an HTTP 'Host' header.<p>Please manually configure "
+                           "your browser to use 'http://%s' as an HTTP proxy. "
+                           "Please refer to your browser's documentation for details. ",
+                           s->http_config_param->proxy_hostname);
     } else if (s->http_config_param->reverse_proxy_enabled) {   // host header missing, and transparency off but reverse
       // proxy on
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host",

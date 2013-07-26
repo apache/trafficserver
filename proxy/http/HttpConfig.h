@@ -648,7 +648,6 @@ public:
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
-  MgmtInt proxy_server_port;
   MgmtByte session_auth_cache_keep_alive_enabled;
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
@@ -907,7 +906,6 @@ HttpConfigParams::HttpConfigParams()
     url_expansions_string(0),
     url_expansions(0),
     num_url_expansions(0),
-    proxy_server_port(0),
     session_auth_cache_keep_alive_enabled(0),
     origin_server_pipeline(0),
     user_agent_pipeline(0),
