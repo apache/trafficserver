@@ -517,7 +517,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.server_other_ports
  proxy.config.http.server_port
  proxy.config.http.server_port_attr
- proxy.config.http.session_auth_cache_keep_alive_enabled
  proxy.config.http.share_server_sessions
  proxy.config.http.slow.log.threshold
  proxy.config.http.connect_ports

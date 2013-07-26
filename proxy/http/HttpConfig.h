@@ -650,7 +650,6 @@ public:
   ///////////////////////////////////////////////////
   MgmtInt proxy_server_port;
   char *proxy_server_other_ports;
-  MgmtByte session_auth_cache_keep_alive_enabled;
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
   MgmtInt transaction_active_timeout_in;
@@ -910,7 +909,6 @@ HttpConfigParams::HttpConfigParams()
     num_url_expansions(0),
     proxy_server_port(0),
     proxy_server_other_ports(0),
-    session_auth_cache_keep_alive_enabled(0),
     origin_server_pipeline(0),
     user_agent_pipeline(0),
     transaction_active_timeout_in(0),
