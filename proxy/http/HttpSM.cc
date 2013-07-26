@@ -805,10 +805,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
     //YTS Team, yamsat Plugin
     //Setting enable_redirection according to HttpConfig master
-    if (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size)
-      enable_redirection = HttpConfig::m_master.redirection_enabled;
-
-    if (HttpConfig::m_master.number_of_redirections)
+    if ((HttpConfig::m_master.number_of_redirections > 0) ||
+        (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size))
       enable_redirection = HttpConfig::m_master.redirection_enabled;
 
     call_transact_and_set_next_state(HttpTransact::ModifyRequest);
