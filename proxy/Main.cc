@@ -1559,12 +1559,19 @@ main(int /* argc ATS_UNUSED */, char **argv)
     SplitDNSConfig::startup();
 #endif
 
+    // Load HTTP port data. getNumSSLThreads depends on this.
+    if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
+      HttpProxyPort::loadConfig();
+    HttpProxyPort::loadDefaultIfEmpty();
 
     if (!accept_mss)
       TS_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
 
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
+
+    sslNetProcessor.start(getNumSSLThreads(), stacksize);
+
 #ifndef INK_NO_HOSTDB
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
@@ -1575,14 +1582,14 @@ main(int /* argc ATS_UNUSED */, char **argv)
     clusterProcessor.init();
 #endif
 
-    // Plugins can get callbacks for very early events, so initialize even earlier.
+#ifndef INK_NO_LOG
+    // initialize logging (after event and net processor)
+    Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
+#endif
+
+    // Init plugins as soon as logging is ready.
     plugin_init(system_config_directory);        // plugin.config
     pmgmt->registerPluginCallbacks(global_config_cbs);
-
-    // Load HTTP port data. getNumSSLThreads depends on this.
-    if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
-      HttpProxyPort::loadConfig();
-    HttpProxyPort::loadDefaultIfEmpty();
 
     cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);
     cacheProcessor.start();
@@ -1592,13 +1599,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
       TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     if (num_of_udp_threads)
       udpNet.start(num_of_udp_threads, stacksize);
-
-    sslNetProcessor.start(getNumSSLThreads(), stacksize);
-
-#ifndef INK_NO_LOG
-    // initialize logging (after event and net processor)
-    Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
-#endif
 
     //acc.init();
     //if (auto_clear_authdb_flag)
