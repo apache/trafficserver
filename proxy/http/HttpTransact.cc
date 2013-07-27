@@ -5887,7 +5887,7 @@ HttpTransact::is_request_cache_lookupable(State* s)
   }
 
   // Don't cache if it's a RANGE request but the cache is not enabled for RANGE.
-  if (!s->http_config_param->cache_range_lookup && s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+  if (!s->txn_conf->cache_range_lookup && s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_HEADER_FIELD);
     return false;
   }

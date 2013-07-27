@@ -1289,7 +1289,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.cache_when_to_add_no_cache_to_msie_requests,
                                     "proxy.config.http.cache.when_to_add_no_cache_to_msie_requests");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
-  HttpEstablishStaticConfigByte(c.cache_range_lookup, "proxy.config.http.cache.range.lookup");
+  HttpEstablishStaticConfigByte(c.oride.cache_range_lookup, "proxy.config.http.cache.range.lookup");
 
   HttpEstablishStaticConfigStringAlloc(c.connect_ports_string, "proxy.config.http.connect_ports");
 
@@ -1560,7 +1560,7 @@ HttpConfig::reconfigure()
   params->cache_when_to_add_no_cache_to_msie_requests = m_master.cache_when_to_add_no_cache_to_msie_requests;
 
   params->oride.cache_required_headers = m_master.oride.cache_required_headers;
-  params->cache_range_lookup = INT_TO_BOOL(m_master.cache_range_lookup);
+  params->oride.cache_range_lookup = INT_TO_BOOL(m_master.oride.cache_range_lookup);
 
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports = parse_ports_list(params->connect_ports_string);

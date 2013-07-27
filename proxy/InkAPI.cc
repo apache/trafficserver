@@ -7362,14 +7362,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->sock_option_flag_out;
     break;
-  case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_packet_mark_out;
-    break;
-  case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_packet_tos_out;
-    break;
   case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
     ret = &sm->t_state.txn_conf->fwd_proxy_auth_to_parent;
     break;
@@ -7526,11 +7518,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
     ret = &sm->t_state.txn_conf->background_fill_active_timeout;
     break;
-  case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->insert_age_in_response;
+  case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
+    typ = OVERRIDABLE_TYPE_STRING;
+    ret = &sm->t_state.txn_conf->proxy_response_server_string;
     break;
-
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     typ = OVERRIDABLE_TYPE_FLOAT;
     ret = &sm->t_state.txn_conf->cache_heuristic_lm_factor;
@@ -7543,10 +7534,17 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_FLOAT;
     ret = &sm->t_state.txn_conf->background_fill_threshold;
     break;
-
-  case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    typ = OVERRIDABLE_TYPE_STRING;
-    ret = &sm->t_state.txn_conf->proxy_response_server_string;
+  case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->sock_packet_mark_out;
+    break;
+  case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->sock_packet_tos_out;
+    break;
+  case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->insert_age_in_response;
     break;
   case TS_CONFIG_HTTP_CHUNKING_SIZE:
     typ = OVERRIDABLE_TYPE_INT;
@@ -7555,13 +7553,17 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
     ret = &sm->t_state.txn_conf->flow_control_enabled;
     break;
+  case TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->flow_low_water_mark;
+    break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->flow_high_water_mark;
     break;
-  case TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK:
+  case TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->flow_low_water_mark;
+    ret = &sm->t_state.txn_conf->cache_range_lookup;
     break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
@@ -7746,6 +7748,7 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     if (!strncmp(name, "proxy.config.http.cache.http", length))
       cnf = TS_CONFIG_HTTP_CACHE_HTTP;
     break;
+
   case 31:
     if (!strncmp(name, "proxy.config.http.chunking.size", length))
       cnf = TS_CONFIG_HTTP_CHUNKING_SIZE;
@@ -7762,8 +7765,16 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 36:
-    if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
-      cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
+    switch (name[length-1]) {
+    case 'p':
+      if (!strncmp(name, "proxy.config.http.cache.range.lookup", length))
+        cnf = TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP;
+      break;
+    case 't':
+      if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
+        cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
+      break;
+    }
     break;
 
   case 37:
