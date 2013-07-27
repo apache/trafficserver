@@ -1319,9 +1319,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.referer_filter_enabled, "proxy.config.http.referer_filter");
   HttpEstablishStaticConfigByte(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
 
-  // HTTP Accept_Encoding filtering (depends on User-Agent)
-  HttpEstablishStaticConfigByte(c.accept_encoding_filter_enabled, "proxy.config.http.accept_encoding_filter_enabled");
-
   // Negative caching
   HttpEstablishStaticConfigLongLong(c.oride.down_server_timeout, "proxy.config.http.down_server.cache_time");
   HttpEstablishStaticConfigLongLong(c.oride.client_abort_threshold, "proxy.config.http.down_server.abort_threshold");

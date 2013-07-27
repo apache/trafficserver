@@ -390,7 +390,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.hostdb.timeout
  proxy.config.hostdb.ttl_mode
  proxy.config.hostdb.verify_after
- proxy.config.http.accept_encoding_filter_enabled
  proxy.config.http.accept_encoding_filter.filename
  proxy.config.http.accept_no_activity_timeout
  proxy.config.http.anonymize_insert_client_ip
