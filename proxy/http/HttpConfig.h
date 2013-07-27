@@ -411,7 +411,7 @@ struct OverridableHttpConfigParams {
       cache_ims_on_client_no_cache(1), cache_ignore_server_no_cache(0), cache_responses_to_cookies(1),
       cache_ignore_auth(0), cache_urls_that_look_dynamic(1), cache_required_headers(2), cache_range_lookup(1),
       insert_request_via_string(1), insert_response_via_string(0), doc_in_cache_skip_dns(1),
-      negative_caching_lifetime(1800),
+      negative_caching_lifetime(1800), normalize_ae_gzip(0),
       sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
       sock_packet_mark_out(0), sock_packet_tos_out(0), server_tcp_init_cwnd(0),
       cache_heuristic_min_lifetime(3600), cache_heuristic_max_lifetime(86400),
@@ -503,6 +503,11 @@ struct OverridableHttpConfigParams {
   MgmtByte flow_control_enabled;
 
   MgmtInt negative_caching_lifetime;
+
+  ////////////////////////////////
+  // Optimize gzip alternates   //
+  ////////////////////////////////
+  MgmtByte normalize_ae_gzip;
 
   ///////////////////////////////////////
   // origin server connection settings //
@@ -784,11 +789,6 @@ public:
   MgmtByte ignore_accept_encoding_mismatch;
   MgmtByte ignore_accept_charset_mismatch;
 
-  ////////////////////////////////
-  // Optimize gzip alternates   //
-  ////////////////////////////////
-  MgmtByte normalize_ae_gzip;
-
   OverridableHttpConfigParams oride;
 
 private:
@@ -946,8 +946,7 @@ HttpConfigParams::HttpConfigParams()
     ignore_accept_mismatch(0),
     ignore_accept_language_mismatch(0),
     ignore_accept_encoding_mismatch(0),
-    ignore_accept_charset_mismatch(0),
-    normalize_ae_gzip(0)
+    ignore_accept_charset_mismatch(0)
 {
 }
 

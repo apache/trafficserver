@@ -7565,6 +7565,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->cache_range_lookup;
     break;
+  case TS_CONFIG_HTTP_NORMALIZE_AE_GZIP:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->normalize_ae_gzip;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -7762,6 +7766,11 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
   case 34:
     if (!strncmp(name, "proxy.config.http.chunking_enabled", length))
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
+    break;
+
+  case 35:
+    if (!strncmp(name, "proxy.config.http.normalize_ae_gzip", length))
+      cnf = TS_CONFIG_HTTP_NORMALIZE_AE_GZIP;
     break;
 
   case 36:

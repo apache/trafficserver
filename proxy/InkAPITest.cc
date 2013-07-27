@@ -7396,7 +7396,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.flow_control.enabled",
   "proxy.config.http.flow_control.low_water",
   "proxy.config.http.flow_control.high_water",
-  "proxy.config.http.cache.range.lookup"
+  "proxy.config.http.cache.range.lookup",
+  "proxy.config.http.normalize_ae_gzip"
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atype ATS_UNUSED */, int *pstatus)

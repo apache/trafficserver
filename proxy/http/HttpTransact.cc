@@ -1054,7 +1054,7 @@ HttpTransact::ModifyRequest(State* s)
     }
   }
 
-  if (s->http_config_param->normalize_ae_gzip) {
+  if (s->txn_conf->normalize_ae_gzip) {
     // if enabled, force Accept-Encoding header to gzip or no header
     MIMEField *ae_field = s->hdr_info.client_request.field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
 

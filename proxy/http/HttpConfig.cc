@@ -1236,10 +1236,8 @@ HttpConfig::startup()
 
 
   HttpEstablishStaticConfigByte(c.oride.insert_age_in_response, "proxy.config.http.insert_age_in_response");
-
   HttpEstablishStaticConfigByte(c.enable_http_stats, "proxy.config.http.enable_http_stats");
-
-  HttpEstablishStaticConfigByte(c.normalize_ae_gzip, "proxy.config.http.normalize_ae_gzip");
+  HttpEstablishStaticConfigByte(c.oride.normalize_ae_gzip, "proxy.config.http.normalize_ae_gzip");
 
   HttpEstablishStaticConfigByte(c.icp_enabled, "proxy.config.icp.enabled");
   HttpEstablishStaticConfigByte(c.stale_icp_enabled, "proxy.config.icp.stale_icp_enabled");
@@ -1512,7 +1510,7 @@ HttpConfig::reconfigure()
   params->oride.insert_squid_x_forwarded_for = INT_TO_BOOL(m_master.oride.insert_squid_x_forwarded_for);
   params->oride.insert_age_in_response = INT_TO_BOOL(m_master.oride.insert_age_in_response);
   params->enable_http_stats = INT_TO_BOOL(m_master.enable_http_stats);
-  params->normalize_ae_gzip = INT_TO_BOOL(m_master.normalize_ae_gzip);
+  params->oride.normalize_ae_gzip = INT_TO_BOOL(m_master.oride.normalize_ae_gzip);
 
   params->icp_enabled = (m_master.icp_enabled == ICP_MODE_SEND_RECEIVE ? 1 : 0); // INT_TO_BOOL
   params->stale_icp_enabled = INT_TO_BOOL(m_master.stale_icp_enabled);
