@@ -5202,7 +5202,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     int64_t alloc_index;
     // content length is undefined, use default buffer size
     if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
-      alloc_index = (int) t_state.http_config_param->default_buffer_size_index;
+      alloc_index = (int) t_state.txn_conf->default_buffer_size_index;
       if (alloc_index<MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index> MAX_BUFFER_SIZE_INDEX) {
         alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
       }
@@ -5639,7 +5639,7 @@ HttpSM::setup_cache_read_transfer()
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
 
-  buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
+  buf->water_mark = (int) t_state.txn_conf->default_buffer_water_mark;
 
   IOBufferReader *buf_start = buf->alloc_reader();
 
@@ -5884,7 +5884,7 @@ HttpSM::find_http_resp_buffer_size(int64_t content_length)
   if (content_length == HTTP_UNDEFINED_CL) {
     // Try use our configured default size.  Otherwise pick
     //   the default size
-    alloc_index = (int) t_state.http_config_param->default_buffer_size_index;
+    alloc_index = (int) t_state.txn_conf->default_buffer_size_index;
     if (alloc_index<MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index> DEFAULT_MAX_BUFFER_SIZE) {
       alloc_index = DEFAULT_RESPONSE_BUFFER_SIZE_INDEX;
     }
@@ -6002,7 +6002,7 @@ HttpSM::setup_transfer_from_transform()
 
   // TODO change this call to new_empty_MIOBuffer()
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
-  buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
+  buf->water_mark = (int) t_state.txn_conf->default_buffer_water_mark;
   IOBufferReader *buf_start = buf->alloc_reader();
 
   HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
@@ -6117,7 +6117,7 @@ HttpSM::setup_server_transfer()
   MIOBuffer *buf = new_empty_MIOBuffer(alloc_index);
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
-  buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
+  buf->water_mark = (int) t_state.txn_conf->default_buffer_water_mark;
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // we need to know if we are going to chunk the response or not

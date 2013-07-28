@@ -425,6 +425,7 @@ struct OverridableHttpConfigParams {
       freshness_fuzz_time(240), freshness_fuzz_min_time(0),
       max_cache_open_read_retries(-1), cache_open_read_retry_time(10), background_fill_active_timeout(60),
       http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
+      default_buffer_size_index(8), default_buffer_water_mark(32768),
 
       // Strings / floats must come last
       proxy_response_server_string(NULL), proxy_response_server_string_len(0),
@@ -569,6 +570,9 @@ struct OverridableHttpConfigParams {
   MgmtInt http_chunking_size; // Maximum chunk size for chunked output.
   MgmtInt flow_high_water_mark; ///< Flow control high water mark.
   MgmtInt flow_low_water_mark; ///< Flow control low water mark.
+
+  MgmtInt default_buffer_size_index;
+  MgmtInt default_buffer_water_mark;
 
   // IMPORTANT: Here comes all strings / floats configs.
 
@@ -758,8 +762,6 @@ public:
   MgmtByte errors_log_error_pages;
   MgmtInt slow_log_threshold;
 
-  MgmtInt default_buffer_size_index;
-  MgmtInt default_buffer_water_mark;
   MgmtByte enable_http_info;
 
   // Cluster time delta is not a config variable,
@@ -936,8 +938,6 @@ HttpConfigParams::HttpConfigParams()
     record_cop_page(0),
     record_tcp_mem_hit(0),
     errors_log_error_pages(1),
-    default_buffer_size_index(8),
-    default_buffer_water_mark(32768),
     enable_http_info(0),
     cluster_time_delta(0),
     redirection_enabled(1),

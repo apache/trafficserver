@@ -7569,6 +7569,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->normalize_ae_gzip;
     break;
+  case TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->default_buffer_size_index;
+    break;
+  case TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->default_buffer_water_mark;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -7793,6 +7801,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;
       else if (!strncmp(name, "proxy.config.http.cache.fuzz.min_time", length))
         cnf = TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME;
+      else if (!strncmp(name, "proxy.config.http.default_buffer_size", length))
+        cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.response_server_str", length)) {
@@ -7928,6 +7938,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.negative_caching_lifetime", length))
         cnf = TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME;
+      break;
+    case 'k':
+      if (!strncmp(name, "proxy.config.http.default_buffer_water_mark", length))
+        cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK;
       break;
     case 'l':
       if (!strncmp(name, "proxy.config.http.cache.cluster_cache_local", length))

@@ -1329,11 +1329,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
 
-  // Buffer size
-  HttpEstablishStaticConfigLongLong(c.default_buffer_size_index, "proxy.config.http.default_buffer_size");
-
-  // Buffer water mark
-  HttpEstablishStaticConfigLongLong(c.default_buffer_water_mark, "proxy.config.http.default_buffer_water_mark");
+  // Buffer size and watermark
+  HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
+  HttpEstablishStaticConfigLongLong(c.oride.default_buffer_water_mark, "proxy.config.http.default_buffer_water_mark");
 
   // Stat Page Info
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
@@ -1575,8 +1573,8 @@ HttpConfig::reconfigure()
   params->record_tcp_mem_hit = INT_TO_BOOL(m_master.record_tcp_mem_hit);
   params->oride.send_http11_requests = m_master.oride.send_http11_requests;
   params->oride.doc_in_cache_skip_dns = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
-  params->default_buffer_size_index = m_master.default_buffer_size_index;
-  params->default_buffer_water_mark = m_master.default_buffer_water_mark;
+  params->oride.default_buffer_size_index = m_master.oride.default_buffer_size_index;
+  params->oride.default_buffer_water_mark = m_master.oride.default_buffer_water_mark;
   params->enable_http_info = INT_TO_BOOL(m_master.enable_http_info);
   params->reverse_proxy_no_host_redirect = ats_strdup(m_master.reverse_proxy_no_host_redirect);
   params->reverse_proxy_no_host_redirect_len =
