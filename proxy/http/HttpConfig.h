@@ -506,6 +506,11 @@ struct OverridableHttpConfigParams {
   MgmtByte doc_in_cache_skip_dns;
   MgmtByte flow_control_enabled;
 
+  ////////////////////////////////////////////////////////
+  // HTTP Accept-Encoding filtering based on User-Agent //
+  ////////////////////////////////////////////////////////
+  MgmtByte accept_encoding_filter_enabled;
+
   ////////////////////////////////
   // Optimize gzip alternates   //
   ////////////////////////////////
@@ -565,9 +570,6 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_timeout;
   MgmtInt post_connect_attempts_timeout;
 
-  ////////////////////////
-  //  Negative Caching  //
-  ////////////////////////
   MgmtInt down_server_timeout;
   MgmtInt client_abort_threshold;
 
@@ -725,11 +727,6 @@ public:
   ////////////////////////////
   MgmtByte referer_filter_enabled;
   MgmtByte referer_format_redirect;
-
-  ////////////////////////////////////////////////////////
-  // HTTP Accept-Encoding filtering based on User-Agent //
-  ////////////////////////////////////////////////////////
-  MgmtByte accept_encoding_filter_enabled;
 
   //////////////////
   // Transparency //
@@ -927,7 +924,6 @@ HttpConfigParams::HttpConfigParams()
     push_method_enabled(0),
     referer_filter_enabled(0),
     referer_format_redirect(0),
-    accept_encoding_filter_enabled(0),
     client_transparency_enabled(false),
     server_transparency_enabled(false),
     reverse_proxy_enabled(0),

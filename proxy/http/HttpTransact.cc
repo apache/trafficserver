@@ -1072,7 +1072,7 @@ HttpTransact::ModifyRequest(State* s)
   /////////////////////////////////////////////////////////
   // Modify Accept-Encoding for several specific User-Agent
   /////////////////////////////////////////////////////////
-  if (s->http_config_param->accept_encoding_filter_enabled) {
+  if (s->txn_conf->accept_encoding_filter_enabled) {
     perform_accept_encoding_filtering(s);
   }
 

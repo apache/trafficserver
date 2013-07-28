@@ -7593,6 +7593,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->negative_revalidating_lifetime;
     break;
+  case TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->accept_encoding_filter_enabled;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -8052,6 +8056,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
 
   case 48:
     switch (name[length-1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.accept_encoding_filter_enabled", length))
+        cnf = TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED;
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.ignore_client_cc_max_age", length))
         cnf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE;

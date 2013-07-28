@@ -7403,7 +7403,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.request_header_max_size",
   "proxy.config.http.response_header_max_size",
   "proxy.config.http.negative_revalidating_enabled",
-  "proxy.config.http.negative_revalidating_lifetime"
+  "proxy.config.http.negative_revalidating_lifetime",
+  "proxy.config.http.accept_encoding_filter_enabled"
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atype ATS_UNUSED */, int *pstatus)
