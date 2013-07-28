@@ -675,7 +675,9 @@ extern "C"
     TS_CONFIG_HTTP_NORMALIZE_AE_GZIP,
     TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE,
     TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK,
-    TS_CONFIG_LAST_ENTRY,
+    TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE,
+    TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE,
+    TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
   /* The TASK pool of threads is the primary method of off-loading continuations from the

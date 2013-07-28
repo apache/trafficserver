@@ -7577,6 +7577,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->default_buffer_water_mark;
     break;
+  case TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->request_hdr_max_size;
+    break;
+  case TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->response_hdr_max_size;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -7898,6 +7906,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_cookie", length))
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE;
+      else if (!strncmp(name, "proxy.config.http.request_header_max_size", length))
+        cnf = TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.insert_response_via_str", length))
@@ -7917,6 +7927,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.when_to_revalidate", length))
         cnf = TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE;
+      else if (!strncmp(name, "proxy.config.http.response_header_max_size", length))
+        cnf = TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_referer", length))

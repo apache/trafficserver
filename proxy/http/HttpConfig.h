@@ -414,6 +414,7 @@ struct OverridableHttpConfigParams {
       negative_caching_lifetime(1800), normalize_ae_gzip(0),
       sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
       sock_packet_mark_out(0), sock_packet_tos_out(0), server_tcp_init_cwnd(0),
+      request_hdr_max_size(131072), response_hdr_max_size(131072),
       cache_heuristic_min_lifetime(3600), cache_heuristic_max_lifetime(86400),
       cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(31536000), cache_max_stale_age(604800),
       keep_alive_no_activity_timeout_in(115), keep_alive_no_activity_timeout_out(120),
@@ -523,6 +524,12 @@ struct OverridableHttpConfigParams {
   // Initial congestion window //
   ///////////////////////////////
   MgmtInt server_tcp_init_cwnd;
+
+  ///////////////
+  // Hdr Limit //
+  ///////////////
+  MgmtInt request_hdr_max_size;
+  MgmtInt response_hdr_max_size;
 
   /////////////////////
   // cache variables //
@@ -701,12 +708,6 @@ public:
   ////////////////////////////////////////////
   char *connect_ports_string;
   HttpConfigPortRange *connect_ports;
-
-  ///////////////
-  // Hdr Limit //
-  ///////////////
-  MgmtInt request_hdr_max_size;
-  MgmtInt response_hdr_max_size;
 
   //////////
   // Push //
@@ -923,8 +924,6 @@ HttpConfigParams::HttpConfigParams()
     cache_when_to_add_no_cache_to_msie_requests(-1),
     connect_ports_string(NULL),
     connect_ports(NULL),
-    request_hdr_max_size(131072),
-    response_hdr_max_size(131072),
     push_method_enabled(0),
     referer_filter_enabled(0),
     referer_format_redirect(0),

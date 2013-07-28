@@ -720,7 +720,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   client_request_hdr_bytes += bytes_used;
 
   // Check to see if we are over the hdr size limit
-  if (client_request_hdr_bytes > t_state.http_config_param->request_hdr_max_size) {
+  if (client_request_hdr_bytes > t_state.txn_conf->request_hdr_max_size) {
     DebugSM("http", "client header bytes were over max header size; treating as a bad request");
     state = PARSE_ERROR;
   }
@@ -1776,7 +1776,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     state = PARSE_ERROR;
   }
   // Check to see if we are over the hdr size limit
-  if (server_response_hdr_bytes > t_state.http_config_param->response_hdr_max_size) {
+  if (server_response_hdr_bytes > t_state.txn_conf->response_hdr_max_size) {
     state = PARSE_ERROR;
   }
 
