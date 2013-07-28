@@ -1316,17 +1316,15 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.referer_filter_enabled, "proxy.config.http.referer_filter");
   HttpEstablishStaticConfigByte(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
 
-  // Negative caching
   HttpEstablishStaticConfigLongLong(c.oride.down_server_timeout, "proxy.config.http.down_server.cache_time");
   HttpEstablishStaticConfigLongLong(c.oride.client_abort_threshold, "proxy.config.http.down_server.abort_threshold");
 
-  // Negative revalidating
-  HttpEstablishStaticConfigByte(c.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
-  HttpEstablishStaticConfigLongLong(c.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
-
-  // Negative response caching
+  // Negative caching and revalidation
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
+  HttpEstablishStaticConfigByte(c.oride.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
+  HttpEstablishStaticConfigLongLong(c.oride.negative_revalidating_lifetime,
+                                    "proxy.config.http.negative_revalidating_lifetime");
 
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
@@ -1588,11 +1586,10 @@ params->push_method_enabled = INT_TO_BOOL(m_master.push_method_enabled);
   params->oride.down_server_timeout = m_master.oride.down_server_timeout;
   params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;
 
-  params->negative_revalidating_enabled = INT_TO_BOOL(m_master.negative_revalidating_enabled);
-  params->negative_revalidating_lifetime = m_master.negative_revalidating_lifetime;
-
   params->oride.negative_caching_enabled = INT_TO_BOOL(m_master.oride.negative_caching_enabled);
   params->oride.negative_caching_lifetime = m_master.oride.negative_caching_lifetime;
+  params->oride.negative_revalidating_enabled = INT_TO_BOOL(m_master.oride.negative_revalidating_enabled);
+  params->oride.negative_revalidating_lifetime = m_master.oride.negative_revalidating_lifetime;
 
   //##############################################################################
   //#

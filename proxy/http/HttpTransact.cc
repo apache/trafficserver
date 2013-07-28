@@ -4103,14 +4103,14 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
          server_response_code == HTTP_STATUS_BAD_GATEWAY ||
          server_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE) &&
         s->cache_info.action == CACHE_DO_UPDATE &&
-        s->http_config_param->negative_revalidating_enabled && is_stale_cache_response_returnable(s)) {
+        s->txn_conf->negative_revalidating_enabled && is_stale_cache_response_returnable(s)) {
       DebugTxn("http_trans", "[hcoofsr] negative revalidating: revalidate stale object and serve from cache");
 
       s->cache_info.object_store.create();
       s->cache_info.object_store.request_set(&s->hdr_info.client_request);
       s->cache_info.object_store.response_set(s->cache_info.object_read->response_get());
       base_response = s->cache_info.object_store.response_get();
-      time_t exp_time = s->http_config_param->negative_revalidating_lifetime + ink_cluster_time();
+      time_t exp_time = s->txn_conf->negative_revalidating_lifetime + ink_cluster_time();
       base_response->set_expires(exp_time);
 
       SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);

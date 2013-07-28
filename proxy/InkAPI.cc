@@ -7585,6 +7585,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->response_hdr_max_size;
     break;
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->negative_revalidating_enabled;
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->negative_revalidating_lifetime;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -8025,6 +8033,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
 
   case 47:
     switch (name[length-1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.negative_revalidating_enabled", length))
+        cnf = TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED;
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.guaranteed_min_lifetime", length))
         cnf = TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME;
@@ -8043,6 +8055,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.ignore_client_cc_max_age", length))
         cnf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE;
+      else if (!strncmp(name, "proxy.config.http.negative_revalidating_lifetime", length))
+        cnf = TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME;
       break;
     case 't':
       switch (name[length-4]) {

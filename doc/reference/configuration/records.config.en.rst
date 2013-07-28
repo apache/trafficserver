@@ -764,6 +764,9 @@ Negative Response Caching
         503  Service Unavailable
         504  Gateway Timeout
 
+    The cache lifetime for objects cached from this setting is controlled via 
+    ``proxy.config.http.negative_caching_lifetime``.
+
 Proxy User Variables
 ====================
 

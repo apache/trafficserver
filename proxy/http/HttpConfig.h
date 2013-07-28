@@ -401,7 +401,7 @@ struct HttpConfigPortRange
 struct OverridableHttpConfigParams {
   OverridableHttpConfigParams()
     : maintain_pristine_host_hdr(1), chunking_enabled(1),
-      negative_caching_enabled(0), cache_when_to_revalidate(0),
+      negative_caching_enabled(0), negative_revalidating_enabled(0), cache_when_to_revalidate(0),
       keep_alive_enabled_in(1), keep_alive_enabled_out(1), keep_alive_post_out(0),
       share_server_sessions(2), fwd_proxy_auth_to_parent(0), insert_age_in_response(1),
       anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
@@ -411,7 +411,8 @@ struct OverridableHttpConfigParams {
       cache_ims_on_client_no_cache(1), cache_ignore_server_no_cache(0), cache_responses_to_cookies(1),
       cache_ignore_auth(0), cache_urls_that_look_dynamic(1), cache_required_headers(2), cache_range_lookup(1),
       insert_request_via_string(1), insert_response_via_string(0), doc_in_cache_skip_dns(1),
-      negative_caching_lifetime(1800), normalize_ae_gzip(0),
+      flow_control_enabled(0), accept_encoding_filter_enabled(0), normalize_ae_gzip(0),
+      negative_caching_lifetime(1800), negative_revalidating_lifetime(1800),
       sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
       sock_packet_mark_out(0), sock_packet_tos_out(0), server_tcp_init_cwnd(0),
       request_hdr_max_size(131072), response_hdr_max_size(131072),
@@ -446,6 +447,7 @@ struct OverridableHttpConfigParams {
   //  Negative Response Caching //
   ////////////////////////////////
   MgmtByte negative_caching_enabled;
+  MgmtByte negative_revalidating_enabled;
 
   MgmtByte cache_when_to_revalidate;
 
@@ -504,12 +506,16 @@ struct OverridableHttpConfigParams {
   MgmtByte doc_in_cache_skip_dns;
   MgmtByte flow_control_enabled;
 
-  MgmtInt negative_caching_lifetime;
-
   ////////////////////////////////
   // Optimize gzip alternates   //
   ////////////////////////////////
   MgmtByte normalize_ae_gzip;
+
+  ////////////////////////////////
+  //  Negative cache lifetimes  //
+  ////////////////////////////////
+  MgmtInt negative_caching_lifetime;
+  MgmtInt negative_revalidating_lifetime;
 
   ///////////////////////////////////////
   // origin server connection settings //
@@ -741,12 +747,6 @@ public:
   char *reverse_proxy_no_host_redirect;
   int reverse_proxy_no_host_redirect_len;
 
-  ////////////////////////////
-  //  Negative Revalidating //
-  ////////////////////////////
-  MgmtByte negative_revalidating_enabled;
-  MgmtInt negative_revalidating_lifetime;
-
   ///////////////////
   // cop access    //
   ///////////////////
@@ -932,8 +932,6 @@ HttpConfigParams::HttpConfigParams()
     server_transparency_enabled(false),
     reverse_proxy_enabled(0),
     url_remap_required(1),
-    negative_revalidating_enabled(0),
-    negative_revalidating_lifetime(1800),
     record_cop_page(0),
     record_tcp_mem_hit(0),
     errors_log_error_pages(1),
