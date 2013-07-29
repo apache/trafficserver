@@ -35,15 +35,12 @@ another, establish a coupled statistic category and make sure that each
 coupled statistic belongs to the appropriate category. When it is time
 to do the global update, specify the category to be updated.
 
-.. figure:: /images/docbook/note.png
-   :alt: [Note]
+.. note::
 
-   [Note]
-
-The local statistic copy must have a duplicate set of statistics as that
-of the master copy. Local statistics must also be added to the local
-statistic category in the same order as their master copy counterparts
-were originally added.
+   The local statistic copy must have a duplicate set of statistics as that
+   of the master copy. Local statistics must also be added to the local
+   statistic category in the same order as their master copy counterparts
+   were originally added.
 
 Below are the steps you need to follow, along with a code example taken
 from the ``redirect-1.c`` sample plugin.

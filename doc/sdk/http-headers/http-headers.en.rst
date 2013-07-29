@@ -48,100 +48,100 @@ defines several pre-allocated method names. These names correspond to
 the methods defined in the HTTP 1.1 specification
 
 ``TS_HTTP_METHOD_CONNECT``
-    "CONNECT"
+   "CONNECT"
 
 ``TS_HTTP_METHOD_DELETE``
-    "DELETE"
+   "DELETE"
 
 ``TS_HTTP_METHOD_GE``
-    "GET"
+   "GET"
 
 ``TS_HTTP_METHOD_HEAD``
-    "HEAD"
+   "HEAD"
 
 ``TS_HTTP_METHOD_ICP_QUERY``
-    "ICP\_QUERY"
+   "ICP\_QUERY"
 
 ``TS_HTTP_METHOD_OPTIONS``
-    "OPTIONS"
+   "OPTIONS"
 
 ``TS_HTTP_METHOD_POST``
-    "POST"
+   "POST"
 
 ``TS_HTTP_METHOD_PURGE``
-    "PURGE"
+   "PURGE"
 
 ``TS_HTTP_METHOD_PUT``
-    "PUT"
+   "PUT"
 
 ``TS_HTTP_METHOD_TRACE``
-    "TRACE"
+   "TRACE"
 
 Traffic Server also defines several common values that appear in HTTP
 headers.
 
 ``TS_HTTP_VALUE_BYTES``
-    "bytes"
+   "bytes"
 
 ``TS_HTTP_VALUE_CHUNKED``
-    "chunked"
+   "chunked"
 
 ``TS_HTTP_VALUE_CLOSE``
-    "close"
+   "close"
 
 ``TS_HTTP_VALUE_COMPRESS``
-    "compress"
+   "compress"
 
 ``TS_HTTP_VALUE_DEFLATE``
-    "deflate"
+   "deflate"
 
 ``TS_HTTP_VALUE_GZIP``
-    "gzip"
+   "gzip"
 
 ``TS_HTTP_VALUE_IDENTITY``
-    "identity"
+   "identity"
 
 ``TS_HTTP_VALUE_KEEP_ALIVE``
-    "keep-alive"
+   "keep-alive"
 
 ``TS_HTTP_VALUE_MAX_AGE``
-    "max-age"
+   "max-age"
 
 ``TS_HTTP_VALUE_MAX_STALE``
-    "max-stale"
+   "max-stale"
 
 ``TS_HTTP_VALUE_MIN_FRESH``
-    "min-fresh"
+   "min-fresh"
 
 ``TS_HTTP_VALUE_MUST_REVALIDATE``
-    "must-revalidate"
+   "must-revalidate"
 
 ``TS_HTTP_VALUE_NONE``
-    "none"
+   "none"
 
 ``TS_HTTP_VALUE_NO_CACHE``
-    "no-cache"
+   "no-cache"
 
 ``TS_HTTP_VALUE_NO_STORE``
-    "no-store"
+   "no-store"
 
 ``TS_HTTP_VALUE_NO_TRANSFORM``
-    "no-transform"
+   "no-transform"
 
 ``TS_HTTP_VALUE_ONLY_IF_CACHED``
-    "only-if-cached"
+   "only-if-cached"
 
 ``TS_HTTP_VALUE_PRIVATE``
-    "private"
+   "private"
 
 ``TS_HTTP_VALUE_PROXY_REVALIDATE``
-    "proxy-revalidate"
+   "proxy-revalidate"
 
 ``TS_HTTP_VALUE_PUBLIC``
-    "public"
+   "public"
 
 ``TS_HTTP_VALUE_S_MAX_AGE``
-    "s-maxage"
+   "s-maxage"
 
 The method names and header values above are defined in ``ts.h`` as
 ``const char*`` strings. When Traffic Server sets a method or a header

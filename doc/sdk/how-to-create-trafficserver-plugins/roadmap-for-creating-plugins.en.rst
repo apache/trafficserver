@@ -3,20 +3,20 @@ Roadmap for Creating Plugins
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+   
+    http://www.apache.org/licenses/LICENSE-2.0
+   
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 This chapter has provided an overview of Traffic Server's HTTP
 processing, API hooks, and the asynchronous event model. Next, you must
@@ -65,17 +65,17 @@ Below are some guidelines for creating a plugin:
    Diagram <../http-hoooks-and-transactions#HTTPTransactionStateDiagram>`__
 
 3. Read `Header-Based Plugin
-   Examples <../header-based-plugin-examples>`__ to learn the basics of
+   Examples <../header-based-plugin-examples>`_ to learn the basics of
    writing plugins: creating continuations and setting up hooks. If you
    want to write a plugin that transforms data, then read `HTTP
-   Transformation Plugins <HTTPTransformationPlugins.html>`__.
+   Transformation Plugins <HTTPTransformationPlugins.html>`_.
 
 4. Figure out what parts of the Traffic Server API you need to use and
    then read about the details of those APIs in this manual's reference
    chapters.
 
 5. Compile and load your plugin (see `Getting
-   Started <../getting-started>`__
+   Started <../getting-started>`_
 
 6. Depending on your plugin's functionality, you might start testing it
    by issuing requests by hand and checking for the desired behavior in
@@ -86,5 +86,4 @@ Below are some guidelines for creating a plugin:
    plugin using SDKTest. You can also customize SDKTest to perform
    functional testing on your plugin; for more information see the
    ***Traffic Server SDKTest User's Guide***.
-
 

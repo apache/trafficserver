@@ -1,22 +1,23 @@
 records.config
 **************
 
-.. Licensed to the Apache Software Foundation (ASF) under one
+..
+   Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+   
    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 The :file:`records.config` file is a list of configurable variables used by
 the Traffic Server software. Many of the variables in the
@@ -59,7 +60,7 @@ If the server name should be ``that_server`` the line would be ::
 
    CONFIG proxy.config.proxy_name STRING that_server
 
-In the following example, the variable `proxy.config.arm.enabled`_ is
+In the following example, the variable ``proxy.config.arm.enabled`` is
 a yes/no flag. A value of ``0`` (zero) disables the option; a value of
 ``1`` enables the option. ::
 
@@ -138,7 +139,7 @@ System Variables
 
 .. ts:confvar:: CONFIG proxy.config.cli_binary STRING traffic_line
 
-   The name of the executable that runs the command-line interface `traffic_line`_.
+   The name of the executable that runs the command-line interface :program:`traffic_line`.
 
 .. ts:confvar:: CONFIG proxy.config.watch_script STRING traffic_cop
 
@@ -300,20 +301,18 @@ Local Manager
 
    Option used to specify who to run the ``traffic_server`` process as; also used to specify ownership of config and log files.
 
-   The nonprivileged user account designated to Traffic Server.
+The nonprivileged user account designated to Traffic Server.
 
-   As of version 2.1.1 if the user_id is prefixed with pound character
-   (#) the remaining of the string is considered to be ``numeric user
-   identifier <http://en.wikipedia.org/wiki/User_identifier>``_. If the
-   value is set to '#-1' Traffic Server will not change the user during
-   startup.
+As of version 2.1.1 if the user_id is prefixed with pound character (#) the remaining of the string is considered to be
+``numeric user identifier <http://en.wikipedia.org/wiki/User_identifier>``_.
+If the value is set to ``#-1`` Traffic Server will not change the user during startup.
 
-   Setting ``user_id`` to ``root`` or ``#0`` is now forbidden to
-   increase security. Trying to do so, will cause the
-   ``traffic_server`` fatal failure. However there are two ways to
-   bypass that restriction: Specify ``-DBIG_SECURITY_HOLE`` in
-   ``CXXFLAGS`` during compilation Set the ``user_id=#-1`` and start
-   trafficserver as root.
+Setting ``user_id`` to ``root`` or ``#0`` is now forbidden to
+increase security. Trying to do so, will cause the
+``traffic_server`` fatal failure. However there are two ways to
+bypass that restriction: Specify ``-DBIG_SECURITY_HOLE`` in
+``CXXFLAGS`` during compilation. Set the ``user_id=#-1`` and start
+trafficserver as root.
 
 Process Manager
 ===============
@@ -532,7 +531,7 @@ Value Effect
 
    Enables (``1``) or disables (``0``) ``traffic_cop`` heartbeat ogging.
 
-.. ts:confvar:: proxy.config.http.use_client_target_addr  INT 0
+.. ts:confvar:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 
    For fully transparent ports use the same origin server address as the client.
 
@@ -1134,15 +1133,19 @@ HostDB
 
    The number of seconds for which to use a stale NS record while initiating a background fetch for the new data.
 
-.. ts:confvar:: proxy.config.hostdb.storage_size INT 200000
+.. ts:confvar:: CONFIG proxy.config.hostdb.storage_size INT 33554432
 
-   The amount of space (in bytes) used to store ``hostdb``. Thevalue of this variable must be increased if you increase the sizeof the
+   The amount of space (in bytes) used to store ``hostdb``.
+   The value of this variable must be increased if you increase the size of the
    `proxy.config.hostdb.size`_ variable.
 
-   Default: ``200000`` : The maximum number of entries allowed in the host database.
+.. ts:confvar:: CONFIG proxy.config.hostdb.size INT 200000
 
-   **Note:** For values above ``200000``, you must increase the value ofthe `proxy.config.hostdb.storage_size`_ variable by at least 44 bytes per
-   entry.
+   The maximum number of entries that can be stored in the database.
+
+.. note::
+
+   For values above ``200000``, you must increase the value of the `proxy.config.hostdb.storage_size`_   variable by at least 44 bytes per entry.
 
 .. ts:confvar:: CONFIG proxy.config.hostdb.ttl_mode INT 0
    :reloadable:
@@ -1208,7 +1211,7 @@ Logging Configuration
 .. ts:confvar:: CONFIG proxy.config.log.max_space_mb_headroom INT 10
    :reloadable:
 
-   The tolerance for the log space limit (in bytes). If the variable `proxy.config.log.auto_delete_rolled_file`_ is set to ``1``
+   The tolerance for the log space limit (in bytes). If the variable `proxy.config.log.auto_delete_rolled_files`_ is set to ``1``
    (enabled), then autodeletion of log files is triggered when the amount of free space available in the logging directory is less than
    the value specified here.
 
@@ -1283,7 +1286,7 @@ Logging Configuration
 .. ts:confvar:: CONFIG proxy.config.log.common_log_header STRING NULL
    :reloadable:
 
-   The `Netscape common log <../working-log-files/log-formats#NetscapeFormats>``_ file header text.
+   The `Netscape common log <../working-log-files/log-formats#NetscapeFormats>`_ file header text.
 
 .. ts:confvar:: CONFIG proxy.config.log.extended_log_enabled INT 0
    :reloadable:
