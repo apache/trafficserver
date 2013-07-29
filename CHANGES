@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-2075] Cleanup around suboptimal checks on redirects.
+
   *) [TS-2074] Remove proxy.config.http.server_port and
    proxy.config.http.server_other_ports remnants.
 
