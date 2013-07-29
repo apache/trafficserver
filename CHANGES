@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) TS-2072 Remove proxy.config.http.avoid_content_spoofing, and also fix a
+    logical bug around the tests of when to mark the request header dirty.
+
   *) [TS-1993] SSL certificate chains are loaded from the wrong directory.
 
   *) [TS-2059] Remove dead code in EnvBlock.cc and processSpawn().
