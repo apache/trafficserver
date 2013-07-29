@@ -25,15 +25,25 @@ Description
 ===========
 
 .. option:: -q VAR, --query VAR
+
 .. option:: -I PATH
+
 .. option:: -L PATH
+
 .. option:: -l LIB
+
 .. option:: -o FILE
+
 .. option:: -i
+
 .. option:: -c FILE [FILE ...]
+
 .. option:: -C FILE [FILE ...]
+
 .. option:: -v, --verbose
+
 .. option:: -h, --help
-Print usage information and exit.
+
+   Print usage information and exit.
 
 

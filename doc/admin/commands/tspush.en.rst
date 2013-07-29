@@ -25,8 +25,12 @@ Description
 ===========
 
 .. option:: -f FILE, --file FILE
+
 .. option:: -u URL, --url URL
+
 .. option:: -v, --verbose
+
 .. option:: -h, --help
-Print usage information and exit.
+
+   Print usage information and exit.
 

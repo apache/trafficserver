@@ -25,34 +25,58 @@ Description
 ===========
 
 .. option:: -n COUNT, --net_threads COUNT
+
 .. option:: -Z COUNT, --cluster_threads COUNT
+
 .. option:: -U COUNT, --udp_threads COUNT
+
 .. option:: -a, --accepts_thread
+
 .. option:: -b, --accept_till_done
+
 .. option:: -p PORT, --httpport PORT
+
 .. option:: -P PORT, --cluster_port PORT
+
 .. option:: -o LEVEL, --dprintf_level LEVEL
+
 .. option:: -R LEVEL, --regression LEVEL
+
 .. option:: -r TEST, --regression_rest TEST
+
 .. option:: -T TAGS, --debug_tags TAGS
+
 .. option:: -B TAGS, --action_tags TAGS
+
 .. option:: -i COUNT, --interval COUNT
+
 .. option:: -M, --remote_management
+
 .. option:: -d DIR, --management_dir DIR
+
 .. option:: -C CMD, --command CMD
+
 .. option:: -k, --clear_hostdb
+
 .. option:: -K, --clear_cache
+
 .. option:: -c CORE, --read_core CORE
+
 .. option:: --accept_mss MSS
+
 .. option:: -t SECS, --poll_timeout SECS
 
 .. option:: -h, --help
-Print usage information and exit.
+
+   Print usage information and exit.
+
 .. option:: -V, --version
-Print version information and exit.
+
+   Print version information and exit.
 
 Environment
 ===========
 
 .. envvar:: PROXY_REMOTE_MGMT
+
 .. envvar:: PROXY_AUTO_EXIT

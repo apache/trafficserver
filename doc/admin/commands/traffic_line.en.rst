@@ -25,21 +25,39 @@ Description
 ===========
 
 .. option:: -q, --query_deadhosts
+
 .. option:: -r VAR, --read_var VAR
+
 .. option:: -s VAR, --set_var VAR
+
 .. option:: -v VALUE, --value VALUE
+
 .. option:: -x, --reread_config
+
 .. option:: -M, --restart_cluster
+
 .. option:: -L, --restart_local
+
 .. option:: -S, --shutdown
+
 .. option:: -U, --startup
+
 .. option:: -B, --bounce_cluster
+
 .. option:: -b, --bounce_local
+
 .. option:: -C, --clean_cluster
+
 .. option:: -c, --clear_node
+
 .. option:: -Z, --zero_cluster
+
 .. option:: -z, --zero_node
+
 .. option:: -h, --help
-Print usage information and exit.
+
+   Print usage information and exit.
+
 .. option:: -V, --version
-Print version information and exit.
+
+   Print version information and exit.

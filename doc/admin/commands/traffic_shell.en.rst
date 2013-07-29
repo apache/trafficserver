@@ -25,4 +25,5 @@ Description
 ===========
 
 .. option:: -V, --version
-Print version information and exit.
+
+   Print version information and exit.

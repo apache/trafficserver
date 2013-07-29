@@ -46,6 +46,7 @@ class TSConfVar(rst.Directive):
         field.append(body)
         return field
 
+    # External entry point
     def run(self):
         cv_default = None
         cv_scope, cv_name, cv_type = self.arguments[0:3]

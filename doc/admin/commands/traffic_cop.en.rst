@@ -25,9 +25,11 @@ Description
 ===========
 
 .. option:: -stop
-Kill children using ``SIGSTOP`` instead of ``SIGKILL``
+
+   Kill children using ``SIGSTOP`` instead of ``SIGKILL``
 
 .. option:: -V
-Print version information and exit.
+
+   Print version information and exit.
 
 

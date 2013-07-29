@@ -25,18 +25,29 @@ Description
 ===========
 
 .. option:: -o PATH, --output_file PATH
+
 .. option:: -a, --auto_filename
+
 .. option:: -f, --follow
+
 .. option:: -C, --clf
+
 .. option:: -E, --elf
+
 .. option:: -S, --squid
+
 .. option:: -2, --elf2
+
 .. option:: -T, --debug_tags
+
 .. option:: -w, --overwrite_output
 
 .. option:: -h, --help
-Print usage information and exit.
+
+   Print usage information and exit.
+
 .. option:: -V, --version
-Print version information and exit.
+
+   Print version information and exit.
 
 

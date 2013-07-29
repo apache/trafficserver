@@ -25,25 +25,44 @@ Description
 ===========
 
 .. option:: -f FILE, --log_file FILE
+
 .. option:: -o LIST, --origin_list LIST
+
 .. option:: -O FILE, --origin_file FILE
+
 .. option:: -M COUNT, --max_origins COUNT
+
 .. option:: -u COUNT, --urls COUNT
+
 .. option:: -U COUNT, --show_urls COUNT
+
 .. option:: --A, --as_object
+
 .. option:: -i, --incremental
+
 .. option:: -S FILE, --statetag FILE
+
 .. option:: -t, --tail
+
 .. option:: -s, --summary
+
 .. option:: -j, --json
+
 .. option:: -c, --cgi
+
 .. option:: -m, --min_hits
+
 .. option:: -a, --max_age
+
 .. option:: -l COUNT, --line_len COUNT
+
 .. option:: -T TAGS, --debug_tags TAGS
 
 .. option:: -h, --help
-Print usage information and exit.
+
+   Print usage information and exit.
+
 .. option:: -V, --version
-Print version information and exit.
+
+   Print version information and exit.
 
