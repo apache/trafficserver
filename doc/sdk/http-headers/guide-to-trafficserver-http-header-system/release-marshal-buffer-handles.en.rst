@@ -79,10 +79,7 @@ Here's an example using a new ``TSMimeHdrField`` function:
 See the sample plugins for many more examples.
 
 .. figure:: /images/docbook/tip.png
-   :alt: [Tip]
-
-   [Tip]
-**Tip**
-
-You should release handles before reenabling the HTTP transaction. In
+   :alt:
+   
+.. rubric:: Tip - You should release handles before reenabling the HTTP transaction. In
 other words, call ``TSHandleMLocRelease`` before ``TSHttpTxnReenable``.

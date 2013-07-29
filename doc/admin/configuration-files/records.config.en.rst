@@ -34,22 +34,36 @@ Each variable has the following format:
 
 ::
 
-    CONFIG variable_name DATATYPE variable_value
+   SCOPE variable_name DATATYPE variable_value
 
-where ``DATATYPE`` is ``INT`` (integer), ``STRING`` (string), or
-``FLOAT`` (floating point).
+where
+
+``SCOPE`` is related to clustering and is either ``CONFIG`` (all members of the cluster) or ``LOCAL`` (only the local machine)
+
+``DATATYPE`` is one of ``INT`` (integer), ``STRING`` (string), ``FLOAT`` (floating point).
+   
+A variable marked as ``Deprecated`` is still functional but should be avoided as it may be removed in a future release without warning.
+
+A variable marked as ``Reloadable`` can be updated via the command::
+
+   traffic_line -x
 
 Examples
 ========
 
-In the following example, the variable .. _proxy.config.net.sock_mss_in:
-``proxy.config.proxy_name`` is
+In the following example, the variable ``proxy.config.proxy_name`` is
 a ``STRING`` datatype with the value ``my_server``. This means that the
 name of the Traffic Server proxy is ``my_server``.
 
 ::
 
-    CONFIG proxy.config.proxy_name STRING my_server
+   CONFIG proxy.config.proxy_name STRING my_server
+
+If the server name should be ``that_server`` the line would be
+
+::
+
+   CONFIG proxy.config.proxy_name STRING that_server
 
 In the following example, the variable ``proxy.config.arm.enabled`` is
 a yes/no flag. A value of ``0`` (zero) disables the option; a value of
@@ -57,14 +71,14 @@ a yes/no flag. A value of ``0`` (zero) disables the option; a value of
 
 ::
 
-    CONFIG proxy.config.arm.enabled INT 0
+   CONFIG proxy.config.arm.enabled INT 0
 
 In the following example, the variable sets the cluster startup timeout
 to 10 seconds.
 
 ::
 
-    CONFIG proxy.config.cluster.startup_timeout INT 10
+   CONFIG proxy.config.cluster.startup_timeout INT 10
 
 Environment Overrides
 =====================
@@ -83,9 +97,8 @@ not be affected by future configuration changes made in
 For example, we could override the ``proxy.config.product_company`` variable
 like this::
 
-    $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
-    $ traffic_line -r proxy.config.product_company
-    example
+   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
+   $ traffic_line -r proxy.config.product_company
 
 Configuration Variables
 =======================
@@ -94,121 +107,84 @@ The following list describes the configuration variables available in
 the :file:`records.config` file.
 
 System Variables
-================
+----------------
 
-.. _proxy.config.product_company:
-:``proxy.config.product_company``:
-:Type: ``STRING``
-:Default: ``Apache Software Foundation``
-:Description:  The name of the organization developing Traffic Server.
+.. ts:confvar:: CONFIG proxy.config.product_company STRING Apache Software Foundation
 
+   The name of the organization developing Traffic Server.
 
+.. ts:confvar:: CONFIG proxy.config.product_vendor STRING Apache
 
-.. _proxy.config.product_vendor:
-:``proxy.config.product_vendor``:
-:Type: ``STRING``
-:Default: ``Apache``
-:Description: The name of the vendor providing Traffic Server.
+   The name of the vendor providing Traffic Server.
 
+.. ts:confvar:: CONFIG proxy.config.product_name STRING Traffic Server
 
-.. _proxy.config.product_name:
-:``proxy.config.product_name``:
-Type: ``STRING``
-:Default: ``Traffic Server``
-:Description: The name of the product.
+   The name of the product.
 
+.. ts:confvar:: CONFIG proxy.config.proxy_name STRING ``build_machine``
+   :reloadable:
 
-.. _proxy.config.proxy_name:
-:``proxy.config.proxy_name``:
-:Type: ``STRING``
-:Default: ``build_machine``
-:Reloadable: Yes
-:Description: The name of the Traffic Server node.
+   The name of the Traffic Server node.
 
-.. _proxy.config.bin_path:
-:``proxy.config.bin_path``:
-:Type: ``STRING``
-:Default: ``bin``
-Description: The location of the Traffic Server ``bin`` directory.
+.. ts:confvar:: CONFIG proxy.config.bin_path STRING bin
+
+   The location of the Traffic Server ``bin`` directory.
 
 
-.. _proxy.config.proxy_binary:
-:``proxy.config.proxy_binary``:
-:Type: ``STRING``
-:Default: ``traffic_server``
-:Description: The name of the executable that runs the ``traffic_server`` process.
+.. ts:confvar:: CONFIG proxy.config.proxy_binary STRING traffic_server
+
+   The name of the executable that runs the ``traffic_server`` process.
 
 
-.. _proxy.config.proxy_binary_opts:
-:``proxy.config.proxy_binary_opts``:
-:Type: ``STRING``
-:Default: ``-M``
-:Description: The command-line options for starting Traffic Server.
+.. ts:confvar:: CONFIG _proxy.config.proxy_binary_opts STRING -M
+
+   The command-line options for starting Traffic Server.
 
 
-.. _proxy.config.manager_binary:
-:``proxy.config.manager_binary``:
-:Type: ``STRING``
-:Default: ``traffic_manager``
-:Description: The name of the executable that runs the ``traffic_manager`` process.
+.. ts:confvar:: CONFIG proxy.config.manager_binary STRING traffic_manager
+
+   The name of the executable that runs the ``traffic_manager`` process.
 
 
-.. _proxy.config.cli_binary:
-:``proxy.config.cli_binary``:
-:Type: ``STRING``
-:Default: ``traffic_line``
-:Description: The name of the executable that runs the command-line interface
-    (Traffic Line).
+.. ts:confvar:: CONFIG proxy.config.cli_binary STRING traffic_line
 
+   The name of the executable that runs the command-line interface `traffic_line`_.
 
-.. _proxy.config.watch_script:
-:``proxy.config.watch_script``:
-:Type: ``STRING``
-:Default: ``traffic_cop``
-:Description: The name of the executable that runs the ``traffic_cop`` process.
+.. ts:confvar:: CONFIG proxy.config.watch_script STRING traffic_cop
 
-.. _proxy.config.env_prep:
-:``proxy.config.env_prep``:
-:Type: ``STRING``
-:Default: (none)
-:Description: The script executed before the ``traffic_manager`` process spawns
-    the ``traffic_server`` process.
+   The name of the executable that runs the ``traffic_cop`` process.
 
-.. _proxy.config.config_dir:
-:``proxy.config.config_dir``:
-:Type: ``STRING``
-:Default: ``config``
-:Description: The directory that contains Traffic Server configuration files.
+.. ts:confvar:: CONFIG proxy.config.env_prep STRING
 
-.. _proxy.config.temp_dir:
-:``proxy.config.temp_dir``:
-:Type: ``STRING``
-:Default: ``/tmp``
-:Description: The directory used for Traffic Server temporary files.
+   The script executed before the ``traffic_manager`` process spawns
+   the ``traffic_server`` process.
 
-.. _proxy.config.alarm_email:
-:``proxy.config.alarm_email``:
-:Type: ``STRING``
-:Default: (none)
-:Reloadable: Yes
-:Description: The email address to which Traffic Server sends alarm messages.
-    During a custom Traffic Server installation, you can specify the
-    email address; otherwise, Traffic Server uses the Traffic Server
-    user account name as the default value for this variable.
+.. ts:confvar:: CONFIG proxy.config.config_dir STRING config
 
-.. _proxy.config.syslog_facility:
-:``proxy.config.syslog_facility``:
-:Type: ``STRING``
-:Default: ``LOG_DAEMON``
-:Description: The facility used to record system log files. Refer to
-    `Understanding Traffic Server Log Files <../working-log-files#UnderstandingTrafficServerLogFiles>`_.
+   The directory that contains Traffic Server configuration files.
 
-.. _proxy.config.cop.core_signal:
-:``proxy.config.cop.core_signal``:
-:Type: ``INT``
-:Default: ``0``
-:Description: The signal sent to ``traffic_cop``'s managed processes to stop them.
-    ``0`` = no signal is sent.
+.. ts:confvar:: CONFIG proxy.config.temp_dir STRING /tmp
+
+   The directory used for Traffic Server temporary files.
+
+.. ts:confvar:: CONFIG proxy.config.alarm_email STRING
+   :Reloadable:
+   
+   The email address to which Traffic Server sends alarm messages.
+   
+During a custom Traffic Server installation, you can specify the email address;
+otherwise, Traffic Server uses the Traffic Server user account name as the default value for this variable.
+
+.. ts:confvar:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
+
+   The facility used to record system log files. Refer to
+   `Understanding Traffic Server Log Files <../working-log-files#UnderstandingTrafficServerLogFiles>`_.
+
+.. ts:confvar:: CONFIG proxy.config.cop.core_signal INT 0
+
+   The signal sent to ``traffic_cop``'s managed processes to stop them.
+   
+A value of ``0`` means no signal will be setn.
 
 .. _proxy.config.cop.linux_min_swapfree_kb:
 :``proxy.config.cop.linux_min_swapfree_kb``:
@@ -274,59 +250,60 @@ Description: The location of the Traffic Server ``bin`` directory.
 Network
 =======
 
-.. _proxy.local.incoming_ip_to_bind:
+.. ts:confvar:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 ::
 
-:Name: proxy.local.incoming_ip_to_bind
-:Type: STRING
-:Default: ``0.0.0.0 ::``
-:Description: This controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
+   Controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
 
 Unless explicitly specified in `proxy.config.http.server_ports`_ the server port will be bound to one of these addresses, selected by IP address family. The built in default is any address. This is used if no address for a family is specified. This setting is useful if most or all server ports should be bound to the same address.
 
+.. note:: This is ignored for inbound transparent server ports because they must be able to accept connections on arbitrary IP addresses.
+
 .. topic:: Example
 
-    Set the global default for IPv4 to ``192.168.101.18`` and leave the global default for IPv6 as any address.::
+   Set the global default for IPv4 to ``192.168.101.18`` and leave the global default for IPv6 as any address.::
 
-        LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18
+      LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18
     
 .. topic:: Example
 
-    Set the global default for IPv4 to ``191.68.101.18`` and the global default for IPv6 to ``fc07:192:168:101::17``.::
+   Set the global default for IPv4 to ``191.68.101.18`` and the global default for IPv6 to ``fc07:192:168:101::17``.::
     
-        LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18 fc07:192:168:101::17
+      LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18 fc07:192:168:101::17
     
-.. _proxy.local.incoming_ip_to_bind:
+.. ts:confvar:: LOCAL proxy.local.outgoing_ip_to_bind STRING 0.0.0.0 ::
 
-:Name: proxy.local.outgoing_ip_to_bind
-:Type: STRING
-:Default: ``0.0.0.0 ::``
-:Description: This controls the global default for the local IP address for outbound connections to origin servers. The value is a list of space separated IP addresses, one per supported IP address family (currently IPv4 and IPv6).
+   This controls the global default for the local IP address for outbound connections to origin servers. The value is a list of space separated IP addresses, one per supported IP address family (currently IPv4 and IPv6).
 
-Unless explicitly specified in `proxy.config.http.server_ports`_ one of these addresses, selected by IP address family, will be used as the local address for outbound connections. This setting is useful if most or all of the server ports should use the same outbound IP addresses.
+   Unless explicitly specified in `proxy.config.http.server_ports`_ one of these addresses, selected by IP address family, will be used as the local address for outbound connections. This setting is useful if most or all of the server ports should use the same outbound IP addresses.
+   
+.. note:: This is ignore for outbound transparent ports as the local outbound address will be the same as the client local address.
+   
+.. topic:: Example
+
+   Set the default local outbound IP address for IPv4 connectionsn to ``192.168.101.18``.::
+
+      LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.18
 
 .. topic:: Example
 
-    Set the default local outbound IP address for IPv4 connectionsn to ``192.168.101.18``.::
+   Set the default local outbound IP address to ``192.168.101.17`` for IPv4 and ``fc07:192:168:101::17`` for IPv6.::
 
-        LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.18
-
-.. topic:: Example
-
-    Set the default local outbound IP address to ``192.168.101.17`` for IPv4 and ``fc07:192:168:101::17`` for IPv6.::
-
-        LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.17 fc07:192:168:101::17
+      LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.17 fc07:192:168:101::17
 
 Cluster
 =======
 
-``proxy.local.cluster.type`` {#proxy.local.cluster.type}
-    ``INT``
-    Default: ``3``
-    Sets the clustering mode:
+.. ts:confvar:: LOCAL proxy.local.cluster.type INT 3
 
-    -  ``1`` = full-clustering mode
-    -  ``2`` = management-only mode
-    -  ``3`` = no clustering
+   Sets the clustering mode:
+
+===== ====================
+Value Effect
+===== ====================
+1     full-clustering mode
+2     management-only mode
+3     no clustering
+===== ====================
 
 ``proxy.config.cluster.rsport`` {#proxy.config.cluster.rsport}
     ``INT``
@@ -413,12 +390,9 @@ Alarm Configuration
 HTTP Engine
 ===========
 
-.. _proxy.config.http.server_ports:
+.. ts:confvar:: CONFIG proxy.config.http.server_ports STRING 8080
 
-:Name: proxy.config.http.server_ports
-:Type: STRING
-:Default: ``8080``
-:Description: Ports used for proxying HTTP traffic.
+   Ports used for proxying HTTP traffic.
 
 This is a list, separated by space or comma, of :index:`port descriptors`. Each descriptor is a sequence of keywords and values separated by colons. Not all keywords have values, those that do are specifically noted. Keywords with values can have an optional '=' character separating the keyword and value. The case of keywords is ignored. The order of keywords is irrelevant but unspecified results may occur if incompatible options are used (noted below). Options without values are idempotent. Options with values use the last (right most) value specified, except for ``ip-out`` as detailed later.
 
@@ -443,111 +417,116 @@ compress    **N/I**         Compressed. Not implemented.
 =========== =============== ========================================
 
 *number*
-    Local IP port to bind. This is the port to which ATS clients will connect.
+   Local IP port to bind. This is the port to which ATS clients will connect.
     
 ipv4
-    Use IPv4. This is the default and is included primarily for completeness. This forced if the ``ip-in`` option is used with an IPv4 address.
+   Use IPv4. This is the default and is included primarily for completeness. This forced if the ``ip-in`` option is used with an IPv4 address.
     
 ipv6
-    Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 address.
+   Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 address.
     
 tr-in
-    Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides `proxy.local.incoming_ip_to_bind`_.
+   Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides `proxy.local.incoming_ip_to_bind`_.
     
-    Not compatible with: ``ip-in``, ``ssl``, ``blind``
+   Not compatible with: ``ip-in``, ``ssl``, ``blind``
     
 tr-out
-    Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides `proxy.local.outgoing_ip_to_bind`_.
+   Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides `proxy.local.outgoing_ip_to_bind`_.
     
-    Not compatible with: ``ip-out``, ``ssl``
+   Not compatible with: ``ip-out``, ``ssl``
     
 tr-full
-    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
+   Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
     
-    Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``.
+   Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``.
     
 tr-pass
-    Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables `proxy.config.http.use_client_target_addr`_ for the transaction as there is no other place to obtain the origin server address.
+   Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables `proxy.config.http.use_client_target_addr`_ for the transaction as there is no other place to obtain the origin server address.
 
 ip-in
-    Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this is omitted `proxy.local.incoming_ip_to_bind`_ is used.
+   Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this is omitted `proxy.local.incoming_ip_to_bind`_ is used.
     
-    Not compatible with: ``tr-in``.
+   Not compatible with: ``tr-in``.
     
 ip-out
-    Set the local IP address for outbound connections. This is the address used by ATS locally when it connects to an origin server for transactions on this port. If this is omitted `proxy.local.outgoing_ip_to_bind`_ is used.
+   Set the local IP address for outbound connections. This is the address used by ATS locally when it connects to an origin server for transactions on this port. If this is omitted `proxy.local.outgoing_ip_to_bind`_ is used.
     
-    This option can used multiple times, once for each IP address family. The address used is selected by the IP address family of the origin server address.
+   This option can used multiple times, once for each IP address family. The address used is selected by the IP address family of the origin server address.
     
-    Not compatible with: ``tr-out``.
+   Not compatible with: ``tr-out``.
     
 ip-resolve
-    Set the IP address resolution style for the origin server for transactions on this proxy port.
+   Set the IP address resolution style for the origin server for transactions on this proxy port.
     
 ssl
-    Require SSL termination for inbound connections. SSL must be configured for this option to provide a functional server port.
+   Require SSL termination for inbound connections. SSL must be configured for this option to provide a functional server port.
     
-    Not compatible with: ``tr-in``, ``tr-out``, ``blind``.
+   Not compatible with: ``tr-in``, ``tr-out``, ``blind``.
     
 blind
-    Accept only ``CONNECT`` transactions on this port.
+   Accept only ``CONNECT`` transactions on this port.
     
-    Not compatible with: ``tr-in``, ``ssl``.
+   Not compatible with: ``tr-in``, ``ssl``.
 
 compress
-    Compress the connection. Retained only by inertia, should be considered "not implemented".
+   Compress the connection. Retained only by inertia, should be considered "not implemented".
 
 .. topic:: Example
 
-    Listen on port 80 on any address for IPv4 and IPv6.::
+   Listen on port 80 on any address for IPv4 and IPv6.::
     
-        80 80:ipv6
+      80 80:ipv6
 
 .. topic:: Example
 
-    Listen transparently on any IPv4 address on port 8080, and
-    transparently on port 8080 on local address ``fc01:10:10:1::1``
-    (which implies ``ipv6``).::
+   Listen transparently on any IPv4 address on port 8080, and
+   transparently on port 8080 on local address ``fc01:10:10:1::1``
+   (which implies ``ipv6``).::
     
-        IPv4:tr-FULL:8080 TR-full:IP-in=[fc02:10:10:1::1]:8080
+      IPv4:tr-FULL:8080 TR-full:IP-in=[fc02:10:10:1::1]:8080
 
 .. topic:: Example
 
-    Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from ``local.proxy.incoming_ip_to_bind``_.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
+   Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from `proxy.local.incoming_ip_to_bind`_.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
     
-        8080:ipv6:tr-full 443:ssl ip-in=192.168.17.1:80:ip-out=[fc01:10:10:1::1]:ip-out=10.10.10.1
+      8080:ipv6:tr-full 443:ssl ip-in=192.168.17.1:80:ip-out=[fc01:10:10:1::1]:ip-out=10.10.10.1
 
-``proxy.config.http.connect_ports`` {#proxy.config.http.connect_ports}
-    ``STRING``
-    Default: ``443 563``
-    The range of ports that can be used for tunneling. 
-    Traffic Server allows tunnels only to the specified ports. 
-    Supports both wildcards ('*') and ranges ("0-1023").
+.. ts:confvar:: CONFIG proxy.config.http.connect_ports STRING 443 563
 
-``proxy.config.http.insert_request_via_str``
-{#proxy.config.http.insert_request_via_str}
-    ``INT``
-    Default: ``1``
-    Reloadable.
-    You can specify one of the following:
+   The range of origin server ports that can be used for tunneling via ``CONNECT``.
+   
+Traffic Server allows tunnels only to the specified ports.
+Supports both wildcards ('\*') and ranges ("0-1023").
+   
+.. note:: These are the ports on the *origin server*, not `server ports <#proxy-config-http-server-ports>`_.
 
-    -  ``0`` = no extra information is added to the string.
-    -  ``1`` = all extra information is added.
-    -  ``2`` = some extra information is added.
+.. ts:confvar:: CONFIG proxy.config.http.insert_request_via_str INT 1
+   :reloadable:
 
-    Note: the Via: header string interpretation can be ``decoded
-    here. </tools/via>``_
+   Set how the ``Via`` field is handled on a request to the origin server.   
 
-``proxy.config.http.insert_response_via_str``
-{#proxy.config.http.insert_response_via_str}
-    ``INT``
-    Default: ``1``
-    Reloadable.
-    You can specify one of the following:
+===== ============================================
+Value Effect
+===== ============================================
+0     no extra information is added to the string.
+1     all extra information is added.
+2     some extra information is added.
+===== ============================================
 
-    -  ``0`` no extra information is added to the string.
-    -  ``1`` all extra information is added.
-    -  ``2`` some extra information is added.
+.. note:: the ``Via`` header string interpretation can be `decoded here. </tools/via>`_
+
+.. ts:confvar:: CONFIG proxy.config.http.insert_response_via_str INT 1
+   :Reloadable:
+   
+   Set how the ``Via`` field is handled on the response to the client.
+
+===== ======================   
+Value Effect
+===== ======================   
+0     no extra information is added to the string.
+1     all extra information is added.
+2     some extra information is added.
+===== ======================   
 
 ``proxy.config.http.response_server_enabled``
 {#proxy.config.http.response_server_enabled}
@@ -1413,17 +1392,16 @@ Customizable User Response Pages
 DNS
 ===
 
-``proxy.config.dns.search_default_domains``
-{#proxy.config.dns.search_default_domains}
-    ``INT``
-    Default: ``1``
-    Reloadable.
-    Enables (``1``) or disables (``0``) local domain expansion so that
-    Traffic Server can attempt to resolve unqualified hostnames by
-    expanding to the local domain. For example: if a client makes a
-    request to an unqualified host (``host_x``) and the Traffic Server
-    local domain is ``y.com`` , then Traffic Server will expand the
-    hostname to ``host_x.y.com``.
+.. ts:confvar:: CONFIG proxy.config.dns.search_default_domains INT 1
+   :Reloadable:
+   
+   Enables (``1``) or disables (``0``) local domain expansion.
+    
+Traffic Server can attempt to resolve unqualified hostnames by
+expanding to the local domain. For example if a client makes a
+request to an unqualified host (``host_x``) and the Traffic Server
+local domain is ``y.com`` , then Traffic Server will expand the
+hostname to ``host_x.y.com``.
 
 ``proxy.config.dns.splitDNS.enabled``
 {#proxy.config.dns.splitDNS.enabled}
@@ -1792,27 +1770,25 @@ header text.
     ``log_hosts.config`` file. Refer to ``HTTP Host Log
     Splitting <../working-log-files#HTTPHostLogSplitting>``_.
 
-``proxy.local.log.collation_mode`` {#proxy.local.log.collation_mode}
-    ``INT``
-    Default: ``0``
-    Reloadable.
-    The log collation mode:
+.. ts:confvar:: LOCAL proxy.local.log.collation_mode INT 0
+   :reloadable:
+   
+   Set the log collation mode.
 
-    -  ``0`` = collation is disabled
-    -  ``1`` = this host is a log collation server
-    -  ``2`` = this host is a collation client and sends entries using
-       standard formats to the collation server
-    -  ``3`` = this host is a collation client and sends entries using
-       the traditional custom formats to the collation server
-    -  ``4`` = this host is a collation client and sends entries that
-       use both the standard and traditional custom formats to the
-       collation server
+===== ======
+Value Effect
+===== ======
+0     collation is disabled
+1     this host is a log collation server
+2     this host is a collation client and sends entries using standard formats to the collation server
+3     this host is a collation client and sends entries using the traditional custom formats to the collation server
+4     this host is a collation client and sends entries that use both the standard and traditional custom formats to the collation server
+===== ======
 
-    For information on sending XML-based custom formats to the collation
-    server, refer to ``logs_xml.config <logs_xml.config>``_.
+For information on sending XML-based custom formats to the collation
+server, refer to ``logs_xml.config <logs_xml.config>``_.
 
-    **Note:** Although Traffic Server supports traditional custom
-    logging, you should use the more versatile XML-based custom formats.
+.. note:: Although Traffic Server supports traditional custom logging, you should use the more versatile XML-based custom formats.
 
 ``proxy.confg.log.collation_host`` {#proxy.confg.log.collation_host}
     ``STRING``

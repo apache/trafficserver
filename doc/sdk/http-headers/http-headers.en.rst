@@ -17,6 +17,17 @@ HTTP Headers
   KIND, either express or implied.  See the License for the
   specific language governing permissions and limitations
   under the License.
+  
+.. toctree::
+
+   marshal-buffers.en
+   mime-headers.en
+   urls.en
+   guide-to-trafficserver-http-header-system.en
+   guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en
+   guide-to-trafficserver-http-header-system/release-marshal-buffer-handles.en
+   guide-to-trafficserver-http-header-system/duplicate-mime-fields-are-not-coalesced.en
+  
 
 The Traffic Server API HTTP header functions enable you to work with
 HTTP header data stored in marshal buffers.
