@@ -18,10 +18,10 @@ class TSConfVar(rst.Directive):
     """
     Description of a traffic server configuration variable.
     Argument is the variable as defined in records.config.
-    
+
     Descriptive text should follow, indented.
     """
-    
+
     option_spec = {
         'class' : rst.directives.class_option,
         'reloadable' : rst.directives.flag,
@@ -42,7 +42,7 @@ class TSConfVar(rst.Directive):
             body.append(value)
         field.append(body)
         return field
-    
+
     def run(self):
         cv_default = None
         cv_scope, cv_name, cv_type = self.arguments[0:3]
@@ -57,7 +57,7 @@ class TSConfVar(rst.Directive):
         # Second (optional) arg is 'msgNode' - no idea what I should pass for that
         # or if it even matters, although I now think it should not be used.
         self.state.document.note_explicit_target(target);
-        
+
         # Do the property fields
         fl = nodes.field_list();
         fl.append(self.make_field('Scope', cv_scope))
@@ -70,13 +70,12 @@ class TSConfVar(rst.Directive):
             fl.append(self.make_field('Reloadable', 'Yes'))
         if ('deprecated' in self.options):
             fl.append(self.make_field('Deprecated', 'Yes'))
-            
+
         # Get any contained content
         nn = nodes.compound();
         self.state.nested_parse(self.content, self.content_offset, nn)
-        
+
         return [ target, title, fl, nn ]
-    
 
 def setup(app):
     app.add_directive('ts:confvar', TSConfVar)
