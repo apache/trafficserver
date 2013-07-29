@@ -51,7 +51,7 @@ A variable marked as ``Reloadable`` can be updated via the command::
 Examples
 ========
 
-In the following example, the variable ``proxy.config.proxy_name`` is
+In the following example, the variable `proxy.config.proxy_name`_ is
 a ``STRING`` datatype with the value ``my_server``. This means that the
 name of the Traffic Server proxy is ``my_server``.
 
@@ -65,7 +65,7 @@ If the server name should be ``that_server`` the line would be
 
    CONFIG proxy.config.proxy_name STRING that_server
 
-In the following example, the variable ``proxy.config.arm.enabled`` is
+In the following example, the variable `proxy.config.arm.enabled`_ is
 a yes/no flag. A value of ``0`` (zero) disables the option; a value of
 ``1`` enables the option.
 
@@ -94,7 +94,7 @@ Overriding a variable from the environment is permanent and will
 not be affected by future configuration changes made in
 :file:`records.config` or applied with :program:`traffic_line`.
 
-For example, we could override the ``proxy.config.product_company`` variable
+For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
    $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
@@ -762,7 +762,7 @@ Negative Response Caching
     time a client requests the same page, Traffic Server serves the negative response directly from cache.
 
     **Note**: ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
-    of the value specified for the ``proxy.config.http.negative_caching_enabled`` variable. The
+    of the value specified for the `proxy.config.http.negative_caching_enabled`_ variable. The
     following negative responses are cached by Traffic Server:::
 
         204  No Content
@@ -1113,7 +1113,7 @@ hostname to ``host_x.y.com``.
     adds the dot (.)).
 
     **Note:** If the variable
-    ``proxy.config.http.enable_url_expandomatic`` is set to ``1`` (the default value), then you do not have to add *``www.``* and
+    `proxy.config.http.enable_url_expandomatic`_ is set to ``1`` (the default value), then you do not have to add *``www.``* and
     *``.com``* to this list because Traffic Server automatically tries www. and .com after trying the values you've specified.
 
 .. ts:confvar:: CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
@@ -1147,11 +1147,11 @@ HostDB
 .. ts:confvar:: proxy.config.hostdb.storage_size INT 200000
 
     The amount of space (in bytes) used to store ``hostdb``. Thevalue of this variable must be increased if you increase the sizeof the
-    ``proxy.config.hostdb.size`` variable.
+    `proxy.config.hostdb.size`_ variable.
 
     Default: ``200000`` : The maximum number of entries allowed in the host database.
 
-    **Note:** For values above ``200000``, you must increase the value ofthe ``proxy.config.hostdb.storage_size`` variable by at least 44 bytes per
+    **Note:** For values above ``200000``, you must increase the value ofthe `proxy.config.hostdb.storage_size`_ variable by at least 44 bytes per
     entry.
 
 .. ts:confvar:: CONFIG proxy.config.hostdb.ttl_mode INT 0
@@ -1218,7 +1218,7 @@ Logging Configuration
 .. ts:confvar:: CONFIG proxy.config.log.max_space_mb_headroom INT 10
    :reloadable:
 
-    The tolerance for the log space limit (in bytes). If the variable ``proxy.config.log.auto_delete_rolled_file`` is set to ``1``
+    The tolerance for the log space limit (in bytes). If the variable `proxy.config.log.auto_delete_rolled_file`_ is set to ``1``
     (enabled), then autodeletion of log files is triggered when the amount of free space available in the logging directory is less than
     the value specified here.
 
@@ -1405,8 +1405,8 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 
     -  ``0`` = disables log file rolling
     -  ``1`` = enables log file rolling at specific intervals during the day (specified with the
-       ``proxy.config.log.rolling_interval_sec`` and ``proxy.config.log.rolling_offset_hr`` variables)
-    -  ``2`` = enables log file rolling when log files reach a specific size (specified with the ``proxy.config.log.rolling_size_mb`` variable)
+       `proxy.config.log.rolling_interval_sec`_ and `proxy.config.log.rolling_offset_hr`_ variables)
+    -  ``2`` = enables log file rolling when log files reach a specific size (specified with the `proxy.config.log.rolling_size_mb`_ variable)
     -  ``3`` = enables log file rolling at specific intervals during the day or when log files reach a specific size (whichever occurs first)
     -  ``4`` = enables log file rolling at specific intervals during the day when log files reach a specific size (i.e., at a specified
        time if the file is of the specified size)
@@ -1489,7 +1489,7 @@ URL Remap Rules
    :reloadable:
 
     Enables (``1``) or disables (``0``) requests for a PAC file on the proxy service port (8080 by default) to be redirected to the PAC
-    port. For this type of redirection to work, the variable ``proxy.config.reverse_proxy.enabled`` must be set to ``1``.
+    port. For this type of redirection to work, the variable `proxy.config.reverse_proxy.enabled`_ must be set to ``1``.
 
 .. ts:confvar:: CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
    :reloadable:
@@ -1498,7 +1498,7 @@ URL Remap Rules
     proxy service port are redirected this port. ``-1`` is the default
     setting that sets the PAC port to the autoconfiguration port (the
     default autoconfiguration port is 8083). This variable can be used
-    together with the ``proxy.config.url_remap.default_to_server_pac``
+    together with the `proxy.config.url_remap.default_to_server_pac`_
     variable to get a PAC file from a different port. You must create
     and run a process that serves a PAC file on this port. For example:
     if you create a Perl script that listens on port 9000 and writes a
@@ -1576,7 +1576,7 @@ SSL Termination
     should be used with every server certificate. This file is only
     used if there are certificates defined in :file:`ssl_multicert.conf`.
     Unless this is an absolute path, it is loaded relative to the
-    path specified by ``proxy.config.ssl.server.cert.path``.
+    path specified by `proxy.config.ssl.server.cert.path`_.
 
 .. ts:confvar:: CONFIG proxy.config.ssl.CA.cert.path STRING NULL
 
