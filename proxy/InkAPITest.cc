@@ -7415,11 +7415,13 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atyp
   HttpSM* s = HttpSM::allocate();
   bool success = true;
   TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
-  TSMgmtInt ival = 0;
-  TSMgmtFloat fval;
-  const char *sval;
+  InkRand generator(17);
+  TSMgmtInt ival_read, ival_rand;
+  TSMgmtFloat fval_read, fval_rand;
+  const char *sval_read;
   const char *test_string = "The Apache Traffic Server";
-  int tmp_int;
+  int len;
+  
 
   s->init();
 
@@ -7438,23 +7440,28 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atyp
       success = false;
       continue;
     }
+
     // Now check the getters / setters
     switch (type) {
     case TS_RECORDDATATYPE_INT:
-      TSHttpTxnConfigIntSet(txnp, key, 17);
-      TSHttpTxnConfigIntGet(txnp, key, &ival);
-      if (17 != ival) {
-        SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_FAIL, "Failed on %s, expected 17, got %d", conf, ival);
+      ival_rand = generator.random() % 126; // to fit in a signed byte
+      TSHttpTxnConfigIntSet(txnp, key, ival_rand);
+      TSHttpTxnConfigIntGet(txnp, key, &ival_read);
+      if (ival_rand != ival_read) {
+        SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_FAIL, "Failed on %s, %d != %d", conf,
+                   ival_read, ival_rand);
         success = false;
         continue;
       }
       break;
 
     case TS_RECORDDATATYPE_FLOAT:
-      TSHttpTxnConfigFloatSet(txnp, key, 17.17);
-      TSHttpTxnConfigFloatGet(txnp, key, &fval);
-      if (17.17 != fval) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_FAIL, "Failed on %s, expected 17, got %d", conf, ival);
+      fval_rand = generator.random();
+      TSHttpTxnConfigFloatSet(txnp, key, fval_rand);
+      TSHttpTxnConfigFloatGet(txnp, key, &fval_read);
+      if (fval_rand != fval_read) {
+        SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_FAIL, "Failed on %s, %f != %f", conf,
+                   fval_read, fval_rand);
         success = false;
         continue;
       }
@@ -7462,9 +7469,10 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atyp
 
     case TS_RECORDDATATYPE_STRING:
       TSHttpTxnConfigStringSet(txnp, key, test_string, -1);
-      TSHttpTxnConfigStringGet(txnp, key, &sval, &tmp_int);
-      if (test_string != sval) {
-        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, expected 17, got %s", conf, sval);
+      TSHttpTxnConfigStringGet(txnp, key, &sval_read, &len);
+      if (test_string != sval_read) {
+        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, %s != %s", conf,
+                   sval_read, test_string);
         success = false;
         continue;
       }

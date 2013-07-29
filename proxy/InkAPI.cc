@@ -7516,6 +7516,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->doc_in_cache_skip_dns;
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->background_fill_active_timeout;
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
@@ -7543,7 +7544,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->sock_packet_tos_out;
     break;
   case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->insert_age_in_response;
     break;
   case TS_CONFIG_HTTP_CHUNKING_SIZE:
@@ -7562,11 +7562,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->flow_high_water_mark;
     break;
   case TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->cache_range_lookup;
     break;
   case TS_CONFIG_HTTP_NORMALIZE_AE_GZIP:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->normalize_ae_gzip;
     break;
   case TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE:
@@ -7586,7 +7584,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->response_hdr_max_size;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->negative_revalidating_enabled;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME:
@@ -7594,7 +7591,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->negative_revalidating_lifetime;
     break;
   case TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->accept_encoding_filter_enabled;
     break;
 
@@ -7903,8 +7899,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT;
       break;
     case 'y':
-      if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length))
+      if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length)) {
+        typ = TS_RECORDDATATYPE_FLOAT;
         cnf = TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY;
+      }
       break;
     }
     break;
@@ -7972,8 +7970,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL;
       break;
     case 'r':
-      if (!strncmp(name, "proxy.config.http.cache.heuristic_lm_factor", length))
+      if (!strncmp(name, "proxy.config.http.cache.heuristic_lm_factor", length)) {
+        typ = TS_RECORDDATATYPE_FLOAT;
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR;
+      }
       break;
     }
     break;
@@ -8068,14 +8068,15 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       break;
     case 't':
       switch (name[length-4]) {
-        case '_':
+      case '_':
         if (!strncmp(name, "proxy.config.http.transaction_active_timeout_out", length))
           cnf = TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT;
         break;
-        case 'e':
-        if (!strncmp(name, "proxy.config.http.background_fill_active_timeout", length))
-          cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT;
-        break;
+      case 'e':
+          if (!strncmp(name, "proxy.config.http.background_fill_active_timeout", length)) {
+            cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT;
+          }
+          break;
       }
       break;
     }
@@ -8115,8 +8116,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT;
       break;
       case 'd':
-      if (!strncmp(name, "proxy.config.http.background_fill_completed_threshold", length))
-        cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD;
+        if (!strncmp(name, "proxy.config.http.background_fill_completed_threshold", length)) {
+          typ = TS_RECORDDATATYPE_FLOAT;
+          cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD;
+        }
       break;
     }
     break;
