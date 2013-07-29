@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) TS-2071 Remove proxy.config.http.session_auth_cache_keep_alive_enabled
+   remnants.
+
   *) TS-2072 Remove proxy.config.http.avoid_content_spoofing, and also fix a
     logical bug around the tests of when to mark the request header dirty.
 
