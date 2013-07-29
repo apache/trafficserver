@@ -3,20 +3,20 @@ Getting Started
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+   
+    http://www.apache.org/licenses/LICENSE-2.0
+   
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 .. toctree::
    :maxdepth: 2
@@ -55,13 +55,12 @@ web-related traffic, such as DNS and HTTP requests and responses.
 Traffic Server itself consists of an event-driven loop that can be
 simplified as follows:
 
-::
+.. code-block:: c
 
-       :::C
-       for (;;) {
-            event = get_next_event();
-            handle_event (event);
-       }
+   for (;;) {
+      event = get_next_event();
+      handle_event (event);
+   }
 
 The Role of Plugins
 ~~~~~~~~~~~~~~~~~~~
@@ -72,19 +71,21 @@ functions that are registered for specific Traffic Server events. When
 Traffic Server needs to process an event, it invokes any and all
 call-back functions you've registered for that event type.
 
-|[Caution]| **Caution**
+.. caution::
 
-Since plugins add object code to Traffic Server, programming errors in a
-plugin can have serious implications. Bugs in your plugin, such as an
-out-of-range pointer, can cause Traffic Server processes to crash and
-may ultimately result in unpredictable behavior.
+   Since plugins add object code to Traffic Server, programming errors in a
+   plugin can have serious implications. Bugs in your plugin, such as an
+   out-of-range pointer, can cause Traffic Server processes to crash and
+   may ultimately result in unpredictable behavior.
 
 **Plugin Process** {#PluginProcess}
 
-.. figure:: /images/sdk/plugin_process.jpg
+.. figure:: /static/images/sdk/plugin_process.jpg
+   :align: center
    :alt: Plugin Process
 
    Plugin Process
+   
 Possible Uses for Plugins
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -125,10 +126,12 @@ Plugins <#possibleTSplugins>`__, illustrates several types of plugins.
 
 **Possible Traffic Server Plugins** {#possibleTSplugins}
 
-.. figure:: /images/sdk/Uses.jpg
+.. figure:: /static/images/sdk/Uses.jpg
+   :align: center
    :alt: Possible Traffic Server Plugins
 
    Possible Traffic Server Plugins
+   
 You can find basic examples for many plugins in the SDK sample code:
 
 -  ``append-transform.c`` adds text from a specified file to HTTP/text
@@ -161,10 +164,7 @@ The :file:`records.config` file defines the path to each plugin shared
 library, as described in `Specify the Plugin's
 Location <SpecifyingPluginLocation.html>`__.
 
-|[Note]| **Note**
-
-The path for each of these files is *``<root_dir>``*\ ``/config/``,
-where *``<root_dir>``* is where you installed Traffic Server.
+.. note:: The path for each of these files is *<root_dir>*\ ``/config/``, where *<root_dir>* is where you installed Traffic Server.
 
 Plugin Configuration
 ~~~~~~~~~~~~~~~~~~~~
@@ -243,7 +243,3 @@ The ``TSPluginInit`` function has two arguments:
 
 See `TSPluginInit <InitializationFunctions.html#TSPluginInit>`__ for
 details about ``TSPluginInit``.
-
-.. |[Caution]| image:: /images/docbook/caution.png
-.. |[Note]| image:: /images/docbook/note.png
-

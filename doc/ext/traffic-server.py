@@ -20,6 +20,9 @@ class TSConfVar(rst.Directive):
     Argument is the variable as defined in records.config.
 
     Descriptive text should follow, indented.
+    
+    Then the bulk description (if any) undented. This should be considered equivalent to the Doxygen
+    short and long description.
     """
 
     option_spec = {
