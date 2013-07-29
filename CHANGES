@@ -2,13 +2,16 @@
 Changes with Apache Traffic Server 3.3.5
 
 
-  *) TS-2073 Set the defaults for request_hdr_max_size and
+  *) [TS-2074] Remove proxy.config.http.server_port and
+   proxy.config.http.server_other_ports remnants.
+
+  *) [TS-2073] Set the defaults for request_hdr_max_size and
    response_hdr_max_size properly.
 
-  *) TS-2071 Remove proxy.config.http.session_auth_cache_keep_alive_enabled
+  *) [TS-2071] Remove proxy.config.http.session_auth_cache_keep_alive_enabled
    remnants.
 
-  *) TS-2072 Remove proxy.config.http.avoid_content_spoofing, and also fix a
+  *) [TS-2072] Remove proxy.config.http.avoid_content_spoofing, and also fix a
     logical bug around the tests of when to mark the request header dirty.
 
   *) [TS-1993] SSL certificate chains are loaded from the wrong directory.
