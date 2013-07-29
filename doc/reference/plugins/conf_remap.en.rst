@@ -105,3 +105,12 @@ the `conf_remap` plugin:
 | proxy.config.http.flow_control.enabled
 | proxy.config.http.flow_control.low_water
 | proxy.config.http.flow_control.high_water
+| proxy.config.http.cache.range.lookup
+| proxy.config.http.normalize_ae_gzip
+| proxy.config.http.default_buffer_size
+| proxy.config.http.default_buffer_water_mark
+| proxy.config.http.request_header_max_size
+| proxy.config.http.response_header_max_size
+| proxy.config.http.negative_revalidating_enabled
+| proxy.config.http.negative_revalidating_lifetime
+| proxy.config.http.accept_encoding_filter_enable
