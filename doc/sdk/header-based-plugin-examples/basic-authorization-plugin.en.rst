@@ -34,10 +34,11 @@ Creating the Plugin's Parent Continuation and Global Hook
 The parent continuation and global hook are created as follows:
 
 ``TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, TSContCreate (auth_plugin, NULL));``
+
 .. toctree::
    :maxdepth: 2
 
-   implementing-the-handler-and-getting-a-handle-to-the-transaction.en
-   working-with-http-headers.en
-   setting-a-transaction-hook.en
+   basic-authorization-plugin/implementing-the-handler-and-getting-a-handle-to-the-transaction.en
+   basic-authorization-plugin/working-with-http-headers.en
+   basic-authorization-plugin/setting-a-transaction-hook.en
 

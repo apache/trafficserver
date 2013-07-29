@@ -180,10 +180,10 @@ Below is an overview of the null transform plugin:
     **Passing Data Through a Transformation**
     {#PassingDataThroughaTransformation}
 
-.. figure:: /images/sdk/vconnection1.jpg
-   :alt: Passing Data Through a Transformation
+.. figure:: /static/images/sdk/vconnection1.jpg
+      :alt: Passing Data Through a Transformation
 
-   Passing Data Through a Transformation
+      Passing Data Through a Transformation
 
 11. If the ``handle_transform`` function finds there is no more data to
     read, then it sets ``nbytes`` to ``ndone`` on the output
@@ -192,16 +192,13 @@ Below is an overview of the null transform plugin:
     upstream vconnection by sending the upstream vconnection a
     ``WRITE_COMPLETE`` event.
 
-    ::
+    .. code-block:: c
 
-        :::c
-        } else {
-
-            TSVIONBytesSet (data->output_vio, TSVIONDoneGet (input_vio));
-            TSVIOReenable (data->output_vio);
-            TSContCall (TSVIOContGet (input_vio),
-                    TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
-        }
+      TSVIONBytesSet (data->output_vio, TSVIONDoneGet (input_vio));
+         TSVIOReenable (data->output_vio);
+         TSContCall (TSVIOContGet (input_vio),
+            TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
+      }
 
     When the upstream vconnection receives the ``WRITE_COMPLETE`` event,
     it will probably shut down the write operation.
@@ -224,7 +221,7 @@ Below is an overview of the null transform plugin:
 
     **Ending the Transformation** {#EndingTransformation}
 
-    .. figure:: /images/sdk/vconnection2.jpg
+    .. figure:: /static/images/sdk/vconnection2.jpg
        :alt: Ending the Transformation
 
        Ending the Transformation

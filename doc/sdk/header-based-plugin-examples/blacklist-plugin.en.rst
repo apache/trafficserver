@@ -97,11 +97,12 @@ established in ``TSPluginInit``, ``TS_EVENT_HTTP_SEND_RESPONSE_HDR`` is
 sent because the plugin contains a transaction hook (see `Setting Up a
 Transaction Hook <setting-a-transaction-hook.html>`__). It is good
 practice to have a default case in your switch statements.
+
 .. toctree::
    :maxdepth: 2
 
-   setting-a-global-hook.en
-   accessing-the-transaction-being-processed.en
-   setting-up-a-transaction-hook.en
-   working-with-http-header-functions.en
+   blacklist-plugin/setting-a-global-hook.en
+   blacklist-plugin/accessing-the-transaction-being-processed.en
+   blacklist-plugin/setting-up-a-transaction-hook.en
+   blacklist-plugin/working-with-http-header-functions.en
 
