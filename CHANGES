@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) TS-2073 Set the defaults for request_hdr_max_size and
+   response_hdr_max_size properly.
+
   *) TS-2071 Remove proxy.config.http.session_auth_cache_keep_alive_enabled
    remnants.
 
