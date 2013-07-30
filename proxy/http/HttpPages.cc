@@ -38,7 +38,11 @@
 HttpSMListBucket HttpSMList[HTTP_LIST_BUCKETS];
 
 HttpPagesHandler::HttpPagesHandler(Continuation * cont, HTTPHdr * header)
-:BaseStatPagesHandler(new_ProxyMutex()), request(NULL), list_bucket(0), state(HP_INIT), sm_id(0)
+  : BaseStatPagesHandler(new_ProxyMutex()),
+    request(NULL),
+    list_bucket(0),
+    state(HP_INIT),
+    sm_id(0)
 {
   action = cont;
 
@@ -115,7 +119,6 @@ HttpPagesHandler::dump_hdr(HTTPHdr *hdr, const char *desc)
 void
 HttpPagesHandler::dump_tunnel_info(HttpSM * sm)
 {
-
   HttpTunnel *t = sm->get_tunnel();
 
   resp_add("<h4> Tunneling Info </h4>");
@@ -214,9 +217,7 @@ HttpPagesHandler::dump_tunnel_info(HttpSM * sm)
 void
 HttpPagesHandler::dump_history(HttpSM * sm)
 {
-
   resp_add("<h4> History</h4>");
-
   resp_begin_table(1, 3, 60);
 
   int size;
@@ -253,7 +254,6 @@ HttpPagesHandler::dump_history(HttpSM * sm)
 int
 HttpPagesHandler::dump_sm(HttpSM * sm)
 {
-
   // Dump the current state
   const char *sm_state = HttpDebugNames::get_action_name(sm->t_state.next_action);
 

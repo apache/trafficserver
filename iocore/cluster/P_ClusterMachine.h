@@ -92,6 +92,7 @@ struct MachineListElement
   unsigned int ip;
   int port;
 };
+
 struct MachineList
 {
   int n;

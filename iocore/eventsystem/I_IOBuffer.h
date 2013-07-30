@@ -59,9 +59,15 @@ extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 #endif
 
 enum AllocType
-{ NO_ALLOC, FAST_ALLOCATED, XMALLOCED, MEMALIGNED,
-  DEFAULT_ALLOC, CONSTANT
+{
+  NO_ALLOC,
+  FAST_ALLOCATED,
+  XMALLOCED,
+  MEMALIGNED,
+  DEFAULT_ALLOC,
+  CONSTANT
 };
+
 #ifndef TS_MICRO
 #if TS_USE_RECLAIMABLE_FREELIST
 #define DEFAULT_BUFFER_NUMBER        64

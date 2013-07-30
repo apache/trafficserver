@@ -76,21 +76,22 @@ private:
   void _build_name(const char *filename);
 
 public:
-    MetaInfo(char *filename):_flags(0)
+ MetaInfo(char *filename)
+   : _flags(0)
   {
     _build_name(filename);
     _read_from_file();
   }
 
-  MetaInfo(char *filename, time_t creation, uint64_t signature):_creation_time(creation),
-    _log_object_signature(signature), _flags(VALID_CREATION_TIME | VALID_SIGNATURE)
+  MetaInfo(char *filename, time_t creation, uint64_t signature)
+    : _creation_time(creation), _log_object_signature(signature), _flags(VALID_CREATION_TIME | VALID_SIGNATURE)
   {
-
     _build_name(filename);
     _write_to_file();
   }
 
-  ~MetaInfo() {
+  ~MetaInfo()
+  {
     ats_free(_filename);
   }
 
@@ -170,10 +171,7 @@ public:
   int do_filesystem_checks() { return 0; }; // TODO: this need to be tidy up when to redo the file checking
 
 private:
-  bool is_open()
-  {
-    return (m_fd >= 0);
-  };
+  bool is_open() { return (m_fd >= 0); }
   void close_file();
 
   void check_fd();

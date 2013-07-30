@@ -61,20 +61,23 @@ public:
 };
 
 enum HSMresult_t
-{ HSM_DONE, HSM_RETRY, HSM_NOT_FOUND };
+{
+  HSM_DONE,
+  HSM_RETRY,
+  HSM_NOT_FOUND
+};
 
 class HttpSessionManager
 {
 public:
   HttpSessionManager()
-    { }
+  { }
 
   ~HttpSessionManager()
-    { }
+  { }
 
-  HSMresult_t acquire_session(Continuation *cont,
-                              sockaddr const* addr,
-                              const char *hostname, HttpClientSession *ua_session, HttpSM *sm);
+  HSMresult_t acquire_session(Continuation *cont, sockaddr const* addr, const char *hostname,
+                              HttpClientSession *ua_session, HttpSM *sm);
   HSMresult_t release_session(HttpServerSession *to_release);
   void purge_keepalives();
   void init();

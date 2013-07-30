@@ -54,14 +54,14 @@
   -------------------------------------------------------------------------*/
 
 LogHost::LogHost(char *object_filename, uint64_t object_signature)
-  : m_object_filename(ats_strdup(object_filename))
-  , m_object_signature(object_signature)
-  , m_port(0)
-  , m_name(NULL)
-  , m_sock(NULL)
-  , m_sock_fd(-1)
-  , m_connected(false)
-  , m_orphan_file(NULL)
+  : m_object_filename(ats_strdup(object_filename)),
+    m_object_signature(object_signature),
+    m_port(0),
+    m_name(NULL),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL)
 #if defined (IOCORE_LOG_COLLATION)
   , m_log_collation_client_sm(NULL)
 #endif
@@ -71,15 +71,15 @@ LogHost::LogHost(char *object_filename, uint64_t object_signature)
 }
 
 LogHost::LogHost(const LogHost & rhs)
-  : m_object_filename(ats_strdup(rhs.m_object_filename))
-  , m_object_signature(rhs.m_object_signature)
-  , m_ip(rhs.m_ip)
-  , m_port(0)
-  , m_name(ats_strdup(rhs.m_name))
-  , m_sock(NULL)
-  , m_sock_fd(-1)
-  , m_connected(false)
-  , m_orphan_file(NULL)
+  : m_object_filename(ats_strdup(rhs.m_object_filename)),
+    m_object_signature(rhs.m_object_signature),
+    m_ip(rhs.m_ip),
+    m_port(0),
+    m_name(ats_strdup(rhs.m_name)),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL)
 #if defined (IOCORE_LOG_COLLATION)
   , m_log_collation_client_sm(NULL)
 #endif
@@ -101,7 +101,6 @@ LogHost::~LogHost()
 // - by specifying a hostname and a port (as separate arguments).
 // - by specifying an ip and a port (as separate arguments).
 //
-
 int
 LogHost::set_name_port(char *hostname, unsigned int pt)
 {

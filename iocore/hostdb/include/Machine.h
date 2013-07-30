@@ -59,7 +59,7 @@
 
 class ClusterHandler;           // Leave this a class - VC++ gets very anal  ~SR
 
-struct Machine:Server
+struct Machine: Server
 {
   bool dead;
   char *hostname;
@@ -91,6 +91,7 @@ struct MachineListElement
   unsigned int ip;
   int port;
 };
+
 struct MachineList
 {
   int n;
@@ -107,7 +108,7 @@ MachineList *read_MachineList(char *filename, int test_fd = -1);
 void free_MachineList(MachineList * l);
 
 #ifdef FIXME_CONFIG
-struct clusterConfigFile:configFile
+struct clusterConfigFile: configFile
 {
 #ifndef INK_NO_CLUSTER
   char *parseFile(int fd)

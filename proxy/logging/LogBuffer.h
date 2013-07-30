@@ -148,43 +148,32 @@ public:
               size_t buf_align = LB_DEFAULT_ALIGN, size_t write_align = INK_MIN_ALIGN);
     LogBuffer(LogObject * owner, LogBufferHeader * header);
    ~LogBuffer();
+
   char &operator [] (int idx)
   {
     ink_assert(idx >= 0);
     ink_assert((size_t) idx < m_size);
     return m_buffer[idx];
-  };
+  }
 
   int switch_state(LB_State & old_state, LB_State & new_state)
   {
     INK_WRITE_MEMORY_BARRIER;
     return (ink_atomic_cas( & m_state.ival, old_state.ival, new_state.ival));
-  };
+  }
 
   LB_ResultCode checkout_write(size_t * write_offset, size_t write_size);
   LB_ResultCode checkin_write(size_t write_offset);
   void force_full();
 
-  LogBufferHeader *header()
-  {
-    return m_header;
-  }
-  long expiration_time()
-  {
-    return m_expiration_time;
-  }
+  LogBufferHeader *header() { return m_header; }
+  long expiration_time() { return m_expiration_time; }
 
   // this should only be called when buffer is ready to be flushed
   void update_header_data();
 
-  uint32_t get_id()
-  {
-    return m_id;
-  };
-  LogObject *get_owner() const
-  {
-    return m_owner;
-  };
+  uint32_t get_id() { return m_id; }
+  LogObject *get_owner() const { return m_owner; }
 
   LINK(LogBuffer, link);;
 
@@ -193,16 +182,14 @@ public:
 
   // static functions
   static size_t max_entry_bytes();
-  static int to_ascii(
-      LogEntryHeader * entry, LogFormatType type,
-      char *buf, int max_len, char *symbol_str, char *printf_str,
-      unsigned buffer_version, char *alt_format = NULL);
-  static int resolve_custom_entry(
-      LogFieldList * fieldlist,
-      char *printf_str, char *read_from, char *write_to,
-      int write_to_len, long timestamp, long timestamp_us,
-      unsigned buffer_version, LogFieldList * alt_fieldlist = NULL,
-      char *alt_printf_str = NULL);
+  static int to_ascii(LogEntryHeader * entry, LogFormatType type,
+                      char *buf, int max_len, char *symbol_str, char *printf_str,
+                      unsigned buffer_version, char *alt_format = NULL);
+  static int resolve_custom_entry(LogFieldList * fieldlist,
+                                  char *printf_str, char *read_from, char *write_to,
+                                  int write_to_len, long timestamp, long timestamp_us,
+                                  unsigned buffer_version, LogFieldList * alt_fieldlist = NULL,
+                                  char *alt_printf_str = NULL);
 
 private:
   char *m_unaligned_buffer;     // the unaligned buffer
@@ -298,10 +285,10 @@ private:
 
 inline
 LogBufferIterator::LogBufferIterator(LogBufferHeader * header, bool in_network_order)
-: m_in_network_order(in_network_order),
-  m_next(0),
-  m_iter_entry_count(0),
-  m_buffer_entry_count(0)
+  : m_in_network_order(in_network_order),
+    m_next(0),
+    m_iter_entry_count(0),
+    m_buffer_entry_count(0)
 {
   ink_assert(header);
 
@@ -323,8 +310,7 @@ LogBufferIterator::LogBufferIterator(LogBufferHeader * header, bool in_network_o
   -------------------------------------------------------------------------*/
 
 inline
-LogBufferIterator::~
-LogBufferIterator()
+LogBufferIterator::~LogBufferIterator()
 {
 }
 

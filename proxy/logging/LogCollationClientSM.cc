@@ -59,19 +59,23 @@ int LogCollationClientSM::ID = 0;
 // LogCollationClientSM::LogCollationClientSM
 //-------------------------------------------------------------------------
 
-LogCollationClientSM::LogCollationClientSM(LogHost * log_host):
-  Continuation(new_ProxyMutex()),
-  m_host_vc(NULL),
-  m_host_vio(NULL),
-  m_auth_buffer(NULL),
-  m_auth_reader(NULL),
-  m_send_buffer(NULL),
-  m_send_reader(NULL),
-  m_pending_action(NULL),
-  m_pending_event(NULL),
-  m_abort_vio(NULL),
-  m_abort_buffer(NULL),
-  m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW), m_log_host(log_host), m_id(ID++)
+LogCollationClientSM::LogCollationClientSM(LogHost * log_host)
+  : Continuation(new_ProxyMutex()),
+    m_host_vc(NULL),
+    m_host_vio(NULL),
+    m_auth_buffer(NULL),
+    m_auth_reader(NULL),
+    m_send_buffer(NULL),
+    m_send_reader(NULL),
+    m_pending_action(NULL),
+    m_pending_event(NULL),
+    m_abort_vio(NULL),
+    m_abort_buffer(NULL),
+    m_buffer_send_list(NULL),
+    m_buffer_in_iocore(NULL),
+    m_flow(LOG_COLL_FLOW_ALLOW),
+    m_log_host(log_host),
+    m_id(ID++)
 {
   Debug("log-coll", "[%d]client::constructor", m_id);
 
@@ -292,17 +296,16 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
 int
 LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
 {
-
   Debug("log-coll", "[%d]client::client_dns", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     m_client_state = LOG_COLL_CLIENT_DNS;
     if (m_log_host->m_name == 0) {
       return client_done(LOG_COLL_EVENT_SWITCH, NULL);
     }
-    hostDBProcessor.getbyname_re(this, m_log_host->m_name, 0, HostDBProcessor::Options().setFlags(HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD));
+    hostDBProcessor.getbyname_re(this, m_log_host->m_name, 0,
+                                 HostDBProcessor::Options().setFlags(HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD));
     return EVENT_CONT;
 
   case EVENT_HOST_DB_LOOKUP:
@@ -403,7 +406,6 @@ LogCollationClientSM::client_fail(int event, void * /* data ATS_UNUSED */)
   Debug("log-coll", "[%d]client::client_fail", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     Debug("log-coll", "[%d]client::client_fail - SWITCH", m_id);
     m_client_state = LOG_COLL_CLIENT_FAIL;

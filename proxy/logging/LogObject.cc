@@ -75,15 +75,15 @@ LogBufferManager::flush_buffers(LogBufferSink *sink) {
 LogObject::LogObject(LogFormat *format, const char *log_dir,
                       const char *basename, LogFileFormat file_format,
                       const char *header, int rolling_enabled,
-                      int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb):
-      m_alt_filename (NULL),
-      m_flags (0),
-      m_signature (0),
-      m_rolling_interval_sec (rolling_interval_sec),
-      m_rolling_offset_hr (rolling_offset_hr),
-      m_rolling_size_mb (rolling_size_mb),
-      m_last_roll_time(0),
-      m_ref_count (0)
+                      int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
+  : m_alt_filename (NULL),
+    m_flags (0),
+    m_signature (0),
+    m_rolling_interval_sec (rolling_interval_sec),
+    m_rolling_offset_hr (rolling_offset_hr),
+    m_rolling_size_mb (rolling_size_mb),
+    m_last_roll_time(0),
+    m_ref_count (0)
 {
     ink_assert (format != NULL);
     m_format = new LogFormat(*format);

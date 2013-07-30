@@ -64,18 +64,18 @@ create_this_cluster_machine()
   cluster_machine = NEW(new ClusterMachine);
 }
 
-ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport):
-dead(false),
-hostname(ahostname),
-ip(aip),
-cluster_port(aport),
-num_connections(0),
-now_connections(0),
-free_connections(0),
-rr_count(0),
-msg_proto_major(0),
-msg_proto_minor(0),
-clusterHandlers(0)
+ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
+  : dead(false),
+    hostname(ahostname),
+    ip(aip),
+    cluster_port(aport),
+    num_connections(0),
+    now_connections(0),
+    free_connections(0),
+    rr_count(0),
+    msg_proto_major(0),
+    msg_proto_minor(0),
+    clusterHandlers(0)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
@@ -131,8 +131,7 @@ clusterHandlers(0)
     ip = aip;
 
     ink_gethostbyaddr_r_data data;
-    struct hostent *r = ink_gethostbyaddr_r((char *) &ip, sizeof(int),
-                                            AF_INET, &data);
+    struct hostent *r = ink_gethostbyaddr_r((char *) &ip, sizeof(int), AF_INET, &data);
 
     if (r == NULL) {
       unsigned char x[4];
@@ -185,9 +184,11 @@ struct MachineTimeoutContinuation: public Continuation
     (void) e;
     delete m;
     delete this;
-      return EVENT_DONE;
+    return EVENT_DONE;
   }
-  MachineTimeoutContinuation(ClusterMachine * am):Continuation(NULL), m(am)
+
+  MachineTimeoutContinuation(ClusterMachine * am)
+    : Continuation(NULL), m(am)
   {
     SET_HANDLER((McTimeoutContHandler) & MachineTimeoutContinuation::dieEvent);
   }
