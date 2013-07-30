@@ -330,17 +330,11 @@ LogHost::write (LogBuffer *lb)
   // send log_buffer; orphan if necessary
   int bytes_sent = m_log_collation_client_sm->send(lb_copy);
   if (bytes_sent <= 0) {
-#ifndef TS_MICRO
     orphan_write_and_delete(lb_copy);
 #if defined(LOG_BUFFER_TRACKING)
     Debug("log-buftrak", "[%d]LogHost::write - orphan write complete",
         lb_copy->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
-#else
-    Note("Starting dropping log buffer due to overloading");
-    delete lb_copy;
-    lb_copy = 0;
-#endif // TS_MICRO
   }
 
   return bytes_sent;
@@ -348,7 +342,6 @@ LogHost::write (LogBuffer *lb)
 #endif // !defined(IOCORE_LOG_COLLATION)
 }
 
-#ifndef TS_MICRO
 int
 LogHost::orphan_write(LogBuffer * lb)
 {
@@ -369,7 +362,6 @@ LogHost::orphan_write_and_delete(LogBuffer * lb)
   lb = 0;
   return bytes;
 }
-#endif // TS_MICRO
 
 void
 LogHost::display(FILE * fd)

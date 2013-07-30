@@ -110,12 +110,10 @@ void free_MachineList(MachineList * l);
 #ifdef FIXME_CONFIG
 struct clusterConfigFile: configFile
 {
-#ifndef INK_NO_CLUSTER
   char *parseFile(int fd)
   {
     return (char *) read_MachineList(NULL, fd);
   }
-#endif
 };
 #endif
 

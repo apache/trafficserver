@@ -353,7 +353,6 @@ public:
   // main interface
   static void init(int configFlags = 0);
   static void init_fields();
-#ifndef INK_NO_LOG
   inkcoreapi static bool transaction_logging_enabled()
   {
     return (logging_mode == FULL_LOGGING || logging_mode == LOG_TRANSACTIONS_ONLY);
@@ -366,12 +365,6 @@ public:
 
   inkcoreapi static int access(LogAccess * lad);
   inkcoreapi static int error(const char *format, ...);
-#else
-  static int error(char *format, ...)
-  {
-    return LOG_OK;
-  }
-#endif
   inkcoreapi static int va_error(char *format, va_list ap);
 
   // public data members

@@ -2534,7 +2534,6 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
 
     DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] " "Revalidate document with server");
 
-#ifndef INK_NO_ICP
     if (s->http_config_param->icp_enabled && icp_dynamic_enabled && s->http_config_param->stale_icp_enabled &&
         needs_authenticate == false && needs_cache_auth == false &&
         !s->hdr_info.client_request.is_pragma_no_cache_set() &&
@@ -2554,7 +2553,6 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
 
       update_current_info(&s->current, &s->icp_info, HttpTransact::ICP_SUGGESTED_HOST, 1);
     }
-#endif //INK_NO_ICP
 
     if (s->stale_icp_lookup == false) {
       find_server_and_update_current_info(s);
@@ -2985,7 +2983,6 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
 }
 
 
-#ifndef INK_NO_ICP
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleICPLookup
 // Description:
@@ -3059,7 +3056,6 @@ HttpTransact::HandleICPLookup(State* s)
 
   return;
 }
-#endif //INK_NO_ICP
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3170,11 +3166,9 @@ HttpTransact::HandleResponse(State* s)
   }
 
   switch (s->current.request_to) {
-#ifndef INK_NO_ICP
   case ICP_SUGGESTED_HOST:
     handle_response_from_icp_suggested_host(s);
     break;
-#endif
   case PARENT_PROXY:
     handle_response_from_parent(s);
     break;
@@ -3275,7 +3269,6 @@ HttpTransact::HandleStatPage(State* s)
   s->next_action = PROXY_INTERNAL_CACHE_NOOP;
 }
 
-#ifndef INK_NO_ICP
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_response_from_icp_suggested_host
 // Description: response came from the host suggested by the icp lookup
@@ -3333,7 +3326,6 @@ HttpTransact::handle_response_from_icp_suggested_host(State* s)
     break;
   }
 }
-#endif //INK_NO_ICP
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3760,7 +3752,6 @@ HttpTransact::handle_forward_server_connection_open(State* s)
     return;
 
   }
-#ifndef INK_NO_HOSTDB
   else if (s->hdr_info.server_response.version_get() == HTTPVersion(1, 0)) {
     if (s->current.server->http_version == HTTPVersion(0, 9)) {
       // update_hostdb_to_indicate_server_version_is_1_0
@@ -3781,9 +3772,7 @@ HttpTransact::handle_forward_server_connection_open(State* s)
     } else {
       // dont update the hostdb. let us try again with what we currently think.
     }
-  }
-#endif
-  else {
+  } else {
     // dont update the hostdb. let us try again with what we currently think.
   }
 
@@ -5283,10 +5272,6 @@ HttpTransact::did_forward_server_send_0_9_response(State* s)
 bool
 HttpTransact::handle_internal_request(State* /* s ATS_UNUSED */, HTTPHdr* incoming_hdr)
 {
-#ifdef INK_NO_STAT_PAGES
-  return false;
-#else
-
   URL *url;
 
   ink_assert(incoming_hdr->type_get() == HTTP_TYPE_REQUEST);
@@ -5307,7 +5292,6 @@ HttpTransact::handle_internal_request(State* /* s ATS_UNUSED */, HTTPHdr* incomi
   }
 
   return true;
-#endif //INK_NO_STAT_PAGES
 }
 
 bool

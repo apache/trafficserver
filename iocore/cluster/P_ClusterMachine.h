@@ -110,12 +110,10 @@ void free_MachineList(MachineList * l);
 
 struct clusterConfigFile
 {
-#ifndef INK_NO_CLUSTER
   char *parseFile(int fd)
   {
     return (char *) read_MachineList(NULL, fd);
   }
-#endif
 };
 
 inkcoreapi ClusterMachine *this_cluster_machine();

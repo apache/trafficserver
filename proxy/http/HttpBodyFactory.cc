@@ -1005,7 +1005,7 @@ char *
 HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64_t *buflen_return)
 {
   char *buffer = NULL;
-#ifndef INK_NO_LOG
+
   Debug("body_factory_instantiation", "    before instantiation: [%s]", template_buffer);
 
   LogAccessHttp la(context->state_machine);
@@ -1016,8 +1016,7 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64
 
   *buflen_return = ((buffer == NULL) ? 0 : strlen(buffer));
   Debug("body_factory_instantiation", "    after instantiation: [%s]", buffer);
-
   Debug("body_factory", "  returning %" PRId64" byte instantiated buffer", *buflen_return);
-#endif
+
   return (buffer);
 }

@@ -124,8 +124,6 @@ EventProcessor::spawn_event_threads(int n_threads, const char* et_name, size_t s
 }
 
 
-#define INK_NO_CLUSTER
-
 class EventProcessor eventProcessor;
 
 int

@@ -401,18 +401,15 @@ shutdown_system()
 #define CMD_IN_PROGRESS 2       // task not completed. don't exit
 
 static int
-cmd_list(char *cmd)
+cmd_list(char * /* cmd ATS_UNUSED */)
 {
-  (void) cmd;
   printf("LIST\n\n");
 
   // show hostdb size
 
-#ifndef INK_NO_HOSTDB
   int h_size = 120000;
   TS_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
   printf("Host Database size:\t%d\n", h_size);
-#endif
 
   // show cache config information....
 
@@ -529,9 +526,7 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   printf("%s\n\n", n);
   int res = 0;
 
-#ifndef INK_NO_HOSTDB
   hostdb_current_interval = (ink_get_based_hrtime() / HRTIME_MINUTE);
-#endif
 
 //#ifndef INK_NO_ACC
 //  acc.clear_cache();
@@ -543,7 +538,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
     printf("%s, %s failed\n", err, n);
     return CMD_FAILED;
   }
-#ifndef INK_NO_HOSTDB
   printf("Host Database\n");
   HostDBCache hd;
   if (hd.start(fix) < 0) {
@@ -552,7 +546,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   }
   res = hd.check("hostdb.config", fix) < 0 || res;
   hd.reset();
-#endif
 
   if (cacheProcessor.start() < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
@@ -604,7 +597,6 @@ cmd_clear(char *cmd)
       return CMD_FAILED;
     }
   }
-#ifndef INK_NO_HOSTDB
   if (c_hdb || c_all) {
     Note("Clearing Host Database");
     if (hostDBProcessor.cache()->start(PROCESSOR_RECONFIGURE) < 0) {
@@ -615,7 +607,6 @@ cmd_clear(char *cmd)
     if (c_hdb)
       return CMD_OK;
   }
-#endif
 
 //#ifndef INK_NO_ACC
 //  if (c_adb || c_all) {
@@ -1549,9 +1540,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
         _exit(1);               // in error
     }
   } else {
-#ifndef INK_NO_ACL
     initCacheControl();
-#endif
     initCongestionControl();
     IpAllow::startup();
     ParentConfig::startup();
@@ -1572,20 +1561,13 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
     sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
-#ifndef INK_NO_HOSTDB
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
       SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
-#endif
-
-#ifndef INK_NO_CLUSTER
     clusterProcessor.init();
-#endif
 
-#ifndef INK_NO_LOG
     // initialize logging (after event and net processor)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
-#endif
 
     // Init plugins as soon as logging is ready.
     plugin_init(system_config_directory);        // plugin.config
@@ -1639,10 +1621,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
     if (http_enabled) {
-#ifndef INK_NO_ICP
       int icp_enabled = 0;
       TS_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
-#endif
+
       // call the ready hooks before we start accepting connections.
       APIHook* hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
       while (hook) {
@@ -1660,10 +1641,8 @@ main(int /* argc ATS_UNUSED */, char **argv)
       } else {
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
-#ifndef INK_NO_ICP
       if (icp_enabled)
         icpProcessor.start();
-#endif
     }
 
     // "Task" processor, possibly with its own set of task threads
@@ -1674,11 +1653,10 @@ main(int /* argc ATS_UNUSED */, char **argv)
     if (back_door_port != NO_FD)
       start_HttpProxyServerBackDoor(back_door_port, num_accept_threads > 0 ? 1 : 0); // One accept thread is enough
 
-#ifndef INK_NO_SOCKS
     if (netProcessor.socks_conf_stuff->accept_enabled) {
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
-#endif
+
     ///////////////////////////////////////////
     // Initialize Scheduled Update subsystem
     ///////////////////////////////////////////
@@ -1694,9 +1672,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
 #if TS_HAS_TESTS
     TransformTest::run();
-#ifndef INK_NO_HOSTDB
     run_HostDBTest();
-#endif
     //  run_SimpleHttp();
     run_RegressionTest();
 #endif

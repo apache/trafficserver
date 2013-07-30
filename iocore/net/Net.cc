@@ -98,7 +98,6 @@ register_net_stats()
                      RECD_INT, RECP_NULL, (int) net_calls_to_write_nodata_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_write_nodata_stat);
 
-#ifndef INK_NO_SOCKS
   RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_successful",
                      RECD_INT, RECP_NULL, (int) socks_connections_successful_stat, RecRawStatSyncSum);
 
@@ -108,7 +107,6 @@ register_net_stats()
   RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_currently_open",
                      RECD_INT, RECP_NON_PERSISTENT, (int) socks_connections_currently_open_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(socks_connections_currently_open_stat);
-#endif
 
   RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.inactivity_cop_lock_acquire_failure",
                      RECD_INT, RECP_NULL, (int) inactivity_cop_lock_acquire_failure_stat,

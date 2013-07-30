@@ -22,7 +22,6 @@
  */
 
 
-#if !defined (INK_NO_LOG)
 #ifndef LOG_BUFFER_H
 #define LOG_BUFFER_H
 
@@ -313,7 +312,4 @@ inline
 LogBufferIterator::~LogBufferIterator()
 {
 }
-
-
 #endif
-#endif //INK_NO_LOG

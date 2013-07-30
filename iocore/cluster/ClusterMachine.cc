@@ -79,9 +79,7 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
-#ifndef INK_NO_CLUSTER
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MACHINES_ALLOCATED_STAT);
-#endif
   if (!aip) {
     char localhost[1024];
     if (!ahostname) {
@@ -172,7 +170,6 @@ ClusterMachine::~ClusterMachine()
   ats_free(clusterHandlers);
 }
 
-#ifndef INK_NO_CLUSTER
 struct MachineTimeoutContinuation;
 typedef int (MachineTimeoutContinuation::*McTimeoutContHandler) (int, void *);
 struct MachineTimeoutContinuation: public Continuation
@@ -290,4 +287,3 @@ read_MachineList(char *filename, int afd)
   }
   return (afd != -1) ? (MachineList *) NULL : l;
 }
-#endif // INK_NO_CLUSTER

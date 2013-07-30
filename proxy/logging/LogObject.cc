@@ -106,7 +106,6 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
     // compute_signature is a static function
     m_signature = compute_signature(m_format, m_basename, m_flags);
 
-#ifndef TS_MICRO
     // by default, create a LogFile for this object, if a loghost is
     // later specified, then we will delete the LogFile object
     //
@@ -115,7 +114,6 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
                                  Log::config->ascii_buffer_size,
                                  Log::config->max_line_size,
                                  Log::config->overspill_report_count));
-#endif // TS_MICRO
 
     LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
     ink_assert(b);
@@ -139,15 +137,11 @@ LogObject::LogObject(LogObject& rhs)
 {
     m_format = new LogFormat(*(rhs.m_format));
 
-#ifndef TS_MICRO
     if (rhs.m_logFile) {
         m_logFile = NEW (new LogFile(*(rhs.m_logFile)));
     } else {
-#endif
         m_logFile = NULL;
-#ifndef TS_MICRO
     }
-#endif
 
     LogFilter *filter;
     for (filter = rhs.m_filter_list.first(); filter;
@@ -357,21 +351,16 @@ LogObject::display(FILE * fd)
   fprintf(fd, "LogObject [%p]: format = %s (%p)\nbasename = %s\n" "flags = %u\n"
           "signature = %" PRIu64 "\n",
           this, m_format->name(), m_format, m_basename, m_flags, m_signature);
-#ifndef TS_MICRO
   if (is_collation_client()) {
     m_host_list.display(fd);
   } else {
-#endif // TS_MICRO
     fprintf(fd, "full path = %s\n", get_full_filename());
-#ifndef TS_MICRO
   }
-#endif // TS_MICRO
   m_filter_list.display(fd);
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 }
 
 
-#ifndef TS_MICRO
 void
 LogObject::displayAsXML(FILE * fd, bool extended)
 {
@@ -399,7 +388,6 @@ LogObject::displayAsXML(FILE * fd, bool extended)
 
   fprintf(fd, "</LogObject>\n");
 }
-#endif // TS_MICRO
 
 
 LogBuffer *
@@ -996,7 +984,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 {
   int retVal = NO_FILENAME_CONFLICTS;
 
-#ifndef TS_MICRO
   char *filename = log_object->get_full_filename();
 
   if (access(filename, F_OK)) {
@@ -1092,12 +1079,10 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
       }
     }
   }
-#endif // TS_MICRO
   return retVal;
 }
 
 
-#ifndef TS_MICRO
 bool
 LogObjectManager::_has_internal_filename_conflict(char *filename, LogObject ** objects, int numObjects)
 {
@@ -1116,15 +1101,12 @@ LogObjectManager::_has_internal_filename_conflict(char *filename, LogObject ** o
   }
   return false;
 }
-#endif // TS_MICRO
 
 
 int
 LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int maxConflicts, int fileNum)
 {
   int retVal = NO_FILENAME_CONFLICTS;
-
-#ifndef TS_MICRO
   char *filename = log_object->get_full_filename();
 
   if (_has_internal_filename_conflict(filename, _objects, _numObjects) ||
@@ -1144,7 +1126,6 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int 
       retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
     }
   }
-#endif // TS_MICRO
   return retVal;
 }
 

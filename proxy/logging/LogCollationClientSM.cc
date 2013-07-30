@@ -122,10 +122,8 @@ LogCollationClientSM::client_handler(int event, void *data)
   switch (m_client_state) {
   case LOG_COLL_CLIENT_AUTH:
     return client_auth(event, (VIO *) data);
-#ifndef INK_NO_HOSTDB
   case LOG_COLL_CLIENT_DNS:
     return client_dns(event, (HostDBInfo *) data);
-#endif
   case LOG_COLL_CLIENT_DONE:
     return client_done(event, data);
   case LOG_COLL_CLIENT_FAIL:
@@ -287,12 +285,10 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
   }
 }
 
-#ifndef INK_NO_HOSTDB
 //-------------------------------------------------------------------------
 // LogCollationClientSM::client_dns
 // next: client_open || client_done
 //-------------------------------------------------------------------------
-
 int
 LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
 {
@@ -324,7 +320,6 @@ LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
   }
 
 }
-#endif // INK_NO_HOSTDB
 
 //-------------------------------------------------------------------------
 // LogCollationClientSM::client_done
@@ -351,10 +346,8 @@ LogCollationClientSM::client_done(int event, void * /* data ATS_UNUSED */)
       m_host_vc->do_io_close(0);
       m_host_vc = 0;
     }
-#ifndef TS_MICRO
     // flush unsent logs to orphan
     flush_to_orphan();
-#endif
 
     // cancel any pending events/actions
     if (m_pending_action != NULL) {
@@ -509,21 +502,7 @@ LogCollationClientSM::client_init(int event, void * /* data ATS_UNUSED */)
 
     // if we don't have an ip already, switch to client_dns
     if (! m_log_host->ip_addr().isValid()) {
-#ifndef INK_NO_HOSTDB
       return client_dns(LOG_COLL_EVENT_SWITCH, NULL);
-#else
-      if (m_log_host->m_name == 0)
-        return client_done(LOG_COLL_EVENT_SWITCH, NULL);
-
-      IpEndpoint ip4, ip6;
-      // Previous version called gethostbyname and just dereferenced
-      // the return. I don't know what should be done if this fails.
-      m_log_host->m_ip.invalidate();
-      ats_ip_getbestaddrinfo(m_log_host->m_name, &ip4, &ip6);
-      m_log_host->m_ip.assign(ip4.isValid() ? &ip4 : &ip6);
-      m_log_host->m_ip.toString(m_log_host->ipstr, sizeof(m_log_host->m_ipstr));
-      return client_open(LOG_COLL_EVENT_SWITCH, NULL);
-#endif
     } else {
       return client_open(LOG_COLL_EVENT_SWITCH, NULL);
     }
@@ -719,7 +698,6 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
-#ifndef TS_MICRO
 //-------------------------------------------------------------------------
 // LogCollationClientSM::flush_to_orphan
 //-------------------------------------------------------------------------
@@ -748,4 +726,3 @@ LogCollationClientSM::flush_to_orphan()
   Debug("log-coll", "[%d]client::client_send - m_flow = ALLOW", m_id);
   m_flow = LOG_COLL_FLOW_ALLOW;
 }
-#endif // TS_MICRO

@@ -49,7 +49,6 @@
 #include "StatSystem.h"
 #include "P_Cache.h"
 
-#ifndef INK_NO_ACL
 static const char modulePrefix[] = "[CacheControl]";
 
 # define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
@@ -501,22 +500,3 @@ CacheControlRecord::UpdateMatch(CacheControlResult * result, RequestData * rdata
           this->line_num, crtc_debug);
   }
 }
-#else
-#include "CacheControl.h"
-
-void
-CacheControlRecord::Print()
-{
-}
-
-char *
-CacheControlRecord::Init(matcher_line * line_info)
-{
-  return NULL;
-}
-
-void
-CacheControlRecord::UpdateMatch(CacheControlResult * result, RequestData * rdata)
-{
-}
-#endif // INK_NO_ACL

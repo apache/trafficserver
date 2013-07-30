@@ -173,9 +173,7 @@ public:
   int getNumElements() { return num_el; }
   Data *getDataArray() { return data_array; }
 
-#ifndef TS_MICRO
 protected:
-#endif
   InkHashTable *url_ht;
   char **url_str;                // array of url strings
   int  *url_value;                // array of posion of url strings
@@ -199,9 +197,7 @@ public:
   int getNumElements() { return num_el; }
   Data *getDataArray() { return data_array; }
 
-#ifndef TS_MICRO
 protected:
-#endif
   pcre** re_array;              // array of compiled regexs
   char **re_str;                // array of uncompiled regex strings
   Data *data_array;             // data array.  Corresponds to re_array
@@ -230,9 +226,7 @@ public:
   Data *getDataArray() { return data_array; }
   HostLookup *getHLookup() { return host_lookup; }
 
-#ifndef TS_MICRO
 private:
-#endif
   static void PrintFunc(void *opaque_data);
   HostLookup *host_lookup;      // Data structure to do the lookups
   Data *data_array;             // array of all data items

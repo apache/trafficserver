@@ -1013,22 +1013,18 @@ template class UrlMatcher<ParentRecord, ParentResult>;
 template class IpMatcher<ParentRecord, ParentResult>;
 template class HostRegexMatcher<ParentRecord, ParentResult>;
 
-#ifndef INK_NO_HOSTDB
 template class ControlMatcher<SplitDNSRecord, SplitDNSResult>;
 template class HostMatcher<SplitDNSRecord, SplitDNSResult>;
 template class RegexMatcher<SplitDNSRecord, SplitDNSResult>;
 template class UrlMatcher<SplitDNSRecord, SplitDNSResult>;
 template class IpMatcher<SplitDNSRecord, SplitDNSResult>;
 template class HostRegexMatcher<SplitDNSRecord, SplitDNSResult>;
-#endif
 
-#ifndef INK_NO_ACL
 template class ControlMatcher<CacheControlRecord, CacheControlResult>;
 template class HostMatcher<CacheControlRecord, CacheControlResult>;
 template class RegexMatcher<CacheControlRecord, CacheControlResult>;
 template class UrlMatcher<CacheControlRecord, CacheControlResult>;
 template class IpMatcher<CacheControlRecord, CacheControlResult>;
-#endif
 
 template class ControlMatcher<CongestionControlRecord, CongestionControlRule>;
 template class HostMatcher<CongestionControlRecord, CongestionControlRule>;

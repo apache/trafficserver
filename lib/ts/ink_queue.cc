@@ -369,21 +369,13 @@ ink_freelists_dump(FILE * f)
 void
 ink_atomiclist_init(InkAtomicList * l, const char *name, uint32_t offset_to_next)
 {
-#if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-  ink_mutex_init(&(l->inkatomiclist_mutex), name);
-#endif
   l->name = name;
   l->offset = offset_to_next;
   SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(0), 0);
 }
 
-#if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-void *
-ink_atomiclist_pop_wrap(InkAtomicList * l)
-#else /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 void *
 ink_atomiclist_pop(InkAtomicList * l)
-#endif                          /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 {
   head_p item;
   head_p next;
@@ -394,17 +386,11 @@ ink_atomiclist_pop(InkAtomicList * l)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset),
                                  FREELIST_VERSION(item) + 1);
-#if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
 #if TS_HAS_128BIT_CAS
        result = ink_atomic_cas((__int128_t*) & l->head.data, item.data, next.data);
 #else
        result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
 #endif
-#else
-    l->head.data = next.data;
-    result = 1;
-#endif
-
   }
   while (result == 0);
   {
@@ -414,13 +400,8 @@ ink_atomiclist_pop(InkAtomicList * l)
   }
 }
 
-#if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-void *
-ink_atomiclist_popall_wrap(InkAtomicList * l)
-#else /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 void *
 ink_atomiclist_popall(InkAtomicList * l)
-#endif                          /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 {
   head_p item;
   head_p next;
@@ -430,17 +411,11 @@ ink_atomiclist_popall(InkAtomicList * l)
     if (TO_PTR(FREELIST_POINTER(item)) == NULL)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
-#if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
 #if TS_HAS_128BIT_CAS
        result = ink_atomic_cas((__int128_t*) & l->head.data, item.data, next.data);
 #else
        result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
 #endif
-#else
-    l->head.data = next.data;
-    result = 1;
-#endif
-
   }
   while (result == 0);
   {
@@ -456,13 +431,8 @@ ink_atomiclist_popall(InkAtomicList * l)
   }
 }
 
-#if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-void *
-ink_atomiclist_push_wrap(InkAtomicList * l, void *item)
-#else /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 void *
 ink_atomiclist_push(InkAtomicList * l, void *item)
-#endif                          /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 {
   volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, l->offset);
   head_p head;
@@ -476,30 +446,19 @@ ink_atomiclist_push(InkAtomicList * l, void *item)
     ink_assert(item != TO_PTR(h));
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
     INK_MEMORY_BARRIER;
-#if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
 #if TS_HAS_128BIT_CAS
        result = ink_atomic_cas((__int128_t*) & l->head, head.data, item_pair.data);
 #else
        result = ink_atomic_cas((int64_t *) & l->head, head.data, item_pair.data);
 #endif
-#else
-    l->head.data = item_pair.data;
-    result = 1;
-#endif
-
   }
   while (result == 0);
 
   return TO_PTR(h);
 }
 
-#if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-void *
-ink_atomiclist_remove_wrap(InkAtomicList * l, void *item)
-#else /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 void *
 ink_atomiclist_remove(InkAtomicList * l, void *item)
-#endif                          /* !INK_USE_MUTEX_FOR_ATOMICLISTS */
 {
   head_p head;
   void *prev = NULL;
@@ -514,16 +473,12 @@ ink_atomiclist_remove(InkAtomicList * l, void *item)
   while (TO_PTR(FREELIST_POINTER(head)) == item) {
     head_p next;
     SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
-#if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
 #if TS_HAS_128BIT_CAS
        result = ink_atomic_cas((__int128_t*) & l->head.data, head.data, next.data);
 #else
        result = ink_atomic_cas((int64_t *) & l->head.data, head.data, next.data);
 #endif
-#else
-    l->head.data = next.data;
-    result = 1;
-#endif
+
     if (result) {
       *addr_next = NULL;
       return item;

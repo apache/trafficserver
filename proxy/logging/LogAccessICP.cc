@@ -31,7 +31,6 @@
 
 
  ***************************************************************************/
-#ifndef TS_MICRO
 #include "libts.h"
 #include "Error.h"
 #include "HTTP.h"
@@ -45,7 +44,7 @@
   -------------------------------------------------------------------------*/
 
 LogAccessICP::LogAccessICP(ICPlog * icp_log)
-:m_icp_log(icp_log)
+  : m_icp_log(icp_log)
 {
   ink_assert(m_icp_log != NULL);
 }
@@ -279,4 +278,3 @@ LogAccessICP::marshal_transfer_time_s(char *buf)
   }
   return INK_MIN_ALIGN;
 }
-#endif // TS_MICRO

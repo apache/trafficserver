@@ -325,7 +325,6 @@ LogFormat::~LogFormat()
   m_valid = false;
 }
 
-#ifndef TS_MICRO
 /*-------------------------------------------------------------------------
   LogFormat::format_from_specification
 
@@ -473,7 +472,6 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
 
   return format;
 }
-#endif // TS_MICRO
 
 /*-------------------------------------------------------------------------
   LogFormat::parse_symbol_string

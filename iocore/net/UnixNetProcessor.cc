@@ -201,7 +201,6 @@ UnixNetProcessor::connect_re_internal(
   // virtual function used to upgrade etype to ET_SSL for SSLNetProcessor.
   upgradeEtype(opt->etype);
 
-#ifndef INK_NO_SOCKS
   bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
 #ifdef SOCKS_WITH_TS
                       && (opt->socks_version != SOCKS_DEFAULT_VERSION ||
@@ -213,7 +212,7 @@ UnixNetProcessor::connect_re_internal(
 #endif
     );
   SocksEntry *socksEntry = NULL;
-#endif
+
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   vc->id = net_next_connection_number();
   vc->submit_time = ink_get_hrtime();
@@ -221,7 +220,7 @@ UnixNetProcessor::connect_re_internal(
   ats_ip_copy(&vc->server_addr, target);
   vc->mutex = cont->mutex;
   Action *result = &vc->action_;
-#ifndef INK_NO_SOCKS
+
   if (using_socks) {
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("Socks", "Using Socks ip: %s\n", ats_ip_nptop(target, buff, sizeof(buff)));
@@ -241,9 +240,6 @@ UnixNetProcessor::connect_re_internal(
     Debug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
     vc->action_ = cont;
   }
-#else
-  vc->action_ = cont;
-#endif /*INK_NO_SOCKS */
 
   if (t->is_event_type(opt->etype)) {
     MUTEX_TRY_LOCK(lock, cont->mutex, t);
@@ -252,21 +248,17 @@ UnixNetProcessor::connect_re_internal(
       if (lock2) {
         int ret;
         ret = vc->connectUp(t);
-#ifndef INK_NO_SOCKS
         if ((using_socks) && (ret == CONNECT_SUCCESS))
           return &socksEntry->action_;
         else
-#endif
           return ACTION_RESULT_DONE;
       }
     }
   }
   eventProcessor.schedule_imm(vc, opt->etype);
-#ifndef INK_NO_SOCKS
   if (using_socks) {
     return &socksEntry->action_;
   } else
-#endif
     return result;
 }
 
@@ -422,7 +414,6 @@ UnixNetProcessor::start(int, size_t)
   change_net_connections_throttle(NULL, RECD_INT, d, NULL);
 
   // Socks
-#ifndef INK_NO_SOCKS
   if (!netProcessor.socks_conf_stuff) {
     socks_conf_stuff = NEW(new socks_conf_struct);
     loadSocksConfiguration(socks_conf_stuff);
@@ -434,7 +425,7 @@ UnixNetProcessor::start(int, size_t)
       socks_conf_stuff = netProcessor.socks_conf_stuff;
     }
   }
-#endif /*INK_NO_SOCKS */
+
   // commented by vijay -  bug 2489945
   /*if (use_accept_thread) // 0
      { NetAccept * na = createNetAccept();

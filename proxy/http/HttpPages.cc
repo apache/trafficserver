@@ -30,7 +30,6 @@
 
 
  ****************************************************************************/
-#ifndef INK_NO_STAT_PAGES
 #include "HttpPages.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
@@ -479,11 +478,3 @@ http_pages_init()
   }
 
 }
-#else //INK_NO_STAT_PAGES
-void
-http_pages_init()
-{
-  return;
-}
-
-#endif

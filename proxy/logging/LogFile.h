@@ -127,11 +127,7 @@ class LogFile:public LogBufferSink
 {
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature,
-#ifndef TS_MICRO
           size_t ascii_buffer_size = 4 * 9216, size_t max_line_size = 9216,
-#else
-          size_t ascii_buffer_size = 1024, size_t max_line_size = 1024,
-#endif
           size_t overspill_report_count = 1000);
   LogFile(const LogFile &);
   ~LogFile();

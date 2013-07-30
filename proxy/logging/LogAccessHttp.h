@@ -26,7 +26,6 @@
 #ifndef LOG_ACCESS_HTTP_H
 #define LOG_ACCESS_HTTP_H
 
-#if !defined (INK_NO_LOG)
 #include "Arena.h"
 #include "HTTP.h"
 #include "LogAccess.h"
@@ -170,4 +169,3 @@ private:
 };
 
 #endif
-#endif //INK_NO_LOG
