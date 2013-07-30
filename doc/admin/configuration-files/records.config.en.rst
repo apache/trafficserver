@@ -199,7 +199,7 @@ A value of ``0`` means no signal will be sent.
 
 .. ts:confvar:: CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
 
-   Factor by which Traffic Server scales the number of threads. The ultiplier is usually the number of available CPU cores. By default
+   Factor by which Traffic Server scales the number of threads. The multiplier is usually the number of available CPU cores. By default
    this is scaling factor is ``1.5``.
 
 .. ts:confvar:: CONFIG proxy.config.exec_thread.limit INT 2
