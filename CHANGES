@@ -2,6 +2,10 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1976] Prevent an invalid httpport argument being passed from
+   traffic_manager to traffic_server
+   Author: Thach Tran <tranngocthachs@gmail.com>
+
   *) [TS-2076] Removed proxy.config.http.accept_encoding_filter_enabled, which
    is obsolete.
 
