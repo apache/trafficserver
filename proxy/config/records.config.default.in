@@ -145,7 +145,6 @@ CONFIG proxy.config.http.send_http11_requests INT 1
    #  1 - Share, with a single global connection pool
    #  2 - Share, with a connection pool per worker thread
 CONFIG proxy.config.http.share_server_sessions INT 2
-CONFIG proxy.config.http.origin_server_pipeline INT 1
    ##########################
    # HTTP referer filtering #
    ##########################

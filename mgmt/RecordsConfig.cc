@@ -426,14 +426,6 @@ RecordElement RecordsConfig[] = {
   //       #
   {RECT_CONFIG, "proxy.config.http.send_http11_requests", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  //       #  origin_server_pipeline
-  //       #
-  //       #  0      - no keepalive
-  //       #  n >= 1 - max pipeline window
-  //       #           (1 is the same HTTP/1.0 keepalive)
-  //       #
-  {RECT_CONFIG, "proxy.config.http.origin_server_pipeline", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.share_server_sessions", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.record_heartbeat", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}

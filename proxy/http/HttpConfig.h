@@ -668,7 +668,6 @@ public:
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
   MgmtByte session_auth_cache_keep_alive_enabled;
-  MgmtInt origin_server_pipeline;
   MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
 
@@ -892,7 +891,6 @@ HttpConfigParams::HttpConfigParams()
     url_expansions(NULL),
     num_url_expansions(0),
     session_auth_cache_keep_alive_enabled(1),
-    origin_server_pipeline(1),
     transaction_active_timeout_in(900),
     accept_no_activity_timeout(120),
     parent_connect_attempts(4),

@@ -3080,7 +3080,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   case VC_EVENT_WRITE_COMPLETE:
     c->write_success = true;
     t_state.client_info.abort = HttpTransact::DIDNOT_ABORT;
-    if (t_state.client_info.keep_alive == HTTP_KEEPALIVE || t_state.client_info.keep_alive == HTTP_PIPELINE) {
+    if (t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
       if (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_session->get_bound_ss()) {
         // successful keep-alive
         close_connection = false;

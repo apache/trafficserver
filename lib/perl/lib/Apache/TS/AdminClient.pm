@@ -483,7 +483,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.number_of_redirections
  proxy.config.http.origin_max_connections
  proxy.config.http.origin_min_keep_alive_connections
- proxy.config.http.origin_server_pipeline
  proxy.config.http.parent_proxies
  proxy.config.http.parent_proxy.connect_attempts_timeout
  proxy.config.http.parent_proxy.fail_threshold
