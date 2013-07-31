@@ -1809,7 +1809,7 @@ Lcallreturn:
 
 #if TS_USE_INTERIM_CACHE == 1
 int
-InterimCacheVol::aggWrite(int event, void *e)
+InterimCacheVol::aggWrite(int /* event ATS_UNUSED */, void * /* ATS_UNUSED e */)
 {
   ink_assert(!is_io_in_progress());
   MigrateToInterimCache *mts;

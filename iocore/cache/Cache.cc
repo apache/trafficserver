@@ -2076,7 +2076,8 @@ static void unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay) {
 #endif
 
 int
-CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */) {
+CacheVC::handleReadDone(int event, Event *e)
+{
   cancel_trigger();
   ink_assert(this_ethread() == mutex->thread_holding);
 
@@ -2181,6 +2182,8 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */) {
       }
       mts = NULL;
     }
+#else
+    (void)e; // Avoid compiler warnings
 #endif
       bool http_copy_hdr = false;
 #ifdef HTTP_CACHE
