@@ -197,8 +197,6 @@ private:
   size_t m_buf_align;           // the buffer alignment
   size_t m_write_align;         // the write alignment mask
 
-  volatile LB_State m_state;    // buffer state
-
   int m_max_entries;            // max number of entries allowed
   long m_expiration_time;       // buffer expiration time
 
@@ -207,6 +205,7 @@ private:
 
   uint32_t m_id;                // unique buffer id (for debugging)
 public:
+  volatile LB_State m_state;    // buffer state
   volatile int m_references;    // oustanding checkout_write references.
 private:
 

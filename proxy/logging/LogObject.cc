@@ -44,7 +44,8 @@ LogBufferManager::flush_buffers(LogBufferSink *sink) {
   SList(LogBuffer, write_link) q(write_list.popall()), new_q;
   LogBuffer *b = NULL;
   while ((b = q.pop())) {
-    if (b->m_references) {  // Still has outstanding references.
+    if (b->m_references || b->m_state.s.num_writers) {
+      // Still has outstanding references.
       write_list.push(b);
     } else if (_num_flush_buffers > FLUSH_ARRAY_SIZE) {
       delete b;
@@ -433,6 +434,14 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       head_p old_h;
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
+        if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
+          ink_atomic_increment(&buffer->m_references, -1);
+
+          // another thread should be taking care of creating a new
+          // buffer, so delete new_buffer and try again
+          delete new_buffer;
+          break;
+        }
         head_p tmp_h;
         SET_FREELIST_POINTER_VERSION(tmp_h, new_buffer, 0);
 #if TS_HAS_128BIT_CAS
@@ -441,14 +450,13 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
        result = ink_atomic_cas((int64_t *) &m_log_buffer.data, old_h.data, tmp_h.data);
 #endif
       } while (!result);
-      if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h))
+      if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h)) {
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
 
-      if (result_code == LogBuffer::LB_FULL_NO_WRITERS) {
-        // there are no writers, move the old buffer to the flush list
         Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
         m_buffer_manager.add_to_flush_queue(buffer);
         ink_cond_signal(&Log::flush_cond);
+
       }
       decremented = true;
       break;
@@ -604,15 +612,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     ink_strlcpy(&(*buffer)[offset], text_entry, bytes_needed);
   }
 
-  LogBuffer::LB_ResultCode result_code = buffer->checkin_write(offset);
-
-  if (result_code == LogBuffer::LB_ALL_WRITERS_DONE) {
-    // all checkins completed, put this buffer in the flush list
-    Debug("log-logbuffer", "adding buffer %d to flush list after checkin", buffer->get_id());
-
-    m_buffer_manager.add_to_flush_queue(buffer);
-//    ink_cond_signal (&Log::flush_cond);
-  }
+  buffer->checkin_write(offset);
 
   LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_stat);
 
