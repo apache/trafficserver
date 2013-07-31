@@ -1,6 +1,3 @@
-storage.config
-**************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,23 +15,27 @@ storage.config
   specific language governing permissions and limitations
   under the License.
 
-The ``storage.config`` file lists all the files, directories, and/or
+==============
+storage.config
+==============
+
+.. configfile:: storage.config
+
+The :file:`storage.config` file lists all the files, directories, and/or
 hard disk partitions that make up the Traffic Server cache. After you
-modify the ``storage.config`` file, you must restart Traffic Server.
+modify the :file:`storage.config` file, you must restart Traffic Server.
 
 Format 
 ======
 
-The format of the ``storage.config`` file is:
-
-::
+The format of the :file:`storage.config` file is::
 
     pathname size volume=volume_number
 
 where ``pathname`` is the name of a partition, directory or file, ``size``
 is the size of the named partition, directory or file (in bytes), and
-``volume`` is the volume number that is used in :doc:`volume.config.en`
-and :doc:`hosting.config.en`. You must specify a size for directories or
+``volume`` is the volume number that is used in :file:`volume.config`
+and :file:`hosting.config`. You must specify a size for directories or
 files; size is optional for raw partitions. ``volume`` is optional.
 
 You can use any partition of any size. For best performance:
@@ -46,7 +47,7 @@ You can use any partition of any size. For best performance:
    split out SSD's or RAM drives into their own volume.
 
 Specify pathnames according to your operating system requirements. See
-the following examples. In the ``storage.config`` file, a formatted or
+the following examples. In the :file:`storage.config` file, a formatted or
 raw disk must be at least 128 MB.
 
 When using raw disk or partitions, you should make sure the admin user,
@@ -60,39 +61,31 @@ Examples
 ========
 
 The following basic example shows 64 MB of cache storage in the
-``/big_dir`` directory:
-
-::
+``/big_dir`` directory::
 
     /big_dir 67108864
 
 You can use the ``.`` symbol for the current directory. Here is an
-example for 64 MB of cache storage in the current directory:
-
-::
+example for 64 MB of cache storage in the current directory::
 
     . 67108864
 
 Solaris Example
 ---------------
 
-The following example is for the Solaris operating system:
-
-::
+The following example is for the Solaris operating system::
 
     /dev/rdsk/c0t0d0s5
     /dev/rdsk/c0t0d1s5
 
-**Note:** Size is optional. If not specified, the entire partition is
-used.
+
+.. note:: Size is optional. If not specified, the entire partition is used.
 
 Linux Example
 -------------
 
 The following example will use an entire raw disk in the Linux operating
-system:
-
-::
+system:::
 
     /dev/sde volume=1
     /dev/sdf volume=2
@@ -100,9 +93,7 @@ system:
 In order to make sure ``traffic_server`` will have access to this disk
 you can use ``udev`` to persistently set the right permissions. The
 following rules are targeted for an Ubuntu system, and stored in
-``/etc/udev/rules.d/51-cache-disk.rules``:
-
-::
+``/etc/udev/rules.d/51-cache-disk.rules``::
 
     # Assign /dev/sde and /dev/sdf to the www group
     # make the assignment final, no later changes allowed to the group!
@@ -115,21 +106,15 @@ Starting with 5.1 FreeBSD dropped support for explicit raw devices. All
 devices on FreeBSD can be accessed raw now.
 
 The following example will use an entire raw disk in the FreeBSD
-operating system:
+operating system::
 
-::
-
-    :::text
     /dev/ada1
     /dev/ada2
 
 In order to make sure ``traffic_server`` will have access to this disk
 you can use ``devfs`` to persistently set the right permissions. The
-following rules are stored in ``/etc/devfs.conf``:
+following rules are stored in ``/etc/devfs.conf``::
 
-::
-
-    :::text
     # Assign /dev/ada1 and /dev/ada2 to the tserver user
     own    ada[12]  tserver:tserver
 

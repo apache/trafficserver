@@ -1,6 +1,3 @@
-splitdns.config
-***************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,8 +15,12 @@ splitdns.config
   specific language governing permissions and limitations
   under the License.
 
+===============
+splitdns.config
+===============
 
-The ``splitdns.config`` file enables you to specify the DNS server that
+
+The :file:`splitdns.config` file enables you to specify the DNS server that
 Traffic Server should use for resolving hosts under specific conditions.
 For more information, refer to `Configuring DNS Server Selection (Split
 DNS) <../security-options#SplitDNS>`_.
@@ -39,8 +40,8 @@ server specification:
 -  A search list specifying the domain search order when multiple
    domains are specified
 
-**IMPORTANT:** After you modify the ``splitdns.config`` file, navigate
-to the Traffic Server\ ``bin`` directory and run the ``traffic_line -x``
+After you modify the :file:`splitdns.config` file,
+run the :option:`traffic_line -x`
 command to apply the changes. When you apply changes to a node in a
 cluster, Traffic Server automatically applies the changes to all other
 nodes in the cluster.
@@ -48,7 +49,7 @@ nodes in the cluster.
 Format
 ======
 
-Each line in the ``splitdns.config`` file uses one of the following
+Each line in the :file:`splitdns.config` file uses one of the following
 formats:
 
 ::

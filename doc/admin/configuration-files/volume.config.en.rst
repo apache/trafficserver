@@ -1,6 +1,3 @@
-volume.config
-*************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,20 +15,25 @@ volume.config
   specific language governing permissions and limitations
   under the License.
 
-.. toctree::                                                                                                                                                                                      
-   :maxdepth: 2
+=============
+volume.config
+=============
 
-The ``volume.config`` file enables you to manage your cache space more
+.. configfile:: volume.config
+
+The :file:`volume.config` file enables you to manage your cache space more
 efficiently and restrict disk usage by creating cache volumes of
 different sizes for specific protocols. You can further configure these
 volumes to store data from certain origin servers and/or domains in the
-`hosting.config <hosting.config>`_ file.
+:file:`hosting.config` file.
 
-**IMPORTANT:** The volume configuration must be the same on all nodes in
-a cluster. You must stop Traffic Server before you change the cache
-volume size and protocol assignment. For step-by-step instructions about
-partitioning the cache, refer to `Partitioning the
-Cache <../configuring-cache#PartitioningCache>`_.
+.. important::
+
+    The volume configuration must be the same on all nodes in
+    a cluster. You must stop Traffic Server before you change the cache
+    volume size and protocol assignment. For step-by-step instructions about
+    partitioning the cache, refer to `Partitioning the
+    Cache <../configuring-cache#PartitioningCache>`_.
 
 Format
 ======
@@ -63,9 +65,7 @@ Examples
 ========
 
 The following example partitions the cache evenly between HTTP and HTTPS
-requests:
-
-::
+requests::
 
     volume=1 scheme=http size=50%
     volume=2 scheme=https size=50%

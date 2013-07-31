@@ -1,6 +1,3 @@
-records.config
-**************
-
 ..
    Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -9,9 +6,9 @@ records.config
    to you under the Apache License, Version 2.0 (the
    "License"); you may not use this file except in compliance
    with the License.  You may obtain a copy of the License at
-   
+
    http://www.apache.org/licenses/LICENSE-2.0
-   
+
    Unless required by applicable law or agreed to in writing,
    software distributed under the License is distributed on an
    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,12 +16,18 @@ records.config
    specific language governing permissions and limitations
    under the License.
 
+==============
+records.config
+==============
+
+.. configfile:: records.config
+
 The :file:`records.config` file is a list of configurable variables used by
 the Traffic Server software. Many of the variables in the
 :file:`records.config` file are set automatically when you set configuration
 options in Traffic Line or Traffic Shell. After you modify the
-:file:`records.config` file, navigate to the Traffic Server\ ``bin``
-directory and run the command ``traffic_line -x`` to apply the changes.
+:file:`records.config` file,
+run the command :option:`traffic_line -x` to apply the changes.
 When you apply changes to one node in a cluster, Traffic Server
 automatically applies the changes to all other nodes in the cluster.
 
@@ -121,21 +124,17 @@ System Variables
 
    The location of the Traffic Server ``bin`` directory.
 
-
 .. ts:confvar:: CONFIG proxy.config.proxy_binary STRING traffic_server
 
    The name of the executable that runs the ``traffic_server`` process.
-
 
 .. ts:confvar:: CONFIG proxy.config.proxy_binary_opts STRING -M
 
    The command-line options for starting Traffic Server.
 
-
 .. ts:confvar:: CONFIG proxy.config.manager_binary STRING traffic_manager
 
    The name of the executable that runs the ``traffic_manager`` process.
-
 
 .. ts:confvar:: CONFIG proxy.config.cli_binary STRING traffic_line
 
@@ -176,7 +175,6 @@ otherwise, Traffic Server uses the Traffic Server user account name as the defau
    The signal sent to ``traffic_cop``'s managed processes to stop them.
 
 A value of ``0`` means no signal will be sent.
-
 
 .. ts:confvar:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 10240
 
@@ -275,7 +273,7 @@ Value Effect
 .. ts:confvar:: CONFIG proxy.config.cluster.rsport INT 8088
 
    The reliable service port. The reliable service port is used to send configuration information between the nodes in a cluster. All nodes
-   in a cluster must use the same reliable service port. 
+   in a cluster must use the same reliable service port.
 
 .. ts:confvar:: CONFIG proxy.config.cluster.threads INT 1
 
@@ -345,7 +343,7 @@ This is a list, separated by space or comma, of :index:`port descriptors`. Each 
 Quick reference chart.
 
 =========== =============== ========================================
-Name        Note            Definition 
+Name        Note            Definition
 =========== =============== ========================================
 *number*    **Required**    The local port.
 ipv4        **Default**     Bind to IPv4 address family.
@@ -449,7 +447,7 @@ Supports both wildcards ('\*') and ranges ("0-1023").
 .. ts:confvar:: CONFIG proxy.config.http.insert_request_via_str INT 1
    :reloadable:
 
-   Set how the ``Via`` field is handled on a request to the origin server.   
+   Set how the ``Via`` field is handled on a request to the origin server.
 
 ===== ============================================
 Value Effect
@@ -466,13 +464,13 @@ Value Effect
 
    Set how the ``Via`` field is handled on the response to the client.
 
-===== ======================   
+===== ======================
 Value Effect
-===== ======================   
+===== ======================
 0     no extra information is added to the string.
 1     all extra information is added.
 2     some extra information is added.
-===== ======================   
+===== ======================
 
 .. ts:confvar:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:
@@ -604,7 +602,7 @@ Parent Proxy Configuration
    :reloadable:
 
    The total number of connection attempts allowed to a parent cache before Traffic Server bypasses the parent or fails the request
-   (depending on the ``go_direct`` option in the ``bypass.config`` file).
+   (depending on the ``go_direct`` option in the :file:`bypass.config` file).
 
 .. ts:confvar:: CONFIG proxy.config.http.parent_proxy.per_parent_connect_attempts INT 2
    :reloadable:
@@ -890,7 +888,7 @@ Cache Control
    :reloadable:
 
    Enables (``1``) or disables (``0``) caching of URLs that look dynamic, i.e.: URLs that end in *``.asp``* or contain a question
-   mark (*``?``*), a semicolon (*``;``*), or *``cgi``*. For a full list, please refer to 
+   mark (*``?``*), a semicolon (*``;``*), or *``cgi``*. For a full list, please refer to
    `HttpTransact::url_looks_dynamic </link/to/doxygen>`_
 
 .. ts:confvar:: CONFIG proxy.config.http.cache.enable_default_vary_headers INT 0
@@ -1092,7 +1090,7 @@ hostname to ``host_x.y.com``.
 .. ts:confvar:: CONFIG proxy.config.dns.splitDNS.enabled INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) DNS server selection. When enabled, Traffic Server refers to the ``splitdns.config`` file for
+   Enables (``1``) or disables (``0``) DNS server selection. When enabled, Traffic Server refers to the :file:`splitdns.config` file for
    the selection specification. Refer to `Configuring DNS Server Selection (Split DNS) <../security-options#ConfiguringDNSServerSelectionSplit>`_.
 
 .. ts:confvar:: CONFIG proxy.config.dns.url_expansions STRING NULL
@@ -1193,7 +1191,7 @@ Logging Configuration
 .. ts:confvar:: CONFIG proxy.config.log.max_space_mb_for_logs INT 2000
    :reloadable:
 
-   The amount of space allocated to the logging directory (in MB). 
+   The amount of space allocated to the logging directory (in MB).
    **Note:** All files in the logging directory contribute to the space used, even if they are not log files. In collation client mode, if
    there is no local disk logging, or max_space_mb_for_orphan_logs is set to a higher value than max_space_mb_for_logs, TS will
    take proxy.config.log.max_space_mb_for_orphan_logs for maximum allowed log space.
@@ -1345,7 +1343,7 @@ Logging Configuration
    :reloadable:
 
    When enabled (``1``), configures Traffic Server to create a separate log file for HTTP transactions for each origin server listed in the
-   ``log_hosts.config`` file. Refer to `HTTP Host Log Splitting <../working-log-files#HTTPHostLogSplitting>`_.
+   :file:`log_hosts.config` file. Refer to `HTTP Host Log Splitting <../working-log-files#HTTPHostLogSplitting>`_.
 
 .. ts:confvar:: LOCAL proxy.local.log.collation_mode INT 0
    :reloadable:
@@ -1369,7 +1367,7 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 
 .. ts:confvar:: proxy.confg.log.collation_host STRING NULL
 
-   The hostname of the log collation server. 
+   The hostname of the log collation server.
 
 .. ts:confvar:: CONFIG proxy.config.log.collation_port INT 8085
    :reloadable:
@@ -1444,8 +1442,8 @@ Diagnostic Logging Configuration
 ================================
 
 .. ts:confvar:: CONFIG proxy.config.diags.output.status STRING
-.. ts:confvar:: CONFIG proxy.config.diags.output.warning STRING 
-.. ts:confvar:: CONFIG proxy.config.diags.output.emergency STRING 
+.. ts:confvar:: CONFIG proxy.config.diags.output.warning STRING
+.. ts:confvar:: CONFIG proxy.config.diags.output.emergency STRING
 
    control where Traffic Server should log diagnostic output. Messages at diagnostic level can be directed to any combination of diagnostic
    destinations. Valid diagnostic message destinations are:::
@@ -1487,7 +1485,7 @@ URL Remap Rules
 .. ts:confvar:: CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
    :reloadable:
 
-   Sets the PAC port so that PAC requests made to the Traffic Server 
+   Sets the PAC port so that PAC requests made to the Traffic Server
    proxy service port are redirected this port. ``-1`` is the default
    setting that sets the PAC port to the autoconfiguration port (the
    default autoconfiguration port is 8083). This variable can be used
@@ -1504,7 +1502,7 @@ URL Remap Rules
 
    Set this variable to ``1`` if you want Traffic Server to serve
    requests only from origin servers listed in the mapping rules of the
-   ``remap.config`` file. If a request does not match, then the browser
+   :file:`remap.config` file. If a request does not match, then the browser
    will receive an error.
 
 .. ts:confvar:: CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
@@ -1758,5 +1756,3 @@ Sockets
 .. ts:confvar:: CONFIG proxy.config.net.sock_mss_in INT 0
 
    Same as the command line option ``--accept_mss`` that sets the MSS for all incoming requests.
-
-

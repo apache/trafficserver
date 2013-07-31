@@ -1,6 +1,3 @@
-logs_xml.config
-***************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -8,9 +5,9 @@ logs_xml.config
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,15 +15,20 @@ logs_xml.config
   specific language governing permissions and limitations
   under the License.
 
+===============
+logs_xml.config
+===============
 
-The ``logs_xml.config`` file defines the custom log file formats,
+.. configfile:: logs_xml.config
+
+The :file:`logs_xml.config` file defines the custom log file formats,
 filters, and processing options. The format of this file is modeled
-after **XML**, the Extensible Markup Language.
+after XML, the Extensible Markup Language.
 
 Format
 ======
 
-The ``logs_xml.config`` file contains the specifications below:
+The :file:`logs_xml.config` file contains the specifications below:
 
 -  ``LogFormat`` specifies the fields to be gathered from each protocol
    event access.
@@ -36,13 +38,13 @@ The ``logs_xml.config`` file contains the specifications below:
 -  ``LogObject`` specifies an object that contains a particular format,
    a local filename, filters, and collation servers.
 
-The ``logs_xml.config`` file ignores extra white space, blank lines, and
+The :file:`logs_xml.config` file ignores extra white space, blank lines, and
 all comments.
 
 LogFormat
 =========
 
-The following list shows **``LogFormat``** specifications.
+The following list shows ``LogFormat`` specifications.
 
 *``&lt;Name = "valid_format_name"/&gt;``* {#LogsXMLFormatName}
     Required
@@ -61,7 +63,7 @@ The following list shows **``LogFormat``** specifications.
     The specified field can be one of the following types:
 
     Simple. For example: ``%<cqu>``
-     A field within a container, such as an HTTP header or a statistic.
+    A field within a container, such as an HTTP header or a statistic.
     Fields of this type have the syntax:
 
     ::
@@ -71,8 +73,10 @@ The following list shows **``LogFormat``** specifications.
     Aggregates, such as ``COUNT``, ``SUM``, ``AVG``, ``FIRST``,
     ``LAST``. Fields of this type have the syntax: ``%<operator (``
     *``field``* ``)>``
-     **Note:** You cannot create a format specification that contains
-    both aggregate operators and regular fields.
+
+.. note::
+
+    You cannot create a format specification that contains both aggregate operators and regular fields.
 
 *``&lt;Interval = "aggregate_interval_secs"/&gt;``* {#LogsXMLInterval}
     Optional
@@ -89,7 +93,7 @@ The following list shows **``LogFormat``** specifications.
     -  LAST
 
 LogFilters
-----------
+==========
 
 The following list shows the ``LogFilter`` specifications.
 
@@ -102,28 +106,30 @@ The following list shows the ``LogFilter`` specifications.
     Required
     This field contains the following elements:
 
-    **``valid_log_field``** - the field that will be compared against
+    ``valid_log_field`` - the field that will be compared against
     the given value. For more information, refer to `Logging Format
     Cross-Reference <../event-logging-formats#LoggingFormatCrossReference>`_.
 
-    **``valid_operator_field``** - any one of the following: ``MATCH``,
+    ``valid_operator_field`` - any one of the following: ``MATCH``,
     ``CASE_INSENSITIVE_MATCH``, ``CONTAIN``,
     ``CASE_INSENSITIVE_CONTAIN``.
 
     -  ``MATCH`` is true if the field and value are identical
        (case-sensitive).
     -  ``CASE_INSENSITIVE_MATCH`` is similar to ``MATCH``, except that
-       it is case-**insensitive**.
+       it is case-insensitive.
     -  ``CONTAIN`` is true if the field contains the value (the value is
        a substring of the field).
     -  ``CASE_INSENSITIVE_CONTAIN`` is a case-insensitive version of
        ``CONTAIN``.
 
-    **``valid_comparison_value``** - any string or integer matching the
+    ``valid_comparison_value`` - any string or integer matching the
     field type. For integer values, all of the operators are equivalent
     and mean that the field must be equal to the specified value.
 
-    **Note:** There are no negative comparison operators. If you want to
+.. note::
+
+    There are no negative comparison operators. If you want to
     specify a negative condition, then use the ``Action`` field to
     ``REJECT`` the record.
 
@@ -133,7 +139,7 @@ The following list shows the ``LogFilter`` specifications.
     that satisfy the filter condition.
 
 LogObject
----------
+=========
 
 The following list shows the ``LogObject`` specifications.
 
@@ -269,7 +275,7 @@ The following list shows the ``LogObject`` specifications.
 Examples
 ========
 
-The following is an example of a **``LogFormat``** specification that
+The following is an example of a ``LogFormat`` specification that
 collects information using three common fields:
 
 ::
@@ -279,7 +285,7 @@ collects information using three common fields:
              <Format = "%<chi> : %<cqu> : %<pssc>"/>
          </LogFormat>
 
-The following is an example of a **``LogFormat``** specification that
+The following is an example of a ``LogFormat`` specification that
 uses aggregate operators:
 
 ::
@@ -290,7 +296,7 @@ uses aggregate operators:
              <Interval = "10"/>
          </LogFormat>
 
-The following is an example of a **``LogFilter``** that will cause only
+The following is an example of a ``LogFilter`` that will cause only
 ``REFRESH_HIT`` entries to be logged:
 
 ::
@@ -301,9 +307,11 @@ The following is an example of a **``LogFilter``** that will cause only
               <Condition = "%<pssc> MATCH REFRESH_HIT"/>
          </LogFilter>
 
-**Note:** When specifying the field in the filter condition, you can
-omit the\ ``%<>``. This means that the filter below is equivalent to the
-example directly above:
+.. note:
+
+    When specifying the field in the filter condition, you can
+    omit the\ ``%<>``. This means that the filter below is equivalent to the
+    example directly above:
 
 ::
 
@@ -313,7 +321,7 @@ example directly above:
              <Condition = "pssc MATCH REFRESH_HIT"/>
          </LogFilter>
 
-The following is an example of a **``LogObject``** specification that
+The following is an example of a ``LogObject`` specification that
 creates a local log file for the minimal format defined earlier. The log
 filename will be ``minimal.log`` because this is an ASCII log file (the
 default).
@@ -325,7 +333,7 @@ default).
              <Filename = "minimal"/>
          </LogObject>
 
-The following is an example of a **``LogObject``** specification that
+The following is an example of a ``LogObject`` specification that
 includes only HTTP requests served by hosts in the domain
 ``company.com`` or by the specific server ``server.somewhere.com``. Log
 entries are sent to port 4000 of the collation host ``logs.company.com``
@@ -347,7 +355,7 @@ WELF
 Traffic Server supports WELF (WebTrends Enhanced Log Format) so you can
 analyze Traffic Server log files with WebTrends reporting tools. A
 predefined ``<LogFormat>`` that is compatible with WELF is provided in
-the ``logs_xml.config`` file (shown below). To create a WELF format log
+the :file:`logs_xml.config` file (shown below). To create a WELF format log
 file, create a ``<LogObject>`` that uses this predefined format.
 
 ::
@@ -360,4 +368,3 @@ file, create a ``<LogObject>`` that uses this predefined format.
                 arg=\"%<cqup>\" result=%<pssc> ref=\"%<{Referer}cqh>\"
                 agent=\"%<{user-agent}cqh>\" cache=%<crc>"/>
          </LogFormat>
-

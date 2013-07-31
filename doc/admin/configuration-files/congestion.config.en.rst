@@ -1,6 +1,3 @@
-congestion.config
-*****************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,16 +15,21 @@ congestion.config
   specific language governing permissions and limitations
   under the License.
 
+=================
+congestion.config
+=================
 
-The ``congestion.config`` file enables you to configure Traffic Server
+.. configfile: congestion.config
+
+The :file:`congestion.config` file enables you to configure Traffic Server
 to stop forwarding HTTP requests to origin servers when they become
 congested, and then send the client a message to retry the congested
-origin server later. After you modify the ``congestion.control`` file,
+origin server later. After you modify the :file:`congestion.config` file,
 navigate to the Traffic Server bin directory; then run the
-``traffic_line -x`` command to apply changes. When you apply the changes
+:option:`traffic_line -x` command to apply changes. When you apply the changes
 to a node in a cluster, Traffic Server automatically applies the changes
 to all other nodes in the cluster. Traffic Server uses the
-``congestion.config`` file only if you enable the `Congestion
+:file:`congestion.config` file only if you enable the `Congestion
 Control <http#UsingCongestionControl>`_ option.
 
 You can create rules in the congestion.config file to specify:
@@ -43,11 +45,9 @@ You can create rules in the congestion.config file to specify:
 Format
 ======
 
-Each line in ``congestion.config`` must follow the format below. Traffic
+Each line in :file:`congestion.config` must follow the format below. Traffic
 Server applies the rules in the order listed, starting at the top of the
-file. Traffic Server recognizes three space-delimited tags:
-
-::
+file. Traffic Server recognizes three space-delimited tags::
 
     primary_destination=value secondary_specifier=value action=value
 
@@ -136,7 +136,7 @@ The following list shows the possible tags and their allowed values.
     The error page sent to the client when a server is congested. You
     must enclose the value in quotes;
 
-*``congestion_scheme``* {#congestion_scheme}
+*:file:`congestion.config`* {#congestion_scheme}
     Default: ``"per_ip"``
     Specifies if Traffic Server applies the rule on a per-host
     (``"per_host"``) or per-IP basis (``"per_ip"``). You must enclose
@@ -152,7 +152,7 @@ The following list shows the possible tags and their allowed values.
 Examples
 ========
 
-The following ``congestion.config`` rule configures Traffic Server to
+The following :file:`congestion.config` rule configures Traffic Server to
 stop forwarding requests to the server ``www.host.com`` on port 80 (HTTP
 traffic) if the server is congested, according to the timeouts
 specified. Traffic Server uses the default tag values because no tag has
@@ -174,17 +174,17 @@ variables at the end of :file:`records.config` as follows:
     CONFIG proxy.config.http.congestion_control.default.tag INT|STRING value
 
 where tag is one of the tags described in the list under
-`congestion.config <#congestion.config>`_ and value is the value you
+:file:`congestion.config` and value is the value you
 want to use.
 
-For example:
-
-::
+For example::
 
     CONFIG proxy.config.http.congestion_control.default.congestion_scheme STRING per_host
 
-**IMPORTANT:** Rules in the congestion.config file override the
-following variables in the records.config file:
+.. important::
+
+    Rules in the :file:`congestion.config` file override the
+    following variables in the :file:`records.config` file:
 
 ::
 

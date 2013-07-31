@@ -1,6 +1,3 @@
-ssl_multicert.config
-********************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,7 +15,13 @@ ssl_multicert.config
   specific language governing permissions and limitations
   under the License.
 
-The ``ssl_multicert.config`` file lets you configure Traffic Server to
+====================
+ssl_multicert.config
+====================
+
+.. configfile:: ssl_multicert.config
+
+The :file:`ssl_multicert.config` file lets you configure Traffic Server to
 use multiple SSL server certificates with the SSL termination option. If
 you have a Traffic Server system with more than one IP address assigned
 to it, then you can assign a different SSL certificate to be served when
@@ -27,21 +30,21 @@ a client requests a particular IP address.
 Format
 ======
 
-The format of the ``ssl_multicert.config`` file is:
+The format of the :file:`ssl_multicert.config` file is:
 
 ::
 
     dest_ip=ipaddress ssl_cert_name=cert_name ssl_key_name=key_name
 
-where *``ipaddress``* is an IP address assigned to Traffic Server ,
-*``ssl_cert_name``* is the filename of the Traffic Server SSL server
-certificate, *``ssl_key_name``* is the filename of the Traffic Server
+where ``ipaddress`` is an IP address assigned to Traffic Server ,
+``ssl_cert_name`` is the filename of the Traffic Server SSL server
+certificate, ``ssl_key_name`` is the filename of the Traffic Server
 SSL private key. If the private key is located in the certificate file,
 then you do not need to specify the name of the private key.
-Additionally *``ssl_ca_name``* can be used to specify the location of a
+Additionally ``ssl_ca_name`` can be used to specify the location of a
 Certification Authorithy change in case that differs from what is
-specified under `:file:`records.config` <../records.config>`_'s
-```proxy.config.ssl.CA.cert.filename`` <../records.config#proxy.config.ssl.CA.cert.filename>`_.
+specified under the :file:`records.config`
+``proxy.config.ssl.CA.cert.filename`` value.
 
 Traffic Server will try to find the files specified in
 *``ssl_cert_name``* relative to

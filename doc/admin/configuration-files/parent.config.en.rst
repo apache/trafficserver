@@ -1,6 +1,3 @@
-parent.config
-*************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,19 +15,24 @@ parent.config
   specific language governing permissions and limitations
   under the License.
 
-The ``parent.config`` file identifies the parent proxies used in an
+=============
+parent.config
+=============
+
+.. configfile:: parent.config
+
+The :file:`parent.config` file identifies the parent proxies used in an
 cache hierarchy. Use this file to perform the following configuration:
 
 -  Set up parent cache hierarchies, with multiple parents and parent
    failover
 -  Configure selected URL requests to bypass parent proxies
 
-Traffic Server uses the ``parent.config`` file only when the parent
+Traffic Server uses the :file:`parent.config` file only when the parent
 caching option is enabled (refer to `Configuring Traffic Server to Use a
 Parent Cache <../hierachical-caching>`_).
 
-**IMPORTANT:** After you modify the ``parent.config`` file, navigate to
-the Traffic Server\ ``bin`` directory and run the ``traffic_line -x``
+After you modify the :file:`parent.config` file, run the :option:`traffic_line -x`
 command to apply your changes. When you apply the changes to one node in
 a cluster, Traffic Server automatically applies the changes to all other
 nodes in the cluster.
@@ -38,10 +40,8 @@ nodes in the cluster.
 Format
 ======
 
-Each line in the ``parent.config`` file must contain a parent caching
+Each line in the :file:`parent.config` file must contain a parent caching
 rule. Traffic Server recognizes three space-delimited tags:
-
-::
 
     primary_destination=value secondary_specifier=value  action=value
 
@@ -61,7 +61,7 @@ allowed values.
 *``url_regex``* {#url_regex}
     A regular expression (regex) to be found in a URL
 
-The secondary specifiers are optional in the ``parent.config`` file. The
+The secondary specifiers are optional in the :file:`parent.config` file. The
 following list shows the possible secondary specifiers and their allowed
 values.
 
@@ -124,9 +124,7 @@ The following rule configures a parent cache hierarchy consisting of
 Traffic Server (which is the child) and two parents, ``p1.x.com`` and
 ``p2.x.com``. Traffic Server forwards the requests it cannot serve to
 the parent servers ``p1.x.com`` and ``p2.x.com`` in a round-robin
-fashion because:
-
-::
+fashion::
 
     round_robin=true
     dest_domain=. method=get parent="p1.x.com:8080; p2.y.com:8080" round_robin=true
@@ -136,6 +134,6 @@ containing the regular expression ``politics`` and the path
 ``/viewpoint`` directly to the origin server (bypassing any parent
 hierarchies): ``url_regex=politics prefix=/viewpoint go_direct=true``
 
-Every line in the ``parent.config`` file must contain either a
+Every line in the :file:`parent.config` file must contain either a
 ``parent=`` or ``go_direct=`` directive.
 

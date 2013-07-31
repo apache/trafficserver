@@ -1,6 +1,3 @@
-remap.config
-************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,12 +15,17 @@ remap.config
   specific language governing permissions and limitations
   under the License.
 
+============
+remap.config
+============
+
+.. configfile:: remap.config
 
 .. toctree::                                                                                                                                                                                      
    :maxdepth: 2
 
 
-The ``remap.config`` file contains mapping rules that Traffic Server
+The :file:`remap.config` file contains mapping rules that Traffic Server
 uses to perform the following actions:
 
 -  Map URL requests for a specific origin server to the appropriate
@@ -39,15 +41,15 @@ Refer to `Reverse Proxy and HTTP
 Redirects <../reverse-proxy-http-redirects>`_, for information about
 redirecting HTTP requests and using reverse proxy.
 
-**IMPORTANT:** After you modify the ``remap.config`` run the
-``traffic_line -x`` command to apply the changes. When you apply the
+After you modify the :file:`remap.config` run the
+:option:`traffic_line -x` to apply the changes. When you apply the
 changes to one node in a cluster, Traffic Server automatically applies
 the changes to all other nodes in the cluster.
 
 Format
 ======
 
-Each line in the ``remap.config`` file must contain a mapping rule.
+Each line in the :file:`remap.config` file must contain a mapping rule.
 Traffic Server recognizes three space-delimited fields: ``type``,
 ``target``, and ``replacement``. The following list describes the format
 of each field.
@@ -79,7 +81,6 @@ of each field.
 
     ::
 
-        :::text
         scheme://host:port/path_prefix
 
     where *``scheme``* is ``http``.
@@ -108,7 +109,7 @@ Examples
 ========
 
 The following section shows example mapping rules in the
-``remap.config`` file.
+:file:`remap.config` file.
 
 Reverse Proxy Mapping Rules
 ===========================
@@ -135,7 +136,6 @@ the target:
 
 ::
 
-    :::text
     map http://www.y.com/marketing/ http://marketing.y.com/
     reverse_map http://marketing.y.com/ http://www.y.com/marketing/
     map http://www.y.com/sales/ http://sales.y.com/
@@ -160,7 +160,6 @@ The following example shows that the order of the rules matters:
 
 ::
 
-    :::text
     map http://www.g.com/ http://external.g.com/
     reverse_map http://external.g.com/ http://www.g.com/
     map http://www.g.com/stuff/ http://stuff.g.com/
@@ -174,15 +173,12 @@ Client Request \| Translated Request
 
 In the above examples, the second rule is never applied because all URLs
 that match the second rule also match the first rule. The first rule
-takes precedence because it appears earlier in the ``remap.config``
+takes precedence because it appears earlier in the :file:`remap.config`
 file.
 
 The following example shows a mapping with a path prefix specified in
-the target and replacement:
+the target and replacement::
 
-::
-
-    :::text
     map http://www.h.com/a/b/ http://server.h.com/customers/x/y
     reverse_map http://server.h.com/customers/x/y/ http://www.h.com/a/b/
 
@@ -194,11 +190,8 @@ Client Request \| Translated Request
 ``http://server.h.com/customers/x/y/c/d/doc.html``
 ``http://www.h.com/a/index.html`` \| ``Translation fails``
 
-The following example shows reverse-map rules:
+The following example shows reverse-map rules::
 
-::
-
-    :::text
     map http://www.x.com/ http://server.hoster.com/x/
     reverse_map http://server.hoster.com/x/ http://www.x.com/
 

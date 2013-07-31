@@ -1,6 +1,3 @@
-update.config
-*************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,7 +15,13 @@ update.config
   specific language governing permissions and limitations
   under the License.
 
-The ``update.config`` file controls how Traffic Server performs a
+=============
+update.config
+=============
+
+.. configfile:: update.config
+
+The :file:`update.config` file controls how Traffic Server performs a
 scheduled update of specific local cache content. The file contains a
 list of URLs specifying objects that you want to schedule for update.
 
@@ -31,8 +34,8 @@ each specified object:
 -  The update time and interval
 -  The recursion depth
 
-**IMPORTANT:** After you modify the ``update.config`` file, navigate to
-the Traffic Serve ``bin`` directory and run the ``traffic_line -x``
+After you modify the :file:`update.config` file,
+run the :option:`traffic_line -x`
 command to apply changes. When you apply changes to one node in a
 cluster, Traffic Server automatically applies the changes to all other
 nodes in the cluster.
@@ -67,7 +70,7 @@ such as those used by Internet crawlers.
 Format
 ======
 
-Each line in the ``update.config`` file uses the following format:
+Each line in the :file:`update.config` file uses the following format:
 
 ::
 

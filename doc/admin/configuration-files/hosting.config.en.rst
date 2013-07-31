@@ -1,6 +1,3 @@
-hosting.config
-**************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,71 +15,71 @@ hosting.config
   specific language governing permissions and limitations
   under the License.
 
+==============
+hosting.config
+==============
 
-The ``hosting.config`` file enables you to assign cache partitions to
+.. configfile:: hosting.config
+
+The :file:`hosting.config` file enables you to assign cache partitions to
 specific origin servers and/or domains so that you can manage cache
 space efficiently and restrict disk usage. For step-by-step instructions
 on partitioning the cache according to origin servers and/or domains,
-refer to `Partitioning the
-Cache <../configuring-cache#PartitoningCache>`_ According to Origin
-Server or Domain. Before you can assign cache partitions to specific
+refer to `Partitioning the Cache <../configuring-cache#PartitoningCache>`_.
+Before you can assign cache partitions to specific
 origin servers and/or domains, you must first partition your cache
-according to size and protocol in the `volume.config <volume.config>`_
+according to size and protocol in the :file:`volume.config`
 file. For step-by-step instructions about partitioning your cache, refer
 to `Partitioning the Cache <../configuring-cache#PartitioningCache>`_.
-For a description of the ``volume.config`` file, refer to
-`volume.config <volume.config>`_.
 
 After you modify hosting.config, navigate to the Traffic Server bin
-directory and run the ``traffic_line -x`` command to apply your changes.
+directory and run :option:`traffic_line -x` to apply your changes.
+
 When you apply the changes to a node in a cluster, Traffic Server
 automatically applies the changes to all other nodes in the cluster.
 
-**IMPORTANT:** The volume.configuration must be the same on all nodes in
-a cluster.
+.. important::
+
+    The :file:`volume.config` configuration must be the same on all nodes in a cluster.
 
 Format
 ======
 
-Each line in the ``hosting.config`` file must have one of the following
-formats:
+Each line in the :file:`hosting.config` file must have one of the following
+formats::
 
-::
+    hostname=HOST partition=NUMBERS
+    domain=DOMAIN partition=NUMBERS
 
-    hostname= hostname partition= partition_numbers
-    domain= domain_name partition= partition_numbers
-
-where hostname is the fully-qualified hostname of the origin server
+where ``HOST`` is the fully-qualified hostname of the origin server
 whose content you want to store on a particular partition (for example,
-``www.myhost.com``); ``domain_name`` is the domain whose content you
+``www.myhost.com``); ``DOMAIN`` is the domain whose content you
 want to store on a particular partition(for example, ``mydomain.com``);
-and ``partition_numbers`` is a comma-separated list of the partitions on
+and ``NUMBERS`` is a comma-separated list of the partitions on
 which you want to store the content that belongs to the origin server or
 domain listed. The partition numbers must be valid numbers listed in the
-`volume.config <volume.config>`_ file.
+file:`volume.config`.
 
 **Note:** To allocate more than one partition to an origin server or
 domain, you must enter the partitions in a comma-separated list on one
 line, as shown in the example below. The
-`hosting.config <hosting.config>`_ file cannot contain multiple entries
+:file:`hosting.config`  file cannot contain multiple entries
 for the same origin server or domain.
 
 Generic Partition
 =================
 
-When configuring the hosting.config file, you must assign a generic
+When configuring the :file:`hosting.config` file, you must assign a generic
 partition to use for content that does not belong to any of the origin
 servers or domains listed. If all partitions for a particular origin
 server become corrupt, Traffic Server will also use the generic
 partition to store content for that origin server.
 
-The generic partition must have the following format:
+The generic partition must have the following format::
 
-::
+    hostname=* partition=NUMBERS
 
-    hostname=* partition=partition_numbers
-
-where ``partition_numbers`` is a comma-separated list of generic
+where ``NUMBERS`` is a comma-separated list of generic
 partitions.
 
 Examples
@@ -97,5 +94,5 @@ all other origin servers in partitions 3 and 4.
 
     domain=mydomain.com partition=1
     hostname=www.myhost.com partition=2
-    hostname=* partition=3,
+    hostname=* partition=3,4
 

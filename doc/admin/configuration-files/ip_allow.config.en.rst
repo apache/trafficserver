@@ -1,6 +1,3 @@
-ip_allow.config
-***************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,23 +15,26 @@ ip_allow.config
   specific language governing permissions and limitations
   under the License.
 
-The ``ip_allow.config`` file controls client access to the Traffic
+===============
+ip_allow.config
+===============
+
+.. configfile:: ip_allow.config
+
+The :file:`ip_allow.config` file controls client access to the Traffic
 Server proxy cache. You can specify ranges of IP addresses that are
 allowed to use the Traffic Server as a web proxy cache. After you modify
-the ``ip_allow.config`` file, navigate to the Traffic Server bin
-directory and run the ``traffic_line -x`` command to apply changes. When
+the :file:`ip_allow.config` file, navigate to the Traffic Server bin
+directory and run the :option:`traffic_line -x` command to apply changes. When
 you apply the changes to a node in a cluster, Traffic Server
 automatically applies the changes to all other nodes in the cluster.
 
 Format
 ======
 
-Each line in the ``ip_allow.config`` file must have the following
-format:
+Each line in the :file:`ip_allow.config` file must have the following
+format::
 
-::
-
-    :::text
     src_ip=<range of IP addresses> action=<action> [method=<list of methods separated by '|'>]
 
 where src_ip is the IP address or range of IP addresses of the
@@ -47,14 +47,11 @@ keyword is optional and it is defaulted to ALL. Available methods: ALL,
 GET, CONNECT, DELETE, HEAD, ICP_QUERY, OPTIONS, POST, PURGE, PUT,
 TRACE, PUSH
 
-By default, the ``ip_allow.config`` file contains the following lines,
+By default, the :file:`ip_allow.config` file contains the following lines,
 which allows all methods to localhost to access the Traffic Server proxy
 cache and denies PUSH, PURGE and DELETE to all IPs (note this allows all
-other methods to all IPs):
+other methods to all IPs)::
 
-::
-
-    :::text
     src_ip=127.0.0.1                                  action=ip_allow method=ALL
     src_ip=::1                                        action=ip_allow method=ALL
     src_ip=0.0.0.0-255.255.255.255                    action=ip_deny  method=PUSH|PURGE|DELETE
@@ -64,26 +61,17 @@ Examples
 ========
 
 The following example enables all clients to access the Traffic Server
-proxy cache:
+proxy cache::
 
-::
-
-    :::text
     src_ip=0.0.0.0-255.255.255.255 action=ip_allow
 
 The following example allows all clients on a specific subnet to access
-the Traffic Server proxy cache:
+the Traffic Server proxy cache::
 
-::
-
-    :::text
     src_ip=123.12.3.000-123.12.3.123 action=ip_allow
 
 The following example denies all clients on a specific subnet to access
-the Traffic Server proxy cache:
+the Traffic Server proxy cache::
 
-::
-
-    :::text
     src_ip=123.45.6.0-123.45.6.123 action=ip_deny
 

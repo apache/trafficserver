@@ -82,4 +82,7 @@ class TSConfVar(rst.Directive):
         return [ target, title, fl, nn ]
 
 def setup(app):
+    app.add_crossref_type('configfile', 'file',
+                        objname='Configuration file',
+                        indextemplate='pair: %s; Configuration files')
     app.add_directive('ts:confvar', TSConfVar)

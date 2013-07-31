@@ -1,6 +1,3 @@
-cache.config
-************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,26 +15,31 @@ cache.config
   specific language governing permissions and limitations
   under the License.
 
+============
+cache.config
+============
 
-The cache.config file defines how Traffic Server caches web objects. You
+.. configfile:: cache.config
+
+The :file:`cache.config` file defines how Traffic Server caches web objects. You
 can add caching rules to specify the following: - Not to cache objects
 from specific IP addresses - How long to pin particular objects in the
 cache - How long to consider cached objects as fresh - Whether to ignore
 no-cache directives from the server
 
-**IMPORTANT:** After you modify the ``cache.config file``, navigate to
-the Traffic Server bin directory; then run the ``traffic_line -x``
-command to apply changes. When you apply the changes to a node in a
-cluster, Traffic Server automatically applies the changes to all other
-nodes in the cluster.
+.. important::
+
+    After you modify the :file:`cache.config file`, navigate to
+    the Traffic Server bin directory; then run the :option:`traffic_line -x`
+    command to apply changes. When you apply the changes to a node in a
+    cluster, Traffic Server automatically applies the changes to all other
+    nodes in the cluster.
 
 Format
 ======
 
-Each line in the cache.config file contains a caching rule. Traffic
-Server recognizes three space-delimited tags:
-
-::
+Each line in the :file:`cache.config` file contains a caching rule. Traffic
+Server recognizes three space-delimited tags::
 
     primary_destination=value secondary_specifier=value action=value
 
@@ -60,7 +62,7 @@ possible primary destinations with allowed values.
 *``url_regex``* {#url_regex}
     A regular expression (regex) to be found in a URL.
 
-The secondary specifiers are optional in the cache.config file. The
+The secondary specifiers are optional in the :file:`cache.config` file. The
 following list shows possible secondary specifiers with allowed values.
 
 *``port``* {#port}

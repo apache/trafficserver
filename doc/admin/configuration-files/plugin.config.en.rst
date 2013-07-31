@@ -1,6 +1,3 @@
-plugin.config
-*************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,7 +15,13 @@ plugin.config
   specific language governing permissions and limitations
   under the License.
 
-The ``plugin.config`` file controls run-time loadable plugins available
+=============
+plugin.config
+=============
+
+.. configfile:: plugin.config
+
+The :file:`plugin.config` file controls run-time loadable plugins available
 to the Traffic Server, as well as their configuration.
 
 Example

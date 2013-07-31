@@ -1,6 +1,3 @@
-icp.config
-**********
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,24 +15,32 @@ icp.config
   specific language governing permissions and limitations
   under the License.
 
+==========
+icp.config
+==========
 
-The ``icp.config`` file defines ICP peers (parent and sibling caches).
+.. configfile:: icp.config
 
-**IMPORTANT:** After you modify the icp.config file, navigate to the
-Traffic Server bin directory and run the ``traffic_line -x`` command to
-apply the changes. When you apply the changes to a node in a cluster,
-Traffic Server automatically applies the changes to all other nodes in
-the cluster.
+.. warning::
+
+  The Traffic Server ICP  feature is not functional in this release.
+
+The :file:`icp.config` file defines ICP peers (parent and sibling caches).
+
+.. important::
+
+    After you modify the icp.config file, navigate to the
+    Traffic Server bin directory and run the :option:`traffic_line -x` command to
+    apply the changes. When you apply the changes to a node in a cluster,
+    Traffic Server automatically applies the changes to all other nodes in
+    the cluster.
 
 Format
 ======
 
 Each line in the icp.config file contains the name and configuration
-information for a single ICP peer in the following format:
+information for a single ICP peer in the following format::
 
-::
-
-    :::text
     host : host_IP : peer_type : proxy_port : icp_port : MC_on : MC_IP : MC_TTL :
 
 Each field is described in the following list.
