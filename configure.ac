@@ -790,7 +790,7 @@ case $host_os_def in
   darwin)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
-      debug_opt="$common_opt"
+      debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ], [
