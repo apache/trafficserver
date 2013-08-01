@@ -87,7 +87,6 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
-
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -167,7 +166,6 @@ html_static_path = ['static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'ApacheTrafficServerdoc'
 
-
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
@@ -208,35 +206,51 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
-
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('reference/api/TSAPI.en', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts'),
-    ('reference/api/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
-    ('reference/api/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
-    ('reference/api/TSHttpParserCreate.en', 'TSHttpParserCreate', u'Parse HTTP headers from memory buffers', None, u'3ts'),
-    ('reference/api/TSHttpTxnMilestoneGet.en', 'TSHttpTxnMilestoneGet', u'Get a specified milestone timer value for the current transaction', None, u'3ts'),
 
-    ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
-    ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
-    ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),
-    ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'Traffic Server analyzer', None, '8'),
-    ('reference/commands/traffic_manager.en', 'traffic_manager', u'Traffic Server process manager', None, '8'),
-    ('reference/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
-    ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
-    ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
-    ('reference/commands/tstop.en','tstop', u'Display Traffic Server statistics', None, '1'),
-    ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
-    
+   ('reference/api/TSAPI.en', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts'),
+   ('reference/api/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
+   ('reference/api/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
+   ('reference/api/TSHttpParserCreate.en', 'TSHttpParserCreate', u'Parse HTTP headers from memory buffers', None, u'3ts'),
+   ('reference/api/TSHttpTxnMilestoneGet.en', 'TSHttpTxnMilestoneGet', u'Get a specified milestone timer value for the current transaction', None, u'3ts'),
+
+   ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
+   ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
+   ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),
+   ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'Traffic Server analyzer', None, '8'),
+   ('reference/commands/traffic_manager.en', 'traffic_manager', u'Traffic Server process manager', None, '8'),
+   ('reference/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
+   ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
+
+   ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
+   ('reference/commands/tstop.en','tstop', u'Display Traffic Server statistics', None, '1'),
+   ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
+
+   ('reference/configuration/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),
+   ('reference/configuration/congestion.config.en', 'congestion.config', u'Traffic Server congestion control configuration file', None, '5'),
+   ('reference/configuration/hosting.config.en', 'hosting.config', u'Traffic Server domain hosting configuration file', None, '5'),
+   ('reference/configuration/icp.config.en', 'icp.config', u'Traffic Server ICP configuration file', None, '5'),
+   ('reference/configuration/ip_allow.config.en', 'ip_allow.config', u'Traffic Server IP access control configuration file', None, '5'),
+   ('reference/configuration/log_hosts.config.en', 'log_hosts.config', u'Traffic Server log host configuration file', None, '5'),
+   ('reference/configuration/logs_xml.config.en', 'logs_xml.config', u'Traffic Server log format configuration file', None, '5'),
+   ('reference/configuration/parent.config.en', 'parent.config', u'Traffic Server parent cache configuration file', None, '5'),
+   ('reference/configuration/plugin.config.en', 'plugin.config', u'Traffic Server global plugin configuration file', None, '5'),
+   ('reference/configuration/records.config.en', 'records.config', u'Traffic Server configuration file', None, '5'),
+   ('reference/configuration/remap.config.en', 'remap.config', u'Traffic Server remap rules configuration file', None, '5'),
+   ('reference/configuration/splitdns.config.en', 'splitdns.config', u'Traffic Server split DNS configuration file', None, '5'),
+   ('reference/configuration/ssl_multicert.config.en', 'ssl_multicert.config', u'Traffic Server SSL certificate configuration file', None, '5'),
+   ('reference/configuration/storage.config.en', 'storage.config', u'Traffic Server cache storage configuration file', None, '5'),
+   ('reference/configuration/update.config.en', 'update.config', u'Traffic Server automated update configuration file', None, '5'),
+   ('reference/configuration/volume.config.en', 'volume.config', u'Traffic Server cache volume configuration file', None, '5'),
+
 ]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
-
-
 
 # -- Options for Texinfo output ------------------------------------------------
 
@@ -257,7 +271,6 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
-
 
 # -- Options for Epub output ---------------------------------------------------
 
