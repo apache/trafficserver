@@ -1030,9 +1030,7 @@ LocalManager::startProxy()
     }
 
     // NUL-terminate for the benefit of strtok and printf.
-    // XXX TS-1976: a small hack to work around the Vec template's
-    // dislike of storing NUL bytes.
-    real_proxy_options.append("", 1);
+    real_proxy_options.add(0);
 
     Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'\n",
           absolute_proxy_binary, &real_proxy_options[0]);
