@@ -222,13 +222,13 @@ man_pages = [
 
     ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
     ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
-    ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'traffic Server log spooler', None, '8'),
-    ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'traffic Server analyzer', None, '8'),
-    ('reference/commands/traffic_manager.en', 'traffic_manager', u'traffic Server process manager', None, '8'),
+    ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),
+    ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'Traffic Server analyzer', None, '8'),
+    ('reference/commands/traffic_manager.en', 'traffic_manager', u'Traffic Server process manager', None, '8'),
     ('reference/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
     ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
     ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
-    ('reference/commands/tstop.en','tstop', u'display Traffic Server statistics', None, '1'),
+    ('reference/commands/tstop.en','tstop', u'Display Traffic Server statistics', None, '1'),
     ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
     
 ]
