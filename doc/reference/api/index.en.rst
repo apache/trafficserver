@@ -21,8 +21,16 @@ API Reference
 .. toctree::
   :maxdepth: 2
 
-  TSAPI.en
-  TSDebug.en
-  TSHttpHookAdd.en
-  TSHttpParserCreate.en
-  TSHttpTxnMilestoneGet.en
+  TSAPI.en.rst
+  TSDebug.en.rst
+  TSHttpHookAdd.en.rst
+  TSHttpParserCreate.en.rst
+  TSHttpTxnMilestoneGet.en.rst
+  TSIOBufferCreate.en.rst
+  TSInstallDirGet.en.rst
+  TSMBufferCreate.en.rst
+  TSPluginInit.en.rst
+  TSRemap.en.rst
+  TSTrafficServerVersionGet.en.rst
+  TSUrlCreate.en.rst
+  TSmalloc.en.rst
