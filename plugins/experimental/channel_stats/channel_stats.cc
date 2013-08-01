@@ -794,31 +794,6 @@ api_handle_event(TSCont contp, TSEvent event, void *edata)
 
 // initial part
 
-static int
-check_ts_version()
-{
-  const char *ts_version = TSTrafficServerVersionGet();
-  int result = 0;
-
-  if (ts_version) {
-    int major_ts_version = 0;
-    int minor_ts_version = 0;
-    int patch_ts_version = 0;
-
-    if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version,
-                &patch_ts_version) != 3) {
-      return 0;
-    }
-
-    // Need at least TS 3.0.0
-    if (major_ts_version >= 3) {
-      result = 1;
-    }
-  }
-
-  return result;
-}
-
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -837,10 +812,6 @@ TSPluginInit(int argc, const char *argv[])
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     fatal("plugin registration failed.");
-  }
-
-  if (!check_ts_version()) {
-    fatal("plugin requires Traffic Server 3.0.0 or later");
   }
 
   info("%s(%s) plugin starting...", PLUGIN_NAME, PLUGIN_VERSION);

@@ -522,28 +522,6 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
   return 0;
 }
 
-/* Check the TS server version, make sure we're supporting it */
-inline int
-check_ts_version()
-{
-  const char *ts_version = TSTrafficServerVersionGet();
-
-  if (ts_version) {
-    int major_ts_version = 0;
-    int minor_ts_version = 0;
-    int patch_ts_version = 0;
-
-    if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3)
-      return 0;
-
-    /* Need at least TS 3.0 */
-    if (major_ts_version >= 3)
-      return 1;
-  }
-
-  return 0;
-}
-
 /* Initialize the plugin / global continuation hook */
 void
 TSPluginInit(int argc, const char *argv[])
@@ -561,11 +539,6 @@ TSPluginInit(int argc, const char *argv[])
 
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
     TSError("Plugin registration failed. \n");
-    return;
-  }
-
-  if (!check_ts_version()) {
-    TSError("Plugin requires Traffic Server 3.0 or later\n");
     return;
   }
 
