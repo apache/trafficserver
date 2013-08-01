@@ -136,14 +136,6 @@ System Variables
 
    The name of the executable that runs the ``traffic_manager`` process.
 
-.. ts:confvar:: CONFIG proxy.config.cli_binary STRING traffic_line
-
-   The name of the executable that runs the command-line interface :program:`traffic_line`.
-
-.. ts:confvar:: CONFIG proxy.config.watch_script STRING traffic_cop
-
-   The name of the executable that runs the ``traffic_cop`` process.
-
 .. ts:confvar:: CONFIG proxy.config.env_prep STRING
 
    The script executed before the ``traffic_manager`` process spawns
@@ -152,10 +144,6 @@ System Variables
 .. ts:confvar:: CONFIG proxy.config.config_dir STRING config
 
    The directory that contains Traffic Server configuration files.
-
-.. ts:confvar:: CONFIG proxy.config.temp_dir STRING /tmp
-
-   The directory used for Traffic Server temporary files.
 
 .. ts:confvar:: CONFIG proxy.config.alarm_email STRING
    :reloadable:

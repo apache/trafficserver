@@ -19,7 +19,6 @@
 ##############################################################################
 CONFIG proxy.config.bin_path STRING bin
 CONFIG proxy.config.config_dir STRING etc/@PACKAGE@
-CONFIG proxy.config.temp_dir STRING /tmp
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 CONFIG proxy.config.cop.linux_min_swapfree_kb INT 10240
 CONFIG proxy.config.cop.linux_min_memfree_kb INT 10240

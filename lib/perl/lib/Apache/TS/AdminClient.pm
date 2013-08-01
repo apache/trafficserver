@@ -306,7 +306,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.url_hash_method
  proxy.config.cache.vary_on_user_agent
  proxy.config.cache.mutex_retry_delay
- proxy.config.cli_binary
  proxy.config.cluster.cluster_configuration
  proxy.config.cluster.cluster_load_clear_duration
  proxy.config.cluster.cluster_load_exceed_duration
@@ -339,7 +338,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cop.core_signal
  proxy.config.cop.linux_min_memfree_kb
  proxy.config.cop.linux_min_swapfree_kb
- proxy.config.cop_name
  proxy.config.core_limit
  proxy.config.diags.action.enabled
  proxy.config.diags.action.tags
@@ -373,7 +371,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.exec_thread.autoconfig.scale
  proxy.config.exec_thread.limit
  proxy.config.header.parse.no_host_url_redirect
- proxy.config.history_info_enabled
  proxy.config.hostdb
  proxy.config.hostdb.cluster
  proxy.config.hostdb.cluster.round_robin
@@ -596,7 +593,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.squid_log_name
  proxy.config.log.xml_config_file
  proxy.config.manager_binary
- proxy.config.manager_name
  proxy.config.net.connections_throttle
  proxy.config.net.listen_backlog
  proxy.config.net_snapshot_filename
@@ -628,7 +624,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.process_manager.enable_mgmt_port
  proxy.config.process_manager.mgmt_port
  proxy.config.process_manager.timeout
- proxy.config.process_state_dump_mode
  proxy.config.product_company
  proxy.config.product_name
  proxy.config.product_vendor
@@ -640,7 +635,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.res_track_memory
  proxy.config.reverse_proxy.enabled
  proxy.config.reverse_proxy.oldasxbehavior
- proxy.config.server_name
  proxy.config.snapshot_dir
  proxy.config.socks.accept_enabled
  proxy.config.socks.accept_port
@@ -681,7 +675,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server_port
  proxy.config.ssl.server.private_key.path
  proxy.config.stack_dump_enabled
- proxy.config.start_script
  proxy.config.stat_collector.interval
  proxy.config.stat_collector.port
  proxy.config.stats.config_file
@@ -689,7 +682,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.stats.snap_frequency
  proxy.config.syslog_facility
  proxy.config.system.mmap_max
- proxy.config.temp_dir
  proxy.config.thread.default.stacksize
  proxy.config.udp.free_cancelled_pkts_sec
  proxy.config.udp.periodic_cleanup
@@ -711,7 +703,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.vmap.addr_file
  proxy.config.vmap.down_up_timeout
  proxy.config.vmap.enabled
- proxy.config.watch_script
 
 =head1 LICENSE
 

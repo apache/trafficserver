@@ -1247,7 +1247,7 @@ test_record_get_mlt(void)
   TSStringList name_list;
   TSList rec_list;
   int i, num;
-  char *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8;
+  char *v1, *v2, *v3, *v6, *v7, *v8;
   TSError ret;
 
   name_list = TSStringListCreate();
@@ -1262,12 +1262,6 @@ test_record_get_mlt(void)
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
   v3 = (char *) TSmalloc(v3_size);
   ink_strlcpy(v3, "proxy.config.manager_binary", v3_size);
-  const size_t v4_size = (sizeof(char) * (strlen("proxy.config.cli_binary") + 1));
-  v4 = (char *) TSmalloc(v4_size);
-  ink_strlcpy(v4, "proxy.config.cli_binary", v4_size);
-  const size_t v5_size = (sizeof(char) * (strlen("proxy.config.watch_script") + 1));
-  v5 = (char *) TSmalloc(v5_size);
-  ink_strlcpy(v5, "proxy.config.watch_script", v5_size);
   const size_t v6_size = (sizeof(char) * (strlen("proxy.config.env_prep") + 1));
   v6 = (char *) TSmalloc(v6_size);
   ink_strlcpy(v6, "proxy.config.env_prep", v6_size);
@@ -1282,8 +1276,6 @@ test_record_get_mlt(void)
   TSStringListEnqueue(name_list, v1);
   TSStringListEnqueue(name_list, v2);
   TSStringListEnqueue(name_list, v3);
-  TSStringListEnqueue(name_list, v4);
-  TSStringListEnqueue(name_list, v5);
   TSStringListEnqueue(name_list, v6);
   TSStringListEnqueue(name_list, v7);
   TSStringListEnqueue(name_list, v8);

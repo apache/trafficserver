@@ -154,7 +154,6 @@ char system_log_dir[PATH_NAME_MAX + 1];          // Layout->logdir
 static char error_tags[1024] = "";
 static char action_tags[1024] = "";
 static int show_statistics = 0;
-static int history_info_enabled = 1;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 
@@ -1450,7 +1449,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // pmgmt->start() must occur after initialization of Diags but
   // before calling RecProcessInit()
 
-  TS_ReadConfigInteger(history_info_enabled, "proxy.config.history_info_enabled");
   TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
   init_http_header();

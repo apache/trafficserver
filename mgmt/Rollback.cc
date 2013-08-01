@@ -41,9 +41,9 @@ const char *RollbackStrings[] = { "Rollback Ok",
   "System Call Error",
   "Invalid Version - Version Numbers Must Increase"
 };
+
 Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
-  :
-root_access_needed(root_access_needed_)
+  : root_access_needed(root_access_needed_)
 {
   char configTmp[PATH_NAME_MAX + 1];
   version_t highestSeen;        // the highest backup version

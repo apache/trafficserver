@@ -23,7 +23,6 @@ CONFIG proxy.config.proxy_name STRING @build_machine@
 CONFIG proxy.config.config_dir STRING @rel_sysconfdir@
 CONFIG proxy.config.proxy_binary_opts STRING -M
 CONFIG proxy.config.env_prep STRING example_prep.sh
-CONFIG proxy.config.temp_dir STRING /tmp
 CONFIG proxy.config.alarm_email STRING @pkgsysuser@
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 CONFIG proxy.config.output.logfile STRING traffic.out

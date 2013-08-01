@@ -42,12 +42,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.product_name", RECD_STRING, "Traffic Server", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cop_name", RECD_STRING, "Traffic Cop", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.manager_name", RECD_STRING, "Traffic Manager", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.server_name", RECD_STRING, "Traffic Server", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.proxy_name", RECD_STRING, "<proxy_name>", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.bin_path", RECD_STRING, "bin", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
@@ -55,14 +49,8 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.proxy_binary", RECD_STRING, "traffic_server", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.manager_binary", RECD_STRING, "traffic_manager", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,                             // required for traffic_cop
-  {RECT_CONFIG, "proxy.config.cli_binary", RECD_STRING, "traffic_line", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.watch_script", RECD_STRING, "traffic_cop", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.proxy_binary_opts", RECD_STRING, "-M", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.start_script", RECD_STRING, "start", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.env_prep", RECD_STRING, "example_prep.sh", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -70,8 +58,6 @@ RecordElement RecordsConfig[] = {
   ,
   // Jira TS-21
   {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.temp_dir", RECD_STRING, "/tmp", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.alarm_email", RECD_STRING, TS_PKGSYSUSER, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
@@ -98,12 +84,6 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.http_ui_enabled", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.max_disk_errors", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  //# 0 = disable
-  {RECT_CONFIG, "proxy.config.history_info_enabled", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  //# 0 = disable
-  {RECT_CONFIG, "proxy.config.process_state_dump_mode", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile", RECD_STRING, "traffic.out", RECU_RESTART_TC, RR_REQUIRED, RECC_NULL, NULL,
    RECA_NULL}
