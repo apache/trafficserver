@@ -220,6 +220,7 @@ man_pages = [
    ('reference/api/TSIOBufferCreate.en', 'TSIOBufferCreate', u'Traffic Server IO buffer API', None, u'3ts'),
    ('reference/api/TSInstallDirGet.en', 'TSInstallDirGet', u'Return Traffic Server installation directories', None, u'3ts'),
    ('reference/api/TSMBufferCreate.en', 'TSMBufferCreate', u'Traffic Server marshall buffer API', None, u'3ts'),
+   ('reference/api/TSmalloc.en', 'TSmalloc', u'Traffic Server memory allocation API', None, u'3ts'),
 
    ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
    ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
