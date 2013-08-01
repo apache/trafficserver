@@ -2,6 +2,10 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1255] Add more overridable configurations, and fix bugs in how we
+   deal with some of these (all "float" configs were completely broken). I
+   also modified the regression tests to be less easy to fool.
+
   *) [TS-1976] Prevent an invalid httpport argument being passed from
    traffic_manager to traffic_server
    Author: Thach Tran <tranngocthachs@gmail.com>
