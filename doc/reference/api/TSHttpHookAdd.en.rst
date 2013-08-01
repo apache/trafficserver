@@ -16,13 +16,9 @@
 
 .. default-domain:: c
 
-===============
-`TSHttpHookAdd`
-===============
-
-Library
-=======
-Apache Traffic Server plugin API
+=============
+TSHttpHookAdd
+=============
 
 Synopsis
 ========

@@ -16,9 +16,9 @@
 
 .. default-domain:: c
 
-=======
-`TSAPI`
-=======
+=====
+TSAPI
+=====
 
 Synopsis
 ========

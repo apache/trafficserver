@@ -19,11 +19,6 @@
 TSHttpTxnMilestoneGet
 =====================
 
-Library
-=======
-
-Apache Traffic Server plugin API
-
 Synopsis
 ========
 

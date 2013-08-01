@@ -16,13 +16,9 @@
 
 .. default-domain:: c
 
-==========
-`TSDebug`
-==========
-
-Library
 =======
-Apache Traffic Server plugin API
+TSDebug
+=======
 
 Synopsis
 ========

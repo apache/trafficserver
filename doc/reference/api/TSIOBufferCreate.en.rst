@@ -20,10 +20,6 @@
 TSIOBufferCreate
 ================
 
-Library
-=======
-Apache Traffic Server plugin API
-
 Synopsis
 ========
 `#include <ts/ts.h>`
