@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-1685] Remove TS_MICRO and fellas.
+
   *) [TS-1255] Add more overridable configurations, and fix bugs in how we
    deal with some of these (all "float" configs were completely broken). I
    also modified the regression tests to be less easy to fool.
