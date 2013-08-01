@@ -1,6 +1,7 @@
 *.o
 *.a
 *.so
+*.pyc
 *.in
 *~
 *.tar.gz
@@ -8,6 +9,7 @@
 *.la
 *.log
 *.trs
+.*.sw*
 
 .deps
 
