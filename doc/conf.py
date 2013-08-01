@@ -223,6 +223,7 @@ man_pages = [
    ('reference/api/TSmalloc.en', 'TSmalloc', u'Traffic Server memory allocation API', None, u'3ts'),
    ('reference/api/TSPluginInit.en', 'TSPluginInit', u'Traffic Server plugin loading and registration', None, u'3ts'),
    ('reference/api/TSRemap.en', 'TSRemap', u'Traffic Server remap plugin entry points ', None, u'3ts'),
+   ('reference/api/TSTrafficServerVersionGet.en', 'TSTrafficServerVersionGet', u'return Traffic Server version information', None, u'3ts'),
 
    ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
    ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
