@@ -773,9 +773,6 @@ TSPluginInit(int argc, const char *argv[])
   if (!register_plugin()) {
     fatal("The gzip plugin failed to register");
   }
-  if (!check_ts_version()) {
-    fatal("The gzip plugin requires at least traffic server v3");
-  }
 
   //if (argc == 2) {
   //  dictionary = load_dictionary(argv[1]);

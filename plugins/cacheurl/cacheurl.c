@@ -361,32 +361,6 @@ static int handle_hook(TSCont contp, TSEvent event, void *edata) {
     return ok;
 }
 
-/* Function to ensure we're running a recent enough version of Traffic Server.
- * (Taken from the example plugin)
- */
-static int check_ts_version() {
-  const char *ts_version = TSTrafficServerVersionGet();
-  int result = 0;
-
-  if (ts_version) {
-    int major_ts_version = 0;
-    int minor_ts_version = 0;
-    int patch_ts_version = 0;
-
-    if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version,
-                &patch_ts_version) != 3) {
-      return 0;
-    }
-
-    /* we are now v3.x */
-    if (major_ts_version >= 3) {
-      result = 1;
-    }
-
-  }
-  return result;
-}
-
 /* Generic error message function for errors in plugin initialization */
 static void initialization_error(char *msg) {
     TSError("[%s] %s\n", PLUGIN_NAME, msg);
@@ -476,11 +450,6 @@ void TSPluginInit(int argc, const char *argv[]) {
 
     if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
         initialization_error("Plugin registration failed.");
-        return;
-    }
-
-    if (!check_ts_version()) {
-        initialization_error("Plugin requires Traffic Server 3.0 or later");
         return;
     }
 

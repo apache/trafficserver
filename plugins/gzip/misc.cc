@@ -140,21 +140,6 @@ init_hidden_header_name()
 }
 
 int
-check_ts_version()
-{
-  const char *ts_version = TSTrafficServerVersionGet();
-  TSReleaseAssert(ts_version);
-
-  int scan_result;
-  int major_version;
-
-  scan_result = sscanf(ts_version, "%d", &major_version);
-  TSReleaseAssert(scan_result == 1);
-
-  return major_version >= 3;
-}
-
-int
 register_plugin()
 {
   TSPluginRegistrationInfo info;
