@@ -214,22 +214,22 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('sdk/man/TSAPI.en', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts'),
-    ('sdk/man/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
-    ('sdk/man/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
-    ('sdk/man/TSHttpParserCreate.en', 'TSHttpParserCreate', u'Parse HTTP headers from memory buffers', None, u'3ts'),
-    ('sdk/man/TSHttpTxnMilestoneGet.en', 'TSHttpTxnMilestoneGet', u'Get a specified milestone timer value for the current transaction', None, u'3ts'),
+    ('reference/api/TSAPI.en', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts'),
+    ('reference/api/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
+    ('reference/api/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
+    ('reference/api/TSHttpParserCreate.en', 'TSHttpParserCreate', u'Parse HTTP headers from memory buffers', None, u'3ts'),
+    ('reference/api/TSHttpTxnMilestoneGet.en', 'TSHttpTxnMilestoneGet', u'Get a specified milestone timer value for the current transaction', None, u'3ts'),
 
-    ('admin/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
-    ('admin/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
-    ('admin/commands/traffic_logcat.en', 'traffic_logcat', u'traffic Server log spooler', None, '8'),
-    ('admin/commands/traffic_logstats.en', 'traffic_logstats', u'traffic Server analyzer', None, '8'),
-    ('admin/commands/traffic_manager.en', 'traffic_manager', u'traffic Server process manager', None, '8'),
-    ('admin/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
-    ('admin/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
-    ('admin/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
-    ('admin/commands/tstop.en','tstop', u'display Traffic Server statistics', None, '1'),
-    ('admin/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
+    ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
+    ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
+    ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'traffic Server log spooler', None, '8'),
+    ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'traffic Server analyzer', None, '8'),
+    ('reference/commands/traffic_manager.en', 'traffic_manager', u'traffic Server process manager', None, '8'),
+    ('reference/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
+    ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
+    ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
+    ('reference/commands/tstop.en','tstop', u'display Traffic Server statistics', None, '1'),
+    ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
     
 ]
 
