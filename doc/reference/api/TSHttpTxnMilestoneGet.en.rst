@@ -19,19 +19,19 @@
 TSHttpTxnMilestoneGet
 =====================
 
-LIBRARY
+Library
 =======
 
 Apache Traffic Server plugin API
 
-SYNOPSIS
+Synopsis
 ========
 
 `#include <ts/ts.h>`
 
 .. function:: TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, TSHRTime * time)
 
-DESCRIPTION
+Description
 ===========
 
 :func:`TSHttpTxnMilestoneGet` will fetch a specific milestone timer
@@ -66,11 +66,11 @@ The supported :type:`TSMilestonesType` milestone types are:
 | :data:`TS_MILESTONE_SM_FINISH`
 | :data:`TS_MILESTONE_LAST_ENTRY`
 
-RETURN VALUES
+Return values
 =============
 
 :data:`TS_SUCCESS` or :data:`TS_ERROR`.
 
-SEE ALSO
+See also
 ========
 :manpage:`TSAPI(3ts)`

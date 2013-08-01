@@ -115,6 +115,6 @@ transaction hooks::
         TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
     }
 
-SEE ALSO
+See also
 ========
 :manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`

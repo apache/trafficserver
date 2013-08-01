@@ -78,6 +78,6 @@ debugging flag is enabled::
     TSDebugSpecifc(TSHttpTxnDebugGet(txn), "tag" ,
             "Hello World from transaction %p", txn);
 
-SEE ALSO
+See also
 ========
 :manpage:`TSAPI(3ts)`, :manpage:`printf(3)`
