@@ -19,7 +19,7 @@
 congestion.config
 =================
 
-.. configfile: congestion.config
+.. configfile:: congestion.config
 
 The :file:`congestion.config` file enables you to configure Traffic Server
 to stop forwarding HTTP requests to origin servers when they become

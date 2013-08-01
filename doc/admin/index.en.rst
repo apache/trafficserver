@@ -1,4 +1,4 @@
-Administrators's Guide
+Administrators' Guide
 **********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
@@ -43,10 +43,8 @@ Contents:
    security-options.en
    working-log-files.en
    event-logging-formats.en
-   configuration-files.en
    traffic-line-commands.en
    traffic-server-error-messages.en
-   commands/index.en
    faqs.en
 
 
@@ -305,10 +303,3 @@ following:
 
 Traffic Server security options are described in more detail in
 `Security Options <security-options>`_.
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

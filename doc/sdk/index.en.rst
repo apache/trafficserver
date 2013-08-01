@@ -63,11 +63,3 @@ Contents:
   adding-statistics.en
   sample-source-code.en
   troubleshooting-tips.en
-  man/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

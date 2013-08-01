@@ -39,11 +39,13 @@ bandwidth.
 
   admin/index.en
   sdk/index.en
-  plugins/index.en
+  reference/configuration/index.en
+  reference/commands/index.en
+  reference/plugins/index.en
+  reference/api/index.en
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
