@@ -58,9 +58,13 @@ lib/ts/test_freelist
 lib/ts/test_Map
 lib/ts/test_Vec
 iocore/net/test_certlookup
+iocore/aio/test_AIO
+iocore/eventsystem/test_Buffer
+iocore/eventsystem/test_Event
 proxy/config/records.config.default
 proxy/config/storage.config.default
 plugins/experimental/esi/*_test
+plugins/experimental/spdy/zstream_test
 
 mgmt/api/remote/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
