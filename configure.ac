@@ -1115,7 +1115,7 @@ TS_FLAG_HEADERS([sys/eventfd.h], [
   ]
 )])
 
-AC_CHECK_FUNCS(has_eventfd)
+AC_CHECK_FUNCS(eventfd)
 
 #
 # Check for pcre library
