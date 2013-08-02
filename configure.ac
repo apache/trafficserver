@@ -1118,6 +1118,12 @@ TS_FLAG_HEADERS([sys/eventfd.h], [
 AC_CHECK_FUNCS(eventfd)
 
 #
+# Check for mcheck_pedantic(3)
+#
+TS_FLAG_HEADERS(mcheck.h)
+AC_CHECK_FUNCS(mcheck_pedantic)
+
+#
 # Check for pcre library
 #
 TS_CHECK_PCRE

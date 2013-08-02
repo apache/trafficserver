@@ -34,17 +34,19 @@
 
 #include "libts.h"
 #include "ink_sys_control.h"
+#include <syslog.h>
 
 #if !defined(linux)
 #include <sys/lock.h>
 #endif
+
 #if defined(linux)
 extern "C" int plock(int);
 #else
 #include <sys/filio.h>
 #endif
-#include <syslog.h>
-#if !defined(darwin) && !defined(freebsd) && !defined(solaris) && !defined(openbsd)
+
+#if HAVE_MCHECK_H
 #include <mcheck.h>
 #endif
 
@@ -1289,7 +1291,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
 #endif
   bool admin_user_p = false;
 
-#ifdef HAVE_MCHECK
+#if defined(DEBUG) && defined(HAVE_MCHECK_PEDANTIC)
   mcheck_pedantic(NULL);
 #endif
 
