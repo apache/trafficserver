@@ -616,8 +616,8 @@ CONFIG proxy.config.diags.show_location INT 0
   #  bit 0: reclaim memory in ink_freelist_new
   #  bit 1: allocate memory from partial-free Chunks(if exist) or OS
 CONFIG proxy.config.allocator.debug_filter INT 0
-  # The value of enable_reclaim should be 0 or 1. Default 0, reclaim disabled.
-CONFIG proxy.config.allocator.enable_reclaim INT 0
+  # The value of enable_reclaim should be 0 or 1. Default 1, reclaim enabled.
+CONFIG proxy.config.allocator.enable_reclaim INT 1
   # The value of reclaim_factor should be in 0.0 ~ 1.0, allocator use it to
   # calculate average value of idle memory in InkFreeList, which will determine
   # when to reclaim memory. The larger the value, the faster the reclaiming.
