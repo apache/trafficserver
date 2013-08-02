@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.3.5
 
 
+  *) [TS-2090 Make proxy.config.allocator.enable_reclaim default based on
+   build instructions.
+
   *) [TS-2086] Remove a few more unused configs.
 
   *) [TS-1685] Remove TS_MICRO and fellas.
