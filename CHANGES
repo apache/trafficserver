@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.5
   
 
+  *) [TS-2081] Make the WCCP addr configuration LOCAL.
+
   *) [TS-2093] Check bounds on plugin stat creation.
 
   *) [TS-2092] Use of uninitialized member in HdrHeap.
