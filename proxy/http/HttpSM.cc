@@ -741,7 +741,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
   }
 
   // Check to see if we are done parsing the header
-  if (state != PARSE_CONT || ua_entry->eos) {
+  if (state != PARSE_CONT || ua_entry->eos ||
+	(state == PARSE_CONT && event == VC_EVENT_READ_COMPLETE)) {
     if (ua_raw_buffer_reader != NULL) {
         ua_raw_buffer_reader->dealloc();
         ua_raw_buffer_reader = NULL;
@@ -771,6 +772,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
+    } else if (event == VC_EVENT_READ_COMPLETE) {
+	DebugSM("http_parse", "[%" PRId64 "] VC_EVENT_READ_COMPLETE and PARSE CONT state", sm_id);
+	break;
     } else {
       if (is_transparent_passthrough_allowed() &&
           ua_raw_buffer_reader != NULL &&
