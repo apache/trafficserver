@@ -69,7 +69,7 @@ less-reliable PC origin servers as backup servers. In fact, a single
 Traffic Server can act as the virtual origin server for multiple backup
 origin servers, as shown in the figure below.
 
-.. figure:: ../_static/images/admin/revproxy.jpg
+.. figure:: ../static/images/admin/revproxy.jpg
    :align: center
    :alt: Traffic Server as reverse proxy for a pair of origin servers
 
@@ -129,7 +129,7 @@ In reverse proxy mode, Traffic Server serves HTTP requests on behalf of
 a web server. The figure below illustrates how Traffic Server in reverse
 proxy mode serves an HTTP request from a client browser.
 
-.. figure:: ../_static/images/admin/httprvs.jpg
+.. figure:: ../static/images/admin/httprvs.jpg
    :align: center
    :alt: HTTP reverse proxy
 
@@ -264,7 +264,7 @@ Enabling HTTP Reverse Proxy
 To enable HTTP reverse proxy, follow the steps below.
 
 1. Edit the following variable in
-   ```records.config`` <configuration-files/records.config>`_
+   `:file:`records.config` <configuration-files/records.config>`_
 
    -  `*``proxy.config.reverse_proxy.enabled``* <configuration-files/records.config#proxy.config.reverse_proxy.enabled>`_
 
@@ -275,7 +275,7 @@ Setting Optional HTTP Reverse Proxy Options
 -------------------------------------------
 
 Traffic Server provides several reverse proxy configuration options in
-```records.config`` <configuration-files/records.config>`_ that
+`:file:`records.config` <configuration-files/records.config>`_ that
 enable you to:
 
 -  Configure Traffic Server to retain the client host header information

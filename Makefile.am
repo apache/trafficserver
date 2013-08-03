@@ -21,6 +21,8 @@
 # http://www.gnu.org/software/automake/manual/automake.html#Local-Macros
 ACLOCAL_AMFLAGS = -I build
 
+export CCACHE_BASEDIR
+
 # TODO: There's still some weirdness in the dependencies between proxy
 # and mgmt, hence we have to build proxy/hdrs first.
 

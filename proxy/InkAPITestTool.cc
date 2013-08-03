@@ -550,9 +550,8 @@ synclient_txn_read_response(TSCont contp)
 }
 
 static int
-synclient_txn_read_response_handler(TSCont contp, TSEvent event, void *data)
+synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
@@ -631,9 +630,8 @@ synclient_txn_write_request(TSCont contp)
 }
 
 static int
-synclient_txn_write_request_handler(TSCont contp, TSEvent event, void *data)
+synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
@@ -889,9 +887,8 @@ synserver_txn_write_response(TSCont contp)
 
 
 static int
-synserver_txn_write_response_handler(TSCont contp, TSEvent event, void *data)
+synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
@@ -958,9 +955,8 @@ synserver_txn_read_request(TSCont contp)
 }
 
 static int
-synserver_txn_read_request_handler(TSCont contp, TSEvent event, void *data)
+synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 

@@ -225,7 +225,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   }
 
   // Record api hook set state
-  hooks_set = http_global_hooks->hooks_set;
+  hooks_set = http_global_hooks->has_hooks();
 
 #ifdef USE_HTTP_DEBUG_LISTS
   ink_mutex_acquire(&debug_cs_list_mutex);
@@ -457,9 +457,8 @@ HttpClientSession::state_keep_alive(int event, void *data)
 }
 
 int
-HttpClientSession::state_api_callout(int event, void *data)
+HttpClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   switch (event) {
   case EVENT_NONE:
   case EVENT_INTERVAL:

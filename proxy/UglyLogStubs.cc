@@ -39,8 +39,7 @@
 int fds_limit = 8000;
 
 class FakeUDPNetProcessor : public UDPNetProcessor {
-  virtual int start(int num) {
-    NOWARN_UNUSED(num);
+  virtual int start(int, size_t) {
     ink_release_assert(false);
     return 0;
   };
@@ -60,9 +59,8 @@ UDPConnection::Release()
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
 void
-ConfigUpdateCbTable::invoke(const char *name)
+ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
   ink_release_assert(false);
 }
 
@@ -105,9 +103,8 @@ LogCollationClientSM::~LogCollationClientSM()
 }
 
 int
-LogCollationClientSM::send(LogBuffer * log_buffer)
+LogCollationClientSM::send(LogBuffer * /* log_buffer ATS_UNUSED */)
 {
-  NOWARN_UNUSED(log_buffer);
   ink_release_assert(false);
   return 0;
 }
@@ -144,10 +141,8 @@ NetProcessor::AcceptOptions::reset()
 
 // These are for clang / llvm
 int
-CacheVC::handleWrite(int event, Event *e)
+CacheVC::handleWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   return 0;
   ink_release_assert(false);
 }
@@ -156,55 +151,45 @@ UnixNetProcessor unix_netProcessor;
 NetProcessor& netProcessor = unix_netProcessor;
 
 int
-UnixNetProcessor::start(int num)
+UnixNetProcessor::start(int, size_t)
 {
-  NOWARN_UNUSED(num);
   ink_release_assert(false);
   return 0;
 }
 
 Action *
-NetProcessor::accept(Continuation* cont, AcceptOptions const& opt)
+NetProcessor::accept(Continuation* /* cont ATS_UNUSED */, AcceptOptions const& /* opt ATS_UNUSED */)
 {
-  NOWARN_UNUSED(cont);
-  NOWARN_UNUSED(opt);
   ink_release_assert(false);
   return NULL;
 }
 
 Action *
-NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const& opt)
+NetProcessor::main_accept(Continuation * /* cont ATS_UNUSED */, SOCKET /* fd ATS_UNUSED */,
+                          AcceptOptions const& /* opt ATS_UNUSED */)
 {
-  NOWARN_UNUSED(cont);
-  NOWARN_UNUSED(fd);
-  NOWARN_UNUSED(opt);
   ink_release_assert(false);
   return NULL;
 }
 
 Action *
-UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const& opt)
+UnixNetProcessor::accept_internal(Continuation * /* cont ATS_UNUSED */, int /* fd ATS_UNUSED */,
+                                  AcceptOptions const& /* opt ATS_UNUSED */)
 {
-  NOWARN_UNUSED(cont);
-  NOWARN_UNUSED(fd);
-  NOWARN_UNUSED(opt);
   ink_release_assert(false);
   return NULL;
 }
 
 UnixNetVConnection *
-UnixNetProcessor::allocateThread(EThread * t)
+UnixNetProcessor::allocateThread(EThread * /* t ATS_UNUSED */)
 {
-  NOWARN_UNUSED(t);
   ink_release_assert(false);
   return NULL;
 }
 
 void
-UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
+UnixNetProcessor::freeThread(UnixNetVConnection * /* vc ATS_UNUSED */, EThread * /* t ATS_UNUSED */)
 {
-  NOWARN_UNUSED(t);
-  NOWARN_UNUSED(vc);
   ink_release_assert(false);
 }
 
@@ -218,10 +203,8 @@ SplitDNSConfig::reconfigure()
 
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 
-CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
+CacheHostTable::CacheHostTable(Cache * /* c ATS_UNUSED */, CacheType /* typ ATS_UNUSED */)
 {
-  NOWARN_UNUSED(c);
-  NOWARN_UNUSED(typ);
 }
 
 CacheHostTable::~CacheHostTable() { }

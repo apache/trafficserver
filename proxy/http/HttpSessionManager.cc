@@ -41,10 +41,8 @@
 
 // Initialize a thread to handle HTTP session management
 void
-initialize_thread_for_http_sessions(EThread *thread, int thread_index)
+initialize_thread_for_http_sessions(EThread *thread, int /* thread_index ATS_UNUSED */)
 {
-  NOWARN_UNUSED(thread_index);
-
   thread->l1_hash = NEW(new SessionBucket[HSM_LEVEL1_BUCKETS]);
   for (int i = 0; i < HSM_LEVEL1_BUCKETS; ++i)
     thread->l1_hash[i].mutex = new_ProxyMutex();
@@ -211,10 +209,9 @@ _acquire_session(SessionBucket *bucket, sockaddr const* ip, INK_MD5 &hostname_ha
 }
 
 HSMresult_t
-HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
+HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const* ip,
                                     const char *hostname, HttpClientSession *ua_session, HttpSM *sm)
 {
-  NOWARN_UNUSED(cont);
   HttpServerSession *to_return = NULL;
 
   //  We compute the hash for matching the hostname as the last

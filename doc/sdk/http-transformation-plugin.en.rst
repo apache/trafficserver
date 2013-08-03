@@ -3,20 +3,20 @@ HTTP Transformation Plugins
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+  
+    http://www.apache.org/licenses/LICENSE-2.0
+  
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 Transform plugins examine or transform HTTP message body content. For
 example, transform plugins can:
@@ -51,7 +51,7 @@ to buffer *and* checks to see if the end of the data stream is reached.
 This mechanism is provided by virtual connections (``VConnection``\ s)
 and virtual IO descriptors (``VIO``\ s).
 
-A **``VConnection``** is an abstraction for a data pipe that allows its
+A ``VConnection`` is an abstraction for a data pipe that allows its
 users to perform asynchronous reads and writes without knowing the
 underlying implementation. A transformation is a specific type of
 ``VConnection``. A **transformation** connects an input data source and
@@ -66,7 +66,7 @@ continuations. ``VConnection``\ s and transformations can thus exchange
 events, informing one another that data is available for reading or
 writing, or that the end of a data stream is reached.
 
-A **``VIO``** is a description of an IO operation that is in progress.
+A ``VIO`` is a description of an IO operation that is in progress.
 Every ``VConnection`` has an associated *input VIO* and an associated
 *output VIO*. When ``VConnection``\ s are transferring data to one
 another, one ``VConnection``'s input ``VIO`` is another
@@ -80,10 +80,11 @@ relationship between the transformation ``VConnection`` and its
 
 **Transformation and its ``VIO``\ s** {#TransformationAndVIOs}
 
-.. figure:: /images/sdk/vconnection.jpg
+.. figure:: /static/images/sdk/vconnection.jpg
    :alt: A Transformation and its VIOs
 
    A Transformation and its VIOs
+   
 Because the Traffic Server API places transformations directly in the
 response or request data stream, the transformation ``VConnection`` is
 responsible only for reading the data from the input buffer,
@@ -113,7 +114,7 @@ Transformations
 VIOs
 ~~~~
 
-A **``VIO``** or virtual IO is a description of an in progress IO
+A ``VIO``*or virtual IO is a description of an in progress IO
 operation. The ``VIO`` data structure is used by ``VConnection`` users
 to determine how much progress has been made on a particular IO
 operation, and to reenable an IO operation when it stalls due to buffer
@@ -125,17 +126,16 @@ made.
 The ``TSVIO`` data structure itself is opaque, but it might have been
 defined as follows:
 
-::
+.. code-block:: c
 
-    :::c
-    typedef struct {
-         TSCont continuation;
-         TSVConn vconnection;
-         TSIOBufferReader reader;
-         TSMutex mutex;
-         int nbytes;
-         int ndone;
-    } *TSVIO;
+   typedef struct {
+      TSCont continuation;
+      TSVConn vconnection;
+      TSIOBufferReader reader;
+      TSMutex mutex;
+      int nbytes;
+      int ndone;
+   } *TSVIO;
 
 IO Buffers
 ~~~~~~~~~~

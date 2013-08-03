@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = cluster preparse tools utils web2 stats api cli
+SUBDIRS = cluster preparse utils web2 stats api cli
 
 # This is for traffic_manager only (local manager)
 AM_CPPFLAGS = $(ink_with_modules_local) \
@@ -99,9 +99,8 @@ traffic_manager_LDADD = \
   utils/libutils_lm.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/lib/records/libreclocal.a \
-  $(top_builddir)/mgmt/tools/libinksysapi.a \
-  $(top_builddir)/mgmt/tools/libinkconfigapi.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
   @LIBRESOLV@ @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ \
   -lm
 

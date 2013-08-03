@@ -1,0 +1,51 @@
+Apache-TS version 3.4.0
+==================================
+
+Apache::TS - a set of perl interfaces to manage an Apache Traffic Server
+             instance. This includes the following sub-modules
+
+    Apache::TS::AdminClient - access the statistics and configuration
+     			      settings stored within Apache Traffic Server
+
+    Apache::TS::Config - Manage Apache Traffic Server configs
+
+    Apache::TS::Config::Records - Manage records.config settings.
+
+
+INSTALLATION
+==================================
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+
+DEPENDENCIES
+==================================
+IO::Socket::UNIX
+IO::Select
+Carp;
+
+Additionally this module requires that Apache Traffic Server is 
+running on localhost so it has something to talk to.  
+
+COPYRIGHT AND LICENSE
+==================================
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

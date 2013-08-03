@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[3.3.4-dev])
-m4_define([TS_VERSION_N],[3003004])
+m4_define([TS_VERSION_S],[3.3.5-dev])
+m4_define([TS_VERSION_N],[3003005])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -154,6 +154,24 @@ AC_ARG_ENABLE([debug],
 AC_MSG_RESULT([$enable_debug])
 
 #
+# Enable -Werror. We want this enabled by default for developers, but disabled by default
+# for end users (because we don't want released versions to suffer from compiler warning hell).
+#
+AC_MSG_CHECKING([whether to enable -Werror])
+AC_ARG_ENABLE([werror],
+  [AS_HELP_STRING([--enable-werror],[turn compiler warnings into errors @<:@default=auto@:>@])],
+  [],
+  [
+    case $TS_VERSION_STRING in
+      *dev) enable_werror=yes ;;
+      *) enable_werror=no ;;
+    esac
+  ]
+)
+AC_MSG_RESULT([$enable_werror])
+
+
+#
 # Fast SDK APIs, this disables the parameter checks (assert)
 # on all APIs.
 #
@@ -261,19 +279,6 @@ AC_MSG_RESULT([$enable_remote_cov_commit])
 AC_SUBST([enable_remote_cov_commit])
 
 #
-# API
-#
-AC_MSG_CHECKING([whether to enable API and plugin support])
-AC_ARG_ENABLE([api],
-  [AS_HELP_STRING([--disable-api],[do not enable API and plugin support])],
-  [],
-  [enable_api=yes]
-)
-AC_MSG_RESULT([$enable_api])
-AS_IF([test "x$enable_api" = "xyes"], [has_inkapi=1], [has_inkapi=0])
-AC_SUBST(has_inkapi)
-
-#
 # WCCP
 #
 AC_MSG_CHECKING([whether to enable WCCP v2 support])
@@ -286,6 +291,20 @@ AC_MSG_RESULT([$enable_wccp])
 TS_ARG_ENABLE_VAR([has],[wccp])
 AC_SUBST(has_wccp)
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
+
+#
+# InterimCache
+#
+AC_MSG_CHECKING([whether to enable interim cache support])
+AC_ARG_ENABLE([interim_cache],
+  [AS_HELP_STRING([--enable-interim-cache],[enable interim cache])],
+  [],
+  [enable_interim_cache=no]
+)
+AC_MSG_RESULT([$enable_interim_cache])
+TS_ARG_ENABLE_VAR([has],[interim_cache])
+AC_SUBST(has_interim_cache)
+AM_CONDITIONAL([BUILD_INTERIM_CACHE], [test 0 -ne $has_interim_cache])
 
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
@@ -515,8 +534,12 @@ TS_SUBST([pkgdocdir])
 _ts_saved_CFLAGS="${CFLAGS}"
 _ts_saved_CXXFLAGS="${CXXFLAGS}"
 
-AC_PROG_CC
-AC_PROG_CXX
+# We force the compiler search list because the default GCC on Darwin cannot build
+# Traffic Server. On most (all?) platforms, cc and c++ should be the preferred default
+# compiler.
+AC_PROG_CC([cc gcc clang icc])
+AC_PROG_CXX([c++ g++ clang++ icpc])
+
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
@@ -537,6 +560,25 @@ AX_CXX_COMPILE_STDCXX_11( [noext], [enable_cxx_11_support=yes], [
 AM_CONDITIONAL([BUILD_HAVE_CXX_11], [ test "x${enable_cxx_11_support}" = "xyes" ])
 if test "x${enable_cxx_11_support}" = "xyes" ; then
   AC_DEFINE(HAVE_CXX_11, 1, [Whether the compiler support C++11])
+fi
+
+# While we are in C++ mode, check for the GNU hash_map extension.
+TS_FLAG_HEADERS([unordered_map unordered_set])
+AC_MSG_CHECKING([for <ext/hash_map>])
+AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([
+    #include <string>
+    #include <ext/hash_map>
+    ], [
+     __gnu_cxx::hash_map<std::string, std::string> map;
+  ])],
+  [ have_gnu_cxx_hash_map=yes ],
+  [ have_gnu_cxx_hash_map=no ]
+)
+
+AC_MSG_RESULT([$have_gnu_cxx_hash_map])
+if test "x${have_gnu_cxx_hash_map}" = "xyes" ; then
+  AC_DEFINE(HAVE_GNU_CXX_HASH_MAP, 1, [whether __gnu_cxx::hash_map is available])
 fi
 
 AC_LANG_POP()
@@ -726,16 +768,16 @@ case $host_os_def in
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      debug_opt="-ggdb3 $common_opt -Werror -Qunused-arguments"
-      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
-      cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
+      debug_opt="-ggdb3 $common_opt -Qunused-arguments"
+      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
+      cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
-      #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
+      #    common_opt="-pipe -Wall -Wconversion -Wno-sign-conversion"
       ts_am_common_flags="-Wunused-parameter"
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -747,12 +789,12 @@ case $host_os_def in
 
   darwin)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations -Qunused-arguments"
-      debug_opt="$common_opt"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
+      debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ], [
-      AC_MSG_ERROR([clang is the only supported on compiler on Darwin])
+      AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
 
     # Darwin needs to use libc++ for any C++11 code.
@@ -770,14 +812,14 @@ case $host_os_def in
 
   freebsd|kfreebsd)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Werror -Qunused-arguments"
+      common_opt="-pipe -Wall -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -804,7 +846,7 @@ case $host_os_def in
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -815,12 +857,19 @@ case $host_os_def in
   *)
     # Not sure what platform this is, but take a stab at some general GCC options ...
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall -Werror"
+      common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ])
 esac
+
+# Only add -Werror if the user has requested it. We enable this by default for
+# development, disable it by default for release.
+AS_IF([test x"$enable_werror" = xyes], [
+  TS_ADDTO(release_opt, -Werror)
+  TS_ADDTO(debug_opt, -Werror)
+])
 
 cc_oflag_opt=$release_opt
 cc_oflag_dbg=$debug_opt
@@ -1056,7 +1105,7 @@ if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
 
-AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate])
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
@@ -1066,7 +1115,13 @@ TS_FLAG_HEADERS([sys/eventfd.h], [
   ]
 )])
 
-AC_CHECK_FUNCS(has_eventfd)
+AC_CHECK_FUNCS(eventfd)
+
+#
+# Check for mcheck_pedantic(3)
+#
+TS_FLAG_HEADERS(mcheck.h)
+AC_CHECK_FUNCS(mcheck_pedantic)
 
 #
 # Check for pcre library
@@ -1121,7 +1176,6 @@ if test "x${with_profiler}" = "xyes"; then
 fi
 AC_SUBST(has_profiler)
 
-has_demangle=0
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in lib/ts.  Because this
 #  library is part of the SunPro distribution, we need
@@ -1130,15 +1184,21 @@ has_demangle=0
 AC_LANG_PUSH([C++])
 AC_SEARCH_LIBS([cplus_demangle],[demangle],
   [LIBDEMANGLE="-ldemangle"
-   has_demangle=1
   ]
 )
 AC_SUBST([LIBDEMANGLE])
 AC_LANG_POP
-AC_SUBST(has_demangle)
 
 AC_MSG_CHECKING(for 128bit CAS support)
 AC_LANG_PUSH([C++])
+
+# We need to save and restore compiler flags around this whole block.
+# TS_TRY_COMPILE_NO_WARNING will save and restore flags, so if we do that in the
+# middle, then we can accidentally restore modified flags.
+__saved_CXXFLAGS="${CXXFLAGS}"
+__saved_CFLAGS="${CFLAGS}"
+
+has_128bit_cas=0
 
 TS_TRY_COMPILE_NO_WARNING([],[
     __int128_t x = 0;
@@ -1147,27 +1207,30 @@ TS_TRY_COMPILE_NO_WARNING([],[
     AC_MSG_RESULT(yes)
     has_128bit_cas=1
   ], [
-      dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
-      dnl clang doesn't; icc is unknown but presumed sane.
-    __saved_CXXFLAGS="${CXXFLAGS}"
+    dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
+    dnl clang doesn't; icc is unknown but presumed sane.
     TS_ADDTO(CXXFLAGS, [-mcx16])
+    TS_ADDTO(CFLAGS, [-mcx16])
     TS_TRY_COMPILE_NO_WARNING([],[
         __int128_t x = 0;
         __sync_bool_compare_and_swap(&x,0,10);
       ], [
         AC_MSG_RESULT(yes)
         has_128bit_cas=1
-        dnl Keep CFLAGS and CXXFLAGS in sync.
-        TS_ADDTO(CFLAGS, [-mcx16])
       ], [
         AC_MSG_RESULT(no)
-        has_128bit_cas=0
-        CXXFLAGS="${__saved_CXXFLAGS}"
     ])
 ])
 
+CXXFLAGS="${__saved_CXXFLAGS}"
+CFLAGS="${__saved_CFLAGS}"
 AC_LANG_POP
 AC_SUBST(has_128bit_cas)
+
+AS_IF([test "x$has_128bit_cas" = "x1"], [
+  TS_ADDTO(CFLAGS, [-mcx16])
+  TS_ADDTO(CXXFLAGS, [-mcx16])
+])
 
 # Check for POSIX capabilities library.
 # If we don't find it, disable checking for header.
@@ -1239,6 +1302,25 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
 ])
 
 AC_SUBST(use_hwloc)
+
+#
+# Check for Maxmind APIs / includes. TODO: Long term, it might make sense to support
+# GeoIP as a "helper" plugin, which other plugins can then use. Such a plugin could
+# then manage which libraries to use via explicit dlopen()'s.
+#
+use_maxmind_geoip=0
+AC_SEARCH_LIBS([GeoIP_id_by_code], [GeoIP], [use_maxmind_geoip=1], [use_maxmind_geoip=0])
+AS_IF([test 1 -eq $use_maxmind_geoip], [
+  TS_FLAG_HEADERS([GeoIP.h], [], [
+    AC_MSG_ERROR([Can not locate GeoIP.h, perhaps install GeoIP-devel package?])
+  ])
+])
+
+AC_SUBST(use_maxmind_geoip)
+AM_CONDITIONAL([BUILD_GEOIP_PLUGIN], [ test 0 -ne $use_maxmind_geoip ])
+
+# Right now, the healthcheck plugins requires inotify_init (and friends)
+AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 
 #
 # Check for tcmalloc and jemalloc
@@ -1701,23 +1783,6 @@ TFW_PACKAGE_SUFFIX=$os_type
 
 MGMT_DEFS="$MGMT_DEFS -DMGMT_USE_SYSLOG"
 
-AC_MSG_NOTICE([Build using CC=$CC])
-AC_MSG_NOTICE([Build using CXX=$CXX])
-AC_MSG_NOTICE([Build using CPP=$CPP])
-AC_MSG_NOTICE([Build using CFLAGS=$CFLAGS])
-AC_MSG_NOTICE([Build using SHARED_CFLAGS=$SHARED_CFLAGS])
-AC_MSG_NOTICE([Build using CXXFLAGS=$CXXFLAGS])
-AC_MSG_NOTICE([Build using SHARED_CXXFLAGS=$SHARED_CXXFLAGS])
-AC_MSG_NOTICE([Build using SHARED_CXXLINKFLAGS=$SHARED_LINKCXXFLAGS])
-AC_MSG_NOTICE([Build using CPPFLAGS=$CPPFLAGS])
-AC_MSG_NOTICE([Build using LDFLAGS=$LDFLAGS])
-AC_MSG_NOTICE([Build using SHARED_LDFLAGS=$SHARED_LDFLAGS])
-AC_MSG_NOTICE([Build using EXTRA_CC_LDFLAGS=$EXTRA_CC_LDFLAGS])
-AC_MSG_NOTICE([Build using EXTRA_CXX_LDFLAGS=$EXTRA_CXX_LDFLAGS])
-AC_MSG_NOTICE([Build using LIBTOOL_LINK_FLAGS=$LIBTOOL_LINK_FLAGS])
-AC_MSG_NOTICE([Build using MGMT_DEFS=$MGMT_DEFS])
-AC_MSG_NOTICE([Build using API_DEFS=$API_DEFS])
-
 AC_SUBST([API_DEFS])
 AC_SUBST([CC])
 AC_SUBST([CFLAGS])
@@ -1739,81 +1804,101 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
-AC_CONFIG_FILES([lib/ts/ink_config.h proxy/api/ts/ts.h])
-AC_CONFIG_FILES([tools/tsxs])
-AC_CONFIG_FILES([doc/Doxyfile])
-AC_CONFIG_FILES([doc/Makefile])
-AC_CONFIG_FILES([rc/Makefile])
-AC_CONFIG_FILES([rc/trafficserver])
-AC_CONFIG_FILES([rc/trafficserver.xml])
-AC_CONFIG_FILES([rc/trafficserver.conf])
-AC_CONFIG_FILES([rc/trafficserver.service])
-AC_CONFIG_FILES([iocore/aio/Makefile])
-AC_CONFIG_FILES([iocore/cache/Makefile])
-AC_CONFIG_FILES([iocore/cluster/Makefile])
-AC_CONFIG_FILES([iocore/dns/Makefile])
-AC_CONFIG_FILES([iocore/eventsystem/Makefile])
-AC_CONFIG_FILES([iocore/hostdb/Makefile])
-AC_CONFIG_FILES([iocore/Makefile])
-AC_CONFIG_FILES([iocore/net/Makefile])
-AC_CONFIG_FILES([iocore/utils/Makefile])
-AC_CONFIG_FILES([lib/Makefile])
-AC_CONFIG_FILES([lib/ts/Makefile])
-AC_CONFIG_FILES([lib/records/Makefile])
-AC_CONFIG_FILES([lib/cpp11api/Makefile])
-AC_CONFIG_FILES([lib/tsconfig/Makefile])
-AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([proxy/config/body_factory/default/Makefile])
-AC_CONFIG_FILES([proxy/config/body_factory/Makefile])
-AC_CONFIG_FILES([proxy/config/records.config.default proxy/config/storage.config.default])
-AC_CONFIG_FILES([proxy/config/Makefile])
-AC_CONFIG_FILES([proxy/congest/Makefile])
-AC_CONFIG_FILES([proxy/hdrs/Makefile])
-AC_CONFIG_FILES([proxy/http/Makefile])
-AC_CONFIG_FILES([proxy/http/remap/Makefile])
-AC_CONFIG_FILES([proxy/logging/Makefile])
-AC_CONFIG_FILES([proxy/Makefile])
-AC_CONFIG_FILES([mgmt/api/Makefile])
-AC_CONFIG_FILES([mgmt/api/remote/Makefile])
-AC_CONFIG_FILES([mgmt/api/include/Makefile])
-AC_CONFIG_FILES([mgmt/cli/Makefile])
-AC_CONFIG_FILES([mgmt/cluster/Makefile])
-AC_CONFIG_FILES([mgmt/Makefile])
-AC_CONFIG_FILES([mgmt/preparse/Makefile])
-AC_CONFIG_FILES([mgmt/stats/Makefile])
-AC_CONFIG_FILES([mgmt/tools/Makefile])
-AC_CONFIG_FILES([mgmt/utils/Makefile])
-AC_CONFIG_FILES([mgmt/web2/Makefile])
-AC_CONFIG_FILES([lib/wccp/Makefile])
-AC_CONFIG_FILES([proxy/api/ts/Makefile])
-# Traffic Cop
-AC_CONFIG_FILES([cop/Makefile])
-# production plugins
-AC_CONFIG_FILES([plugins/Makefile])
-AC_CONFIG_FILES([plugins/conf_remap/Makefile])
-AC_CONFIG_FILES([plugins/regex_remap/Makefile])
-AC_CONFIG_FILES([plugins/header_filter/Makefile])
-AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
-AC_CONFIG_FILES([plugins/cacheurl/Makefile])
-# experimental plugins
-AC_CONFIG_FILES([plugins/experimental/Makefile])
-AC_CONFIG_FILES([plugins/experimental/esi/Makefile])
-AC_CONFIG_FILES([plugins/experimental/lua/Makefile])
-AC_CONFIG_FILES([plugins/experimental/rfc5861/Makefile])
-AC_CONFIG_FILES([plugins/experimental/tcp_info/Makefile])
-AC_CONFIG_FILES([plugins/experimental/custom_redirect/Makefile])
-AC_CONFIG_FILES([plugins/experimental/header_rewrite/Makefile])
-AC_CONFIG_FILES([plugins/experimental/metalink/Makefile])
-AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
-AC_CONFIG_FILES([plugins/experimental/spdy/Makefile])
-AC_CONFIG_FILES([plugins/experimental/channel_stats/Makefile])
-AC_CONFIG_FILES([plugins/experimental/authproxy/Makefile])
-# various tools
-AC_CONFIG_FILES([tools/Makefile])
-# example plugins
-AC_CONFIG_FILES([example/Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  cop/Makefile
+  doc/Doxyfile
+  doc/Makefile
+  example/Makefile
+  iocore/Makefile
+  iocore/aio/Makefile
+  iocore/cache/Makefile
+  iocore/cluster/Makefile
+  iocore/dns/Makefile
+  iocore/eventsystem/Makefile
+  iocore/hostdb/Makefile
+  iocore/net/Makefile
+  iocore/utils/Makefile
+  lib/Makefile
+  lib/cpp11api/Makefile
+  lib/records/Makefile
+  lib/ts/Makefile
+  lib/ts/ink_config.h
+  lib/tsconfig/Makefile
+  lib/wccp/Makefile
+  lib/perl/Makefile
+  mgmt/Makefile
+  mgmt/api/Makefile
+  mgmt/api/include/Makefile
+  mgmt/api/remote/Makefile
+  mgmt/cli/Makefile
+  mgmt/cluster/Makefile
+  mgmt/preparse/Makefile
+  mgmt/stats/Makefile
+  mgmt/utils/Makefile
+  mgmt/web2/Makefile
+  plugins/Makefile
+  plugins/cacheurl/Makefile
+  plugins/conf_remap/Makefile
+  plugins/experimental/Makefile
+  plugins/experimental/authproxy/Makefile
+  plugins/experimental/channel_stats/Makefile
+  plugins/experimental/custom_redirect/Makefile
+  plugins/experimental/esi/Makefile
+  plugins/experimental/geoip_acl/Makefile
+  plugins/experimental/lua/Makefile
+  plugins/experimental/metalink/Makefile
+  plugins/experimental/rfc5861/Makefile
+  plugins/experimental/spdy/Makefile
+  plugins/experimental/tcp_info/Makefile
+  plugins/experimental/healthchecks/Makefile
+  plugins/gzip/Makefile
+  plugins/header_filter/Makefile
+  plugins/header_rewrite/Makefile
+  plugins/regex_remap/Makefile
+  plugins/stats_over_http/Makefile
+  proxy/Makefile
+  proxy/api/ts/Makefile
+  proxy/api/ts/ts.h
+  proxy/config/Makefile
+  proxy/config/body_factory/Makefile
+  proxy/config/body_factory/default/Makefile
+  proxy/config/records.config.default
+  proxy/config/storage.config.default
+  proxy/congest/Makefile
+  proxy/hdrs/Makefile
+  proxy/http/Makefile
+  proxy/http/remap/Makefile
+  proxy/logging/Makefile
+  rc/Makefile
+  rc/trafficserver
+  rc/trafficserver.conf
+  rc/trafficserver.service
+  rc/trafficserver.xml
+  tools/Makefile
+  tools/tsxs
+])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
 
 AC_OUTPUT
+
+AC_MSG_NOTICE([Build option summary:
+    CC:                 $CC
+    CXX:                $CXX
+    CPP:                $CPP
+    CFLAGS:             $CFLAGS
+    SHARED_CFLAGS:      $SHARED_CFLAGS
+    CXXFLAGS:           $CXXFLAGS
+    SHARED_CXXFLAGS:    $SHARED_CXXFLAGS
+    SHARED_CXXLINKFLAGS:$SHARED_LINKCXXFLAGS
+    CPPFLAGS:           $CPPFLAGS
+    LDFLAGS:            $LDFLAGS
+    SHARED_LDFLAGS:     $SHARED_LDFLAGS
+    EXTRA_CC_LDFLAGS:   $EXTRA_CC_LDFLAGS
+    EXTRA_CXX_LDFLAGS:  $EXTRA_CXX_LDFLAGS
+    LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
+    MGMT_DEFS:          $MGMT_DEFS
+    API_DEFS:           $API_DEFS
+])

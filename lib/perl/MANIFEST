@@ -1,0 +1,9 @@
+Makefile.PL
+README
+examples/forw_proxy_conf.pl
+MANIFEST
+t/Apache-TS-AdminClient.t
+lib/Apache/TS.pm
+lib/Apache/TS/Config/Records.pm
+lib/Apache/TS/AdminClient.pm
+lib/Apache/TS/Config.pm

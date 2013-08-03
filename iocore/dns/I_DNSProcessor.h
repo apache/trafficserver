@@ -118,7 +118,7 @@ struct DNSProcessor: public Processor
   //
   /* currently dns system uses event threads
    * dont pass any value to the call */
-  int start(int no_of_extra_dns_threads = 0);
+  int start(int no_of_extra_dns_threads=0, size_t stacksize=DEFAULT_STACKSIZE);
 
   // Open/close a link to a 'named' (done in start())
   //

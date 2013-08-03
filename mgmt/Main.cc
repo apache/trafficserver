@@ -271,54 +271,35 @@ setup_coredump()
 }
 
 static void
-init_dirs(bool use_librecords = true)
+init_dirs()
 {
   char buf[PATH_NAME_MAX + 1];
 
-  ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
-  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-
+  REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
+  Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
   if (access(system_config_directory, R_OK) == -1) {
-    if (use_librecords) {
-      REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
-      Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
-    }
-    if (access(system_config_directory, R_OK) == -1) {
-      mgmt_elog("unable to access() config dir '%s': %d, %s\n",
-              system_config_directory, errno, strerror(errno));
-      mgmt_elog("please set config path via 'proxy.config.config_dir' \n");
-      _exit(1);
-    }
+    mgmt_elog("unable to access() config dir '%s': %d, %s\n", system_config_directory, errno, strerror(errno));
+    mgmt_elog("please set config path via 'proxy.config.config_dir' \n");
+    _exit(1);
   }
+
   ink_strlcpy(mgmt_path, system_config_directory, sizeof(mgmt_path));
 
-  if (access(system_runtime_dir, W_OK) == -1) {
-    if (use_librecords) {
-      REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
-      Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
-    }
-    if (access(system_runtime_dir, R_OK) == -1) {
-      mgmt_elog("unable to access() local state dir '%s': %d, %s\n",
-              system_runtime_dir, errno, strerror(errno));
-      mgmt_elog("please set 'proxy.config.local_state_dir'\n");
-      _exit(1);
-    }
+  REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
+  Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
+  if (access(system_runtime_dir, R_OK) == -1) {
+    mgmt_elog("unable to access() local state dir '%s': %d, %s\n", system_runtime_dir, errno, strerror(errno));
+    mgmt_elog("please set 'proxy.config.local_state_dir'\n");
+    _exit(1);
   }
 
+  REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
+  Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
   if (access(system_log_dir, W_OK) == -1) {
-    if (use_librecords) {
-      REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
-      Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
-    }
-    if (access(system_log_dir, W_OK) == -1) {
-      mgmt_elog("unable to access() log dir'%s': %d, %s\n",
-              system_log_dir, errno, strerror(errno));
-      mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
-      _exit(1);
-    }
+    mgmt_elog("unable to access() log dir'%s': %d, %s\n", system_log_dir, errno, strerror(errno));
+    mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
+    _exit(1);
   }
-
 }
 
 static void
@@ -410,7 +391,7 @@ main(int argc, char **argv)
 
   bool found = false;
   int just_started = 0;
-  int cluster_port = -1, cluster_server_port = -1;
+  int cluster_mcport = -1, cluster_rsport = -1;
   // TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
   char* proxy_port = 0;
@@ -433,12 +414,12 @@ main(int argc, char **argv)
     aconf_port_arg = atoi(envVar);
   }
 
-  if ((envVar = getenv("MGMT_CLUSTER_PORT")) != NULL) {
-    cluster_port = atoi(envVar);
+  if ((envVar = getenv("MGMT_CLUSTER_MC_PORT")) != NULL) {
+    cluster_mcport = atoi(envVar);
   }
 
   if ((envVar = getenv("MGMT_CLUSTER_RS_PORT")) != NULL) {
-    cluster_server_port = atoi(envVar);
+    cluster_rsport = atoi(envVar);
   }
 
   if ((envVar = getenv("MGMT_GROUP_ADDR")) != NULL) {
@@ -462,15 +443,15 @@ main(int argc, char **argv)
           if (strcmp(argv[i], "-aconfPort") == 0) {
             ++i;
             aconf_port_arg = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-clusterPort") == 0) {
+          } else if (strcmp(argv[i], "-clusterMCPort") == 0) {
             ++i;
-            cluster_port = atoi(argv[i]);
+            cluster_mcport = atoi(argv[i]);
           } else if (strcmp(argv[i], "-groupAddr") == 0) {
             ++i;
             group_addr = argv[i];
           } else if (strcmp(argv[i], "-clusterRSPort") == 0) {
             ++i;
-            cluster_server_port = atoi(argv[i]);
+            cluster_rsport = atoi(argv[i]);
 #if TS_USE_DIAGS
           } else if (strcmp(argv[i], "-debug") == 0) {
             ++i;
@@ -538,12 +519,6 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-proxyBackDoor") == 0) {
             ++i;
             proxy_backdoor = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-vingid") == 0) {
-            // smanager/cnp integration, this argument is
-            // really just a dummy argument used so that
-            // smanager can find all instances of a
-            // particular TM process.
-            ++i;
           } else if (strcmp(argv[i], "-schema") == 0) {
             // hidden option
             ++i;
@@ -576,7 +551,11 @@ main(int argc, char **argv)
   diags = diagsConfig->diags;
   diags->prefix_str = "Manager ";
 
-  init_dirs(false);// setup directories
+  RecLocalInit();
+  LibRecordsConfigInit();
+  RecordsConfigOverrideFromEnvironment();
+
+  init_dirs();// setup critical directories, needs LibRecords
 
   // Get the config info we need while we are still root
   extractConfigInfo(mgmt_path, recs_conf, userToRunAs, &fds_throttle);
@@ -600,8 +579,6 @@ main(int argc, char **argv)
 
 #endif
 
-  RecLocalInit();
-  LibRecordsConfigInit();
 #if TS_HAS_WCCP
   Init_Errata_Logging();
 #endif
@@ -704,13 +681,13 @@ main(int argc, char **argv)
     RecSetRecordInt("proxy.config.process_manager.mgmt_port", proxy_backdoor);
   }
 
-  if (cluster_server_port == -1) {
-    cluster_server_port = REC_readInteger("proxy.config.cluster.rsport", &found);
+  if (cluster_rsport == -1) {
+    cluster_rsport = REC_readInteger("proxy.config.cluster.rsport", &found);
     ink_assert(found);
   }
 
-  if (cluster_port == -1) {
-    cluster_port = REC_readInteger("proxy.config.cluster.mcport", &found);
+  if (cluster_mcport == -1) {
+    cluster_mcport = REC_readInteger("proxy.config.cluster.mcport", &found);
     ink_assert(found);
   }
 
@@ -737,7 +714,7 @@ main(int argc, char **argv)
   }
 
   /* TODO: Do we really need to init cluster communication? */
-  lmgmt->initCCom(cluster_port, group_addr, cluster_server_port);       /* Setup cluster communication */
+  lmgmt->initCCom(cluster_mcport, group_addr, cluster_rsport);       /* Setup cluster communication */
 
   lmgmt->initMgmtProcessServer();       /* Setup p-to-p process server */
 
@@ -843,13 +820,12 @@ main(int argc, char **argv)
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void
-SignalAlrmHandler(int sig, siginfo_t * t, void *c)
+SignalAlrmHandler(int /* sig ATS_UNUSED */, siginfo_t * t, void * /* c ATS_UNUSED */)
 #else
 static void
-SignalAlrmHandler(int sig)
+SignalAlrmHandler(int /* sig ATS_UNUSED */)
 #endif
 {
-  NOWARN_UNUSED(sig);
   /*
      fprintf(stderr,"[TrafficManager] ==> SIGALRM received\n");
      mgmt_elog(stderr,"[TrafficManager] ==> SIGALRM received\n");
@@ -960,9 +936,8 @@ SignalHandler(int sig)
 //    zombies which is bad for us
 //
 static void
-SigChldHandler(int sig)
+SigChldHandler(int /* sig ATS_UNUSED */)
 {
-  NOWARN_UNUSED(sig);
 }
 
 void
@@ -1001,7 +976,6 @@ printUsage()
   fprintf(stderr, "     -debug         <tags>  Enable the given debug tags\n");
   fprintf(stderr, "     -action        <tags>  Enable the given action tags.\n");
   fprintf(stderr, "     -version or -V         Print version id and exit.\n");
-  fprintf(stderr, "     -vingid        <id>    Vingid Flag\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "   [...] can be one+ of: [config process node cluster local all]\n");
   fprintf(stderr, "----------------------------------------------------------------------------\n");

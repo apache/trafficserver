@@ -49,11 +49,13 @@
   -------------------------------------------------------------------------*/
 
 LogAccessHttp::LogAccessHttp(HttpSM * sm)
-:m_http_sm(sm), m_arena(), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL), m_cache_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL), m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),      // undetermined
-  m_client_req_unmapped_url_path_str(NULL), m_client_req_unmapped_url_path_len(-1),     // undetermined
-  m_client_req_unmapped_url_host_str(NULL), m_client_req_unmapped_url_host_len(-1),
-  m_client_req_url_path_str(NULL),
-m_client_req_url_path_len(0), m_proxy_resp_content_type_str(NULL), m_proxy_resp_content_type_len(0)
+  : m_http_sm(sm), m_arena(), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL),
+    m_server_response(NULL), m_cache_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0),
+    m_client_req_url_canon_str(NULL), m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL),
+    m_client_req_unmapped_url_canon_len(-1), m_client_req_unmapped_url_path_str(NULL),
+    m_client_req_unmapped_url_path_len(-1), m_client_req_unmapped_url_host_str(NULL),
+    m_client_req_unmapped_url_host_len(-1), m_client_req_url_path_str(NULL), m_client_req_url_path_len(0),
+    m_proxy_resp_content_type_str(NULL), m_proxy_resp_content_type_len(0)
 {
   ink_assert(m_http_sm != NULL);
 }
@@ -90,8 +92,7 @@ LogAccessHttp::init()
   if (hdr->client_request.valid()) {
     m_client_request = &(hdr->client_request);
     m_client_req_url_str = m_client_request->url_string_get_ref(&m_client_req_url_len);
-    m_client_req_url_canon_str = LogUtils::escapify_url(&m_arena,
-                                                        m_client_req_url_str, m_client_req_url_len,
+    m_client_req_url_canon_str = LogUtils::escapify_url(&m_arena, m_client_req_url_str, m_client_req_url_len,
                                                         &m_client_req_url_canon_len);
     m_client_req_url_path_str = m_client_request->path_get(&m_client_req_url_path_len);
   }
@@ -348,9 +349,7 @@ LogAccessHttp::marshal_client_req_unmapped_url_path(char *buf)
 int
 LogAccessHttp::marshal_client_req_unmapped_url_host(char *buf)
 {
-
   validate_unmapped_url();
-
   validate_unmapped_url_path();
 
   int len = round_strlen(m_client_req_unmapped_url_host_len + 1);      // +1 for eos
@@ -652,12 +651,7 @@ LogAccessHttp::marshal_proxy_req_server_name(char *buf)
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
 {
-  return marshal_ip(
-    buf,
-    m_http_sm->t_state.current.server != NULL
-      ? &m_http_sm->t_state.current.server->addr.sa
-      : 0
-  );
+  return marshal_ip(buf, m_http_sm->t_state.current.server != NULL ? &m_http_sm->t_state.current.server->addr.sa : 0);
 }
 
 /*-------------------------------------------------------------------------
@@ -728,10 +722,8 @@ LogAccessHttp::marshal_client_accelerator_id(char *buf)
   int actual_len = 0;
 
   if (Log::config->xuid_logging_enabled) {
-
     if (m_client_request) {
-      MIMEField *field = m_client_request->field_find(MIME_FIELD_X_ID,
-                                                      MIME_LEN_X_ID);
+      MIMEField *field = m_client_request->field_find(MIME_FIELD_X_ID, MIME_LEN_X_ID);
 
       if (field) {
         str = (char *) field->value_get(&actual_len);
@@ -937,7 +929,6 @@ LogAccessHttp::marshal_cache_write_code(char *buf)
 
   if (buf) {
     int code = convert_cache_write_code(m_http_sm->t_state.cache_info.write_status);
-
     marshal_int(buf, code);
   }
 
@@ -950,7 +941,6 @@ LogAccessHttp::marshal_cache_write_transform_code(char *buf)
 
   if (buf) {
     int code = convert_cache_write_code(m_http_sm->t_state.cache_info.transform_write_status);
-
     marshal_int(buf, code);
   }
 

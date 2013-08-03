@@ -387,7 +387,7 @@ RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
 // RecDataSetFromString
 //-------------------------------------------------------------------------
 bool
-RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
+RecDataSetFromString(RecDataT data_type, RecData * data_dst, const char *data_string)
 {
   bool rec_set;
   RecData data_src;
@@ -406,10 +406,12 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
     data_src.rec_float = atof(data_string);
     break;
   case RECD_STRING:
-    if (strcmp((data_string), "NULL") == 0)
+    if (strcmp((data_string), "NULL") == 0) {
       data_src.rec_string = NULL;
-    else
-      data_src.rec_string = data_string;
+    } else {
+      // It's OK to cast away the const here, because RecDataSet will copy the string.
+      data_src.rec_string = (char *)data_string;
+    }
     break;
   case RECD_COUNTER:
     data_src.rec_counter = ink_atoi64(data_string);
@@ -423,44 +425,3 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
   return rec_set;
 }
 
-
-//-------------------------------------------------------------------------
-// RecLog
-//-------------------------------------------------------------------------
-void
-RecLog(DiagsLevel dl, const char *format_string, ...)
-{
-  va_list ap;
-
-  va_start(ap, format_string);
-  if (g_diags) {
-    g_diags->log_va(NULL, dl, NULL, format_string, ap);
-  }
-  va_end(ap);
-}
-
-
-//-------------------------------------------------------------------------
-// RecDebug
-//-------------------------------------------------------------------------
-void
-RecDebug(DiagsLevel dl, const char *format_string, ...)
-{
-  va_list ap;
-
-  va_start(ap, format_string);
-  if (g_diags) {
-    g_diags->log_va("rec", dl, NULL, format_string, ap);
-  }
-  va_end(ap);
-}
-
-
-//-------------------------------------------------------------------------
-// RecDebugOff
-//-------------------------------------------------------------------------
-void
-RecDebugOff()
-{
-  g_diags = NULL;
-}

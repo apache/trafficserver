@@ -49,7 +49,7 @@ struct SSLNetProcessor : public UnixNetProcessor
 {
 public:
 
-  virtual int start(int no_of_ssl_threads);
+  virtual int start(int no_of_ssl_threads, size_t stacksize);
 
   void cleanup(void);
 

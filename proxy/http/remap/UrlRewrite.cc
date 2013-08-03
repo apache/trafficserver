@@ -488,7 +488,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   this->file_var = ats_strdup(file_var_in);
   config_file_path[0] = '\0';
 
-  REVERSE_ReadConfigStringAlloc(config_file, file_var_in);
+  REC_ReadConfigStringAlloc(config_file, file_var_in);
 
   if (config_file == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
@@ -497,7 +497,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   }
 
   this->ts_name = NULL;
-  REVERSE_ReadConfigStringAlloc(this->ts_name, "proxy.config.proxy_name");
+  REC_ReadConfigStringAlloc(this->ts_name, "proxy.config.proxy_name");
   if (this->ts_name == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.proxy_name");
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
@@ -505,19 +505,19 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   }
 
   this->http_default_redirect_url = NULL;
-  REVERSE_ReadConfigStringAlloc(this->http_default_redirect_url, "proxy.config.http.referer_default_redirect");
+  REC_ReadConfigStringAlloc(this->http_default_redirect_url, "proxy.config.http.referer_default_redirect");
   if (this->http_default_redirect_url == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.http.referer_default_redirect");
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
     this->http_default_redirect_url = ats_strdup("http://www.apache.org");
   }
 
-  REVERSE_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
-  REVERSE_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf_port");
-  REVERSE_ReadConfigInteger(default_to_pac, "proxy.config.url_remap.default_to_server_pac");
-  REVERSE_ReadConfigInteger(default_to_pac_port, "proxy.config.url_remap.default_to_server_pac_port");
-  REVERSE_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
-  REVERSE_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
+  REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
+  REC_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf_port");
+  REC_ReadConfigInteger(default_to_pac, "proxy.config.url_remap.default_to_server_pac");
+  REC_ReadConfigInteger(default_to_pac_port, "proxy.config.url_remap.default_to_server_pac_port");
+  REC_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
+  REC_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
 
   ink_strlcpy(config_file_path, system_config_directory, sizeof(config_file_path));
   ink_strlcat(config_file_path, "/", sizeof(config_file_path));

@@ -132,7 +132,7 @@ public:
 
   void init(size_t numPairs, ...);
 
-  int asInt(char *key, IntType * val, bool case_sensitive_search = 0) const
+  int asInt(char *key, IntType * val, bool case_sensitive) const
   {
     int retVal = INVALID_STRING;
 
@@ -141,7 +141,7 @@ public:
       bool found;
       if (m_table[i].valid)
       {
-        if (case_sensitive_search) {
+        if (case_sensitive) {
           found = (strcmp(key, m_table[i].name) == 0);
         } else
         {
@@ -200,9 +200,8 @@ from their integer value to the "hex" notation and back.
 class LogFieldAliasTimeHex:public LogFieldAliasMap
 {
 public:
-  int asInt(char *str, IntType * time, bool case_sensitive = 0) const
+  int asInt(char *str, IntType * time, bool /* case_sensitive ATS_UNUSED */) const
   {
-    NOWARN_UNUSED(case_sensitive);
     unsigned long a;
     // coverity[secure_coding]
     if (sscanf(str, "%lx", (unsigned long *) &a) == 1) {

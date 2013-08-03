@@ -64,7 +64,7 @@ cached and then served to the client. Future requests for this content
 can now be served directly from the Traffic Server cache (until the data
 is stale or expired).
 
-.. figure:: ../_static/images/admin/cachehrc.jpg
+.. figure:: ../static/images/admin/cachehrc.jpg
    :align: center
    :alt: Parent caching
 
@@ -110,7 +110,7 @@ configuration is needed for the Traffic Server parent cache.
 Configure Traffic Server to use a parent cache by editing the following
 variable
 `*``proxy.config.http.parent_proxy_routing_enable``* <configuration-files/records.config#proxy.config.http.parent_proxy_routing_enable>`_
-in ``records.config`` file.
+in :file:`records.config` file.
 
 Edit the ```parent.config`` <../configuration-files/parent.config>`_
 file located in the Traffic Server ``config`` directory to set parent

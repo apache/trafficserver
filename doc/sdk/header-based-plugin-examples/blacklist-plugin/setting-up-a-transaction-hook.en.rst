@@ -3,20 +3,20 @@ Setting Up a Transaction Hook
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+  
+    http://www.apache.org/licenses/LICENSE-2.0
+  
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 The Blacklist plugin sends "access forbidden" messages to clients if
 their requests are directed to blacklisted hosts. Therefore, the plugin
@@ -25,26 +25,25 @@ HTTP state machine reaches the "send response header" event. In the
 Blacklist plugin's ``handle_dns`` routine, the transaction hook is added
 as follows:
 
-::
+.. code-block:: c
 
-    :::c
-    TSMutexLock (sites_mutex);
-    for (i = 0; i < nsites; i++) {
-        if (strncmp (host, sites[i], host_length) == 0) {
-            printf ("blacklisting site: %s\n", sites[i]);
-            TSHttpTxnHookAdd (txnp,
-                    TS_HTTP_SEND_RESPONSE_HDR_HOOK,
-                    contp);
-            TSHandleMLocRelease (bufp, hdr_loc, url_loc);
-            TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
-            TSHttpTxnReenable (txnp, TS_EVENT_HTTP_ERROR);
-            TSMutexUnlock (sites_mutex);
-            return;
-        }
-    }
-    TSMutexUnlock (sites_mutex);
-    done:
-        TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
+   TSMutexLock (sites_mutex);
+   for (i = 0; i < nsites; i++) {
+      if (strncmp (host, sites[i], host_length) == 0) {
+         printf ("blacklisting site: %s\n", sites[i]);
+         TSHttpTxnHookAdd (txnp,
+            TS_HTTP_SEND_RESPONSE_HDR_HOOK,
+            contp);
+         TSHandleMLocRelease (bufp, hdr_loc, url_loc);
+         TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+         TSHttpTxnReenable (txnp, TS_EVENT_HTTP_ERROR);
+         TSMutexUnlock (sites_mutex);
+         return;
+      }
+   }
+   TSMutexUnlock (sites_mutex);
+   done:
+   TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
 
 This code fragment shows some interesting features. The plugin is
 comparing the requested site to the list of blacklisted sites. While the

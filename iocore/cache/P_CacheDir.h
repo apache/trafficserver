@@ -81,6 +81,7 @@ struct CacheVC;
   dir_assign(_e, _x);		              \
   dir_set_next(_e, next);                     \
 } while(0)
+#if !TS_USE_INTERIM_CACHE
 // entry is valid
 #define dir_valid(_d, _e)                                               \
   (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) :   \
@@ -95,6 +96,7 @@ struct CacheVC;
                                         vol_out_of_phase_write_valid(_d, _e))
 #define dir_agg_buf_valid(_d, _e)                                          \
   (_d->header->phase == dir_phase(_e) && vol_in_phase_agg_buf_valid(_d, _e))
+#endif
 #define dir_is_empty(_e) (!dir_offset(_e))
 #define dir_clear(_e) do { \
     (_e)->w[0] = 0; \
@@ -155,15 +157,42 @@ struct FreeDir
   unsigned int reserved:8;
   unsigned int prev:16;         // (2)
   unsigned int next:16;         // (3)
+#if TS_USE_INTERIM_CACHE == 1
+  unsigned int offset_high:12;   // 8GB * 4K = 32TB
+  unsigned int index:3;          // interim index
+  unsigned int ininterim:1;          // in interim or not
+#else
   inku16 offset_high;           // 0: empty
+#endif
 #else
   uint16_t w[5];
   FreeDir() { dir_clear(this); }
 #endif
 };
 
-#define dir_bit(_e, _w, _b) ((uint32_t)(((_e)->w[_w] >> (_b)) & 1))
-#define dir_set_bit(_e, _w, _b, _v) (_e)->w[_w] = (uint16_t)(((_e)->w[_w] & ~(1<<(_b))) | (((_v)?1:0)<<(_b)))
+#if TS_USE_INTERIM_CACHE == 1
+#define dir_ininterim(_e) (((_e)->w[4] >> 15) & 1)
+#define dir_set_ininterim(_e) ((_e)->w[4] |= (1 << 15));
+#define dir_set_indisk(_e) ((_e)->w[4] &= 0x0FFF);
+#define dir_get_index(_e) (((_e)->w[4] >> 12) & 0x7)
+#define dir_set_index(_e, i) ((_e)->w[4] |= (i << 12))
+#define dir_offset(_e) ((int64_t)                \
+  (((uint64_t)(_e)->w[0]) |           \
+  (((uint64_t)((_e)->w[1] & 0xFF)) << 16) |       \
+  (((uint64_t)((_e)->w[4] & 0x0FFF)) << 24)))
+#define dir_set_offset(_e, _o) do {            \
+  (_e)->w[0] = (uint16_t)_o;        \
+  (_e)->w[1] = (uint16_t)((((_o) >> 16) & 0xFF) | ((_e)->w[1] & 0xFF00));       \
+  (_e)->w[4] = (((_e)->w[4] & 0xF000) | ((uint16_t)((_o) >> 24)));                                          \
+} while (0)
+#define dir_get_offset(_e) ((int64_t)                                     \
+                         (((uint64_t)(_e)->w[0]) |                        \
+                          (((uint64_t)((_e)->w[1] & 0xFF)) << 16) |       \
+                          (((uint64_t)(_e)->w[4]) << 24)))
+
+void clear_interim_dir(Vol *v);
+
+#else
 #define dir_offset(_e) ((int64_t)                                         \
                          (((uint64_t)(_e)->w[0]) |                        \
                           (((uint64_t)((_e)->w[1] & 0xFF)) << 16) |       \
@@ -173,6 +202,9 @@ struct FreeDir
     (_e)->w[1] = (uint16_t)((((_o) >> 16) & 0xFF) | ((_e)->w[1] & 0xFF00));       \
     (_e)->w[4] = (uint16_t)((_o) >> 24);                                          \
 } while (0)
+#endif
+#define dir_bit(_e, _w, _b) ((uint32_t)(((_e)->w[_w] >> (_b)) & 1))
+#define dir_set_bit(_e, _w, _b, _v) (_e)->w[_w] = (uint16_t)(((_e)->w[_w] & ~(1<<(_b))) | (((_v)?1:0)<<(_b)))
 #define dir_big(_e) ((uint32_t)((((_e)->w[1]) >> 8)&0x3))
 #define dir_set_big(_e, _v) (_e)->w[1] = (uint16_t)(((_e)->w[1] & 0xFCFF) | (((uint16_t)(_v))&0x3)<<8)
 #define dir_size(_e) ((uint32_t)(((_e)->w[1]) >> 10))

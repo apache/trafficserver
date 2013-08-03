@@ -56,10 +56,8 @@ Cache::link(Continuation * cont, CacheKey * from, CacheKey * to, CacheFragType t
 }
 
 int
-CacheVC::linkWrite(int event, Event * e)
+CacheVC::linkWrite(int event, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
   ink_assert(event == AIO_EVENT_DONE);
   set_io_not_in_progress();
   dir_insert(&first_key, vol, &dir);
@@ -122,10 +120,8 @@ Lcallreturn:
 }
 
 int
-CacheVC::derefRead(int event, Event * e)
+CacheVC::derefRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
   Doc *doc = NULL;
 
   cancel_trigger();

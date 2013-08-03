@@ -70,7 +70,7 @@ In more specific terms, Traffic Server and the Protocol plugin must:
 
 **Sample Protocol State Diagram** {#SampleProtocolStDiag}
 
-.. figure:: /images/sdk/Protocol_state_diagram.jpg
+.. figure:: ../static/images/sdk/Protocol_state_diagram.jpg
    :alt: Sample Protocol State Diagram
 
    Sample Protocol State Diagram
@@ -104,7 +104,7 @@ Overview <#ProtocolPluginOverview>`__ diagram below.
 
 **Protocol Plugin Overview** {#ProtocolPluginOverview}
 
-.. figure:: /images/sdk/protocol_sm_big.jpg
+.. figure:: ../static/images/sdk/protocol_sm_big.jpg
    :alt: Protocol Plugin Overview
 
    Protocol Plugin Overview
@@ -156,7 +156,7 @@ Processor.
 
 **Protocol Plugin Flow of Events** {#ProtocolPluginFlow}
 
-.. figure:: /images/sdk/protocol_evt.jpg
+.. figure:: ../static/images/sdk/protocol_evt.jpg
    :alt: Protocol Plugin Flow of Events
 
    Protocol Plugin Flow of Events

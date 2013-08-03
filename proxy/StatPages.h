@@ -89,7 +89,7 @@ struct StatPagesManager
   inkcoreapi void register_http(const char *hostname, StatPagesFunc func);
 
   // Private
-  Action *handle_http(Continuation * cont, HTTPHdr * header, int client_ip);
+  Action *handle_http(Continuation * cont, HTTPHdr * header);
   bool is_stat_page(URL * url);
   bool is_cache_inspector_page(URL * url);
   int m_enabled;

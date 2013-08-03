@@ -139,9 +139,8 @@ handleArgInvocation()
 }
 
 int
-main(int argc, char **argv)
+main(int /* argc ATS_UNUSED */, char **argv)
 {
-  NOWARN_UNUSED(argc);
   AppVersionInfo appVersionInfo;
   TSError status;
 

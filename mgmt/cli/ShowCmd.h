@@ -116,7 +116,6 @@ int CmdArgs_ShowParents();
 int Cmd_ShowRemap(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowSocks(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_ShowSocks();
-int Cmd_ShowPortTunnels(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowScheduledUpdate(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_ShowScheduledUpdate();
 int Cmd_ShowProxyStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
@@ -131,7 +130,6 @@ int Cmd_ShowAlarms(ClientData clientData, Tcl_Interp * interp, int argc, const c
 int Cmd_ShowRadius(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowNtlm(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowNtlmStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowNetwork(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_None();
 
 int getnameserver(char *nameserver, int len);
@@ -208,9 +206,6 @@ int ShowSocks();
 
 // show:socks rules sub-command
 int ShowSocksRules();
-
-// show port-tunnels sub-command
-int ShowPortTunnels();
 
 // show scheduled-update sub-command
 int ShowScheduledUpdate();

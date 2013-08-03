@@ -112,7 +112,7 @@ public:
     @return event object representing the start of the thread.
 
   */
-  Event *spawn_thread(Continuation * cont, const char *thr_name, ink_sem * sem = NULL);
+  Event *spawn_thread(Continuation * cont, const char *thr_name, size_t stacksize, ink_sem * sem = NULL);
 
   /**
     Spawns a group of threads for an event type. Spawns the number of
@@ -123,7 +123,7 @@ public:
     @return EventType or thread id for the new group of threads.
 
   */
-  EventType spawn_event_threads(int n_threads, const char* et_name);
+  EventType spawn_event_threads(int n_threads, const char* et_name, size_t stacksize);
 
 
   /**
@@ -246,7 +246,7 @@ public:
     @return 0 if successful, and a negative value otherwise.
 
   */
-  int start(int n_net_threads);
+  int start(int n_net_threads, size_t stacksize=DEFAULT_STACKSIZE);
 
   /**
     Stop the EventProcessor. Attempts to stop the EventProcessor and

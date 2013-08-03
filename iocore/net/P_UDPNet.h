@@ -46,8 +46,8 @@ struct UDPNetHandler;
 
 struct UDPNetProcessorInternal : public UDPNetProcessor
 {
-  virtual int start(int n_udp_threads);
-  void udp_read_from_net(UDPNetHandler * nh, UDPConnection * uc, PollDescriptor * pd, EThread * thread);
+  virtual int start(int n_udp_threads, size_t stacksize);
+  void udp_read_from_net(UDPNetHandler * nh, UDPConnection * uc);
   int udp_callback(UDPNetHandler * nh, UDPConnection * uc, EThread * thread);
 
   off_t pollCont_offset;

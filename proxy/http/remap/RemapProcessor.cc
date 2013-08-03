@@ -27,10 +27,10 @@ RemapProcessor remapProcessor;
 extern ClassAllocator<RemapPlugins> pluginAllocator;
 
 int
-RemapProcessor::start(int num_threads)
+RemapProcessor::start(int num_threads, size_t stacksize)
 {
   if (_use_separate_remap_thread)
-    ET_REMAP = eventProcessor.spawn_event_threads(num_threads, "ET_REMAP");  // ET_REMAP is a class member
+    ET_REMAP = eventProcessor.spawn_event_threads(num_threads, "ET_REMAP", stacksize);  // ET_REMAP is a class member
 
   return 0;
 }

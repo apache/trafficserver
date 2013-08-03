@@ -118,10 +118,8 @@ private:
 };
 
 int
-MachineStatusSM::MachineStatusSMEvent(Event * e, void *d)
+MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d ATS_UNUSED */)
 {
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(d);
   int n;
   EThread *et = this_ethread();
 

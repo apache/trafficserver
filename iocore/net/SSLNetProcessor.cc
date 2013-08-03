@@ -44,7 +44,7 @@ SSLNetProcessor::cleanup(void)
 }
 
 int
-SSLNetProcessor::start(int number_of_ssl_threads)
+SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
 {
   // This initialization order matters ...
   SSLInitializeLibrary();
@@ -69,8 +69,8 @@ SSLNetProcessor::start(int number_of_ssl_threads)
     return -1;
   }
 
-  SSLNetProcessor::ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL");
-  return UnixNetProcessor::start();
+  SSLNetProcessor::ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL", stacksize);
+  return UnixNetProcessor::start(0, stacksize);
 }
 
 NetAccept *

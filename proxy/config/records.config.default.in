@@ -23,7 +23,6 @@ CONFIG proxy.config.proxy_name STRING @build_machine@
 CONFIG proxy.config.config_dir STRING @rel_sysconfdir@
 CONFIG proxy.config.proxy_binary_opts STRING -M
 CONFIG proxy.config.env_prep STRING example_prep.sh
-CONFIG proxy.config.temp_dir STRING /tmp
 CONFIG proxy.config.alarm_email STRING @pkgsysuser@
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 CONFIG proxy.config.output.logfile STRING traffic.out
@@ -81,28 +80,35 @@ CONFIG proxy.config.alarm.abs_path STRING NULL
    ##########
    # The server ports are listed here. These are separated by spaces or commas.
    # Each port is a colon separated list of values, which must include a
-   # port number. Other options are
+   # port number. The order is irrelevant. Other options are
    # ipv4 - Use IPv4 (default)
    # ipv6 - Use IPv6
    # tr-in - Transparent inbound.
    # tr-out - Transparent outbound.
    # tr-full - Fully transparent (inbound and outbound).
-   # tr-pass - Transprently Pass-through non-HTTP traffic (in conjuction with tr-in).
+   # tr-pass - Transparently Pass-through non-HTTP traffic (in conjuction with tr-in).
    # ssl - SSL terminated port.
-   # blind - Blind tunnel port.
+   # blind - Blind tunnel port (CONNECT only)
    # ip-in=[addr] - Bind inbound IP address (listen for client).
    # ip-out=[addr] - Bind outbound IP address (connect to origin server).
+   # ip-resolve=[style] - Set the IP resolution style.
    #
-   # note - address types must agree with each other and the ipv4/ipv6
+   # Note - address types must agree with each other and the ipv4/ipv6
    # option if specified. IPv6 addresses must be enclosed in brackets.
-   # ip-out can be repeated as long as each address is a different family.
-   # The '=' is optional.
+   # ip-out can be repeated as long as each address is a different
+   # family. If ip-in is specified as an IPv6 address, the port is
+   # forced to IPv6. Transparent ports cannot be bound to an IP
+   # address on the transparent side.
+   #
+   # The '=' is optional for any option with a value.
    #
    # Example 1: Port 8080 IPv6 inbound transparent, and port 80 IPv4
    # "8080:ipv6:tr-in 80"
    #
-   # Example 2: Listen on standard http and https ports for IPv4 and IPv6:
-   # "80:ipv4 80:ipv6 443:ipv4:ssl 443:ipv6:ssl"
+   # Example 2: Listen on standard http and https ports for IPv4 and IPv6,
+   # fully transparent on the http ports. Also provide an non-transparent
+   # port at address 192.168.1.56 on port 8080.
+   # "80:ipv4:tr-full tr-full:80:ipv6 443:ipv4:ssl 443:ssl:ipv6 ip-in=192.168.1.56:8080"
    #
 CONFIG proxy.config.http.server_ports STRING 8080
    # Ports on the origin server to which a blind tunnel may connect.
@@ -370,6 +376,10 @@ CONFIG proxy.config.cache.threads_per_disk INT 8
    # this low can reduce latencies in some cases, but can consume more CPU.
    # If you experience CPU spinning, try increasing this setting.
 CONFIG proxy.config.cache.mutex_retry_delay INT 2
+   # The interim storage disks. Must use raw disks.
+   # Only support at most 8 interim disks now. e.g.
+   # proxy.config.cache.interim.storage STRING /dev/sda /dev/sdb/
+LOCAL proxy.config.cache.interim.storage STRING NULL
 ##############################################################################
 #
 # DNS
@@ -482,12 +492,6 @@ CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
 # SSL Termination
 #
 ##############################################################################
-   # proxy.config.ssl.enabled should be:
-   #   0 - none
-   #   1 - SSL enabled
-   # Deprecated. SSL is enabled automatically if an SSL port is configured
-   # in config.proxy.http.server_ports.
-#CONFIG proxy.config.ssl.enabled INT 0
    # The number of SSL threads is a multiplier of number of CPUs and
    # proxy.config.exec_thread.autoconfig.scale by default. You can
    # override that here (set it to a non-zero value).
@@ -506,9 +510,6 @@ CONFIG proxy.config.ssl.server.cipher_suite STRING RC4-SHA:AES128-SHA:DES-CBC3-S
 CONFIG proxy.config.ssl.server.honor_cipher_order INT 0
    # Control if SSL should perform content compression or not
 CONFIG proxy.config.ssl.compression INT 0
-   # Deprecated.
-   # SSL ports should now be configured via proxy.config.http.server_ports
-#CONFIG proxy.config.ssl.server_port INT 443
    # Client certification level should be:
    # 0 no client certificates
    # 1 client certificates optional
@@ -599,6 +600,8 @@ CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
   # ink allocators
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 
+  # Log the source code location of diagnostic messages.
+CONFIG proxy.config.diags.show_location INT 0
 ##############################################################################
 #
 # Configuration for Reclaimable InkFreeList memory pool
@@ -613,8 +616,8 @@ CONFIG proxy.config.dump_mem_info_frequency INT 0
   #  bit 0: reclaim memory in ink_freelist_new
   #  bit 1: allocate memory from partial-free Chunks(if exist) or OS
 CONFIG proxy.config.allocator.debug_filter INT 0
-  # The value of enable_reclaim should be 0 or 1. Default 0, reclaim disabled.
-CONFIG proxy.config.allocator.enable_reclaim INT 0
+  # The value of enable_reclaim should be 0 or 1. Default 1, reclaim enabled.
+CONFIG proxy.config.allocator.enable_reclaim INT @use_reclaimable_freelist@
   # The value of reclaim_factor should be in 0.0 ~ 1.0, allocator use it to
   # calculate average value of idle memory in InkFreeList, which will determine
   # when to reclaim memory. The larger the value, the faster the reclaiming.

@@ -91,9 +91,6 @@ CliCreateCommands()
   createCommand("show:socks", Cmd_ShowSocks, CmdArgs_ShowSocks, CLI_COMMAND_EXTERNAL,
                 "show:socks", "SOCKS configuration");
 
-  createCommand("show:port-tunnels", Cmd_ShowPortTunnels, NULL, CLI_COMMAND_EXTERNAL,
-                "show:port-tunnels", "Port tunnels configuration");
-
   createCommand("show:scheduled-update", Cmd_ShowScheduledUpdate, CmdArgs_ShowScheduledUpdate, CLI_COMMAND_EXTERNAL,
                 "show:scheduled-update", "Scheduled update configuration");
 
@@ -119,8 +116,6 @@ CliCreateCommands()
                 "show:logging-stats", "Logging statistics");
 
   createCommand("show:alarms", Cmd_ShowAlarms, NULL, CLI_COMMAND_EXTERNAL, "show:alarms", "Show active alarms");
-
-  createCommand("show:network", Cmd_ShowNetwork, NULL, CLI_COMMAND_EXTERNAL, "show:network", "Show Network Settings");
 
   createCommand("show:cluster", Cmd_ShowCluster, NULL, CLI_COMMAND_EXTERNAL,
                 "show:cluster", "Show Cluster Ports Settings");
@@ -181,9 +176,6 @@ CliCreateCommands()
                 "config:icp multicast <on | off>\n"
                 "config:icp query-timeout <seconds>\n" "config:icp peers <url-config-file>", "Configure ICP");
 
-  createCommand("config:port-tunnels", Cmd_ConfigPortTunnels, CmdArgs_ConfigPortTunnels, CLI_COMMAND_EXTERNAL,
-                "config:port-tunnels server-other-ports <port>", "Configure Port Tunnels");
-
   createCommand("config:scheduled-update", Cmd_ConfigScheduledUpdate, CmdArgs_ConfigScheduledUpdate,
                 CLI_COMMAND_EXTERNAL,
                 "config:scheduled-update status <on | off>\n" "config:scheduled-update retry-count <int>\n"
@@ -239,21 +231,6 @@ CliCreateCommands()
                 "config:virtual-ip list\n"
                 "config:virtual-ip add <x.x.x.x> device <string> sub-intf <int>\n"
                 "config:virtual-ip delete <virtual ip number>", "Configure virtual-ip");
-
-  createCommand("config:network", Cmd_ConfigNetwork, CmdArgs_ConfigNetwork, CLI_COMMAND_EXTERNAL,
-                "config:network hostname <string>\n"
-                "config:network defaultrouter <x.x.x.x>\n"
-                "config:network search-domain <string>\n"
-                "config:network dns \"a.a.a.a b.b.b.b c.c.c.c\"\n"
-                "config:network int <interface>\n"
-                "config:network int <interface> down\n"
-                "config:network int <interface> up <onboot | not-onboot>\n"
-                "               <static | dhcp> <ip> <netmask> <gateway>\n"
-                "config:network int <interface> <onboot | not-onboot>\n"
-                "config:network int <interface> <static | dhcp>\n"
-                "config:network int <interface> ip <x.x.x.x>\n"
-                "config:network int <interface> netmask <x.x.x.x>\n"
-                "config:network int <interface> gateway <x.x.x.x | default>\n", "Configure Network Settings");
 
   createCommand("config:alarms", Cmd_ConfigAlarm, CmdArgs_ConfigAlarm, CLI_COMMAND_EXTERNAL,
                 "config:alarms resolve-name <string>\n"

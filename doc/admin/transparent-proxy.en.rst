@@ -34,7 +34,7 @@ intercept connections between clients and servers without being visible.
 The general network structure that will be used in this documentation
 looks like this --
 
-.. figure:: ../_static/images/admin/ats-basic-traffic.png
+.. figure:: ../static/images/admin/ats-basic-traffic.png
    :align: center
    :alt: ATS basic traffic flow of Transparent Proxy
 
@@ -82,10 +82,9 @@ Standard build procedures should work for transparency support but if
 not consult these `more detailed instructions <build>`_
 
 Transparency is configured per server port not globally. This is done
-via the configuration values ``proxy.config.http.server_port_attr`` and
-``proxy.config.http.server_other_ports``. In addition,
-``proxy.config.reverse_proxy_enabled`` must be enabled if the client
-side is transparent. That should be fixed in a future patch.
+via the configuration values ``proxy.config.http.server_port_attr``.
+In addition, ``proxy.config.reverse_proxy_enabled`` must be enabled if the
+client side is transparent. That should be fixed in a future patch.
 
 In the first case use the attribute character (replacing the default
 'X')
@@ -104,10 +103,6 @@ In the first case use the attribute character (replacing the default
 In the outbound transparent case clients must connect directly to ATS
 either through an explicit proxy mechanism or by advertising the IP
 address of the ATS server via DNS as the origin server address.
-
-For ``.server_other_ports`` use the same characters after the port and
-colon, e.g. if port 8088 is to be configured for client side
-transparency use '``8088:>``\ '.
 
 Some tested scenarios --
 

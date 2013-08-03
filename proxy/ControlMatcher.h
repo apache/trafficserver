@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  ControlMatcher.h - Interface to genernal purpose matcher
+ *  ControlMatcher.h - Interface to general purpose matcher
  *
  *
  *
@@ -124,14 +124,16 @@ public:
   virtual sockaddr const* get_ip() = 0;
 
   virtual sockaddr const* get_client_ip() = 0;
+
   enum RD_Type
-  { RD_NULL, RD_HTTP, RD_CONGEST_ENTRY };
-  virtual RD_Type data_type(void)
   {
-    return RD_NULL;
-  }
+    RD_NULL,
+    RD_HTTP,
+    RD_CONGEST_ENTRY
+  };
+
+  virtual RD_Type data_type(void) { return RD_NULL; }
 };
-typedef RequestData RD;
 
 class HttpRequestData:public RequestData
 {
@@ -142,8 +144,7 @@ public:
   inkcoreapi sockaddr const* get_client_ip();
 
   HttpRequestData()
-    : hdr(NULL), hostname_str(NULL), api_info(NULL),
-      xact_start(0), incoming_port(0), tag(NULL)
+    : hdr(NULL), hostname_str(NULL), api_info(NULL), xact_start(0), incoming_port(0), tag(NULL)
   { 
     ink_zero(src_ip);
     ink_zero(dest_ip);
@@ -160,25 +161,43 @@ public:
 };
 
 
+template<class Data, class Result> class UrlMatcher {
+public:
+  UrlMatcher(const char *name, const char *filename);
+  ~UrlMatcher();
+  void Match(RequestData * rdata, Result * result);
+  void AllocateSpace(int num_entries);
+  char *NewEntry(matcher_line * line_info);
+  void Print();
+
+  int getNumElements() { return num_el; }
+  Data *getDataArray() { return data_array; }
+
+protected:
+  InkHashTable *url_ht;
+  char **url_str;                // array of url strings
+  int  *url_value;                // array of posion of url strings
+  Data *data_array;             // data array.  Corresponds to re_array
+  int array_len;                // length of the arrays (all three are the same length)
+  int num_el;                   // number of elements in the table
+  const char *matcher_name;     // Used for Debug/Warning/Error messages
+  const char *file_name;        // Used for Debug/Warning/Error messages
+};
+
+
 template<class Data, class Result> class RegexMatcher {
 public:
   RegexMatcher(const char *name, const char *filename);
   ~RegexMatcher();
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();
-  int getNumElements()
-  {
-    return num_el;
-  };
-  Data *getDataArray()
-  {
-    return data_array;
-  };
-#ifndef TS_MICRO
+
+  int getNumElements() { return num_el; }
+  Data *getDataArray() { return data_array; }
+
 protected:
-#endif
   pcre** re_array;              // array of compiled regexs
   char **re_str;                // array of uncompiled regex strings
   Data *data_array;             // data array.  Corresponds to re_array
@@ -191,32 +210,23 @@ protected:
 template<class Data, class Result> class HostRegexMatcher:public RegexMatcher<Data, Result> {
 public:
   HostRegexMatcher(const char *name, const char *filename);
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
 };
 
 template<class Data, class Result> class HostMatcher {
 public:
   HostMatcher(const char *name, const char *filename);
   ~HostMatcher();
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();
-  int getNumElements()
-  {
-    return num_el;
-  };
-  Data *getDataArray()
-  {
-    return data_array;
-  };
-  HostLookup *getHLookup()
-  {
-    return host_lookup;
-  };
-#ifndef TS_MICRO
+
+  int getNumElements() { return num_el; }
+  Data *getDataArray() { return data_array; }
+  HostLookup *getHLookup() { return host_lookup; }
+
 private:
-#endif
   static void PrintFunc(void *opaque_data);
   HostLookup *host_lookup;      // Data structure to do the lookups
   Data *data_array;             // array of all data items
@@ -230,23 +240,16 @@ template<class Data, class Result> class IpMatcher {
 public:
   IpMatcher(const char *name, const char *filename);
   ~IpMatcher();
-  void Match(sockaddr const* ip_addr, RD * rdata, Result * result);
+  void Match(sockaddr const* ip_addr, RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();
-  int getNumElements()
-  {
-    return num_el;
-  };
-  Data *getDataArray()
-  {
-    return data_array;
-  };
 
-  //private:
-  //void MatchArray(in_addr_t addr, RD* rdata, Result* result, void* array);
+  int getNumElements() { return num_el; }
+  Data *getDataArray() { return data_array; }
+
   static void PrintFunc(void *opaque_data);
-  IpMap ip_map;          // Data structure to do lookups
+  IpMap ip_map;                 // Data structure to do lookups
   Data *data_array;             // array of the data lements with in the table
   int array_len;                // size of the arrays
   int num_el;                   // number of elements in the table
@@ -259,38 +262,33 @@ public:
 #define ALLOW_IP_TABLE     1 << 1
 #define ALLOW_REGEX_TABLE  1 << 2
 #define ALLOW_HOST_REGEX_TABLE 1 << 3
-#define DONT_BUILD_TABLE     1 << 4     // for testing
+#define ALLOW_URL_TABLE 1 << 4
+#define DONT_BUILD_TABLE     1 << 5     // for testing
 
 template<class Data, class Result> class ControlMatcher {
 public:
   // Parameter name must not be deallocated before this
   //  object is
-  ControlMatcher(const char *file_var, const char *name, const matcher_tags * tags, int flags_in = 0xf);
+  ControlMatcher(const char *file_var, const char *name, const matcher_tags * tags,
+                 int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE |
+                                 ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE));
   ~ControlMatcher();
   int BuildTable();
   int BuildTableFromString(char *str);
-  void Match(RD * rdata, Result * result);
+  void Match(RequestData * rdata, Result * result);
   void Print();
   char *config_file_var;        // temporary: until config is integerated
-  int getEntryCount()
-  {
-    return m_numEntries;
-  }
-  HostMatcher<Data, Result> *getHostMatcher() {
-    return hostMatch;
-  }
-  RegexMatcher<Data, Result> *getReMatcher() {
-    return reMatch;
-  }
-  IpMatcher<Data, Result> *getIPMatcher() {
-    return ipMatch;
-  }
-  HostRegexMatcher<Data, Result> *getHrMatcher() {
-    return hrMatch;
-  }
+
+  int getEntryCount() { return m_numEntries; }
+  HostMatcher<Data, Result> *getHostMatcher() { return hostMatch; }
+  RegexMatcher<Data, Result> *getReMatcher() { return reMatch; }
+  UrlMatcher<Data, Result> *getUrlMatcher() { return urlMatch; }
+  IpMatcher<Data, Result> *getIPMatcher() { return ipMatch; }
+  HostRegexMatcher<Data, Result> *getHrMatcher() { return hrMatch; }
 
   //private:
   RegexMatcher<Data, Result> *reMatch;
+  UrlMatcher<Data, Result> *urlMatch;
   HostMatcher<Data, Result> *hostMatch;
   IpMatcher<Data, Result> *ipMatch;
   HostRegexMatcher<Data, Result> *hrMatch;
@@ -301,4 +299,4 @@ public:
   const char *matcher_name;     // Used for Debug/Warning/Error messages
 };
 
-#endif
+#endif /* _CONTROL_MATCHER_H_ */

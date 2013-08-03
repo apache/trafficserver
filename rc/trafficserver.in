@@ -248,10 +248,10 @@ do_stop()
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
   # Need to stop the TM and TS also
-    start-stop-daemon --stop --quiet -oknodo --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
+    start-stop-daemon --stop --quiet --oknodo --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
-    start-stop-daemon --stop --quiet -oknodo --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
+    start-stop-daemon --stop --quiet --oknodo --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
   # Many daemons don't delete their pidfiles when they exit.

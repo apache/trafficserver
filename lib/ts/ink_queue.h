@@ -190,9 +190,6 @@ extern "C"
 
   typedef struct
   {
-#if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    ink_mutex inkatomiclist_mutex;
-#endif
     volatile head_p head;
     const char *name;
     uint32_t offset;
@@ -206,7 +203,6 @@ extern "C"
 #endif
 
   inkcoreapi void ink_atomiclist_init(InkAtomicList * l, const char *name, uint32_t offset_to_next);
-#if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
   inkcoreapi void *ink_atomiclist_push(InkAtomicList * l, void *item);
   void *ink_atomiclist_pop(InkAtomicList * l);
   inkcoreapi void *ink_atomiclist_popall(InkAtomicList * l);
@@ -217,47 +213,7 @@ extern "C"
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  */
   void *ink_atomiclist_remove(InkAtomicList * l, void *item);
-#else /* INK_USE_MUTEX_FOR_ATOMICLISTS */
-  void *ink_atomiclist_push_wrap(InkAtomicList * l, void *item);
-  static inline void *ink_atomiclist_push(InkAtomicList * l, void *item)
-  {
-    void *ret_value = NULL;
-    ink_mutex_acquire(&(l->inkatomiclist_mutex));
-    ret_value = ink_atomiclist_push_wrap(l, item);
-    ink_mutex_release(&(l->inkatomiclist_mutex));
-    return ret_value;
-  }
 
-  void *ink_atomiclist_pop_wrap(InkAtomicList * l);
-  static inline void *ink_atomiclist_pop(InkAtomicList * l)
-  {
-    void *ret_value = NULL;
-    ink_mutex_acquire(&(l->inkatomiclist_mutex));
-    ret_value = ink_atomiclist_pop_wrap(l);
-    ink_mutex_release(&(l->inkatomiclist_mutex));
-    return ret_value;
-  }
-
-  void *ink_atomiclist_popall_wrap(InkAtomicList * l);
-  static inline void *ink_atomiclist_popall(InkAtomicList * l)
-  {
-    void *ret_value = NULL;
-    ink_mutex_acquire(&(l->inkatomiclist_mutex));
-    ret_value = ink_atomiclist_popall_wrap(l);
-    ink_mutex_release(&(l->inkatomiclist_mutex));
-    return ret_value;
-  }
-
-  void *ink_atomiclist_remove_wrap(InkAtomicList * l, void *item);
-  static inline void *ink_atomiclist_remove(InkAtomicList * l, void *item)
-  {
-    void *ret_value = NULL;
-    ink_mutex_acquire(&(l->inkatomiclist_mutex));
-    ret_value = ink_atomiclist_remove_wrap(l, item);
-    ink_mutex_release(&(l->inkatomiclist_mutex));
-    return ret_value;
-  }
-#endif /* INK_USE_MUTEX_FOR_ATOMICLISTS */
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

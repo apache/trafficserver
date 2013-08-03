@@ -70,7 +70,5 @@ void handle_diags(struct SocketInfo sock_info, char *req);
 
 TSError handle_stats_reset(struct SocketInfo sock_info, char *req, OpType op);
 
-TSError handle_encrypt_to_file(struct SocketInfo sock_info, char *req);
-
 
 #endif

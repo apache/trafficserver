@@ -3,20 +3,20 @@ How to Create Traffic Server Plugins
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+   
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 .. toctree::
    :maxdepth: 2
@@ -83,10 +83,11 @@ back to sleep & waits for the next event.
 
 **Traffic Server Internals** {#TSInternals}
 
-.. figure:: /images/sdk/event_sys80.jpg
+.. figure:: /static/images/sdk/event_sys80.jpg
    :alt: Traffic Server Internals
 
    Traffic Server Internals
+   
 Plugins are typically implemented as continuations. All of the sample
 code plugins (except ``hello-world``) are continuations that are created
 when Traffic Server starts up; they then wait for events that trigger
@@ -94,10 +95,11 @@ them into activity.
 
 **Traffic Server with Plugins** {#TSwithPlugins}
 
-.. figure:: /images/sdk/evt_plugin120.jpg
+.. figure:: /static/images/sdk/evt_plugin120.jpg
    :alt: Traffic Server with Plugins
 
    Traffic Server with Plugins
+   
 A plugin may consist of just one static continuation that is called
 whenever certain events happen. Examples of such plugins include
 ``blacklist-1.c``, ``basic-auth.c``, and ``redirect-1.c``.
@@ -154,10 +156,11 @@ cache.
 
 **Simplified HTTP Transaction** {#SimplifiedHTTPTransaction}
 
-.. figure:: /images/sdk/transact75.jpg
+.. figure:: /static/images/sdk/transact75.jpg
    :alt: Simplified HTTP Transaction
 
    Simplified HTTP Transaction
+   
 In the diagram above, Traffic Server accepts the client connection,
 reads the request headers, looks up the origin server's IP address, and
 looks for the requested content in the cache. If the content is not in
@@ -177,10 +180,11 @@ the response content before it closes the transaction.
 
 **API Hooks Corresponding to States** {#APIHooksCorrespondingtoStates}
 
-.. figure:: /images/sdk/transact_hook75.jpg
+.. figure:: /static/images/sdk/transact_hook75.jpg
    :alt: API Hooks Corresponding to States Listed in
 
    API Hooks Corresponding to States Listed in
+   
 You use hooks as triggers to start your plugin. The name of a hook
 reflects the Traffic Server state that was *just completed*. For
 example, the "OS DNS lookup" hook wakes up a plugin right *after* the
@@ -191,10 +195,11 @@ Plugin <#BlacklistPlugin>`__ diagram below.
 
 **Blacklist Plugin** {#BlacklistPlugin}
 
-.. figure:: /images/sdk/blacklist75.jpg
+.. figure:: /static/images/sdk/blacklist75.jpg
    :alt: Blacklist Plugin
 
    Blacklist Plugin
+   
 Traffic Server calls the Blacklist plugin right after the origin server
 DNS lookup. The plugin checks the requested host against a list of
 blacklisted servers; if the request is allowed, then the transaction

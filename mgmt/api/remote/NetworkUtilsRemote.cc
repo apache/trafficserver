@@ -455,9 +455,8 @@ socket_write_conn(int fd, const char *msg_buf, int bytes)
  *         will try to reconnect to TM if it is not already connected
  **********************************************************************/
 void *
-socket_test_thread(void *arg)
+socket_test_thread(void *)
 {
-  NOWARN_UNUSED(arg);
   // loop until client process dies
   while (1) {
     if (socket_test(main_socket_fd) <= 0) {

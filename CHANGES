@@ -1,6 +1,180 @@
                                                          -*- coding: utf-8 -*-
-  Changes with Apache Traffic Server 3.3.4
+Changes with Apache Traffic Server 3.3.5
+  
 
+  *) [TS-2081] Make the WCCP addr configuration LOCAL.
+
+  *) [TS-2093] Check bounds on plugin stat creation.
+
+  *) [TS-2092] Use of uninitialized member in HdrHeap.
+
+  *) [TS-2052] ET_SSL thread spinning
+   Author: Can Selcik <cselcik at linkedin.com>
+
+  *) [TS-2090 Make proxy.config.allocator.enable_reclaim default based on
+   build instructions.
+
+  *) [TS-2086] Remove a few more unused configs.
+
+  *) [TS-1685] Remove TS_MICRO and fellas.
+
+  *) [TS-1255] Add more overridable configurations, and fix bugs in how we
+   deal with some of these (all "float" configs were completely broken). I
+   also modified the regression tests to be less easy to fool.
+
+  *) [TS-1976] Prevent an invalid httpport argument being passed from
+   traffic_manager to traffic_server
+   Author: Thach Tran <tranngocthachs@gmail.com>
+
+  *) [TS-2076] Removed proxy.config.http.accept_encoding_filter_enabled, which
+   is obsolete.
+
+  *) [TS-2075] Cleanup around suboptimal checks on redirects.
+
+  *) [TS-2074] Remove proxy.config.http.server_port and
+   proxy.config.http.server_other_ports remnants.
+
+  *) [TS-2073] Set the defaults for request_hdr_max_size and
+   response_hdr_max_size properly.
+
+  *) [TS-2071] Remove proxy.config.http.session_auth_cache_keep_alive_enabled
+   remnants.
+
+  *) [TS-2072] Remove proxy.config.http.avoid_content_spoofing, and also fix a
+    logical bug around the tests of when to mark the request header dirty.
+
+  *) [TS-1993] SSL certificate chains are loaded from the wrong directory.
+
+  *) [TS-2059] Remove dead code in EnvBlock.cc and processSpawn().
+
+  *) [TS-2057] Removed deprecated proxy port configuration values from records.config.
+
+  *) [TS-1280] Add url match token about cache control rule.
+
+  *) [TS-2064] Fix the authproxy plugin to send an error body.
+
+  *) [TS-2061] Avoid writing outside buffer boundaries in LogFile overfill
+   buffers (for ASCII logging). Author: quehan.
+
+  *) [TS-2041] Allow environment values to override records.config settings.
+
+  *) [TS-2044] Avoid logging client running into DENY status infinitely.
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
+  *) [TS-2030] Build error with --enable-interim-cache on fedora19 x86_64.
+    Author: bettydramit <b13621367396 at gmail dot com>
+
+  *) [TS-1943] Rename mcport and rsport parameters to make them more readable.
+    Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+
+  *) [TS-2046] Move perl contribs to lib/perl, and have make / make install
+   build and install the modules as appropriate.
+
+  *) [TS-954] Better calculation of blocks in volume. Bumped cache DB version.
+
+  *) [TS-2050] Cleanup ink_config.h.in, removing unused symbols.
+
+  *) [TS-1487] [TS-2035] Moved plugin init, added plugin lifecycle hooks,
+   added delay listen for cache. Removed TS_NO_API defined/build option.
+
+  *) [TS-2047] Schedule RamCacheCLFUSCompressor in RamCacheCLFUS::init instead
+   of immediately after instantiation.
+
+  *) [TS-2042] Remove remnants of unused vingid command line option.
+
+  *) [TS-1898] improve cluster read/write performance.
+
+  *) [TS-2036] Enable mgmt update (traffic_line -x) for plugins.
+
+  *) [TS-2037] Fix start-stop-daemon typo in debian init script.
+
+  *) [TS-2003] Fix RAM cache stats when using cluster. Author: Yunkai Zhang.
+
+  *) [TS-1820] Cleanup UNUSED / INK_UNUSED / RELEASE_UNUSED. This also removes
+   the entire mgmt/tools directory, and relevant support in traffic_shell for
+   managing network interfaces.
+
+  *) [TS-2033] Remove EncryptToFile() and mgmt API.
+
+  *) [TS-2027] Initialize the ConnectionCount`s mutex.
+
+  *) [TS-1997] Remove TSHttpTxnCachedUrlSet() API.
+
+  *) [TS-2028] Config parse problems in healthchecks plugin.
+
+  *) [TS-1966] Add new configuration option to control ProxyAllocator size.
+
+  *) [TS-1151] cop may crash due to uninitialized pointer val
+
+  *) [TS-2013] Install the tspush script.
+
+  *) [TS-2012] Use standard C++11 containers in logstats.
+
+  *) [TS-1999] Merge in the healthcheck plugin from GoDaddy.
+
+  *) [TS-1998] Make stats-over-http support configurable URL path.
+
+  *) [TS-1990] Fix core at CacheContinuation::handleDisposeEvent().
+
+  *) [TS-2010] Build fixes for OS X 10.9 and Xcode 5.
+
+  *) [TS-1957] fix If CacheContinuation timeout, timeout Event will be loop
+
+  *) [TS-2007] Add TSNetConnectTransparent API for transparent net connections
+
+  *) [TS-1991] clang complaint: logical not is only applied to the left hand
+   side of this comparison.
+
+  *) [TS-1958] Web UI can crash doing a regex lookup.
+
+  *) [TS-1994] Increase default RAM cache size by a magnitude.
+
+  *) [TS-1978] Segfault when trying to set an error from (remap) plugin. This
+   also fixes a bug where the "default" template was not loaded upon startup.
+
+  *) [TS-1977] Build issues on OSX / clang related to stacksize changes.
+
+  *) [TS-1972] TSNetAcceptNamedProtocol does not receive connections.
+
+  *) [TS-1970] Using ssl_ca_name= in ssl_multicert.config fails.
+
+  *) [TS-1946] Reduce the verbosity of SSL handshake errors.
+
+  *) [TS-1971] Switch jtest over to standard argument parsing.
+
+  *) [TS-1786] Only enable -Werror for development builds.
+
+  *) [TS-1960] Decouple stacksize config from core, this fixes regressions.
+
+  *) [TS-1959] traffic_manager not honoring some records.config settings
+   necessary for e.g. logging.
+
+  *) [TS-745] support interim caching in storage to enable, use
+   '--enable-interim-cache' configure option. 
+
+  *) [TS-1968] Promote header_rewrite plugin from experimental
+
+  *) [TS-1961] Add tsxs support for querying installation variables.
+
+  *) [TS-1886] Allow users to attempt gcc builds on Mac OS X.
+
+  *) [TS-1934] Make geoip_acl experimental plugin compile.
+
+  *) [TS-1948] Remove obsolete TSPluginLicenseRequired and plugin.db.
+
+  *) [TS-1942] Remove username.cache configs, they are obsolete and long gone.
+
+  *) [TS-1496] Enable per transaction flow control.
+
+  *) [TS-1684] Added more ProxyAllocators for faster and local memory
+   allocation.  Have seen a doubling in performance depending on the benchmark.
+   Details in the ticket.
+
+  *) [TS-1962] Don't add POST server connections to the shared pool unless POST
+   keep-alive option is on
+
+
+Changes with Apache Traffic Server 3.3.4
 
   *) [TS-1940] HostDB gets reinitialized on startup.
 
@@ -9,8 +183,8 @@
   *) [TS-1938] Remove unnecessary thread_id() wrapper in reclaimable freelist.
     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  Changes with Apache Traffic Server 3.3.3
 
+Changes with Apache Traffic Server 3.3.3 (never released)
 
   *) [TS-1936] Make traffic_logstats honor the log-directory as intended.
 
@@ -202,7 +376,7 @@
   *) [TS-1826] Remove DumpStats/http_dump dead code.
 
 
-  Changes with Apache Traffic Server 3.3.2
+Changes with Apache Traffic Server 3.3.2
 
   *) [TS-621] Allow caching of empty docs (currently only if a header
    Content-Length: 0 is in the response). New config option is named
@@ -311,7 +485,7 @@
   *) [TS-1356] Ability to set thread affinity with multiple modes.
 
 
-  Changes with Apache Traffic Server 3.3.1
+Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1743] Implement our own hash mechanism for traffic_logstats, since
    C++11 does not provide a sensical hash<const char*>.

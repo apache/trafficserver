@@ -35,6 +35,7 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
+#include "I_EventSystem.h"
 
 #define MAX_LOST_STR_SPACE 1024
 
@@ -104,6 +105,7 @@ HdrHeap::init()
     m_ronly_heap[i].m_heap_start = NULL;
     m_ronly_heap[i].m_ref_count_ptr.m_ptr = NULL;
     m_ronly_heap[i].m_locked = false;
+    m_ronly_heap[i].m_heap_len = 0;
   }
   m_lost_string_space = 0;
 
@@ -116,7 +118,7 @@ new_HdrHeap(int size)
   HdrHeap *h;
   if (size <= HDR_HEAP_DEFAULT_SIZE) {
     size = HDR_HEAP_DEFAULT_SIZE;
-    h = (HdrHeap *) hdrHeapAllocator.alloc_void();
+    h = (HdrHeap *)(THREAD_ALLOC(hdrHeapAllocator, this_ethread()));
   } else {
     h = (HdrHeap *)ats_malloc(size);
   }
@@ -146,7 +148,7 @@ new_HdrStrHeap(int requested_size)
   HdrStrHeap *sh;
   if (alloc_size <= HDR_STR_HEAP_DEFAULT_SIZE) {
     alloc_size = HDR_STR_HEAP_DEFAULT_SIZE;
-    sh = (HdrStrHeap *) strHeapAllocator.alloc_void();
+    sh = (HdrStrHeap *)(THREAD_ALLOC(strHeapAllocator, this_ethread()));
   } else {
     alloc_size = ROUND(alloc_size, HDR_STR_HEAP_DEFAULT_SIZE*2);
     sh = (HdrStrHeap *)ats_malloc(alloc_size);
@@ -179,7 +181,7 @@ HdrHeap::destroy()
     m_ronly_heap[i].m_ref_count_ptr = NULL;
 
   if (m_size == HDR_HEAP_DEFAULT_SIZE) {
-    hdrHeapAllocator.free_void(this);
+    THREAD_FREE(this, hdrHeapAllocator, this_ethread());
   } else {
     ats_free(this);
   }
@@ -1103,7 +1105,7 @@ void
 HdrStrHeap::free()
 {
   if (m_heap_size == HDR_STR_HEAP_DEFAULT_SIZE) {
-    strHeapAllocator.free_void(this);
+    THREAD_FREE(this, strHeapAllocator, this_ethread());
   } else {
     ats_free(this);
   }

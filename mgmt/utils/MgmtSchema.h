@@ -22,7 +22,7 @@
  */
 
 #ifndef __MGMT_SCHEMA_
-#define _MGMT_SCHEMA_
+#define __MGMT_SCHEMA_
 
 /****************************************************************************
  *
@@ -54,4 +54,4 @@
 bool validateRecordsConfig(XMLNode * node);
 bool validateNode(XMLNode * node);
 
-#endif // _MGMT_SCHEMA
+#endif // __MGMT_SCHEMA

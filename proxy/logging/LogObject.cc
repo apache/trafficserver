@@ -44,7 +44,8 @@ LogBufferManager::flush_buffers(LogBufferSink *sink) {
   SList(LogBuffer, write_link) q(write_list.popall()), new_q;
   LogBuffer *b = NULL;
   while ((b = q.pop())) {
-    if (b->m_references) {  // Still has outstanding references.
+    if (b->m_references || b->m_state.s.num_writers) {
+      // Still has outstanding references.
       write_list.push(b);
     } else if (_num_flush_buffers > FLUSH_ARRAY_SIZE) {
       delete b;
@@ -75,15 +76,15 @@ LogBufferManager::flush_buffers(LogBufferSink *sink) {
 LogObject::LogObject(LogFormat *format, const char *log_dir,
                       const char *basename, LogFileFormat file_format,
                       const char *header, int rolling_enabled,
-                      int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb):
-      m_alt_filename (NULL),
-      m_flags (0),
-      m_signature (0),
-      m_rolling_interval_sec (rolling_interval_sec),
-      m_rolling_offset_hr (rolling_offset_hr),
-      m_rolling_size_mb (rolling_size_mb),
-      m_last_roll_time(0),
-      m_ref_count (0)
+                      int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
+  : m_alt_filename (NULL),
+    m_flags (0),
+    m_signature (0),
+    m_rolling_interval_sec (rolling_interval_sec),
+    m_rolling_offset_hr (rolling_offset_hr),
+    m_rolling_size_mb (rolling_size_mb),
+    m_last_roll_time(0),
+    m_ref_count (0)
 {
     ink_assert (format != NULL);
     m_format = new LogFormat(*format);
@@ -106,7 +107,6 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
     // compute_signature is a static function
     m_signature = compute_signature(m_format, m_basename, m_flags);
 
-#ifndef TS_MICRO
     // by default, create a LogFile for this object, if a loghost is
     // later specified, then we will delete the LogFile object
     //
@@ -115,7 +115,6 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
                                  Log::config->ascii_buffer_size,
                                  Log::config->max_line_size,
                                  Log::config->overspill_report_count));
-#endif // TS_MICRO
 
     LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
     ink_assert(b);
@@ -139,15 +138,11 @@ LogObject::LogObject(LogObject& rhs)
 {
     m_format = new LogFormat(*(rhs.m_format));
 
-#ifndef TS_MICRO
     if (rhs.m_logFile) {
         m_logFile = NEW (new LogFile(*(rhs.m_logFile)));
     } else {
-#endif
         m_logFile = NULL;
-#ifndef TS_MICRO
     }
-#endif
 
     LogFilter *filter;
     for (filter = rhs.m_filter_list.first(); filter;
@@ -357,21 +352,16 @@ LogObject::display(FILE * fd)
   fprintf(fd, "LogObject [%p]: format = %s (%p)\nbasename = %s\n" "flags = %u\n"
           "signature = %" PRIu64 "\n",
           this, m_format->name(), m_format, m_basename, m_flags, m_signature);
-#ifndef TS_MICRO
   if (is_collation_client()) {
     m_host_list.display(fd);
   } else {
-#endif // TS_MICRO
     fprintf(fd, "full path = %s\n", get_full_filename());
-#ifndef TS_MICRO
   }
-#endif // TS_MICRO
   m_filter_list.display(fd);
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 }
 
 
-#ifndef TS_MICRO
 void
 LogObject::displayAsXML(FILE * fd, bool extended)
 {
@@ -399,7 +389,6 @@ LogObject::displayAsXML(FILE * fd, bool extended)
 
   fprintf(fd, "</LogObject>\n");
 }
-#endif // TS_MICRO
 
 
 LogBuffer *
@@ -445,6 +434,14 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       head_p old_h;
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
+        if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
+          ink_atomic_increment(&buffer->m_references, -1);
+
+          // another thread should be taking care of creating a new
+          // buffer, so delete new_buffer and try again
+          delete new_buffer;
+          break;
+        }
         head_p tmp_h;
         SET_FREELIST_POINTER_VERSION(tmp_h, new_buffer, 0);
 #if TS_HAS_128BIT_CAS
@@ -453,14 +450,13 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
        result = ink_atomic_cas((int64_t *) &m_log_buffer.data, old_h.data, tmp_h.data);
 #endif
       } while (!result);
-      if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h))
+      if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h)) {
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
 
-      if (result_code == LogBuffer::LB_FULL_NO_WRITERS) {
-        // there are no writers, move the old buffer to the flush list
         Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
         m_buffer_manager.add_to_flush_queue(buffer);
         ink_cond_signal(&Log::flush_cond);
+
       }
       decremented = true;
       break;
@@ -616,15 +612,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     ink_strlcpy(&(*buffer)[offset], text_entry, bytes_needed);
   }
 
-  LogBuffer::LB_ResultCode result_code = buffer->checkin_write(offset);
-
-  if (result_code == LogBuffer::LB_ALL_WRITERS_DONE) {
-    // all checkins completed, put this buffer in the flush list
-    Debug("log-logbuffer", "adding buffer %d to flush list after checkin", buffer->get_id());
-
-    m_buffer_manager.add_to_flush_queue(buffer);
-//    ink_cond_signal (&Log::flush_cond);
-  }
+  buffer->checkin_write(offset);
 
   LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_stat);
 
@@ -996,7 +984,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 {
   int retVal = NO_FILENAME_CONFLICTS;
 
-#ifndef TS_MICRO
   char *filename = log_object->get_full_filename();
 
   if (access(filename, F_OK)) {
@@ -1092,17 +1079,13 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
       }
     }
   }
-#endif // TS_MICRO
   return retVal;
 }
 
 
-#ifndef TS_MICRO
 bool
-  LogObjectManager::_has_internal_filename_conflict(char *filename, uint64_t signature, LogObject ** objects,
-                                                    int numObjects)
+LogObjectManager::_has_internal_filename_conflict(char *filename, LogObject ** objects, int numObjects)
 {
-  NOWARN_UNUSED(signature);
   for (int i = 0; i < numObjects; i++) {
     LogObject *obj = objects[i];
 
@@ -1118,20 +1101,16 @@ bool
   }
   return false;
 }
-#endif // TS_MICRO
 
 
 int
 LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int maxConflicts, int fileNum)
 {
   int retVal = NO_FILENAME_CONFLICTS;
-
-#ifndef TS_MICRO
   char *filename = log_object->get_full_filename();
-  uint64_t signature = log_object->get_signature();
 
-  if (_has_internal_filename_conflict(filename, signature, _objects, _numObjects) ||
-      _has_internal_filename_conflict(filename, signature, _APIobjects, _numAPIobjects)) {
+  if (_has_internal_filename_conflict(filename, _objects, _numObjects) ||
+      _has_internal_filename_conflict(filename, _APIobjects, _numAPIobjects)) {
     if (fileNum < maxConflicts) {
       char new_name[MAXPATHLEN];
 
@@ -1147,7 +1126,6 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int 
       retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
     }
   }
-#endif // TS_MICRO
   return retVal;
 }
 

@@ -49,22 +49,6 @@ typedef SSL_METHOD * ink_ssl_method_t;
 static ProxyMutex ** sslMutexArray;
 static bool open_ssl_initialized = false;
 
-struct ats_x509_certificate
-{
-  explicit ats_x509_certificate(X509 * x) : x509(x) {}
-  ~ats_x509_certificate() { if (x509) X509_free(x509); }
-
-  operator bool() const {
-      return x509 != NULL;
-  }
-
-  X509 * x509;
-
-private:
-  ats_x509_certificate(const ats_x509_certificate&);
-  ats_x509_certificate& operator=(const ats_x509_certificate&);
-};
-
 struct ats_file_bio
 {
     ats_file_bio(const char * path, const char * mode)
@@ -95,11 +79,8 @@ SSL_pthreads_thread_id()
 }
 
 static void
-SSL_locking_callback(int mode, int type, const char * file, int line)
+SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int /* line ATS_UNUSED */)
 {
-  NOWARN_UNUSED(file);
-  NOWARN_UNUSED(line);
-
   ink_assert(type < CRYPTO_num_locks());
 
   if (mode & CRYPTO_LOCK) {
@@ -115,6 +96,7 @@ SSL_locking_callback(int mode, int type, const char * file, int line)
 static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
 {
+  X509 *cert;
   ats_file_bio bio(chainfile, "r");
 
   if (!bio) {
@@ -122,14 +104,16 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
   }
 
   for (;;) {
-    ats_x509_certificate certificate(PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL));
+    cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
 
-    if (!certificate) {
+    if (!cert) {
       // No more the certificates in this file.
       break;
     }
 
-    if (!SSL_CTX_add_extra_chain_cert(ctx, certificate.x509)) {
+    // This transfers ownership of the cert (X509) to the SSL context, if successful.
+    if (!SSL_CTX_add_extra_chain_cert(ctx, cert)) {
+      X509_free(cert);
       return false;
     }
   }
@@ -194,8 +178,8 @@ ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * lookup)
     SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
   }
 #else
-  NOWARN_UNUSED(ctx);
-  NOWARN_UNUSED(lookup);
+  (void)ctx;
+  (void)lookup;
 #endif /* TS_USE_TLS_SNI */
 
   return ctx;
@@ -224,7 +208,7 @@ SSLInitializeLibrary()
 }
 
 void
-SSLError(const char * fmt, ...)
+SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...)
 {
   unsigned long l;
   char buf[256];
@@ -234,13 +218,43 @@ SSLError(const char * fmt, ...)
 
   va_list ap;
   va_start(ap, fmt);
-  ErrorV(fmt, ap);
-  va_end(ap);
 
   es = CRYPTO_thread_id();
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
-    Error("SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+    if (debug) {
+      if (unlikely(diags->on())) {
+        diags->log("ssl", DL_Debug, loc.file, loc.func, loc.line,
+            "SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+      }
+    } else {
+      diags->error(DL_Error, loc.file, loc.func, loc.line,
+          "SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+    }
   }
+
+  va_end(ap);
+}
+
+const char *
+SSLErrorName(int ssl_error)
+{
+  static const char * names[] =  {
+    "SSL_ERROR_NONE",
+    "SSL_ERROR_SSL",
+    "SSL_ERROR_WANT_READ",
+    "SSL_ERROR_WANT_WRITE",
+    "SSL_ERROR_WANT_X509_LOOKUP",
+    "SSL_ERROR_SYSCALL",
+    "SSL_ERROR_ZERO_RETURN",
+    "SSL_ERROR_WANT_CONNECT",
+    "SSL_ERROR_WANT_ACCEPT"
+  };
+
+  if (ssl_error < 0 || ssl_error >= (int)countof(names)) {
+    return "unknown SSL error";
+  }
+
+  return names[ssl_error];
 }
 
 void
@@ -303,19 +317,19 @@ SSLInitServerContext(
   }
 
   // First, load any CA chains from the global chain file.
-  if (params->serverCertChainPath) {
-    xptr<char> completeServerCaCertPath(Layout::relative_to(params->serverCACertPath, params->serverCertChainPath));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCaCertPath)) {
-      SSLError("failed to load global certificate chain from %s", (const char *)completeServerCaCertPath);
+  if (params->serverCertChainFilename) {
+    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
+    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+      SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
       goto fail;
     }
   }
 
   // Now, load any additional certificate chains specified in this entry.
   if (serverCaCertPtr) {
-    xptr<char> completeServerCaCertPath(Layout::relative_to(params->serverCACertPath, serverCaCertPtr));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCaCertPath)) {
-      SSLError("failed to load certificate chain from %s", (const char *)completeServerCaCertPath);
+    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, serverCaCertPtr));
+    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+      SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
       goto fail;
     }
   }
@@ -476,10 +490,10 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
   X509_NAME * subject = NULL;
 
   ats_file_bio bio(certfile, "r");
-  ats_x509_certificate certificate(PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL));
+  X509* cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
 
   // Insert a key for the subject CN.
-  subject = X509_get_subject_name(certificate.x509);
+  subject = X509_get_subject_name(cert);
   if (subject) {
     int pos = -1;
     for (;;) {
@@ -499,7 +513,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 
 #if HAVE_OPENSSL_TS_H
   // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(certificate.x509, NID_subject_alt_name, NULL, NULL);
+  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
   if (names) {
     unsigned count = sk_GENERAL_NAME_num(names);
     for (unsigned i = 0; i < count; ++i) {
@@ -516,7 +530,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
     GENERAL_NAMES_free(names);
   }
 #endif // HAVE_OPENSSL_TS_H
-
+  X509_free(cert);
 }
 
 static void
@@ -536,6 +550,10 @@ ssl_store_ssl_context(
     SSLError("failed to create new SSL server context");
     return;
   }
+
+#if TS_USE_TLS_NPN
+  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
+#endif /* TS_USE_TLS_NPN */
 
   certpath = Layout::relative_to(params->serverCertPathOnly, cert);
 
@@ -621,7 +639,7 @@ SSLParseCertificateConfiguration(
   char errBuf[1024];
 
   const matcher_tags sslCertTags = {
-    NULL, NULL, NULL, NULL, NULL, false
+    NULL, NULL, NULL, NULL, NULL, NULL, false
   };
 
   Note("loading SSL certificate configuration from %s", params->configFilePath);

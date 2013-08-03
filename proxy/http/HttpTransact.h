@@ -632,7 +632,6 @@ public:
     URL *lookup_url;
     URL lookup_url_storage;
     URL original_url;
-    URL store_url;
     HTTPInfo *object_read;
     HTTPInfo *second_object_read;
     HTTPInfo object_store;
@@ -653,7 +652,6 @@ public:
         lookup_url(NULL),
         lookup_url_storage(),
         original_url(),
-        store_url(),
         object_read(NULL),
         second_object_read(NULL),
         object_store(),
@@ -661,7 +659,10 @@ public:
         config(),
         directives(),
         open_read_retries(0),
-        open_write_retries(0), write_lock_state(CACHE_WL_INIT), lookup_count(0), is_ram_cache_hit(false)
+        open_write_retries(0),
+      write_lock_state(CACHE_WL_INIT),
+      lookup_count(0),
+      is_ram_cache_hit(false)
     { }
   } CacheLookupInfo;
 
@@ -1161,7 +1162,6 @@ public:
       hdr_info.cache_response.destroy();
       cache_info.lookup_url_storage.destroy();
       cache_info.original_url.destroy();
-      cache_info.store_url.destroy();
       cache_info.object_store.destroy();
       cache_info.transform_store.destroy();
       redirect_info.original_url.destroy();
@@ -1291,7 +1291,7 @@ public:
   static bool is_stale_cache_response_returnable(State* s);
   static bool need_to_revalidate(State* s);
   static bool url_looks_dynamic(URL* url);
-  static bool is_request_cache_lookupable(State* s, HTTPHdr* incoming);
+  static bool is_request_cache_lookupable(State* s);
   static bool is_request_valid(State* s, HTTPHdr* incoming_request);
   static bool is_request_retryable(State* s);
   static bool is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* response);
@@ -1321,8 +1321,7 @@ public:
   static void handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static int calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
   static int calculate_freshness_fuzz(State *s, int fresh_limit);
-  static Freshness_t what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_request,
-                                                HTTPHdr *cached_obj_response);
+  static Freshness_t what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response);
   static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request, HTTPHdr *obj_response);
   static void handle_parent_died(State* s);
   static void handle_server_died(State* s);
@@ -1334,18 +1333,17 @@ public:
   // the stat functions
   static void update_stat(State* s, int stat, ink_statval_t increment);
   static void update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
-                                         ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
-                                         int user_agent_request_header_size, int64_t user_agent_request_body_size,
-                                         int user_agent_response_header_size, int64_t user_agent_response_body_size,
-                                         int origin_server_request_header_size, int64_t origin_server_request_body_size,
-                                         int origin_server_response_header_size, int64_t origin_server_response_body_size,
-                                         int pushed_response_header_size, int64_t pushed_response_body_size, CacheAction_t cache_action);
+                                         ink_hrtime origin_server_read_time, int user_agent_request_header_size,
+                                         int64_t user_agent_request_body_size, int user_agent_response_header_size,
+                                         int64_t user_agent_response_body_size, int origin_server_request_header_size,
+                                         int64_t origin_server_request_body_size, int origin_server_response_header_size,
+                                         int64_t origin_server_response_body_size, int pushed_response_header_size,
+                                         int64_t pushed_response_body_size);
   static void histogram_request_document_size(State* s, int64_t size);
   static void histogram_response_document_size(State* s, int64_t size);
   static void user_agent_connection_speed(State* s, ink_hrtime transfer_time, int64_t nbytes);
   static void origin_server_connection_speed(State* s, ink_hrtime transfer_time, int64_t nbytes);
   static void client_result_stat(State* s, ink_hrtime total_time, ink_hrtime request_process_time);
-  static void initialize_bypass_variables(State* s);
   static void add_new_stat_block(State* s);
   static void delete_warning_value(HTTPHdr* to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State* s); //YTS Team, yamsat

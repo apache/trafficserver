@@ -46,7 +46,6 @@
 void ink_split_dns_init(ModuleVersion version);
 
 struct RequestData;
-typedef RequestData RD;
 
 struct matcher_line;
 
@@ -98,7 +97,7 @@ struct SplitDNS:public ConfigInfo
   ~SplitDNS();
 
   void *getDNSRecord(const char *hostname);
-  void findServer(RD * rdata, SplitDNSResult * result);
+  void findServer(RequestData * rdata, SplitDNSResult * result);
 
 
   DNS_table *m_DNSSrvrTable;
@@ -242,7 +241,7 @@ public:
   const char *ProcessDomainSrchList(char *val);
   const char *ProcessDefDomain(char *val);
 
-  void UpdateMatch(SplitDNSResult * result, RD * rdata);
+  void UpdateMatch(SplitDNSResult * result, RequestData * rdata);
   void Print();
 
   DNSServer m_servers;

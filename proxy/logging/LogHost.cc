@@ -54,14 +54,14 @@
   -------------------------------------------------------------------------*/
 
 LogHost::LogHost(char *object_filename, uint64_t object_signature)
-  : m_object_filename(ats_strdup(object_filename))
-  , m_object_signature(object_signature)
-  , m_port(0)
-  , m_name(NULL)
-  , m_sock(NULL)
-  , m_sock_fd(-1)
-  , m_connected(false)
-  , m_orphan_file(NULL)
+  : m_object_filename(ats_strdup(object_filename)),
+    m_object_signature(object_signature),
+    m_port(0),
+    m_name(NULL),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL)
 #if defined (IOCORE_LOG_COLLATION)
   , m_log_collation_client_sm(NULL)
 #endif
@@ -71,15 +71,15 @@ LogHost::LogHost(char *object_filename, uint64_t object_signature)
 }
 
 LogHost::LogHost(const LogHost & rhs)
-  : m_object_filename(ats_strdup(rhs.m_object_filename))
-  , m_object_signature(rhs.m_object_signature)
-  , m_ip(rhs.m_ip)
-  , m_port(0)
-  , m_name(ats_strdup(rhs.m_name))
-  , m_sock(NULL)
-  , m_sock_fd(-1)
-  , m_connected(false)
-  , m_orphan_file(NULL)
+  : m_object_filename(ats_strdup(rhs.m_object_filename)),
+    m_object_signature(rhs.m_object_signature),
+    m_ip(rhs.m_ip),
+    m_port(0),
+    m_name(ats_strdup(rhs.m_name)),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL)
 #if defined (IOCORE_LOG_COLLATION)
   , m_log_collation_client_sm(NULL)
 #endif
@@ -101,7 +101,6 @@ LogHost::~LogHost()
 // - by specifying a hostname and a port (as separate arguments).
 // - by specifying an ip and a port (as separate arguments).
 //
-
 int
 LogHost::set_name_port(char *hostname, unsigned int pt)
 {
@@ -331,17 +330,11 @@ LogHost::write (LogBuffer *lb)
   // send log_buffer; orphan if necessary
   int bytes_sent = m_log_collation_client_sm->send(lb_copy);
   if (bytes_sent <= 0) {
-#ifndef TS_MICRO
     orphan_write_and_delete(lb_copy);
 #if defined(LOG_BUFFER_TRACKING)
     Debug("log-buftrak", "[%d]LogHost::write - orphan write complete",
         lb_copy->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
-#else
-    Note("Starting dropping log buffer due to overloading");
-    delete lb_copy;
-    lb_copy = 0;
-#endif // TS_MICRO
   }
 
   return bytes_sent;
@@ -349,7 +342,6 @@ LogHost::write (LogBuffer *lb)
 #endif // !defined(IOCORE_LOG_COLLATION)
 }
 
-#ifndef TS_MICRO
 int
 LogHost::orphan_write(LogBuffer * lb)
 {
@@ -370,7 +362,6 @@ LogHost::orphan_write_and_delete(LogBuffer * lb)
   lb = 0;
   return bytes;
 }
-#endif // TS_MICRO
 
 void
 LogHost::display(FILE * fd)

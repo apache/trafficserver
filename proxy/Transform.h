@@ -60,6 +60,34 @@ public:
 };
 #endif
 
+/** A protocol class.
+    This provides transform VC specific methods for external access
+    without exposing internals or requiring extra includes.
+*/
+class TransformVCChain : public VConnection
+{
+ protected:
+  /// Required constructor
+  TransformVCChain(ProxyMutex* m);
+ public:
+  /** Compute the backlog.  This is the amount of data ready to read
+      for each element of the chain.  If @a limit is non-negative then
+      the method will return as soon as the computed backlog is at
+      least that large. This provides for more efficient checking if
+      the caller is interested only in whether the backlog is at least
+      @a limit. The default is to accurately compute the backlog.
+  */
+  virtual uint64_t backlog(
+			   uint64_t limit = INTU64_MAX ///< Maximum value of interest
+			  ) = 0;
+};
+
+inline
+TransformVCChain::TransformVCChain(ProxyMutex* m)
+		 : VConnection(m)
+{
+}
+
 ///////////////////////////////////////////////////////////////////
 /// RangeTransform implementation
 /// handling Range requests from clients

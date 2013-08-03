@@ -100,10 +100,8 @@ public:
     SET_HANDLER(&ConfigInfoReleaser::handle_event);
   }
 
-  int handle_event(int event, void *edata)
+  int handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(edata);
     configProcessor.release(m_id, m_info);
     delete this;
     return 0;

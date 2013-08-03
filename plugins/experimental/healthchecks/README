@@ -1,0 +1,15 @@
+This is a simple plugin, to provide basic (but configurable) health checks.
+This is a server intercept plugin, and it takes one single  configuration
+option in plugin.config, the configuration file name. 
+
+This configuration contains one, or several, lines of the format
+
+   <URI-path> <file-path> <mime> <file-exists-code> <file-missing-code>
+
+
+For example,
+
+   /__hc  /var/run/ts-alive  text/plain 200  403
+
+
+The content of the file, if any, is sent as the body of the response.

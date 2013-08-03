@@ -59,8 +59,6 @@
 
 */
 
-#ifndef TS_NO_TRANSFORM
-
 #include "ProxyConfig.h"
 #include "P_Net.h"
 #include "MimeTable.h"
@@ -141,9 +139,8 @@ TransformTerminus::TransformTerminus(TransformVConnection *tvc)
 
 
 int
-TransformTerminus::handle_event(int event, void *edata)
+TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(edata);
   int val;
 
   m_deletable = ((m_closed != 0) && (m_tvc->m_closed != 0));
@@ -398,7 +395,7 @@ TransformTerminus::reenable(VIO *vio)
   -------------------------------------------------------------------------*/
 
 TransformVConnection::TransformVConnection(Continuation *cont, APIHook *hooks)
-:VConnection(cont->mutex), m_cont(cont), m_terminus(this), m_closed(0)
+:TransformVCChain(cont->mutex), m_cont(cont), m_terminus(this), m_closed(0)
 {
   INKVConnInternal *xform;
 
@@ -435,10 +432,8 @@ TransformVConnection::~TransformVConnection()
   -------------------------------------------------------------------------*/
 
 int
-TransformVConnection::handle_event(int event, void *edata)
+TransformVConnection::handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(edata);
   ink_assert(!"not reached");
   return 0;
 }
@@ -458,9 +453,9 @@ TransformVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+TransformVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf,
+                                  bool /* owner ATS_UNUSED */)
 {
-  NOWARN_UNUSED(owner);
   Debug("transform", "TransformVConnection do_io_write: 0x%lx [0x%lx]", (long) c, (long) this);
 
   return m_transform->do_io_write(c, nbytes, buf);
@@ -500,12 +495,36 @@ TransformVConnection::do_io_shutdown(ShutdownHowTo_t howto)
   -------------------------------------------------------------------------*/
 
 void
-TransformVConnection::reenable(VIO *vio)
+TransformVConnection::reenable(VIO * /* vio ATS_UNUSED */)
 {
-  NOWARN_UNUSED(vio);
   ink_assert(!"not reached");
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+uint64_t
+TransformVConnection::backlog(uint64_t limit)
+{
+  uint64_t b = 0; // backlog
+  VConnection* raw_vc = m_transform;
+  MIOBuffer* w;
+  while (raw_vc && raw_vc != &m_terminus) {
+    INKVConnInternal* vc = static_cast<INKVConnInternal*>(raw_vc);
+    if (0 != (w = vc->m_read_vio.buffer.writer()))
+      b += w->max_read_avail();
+    if (b >= limit) return b;
+    raw_vc = vc->m_output_vc;
+  }
+  if (0 != (w = m_terminus.m_read_vio.buffer.writer()))
+    b += w->max_read_avail();
+  if (b >= limit) return b;
+
+  IOBufferReader* r = m_terminus.m_write_vio.get_reader();
+  if (r)
+    b += r->read_avail();
+  return b;
+}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -522,9 +541,8 @@ TransformControl::TransformControl()
   -------------------------------------------------------------------------*/
 
 int
-TransformControl::handle_event(int event, void *edata)
+TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(edata);
   switch (event) {
   case EVENT_IMMEDIATE:
     {
@@ -1020,5 +1038,3 @@ RangeTransform::change_response_header()
 }
 
 #undef RANGE_NUMBERS_LENGTH
-
-#endif // TS_NO_TRANSFORM

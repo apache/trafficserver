@@ -27,11 +27,8 @@
 int
 main(int argc, char **argv)
 {
-
-  REC_NOWARN_UNUSED(argc);
-  REC_NOWARN_UNUSED(argv);
-
   RecTree *new_rec_tree = new RecTree(NULL);
+
   new_rec_tree->rec_tree_insert("proxy.process.librecords.first_child");
   printf("\n");
   new_rec_tree->rec_tree_insert("proxy.process.librecords.first_child.grandchild1");

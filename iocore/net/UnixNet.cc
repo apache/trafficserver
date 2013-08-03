@@ -185,10 +185,8 @@ net_signal_hook_function(EThread *thread) {
 }
 
 void
-initialize_thread_for_net(EThread *thread, int thread_index)
+initialize_thread_for_net(EThread *thread)
 {
-  NOWARN_UNUSED(thread_index);
-
   new((ink_dummy_for_new *) get_NetHandler(thread)) NetHandler();
   new((ink_dummy_for_new *) get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));
   get_NetHandler(thread)->mutex = new_ProxyMutex();
@@ -237,9 +235,8 @@ NetHandler::startNetEvent(int event, Event *e)
 // Move VC's enabled on a different thread to the ready list
 //
 void
-NetHandler::process_enabled_list(NetHandler *nh, EThread *t)
+NetHandler::process_enabled_list(NetHandler *nh)
 {
-  NOWARN_UNUSED(t);
   UnixNetVConnection *vc = NULL;
 
   SListM(UnixNetVConnection, NetState, read, enable_link) rq(nh->read_enable_list.popall());
@@ -278,7 +275,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
 
-  process_enabled_list(this, e->ethread);
+  process_enabled_list(this);
   if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty()))
     poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
   else

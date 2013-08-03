@@ -55,7 +55,7 @@ static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator")
    cases.
    -------------------------------------------------------------- */
 const matcher_tags sdns_dest_tags = {
-  "dest_host", "dest_domain", NULL, "url_regex", NULL, true
+  "dest_host", "dest_domain", NULL, "url_regex", "url", NULL, true
 };
 
 
@@ -228,7 +228,7 @@ SplitDNS::getDNSRecord(const char *hostname)
    SplitDNS::findServer()
    -------------------------------------------------------------- */
 void
-SplitDNS::findServer(RD * rdata, SplitDNSResult * result)
+SplitDNS::findServer(RequestData * rdata, SplitDNSResult * result)
 {
   DNS_table *tablePtr = m_DNSSrvrTable;
   SplitDNSRecord *rec;
@@ -556,9 +556,8 @@ SplitDNSRecord::Init(matcher_line * line_info)
     SplitDNSRecord::UpdateMatch()
    -------------------------------------------------------------- */
 void
-SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RD * rdata)
+SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RequestData * /* rdata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(rdata);
   int last_number = result->m_line_number;
 
   if ((last_number<0) || (last_number> this->line_num)) {

@@ -59,10 +59,15 @@ extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 #endif
 
 enum AllocType
-{ NO_ALLOC, FAST_ALLOCATED, XMALLOCED, MEMALIGNED,
-  DEFAULT_ALLOC, CONSTANT
+{
+  NO_ALLOC,
+  FAST_ALLOCATED,
+  XMALLOCED,
+  MEMALIGNED,
+  DEFAULT_ALLOC,
+  CONSTANT
 };
-#ifndef TS_MICRO
+
 #if TS_USE_RECLAIMABLE_FREELIST
 #define DEFAULT_BUFFER_NUMBER        64
 #else
@@ -72,17 +77,6 @@ enum AllocType
 #define MAX_MIOBUFFER_READERS        5
 #define DEFAULT_BUFFER_ALIGNMENT     8192       // should be disk/page size
 #define DEFAULT_BUFFER_BASE_SIZE     128
-#else
-#define DEFAULT_BUFFER_NUMBER        4
-#if TS_USE_RECLAIMABLE_FREELIST
-#define DEFAULT_HUGE_BUFFER_NUMBER   4
-#else
-#define DEFAULT_HUGE_BUFFER_NUMBER   32
-#endif
-#define MAX_MIOBUFFER_READERS        3
-#define DEFAULT_BUFFER_BASE_SIZE     128
-#define DEFAULT_BUFFER_ALIGNMENT     8  // should be disk/page size
-#endif
 
 ////////////////////////////////////////////////
 // These are defines so that code that used 2 //
@@ -578,6 +572,12 @@ public:
   */
   int64_t read_avail();
 
+  /** Check if there is more than @a size bytes available to read.
+      @return @c true if more than @a size byte are available.
+  */
+  bool is_read_avail_more_than(int64_t size);
+
+
   /**
     Number of IOBufferBlocks with data in the block list. Returns the
     number of IOBufferBlocks on the block list with data remaining for
@@ -1071,6 +1071,7 @@ public:
     return !_writer;
   }
   int64_t max_read_avail();
+
   int max_block_count();
   void check_add_block();
 

@@ -116,7 +116,6 @@ HttpUpdateSM::handle_api_return()
   }
 
   switch (t_state.next_action) {
-#ifndef TS_NO_TRANSFORM
   case HttpTransact::TRANSFORM_READ:
     {
       if (t_state.cache_info.transform_action == HttpTransact::CACHE_DO_WRITE) {
@@ -154,7 +153,6 @@ HttpUpdateSM::handle_api_return()
       }
       break;
     }
-#endif //TS_NO_TRANSFORM
   case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
   case HttpTransact::SERVER_READ:
   case HttpTransact::PROXY_INTERNAL_CACHE_NOOP:
@@ -210,9 +208,8 @@ HttpUpdateSM::set_next_state()
 }
 
 int
-HttpUpdateSM::kill_this_async_hook(int event, void *data)
+HttpUpdateSM::kill_this_async_hook(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpUpdateSM::user_cb_handler, event, data);
 
   MUTEX_TRY_LOCK(lock, cb_action.mutex, this_ethread());

@@ -13,6 +13,7 @@ proxy/config/
 **/Makefile
 **/TODO
 .vimrc
+.clang-format
 .gitignore
 **/.gitignore
 .git/
@@ -48,6 +49,7 @@ example/thread-pool/TESTPLAN.txt
 example/thread-pool/test/SynTest/
 example/thread-pool/test/SDKTest/SDKtest_server.config
 example/app-template/records.config
+doc/docbuild/
 doc/dot/
 doc/Doxyfile
 doc/Doxyfile.in
@@ -87,8 +89,10 @@ lib/ts/ink_rand.cc
 lib/tsconfig/BisonHeaderToC++.sed
 README-EC2
 REVIEWERS
-contrib/perl/AdminClient/Changes
-contrib/perl/AdminClient/MANIFEST
+lib/perl/AdminClient/MANIFEST
+lib/perl/Makefile-pl
+lib/perl/blib/
+lib/perl/pm_to_blib
 ats-install/
 cop/traffic_cop
 mgmt/api/remote/traffic_api_cli_remote

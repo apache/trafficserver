@@ -66,10 +66,9 @@ startProcessManager(void *arg)
   return ret;
 }                               /* End startProcessManager */
 
-ProcessManager::ProcessManager(bool rlm, char *mpath):
+ProcessManager::ProcessManager(bool rlm, char * /* mpath ATS_UNUSED */):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0), cbtable(NULL)
 {
-  NOWARN_UNUSED(mpath);
   ink_strlcpy(pserver_path, Layout::get()->runtimedir, sizeof(pserver_path));
   mgmt_signal_queue = create_queue();
 

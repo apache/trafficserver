@@ -15,7 +15,7 @@ online, at
 BUILD AND INSTALLATION
 ----------------------
 
-Configure & Build from source:
+Configure & Build from Git source tree:
     $ autoreconf -if  # generate the configure script and Makefile.in files
 
 On Linux, OSX:
@@ -50,6 +50,10 @@ optimization. To alter this, specify your own optimizer flags at
 configuration time:
 
     $ ./configure CXXFLAGS=-Os CFLAGS=-Os
+
+To compile with an alternate set of compilers, e.g. LLVM/Clang
+
+    $ ./configure CC=clang CXX=clang++
 
 
 INITIAL CONFIGURATION

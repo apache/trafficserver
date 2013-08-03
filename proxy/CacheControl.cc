@@ -49,7 +49,6 @@
 #include "StatSystem.h"
 #include "P_Cache.h"
 
-#ifndef INK_NO_ACL
 static const char modulePrefix[] = "[CacheControl]";
 
 # define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
@@ -89,14 +88,12 @@ typedef int (CC_FreerContinuation::*CC_FreerContHandler) (int, void *);
 struct CC_FreerContinuation: public Continuation
 {
   CC_table *p;
-  int freeEvent(int event, Event * e)
+  int freeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(e);
     Debug("cache_control", "Deleting old table");
     delete p;
     delete this;
-      return EVENT_DONE;
+    return EVENT_DONE;
   }
   CC_FreerContinuation(CC_table * ap):Continuation(NULL), p(ap)
   {
@@ -112,13 +109,11 @@ struct CC_FreerContinuation: public Continuation
 //
 struct CC_UpdateContinuation: public Continuation
 {
-  int file_update_handler(int etype, void *data)
+  int file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    NOWARN_UNUSED(etype);
-    NOWARN_UNUSED(data);
     reloadCacheControl();
     delete this;
-      return EVENT_DONE;
+    return EVENT_DONE;
   }
   CC_UpdateContinuation(ProxyMutex * m):Continuation(m)
   {
@@ -127,12 +122,9 @@ struct CC_UpdateContinuation: public Continuation
 };
 
 int
-cacheControlFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
+cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                    RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   eventProcessor.schedule_imm(NEW(new CC_UpdateContinuation(reconfig_mutex)), ET_CACHE);
   return 0;
 }
@@ -215,6 +207,7 @@ getClusterCacheLocal(URL *url, char * /* hostname ATS_UNUSED */)
   req_hdr.clear();
   return result.cluster_cache_local;
 }
+
 //
 //   End API functions
 //
@@ -228,7 +221,8 @@ void
 CacheControlResult::Print()
 {
   printf("\t reval: %d, never-cache: %d, pin: %d, cluster-cache-c: %d ignore-c: %d ignore-s: %d\n",
-         revalidate_after, never_cache, pin_in_cache_for, cluster_cache_local, ignore_client_no_cache, ignore_server_no_cache);
+         revalidate_after, never_cache, pin_in_cache_for, cluster_cache_local, ignore_client_no_cache,
+         ignore_server_no_cache);
 }
 
 // void CacheControlRecord::Print()
@@ -254,7 +248,6 @@ CacheControlRecord::Print()
   case CC_NEVER_CACHE:
   case CC_STANDARD_CACHE:
   case CC_IGNORE_NO_CACHE:
- // case CC_CACHE_AUTH_CONTENT:
     printf("\t\tDirective: %s\n", CC_directive_str[this->directive]);
     break;
   case CC_INVALID:
@@ -303,10 +296,8 @@ CacheControlRecord::Init(matcher_line * line_info)
       int v = strtol(val, &ptr, 0);
       if (!ptr || v < 0 || v > 4) {
         errBuf = static_cast<char*>(ats_malloc(errBufLen * sizeof(char)));
-        snprintf(errBuf, errBufLen,
-          "Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES
-          " must be an integer in the range 0..4"
-        );
+        snprintf(errBuf, errBufLen, "Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES
+                 " must be an integer in the range 0..4");
         return errBuf;
       } else {
         cache_responses_to_cookies = v;
@@ -349,9 +340,6 @@ CacheControlRecord::Init(matcher_line * line_info)
       } else if (strcasecmp(val, "ignore-server-no-cache") == 0) {
         directive = CC_IGNORE_SERVER_NO_CACHE;
         d_found = true;
-      //} else if (strcasecmp(val, "cache-auth-content") == 0) {
-       // directive = CC_CACHE_AUTH_CONTENT;
-       // d_found = true;
       } else {
         errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
         snprintf(errBuf, errBufLen, "%s Invalid action at line %d in cache.config", modulePrefix, line_num);
@@ -410,13 +398,13 @@ CacheControlRecord::Init(matcher_line * line_info)
   return NULL;
 }
 
-// void CacheControlRecord::UpdateMatch(CacheControlResult* result, RD* rdata)
+// void CacheControlRecord::UpdateMatch(CacheControlResult* result, RequestData* rdata)
 //
 //    Updates the parameters in result if the this element
 //     appears later in the file
 //
 void
-CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
+CacheControlRecord::UpdateMatch(CacheControlResult * result, RequestData * rdata)
 {
   bool match = false;
   HttpRequestData *h_rdata = (HttpRequestData *) rdata;
@@ -488,13 +476,6 @@ CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
       match = true;
     }
     break;
-//  case CC_CACHE_AUTH_CONTENT:
- //   if (this->CheckForMatch(h_rdata, result->cache_auth_line) == true) {
-  //    result->cache_auth_content = true;
-   //   result->cache_auth_line = this->line_num;
-    //  match = true;
-   // }
-   // break;
   case CC_INVALID:
   case CC_NUM_TYPES:
   default:
@@ -511,32 +492,11 @@ CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
     char crtc_debug[80];
     if (result->cache_responses_to_cookies >= 0)
       snprintf(crtc_debug, sizeof(crtc_debug), " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]",
-        result->cache_responses_to_cookies
-      );
+               result->cache_responses_to_cookies);
     else
       crtc_debug[0] = 0;
       
-    Debug("cache_control", "Matched with for %s at line %d%s",
-      CC_directive_str[this->directive], this->line_num, crtc_debug
-    );
+    Debug("cache_control", "Matched with for %s at line %d%s", CC_directive_str[this->directive],
+          this->line_num, crtc_debug);
   }
 }
-#else
-#include "CacheControl.h"
-
-void
-CacheControlRecord::Print()
-{
-}
-
-char *
-CacheControlRecord::Init(matcher_line * line_info)
-{
-  return NULL;
-}
-
-void
-CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
-{
-}
-#endif // INK_NO_ACL

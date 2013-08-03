@@ -62,7 +62,7 @@ bridge is functional.
 Once the bridge is verified to work, this is the basic traffic pattern
 of interest.
 
-.. figure:: ../../_static/images/admin/ats-traffic-bridge.png
+.. figure:: ../../static/images/admin/ats-traffic-bridge.png
    :align: center
    :alt: Picture of traffic flow through a bridge with ATS
 
@@ -134,7 +134,7 @@ The marking used is arbitrary but it must be consistent between
 1..253.
 
 To configure Traffic Server set the following values in
-``records.config``
+:file:`records.config`
 
 ``proxy.config.http.server_port``
     ``STRING``

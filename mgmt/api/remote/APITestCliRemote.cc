@@ -301,6 +301,9 @@ print_pd_sspec(TSPdSsFormat info)
   case TS_PD_URL_REGEX:
     printf("Prime Url regex: url_regex=%s\n", info.pd_val);
     break;
+  case TS_PD_URL:
+    printf("Prime Url: url=%s\n", info.pd_val);
+    break;
   default:
     break;
   }
@@ -458,6 +461,9 @@ print_hosting_ele(TSHostingEle * ele)
     break;
   case TS_PD_URL_REGEX:
     printf("url_regex=%s\n", ele->pd_val);
+    break;
+  case TS_PD_URL:
+    printf("url=%s\n", ele->pd_val);
     break;
   default:
     printf("INVALID Prime Dest specifier\n");
@@ -696,6 +702,9 @@ print_split_dns_ele(TSSplitDnsEle * ele)
     break;
   case TS_PD_URL_REGEX:
     pd_name = ats_strdup("url_regex");
+    break;
+  case TS_PD_URL:
+    pd_name = ats_strdup("url");
     break;
   default:
     pd_name = ats_strdup("?????");
@@ -1238,7 +1247,7 @@ test_record_get_mlt(void)
   TSStringList name_list;
   TSList rec_list;
   int i, num;
-  char *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8;
+  char *v1, *v2, *v3, *v6, *v7, *v8;
   TSError ret;
 
   name_list = TSStringListCreate();
@@ -1253,12 +1262,6 @@ test_record_get_mlt(void)
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
   v3 = (char *) TSmalloc(v3_size);
   ink_strlcpy(v3, "proxy.config.manager_binary", v3_size);
-  const size_t v4_size = (sizeof(char) * (strlen("proxy.config.cli_binary") + 1));
-  v4 = (char *) TSmalloc(v4_size);
-  ink_strlcpy(v4, "proxy.config.cli_binary", v4_size);
-  const size_t v5_size = (sizeof(char) * (strlen("proxy.config.watch_script") + 1));
-  v5 = (char *) TSmalloc(v5_size);
-  ink_strlcpy(v5, "proxy.config.watch_script", v5_size);
   const size_t v6_size = (sizeof(char) * (strlen("proxy.config.env_prep") + 1));
   v6 = (char *) TSmalloc(v6_size);
   ink_strlcpy(v6, "proxy.config.env_prep", v6_size);
@@ -1273,8 +1276,6 @@ test_record_get_mlt(void)
   TSStringListEnqueue(name_list, v1);
   TSStringListEnqueue(name_list, v2);
   TSStringListEnqueue(name_list, v3);
-  TSStringListEnqueue(name_list, v4);
-  TSStringListEnqueue(name_list, v5);
   TSStringListEnqueue(name_list, v6);
   TSStringListEnqueue(name_list, v7);
   TSStringListEnqueue(name_list, v8);
@@ -2017,10 +2018,8 @@ try_resolve(char *event_name)
  * of the event that was signalled
  */
 void
-eventCallbackFn(char *name, char *msg, int pri, void *data)
+eventCallbackFn(char *name, char *msg, int /* pri ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(pri);
-  NOWARN_UNUSED(data);
   printf("[eventCallbackFn] EVENT: %s, %s\n", name, msg);
   return;
 }
@@ -2322,14 +2321,6 @@ sync_test()
   print_err("stop_TS", ret);
 }
 
-void
-test_encrypt_password(char *pwd)
-{
-  if (TSEncryptToFile(pwd, "/export/workareas/lant/tsunami/traffic/sun_dbg/etc/trafficserver/LAN_pwd") != TS_ERR_OKAY)
-    printf("[TSEncryptToFile] could not encrypt %s", pwd);
-}
-
-
 /* ########################################################################*/
 /* ------------------------------------------------------------------------
  * runInteractive
@@ -2432,8 +2423,6 @@ runInteractive()
       set_stats();
     } else if (strstr(buf, "print_stats")) {
       print_stats();
-    } else if (strstr(buf, "encrypt:")) {
-      test_encrypt_password(buf);
     } else {
       sync_test();
     }

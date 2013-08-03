@@ -133,36 +133,100 @@ public:
   LINK(APIHook, m_link);
 };
 
-
 class APIHooks
 {
 public:
   void prepend(INKContInternal * cont);
   void append(INKContInternal * cont);
   APIHook *get();
+  void clear();
 
 private:
   Que(APIHook, m_link) m_hooks;
 };
 
-
-class HttpAPIHooks
+/** Container for API hooks for a specific feature.
+ */
+template <
+  typename ID, ///< Type of hook ID
+  ID MAX_ID ///< Maximum value for ID
+>
+class FeatureAPIHooks
 {
 public:
-  HttpAPIHooks();
-  ~HttpAPIHooks();
+  FeatureAPIHooks();
+  ~FeatureAPIHooks();
 
   void clear();
-  void prepend(TSHttpHookID id, INKContInternal * cont);
-  void append(TSHttpHookID id, INKContInternal * cont);
-  APIHook *get(TSHttpHookID id);
+  void prepend(ID id, INKContInternal * cont);
+  void append(ID id, INKContInternal * cont);
+  APIHook *get(ID id);
 
-  // A boolean value to quickly see if
-  //   any hooks are set
-  int hooks_set;
+  bool has_hooks() const;
 
 private:
-  APIHooks m_hooks[TS_HTTP_LAST_HOOK];
+  bool hooks_p; ///< Enable fast check for any hooks.
+  APIHooks m_hooks[MAX_ID];
+};
+
+template < typename ID, ID MAX_ID >
+FeatureAPIHooks<ID,MAX_ID>::FeatureAPIHooks():
+hooks_p(false)
+{
+}
+
+template < typename ID, ID MAX_ID >
+FeatureAPIHooks<ID,MAX_ID>::~FeatureAPIHooks()
+{
+  this->clear();
+}
+
+template < typename ID, ID MAX_ID >
+void
+FeatureAPIHooks<ID,MAX_ID>::clear()
+{
+  for (int i = 0; i < MAX_ID; ++i) {
+    m_hooks->clear();
+  }
+  hooks_p = false;
+}
+
+template < typename ID, ID MAX_ID >
+void
+FeatureAPIHooks<ID,MAX_ID>::prepend(ID id, INKContInternal *cont)
+{
+  hooks_p = true;
+  m_hooks[id].prepend(cont);
+}
+
+template < typename ID, ID MAX_ID >
+void
+FeatureAPIHooks<ID,MAX_ID>::append(ID id, INKContInternal *cont)
+{
+  hooks_p = true;
+  m_hooks[id].append(cont);
+}
+
+template < typename ID, ID MAX_ID >
+APIHook *
+FeatureAPIHooks<ID,MAX_ID>::get(ID id)
+{
+  return m_hooks[id].get();
+}
+
+template < typename ID, ID MAX_ID >
+bool
+FeatureAPIHooks<ID,MAX_ID>::has_hooks() const
+{
+  return hooks_p;
+}
+
+class HttpAPIHooks : public FeatureAPIHooks<TSHttpHookID, TS_HTTP_LAST_HOOK>
+{
+};
+
+class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE_LAST_HOOK>
+{
 };
 
 
@@ -214,6 +278,7 @@ private:
 void api_init();
 
 extern HttpAPIHooks *http_global_hooks;
+extern LifecycleAPIHooks* lifecycle_hooks;
 extern ConfigUpdateCbTable *global_config_cbs;
 
 #endif /* __INK_API_INTERNAL_H__ */

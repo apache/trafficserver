@@ -41,8 +41,8 @@
  * table and can be easily retrived
  * also exercise the resizing of the table
  */
-EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable) (RegressionTest * t, int atype, int *pstatus) {
-  NOWARN_UNUSED(atype);
+EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable) (RegressionTest * t, int /* atype ATS_UNUSED */, int *pstatus)
+{
   MTHashTable<long, long>*htable = new MTHashTable<long, long>(4);
   // add elements to the table;
   long i, count = 1 * 1024 * 1024;
@@ -280,10 +280,8 @@ CCFailHistoryTestCont::init_events()
 }
 
 int
-CCFailHistoryTestCont::schedule_event(int event, Event * e)
+CCFailHistoryTestCont::schedule_event(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   if (failEvents == NULL)
     return EVENT_DONE;
   CCFailHistoryTestCont::FailEvents * f = (CCFailHistoryTestCont::FailEvents *) ink_atomiclist_pop(failEvents);
@@ -320,10 +318,8 @@ CCFailHistoryTestCont::check_history(bool print)
 }
 
 int
-CCFailHistoryTestCont::mainEvent(int event, Event * e)
+CCFailHistoryTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   test_mode = CCFailHistoryTestCont::SIMPLE_TEST;
   init_events();
   entry->init(rule->pRecord);
@@ -356,8 +352,8 @@ Ldone:
   return EVENT_CONT;
 }
 
-EXCLUSIVE_REGRESSION_TEST(Congestion_FailHistory) (RegressionTest * t, int atype, int *pstatus) {
-  NOWARN_UNUSED(atype);
+EXCLUSIVE_REGRESSION_TEST(Congestion_FailHistory) (RegressionTest * t, int /* atype ATS_UNUSED */, int *pstatus)
+{
   CCFailHistoryTestCont *test = new CCFailHistoryTestCont(make_ptr(new_ProxyMutex()), t);
   eventProcessor.schedule_in(test, HRTIME_SECONDS(1));
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -460,10 +456,8 @@ CCCongestionDBTestCont::get_congest_list()
 }
 
 int
-CCCongestionDBTestCont::mainEvent(int event, Event * e)
+CCCongestionDBTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   int to_add = 1 * 1024 * 1024;
   int i;
   int items[10] = { 0 };
@@ -536,8 +530,8 @@ CCCongestionDBTestCont::mainEvent(int event, Event * e)
   return EVENT_CONT;
 }
 
-EXCLUSIVE_REGRESSION_TEST(Congestion_CongestionDB) (RegressionTest * t, int atype, int *pstatus) {
-  NOWARN_UNUSED(atype);
+EXCLUSIVE_REGRESSION_TEST(Congestion_CongestionDB) (RegressionTest * t, int /* atype ATS_UNUSED */, int *pstatus)
+{
   CCCongestionDBTestCont *test = new CCCongestionDBTestCont(make_ptr(new_ProxyMutex()), t);
   eventProcessor.schedule_in(test, HRTIME_SECONDS(1));
   *pstatus = REGRESSION_TEST_INPROGRESS;

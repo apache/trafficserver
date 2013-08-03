@@ -100,6 +100,8 @@ struct DiagsConfigState
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#define DiagsMakeLocation() SrcLoc(__FILE__, __FUNCTION__, __LINE__)
+
 class SrcLoc
 {
 public:

@@ -476,7 +476,7 @@ ParentConfigParams::nextParent(HttpRequestData * rdata, ParentResult * result)
 //
 
 void
-ParentRecord::FindParent(bool first_call, ParentResult * result, RD * rdata, ParentConfigParams * config)
+ParentRecord::FindParent(bool first_call, ParentResult * result, RequestData * rdata, ParentConfigParams * config)
 {
   Debug("cdn", "Entering FindParent (the inner loop)");
   int cur_index = 0;
@@ -815,13 +815,13 @@ ParentRecord::Init(matcher_line * line_info)
   return NULL;
 }
 
-// void ParentRecord::UpdateMatch(ParentResult* result, RD* rdata);
+// void ParentRecord::UpdateMatch(ParentResult* result, RequestData* rdata);
 //
 //    Updates the record ptr in result if the this element
 //     appears later in the file
 //
 void
-ParentRecord::UpdateMatch(ParentResult * result, RD * rdata)
+ParentRecord::UpdateMatch(ParentResult * result, RequestData * rdata)
 {
   if (this->CheckForMatch((HttpRequestData *) rdata, result->line_number) == true) {
     result->rec = this;
@@ -1011,10 +1011,9 @@ static int passes;
 static int fails;
 
 // Parenting Tests
-EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_level, int *pstatus)
+EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * /* t ATS_UNUSED */,
+                                            int /* intensity_level ATS_UNUSED */, int *pstatus)
 {
-  NOWARN_UNUSED(t);
-  NOWARN_UNUSED(intensity_level);
   // first, set everything up
   *pstatus = REGRESSION_TEST_INPROGRESS;
   ParentConfig config;
@@ -1026,7 +1025,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
   params->ParentEnable = true;
   char tbl[2048];
 #define T(x) ink_strlcat(tbl,x, sizeof(tbl));
-#define REBUILD params->ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags, ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); params->ParentTable->BuildTableFromString(tbl);
+#define REBUILD params->ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags, ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); params->ParentTable->BuildTableFromString(tbl);
   HttpRequestData *request = NULL;
   ParentResult *result = NULL;
 #define REINIT delete request; delete result; request = new HttpRequestData(); result = new ParentResult(); if (!result || !request) { (void)printf("Allocation failed\n"); return; }

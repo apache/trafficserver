@@ -36,7 +36,6 @@
 #include "ControlBase.h"
 
 struct RequestData;
-typedef RequestData RD;
 
 const int CC_UNSET_TIME = -1;
 
@@ -55,7 +54,6 @@ enum CacheControlType
   CC_IGNORE_NO_CACHE,
   CC_CLUSTER_CACHE_LOCAL,
   CC_IGNORE_CLIENT_NO_CACHE,
-  //CC_IGNORE_SERVER_NO_CACHE,CC_PIN_IN_CACHE, CC_TTL_IN_CACHE, CC_CACHE_AUTH_CONTENT, CC_NUM_TYPES
   CC_IGNORE_SERVER_NO_CACHE,
   CC_PIN_IN_CACHE,
   CC_TTL_IN_CACHE,
@@ -84,7 +82,6 @@ public:
   bool ignore_server_no_cache;
   bool ignore_client_cc_max_age;
   int cache_responses_to_cookies; ///< Override for caching cookied responses.
-//  bool cache_auth_content;
 
   // Data for internal use only
   //
@@ -101,7 +98,6 @@ public:
   int cluster_cache_local_line;
   int ignore_client_line;
   int ignore_server_line;
- // int cache_auth_line;
 };
 
 inline
@@ -115,7 +111,6 @@ CacheControlResult::CacheControlResult()
     ignore_server_no_cache(false),
     ignore_client_cc_max_age(true),
     cache_responses_to_cookies(-1), // do not change value
-    //cache_auth_content(false),
     reval_line(-1),
     never_line(-1),
     pin_line(-1),
@@ -123,7 +118,6 @@ CacheControlResult::CacheControlResult()
     cluster_cache_local_line(-1),
     ignore_client_line(-1),
     ignore_server_line(-1)
-    //cache_auth_line(-1)
 { }
 
 class CacheControlRecord : public ControlBase
@@ -134,15 +128,14 @@ public:
   int time_arg;
   int cache_responses_to_cookies;
   char *Init(matcher_line * line_info);
-  inkcoreapi void UpdateMatch(CacheControlResult * result, RD * rdata);
+  inkcoreapi void UpdateMatch(CacheControlResult * result, RequestData * rdata);
   void Print();
 };
 
 inline
 CacheControlRecord::CacheControlRecord()
-  : ControlBase(), directive(CC_INVALID), time_arg(0)
-                  , cache_responses_to_cookies(-1)
-{}
+  : ControlBase(), directive(CC_INVALID), time_arg(0) , cache_responses_to_cookies(-1)
+{ }
 
 //
 // API to outside world
@@ -159,4 +152,5 @@ inkcoreapi bool ip_rule_in_CacheControlTable();
 
 void initCacheControl();
 void reloadCacheControl();
-#endif
+
+#endif /* _CACHE_CONTROL_H_ */

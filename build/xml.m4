@@ -56,13 +56,29 @@ AC_ARG_WITH(expat, [AC_HELP_STRING([--with-expat=DIR],[use a specific Expat libr
 if test "x$expat_base_dir" = "x"; then
   AC_MSG_CHECKING([for Expat location])
   AC_CACHE_VAL(ats_cv_expat_dir,[
-  for dir in /usr/local /usr; do
-    if test -d $dir && test -f $dir/include/expat.h; then
-      ats_cv_expat_dir=$dir
-      break
-    fi
-  done
+  _expat_dir_list=""
+  case $host_os_def in
+    darwin)
+    for dir in "`xcrun -show-sdk-path`/usr" /usr/local /usr; do
+      if test -d $dir && test -f $dir/include/expat.h; then
+        ats_cv_expat_dir=$dir
+        break
+      fi
+    done
+    ;;
+    *)
+    for dir in /usr/local /usr; do
+      if test -d $dir && test -f $dir/include/expat.h; then
+        ats_cv_expat_dir=$dir
+        break
+      fi
+    done
+    ;;
+  esac
+
+  unset _expat_dir_list
   ])
+
   expat_base_dir=$ats_cv_expat_dir
   if test "x$expat_base_dir" = "x"; then
     enable_expat=no

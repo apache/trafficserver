@@ -43,7 +43,6 @@
 #define CONGESTION_EVENT_CONTROL_LOOKUP_DONE (CONGESTION_EVENT_EVENTS_START + 4)
 
 struct RequestData;
-typedef RequestData RD;
 
 extern InkRand CongestionRand;
 
@@ -66,7 +65,7 @@ public:
   CongestionControlRecord(const CongestionControlRecord & rec);
    ~CongestionControlRecord();
   char *Init(matcher_line * line_info);
-  void UpdateMatch(CongestionControlRule * pRule, RD * rdata);
+  void UpdateMatch(CongestionControlRule * pRule, RequestData * rdata);
   void Print();
 
   void cleanup();
@@ -449,7 +448,7 @@ extern int congestionControlEnabled;
 extern int congestionControlLocalTime;
 
 void initCongestionControl();
-CongestionControlRecord *CongestionControlled(RD * rdata);
+CongestionControlRecord *CongestionControlled(RequestData * rdata);
 
 uint64_t make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * record);
 uint64_t make_key(char *hostname, sockaddr const* ip, CongestionControlRecord * record);

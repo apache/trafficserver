@@ -41,7 +41,6 @@ int g_config_update_result = 0;
 int
 cb_test_1a(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  NOWARN_UNUSED(data_type);
   if ((cookie == (void *) 0x12345678) && (strcmp(data.rec_string, "cb_test_1__changed") == 0)) {
     g_config_update_result++;
     printf("    - cb_test_1(%d) name: %s, data: %s, cookie: 0x%x\n",
@@ -59,12 +58,9 @@ cb_test_1b(const char *name, RecDataT data_type, RecData data, void *cookie)
 }
 
 int
-cb_test_2a(const char *name, RecDataT data_type, RecData data, void *cookie)
+cb_test_2a(const char */* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+           RecData /* data ATS_UNUSED */, void */* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   g_config_update_result = -1;
   return REC_ERR_FAIL;
 }
@@ -122,7 +118,6 @@ Test01()
 int
 cb_test_3a(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
-  NOWARN_UNUSED(data_type);
   RecString rec_result;
   int rec_status = RecGetRecordString_Xmalloc(name, &rec_result);
 
@@ -250,8 +245,6 @@ Test03()
 int
 main(int argc, char **argv)
 {
-  NOWARN_UNUSED(argc);
-
   // start diags logging
   FILE *log_fp;
   if ((log_fp = fopen("reclocal.log", "a+")) != NULL) {

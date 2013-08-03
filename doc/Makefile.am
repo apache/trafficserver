@@ -16,6 +16,8 @@
 
 trafficshelldir = $(pkgdocdir)/trafficshell
 
+.PHONY: help dirhtml singlehtml epub latex man changes linkcheck doxygen
+
 dist_trafficshell_DATA = \
   man/config_alarms.1 \
   man/config_cache.1 \
@@ -79,27 +81,13 @@ dist_trafficshell_DATA = \
 man1_MANS = \
   man/traffic_shell.1
 
-man3_MANS = \
-  sdk/TSAPI.3 \
-  sdk/TSDebug.3 \
-  sdk/TSHttpHookAdd.3 \
-  sdk/TSHttpParserCreate.3 \
-  sdk/TSIOBufferCreate.3 \
-  sdk/TSInstallDirGet.3 \
-  sdk/TSMBufferCreate.3 \
-  sdk/TSMalloc.3 \
-  sdk/TSPluginInit.3 \
-  sdk/TSRemap.3 \
-  sdk/TSTrafficServerVersionGet.3 \
-  sdk/TSUrlCreate.3
-
 EXTRA_DIST = \
   Doxyfile.in \
   $(dist_trafficshell_DATA)
 
 clean-local:
 	-rm -rf html warn.log
-	-rm -rf doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex
+	-rm -rf doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex $(BUILDDIR)/man
 
 doxygen: Doxyfile
 	$(DOXYGEN)
@@ -111,7 +99,7 @@ doxygen: Doxyfile
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = letter
-BUILDDIR      = .
+BUILDDIR      = docbuild
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -123,7 +111,11 @@ I18NSPHINXOPTS  = $(SPHINXOPTS)
 # The PAPER setting variables requires recursive make variable expansion, which automake
 # detects as non-portable. We bounce this through a shell script and do the expansion there.
 SBUILD = PAPEROPT_a4="$(PAPEROPT_a4)" PAPEROPT_letter="$(PAPEROPT_letter)" PAPER="$(PAPER)" \
-	 $(srcdir)/sbuild $(SPHINXBUILD) -c $(srcdir) $(ALLSPHINXOPTS)
+	 $(srcdir)/sbuild $(SPHINXBUILD) \
+	 -D version=$(TS_VERSION_STRING) \
+	 -D release=$(TS_VERSION_STRING) \
+	 -c $(srcdir) \
+	 $(ALLSPHINXOPTS)
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -138,34 +130,34 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 
 html-local:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b html $(srcdir)/admin $(BUILDDIR)/html/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b  html $(srcdir)/sdk $(BUILDDIR)/html/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b html $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 dirhtml:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b dirhtml $(srcdir)/admin $(BUILDDIR)/dirhtml/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b dirhtml $(srcdir)/sdk $(BUILDDIR)/dirhtml/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b dirhtml $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
 
 singlehtml:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b singlehtml $(srcdir)/admin $(BUILDDIR)/singlehtml/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b singlehtml $(srcdir)/sdk $(BUILDDIR)/singlehtml/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b singlehtml $(srcdir) $(BUILDDIR)/singlehtml
 	@echo
 	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
 
 epub:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b epub $(srcdir)/admin $(BUILDDIR)/epub/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b epub $(srcdir)/admin $(BUILDDIR)/epub/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b epub $(srcdir) $(BUILDDIR)/epub
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
 
 latex:
-	$(SBUILD) -d $(BUILDDIR)/doctrees/admin -b latex $(srcdir)/admin $(BUILDDIR)/latex/admin
-	$(SBUILD) -d $(BUILDDIR)/doctrees/sdk -b latex $(srcdir)/sdk $(BUILDDIR)/latex/sdk
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b latex $(srcdir) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/latex."
+
+man:
+	$(SBUILD) -d $(BUILDDIR)/doctrees -b man $(srcdir) $(BUILDDIR)/man
+	@echo
+	@echo "Build finished. The man pages are in $(BUILDDIR)/man."
 
 changes:
 	@echo FIXME

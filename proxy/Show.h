@@ -39,37 +39,48 @@ struct ShowCont;
 typedef int (ShowCont::*ShowContEventHandler) (int event, Event * data);
 struct ShowCont: public Continuation
 {
-  Action action;
+private:
   char *buf, *start, *ebuf;
-  int iarg;
+
+public:
+  Action action;
   char *sarg;
 
   int show(const char *s, ...)
   {
     va_list aap, va_scratch;
-    int l = ebuf - buf;
+    ptrdiff_t avail = ebuf - buf;
+    ptrdiff_t needed;
+
     va_start(aap, s);
     va_copy(va_scratch, aap);
-    int done = vsnprintf(buf, l, s, va_scratch);
+    needed = vsnprintf(buf, avail, s, va_scratch);
     va_end(va_scratch);
-    if (done > l - 256)
-    {
-      char *start2 = (char *)ats_realloc(start, (ebuf - start) * 2);
-        ebuf = start2 + (ebuf - start) * 2;
-        buf = start2 + (buf - start);
-        start = start2;
-        l = ebuf - buf;
-        done = vsnprintf(buf, l, s, aap);
-      if (done > l - 256)
-      {
-        va_end(aap);
+
+    if (needed >= avail) {
+      ptrdiff_t bufsz = ebuf - start;
+      ptrdiff_t used = buf - start;
+
+      Debug("cache_inspector", "needed %d bytes, reallocating to %d bytes",
+          (int)needed, (int)bufsz + (int)needed);
+
+      bufsz += ROUNDUP(needed, ats_pagesize());
+      start = (char *)ats_realloc(start, bufsz);
+      ebuf = start + bufsz;
+      buf = start + used;
+      avail = ebuf - buf;
+
+      needed = vsnprintf(buf, avail, s, aap);
+      va_end(aap);
+
+      if (needed >= avail) {
+        Debug("cache_inspector", "needed %d bytes, but had only %d",
+          (int)needed, (int)avail + (int)needed);
         return EVENT_DONE;
       }
-      buf += done;
-    } else
-      buf += done;
+    }
 
-    va_end(aap);
+    buf += needed;
     return EVENT_CONT;
   }
 
@@ -109,31 +120,26 @@ struct ShowCont: public Continuation
     return complete_error(event, e);
   }
 
-  virtual int done(int e, int event, void *data)
+  virtual int done(int /* e ATS_UNUSED */, int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    NOWARN_UNUSED(e);
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(data);
-    if (sarg) {
-      ats_free(sarg);
-      sarg = NULL;
-    }
     delete this;
     return EVENT_DONE;
   }
 
-ShowCont(Continuation * c, HTTPHdr * h):
-  Continuation(NULL), iarg(0), sarg(0) {
-    NOWARN_UNUSED(h);
+  ShowCont(Continuation * c, HTTPHdr * /* h ATS_UNUSED */)
+    : Continuation(NULL), sarg(0) {
+    size_t sz = ats_pagesize();
+
     mutex = c->mutex;
     action = c;
-    buf = (char *)ats_malloc(32000);
+    buf = (char *)ats_malloc(sz);
     start = buf;
-    ebuf = buf + 32000;
+    ebuf = buf + sz;
   }
+
   ~ShowCont() {
-    if (start)
-      ats_free(start);
+    ats_free(sarg);
+    ats_free(start);
   }
 };
 

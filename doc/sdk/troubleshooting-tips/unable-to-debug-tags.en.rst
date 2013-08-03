@@ -37,7 +37,7 @@ below:
        :::text
        traffic_server -T"my-plugin"
 
-Set the following variables in ``records.config`` (in the Traffic Server
+Set the following variables in :file:`records.config` (in the Traffic Server
 ``config`` directory):
 
 ::

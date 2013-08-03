@@ -64,7 +64,6 @@ class Vec {
   C pop();
   void reset();
   void clear();
-  void free();
   void free_and_clear();
   void delete_and_clear();
   void set_clear();
@@ -113,7 +112,7 @@ class Vec {
   int read(int fd);
   void qsort(bool (*lt)(C,C));
   
-  // private:
+private:
   void move_internal(Vec<C,A,S> &v);
   void copy_internal(const Vec<C,A,S> &v);
   void add_internal(C a);
@@ -159,8 +158,8 @@ class UnionFind : public Vec<int> {
   void unify(int n, int m);
 };
 
-extern uintptr_t prime2[];
-extern uintptr_t open_hash_primes[256];
+extern const uintptr_t prime2[];
+extern const uintptr_t open_hash_primes[256];
 
 /* IMPLEMENTATION */
 
@@ -662,11 +661,6 @@ Vec<C,A,S>::addx() {
       A::free(vv);
     }
   }
-}
-
-template <class C, class A, int S> inline void
-Vec<C,A,S>::free() {
-  if (v && v != e) A::free(v);
 }
 
 template <class C, class A, int S> inline void

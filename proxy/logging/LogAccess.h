@@ -26,7 +26,6 @@
 
 
  ***************************************************************************/
-#if !defined (INK_NO_LOG)
 #ifndef LOG_ACCESS_H
 #define LOG_ACCESS_H
 #include "libts.h"
@@ -360,4 +359,3 @@ LogAccess::marshal_int(char *dest, int64_t source)
 char *resolve_logfield_string(LogAccess * context, const char *format_str);
 
 #endif
-#endif // INK_NO_LOG

@@ -14,19 +14,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+$source = $lsbmajdistrelease ? {
+  '5' => 'http://mirror.pnl.gov/epel/5/i386/epel-release-5-4.noarch.rpm',
+  '6' => 'http://mirror.pnl.gov/epel/6/i386/epel-release-6-8.noarch.rpm',
+  default => 'http://mirror.pnl.gov/epel/7/i386/epel-release-7-2.noarch.rpm',
+}
+
+package {'epel-release':
+  source => $source,
+  provider => rpm,
+  ensure => present,
+}
+
 # Base ATS build dependencies.
 package {[
     'gcc', 'gcc-c++', 'automake', 'autoconf', 'libtool', 'pkgconfig',
     'openssl-devel', 'tcl-devel', 'expat-devel', 'pcre-devel',
-    'ncurses-devel', 'libcurl-devel', 'libaio-devel',
+    'ncurses-devel', 'libaio-devel',
     'hwloc-devel', 'libcap-devel', 'bison', 'flex', 'make',
   ]:
   ensure => latest
 }
 
+package { $lsbmajdistrelease ? { '5' => 'curl-devel', default => 'libcurl-devel'}:
+  ensure => latest
+}
+
+# RHEL/CentOS 5 doesn't have MakeMaker and I don't know what package to use instead :(
+if $lsbmajdistrelease != '5' {
+  package{'perl-ExtUtils-MakeMaker':
+    ensure => latest
+  }
+}
+
 # development extras.
 package {[
-    'gdb', 'valgrind', 'git', 'curl', 'screen'
+    'gdb', 'valgrind', 'git', 'curl', 'screen', 'ccache'
   ]:
-  ensure => latest
+  ensure => latest,
+  require => Package['epel-release']
 }

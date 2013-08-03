@@ -38,7 +38,6 @@ dist_sysconf_DATA =	\
   parent.config.default \
   volume.config.default \
   plugin.config.default \
-  plugin.db.default \
   prefetch.config.default \
   remap.config.default \
   socks.config.default \

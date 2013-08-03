@@ -395,9 +395,8 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
  *----------------------------------------------------------------------
  */
 static void
-PrintUsage(Tcl_Interp * interp, cli_CommandInfo * commandInfo)
+PrintUsage(Tcl_Interp * /* interp ATS_UNUSED */, cli_CommandInfo * commandInfo)
 {
-  NOWARN_UNUSED(interp);
   cli_ArgvInfo *infoPtr;
   cli_ArgvInfo *argTable = commandInfo->argtable;
   int width, numSpaces;

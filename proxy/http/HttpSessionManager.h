@@ -43,13 +43,8 @@ class HttpSM;
 void
 initialize_thread_for_http_sessions(EThread *thread, int thread_index);
 
-#ifndef TS_MICRO
 #define  HSM_LEVEL1_BUCKETS   127
 #define  HSM_LEVEL2_BUCKETS   63
-#else
-#define  HSM_LEVEL1_BUCKETS   7
-#define  HSM_LEVEL2_BUCKETS   3
-#endif
 
 class SessionBucket: public Continuation
 {
@@ -61,20 +56,23 @@ public:
 };
 
 enum HSMresult_t
-{ HSM_DONE, HSM_RETRY, HSM_NOT_FOUND };
+{
+  HSM_DONE,
+  HSM_RETRY,
+  HSM_NOT_FOUND
+};
 
 class HttpSessionManager
 {
 public:
   HttpSessionManager()
-    { }
+  { }
 
   ~HttpSessionManager()
-    { }
+  { }
 
-  HSMresult_t acquire_session(Continuation *cont,
-                              sockaddr const* addr,
-                              const char *hostname, HttpClientSession *ua_session, HttpSM *sm);
+  HSMresult_t acquire_session(Continuation *cont, sockaddr const* addr, const char *hostname,
+                              HttpClientSession *ua_session, HttpSM *sm);
   HSMresult_t release_session(HttpServerSession *to_release);
   void purge_keepalives();
   void init();

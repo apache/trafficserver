@@ -74,6 +74,8 @@ typedef THREADAPI_RETURN_TYPE(THREADAPI * ThreadFunction) (void *arg);
 extern ProxyMutex *global_mutex;
 
 static const int MAX_THREAD_NAME_LENGTH  = 16;
+static const int DEFAULT_STACKSIZE = 1048576; // 1MB
+
 
 /**
   Base class for the threads in the Event System. Thread is the base
@@ -129,7 +131,7 @@ private:
   Thread & operator =(const Thread &);
 
 public:
-  ink_thread start(const char* name, ThreadFunction f = NULL, void *a = NULL, size_t stacksize = 0);
+  ink_thread start(const char* name, size_t stacksize=DEFAULT_STACKSIZE, ThreadFunction f=NULL, void *a=NULL);
 
   virtual void execute()
   {  }

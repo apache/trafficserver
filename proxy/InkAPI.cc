@@ -21,8 +21,6 @@
   limitations under the License.
  */
 
-#ifndef TS_NO_API
-
 // Avoid complaining about the deprecated APIs.
 // #define TS_DEPRECATED
 
@@ -369,6 +367,7 @@ tsapi const char * TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";   // upcoming
 tsapi const TSMLoc TS_NULL_MLOC = (TSMLoc)NULL;
 
 HttpAPIHooks *http_global_hooks = NULL;
+LifecycleAPIHooks* lifecycle_hooks = NULL;
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
 static char traffic_server_version[128] = "";
@@ -630,6 +629,13 @@ sdk_sanity_check_hook_id(TSHttpHookID id)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+sdk_sanity_check_lifecycle_hook_id(TSLifecycleHookID id)
+{
+  if (id<TS_LIFECYCLE_PORTS_INITIALIZED_HOOK || id> TS_LIFECYCLE_LAST_HOOK)
+    return TS_ERROR;
+  return TS_SUCCESS;
+}
 
 TSReturnCode
 sdk_sanity_check_null_ptr(void *ptr)
@@ -1241,57 +1247,14 @@ APIHooks::get()
   return m_hooks.head;
 }
 
-
-HttpAPIHooks::HttpAPIHooks():
-hooks_set(0)
-{
-}
-
-HttpAPIHooks::~HttpAPIHooks()
-{
-  clear();
-}
-
-
-
 void
-HttpAPIHooks::clear()
+APIHooks::clear()
 {
-  APIHook *api_hook;
-  APIHook *next_hook;
-  int i;
-
-  for (i = 0; i < TS_HTTP_LAST_HOOK; i++) {
-    api_hook = m_hooks[i].get();
-    while (api_hook) {
-      next_hook = api_hook->m_link.next;
-      apiHookAllocator.free(api_hook);
-      api_hook = next_hook;
-    }
+  APIHook* hook;
+  while (0 != (hook = m_hooks.pop())) {
+    apiHookAllocator.free(hook);
   }
-  hooks_set = 0;
 }
-
-void
-HttpAPIHooks::prepend(TSHttpHookID id, INKContInternal *cont)
-{
-  hooks_set = 1;
-  m_hooks[id].prepend(cont);
-}
-
-void
-HttpAPIHooks::append(TSHttpHookID id, INKContInternal *cont)
-{
-  hooks_set = 1;
-  m_hooks[id].append(cont);
-}
-
-APIHook *
-HttpAPIHooks::get(TSHttpHookID id)
-{
-  return m_hooks[id].get();
-}
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -1616,6 +1579,7 @@ api_init()
     TS_HTTP_LEN_S_MAXAGE = HTTP_LEN_S_MAXAGE;
 
     http_global_hooks = NEW(new HttpAPIHooks);
+    lifecycle_hooks = NEW(new LifecycleAPIHooks);
     global_config_cbs = NEW(new ConfigUpdateCbTable);
 
     if (TS_MAX_API_STATS > 0) {
@@ -4416,6 +4380,15 @@ TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 }
 
 void
+TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
+{
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_lifecycle_hook_id(id) == TS_SUCCESS);
+
+  lifecycle_hooks->append(id, (INKContInternal *)contp);
+}
+
+void
 TSHttpIcpDynamicSet(int value)
 {
   int32_t old_value, new_value;
@@ -4876,31 +4849,7 @@ TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   return TS_ERROR;
 }
 
-TSReturnCode
-TSHttpTxnCachedUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-  URL u, *s_url;
-
-  u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-  u.m_url_impl = (URLImpl *) obj;
-  if (!u.valid())
-    return TS_ERROR;
-
-  s_url = &(sm->t_state.cache_info.store_url);
-  if (!s_url->valid())
-    s_url->create(NULL);
-  s_url->copy(&u);
-  if (sm->decide_cached_url(&u))
-    return TS_SUCCESS;
-
-  return TS_ERROR;
-}
-
+// TS-1996: This API will be removed after v3.4.0 is cut. Do not use it!
 TSReturnCode
 TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
 {
@@ -4954,6 +4903,7 @@ TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
   return TS_SUCCESS;
 }
 
+// TS-1996: This API will be removed after v3.4.0 is cut. Do not use it!
 TSReturnCode
 TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp)
 {
@@ -6484,6 +6434,25 @@ TSNetConnect(TSCont contp, sockaddr const* addr)
 }
 
 TSAction
+TSNetConnectTransparent(TSCont contp, sockaddr const* client_addr, sockaddr const* server_addr)
+{
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(ats_is_ip(server_addr));
+  sdk_assert(ats_ip_are_compatible(client_addr, server_addr));
+
+  NetVCOptions opt;
+  opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
+  opt.local_ip.assign(client_addr);
+  opt.local_port = ats_ip_port_host_order(client_addr);
+
+  FORCE_PLUGIN_MUTEX(contp);
+
+  return reinterpret_cast<TSAction>(
+    netProcessor.connect_re(reinterpret_cast<INKContInternal*>(contp), server_addr, &opt)
+  );
+}
+
+TSAction
 TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 {
   NetProcessor::AcceptOptions opt;
@@ -6658,14 +6627,15 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 int
 TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
-  int volatile id = ink_atomic_increment(&top_stat, 1);
+  int id = ink_atomic_increment(&top_stat, 1);
   RecRawStatSyncCb syncer = RecRawStatSyncCount;
 
   // TODO: This only supports "int" data types at this point, since the "Raw" stats
   // interfaces only supports integers. Going forward, we could extend either the "Raw"
   // stats APIs, or make non-int use the direct (synchronous) stats APIs (slower).
   if ((sdk_sanity_check_null_ptr((void*)the_name) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void*)api_rsb) != TS_SUCCESS))
+      (sdk_sanity_check_null_ptr((void*)api_rsb) != TS_SUCCESS) ||
+      (id >= api_rsb->max_stats))
     return TS_ERROR;
 
   switch (sync) {
@@ -7393,14 +7363,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->sock_option_flag_out;
     break;
-  case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_packet_mark_out;
-    break;
-  case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_packet_tos_out;
-    break;
   case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
     ret = &sm->t_state.txn_conf->fwd_proxy_auth_to_parent;
     break;
@@ -7555,13 +7517,13 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->doc_in_cache_skip_dns;
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->background_fill_active_timeout;
     break;
-  case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->insert_age_in_response;
+  case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
+    typ = OVERRIDABLE_TYPE_STRING;
+    ret = &sm->t_state.txn_conf->proxy_response_server_string;
     break;
-
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     typ = OVERRIDABLE_TYPE_FLOAT;
     ret = &sm->t_state.txn_conf->cache_heuristic_lm_factor;
@@ -7574,14 +7536,63 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_FLOAT;
     ret = &sm->t_state.txn_conf->background_fill_threshold;
     break;
-
-  case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    typ = OVERRIDABLE_TYPE_STRING;
-    ret = &sm->t_state.txn_conf->proxy_response_server_string;
+  case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->sock_packet_mark_out;
+    break;
+  case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->sock_packet_tos_out;
+    break;
+  case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
+    ret = &sm->t_state.txn_conf->insert_age_in_response;
     break;
   case TS_CONFIG_HTTP_CHUNKING_SIZE:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->http_chunking_size;
+    break;
+  case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
+    ret = &sm->t_state.txn_conf->flow_control_enabled;
+    break;
+  case TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->flow_low_water_mark;
+    break;
+  case TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->flow_high_water_mark;
+    break;
+  case TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP:
+    ret = &sm->t_state.txn_conf->cache_range_lookup;
+    break;
+  case TS_CONFIG_HTTP_NORMALIZE_AE_GZIP:
+    ret = &sm->t_state.txn_conf->normalize_ae_gzip;
+    break;
+  case TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->default_buffer_size_index;
+    break;
+  case TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->default_buffer_water_mark;
+    break;
+  case TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->request_hdr_max_size;
+    break;
+  case TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->response_hdr_max_size;
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED:
+    ret = &sm->t_state.txn_conf->negative_revalidating_enabled;
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->negative_revalidating_lifetime;
+    break;
+  case TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED:
+    ret = &sm->t_state.txn_conf->accept_encoding_filter_enabled;
     break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
@@ -7766,6 +7777,7 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     if (!strncmp(name, "proxy.config.http.cache.http", length))
       cnf = TS_CONFIG_HTTP_CACHE_HTTP;
     break;
+
   case 31:
     if (!strncmp(name, "proxy.config.http.chunking.size", length))
       cnf = TS_CONFIG_HTTP_CHUNKING_SIZE;
@@ -7781,9 +7793,22 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
     break;
 
+  case 35:
+    if (!strncmp(name, "proxy.config.http.normalize_ae_gzip", length))
+      cnf = TS_CONFIG_HTTP_NORMALIZE_AE_GZIP;
+    break;
+
   case 36:
-    if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
-      cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
+    switch (name[length-1]) {
+    case 'p':
+      if (!strncmp(name, "proxy.config.http.cache.range.lookup", length))
+        cnf = TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP;
+      break;
+    case 't':
+      if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
+        cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
+      break;
+    }
     break;
 
   case 37:
@@ -7793,6 +7818,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;
       else if (!strncmp(name, "proxy.config.http.cache.fuzz.min_time", length))
         cnf = TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME;
+      else if (!strncmp(name, "proxy.config.http.default_buffer_size", length))
+        cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.response_server_str", length)) {
@@ -7816,6 +7843,9 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'd':
       if (!strncmp(name, "proxy.config.http.server_tcp_init_cwnd", length))
         cnf = TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND;
+      else if (!strncmp(name, "proxy.config.http.flow_control.enabled", length))
+        cnf = TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED;
+      break;
       break;
     case 's':
       if (!strncmp(name, "proxy.config.http.send_http11_requests", length))
@@ -7856,6 +7886,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR;
       else if (!strncmp(name, "proxy.config.http.insert_request_via_str", length))
         cnf = TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR;
+      else if (!strncmp(name, "proxy.config.http.flow_control.low_water", length))
+        cnf = TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK;
       break;
     case 's':
       if (!strncmp(name, "proxy.config.http.origin_max_connections", length))
@@ -7868,8 +7900,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT;
       break;
     case 'y':
-      if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length))
+      if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length)) {
+        typ = TS_RECORDDATATYPE_FLOAT;
         cnf = TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY;
+      }
       break;
     }
     break;
@@ -7883,10 +7917,14 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_cookie", length))
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE;
+      else if (!strncmp(name, "proxy.config.http.request_header_max_size", length))
+        cnf = TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.insert_response_via_str", length))
         cnf = TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR;
+      else if (!strncmp(name, "proxy.config.http.flow_control.high_water", length))
+        cnf = TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK;
       break;
     }
     break;
@@ -7900,6 +7938,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.when_to_revalidate", length))
         cnf = TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE;
+      else if (!strncmp(name, "proxy.config.http.response_header_max_size", length))
+        cnf = TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_referer", length))
@@ -7922,13 +7962,19 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       if (!strncmp(name, "proxy.config.http.negative_caching_lifetime", length))
         cnf = TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME;
       break;
+    case 'k':
+      if (!strncmp(name, "proxy.config.http.default_buffer_water_mark", length))
+        cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK;
+      break;
     case 'l':
       if (!strncmp(name, "proxy.config.http.cache.cluster_cache_local", length))
         cnf = TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL;
       break;
     case 'r':
-      if (!strncmp(name, "proxy.config.http.cache.heuristic_lm_factor", length))
+      if (!strncmp(name, "proxy.config.http.cache.heuristic_lm_factor", length)) {
+        typ = TS_RECORDDATATYPE_FLOAT;
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR;
+      }
       break;
     }
     break;
@@ -7992,6 +8038,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
 
   case 47:
     switch (name[length-1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.negative_revalidating_enabled", length))
+        cnf = TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED;
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.guaranteed_min_lifetime", length))
         cnf = TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME;
@@ -8007,20 +8057,27 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
 
   case 48:
     switch (name[length-1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.accept_encoding_filter_enabled", length))
+        cnf = TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED;
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.ignore_client_cc_max_age", length))
         cnf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE;
+      else if (!strncmp(name, "proxy.config.http.negative_revalidating_lifetime", length))
+        cnf = TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME;
       break;
     case 't':
       switch (name[length-4]) {
-        case '_':
+      case '_':
         if (!strncmp(name, "proxy.config.http.transaction_active_timeout_out", length))
           cnf = TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT;
         break;
-        case 'e':
-        if (!strncmp(name, "proxy.config.http.background_fill_active_timeout", length))
-          cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT;
-        break;
+      case 'e':
+          if (!strncmp(name, "proxy.config.http.background_fill_active_timeout", length)) {
+            cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT;
+          }
+          break;
       }
       break;
     }
@@ -8060,8 +8117,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT;
       break;
       case 'd':
-      if (!strncmp(name, "proxy.config.http.background_fill_completed_threshold", length))
-        cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD;
+        if (!strncmp(name, "proxy.config.http.background_fill_completed_threshold", length)) {
+          typ = TS_RECORDDATATYPE_FLOAT;
+          cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD;
+        }
       break;
     }
     break;
@@ -8179,5 +8238,3 @@ TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
 
   return (s->background_fill == BACKGROUND_FILL_STARTED);
 }
-
-#endif //TS_NO_API

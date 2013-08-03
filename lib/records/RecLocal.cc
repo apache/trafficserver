@@ -27,7 +27,7 @@
 #include "P_RecLocal.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
-#include "P_RecCompatibility.h"
+#include "P_RecFile.h"
 
 static bool g_initialized = false;
 static bool g_message_initialized = false;
@@ -67,7 +67,6 @@ i_am_the_record_owner(RecT rec_type)
 static void *
 sync_thr(void *data)
 {
-  REC_NOWARN_UNUSED(data);
   textBuffer tb(65536);
   while (1) {
     send_push_message();
@@ -101,7 +100,6 @@ sync_thr(void *data)
 static void *
 sync_thr(void *data)
 {
-  REC_NOWARN_UNUSED(data);
   textBuffer *tb = NEW(new textBuffer(65536));
   Rollback *rb;
 
@@ -137,7 +135,6 @@ sync_thr(void *data)
 static void *
 config_update_thr(void *data)
 {
-  REC_NOWARN_UNUSED(data);
   while (true) {
     RecExecConfigUpdateCbs(REC_LOCAL_UPDATE_REQUIRED);
     usleep(REC_CONFIG_UPDATE_INTERVAL_MS * 1000);

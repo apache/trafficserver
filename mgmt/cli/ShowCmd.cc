@@ -32,7 +32,6 @@
 #include "CliDisplay.h"
 #include "ink_defs.h"
 #include "ink_string.h"
-#include <SysAPI.h>
 
 ////////////////////////////////////////////////////////////////
 // Cmd_Show
@@ -46,9 +45,8 @@
 //    argv -- the command arguments
 //
 int
-Cmd_Show(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_Show(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -103,9 +101,8 @@ Cmd_Show(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
 //    argv -- the command arguments
 //
 int
-Cmd_ShowStatus(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowStatus(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -133,9 +130,8 @@ Cmd_ShowStatus(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 //    argv -- the command arguments
 //
 int
-Cmd_ShowVersion(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowVersion(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -163,9 +159,8 @@ Cmd_ShowVersion(ClientData clientData, Tcl_Interp * interp, int argc, const char
 //    argv -- the command arguments
 //
 int
-Cmd_ShowPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowPorts(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -194,9 +189,8 @@ Cmd_ShowPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char *
 //    argv -- the command arguments
 //
 int
-Cmd_ShowCluster(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowCluster(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -224,9 +218,8 @@ Cmd_ShowCluster(ClientData clientData, Tcl_Interp * interp, int argc, const char
 //    argv -- the command arguments
 //
 int
-Cmd_ShowSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowSecurity(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -254,9 +247,8 @@ Cmd_ShowSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const cha
 //    argv -- the command arguments
 //
 int
-Cmd_ShowHttp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowHttp(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -340,9 +332,8 @@ CmdArgs_ShowIcp()
 //    argv -- the command arguments
 //
 int
-Cmd_ShowProxy(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowProxy(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -431,9 +422,8 @@ CmdArgs_ShowCache()
 //    argv -- the command arguments
 //
 int
-Cmd_ShowVirtualIp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowVirtualIp(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -461,9 +451,8 @@ Cmd_ShowVirtualIp(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 //    argv -- the command arguments
 //
 int
-Cmd_ShowHostDb(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowHostDb(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -491,9 +480,8 @@ Cmd_ShowHostDb(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 //    argv -- the command arguments
 //
 int
-Cmd_ShowDnsResolver(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowDnsResolver(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -521,9 +509,8 @@ Cmd_ShowDnsResolver(ClientData clientData, Tcl_Interp * interp, int argc, const 
 //    argv -- the command arguments
 //
 int
-Cmd_ShowLogging(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowLogging(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -551,9 +538,8 @@ Cmd_ShowLogging(ClientData clientData, Tcl_Interp * interp, int argc, const char
 //    argv -- the command arguments
 //
 int
-Cmd_ShowSsl(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowSsl(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -639,9 +625,8 @@ CmdArgs_ShowParents()
 //    argv -- the command arguments
 //
 int
-Cmd_ShowRemap(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowRemap(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -716,36 +701,6 @@ CmdArgs_ShowSocks()
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowPortTunnels
-//
-// This is the callback function for the "show:port-tunnels" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowPortTunnels(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  NOWARN_UNUSED(clientData);
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowPortTunnels\n");
-
-  return (ShowPortTunnels());
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowScheduledUpdate
 //
 // This is the callback function for the "show:scheduled-update" command.
@@ -814,9 +769,8 @@ CmdArgs_ShowScheduledUpdate()
 //    argv -- the command arguments
 //
 int
-Cmd_ShowProxyStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowProxyStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -844,9 +798,8 @@ Cmd_ShowProxyStats(ClientData clientData, Tcl_Interp * interp, int argc, const c
 //    argv -- the command arguments
 //
 int
-Cmd_ShowHttpTransStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowHttpTransStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -874,9 +827,8 @@ Cmd_ShowHttpTransStats(ClientData clientData, Tcl_Interp * interp, int argc, con
 //    argv -- the command arguments
 //
 int
-Cmd_ShowHttpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowHttpStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -904,9 +856,8 @@ Cmd_ShowHttpStats(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 //    argv -- the command arguments
 //
 int
-Cmd_ShowIcpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowIcpStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -934,9 +885,8 @@ Cmd_ShowIcpStats(ClientData clientData, Tcl_Interp * interp, int argc, const cha
 //    argv -- the command arguments
 //
 int
-Cmd_ShowCacheStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowCacheStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -964,9 +914,8 @@ Cmd_ShowCacheStats(ClientData clientData, Tcl_Interp * interp, int argc, const c
 //    argv -- the command arguments
 //
 int
-Cmd_ShowHostDbStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowHostDbStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -994,9 +943,8 @@ Cmd_ShowHostDbStats(ClientData clientData, Tcl_Interp * interp, int argc, const 
 //    argv -- the command arguments
 //
 int
-Cmd_ShowDnsStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowDnsStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -1024,9 +972,8 @@ Cmd_ShowDnsStats(ClientData clientData, Tcl_Interp * interp, int argc, const cha
 //    argv -- the command arguments
 //
 int
-Cmd_ShowLoggingStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowLoggingStats(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -1054,9 +1001,8 @@ Cmd_ShowLoggingStats(ClientData clientData, Tcl_Interp * interp, int argc, const
 //    argv -- the command arguments
 //
 int
-Cmd_ShowAlarms(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_ShowAlarms(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -1071,87 +1017,6 @@ Cmd_ShowAlarms(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 
   return (ShowAlarms());
 }
-
-////////////////////////////////////////////////////////////////
-// Cmd_ShowNetwork
-//
-// This is the callback function for the "show:network" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowNetwork(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  NOWARN_UNUSED(clientData);
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  char hostname[256], ipaddr[32], netmask[32], domainname[256], router[32], dns_ip[32];
-  char value[80];
-
-  Cli_Debug("Cmd_ShowNetwork\n");
-
-  memset(hostname, 0, 256);
-  memset(ipaddr, 0, 32);
-  memset(netmask, 0, 32);
-  memset(domainname, 0, 32);
-  memset(router, 0, 32);
-  memset(dns_ip, 0, 32);
-
-  Net_GetHostname(hostname, sizeof(hostname));
-  Cli_Printf("\nHostname ---------------- %s\n", strlen(hostname) ? hostname : "not set");
-
-  Net_GetDefaultRouter(value, sizeof(value));
-  Cli_Printf("Default Gateway --------- %s\n", value);
-
-  Net_GetDomain(value, sizeof(value));
-  Cli_Printf("Search Domain ----------- %s\n", strlen(value) ? value : "none");
-
-  Net_GetDNS_Servers(value, sizeof(value));
-  Cli_Printf("DNS IP Addresses--------- %s\n", strlen(value) ? value : "none");
-
-  char interface[80];
-  int num_interfaces = Net_GetNetworkIntCount();
-  for (int i = 0; i < num_interfaces; i++) {
-    if (Net_GetNetworkInt(i, interface, sizeof(interface))) {
-      Cli_Printf("No information for NIC %d\n", i);
-      continue;
-    }
-    Cli_Printf("\nNIC %s\n", interface);
-
-    Net_GetNIC_Status(interface, value, sizeof(value));
-    Cli_Printf("  Status ---------------- %s\n", value);
-
-    Net_GetNIC_Start(interface, value, sizeof(value));
-    Cli_Printf("  Start on Boot --------- %s\n", value);
-
-    Net_GetNIC_Protocol(interface, value, sizeof(value));
-    Cli_Printf("  Start Protocol -------- %s\n", value);
-
-    Net_GetNIC_IP(interface, value, sizeof(value));
-    Cli_Printf("  IP Address ------------ %s\n", value);
-
-    Net_GetNIC_Netmask(interface, value, sizeof(value));
-    Cli_Printf("  Netmask --------------- %s\n", value);
-
-    Net_GetNIC_Gateway(interface, value, sizeof(value));
-    Cli_Printf("  Gateway --------------- %s\n", value);
-  }
-  Cli_Printf("\n");
-  return CLI_OK;
-}
-
 
 ////////////////////////////////////////////////////////////////
 // CmdArgs_None
@@ -1322,7 +1187,6 @@ ShowHttp()
   Cli_RecordGetInt("proxy.config.http.anonymize_insert_client_ip", &insert_client_ip);
   Cli_RecordGetInt("proxy.config.http.anonymize_remove_client_ip", &remove_client_ip);
   Cli_RecordGetInt("proxy.config.http.server_port", &http_server);
-  Cli_RecordGetString("proxy.config.http.server_other_ports", &http_other);
 
   Cli_RecordGetString("proxy.config.http.global_user_agent_header", &global_user_agent);
 
@@ -1960,27 +1824,6 @@ ShowSocksRules()
   Cli_Printf("\n");
 
   return status;
-}
-
-// show port-tunnels sub-command
-int
-ShowPortTunnels()
-{
-  TSString str_val = NULL;
-  TSError status = TS_ERR_OKAY;
-
-  status = Cli_RecordGetString("proxy.config.http.server_other_ports", &str_val);
-  if (status) {
-    return status;
-  }
-  Cli_Printf("\n");
-  Cli_Printf("server-other-ports -- %s\n", str_val);
-  Cli_Printf("\n");
-  Cli_Printf("To view the corresponding rule of the remap.config file in the following format\n");
-  Cli_Printf("map tunnel://<proxy_ip>:<port_num>/tunnel://<dest_server>:<dest_port>\n");
-  Cli_Printf("Use show:remap\n");
-  Cli_Printf("\n");
-  return CLI_OK;
 }
 
 // show scheduled-update sub-command

@@ -1696,32 +1696,24 @@ TSTerminate()
 
 /*--- plugin initialization -----------------------------------------------*/
 inkexp extern void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 {
-  NOWARN_UNUSED(argc);
-  NOWARN_UNUSED(argv);
 }
 
 /*--- network operations --------------------------------------------------*/
 tsapi TSError
-TSConnect(TSIpAddr ip_addr, int port)
+TSConnect(TSIpAddr /* ip_addr ATS_UNUSED */, int /* port ATS_UNUSED */)
 {
-  NOWARN_UNUSED(ip_addr);
-  NOWARN_UNUSED(port);
   return TS_ERR_OKAY;
 }
 tsapi TSError
-TSDisconnectCbRegister(TSDisconnectFunc * func, void *data)
+TSDisconnectCbRegister(TSDisconnectFunc * /* func ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(func);
-  NOWARN_UNUSED(data);
   return TS_ERR_OKAY;
 }
 tsapi TSError
-TSDisconnectRetrySet(int retries, int retry_sleep_msec)
+TSDisconnectRetrySet(int /* retries ATS_UNUSED */, int /* retry_sleep_msec ATS_UNUSED */)
 {
-  NOWARN_UNUSED(retries);
-  NOWARN_UNUSED(retry_sleep_msec);
   return TS_ERR_OKAY;
 }
 tsapi TSError
@@ -1904,7 +1896,6 @@ TSGetErrorMessage(TSError err_id)
 tsapi TSError
 TSEncryptPassword(char *passwd, char **e_passwd)
 {
-
   INK_DIGEST_CTX md5_context;
   char passwd_md5[16];
   char *passwd_md5_str;
@@ -1926,12 +1917,6 @@ TSEncryptPassword(char *passwd, char **e_passwd)
   *e_passwd = passwd_md5_str;
 
   return TS_ERR_OKAY;
-}
-
-tsapi TSError
-TSEncryptToFile(const char *passwd, const char *filepath)
-{
-  return EncryptToFile(passwd, filepath);
 }
 
 /*--- direct file operations ----------------------------------------------*/
@@ -2331,9 +2316,8 @@ TSCfgContextDestroy(TSCfgContext ctx)
 }
 
 tsapi TSError
-TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * action_need, TSIntList errRules)
+TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * /* action_need ATS_UNUSED */, TSIntList errRules)
 {
-  NOWARN_UNUSED(action_need);
   return (CfgContextCommit((CfgContext *) ctx, (LLQ *) errRules));
 }
 
@@ -2496,114 +2480,4 @@ tsapi TSError rm_start_proxy()
   }                             // else already try to stop within 60s Window, skip
 #endif
   return TS_ERR_OKAY;
-}
-
-
-/*****************************************************************
-* Traffic server changes necessary when network config is changed
-*****************************************************************/
-
-tsapi TSError
-TSSetHostname(TSString hostname)
-{
-  TSActionNeedT action_need = TS_ACTION_UNDEFINED, top_action_req = TS_ACTION_UNDEFINED;
-  TSInt val = 0;
-
-  /* Here we should handle these cases:
-   * rmserver.cfg - different API currently, records.config, mrtg, and hostname_FQ
-   */
-
-  if (TSRecordGetInt("proxy.local.cluster.type", &val) == TS_ERR_OKAY) {      //If error??
-    if (val == 3) {
-      if (MgmtRecordSet("proxy.config.proxy_name", hostname, &action_need) != TS_ERR_OKAY)
-        return TS_ERR_FAIL;
-    }
-  }
-
-  if (action_need < top_action_req)     // a more severe action
-    top_action_req = action_need;
-
-  if (MgmtRecordSet("proxy.node.hostname_FQ", hostname, &action_need) != TS_ERR_OKAY)
-    return TS_ERR_FAIL;
-
-  //carry out the appropriate action
-  if (action_need < top_action_req)     // a more severe action
-    top_action_req = action_need;
-
-  if (top_action_req != TS_ACTION_UNDEFINED) {
-    return TS_ERR_OKAY;
-  } else {
-    return TS_ERR_OKAY;
-  }
-}
-
-tsapi TSError
-TSSetGateway(TSString gateway_ip)
-{
-  NOWARN_UNUSED(gateway_ip);
-  //Nothing to be done for now
-  return TS_ERR_OKAY;
-
-}
-
-tsapi TSError
-TSSetDNSServers(TSString dns_ips)
-{
-  NOWARN_UNUSED(dns_ips);
-  //Nothing to be done for now
-  return TS_ERR_OKAY;
-
-}
-
-tsapi TSError
-TSSetNICUp(TSString nic_name, bool static_ip, TSString ip, TSString old_ip, TSString netmask, bool onboot,
-           TSString gateway_ip)
-{
-  NOWARN_UNUSED(nic_name);
-  NOWARN_UNUSED(static_ip);
-  NOWARN_UNUSED(ip);
-  NOWARN_UNUSED(old_ip);
-  NOWARN_UNUSED(netmask);
-  NOWARN_UNUSED(onboot);
-  NOWARN_UNUSED(gateway_ip);
-  /* there is no ipnat conf file anymore */
-  return TS_ERR_READ_FILE;
-}
-
-tsapi TSError
-TSSetProxyPort(TSString proxy_port)
-{
-  NOWARN_UNUSED(proxy_port);
-  /* there is no ipnat.conf file anymore */
-  return TS_ERR_READ_FILE;
-}
-
-tsapi TSError
-TSSetNICDown(TSString nic_name, TSString ip_addrr)
-{
-  NOWARN_UNUSED(nic_name);
-  NOWARN_UNUSED(ip_addrr);
-  /* there is no ipnat.conf file anymore */
-  return TS_ERR_READ_FILE;
-}
-
-
-tsapi TSError
-TSSetSearchDomain(const char *search_name)
-{
-  NOWARN_UNUSED(search_name);
-  //Nothing to be done for now
-  return TS_ERR_OKAY;
-}
-
-/* The following 2 functions set the Realm field in rmserver.cfg file. */
-void
-resetHostName(TSRmServerEle * ele, const char *hostname, const char *tail)
-{
-  char buff[MAX_RULE_SIZE];
-
-  ats_free(ele->str_val);
-  snprintf(buff, sizeof(buff), "%s.%s", hostname, tail);
-  ele->str_val = ats_strdup(buff);
-  return;
 }

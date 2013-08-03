@@ -79,7 +79,6 @@ typedef enum
   DIAGS,
   STATS_RESET_NODE,
   STATS_RESET_CLUSTER,
-  ENCRYPT_TO_FILE,
   UNDEFINED_OP /* This must be last */
 } OpType;
 

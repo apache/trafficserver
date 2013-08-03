@@ -148,31 +148,6 @@ hdr_plugin(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-int
-check_ts_version()
-{
-
-  const char *ts_version = TSTrafficServerVersionGet();
-  int result = 0;
-
-  if (ts_version) {
-    int major_ts_version = 0;
-    int minor_ts_version = 0;
-    int patch_ts_version = 0;
-
-    if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3) {
-      return 0;
-    }
-
-    /* Need at least TS 2.0 */
-    if (major_ts_version >= 2) {
-      result = 1;
-    }
-  }
-
-  return result;
-}
-
 void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
@@ -186,12 +161,6 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     TSError("[PluginInit] Plugin registration failed.\n");
     goto error;
   }
-
-  if (!check_ts_version()) {
-    TSError("[PluginInit] Plugin requires Traffic Server 3.0 or later\n");
-    goto error;
-  }
-
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(hdr_plugin, NULL));
 

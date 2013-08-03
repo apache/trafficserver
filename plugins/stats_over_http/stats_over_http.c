@@ -35,6 +35,10 @@
 
 #include "ink_defs.h"
 
+/* global holding the path used for access to this JSON data */
+static const char* url_path = "_stats";
+static int url_path_len;
+
 typedef struct stats_state_t
 {
   TSVConn net_vc;
@@ -216,7 +220,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   const char* path = TSUrlPathGet(reqp,url_loc,&path_len);
   TSDebug("istats","Path: %.*s",path_len,path);
   
-  if (! (path_len != 0 && path_len == 6 && !memcmp(path,"_stats",6)) ) {
+  if (! (path_len != 0 && path_len == url_path_len  && !memcmp(path,url_path,url_path_len)) ) {
     goto notforme;
   }
   
@@ -245,33 +249,8 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   return 0;
 }
 
-int
-check_ts_version()
-{
-
-  const char *ts_version = TSTrafficServerVersionGet();
-  int result = 0;
-
-  if (ts_version) {
-    int major_ts_version = 0;
-    int minor_ts_version = 0;
-    int patch_ts_version = 0;
-
-    if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3) {
-      return 0;
-    }
-
-    /* Need at least TS 2.0 */
-    if (major_ts_version >= 2) {
-      result = 1;
-    }
-  }
-
-  return result;
-}
-
 void
-TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
+TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
@@ -282,10 +261,10 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS)
     TSError("Plugin registration failed. \n");
 
-  if (!check_ts_version()) {
-    TSError("Plugin requires Traffic Server 2.0 or later\n");
-    return;
+  if (argc > 1) {
+    url_path = TSstrdup(argv[1] + ('/' == argv[1][0] ? 1 : 0)); /* Skip leading / */
   }
+  url_path_len = strlen(url_path);
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */

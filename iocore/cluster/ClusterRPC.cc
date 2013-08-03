@@ -116,6 +116,7 @@ close_channel_ClusterFunction(ClusterHandler *ch, void *data, int len)
   if (VALID_CHANNEL(vc) && vc->token.sequence_number == m->sequence_number) {
     vc->remote_closed = m->status;
     vc->remote_lerrno = m->lerrno;
+    ch->vcs_push(vc, vc->type);
   }
 }
 
@@ -230,9 +231,8 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
 }
 
 void
-post_setchan_send_ClusterFunction(ClusterHandler *ch, void *data, int len)
+post_setchan_send_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   // We are called on the ET_CLUSTER thread.
@@ -257,9 +257,8 @@ post_setchan_send_ClusterFunction(ClusterHandler *ch, void *data, int len)
 }
 
 void
-set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int len)
+set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(len);
   // This isn't used. /leif
   //EThread *thread = this_ethread();
   //ProxyMutex *mutex = thread->mutex;
@@ -292,9 +291,8 @@ set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int len)
 }
 
 void
-post_setchan_pin_ClusterFunction(ClusterHandler *ch, void *data, int len)
+post_setchan_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   // We are called on the ET_CLUSTER thread.
@@ -319,9 +317,8 @@ post_setchan_pin_ClusterFunction(ClusterHandler *ch, void *data, int len)
 }
 
 void
-set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int len)
+set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(len);
   // This isn't used.
   //EThread *thread = this_ethread();
   //ProxyMutex *mutex = thread->mutex;
@@ -353,9 +350,8 @@ set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int len)
 }
 
 void
-post_setchan_priority_ClusterFunction(ClusterHandler *ch, void *data, int len)
+post_setchan_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
 

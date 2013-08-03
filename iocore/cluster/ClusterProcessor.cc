@@ -198,10 +198,10 @@ ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn,
   return internal_invoke_remote(ch, cluster_fn, data, data_len, options, (void *) chdr);
 }
 
+// TODO: Why pass in the length here if not used ?
 void
-ClusterProcessor::free_remote_data(char *p, int l)
+ClusterProcessor::free_remote_data(char *p, int /* l ATS_UNUSED */)
 {
-  NOWARN_UNUSED(l);
   char *d = p - sizeof(int32_t);  // reset to ptr to function code
   int data_hdr = ClusterControl::DATA_HDR;
 
@@ -410,9 +410,13 @@ ClusterProcessor::init()
                      RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_SLOW_CTRL_MSGS_SENT_STAT, RecRawStatSyncCount);
   CLUSTER_CLEAR_DYN_STAT(CLUSTER_SLOW_CTRL_MSGS_SENT_STAT);
   RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
-                     "proxy.process.cluster.connections_locked",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_CONNECTIONS_LOCKED_STAT, RecRawStatSyncSum);
-  CLUSTER_CLEAR_DYN_STAT(CLUSTER_CONNECTIONS_LOCKED_STAT);
+                     "proxy.process.cluster.connections_read_locked",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_CONNECTIONS_READ_LOCKED_STAT, RecRawStatSyncSum);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_CONNECTIONS_READ_LOCKED_STAT);
+  RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
+                     "proxy.process.cluster.connections_write_locked",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_CONNECTIONS_WRITE_LOCKED_STAT, RecRawStatSyncSum);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_CONNECTIONS_WRITE_LOCKED_STAT);
   RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
                      "proxy.process.cluster.reads",
                      RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_READ_BYTES_STAT, RecRawStatSyncCount);
@@ -647,6 +651,14 @@ ClusterProcessor::init()
                      "proxy.process.cluster.write_lock_misses",
                      RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_WRITE_LOCK_MISSES_STAT, RecRawStatSyncCount);
   CLUSTER_CLEAR_DYN_STAT(CLUSTER_WRITE_LOCK_MISSES_STAT);
+  RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
+                     "proxy.process.cluster.vc_read_list_len",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_VC_READ_LIST_LEN_STAT, RecRawStatSyncAvg);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_VC_READ_LIST_LEN_STAT);
+  RecRegisterRawStat(cluster_rsb, RECT_PROCESS,
+                     "proxy.process.cluster.vc_write_list_len",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) CLUSTER_VC_WRITE_LIST_LEN_STAT, RecRawStatSyncAvg);
+  CLUSTER_CLEAR_DYN_STAT(CLUSTER_VC_WRITE_LIST_LEN_STAT);
   CLUSTER_CLEAR_DYN_STAT(CLUSTER_NODES_STAT);   // clear sum and count
   // INKqa08033: win2k: ui: cluster warning light on
   // Used to call CLUSTER_INCREMENT_DYN_STAT here; switch to SUM_GLOBAL_DYN_STAT
@@ -730,10 +742,12 @@ ClusterProcessor::start()
   this_cluster_machine()->cluster_port = cluster_port;
 #endif
   if (cache_clustering_enabled && (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED)) {
+    size_t stacksize;
 
-    ET_CLUSTER = eventProcessor.spawn_event_threads(num_of_cluster_threads, "ET_CLUSTER");
+    REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+    ET_CLUSTER = eventProcessor.spawn_event_threads(num_of_cluster_threads, "ET_CLUSTER", stacksize);
     for (int i = 0; i < eventProcessor.n_threads_for_type[ET_CLUSTER]; i++) {
-      initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i], i);
+      initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i]);
     }
     REC_RegisterConfigUpdateFunc("proxy.config.cluster.cluster_configuration", machine_config_change, (void *) CLUSTER_CONFIG);
     do_machine_config_change((void *) CLUSTER_CONFIG, "proxy.config.cluster.cluster_configuration");

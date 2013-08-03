@@ -3,20 +3,20 @@ Getting Started
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+   
+    http://www.apache.org/licenses/LICENSE-2.0
+   
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 
 .. toctree::
@@ -81,55 +81,41 @@ if you're building from a git clone, you'll also need
 -  autoconf
 -  automake
 
-We will show-case a build from git:
+We will show-case a build from git::
 
-::
+   git clone https://git-wip-us.apache.org/repos/asf/trafficserver.git
 
-     git clone https://git-wip-us.apache.org/repos/asf/trafficserver.git
+Next, we ``cd trafficserver`` and run::
 
-Next, we ``cd trafficserver`` and run:
-
-::
-
-     autoreconf -if
+   autoreconf -if
 
 This will generate a ``configure`` file from ``configure.ac``, so now we
-can run that:
+can run that::
 
-::
-
-     ./configure --prefix=/opt/ats
+   ./configure --prefix=/opt/ats
 
 Note well, that by default Traffic Server uses the user ``nobody``, as
 well as user's primary group as Traffic Server user. If you want to
-change that, you can override it here:
+change that, you can override it here::
 
-::
-
-     ./configure --prefix=/opt/ats --with-user=tserver
+   ./configure --prefix=/opt/ats --with-user=tserver
 
 If dependencies are not in standard paths (``/usr/local`` or ``/usr``),
-you need to pass options to ``configure`` to account for that:
+you need to pass options to ``configure`` to account for that::
 
-::
-
-     ./configure --prefix=/opt/ats --with-user=tserver --with-lua=/opt/csw
+   ./configure --prefix=/opt/ats --with-user=tserver --with-lua=/opt/csw
 
 Most ``configure`` path-options accept a format of
-``"INCLUDE_PATH:LIBRARY_PATH"``:
+``"INCLUDE_PATH:LIBRARY_PATH"``::
 
-::
-
-     ./configure --prefix=/opt/ats --with-user=tserver --with-lua=/opt/csw \
-        --with-pcre=/opt/csw/include:/opt/csw/lib/amd64
+   ./configure --prefix=/opt/ats --with-user=tserver --with-lua=/opt/csw \
+      --with-pcre=/opt/csw/include:/opt/csw/lib/amd64
 
 We can run ``make`` to build the project. We highly recommend to run
-``make check`` to verify the build's general sanity:
+``make check`` to verify the build's general sanity::
 
-::
-
-     make
-     make check
+   make
+   make check
 
 We can finally run ``make install`` to install (you may have to switch
 to root to do this):

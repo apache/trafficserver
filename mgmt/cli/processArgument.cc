@@ -30,9 +30,8 @@
 
 // processArgForCommand
 int
-processArgForCommand(Tcl_Interp * interp, int argc, const char *argv[])
+processArgForCommand(Tcl_Interp * /* interp ATS_UNUSED */, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(interp);
   cli_CommandInfo *commandinfo = cliGetCommandArgsfromHashtable((char *) argv[0]);
 
   if (commandinfo == NULL)

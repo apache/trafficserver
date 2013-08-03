@@ -1,5 +1,5 @@
-Apache Traffic Server Title: Administrators's Guide - Overview
-**************************************************************
+Administrators' Guide
+**********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -43,11 +43,9 @@ Contents:
    security-options.en
    working-log-files.en
    event-logging-formats.en
-   configuration-files.en
    traffic-line-commands.en
    traffic-server-error-messages.en
    faqs.en
-   plugins.en
 
 
 What Is Apache Traffic Server?
@@ -224,7 +222,7 @@ processes are described below:
 
 The figure below illustrates the three Traffic Server processes.
 
-.. figure:: ../_static/images/admin/process.jpg
+.. figure:: ../static/images/admin/process.jpg
    :align: center
    :alt: Illustration of the three Traffic Server Processes
 
@@ -305,10 +303,3 @@ following:
 
 Traffic Server security options are described in more detail in
 `Security Options <security-options>`_.
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

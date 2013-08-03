@@ -34,41 +34,35 @@ continuation is a handle to the same continuation that is invoked. The
 handler function typically has a switch statement to handle the events
 it receives:
 
-::
+.. code-block:: c
 
-        ::::c
-        static int some_handler (TScont contp, TSEvent event, void *edata)
-        {
-            .....
-                switch(event) {
-                    case TS_EVENT_SOME_EVENT_1:
-                        do_some_thing_1;
-                        return;
-                    case TS_EVENT_SOME_EVENT_2:
-                        do_some_thing_2;
-                        return;
-                    case TS_EVENT_SOME_EVENT_3:
-                        do_some_thing_3;
-                        return;
-                    default: break;
-                }
-            return 0;
-        }
+   static int some_handler (TScont contp, TSEvent event, void *edata)
+   {
+      // .....
+      switch(event) {
+         case TS_EVENT_SOME_EVENT_1:
+            do_some_thing_1;
+            return;
+         case TS_EVENT_SOME_EVENT_2:
+            do_some_thing_2;
+            return;
+         case TS_EVENT_SOME_EVENT_3:
+            do_some_thing_3;
+            return;
+         default: break;
+      }
+      return 0;
+   }
 
-.. figure:: /images/docbook/caution.png
-   :alt: [Caution]
+.. caution::
 
-   [Caution]
-
-**Caution**
-
-You might notice that a continuation cannot determine if more events are
-"in flight" toward it. Do not use ``TSContDestroy`` to delete a
-continuation before you make sure that all incoming events, such as
-those sent because of ``TSHttpTxnHookAdd``, have been handled.
+   You might notice that a continuation cannot determine if more events are
+   "in flight" toward it. Do not use ``TSContDestroy`` to delete a
+   continuation before you make sure that all incoming events, such as
+   those sent because of ``TSHttpTxnHookAdd``, have been handled.
 
 The following table lists events and the corresponding type of
-``void *``\ data passed to handler functions:
+``void* data`` passed to handler functions:
 
 ======================================== ======================================= ======================
 Event                                    Event Sender                            Data Type

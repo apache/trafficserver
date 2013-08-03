@@ -59,7 +59,7 @@ To do this, we
 
 2. Add rules to the ``splitdns.config`` file. (Refer to
    ```splitdns.config`` <../configuration-files/splitdns.config>`_.
-3. In the file ``records.config`` the variable
+3. In the file :file:`records.config` the variable
    `*``proxy.process.dns.splitDNS.enabled``* <configuration-files/records.config#proxy.process.dns.splitDNS.enabled>`_
    to ``1`` to enable split DNS.
 4. Run the command ``traffic_line -x`` to apply the configuration
@@ -95,7 +95,7 @@ Server (and between Traffic Server and an origin server) when the SSL
 termination option is enabled & configured for\ *\* client/Traffic
 Server connections only*\ \*.
 
-.. figure:: ../_static/images/admin/ssl_c.jpg
+.. figure:: ../static/images/admin/ssl_c.jpg
    :align: center
    :alt: Client and Traffic Server communication using SSL termination
 
@@ -156,12 +156,11 @@ client/Traffic Server connections, you must do the following:
 In order to accomplish this, we
 
 2. Edit the following variables in the ``SSL Termination`` section of
-   the ``records.config`` file:
+   the :file:`records.config` file:
 
    -  `*``proxy.config.ssl.enabled``* <configuration-files/records.config#proxy.config.ssl.enabled>`_
    -  `*``proxy.config.ssl.server_port``* <configuration-files/records.config#proxy.config.ssl.server_port>`_
    -  `*``proxy.config.ssl.client.certification_level``* <configuration-files/records.config#proxy.config.ssl.client.certification_level>`_
-   -  `*``proxy.config.ssl.server.cert.filename``* <configuration-files/records.config#proxy.config.ssl.server.cert.filename>`_
    -  `*``proxy.config.ssl.server.cert.path``* <configuration-files/records.config#proxy.config.ssl.server.cert.path>`_
    -  `*``proxy.config.ssl.server.private_key.filename``* <configuration-files/records.config#proxy.config.ssl.server.private_key.filename>`_
    -  `*``proxy.config.ssl.server.private_key.path``* <configuration-files/records.config#proxy.config.ssl.server.private_key.path>`_
@@ -179,7 +178,7 @@ The figure below illustrates communication between Traffic Server and an
 origin server when the SSL termination option is enabled for **Traffic
 Server/origin server connections**.
 
-.. figure:: ../_static/images/admin/ssl_os.jpg
+.. figure:: ../static/images/admin/ssl_os.jpg
    :align: center
    :alt: Traffic Server and origin server communication using SSL termination
 
@@ -230,7 +229,7 @@ Traffic Server and origin server connections, you must do the following:
 In order to accomplish this, we:
 
 2. Edit the following variables in the ``SSL Termination`` section of
-   the ``records.config`` file:
+   the :file:`records.config` file:
 
    -  `*``proxy.config.ssl.auth.enabled``* <configuration-files/records.config#proxy.config.ssl.auth.enabled>`_
    -  ```proxy.config.ssl.server_port`` <configuration-files/records.config#proxy.config.ssl.server_port>`_

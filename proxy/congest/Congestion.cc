@@ -45,6 +45,7 @@ static const matcher_tags congest_dest_tags = {
   "dest_domain",
   "dest_ip",
   NULL,
+  NULL,
   "host_regex",
   true
 };
@@ -264,7 +265,7 @@ CongestionControlRecord::Init(matcher_line * line_info)
 }
 
 void
-CongestionControlRecord::UpdateMatch(CongestionControlRule * pRule, RD * rdata)
+CongestionControlRecord::UpdateMatch(CongestionControlRule * pRule, RequestData * rdata)
 {
 /*
  * Select the first matching rule specified in congestion.config
@@ -324,12 +325,9 @@ extern void initCongestionDB();
 
 // place holder for congestion control enable config
 static int
-CongestionControlEnabledChanged(const char *name, RecDataT data_type, RecData data, void *cookie)
+CongestionControlEnabledChanged(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                                RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   if (congestionControlEnabled == 1 || congestionControlEnabled == 2) {
     revalidateCongestionDB();
   }
@@ -337,12 +335,9 @@ CongestionControlEnabledChanged(const char *name, RecDataT data_type, RecData da
 }
 
 static int
-CongestionControlDefaultSchemeChanged(const char *name, RecDataT data_type, RecData data, void *cookie)
+CongestionControlDefaultSchemeChanged(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                                      RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   if (strcasecmp(DEFAULT_congestion_scheme_str, "per_host") == 0) {
     DEFAULT_congestion_scheme = PER_HOST;
   } else {
@@ -420,7 +415,7 @@ CongestionMatcherTable::reconfigure()
 }
 
 CongestionControlRecord *
-CongestionControlled(RD * rdata)
+CongestionControlled(RequestData * rdata)
 {
   if (congestionControlEnabled) {
     CongestionControlRule result;

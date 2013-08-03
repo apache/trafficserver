@@ -34,17 +34,19 @@
 
 #include "libts.h"
 #include "ink_sys_control.h"
+#include <syslog.h>
 
 #if !defined(linux)
 #include <sys/lock.h>
 #endif
+
 #if defined(linux)
 extern "C" int plock(int);
 #else
 #include <sys/filio.h>
 #endif
-#include <syslog.h>
-#if !defined(darwin) && !defined(freebsd) && !defined(solaris) && !defined(openbsd)
+
+#if HAVE_MCHECK_H
 #include <mcheck.h>
 #endif
 
@@ -99,7 +101,6 @@ extern "C" int plock(int);
 //
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
-#define DEFAULT_LOCK_PROCESS              0
 
 #define DEFAULT_VERBOSE_FLAG              0
 #define DEFAULT_VERSION_FLAG              0
@@ -136,7 +137,6 @@ int command_flag = DEFAULT_COMMAND_FLAG;
 static char regression_test[1024] = "";
 #endif
 int auto_clear_hostdb_flag = 0;
-int lock_process = DEFAULT_LOCK_PROCESS;
 extern int fds_limit;
 extern int cluster_port_number;
 extern int cache_clustering_enabled;
@@ -156,14 +156,16 @@ char system_log_dir[PATH_NAME_MAX + 1];          // Layout->logdir
 static char error_tags[1024] = "";
 static char action_tags[1024] = "";
 static int show_statistics = 0;
-static int history_info_enabled = 1;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 
-static char vingid_flag[255] = "";
-
 static int accept_mss = 0;
-static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dprintf function
+static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
+
+// 1: delay listen, wait for cache.
+// 0: Do not delay, start listen ASAP.
+// -1: cache is already initialized, don't delay.
+static volatile int delay_listen_for_cache_p = 0;
 
 AppVersionInfo appVersionInfo;  // Build info for this application
 
@@ -175,26 +177,17 @@ const Version version = {
 };
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"lock_memory", 'l', "Lock process in memory (must be root)",
-   "I", &lock_process, "PROXY_LOCK_PROCESS", NULL},
-  {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads,
-   "PROXY_NET_THREADS", NULL},
-  {"cluster_threads", 'Z', "Number of Cluster Threads", "I",
-   &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
-  {"udp_threads", 'U', "Number of UDP Threads", "I",
-   &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
-  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads,
-   "PROXY_ACCEPT_THREAD", NULL},
-  {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done,
-   "PROXY_ACCEPT_TILL_DONE", NULL},
-  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*",
-   &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", NULL},
-  {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number,
-   "PROXY_CLUSTER_PORT", NULL},
-  {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level,
-   "PROXY_DPRINTF_LEVEL", NULL},
-  {"version", 'V', "Print Version String", "T", &version_flag,
-   NULL, NULL},
+  {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", NULL},
+  {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
+  {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
+  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads, "PROXY_ACCEPT_THREAD", NULL},
+  {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done, "PROXY_ACCEPT_TILL_DONE", NULL},
+  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor,
+   "PROXY_HTTP_ACCEPT_PORT", NULL},
+  {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number, "PROXY_CLUSTER_PORT", NULL},
+  {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", NULL},
+  {"version", 'V', "Print Version String", "T", &version_flag, NULL, NULL},
+
 #if TS_HAS_TESTS
   {"regression", 'R',
 #ifdef DEBUG
@@ -204,6 +197,7 @@ static const ArgumentDescription argument_descriptions[] = {
 #endif
    "I", &regression_level, "PROXY_REGRESSION", NULL},
   {"regression_test", 'r',
+
 #ifdef DEBUG
    "Run Specific Regression Test",
 #else
@@ -211,36 +205,24 @@ static const ArgumentDescription argument_descriptions[] = {
 #endif
    "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
 #endif //TS_HAS_TESTS
+
 #if TS_USE_DIAGS
-  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
-   "PROXY_DEBUG_TAGS", NULL},
-  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags,
-   "PROXY_BEHAVIOR_TAGS", NULL},
-#endif
-  {"interval", 'i', "Statistics Interval", "I", &show_statistics,
-   "PROXY_STATS_INTERVAL", NULL},
-  {"remote_management", 'M', "Remote Management", "T",
-   &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
-  {"management_dir", 'd', "Management Directory", "S255",
-   &management_directory, "PROXY_MANAGEMENT_DIRECTORY", NULL},
-  {"command", 'C', "Maintenance Command to Execute", "S511",
-   &command_string, "PROXY_COMMAND_STRING", NULL},
-//  {"clear_authdb", 'j', "Clear AuthDB on Startup", "F",
- //  &auto_clear_authdb_flag, "PROXY_CLEAR_AUTHDB", NULL},
-  {"clear_hostdb", 'k', "Clear HostDB on Startup", "F",
-   &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
-  {"clear_cache", 'K', "Clear Cache on Startup", "F",
-   &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
-  {"vingid", 'v', "Vingid Flag", "S255", vingid_flag, "PROXY_VINGID", NULL},
-#if defined(linux)
-  {"read_core", 'c', "Read Core file", "S255",
-   &core_file, NULL, NULL},
+  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags, "PROXY_DEBUG_TAGS", NULL},
+  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, "PROXY_BEHAVIOR_TAGS", NULL},
 #endif
 
-  {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss,
-   NULL, NULL},
-  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &net_config_poll_timeout,
-   NULL, NULL},
+  {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", NULL},
+  {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
+  {"management_dir", 'd', "Management Directory", "S255", &management_directory, "PROXY_MANAGEMENT_DIRECTORY", NULL},
+  {"command", 'C', "Maintenance Command to Execute", "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
+  {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
+  {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
+#if defined(linux)
+  {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
+#endif
+
+  {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss, NULL, NULL},
+  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &net_config_poll_timeout, NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
 
@@ -381,6 +363,7 @@ initialize_process_manager()
 
   if (!remote_management_flag) {
     LibRecordsConfigInit();
+    RecordsConfigOverrideFromEnvironment();
   }
   //
   // Start up manager
@@ -419,18 +402,15 @@ shutdown_system()
 #define CMD_IN_PROGRESS 2       // task not completed. don't exit
 
 static int
-cmd_list(char *cmd)
+cmd_list(char * /* cmd ATS_UNUSED */)
 {
-  (void) cmd;
   printf("LIST\n\n");
 
   // show hostdb size
 
-#ifndef INK_NO_HOSTDB
   int h_size = 120000;
   TS_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
   printf("Host Database size:\t%d\n", h_size);
-#endif
 
   // show cache config information....
 
@@ -457,6 +437,26 @@ skip(char *cmd, int null_ok = 0)
   }
   cmd += strspn(cmd, " \t");
   return cmd;
+}
+
+// Handler for things that need to wait until the cache is initialized.
+static void
+CB_After_Cache_Init()
+{
+  APIHook* hook;
+  int start;
+
+  start = ink_atomic_swap(&delay_listen_for_cache_p, -1);
+  if (1 == start) {
+    Debug("http_listen", "Delayed listen enable, cache initialization finished");
+    start_HttpProxyServer();
+  }
+  // Alert the plugins the cache is initialized.
+  hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_LIFECYCLE_CACHE_READY, NULL);
+    hook = hook->next();
+  }
 }
 
 struct CmdCacheCont: public Continuation
@@ -509,7 +509,7 @@ struct CmdCacheCont: public Continuation
     return EVENT_CONT;
   }
 
-CmdCacheCont(bool check, bool fix = false):Continuation(new_ProxyMutex()) {
+  CmdCacheCont(bool check, bool fix = false):Continuation(new_ProxyMutex()) {
     cache_fix = fix;
     if (check)
       SET_HANDLER(&CmdCacheCont::CheckEvent);
@@ -520,17 +520,14 @@ CmdCacheCont(bool check, bool fix = false):Continuation(new_ProxyMutex()) {
 };
 
 static int
-cmd_check_internal(char *cmd, bool fix = false)
+cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 {
-  NOWARN_UNUSED(cmd);
   const char *n = fix ? "REPAIR" : "CHECK";
 
   printf("%s\n\n", n);
   int res = 0;
 
-#ifndef INK_NO_HOSTDB
   hostdb_current_interval = (ink_get_based_hrtime() / HRTIME_MINUTE);
-#endif
 
 //#ifndef INK_NO_ACC
 //  acc.clear_cache();
@@ -542,7 +539,6 @@ cmd_check_internal(char *cmd, bool fix = false)
     printf("%s, %s failed\n", err, n);
     return CMD_FAILED;
   }
-#ifndef INK_NO_HOSTDB
   printf("Host Database\n");
   HostDBCache hd;
   if (hd.start(fix) < 0) {
@@ -551,7 +547,6 @@ cmd_check_internal(char *cmd, bool fix = false)
   }
   res = hd.check("hostdb.config", fix) < 0 || res;
   hd.reset();
-#endif
 
   if (cacheProcessor.start() < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
@@ -575,7 +570,6 @@ cmd_repair(char *cmd)
   return cmd_check_internal(cmd, true);
 }
 #endif
-
 
 static int
 cmd_clear(char *cmd)
@@ -604,7 +598,6 @@ cmd_clear(char *cmd)
       return CMD_FAILED;
     }
   }
-#ifndef INK_NO_HOSTDB
   if (c_hdb || c_all) {
     Note("Clearing Host Database");
     if (hostDBProcessor.cache()->start(PROCESSOR_RECONFIGURE) < 0) {
@@ -615,7 +608,6 @@ cmd_clear(char *cmd)
     if (c_hdb)
       return CMD_OK;
   }
-#endif
 
 //#ifndef INK_NO_ACC
 //  if (c_adb || c_all) {
@@ -796,15 +788,12 @@ check_for_root_uid()
 #endif
 
 static int
-set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_token)
+set_core_size(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+              RecData data, void * /* opaque_token ATS_UNUSED */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
   RecInt size = data.rec_int;
   struct rlimit lim;
   bool failed = false;
-
-  NOWARN_UNUSED(opaque_token);
 
   if (getrlimit(RLIMIT_CORE, &lim) < 0) {
     failed = true;
@@ -1097,7 +1086,7 @@ struct RegressionCont: public Continuation
       printf("Regression waiting for the cache to be ready... %d\n", ++waits);
       return EVENT_CONT;
     }
-    char *rt = (char *) (regression_test[0] == '\0' ? '\0' : regression_test);
+    char *rt = (char *) (regression_test[0] == 0 ? "" : regression_test);
     if (!initialized && RegressionTest::run(rt) == REGRESSION_TEST_INPROGRESS) {
       initialized = 1;
       return EVENT_CONT;
@@ -1295,18 +1284,14 @@ change_uid_gid(const char *user)
 //
 
 int
-main(int argc, char **argv)
+main(int /* argc ATS_UNUSED */, char **argv)
 {
 #if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
   bool admin_user_p = false;
 
-  NOWARN_UNUSED(argc);
-
-  //init_logging();
-
-#ifdef HAVE_MCHECK
+#if defined(DEBUG) && defined(HAVE_MCHECK_PEDANTIC)
   mcheck_pedantic(NULL);
 #endif
 
@@ -1466,7 +1451,6 @@ main(int argc, char **argv)
   // pmgmt->start() must occur after initialization of Diags but
   // before calling RecProcessInit()
 
-  TS_ReadConfigInteger(history_info_enabled, "proxy.config.history_info_enabled");
   TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
   init_http_header();
@@ -1517,6 +1501,9 @@ main(int argc, char **argv)
 
   adjust_num_of_net_threads();
 
+  size_t stacksize;
+  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+
   ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_aio_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
@@ -1524,7 +1511,7 @@ main(int argc, char **argv)
   ink_hostdb_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
   ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION , PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  eventProcessor.start(num_of_net_threads);
+  eventProcessor.start(num_of_net_threads, stacksize);
 
   int num_remap_threads = 0;
   TS_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
@@ -1535,9 +1522,9 @@ main(int argc, char **argv)
     Note("using the new remap processor system with %d threads", num_remap_threads);
     remapProcessor.setUseSeparateThread();
   }
-  remapProcessor.start(num_remap_threads);
+  remapProcessor.start(num_remap_threads, stacksize);
 
-  RecProcessStart();
+  RecProcessStart(stacksize);
 
   init_signals2();
   // log initialization moved down
@@ -1553,9 +1540,7 @@ main(int argc, char **argv)
         _exit(1);               // in error
     }
   } else {
-#ifndef INK_NO_ACL
     initCacheControl();
-#endif
     initCongestionControl();
     IpAllow::startup();
     ParentConfig::startup();
@@ -1563,41 +1548,39 @@ main(int argc, char **argv)
     SplitDNSConfig::startup();
 #endif
 
-
-    if (!accept_mss)
-      TS_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
-
-    NetProcessor::accept_mss = accept_mss;
-    netProcessor.start();
-#ifndef INK_NO_HOSTDB
-    dnsProcessor.start();
-    if (hostDBProcessor.start() < 0)
-      SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
-#endif
-
-#ifndef INK_NO_CLUSTER
-    clusterProcessor.init();
-#endif
-
     // Load HTTP port data. getNumSSLThreads depends on this.
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
       HttpProxyPort::loadConfig();
     HttpProxyPort::loadDefaultIfEmpty();
 
+    if (!accept_mss)
+      TS_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
+
+    NetProcessor::accept_mss = accept_mss;
+    netProcessor.start(0, stacksize);
+
+    sslNetProcessor.start(getNumSSLThreads(), stacksize);
+
+    dnsProcessor.start(0, stacksize);
+    if (hostDBProcessor.start() < 0)
+      SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
+    clusterProcessor.init();
+
+    // initialize logging (after event and net processor)
+    Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
+
+    // Init plugins as soon as logging is ready.
+    plugin_init(system_config_directory);        // plugin.config
+    pmgmt->registerPluginCallbacks(global_config_cbs);
+
+    cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);
     cacheProcessor.start();
 
     // UDP net-threads are turned off by default.
     if (!num_of_udp_threads)
       TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     if (num_of_udp_threads)
-      udpNet.start(num_of_udp_threads);
-
-    sslNetProcessor.start(getNumSSLThreads());
-
-#ifndef INK_NO_LOG
-    // initialize logging (after event and net processor)
-    Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
-#endif
+      udpNet.start(num_of_udp_threads, stacksize);
 
     //acc.init();
     //if (auto_clear_authdb_flag)
@@ -1630,47 +1613,50 @@ main(int argc, char **argv)
     // main server logic initiated here //
     //////////////////////////////////////
 
-#ifndef TS_NO_TRANSFORM
     transformProcessor.start();
-#endif
 
-    init_HttpProxyServer();
+    init_HttpProxyServer(num_accept_threads);
+
     int http_enabled = 1;
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
     if (http_enabled) {
-#ifndef INK_NO_ICP
       int icp_enabled = 0;
       TS_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
-#endif
-      start_HttpProxyServer(num_accept_threads);
-#ifndef INK_NO_ICP
+
+      // call the ready hooks before we start accepting connections.
+      APIHook* hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
+      while (hook) {
+        hook->invoke(TS_EVENT_LIFECYCLE_PORTS_INITIALIZED, NULL);
+        hook = hook->next();
+      }
+
+      int delay_p = 0;
+      TS_ReadConfigInteger(delay_p, "proxy.config.http.wait_for_cache");
+
+      // Delay only if config value set and flag value is zero
+      // (-1 => cache already initialized)
+      if (delay_p && ink_atomic_cas(&delay_listen_for_cache_p, 0, 1)) {
+        Debug("http_listen", "Delaying listen, waiting for cache initialization");
+      } else {
+        start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
+      }
       if (icp_enabled)
         icpProcessor.start();
-#endif
     }
 
-#ifndef TS_NO_API
-    plugin_init(system_config_directory);        // plugin.config
-#else
-    api_init();                 // we still need to initialize some of the data structure other module needs.
-    // i.e. http_global_hooks
-    pmgmt->registerPluginCallbacks(global_config_cbs);
-#endif
-
     // "Task" processor, possibly with its own set of task threads
-    tasksProcessor.start(num_task_threads);
+    tasksProcessor.start(num_task_threads, stacksize);
 
     int back_door_port = NO_FD;
     TS_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
     if (back_door_port != NO_FD)
       start_HttpProxyServerBackDoor(back_door_port, num_accept_threads > 0 ? 1 : 0); // One accept thread is enough
 
-#ifndef INK_NO_SOCKS
     if (netProcessor.socks_conf_stuff->accept_enabled) {
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
-#endif
+
     ///////////////////////////////////////////
     // Initialize Scheduled Update subsystem
     ///////////////////////////////////////////
@@ -1686,9 +1672,7 @@ main(int argc, char **argv)
 
 #if TS_HAS_TESTS
     TransformTest::run();
-#ifndef INK_NO_HOSTDB
     run_HostDBTest();
-#endif
     //  run_SimpleHttp();
     run_RegressionTest();
 #endif
@@ -1723,9 +1707,8 @@ REGRESSION_TEST(Hdrs) (RegressionTest * t, int atype, int *pstatus) {
 #endif
 
 static void *
-mgmt_restart_shutdown_callback(void *, char *, int data_len)
+mgmt_restart_shutdown_callback(void *, char *, int /* data_len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data_len);
   sync_cache_dir_on_shutdown();
   return NULL;
 }

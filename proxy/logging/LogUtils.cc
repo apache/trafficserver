@@ -37,13 +37,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#if defined(solaris)
 #include <netdb.h>
-#else
-// XXX: This is just nonsense!!!
-#include "/usr/include/netdb.h" // need following instead of <netdb.h>
-#endif
-
 
 #include "P_RecProcess.h"
 #define LOG_SignalManager             REC_SignalManager
@@ -62,9 +56,8 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-LogUtils::LogUtils(DoNotConstruct object)
+LogUtils::LogUtils(DoNotConstruct /* object ATS_UNUSED */)
 {
-  NOWARN_UNUSED(object);
   ink_release_assert(!"you can't construct a LogUtils object");
 }
 

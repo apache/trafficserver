@@ -37,6 +37,17 @@
 //-------------------------------------------------------------------------
 int RecSetDiags(Diags * diags);
 
+//-------------------------------------------------------------------------
+// Config File Parsing
+//-------------------------------------------------------------------------
+typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char * name, const char * value);
+
+void RecConfigFileInit(void);
+int RecConfigFileParse(const char * path, RecConfigEntryCallback handler);
+
+// Test whether the named configuration value is overridden by an environment variable. Return either
+// the overridden value, or the original value. Caller MUST NOT free the result.
+const char * RecConfigOverrideFromEnvironment(const char * name, const char * value);
 
 //-------------------------------------------------------------------------
 // Stat Registration

@@ -68,8 +68,6 @@ set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_t
   struct rlimit lim;
   bool failed = false;
 
-  NOWARN_UNUSED(opaque_token);
-
   if (getrlimit(RLIMIT_CORE, &lim) < 0) {
     failed = true;
   } else {

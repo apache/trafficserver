@@ -99,6 +99,43 @@ struct RamCacheCLFUS : public RamCache {
               seen(0), ncompressed(0), compressed(0) { }
 };
 
+class RamCacheCLFUSCompressor : public Continuation {
+public:
+  RamCacheCLFUS *rc;
+  int mainEvent(int event, Event *e);
+
+  RamCacheCLFUSCompressor(RamCacheCLFUS *arc)
+    : rc(arc)
+  { 
+    SET_HANDLER(&RamCacheCLFUSCompressor::mainEvent); 
+  }
+};
+
+int
+RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
+{
+  switch (cache_config_ram_cache_compress) {
+    default:
+      Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
+    case CACHE_COMPRESSION_NONE: 
+    case CACHE_COMPRESSION_FASTLZ:
+      break;
+    case CACHE_COMPRESSION_LIBZ:
+#if ! TS_HAS_LIBZ
+      Warning("libz not available for RAM cache compression");
+#endif
+      break;
+    case CACHE_COMPRESSION_LIBLZMA:
+#if ! TS_HAS_LZMA
+      Warning("lzma not available for RAM cache compression");
+#endif
+      break;
+  }
+  if (cache_config_ram_cache_compress_percent)
+    rc->compress_entries(e->ethread);
+  return EVENT_CONT;
+}
+
 ClassAllocator<RamCacheCLFUSEntry> ramCacheCLFUSEntryAllocator("RamCacheCLFUSEntry");
 
 static const int bucket_sizes[] = {
@@ -107,7 +144,9 @@ static const int bucket_sizes[] = {
   134217689, 268435399, 536870909, 1073741789, 2147483647
 };
 
-void RamCacheCLFUS::resize_hashtable() {
+void
+RamCacheCLFUS::resize_hashtable()
+{
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
   int64_t s = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
@@ -131,17 +170,22 @@ void RamCacheCLFUS::resize_hashtable() {
   }
 }
 
-void RamCacheCLFUS::init(int64_t abytes, Vol *avol) {
+void
+RamCacheCLFUS::init(int64_t abytes, Vol *avol)
+{
+  ink_assert(avol != 0);
   vol = avol;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!max_bytes)
     return;
   resize_hashtable();
+  eventProcessor.schedule_every(new RamCacheCLFUSCompressor(this), HRTIME_SECOND, ET_TASK);
 }
 
 #ifdef CHECK_ACOUNTING
-static void check_accounting(RamCacheCLFUS *c) {
+static void check_accounting(RamCacheCLFUS *c)
+{
   int64_t x = 0, xsize = 0, h = 0;
   RamCacheCLFUSEntry *y = c->lru[0].head;
   while (y) { x++; xsize += y->size + ENTRY_OVERHEAD; y = y->lru_link.next; }
@@ -155,7 +199,9 @@ static void check_accounting(RamCacheCLFUS *c) {
 #define check_accounting(_c)
 #endif
 
-int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2) {
+int
+RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
+{
   if (!max_bytes)
     return 0;
   int64_t i = key->word(3) % nbuckets;
@@ -262,7 +308,9 @@ Lfree:
   THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_ethread());
 }
 
-void RamCacheCLFUS::victimize(RamCacheCLFUSEntry *e) {
+void
+RamCacheCLFUS::victimize(RamCacheCLFUSEntry *e)
+{
   objects--;
   DDebug("ram_cache", "put %X %d %d size %d VICTIMIZED", e->key.word(3), e->auxkey1, e->auxkey2, e->size);
   e->data = NULL;
@@ -271,7 +319,9 @@ void RamCacheCLFUS::victimize(RamCacheCLFUSEntry *e) {
   history++;
 }
 
-void RamCacheCLFUS::move_compressed(RamCacheCLFUSEntry *e) {
+void
+RamCacheCLFUS::move_compressed(RamCacheCLFUSEntry *e)
+{
   if (e == compressed) {
     if (compressed->lru_link.next)
       compressed = compressed->lru_link.next;
@@ -282,7 +332,9 @@ void RamCacheCLFUS::move_compressed(RamCacheCLFUSEntry *e) {
   }
 }
 
-RamCacheCLFUSEntry *RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e) {
+RamCacheCLFUSEntry *
+RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e)
+{
   RamCacheCLFUSEntry *ret = e->hash_link.next;
   move_compressed(e);
   lru[e->flag_bits.lru].remove(e);
@@ -300,9 +352,12 @@ RamCacheCLFUSEntry *RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e) {
   return ret;
 }
 
-void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
+void
+RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
+{
   if (!cache_config_ram_cache_compress)
     return;
+  ink_assert(vol != 0);
   MUTEX_TAKE_LOCK(vol->mutex, thread);
   if (!compressed) {
     compressed = lru[0].head;
@@ -429,7 +484,9 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
   return;
 }
 
-void RamCacheCLFUS::requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lru_link) &victims) {
+void
+RamCacheCLFUS::requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lru_link) &victims)
+{
   RamCacheCLFUSEntry *victim = 0;
   while ((victim = victims.dequeue())) {
     c->bytes += victim->size + ENTRY_OVERHEAD;
@@ -439,7 +496,9 @@ void RamCacheCLFUS::requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lr
   }
 }
 
-int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, uint32_t auxkey1, uint32_t auxkey2) {
+int
+RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, uint32_t auxkey1, uint32_t auxkey2)
+{
   if (!max_bytes)
     return 0;
   uint32_t i = key->word(3) % nbuckets;
@@ -595,7 +654,10 @@ Lhistory:
   return 0;
 }
 
-int RamCacheCLFUS::fixup(INK_MD5 * key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) {
+int
+RamCacheCLFUS::fixup(INK_MD5 * key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1,
+                     uint32_t new_auxkey2)
+{
   if (!max_bytes)
     return 0;
   uint32_t i = key->word(3) % nbuckets;
@@ -611,41 +673,9 @@ int RamCacheCLFUS::fixup(INK_MD5 * key, uint32_t old_auxkey1, uint32_t old_auxke
   return 0;
 }
 
-class RamCacheCLFUSCompressor : public Continuation { public:
-  RamCacheCLFUS *rc;
-  int mainEvent(int event, Event *e);
-  RamCacheCLFUSCompressor(RamCacheCLFUS *arc): rc(arc) { 
-   SET_HANDLER(&RamCacheCLFUSCompressor::mainEvent); 
-  }
-};
-
-int RamCacheCLFUSCompressor::mainEvent(int event, Event *e) {
-  NOWARN_UNUSED(event);
-  switch (cache_config_ram_cache_compress) {
-    default:
-      Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
-    case CACHE_COMPRESSION_NONE: 
-    case CACHE_COMPRESSION_FASTLZ:
-      break;
-    case CACHE_COMPRESSION_LIBZ:
-#if ! TS_HAS_LIBZ
-      Warning("libz not available for RAM cache compression");
-#endif
-      break;
-    case CACHE_COMPRESSION_LIBLZMA:
-#if ! TS_HAS_LZMA
-      Warning("lzma not available for RAM cache compression");
-#endif
-      break;
-  }
-  if (cache_config_ram_cache_compress_percent)
-    rc->compress_entries(e->ethread);
-  return EVENT_CONT;
-}
-
-RamCache *new_RamCacheCLFUS() {
+RamCache *
+new_RamCacheCLFUS()
+{
   RamCacheCLFUS *r = new RamCacheCLFUS;
-  eventProcessor.schedule_every(new RamCacheCLFUSCompressor(r), HRTIME_SECOND,
-    ET_TASK);
   return r;
 }

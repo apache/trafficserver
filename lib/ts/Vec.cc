@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include "Vec.h"
 
-uintptr_t prime2[] = {
+const uintptr_t prime2[] = {
   1, 3, 7, 13, 31, 61, 127, 251, 509, 1021, 2039, 4093, 8191,
   16381, 32749, 65521, 131071, 262139, 524287, 1048573, 2097143,
   4194301, 8388593, 16777213, 33554393, 67108859, 134217689,
@@ -33,7 +33,7 @@ uintptr_t prime2[] = {
 };
   
 // primes generated with map_mult.c
-uintptr_t open_hash_primes[256] = {
+const uintptr_t open_hash_primes[256] = {
 0x02D4AF27, 0x1865DFC7, 0x47C62B43, 0x35B4889B, 0x210459A1, 0x3CC51CC7, 0x02ADD945, 0x0607C4D7, 
 0x558E6035, 0x0554224F, 0x5A281657, 0x1C458C7F, 0x7F8BE723, 0x20B9BA99, 0x7218AA35, 0x64B10C2B, 
 0x548E8983, 0x5951218F, 0x7AADC871, 0x695FA5B1, 0x40D40FCB, 0x20E03CC9, 0x55E9920F, 0x554CE08B, 

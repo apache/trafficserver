@@ -319,7 +319,8 @@ HttpSM::HttpSM()
     ua_raw_buffer_reader(NULL),
     server_entry(NULL), server_session(NULL), shared_session_retries(0),
     server_buffer_reader(NULL),
-    transform_info(), post_transform_info(), second_cache_sm(NULL),
+    transform_info(), post_transform_info(), has_active_plugin_agents(false),
+    second_cache_sm(NULL),
     default_handler(NULL), pending_action(NULL), historical_action(NULL),
     last_action(HttpTransact::STATE_MACHINE_ACTION_UNDEFINED),
     client_request_hdr_bytes(0), client_request_body_bytes(0),
@@ -507,9 +508,8 @@ HttpSM::do_api_callout()
 }
 
 int
-HttpSM::state_add_to_list(int event, void *data)
+HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   // The list if for stat pages and general debugging
   //   The config variable exists mostly to allow us to
   //   measure an performance drop during benchmark runs
@@ -535,9 +535,8 @@ HttpSM::state_add_to_list(int event, void *data)
 }
 
 int
-HttpSM::state_remove_from_list(int event, void *data)
+HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   // The config parameters are guranteed not change
   //   across the life of a transaction so it safe to
   //   check the config here and use it detrmine
@@ -563,10 +562,8 @@ HttpSM::state_remove_from_list(int event, void *data)
 }
 
 int
-HttpSM::kill_this_async_hook(int event, void *data)
+HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(data);
   // In the base HttpSM, we don't have anything to
   //   do here.  subclasses can overide this function
   //   to do their own asyncronous cleanup
@@ -615,7 +612,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
 
   // Record api hook set state
-  hooks_set = http_global_hooks->hooks_set | client_vc->hooks_set;
+  hooks_set = http_global_hooks->has_hooks() || client_vc->hooks_set;
 
   // Setup for parsing the header
   ua_buffer_reader = buffer_reader;
@@ -723,7 +720,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   client_request_hdr_bytes += bytes_used;
 
   // Check to see if we are over the hdr size limit
-  if (client_request_hdr_bytes > t_state.http_config_param->request_hdr_max_size) {
+  if (client_request_hdr_bytes > t_state.txn_conf->request_hdr_max_size) {
     DebugSM("http", "client header bytes were over max header size; treating as a bad request");
     state = PARSE_ERROR;
   }
@@ -744,7 +741,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
   }
 
   // Check to see if we are done parsing the header
-  if (state != PARSE_CONT || ua_entry->eos) {
+  if (state != PARSE_CONT || ua_entry->eos ||
+	(state == PARSE_CONT && event == VC_EVENT_READ_COMPLETE)) {
     if (ua_raw_buffer_reader != NULL) {
         ua_raw_buffer_reader->dealloc();
         ua_raw_buffer_reader = NULL;
@@ -774,6 +772,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
+    } else if (event == VC_EVENT_READ_COMPLETE) {
+	DebugSM("http_parse", "[%" PRId64 "] VC_EVENT_READ_COMPLETE and PARSE CONT state", sm_id);
+	break;
     } else {
       if (is_transparent_passthrough_allowed() &&
           ua_raw_buffer_reader != NULL &&
@@ -808,10 +809,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
     //YTS Team, yamsat Plugin
     //Setting enable_redirection according to HttpConfig master
-    if (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size)
-      enable_redirection = HttpConfig::m_master.redirection_enabled;
-
-    if (HttpConfig::m_master.number_of_redirections)
+    if ((HttpConfig::m_master.number_of_redirections > 0) ||
+        (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size))
       enable_redirection = HttpConfig::m_master.redirection_enabled;
 
     call_transact_and_set_next_state(HttpTransact::ModifyRequest);
@@ -1781,7 +1780,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     state = PARSE_ERROR;
   }
   // Check to see if we are over the hdr size limit
-  if (server_response_hdr_bytes > t_state.http_config_param->response_hdr_max_size) {
+  if (server_response_hdr_bytes > t_state.txn_conf->response_hdr_max_size) {
     state = PARSE_ERROR;
   }
 
@@ -2966,9 +2965,10 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
 
   // There must be another consumer for it to worthwhile to
   //  set up a background fill
-  if (c->producer->num_consumers > 1 &&
-      (c->producer->vc_type == HT_HTTP_SERVER  || c->producer->vc_type == HT_TRANSFORM) &&
+  if (((c->producer->num_consumers > 1 && c->producer->vc_type == HT_HTTP_SERVER) ||
+       (c->producer->num_consumers > 1 && c->producer->vc_type == HT_TRANSFORM)) &&
       c->producer->alive == true) {
+
     // If threshold is 0.0 or negative then do background
     //   fill regardless of the content length.  Since this
     //   is floating point just make sure the number is near zero
@@ -2988,7 +2988,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
       if (pDone <= 1.0 && pDone > t_state.txn_conf->background_fill_threshold) {
         return true;
       } else {
-        DebugSM("http", "[%" PRId64 "] no background.  Only %%%f done", sm_id, pDone);
+        DebugSM("http", "[%" PRId64 "] no background.  Only %%%f of %%%f done [%" PRId64 " / %" PRId64" ]", sm_id, pDone, t_state.txn_conf->background_fill_threshold, ua_body_done, ua_cl);
       }
 
     }
@@ -3027,8 +3027,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
 
       // There is another consumer (cache write) so
       //  detach the user agent
-      ink_assert(server_entry->vc == c->producer->vc);
-      ink_assert(server_session == c->producer->vc);
+      ink_assert(server_entry->vc == server_session);
+      ink_assert(c->is_downstream_from(server_session));
       server_session->get_netvc()->
         set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
     } else {
@@ -3283,6 +3283,11 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
     // Completed successfully
+    if (t_state.txn_conf->keep_alive_post_out == 0) {
+      // don't share the session if keep-alive for post is not on
+      set_server_session_private(true);
+    }
+
     p->handler_state = HTTP_SM_POST_SUCCESS;
     p->read_success = true;
     ua_entry->in_tunnel = false;
@@ -3312,9 +3317,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 //Copy partial POST data to buffers. Check for the various parameters including
 //the maximum configured post data size
 int
-HttpSM::tunnel_handler_for_partial_post(int event, void *data)
+HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpSM::tunnel_handler_for_partial_post, event);
   tunnel.deallocate_buffers();
   tunnel.reset();
@@ -3690,6 +3694,35 @@ HttpSM::tunnel_handler_transform_read(int event, HttpTunnelProducer * p)
 }
 
 int
+HttpSM::tunnel_handler_plugin_agent(int event, HttpTunnelConsumer * c)
+{
+  STATE_ENTER(&HttpSM::tunnel_handler_plugin_client, event);
+
+  switch (event) {
+  case VC_EVENT_ERROR:
+    c->vc->do_io_close(EHTTP_ERROR); // close up
+    // Signal producer if we're the last consumer.
+    if (c->producer->alive && c->producer->num_consumers == 1) {
+      tunnel.producer_handler(HTTP_TUNNEL_EVENT_CONSUMER_DETACH, c->producer);
+    }
+    break;
+  case VC_EVENT_EOS:
+    if (c->producer->alive && c->producer->num_consumers == 1) {
+      tunnel.producer_handler(HTTP_TUNNEL_EVENT_CONSUMER_DETACH, c->producer);
+    }
+    // FALLTHROUGH
+  case VC_EVENT_WRITE_COMPLETE:
+    c->write_success = true;
+    c->vc->do_io(VIO::CLOSE);
+    break;
+  default:
+    ink_release_assert(0);
+  }
+
+  return 0;
+}
+
+int
 HttpSM::state_srv_lookup(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_srv_lookup, event);
@@ -3713,9 +3746,8 @@ HttpSM::state_srv_lookup(int event, void *data)
 }
 
 int
-HttpSM::state_remap_request(int event, void *data)
+HttpSM::state_remap_request(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpSM::state_remap_request, event);
 
   switch (event) {
@@ -4285,7 +4317,7 @@ HttpSM::do_cache_prepare_write()
 inline void
 HttpSM::do_cache_prepare_write_transform()
 {
-  if (cache_sm.cache_write_vc != NULL || tunnel.is_there_cache_write())
+  if (cache_sm.cache_write_vc != NULL || tunnel.has_cache_writer())
     do_cache_prepare_action(&transform_cache_sm, NULL, false, true);
   else
     do_cache_prepare_action(&transform_cache_sm, NULL, false);
@@ -4325,10 +4357,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
   ink_assert(c_sm->cache_write_vc == NULL);
 
   if (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST) {
-    s_url = &(t_state.cache_info.store_url);
-    if (s_url->valid()) {
-      restore_client_request = true;
-    } else if (t_state.redirect_info.redirect_in_process) {
+    if (t_state.redirect_info.redirect_in_process) {
       o_url = &(t_state.redirect_info.original_url);
       ink_assert(o_url->valid());
       restore_client_request = true;
@@ -4369,7 +4398,6 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
     historical_action = pending_action;
   }
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -4566,7 +4594,6 @@ HttpSM::do_http_server_open(bool raw)
     } else if (ua_session->f_outbound_transparent) {
       opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
       opt.local_ip = t_state.client_info.addr;
-
       /* If the connection is server side transparent, we can bind to the
          port that the client chose instead of randomly assigning one at
          the proxy.  This is controlled by the 'use_client_source_port'
@@ -5116,8 +5143,7 @@ HttpSM::setup_transform_to_server_transfer()
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,
                                               "post transform");
-  p->self_consumer = c;
-  c->self_producer = p;
+  tunnel.chain(c,p);
   post_transform_info.entry->in_tunnel = true;
 
   tunnel.add_consumer(server_entry->vc,
@@ -5180,7 +5206,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     int64_t alloc_index;
     // content length is undefined, use default buffer size
     if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
-      alloc_index = (int) t_state.http_config_param->default_buffer_size_index;
+      alloc_index = (int) t_state.txn_conf->default_buffer_size_index;
       if (alloc_index<MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index> MAX_BUFFER_SIZE_INDEX) {
         alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
       }
@@ -5617,7 +5643,7 @@ HttpSM::setup_cache_read_transfer()
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
 
-  buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
+  buf->water_mark = (int) t_state.txn_conf->default_buffer_water_mark;
 
   IOBufferReader *buf_start = buf->alloc_reader();
 
@@ -5862,7 +5888,7 @@ HttpSM::find_http_resp_buffer_size(int64_t content_length)
   if (content_length == HTTP_UNDEFINED_CL) {
     // Try use our configured default size.  Otherwise pick
     //   the default size
-    alloc_index = (int) t_state.http_config_param->default_buffer_size_index;
+    alloc_index = (int) t_state.txn_conf->default_buffer_size_index;
     if (alloc_index<MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index> DEFAULT_MAX_BUFFER_SIZE) {
       alloc_index = DEFAULT_RESPONSE_BUFFER_SIZE_INDEX;
     }
@@ -5980,7 +6006,7 @@ HttpSM::setup_transfer_from_transform()
 
   // TODO change this call to new_empty_MIOBuffer()
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
-  buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
+  buf->water_mark = (int) t_state.txn_conf->default_buffer_water_mark;
   IOBufferReader *buf_start = buf->alloc_reader();
 
   HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
@@ -6000,13 +6026,14 @@ HttpSM::setup_transfer_from_transform()
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,
                                               "transform read");
-  p->self_consumer = c;
-  c->self_producer = p;
+  tunnel.chain(c, p);
 
   tunnel.add_consumer(ua_entry->vc, transform_info.vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
   transform_info.entry->in_tunnel = true;
   ua_entry->in_tunnel = true;
+
+  this->setup_plugin_agents(p);
 
   if ( t_state.client_info.receive_chunked_response ) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
@@ -6037,8 +6064,7 @@ HttpSM::setup_transfer_from_transform_to_cache_only()
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,
                                               "transform read");
-  p->self_consumer = c;
-  c->self_producer = p;
+  tunnel.chain(c, p);
 
   transform_info.entry->in_tunnel = true;
 
@@ -6095,7 +6121,7 @@ HttpSM::setup_server_transfer()
   MIOBuffer *buf = new_empty_MIOBuffer(alloc_index);
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
-  buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
+  buf->water_mark = (int) t_state.txn_conf->default_buffer_water_mark;
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // we need to know if we are going to chunk the response or not
@@ -6108,7 +6134,10 @@ HttpSM::setup_server_transfer()
       action = TCA_PASSTHRU_DECHUNKED_CONTENT;
   } else {
     if (t_state.current.server->transfer_encoding != HttpTransact::CHUNKED_ENCODING)
-      action = TCA_CHUNK_CONTENT;
+      if (t_state.client_info.http_version == HTTPVersion(0, 9))
+        action = TCA_PASSTHRU_DECHUNKED_CONTENT; // send as-is
+      else
+        action = TCA_CHUNK_CONTENT;
     else
       action = TCA_PASSTHRU_CHUNKED_CONTENT;
   }
@@ -6140,6 +6169,8 @@ HttpSM::setup_server_transfer()
 
   ua_entry->in_tunnel = true;
   server_entry->in_tunnel = true;
+
+  this->setup_plugin_agents(p);
 
   // If the incoming server response is chunked and the client does not
   // expect a chunked response, then dechunk it.  Otherwise, if the
@@ -6257,15 +6288,27 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
                              &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_SERVER, "http server - tunnel");
 
   // Make the tunnel aware that the entries are bi-directional
-  p_os->self_consumer = c_os;
-  p_ua->self_consumer = c_ua;
-  c_ua->self_producer = p_ua;
-  c_os->self_producer = p_os;
+  tunnel.chain(c_os, p_os);
+  tunnel.chain(c_ua, p_ua);
 
   ua_entry->in_tunnel = true;
   server_entry->in_tunnel = true;
 
   tunnel.tunnel_run();
+}
+
+void
+HttpSM::setup_plugin_agents(HttpTunnelProducer* p)
+{
+  APIHook* agent = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
+  has_active_plugin_agents = agent != 0;
+  while (agent) {
+    INKVConnInternal* contp = static_cast<INKVConnInternal*>(agent->m_cont);
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "plugin agent");
+    // We don't put these in the SM VC table because the tunnel
+    // will clean them up in do_io_close().
+    agent = agent->next();
+  }
 }
 
 inline void
@@ -6278,6 +6321,22 @@ HttpSM::transform_cleanup(TSHttpHookID hook, HttpTransformInfo * info)
       t_vcon->do_io_close();
       t_hook = t_hook->m_link.next;
     } while (t_hook != NULL);
+  }
+}
+
+void
+HttpSM::plugin_agents_cleanup()
+{
+  // If this is set then all of the plugin agent VCs were put in
+  // the VC table and cleaned up there. This handles the case where
+  // something went wrong early.
+  if (!has_active_plugin_agents) {
+    APIHook* agent = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
+    while (agent) {
+      INKVConnInternal* contp = static_cast<INKVConnInternal*>(agent->m_cont);
+      contp->do_io_close();
+      agent = agent->next();
+    }
   }
 }
 
@@ -6326,6 +6385,7 @@ HttpSM::kill_this()
     if (hooks_set) {
       transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
       transform_cleanup(TS_HTTP_REQUEST_TRANSFORM_HOOK, &post_transform_info);
+      plugin_agents_cleanup();
     }
     // It's also possible that the plugin_tunnel vc was never
     //   executed due to not contacting the server
@@ -6467,12 +6527,6 @@ HttpSM::update_stats()
     ua_write_time = -1;
   }
 
-/*   DebugSM("ARMStatsCache", "ua_begin_write: %d ua_close: %d ua_write_time:%d",
-     (int) ink_hrtime_to_msec(milestones.ua_begin_write),
-     (int) ink_hrtime_to_msec(milestones.ua_close),
-     (int) ink_hrtime_to_msec(ua_write_time));
- */
-
   ink_hrtime os_read_time;
   if (milestones.server_read_header_done != 0 && milestones.server_close != 0) {
     os_read_time = milestones.server_close - milestones.server_read_header_done;
@@ -6480,28 +6534,21 @@ HttpSM::update_stats()
     os_read_time = -1;
   }
 
+  // TS-2032: This code is never used, but leaving it here in case we want to add these
+  // to the metrics code.
+#if 0
   ink_hrtime cache_lookup_time;
   if (milestones.cache_open_read_end != 0 && milestones.cache_open_read_begin != 0) {
     cache_lookup_time = milestones.cache_open_read_end - milestones.cache_open_read_begin;
   } else {
     cache_lookup_time = -1;
   }
+#endif
 
-  HttpTransact::update_size_and_time_stats(&t_state,
-                                           total_time,
-                                           ua_write_time,
-                                           os_read_time,
-                                           cache_lookup_time,
-                                           client_request_hdr_bytes,
-                                           client_request_body_bytes,
-                                           client_response_hdr_bytes,
-                                           client_response_body_bytes,
-                                           server_request_hdr_bytes,
-                                           server_request_body_bytes,
-                                           server_response_hdr_bytes,
-                                           server_response_body_bytes,
-                                           pushed_response_hdr_bytes,
-                                           pushed_response_body_bytes, t_state.cache_info.action);
+  HttpTransact::update_size_and_time_stats(&t_state, total_time, ua_write_time, os_read_time, client_request_hdr_bytes,
+                                           client_request_body_bytes, client_response_hdr_bytes, client_response_body_bytes,
+                                           server_request_hdr_bytes, server_request_body_bytes, server_response_hdr_bytes,
+                                           server_response_body_bytes, pushed_response_hdr_bytes, pushed_response_body_bytes);
 /*
     if (is_action_tag_set("http_handler_times")) {
 	print_all_http_handler_times();
@@ -7017,9 +7064,7 @@ HttpSM::set_next_state()
   case HttpTransact::PROXY_INTERNAL_REQUEST:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_handle_stat_page);
-      Action *action_handle = statPagesManager.handle_http(this,
-                                                           &t_state.hdr_info.client_request,
-                                                           ua_session->get_netvc()->get_remote_ip());
+      Action *action_handle = statPagesManager.handle_http(this, &t_state.hdr_info.client_request);
 
       if (action_handle != ACTION_RESULT_DONE) {
         pending_action = action_handle;
@@ -7344,9 +7389,8 @@ HttpSM::set_http_schedule(Continuation *contp)
 }
 
 int
-HttpSM::get_http_schedule(int event, void * data)
+HttpSM::get_http_schedule(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   bool plugin_lock;
   Ptr <ProxyMutex> plugin_mutex;
   if (schedule_cont->mutex) {

@@ -164,7 +164,7 @@ make_ipv6_ptr(in6_addr const* addr, char *buffer)
 //  See documentation is header files and Memos
 //
 int
-DNSProcessor::start(int) {
+DNSProcessor::start(int, size_t stacksize) {
   //
   // Read configuration
   //
@@ -183,8 +183,9 @@ DNSProcessor::start(int) {
   REC_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
 
   if (dns_thread > 0) {
-    ET_DNS = eventProcessor.spawn_event_threads(1, "ET_DNS"); // TODO: Hmmm, should we just get a single thread some other way?
-    initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0], 0);
+    // TODO: Hmmm, should we just get a single thread some other way?
+    ET_DNS = eventProcessor.spawn_event_threads(1, "ET_DNS", stacksize);
+    initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0]);
   } else {
     // Initialize the first event thread for DNS.
     ET_DNS = ET_CALL;
@@ -472,9 +473,8 @@ DNSHandler::validate_ip() {
 
 */
 int
-DNSHandler::startEvent(int event, Event *e)
+DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
-  NOWARN_UNUSED(event);
   //
   // If this is for the default server, get it
   Debug("dns", "DNSHandler::startEvent: on thread %d\n", e->ethread->id);
@@ -524,9 +524,8 @@ DNSHandler::startEvent(int event, Event *e)
   hander to a new nameserver.
 */
 int
-DNSHandler::startEvent_sdns(int event, Event *e)
+DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 {
-  NOWARN_UNUSED(event);
   Debug("dns", "DNSHandler::startEvent_sdns: on thread %d\n", e->ethread->id);
   this->validate_ip();
 
@@ -727,10 +726,8 @@ good_rcode(char *buff) {
 
 
 void
-DNSHandler::recv_dns(int event, Event *e)
+DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   DNSConnection *dnsc = NULL;
   ip_text_buffer ipbuff1, ipbuff2;
 
@@ -1274,10 +1271,8 @@ DNSEntry::post(DNSHandler *h, HostEnt *ent)
 }
 
 int
-DNSEntry::postEvent(int event, Event *e)
+DNSEntry::postEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   if (!action.cancelled) {
     Debug("dns", "called back continuation for %s", qname);
     action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent);

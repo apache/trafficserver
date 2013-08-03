@@ -36,9 +36,6 @@
 #define URL_REMAP_FILTER_NONE         0x00000000
 #define URL_REMAP_FILTER_REFERER      0x00000001        /* enable "referer" header validation */
 #define URL_REMAP_FILTER_REDIRECT_FMT 0x00010000        /* enable redirect URL formatting */
-#define REVERSE_RegisterConfigUpdateFunc REC_RegisterConfigUpdateFunc
-#define REVERSE_ReadConfigInteger REC_ReadConfigInteger
-#define REVERSE_ReadConfigStringAlloc REC_ReadConfigStringAlloc
 
 #define modulePrefix "[ReverseProxy]"
 #define BUILD_TABLE_MAX_ARGS 2048

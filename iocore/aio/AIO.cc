@@ -63,9 +63,8 @@ uint64_t aio_bytes_written = 0;
  */
 
 static int
-aio_stats_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
+aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  NOWARN_UNUSED(name);
   (void) data_type;
   (void) rsb;
   int64_t new_val = 0;
@@ -248,13 +247,16 @@ aio_init_fildes(int fildes, int fromAPI = 0)
 
   /* create the main thread */
   AIOThreadInfo *thr_info;
+  size_t stacksize;
+
+  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   for (i = 0; i < thread_num; i++) {
     if (i == (thread_num - 1))
       thr_info = new AIOThreadInfo(request, 1);
     else
       thr_info = new AIOThreadInfo(request, 0);
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_AIO %d]", i);
-    ink_assert(eventProcessor.spawn_thread(thr_info, thr_name));
+    ink_assert(eventProcessor.spawn_thread(thr_info, thr_name, stacksize));
   }
 
   /* the num_filedes should be incremented after initializing everything.

@@ -45,10 +45,8 @@ bool sumClusterVar;
 
 
 void
-startElement(void *userData, const char *name, const char **atts)
+startElement(void * /* userData ATS_UNUSED */, const char *name, const char **atts)
 {
-  NOWARN_UNUSED(userData);
-  NOWARN_UNUSED(name);
   int i = 0;
 
   if (!strcmp(name, "ink:statistics"))
@@ -119,10 +117,8 @@ startElement(void *userData, const char *name, const char **atts)
 
 
 void
-endElement(void *userData, const char *name)
+endElement(void * /* userData ATS_UNUSED */, const char */* name ATS_UNUSED */)
 {
-  NOWARN_UNUSED(userData);
-  NOWARN_UNUSED(name);
   switch (currentTag) {
   case STAT_TAG:
     statObjectList.enqueue(statObject);
@@ -141,10 +137,8 @@ endElement(void *userData, const char *name)
 
 
 void
-charDataHandler(void *userData, const XML_Char * name, int len)
+charDataHandler(void * /* userData ATS_UNUSED */, const XML_Char * name, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(userData);
-  NOWARN_UNUSED(len);
   if (currentTag != EXPR_TAG && currentTag != DST_TAG) {
     return;
   }

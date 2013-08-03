@@ -59,19 +59,23 @@ int LogCollationClientSM::ID = 0;
 // LogCollationClientSM::LogCollationClientSM
 //-------------------------------------------------------------------------
 
-LogCollationClientSM::LogCollationClientSM(LogHost * log_host):
-  Continuation(new_ProxyMutex()),
-  m_host_vc(NULL),
-  m_host_vio(NULL),
-  m_auth_buffer(NULL),
-  m_auth_reader(NULL),
-  m_send_buffer(NULL),
-  m_send_reader(NULL),
-  m_pending_action(NULL),
-  m_pending_event(NULL),
-  m_abort_vio(NULL),
-  m_abort_buffer(NULL),
-  m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW), m_log_host(log_host), m_id(ID++)
+LogCollationClientSM::LogCollationClientSM(LogHost * log_host)
+  : Continuation(new_ProxyMutex()),
+    m_host_vc(NULL),
+    m_host_vio(NULL),
+    m_auth_buffer(NULL),
+    m_auth_reader(NULL),
+    m_send_buffer(NULL),
+    m_send_reader(NULL),
+    m_pending_action(NULL),
+    m_pending_event(NULL),
+    m_abort_vio(NULL),
+    m_abort_buffer(NULL),
+    m_buffer_send_list(NULL),
+    m_buffer_in_iocore(NULL),
+    m_flow(LOG_COLL_FLOW_ALLOW),
+    m_log_host(log_host),
+    m_id(ID++)
 {
   Debug("log-coll", "[%d]client::constructor", m_id);
 
@@ -118,10 +122,8 @@ LogCollationClientSM::client_handler(int event, void *data)
   switch (m_client_state) {
   case LOG_COLL_CLIENT_AUTH:
     return client_auth(event, (VIO *) data);
-#ifndef INK_NO_HOSTDB
   case LOG_COLL_CLIENT_DNS:
     return client_dns(event, (HostDBInfo *) data);
-#endif
   case LOG_COLL_CLIENT_DONE:
     return client_done(event, data);
   case LOG_COLL_CLIENT_FAIL:
@@ -222,10 +224,10 @@ LogCollationClientSM::send(LogBuffer * log_buffer)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_auth(int event, VIO * vio)
+LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(vio);
+
   Debug("log-coll", "[%d]client::client_auth", m_id);
 
   switch (event) {
@@ -283,26 +285,23 @@ LogCollationClientSM::client_auth(int event, VIO * vio)
   }
 }
 
-#ifndef INK_NO_HOSTDB
 //-------------------------------------------------------------------------
 // LogCollationClientSM::client_dns
 // next: client_open || client_done
 //-------------------------------------------------------------------------
-
 int
 LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
 {
-
   Debug("log-coll", "[%d]client::client_dns", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     m_client_state = LOG_COLL_CLIENT_DNS;
     if (m_log_host->m_name == 0) {
       return client_done(LOG_COLL_EVENT_SWITCH, NULL);
     }
-    hostDBProcessor.getbyname_re(this, m_log_host->m_name, 0, HostDBProcessor::Options().setFlags(HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD));
+    hostDBProcessor.getbyname_re(this, m_log_host->m_name, 0,
+                                 HostDBProcessor::Options().setFlags(HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD));
     return EVENT_CONT;
 
   case EVENT_HOST_DB_LOOKUP:
@@ -321,7 +320,6 @@ LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
   }
 
 }
-#endif // INK_NO_HOSTDB
 
 //-------------------------------------------------------------------------
 // LogCollationClientSM::client_done
@@ -329,10 +327,10 @@ LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_done(int event, void *data)
+LogCollationClientSM::client_done(int event, void * /* data ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(data);
+
   Debug("log-coll", "[%d]client::client_done", m_id);
 
   switch (event) {
@@ -348,10 +346,8 @@ LogCollationClientSM::client_done(int event, void *data)
       m_host_vc->do_io_close(0);
       m_host_vc = 0;
     }
-#ifndef TS_MICRO
     // flush unsent logs to orphan
     flush_to_orphan();
-#endif
 
     // cancel any pending events/actions
     if (m_pending_action != NULL) {
@@ -396,14 +392,13 @@ LogCollationClientSM::client_done(int event, void *data)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_fail(int event, void *data)
+LogCollationClientSM::client_fail(int event, void * /* data ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(data);
+
   Debug("log-coll", "[%d]client::client_fail", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     Debug("log-coll", "[%d]client::client_fail - SWITCH", m_id);
     m_client_state = LOG_COLL_CLIENT_FAIL;
@@ -449,9 +444,8 @@ LogCollationClientSM::client_fail(int event, void *data)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_idle(int event, void *data)
+LogCollationClientSM::client_idle(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   Debug("log-coll", "[%d]client::client_idle", m_id);
 
   switch (event) {
@@ -477,9 +471,8 @@ LogCollationClientSM::client_idle(int event, void *data)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_init(int event, void *data)
+LogCollationClientSM::client_init(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   Debug("log-coll", "[%d]client::client_init", m_id);
 
   switch (event) {
@@ -509,21 +502,7 @@ LogCollationClientSM::client_init(int event, void *data)
 
     // if we don't have an ip already, switch to client_dns
     if (! m_log_host->ip_addr().isValid()) {
-#ifndef INK_NO_HOSTDB
       return client_dns(LOG_COLL_EVENT_SWITCH, NULL);
-#else
-      if (m_log_host->m_name == 0)
-        return client_done(LOG_COLL_EVENT_SWITCH, NULL);
-
-      IpEndpoint ip4, ip6;
-      // Previous version called gethostbyname and just dereferenced
-      // the return. I don't know what should be done if this fails.
-      m_log_host->m_ip.invalidate();
-      ats_ip_getbestaddrinfo(m_log_host->m_name, &ip4, &ip6);
-      m_log_host->m_ip.assign(ip4.isValid() ? &ip4 : &ip6);
-      m_log_host->m_ip.toString(m_log_host->ipstr, sizeof(m_log_host->m_ipstr));
-      return client_open(LOG_COLL_EVENT_SWITCH, NULL);
-#endif
     } else {
       return client_open(LOG_COLL_EVENT_SWITCH, NULL);
     }
@@ -602,10 +581,10 @@ LogCollationClientSM::client_open(int event, NetVConnection * net_vc)
 //-------------------------------------------------------------------------
 
 int
-LogCollationClientSM::client_send(int event, VIO * vio)
+LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(vio);
+
   Debug("log-coll", "[%d]client::client_send", m_id);
 
   switch (event) {
@@ -719,7 +698,6 @@ LogCollationClientSM::client_send(int event, VIO * vio)
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
-#ifndef TS_MICRO
 //-------------------------------------------------------------------------
 // LogCollationClientSM::flush_to_orphan
 //-------------------------------------------------------------------------
@@ -744,5 +722,7 @@ LogCollationClientSM::flush_to_orphan()
     m_log_host->orphan_write_and_delete(log_buffer);
   }
 
+  // Now send_list is empty, let's update m_flow to ALLOW status
+  Debug("log-coll", "[%d]client::client_send - m_flow = ALLOW", m_id);
+  m_flow = LOG_COLL_FLOW_ALLOW;
 }
-#endif // TS_MICRO

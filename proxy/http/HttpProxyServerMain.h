@@ -23,12 +23,14 @@
 
 struct HttpProxyPort;
 
-void init_HttpProxyServer(void);
+/** Initialize all HTTP proxy port data structures needed to run.
+ */
+void init_HttpProxyServer(int n_accept_threads = 0);
 
 /** Start the proxy server. 
-    The ports are contained in the HttpProxyPort global data.
+    The port data should have been created by @c init_HttpProxyServer().
 */
-void start_HttpProxyServer(int accept_threads = 0);
+void start_HttpProxyServer();
 
 void start_HttpProxyServerBackDoor(int port, int accept_threads = 0);
 

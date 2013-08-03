@@ -128,9 +128,12 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 
   // initialize the event and net processor
   //
-  eventProcessor.start(ink_number_of_processors());
+  size_t stacksize;
+
+  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+  eventProcessor.start(ink_number_of_processors(), stacksize);
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  netProcessor.start();
+  netProcessor.start(0, stacksize);
   Machine::init();
 
   Log::init(Log::NO_REMOTE_MANAGEMENT | Log::STANDALONE_COLLATOR);

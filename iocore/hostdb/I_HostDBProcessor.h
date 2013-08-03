@@ -459,7 +459,7 @@ struct HostDBProcessor: public Processor
   /* hostdb does not use any dedicated event threads
    * currently. Dont pass any value to start
    */
-  int start(int no_of_additional_event_threads = 0);
+  int start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
 
   // Private
   HostDBCache *cache();

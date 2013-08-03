@@ -53,8 +53,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "ConfigAPI.h"
-#include "SysAPI.h"
 
 
 bool enable_restricted_commands = false;
@@ -165,9 +163,8 @@ CmdArgs_Enable()
 //    argv -- the command arguments
 //
 int
-Cmd_Disable(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_Disable(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -201,9 +198,8 @@ Cmd_Disable(ClientData clientData, Tcl_Interp * interp, int argc, const char *ar
 //    argv -- the command arguments
 //
 int
-Cmd_Config(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+Cmd_Config(ClientData /* clientData ATS_UNUSED */, Tcl_Interp * interp, int argc, const char *argv[])
 {
-  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -722,7 +718,6 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
       return (ConfigPortsGet(argtable[0].parsed_args));
     } else {                    // set
       switch (argtable->parsed_args) {
-      case CMD_CONFIG_PORTS_HTTP_OTHER:
       case CMD_CONFIG_PORTS_CONNECT:
         return (ConfigPortsSet(argtable[0].parsed_args, argtable[0].data));
         break;
@@ -752,8 +747,6 @@ CmdArgs_ConfigPorts()
 {
   createArgument("http-server", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_HTTP_SERVER, "Set Ports for http-server", (char *) NULL);
-  createArgument("http-other", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_HTTP_OTHER, "Set Ports for http-other", (char *) NULL);
   createArgument("cluster", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER, "Set Ports for cluster", (char *) NULL);
   createArgument("cluster-rs", 1, CLI_ARGV_OPTION_INT_VALUE,
@@ -1169,58 +1162,6 @@ CmdArgs_ConfigIcp()
   createArgument("peers", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_ICP_PEERS, "URL for ICP Peers config file <url>", (char *) NULL);
   return 0;
-}
-
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigPortTunnels
-//
-// This is the callback function for the "config:port-tunnels" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigPortTunnels(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  if (cliCheckIfEnabled("config:port-tunnel") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-  Cli_Debug("Cmd_ConfigPortTunnles argc %d\n", argc);
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-
-  if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
-    switch (argtable->parsed_args) {
-    case CMD_CONFIG_PORT_TUNNELS_SERVER_OTHER_PORTS:
-      int status = Cli_RecordInt_Action((argc == 3),
-                                        "proxy.config.http.server_other_ports",
-                                        argtable->arg_int);
-      Cli_Printf("\n");
-      Cli_Printf("Use config:remap to add rules to the remap.config file as follows:\n");
-      Cli_Printf("map tunnel://<proxy_ip>:<port_num>/tunnel://<dest_server>:<dest_port>\n");
-      Cli_Printf("\n");
-      return status;
-    }
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2442,7 +2383,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
 {
 
   switch (arg_ref) {
-  case CMD_CONFIG_PORTS_HTTP_OTHER:
   case CMD_CONFIG_PORTS_CONNECT:
     Cli_Debug("ConfigPortsSet: arg_ref %d value %s\n", arg_ref, (char *) valuePtr);
     break;
@@ -2457,9 +2397,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   switch (arg_ref) {
   case CMD_CONFIG_PORTS_HTTP_SERVER:
     status = Cli_RecordSetInt("proxy.config.http.server_port", *(TSInt *) valuePtr, &action_need);
-    break;
-  case CMD_CONFIG_PORTS_HTTP_OTHER:
-    status = Cli_RecordSetString("proxy.config.http.server_other_ports", (TSString) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordSetInt("proxy.config.cluster.cluster_port", *(TSInt *) valuePtr, &action_need);
@@ -2508,17 +2445,6 @@ ConfigPortsGet(int arg_ref)
       return status;
     }
     Cli_Printf("%d\n", int_val);
-    break;
-  case CMD_CONFIG_PORTS_HTTP_OTHER:
-    status = Cli_RecordGetString("proxy.config.http.server_other_ports", &str_val);
-    if (status) {
-      return status;
-    }
-    if (str_val) {
-      Cli_Printf("%s\n", str_val);
-    } else {
-      Cli_Printf("none\n");
-    }
     break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordGetInt("proxy.config.cluster.cluster_port", &int_val);
@@ -3591,238 +3517,6 @@ ConfigVirtualipDelete(int ip_no, int setvar)
   }
 }
 
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigNetwork
-//
-// This is the callback function for the "config:network" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigNetwork(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  if (cliCheckIfEnabled("config:network") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-  Cli_Debug("Cmd_ConfigNetwork argc %d\n", argc);
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-
-
-  if (argc == 1) {
-    Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-    return CMD_ERROR;
-  }
-
-  char value[256];
-  char *interface;
-
-  switch (argtable->parsed_args) {
-  case CMD_CONFIG_HOSTNAME:
-    Cli_Debug("CMD_CONFIG_HOSTNAME\n");
-    if (argc == 2) {
-      Config_GetHostname(value, sizeof(value));
-      Cli_Printf("%s\n", strlen(value) ? value : "not set");
-      return CLI_OK;
-    } else {
-      if (Config_SetHostname(argtable->arg_string)) {
-        Cli_Error("ERROR while setting fully qualified hostname.\n");
-        return CLI_ERROR;
-      }
-      return CLI_OK;
-    }
-    break;
-  case CMD_CONFIG_DEFAULT_ROUTER:
-    Cli_Debug("CMD_CONFIG_DEFAULT_ROUTER\n");
-    if (argc == 2) {
-      Config_GetDefaultRouter(value, sizeof(value));
-      Cli_Printf("%s\n", strlen(value) ? value : "none");
-      return CLI_OK;
-    } else {
-      if (Config_SetDefaultRouter(argtable->arg_string)) {
-        Cli_Error("ERROR while setting default router.\n");
-        return CLI_ERROR;
-      }
-      return CLI_OK;
-    }
-    break;
-  case CMD_CONFIG_DOMAIN:
-    Cli_Debug("CMD_CONFIG_DOMAIN\n");
-    if (argc == 2) {
-      Config_GetDomain(value, sizeof(value));
-      Cli_Printf("%s\n", strlen(value) ? value : "none");
-      return CLI_OK;
-    } else {
-      if (Config_SetDomain(argtable->arg_string)) {
-        Cli_Error("ERROR while setting search-domain.\n");
-        return CLI_ERROR;
-      }
-      return CLI_OK;
-    }
-  case CMD_CONFIG_DNS_IP:
-    Cli_Debug("CMD_CONFIG_DNS_IP\n");
-    if (argc == 2) {
-      Config_GetDNS_Servers(value, sizeof(value));
-      Cli_Printf("%s\n", strlen(value) ? value : "none");
-      return CLI_OK;
-    } else {
-      if (Config_SetDNS_Servers(argtable->arg_string)) {
-        Cli_Error("ERROR while setting DNS Servers.\n");
-        return CLI_ERROR;
-      }
-      return CLI_OK;
-    }
-    break;
-  case CMD_CONFIG_NETWORK_INT:
-    Cli_Debug("CMD_CONFIG_NETWORK_INT argc %d\n", argc);
-    if (argc == 2) {            // display all network interfaces
-      int count = Config_GetNetworkIntCount();
-      for (int i = 0; i < count; i++) {
-        Config_GetNetworkInt(i, value, sizeof(value));
-        Cli_Printf("%s\n", value);
-      }
-      return CLI_OK;
-    }
-    interface = argtable[0].arg_string;
-
-    if (!Net_IsValid_Interface(interface)) {
-      Cli_Printf("Invalid NIC %s\n", interface);
-      return CLI_ERROR;
-    }
-
-    if (argc == 3) {            // display setting for interface
-      char nic_status[80], nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-
-      Config_GetNIC_Status(interface, nic_status, sizeof(nic_status));
-      Config_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
-      Config_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
-      Config_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-      Config_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-      Config_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-
-      Cli_Printf("\nNIC %s\n", interface);
-      Cli_Printf("  Status -------------- %s\n", nic_status);
-      Cli_Printf("  Start on Boot ------- %s\n", nic_boot);
-      Cli_Printf("  Start Protocol ------ %s\n", nic_protocol);
-      Cli_Printf("  IP Address ---------- %s\n", nic_ip);
-      Cli_Printf("  Netmask ------------- %s\n", nic_netmask);
-      Cli_Printf("  Gateway ------------- %s\n", nic_gateway);
-      Cli_Printf("\n");
-
-      return CLI_OK;
-    } else if (argc == 4) {
-      if (strcmp(argv[3], "down") == 0) {
-        if (Config_SetNIC_Down(interface)) {
-          Cli_Error("ERROR while setting NIC down.\n");
-          return CLI_ERROR;
-        }
-        return CLI_OK;
-      } else {
-        if ((strcmp(argv[3], "onboot") != 0)
-            && (strcmp(argv[3], "not-onboot") != 0)
-            && (strcmp(argv[3], "static") != 0)
-            && (strcmp(argv[3], "dhcp") != 0)) {
-          if (strcmp(argv[3], "up") == 0) {
-            Cli_Printf("Error: Invalid syntax\n");
-            Cli_Printf
-              ("config:network int <interface> up <onboot | not-onboot> <static | dhcp> <ip> <netmask> <gateway>\n");
-          } else {
-            Cli_Printf("Invalid parameter \"%s\"\n", argv[3]);
-          }
-          return CLI_ERROR;
-        }
-        char nic_status[80];
-        Config_GetNIC_Status(interface, nic_status, sizeof(nic_status));
-
-        if (strcmp(nic_status, "down") == 0) {
-          Cli_Error("ERROR: Interface must be \"up\" to make this change.\n");
-          return CLI_ERROR;
-        }
-        if (strcmp(argv[3], "onboot") == 0 || strcmp(argv[3], "not-onboot") == 0) {
-          if (Config_SetNIC_StartOnBoot(interface, (char *) argv[3])) {
-            Cli_Error("ERROR: Unable to modify NIC status.\n");
-            return CLI_ERROR;
-          }
-          return CLI_OK;
-        } else if (strcmp(argv[3], "static") == 0 || strcmp(argv[3], "dhcp") == 0) {
-          if (Config_SetNIC_BootProtocol(interface, (char *) argv[3])) {
-            Cli_Error("ERROR: Unable to modify NIC status.\n");
-            return CLI_ERROR;
-          }
-          return CLI_OK;
-        }
-      }
-    } else if (argc == 5) {
-      if ((strcmp(argv[3], "ip") != 0)
-          && (strcmp(argv[3], "netmask") != 0)
-          && (strcmp(argv[3], "gateway") != 0)) {
-        Cli_Printf("Invalid parameter \"%s\"\n", argv[3]);
-        return CLI_ERROR;
-      }
-      char nic_status[80];
-      Config_GetNIC_Status(interface, nic_status, sizeof(nic_status));
-
-      if (strcmp(nic_status, "down") == 0) {
-        Cli_Error("ERROR: Interface must be \"up\" to make this change.\n");
-        return CLI_ERROR;
-      }
-      if (strcmp(argv[3], "ip") == 0) {
-        if (Config_SetNIC_IP(interface, (char *) argv[4])) {
-          Cli_Error("ERROR while changing IP address.\n");
-          return CLI_ERROR;
-        }
-        return CLI_OK;
-      } else if (strcmp(argv[3], "netmask") == 0) {
-        if (Config_SetNIC_Netmask(interface, (char *) argv[4])) {
-          Cli_Error("ERROR while changing netmask.\n");
-          return CLI_ERROR;
-        }
-        return CLI_OK;
-      } else if (strcmp(argv[3], "gateway") == 0) {
-        if (Config_SetNIC_Gateway(interface, (char *) argv[4])) {
-          Cli_Error("ERROR while changing gateway.\n");
-          return CLI_ERROR;
-        }
-        return CLI_OK;
-      }
-    } else if (argc == 9) {     // change setting for interface
-      if (strcmp(argv[3], "up") == 0) {
-        if (Config_SetNIC_Up
-            (interface, (char *) argv[4], (char *) argv[5], (char *) argv[6], (char *) argv[7], (char *) argv[8])) {
-          Cli_Printf("Error while changing NIC settings.\n");
-          return CLI_ERROR;
-        }
-        return CLI_OK;
-      } else {
-        Cli_Printf("Invalid parameter \"%s\"\n", argv[3]);
-      }
-    } else {
-      Cli_Printf("Invalid syntax\n");
-    }
-    break;
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
-}
-
 int
 IsValidIpAddress(char *str)
 {
@@ -3955,27 +3649,6 @@ StartBinary(char *abs_bin_path, char *bin_options, int isScript)
 
 done:
   return ret_value;
-}
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigNetwork
-//
-// Register "config:network" arguments with the Tcl interpreter.
-//
-int
-CmdArgs_ConfigNetwork()
-{
-  createArgument("hostname", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_HOSTNAME, "Hostname <string>", (char *) NULL);
-  createArgument("defaultrouter", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_DEFAULT_ROUTER, "Default Router IP Address <x.x.x.x>", (char *) NULL);
-  createArgument("search-domain", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_DOMAIN, "Domain-name <string>", (char *) NULL);
-  createArgument("dns", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_DNS_IP, "Specify up to 3 DNS IP Addresses", (char *) NULL);
-  createArgument("int", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NETWORK_INT, "Network Interface", (char *) NULL);
-  return CLI_OK;
 }
 
 // config Logging Event sub-command

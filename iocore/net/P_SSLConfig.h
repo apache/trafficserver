@@ -56,7 +56,7 @@ struct SSLConfigParams : public ConfigInfo
   virtual ~SSLConfigParams();
 
   char *  serverCertPathOnly;
-  char *  serverCertChainPath;
+  char *  serverCertChainFilename;
   char *  serverKeyPathOnly;
   char *  serverCACertFilename;
   char *  serverCACertPath;

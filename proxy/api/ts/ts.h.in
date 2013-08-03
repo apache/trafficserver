@@ -210,8 +210,10 @@ extern "C"
       continuation for a particular hook are:
 
       TSHttpHookAdd: adds a global hook. You can globally add
-      any hook except for TS_HTTP_REQUEST_TRANSFORM_HOOK and
-      TS_HTTP_RESPONSE_TRANSFORM_HOOK.
+      any hook except for
+       - TS_HTTP_REQUEST_TRANSFORM_HOOK
+       - TS_HTTP_RESPONSE_TRANSFORM_HOOK
+       - TS_HTTP_RESPONSE_CLIENT_HOOK
 
       The following hooks can ONLY be added globally:
        - TS_HTTP_SELECT_ALT_HOOK
@@ -228,6 +230,7 @@ extern "C"
        - TS_HTTP_SEND_RESPONSE_HDR_HOOK
        - TS_HTTP_REQUEST_TRANSFORM_HOOK
        - TS_HTTP_RESPONSE_TRANSFORM_HOOK
+       - TS_HTTP_RESPONSE_CLIENT_HOOK
        - TS_HTTP_TXN_START_HOOK
        - TS_HTTP_TXN_CLOSE_HOOK
 
@@ -268,9 +271,59 @@ extern "C"
     TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
     TS_HTTP_PRE_REMAP_HOOK,
     TS_HTTP_POST_REMAP_HOOK,
+    TS_HTTP_RESPONSE_CLIENT_HOOK,
     TS_HTTP_LAST_HOOK
   } TSHttpHookID;
   #define TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK TS_HTTP_PRE_REMAP_HOOK  /* backwards compat */
+
+  /** Plugin lifecycle hooks.
+
+      These are called during lifecycle events of a plugin. They
+      should be set in the plugin initialization function. The
+      continuation is invoked with an event ID specified for each hook
+      and @c NULL for the event data.
+
+      TS_LIFECYCLE_PORTS_INITIALIZED_HOOK
+
+        called once, after the HTTP proxy port data structures have
+        been initialized. In particular, SSL related calls that depend
+        on accept endpoints may be invoked. After this hook is
+        finished, the proxy port sockets are opened and connections
+        are accepted.
+
+        Event: TS_EVENT_LIFECYCLE_PORTS_INITIALIZED
+
+      TS_LIFECYCLE_PORTS_READY_HOOK
+
+        called once, after the sockets have been opened and the accept
+        threads have been started. That is, the ports are ready to
+        accept connections. This is *not* guaranteed to be called
+        before the first connection is accepted.
+
+        Event: TS_EVENT_LIFECYCLE_PORTS_READY_HOOK
+
+      TS_LIFECYCLE_CACHE_READY_HOOK
+
+        called once, after the cache has finished its
+        initialization. It is either online or has failed when this
+        hook is called.
+
+        Event: TS_EVENT_LIFECYCLE_CACHE_READY
+
+      Ordering guarantees:
+
+      - TS_LIFECYCLE_PORTS_INITIALIZED_HOOK before TS_LIFECYCLE_PORTS_READY_HOOK.
+
+      NOTE! ONLY the orderings EXPLICITLY mentioned above are guaranteed.
+      
+   */
+  typedef enum
+  {
+    TS_LIFECYCLE_PORTS_INITIALIZED_HOOK,
+    TS_LIFECYCLE_PORTS_READY_HOOK,
+    TS_LIFECYCLE_CACHE_READY_HOOK,
+    TS_LIFECYCLE_LAST_HOOK
+  } TSLifecycleHookID;
 
   /**
       TSEvents are sent to continuations when they are called back.
@@ -357,6 +410,9 @@ extern "C"
     TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE = 60015,
     TS_EVENT_HTTP_PRE_REMAP = 60016,
     TS_EVENT_HTTP_POST_REMAP = 60017,
+    TS_EVENT_LIFECYCLE_PORTS_INITIALIZED = 60018,
+    TS_EVENT_LIFECYCLE_PORTS_READY = 60019,
+    TS_EVENT_LIFECYCLE_CACHE_READY = 60020,
     TS_EVENT_MGMT_UPDATE = 60100,
 
     /* EVENTS 60200 - 60202 for internal use */
@@ -612,6 +668,18 @@ extern "C"
     TS_CONFIG_NET_SOCK_PACKET_TOS_OUT,
     TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE,
     TS_CONFIG_HTTP_CHUNKING_SIZE,
+    TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED,
+    TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK,
+    TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK,
+    TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP,
+    TS_CONFIG_HTTP_NORMALIZE_AE_GZIP,
+    TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE,
+    TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK,
+    TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE,
+    TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE,
+    TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED,
+    TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME,
+    TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED,
     TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
@@ -738,21 +806,6 @@ extern "C"
 
    */
   extern tsapi void TSPluginInit(int argc, const char* argv[]);
-
-  /* --------------------------------------------------------------------------
-     License */
-  /**
-      This function lets Traffic Server know that a license key is
-      required for the plugin. You implement this function to return the
-      necessary value. If a license is required, Traffic Server looks
-      at the plugin.db file for the license key. If this function is
-      not defined, a license is not required. Use the gen_key tool to
-      generate license keys.
-
-      @return Zero if no license is required. Returns 1 if a license
-        is required.
-  */
-  extern tsapi int TSPluginLicenseRequired(void);
 
   /* --------------------------------------------------------------------------
      URL schemes */
@@ -2199,6 +2252,9 @@ extern "C"
   tsapi TSMutex TSContMutexGet(TSCont contp);
 
   /* --------------------------------------------------------------------------
+     Plugin lifecycle  hooks */
+  tsapi void TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp);
+  /* --------------------------------------------------------------------------
      HTTP hooks */
   tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
 
@@ -3211,7 +3267,6 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
   tsapi TSReturnCode TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup);
   tsapi TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
-  tsapi TSReturnCode TSHttpTxnCachedUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
   tsapi TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
   tsapi int TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp);
 

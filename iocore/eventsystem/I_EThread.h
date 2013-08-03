@@ -269,12 +269,15 @@ public:
   ProxyAllocator sslNetVCAllocator;
   ProxyAllocator httpClientSessionAllocator;
   ProxyAllocator httpServerSessionAllocator;
+  ProxyAllocator hdrHeapAllocator;
+  ProxyAllocator strHeapAllocator;
   ProxyAllocator cacheVConnectionAllocator;
   ProxyAllocator openDirEntryAllocator;
   ProxyAllocator ramCacheCLFUSEntryAllocator;
   ProxyAllocator ramCacheLRUEntryAllocator;
   ProxyAllocator evacuationBlockAllocator;
   ProxyAllocator ioDataAllocator;
+  ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
   ProxyAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 

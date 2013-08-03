@@ -65,7 +65,11 @@ typedef HTTPInfo CacheHTTPInfo;
 
 struct CacheProcessor:public Processor
 {
-  virtual int start(int n_cache_threads = 0 /* cache uses event threads */ );
+  CacheProcessor()
+    : cb_after_init(0)
+  {}
+
+  virtual int start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
   virtual int start_internal(int flags = 0);
   void stop();
 
@@ -132,6 +136,20 @@ struct CacheProcessor:public Processor
 
   static unsigned int IsCacheReady(CacheFragType type);
 
+  /// Type for callback function.
+  typedef void (*CALLBACK_FUNC)();
+  /** Lifecycle callback.
+
+      The function @a cb is called after cache initialization has
+      finished and the cache is ready or has failed.
+
+      @internal If we need more lifecycle callbacks, this should be
+      generalized ala the standard hooks style, with a type enum used
+      to specific the callback type and passed to the callback
+      function.
+  */
+  void set_after_init_callback(CALLBACK_FUNC cb);
+
   // private members
   void diskInitialized();
 
@@ -144,7 +162,14 @@ struct CacheProcessor:public Processor
   static int fix;
   static int start_internal_flags;
   static int auto_clear_flag;
+  CALLBACK_FUNC cb_after_init;
 };
+
+inline void
+CacheProcessor::set_after_init_callback(CALLBACK_FUNC cb)
+{
+  cb_after_init = cb;
+}
 
 struct CacheVConnection:public VConnection
 {
@@ -169,7 +194,7 @@ struct CacheVConnection:public VConnection
   virtual void get_http_info(CacheHTTPInfo **info) = 0;
 #endif
 
-  virtual bool is_ram_cache_hit() = 0;
+  virtual bool is_ram_cache_hit() const = 0;
   virtual bool set_disk_io_priority(int priority) = 0;
   virtual int get_disk_io_priority() = 0;
   virtual bool set_pin_in_cache(time_t t) = 0;

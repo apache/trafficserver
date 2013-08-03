@@ -34,7 +34,6 @@
 #ifndef _HTTP_PAGES_H_
 #define _HTTP_PAGES_H_
 
-#ifndef INK_NO_STAT_PAGES
 #include "libts.h"
 #include "P_EventSystem.h"
 #include "DynArray.h"
@@ -86,8 +85,6 @@ private:
   // Info for SM details
   int64_t sm_id;
 };
-
-#endif //INK_NO_STAT_PAGES
 
 void http_pages_init();
 

@@ -17,6 +17,7 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('ext'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -25,7 +26,7 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.pngmath', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.intersphinx', 'sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.pngmath', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode', 'traffic-server' ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -37,7 +38,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index.en'
+master_doc = 'index'
 
 # General information about the project.
 project = u'Apache Traffic Server'
@@ -86,12 +87,11 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
-
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+#html_theme = 'agogo'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -110,12 +110,12 @@ html_theme = 'default'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'static/images/trans_logo_tm_380x69.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = 'static/images/favicon.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -166,7 +166,6 @@ html_static_path = ['static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'ApacheTrafficServerdoc'
 
-
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
@@ -207,19 +206,59 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
-
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'apachetrafficserver', u'Apache Traffic Server Documentation',
-     [u'dev@trafficserver.apache.org'], 1)
+
+   ('reference/api/TSAPI.en', 'TSAPI', u'Introduction to the Apache Traffic Server API', None, u'3ts'),
+   ('reference/api/TSDebug.en', 'TSDebug', u'Traffic Server Debugging APIs', None, u'3ts'),
+   ('reference/api/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
+   ('reference/api/TSHttpParserCreate.en', 'TSHttpParserCreate', u'Parse HTTP headers from memory buffers', None, u'3ts'),
+   ('reference/api/TSHttpTxnMilestoneGet.en', 'TSHttpTxnMilestoneGet', u'Get a specified milestone timer value for the current transaction', None, u'3ts'),
+   ('reference/api/TSIOBufferCreate.en', 'TSIOBufferCreate', u'Traffic Server IO buffer API', None, u'3ts'),
+   ('reference/api/TSInstallDirGet.en', 'TSInstallDirGet', u'Return Traffic Server installation directories', None, u'3ts'),
+   ('reference/api/TSMBufferCreate.en', 'TSMBufferCreate', u'Traffic Server marshall buffer API', None, u'3ts'),
+   ('reference/api/TSmalloc.en', 'TSmalloc', u'Traffic Server memory allocation API', None, u'3ts'),
+   ('reference/api/TSPluginInit.en', 'TSPluginInit', u'Traffic Server plugin loading and registration', None, u'3ts'),
+   ('reference/api/TSRemap.en', 'TSRemap', u'Traffic Server remap plugin entry points ', None, u'3ts'),
+   ('reference/api/TSTrafficServerVersionGet.en', 'TSTrafficServerVersionGet', u'return Traffic Server version information', None, u'3ts'),
+   ('reference/api/TSUrlCreate.en', 'TSUrlCreate', u'Traffic Server URL manipulation API', None, u'3ts'),
+
+   ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
+   ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
+   ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),
+   ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'Traffic Server analyzer', None, '8'),
+   ('reference/commands/traffic_manager.en', 'traffic_manager', u'Traffic Server process manager', None, '8'),
+   ('reference/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
+   ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
+
+   ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
+   ('reference/commands/tstop.en','tstop', u'Display Traffic Server statistics', None, '1'),
+   ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
+
+   ('reference/configuration/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),
+   ('reference/configuration/congestion.config.en', 'congestion.config', u'Traffic Server congestion control configuration file', None, '5'),
+   ('reference/configuration/hosting.config.en', 'hosting.config', u'Traffic Server domain hosting configuration file', None, '5'),
+   ('reference/configuration/icp.config.en', 'icp.config', u'Traffic Server ICP configuration file', None, '5'),
+   ('reference/configuration/ip_allow.config.en', 'ip_allow.config', u'Traffic Server IP access control configuration file', None, '5'),
+   ('reference/configuration/log_hosts.config.en', 'log_hosts.config', u'Traffic Server log host configuration file', None, '5'),
+   ('reference/configuration/logs_xml.config.en', 'logs_xml.config', u'Traffic Server log format configuration file', None, '5'),
+   ('reference/configuration/parent.config.en', 'parent.config', u'Traffic Server parent cache configuration file', None, '5'),
+   ('reference/configuration/plugin.config.en', 'plugin.config', u'Traffic Server global plugin configuration file', None, '5'),
+   ('reference/configuration/records.config.en', 'records.config', u'Traffic Server configuration file', None, '5'),
+   ('reference/configuration/remap.config.en', 'remap.config', u'Traffic Server remap rules configuration file', None, '5'),
+   ('reference/configuration/splitdns.config.en', 'splitdns.config', u'Traffic Server split DNS configuration file', None, '5'),
+   ('reference/configuration/ssl_multicert.config.en', 'ssl_multicert.config', u'Traffic Server SSL certificate configuration file', None, '5'),
+   ('reference/configuration/storage.config.en', 'storage.config', u'Traffic Server cache storage configuration file', None, '5'),
+   ('reference/configuration/update.config.en', 'update.config', u'Traffic Server automated update configuration file', None, '5'),
+   ('reference/configuration/volume.config.en', 'volume.config', u'Traffic Server cache volume configuration file', None, '5'),
+
 ]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
-
 
 # -- Options for Texinfo output ------------------------------------------------
 
@@ -240,7 +279,6 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
-
 
 # -- Options for Epub output ---------------------------------------------------
 

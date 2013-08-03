@@ -1187,7 +1187,7 @@ private:
     ICP_DONE
   } ICPstate_t;
   int ICPStateMachine(int, void *);
-  int ICPResponseMessage(int, ICPMsg_t *, int, Peer *);
+  int ICPResponseMessage(int, ICPMsg_t *, Peer *);
   void remove_from_pendingActions(Action *);
   void remove_all_pendingActions();
 
@@ -1230,16 +1230,13 @@ typedef int (*PluginFreshnessCalcFunc) (void *contp);
 extern PluginFreshnessCalcFunc pluginFreshnessCalcFunc;
 
 inline void *
-ICPRequestCont::operator
-new(size_t size, void *mem)
+ICPRequestCont::operator new(size_t /* size ATS_UNUSED */, void *mem)
 {
-  NOWARN_UNUSED(size);
   return mem;
 }
 
 inline void
-ICPRequestCont::operator
-delete(void *mem)
+ICPRequestCont::operator delete(void *mem)
 {
   ICPRequestCont_allocator.free((ICPRequestCont *) mem);
 }

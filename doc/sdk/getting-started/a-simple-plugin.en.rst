@@ -29,7 +29,7 @@ simple Traffic Server plugin. You'll follow the steps below:
 3. Add an entry to your plugin's ``plugin.config`` file.
 
 4. Add the path to your plugin shared library into the
-   ``records.config`` file.
+   :file:`records.config` file.
 
 5. Restart Traffic Server.
 
@@ -82,7 +82,7 @@ Specify the Plugin's Location
 
 All plugins must be located in the directory specified by the
 configuration variable ``proxy.config.plugin.plugin_dir``, which is
-located in the ``records.config`` file. The directory can be specified
+located in the :file:`records.config` file. The directory can be specified
 as an absolute or relative path.
 
 If a relative path is used, then the starting directory will be the
@@ -113,6 +113,6 @@ plugin.
 
 **Note:** in the example above, Traffic Server notes are directed to the
 console by specifying ``E`` for ``proxy.config.diags.output.note`` in
-``records.config``. The second note shows Traffic Server attempting to
+:file:`records.config`. The second note shows Traffic Server attempting to
 load the ``hello-world`` plugin. The third line of Traffic Server output
 is from your plugin.

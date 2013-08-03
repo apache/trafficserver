@@ -275,8 +275,7 @@ CacheTestSM::CacheTestSM(const CacheTestSM &ao) : RegressionSM(ao) {
   SET_HANDLER(&CacheTestSM::event_handler);
 }
 
-EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
-  NOWARN_UNUSED(atype);
+EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus) {
   if (cacheProcessor.IsCacheEnabled() != CACHE_INITIALIZED) {
     rprintf(t, "cache not initialized");
     *pstatus = REGRESSION_TEST_FAILED;

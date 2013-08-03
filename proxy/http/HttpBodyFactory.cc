@@ -245,11 +245,9 @@ HttpBodyFactory::dump_template_tables(FILE * fp)
 ////////////////////////////////////////////////////////////////////////
 
 static int
-config_callback(const char *name, RecDataT data_type, RecData data, void *cookie)
+config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                RecData /* data ATS_UNUSED */, void *cookie)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
   HttpBodyFactory *body_factory = (HttpBodyFactory *) cookie;
   body_factory->reconfigure();
   return (0);
@@ -710,8 +708,9 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     // all template files have name of the form <type>#<subtype> //
     ///////////////////////////////////////////////////////////////
 
-    if (strchr(entry_buffer->d_name, '#') == NULL)
+    if ((strchr(entry_buffer->d_name, '#') == NULL) && (strcmp(entry_buffer->d_name, "default") != 0))
       continue;
+
     snprintf(path, sizeof(path), "%s/%s", tmpl_dir, entry_buffer->d_name);
     status = stat(path, &stat_buf);
     if (status != 0)
@@ -1006,7 +1005,7 @@ char *
 HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64_t *buflen_return)
 {
   char *buffer = NULL;
-#ifndef INK_NO_LOG
+
   Debug("body_factory_instantiation", "    before instantiation: [%s]", template_buffer);
 
   LogAccessHttp la(context->state_machine);
@@ -1017,8 +1016,7 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64
 
   *buflen_return = ((buffer == NULL) ? 0 : strlen(buffer));
   Debug("body_factory_instantiation", "    after instantiation: [%s]", buffer);
-
   Debug("body_factory", "  returning %" PRId64" byte instantiated buffer", *buflen_return);
-#endif
+
   return (buffer);
 }

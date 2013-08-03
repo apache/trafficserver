@@ -82,9 +82,8 @@ dll_findsym(void *dlp, const char *name)
 }
 
 static char *
-dll_error(void *dlp)
+dll_error(void * /* dlp ATS_UNUSED */)
 {
-  NOWARN_UNUSED(dlp);
   return (char *) dlerror();
 }
 

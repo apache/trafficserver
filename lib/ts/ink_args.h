@@ -29,6 +29,7 @@ Process arguments
 #ifndef _INK_ARGS_H
 #define _INK_ARGS_H
 #include "ink_defs.h"
+#include "ink_apidefs.h"
 
 #define MAX_FILE_ARGUMENTS 100
 
@@ -68,7 +69,7 @@ extern const char *program_name;      // exported by process_args()
 */
 void show_argument_configuration(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions);
 
-void usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *arg_unused);
+void usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *arg_unused) TS_NORETURN;
 
 /* Process all arguments
 */

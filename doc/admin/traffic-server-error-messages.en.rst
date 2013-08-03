@@ -42,7 +42,7 @@ Traffic Server Process Fatal
 ============================
 
 ``Accept port is not between 1 and 65535. Please check configuration``
-    The port specified in the ``records.config`` file that accepts
+    The port specified in the :file:`records.config` file that accepts
     incoming HTTP requests is not valid.
 
 ``Self loop is detected in parent proxy configuration``

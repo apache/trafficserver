@@ -219,7 +219,7 @@ public:
       uses the Event Processor threads for its activity.
 
   */
-  virtual int start(int number_of_net_threads = 0 /* uses event threads */ ) = 0;
+  virtual int start(int number_of_net_threads, size_t stacksize) = 0;
 
   /** Private constructor. */
   NetProcessor()

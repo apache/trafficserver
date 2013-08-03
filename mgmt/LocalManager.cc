@@ -35,11 +35,8 @@
 #endif
 
 bool
-LocalManager::SetForDup(void *hIOCPort, long lTProcId, void *hTh)
+LocalManager::SetForDup(void * /* hIOCPort ATS_UNUSED */, long /* lTProcId ATS_UNUSED */, void * /* hTh ATS_UNUSED */)
 {
-  NOWARN_UNUSED(hIOCPort);
-  NOWARN_UNUSED(lTProcId);
-  NOWARN_UNUSED(hTh);
   return true;
 }
 
@@ -202,10 +199,9 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(char *mpath, bool proxy_on)
+LocalManager::LocalManager(char * /* mpath ATS_UNUSED */, bool proxy_on)
   : BaseManager(), run_proxy(proxy_on)
 {
-  NOWARN_UNUSED(mpath);
   bool found;
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
@@ -325,7 +321,7 @@ LocalManager::initAlarm()
  *   Function initializes cluster communication structure held by local manager.
  */
 void
-LocalManager::initCCom(int port, char *addr, int sport)
+LocalManager::initCCom(int mcport, char *addr, int rsport)
 {
   bool found;
   IpEndpoint cluster_ip;    // ip addr of the cluster interface
@@ -372,7 +368,7 @@ LocalManager::initCCom(int port, char *addr, int sport)
   ink_strlcat(envBuf, clusterAddrStr, envBuf_size);
   ink_release_assert(putenv(envBuf) == 0);
 
-  ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, port, addr, sport, pserver_path);
+  ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, mcport, addr, rsport, pserver_path);
   virt_map = new VMap(intrName, ats_ip4_addr_cast(&cluster_ip), &lmgmt->ccom->mutex);
   virt_map->downAddrs();        // Just to be safe
   ccom->establishChannels();
@@ -1034,7 +1030,7 @@ LocalManager::startProxy()
     }
 
     // NUL-terminate for the benefit of strtok and printf.
-    real_proxy_options.append('\0');
+    real_proxy_options.add(0);
 
     Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'\n",
           absolute_proxy_binary, &real_proxy_options[0]);

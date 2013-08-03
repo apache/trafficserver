@@ -286,11 +286,8 @@ ClusterLoadMonitor::send_cluster_load_msg(ink_hrtime current_time)
 }
 
 int
-ClusterLoadMonitor::cluster_load_periodic(int event, Event * e)
+ClusterLoadMonitor::cluster_load_periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
-
   // Perform periodic cluster load computation actions.
 
   if (cancel_periodic) {

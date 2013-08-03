@@ -115,9 +115,6 @@ countof(const T (&)[N]) {
 #define ATS_WARN_IF_UNUSED __attribute__ ((warn_unused_result))
 #define	ATS_UNUSED_RETURN(x)	if (x) {}
 
-#define	NOWARN_UNUSED(x)	(void)(x)
-
-
 #ifndef likely
 #define likely(x)	__builtin_expect (!!(x), 1)
 #endif
@@ -128,6 +125,10 @@ countof(const T (&)[N]) {
 
 #if TS_USE_HWLOC
 #  include <hwloc.h>
+#endif
+
+#ifndef ROUNDUP
+#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
 #endif
 
 /* Debugging

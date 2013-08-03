@@ -1,0 +1,25 @@
+# BasedOnStyle:  LLVM
+AccessModifierOffset: -2
+AlignEscapedNewlinesLeft: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: false
+BinPackParameters: true
+ColumnLimit:     120
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+DerivePointerBinding: false
+IndentCaseLabels: false
+MaxEmptyLinesToKeep: 2
+ObjCSpaceBeforeProtocolList: true
+PenaltyBreakComment: 45
+PenaltyBreakString: 1000
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 0
+PointerBindsToType: true
+SpacesBeforeTrailingComments: 4
+SpacesInBracedLists: true
+Standard:        C++03
+IndentWidth:     2
+UseTab:          false
+BreakBeforeBraces: Linux

@@ -30,7 +30,6 @@
 
 
  ****************************************************************************/
-#ifndef INK_NO_STAT_PAGES
 #include "HttpPages.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
@@ -38,7 +37,11 @@
 HttpSMListBucket HttpSMList[HTTP_LIST_BUCKETS];
 
 HttpPagesHandler::HttpPagesHandler(Continuation * cont, HTTPHdr * header)
-:BaseStatPagesHandler(new_ProxyMutex()), request(NULL), list_bucket(0), state(HP_INIT), sm_id(0)
+  : BaseStatPagesHandler(new_ProxyMutex()),
+    request(NULL),
+    list_bucket(0),
+    state(HP_INIT),
+    sm_id(0)
 {
   action = cont;
 
@@ -115,7 +118,6 @@ HttpPagesHandler::dump_hdr(HTTPHdr *hdr, const char *desc)
 void
 HttpPagesHandler::dump_tunnel_info(HttpSM * sm)
 {
-
   HttpTunnel *t = sm->get_tunnel();
 
   resp_add("<h4> Tunneling Info </h4>");
@@ -214,9 +216,7 @@ HttpPagesHandler::dump_tunnel_info(HttpSM * sm)
 void
 HttpPagesHandler::dump_history(HttpSM * sm)
 {
-
   resp_add("<h4> History</h4>");
-
   resp_begin_table(1, 3, 60);
 
   int size;
@@ -253,7 +253,6 @@ HttpPagesHandler::dump_history(HttpSM * sm)
 int
 HttpPagesHandler::dump_sm(HttpSM * sm)
 {
-
   // Dump the current state
   const char *sm_state = HttpDebugNames::get_action_name(sm->t_state.next_action);
 
@@ -273,9 +272,8 @@ HttpPagesHandler::dump_sm(HttpSM * sm)
 }
 
 int
-HttpPagesHandler::handle_smdetails(int event, void *data)
+HttpPagesHandler::handle_smdetails(int event, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   EThread *ethread = this_ethread();
   HttpSM *sm = NULL;
 
@@ -350,9 +348,8 @@ HttpPagesHandler::handle_smdetails(int event, void *data)
 }
 
 int
-HttpPagesHandler::handle_smlist(int event, void *data)
+HttpPagesHandler::handle_smlist(int event, void */* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data);
   EThread *ethread = this_ethread();
   HttpSM *sm;
 
@@ -431,10 +428,8 @@ HttpPagesHandler::handle_smlist(int event, void *data)
 }
 
 int
-HttpPagesHandler::handle_callback(int event, void *edata)
+HttpPagesHandler::handle_callback(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(edata);
   MUTEX_TRY_LOCK(trylock, action.mutex, this_ethread());
   if (!trylock) {
     SET_HANDLER(&HttpPagesHandler::handle_callback);
@@ -483,11 +478,3 @@ http_pages_init()
   }
 
 }
-#else //INK_NO_STAT_PAGES
-void
-http_pages_init()
-{
-  return;
-}
-
-#endif

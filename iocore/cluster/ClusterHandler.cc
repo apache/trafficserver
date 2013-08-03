@@ -223,6 +223,8 @@ ClusterHandler::ClusterHandler()
   ClusterVConnection ivc;
   ink_atomiclist_init(&external_incoming_open_local,
                       "ExternalIncomingOpenLocalQueue", (char *) &ivc.link.next - (char *) &ivc);
+  ink_atomiclist_init(&read_vcs_ready, "ReadVcReadyQueue", offsetof(ClusterVConnection, ready_alink.next));
+  ink_atomiclist_init(&write_vcs_ready, "WriteVcReadyQueue", offsetof(ClusterVConnection, ready_alink.next));
   memset((char *) &callout_cont[0], 0, sizeof(callout_cont));
   memset((char *) &callout_events[0], 0, sizeof(callout_events));
 }
@@ -337,9 +339,11 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection * vc)
   }
   ink_hrtime now = ink_get_hrtime();
   CLUSTER_DECREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPEN_STAT);
+  CLUSTER_SUM_DYN_STAT(CLUSTER_CON_TOTAL_TIME_STAT, now - vc->start_time);
   if (!local_channel(channel)) {
-    CLUSTER_SUM_DYN_STAT(CLUSTER_CON_TOTAL_TIME_STAT, now - vc->start_time);
     CLUSTER_SUM_DYN_STAT(CLUSTER_REMOTE_CONNECTION_TIME_STAT, now - vc->start_time);
+  } else {
+    CLUSTER_SUM_DYN_STAT(CLUSTER_LOCAL_CONNECTION_TIME_STAT, now - vc->start_time);
   }
   clusterVCAllocator_free(vc);
 }
@@ -1061,15 +1065,7 @@ ClusterHandler::process_freespace_msgs()
         // write (WRITE_VC_PRIORITY).
         //
         channels[c]->remote_free = read.msg.descriptor[i].length;
-        ClusterVConnState *ns = &channels[c]->write;
-        if (ns->queue) {
-          ClusterVConnection *vc = channels[c];
-          ClusterVC_remove_write(vc);
-          cluster_set_priority(this, ns, 1);
-          Debug(CL_PROTO, "(%d) upping write priority %d read %d free %d",
-                c, ns->priority, channels[c]->read.priority, channels[c]->remote_free);
-          ClusterVC_enqueue_write(write_vcs[cur_vcs], vc);
-        }
+        vcs_push(channels[c], VC_CLUSTER_WRITE);
       }
     }
   }
@@ -1141,10 +1137,6 @@ ClusterHandler::update_channels_read()
               vc->read_block->consume(len);     // note bytes moved to user
             }
             complete_channel_read(len, vc);
-          } else {
-            if (vc->read.queue) {
-              cluster_reschedule(this, vc, &vc->read);
-            }
           }
         }
       }
@@ -1395,20 +1387,7 @@ bool ClusterHandler::complete_channel_read(int len, ClusterVConnection * vc)
       s->enabled = 0;
   }
 
-  if (!s->queue) {
-    cluster_set_priority(this, s, s->priority);
-    cluster_schedule(this, vc, s);
-
-  } else {
-    //
-    // VC received data, move VC to current bucket since
-    // it may have freespace data to send (READ_VC_PRIORITY).
-    //
-    ClusterVC_remove_read(vc);
-    cluster_set_priority(this, s, 1);
-    Debug(CL_PROTO, "(%d) upping read priority %d", vc->channel, s->priority);
-    ClusterVC_enqueue_read(read_vcs[cur_vcs], vc);
-  }
+  vcs_push(vc, VC_CLUSTER_READ);
   return true;
 }
 
@@ -1454,7 +1433,7 @@ ClusterHandler::finish_delayed_reads()
 }
 
 void
-ClusterHandler::update_channels_written(bool bump_unhandled_channels)
+ClusterHandler::update_channels_written()
 {
   //
   // We have sucessfully pushed the write data for the VC(s) described
@@ -1489,17 +1468,12 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
 
           if (vc_ok_write(vc)) {
             vc->last_activity_time = current_time;      // note activity time
-            int64_t n = vc->was_closed()? 0 : s->vio.buffer.reader()->block_read_avail();
-            int64_t nb = vc->was_closed()? 0 : s->vio.nbytes;
             int64_t ndone = vc->was_closed()? 0 : s->vio.ndone;
 
             if (ndone < vc->remote_free) {
-              cluster_set_priority(this, s, 1); // next bucket
-            } else {
-              cluster_update_priority(this, vc, s, n, nb);
+              vcs_push(vc, VC_CLUSTER_WRITE);
             }
           }
-          cluster_reschedule(this, vc, s);
         }
       } else {
         //
@@ -1512,42 +1486,6 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
         CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - oc->submit_time);
         LOG_EVENT_TIME(oc->submit_time, cluster_send_time_dist, cluster_send_events);
         oc->freeall();
-      }
-    } else {
-      ink_assert(write.msg.descriptor[i].type == CLUSTER_SEND_FREE);
-      ClusterVConnection *vc = channels[write.msg.descriptor[i].channel];
-
-      if (VALID_CHANNEL(vc) &&
-          (write.msg.descriptor[i].sequence_number) == CLUSTER_SEQUENCE_NUMBER(vc->token.sequence_number)) {
-        if (!vc->byte_bank_q.head) {
-          cluster_reschedule(this, vc, &vc->read);
-        }
-      }
-    }
-  }
-  //
-  // If requested, process unhandled VC(s) in the current write_vcs bucket.
-  // Unhandled VC(s) result in cases where we are unable to acquire the
-  // lock or due to maximum size restrictions on the struct iovec.
-  //
-  if (bump_unhandled_channels) {
-    int n;
-    ClusterVConnection *vc;
-    while ((vc = (ClusterVConnection *) write_vcs[cur_vcs].head)) {
-      ClusterVC_remove_write(vc);
-
-      ink_assert(!((ProxyMutex *) vc->write_locked));
-      MUTEX_TRY_LOCK_SPIN(lock, vc->write.vio.mutex, thread, WRITE_LOCK_SPIN_COUNT);
-      if (lock) {
-        n = vc->write.vio.buffer.writer() ? vc->write.vio.buffer.reader()->block_read_avail() : 0;
-      } else {
-        n = 0;
-      }
-      if (n) {
-        cluster_bump(this, vc, &vc->write, CLUSTER_BUMP_NO_REMOVE);
-        CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_BUMPED_STAT);
-      } else {
-        cluster_schedule(this, vc, &vc->write);
       }
     }
   }
@@ -1588,18 +1526,60 @@ ClusterHandler::build_write_descriptors()
   int count_bucket = cur_vcs;
   int tcount = write.msg.count + 2;     // count + descriptor
   int write_descriptors_built = 0;
+  int valid;
+  int list_len = 0;
+  ClusterVConnection *vc, *vc_next;
 
   //
   // Build descriptors for connections with stuff to send.
   //
-  ClusterVConnection *vc_next = (ClusterVConnection *) write_vcs[count_bucket].head;
-  while (vc_next) {
+  vc = (ClusterVConnection *)ink_atomiclist_popall(&write_vcs_ready);
+  while (vc) {
     enter_exit(&cls_build_writes_entered, &cls_writes_exited);
+    vc_next = (ClusterVConnection *) vc->ready_alink.next;
+    vc->ready_alink.next = NULL;
+    list_len++;
+    if (VC_CLUSTER_CLOSED == vc->type) {
+      vc->in_vcs = false;
+      vc->type = VC_NULL;
+      clusterVCAllocator.free(vc);
+      vc = vc_next;
+      continue;
+    }
+
+    if (tcount >= MAX_TCOUNT) {
+      vcs_push(vc, VC_CLUSTER_WRITE);
+    } else {
+      vc->in_vcs = false;
+      cluster_reschedule_offset(this, vc, &vc->write, 0);
+      tcount++;
+    }
+    vc = vc_next;
+  }
+  if (list_len) {
+    CLUSTER_SUM_DYN_STAT(CLUSTER_VC_WRITE_LIST_LEN_STAT, list_len);
+  }
+
+  tcount = write.msg.count + 2;
+  vc_next = (ClusterVConnection *) write_vcs[count_bucket].head;
+  while (vc_next) {
+    vc = vc_next;
+    vc_next = (ClusterVConnection *) vc->write.link.next;
+
+    if (VC_CLUSTER_CLOSED == vc->type) {
+      vc->type = VC_NULL;
+      clusterVCAllocator.free(vc);
+      vc = vc_next;
+      continue;
+    }
+
     if (tcount >= MAX_TCOUNT)
       break;
-    ClusterVConnection *vc = vc_next;
-    vc_next = (ClusterVConnection *) vc->write.link.next;
-    if (valid_for_data_write(vc)) {
+
+    valid = valid_for_data_write(vc);
+    if (-1 == valid) {
+      vcs_push(vc, VC_CLUSTER_WRITE);
+    } else if (valid) {
       ink_assert(vc->write_locked);     // Acquired in valid_for_data_write()
       if ((vc->remote_free > (vc->write.vio.ndone - vc->write_list_bytes))
           && channels[vc->channel] == vc) {
@@ -1630,9 +1610,6 @@ ClusterHandler::build_write_descriptors()
 #endif
 
       } else {
-        cluster_lower_priority(this, &vc->write);
-        cluster_reschedule(this, vc, &vc->write);
-
         MUTEX_UNTAKE_LOCK(vc->write_locked, thread);
         vc->write_locked = NULL;
 
@@ -1656,19 +1633,60 @@ ClusterHandler::build_freespace_descriptors()
   int count_bucket = cur_vcs;
   int tcount = write.msg.count + 2;     // count + descriptor require 2 iovec(s)
   int freespace_descriptors_built = 0;
+  int s = 0;
+  int list_len = 0;
+  ClusterVConnection *vc, *vc_next;
 
   //
   // Build descriptors for available space
   //
-  ClusterVConnection *vc_next = (ClusterVConnection *) read_vcs[count_bucket].head;
-  while (vc_next) {
+  vc = (ClusterVConnection *)ink_atomiclist_popall(&read_vcs_ready);
+  while (vc) {
     enter_exit(&cls_build_reads_entered, &cls_reads_exited);
+    vc_next = (ClusterVConnection *) vc->ready_alink.next;
+    vc->ready_alink.next = NULL;
+    list_len++;
+    if (VC_CLUSTER_CLOSED == vc->type) {
+      vc->in_vcs = false;
+      vc->type = VC_NULL;
+      clusterVCAllocator.free(vc);
+      vc = vc_next;
+      continue;
+    }
+
+    if (tcount >= MAX_TCOUNT) {
+      vcs_push(vc, VC_CLUSTER_READ);
+    } else {
+      vc->in_vcs = false;
+      cluster_reschedule_offset(this, vc, &vc->read, 0);
+      tcount++;
+    }
+    vc = vc_next;
+  }
+  if (list_len) {
+    CLUSTER_SUM_DYN_STAT(CLUSTER_VC_READ_LIST_LEN_STAT, list_len);
+  }
+
+  tcount = write.msg.count + 2;
+  vc_next = (ClusterVConnection *) read_vcs[count_bucket].head;
+  while (vc_next) {
+    vc = vc_next;
+    vc_next = (ClusterVConnection *) vc->read.link.next;
+
+    if (VC_CLUSTER_CLOSED == vc->type) {
+      vc->type = VC_NULL;
+      clusterVCAllocator.free(vc);
+      vc = vc_next;
+      continue;
+    }
+
     if (tcount >= MAX_TCOUNT)
       break;
-    ClusterVConnection *vc = vc_next;
-    vc_next = (ClusterVConnection *) vc->read.link.next;
-    int s = 0;
-    if ((s = valid_for_freespace_write(vc))) {
+
+    s = valid_for_freespace_write(vc);
+    if (-1 == s) {
+      vcs_push(vc, VC_CLUSTER_READ);
+    } else if (s) {
       if (vc_ok_read(vc) && channels[vc->channel] == vc) {
         // Send free space only if changed
         int d = write.msg.count;
@@ -1683,11 +1701,9 @@ ClusterHandler::build_freespace_descriptors()
         write.msg.count++;
         tcount++;
         freespace_descriptors_built++;
-      } else {
-        cluster_lower_priority(this, &vc->read);
-        cluster_reschedule(this, vc, &vc->read);
       }
     }
+    vc = vc_next;
   }
   return (freespace_descriptors_built);
 }
@@ -1903,7 +1919,6 @@ ClusterHandler::valid_for_data_write(ClusterVConnection * vc)
   //
   // Determine if writes are allowed on this VC
   //
-  int count_bucket = cur_vcs;
   ClusterVConnState *s = &vc->write;
 
   ink_assert(!on_stolen_thread);
@@ -1918,13 +1933,12 @@ retry:
   if ((lock.m = s->vio.mutex)) {
     lock.have_lock = MUTEX_TAKE_TRY_LOCK_FOR_SPIN(lock.m, thread, s->vio._cont, WRITE_LOCK_SPIN_COUNT);
     if (!lock.have_lock) {
-      CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_LOCKED_STAT);
-      cluster_bump(this, vc, s, count_bucket);
+      CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_WRITE_LOCKED_STAT);
 
 #ifdef CLUSTER_STATS
       _dw_missed_lock++;
 #endif
-      return 0;
+      return -1;
     }
   }
 
@@ -1946,9 +1960,6 @@ retry:
   }
 
   if (!s->enabled && !vc->was_remote_closed()) {
-    cluster_lower_priority(this, s);
-    cluster_reschedule(this, vc, s);
-
 #ifdef CLUSTER_STATS
     _dw_not_enabled++;
 #endif
@@ -1970,8 +1981,6 @@ retry:
       goto retry;
     } else {
       // No active VIO
-      cluster_reschedule(this, vc, s);
-
 #ifdef CLUSTER_STATS
       _dw_no_active_vio++;
 #endif
@@ -1983,10 +1992,8 @@ retry:
   //
   if (vc->was_remote_closed()) {
     if (!vc->write_bytes_in_transit && !vc->schedule_write()) {
-      if (remote_close(vc, s) == EVENT_DONE)
-        return 0;
+      remote_close(vc, s);
     }
-    cluster_reschedule(this, vc, s);
     return 0;
   }
   //
@@ -1994,9 +2001,6 @@ retry:
   //
   if (!s->enabled || s->vio.op != VIO::WRITE) {
     s->enabled = 0;
-    cluster_lower_priority(this, s);
-    cluster_reschedule(this, vc, s);
-
 #ifdef CLUSTER_STATS
     _dw_not_enabled_or_no_write++;
 #endif
@@ -2008,7 +2012,6 @@ retry:
   int set_data_msgs_pending = vc->n_set_data_msgs;
   if (set_data_msgs_pending || (vc->remote_free <= (s->vio.ndone - vc->write_list_bytes))) {
     if (set_data_msgs_pending) {
-      cluster_bump(this, vc, s, cur_vcs);
       CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_WRITE_STALL_STAT);
 
 #ifdef CLUSTER_STATS
@@ -2016,9 +2019,6 @@ retry:
 #endif
 
     } else {
-      cluster_lower_priority(this, s);
-      cluster_reschedule(this, vc, s);
-
 #ifdef CLUSTER_STATS
       _dw_no_free_space++;
 #endif
@@ -2032,25 +2032,23 @@ retry:
 
   int64_t towrite = buf.reader()->read_avail();
   int64_t ntodo = s->vio.ntodo();
+  bool write_vc_signal = false;
 
   if (towrite > ntodo)
     towrite = ntodo;
 
   ink_assert(ntodo >= 0);
   if (ntodo <= 0) {
-    if (cluster_signal_and_update(VC_EVENT_WRITE_COMPLETE, vc, s) == EVENT_DONE)
-      return 0;
-    cluster_reschedule(this, vc, s);
+    cluster_signal_and_update(VC_EVENT_WRITE_COMPLETE, vc, s);
     return 0;
   }
   if (buf.writer()->write_avail() && towrite != ntodo) {
+    write_vc_signal = true;
     if (cluster_signal_and_update(VC_EVENT_WRITE_READY, vc, s) == EVENT_DONE)
       return 0;
     ink_assert(s->vio.ntodo() >= 0);
     if (s->vio.ntodo() <= 0) {
-      if (cluster_signal_and_update(VC_EVENT_WRITE_COMPLETE, vc, s) == EVENT_DONE)
-        return 0;
-      cluster_reschedule(this, vc, s);
+      cluster_signal_and_update(VC_EVENT_WRITE_COMPLETE, vc, s);
       return 0;
     }
   }
@@ -2086,9 +2084,7 @@ retry:
     (s->vio.buffer.reader())->consume(consume_bytes);
     s->vio.ndone += consume_bytes;
     if (s->vio.ntodo() <= 0) {
-      if (cluster_signal_and_update_locked(VC_EVENT_WRITE_COMPLETE, vc, s) != EVENT_DONE) {
-        cluster_reschedule(this, vc, s);
-      }
+      cluster_signal_and_update_locked(VC_EVENT_WRITE_COMPLETE, vc, s);
     }
   }
 
@@ -2101,6 +2097,8 @@ retry:
     lock.have_lock = false;
     return 1;
   } else {
+    if (!write_vc_signal && buf.writer()->write_avail() && towrite != ntodo)
+       cluster_signal_and_update(VC_EVENT_WRITE_READY, vc, s);
     return 0;
   }
 }
@@ -2111,7 +2109,6 @@ ClusterHandler::valid_for_freespace_write(ClusterVConnection * vc)
   //
   // Determine if freespace messages are allowed on this VC
   //
-  int count_bucket = cur_vcs;
   ClusterVConnState *s = &vc->read;
 
   ink_assert(!on_stolen_thread);
@@ -2126,29 +2123,22 @@ retry:
     lock.have_lock = MUTEX_TAKE_TRY_LOCK_FOR_SPIN(lock.m, thread, s->vio._cont, READ_LOCK_SPIN_COUNT);
 
     if (!lock.have_lock) {
-      CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_LOCKED_STAT);
-      cluster_bump(this, vc, s, count_bucket);
+      CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_READ_LOCKED_STAT);
 
 #ifdef CLUSTER_STATS
       _fw_missed_lock++;
 #endif
-      return 0;
+      return -1;
     }
   }
   if (vc->was_closed()) {
     if (!vc->write_bytes_in_transit && !vc->schedule_write()) {
       close_ClusterVConnection(vc);
-      return 0;
-    } else {
-      // Defer close until write data is pushed
-      return 0;
-    }
+    } 
+    return 0;
   }
 
   if (!s->enabled && !vc->was_remote_closed()) {
-    cluster_lower_priority(this, s);
-    cluster_reschedule(this, vc, s);
-
 #ifdef CLUSTER_STATS
     _fw_not_enabled++;
 #endif
@@ -2170,8 +2160,6 @@ retry:
       goto retry;
     } else {
       // No active VIO
-      cluster_reschedule(this, vc, s);
-
 #ifdef CLUSTER_STATS
       _fw_no_active_vio++;
 #endif
@@ -2186,32 +2174,24 @@ retry:
       // Defer close until write data is pushed
       return 0;
     }
-    if (remote_close(vc, s) == EVENT_DONE)
-      return 0;
-    cluster_reschedule(this, vc, s);
+    remote_close(vc, s);
     return 0;
   }
   //
   // If not enabled or not WRITE
   //
   if (!s->enabled || s->vio.op != VIO::READ) {
-    cluster_lower_priority(this, s);
-    cluster_reschedule(this, vc, s);
-
 #ifdef CLUSTER_STATS
     _fw_not_enabled_or_no_read++;
 #endif
     return 0;
   }
 
-  int64_t nb = s->vio.nbytes;
   int64_t ntodo = s->vio.ntodo();
   ink_assert(ntodo >= 0);
 
   if (ntodo <= 0) {
-    if (cluster_signal_and_update(VC_EVENT_READ_COMPLETE, vc, s) == EVENT_DONE)
-      return 0;
-    cluster_reschedule(this, vc, s);
+    cluster_signal_and_update(VC_EVENT_READ_COMPLETE, vc, s);
     return 0;
   }
 
@@ -2243,19 +2223,14 @@ retry:
 
     if (s->vio.ntodo() <= 0) {
       s->enabled = 0;
-      if (cluster_signal_and_update_locked(VC_EVENT_READ_COMPLETE, vc, s)
-          != EVENT_DONE) {
-        cluster_reschedule(this, vc, s);
-      }
+      cluster_signal_and_update_locked(VC_EVENT_READ_COMPLETE, vc, s);
       return 0;
 
     } else {
       if (vc->have_all_data) {
         if (!vc->read_block) {
           s->enabled = 0;
-          if (cluster_signal_and_update(VC_EVENT_EOS, vc, s) != EVENT_DONE) {
-            cluster_reschedule(this, vc, s);
-          }
+          cluster_signal_and_update(VC_EVENT_EOS, vc, s);
           return 0;
         }
       }
@@ -2285,8 +2260,6 @@ retry:
 
   if ((vc->last_local_free == 0) || (nextfree >= vc->last_local_free)) {
     Debug(CL_PROTO, "(%d) update freespace %" PRId64, vc->channel, nextfree);
-    cluster_update_priority(this, vc, s, nextfree - vc->last_local_free, nb);
-    cluster_reschedule(this, vc, s);
     //
     // Have good VC candidate locked for freespace write
     //
@@ -2295,6 +2268,21 @@ retry:
   } else {
     // No free space update required
     return 0;
+  }
+}
+
+void
+ClusterHandler::vcs_push(ClusterVConnection * vc, int type)
+{
+  if (vc->type <= VC_CLUSTER)
+    vc->type = type;
+
+  while ((vc->type > VC_CLUSTER) && !vc->in_vcs && ink_atomic_cas(pvint32(&vc->in_vcs), 0, 1)) {
+    if (vc->type == VC_CLUSTER_READ)
+      ink_atomiclist_push(&vc->ch->read_vcs_ready, (void *)vc);
+    else
+      ink_atomiclist_push(&vc->ch->write_vcs_ready, (void *)vc);
+    return;
   }
 }
 
@@ -2529,9 +2517,8 @@ ClusterHandler::mainClusterEvent(int event, Event * e)
 }
 
 int
-ClusterHandler::process_read(ink_hrtime now)
+ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
 {
-  NOWARN_UNUSED(now);
 #ifdef CLUSTER_STATS
   _process_read_calls++;
 #endif
@@ -2985,12 +2972,7 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
         // Move the channels into their new buckets based on how much
         // was written
         //
-        if (!control_message_write && !started_on_stolen_thread
-            && !pw_write_descriptors_built && !pw_freespace_descriptors_built && !pw_controldata_descriptors_built) {
-          update_channels_written(true);        // bump unprocessed VC(s)
-        } else {
-          update_channels_written(false);       // do not bump unprocessed VC(s)
-        }
+        update_channels_written();
         free_locks(CLUSTER_WRITE);
         write.state = ClusterState::WRITE_COMPLETE;
         break;

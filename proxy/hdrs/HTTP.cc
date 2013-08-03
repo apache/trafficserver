@@ -165,12 +165,9 @@ is_digit(char c)
  ***********************************************************************/
 
 void
-http_hdr_adjust(HTTPHdrImpl *hdrp, int32_t offset, int32_t length, int32_t delta)
+http_hdr_adjust(HTTPHdrImpl */* hdrp ATS_UNUSED */, int32_t /* offset ATS_UNUSED */, int32_t /* length ATS_UNUSED */,
+                int32_t /* delta ATS_UNUSED */)
 {
-  NOWARN_UNUSED(hdrp);
-  NOWARN_UNUSED(offset);
-  NOWARN_UNUSED(length);
-  NOWARN_UNUSED(delta);
   ink_release_assert(!"http_hdr_adjust not implemented");
 }
 

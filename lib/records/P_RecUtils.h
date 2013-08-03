@@ -43,7 +43,6 @@
   (((rec_type) == RECT_CONFIG) || \
    ((rec_type) == RECT_LOCAL))
 
-#define REC_NOWARN_UNUSED(a) NOWARN_UNUSED(a)
 
 //-------------------------------------------------------------------------
 // RecData Utils
@@ -56,7 +55,7 @@ void RecDataSetMin(RecDataT type, RecData * data);
 bool RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src);
 bool RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64_t data_int64);
 bool RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float);
-bool RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string);
+bool RecDataSetFromString(RecDataT data_type, RecData * data_dst, const char *data_string);
 int RecDataCmp(RecDataT type, RecData left, RecData right);
 RecData RecDataAdd(RecDataT type, RecData left, RecData right);
 RecData RecDataSub(RecDataT type, RecData left, RecData right);

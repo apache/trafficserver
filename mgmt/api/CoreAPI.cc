@@ -59,9 +59,8 @@ CallbackTable *local_event_callbacks;
  * eg. set up global structures; called by the TSMgmtAPI::TSInit()
  */
 TSError
-Init(const char *socket_path, TSInitOptionT options)
+Init(const char * /* socket_path ATS_UNUSED */, TSInitOptionT options)
 {
-  NOWARN_UNUSED(socket_path);
   // socket_path should be null; only applies to remote clients
   if (0 == (options & TS_MGMT_OPT_NO_EVENTS)) {
     local_event_callbacks = create_callback_table("local_callbacks");
@@ -641,10 +640,8 @@ WriteFile(TSFileNameT file, char *text, int size, int version)
  * of alarms in the current alarm processor
  */
 TSError
-EventSignal(char *event_name, va_list ap)
+EventSignal(char * /* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event_name);
-  NOWARN_UNUSED(ap);
   //char *text;
   //int id;
 
@@ -897,30 +894,6 @@ StatsReset(bool cluster, const char *name)
     lmgmt->clearStats(name);
   return TS_ERR_OKAY;
 }
-
-/*-------------------------------------------------------------------------
- * EncryptToFile
- *-------------------------------------------------------------------------
- * Encrypts the password and stores the encrypted password in the
- * location specified by "filepath"
- */
-TSError
-EncryptToFile(const char *passwd, const char *filepath)
-{
-  NOWARN_UNUSED(passwd);
-  NOWARN_UNUSED(filepath);
-  //AuthString fileAuthStr(filepath);
-  //AuthString passwdAuthStr(passwd);
-  /*if (!AccCrypto::encryptToFile(fileAuthStr, passwdAuthStr)) {
-    Debug("config", "[EncryptToFile] Failed to encrypt password");
-    return TS_ERR_FAIL;
-  }*/
-
-  return TS_ERR_OKAY;
-}
-
-
-/* Network conifguration functions */
 
 /*-------------------------------------------------------------
  * rmserver.cfg

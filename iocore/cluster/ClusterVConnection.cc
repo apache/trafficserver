@@ -52,6 +52,10 @@ clusterVCAllocator_free(ClusterVConnection * vc)
   vc->mutex = 0;
   vc->action_ = 0;
   vc->free();
+  if (vc->in_vcs) {
+    vc->type = VC_CLUSTER_CLOSED;
+    return;
+  }
   clusterVCAllocator.free(vc);
 }
 
@@ -87,39 +91,29 @@ ClusterVConnectionBase::do_io_read(Continuation * acont, int64_t anbytes, MIOBuf
 }
 
 VIO *
-ClusterVConnectionBase::do_io_pread(Continuation * acont, int64_t anbytes, MIOBuffer * abuffer, int64_t off)
+ClusterVConnectionBase::do_io_pread(Continuation * /* acont ATS_UNUSED */, int64_t /* anbytes ATS_UNUSED */,
+                                    MIOBuffer * /* abuffer ATS_UNUSED */, int64_t /* off ATS_UNUSED */)
 {
-  NOWARN_UNUSED(acont);
-  NOWARN_UNUSED(anbytes);
-  NOWARN_UNUSED(abuffer);
-  NOWARN_UNUSED(off);
-  ink_assert(!"implemented");
   return 0;
 }
 
 int
-ClusterVConnection::get_header(void **ptr, int *len)
+ClusterVConnection::get_header(void ** /* ptr ATS_UNUSED */, int * /*len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(ptr);
-  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
 
 int
-ClusterVConnection::set_header(void *ptr, int len)
+ClusterVConnection::set_header(void * /* ptr ATS_UNUSED */, int /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(ptr);
-  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
 
 int
-ClusterVConnection::get_single_data(void **ptr, int *len)
+ClusterVConnection::get_single_data(void ** /* ptr ATS_UNUSED */, int * /* len ATS_UNUSED */)
 {
-  NOWARN_UNUSED(ptr);
-  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
@@ -159,6 +153,15 @@ ClusterVConnectionBase::do_io_close(int alerrno)
 }
 
 void
+ClusterVConnection::reenable(VIO *vio)
+{
+  if (type == VC_CLUSTER_WRITE)
+    ch->vcs_push(this, VC_CLUSTER_WRITE);
+
+  ClusterVConnectionBase::reenable(vio);
+}
+
+void
 ClusterVConnectionBase::reenable(VIO * vio)
 {
   ink_assert(!closed);
@@ -195,11 +198,14 @@ ClusterVConnection::ClusterVConnection(int is_new_connect_read)
      remote_closed(0),
      remote_close_disabled(1),
      remote_lerrno(0),
+     in_vcs(0),
+     type(0),
      start_time(0),
      last_activity_time(0),
      n_set_data_msgs(0),
      n_recv_set_data_msgs(0),
      pending_remote_fill(0),
+     remote_ram_cache_hit(0),
      have_all_data(0),
      initial_data_bytes(0),
      current_cont(0),
@@ -242,15 +248,37 @@ ClusterVConnection::free()
   write_bytes_in_transit = 0;
 }
 
+VIO *
+ClusterVConnection::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
+{
+  if (type == VC_CLUSTER)
+    type = VC_CLUSTER_READ;
+  ch->vcs_push(this, VC_CLUSTER_READ);
+
+  return ClusterVConnectionBase::do_io_read(c, nbytes, buf);
+}
+
+VIO *
+ClusterVConnection::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner)
+{
+  if (type == VC_CLUSTER)
+    type = VC_CLUSTER_WRITE;
+  ch->vcs_push(this, VC_CLUSTER_WRITE);
+
+  return ClusterVConnectionBase::do_io_write(c, nbytes, buf, owner);
+}
+
 void
 ClusterVConnection::do_io_close(int alerrno)
 {
-#ifdef CLUSTER_TOMCAT
-  ProxyMutex *mutex = (this_ethread())->mutex;
-#endif
-  ink_hrtime now = ink_get_hrtime();
-  CLUSTER_SUM_DYN_STAT(CLUSTER_CON_TOTAL_TIME_STAT, now - start_time);
-  CLUSTER_SUM_DYN_STAT(CLUSTER_LOCAL_CONNECTION_TIME_STAT, now - start_time);
+  if ((type == VC_CLUSTER) && current_cont) {
+    if (((CacheContinuation *)current_cont)->read_cluster_vc == this)
+      type = VC_CLUSTER_READ;
+    else if (((CacheContinuation *)current_cont)->write_cluster_vc == this)
+      type = VC_CLUSTER_WRITE;
+  }
+  ch->vcs_push(this, type);
+
   ClusterVConnectionBase::do_io_close(alerrno);
 }
 
@@ -365,9 +393,7 @@ ClusterVConnection::start(EThread * t)
       this->iov_map = CLUSTER_IOV_NONE; // disable connect timeout
     }
   }
-  cluster_set_priority(ch, &read, CLUSTER_INITIAL_PRIORITY);
   cluster_schedule(ch, this, &read);
-  cluster_set_priority(ch, &write, CLUSTER_INITIAL_PRIORITY);
   cluster_schedule(ch, this, &write);
   if (action_.continuation) {
     action_.continuation->handleEvent(CLUSTER_EVENT_OPEN, this);

@@ -188,17 +188,6 @@ machine_in_vector(ClusterMachine * m, ClusterMachine ** mm, int len)
 }
 
 //
-//   Return a machine list based on the given hash which is ordered from
-//   now to the past.  Returned list contains no duplicates and depth_list[0]
-//   entry (current configuration) is always valid.  Entries following
-//   depth_list[0] are considered online.
-//   Returns 0 on Success else non-zero on error.
-//
-int
-cluster_machine_depth_list(unsigned int hash, ClusterMachine ** depth_list,
-                           int depth_list_size = (CONFIGURATION_HISTORY_PROBE_DEPTH + 1));
-
-//
 // Returns either a machine or NULL.
 // Finds a machine starting at probe_depth going up to
 //    CONFIGURATION_HISTORY_PROBE_DEPTH
@@ -479,6 +468,15 @@ private:
   Ptr<IOBufferBlock> block;  // holder of bank bytes
 };
 
+enum TypeVConnection
+{
+  VC_NULL,
+  VC_CLUSTER,
+  VC_CLUSTER_READ,
+  VC_CLUSTER_WRITE,
+  VC_CLUSTER_CLOSED
+};
+
 //
 // ClusterVConnection
 //
@@ -516,6 +514,9 @@ struct ClusterVConnection: public ClusterVConnectionBase
   void free();                  // Destructor actions (we are using ClassAllocator)
 
   virtual void do_io_close(int lerrno = -1);
+  virtual VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
+  virtual VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
+  virtual void reenable(VIO *vio);
 
   ClusterHandler *ch;
   //
@@ -536,6 +537,9 @@ struct ClusterVConnection: public ClusterVConnectionBase
   volatile int remote_closed;
   volatile int remote_close_disabled;
   volatile int remote_lerrno;
+  volatile uint32_t in_vcs;
+  volatile uint32_t type;
+  SLINK(ClusterVConnection, ready_alink);
   int was_closed();
   void allow_close();
   void disable_close();
@@ -550,6 +554,7 @@ struct ClusterVConnection: public ClusterVConnectionBase
   int n_recv_set_data_msgs;     // # set_data() msgs received on VC
   volatile int pending_remote_fill;     // Remote fill pending on connection
   Ptr<IOBufferBlock> read_block;   // Hold current data for open read
+  bool remote_ram_cache_hit;    // Entire object was from remote ram cache
   bool have_all_data;           // All data in read_block
   int initial_data_bytes;       // bytes in open_read buffer
   Ptr<IOBufferBlock> remote_write_block;   // Write side data for remote fill
@@ -576,6 +581,10 @@ struct ClusterVConnection: public ClusterVConnectionBase
   int disk_io_priority;
   void set_remote_fill_action(Action *);
 
+  // Indicates whether a cache hit was from an peering cluster cache
+  bool is_ram_cache_hit() const { return remote_ram_cache_hit; };
+  void set_ram_cache_hit(bool remote_hit) { remote_ram_cache_hit = remote_hit; }
+
   // For VC(s) established via OPEN_READ, we are passed a CacheHTTPInfo
   //  in the reply.
   virtual bool get_data(int id, void *data);    // backward compatibility
@@ -592,10 +601,6 @@ struct ClusterVConnection: public ClusterVConnectionBase
   virtual time_t get_pin_in_cache();
   virtual bool set_disk_io_priority(int priority);
   virtual int get_disk_io_priority();
-  bool is_ram_cache_hit()
-  {
-    return 0;
-  }
   virtual int get_header(void **ptr, int *len);
   virtual int set_header(void *ptr, int len);
   virtual int get_single_data(void **ptr, int *len);
@@ -770,24 +775,18 @@ ClusterFunctionDescriptor clusterFunction[]
   {false, true, CMSG_LOW_PRI, ping_reply_ClusterFunction, 0},
   {false, true, CMSG_LOW_PRI, machine_list_ClusterFunction, 0},
   {false, true, CMSG_LOW_PRI, close_channel_ClusterFunction, 0},
-  {false, false, CMSG_LOW_PRI,
-   get_hostinfo_ClusterFunction, 0},    // in HostDB.cc
-  {false, false, CMSG_LOW_PRI,
-   put_hostinfo_ClusterFunction, 0},    // in HostDB.cc
-  {false, true, CMSG_LOW_PRI,
-   cache_lookup_ClusterFunction, 0},    // in CacheCont.cc
+  {false, false, CMSG_LOW_PRI, get_hostinfo_ClusterFunction, 0},    // in HostDB.cc
+  {false, false, CMSG_LOW_PRI, put_hostinfo_ClusterFunction, 0},    // in HostDB.cc
+  {false, true, CMSG_LOW_PRI, cache_lookup_ClusterFunction, 0},    // in CacheCont.cc
   {true, true, CMSG_LOW_PRI, cache_op_malloc_ClusterFunction, 0},
   {false, true, CMSG_LOW_PRI, cache_op_ClusterFunction, 0},
   {false, false, CMSG_LOW_PRI, cache_op_result_ClusterFunction, 0},
   {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
   {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
   {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
-  {false, true, CMSG_MAX_PRI, set_channel_data_ClusterFunction,
-   post_setchan_send_ClusterFunction},
-  {false, true, CMSG_MAX_PRI, set_channel_pin_ClusterFunction,
-   post_setchan_pin_ClusterFunction},
-  {false, true, CMSG_MAX_PRI, set_channel_priority_ClusterFunction,
-   post_setchan_priority_ClusterFunction},
+  {false, true, CMSG_MAX_PRI, set_channel_data_ClusterFunction, post_setchan_send_ClusterFunction},
+  {false, true, CMSG_MAX_PRI, set_channel_pin_ClusterFunction, post_setchan_pin_ClusterFunction},
+  {false, true, CMSG_MAX_PRI, set_channel_priority_ClusterFunction, post_setchan_priority_ClusterFunction},
    /********************************************
     * RESERVED for future cluster internal use *
     ********************************************/

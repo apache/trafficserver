@@ -173,18 +173,14 @@ ICPHandlerCont::ICPHandlerCont(ICPProcessor * icpP)
 
 // do nothing continuation handler
 int
-ICPHandlerCont::TossEvent(int event, Event * e)
+ICPHandlerCont::TossEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   return EVENT_DONE;
 }
 
 int
-ICPHandlerCont::PeriodicEvent(int event, Event * e)
+ICPHandlerCont::PeriodicEvent(int event, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   int n_peer, valid_peers;
   Peer *P;
 
@@ -390,10 +386,10 @@ ICPPeerReadCont::ICPPeerReadEvent(int event, Event * e)
 }
 
 int
-ICPPeerReadCont::StaleCheck(int event, Event * e)
+ICPPeerReadCont::StaleCheck(int event, Event * /* e ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(e);
+
   ink_release_assert(mutex->thread_holding == this_ethread());
 
   Debug("icp-stale", "Stale check res=%d for id=%d, [%s] from [%s]",
@@ -428,7 +424,7 @@ int
 ICPPeerReadCont::ICPPeerQueryEvent(int event, Event * e)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(e);
+
   Debug("icp", "Remote Query lookup res=%d for id=%d, [%s] from [%s]",
         event, _state->_rICPmsg->h.requestno,
     _state->_rICPmsg->un.query.URL, ats_ip_nptop(&_state->_sender, ipb, sizeof(ipb)));
@@ -458,12 +454,9 @@ ICPPeerReadCont::ICPPeerQueryEvent(int event, Event * e)
 }
 
 int
-ICPPeerReadCont::ICPPeerQueryCont(int event, Event * e)
+ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   ip_port_text_buffer ipb;
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
-
   Action *a;
 
   // Perform lookup()/open_read() on behalf of PeerReadStateMachine()
@@ -1190,10 +1183,8 @@ ICPRequestCont::ICPRequestEvent(int event, Event * e)
 }
 
 int
-ICPRequestCont::NopICPRequestEvent(int event, Event * e)
+ICPRequestCont::NopICPRequestEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(e);
   delete this;
   return EVENT_DONE;
 }
@@ -1387,7 +1378,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         }
 
         // Process ICP response
-        if (ICPResponseMessage(event, args->rICPmsg, args->rICPmsg_len, args->peer) == EVENT_DONE) {
+        if (ICPResponseMessage(event, args->rICPmsg, args->peer) == EVENT_DONE) {
           // ICP Request processing is complete, do completion actions
           _next_state = ICP_DEQUEUE_REQUEST;
           break;                // move to next_state
@@ -1483,12 +1474,11 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
 }
 
 int
-ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t * m, int ICPMsg_len, Peer * peer)
+ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t * m, Peer * peer)
 {
-  NOWARN_UNUSED(ICPMsg_len);
   ip_port_text_buffer ipb, ipb2;
-  if (event == EVENT_INTERVAL) {
 
+  if (event == EVENT_INTERVAL) {
     _timeout = 0;
     remove_all_pendingActions();
 
@@ -2259,12 +2249,9 @@ ICPProcessor::ShutdownListenSockets()
 }
 
 int
-ICPProcessor::Reconfigure(int global_config_changed, int peer_config_changed)
+ICPProcessor::Reconfigure(int /* global_config_changed ATS_UNUSED */, int /* peer_config_changed ATS_UNUSED */)
 {
   // Returns 0 on Success
-
-  NOWARN_UNUSED(global_config_changed);
-  NOWARN_UNUSED(peer_config_changed);
   //
   // At this point, ICP requests processing is disabled and
   // no pending ICP requests exist.

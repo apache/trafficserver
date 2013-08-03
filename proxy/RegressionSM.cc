@@ -80,9 +80,8 @@ void RegressionSM::child_done(int astatus)
   set_status(astatus);
 }
 
-int RegressionSM::regression_sm_waiting(int event, void *data)
+int RegressionSM::regression_sm_waiting(int /* event ATS_UNUSED */ , void *data)
 {
-  NOWARN_UNUSED(event);
   if (!nwaiting) {
     done(REGRESSION_TEST_NOT_RUN);
     delete this;
@@ -96,10 +95,8 @@ int RegressionSM::regression_sm_waiting(int event, void *data)
   return EVENT_DONE;
 }
 
-int RegressionSM::regression_sm_start(int event, void *data)
+int RegressionSM::regression_sm_start(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(data);
   run();
   return EVENT_CONT;
 }
@@ -241,19 +238,12 @@ struct ReRegressionSM: public RegressionSM
   }
 };
 
-REGRESSION_TEST(RegressionSM)(RegressionTest *t, int atype, int *pstatus)
+REGRESSION_TEST(RegressionSM)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  NOWARN_UNUSED(atype);
-  r_sequential(
-    t,
-    r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),
-    r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),
-    r_parallel(t, 3, new ReRegressionSM(t)),
-    r_sequential(t, 3, new ReRegressionSM(t)),
-    r_parallel(
-      t,
-      r_sequential(t, 2, new ReRegressionSM(t)),
-      r_parallel(t, 2, new ReRegressionSM(t)),
-      NULL_PTR),
-    NULL_PTR)->run(pstatus);
+  r_sequential(t, r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),
+               r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),
+               r_parallel(t, 3, new ReRegressionSM(t)), r_sequential(t, 3, new ReRegressionSM(t)),
+               r_parallel(t, r_sequential(t, 2, new ReRegressionSM(t)),
+                          r_parallel(t, 2, new ReRegressionSM(t)), NULL_PTR),
+               NULL_PTR)->run(pstatus);
 }

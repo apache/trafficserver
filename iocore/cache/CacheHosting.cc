@@ -98,7 +98,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
   num_el = 0;
 }
 
-// void CacheHostMatcher::Match(RD* rdata, Result* result)
+// void CacheHostMatcher::Match(RequestData* rdata, Result* result)
 //
 //  Searches our tree and updates argresult for each element matching
 //    arg hostname
@@ -234,7 +234,7 @@ CacheHostTable::Print()
 }
 
 
-// void ControlMatcher<Data, Result>::Match(RD* rdata
+// void ControlMatcher<Data, Result>::Match(RequestData* rdata
 //                                          Result* result)
 //
 //   Queries each table for the Result*
@@ -247,11 +247,9 @@ CacheHostTable::Match(char *rdata, int rlen, CacheHostResult * result)
 }
 
 int
-CacheHostTable::config_callback(const char *name, RecDataT data_type, RecData data, void *cookie)
+CacheHostTable::config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                                RecData /* data ATS_UNUSED */, void *cookie)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(data_type);
   CacheHostTable **ppt = (CacheHostTable **) cookie;
   eventProcessor.schedule_imm(NEW(new CacheHostTableConfig(ppt)));
   return 0;
@@ -618,9 +616,8 @@ CacheHostRecord::Init(matcher_line * line_info, CacheType typ)
 }
 
 void
-CacheHostRecord::UpdateMatch(CacheHostResult * r, char *rd)
+CacheHostRecord::UpdateMatch(CacheHostResult * r, char * /* rd ATS_UNUSED */)
 {
-  NOWARN_UNUSED(rd);
   r->record = this;
 }
 
@@ -903,8 +900,7 @@ int execute_and_verify(RegressionTest * t);
 void save_state();
 void restore_state();
 
-EXCLUSIVE_REGRESSION_TEST(Cache_vol) (RegressionTest * t, int atype, int *status) {
-  NOWARN_UNUSED(atype);
+EXCLUSIVE_REGRESSION_TEST(Cache_vol) (RegressionTest * t, int /* atype ATS_UNUSED */, int *status) {
   save_state();
   srand48(time(NULL));
   *status = REGRESSION_TEST_PASSED;

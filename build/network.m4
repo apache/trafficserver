@@ -84,14 +84,7 @@ int tmp = gethostbyname_r((const char *) 0, (struct hostent *) 0,
 tmp=0;
 ], ac_cv_gethostbyname_r_arg=hostent_data, ac_cv_gethostbyname_r_arg=char))
 
-if test "$ac_cv_gethostbyname_r_arg" = "hostent_data"; then
-  gethostbyname_r_hostent_data=1
-  AC_DEFINE(GETHOSTBYNAME_R_HOSTENT_DATA, 1, [Define if gethostbyname_r has the hostent_data for the third argument])
-else
-  gethostbyname_r_hostent_data=0
-fi
 AC_SUBST(gethostbyname_r_glibc2)
-AC_SUBST(gethostbyname_r_hostent_data)
 ])
 
 dnl

@@ -86,12 +86,12 @@ initialize_thread_for_udp_net(EThread * thread)
 }
 
 int
-UDPNetProcessorInternal::start(int n_upd_threads)
+UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
 {
   if (n_upd_threads < 1)
     return -1;
 
-  ET_UDP = eventProcessor.spawn_event_threads(n_upd_threads, "ET_UDP");
+  ET_UDP = eventProcessor.spawn_event_threads(n_upd_threads, "ET_UDP", stacksize);
   if (ET_UDP < 0)               // Probably can't happen, maybe at some point EventType should be unsigned ?
     return -1;
 
@@ -105,11 +105,8 @@ UDPNetProcessorInternal::start(int n_upd_threads)
 }
 
 void
-UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler * nh,
-                                           UDPConnection * xuc, PollDescriptor * pd, EThread * thread)
+UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler * nh, UDPConnection * xuc)
 {
-  NOWARN_UNUSED(pd);
-  (void) thread;
   UnixUDPConnection *uc = (UnixUDPConnection *) xuc;
 
   // receive packet and queue onto UDPConnection.
@@ -847,7 +844,7 @@ UDPNetHandler::mainNetEvent(int event, Event * e)
         // udp_polling->remove(uc,uc->polling_link);
         uc->Release();
       } else {
-        udpNetInternal.udp_read_from_net(this, uc, pc->pollDescriptor, trigger_event->ethread);
+        udpNetInternal.udp_read_from_net(this, uc);
         nread++;
       }
     }                           //if EPOLLIN

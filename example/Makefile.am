@@ -19,25 +19,26 @@ include $(top_srcdir)/build/plugins.mk
 AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 noinst_LTLIBRARIES = \
-	add-header.la \
-	append-transform.la \
-	basic-auth.la \
-	blacklist-0.la \
-	blacklist-1.la \
-	bnull-transform.la \
-	cache-scan.la \
-	file-1.la \
-	hello.la \
-	null-transform.la \
-	output-header.la \
-	protocol.la \
-	psi.la \
-	query-remap.la \
-	remap.la \
-	replace-header.la \
-	response-header-1.la \
-	server-transform.la \
-	thread-1.la
+  add-header.la \
+  append-transform.la \
+  basic-auth.la \
+  blacklist-0.la \
+  blacklist-1.la \
+  bnull-transform.la \
+  cache-scan.la \
+  file-1.la \
+  hello.la \
+  lifecycle-plugin.la \
+  null-transform.la \
+  output-header.la \
+  protocol.la \
+  psi.la \
+  query-remap.la \
+  remap.la \
+  replace-header.la \
+  response-header-1.la \
+  server-transform.la \
+  thread-1.la
 
 add_header_la_SOURCES = add-header/add-header.c
 append_transform_la_SOURCES = append-transform/append-transform.c
@@ -48,6 +49,7 @@ bnull_transform_la_SOURCES = bnull-transform/bnull-transform.c
 cache_scan_la_SOURCES = cache-scan/cache-scan.cc
 file_1_la_SOURCES = file-1/file-1.c
 hello_la_SOURCES = hello/hello.c
+lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
 null_transform_la_SOURCES = null-transform/null-transform.c
 output_header_la_SOURCES = output-header/output-header.c
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c

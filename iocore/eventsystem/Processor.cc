@@ -72,9 +72,8 @@ Processor::~Processor()
 //
 //////////////////////////////////////////////////////////////////
 Thread *
-Processor::create_thread(int thread_index)
+Processor::create_thread(int /* thread_index */)
 {
-  NOWARN_UNUSED(thread_index);
   ink_release_assert(!"Processor::create_thread -- no default implementation");
   return ((Thread *) 0);
 }

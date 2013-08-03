@@ -334,9 +334,8 @@ Lerror:
 
 struct SnapStatsContinuation: public Continuation
 {
-  int mainEvent(int event, Event * e)
+  int mainEvent(int /* event ATS_UNUSED */, Event *e ATS_UNUSED)
   {
-    NOWARN_UNUSED(event);
     write_stats_snap();
     e->schedule_every(HRTIME_SECONDS(snap_stats_every));
     return EVENT_CONT;
@@ -370,9 +369,8 @@ typedef int (SnapCont::*SnapContHandler) (int, void *);
 
 struct SnapCont: public Continuation
 {
-  int mainEvent(int event, Event * e)
+  int mainEvent(int /* event ATS_UNUSED */, Event * e)
   {
-    NOWARN_UNUSED(event);
     take_rusage_snap();
     e->schedule_every(SNAP_USAGE_PERIOD);
     return EVENT_CONT;
@@ -575,8 +573,7 @@ dyn_stats_count_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   READ_DYN_STAT((long) data, count, sum);
-  NOWARN_UNUSED(sum);
-  //*(ink_statval_t *)res = count;
+  (void)sum;
   ink_atomic_swap((ink_statval_t *) res, count);
   return res;
 }
@@ -586,8 +583,7 @@ dyn_stats_sum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   READ_DYN_STAT((long) data, count, sum);
-  NOWARN_UNUSED(count);
-  //*(ink_statval_t *)res = sum;
+  (void)count;
   ink_atomic_swap((ink_statval_t *) res, sum);
   return res;
 }
@@ -610,7 +606,7 @@ dyn_stats_fsum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   READ_DYN_STAT((long) data, count, sum);
-  NOWARN_UNUSED(count);
+  (void)count;
   *(float *) res = *(double *) &sum;
   return res;
 }
@@ -700,8 +696,7 @@ http_trans_stats_count_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   READ_HTTP_TRANS_STAT((long) data, count, sum);
-  NOWARN_UNUSED(sum);
-  //*(ink_statval_t *)res = count;
+  (void)sum;
   ink_atomic_swap((ink_statval_t *) res, count);
   return res;
 }
@@ -711,8 +706,7 @@ http_trans_stats_sum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   READ_HTTP_TRANS_STAT((long) data, count, sum);
-  NOWARN_UNUSED(count);
-  //*(ink_statval_t *)res = sum;
+  (void)count;
   ink_atomic_swap((ink_statval_t *) res, sum);
   return res;
 }
@@ -735,7 +729,7 @@ http_trans_stats_fsum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   READ_HTTP_TRANS_STAT((long) data, count, sum);
-  NOWARN_UNUSED(count);
+  (void)count;
   *(float *) res = *(double *) &sum;
   return res;
 }

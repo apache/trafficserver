@@ -314,11 +314,9 @@ drainIncomingChannel(void *arg)
  * the manager.
  */
 int
-cluster_com_port_watcher(const char *name, RecDataT data_type, RecData data, void *cookie)
+cluster_com_port_watcher(const char *name, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                         void * /* cookie ATS_UNUSED */)
 {
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(cookie);
-
   ink_assert(!name);
 
   ink_mutex_acquire(&(lmgmt->ccom->mutex));     /* Grab cluster lock */
@@ -329,7 +327,7 @@ cluster_com_port_watcher(const char *name, RecDataT data_type, RecData data, voi
 }                               /* End cluster_com_port_watcher */
 
 
-ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int sport, char *p)
+ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, int rsport, char *p)
   : our_wall_clock(0), alive_peers_count(0), reliable_server_fd(0), broadcast_fd(0), receive_fd(0)
 {
   int rec_err;
@@ -408,8 +406,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int
   }
 
   ink_strlcpy(mc_group, group, sizeof(mc_group));
-  mc_port = port;
-  reliable_server_port = sport;
+  mc_port = mcport;
+  reliable_server_port = rsport;
 
   mc_ttl = REC_readInteger("proxy.config.cluster.mc_ttl", &found);
   ink_assert(found);
