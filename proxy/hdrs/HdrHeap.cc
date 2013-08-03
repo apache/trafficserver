@@ -105,6 +105,7 @@ HdrHeap::init()
     m_ronly_heap[i].m_heap_start = NULL;
     m_ronly_heap[i].m_ref_count_ptr.m_ptr = NULL;
     m_ronly_heap[i].m_locked = false;
+    m_ronly_heap[i].m_heap_len = 0;
   }
   m_lost_string_space = 0;
 

@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
   
+
+  *) [TS-2092] Use of uninitialized member in HdrHeap.
+
   *) [TS-2052] ET_SSL thread spinning
    Author: Can Selcik <cselcik at linkedin.com>
 
