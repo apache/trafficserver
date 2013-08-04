@@ -502,13 +502,13 @@ RecGetRecordOrderAndId(const char *name, int* order, int* id, bool lock)
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
     if (r->registered) {
-    rec_mutex_acquire(&(r->lock));
-    if (order)
-      *order = r->order;
-    if (id)
-      *id = r->rsb_id;
-    err = REC_ERR_OKAY;
-    rec_mutex_release(&(r->lock));
+      rec_mutex_acquire(&(r->lock));
+      if (order)
+        *order = r->order;
+      if (id)
+        *id = r->rsb_id;
+      err = REC_ERR_OKAY;
+      rec_mutex_release(&(r->lock));
     }
   }
 
