@@ -97,49 +97,6 @@ void ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen);
 
 /*---------------------------------------------------------------------------*
 
-  char *ink_strchr(char *s, char c)
-
-  A faster version of strchr.
-
- *---------------------------------------------------------------------------*/
-
-static inline char *
-ink_strchr(char *s, char c)
-{
-  while (*s) {
-    if (*s == c)
-      return (s);
-    else
-      ++s;
-  }
-  return (NULL);
-}                               /* End ink_strchr */
-
-
-/*---------------------------------------------------------------------------*
-
-  int ink_string_is_prefix(char *prefix, char *str)
-
-  Returns 1 is <prefix> is a strict prefix of <str>, 0 otherwise.
-
- *---------------------------------------------------------------------------*/
-
-static inline int
-ink_string_is_prefix(char *prefix, char *str)
-{
-  while (*prefix && *str && *prefix == *str) {
-    ++prefix;
-    ++str;
-  }
-  if (*prefix == '\0')
-    return (1);
-  else
-    return (0);
-}                               /* End ink_string_is_prefix */
-
-
-/*---------------------------------------------------------------------------*
-
   char *ink_string_copy(char *dest, char *src, int n)
 
   This routine is like ink_strncpy, but it stops writing to <dest>
@@ -166,31 +123,6 @@ ink_string_copy(char *dest, char *src, int n)
 
   return (dest);
 }                               /* End ink_string_copy */
-
-
-/*---------------------------------------------------------------------------*
-
-  char *ink_string_concatenate_two_strings(char *dest, char *s1, char *s2)
-
-  This routine concatenates the two strings <s1> and <s2> into the buffer
-  <dest>, returning the pointer to <dest>.
-
- *---------------------------------------------------------------------------*/
-
-static inline char *
-ink_string_concatenate_two_strings(char *dest, char *s1, char *s2)
-{
-  char *d;
-
-  d = dest;
-  while (*s1)
-    *d++ = *s1++;
-  while (*s2)
-    *d++ = *s2++;
-  *d++ = '\0';
-
-  return (dest);
-}                               /* End ink_string_concatenate_two_strings */
 
 
 // inline int ptr_len_cmp(const char* p1, int l1, const char* p2, int l2)

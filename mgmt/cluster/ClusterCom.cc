@@ -896,10 +896,10 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
     case RECD_COUNTER:{
         RecInt tmp_msg_val = -1;
         tmp_id = ink_atoi(line);
-        char *v2 = ink_strchr(line, ':'), *v3 = NULL;
+        char *v2 = strchr(line, ':'), *v3 = NULL;
         if (v2) {
           tmp_type = (RecDataT) ink_atoi(v2 + 1);
-          v3 = ink_strchr(v2 + 1, ':');
+          v3 = strchr(v2 + 1, ':');
           if (v3)
             tmp_msg_val = ink_atoi64(v3 + 1);
         }
