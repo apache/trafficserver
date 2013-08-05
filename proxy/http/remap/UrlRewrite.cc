@@ -46,47 +46,47 @@ check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret
     *argptr = NULL;
   if (argv && argc > 0) {
     for (int i = 0; i < argc; i++) {
-      if (!ink_string_fast_strcasecmp(argv[i], "map_with_referer")) {
+      if (!strcasecmp(argv[i], "map_with_referer")) {
         if ((findmode & REMAP_OPTFLG_MAP_WITH_REFERER) != 0)
           idx = i;
         ret_flags |= REMAP_OPTFLG_MAP_WITH_REFERER;
-      } else if (!ink_string_fast_strncasecmp(argv[i], "plugin=", 7)) {
+      } else if (!strncasecmp(argv[i], "plugin=", 7)) {
         if ((findmode & REMAP_OPTFLG_PLUGIN) != 0)
           idx = i;
         if (argptr)
           *argptr = &argv[i][7];
         ret_flags |= REMAP_OPTFLG_PLUGIN;
-      } else if (!ink_string_fast_strncasecmp(argv[i], "pparam=", 7)) {
+      } else if (!strncasecmp(argv[i], "pparam=", 7)) {
         if ((findmode & REMAP_OPTFLG_PPARAM) != 0)
           idx = i;
         if (argptr)
           *argptr = &argv[i][7];
         ret_flags |= REMAP_OPTFLG_PPARAM;
-      } else if (!ink_string_fast_strncasecmp(argv[i], "method=", 7)) {
+      } else if (!strncasecmp(argv[i], "method=", 7)) {
         if ((findmode & REMAP_OPTFLG_METHOD) != 0)
           idx = i;
         if (argptr)
           *argptr = &argv[i][7];
         ret_flags |= REMAP_OPTFLG_METHOD;
-      } else if (!ink_string_fast_strncasecmp(argv[i], "src_ip=~", 8)) {
+      } else if (!strncasecmp(argv[i], "src_ip=~", 8)) {
         if ((findmode & REMAP_OPTFLG_SRC_IP) != 0)
           idx = i;
         if (argptr)
           *argptr = &argv[i][8];
         ret_flags |= (REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_INVERT);
-      } else if (!ink_string_fast_strncasecmp(argv[i], "src_ip=", 7)) {
+      } else if (!strncasecmp(argv[i], "src_ip=", 7)) {
         if ((findmode & REMAP_OPTFLG_SRC_IP) != 0)
           idx = i;
         if (argptr)
           *argptr = &argv[i][7];
         ret_flags |= REMAP_OPTFLG_SRC_IP;
-      } else if (!ink_string_fast_strncasecmp(argv[i], "action=", 7)) {
+      } else if (!strncasecmp(argv[i], "action=", 7)) {
         if ((findmode & REMAP_OPTFLG_ACTION) != 0)
           idx = i;
         if (argptr)
           *argptr = &argv[i][7];
         ret_flags |= REMAP_OPTFLG_ACTION;
-      } else if (!ink_string_fast_strncasecmp(argv[i], "mapid=", 6)) {
+      } else if (!strncasecmp(argv[i], "mapid=", 6)) {
         if ((findmode & REMAP_OPTFLG_MAP_ID) != 0)
           idx = i;
         if (argptr)
@@ -239,27 +239,27 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
       }
       // Please remember that the order of hash idx creation is very important and it is defined
       // in HTTP.cc file
-      if (!ink_string_fast_strcasecmp(argptr, "CONNECT"))
+      if (!strcasecmp(argptr, "CONNECT"))
         m = HTTP_WKSIDX_CONNECT;
-      else if (!ink_string_fast_strcasecmp(argptr, "DELETE"))
+      else if (!strcasecmp(argptr, "DELETE"))
         m = HTTP_WKSIDX_DELETE;
-      else if (!ink_string_fast_strcasecmp(argptr, "GET"))
+      else if (!strcasecmp(argptr, "GET"))
         m = HTTP_WKSIDX_GET;
-      else if (!ink_string_fast_strcasecmp(argptr, "HEAD"))
+      else if (!strcasecmp(argptr, "HEAD"))
         m = HTTP_WKSIDX_HEAD;
-      else if (!ink_string_fast_strcasecmp(argptr, "ICP_QUERY"))
+      else if (!strcasecmp(argptr, "ICP_QUERY"))
         m = HTTP_WKSIDX_ICP_QUERY;
-      else if (!ink_string_fast_strcasecmp(argptr, "OPTIONS"))
+      else if (!strcasecmp(argptr, "OPTIONS"))
         m = HTTP_WKSIDX_OPTIONS;
-      else if (!ink_string_fast_strcasecmp(argptr, "POST"))
+      else if (!strcasecmp(argptr, "POST"))
         m = HTTP_WKSIDX_POST;
-      else if (!ink_string_fast_strcasecmp(argptr, "PURGE"))
+      else if (!strcasecmp(argptr, "PURGE"))
         m = HTTP_WKSIDX_PURGE;
-      else if (!ink_string_fast_strcasecmp(argptr, "PUT"))
+      else if (!strcasecmp(argptr, "PUT"))
         m = HTTP_WKSIDX_PUT;
-      else if (!ink_string_fast_strcasecmp(argptr, "TRACE"))
+      else if (!strcasecmp(argptr, "TRACE"))
         m = HTTP_WKSIDX_TRACE;
-      else if (!ink_string_fast_strcasecmp(argptr, "PUSH"))
+      else if (!strcasecmp(argptr, "PUSH"))
         m = HTTP_WKSIDX_PUSH;
       else {
         Debug("url_rewrite", "[validate_filter_args] Unknown method value %s", argptr);

@@ -1186,10 +1186,10 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
       Debug("http_match", "      type = '%s', subtype = '%s'", type, subtype);
 
       if (http_config_params->cache_enable_default_vary_headers) {
-        if (ink_string_fast_strcasecmp(type, "text") == 0) {
+        if (strcasecmp(type, "text") == 0) {
           Debug("http_match", "      Using default text vary headers");
           vary_values = http_config_params->cache_vary_default_text;
-        } else if (ink_string_fast_strcasecmp(type, "image") == 0) {
+        } else if (strcasecmp(type, "image") == 0) {
           Debug("http_match", "      Using default image vary headers");
           vary_values = http_config_params->cache_vary_default_images;
         } else {
@@ -1230,13 +1230,13 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
       // is 1. Actually the 'proxy.config.cache.vary_on_user_agent' is useless in such case //
       ///////////////////////////////////////////////////////////////////////////////////////
       if (http_config_params->cache_global_user_agent_header &&
-          !ink_string_fast_strcasecmp((char *) field->str, "User-Agent"))
+          !strcasecmp((char *) field->str, "User-Agent"))
         continue;
 
       // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
       // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
       if (http_config_params->ignore_accept_encoding_mismatch && 
-          !ink_string_fast_strcasecmp((char *) field->str, "Accept-Encoding"))
+          !strcasecmp((char *) field->str, "Accept-Encoding"))
         continue;
 
 
