@@ -325,7 +325,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
         active_timeout = thread->schedule_in(this, active_timeout_in);
     } else if (write.enabled) {
       ink_assert(write.vio.mutex->thread_holding == this_ethread() && thread);
-      if (read.vio.mutex->thread_holding == thread)
+      if (write.vio.mutex->thread_holding == thread)
         active_timeout = thread->schedule_in_local(this, active_timeout_in);
       else
         active_timeout = thread->schedule_in(this, active_timeout_in);
