@@ -55,7 +55,6 @@ inkcoreapi char *ink_strncat(char *dest, const char *src, int n);
 inkcoreapi char *ink_string_concatenate_strings(char *dest, ...);
 inkcoreapi char *ink_string_concatenate_strings_n(char *dest, int n, ...);
 inkcoreapi char *ink_string_append(char *dest, char *src, int n);
-inkcoreapi char *ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len);
 
 /*
  * Copy src to string dst of size siz.  At most siz-1 characters
