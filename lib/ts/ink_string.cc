@@ -270,9 +270,3 @@ ink_strlcat(char *dst, const char *src, size_t siz)
 }
 #endif
 
-char *
-ink_strtok_r(char *s1, const char *s2, char **lasts)
-{
-  return strtok_r(s1, s2, lasts);
-}
-

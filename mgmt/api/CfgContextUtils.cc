@@ -760,7 +760,7 @@ string_to_domain(const char *str)
 
   // get hostname
   ink_strlcpy(buf, str, sizeof(buf));
-  token = ink_strtok_r(buf, ":", &token_pos);
+  token = strtok_r(buf, ":", &token_pos);
   remain = token_pos;
   if (token)
     dom->domain_val = ats_strdup(token);

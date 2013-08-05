@@ -690,7 +690,7 @@ ClusterCom::handleMultiCastMessage(char *message)
 
   /* Grab the ip address, we need to know this so that we only complain
      once about a cluster name or traffic server version mismatch */
-  if ((line = ink_strtok_r(message, "\n", &last)) == NULL)
+  if ((line = strtok_r(message, "\n", &last)) == NULL)
     goto Lbogus;                /* IP of sender */
 
   // coverity[secure_coding]
@@ -705,7 +705,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Make sure this is a message for the cluster we belong to */
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* ClusterName of sender */
 
   // coverity[secure_coding]
@@ -718,7 +718,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Make sure this a message from a Traffic Server of the same version */
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* TS version of sender */
 
   // coverity[secure_coding]
@@ -728,7 +728,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Figure out what type of message this is */
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;
   if (strcmp("type: files", line) == 0) {       /* Config Files report */
     handleMultiCastFilePacket(last, ip);
@@ -747,7 +747,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Check OS and version info */
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* OS of sender */
   if (!strstr(line, "os: ") || !strstr(line, sys_name)) {
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
@@ -757,7 +757,7 @@ ClusterCom::handleMultiCastMessage(char *message)
               "running different os/release '%s'(ours os: '%s' rel: '%s'\n", line, sys_name, sys_release);
   }
 
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* OS-Version of sender */
   if (!strstr(line, "rel: ") || !strstr(line, sys_release)) {
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
@@ -767,21 +767,21 @@ ClusterCom::handleMultiCastMessage(char *message)
               "running different os/release '%s'(ours os: '%s' rel: '%s'\n", line, sys_name, sys_release);
   }
 
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* Hostname of sender */
   if (strlen(line) >= sizeof(hostname) || sscanf(line, "hostname: %s", hostname) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
 
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* mc_port of sender */
   if (sscanf(line, "port: %d", &peer_cluster_port) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
 
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* rs_port of sender */
   if (sscanf(line, "ccomport: %d", &ccom_port) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
@@ -789,7 +789,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Their wall clock time and last config change time */
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;
   int64_t tt;
   if (sscanf(line, "time: %" PRId64 "", &tt) != 1) {
@@ -884,7 +884,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
 
   /* Loop over records, updating peer copy(summed later) */
   rec_ptr = &(peer->node_rec_data);
-  for (int i = 0; (line = ink_strtok_r(NULL, "\n", &last)) && i < rec_ptr->num_recs; i++) {
+  for (int i = 0; (line = strtok_r(NULL, "\n", &last)) && i < rec_ptr->num_recs; i++) {
 
     tmp_id = -1;
     tmp_type = RECD_NULL;
@@ -1104,7 +1104,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
   InkHashTableValue hash_value;
   bool file_update_failure;
 
-  while ((line = ink_strtok_r(NULL, "\n", &last))) {
+  while ((line = strtok_r(NULL, "\n", &last))) {
     Rollback *rb;
 
     file_update_failure = false;
@@ -1215,7 +1215,7 @@ ClusterCom::handleMultiCastAlarmPacket(char *last, char *ip)
 
   /* Allows us to expire stale alarms */
   lmgmt->alarm_keeper->resetSeenFlag(ip);
-  while ((line = ink_strtok_r(NULL, "\n", &last))) {
+  while ((line = strtok_r(NULL, "\n", &last))) {
     int ccons;
     alarm_t a;
     char *desc;
@@ -1257,7 +1257,7 @@ ClusterCom::handleMultiCastVMapPacket(char *last, char *ip)
   lmgmt->virt_map->rl_resetSeenFlag(ip);        /* Ala alarms */
   ink_mutex_release(&(mutex));
 
-  while ((line = ink_strtok_r(NULL, "\n", &last))) {
+  while ((line = strtok_r(NULL, "\n", &last))) {
     char vaddr[80];
 
     if (strcmp(line, "virt: none") == 0) {
@@ -1514,7 +1514,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
 
   buff = configFiles->filesManaged();
   files = buff->bufPtr();
-  line = ink_strtok_r(files, "\n", &last);
+  line = strtok_r(files, "\n", &last);
   if (line == NULL) {
     delete buff;
     return;
@@ -1553,7 +1553,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
     } else {
       mgmt_elog("[ClusterCom::constructSharedFilePacket] Invalid base name? '%s'\n", line);
     }
-  } while ((line = ink_strtok_r(NULL, "\n", &last)));
+  } while ((line = strtok_r(NULL, "\n", &last)));
 
   delete buff;
   return;

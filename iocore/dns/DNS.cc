@@ -247,7 +247,7 @@ DNSProcessor::dns_init()
     int i;
     char *last;
     char *ns_list = ats_strdup(dns_ns_list);
-    char *ns = (char *) ink_strtok_r(ns_list, " ,;\t\r", &last);
+    char *ns = (char *) strtok_r(ns_list, " ,;\t\r", &last);
 
     for (i = 0, nserv = 0 ; (i < MAX_NAMED) && ns ; ++i) {
       Debug("dns", "Nameserver list - parsing \"%s\"\n", ns);
@@ -292,7 +292,7 @@ DNSProcessor::dns_init()
         ++nserv;
       }
 
-      ns = (char *) ink_strtok_r(NULL, " ,;\t\r", &last);
+      ns = (char *) strtok_r(NULL, " ,;\t\r", &last);
     }
     ats_free(ns_list);
   }

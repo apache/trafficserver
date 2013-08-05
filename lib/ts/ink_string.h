@@ -79,9 +79,6 @@ size_t ink_strlcpy(char *dst, const char *str, size_t siz);
 size_t ink_strlcat(char *dst, const char *str, size_t siz);
 #endif
 
-/* 9/3/98 elam: Added this because NT doesn't have strtok_r() */
-char *ink_strtok_r(char *s1, const char *s2, char **lasts);
-
 inkcoreapi int ink_strcasecmp(const char *a, const char *b);
 inkcoreapi int ink_strncasecmp(const char *a, const char *b, unsigned int max);
 

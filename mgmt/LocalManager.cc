@@ -1038,9 +1038,9 @@ LocalManager::startProxy()
     ink_zero(options);
     options[0] = absolute_proxy_binary;
     i = 1;
-    tok = ink_strtok_r(&real_proxy_options[0], " ", &last);
+    tok = strtok_r(&real_proxy_options[0], " ", &last);
     options[i++] = tok;
-    while (i < 32 && (tok = ink_strtok_r(NULL, " ", &last))) {
+    while (i < 32 && (tok = strtok_r(NULL, " ", &last))) {
       Debug("lm", "opt %d = '%s'\n", i, tok);
       options[i++] = tok;
     }
