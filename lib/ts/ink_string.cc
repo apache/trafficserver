@@ -238,7 +238,7 @@ ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
       if (p <= str)
         return (NULL);
 
-      ink_string_copy(ext, (p + 1), max_ext_len);
+      ink_strlcpy(ext, (p + 1), max_ext_len);
     }
   }
   return (p);

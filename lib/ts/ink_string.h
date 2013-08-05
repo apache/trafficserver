@@ -95,35 +95,6 @@ void ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen);
 
  *===========================================================================*/
 
-/*---------------------------------------------------------------------------*
-
-  char *ink_string_copy(char *dest, char *src, int n)
-
-  This routine is like ink_strncpy, but it stops writing to <dest>
-  after the first NUL from <src> is written, even if <n> bytes are
-  not copied.  A NUL is always written if n > 0.  Returns <dest>.
-
- *---------------------------------------------------------------------------*/
-
-static inline char *
-ink_string_copy(char *dest, char *src, int n)
-{
-  char *s, *d;
-
-  s = src;
-  d = dest;
-
-  while ((n > 1) && *s) {
-    *d++ = *s++;
-    --n;
-  }
-
-  if (n > 0)
-    *d = '\0';
-
-  return (dest);
-}                               /* End ink_string_copy */
-
 
 // inline int ptr_len_cmp(const char* p1, int l1, const char* p2, int l2)
 //
