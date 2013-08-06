@@ -40,7 +40,7 @@ HttpAccept *plugin_http_accept = NULL;
 HttpAccept *plugin_http_transparent_accept = 0;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
-static ProcessMutex ssl_plugin_mutex;
+static ProcessMutex ssl_plugin_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 bool
 ssl_register_protocol(const char * protocol, Continuation * contp)
