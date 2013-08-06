@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
+  *) [TS-2102] SPDY plugin tries to setup protocol handler too early.
+
+  *) [TS-1953] remove version checks from plugins that don't use it and
+   add an example showing off the version API and partial compilation.
+
   *) [TS-2100] Initialize the SSL/NPN registration mutex.
 
   * [TS-1987, TS-2097]: Remove duplicate and unused string functions

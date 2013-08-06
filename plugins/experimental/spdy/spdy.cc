@@ -339,6 +339,23 @@ spdy_accept_io(TSCont contp, TSEvent ev, void * edata)
     return TS_EVENT_NONE;
 }
 
+static int
+spdy_setup_protocol(TSCont /* contp ATS_UNUSED */, TSEvent ev, void * /* edata ATS_UNUSED */)
+{
+  switch (ev) {
+  case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
+    TSReleaseAssert(TSNetAcceptNamedProtocol(TSContCreate(spdy_accept_io, TSMutexCreate()),
+                                             TS_NPN_PROTOCOL_SPDY_2) == TS_SUCCESS);
+    debug_plugin("registered named protocol endpoint for %s", TS_NPN_PROTOCOL_SPDY_2);
+    break;
+  default:
+    TSError("[spdy] Protocol registration failed");
+    break;
+  }
+
+  return TS_EVENT_NONE;
+}
+
 extern "C" void
 TSPluginInit(int argc, const char * argv[])
 {
@@ -372,12 +389,7 @@ TSPluginInit(int argc, const char * argv[])
     }
 
 init:
-    TSReleaseAssert(
-        TSNetAcceptNamedProtocol(TSContCreate(spdy_accept_io, TSMutexCreate()),
-        TS_NPN_PROTOCOL_SPDY_2) == TS_SUCCESS);
-
-    debug_plugin("registered named protocol endpoint for %s",
-            TS_NPN_PROTOCOL_SPDY_2);
+    TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, TSContCreate(spdy_setup_protocol, NULL));
 }
 
 /* vim: set sw=4 tw=79 ts=4 et ai : */

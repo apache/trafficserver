@@ -38,7 +38,8 @@ noinst_LTLIBRARIES = \
   replace-header.la \
   response-header-1.la \
   server-transform.la \
-  thread-1.la
+  thread-1.la \
+  version.la
 
 add_header_la_SOURCES = add-header/add-header.c
 append_transform_la_SOURCES = append-transform/append-transform.c
@@ -60,6 +61,7 @@ response_header_1_la_SOURCES = response-header-1/response-header-1.c
 server_transform_la_SOURCES = server-transform/server-transform.c
 thread_1_la_SOURCES = thread-1/thread-1.c
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
+version_la_SOURCES = version/version.c
 
 # The following examples do not build:
 #
