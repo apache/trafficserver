@@ -212,39 +212,6 @@ ink_string_append(char *dest, char *src, int n)
 }                               /* End ink_string_append */
 
 
-/*---------------------------------------------------------------------------*
-
-  char *ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
-
-  This routine takes a string <str>, copies the period-separated extension to
-  <ext> (up to <max_ext_len - 1> characters) NUL terminates <ext>, and
-  returns a pointer into the string <str> where the '.' of the extension
-  begins, or NULL if there is no extension.
-
- *---------------------------------------------------------------------------*/
-
-char *
-ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
-{
-  char *p = NULL;
-
-  if (ext) {
-    *ext = '\0';
-    if (str) {
-      for (p = (str + strlen(str)) - 1; p >= str; p--)
-        if (*p == '.')
-          break;
-
-      if (p <= str)
-        return (NULL);
-
-      ink_string_copy(ext, (p + 1), max_ext_len);
-    }
-  }
-  return (p);
-}                               /* End ink_string_find_dotted_extension */
-
-
 #if !HAVE_STRLCPY
 size_t
 ink_strlcpy(char *dst, const char *src, size_t siz)
@@ -302,10 +269,4 @@ ink_strlcat(char *dst, const char *src, size_t siz)
   return (dlen + (s - src));  /* count does not include NUL */
 }
 #endif
-
-char *
-ink_strtok_r(char *s1, const char *s2, char **lasts)
-{
-  return strtok_r(s1, s2, lasts);
-}
 

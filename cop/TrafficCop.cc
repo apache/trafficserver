@@ -708,10 +708,10 @@ spawn_manager()
   }
   options[0] = prog;
   i = 1;
-  tok = ink_strtok_r(manager_options, " ", &last);
+  tok = strtok_r(manager_options, " ", &last);
   options[i++] = tok;
   if (tok != NULL) {
-    while (i < OPTIONS_MAX && (tok = ink_strtok_r(NULL, " ", &last))) {
+    while (i < OPTIONS_MAX && (tok = strtok_r(NULL, " ", &last))) {
       options[i++] = tok;
     }
   }

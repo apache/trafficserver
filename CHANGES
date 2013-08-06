@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
-  
+
+  *) [TS-2100] Initialize the SSL/NPN registration mutex.
+
+  * [TS-1987, TS-2097]: Remove duplicate and unused string functions
+
+  *) [TS-2091] Return an error from RecGetRecordOrderAndId if the stat isn't
+   registered.
 
   *) [TS-2081] Make the WCCP addr configuration LOCAL.
 

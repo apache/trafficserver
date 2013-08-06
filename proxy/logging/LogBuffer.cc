@@ -646,8 +646,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
     // text log entries are just strings, so simply move it into the
     // format buffer.
     //
-    ink_string_copy(write_to, read_from, buf_len);
-    return (int)::strlen(write_to);     // OPTIMIZE, should not need strlen
+    return ink_strlcpy(write_to, read_from, buf_len);
   }
   //
   // We no longer make the distinction between custom vs pre-defined

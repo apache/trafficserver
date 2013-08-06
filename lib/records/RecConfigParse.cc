@@ -153,15 +153,15 @@ RecConfigFileParse(const char * path, RecConfigEntryCallback handler)
 
     while (isspace(*lt))
       lt++;
-    rec_type_str = ink_strtok_r(lt, " \t", &ln);
+    rec_type_str = strtok_r(lt, " \t", &ln);
 
     // check for blank lines and comments
     if ((!rec_type_str) || (rec_type_str && (*rec_type_str == '#'))) {
       goto L_next_line;
     }
 
-    name_str = ink_strtok_r(NULL, " \t", &ln);
-    data_type_str = ink_strtok_r(NULL, " \t", &ln);
+    name_str = strtok_r(NULL, " \t", &ln);
+    data_type_str = strtok_r(NULL, " \t", &ln);
 
     // extract the string data (a little bit tricker since it can have spaces)
     if (ln) {
