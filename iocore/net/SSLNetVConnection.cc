@@ -189,6 +189,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   int64_t bytes = 0;
   NetState *s = &this->read;
   MIOBufferAccessor &buf = s->vio.buffer;
+  int64_t ntodo = s->vio.ntodo();
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
   if (!lock) {
@@ -228,21 +229,24 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       nh->write_ready_list.remove(this);
       writeReschedule(nh);
     } else if (ret == EVENT_DONE) {
-      read.triggered = 1;
-      if (read.enabled)
-        nh->read_ready_list.in_or_enqueue(this);
+      // If this was driven by a zero length read, signal complete when
+      // the handshake is complete. Otherwise set up for continuing read
+      // operations.
+      if (ntodo <= 0) {
+        readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+      } else {
+        read.triggered = 1;
+        if (read.enabled)
+          nh->read_ready_list.in_or_enqueue(this);
+      }
     } else
       readReschedule(nh);
     return;
   }
 
   // If there is nothing to do, disable connection
-  int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     read_disable(nh, this);
-    // Don't return early even if there's nothing. We still need
-    // to propagate events for zero-length reads.
-    readSignalDone(VC_EVENT_READ_COMPLETE, nh);
     return;
   }
 
