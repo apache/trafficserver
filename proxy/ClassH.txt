@@ -41,8 +41,8 @@
            /    \    \
           /      \    \
                   \    \
-DiskIOVConnection   \    \
-         NetIOVConnection \
+DiskIOVConnection  \    \
+        NetIOVConnection \
                    DNSIOVConnection
 
 
