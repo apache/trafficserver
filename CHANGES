@@ -1,7 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.5
 
-
   *) [TS-2051] Fix SSL crash due to excess READ_COMPLETE events.
 
   *) [TS-2099] Using wrong member when setting active timeout.
