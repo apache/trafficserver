@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 3.5.0
 
 
+  *) [TS-1823] remap.config line continuation support
+    Author: Jim Riggs <jim@riggs.me>
+
   *) [TS-1597] Document remap.config filters
     Author: Jim Riggs <jim@riggs.me>
 

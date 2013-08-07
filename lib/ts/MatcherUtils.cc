@@ -232,16 +232,17 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
   return NULL;
 }
 
-// char* tokLine(char* buf, char** last)
+// char* tokLine(char* buf, char** last, char cont)
 //
 //  Similar to strtok_r but only tokenizes on '\n'
 //   and will return tokens that are empty strings
 //
 char *
-tokLine(char *buf, char **last)
+tokLine(char *buf, char **last, char cont)
 {
   char *start;
   char *cur;
+  char *prev = NULL;
 
   if (buf != NULL) {
     start = cur = buf;
@@ -252,11 +253,17 @@ tokLine(char *buf, char **last)
 
   while (*cur != '\0') {
     if (*cur == '\n') {
-      *cur = '\0';
-      *last = cur;
-      return start;
+      if (cont != '\0' && prev != NULL && *prev == cont) {
+        *prev = ' ';
+        *cur = ' ';
+      }
+      else {
+        *cur = '\0';
+        *last = cur;
+        return start;
+      }
     }
-    cur++;
+    prev = cur++;
   }
 
   // Return the last line even if it does
