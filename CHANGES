@@ -6,6 +6,12 @@ Changes with Apache Traffic Server 4.0.0
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
 
+  *) [TS-1823] remap.config line continuation support
+    Author: Jim Riggs <jim@riggs.me>
+
+  *) [TS-1597] Document remap.config filters
+    Author: Jim Riggs <jim@riggs.me>
+
   *) [TS-2132, TS-2131] ${libexecdir} and $(localstatedir} chowned
    needlessly chowned to to ATS' user.
    Author: Tomasz Kuzemko <tomasz@kuzemko.net>

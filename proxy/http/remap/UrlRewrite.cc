@@ -1111,7 +1111,7 @@ UrlRewrite::BuildTable()
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
 
-  for (cur_line = tokLine(file_buf, &tok_state); cur_line != NULL;) {
+  for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != NULL;) {
     errStrBuf[0] = 0;
     clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));
     clear_xstr_array(bti.argv, sizeof(bti.argv) / sizeof(char *));
@@ -1122,7 +1122,7 @@ UrlRewrite::BuildTable()
       ++cur_line;
 
     if ((cur_line_size = strlen((char *) cur_line)) <= 0) {
-      cur_line = tokLine(NULL, &tok_state);
+      cur_line = tokLine(NULL, &tok_state, '\\');
       ++cln;
       continue;
     }
@@ -1135,7 +1135,7 @@ UrlRewrite::BuildTable()
     }
 
     if ((cur_line_size = strlen((char *) cur_line)) <= 0 || *cur_line == '#' || *cur_line == '\0') {
-      cur_line = tokLine(NULL, &tok_state);
+      cur_line = tokLine(NULL, &tok_state, '\\');
       ++cln;
       continue;
     }
@@ -1171,7 +1171,7 @@ UrlRewrite::BuildTable()
         goto MAP_ERROR;
       }
       // We skip the rest of the parsing here.
-      cur_line = tokLine(NULL, &tok_state);
+      cur_line = tokLine(NULL, &tok_state, '\\');
       ++cln;
       continue;
     }
@@ -1483,7 +1483,7 @@ UrlRewrite::BuildTable()
 
     fromHost_lower_ptr = (char *)ats_free_null(fromHost_lower_ptr);
 
-    cur_line = tokLine(NULL, &tok_state);
+    cur_line = tokLine(NULL, &tok_state, '\\');
     ++cln;
     continue;
 

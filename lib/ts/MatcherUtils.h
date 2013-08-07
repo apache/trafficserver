@@ -64,7 +64,7 @@ inline char const* ExtractIpRange(
   return ExtractIpRange(match_str, ats_ip_sa_cast(addr1), ats_ip_sa_cast(addr2));
 }
 
-char *tokLine(char *buf, char **last);
+char *tokLine(char *buf, char **last, char cont = '\0');
 
 const char *processDurationString(char *str, int *seconds);
 
