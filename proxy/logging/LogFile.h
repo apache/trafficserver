@@ -127,8 +127,7 @@ class LogFile:public LogBufferSink
 {
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature,
-          size_t ascii_buffer_size = 4 * 9216, size_t max_line_size = 9216,
-          size_t overspill_report_count = 1000);
+          size_t ascii_buffer_size = 4 * 9216, size_t max_line_size = 9216);
   LogFile(const LogFile &);
   ~LogFile();
 
@@ -184,17 +183,6 @@ private:
   char *m_ascii_buffer;         // buffer for ascii output
   size_t m_ascii_buffer_size;   // size of ascii buffer
   size_t m_max_line_size;       // size of longest log line (record)
-  // (including newline)
-  char *m_overspill_buffer;     // buffer for data that did not fit
-  // the pipe buffer
-  size_t m_overspill_bytes;     // bytes in the overspill buffer
-  size_t m_overspill_written;   // bytes in overspill that have been
-  // transferred to pipe buffer
-  size_t m_attempts_to_write_overspill; // times transfer from overspill to
-  // pipe buffer has been attempted
-  size_t m_overspill_report_count;      // number of attempts at which
-  // overspill report is written to
-  // diags log
 
   int m_fd;
   long m_start_time;

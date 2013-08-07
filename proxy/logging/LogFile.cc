@@ -86,20 +86,16 @@ static const int FILESIZE_SAFE_THRESHOLD_FACTOR = 10;
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
-                 uint64_t signature, size_t ascii_buffer_size, size_t max_line_size, size_t overspill_report_count)
+                 uint64_t signature, size_t ascii_buffer_size, size_t max_line_size)
   : m_file_format(format),
     m_name(ats_strdup(name)),
     m_header(ats_strdup(header)),
     m_signature(signature),
     m_meta_info(NULL),
-    m_max_line_size(max_line_size),
-    m_overspill_report_count(overspill_report_count)
+    m_max_line_size(max_line_size)
 {
   delete m_meta_info;
   m_meta_info = NULL;
-  m_overspill_bytes = 0;
-  m_overspill_written = 0;
-  m_attempts_to_write_overspill = 0;
   m_fd = -1;
   m_start_time = 0L;
   m_end_time = 0L;
@@ -107,7 +103,6 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
   m_size_bytes = 0;
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
   m_ascii_buffer = NEW(new char[m_ascii_buffer_size]);
-  m_overspill_buffer = NEW(new char[m_max_line_size]);
 
   Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
 }
@@ -126,10 +121,6 @@ LogFile::LogFile (const LogFile& copy)
     m_meta_info (NULL),
     m_ascii_buffer_size (copy.m_ascii_buffer_size),
     m_max_line_size (copy.m_max_line_size),
-    m_overspill_bytes (0),
-    m_overspill_written (0),
-    m_attempts_to_write_overspill (0),
-    m_overspill_report_count (copy.m_overspill_report_count),
     m_fd (-1),
     m_start_time (0L),
     m_end_time (0L),
@@ -137,7 +128,6 @@ LogFile::LogFile (const LogFile& copy)
 {
     ink_assert(m_ascii_buffer_size >= m_max_line_size);
     m_ascii_buffer = NEW (new char[m_ascii_buffer_size]);
-    m_overspill_buffer = NEW (new char[m_max_line_size]);
 
     Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p",
           m_name, this);
@@ -156,8 +146,6 @@ LogFile::~LogFile()
   delete m_meta_info;
   delete[]m_ascii_buffer;
   m_ascii_buffer = 0;
-  delete[]m_overspill_buffer;
-  m_overspill_buffer = 0;
   Debug("log-file", "exiting LogFile destructor, this=%p", this);
 }
 
@@ -661,81 +649,67 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
   while ((entry_header = iter.next())) {
     fmt_buf_bytes = 0;
 
+    ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
+
     // fill the buffer with as many records as possible
     //
     do {
-      if (m_ascii_buffer_size - fmt_buf_bytes >= m_max_line_size) {
-        int bytes = LogBuffer::to_ascii(entry_header, format_type,
-                                        &m_ascii_buffer[fmt_buf_bytes],
-                                        m_max_line_size - 1,
-                                        fieldlist_str, printf_str,
-                                        buffer_header->version,
-                                        alt_format);
-
-        if (bytes > 0) {
-          fmt_buf_bytes += bytes;
-          m_ascii_buffer[fmt_buf_bytes] = '\n';
-          ++fmt_buf_bytes;
-        }
-        // if writing to a pipe, fill the buffer with a single
-        // record to avoid as much as possible overflowing the
-        // pipe buffer
-        //
-        if (m_file_format == ASCII_PIPE)
-          break;
+      if (entry_header->entry_len >= m_max_line_size) {
+        Warning("Log is too long(%"PRIu32"), it would be truncated. max_len:%zu",
+                entry_header->entry_len, m_max_line_size);
       }
+
+      int bytes = LogBuffer::to_ascii(entry_header, format_type,
+                                      &m_ascii_buffer[fmt_buf_bytes],
+                                      m_max_line_size - 1,
+                                      fieldlist_str, printf_str,
+                                      buffer_header->version,
+                                      alt_format);
+
+      if (bytes > 0) {
+        fmt_buf_bytes += bytes;
+        m_ascii_buffer[fmt_buf_bytes] = '\n';
+        ++fmt_buf_bytes;
+      } else {
+        Error("Failed to convert LogBuffer to ascii, have dropped (%"PRIu32") bytes.",
+              entry_header->entry_len);
+      }
+      // if writing to a pipe, fill the buffer with a single
+      // record to avoid as much as possible overflowing the
+      // pipe buffer
+      //
+      if (m_file_format == ASCII_PIPE)
+        break;
+
+      if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size)
+        break;
     } while ((entry_header = iter.next()));
 
-    ssize_t bytes_written;
+    int bytes_written = 0;
 
-    // try to write any data that may not have been written in a
-    // previous attempt
+    // try to write *all* the buffer out to the file or pipe
     //
-    if (m_overspill_bytes) {
-      bytes_written = 0;
-      if (!Log::config->logging_space_exhausted) {
-        bytes_written =::write(m_fd, &m_overspill_buffer[m_overspill_written], m_overspill_bytes);
-      }
-      if (bytes_written < 0) {
-        Error("An error was encountered in writing to %s: %s.", ((m_name) ? m_name : "logfile"), strerror(errno));
-      } else {
-        m_overspill_bytes -= bytes_written;
-        m_overspill_written += bytes_written;
+    while (bytes_written < fmt_buf_bytes) {
+      if (Log::config->logging_space_exhausted) {
+        Warning("logging space exhausted, have dropped (%d) bytes.",
+                (fmt_buf_bytes - bytes_written));
+        break;
       }
 
-      if (m_overspill_bytes) {
-        ++m_attempts_to_write_overspill;
-        if (m_overspill_report_count && (m_attempts_to_write_overspill % m_overspill_report_count == 0)) {
-          Warning("Have dropped %zu records so far because buffer "
-                  "for %s is full", m_attempts_to_write_overspill, m_name);
-        }
-      } else if (m_attempts_to_write_overspill) {
-        Warning("Dropped %zu records because buffer for %s was full", m_attempts_to_write_overspill, m_name);
-        m_attempts_to_write_overspill = 0;
-      }
-    }
-    // write the buffer out to the file or pipe
-    //
-    if (fmt_buf_bytes && !m_overspill_bytes) {
-      bytes_written = 0;
-      if (!Log::config->logging_space_exhausted) {
-        bytes_written =::write(m_fd, m_ascii_buffer, fmt_buf_bytes);
+      int cnt = ::write(m_fd, &m_ascii_buffer[bytes_written],
+                        (fmt_buf_bytes - bytes_written));
+      if (cnt < 0) {
+        Error("An error was encountered in writing to %s: %s.",
+              ((m_name) ? m_name : "logfile"), strerror(errno));
+        break;
       }
 
-      if (bytes_written < 0) {
-        Error("An error was encountered in writing to %s: %s.", ((m_name) ? m_name : "logfile"), strerror(errno));
-      } else {
-        if (bytes_written < fmt_buf_bytes) {
-          m_overspill_bytes = fmt_buf_bytes - bytes_written;
-          if (m_overspill_bytes > m_max_line_size)
-            m_overspill_bytes = m_max_line_size;
-          memcpy(m_overspill_buffer, &m_ascii_buffer[bytes_written], m_overspill_bytes);
-          m_overspill_written = 0;
-        }
-        total_bytes += bytes_written;
-      }
+      bytes_written += cnt;
     }
+
+    total_bytes += bytes_written;
   }
+
   return total_bytes;
 }
 

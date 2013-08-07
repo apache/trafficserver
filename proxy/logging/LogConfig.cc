@@ -183,7 +183,6 @@ LogConfig::setup_default_values()
 
   ascii_buffer_size = 4 * 9216;
   max_line_size = 9216;         // size of pipe buffer for SunOS 5.6
-  overspill_report_count = 500;
 }
 
 void *
@@ -486,11 +485,6 @@ LogConfig::read_configuration_variables()
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_line_size");
   if (val > 0) {
     max_line_size = val;
-  }
-
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.overspill_report_count");
-  if (val > 0) {
-    overspill_report_count = val;
   }
 
 /* The following variables are initialized after reading the     */

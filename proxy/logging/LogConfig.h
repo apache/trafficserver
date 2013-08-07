@@ -241,7 +241,6 @@ public:
 
   int ascii_buffer_size;
   int max_line_size;
-  int overspill_report_count;
 
   char *hostname;
   char *logfile_dir;
