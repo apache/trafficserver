@@ -41,6 +41,9 @@ proxy/cache_test.config
 proxy/congest/FeatureSpec.txt
 proxy/http/stats.memo
 proxy/issues.txt
+proxy/test_xml_parser
+proxy/tests/logstats.json
+proxy/tests/logstats.summary
 mgmt/cli/cli_detailed_command_list.txt
 mgmt/cli/cli_feature_spec.txt
 example/README.internal
@@ -53,6 +56,7 @@ doc/docbuild/
 doc/dot/
 doc/Doxyfile
 doc/Doxyfile.in
+doc/static/images/press/trafficserver.svg
 lib/tsconfig/test-tsconfig
 lib/tsconfig/TsConfigGrammar.hpp
 lib/ts/ParseRulesCType
@@ -89,7 +93,7 @@ lib/ts/ink_rand.cc
 lib/tsconfig/BisonHeaderToC++.sed
 README-EC2
 REVIEWERS
-lib/perl/AdminClient/MANIFEST
+lib/perl/MANIFEST
 lib/perl/Makefile-pl
 lib/perl/blib/
 lib/perl/pm_to_blib
@@ -107,6 +111,8 @@ lib/tsconfig/test-1.tsconfig
 rc/solaris.txt
 rc/trafficserver.service
 tools/http_load/
+tools/tstop/tstop
+tools/jtest/jtest
 plugins/experimental/stale_while_revalidate/stale_while_revalidate.conf
 plugins/experimental/tcp_info/tcp_info.config
 plugins/experimental/esi/docnode_test
@@ -114,6 +120,7 @@ plugins/experimental/esi/parser_test
 plugins/experimental/esi/processor_test
 plugins/experimental/esi/utils_test
 plugins/experimental/esi/vars_test
+plugins/experimental/esi/README.combo
 iocore/aio/diags.log
 iocore/aio/test_AIO
 iocore/aio/test_AIO.sample
