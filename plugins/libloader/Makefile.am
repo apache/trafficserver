@@ -14,15 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Add new plugins in alphabetic order, but keep experimental always at the bottom.
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
-  cacheurl \
-  conf_remap \
-  gzip \
-  header_filter \
-  header_rewrite \
-  libloader \
-  regex_remap \
-  stats_over_http \
-  experimental
+pkglib_LTLIBRARIES = libloader.la
+libloader_la_SOURCES = libloader.c
+libloader_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

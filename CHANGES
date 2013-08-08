@@ -4,6 +4,9 @@ Changes with Apache Traffic Server 3.4.0
 
   *) [TS-2129] Check for existence of ExtUtils::MakeMaker.
 
+  *) [TS-2112] Make libloader compile by default.
+
+
 Changes with Apache Traffic Server 3.3.5
 
   *) [TS-2051] Fix SSL crash due to excess READ_COMPLETE events.
