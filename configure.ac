@@ -1049,7 +1049,7 @@ AX_LIB_CURL([7.19], [
 
 #
 # The header_rewrite module depends on boost.
-AX_BOOST_BASE([1.50],
+AX_BOOST_BASE([1.33],
   [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [true]) ],
   [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [false]) ]
 )
