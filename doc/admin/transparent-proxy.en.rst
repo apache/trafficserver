@@ -8,9 +8,9 @@ Transparent Proxying
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -83,7 +83,7 @@ not consult these `more detailed instructions <build>`_
 
 Transparency is configured per server port not globally. This is done
 via the configuration values ``proxy.config.http.server_port_attr``.
-In addition, ``proxy.config.reverse_proxy_enabled`` must be enabled if the
+In addition, :ts:cv:`proxy.config.reverse_proxy.enabled` must be enabled if the
 client side is transparent. That should be fixed in a future patch.
 
 In the first case use the attribute character (replacing the default
