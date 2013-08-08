@@ -1853,6 +1853,7 @@ AC_CONFIG_FILES([
   plugins/experimental/tcp_info/Makefile
   plugins/experimental/healthchecks/Makefile
   plugins/gzip/Makefile
+  plugins/libloader/Makefile
   plugins/header_filter/Makefile
   plugins/header_rewrite/Makefile
   plugins/regex_remap/Makefile
