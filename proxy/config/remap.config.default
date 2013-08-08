@@ -1,5 +1,5 @@
 #
-#  URL Remapping Config File 
+#  URL Remapping Config File
 #
 # Using remap.config allows you to accomplish two things:
 #
@@ -13,11 +13,11 @@
 #
 # Be aware, doing so makes the proxy a generic, open-relay!
 #
-#  The format is: 
+#  The format is:
 #      <map_type> client-URL origin-server-URL <tag_value> <filtering>
 #
 # Where client-URL and origin-server-URL are both of the format
-#    <scheme>://<host>:<port>/<path_prefix> 
+#    <scheme>://<host>:<port>/<path_prefix>
 #
 #  The <tag_value> directive is optional and can be different for different
 #  types of <map_type>. The <filtering arguments> are optional ACL-like
@@ -120,12 +120,12 @@
 #  all referers are allowed.  Various combinations of "*" and "~" in a referer
 #  list can be used to create different filtering rules.
 #
-#  Examples: 
+#  Examples:
 #    map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/new_games .*\.bar\.com www.bar-friends.com
 #
 #  Explanation: Referer header must be in the request, only ".*\.bar\.com"
 #  and "www.bar-friends.com" are allowed.
-#  
+#
 #    map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/new_games * ~.*\.evil\.com
 #
 #  Explanation: Referer header must be in the request but all referers are
@@ -150,11 +150,27 @@
 #    map http://foo.cow.com/ http://bar.cow.com @src_ip=10.72.118.51-10.72.118.62 @method=GET @method=DELETE @src_ip=192.168.0.1-192.168.0.254 @action=allow @method=PUT
 #
 #
-# ToDo: This has to be documented.
-# .defflt  disable_all @action=deny @src_ip=0.0.0.1-254.254.254.254
-# .defflt  disable_delete_purge @action=deny @method=delete @method=purge
-# .useflt  disable_all
-# .useflt  disable_delete_purge
+#  Named filters can be created and applied to blocks of mappings
+#  using the .definefilter, .activatefilter, and .deactivatefilter
+#  directives. Named filters must be defined using .definefilter
+#  before being used. Once defined, .activatefilter can used to
+#  activate a filter for all mappings that follow until deactivated
+#  with .deactivatefilter.
+#
+#  Example:
+#    .definefilter disable_delete_purge @action=deny @method=delete @method=purge
+#    .definefilter internal_only @action=allow @src_ip=192.168.0.1-192.168.0.254 @src_ip=10.0.0.1-10.0.0.254
+#
+#    .activatefilter disable_delete_purge
+#
+#    map http://foo.example.com/ http://bar.example.com/
+#
+#    .activatefilter internal_only
+#    map http://www.example.com/admin http://internal.example.com/admin
+#    .deactivatefilter internal_only
+#
+#    map http://www.example.com/ http://internal.example.com/
+#
 #
 #  Regex support: Regular expressions can be specified in the rules with the
 #  following limitations:

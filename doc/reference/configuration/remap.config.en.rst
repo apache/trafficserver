@@ -275,3 +275,36 @@ Examples
 will pass "1" and "2" to plugin1.so and "3" to plugin2.so.
 
 This will pass "1" and "2" to plugin1.so and "3" to plugin2.so
+
+Named Filters
+=============
+
+Named filters can be created and applied to blocks of mappings using
+the ``.definefilter``, ``.activatefilter``, and ``.deactivatefilter``
+directives. Named filters must be defined using ``.definefilter`` before
+being used. Once defined, ``.activatefilter`` can used to activate a
+filter for all mappings that follow until deactivated with
+``.deactivatefilter``.
+
+Examples
+--------
+
+::
+
+    .definefilter disable_delete_purge @action=deny @method=delete @method=purge
+    .definefilter internal_only @action=allow @src_ip=192.168.0.1-192.168.0.254 @src_ip=10.0.0.1-10.0.0.254
+
+    .activatefilter disable_delete_purge
+
+    map http://foo.example.com/ http://bar.example.com/
+
+    .activatefilter internal_only
+    map http://www.example.com/admin http://internal.example.com/admin
+    .deactivatefilter internal_only
+
+    map http://www.example.com/ http://internal.example.com/
+
+The filter `disable_delete_purge` will be applied to all of the
+mapping rules. (It is activated before any mappings and is never
+deactivated.) The filter `internal_only` will only be applied to the
+second mapping.
