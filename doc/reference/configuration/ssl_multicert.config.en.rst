@@ -49,7 +49,7 @@ particular SSL certificate.
 ssl_cert_name=PATH
   The name of the file containing the TLS certificate. `PATH` is
   located relative to the directory specified by the
-  ``proxy.config.ssl.server.cert.path`` configuration variable.
+  :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
   This is the only field that is required to be present.
 
 dest_ip=ADDRESS
@@ -67,13 +67,13 @@ ssl_key_name=PATH
   The name of the file containing the private key for this certificate.
   If the key is contained in the certificate file, this field can
   be omitted, otherwise `PATH` is resolved relative to the
-  ``proxy.config.ssl.server.private_key.path`` configuration variable.
+  :ts:cv:`proxy.config.ssl.server.private_key.path` configuration variable.
 
 ssl_ca_name=FILENAME
   If the certificate is issued by an authority that is not in the
   system CA bundle, additional certificates may be needed to validate
   the certificate chain. `PATH` is resolved relative to the
-  ``proxy.config.ssl.CA.cert.path`` configuration variable.
+  :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
 
 Certificate Selection
 =====================
