@@ -6,6 +6,9 @@ Changes with Apache Traffic Server 3.4.0
 
   *) [TS-2112] Make libloader compile by default.
 
+  *) [TS-2111] configure check in boost falsely requires 1.50. Reducing it to
+   v1.33, which is what RHEL5 ships with.
+
 
 Changes with Apache Traffic Server 3.3.5
 
