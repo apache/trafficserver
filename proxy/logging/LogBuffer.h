@@ -196,7 +196,6 @@ private:
   size_t m_buf_align;           // the buffer alignment
   size_t m_write_align;         // the write alignment mask
 
-  int m_max_entries;            // max number of entries allowed
   long m_expiration_time;       // buffer expiration time
 
   LogObject *m_owner;           // the LogObject that owns this buf.

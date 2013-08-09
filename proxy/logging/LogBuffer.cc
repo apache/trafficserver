@@ -128,7 +128,7 @@ LogBufferHeader::log_filename()
 LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t write_align):
   m_size(size),
   m_buf_align(buf_align),
-  m_write_align(write_align), m_max_entries(Log::config->max_entries_per_buffer), m_owner(owner),
+  m_write_align(write_align), m_owner(owner),
   m_references(0)
 {
   size_t hdr_size;
@@ -158,7 +158,7 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   m_buffer((char *) header),
   m_size(0),
   m_buf_align(LB_DEFAULT_ALIGN),
-  m_write_align(INK_MIN_ALIGN), m_max_entries(0), m_expiration_time(0), m_owner(owner), m_header(header),
+  m_write_align(INK_MIN_ALIGN), m_expiration_time(0), m_owner(owner), m_header(header),
   m_references(0)
 {
   // This constructor does not allocate a buffer because it gets it as
@@ -221,7 +221,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
       // before we do
 
       if (write_offset) {
-        if (old_s.s.num_entries < m_max_entries && old_s.s.offset + actual_write_size <= m_size) {
+        if (old_s.s.offset + actual_write_size <= m_size) {
           // there is room for this entry, update the state
 
           offset = old_s.s.offset;
@@ -810,8 +810,7 @@ LogBufferIterator::next()
   LogEntryHeader *entry = (LogEntryHeader *) m_next;
 
   if (entry) {
-    if (m_iter_entry_count < m_buffer_entry_count &&
-        m_iter_entry_count < (unsigned) Log::config->max_entries_per_buffer) {
+    if (m_iter_entry_count < m_buffer_entry_count) {
       m_next += entry->entry_len;
       ++m_iter_entry_count;
       ret_val = entry;

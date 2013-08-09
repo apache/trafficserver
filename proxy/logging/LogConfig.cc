@@ -103,7 +103,6 @@ LogConfig::setup_default_values()
   hostname = ats_strdup(name);
 
   log_buffer_size = (int) (10 * LOG_KILOBYTE);
-  max_entries_per_buffer = 100;
   max_secs_per_buffer = 5;
   max_space_mb_for_logs = 100;
   max_space_mb_for_orphan_logs = 25;
@@ -205,11 +204,6 @@ LogConfig::read_configuration_variables()
   val = (int) LOG_ConfigReadInteger("proxy.config.log.log_buffer_size");
   if (val > 0) {
     log_buffer_size = val;
-  }
-
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_entries_per_buffer");
-  if (val > 0) {
-    max_entries_per_buffer = val;
   }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_secs_per_buffer");
@@ -771,7 +765,6 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "-----------------------------\n");
   fprintf(fd, "Config variables:\n");
   fprintf(fd, "   log_buffer_size = %d\n", log_buffer_size);
-  fprintf(fd, "   max_entries_per_buffer = %d\n", max_entries_per_buffer);
   fprintf(fd, "   max_secs_per_buffer = %d\n", max_secs_per_buffer);
   fprintf(fd, "   max_space_mb_for_logs = %d\n", max_space_mb_for_logs);
   fprintf(fd, "   max_space_mb_for_orphan_logs = %d\n", max_space_mb_for_orphan_logs);
@@ -1223,7 +1216,6 @@ LogConfig::register_config_callbacks()
   // Note: variables that are not exposed in the UI are commented out
   //
   LOG_RegisterConfigUpdateFunc("proxy.config.log.log_buffer_size", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_entries_per_buffer", &LogConfig::reconfigure, NULL);
 //    LOG_RegisterConfigUpdateFunc ("proxy.config.log.max_secs_per_buffer",
 //                            &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_logs", &LogConfig::reconfigure, NULL);
