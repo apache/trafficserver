@@ -655,7 +655,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
     //
     do {
       if (entry_header->entry_len >= m_max_line_size) {
-        Warning("Log is too long(%"PRIu32"), it would be truncated. max_len:%zu",
+        Warning("Log is too long(%" PRIu32 "), it would be truncated. max_len:%zu",
                 entry_header->entry_len, m_max_line_size);
       }
 
@@ -671,7 +671,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
         m_ascii_buffer[fmt_buf_bytes] = '\n';
         ++fmt_buf_bytes;
       } else {
-        Error("Failed to convert LogBuffer to ascii, have dropped (%"PRIu32") bytes.",
+        Error("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.",
               entry_header->entry_len);
       }
       // if writing to a pipe, fill the buffer with a single
