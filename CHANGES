@@ -2,14 +2,22 @@
 Changes with Apache Traffic Server 3.5.0
 
 
+  *) [TS-2122] Enlarge the 64KB limitation of log buffer size.
+
+  *) [TS-2061] LogFile::write_ascii_logbuffer3() can silently drop log
+   entries.
+
+  *) [TS-2123] Remove useless max_entries_per_buffer option.
+
+  *) [TS-2112] make libloader build by default.
+
   *) [TS-2111] configure check in boost falsely requires 1.50. Reducing it to
    v1.33, which is what RHEL5 ships with.
 
-  *) [TS-1823] remap.config line continuation support
+  *) [TS-1823] remap.config line continuation support.
     Author: Jim Riggs <jim@riggs.me>
 
-  *) [TS-1597] Document remap.config filters
-    Author: Jim Riggs <jim@riggs.me>
+  *) [TS-1597] Document remap.config filters. Author: Jim Riggs <jim@riggs.me>.
 
   *) [TS-2111] configure check in boost falsely requires 1.50. Reducing it to
    v1.33, which is what RHEL5 ships with.
