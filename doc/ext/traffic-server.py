@@ -154,3 +154,7 @@ def setup(app):
                         objname='Configuration file',
                         indextemplate='pair: %s; Configuration files')
     app.add_domain(TrafficServerDomain)
+
+    # Types that we want the C domain to consider built in
+    for word in ('size_t'):
+        sphinx.domains.c.CObject.stopwords.add(word)

@@ -26,7 +26,7 @@ Take standard headers and knowledge about objects in the cache and
 potentially rewrite those headers so that a client will use a URL
 that is already cached instead of one that isn't.
 
-The `metalink` headers are specified in :rfc:`6429` and :rfc:`3230` 
+The `metalink` headers are specified in :rfc:`6429` and :rfc:`3230`
 and are sent by various download redirectors or content distribution
 networks.
 
@@ -59,7 +59,7 @@ Installation
 ------------
 
 `metalink` is a global plugin. It is enabled by adding it to your
-:file:`plugins.config` file. There are no options.
+:file:`plugin.config` file. There are no options.
 
 Implementation Status
 ---------------------
