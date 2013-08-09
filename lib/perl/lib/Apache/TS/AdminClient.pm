@@ -565,7 +565,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.logfile_dir
  proxy.config.log.logfile_perm
  proxy.config.log.logging_enabled
- proxy.config.log.max_entries_per_buffer
  proxy.config.log.max_line_size
  proxy.config.log.max_secs_per_buffer
  proxy.config.log.max_space_mb_for_logs
