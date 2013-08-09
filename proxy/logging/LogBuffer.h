@@ -118,9 +118,8 @@ union LB_State
   int64_t ival;
   struct
   {
-    uint16_t offset;              // buffer should be <= 64KB
+    uint32_t offset;              // buffer offset(bytes in buffer)
     uint16_t num_entries;         // number of entries in buffer
-    uint16_t byte_count;          // bytes in buffer
     uint16_t full:1;              // not accepting more checkouts
     uint16_t num_writers:15;      // number of writers
   } s;

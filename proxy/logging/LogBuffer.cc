@@ -143,7 +143,6 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
 
   // initialize buffer state
   m_state.s.offset = hdr_size;
-  m_state.s.byte_count = hdr_size;
 
   // update the buffer id (m_id gets the old value)
   m_id = (uint32_t) ink_atomic_increment((pvint32) & M_ID, 1);
@@ -230,7 +229,6 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
           ++new_s.s.num_writers;
           new_s.s.offset += actual_write_size;
           ++new_s.s.num_entries;
-          new_s.s.byte_count += actual_write_size;
 
           ret_val = LB_OK;
         } else {
@@ -424,7 +422,7 @@ LogBuffer::update_header_data()
 
   if (m_unaligned_buffer) {
     m_header->entry_count = m_state.s.num_entries;
-    m_header->byte_count = m_state.s.byte_count;
+    m_header->byte_count = m_state.s.offset;
     m_header->high_timestamp = LogUtils::timestamp();
   }
 }
