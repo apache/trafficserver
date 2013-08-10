@@ -149,12 +149,42 @@ class TrafficServerDomain(Domain):
         for var, doc in self.data['cv'].iteritems():
             yield var, var, 'cv', doc, var, 1
 
+# These types are ignored as missing references for the C++ domain.
+EXTERNAL_TYPES = set((
+    'int',
+    'uint8_t', 'uint16_t', 'uint24_t', 'uint32_t', 'uint64_t',
+    'off_t',
+    'Event', 'INK_MD5', 'DLL<EvacuationBlock>',
+    ))
+
+# Clean up specific references that we know will never be defined but are implicitly used by
+# other domain directives. Hand convert them to literals.
+def xref_cleanup(app, env, node, contnode):
+    rdomain = node['refdomain']
+    rtype = node['reftype']
+    rtarget = node['reftarget']
+    if 'cpp' == rdomain:
+        if 'type' == rtype:
+            if rtarget in EXTERNAL_TYPES:
+                node = nodes.literal()
+                node += contnode
+                return node
+            # allow pointer or reference decorations
+            if ('*' == rtarget[-1] or '&' == rtarget[-1]) and rtarget[:-1] in EXTERNAL_TYPES:
+                return contnode
+    return;
+
 def setup(app):
     app.add_crossref_type('configfile', 'file',
                         objname='Configuration file',
                         indextemplate='pair: %s; Configuration files')
+
+    rst.roles.register_generic_role('arg', nodes.emphasis);
+
     app.add_domain(TrafficServerDomain)
 
     # Types that we want the C domain to consider built in
-    for word in ('size_t'):
+    for word in EXTERNAL_TYPES:
         sphinx.domains.c.CObject.stopwords.add(word)
+
+    app.connect('missing-reference', xref_cleanup)

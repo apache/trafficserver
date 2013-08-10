@@ -43,6 +43,7 @@ bandwidth.
   reference/commands/index.en
   reference/plugins/index.en
   reference/api/index.en
+  arch/index.en
 
 Indices and tables
 ==================

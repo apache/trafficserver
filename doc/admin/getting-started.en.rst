@@ -8,9 +8,9 @@ Getting Started
    to you under the Apache License, Version 2.0 (the
    "License"); you may not use this file except in compliance
    with the License.  You may obtain a copy of the License at
-   
+
     http://www.apache.org/licenses/LICENSE-2.0
-   
+
    Unless required by applicable law or agreed to in writing,
    software distributed under the License is distributed on an
    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -135,6 +135,8 @@ only work successfully with the default ``layout``:
 After you have installed Traffic Server on your system, you can do any
 of the following:
 
+.. _start-traffic-server:
+
 Start Traffic Server
 ====================
 
@@ -143,11 +145,9 @@ passing in the attribute ``start``. This command starts all the
 processes that work together to process Traffic Server requests as well
 as manage, control, and monitor the health of the Traffic Server system.
 
-To run the ``trafficserver start`` command, e.g.:
+To run the ``trafficserver start`` command, e.g.::
 
-::
-
-        bin/trafficserver start
+   bin/trafficserver start
 
 At this point your server is up and running in the default configuration
 of a `reverse proxy <../reverse-proxy-http-redirects>`_.

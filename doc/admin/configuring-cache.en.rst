@@ -1,22 +1,24 @@
+.. _configuring-the-cache:
+
 Configuring the Cache
 *********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 The Traffic Server cache consists of a high-speed object database called
 the **object store** that indexes objects according to URLs and their
@@ -92,8 +94,7 @@ To change the RAM cache size:
    gigabyte of disk.
 3. Restart Traffic Server. If you increase the RAM cache to a size or
    1GB or more, then restart with the ``start_traffic_server`` command
-   (refer to `Starting Traffic
-   Server <../getting-started#StartingTS>`_).
+   (refer to :ref:`start-traffic-server`).
 
  
 
@@ -114,8 +115,7 @@ steps below:
 
 1. Stop Traffic Server.
 2. Add hardware, if necessary.
-3. Edit the Traffic Server
-   ```storage.config`` <../configuration-files/storage.config>`_ file:
+3. Edit :file:`storage.config` to
    increase the amount of disk space allocated to the cache on existing
    disks or describe the new hardware you are adding.
 4. Restart Traffic Server.
@@ -129,13 +129,12 @@ steps below:
 
 1. Stop Traffic Server.
 2. Remove hardware, if necessary.
-3. Edit the Traffic Server
-   ```storage.config`` <../configuration-files/storage.config>`_ file:
+3. Edit :file:`storage.config` to
    reduce the amount of disk space allocated to the cache on existing
    disks or delete the reference to the hardware you're removing.
 4. Restart Traffic Server.
 
-**IMPORTANT:** In the ``storage.config`` file, a formatted or raw disk
+**IMPORTANT:** In :file:`storage.config`, a formatted or raw disk
 must be at least 128 MB.
 
 Partitioning the Cache
@@ -303,6 +302,8 @@ Note: The procedure above only removes an object from a *specific*
 Traffic Server cache. Users may still see the old (removed) content if
 it was cached by intermediary caches or by the end-users' web browser.
 
+.. _inspecting-the-cache:
+
 Inspecting the Cache
 ====================
 
@@ -310,27 +311,27 @@ Traffic Server provides a Cache Inspector utility that enables you to
 view, delete, and invalidate URLs in the cache (HTTP only). The Cache
 Inspector utility is a powerful tool that's capable of deleting *all*
 the objects in your cache; therefore, make sure that only authorized
-administrators are allowed to access this utility, see `Controlling Host
-Access to Traffic
-Manager <../security-options#ControllingHostAccessTrafficManager>`_.
+administrators are allowed to access this utility, see :ref:`controlling-client-access-to-cache` and the ``@scr_ip`` option in :file:`remap.config`.
 
 Accessing the Cache Inspector Utility
 -------------------------------------
 
 To access the Cache Inspector utility, follow the steps below:
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file add the following variable:
-2. `*``CONFIG proxy.config.http_ui_enabled INT 1``* <../configuration-files/records.config#proxy.config.http_ui_enabled>`_
-3. To access the cache inspector in reverse proxy mode, you must add a
-   remap rule to ``remap.config`` to expose the URL For example:
-   ``map http://yourhost.com/myCI http://{cache} @action=allow @src_ip=corp_internal_address``
-4. From the Traffic Server ``bin`` directory, enter the following
+#. Set :ts:cv:`proxy.config.http_ui_enabled` to ``1``.
+#. To access the cache inspector in reverse proxy mode, you must add a
+   remap rule to :file:`remap.config` to expose the URL. This should be restricted to a limited set of hosts using the ``@src_ip`` option. To restrict access to the network 172.28.56.0/24, use ::
+
+      map http://yourhost.com/myCI http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
+
+#. From the Traffic Server ``bin`` directory, enter the following
    command to re-read the configuration file: ``traffic_line -x``
-5. Open your web browser and configure it to use your Traffic Server as
-   a proxy server. Type the following URL: ``http://yourhost/myCI``
-6. The Cache page opens (see `Using the Cache Page <#UsingCachePage>`_
-   below).
+#. Open your web browser and configure it to use your Traffic Server as
+   a proxy server. Type the following URL::
+
+      http://yourhost/myCI
+
+#. The Cache page opens.
 
 Using the Cache Page
 --------------------

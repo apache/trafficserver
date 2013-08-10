@@ -1,3 +1,5 @@
+.. _admin-guide:
+
 Administrators' Guide
 **********************
 

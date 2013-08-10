@@ -28,6 +28,13 @@ Synopsis
 .. function:: void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
 .. function:: void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
 
+.. rubric:: Opaque types
+
+.. type:: TSHttpTxn
+.. type:: TSHttpSsn
+.. type:: TSHttpHookID
+.. type:: TSCont
+
 Description
 ===========
 
@@ -46,20 +53,20 @@ transaction. :func:`TSHttpHookAdd` is typically called from
 A session consists of a single client connection to Traffic Server.
 A session can consist of several transactions in succession. The
 session starts when the client connection opens, and ends when the
-connection closes. :func:`TSHttpSsnHookAdd` adds :data:`contp` to
-the end of the list of HTTP transaction hooks specified by :data:`id`.
-This means that :data:`contp` is called back for every transaction
+connection closes. :func:`TSHttpSsnHookAdd` adds :arg:`contp` to
+the end of the list of HTTP transaction hooks specified by :arg:`id`.
+This means that :arg:`contp` is called back for every transaction
 within the session, at the point specified by the hook ID. Since
-:data:`contp` is added to a session, it is not possible to call
+:arg:`contp` is added to a session, it is not possible to call
 :func:`TSHttpSsnHookAdd` from the plugin initialization routine;
 the plugin needs a handle to an HTTP session.
 
 A transaction consists of a single HTTP request from a client and
 the response that Traffic Server sends to that client. A transaction
 begins when Traffic Server receives a request, and ends when Traffic
-Server sends the response. :func:`TSHttpTxnHookAdd` adds :data:`contp`
+Server sends the response. :func:`TSHttpTxnHookAdd` adds :arg:`contp`
 to the end of the list of HTTP transaction hooks specified by
-:data:`id`. Since :data:`contp` is added to a transaction, it is
+:arg:`id`. Since :arg:`contp` is added to a transaction, it is
 not possible to call :func:`TSHttpTxnHookAdd` from the plugin
 initialization routine but only when the plugin has a handle to an
 HTTP transaction.

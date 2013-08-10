@@ -1064,6 +1064,10 @@ Customizable User Response Pages
    -  ``1`` = always suppress generated response pages
    -  ``2`` = suppress response pages only for intercepted traffic
 
+.. ts:cv:: CONFIG proxy.config.http_ui_enabled INT 0
+
+   Enable the user interface page.
+
 DNS
 ===
 
@@ -1090,9 +1094,11 @@ hostname to ``host_x.y.com``.
    Traffic Server to add the hostname extension .org, then specify ``org`` as the value for this variable (Traffic Server automatically
    adds the dot (.)).
 
-   **Note:** If the variable
-   `proxy.config.http.enable_url_expandomatic`_ is set to ``1`` (the default value), then you do not have to add *``www.``* and
-   *``.com``* to this list because Traffic Server automatically tries www. and .com after trying the values you've specified.
+.. note::
+
+   If the variable :ts:cv:`proxy.config.http.enable_url_expandomatic` is set to ``1`` (the default value), then you do not have to
+   add *``www.``* and *``.com``* to this list because Traffic Server automatically tries www. and .com after trying the values
+   you've specified.
 
 .. ts:cv:: CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
 
@@ -1554,6 +1560,10 @@ SSL Termination
    :file:`ssl_multicert.config` will be loaded relative to this
    path.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.private_key.filename STRING NULL
+
+   TBD
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
 
    The name of a file containing a global certificate chain that
@@ -1571,6 +1581,10 @@ SSL Termination
 
    The filename of the certificate authority that client certificates
    will be verified against.
+
+.. ts:cv:: CONFIG proxy.config.ssl.auth.enabled INT 0
+
+   TBD
 
 Client-Related Configuration
 ----------------------------
