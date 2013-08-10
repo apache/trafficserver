@@ -584,8 +584,7 @@ cmd_clear(char *cmd)
   char p[PATH_NAME_MAX];
   if (c_all || c_hdb) {
     Note("Clearing Configuration");
-    Layout::relative_to(p, sizeof(p), system_config_directory,
-                        "internal/hostdb.config");
+    Layout::relative_to(p, sizeof(p), system_runtime_dir, "hostdb.config");
     if (unlink(p) < 0)
       Note("unable to unlink %s", p);
   }

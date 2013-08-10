@@ -293,13 +293,12 @@ versiondir = $(pkgsysconfdir)
 install-data-local:
 	if [ `id -un` != "root" ]; then \
 		$(INSTALL) -d $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgruntimedir) \
-				$(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir) \
-				$(DESTDIR)$(pkgcachedir); \
+				$(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(pkgcachedir); \
 	else \
 		 $(INSTALL) -d $(DESTDIR)$(pkglocalstatedir); \
 		 $(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglogdir) \
 				$(DESTDIR)$(pkgruntimedir) $(DESTDIR)$(pkgsysconfdir) \
-				$(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(pkgcachedir); \
+				$(DESTDIR)$(pkgdatadir) $(DESTDIR)$(pkgcachedir); \
 	fi
 
 install-data-hook:

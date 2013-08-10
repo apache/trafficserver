@@ -296,9 +296,9 @@ client machines have no access to the cluster ports.
 The following message appears repeatedly in the system log file:
 
 ::
-     traffic_cop[16056]: encountered "config/internal/no_cop" file...exiting
+     traffic_cop[16056]: encountered "var/trafficserver/no_cop" file...exiting
 
-The file ``config/internal/no_cop`` acts as an administrative control
+The file ``var/trafficserver/no_cop`` acts as an administrative control
 that instructs the ``traffic_cop`` process to exit immediately without
 starting ``traffic_manager`` or performing any health checks. The
 ``no_cop`` file prevents Traffic Server from starting automatically when

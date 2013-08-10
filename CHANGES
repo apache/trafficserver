@@ -2,7 +2,10 @@
 Changes with Apache Traffic Server 3.5.0
 
 
-  *) TS-2089: introduce configurable collation preproc threads
+  *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
+   host.db itself.
+
+  *) [TS-2089] Introduce configurable collation preproc threads.
 
   *) [TS-2132, TS-2131] ${libexecdir} and $(localstatedir} chowned
    needlessly chowned to to ATS' user.
@@ -12,11 +15,11 @@ Changes with Apache Traffic Server 3.5.0
 
   *) [TS-2130] pthread_setname_np() detection fails on various platforms.
 
-  *)[ TS-2096] improve SSL certificate loading error messages
+  *)[ TS-2096] Improve SSL certificate loading error messages.
 
   *) [TS-2129] Check for existence of ExtUtils::MakeMaker.
 
-  *) [TS-2128] Don't link libGeoIP.so.1 into binaries
+  *) [TS-2128] Don't link libGeoIP.so.1 into binaries.
 
   *) [TS-2122] Enlarge the 64KB limitation of log buffer size.
 
@@ -25,7 +28,7 @@ Changes with Apache Traffic Server 3.5.0
 
   *) [TS-2123] Remove useless max_entries_per_buffer option.
 
-  *) [TS-2112] make libloader build by default.
+  *) [TS-2112] Make libloader build by default.
 
   *) [TS-2111] configure check in boost falsely requires 1.50. Reducing it to
    v1.33, which is what RHEL5 ships with.
