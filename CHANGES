@@ -1,5 +1,10 @@
                                                          -*- coding: utf-8 -*-
+
 Changes with Apache Traffic Server 3.4.0
+
+
+  *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
+   host.db itself.
 
   *) [TS-2132, TS-2131] ${libexecdir} and $(localstatedir} chowned
    needlessly chowned to to ATS' user.

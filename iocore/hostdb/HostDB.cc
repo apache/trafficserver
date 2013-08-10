@@ -414,7 +414,7 @@ HostDBCache::start(int flags)
     Note("reconfiguring host database");
 
     char p[PATH_NAME_MAX + 1];
-    Layout::relative_to(p, PATH_NAME_MAX, system_config_directory, "internal/hostdb.config");
+    Layout::relative_to(p, PATH_NAME_MAX, system_runtime_dir, "hostdb.config");
     if (unlink(p) < 0)
       Debug("hostdb", "unable to unlink %s", p);
 

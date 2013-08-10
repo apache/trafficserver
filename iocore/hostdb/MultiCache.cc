@@ -501,10 +501,8 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 {
   int scratch;
   char p[PATH_NAME_MAX + 1], buf[256];
-  char i[PATH_NAME_MAX + 1];
 
-  ink_filepath_make(i, sizeof(i), system_config_directory, "internal/");
-  Layout::relative_to(p, sizeof(p), i, config_filename);
+  Layout::relative_to(p, sizeof(p), system_runtime_dir, config_filename);
 
   int fd =::open(p, O_RDONLY);
   if (fd < 0)
@@ -539,11 +537,9 @@ int
 MultiCacheBase::write_config(const char *config_filename, int nominal_size, int abuckets)
 {
   char p[PATH_NAME_MAX + 1], buf[256];
-  char i[PATH_NAME_MAX + 1];
   int fd, retcode = -1;
 
-  ink_filepath_make(i, sizeof(i), system_config_directory, "internal/");
-  Layout::relative_to(p, sizeof(p), i, config_filename);
+  Layout::relative_to(p, sizeof(p), system_runtime_dir, config_filename);
 
   // XXX: Shouldn't that be 0664?
   //

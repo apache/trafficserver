@@ -1521,7 +1521,7 @@ check_no_run()
   int err;
 
   cop_log_trace("Entering check_no_run()\n");
-  snprintf(path, sizeof(path), "%s/internal/no_cop", config_dir);
+  snprintf(path, sizeof(path), "%s/no_cop", runtime_dir);
 
   do {
     err = stat(path, &info);
