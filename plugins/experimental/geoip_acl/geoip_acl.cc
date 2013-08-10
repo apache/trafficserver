@@ -47,10 +47,8 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-#if TS_USE_MAXMIND_GEOIP
   //gGI = GeoIP_new(GEOIP_STANDARD); // This seems to break on threaded apps
   gGI = GeoIP_new(GEOIP_MMAP_CACHE);
-#endif
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS;                     /* success */

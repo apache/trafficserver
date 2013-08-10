@@ -1308,16 +1308,14 @@ AC_SUBST(use_hwloc)
 # GeoIP as a "helper" plugin, which other plugins can then use. Such a plugin could
 # then manage which libraries to use via explicit dlopen()'s.
 #
-use_maxmind_geoip=0
-AC_SEARCH_LIBS([GeoIP_id_by_code], [GeoIP], [use_maxmind_geoip=1], [use_maxmind_geoip=0])
-AS_IF([test 1 -eq $use_maxmind_geoip], [
-  TS_FLAG_HEADERS([GeoIP.h], [], [
-    AC_MSG_ERROR([Can not locate GeoIP.h, perhaps install GeoIP-devel package?])
-  ])
+enable_maxmind_geoip=no
+TS_SEARCH_LIBRARY([GeoIP_id_by_code], [GeoIP], [
+  GEOIP_LIBS=$ts_cv_search_GeoIP_id_by_code
+  TS_FLAG_HEADERS([GeoIP.h], [ enable_maxmind_geoip=yes ])
 ])
 
-AC_SUBST(use_maxmind_geoip)
-AM_CONDITIONAL([BUILD_GEOIP_PLUGIN], [ test 0 -ne $use_maxmind_geoip ])
+AC_SUBST(GEOIP_LIBS)
+AM_CONDITIONAL([BUILD_GEOIP_PLUGIN], [ test "x${enable_maxmind_geoip}" = x"yes" ])
 
 # Right now, the healthcheck plugins requires inotify_init (and friends)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])

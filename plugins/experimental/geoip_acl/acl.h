@@ -27,11 +27,11 @@
 
 #include "lulu.h"
 
-#if TS_USE_MAXMIND_GEOIP
+#if HAVE_GEOIP_H
 #include <GeoIP.h>
-extern GeoIP* gGI;
 #endif
 
+extern GeoIP* gGI;
 
 // See http://www.iso.org/iso/english_country_names_and_code_elements
 // Maxmind allocates 253 country codes,even though there are only 248 according to the above

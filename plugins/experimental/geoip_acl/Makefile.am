@@ -21,5 +21,6 @@ if BUILD_GEOIP_PLUGIN
 pkglib_LTLIBRARIES = geoip_acl.la
 geoip_acl_la_SOURCES = acl.cc geoip_acl.cc
 geoip_acl_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+geoip_acl_la_LIBADD = $(GEOIP_LIBS)
 
 endif
