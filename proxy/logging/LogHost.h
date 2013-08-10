@@ -33,7 +33,7 @@ class LogCollationClientSM;
   LogHost
   This object corresponds to a named log collation host.
   -------------------------------------------------------------------------*/
-class LogHost: public LogBufferSink
+class LogHost
 {
 
 //#if defined(IOCORE_LOG_COLLATION)
@@ -52,7 +52,11 @@ public:
   bool connected(bool ping);
   bool connect();
   void disconnect();
-  int write(LogBuffer * lb);
+  //
+  // write the buffer data to target host and try to
+  // delete it when its reference become zero.
+  //
+  int write_and_try_delete(LogBuffer * lb);
 
   char const* name() const { return m_name ? m_name : "UNKNOWN"; }
   IpAddr const& ip_addr() const { return m_ip; }
@@ -69,7 +73,6 @@ private:
   void clear();
   bool authenticated();
   int orphan_write(LogBuffer * lb);
-  int orphan_write_and_delete(LogBuffer * lb);
   void create_orphan_LogFile_object();
 
 private:
@@ -108,7 +111,7 @@ public:
   void add(LogHost * host, bool copy = true);
   unsigned count();
   void clear();
-  int write(LogBuffer * lb);
+  int write_and_delete(LogBuffer * lb);
 
   LogHost *first() { return m_host_list.head; }
   LogHost *next(LogHost * here) { return (here->link).next; }

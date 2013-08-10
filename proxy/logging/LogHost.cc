@@ -259,9 +259,15 @@ LogHost::create_orphan_LogFile_object()
   ats_free(name_buf);
 }
 
+//
+// write the buffer data to target host and try to
+// delete it when its reference become zero.
+//
 int
-LogHost::write (LogBuffer *lb)
+LogHost::write_and_try_delete (LogBuffer *lb)
 {
+  int result = -1;
+
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
     return -1;
@@ -270,11 +276,12 @@ LogHost::write (LogBuffer *lb)
   if (buffer_header == NULL) {
     Note("Cannot write LogBuffer to LogHost %s; LogBufferHeader is NULL",
         name());
-    return -1;
+    goto done;
   }
   if (buffer_header->entry_count == 0) {
     // no bytes to write
-    return 0;
+    result = 0;
+    goto done;
   }
 
 #if !defined(IOCORE_LOG_COLLATION)
@@ -283,9 +290,9 @@ LogHost::write (LogBuffer *lb)
 
   if (!connected(NOPING)) {
     if (!connect ()) {
-      Note("Cannot write LogBuffer to LogHost %s; not connected",
-          name());
-      return orphan_write (lb);
+      Note("Cannot write LogBuffer to LogHost %s; not connected", name());
+      result = orphan_write(lb);
+      goto done;
     }
   }
 
@@ -301,26 +308,17 @@ LogHost::write (LogBuffer *lb)
     disconnect();
     // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
     // lb->convert_to_host_order ();
-    return orphan_write (lb);
+    result = orphan_write(lb);
+    goto done;
   }
 
   Debug("log-host","%d bytes sent to LogHost %s:%u", bytes_sent,
       name(), port());
   SUM_DYN_STAT (log_stat_bytes_sent_to_network_stat, bytes_sent);
-  return bytes_sent;
+  result = bytes_sent;
+  goto done;
 
 #else // !defined(IOCORE_LOG_COLLATION)
-  // make a copy of our log_buffer
-  int buffer_header_size = buffer_header->byte_count;
-  LogBufferHeader *buffer_header_copy =
-      (LogBufferHeader*) NEW(new char[buffer_header_size]);
-  ink_assert(buffer_header_copy != NULL);
-
-  memcpy(buffer_header_copy, buffer_header, buffer_header_size);
-  LogBuffer *lb_copy = NEW(new LogBuffer(lb->get_owner(),
-          buffer_header_copy));
-  ink_assert(lb_copy != NULL);
-
   // create a new collation client if necessary
   if (m_log_collation_client_sm == NULL) {
     m_log_collation_client_sm = NEW(new LogCollationClientSM(this));
@@ -328,18 +326,23 @@ LogHost::write (LogBuffer *lb)
   }
 
   // send log_buffer; orphan if necessary
-  int bytes_sent = m_log_collation_client_sm->send(lb_copy);
-  if (bytes_sent <= 0) {
-    orphan_write_and_delete(lb_copy);
+  result = m_log_collation_client_sm->send(lb);
+  if (result <= 0) {
+    result = orphan_write(lb);
 #if defined(LOG_BUFFER_TRACKING)
-    Debug("log-buftrak", "[%d]LogHost::write - orphan write complete",
-        lb_copy->header()->id);
+    Debug("log-buftrak", "[%d]LogHost::write_and_try_delete - orphan write complete",
+        lb->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
+    goto done;
   }
 
-  return bytes_sent;
+  return result;
 
 #endif // !defined(IOCORE_LOG_COLLATION)
+
+done:
+  LogBuffer::destroy(lb);
+  return result;
 }
 
 int
@@ -351,16 +354,6 @@ LogHost::orphan_write(LogBuffer * lb)
   } else {
     return 0;                   // nothing written
   }
-}
-
-int
-LogHost::orphan_write_and_delete(LogBuffer * lb)
-{
-  int bytes = orphan_write(lb);
-  // done with the buffer, delete it
-  delete lb;
-  lb = 0;
-  return bytes;
 }
 
 void
@@ -457,14 +450,26 @@ LogHostList::clear()
 }
 
 int
-LogHostList::write(LogBuffer * lb)
+LogHostList::write_and_delete(LogBuffer * lb)
 {
   int total_bytes = 0;
-  for (LogHost * host = first(); host; host = next(host)) {
-    int bytes = host->write(lb);
+  unsigned nr_host, nr;
+
+  ink_release_assert(lb->m_references == 0);
+
+  nr_host = nr = count();
+  ink_atomic_increment(&lb->m_references, nr_host);
+
+  for (LogHost * host = first(); host && nr; host = next(host)) {
+    int bytes = host->write_and_try_delete(lb);
     if (bytes > 0)
       total_bytes += bytes;
+    nr--;
   }
+
+  if (nr_host == 0)
+    delete lb;
+
   return total_bytes;
 }
 

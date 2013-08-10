@@ -188,6 +188,21 @@ public:
                                   int write_to_len, long timestamp, long timestamp_us,
                                   unsigned buffer_version, LogFieldList * alt_fieldlist = NULL,
                                   char *alt_printf_str = NULL);
+  static void destroy(LogBuffer *lb)
+  {
+    int result, old_ref, new_ref;
+
+    do {
+      old_ref = lb->m_references;
+      new_ref = old_ref - 1;
+      result = ink_atomic_cas(&lb->m_references, old_ref, new_ref);
+    } while(!result);
+
+    ink_release_assert(new_ref >= 0);
+
+    if (new_ref == 0)
+      delete lb;
+  }
 
 private:
   char *m_unaligned_buffer;     // the unaligned buffer

@@ -472,37 +472,41 @@ LogFile::roll(long interval_start, long interval_end)
 }
 
 /*-------------------------------------------------------------------------
-  LogFile::write
+  LogFile::write_and_try_delete
 
-  Write the given LogBuffer data onto this file
+  Write the given LogBuffer data onto this file and
+  free the buffer memory according _need_delete_ parameter.
   -------------------------------------------------------------------------*/
 int
-LogFile::write(LogBuffer * lb)
+LogFile::write_and_try_delete(LogBuffer * lb, bool need_delete)
 {
+  int bytes = 0;
+  int result = -1;
+  LogBufferHeader *buffer_header;
+
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogFile %s; LogBuffer is NULL", m_name);
     return -1;
   }
-  LogBufferHeader *buffer_header = lb->header();
-  if (buffer_header == NULL) {
+  if ((buffer_header = lb->header()) == NULL) {
     Note("Cannot write LogBuffer to LogFile %s; LogBufferHeader is NULL",
         m_name);
-    return -1;
+    goto done;
   }
   if (buffer_header->entry_count == 0) {
     // no bytes to write
     Note("LogBuffer with 0 entries for LogFile %s, nothing to write", m_name);
-    return 0;
+    result = 0;
+    goto done;
   }
 
   // make sure we're open & ready to write
 
   check_fd();
   if (!is_open()) {
-    return -1;
+    goto done;
   }
 
-  int bytes = 0;
   if (m_file_format == BINARY_LOG) {
     //
     // Ok, now we need to write the binary buffer to the file, and we
@@ -512,9 +516,14 @@ LogFile::write(LogBuffer * lb)
     // don't change between buffers), it's not worth trying to separate
     // out the buffer-dependent data from the buffer-independent data.
     //
-    bytes = ::write(m_fd, buffer_header, buffer_header->byte_count);
-    if (static_cast<uint32_t>(bytes) != buffer_header->byte_count) {
-      Warning("An error was encountered writing to %s: [tried %d, wrote %d, '%s']", m_name, buffer_header->byte_count, bytes, strerror(errno));
+    while (static_cast<uint32_t>(bytes) < buffer_header->byte_count) {
+      int cnt = ::write(m_fd, buffer_header, buffer_header->byte_count);
+      if (cnt < 0) {
+        Error("An error was encountered writing to %s: [tried %d, wrote %d, '%s']",
+              m_name, buffer_header->byte_count, bytes, strerror(errno));
+        break;
+      }
+      bytes += cnt;
     }
   }
   else if (m_file_format == ASCII_LOG || m_file_format == ASCII_PIPE) {
@@ -527,7 +536,7 @@ LogFile::write(LogBuffer * lb)
   else {
     Note("Cannot write LogBuffer to LogFile %s; invalid file format: %d",
         m_name, m_file_format);
-    return -1;
+    goto done;
   }
 
   //
@@ -540,7 +549,12 @@ LogFile::write(LogBuffer * lb)
     m_start_time = buffer_header->low_timestamp;
   m_end_time = buffer_header->high_timestamp;
   m_bytes_written += bytes;
-  return bytes;
+  result = bytes;
+
+done:
+  if (need_delete)
+    delete lb;
+  return result;
 }
 
 /*-------------------------------------------------------------------------

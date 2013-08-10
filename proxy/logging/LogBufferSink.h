@@ -35,7 +35,11 @@ the network
 class LogBufferSink
 {
 public:
-  virtual int write(LogBuffer * buffer) = 0;
+  //
+  // The write_and_delete() function should be responsible for
+  // freeing memory pointed to by _buffer_ parameter.
+  //
+  virtual int write_and_delete(LogBuffer * buffer) = 0;
     virtual ~ LogBufferSink()
   {
   };

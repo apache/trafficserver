@@ -141,7 +141,13 @@ public:
     LOG_FILE_FILESYSTEM_CHECKS_FAILED
   };
 
-  int write(LogBuffer * lb);
+  inline int write(LogBuffer * lb) {
+    return write_and_try_delete(lb, false);
+  }
+
+  inline int write_and_delete(LogBuffer * lb) {
+    return write_and_try_delete(lb, true);
+  }
   int roll(long interval_start, long interval_end);
 
   char *get_name() const { return m_name; }
@@ -172,6 +178,12 @@ private:
   void check_fd();
   static int writeln(char *data, int len, int fd, const char *path);
   void read_metadata();
+
+  //
+  // Write the given LogBuffer data onto this file and
+  // free the buffer memory according _need_delete_ parameter.
+  //
+  int write_and_try_delete(LogBuffer * lb, bool need_delete);
 
 private:
   LogFileFormat m_file_format;

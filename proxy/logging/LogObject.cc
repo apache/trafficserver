@@ -59,8 +59,7 @@ LogBufferManager::flush_buffers(LogBufferSink *sink) {
   int flushed = 0;
   while ((b = new_q.pop())) {
     b->update_header_data();
-    sink->write(b);
-    delete b;
+    sink->write_and_delete(b);
     ink_atomic_increment(&_num_flush_buffers, -1);
     flushed++;
   }
