@@ -24,12 +24,8 @@
 #include "acl.h"
 #include "lulu.h"
 
-
 // Global GeoIP object.
-#if TS_USE_MAXMIND_GEOIP
-#include <GeoIP.h>
 GeoIP* gGI;
-#endif
 
 // Implementation of the ACL base class.
 void
@@ -140,9 +136,7 @@ CountryAcl::add_token(const std::string& str)
   int iso = -1;
 
   Acl::add_token(str);
-#if TS_USE_MAXMIND_GEOIP
   iso = GeoIP_id_by_code(str.c_str());
-#endif
 
   if (iso > 0 && iso < NUM_ISO_CODES) {
     _iso_country_codes[iso] = true;
@@ -215,14 +209,12 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
     {
       uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
 
-#if TS_USE_MAXMIND_GEOIP
       iso = GeoIP_id_by_ipnum(gGI, ip);
       if (TSIsDebugTagSet(PLUGIN_NAME)) {
         const char* c = GeoIP_country_code_by_ipnum(gGI, ip);
         TSDebug(PLUGIN_NAME, "eval(): IP=%u seems to come from ISO=%d / %s", ip, iso, c);
       }
     }
-#endif
     break;
   case AF_INET6:
     return true;

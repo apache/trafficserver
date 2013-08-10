@@ -513,7 +513,7 @@ done
 
 ])dnl
 
-dnl TS_FLAG_HEADERS(HEADER-FILE ... )
+dnl TS_FLAG_HEADERS(header-file, [action-if-found], [action-if-not-found], [includes])
 dnl
 AC_DEFUN([TS_FLAG_HEADERS], [
 AC_CHECK_HEADERS([$1], [$2], [$3], [$4])
@@ -560,3 +560,26 @@ AC_DEFUN([TS_ARG_ENABLE_VAR],[
   )
 ])
 
+dnl
+dnl TS_SEARCH_LIBRARY(function, search-libs, [action-if-found], [action-if-not-found])
+dnl This macro works like AC_SEARCH_LIBS, except that $LIBS is not modified. If the library
+dnl is found, it is cached in the ts_cv_lib_${function} variable.
+dnl
+AC_DEFUN([TS_SEARCH_LIBRARY], [
+  __saved_LIBS="$LIBS"
+
+  AC_SEARCH_LIBS($1, $2, [
+    dnl action-if-found
+    case $ac_cv_search_$1 in
+    "none required"|"no") ts_cv_search_$1="" ;;
+    *) ts_cv_search_$1=$ac_cv_search_$1 ;;
+    esac
+    m4_ifval($3, [$3], [true])
+  ], [
+    dnl action-if-not-found
+    m4_ifval($4, [$4], [true])
+  ])
+
+  LIBS="$__saved_LIBS"
+  unset __saved_LIBS
+])

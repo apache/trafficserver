@@ -4,6 +4,8 @@ Changes with Apache Traffic Server 3.4.0
 
   *) [TS-2129] Check for existence of ExtUtils::MakeMaker.
 
+  *) [TS-2128] Don't link libGeoIP.so.1 into binaries
+
   *) [TS-2112] Make libloader compile by default.
 
   *) [TS-2111] configure check in boost falsely requires 1.50. Reducing it to
