@@ -77,21 +77,21 @@ Cache Data Structures
 
    This represents a storage unit inside a cache volume.
 
-.. cpp:member:: off_t Vol::segments
+   .. cpp:member:: off_t Vol::segments
 
       The number of segments in the volume. This will be roughly the total number of entries divided by the number of entries in a segment. It will be rounded up to cover all entries.
 
-.. cpp:member:: off_t Vol::buckets
+   .. cpp:member:: off_t Vol::buckets
 
       The number of buckets in the volume. This will be roughly the number of entries in a segment divided by ``DIR_DEPTH``. For currently defined values this is around 16,384 (2^16 / 4). Buckets are used as the targets of the index hash.
 
-.. cpp:member:: DLL\<EvacuationBlock\> Vol::evacuate
+   .. cpp:member:: DLL\<EvacuationBlock\> Vol::evacuate
 
-    Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there is one bucket for every evacuation span.
+      Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there is one bucket for every evacuation span.
 
 .. cpp:function:: int Vol::evac_range(off_t low, off_t high, int evac_phase)
 
-    Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the range from *low* to *high*. Return 0 if no evacuation was started, non-zero otherwise.
+   Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the range from *low* to *high*. Return 0 if no evacuation was started, non-zero otherwise.
 
 .. cpp:class:: CacheVol
 
@@ -129,11 +129,11 @@ Cache Data Structures
 
       Fragment type. Currently only `CACHE_FRAG_TYPE_HTTP` is used. Other types may be used for cache extensions if those are ever used / implemented.
 
-    .. cpp:member:: uint24_t Doc::flen
+   .. cpp:member:: uint24_t Doc::flen
 
-        Fragment table length, if any. Only the first ``Doc`` in an object should contain a fragment table.
+      Fragment table length, if any. Only the first ``Doc`` in an object should contain a fragment table.
 
-        The fragment table is a list of offsets relative to the HTTP content (not counting metadata or HTTP headers). Each offset is the byte offset of the first byte in the fragment. The first element in the table is the second fragment (what would be index 1 for an array). The offset for the first fragment is of course always zero and so not stored. The purpose of this is to enable a fast seek for range requests - given the first ``Doc`` the fragment containing the first byte in the range can be computed and loaded directly without further disk access.
+      The fragment table is a list of offsets relative to the HTTP content (not counting metadata or HTTP headers). Each offset is the byte offset of the first byte in the fragment. The first element in the table is the second fragment (what would be index 1 for an array). The offset for the first fragment is of course always zero and so not stored. The purpose of this is to enable a fast seek for range requests - given the first ``Doc`` the fragment containing the first byte in the range can be computed and loaded directly without further disk access.
 
       Removed as of version 3.3.0.
 

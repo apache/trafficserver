@@ -15,11 +15,11 @@
    specific language governing permissions and limitations
    under the License.
 
+.. configfile:: cache.config
+
 ============
 cache.config
 ============
-
-.. configfile:: cache.config
 
 The :file:`cache.config` file defines how Traffic Server caches web objects. You
 can add caching rules to specify the following: - Not to cache objects

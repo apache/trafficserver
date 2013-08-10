@@ -1660,10 +1660,8 @@ ICP Configuration
 Scheduled Update Configuration
 ==============================
 
-.. XXX this is missing something:
+.. ts:cv:: CONFIG proxy.config.update.enabled INT 0
 
-   ``INT``
-   ``0``
    Enables (``1``) or disables (``0``) the Scheduled Update option.
 
 .. ts:cv:: CONFIG proxy.config.update.force INT 0
@@ -1763,3 +1761,16 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 
    Same as the command line option ``--accept_mss`` that sets the MSS for all incoming requests.
+
+Undocumented
+============
+
+.. ts:cv:: CONFIG proxy.config.http.cache.heuristic_min_lifetime INT 0
+
+.. ts:cv:: CONFIG proxy.config.http.cache.heuristic_max_lifetime INT 0
+
+.. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
+
+.. ts:cv:: CONFIG proxy.config.http.enabled INT 1
+
+   Enable caching HTTP content.

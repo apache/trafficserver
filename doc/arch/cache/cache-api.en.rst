@@ -18,8 +18,8 @@ Cache Internals
 
 .. cpp:function::    int DIR_SIZE_WITH_BLOCK(int big)
 
-    A preprocessor macro which computes the maximum size of a fragment based on the value of *big*. This is computed as if the argument where the value of the *big* field in a struct :cpp:class:`Dir`.
+   A preprocessor macro which computes the maximum size of a fragment based on the value of *big*. This is computed as if the argument where the value of the *big* field in a struct :cpp:class:`Dir`.
 
 .. cpp:function::    int DIR_BLOCK_SIZE(int big)
 
-    A preprocessor macro which computes the block size multiplier for a struct :cpp:class:`Dir` where *big* is the *big* field value.
+   A preprocessor macro which computes the block size multiplier for a struct :cpp:class:`Dir` where *big* is the *big* field value.

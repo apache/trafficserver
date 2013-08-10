@@ -165,13 +165,11 @@ def xref_cleanup(app, env, node, contnode):
     rtarget = node['reftarget']
     if 'cpp' == rdomain:
         if 'type' == rtype:
-            if rtarget in EXTERNAL_TYPES:
+            # one of the predefined type, or a pointer or reference to it.
+            if (rtarget in EXTERNAL_TYPES) or (('*' == rtarget[-1] or '&' == rtarget[-1]) and rtarget[:-1] in EXTERNAL_TYPES):
                 node = nodes.literal()
                 node += contnode
                 return node
-            # allow pointer or reference decorations
-            if ('*' == rtarget[-1] or '&' == rtarget[-1]) and rtarget[:-1] in EXTERNAL_TYPES:
-                return contnode
     return;
 
 def setup(app):
