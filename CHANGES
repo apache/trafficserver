@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.4.0
 
 
+  *) [TS-2130] pthread_setname_np() detection fails on various platforms.
+
   *) [TS-2129] Check for existence of ExtUtils::MakeMaker.
 
   *) [TS-2128] Don't link libGeoIP.so.1 into binaries
