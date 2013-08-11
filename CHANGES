@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.5.0
 
 
+  *) [TS-2129] Check for existence of ExtUtils::MakeMaker.
+
   *) [TS-2128] Don't link libGeoIP.so.1 into binaries
 
   *) [TS-2122] Enlarge the 64KB limitation of log buffer size.
