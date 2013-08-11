@@ -172,8 +172,8 @@ static SSL_CTX *
 ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * lookup)
 {
 #if TS_USE_TLS_SNI
-  Debug("ssl", "setting SNI callbacks with for ctx %p", ctx);
   if (ctx) {
+    Debug("ssl", "setting SNI callbacks with for ctx %p", ctx);
     SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
     SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
   }
@@ -217,22 +217,30 @@ SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...)
   unsigned long es;
 
   va_list ap;
-  va_start(ap, fmt);
 
   es = CRYPTO_thread_id();
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
         diags->log("ssl", DL_Debug, loc.file, loc.func, loc.line,
-            "SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+            "SSL::%lu:%s:%s:%d%s%s", es, ERR_error_string(l, buf), file, line,
+          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "");
       }
     } else {
       diags->error(DL_Error, loc.file, loc.func, loc.line,
-          "SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
+          "SSL::%lu:%s:%s:%d%s%s", es, ERR_error_string(l, buf), file, line,
+          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "");
     }
   }
 
+  va_start(ap, fmt);
+  if (debug) {
+    diags->log_va("ssl", DL_Debug, &loc, fmt, ap);
+  } else {
+    diags->error_va(DL_Error, loc.file, loc.func, loc.line, fmt, ap);
+  }
   va_end(ap);
+
 }
 
 const char *
@@ -533,7 +541,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
   X509_free(cert);
 }
 
-static void
+static bool
 ssl_store_ssl_context(
     const SSLConfigParams * params,
     SSLCertLookup *         lookup,
@@ -547,8 +555,7 @@ ssl_store_ssl_context(
 
   ctx = ssl_context_enable_sni(SSLInitServerContext(params, cert, ca, key), lookup);
   if (!ctx) {
-    SSLError("failed to create new SSL server context");
-    return;
+    return false;
   }
 
 #if TS_USE_TLS_NPN
@@ -578,6 +585,7 @@ ssl_store_ssl_context(
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   ssl_index_certificate(lookup, ctx, certpath);
+  return true;
 }
 
 static bool
@@ -678,7 +686,10 @@ SSLParseCertificateConfiguration(
         REC_SignalError(errBuf, alarmAlready);
       } else {
         if (ssl_extract_certificate(&line_info, addr, cert, ca, key)) {
-          ssl_store_ssl_context(params, lookup, addr, cert, ca, key);
+          if (!ssl_store_ssl_context(params, lookup, addr, cert, ca, key)) {
+            Error("failed to load SSL certificate specification from %s line %u",
+                params->configFilePath, line_num);
+          }
         } else {
           snprintf(errBuf, sizeof(errBuf), "%s: discarding invalid %s entry at line %u",
                        __func__, params->configFilePath, line_num);
@@ -701,4 +712,3 @@ SSLParseCertificateConfiguration(
 
   return true;
 }
-

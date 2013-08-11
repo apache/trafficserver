@@ -174,7 +174,7 @@ public:
   const char *level_name(DiagsLevel dl) const;
 
   inkcoreapi void print_va(const char *tag, DiagsLevel dl,
-                           SrcLoc *loc, const char *format_string, va_list ap) const;
+                           const SrcLoc *loc, const char *format_string, va_list ap) const;
 
 
   //////////////////////////////
@@ -200,7 +200,7 @@ public:
   // on the value of the enable flag, and the state of the debug tags. //
   ///////////////////////////////////////////////////////////////////////
 
-  void log_va(const char *tag, DiagsLevel dl, SrcLoc * loc, const char *format_string, va_list ap)
+  void log_va(const char *tag, DiagsLevel dl, const SrcLoc * loc, const char *format_string, va_list ap)
   {
     if (!on(tag))
       return;

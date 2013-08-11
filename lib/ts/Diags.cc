@@ -185,7 +185,7 @@ Diags::~Diags()
 //////////////////////////////////////////////////////////////////////////////
 
 void
-Diags::print_va(const char *debug_tag, DiagsLevel diags_level ,SrcLoc *loc,
+Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc,
                 const char *format_string, va_list ap) const
 {
   struct timeval tp;
