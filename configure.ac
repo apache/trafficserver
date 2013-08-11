@@ -1549,7 +1549,7 @@ AC_SUBST(netinet_ip_icmph)
 
 # Darwin pthread_setname_np:
 AC_MSG_CHECKING([for 1-parameter version of pthread_setname_np()])
-AC_COMPILE_IFELSE([
+AC_LINK_IFELSE([
     AC_LANG_PROGRAM([
 #if HAVE_PTHREAD_H
 #include <pthread.h>
@@ -1569,7 +1569,7 @@ AC_COMPILE_IFELSE([
 
 # Linux pthread_setname_np:
 AC_MSG_CHECKING([for 2-parameter version of pthread_setname_np()])
-AC_COMPILE_IFELSE([
+AC_LINK_IFELSE([
     AC_LANG_PROGRAM([
 #if HAVE_PTHREAD_H
 #include <pthread.h>
@@ -1589,7 +1589,7 @@ AC_COMPILE_IFELSE([
 
 # BSD pthread_set_name_np:
 AC_MSG_CHECKING([for 2-parameter version of pthread_set_name_np()])
-AC_COMPILE_IFELSE([
+AC_LINK_IFELSE([
     AC_LANG_PROGRAM([
 #if HAVE_PTHREAD_H
 #include <pthread.h>
