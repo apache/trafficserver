@@ -77,16 +77,18 @@ size_t Log::numInactiveObjects;
 size_t Log::maxInactiveObjects;
 
 // Flush thread stuff
-volatile unsigned long Log::flush_counter = 0;
-ink_mutex Log::flush_mutex;
-ink_cond Log::flush_cond;
-ink_thread Log::flush_thread;
+ink_mutex *Log::preproc_mutex;
+ink_cond *Log::preproc_cond;
+ink_mutex *Log::flush_mutex;
+ink_cond *Log::flush_cond;
+InkAtomicList *Log::flush_data_list;
 
 // Collate thread stuff
 ink_mutex Log::collate_mutex;
 ink_cond Log::collate_cond;
 ink_thread Log::collate_thread;
 int Log::collation_accept_file_descriptor;
+int Log::collation_preproc_threads;
 int Log::collation_port;
 
 // Log private objects
@@ -179,16 +181,28 @@ Log::add_to_inactive(LogObject * object)
 
 struct PeriodicWakeup;
 typedef int (PeriodicWakeup::*PeriodicWakeupHandler)(int, void *);
-struct PeriodicWakeup : Continuation {
+struct PeriodicWakeup : Continuation
+{
+  int m_preproc_threads;
+  int m_flush_threads;
+
   int wakeup (int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    ink_cond_signal (&Log::flush_cond);
-    return EVENT_CONT;
+      for (int i = 0; i < m_preproc_threads; i++) {
+        ink_cond_signal (&Log::preproc_cond[i]);
+      }
+      for (int i = 0; i < m_flush_threads; i++) {
+        ink_cond_signal (&Log::flush_cond[i]);
+      }
+      return EVENT_CONT;
   }
 
-  PeriodicWakeup () : Continuation (new_ProxyMutex())
+  PeriodicWakeup (int preproc_threads, int flush_threads) :
+    Continuation (new_ProxyMutex()),
+    m_preproc_threads(preproc_threads),
+    m_flush_threads(flush_threads)
   {
-    SET_HANDLER ((PeriodicWakeupHandler)&PeriodicWakeup::wakeup);
+      SET_HANDLER ((PeriodicWakeupHandler)&PeriodicWakeup::wakeup);
   }
 };
 
@@ -286,15 +300,33 @@ Log::periodic_tasks(long time_now)
 /*-------------------------------------------------------------------------
   MAIN INTERFACE
   -------------------------------------------------------------------------*/
-struct LoggingFlushContinuation: public Continuation
+struct LoggingPreprocContinuation: public Continuation
 {
+  int m_idx;
+
   int mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    Log::flush_thread_main(NULL);
+    Log::preproc_thread_main((void *)&m_idx);
     return 0;
   }
 
-  LoggingFlushContinuation():Continuation(NULL)
+  LoggingPreprocContinuation(int idx):Continuation(NULL), m_idx(idx)
+  {
+    SET_HANDLER(&LoggingPreprocContinuation::mainEvent);
+  }
+};
+
+struct LoggingFlushContinuation: public Continuation
+{
+  int m_idx;
+
+  int mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+  {
+    Log::flush_thread_main((void *)&m_idx);
+    return 0;
+  }
+
+  LoggingFlushContinuation(int idx):Continuation(NULL), m_idx(idx)
   {
     SET_HANDLER(&LoggingFlushContinuation::mainEvent);
   }
@@ -910,6 +942,7 @@ Log::init(int flags)
   numInactiveObjects = 0;
   inactive_objects = new LogObject*[maxInactiveObjects];
 
+  collation_preproc_threads = 1;
   collation_accept_file_descriptor = NO_FD;
 
   // store the configuration flags
@@ -931,6 +964,7 @@ Log::init(int flags)
 
     config->read_configuration_variables();
     collation_port = config->collation_port;
+    collation_preproc_threads = config->collation_preproc_threads;
 
     if (config_flags & STANDALONE_COLLATOR) {
       logging_mode = LOG_TRANSACTIONS_ONLY;
@@ -959,8 +993,8 @@ Log::init(int flags)
     create_threads();
 
 #ifndef INK_SINGLE_THREADED
-    eventProcessor.schedule_every(NEW (new PeriodicWakeup()), HRTIME_SECOND,
-        ET_CALL);
+    eventProcessor.schedule_every(NEW (new PeriodicWakeup(collation_preproc_threads, 1)),
+                                  HRTIME_SECOND, ET_CALL);
 #endif
     init_status |= PERIODIC_WAKEUP_SCHEDULED;
 
@@ -1001,9 +1035,16 @@ Log::init_when_enabled()
     // setup global scrap object
     //
     global_scrap_format = NEW(new LogFormat(TEXT_LOG));
-    global_scrap_object = NEW(new LogObject(global_scrap_format, Log::config->logfile_dir, "scrapfile.log", BINARY_LOG,
-                                            NULL, Log::config->rolling_enabled, Log::config->rolling_interval_sec,
-                                            Log::config->rolling_offset_hr, Log::config->rolling_size_mb));
+    global_scrap_object =
+      NEW(new LogObject(global_scrap_format,
+                        Log::config->logfile_dir,
+                        "scrapfile.log",
+                        BINARY_LOG, NULL,
+                        Log::config->rolling_enabled,
+                        Log::config->collation_preproc_threads,
+                        Log::config->rolling_interval_sec,
+                        Log::config->rolling_offset_hr,
+                        Log::config->rolling_size_mb));
 
     // create the flush thread and the collation thread
     //
@@ -1030,15 +1071,43 @@ Log::create_threads()
 
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   if (!(init_status & THREADS_CREATED)) {
-    // start the flush thread
+
+    char desc[64];
+    preproc_mutex = new ink_mutex[collation_preproc_threads];
+    preproc_cond = new ink_cond[collation_preproc_threads];
+
+    size_t stacksize;
+    REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+
+    // start the preproc threads
     //
     // no need for the conditional var since it will be relying on
     // on the event system.
-    ink_mutex_init(&flush_mutex, "Flush thread mutex");
-    ink_cond_init(&flush_cond);
-    Continuation *flush_continuation = NEW(new LoggingFlushContinuation);
-    Event *flush_event = eventProcessor.spawn_thread(flush_continuation, "[LOGGING]", stacksize);
-    flush_thread = flush_event->ethread->tid;
+    for (int i = 0; i < collation_preproc_threads; i++) {
+      sprintf(desc, "Logging preproc thread mutex[%d]", i);
+      ink_mutex_init(&preproc_mutex[i], desc);
+      ink_cond_init(&preproc_cond[i]);
+      Continuation *preproc_cont = NEW(new LoggingPreprocContinuation(i));
+      sprintf(desc, "[LOG_PREPROC %d]", i);
+      eventProcessor.spawn_thread(preproc_cont, desc, stacksize);
+    }
+
+    // Now, only one flush thread is supported.
+    // TODO: Enable multiple flush threads, such as
+    //       one flush thread per file.
+    //
+    flush_mutex = new ink_mutex;
+    flush_cond = new ink_cond;
+    flush_data_list = new InkAtomicList;
+
+    sprintf(desc, "Logging flush thread mutex");
+    ink_mutex_init(flush_mutex, desc);
+    ink_cond_init(flush_cond);
+    sprintf(desc, "Logging flush buffer list");
+    ink_atomiclist_init(flush_data_list, desc, 0);
+    Continuation *flush_cont = NEW(new LoggingFlushContinuation(0));
+    sprintf(desc, "[LOG_FLUSH]");
+    eventProcessor.spawn_thread(flush_cont, desc, stacksize);
 
 #if !defined(IOCORE_LOG_COLLATION)
     // start the collation thread if we are not using iocore log collation
@@ -1164,52 +1233,150 @@ Log::va_error(char *format, va_list ap)
 }
 
 /*-------------------------------------------------------------------------
-  Log::flush_thread_main
+  Log::preproc_thread_main
 
-  This function defines the functionality of the logging flush thread,
-  whose purpose is to consume LogBuffer objects from the
-  global_buffer_full_list, process them, and destroy them.
+  This function defines the functionality of the logging flush prepare
+  thread, whose purpose is to consume LogBuffer objects from the
+  global_buffer_full_list, do some prepare work(such as convert to ascii),
+  and then forward to flush thread.
   -------------------------------------------------------------------------*/
 
 void *
-Log::flush_thread_main(void * /* args ATS_UNUSED */)
+Log::preproc_thread_main(void *args)
 {
-  time_t now, last_time = 0;
-  size_t buffers_flushed;
+  size_t buffers_preproced;
+  int idx = *(int *)args;
 
-  Debug("log-flush", "Log flush thread is alive ...");
+  Debug("log-preproc", "log preproc thread is alive ...");
+
+  ink_mutex_acquire(&preproc_mutex[idx]);
 
   while (true) {
-    buffers_flushed = 0;
-
-    buffers_flushed = config->log_object_manager.flush_buffers();
+    buffers_preproced = config->log_object_manager.preproc_buffers(idx);
 
     if (error_log)
-      buffers_flushed += error_log->flush_buffers();
+      buffers_preproced += error_log->preproc_buffers(idx);
 
     // config->increment_space_used(bytes_to_disk);
     // TODO: the bytes_to_disk should be set to Log
 
-    Debug("log-flush","%zu buffers flushed this round", buffers_flushed);
+    Debug("log-preproc","%zu buffers preprocessed this round",
+          buffers_preproced);
 
-    // Time to work on periodic events??
-    //
-    now = time(NULL);
-    if (now > last_time) {
-      if ((now % PERIODIC_TASKS_INTERVAL) == 0) {
-        Debug("log-flush", "periodic tasks for %" PRId64, (int64_t)now);
-        periodic_tasks(now);
-      }
-      last_time = (now = time(NULL));
-    }
     // wait for more work; a spurious wake-up is ok since we'll just
     // check the queue and find there is nothing to do, then wait
     // again.
     //
-    ink_mutex_try_acquire(&flush_mutex); // acquire if not already acquired, so ink_cond_wait doesn't fail us
-    ink_cond_wait (&flush_cond, &flush_mutex);
+    ink_cond_wait (&preproc_cond[idx], &preproc_mutex[idx]);
   }
+
   /* NOTREACHED */
+  ink_mutex_release(&preproc_mutex[idx]);
+  return NULL;
+}
+
+void *
+Log::flush_thread_main(void * /* args ATS_UNUSED */)
+{
+  char *buf;
+  LogFile *logfile;
+  LogBuffer *logbuffer;
+  LogFlushData *fdata;
+  ink_hrtime now, last_time = 0;
+  int len, bytes_written, total_bytes;
+  SLL<LogFlushData, LogFlushData::Link_link> link, invert_link;
+
+  ink_mutex_acquire(flush_mutex);
+
+  while (true) {
+    fdata = (LogFlushData *) ink_atomiclist_popall(flush_data_list);
+
+    // invert the list
+    //
+    link.head = fdata;
+    while ((fdata = link.pop()))
+      invert_link.push(fdata);
+
+    // process each flush data
+    //
+    while ((fdata = invert_link.pop())) {
+      buf = NULL;
+      total_bytes = 0;
+      bytes_written = 0;
+      logfile = fdata->m_logfile;
+
+      if (logfile->m_file_format == BINARY_LOG) {
+
+        logbuffer = (LogBuffer *)fdata->m_data;
+        LogBufferHeader *buffer_header = logbuffer->header();
+
+        buf = (char *)buffer_header;
+        total_bytes = buffer_header->byte_count;
+
+      } else if (logfile->m_file_format == ASCII_LOG
+                 || logfile->m_file_format == ASCII_PIPE){
+
+        buf = (char *)fdata->m_data;
+        total_bytes = fdata->m_len;
+
+      } else {
+        ink_release_assert(!"Unknown file format type!");
+      }
+
+      // make sure we're open & ready to write
+      logfile->check_fd();
+      if (!logfile->is_open()) {
+        Warning("File:%s was closed, have dropped (%d) bytes.",
+                logfile->m_name, total_bytes);
+        delete fdata;
+        continue;
+      }
+
+      // write *all* data to target file as much as possible
+      //
+      while (total_bytes - bytes_written) {
+        if (Log::config->logging_space_exhausted) {
+          Warning("logging space exhausted, failed to write file:%s, have dropped (%d) bytes.",
+                  logfile->m_name, (total_bytes - bytes_written));
+          break;
+        }
+
+        len = ::write(logfile->m_fd, &buf[bytes_written],
+                      total_bytes - bytes_written);
+        if (len < 0) {
+          Error("Failed to write log to %s: [tried %d, wrote %d, %s]",
+                logfile->m_name, total_bytes, bytes_written, strerror(errno));
+          ink_release_assert(!"test");
+          break;
+        }
+        bytes_written += len;
+      }
+
+      ink_atomic_increment(&logfile->m_bytes_written, bytes_written);
+
+      delete fdata;
+    }
+
+    // Time to work on periodic events??
+    //
+    now = ink_get_hrtime() / HRTIME_SECOND;
+    if (now > last_time) {
+      if ((now % (PERIODIC_TASKS_INTERVAL)) == 0) {
+        Debug("log-preproc", "periodic tasks for %" PRId64, (int64_t)now);
+        periodic_tasks(now);
+      }
+      last_time = (now = ink_get_hrtime() / HRTIME_SECOND);
+    }
+
+    // wait for more work; a spurious wake-up is ok since we'll just
+    // check the queue and find there is nothing to do, then wait
+    // again.
+    //
+    ink_cond_wait(flush_cond, flush_mutex);
+  }
+
+  /* NOTREACHED */
+  ink_mutex_release(flush_mutex);
   return NULL;
 }
 
@@ -1233,6 +1400,8 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
 
 
   Debug("log-thread", "Log collation thread is alive ...");
+
+  ink_mutex_acquire(&collate_mutex);
 
   while (true) {
     ink_assert(Log::config != NULL);
@@ -1321,7 +1490,9 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
     Debug("log", "no longer collation host, deleting LogSock");
     delete sock;
   }
+
   /* NOTREACHED */
+  ink_mutex_release(&collate_mutex);
   return NULL;
 }
 
@@ -1355,8 +1526,10 @@ Log::match_logobject(LogBufferHeader * header)
       obj = NEW(new LogObject(fmt, Log::config->logfile_dir,
                               header->log_filename(), file_format, NULL,
                               Log::config->rolling_enabled,
+                              Log::config->collation_preproc_threads,
                               Log::config->rolling_interval_sec,
-                              Log::config->rolling_offset_hr, Log::config->rolling_size_mb));
+                              Log::config->rolling_offset_hr,
+                              Log::config->rolling_size_mb));
 
       obj->set_remote_flag();
 

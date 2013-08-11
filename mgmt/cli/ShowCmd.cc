@@ -1555,6 +1555,7 @@ ShowLogging()
   TSInt collation_port = -1;
   TSString collation_secret = NULL;
   TSInt host_tag = 0;
+  TSInt preproc_threads = 0;
   TSInt orphan_space = -1;
 
   TSInt squid_log = 0;
@@ -1596,6 +1597,7 @@ ShowLogging()
   Cli_RecordGetString("proxy.config.log.collation_secret", &collation_secret);
   Cli_RecordGetInt("proxy.config.log.collation_host_tagged", &host_tag);
   Cli_RecordGetInt("proxy.config.log.max_space_mb_for_orphan_logs", &orphan_space);
+  Cli_RecordGetInt("proxy.config.log.collation_preproc_threads", &preproc_threads);
 
   Cli_RecordGetInt("proxy.config.log.squid_log_enabled", &squid_log);
   Cli_RecordGetInt("proxy.config.log.squid_log_is_ascii", &is_ascii);
@@ -1657,6 +1659,7 @@ ShowLogging()
   Cli_Printf("  Port ----------------------------------- %d\n", collation_port);
   Cli_Printf("  Secret --------------------------------- %s\n", collation_secret);
   Cli_PrintEnable("  Host Tagged ---------------------------- ", host_tag);
+  Cli_PrintEnable("  Preproc Threads ------------------------ ", preproc_threads);
   Cli_Printf("  Space Limit for Orphan Files ----------- %d MB\n", orphan_space);
 
   Cli_PrintEnable("\nSquid Format ----------------------------- ", squid_log);

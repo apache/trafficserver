@@ -296,6 +296,8 @@
 #include <stdarg.h>
 #include "libts.h"
 #include "P_RecProcess.h"
+#include "LogFile.h"
+#include "LogBuffer.h"
 
 class LogAccess;
 class LogFieldList;
@@ -303,11 +305,44 @@ class LogFilterList;
 class LogFormatList;
 //class LogBufferList; vl: we don't need it here
 struct LogBufferHeader;
+class LogFile;
 class LogBuffer;
 class LogFormat;
 class LogObject;
 class LogConfig;
 class TextLogObject;
+
+class LogFlushData
+{
+public:
+  LINK(LogFlushData, link);
+  LogFile *m_logfile;
+  LogBuffer *logbuffer;
+  void *m_data;
+  int m_len;
+
+  LogFlushData(LogFile *logfile, void *data, int len = -1):
+    m_logfile(logfile), m_data(data), m_len(len)
+  {
+  }
+
+  ~LogFlushData()
+  {
+    switch (m_logfile->m_file_format) {
+    case BINARY_LOG:
+      logbuffer = (LogBuffer *)m_data;
+      LogBuffer::destroy(logbuffer);
+      break;
+    case ASCII_LOG:
+    case ASCII_PIPE:
+      free(m_data);
+      break;
+    case N_LOGFILE_TYPES:
+    default:
+      ink_release_assert(!"Unknown file format type!");
+    }
+  }
+};
 
 /**
    This object exists to provide a namespace for the logging system.
@@ -385,16 +420,19 @@ public:
   static void add_to_inactive(LogObject * obj);
 
   // logging thread stuff
-  static volatile unsigned long flush_counter;
-  static ink_mutex flush_mutex;
-  static ink_cond flush_cond;
-  static ink_thread flush_thread;
+  static ink_mutex *preproc_mutex;
+  static ink_cond *preproc_cond;
+  static void *preproc_thread_main(void *args);
+  static ink_mutex *flush_mutex;
+  static ink_cond *flush_cond;
+  static InkAtomicList *flush_data_list;
   static void *flush_thread_main(void *args);
 
   // collation thread stuff
   static ink_mutex collate_mutex;
   static ink_cond collate_cond;
   static ink_thread collate_thread;
+  static int collation_preproc_threads;
   static int collation_accept_file_descriptor;
   static int collation_port;
   static void *collate_thread_main(void *args);

@@ -216,6 +216,7 @@ public:
   int collation_mode;
   int collation_port;
   bool collation_host_tagged;
+  int collation_preproc_threads;
   int collation_retry_sec;
   int collation_max_send_buffers;
   int rolling_enabled;

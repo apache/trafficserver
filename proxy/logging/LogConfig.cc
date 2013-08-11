@@ -138,6 +138,7 @@ LogConfig::setup_default_values()
   collation_host = ats_strdup("none");
   collation_port = 0;
   collation_host_tagged = false;
+  collation_preproc_threads = 1;
   collation_secret = ats_strdup("foobar");
   collation_retry_sec = 0;
   collation_max_send_buffers = 0;
@@ -413,6 +414,11 @@ LogConfig::read_configuration_variables()
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_host_tagged");
   collation_host_tagged = (val > 0);
+
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_preproc_threads");
+  if (val > 0 && val <= 128) {
+    collation_preproc_threads = val;
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.collation_secret");
   if (ptr != NULL) {
@@ -705,9 +711,10 @@ LogConfig::init(LogConfig * prev_config)
         (old_elog && Log::error_logging_enabled() &&
          (prev_config ? !strcmp(prev_config->logfile_dir, logfile_dir) : 0)))) {
     if (Log::error_logging_enabled()) {
-      new_elog =
-        NEW(new TextLogObject("error.log", logfile_dir, true, NULL,
-                              rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb));
+      new_elog = NEW(new TextLogObject("error.log", logfile_dir, true, NULL,
+                                       rolling_enabled, collation_preproc_threads,
+                                       rolling_interval_sec, rolling_offset_hr,
+                                       rolling_size_mb));
       if (new_elog->do_filesystem_checks() < 0) {
         const char *msg = "The log file %s did not pass filesystem checks. " "No output will be produced for this log";
         Error(msg, new_elog->get_full_filename());
@@ -792,6 +799,7 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   collation_host = %s\n", collation_host);
   fprintf(fd, "   collation_port = %d\n", collation_port);
   fprintf(fd, "   collation_host_tagged = %d\n", collation_host_tagged);
+  fprintf(fd, "   collation_preproc_threads = %d\n", collation_preproc_threads);
   fprintf(fd, "   collation_secret = %s\n", collation_secret);
   fprintf(fd, "   rolling_enabled = %d\n", rolling_enabled);
   fprintf(fd, "   rolling_interval_sec = %d\n", rolling_interval_sec);
@@ -935,7 +943,9 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
     LogObject *obj;
     obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
                             pdi->is_ascii ? ASCII_LOG : BINARY_LOG,
-                            pdi->header, rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb));
+                            pdi->header, rolling_enabled,
+                            collation_preproc_threads, rolling_interval_sec,
+                            rolling_offset_hr, rolling_size_mb));
 
     if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
 
@@ -2173,6 +2183,7 @@ LogConfig::read_xml_log_config(int from_memory)
                                          file_type,
                                          header.dequeue(),
                                          obj_rolling_enabled,
+                                         collation_preproc_threads,
                                          obj_rolling_interval_sec,
                                          obj_rolling_offset_hr,
                                          obj_rolling_size_mb));

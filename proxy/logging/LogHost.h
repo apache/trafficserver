@@ -53,10 +53,10 @@ public:
   bool connect();
   void disconnect();
   //
-  // write the buffer data to target host and try to
-  // delete it when its reference become zero.
+  // preprocess the given buffer data before sent to target host
+  // and try to delete it when its reference become zero.
   //
-  int write_and_try_delete(LogBuffer * lb);
+  void preproc_and_try_delete(LogBuffer * lb);
 
   char const* name() const { return m_name ? m_name : "UNKNOWN"; }
   IpAddr const& ip_addr() const { return m_ip; }
@@ -72,7 +72,11 @@ public:
 private:
   void clear();
   bool authenticated();
-  int orphan_write(LogBuffer * lb);
+  //
+  // write the given buffer data to orhpan file and
+  // try to delete it when its reference become zero.
+  //
+  void orphan_write_and_try_delete(LogBuffer * lb);
   void create_orphan_LogFile_object();
 
 private:
@@ -111,7 +115,7 @@ public:
   void add(LogHost * host, bool copy = true);
   unsigned count();
   void clear();
-  int write_and_delete(LogBuffer * lb);
+  void preproc_and_try_delete(LogBuffer * lb);
 
   LogHost *first() { return m_host_list.head; }
   LogHost *next(LogHost * here) { return (here->link).next; }

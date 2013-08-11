@@ -40,7 +40,7 @@
 #include "LogObject.h"
 
 size_t
-LogBufferManager::flush_buffers(LogBufferSink *sink) {
+LogBufferManager::preproc_buffers(LogBufferSink *sink) {
   SList(LogBuffer, write_link) q(write_list.popall()), new_q;
   LogBuffer *b = NULL;
   while ((b = q.pop())) {
@@ -56,16 +56,16 @@ LogBufferManager::flush_buffers(LogBufferSink *sink) {
     }
   }
 
-  int flushed = 0;
+  int prepared = 0;
   while ((b = new_q.pop())) {
     b->update_header_data();
-    sink->write_and_delete(b);
+    sink->preproc_and_try_delete(b);
     ink_atomic_increment(&_num_flush_buffers, -1);
-    flushed++;
+    prepared++;
   }
 
-  Debug("log-logbuffer", "flushed %d buffers", flushed);
-  return flushed;
+  Debug("log-logbuffer", "prepared %d buffers", prepared);
+  return prepared;
 }
 
 /*-------------------------------------------------------------------------
@@ -73,20 +73,24 @@ LogBufferManager::flush_buffers(LogBufferSink *sink) {
   -------------------------------------------------------------------------*/
 
 LogObject::LogObject(LogFormat *format, const char *log_dir,
-                      const char *basename, LogFileFormat file_format,
-                      const char *header, int rolling_enabled,
-                      int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
-  : m_alt_filename (NULL),
-    m_flags (0),
-    m_signature (0),
-    m_rolling_interval_sec (rolling_interval_sec),
-    m_rolling_offset_hr (rolling_offset_hr),
-    m_rolling_size_mb (rolling_size_mb),
-    m_last_roll_time(0),
-    m_ref_count (0)
+                     const char *basename, LogFileFormat file_format,
+                     const char *header, int rolling_enabled,
+                     int flush_threads, int rolling_interval_sec,
+                     int rolling_offset_hr, int rolling_size_mb):
+      m_alt_filename (NULL),
+      m_flags (0),
+      m_signature (0),
+      m_flush_threads (flush_threads),
+      m_rolling_interval_sec (rolling_interval_sec),
+      m_rolling_offset_hr (rolling_offset_hr),
+      m_rolling_size_mb (rolling_size_mb),
+      m_last_roll_time(0),
+      m_ref_count (0),
+      m_buffer_manager_idx(0)
 {
     ink_assert (format != NULL);
     m_format = new LogFormat(*format);
+    m_buffer_manager = new LogBufferManager[m_flush_threads];
 
     if (file_format == BINARY_LOG) {
         m_flags |= BINARY;
@@ -130,11 +134,13 @@ LogObject::LogObject(LogObject& rhs)
     m_alt_filename(ats_strdup(rhs.m_alt_filename)),
     m_flags(rhs.m_flags),
     m_signature(rhs.m_signature),
+    m_flush_threads(rhs.m_flush_threads),
     m_rolling_interval_sec(rhs.m_rolling_interval_sec),
     m_last_roll_time(rhs.m_last_roll_time),
     m_ref_count(0)
 {
     m_format = new LogFormat(*(rhs.m_format));
+    m_buffer_manager = new LogBufferManager[m_flush_threads];
 
     if (rhs.m_logFile) {
         m_logFile = NEW (new LogFile(*(rhs.m_logFile)));
@@ -172,7 +178,7 @@ LogObject::~LogObject()
     Debug("log-config", "LogObject refcount = %d, waiting for zero", m_ref_count);
   }
 
-  flush_buffers();
+  preproc_buffers();
 
   // here we need to free LogHost if it is remote logging.
   if (is_collation_client()) {
@@ -185,6 +191,7 @@ LogObject::~LogObject()
   ats_free(m_filename);
   ats_free(m_alt_filename);
   delete m_format;
+  delete[] m_buffer_manager;
   delete (LogBuffer*)FREELIST_POINTER(m_log_buffer);
 }
 
@@ -451,9 +458,10 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h)) {
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
 
+        int idx = m_buffer_manager_idx++ % m_flush_threads;
         Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
-        m_buffer_manager.add_to_flush_queue(buffer);
-        ink_cond_signal(&Log::flush_cond);
+        m_buffer_manager[idx].add_to_flush_queue(buffer);
+        ink_cond_signal(&Log::preproc_cond[idx]);
 
       }
       decremented = true;
@@ -798,10 +806,14 @@ LogObject::do_filesystem_checks()
 /*-------------------------------------------------------------------------
   TextLogObject::TextLogObject
   -------------------------------------------------------------------------*/
-TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header, int rolling_enabled,
-                             int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
+TextLogObject::TextLogObject(const char *name, const char *log_dir,
+                             bool timestamps, const char *header,
+                             int rolling_enabled, int flush_threads,
+                             int rolling_interval_sec, int rolling_offset_hr,
+                             int rolling_size_mb)
   : LogObject(NEW(new LogFormat(TEXT_LOG)), log_dir, name, ASCII_LOG, header,
-              rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb), m_timestamps(timestamps)
+              rolling_enabled, flush_threads, rolling_interval_sec,
+              rolling_offset_hr, rolling_size_mb), m_timestamps(timestamps)
 {
 }
 
@@ -1155,19 +1167,19 @@ LogObjectManager::check_buffer_expiration(long time_now)
   }
 }
 
-size_t LogObjectManager::flush_buffers()
+size_t LogObjectManager::preproc_buffers(int idx)
 {
   size_t i;
-  size_t buffers_flushed = 0;
+  size_t buffers_preproced = 0;
 
   for (i = 0; i < _numObjects; i++) {
-    buffers_flushed += _objects[i]->flush_buffers();
+    buffers_preproced += _objects[i]->preproc_buffers(idx);
   }
 
   for (i = 0; i < _numAPIobjects; i++) {
-      buffers_flushed += _APIobjects[i]->flush_buffers();
+      buffers_preproced += _APIobjects[i]->preproc_buffers(idx);
   }
-  return buffers_flushed;
+  return buffers_preproced;
 }
 
 

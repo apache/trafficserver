@@ -141,13 +141,8 @@ public:
     LOG_FILE_FILESYSTEM_CHECKS_FAILED
   };
 
-  inline int write(LogBuffer * lb) {
-    return write_and_try_delete(lb, false);
-  }
+  void preproc_and_try_delete(LogBuffer * lb);
 
-  inline int write_and_delete(LogBuffer * lb) {
-    return write_and_try_delete(lb, true);
-  }
   int roll(long interval_start, long interval_end);
 
   char *get_name() const { return m_name; }
@@ -171,7 +166,7 @@ public:
   off_t get_size_bytes() const { return m_file_format != ASCII_PIPE? m_bytes_written : 0; };
   int do_filesystem_checks() { return 0; }; // TODO: this need to be tidy up when to redo the file checking
 
-private:
+public:
   bool is_open() { return (m_fd >= 0); }
   void close_file();
 
@@ -179,27 +174,20 @@ private:
   static int writeln(char *data, int len, int fd, const char *path);
   void read_metadata();
 
-  //
-  // Write the given LogBuffer data onto this file and
-  // free the buffer memory according _need_delete_ parameter.
-  //
-  int write_and_try_delete(LogBuffer * lb, bool need_delete);
-
-private:
+public:
   LogFileFormat m_file_format;
   char *m_name;
   char *m_header;
   uint64_t m_signature;           // signature of log object stored
   MetaInfo *m_meta_info;
 
-  char *m_ascii_buffer;         // buffer for ascii output
   size_t m_ascii_buffer_size;   // size of ascii buffer
   size_t m_max_line_size;       // size of longest log line (record)
 
   int m_fd;
   long m_start_time;
   long m_end_time;
-  uint64_t m_bytes_written;
+  volatile uint64_t m_bytes_written;
   off_t m_size_bytes;           // current size of file in bytes
 
 public:

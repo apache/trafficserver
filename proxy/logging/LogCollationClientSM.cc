@@ -711,8 +711,7 @@ LogCollationClientSM::flush_to_orphan()
     Debug("log-coll", "[%d]client::flush_to_orphan - m_buffer_in_iocore to oprhan", m_id);
     // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
     // m_buffer_in_iocore->convert_to_host_order();
-    m_log_host->orphan_write(m_buffer_in_iocore);
-    LogBuffer::destroy(m_buffer_in_iocore);
+    m_log_host->orphan_write_and_try_delete(m_buffer_in_iocore);
     m_buffer_in_iocore = NULL;
   }
   // flush buffers in send_list to orphan
@@ -720,8 +719,7 @@ LogCollationClientSM::flush_to_orphan()
   ink_assert(m_buffer_send_list != NULL);
   while ((log_buffer = m_buffer_send_list->get()) != NULL) {
     Debug("log-coll", "[%d]client::flush_to_orphan - send_list to orphan", m_id);
-    m_log_host->orphan_write(log_buffer);
-    LogBuffer::destroy(log_buffer);
+    m_log_host->orphan_write_and_try_delete(log_buffer);
   }
 
   // Now send_list is empty, let's update m_flow to ALLOW status

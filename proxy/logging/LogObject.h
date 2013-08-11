@@ -75,11 +75,11 @@ class LogBufferManager
     LogBufferManager() : _num_flush_buffers(0) { }
 
     void add_to_flush_queue(LogBuffer *buffer) {
-    write_list.push(buffer);
-    ink_atomic_increment(&_num_flush_buffers, 1);
+      write_list.push(buffer);
+      ink_atomic_increment(&_num_flush_buffers, 1);
     }
 
-    size_t flush_buffers(LogBufferSink *sink);
+    size_t preproc_buffers(LogBufferSink *sink);
 };
 
 class LogObject
@@ -99,8 +99,9 @@ public:
 
   LogObject(LogFormat *format, const char *log_dir, const char *basename,
                  LogFileFormat file_format, const char *header,
-                 int rolling_enabled, int rolling_interval_sec = 0,
-                 int rolling_offset_hr = 0, int rolling_size_mb = 0);
+                 int rolling_enabled, int flush_threads,
+                 int rolling_interval_sec = 0, int rolling_offset_hr = 0,
+                 int rolling_size_mb = 0);
   LogObject(LogObject &);
   virtual ~LogObject();
 
@@ -114,16 +115,26 @@ public:
 
   int roll_files(long time_now = 0);
 
-  void add_to_flush_queue(LogBuffer * buffer) { m_buffer_manager.add_to_flush_queue(buffer); }
+  int add_to_flush_queue(LogBuffer * buffer)
+  {
+    int idx = m_buffer_manager_idx++ % m_flush_threads;
 
-  size_t flush_buffers()
+    m_buffer_manager[idx].add_to_flush_queue(buffer);
+
+    return idx;
+  }
+
+  size_t preproc_buffers(int idx = -1)
   {
     size_t nfb;
 
+    if (idx == -1)
+      idx = m_buffer_manager_idx++ % m_flush_threads;
+
     if (m_logFile) {
-      nfb = m_buffer_manager.flush_buffers(m_logFile);
+      nfb = m_buffer_manager[idx].preproc_buffers(m_logFile);
     } else {
-      nfb = m_buffer_manager.flush_buffers(&m_host_list);
+      nfb = m_buffer_manager[idx].preproc_buffers(&m_host_list);
     }
     return nfb;
   }
@@ -204,9 +215,10 @@ private:
   // name conflicts
 
   unsigned int m_flags;         // diverse object flags (see above)
-  uint64_t m_signature;           // INK_MD5 signature for object
+  uint64_t m_signature;         // INK_MD5 signature for object
 
   int m_rolling_enabled;
+  int m_flush_threads;          // number of flush threads
   int m_rolling_interval_sec;   // time interval between rolls
   // 0 means no rolling
   int m_rolling_offset_hr;      //
@@ -217,7 +229,8 @@ private:
   int m_ref_count;
 
   volatile head_p m_log_buffer;     // current work buffer
-  LogBufferManager m_buffer_manager;
+  unsigned m_buffer_manager_idx;
+  LogBufferManager *m_buffer_manager;
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
   void _setup_rolling(int rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb);
@@ -240,8 +253,10 @@ class TextLogObject:public LogObject
 public:
   inkcoreapi TextLogObject(const char *name, const char *log_dir,
                            bool timestamps, const char *header,
-                           int rolling_enabled, int rolling_interval_sec = 0,
-                           int rolling_offset_hr = 0, int rolling_size_mb = 0);
+                           int rolling_enabled, int flush_threads,
+                           int rolling_interval_sec = 0,
+                           int rolling_offset_hr = 0,
+                           int rolling_size_mb = 0);
 
   inkcoreapi int write(const char *format, ...);
   inkcoreapi int va_write(const char *format, va_list ap);
@@ -365,7 +380,7 @@ public:
   void display(FILE * str = stdout);
   void add_filter_to_all(LogFilter * filter);
   LogObject *find_by_format_name(const char *name);
-  size_t flush_buffers();
+  size_t preproc_buffers(int idx);
   void open_local_pipes();
   void transfer_objects(LogObjectManager & mgr);
 

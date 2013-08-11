@@ -36,11 +36,14 @@ class LogBufferSink
 {
 public:
   //
-  // The write_and_delete() function should be responsible for
+  // The preproc_and_try_delete() function should be responsible for
   // freeing memory pointed to by _buffer_ parameter.
   //
-  virtual int write_and_delete(LogBuffer * buffer) = 0;
-    virtual ~ LogBufferSink()
+  // Of course, this function may not free memory directly, it
+  // can delegate another function to do it.
+  //
+  virtual void preproc_and_try_delete(LogBuffer * buffer) = 0;
+  virtual ~ LogBufferSink()
   {
   };
 };

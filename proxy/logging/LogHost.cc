@@ -260,17 +260,17 @@ LogHost::create_orphan_LogFile_object()
 }
 
 //
-// write the buffer data to target host and try to
-// delete it when its reference become zero.
+// preprocess the given buffer data before sent to target host
+// and try to delete it when its reference become zero.
 //
-int
-LogHost::write_and_try_delete (LogBuffer *lb)
+void
+LogHost::preproc_and_try_delete (LogBuffer *lb)
 {
-  int result = -1;
+  int bytes;
 
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
-    return -1;
+    return;
   }
   LogBufferHeader *buffer_header = lb->header();
   if (buffer_header == NULL) {
@@ -280,7 +280,6 @@ LogHost::write_and_try_delete (LogBuffer *lb)
   }
   if (buffer_header->entry_count == 0) {
     // no bytes to write
-    result = 0;
     goto done;
   }
 
@@ -291,8 +290,8 @@ LogHost::write_and_try_delete (LogBuffer *lb)
   if (!connected(NOPING)) {
     if (!connect ()) {
       Note("Cannot write LogBuffer to LogHost %s; not connected", name());
-      result = orphan_write(lb);
-      goto done;
+      orphan_write_and_try_delete(lb);
+      return;
     }
   }
 
@@ -308,15 +307,9 @@ LogHost::write_and_try_delete (LogBuffer *lb)
     disconnect();
     // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
     // lb->convert_to_host_order ();
-    result = orphan_write(lb);
-    goto done;
+    orphan_write_and_try_delete(lb);
+    return;
   }
-
-  Debug("log-host","%d bytes sent to LogHost %s:%u", bytes_sent,
-      name(), port());
-  SUM_DYN_STAT (log_stat_bytes_sent_to_network_stat, bytes_sent);
-  result = bytes_sent;
-  goto done;
 
 #else // !defined(IOCORE_LOG_COLLATION)
   // create a new collation client if necessary
@@ -326,33 +319,37 @@ LogHost::write_and_try_delete (LogBuffer *lb)
   }
 
   // send log_buffer; orphan if necessary
-  result = m_log_collation_client_sm->send(lb);
-  if (result <= 0) {
-    result = orphan_write(lb);
+  bytes = m_log_collation_client_sm->send(lb);
+  if (bytes <= 0) {
+    orphan_write_and_try_delete(lb);
 #if defined(LOG_BUFFER_TRACKING)
-    Debug("log-buftrak", "[%d]LogHost::write_and_try_delete - orphan write complete",
+    Debug("log-buftrak", "[%d]LogHost::preproc_and_try_delete - orphan write complete",
         lb->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
-    goto done;
   }
 
-  return result;
-
+  return;
 #endif // !defined(IOCORE_LOG_COLLATION)
 
 done:
   LogBuffer::destroy(lb);
-  return result;
+  return;
 }
 
-int
-LogHost::orphan_write(LogBuffer * lb)
+//
+// write the given buffer data to orhpan file and
+// try to delete it when its reference become zero.
+//
+void
+LogHost::orphan_write_and_try_delete(LogBuffer * lb)
 {
   if (!Log::config->logging_space_exhausted) {
     Debug("log-host", "Sending LogBuffer to orphan file %s", m_orphan_file->get_name());
-    return m_orphan_file->write(lb);
+    m_orphan_file->preproc_and_try_delete(lb);
   } else {
-    return 0;                   // nothing written
+    Note("logging space exhausted, failed to write orphan file, drop(%" PRIu32 ") bytes",
+         lb->header()->byte_count);
+    LogBuffer::destroy(lb);
   }
 }
 
@@ -449,10 +446,9 @@ LogHostList::clear()
   }
 }
 
-int
-LogHostList::write_and_delete(LogBuffer * lb)
+void
+LogHostList::preproc_and_try_delete(LogBuffer * lb)
 {
-  int total_bytes = 0;
   unsigned nr_host, nr;
 
   ink_release_assert(lb->m_references == 0);
@@ -461,16 +457,12 @@ LogHostList::write_and_delete(LogBuffer * lb)
   ink_atomic_increment(&lb->m_references, nr_host);
 
   for (LogHost * host = first(); host && nr; host = next(host)) {
-    int bytes = host->write_and_try_delete(lb);
-    if (bytes > 0)
-      total_bytes += bytes;
+    host->preproc_and_try_delete(lb);
     nr--;
   }
 
   if (nr_host == 0)
     delete lb;
-
-  return total_bytes;
 }
 
 void

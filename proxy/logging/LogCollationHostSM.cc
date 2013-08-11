@@ -320,8 +320,8 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
         // object's flush queue
         //
         log_buffer = NEW(new LogBuffer(log_object, log_buffer_header));
-        log_object->add_to_flush_queue(log_buffer);
-        ink_cond_signal(&Log::flush_cond);
+        int idx = log_object->add_to_flush_queue(log_buffer);
+        ink_cond_signal(&Log::preproc_cond[idx]);
       }
 
 #if defined(LOG_BUFFER_TRACKING)
