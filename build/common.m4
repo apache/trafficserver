@@ -574,10 +574,10 @@ AC_DEFUN([TS_SEARCH_LIBRARY], [
     "none required"|"no") ts_cv_search_$1="" ;;
     *) ts_cv_search_$1=$ac_cv_search_$1 ;;
     esac
-    m4_ifval($3, [$3], [true])
+    m4_default([$3], [true])
   ], [
     dnl action-if-not-found
-    m4_ifval($4, [$4], [true])
+    m4_default([$4], [true])
   ])
 
   LIBS="$__saved_LIBS"
