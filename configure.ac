@@ -716,13 +716,19 @@ AS_IF([test "x$enable_wccp" = "xyes"],
   ]
 )
 
+# Check for Perl and Doxygen
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
-AC_PATH_PROG([PERL],[perl],[not found])
+AC_PATH_PROG([PERL], [perl],[not found])
 AS_IF([test "x$PERL" = "xnot found"],
   [AC_MSG_ERROR([check for perl failed. Have you installed perl?])]
 )
 AC_ARG_VAR([DOXYGEN], [full path of Doxygen executable])
 AC_ARG_VAR([PERL], [full path of Perl executable])
+
+# Check if MakeMaker is available
+AX_PROG_PERL_MODULES([ExtUtils::MakeMaker], AM_CONDITIONAL([BUILD_PERL_LIB], [true]),
+                                            AM_CONDITIONAL([BUILD_PERL_LIB], [false])
+)
 
 # Check for GNU-style -On and for Solaris Studio style -xOn.
 AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
