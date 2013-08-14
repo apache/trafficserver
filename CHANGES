@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.4.0
 
+  *) [TS-2132, TS-2131] ${libexecdir} and $(localstatedir} chowned
+   needlessly chowned to to ATS' user.
+   Author: Tomasz Kuzemko <tomasz@kuzemko.net>
 
   *) [TS-2130] pthread_setname_np() detection fails on various platforms.
 
