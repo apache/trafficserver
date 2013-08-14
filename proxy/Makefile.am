@@ -296,7 +296,8 @@ install-data-local:
 				$(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir) \
 				$(DESTDIR)$(pkgcachedir); \
 	else \
-		 $(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) \
+		 $(INSTALL) -d $(DESTDIR)$(pkglocalstatedir); \
+		 $(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglogdir) \
 				$(DESTDIR)$(pkgruntimedir) $(DESTDIR)$(pkgsysconfdir) \
 				$(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(pkgcachedir); \
 	fi
