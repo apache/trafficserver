@@ -307,14 +307,3 @@ install-data-hook:
 		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir);\
 	fi
 	-echo "<TS_VERSION> $(PACKAGE_VERSION)" > $(DESTDIR)$(pkgsysconfdir)/trafficserver-release
-
-install-exec-local:
-	if [ `id -un` != "root" ]; then \
-		$(INSTALL) -d $(DESTDIR)$(pkglibexecdir); \
-	else \
-		$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglibexecdir); fi
-
-install-exec-hook:
-	if [ `id -un` == "root" ]; then \
-		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkglibexecdir); \
-	fi
