@@ -1362,7 +1362,7 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 
 .. note:: Although Traffic Server supports traditional custom logging, you should use the more versatile XML-based custom formats.
 
-.. ts:cv:: proxy.confg.log.collation_host STRING NULL
+.. ts:cv:: CONFIG proxy.confg.log.collation_host STRING NULL
 
    The hostname of the log collation server.
 
