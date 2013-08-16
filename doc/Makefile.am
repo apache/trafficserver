@@ -87,7 +87,7 @@ EXTRA_DIST = \
 
 clean-local:
 	-rm -rf html warn.log
-	-rm -rf doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex $(BUILDDIR)/man
+	-rm -rf $(BUILDDIR)/doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex $(BUILDDIR)/man
 
 doxygen: Doxyfile
 	$(DOXYGEN)
