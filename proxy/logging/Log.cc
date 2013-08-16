@@ -1067,9 +1067,6 @@ Log::init_when_enabled()
 void
 Log::create_threads()
 {
-  size_t stacksize;
-
-  REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   if (!(init_status & THREADS_CREATED)) {
 
     char desc[64];
