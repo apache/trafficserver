@@ -622,7 +622,6 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
 {
   Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
   ink_assert(buffer_header != NULL);
-  ink_assert(m_fd >= 0);
 
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
