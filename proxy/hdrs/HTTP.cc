@@ -1693,18 +1693,11 @@ ClassAllocator<HTTPCacheAlt> httpCacheAltAllocator("httpCacheAltAllocator");
 HTTPCacheAlt::HTTPCacheAlt():
 m_magic(CACHE_ALT_MAGIC_ALIVE), m_writeable(1),
 m_unmarshal_len(-1),
-m_id(-1), m_rid(-1), m_request_hdr(),
+m_id(-1), m_rid(-1), m_object_key(), m_object_size(0), m_request_hdr(),
 m_response_hdr(), m_request_sent_time(0), m_response_received_time(0),
 m_frag_offset_count(0), m_frag_offsets(0),
 m_ext_buffer(NULL)
 {
-
-  m_object_key[0] = 0;
-  m_object_key[1] = 0;
-  m_object_key[2] = 0;
-  m_object_key[3] = 0;
-  m_object_size[0] = 0;
-  m_object_size[1] = 0;
 }
 
 void
@@ -1733,12 +1726,8 @@ HTTPCacheAlt::copy(HTTPCacheAlt *to_copy)
   m_unmarshal_len = to_copy->m_unmarshal_len;
   m_id = to_copy->m_id;
   m_rid = to_copy->m_rid;
-  m_object_key[0] = to_copy->m_object_key[0];
-  m_object_key[1] = to_copy->m_object_key[1];
-  m_object_key[2] = to_copy->m_object_key[2];
-  m_object_key[3] = to_copy->m_object_key[3];
-  m_object_size[0] = to_copy->m_object_size[0];
-  m_object_size[1] = to_copy->m_object_size[1];
+  m_object_key = to_copy->m_object_key;
+  m_object_size = to_copy->m_object_size;
 
   if (to_copy->m_request_hdr.valid()) {
     m_request_hdr.copy(&to_copy->m_request_hdr);
