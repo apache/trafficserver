@@ -45,7 +45,6 @@ Contents:
    security-options.en
    working-log-files.en
    event-logging-formats.en
-   traffic-line-commands.en
    traffic-server-error-messages.en
    faqs.en
 
