@@ -1146,7 +1146,7 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
       char *hostname = NULL;
       int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
       if (host_len) {
-        hostname = (char *) msg->moi;
+        hostname = (char *) msg->moi.byte;
       }
       Cache *call_cache = caches[c->frag_type];
       c->cache_action = call_cache->open_read(c, &key, c->frag_type, hostname, host_len);
@@ -1286,7 +1286,7 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
       char *hostname = NULL;
       int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
       if (host_len) {
-        hostname = (char *) msg->moi;
+        hostname = (char *) msg->moi.byte;
       }
 
       Cache *call_cache = caches[c->frag_type];
@@ -1386,7 +1386,7 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
       char *hostname = NULL;
       int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
       if (host_len) {
-        hostname = (char *) msg->moi;
+        hostname = (char *) msg->moi.byte;
       }
 
       Cache *call_cache = caches[c->frag_type];
@@ -1415,7 +1415,7 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
       char *hostname = NULL;
       int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
       if (host_len) {
-        hostname = (char *) msg->moi;
+        hostname = (char *) msg->moi.byte;
       }
 
       Cache *call_cache = caches[c->frag_type];
@@ -1441,7 +1441,7 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
       char *hostname = NULL;
       int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
       if (host_len) {
-        hostname = (char *) msg->moi;
+        hostname = (char *) msg->moi.byte;
       }
 
       Cache *call_cache = caches[c->frag_type];
@@ -1764,7 +1764,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
         write_cluster_vc->remote_closed = 1;    // avoid remote close msg
         write_cluster_vc->do_io(VIO::CLOSE);
       }
-      *((int32_t *) reply->moi) = (int32_t) ((uintptr_t) cvc & 0xffffffff);    // code describing failure
+      reply->moi.u32 = (int32_t) ((uintptr_t) cvc & 0xffffffff);    // code describing failure
     }
     // Make reply message the current message
     msg = reply;
@@ -2027,7 +2027,7 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
       {
         // Unmarshal the error code
         ink_assert(((len - flen) == sizeof(int32_t)));
-        op_result_error = *(int32_t *) msg->moi;
+        op_result_error = msg->moi.u32;
         if (mh->NeedByteSwap())
           ats_swap32((uint32_t *) & op_result_error);
         op_result_error = -op_result_error;
@@ -2599,7 +2599,7 @@ CacheContinuation::do_remote_lookup(Continuation * cont, CacheKey * key,
     data = (char *) msg;
     len = mlen;
     if (hostname && hostname_len) {
-      memcpy(msg->moi, hostname, hostname_len);
+      memcpy(msg->moi.byte, hostname, hostname_len);
     }
   } else {
     //////////////////////////////////////////////////////////////
@@ -2667,7 +2667,7 @@ cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
 
   char *hostname;
   int hostname_len = len - op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP);
-  hostname = (hostname_len ? (char *) msg->moi : 0);
+  hostname = (hostname_len ? (char *) msg->moi.byte : 0);
 
   // Note: Hostname data invalid after return from lookup
   Cache *call_cache = caches[msg->frag_type];
@@ -3109,7 +3109,7 @@ CacheContinuation::tunnelEvent(int event, VConnection * vc)
       *reply = *msg;
 
       // Marshal response data into reply message
-      res = ci->marshal((char *) reply->moi, len);
+      res = ci->marshal((char *) reply->moi.byte, len);
       ink_assert(res > 0);
 
       // Make reply message the current message

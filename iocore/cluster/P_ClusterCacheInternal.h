@@ -398,7 +398,7 @@ struct CacheLookupMsg:public ClusterMessageHeader
   INK_MD5 url_md5;
   uint32_t seq_number;
   uint32_t frag_type;
-  uint8_t moi[4];
+  Alias32 moi;
   enum
   {
     MIN_VERSION = 1,
@@ -407,7 +407,7 @@ struct CacheLookupMsg:public ClusterMessageHeader
   };
   CacheLookupMsg(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION):
   ClusterMessageHeader(vers), seq_number(0), frag_type(0) {
-    memset(moi, 0, sizeof(moi));
+    moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -418,10 +418,7 @@ struct CacheLookupMsg:public ClusterMessageHeader
   }
   static int sizeof_fixedlen_msg()
   {
-    CacheLookupMsg *p = 0;
-
-    // Maybe use offsetoff here instead. /leif
-    return (int) ALIGN_DOUBLE(&p->moi[0]);
+    return (int) ALIGN_DOUBLE(offsetof(CacheLookupMsg, moi));
   }
   void init(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION) {
     _init(vers);
@@ -449,7 +446,7 @@ struct CacheOpMsg_long:public ClusterMessageHeader
   int32_t channel;                // used by open interfaces
   ClusterVCToken token;
   int32_t buffer_size;            // used by open read interface
-  uint8_t moi[4];
+  Alias32 moi;
   enum
   {
     MIN_VERSION = 1,
@@ -459,7 +456,7 @@ struct CacheOpMsg_long:public ClusterMessageHeader
   CacheOpMsg_long(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION):
   ClusterMessageHeader(vers),
     opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0), buffer_size(0) {
-    memset(moi, 0, sizeof(moi));
+    moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -470,10 +467,7 @@ struct CacheOpMsg_long:public ClusterMessageHeader
   }
   static int sizeof_fixedlen_msg()
   {
-    CacheOpMsg_long *p = 0;
-
-    // Change to offsetof maybe? /leif
-    return (int) ALIGN_DOUBLE(&p->moi[0]);
+    return (int) ALIGN_DOUBLE(offsetof(CacheOpMsg_long, moi));
   }
   void init(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION) {
     _init(vers);
@@ -509,7 +503,7 @@ struct CacheOpMsg_short:public ClusterMessageHeader
   int32_t buffer_size;            // used by open read interface
 
   // Variable portion of message
-  uint8_t moi[4];
+  Alias32 moi;
   enum
   {
     MIN_VERSION = 1,
@@ -519,7 +513,7 @@ struct CacheOpMsg_short:public ClusterMessageHeader
   CacheOpMsg_short(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION):
   ClusterMessageHeader(vers),
     opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0), buffer_size(0) {
-    memset(moi, 0, sizeof(moi));
+    moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -530,9 +524,7 @@ struct CacheOpMsg_short:public ClusterMessageHeader
   }
   static int sizeof_fixedlen_msg()
   {
-    CacheOpMsg_short *p = 0;
-    // Use offsetof. /leif
-    return (int) ALIGN_DOUBLE(&p->moi[0]);
+    return (int) ALIGN_DOUBLE(offsetof(CacheOpMsg_short, moi));
   }
   void init(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION) {
     _init(vers);
@@ -563,7 +555,7 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
   INK_MD5 md5_1;
   INK_MD5 md5_2;
   uint32_t seq_number;
-  uint8_t moi[4];
+  Alias32 moi;
   enum
   {
     MIN_VERSION = 1,
@@ -572,7 +564,7 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
   };
   CacheOpMsg_short_2(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
     :  ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0) {
-    memset(moi, 0, sizeof(moi));
+    moi.u32 = 0;
   }
   //////////////////////////////////////////////////////////////////////////
   static int protoToVersion(int protoMajor)
@@ -582,9 +574,7 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
   }
   static int sizeof_fixedlen_msg()
   {
-    CacheOpMsg_short_2 *p = 0;
-    // Use offsetof already. /leif
-    return (int) ALIGN_DOUBLE(&p->moi[0]);
+    return (int) ALIGN_DOUBLE(offsetof(CacheOpMsg_short_2, moi));
   }
   void init(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION) {
     _init(vers);
@@ -607,7 +597,7 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
   int32_t result;
   ClusterVCToken token;
   bool is_ram_cache_hit;          // Entire object was from ram cache
-  uint8_t moi[4];                 // Used by CACHE_OPEN_READ & CACHE_LINK reply
+  Alias32 moi;                 // Used by CACHE_OPEN_READ & CACHE_LINK reply
   enum
   {
     MIN_VERSION = 1,
@@ -616,7 +606,7 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
   };
   CacheOpReplyMsg(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION)
     : ClusterMessageHeader(vers), seq_number(0), result(0), is_ram_cache_hit(false) {
-    memset(moi, 0, sizeof(moi));
+    moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -627,9 +617,7 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
   }
   static int sizeof_fixedlen_msg()
   {
-    CacheOpReplyMsg *p = 0;
-    // Use offsetof. /leif
-    return (int) ALIGN_DOUBLE(&p->moi[0]);
+    return (int) ALIGN_DOUBLE(offsetof(CacheOpReplyMsg, moi));
   }
   void init(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION) {
     _init(vers);
