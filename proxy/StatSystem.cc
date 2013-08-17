@@ -607,7 +607,7 @@ dyn_stats_fsum_cb(void *data, void *res)
   ink_statval_t count, sum;
   READ_DYN_STAT((long) data, count, sum);
   (void)count;
-  *(float *) res = *(double *) &sum;
+  *(float *) res = (double) sum;
   return res;
 }
 
@@ -619,7 +619,7 @@ dyn_stats_favg_cb(void *data, void *res)
   if (count == 0) {
     *(float *) res = 0.0;
   } else {
-    *(float *) res = *(double *) &sum / *(double *) &count;
+    *(float *) res = (double) sum / (double) count;
   }
   return res;
 }
@@ -730,7 +730,7 @@ http_trans_stats_fsum_cb(void *data, void *res)
   ink_statval_t count, sum;
   READ_HTTP_TRANS_STAT((long) data, count, sum);
   (void)count;
-  *(float *) res = *(double *) &sum;
+  *(float *) res = (double) sum;
   return res;
 }
 
@@ -742,7 +742,7 @@ http_trans_stats_favg_cb(void *data, void *res)
   if (count == 0) {
     *(float *) res = 0.0;
   } else {
-    *(float *) res = *(double *) &sum / *(double *) &count;
+    *(float *) res = (double) sum / (double) count;
   }
   return res;
 }

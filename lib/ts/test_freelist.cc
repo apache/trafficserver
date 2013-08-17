@@ -37,7 +37,7 @@ test(void *d)
   int id;
   void *m1, *m2, *m3;
 
-  id = *((int *) &d);
+  id = (intptr_t) d;
 
   time_t start = time(NULL);
   int count = 0;
