@@ -1,3 +1,6 @@
+
+.. _monitoring-traffic:
+
 Monitoring Traffic
 ******************
 
@@ -57,12 +60,9 @@ Configuring Traffic Server to Email Alarms
 To configure Traffic Server to send an email to a specific address
 whenever an alarm occurs, follow the steps below:
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file
-2. Set the
-   `*``proxy.config.alarm_email``* <../configuration-files/records.config#proxy.config.alarm_email>`_
-   variable to the email address alarms will be routed to.
-3. Run the command ``traffic_line -x`` to apply the configuration
+1. In the :file:`records.config` file
+2. Set the :ts:cv:`proxy.config.alarm_email` variable to the email address alarms will be routed to.
+3. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Using a Script File for Alarms
@@ -80,31 +80,26 @@ Viewing Statistics from Traffic Line
 You can use the Traffic Line command-line interface to view statistics
 about Traffic Server performance and web traffic. In addition to viewing
 statistics, you can also configure, stop, and restart the Traffic Server
-system. For additional information, refer to `Configuring Traffic Server
-Using Traffic Line <configure.htm#ConfiguringTSUsingTrafficLine>`_ and
-`Traffic Line Commands <../traffic-line-commands>`_. You can view
+system. For additional information, refer to :ref:`configure-using-traffic-line`
+and :ref:`traffic-line-commands`. You can view
 specific information about a Traffic Server node or cluster by
 specifying the variable that corresponds to the statistic you want to
 see.
 
-**To view a statistic**, enter the following command:
-
-::
+**To view a statistic**, enter the following command:::
 
         traffic_line -r variable
 
-where *``variable``* is the variable representing the information you
+where ``variable`` is the variable representing the information you
 want to view. For a list of variables you can specify, refer to `Traffic
 Line Variables <../traffic-line-commands##TrafficLineVariables>`_.
 
 For example, the following command displays the document hit rate for
-the Traffic Server node:
-
-::
+the Traffic Server node:::
 
      traffic_line -r proxy.node.http.cache_hit_ratio
 
 If the Traffic Server ``bin`` directory is not in your path, then
 prepend the Traffic Line command with ``./`` (for example:
-``./traffic_line -r variable``).
+:option:`traffic_line -r` ``variable``).
 

@@ -94,6 +94,8 @@ like this::
    $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
    $ traffic_line -r proxy.config.product_company
 
+.. _configuration-variables:
+
 Configuration Variables
 =======================
 

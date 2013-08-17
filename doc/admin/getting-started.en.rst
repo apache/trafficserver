@@ -1,22 +1,25 @@
+
+.. _getting-started:
+
 Getting Started
 ***************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
-   under the License.
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
 
 
 .. toctree::
@@ -31,11 +34,11 @@ versioning" to denote "stability" as Apache
 `apr <http://apr.apache.org/versioning.html>`_ and
 `httpd <http://httpd.apache.org/dev/release.html>`_ do:
 
-A version is made of a version-triplet: *``MAJOR.MINOR.PATCH``*
+A version is made of a version-triplet: ``MAJOR.MINOR.PATCH``
 
-The most important thing that you need to know is that an *even
-``MINOR``* marks a production stable release (such as 3.0.3 and 3.2.5),
-while an *odd ``MINOR``* number marks a targeted at developers.
+The most important thing that you need to know is that an *even*
+``MINOR`` marks a production stable release (such as 3.0.3 and 3.2.5),
+while an *odd* ``MINOR`` number marks a targeted at developers.
 
 Sometimes we speak of trunk, master, or when talking about actual
 releases, we will say "-unstable", or "-dev". All of these are
@@ -118,16 +121,12 @@ We can run ``make`` to build the project. We highly recommend to run
    make check
 
 We can finally run ``make install`` to install (you may have to switch
-to root to do this):
-
-::
+to root to do this)::
 
      sudo make install
 
 We also recommend to run a regression test. Please note that this will
-only work successfully with the default ``layout``:
-
-::
+only work successfully with the default ``layout``::
 
      cd /opt/ats
      sudo bin/traffic_server -R 1
@@ -150,7 +149,9 @@ To run the ``trafficserver start`` command, e.g.::
    bin/trafficserver start
 
 At this point your server is up and running in the default configuration
-of a `reverse proxy <../reverse-proxy-http-redirects>`_.
+of a :ref:`reverse-proxy-and-http-redirects`.
+
+.. _start-straffic-line:
 
 Start Traffic Line
 ==================
@@ -158,24 +159,20 @@ Start Traffic Line
 Traffic Line provides a quick way of viewing Traffic Server statistics
 and configuring the Traffic Server system via command-line interface. To
 execute individual commands or script multiple commands, refer to
-`Traffic Line Commands <../traffic-line-commands>`_.
+:program:`traffic_line`.
 
-Traffic Line commands take the following form:
-
-::
+Traffic Line commands take the following form::
 
      bin/traffic_line -command argument
 
-For a list of ``traffic_line`` commands, enter:
-
-::
+For a list of ``traffic_line`` commands, enter::
 
      bin/traffic_line -h
 
 Please note that ``traffic_line``, while a fine tool for an
 administrator, is a poor choice for automation, especially that of
-monitoring. See our chapter on `Monitoring
-Traffic <../monitoring-traffic>`_ for how to get that righter.
+monitoring. See our chapter on :ref:`monitoring-traffic`
+for how to get that righter.
 
 Stop Traffic Server
 ===================
@@ -184,9 +181,7 @@ To stop Traffic Server, always use the ``trafficserver`` command,
 passing in the attribute ``stop``. This command stops all the Traffic
 Server processes (``traffic_manager``, ``traffic_server``, and
 ``traffic_cop``). Do not manually stop processes, as this can lead to
-unpredictable results.
-
-::
+unpredictable results.::
 
     bin/trafficserver stop
 
