@@ -81,6 +81,7 @@
 #include "Bitops.h"
 #include "Compatability.h"
 #include "DynArray.h"
+#include "EventNotify.h"
 #include "I_Version.h"
 #include "InkPool.h"
 #include "List.h"

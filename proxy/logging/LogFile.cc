@@ -523,7 +523,7 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
 
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 
-    ink_cond_signal(Log::flush_cond);
+    Log::flush_notify->signal();
 
     //
     // LogBuffer will be deleted in flush thread
@@ -693,7 +693,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
     LogFlushData *flush_data = new LogFlushData(this, ascii_buffer, fmt_buf_bytes);
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 
-    ink_cond_signal(Log::flush_cond);
+    Log::flush_notify->signal();
 
     total_bytes += fmt_buf_bytes;
   }

@@ -661,7 +661,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
         // since we are the collation host, we need to signal the
         // collate_cond variable so that our collation thread wakes up.
         //
-        ink_cond_signal(&Log::collate_cond);
+        Log::collate_notify.signal();
 #endif
         Debug("log", "I am a collation host listening on port %d.", collation_port);
       } else {

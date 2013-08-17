@@ -420,17 +420,14 @@ public:
   static void add_to_inactive(LogObject * obj);
 
   // logging thread stuff
-  static ink_mutex *preproc_mutex;
-  static ink_cond *preproc_cond;
+  static EventNotify *preproc_notify;
   static void *preproc_thread_main(void *args);
-  static ink_mutex *flush_mutex;
-  static ink_cond *flush_cond;
+  static EventNotify *flush_notify;
   static InkAtomicList *flush_data_list;
   static void *flush_thread_main(void *args);
 
   // collation thread stuff
-  static ink_mutex collate_mutex;
-  static ink_cond collate_cond;
+  static EventNotify collate_notify;
   static ink_thread collate_thread;
   static int collation_preproc_threads;
   static int collation_accept_file_descriptor;

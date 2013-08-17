@@ -117,6 +117,8 @@ libtsutil_la_SOURCES = \
   ink_syslog.h \
   ink_thread.cc \
   ink_thread.h \
+  EventNotify.h \
+  EventNotify.cc \
   ink_time.cc \
   ink_time.h \
   inktomi++.h \

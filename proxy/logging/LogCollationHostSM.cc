@@ -321,7 +321,7 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
         //
         log_buffer = NEW(new LogBuffer(log_object, log_buffer_header));
         int idx = log_object->add_to_flush_queue(log_buffer);
-        ink_cond_signal(&Log::preproc_cond[idx]);
+        Log::preproc_notify[idx].signal();
       }
 
 #if defined(LOG_BUFFER_TRACKING)

@@ -461,7 +461,7 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
         int idx = m_buffer_manager_idx++ % m_flush_threads;
         Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
         m_buffer_manager[idx].add_to_flush_queue(buffer);
-        ink_cond_signal(&Log::preproc_cond[idx]);
+        Log::preproc_notify[idx].signal();
 
       }
       decremented = true;
