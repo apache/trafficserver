@@ -1,3 +1,5 @@
+.. _working-with-log-files:
+
 Working with Log Files
 **********************
 
@@ -50,7 +52,7 @@ keeps three types of log files:
    error indicating that Traffic Server was restarted.
 
    All system information messages are logged with the system-wide
-   logging facility **``syslog``** under the daemon facility. The
+   logging facility :manpage:`syslog` under the daemon facility. The
    ``syslog.conf`` configuration file (stored in the ``/etc`` directory)
    specifies where these messages are logged. A typical location is
    ``/var/log/messages`` (Linux).

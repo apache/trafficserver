@@ -1,22 +1,24 @@
+.. _security-options:
+
 Security Options
 ****************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
-
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+ 
    http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
-   under the License.
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
 
 Traffic Server provides a number of security features.
 
@@ -35,7 +37,7 @@ the proxy cache by editing a configuration file.
 
 #. Add a line in :file:`ip_allow.config` for each IP address or
    range of IP addresses allowed to access Traffic Server.
-#. Run the command ``traffic_line -x`` to apply the configuration
+#. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Configuring DNS Server Selection (Split DNS)
@@ -61,7 +63,7 @@ To do this, we
 #. Add rules to :file:`splitdns.config`.
 #. In :file:`records.config` set the variable
    :ts:cv:`proxy.config.dns.splitDNS.enabled` to ``1`` to enable split DNS.
-#. Run the command ``traffic_line -x`` to apply the configuration
+#. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Using SSL Termination
@@ -75,24 +77,22 @@ The following sections describe how to enable and configure the SSL
 termination option.
 
 -  Enable and configure SSL termination for client/Traffic Server
-   connections: `Client and Traffic Server
-   Connections <#ClientTSConnections>`_.
+   connections: :ref:`client-and-traffic-server-connections`
 -  Enable and configure SSL termination for Traffic Server/origin server
-   connections: `Traffic Server and Origin Server
-   Connections <#TSOriginServerConnections>`_.
+   connections: :ref:`traffic-server-and-origin-server-connections`
 -  Enable and configure SSL termination for both client/Traffic Server
-   and Traffic Server/origin server connections: `Client and Traffic
-   Server Connections <#ClientTSConnections>`_ and `Traffic Server and
-   Origin Server Connections <#TSOriginServerConnections>`_,
-   respectively.
+   and Traffic Server/origin server connections:  :ref:`client-and-traffic-server-connections`
+   :ref:`traffic-server-and-origin-server-connections`, respectively.
+
+.. _client-and-traffic-server-connections:
 
 Client and Traffic Server Connections
 -------------------------------------
 
 The figure below illustrates communication between a client and Traffic
 Server (and between Traffic Server and an origin server) when the SSL
-termination option is enabled & configured for\ *\* client/Traffic
-Server connections only*\ \*.
+termination option is enabled & configured for **client/Traffic
+Server connections only**.
 
 .. figure:: ../static/images/admin/ssl_c.jpg
    :align: center
@@ -163,9 +163,11 @@ In order to accomplish this, we
    -  :ts:cv:`proxy.config.ssl.CA.cert.filename`
    -  :ts:cv:`proxy.config.ssl.CA.cert.path`
 
-3. Run the command ``traffic_line -L`` to restart Traffic Server on the
-   local node or ``traffic_line -M`` to restart Traffic Server on all
+3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
+   local node or :option:`traffic_line -M` to restart Traffic Server on all
    the nodes in a cluster.
+
+.. _traffic-server-and-origin-server-connections:
 
 Traffic Server and Origin Server Connections
 --------------------------------------------
@@ -237,7 +239,7 @@ In order to accomplish this, we:
    -  :ts:cv:`proxy.config.ssl.client.CA.cert.filename`
    -  :ts:cv:`proxy.config.ssl.client.CA.cert.path`
 
-3. Run the command ``traffic_line -L`` to restart Traffic Server on the
-   local node or ``traffic_line -M`` to restart Traffic Server on all
+3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
+   local node or :option:`traffic_line -M` to restart Traffic Server on all
    the nodes in a cluster.
 

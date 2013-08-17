@@ -1,3 +1,5 @@
+.. _explicit-proxy-caching:
+
 Explicit Proxy Caching
 **********************
 

@@ -1,3 +1,5 @@
+.. _hierachical-caching:
+
 Hierarchical Caching
 ********************
 
