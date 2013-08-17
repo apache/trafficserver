@@ -132,10 +132,9 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
     struct hostent *r = ink_gethostbyaddr_r((char *) &ip, sizeof(int), AF_INET, &data);
 
     if (r == NULL) {
-      unsigned char x[4];
-      memset(x, 0, sizeof(x));
-      *(uint32_t *) & x = (uint32_t) ip;
-      Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %d", x[0], x[1], x[2], x[3], data.herrno);
+      Alias32 x;
+      memcpy(&x.u32, &ip, sizeof(x.u32));
+      Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %d", x.byte[0], x.byte[1], x.byte[2], x.byte[3], data.herrno);
     } else
       hostname = ats_strdup(r->h_name);
   }
