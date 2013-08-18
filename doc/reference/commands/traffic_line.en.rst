@@ -113,8 +113,12 @@ Options
 
     Reset performance statistics to zero on the local node.
 
+.. traffic-line-performance-statistics
+
 Performance Statistics
 ======================
+
+.. XXX: These variables need to be documented.. Volunteers? //igalic
 
 The :option:`traffic_line -r` option accepts the following variable names::
 

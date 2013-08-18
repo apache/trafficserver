@@ -24,8 +24,6 @@ Monitoring Traffic
 Traffic Server provides several options for monitoring system
 performance and analyzing network traffic.
 
-This chapter discusses the following topics:
-
 .. toctree::
    :maxdepth: 2
 
@@ -36,16 +34,15 @@ Traffic Server provides the following tools to monitor system
 performance and analyze network traffic:
 
 -  Traffic Server can send email that's triggered by alarms that signal
-   any detected failure conditions; refer to `Working with Traffic
-   Manager Alarms <#WorkingTrafficManagerAlarms>`_.
+   any detected failure conditions; refer to `Working with Traffic Manager Alarms`_.
 -  The Traffic Line command-line interface provides an alternative
    method of viewing Traffic Server performance and network traffic
-   information; refer to `Viewing Statistics from Traffic
-   Line <#ViewingStatisticsTrafficLine>`_.
+   information; refer to `Viewing Statistics from Traffic Line`_.
 -  The Traffic Shell command-line tool provides yet another alternative
    method of viewing Traffic Server performance and network traffic
-   information; refer to `Starting Traffic
-   Shell <../getting-started#StartTrafficShell>`_.
+   information; refer to `Starting Traffic Shell <../getting-started#StartTrafficShell>`_.
+
+.. XXX: *someone* seems to have deleted the traffic_shell docs, I'm suspecting igalic, btw. // igalic
 
 Working with Traffic Manager Alarms
 ===================================
@@ -91,8 +88,8 @@ see.
         traffic_line -r variable
 
 where ``variable`` is the variable representing the information you
-want to view. For a list of variables you can specify, refer to `Traffic
-Line Variables <../traffic-line-commands##TrafficLineVariables>`_.
+want to view. For a list of variables you can specify, refer to :ref:`Traffic
+Line Variables <traffic-line-performance-statistics>`.
 
 For example, the following command displays the document hit rate for
 the Traffic Server node:::
@@ -103,3 +100,5 @@ If the Traffic Server ``bin`` directory is not in your path, then
 prepend the Traffic Line command with ``./`` (for example:
 :option:`traffic_line -r` ``variable``).
 
+
+.. XXX: We're missing docs on how to use tstop here.
