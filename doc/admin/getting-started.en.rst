@@ -72,11 +72,12 @@ In order to build Traffic Server from source you will need the following
 -  tcl
 -  expat
 -  pcre
--  pcre
 -  libcap
 -  flex (for TPROXY)
 -  hwloc
 -  lua
+-  curses
+-  curl (both for tstop)
 
 if you're building from a git clone, you'll also need
 
