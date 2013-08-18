@@ -210,7 +210,7 @@ To set log management options, follow the steps below:
    -  `*``proxy.config.log.max_space_mb_for_logs``* <../configuration-files/records.config#proxy.config.log.max_space_mb_for_logs>`_
    -  `*``proxy.config.log.max_space_mb_headroom``* <../configuration-files/records.config#proxy.config.log.max_space_mb_headroom>`_
 
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Choosing Event Log File Formats
@@ -273,7 +273,7 @@ Set standard log file format options by following the steps below:
    -  `*``proxy.config.log.extended2_log_name``* <../configuration-files/records.config#proxy.config.log.extended2_log_name>`_
    -  `*``proxy.config.log.extended2_log_header``* <../configuration-files/records.config#proxy.config.log.extended2_log_header>`_
 
-6. Run the command ``traffic_line -x`` to apply the configuration
+6. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Using the Custom Format
@@ -346,7 +346,7 @@ In order to accomplish this, we
    ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
    specifications to the configuration file.
 5. Save and close the ``log``s_xml.config`` file.
-6. Run the command ``traffic_line -x`` to apply your configuration
+6. Run the command :option:`traffic_line -x` to apply your configuration
    changes.
 
 Creating Summary Log Files
@@ -395,7 +395,7 @@ To create a summary log file format, we
    information, refer to
    ```logs_xml.config`` <../configuration-files/logs_xml.config>`_.
 
-2. Run the command ``traffic_line -x`` to apply configuration changes .
+2. Run the command :option:`traffic_line -x` to apply configuration changes .
 
 The following example format generates one entry every 10 seconds. Each
 entry contains the timestamp of the last entry of the interval, a count
@@ -475,68 +475,6 @@ does not use disk space. Refer to
 ```logs_xml.config`` <../configuration-files/logs_xml.config>`_ for more
 information about the ``ASCII_PIPE`` option.
 
-Using logcat to Convert Binary Logs to ASCII
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You must convert a binary log file to ASCII before you can analyze it
-using standard tools.
-
-To convert a binary log file to ASCII, use the :program:`traffic_logcat`
-command The following is a description of its command-line options.
-
-::
-
-    ::::text
-    Usage: traffic_logcat [-o output-file | -a] [-CEhSVw2] [input-file ...]
-
-``-o output_file``
-    Specifies where the command output is directed.
-
-``-a``
-    Automatically generates the output filename based on the input
-    filename. If the input is from stdin, then this option is ignored.
-    For example:
-
-    ::
-
-         traffic_logcat -a squid-1.blog squid-2.blog squid-3.blog
-
-    generates
-
-    squid-1.log squid-2.log squid-3.log
-
-``-S``
-    Attempts to transform the input to Squid format, if possible.
-
-``-C``
-    Attempts to transform the input to Netscape Common format, if
-    possible.
-
-``-E``
-    Attempts to transform the input to Netscape Extended format, if
-    possible.
-
-``-2``
-    Attempt to transform the input to Netscape Extended-2 format, if
-    possible.
-
-**Note:** Use only one of the following options at any given time:
-``-S``, ``-C``, ``-E``, or\ ``-2``.
-
-If no input files are specified, then :program:`traffic_logcat` reads from the
-standard input (``stdin``). If you do not specify an output file, then
-:program:`traffic_logcat` writes to the standard output (``stdout``).
-
-For example, to convert a binary log file to an ASCII file, you can use
-the :program:`traffic_logcat` command with either of the following options
-below:
-
-::
-
-    traffic_logcat binary_file > ascii_file
-    traffic_logcat -o ascii_file binary_file
-
-The binary log file is not modified by this command.
 
 Rolling Event Log Files
 -----------------------
@@ -668,7 +606,7 @@ log files when they reach a certain size, follow the steps below:
    -  `*``proxy.config.log.rolling_offset_hr``* <../configuration-files/records.config#proxy.config.log.rolling_offset_hr>`_
    -  `*``proxy.config.log.rolling_interval_sec``* <../configuration-files/records.config#proxy.config.log.rolling_interval_sec>`_
 
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 You can fine-tune log file rolling settings for a custom log file in the
@@ -754,7 +692,7 @@ To set log splitting options, follow the steps below:
    -  `*``proxy.config.log.separate_icp_logs``* <../configuration-files/records.config#proxy.config.log.separate_icp_logs>`_
    -  `*``proxy.config.log.separate_host_logs``* <../configuration-files/records.config#proxy.config.log.separate_host_logs>`_
 
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Editing the log_hosts.config File
@@ -787,7 +725,7 @@ To edit the ``log_hosts.config`` file follow the steps below:
        webserver2
        webserver3
 
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Collating Event Log Files
@@ -858,7 +796,7 @@ a configuration file via the steps below.
    -  `*``proxy.config.log.collation_port``* <../configuration-files/records.config#proxy.config.log.collation_port>`_
    -  `*``proxy.config.log.collation_secret``* <../configuration-files/records.config#proxy.config.log.collation_secret>`_
 
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 **Note:** If you modify the ``collation_port`` or ``secret`` after
@@ -899,11 +837,8 @@ To install and configure a standalone collator:
 
    -  `*``proxy.config.log.logfile_dir``* <../configuration-files/records.config#proxy.config.log.logfile_dir>`_
 
-8. Enter the following command:
+8. Enter the following command::
 
-   ::
-
-       :::text
        traffic_sac -c config
 
 Configuring Traffic Server to Be a Collation Client
@@ -929,7 +864,7 @@ been established, then you must restart Traffic Server.
    -  `*``proxy.config.log.collation_host_tagged``* <../configuration-files/records.config#proxy.config.log.collation_host_tagged>`_
    -  `*``proxy.config.log.max_space_for_orphan_logs``* <../configuration-files/records.config#proxy.config.log.max_space_for_orphan_logs>`_
 
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Collating Custom Event Log Files
@@ -962,8 +897,8 @@ To collate custom event log files
    *``port``* is the port number for communication between the collation
    server and collation clients.
 
-3. Run the command ``traffic_line -L`` to restart Traffic Server on the
-   local node or ``traffic_line -M`` to restart Traffic Server on all
+3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
+   local node or :option:`traffic_line -M` to restart Traffic Server on all
    the nodes in a cluster.
 
 Viewing Logging Statistics

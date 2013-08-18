@@ -19,24 +19,58 @@
 traffic_logcat
 ==============
 
+Synopsis
+========
+
+:program:`traffic_logcat` [-o output-file | -a] [-CEhSVw2] [input-file ...]
+
 .. program:: traffic_logcat
+
 
 Description
 ===========
 
+To analyse a binary log file using standard tools, you must first convert
+it to ASCII. :program:`traffic_logcat` does exactly that.
+
+Options
+=======
+
 .. option:: -o PATH, --output_file PATH
+
+Specifies where the command output is directed.
 
 .. option:: -a, --auto_filename
 
+Automatically generates the output filename based on the input
+filename. If the input is from stdin, then this option is ignored.
+For example::
+
+     traffic_logcat -a squid-1.blog squid-2.blog squid-3.blog
+
+generates::
+
+     squid-1.log squid-2.log squid-3.log
+
 .. option:: -f, --follow
+
+Follows the file, like :manpage:`tail(1)` ``-f``
 
 .. option:: -C, --clf
 
+Attempts to transform the input to Netscape Common format, if possible.
+
 .. option:: -E, --elf
+
+Attempts to transform the input to Netscape Extended format, if possible.
 
 .. option:: -S, --squid
 
+Attempts to transform the input to Squid format, if possible.
+
 .. option:: -2, --elf2
+
+Attempt to transform the input to Netscape Extended-2 format, if possible.
 
 .. option:: -T, --debug_tags
 
@@ -51,3 +85,22 @@ Description
    Print version information and exit.
 
 
+.. note: Use only one of the following options at any given time: ``-S``, ``-C``, ``-E``, or ``-2``.
+
+If no input files are specified, then :program:`traffic_logcat` reads from the
+standard input (``stdin``). If you do not specify an output file, then
+:program:`traffic_logcat` writes to the standard output (``stdout``).
+
+For example, to convert a binary log file to an ASCII file, you can use
+the :program:`traffic_logcat` command with either of the following options
+below::
+
+    traffic_logcat binary_file > ascii_file
+    traffic_logcat -o ascii_file binary_file
+
+The binary log file is not modified by this command.
+
+See Also
+========
+
+:manpage:`tail(1)`
