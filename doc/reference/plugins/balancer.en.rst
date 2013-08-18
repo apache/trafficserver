@@ -1,4 +1,4 @@
-.. balancer-plugin:
+.. _balancer-plugin:
 
 Balancer Plugin
 ***************

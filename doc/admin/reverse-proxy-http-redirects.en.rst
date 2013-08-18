@@ -258,7 +258,7 @@ To create mapping rules
 
 1. Enter the map and reverse-map rules into the
    ```remap.config`` <configuration-files/remap.config>`_ file
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Enabling HTTP Reverse Proxy
@@ -271,7 +271,7 @@ To enable HTTP reverse proxy, follow the steps below.
 
    -  `*``proxy.config.reverse_proxy.enabled``* <configuration-files/records.config#proxy.config.reverse_proxy.enabled>`_
 
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Setting Optional HTTP Reverse Proxy Options
@@ -294,7 +294,7 @@ enable you to:
    directed
    (`*``proxy.config.header.parse.no_host_url_reedirect``* <configuration-files/records.config#proxy.config.header.parse.no_host_url_redirect>`_)
 
-Don't forget to run the command ``traffic_line -x`` to apply the
+Don't forget to run the command :option:`traffic_line -x` to apply the
 configuration changes.
 
 Redirecting HTTP Requests
@@ -318,7 +318,7 @@ To set redirect rules
 
 1. For each redirect you want to set enter a mapping rule in the
    ```remap.config`` <../configuration-files/remap.config>`_ file
-2. Run the command ``traffic_line -x`` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 **Example**

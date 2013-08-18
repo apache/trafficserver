@@ -1,4 +1,4 @@
-.. _hierachical-caching:
+.. _hierarchical-caching:
 
 Hierarchical Caching
 ********************
@@ -139,7 +139,7 @@ address.
 
     dest_host=host1 scheme=http parent="parent1;parent2" round-robin=strict
 
-Run the command ``traffic_line -x`` to apply the configuration changes.
+Run the command :option:`traffic_line -x` to apply the configuration changes.
 
 .. XXX As of yet, this is unsupported.
 

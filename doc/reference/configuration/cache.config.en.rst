@@ -47,48 +47,73 @@ You can use more than one secondary specifier in a rule. However, you
 cannot repeat a secondary specifier. The following list shows the
 possible primary destinations with allowed values.
 
-*``dest_domain``* {#dest_domain}
+.. _cache-config-format-dest-domain:
+
+``dest_domain``
    A requested domain name. Traffic Server matches the domain name of
    the destination from the URL in the request.
 
-*``dest_host``* {#dest_host}
+.. _cache-config-format-dest-host:
+
+``dest_host``
    A requested hostname. Traffic Server matches the hostname of the
    destination from the URL in the request.
 
-*``dest_ip``* {#dest_ip}
+.. _cache-config-format-dest-ip:
+
+``dest_ip``
    A requested IP address. Traffic Server matches the IP address of the
    destination in the request.
 
-*``url_regex``* {#url_regex}
+.. _cache-config-format-url-regex:
+
+``url_regex``
    A regular expression (regex) to be found in a URL.
 
 The secondary specifiers are optional in the :file:`cache.config` file. The
 following list shows possible secondary specifiers with allowed values.
 
-*``port``* {#port}
+.. _cache-config-format-port:
+
+``port``
    A requested URL port.
 
-*``scheme``* {#scheme}
+.. _cache-config-format-scheme:
+
+``scheme``
    A request URL protocol: http or https.
 
-*``prefix``* {#prefix}
+.. _cache-config-format-prefix:
+
+``prefix``
    A prefix in the path part of a URL.
 
-*``suffix``* {#suffix}
+.. _cache-config-format-suffix:
+
+``suffix``
    A file suffix in the URL.
 
-*``method``* {#method}
+.. _cache-config-format-method:
+
+``method``
    A request URL method: get, put, post, trace.
 
-*``time``* {#time}
+.. _cache-config-format-time:
+
+``time``
    A time range, such as 08:00-14:00.
 
-*``src_ip``* {#src_ip}
+.. _cache-config-format-src-ip:
+
+``src_ip``
    A client IP address.
 
 The following list shows possible actions and their allowed values.
 
-*``action``* {#action}
+
+.. _cache-config-format-action:
+
+``action``
    One of the following values:
 
    -  ``never-cache`` configures Traffic Server to never cache
@@ -100,7 +125,9 @@ The following list shows possible actions and their allowed values.
    -  ``ignore-server-no-cache`` configures Traffic Server to ignore
       ``Cache-Control: no-cache`` headers from origin server responses.
 
-*``pin-in-cache``* {#pin-in-cache}
+.. _cache-config-format-pin-in-cache:
+
+``pin-in-cache``
    The amount of time you want to keep the object(s) in the cache. The
    following time formats are allowed:
 
@@ -110,11 +137,15 @@ The following list shows possible actions and their allowed values.
    -  ``s`` for seconds; for example: 20s
    -  mixed units; for example: 1h15m20s
 
-*``revalidate``* {#revalidate}
+.. _cache-config-format-revalidate:
+
+``revalidate``
    The amount of time object(s) are to be considered fresh. Use the
    same time formats as ``pin-in-cache``.
 
-*``ttl-in-cache``* {#ttl-in-cache}
+.. _cache-config-format-ttl-in-cache:
+
+``ttl-in-cache``
    The amount of time object(s) are to be kept in the cache, regardless
    of Cache-Control response headers. Use the same time formats as
    pin-in-cache and revalidate .

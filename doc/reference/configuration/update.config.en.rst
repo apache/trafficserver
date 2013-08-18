@@ -70,31 +70,39 @@ such as those used by Internet crawlers.
 Format
 ======
 
-Each line in the :file:`update.config` file uses the following format:
-
-::
+Each line in the :file:`update.config` file uses the following format::
 
     URL\request_headers\offset_hour\interval\recursion_depth\
 
 The following list describes each field.
 
-*``URL``* {#URL}
+.. _update-config-format-url:
+
+*URL*
     HTTP-based URLs.
 
-*``request_headers``* {#request_headers}
+.. _update-config-format-request-headers:
+
+*request_headers*
     Optional. A list of headers, separated by semicolons, passed in each
     ``GET`` request. You can define any request header that conforms to
     the HTTP specification; the default is no request header.
 
-*``offset_hour``* {#offset_hour}
+.. _update-config-format-offset-hour:
+
+*offset_hour*
     The base hour used to derive the update periods. The range is 00-23
     hours.
 
-*``interval``* {#interval}
+.. _update-config-format-interval:
+
+*interval*
     The interval (in seconds) at which updates should occur, starting at
     the offset hour.
 
-*``recursion_depth``* {#recursion_depth}
+.. _update-config-format-reecursion-depth:
+
+*recursion_depth*
     The depth to which referenced URLs are recursively updated, starting
     at the given URL. This field applies only to HTTP.
 
@@ -112,6 +120,8 @@ The example specifies the URL and request headers, an offset hour of 13
 result in updates at 13:00, 14:00, 15:00, and so on. To schedule an
 update that occurs only once a day, use an interval value 86400 (i.e.,
 24 hours x 60 minutes x 60 seconds = 86400).
+
+.. XXX: The following seems misplaced here, and is probably better off placed in an apendix.
 
 Specifying URL Regular Expressions (``url_regex``)
 ==================================================

@@ -123,7 +123,7 @@ The configuration that ties everything together is then
         X-Forwarded-Proto =https=
 
 To activate this configuration, we need to restart Traffic Server with
-``traffic_line -L``.
+:option:`traffic_line -L`.
 
 In the backend servers we can now pick this up and do appropriately set
 server variables that will be picked up by CGI programs for instance. In
