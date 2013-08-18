@@ -32,7 +32,7 @@ If you do not configure Traffic Server to use the transparency option
 by a switch/router and rerouted to the Traffic Server machine), then
 clients must configure their web browsers to send HTTP requests to the
 Traffic Server proxy cache by configuring their browsers to download
-proxy configuration instructions from a `PAC file <#UsingPACFile>`_
+proxy configuration instructions from a :ref:`PAC file <using-a-pack-file>`
 (Proxy Auto-Configuration file).
 
 Configuring Browsers Manually
@@ -52,6 +52,8 @@ proxy configuration instructions. You do not need to set any special
 configuration options on Traffic Server if you want to accept requests
 from manually-configured browsers.
 
+.. _using-a-pack-file:
+
 Using a PAC File
 ================
 
@@ -68,10 +70,9 @@ must perform the following configuration:
    directory or enter a script that defines the proxy server
    configuration settings in the ``proxy.pac`` file provided. The file
    is empty by default. A sample script is provided in `Sample PAC
-   File <#SamplePACFile>`_.
+   File`_.
 -  Specify the port Traffic Server uses to serve the PAC file. The
-   default port is
-   `8083 <../configuration-files/records.config#proxy.config.admin.autoconf_port>`_.
+   default port is 8083, see :ts:cv:`proxy.config.admin.autoconf_port`.
 
 Sample PAC File
 ---------------
@@ -79,9 +80,7 @@ Sample PAC File
 The following sample PAC file instructs browsers to connect directly to
 all hosts without a fully-qualified domain name and to all hosts in the
 local domain. All other requests go to the Traffic Server named
-``myproxy.company.com``.
-
-::
+``myproxy.company.com``.::
 
     function FindProxyForURL(url, host)
     {
