@@ -25,6 +25,8 @@ Synopsis
 
 :program:`traffic_line` [options]
 
+.. _traffic-line-commands:
+
 Description
 ===========
 

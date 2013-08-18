@@ -28,6 +28,8 @@ Getting Started
 Before you start
 ================
 
+.. XXX: We'll need to adapt this when we start off with the new release process.
+
 Before you get started with Traffic Server you may have to decide which
 version you want to use. Traffic Server uses the same "semantic
 versioning" to denote "stability" as Apache
@@ -173,12 +175,12 @@ For a list of :program:`traffic_line` commands, enter::
 Please note that :program:`traffic_line`, while a fine tool for an
 administrator, is a poor choice for automation, especially that of
 monitoring. See our chapter on :ref:`monitoring-traffic`
-for how to get that righter.
+for how to do that better.
 
 Stop Traffic Server
 ===================
 
-To stop Traffic Server, always use the ``trafficserver`` command,
+To stop Traffic Server, always use the :program:`trafficserver` command,
 passing in the attribute ``stop``. This command stops all the Traffic
 Server processes (:program:`traffic_manager`, :program:`traffic_server`, and
 :program:`traffic_cop`). Do not manually stop processes, as this can lead to
