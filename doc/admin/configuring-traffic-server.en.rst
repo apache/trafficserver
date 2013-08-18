@@ -23,8 +23,6 @@ Configuring Traffic Server
 
 Traffic Server provides several options for configuring the system.
 
-This chapter discusses the following topics:
-
 .. toctree::
    :maxdepth: 2
 
