@@ -24,7 +24,7 @@ Administrators' Guide
 Apache Traffic Server™ speeds Internet access, enhances website
 performance, and delivers unprecedented web hosting capabilities.
 
-This chapter discusses the following topics:
+This chapter discusses how:
 
 Contents:
 
@@ -189,19 +189,19 @@ Traffic Server contains three processes that work together to serve
 requests and manage/control/monitor the health of the system. The three
 processes are described below:
 
--  The ``traffic_server`` process is the transaction processing engine
+-  The :program:`traffic_server` process is the transaction processing engine
    of Traffic Server. It is responsible for accepting connections,
    processing protocol requests, and serving documents from the cache or
    origin server.
 
--  The ``traffic_manager`` process is the command and control facility
+-  The :program:`traffic_manager` process is the command and control facility
    of the Traffic Server, responsible for launching, monitoring, and
-   reconfiguring the ``traffic_server`` process. The ``traffic_manager``
+   reconfiguring the :program:`traffic_server` process. The :program:`traffic_manager`
    process is also responsible for the proxy autoconfiguration port, the
    statistics interface, cluster administration, and virtual IP
    failover.
 
-   If the ``traffic_manager`` process detects a ``traffic_server``
+   If the :program:`traffic_manager` process detects a :program:`traffic_server`
    process failure, it instantly restarts the process but also maintains
    a connection queue of all incoming requests. All incoming connections
    that arrive in the several seconds before full server restart are
@@ -209,14 +209,14 @@ processes are described below:
    first-served order. This connection queueing shields users from any
    server restart downtime.
 
--  The ``traffic_cop`` process monitors the health of both the
-   ``traffic_server`` and ``traffic_manager`` processes. The
-   ``traffic_cop`` process periodically (several times each minute)
-   queries the ``traffic_server`` and ``traffic_manager`` process by
+-  The :program:`traffic_cop` process monitors the health of both the
+   :program:`traffic_server` and :program:`traffic_manager` processes. The
+   :program:`traffic_cop` process periodically (several times each minute)
+   queries the :program:`traffic_server` and :program:`traffic_manager` process by
    issuing heartbeat requests to fetch synthetic web pages. In the event
    of failure (if no response is received within a timeout interval or
-   if an incorrect response is received), ``traffic_cop`` restarts the
-   ``traffic_manager`` and ``traffic_server`` processes.
+   if an incorrect response is received), :program:`traffic_cop` restarts the
+   :program:`traffic_manager` and :program:`traffic_server` processes.
 
 The figure below illustrates the three Traffic Server processes.
 

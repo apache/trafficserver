@@ -127,7 +127,7 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary STRING traffic_server
 
-   The name of the executable that runs the ``traffic_server`` process.
+   The name of the executable that runs the :program:`traffic_server` process.
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary_opts STRING -M
 
@@ -135,12 +135,12 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.manager_binary STRING traffic_manager
 
-   The name of the executable that runs the ``traffic_manager`` process.
+   The name of the executable that runs the :program:`traffic_manager` process.
 
 .. ts:cv:: CONFIG proxy.config.env_prep STRING
 
-   The script executed before the ``traffic_manager`` process spawns
-   the ``traffic_server`` process.
+   The script executed before the :program:`traffic_manager` process spawns
+   the :program:`traffic_server` process.
 
 .. ts:cv:: CONFIG proxy.config.config_dir STRING config
 
@@ -161,13 +161,13 @@ otherwise, Traffic Server uses the Traffic Server user account name as the defau
 
 .. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
 
-   The signal sent to ``traffic_cop``'s managed processes to stop them.
+   The signal sent to :program:`traffic_cop`'s managed processes to stop them.
 
 A value of ``0`` means no signal will be sent.
 
 .. ts:cv:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 10240
 
-   The minimum amount of free swap space allowed before Traffic Server stops the ``traffic_server`` and ``traffic_manager`` processes to
+   The minimum amount of free swap space allowed before Traffic Server stops the :program:`traffic_server` and :program:`traffic_manager` processes to
    prevent the system from hanging. This configuration variable applies if swap is enabled in Linux 2.2 only.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
@@ -286,7 +286,7 @@ Local Manager
 
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 
-   Option used to specify who to run the ``traffic_server`` process as; also used to specify ownership of config and log files.
+   Option used to specify who to run the :program:`traffic_server` process as; also used to specify ownership of config and log files.
 
 The nonprivileged user account designated to Traffic Server.
 
@@ -296,7 +296,7 @@ If the value is set to ``#-1`` Traffic Server will not change the user during st
 
 Setting ``user_id`` to ``root`` or ``#0`` is now forbidden to
 increase security. Trying to do so, will cause the
-``traffic_server`` fatal failure. However there are two ways to
+:program:`traffic_server` fatal failure. However there are two ways to
 bypass that restriction: Specify ``-DBIG_SECURITY_HOLE`` in
 ``CXXFLAGS`` during compilation. Set the ``user_id=#-1`` and start
 trafficserver as root.
@@ -306,7 +306,7 @@ Process Manager
 
 .. ts:cv:: CONFIOG proxy.config.process_manager.mgmt_port  INT 8084
 
-   The port used for internal communication between the ``traffic_manager`` and ``traffic_server`` processes.
+   The port used for internal communication between the :program:`traffic_manager` and :program:`traffic_server` processes.
 
 Alarm Configuration
 ===================
@@ -516,7 +516,7 @@ Value Effect
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) ``traffic_cop`` heartbeat ogging.
+   Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat ogging.
 
 .. ts:cv:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 

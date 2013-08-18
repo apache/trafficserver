@@ -165,11 +165,11 @@ Traffic Line commands take the following form::
 
      bin/traffic_line -command argument
 
-For a list of ``traffic_line`` commands, enter::
+For a list of :program:`traffic_line` commands, enter::
 
      bin/traffic_line -h
 
-Please note that ``traffic_line``, while a fine tool for an
+Please note that :program:`traffic_line`, while a fine tool for an
 administrator, is a poor choice for automation, especially that of
 monitoring. See our chapter on :ref:`monitoring-traffic`
 for how to get that righter.
@@ -179,8 +179,8 @@ Stop Traffic Server
 
 To stop Traffic Server, always use the ``trafficserver`` command,
 passing in the attribute ``stop``. This command stops all the Traffic
-Server processes (``traffic_manager``, ``traffic_server``, and
-``traffic_cop``). Do not manually stop processes, as this can lead to
+Server processes (:program:`traffic_manager`, :program:`traffic_server`, and
+:program:`traffic_cop`). Do not manually stop processes, as this can lead to
 unpredictable results.::
 
     bin/trafficserver stop

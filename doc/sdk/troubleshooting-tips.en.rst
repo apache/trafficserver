@@ -33,7 +33,7 @@ Unable to Compile Plugins
 -------------------------
 
 The process for compiling a shared library varies with the platform
-used, so the Traffic Server API includes the ``tsxs`` script you can use
+used, so the Traffic Server API includes the :program:`tsxs` script you can use
 to create shared libraries on all supported Traffic Server platforms.
 
 Example

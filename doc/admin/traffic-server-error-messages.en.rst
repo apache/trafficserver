@@ -120,7 +120,7 @@ Traffic Server Alarm Messages
     indicated file permissions; change if necessary.
 
 ``[Traffic Manager] Mgmt <==>Proxy conn. closed``
-    An informational message to inform you that the ``traffic_server``
+    An informational message to inform you that the :program:`traffic_server`
     process is down.
 
 ``Access logging suspended - configured space allocation exhausted.``
@@ -150,7 +150,7 @@ Traffic Server Alarm Messages
     correct custom log format fields.
 
 ``vip_config binary is not setuid root, manager will be unable to enable virtual ip addresses``
-    The ``traffic_manager`` process is not able to set virtual IP
+    The :program:`traffic_manager` process is not able to set virtual IP
     addresses. You must ``setuid root``\ for the ``vip_config`` file in
     the Traffic Server ``bin`` directory.
 

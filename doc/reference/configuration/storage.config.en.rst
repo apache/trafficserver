@@ -90,7 +90,7 @@ system:::
     /dev/sde volume=1
     /dev/sdf volume=2
 
-In order to make sure ``traffic_server`` will have access to this disk
+In order to make sure :program:`traffic_server` will have access to this disk
 you can use ``udev`` to persistently set the right permissions. The
 following rules are targeted for an Ubuntu system, and stored in
 ``/etc/udev/rules.d/51-cache-disk.rules``::
@@ -111,7 +111,7 @@ operating system::
     /dev/ada1
     /dev/ada2
 
-In order to make sure ``traffic_server`` will have access to this disk
+In order to make sure :program:`traffic_server` will have access to this disk
 you can use ``devfs`` to persistently set the right permissions. The
 following rules are stored in ``/etc/devfs.conf``::
 

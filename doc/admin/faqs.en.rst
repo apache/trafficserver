@@ -182,13 +182,15 @@ You are unable to execute Traffic Line commands
 
 Traffic Line commands do not execute under the following conditions:
 
--  **When the ``traffic_manager`` process is not running** Check to see
+-  **When the :program:`traffic_manager` process is not running** Check to see
    if the ``**traffic_manager**`` process is running by entering the
    following command: ``ps aux | grep traffic_manager``
 
-If the ``traffic_manager`` process is not running, then enter the
+If the :program:`traffic_manager` process is not running, then enter the
 following command from the Traffic Server ``bin`` directory to start it:
 ``./traffic_manager``
+
+.. this is wrong
 
 You should always start and stop Traffic Server with the
 ``start_traffic_server``\ and ``stop_traffic_server`` commands to ensure
@@ -299,8 +301,8 @@ The following message appears repeatedly in the system log file:
      traffic_cop[16056]: encountered "var/trafficserver/no_cop" file...exiting
 
 The file ``var/trafficserver/no_cop`` acts as an administrative control
-that instructs the ``traffic_cop`` process to exit immediately without
-starting ``traffic_manager`` or performing any health checks. The
+that instructs the :program:`traffic_cop` process to exit immediately without
+starting :program:`traffic_manager` or performing any health checks. The
 ``no_cop`` file prevents Traffic Server from starting automatically when
 it has been stopped with the ``stop_traffic_server`` command. Without
 this static control, Traffic Server would restart automatically upon

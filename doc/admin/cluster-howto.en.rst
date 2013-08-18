@@ -49,7 +49,7 @@ configuration information. You can administer all the nodes at the same
 time. Traffic Server uses a multicast management protocol to provide a
 single system image of your Traffic Server cluster. Information about
 cluster membership, configuration, and exceptions is shared across all
-nodes, and the ``traffic_manager`` process automatically propagates
+nodes, and the :program:`traffic_manager` process automatically propagates
 configuration changes to all the nodes.
 
 Full Clustering
@@ -121,7 +121,7 @@ individually. You may following these instructions:
    ::
        traffic_line -L
 
-   The ``traffic_server`` and ``traffic_manager`` processes will need to
+   The :program:`traffic_server` and :program:`traffic_manager` processes will need to
    restart after the change of 'proxy.local.cluster.type' and
    'proxy.config.cluster.ethernet_interface' have taken place.
 

@@ -59,8 +59,8 @@ keeps three types of log files:
 
    The ``syslog`` process works on a system-wide basis, so it serves as
    the single repository for messages from all Traffic Server processes
-   (including ``traffic_server``, ``traffic_manager``, and
-   ``traffic_cop``).
+   (including :program:`traffic_server`, :program:`traffic_manager`, and
+   :program:`traffic_cop`).
 
    System information logs observe a static format. Each log entry in
    the log contains information about the date and time the error was
@@ -481,7 +481,7 @@ Using logcat to Convert Binary Logs to ASCII
 You must convert a binary log file to ASCII before you can analyze it
 using standard tools.
 
-To convert a binary log file to ASCII, use the ``traffic_logcat``
+To convert a binary log file to ASCII, use the :program:`traffic_logcat`
 command The following is a description of its command-line options.
 
 ::
@@ -523,12 +523,12 @@ command The following is a description of its command-line options.
 **Note:** Use only one of the following options at any given time:
 ``-S``, ``-C``, ``-E``, or\ ``-2``.
 
-If no input files are specified, then ``traffic_logcat`` reads from the
+If no input files are specified, then :program:`traffic_logcat` reads from the
 standard input (``stdin``). If you do not specify an output file, then
-``traffic_logcat`` writes to the standard output (``stdout``).
+:program:`traffic_logcat` writes to the standard output (``stdout``).
 
 For example, to convert a binary log file to an ASCII file, you can use
-the ``traffic_logcat`` command with either of the following options
+the :program:`traffic_logcat` command with either of the following options
 below:
 
 ::
@@ -878,12 +878,12 @@ To install and configure a standalone collator:
 1. Configure your Traffic Server nodes as log collation clients; refer
    to `Configuring Traffic Server to Be a Collation
    Client <#ConfiguringTSCollationClient>`_.
-2. Copy the ``traffic_sac`` binary from the Traffic Server ``bin``
+2. Copy the :program:`traffic_sac` binary from the Traffic Server ``bin``
    directory and
 3. Copy the ``libtsutil.so`` libraries from the Traffic Server ``lib``
    directory to the machine serving as the standalone collator.
 4. Create a directory called ``config`` in the directory that contains
-   the ``traffic_sac`` binary.
+   the :program:`traffic_sac` binary.
 5. Create a directory called *``internal``* in the ``config`` directory
    you created in Step 4 (above). This directory is used internally by
    the standalone collator to store lock files.
