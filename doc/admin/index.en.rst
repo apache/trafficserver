@@ -121,6 +121,15 @@ similar caching products.
 Traffic Server supports ICP (Internet Cache Protocol) peering.
 Hierarchical caching is described in more detail in :ref:`hierarchical-caching`.
 
+Deployment Limitations
+----------------------
+
+There's a number of deployment options that Traffic Server does not support right out
+of the box. Such funcionality may be implemented in a plugin, but in some cases
+Traffic Server's internal APIs or architectural restrictions won't make it easy:
+
+* Load Balancing - note that there is an experimental plugin for this: :ref:`balancer-plugin`.
+
 Traffic Server Components
 =========================
 
