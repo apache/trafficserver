@@ -276,9 +276,7 @@ Examples
 ========
 
 The following is an example of a ``LogFormat`` specification that
-collects information using three common fields:
-
-::
+collects information using three common fields: ::
 
          <LogFormat>
              <Name="minimal"/>
@@ -286,9 +284,7 @@ collects information using three common fields:
          </LogFormat>
 
 The following is an example of a ``LogFormat`` specification that
-uses aggregate operators:
-
-::
+uses aggregate operators: ::
 
          <LogFormat>
              <Name = "summary"/>
@@ -297,9 +293,7 @@ uses aggregate operators:
          </LogFormat>
 
 The following is an example of a ``LogFilter`` that will cause only
-``REFRESH_HIT`` entries to be logged:
-
-::
+``REFRESH_HIT`` entries to be logged: ::
 
          <LogFilter>
               <Name = "only_refresh_hits"/>
@@ -307,13 +301,11 @@ The following is an example of a ``LogFilter`` that will cause only
               <Condition = "%<pssc> MATCH REFRESH_HIT"/>
          </LogFilter>
 
-.. note:
+.. note::
 
     When specifying the field in the filter condition, you can
     omit the\ ``%<>``. This means that the filter below is equivalent to the
-    example directly above:
-
-::
+    example directly above: ::
 
          <LogFilter>
              <Name = "only_refresh_hits"/>
@@ -324,9 +316,7 @@ The following is an example of a ``LogFilter`` that will cause only
 The following is an example of a ``LogObject`` specification that
 creates a local log file for the minimal format defined earlier. The log
 filename will be ``minimal.log`` because this is an ASCII log file (the
-default).
-
-::
+default).::
 
          <LogObject>
              <Format = "minimal"/>

@@ -104,7 +104,7 @@ complete the following steps:
    cache so that when a parent cache is unavailable, requests are sent
    to another parent cache.
 
-.. note: You need to configure the child cache only. No additional configuration is needed for the Traffic Server parent cache.
+.. note:: You need to configure the child cache only. No additional configuration is needed for the Traffic Server parent cache.
 
 Configure Traffic Server to use a parent cache by editing the following
 variable :ts:cv:`proxy.config.http.parent_proxy_routing_enable` in :file:`records.config` file.

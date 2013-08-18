@@ -32,22 +32,19 @@ volumes to store data from certain origin servers and/or domains in the
     The volume configuration must be the same on all nodes in
     a cluster. You must stop Traffic Server before you change the cache
     volume size and protocol assignment. For step-by-step instructions about
-    partitioning the cache, refer to `Partitioning the
-    Cache <../configuring-cache#PartitioningCache>`_.
+    partitioning the cache, refer to :ref:`partitioning-the-cache`.
 
 Format
 ======
 
 For each volume you want to create, enter a line with the following
-format:
-
-::
+format: ::
 
     volume=volume_number  scheme=protocol_type  size=volume_size
 
-where *``volume_number``* is a number between 1 and 255 (the maximum
-number of volumes is 255) and *``protocol_type``* is ``http``. Traffic
-Server supports ``http`` for HTTP volume types; *``volume_size``* is the
+where ``volume_number`` is a number between 1 and 255 (the maximum
+number of volumes is 255) and ``protocol_type`` is ``http``. Traffic
+Server supports ``http`` for HTTP volume types; ``volume_size`` is the
 amount of cache space allocated to the volume. This value can be either
 a percentage of the total cache space or an absolute value. The absolute
 value must be a multiple of 128 MB, where 128 MB is the smallest value.

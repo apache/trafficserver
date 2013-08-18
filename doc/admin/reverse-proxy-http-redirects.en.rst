@@ -119,7 +119,7 @@ Server IP address. When Traffic Server is configured as the origin
 server, the browser connects to Traffic Server rather than the origin
 server. For additional information, see `HTTP Reverse Proxy`_.
 
-.. note: To avoid a DNS conflict, the origin server’s hostname and its advertised hostname must not be the same.
+.. note:: To avoid a DNS conflict, the origin server’s hostname and its advertised hostname must not be the same.
 
 HTTP Reverse Proxy
 ==================

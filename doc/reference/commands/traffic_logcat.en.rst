@@ -85,7 +85,7 @@ Attempt to transform the input to Netscape Extended-2 format, if possible.
    Print version information and exit.
 
 
-.. note: Use only one of the following options at any given time: ``-S``, ``-C``, ``-E``, or ``-2``.
+.. note:: Use only one of the following options at any given time: ``-S``, ``-C``, ``-E``, or ``-2``.
 
 If no input files are specified, then :program:`traffic_logcat` reads from the
 standard input (``stdin``). If you do not specify an output file, then

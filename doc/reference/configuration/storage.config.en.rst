@@ -52,9 +52,8 @@ raw disk must be at least 128 MB.
 
 When using raw disk or partitions, you should make sure the admin user,
 which is the traffic_server running at, have the read&write privileges.
-The admin user_id is set in
-```proxy.config.admin.user_id`` <records.config#proxy.config.admin.user_id>`_.
-One good practice is if the disk set with g+rw, put the admin user into
+The admin user_id is set in :ts:cv:`proxy.config.admin.user_id`.
+One good practice is if the disk set with 'g+rw', put the admin user into
 the group which have the privileges.
 
 Examples
@@ -91,16 +90,16 @@ system:::
     /dev/sdf volume=2
 
 In order to make sure :program:`traffic_server` will have access to this disk
-you can use ``udev`` to persistently set the right permissions. The
+you can use :manpage:`udev(7)` to persistently set the right permissions. The
 following rules are targeted for an Ubuntu system, and stored in
 ``/etc/udev/rules.d/51-cache-disk.rules``::
 
-    # Assign /dev/sde and /dev/sdf to the www group
+    # Assign /dev/sde and /dev/sdf to the tserver group
     # make the assignment final, no later changes allowed to the group!
-    SUBSYSTEM=="block", KERNEL=="sd[ef]", GROUP:="www"
+    SUBSYSTEM=="block", KERNEL=="sd[ef]", GROUP:="tserver"
 
-FreeBSD Example ## {#LinuxExample}
-----------------------------------
+FreeBSD Example
+---------------
 
 Starting with 5.1 FreeBSD dropped support for explicit raw devices. All
 devices on FreeBSD can be accessed raw now.
@@ -112,8 +111,8 @@ operating system::
     /dev/ada2
 
 In order to make sure :program:`traffic_server` will have access to this disk
-you can use ``devfs`` to persistently set the right permissions. The
-following rules are stored in ``/etc/devfs.conf``::
+you can use :manpage:`devfs(8)` to persistently set the right permissions. The
+following rules are stored in :manpage:`devfs.conf(5)`::
 
     # Assign /dev/ada1 and /dev/ada2 to the tserver user
     own    ada[12]  tserver:tserver

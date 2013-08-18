@@ -502,12 +502,14 @@ Value Effect
    -  ``2`` Generate a chunked response if the server has returned HTTP/1.1 before
    -  ``3`` = Generate a chunked response if the client request is HTTP/1.1 and the origin server has returned HTTP/1.1 before
 
-   **Note:** If HTTP/1.1 is used, then Traffic Server can use
-   keep-alive connections with pipelining to origin servers. If
-   HTTP/0.9 is used, then Traffic Server does not use ``keep-alive``
-   connections to origin servers. If HTTP/1.0 is used, then Traffic
-   Server can use ``keep-alive`` connections without pipelining to
-   origin servers.
+   .. note::
+
+       If HTTP/1.1 is used, then Traffic Server can use
+       keep-alive connections with pipelining to origin servers. If
+       HTTP/0.9 is used, then Traffic Server does not use ``keep-alive``
+       connections to origin servers. If HTTP/1.0 is used, then Traffic
+       Server can use ``keep-alive`` connections without pipelining to
+       origin servers.
 
 .. ts:cv:: CONFIG proxy.config.http.share_server_sessions INT 1
 
@@ -742,21 +744,23 @@ Negative Response Caching
    When enabled (``1``), Traffic Server caches negative responses (such as ``404 Not Found``) when a requested page does not exist. The next
    time a client requests the same page, Traffic Server serves the negative response directly from cache.
 
-   **Note**: ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
-   of the value specified for the `proxy.config.http.negative_caching_enabled`_ variable. The
-   following negative responses are cached by Traffic Server:::
+   .. note::
+   
+       ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
+       of the value specified for the `proxy.config.http.negative_caching_enabled`_ variable. The
+       following negative responses are cached by Traffic Server:::
 
-        204  No Content
-        305  Use Proxy
-        400  Bad Request
-        403  Forbidden
-        404  Not Found
-        405  Method Not Allowed
-        500  Internal Server Error
-        501  Not Implemented
-        502  Bad Gateway
-        503  Service Unavailable
-        504  Gateway Timeout
+            204  No Content
+            305  Use Proxy
+            400  Bad Request
+            403  Forbidden
+            404  Not Found
+            405  Method Not Allowed
+            500  Internal Server Error
+            501  Not Implemented
+            502  Bad Gateway
+            503  Service Unavailable
+            504  Gateway Timeout
 
     The cache lifetime for objects cached from this setting is controlled via
     ``proxy.config.http.negative_caching_lifetime``.
@@ -829,9 +833,11 @@ Security
    Enables (``1``) or disables (``0``) the HTTP ``PUSH`` option, which allows you to deliver content directly to the cache without a user
    request.
 
-   **Important:** If you enable this option, then you must also specify
-   a filtering rule in the ip_allow.config file to allow only certain
-   machines to push content into the cache.
+   .. important::
+
+       If you enable this option, then you must also specify
+       a filtering rule in the ip_allow.config file to allow only certain
+       machines to push content into the cache.
 
 Cache Control
 =============
@@ -954,11 +960,13 @@ Cache Control
    When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Type:`` header that does not match the ``Accept:``
    header of the request.
 
-   **Note:** This option should only be enabled if you're having
-   problems with caching *and* one of the following is true:
+   .. note::
 
-   -  Your origin server sets ``Vary: Accept`` when doing content negotiation with ``Accept`` *OR*
-   -  The server does not send a ``406 (Not Acceptable)`` response for types that it cannot serve.
+       This option should only be enabled if you're having
+       problems with caching *and* one of the following is true:
+
+       -  Your origin server sets ``Vary: Accept`` when doing content negotiation with ``Accept`` *OR*
+       -  The server does not send a ``406 (Not Acceptable)`` response for types that it cannot serve.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 0
    :reloadable:
@@ -966,10 +974,12 @@ Cache Control
    When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Language:`` header that does not match the
    ``Accept-Language:`` header of the request.
 
-   **Note:** This option should only be enabled if you're having
-   problems with caching and your origin server is guaranteed to set
-   ``Vary: Accept-Language`` when doing content negotiation with
-   ``Accept-Language``.
+   .. note::
+
+       This option should only be enabled if you're having
+       problems with caching and your origin server is guaranteed to set
+       ``Vary: Accept-Language`` when doing content negotiation with
+       ``Accept-Language``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 0
    :reloadable:
@@ -977,10 +987,12 @@ Cache Control
    When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Type:`` header that does not match the
    ``Accept-Charset:`` header of the request.
 
-   **Note:** This option should only be enabled if you're having
-   problems with caching and your origin server is guaranteed to set
-   ``Vary: Accept-Charset`` when doing content negotiation with
-   ``Accept-Charset``.
+   .. note::
+
+       This option should only be enabled if you're having
+       problems with caching and your origin server is guaranteed to set
+       ``Vary: Accept-Charset`` when doing content negotiation with
+       ``Accept-Charset``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
    :reloadable:
@@ -992,15 +1004,24 @@ Cache Control
 
    When enabled (``1``), Traffic Server will keep certain HTTP objects in the cache for a certain time as specified in cache.config.
 
+RAM Cache
+=========
+
+
+.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.size INT -1
+
+   By default the RAM cache size to is automatically determined, based on cache size (approximately 10 MB of RAM cache per GB of disk cache).
+   Alternatively, it can be set to a fixed value such as 21474836480 (20GB).
+
 Heuristic Expiration
 ====================
 
-.. ts::confvar:: proxy.config.http.cache.heuristic_min_lifetime INT 3600
+.. :ts:cv:: proxy.config.http.cache.heuristic_min_lifetime INT 3600
    :reloadable:
 
    The minimum amount of time an HTTP object without an expiration date can remain fresh in the cache before is considered to be stale.
 
-.. ts::confvar:: proxy.config.http.cache.heuristic_max_lifetime INT 86400
+.. :ts:cv:: proxy.config.http.cache.heuristic_max_lifetime INT 86400
    :reloadable:
 
    The maximum amount of time an HTTP object without an expiration date can remain fresh in the cache before is considered to be stale.
@@ -1196,19 +1217,24 @@ Logging Configuration
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB).
-   **Note:** All files in the logging directory contribute to the space used, even if they are not log files. In collation client mode, if
-   there is no local disk logging, or max_space_mb_for_orphan_logs is set to a higher value than max_space_mb_for_logs, TS will
-   take proxy.config.log.max_space_mb_for_orphan_logs for maximum allowed log space.
+
+
+   .. note::
+       All files in the logging directory contribute to the space used, even if they are not log files. In collation client mode, if
+       there is no local disk logging, or `max_space_mb_for_orphan_logs` is set to a higher value than `max_space_mb_for_logs`_, TS will
+       take `proxy.config.log.max_space_mb_for_orphan_logs`_ for maximum allowed log space.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB) if this node is acting as a collation client.
 
-   **Note:** When max_space_mb_for_orphan_logs is take as the maximum allowedlog space in the logging system, the same rule apply to
-   proxy.config.log.max_space_mb_for_logs also apply to proxy.config.log.max_space_mb_for_orphan_logs, ie: All files in
-   the logging directory contribute to the space used, even if they are not log files. you may need to consider this when you enable full
-   remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
+   .. note::
+
+       When max_space_mb_for_orphan_logs is take as the maximum allowedlog space in the logging system, the same rule apply to
+       proxy.config.log.max_space_mb_for_logs also apply to proxy.config.log.max_space_mb_for_orphan_logs, ie: All files in
+       the logging directory contribute to the space used, even if they are not log files. you may need to consider this when you enable full
+       remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_headroom INT 10
    :reloadable:
@@ -1227,7 +1253,7 @@ Logging Configuration
 
    The full path to the logging directory. This can be an absolute path or a path relative to the directory in which Traffic Server is installed.
 
-   **Note:** The directory you specify must already exist.
+   .. note:: The directory you specify must already exist.
 
 .. ts:cv:: CONFIG proxy.config.log.logfile_perm STRING rw-r--r--
    :reloadable:
@@ -1411,7 +1437,7 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 
    The log file rolling interval, in seconds. The minimum value is ``300`` (5 minutes). The maximum, and default, value is 86400 seconds (one day).
 
-   **Note:** If you start Traffic Server within a few minutes of the next rolling time, then rolling might not occur until the next rolling time.
+   .. note:: If you start Traffic Server within a few minutes of the next rolling time, then rolling might not occur until the next rolling time.
 
 .. ts:cv:: CONFIG proxy.config.log.rolling_offset_hr INT 0
    :reloadable:
@@ -1649,10 +1675,12 @@ ICP Configuration
 
    Specifies the network interface used for ICP traffic.
 
-   **Note:** The Traffic Server installation script detects your
-   network interface and sets this variable appropriately. If your
-   system has multiple network interfaces, check that this variable
-   specifies the correct interface.
+   .. note::
+
+       The Traffic Server installation script detects your
+       network interface and sets this variable appropriately. If your
+       system has multiple network interfaces, check that this variable
+       specifies the correct interface.
 
 .. ts:cv:: CONFIG proxy.config.icp.icp_port INT 3130
    :reloadable:
@@ -1741,9 +1769,11 @@ Sockets
         TCP_NODELAY (1)
         SO_KEEPALIVE (2)
 
-   **Note:** This is a flag and you look at the bits set. Therefore,
-   you must set the value to ``3`` if you want to enable both options
-   above.
+   .. note::
+
+       This is a flag and you look at the bits set. Therefore,
+       you must set the value to ``3`` if you want to enable both options
+       above.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
 
@@ -1761,9 +1791,11 @@ Sockets
         TCP_NODELAY (1)
         SO_KEEPALIVE (2)
 
-   **Note:** This is a flag and you look at the bits set. Therefore,
-   you must set the value to ``3`` if you want to enable both options
-   above.
+   .. note::
+
+        This is a flag and you look at the bits set. Therefore,
+        you must set the value to ``3`` if you want to enable both options
+        above.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 

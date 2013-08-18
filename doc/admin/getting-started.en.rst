@@ -177,6 +177,8 @@ administrator, is a poor choice for automation, especially that of
 monitoring. See our chapter on :ref:`monitoring-traffic`
 for how to do that better.
 
+.. _stop-traffic-server:
+
 Stop Traffic Server
 ===================
 

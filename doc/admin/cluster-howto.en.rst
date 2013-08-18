@@ -1,3 +1,5 @@
+.. _traffic-server-cluster:
+
 Traffic Server Cluster
 **********************
 

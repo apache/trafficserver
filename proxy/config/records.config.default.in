@@ -329,8 +329,8 @@ CONFIG proxy.config.cluster.ethernet_interface STRING @default_loopback_iface@
 ##############################################################################
 CONFIG proxy.config.cache.permit.pinning INT 0
    # default the ram cache size to AUTO_SIZE (-1) based on cache size
-   #   (approximately 1 MB of RAM cache per GB of disk cache)
-   # alternatively, set to a fixed value such as 20971520 (20MB)
+   #   (approximately 10 MB of RAM cache per GB of disk cache)
+   # alternatively, set to a fixed value such as 21474836480 (20GB)
 CONFIG proxy.config.cache.ram_cache.size INT -1
 CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
    # Replacement algorithm
