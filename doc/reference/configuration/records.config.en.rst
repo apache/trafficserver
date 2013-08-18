@@ -1543,6 +1543,8 @@ URL Remap Rules
    Set this variable to ``1`` if you want to retain the client host
    header in a request during remapping.
 
+.. _records-config-ssl-termination:
+
 SSL Termination
 ===============
 

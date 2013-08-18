@@ -23,8 +23,7 @@ splitdns.config
 
 The :file:`splitdns.config` file enables you to specify the DNS server that
 Traffic Server should use for resolving hosts under specific conditions.
-For more information, refer to `Configuring DNS Server Selection (Split
-DNS) <../security-options#SplitDNS>`_.
+For more information, refer to :ref:`configuring-dns-server-selection-split-dns`.
 
 To specify a DNS server, you must supply the following information in
 each active line within the file:
@@ -51,29 +50,35 @@ Format
 ======
 
 Each line in the :file:`splitdns.config` file uses one of the following
-formats:
-
-::
+formats: ::
 
     dest_domain=dest_domain | dest_host | url_regex named=dns_server def_domain=def_domain search_list=search_list
 
 The following list describes each field.
 
-*``dest_domain``* {#dest_domain}
+.. _splitdns-config-format-dest-domain:
+
+``dest_domain``
     A valid domain name. This specifies that DNS server selection will
     be based on the destination domain. You can prefix the domain with
     an exclamation mark (``!``) to indicate the NOT logical operator.
 
-*``dest_host``* {#dest_host}
+.. _splitdns-config-format-dest-host:
+
+``dest_host``
     A valid hostname. This specifies that DNS server selection will be
     based on the destination host. You can prefix the host with an
     exclamation mark (``!``) to indicate the ``NOT`` logical operator.
 
-*``url_regex``* {#url_regex}
+.. _splitdns-config-format-url-regex:
+
+``url_regex``
     A valid URL regular expression. This specifies that DNS server
     selection will be based on a regular expression.
 
-*``dns_server``* {#dns_server}
+.. _splitdns-config-format-dns-server:
+
+``dns_server``
     This is a required directive. It identifies the DNS server that
     Traffic Server should use with the given destination specifier. You
     can specify a port using a colon (``:``). If you do not specify a
@@ -83,44 +88,42 @@ The following list describes each field.
     You must specify the domains with IP addresses in CIDR ("dot")
     notation.
 
-*``def_domain``* {#def_domain}
+.. _splitdns-config-format-def-domain:
+
+``def_domain``
     A valid domain name. This optional directive specifies the default
     domain name to use for resolving hosts. Only one entry is allowed.
     If you do not provide the default domain, the system determines its
     value from ``/etc/resolv.conf``
 
-*``search_list``* {#search_list}
+.. _splitdns-config-format-search-list:
+
+``search_list``
     A list of domains separated by spaces or semicolons (;). This
     specifies the domain search order. If you do not provide the search
-    list, the system determines the value from ``/etc/resolv.conf``
+    list, the system determines the value from :manpage:`resolv.conf(5)`
 
 Examples
 ========
 
-Consider the following DNS server selection specifications:
-
-::
+Consider the following DNS server selection specifications: ::
 
       dest_domain=internal.company.com named=255.255.255.255:212 255.255.255.254 def_domain=company.com search_list=company.com company1.com
       dest_domain=!internal.company.com named=255.255.255.253
 
-Now consider the following two requests:
-
-::
+Now consider the following two requests: ::
 
      http://minstar.internal.company.com
 
 This request matches the first line and therefore selects DNS server
 ``255.255.255.255`` on port ``212``. All resolver requests use
 ``company.com`` as the default domain, and ``company.com`` and
-``company1.com`` as the set of domains to search first.
-
-::
+``company1.com`` as the set of domains to search first. ::
 
      http://www.microsoft.com
 
 This request matches the second line. Therefore, Traffic Server selects
 DNS server ``255.255.255.253``. Because no ``def_domain`` or
 ``search_list`` was supplied, Traffic Server retrieves this information
-from ``/etc/resolv.conf``
+from :manpage:`resolv.conf(5)`
 

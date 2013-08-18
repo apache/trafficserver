@@ -22,11 +22,6 @@ Security Options
 
 Traffic Server provides a number of security features.
 
-This chapter discusses the following topics:
-
-.. toctree::
-   :maxdepth: 2
-
 .. _controlling-client-access-to-cache:
 
 Controlling Client Access to the Proxy Cache
@@ -39,6 +34,8 @@ the proxy cache by editing a configuration file.
    range of IP addresses allowed to access Traffic Server.
 #. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
+
+.. _configuring-dns-server-selection-split-dns:
 
 Configuring DNS Server Selection (Split DNS)
 ============================================
@@ -102,19 +99,19 @@ Server connections only**.
 
 The figure above depicts the following:
 
-**Step 1:** The client sends an HTTPS request for content. Traffic
+# The client sends an HTTPS request for content. Traffic
 Server receives the request and performs the SSL 'handshake' to
 authenticate the client (depending on the authentication options
 configured) and determine the encryption method that will be used. If
 the client is allowed access, then Traffic Server checks its cache for
 the requested content.
 
-**Step 2:** If the request is a cache hit and the content is fresh, then
+# If the request is a cache hit and the content is fresh, then
 Traffic Server encrypts the content and sends it to the client. The
 client decrypts the content (using the method determined during the
 handshake) and displays it.
 
-**Step 3:** If the request is a cache miss or cached content is stale,
+# If the request is a cache miss or cached content is stale,
 then Traffic Server communicates with the origin server via HTTP and
 obtains a plain text version of the content. Traffic Server saves the
 plain text version of the content in its cache, encrypts the content,
@@ -152,7 +149,7 @@ client/Traffic Server connections, you must do the following:
 
 In order to accomplish this, we
 
-2. Edit the following variables in the ``SSL Termination`` section of
+2. Edit the following variables in the :ref:`records-config-ssl-termination` section of
    :file:`records.config`
 
    -  :ts:cv:`proxy.config.http.server_ports`
@@ -166,6 +163,9 @@ In order to accomplish this, we
 3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
    local node or :option:`traffic_line -M` to restart Traffic Server on all
    the nodes in a cluster.
+
+
+.. XXX:: This numbering is ridiculous.
 
 .. _traffic-server-and-origin-server-connections:
 
@@ -226,7 +226,9 @@ Traffic Server and origin server connections, you must do the following:
 
 In order to accomplish this, we:
 
-2. Edit the following variables in the ``SSL Termination`` section of
+.. XXX:: This numbering is ridiculous. I need to re-read this doc with a fresh mind and re(number|order) it.
+
+2. Edit the following variables in the :ref:`records-config-ssl-termination` section of
    :file:`records.config`:
 
    -  :ts:cv:`proxy.config.ssl.auth.enabled`
