@@ -1,3 +1,5 @@
+.. _building-ats-for-transparency:
+
 Building ATS for transparency
 *****************************
 

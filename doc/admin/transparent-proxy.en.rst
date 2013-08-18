@@ -1,3 +1,5 @@
+.. _transparent-proxy:
+
 Transparent Proxying
 ********************
 
@@ -64,7 +66,7 @@ proxy, i.e. a connection initiated by the proxy to an origin server
 In most treatments these two types of transparency are treated as
 unitarily but that is not required. This implementation supports
 transparency independently on the two (client, origin server) sides
-(`use cases <half-transparency-use-cases>`_).
+(`use cases <half-transparency-use-cases>`_.
 
 It is critical to note that any transparency requires specialized
 routing and cannot be done solely by configuring ATS. ATS transparency
@@ -79,10 +81,10 @@ In addition the specialized routing will require using ``iptables`` and
 in some cases ``ebtables``.
 
 Standard build procedures should work for transparency support but if
-not consult these `more detailed instructions <build>`_
+not consult these :ref:`more detailed instructions <building-ats-for-transparency>`
 
 Transparency is configured per server port not globally. This is done
-via the configuration values ``proxy.config.http.server_port_attr``.
+via the configuration values :ts:cv:`proxy.config.http.server_ports`.
 In addition, :ts:cv:`proxy.config.reverse_proxy.enabled` must be enabled if the
 client side is transparent. That should be fixed in a future patch.
 

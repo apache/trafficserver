@@ -608,6 +608,11 @@ Parent Proxy Configuration
 
    Configures Traffic Server to send proxy authentication headers on to the parent cache.
 
+.. ts:cv:: CONFIG proxy.config.http.no_dns_just_forward_to_parent INT 0
+   :reloadable:
+
+   Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
+
 HTTP Connection Timeouts
 ========================
 
@@ -813,6 +818,7 @@ Proxy User Variables
 
    This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``). Enabling this option is
    recommended if your origin servers use no encodings other than ``gzip``.
+
 
 Security
 ========
