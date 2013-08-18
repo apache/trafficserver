@@ -29,8 +29,7 @@ cache hierarchy. Use this file to perform the following configuration:
 -  Configure selected URL requests to bypass parent proxies
 
 Traffic Server uses the :file:`parent.config` file only when the parent
-caching option is enabled (refer to `Configuring Traffic Server to Use a
-Parent Cache <../hierachical-caching>`_).
+caching option is enabled (refer to :ref:`configuring-traffic-server-to-use-a-parent-cache`).
 
 After you modify the :file:`parent.config` file, run the :option:`traffic_line -x`
 command to apply your changes. When you apply the changes to one node in
@@ -41,43 +40,60 @@ Format
 ======
 
 Each line in the :file:`parent.config` file must contain a parent caching
-rule. Traffic Server recognizes three space-delimited tags:
+rule. Traffic Server recognizes three space-delimited tags: ::
 
     primary_destination=value secondary_specifier=value  action=value
 
 The following list shows the possible primary destinations and their
 allowed values.
 
-*``dest_domain``* {#dest_domain}
+.. _parent-config-format-dest-domain:
+
+``dest_domain``
     A requested domain name.
 
-*``dest_host``* {#dest_host}
+.. _parent-config-format-dest-host:
+
+``dest_host``
     A requested hostname.
 
-*``dest_ip``* {#dest_ip}
-    A requested IP address or range of IP addresses separated by a dash
-    (-).
+.. _parent-config-format-dest-ip:
 
-*``url_regex``* {#url_regex}
+``dest_ip``
+    A requested IP address or range of IP addresses separated by a dash (-).
+
+.. _parent-config-format-url-regex:
+
+``url_regex``
     A regular expression (regex) to be found in a URL
 
 The secondary specifiers are optional in the :file:`parent.config` file. The
 following list shows the possible secondary specifiers and their allowed
 values.
 
-*``port``* {#port}
+.. _parent-config-format-port:
+
+``port``
     A requested URL port.
 
-*``scheme``* {#scheme}
+.. _parent-config-format-scheme:
+
+``scheme``
     A request URL protocol: ``http`` or ``https``.
 
-*``prefix``* {#prefix}
+.. _parent-config-format-prefix:
+
+``prefix``
     A prefix in the path part of a URL.
 
-*``suffix``* {#suffix}
+.. _parent-config-format-suffix:
+
+``suffix``
     A file suffix in the URL.
 
-*``method``* {#method}
+.. _parent-config-format-method:
+
+``method``
     A request URL method. It can be one of the following:
 
     -  get
@@ -85,20 +101,28 @@ values.
     -  put
     -  trace
 
-*``time``* {#time}
+.. _parent-config-format-time:
+
+``time``
     A time range, such as 08:00-14:00, during which the parent cache is
     used to serve requests.
 
-*``src_ip``* {#src_ip}
+.. _parent-config-format-src-ip:
+
+``src_ip``
     A client IP address.
 
 The following list shows the possible actions and their allowed values.
+
+.. _parent-config-format-parent:
 
 ``parent``
     An ordered list of parent servers. If the request cannot be handled
     by the last parent server in the list, then it will be routed to the
     origin server. You can specify either a hostname or an IP address,
     but; you must specify the port number.
+
+.. _parent-config-format-round-robin:
 
 ``round_robin``
     One of the following values:
@@ -109,6 +133,8 @@ The following list shows the possible actions and their allowed values.
        turn. For example: machine ``proxy1`` serves the first request,
        ``proxy2`` serves the second request, and so on.
     -  ``false`` - Round robin selection does not occur.
+
+.. _parent-config-format-go-direct:
 
 ``go_direct``
     One of the following values:

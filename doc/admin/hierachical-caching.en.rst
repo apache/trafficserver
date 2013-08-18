@@ -36,8 +36,6 @@ Server is a parent.
 
 Traffic Server supports the following hierarchical caching options:
 
--  `Parent Caching <#ParentCaching>`_
-
 Parent Caching
 ==============
 
@@ -46,14 +44,13 @@ then it searches a parent cache (which itself can search other caches)
 before finally retrieving the object from the origin server. You can
 configure a Traffic Server node to use one or more parent caches so that
 if one parent is unavailable, then another parent is availale to service
-requests. This is called `Parent Failover <#ParentFailover>`_. Traffic
+requests. This is called `Parent Failover`_. Traffic
 Server will support parent caching for HTTP and HTTPS requests.
 
 **Note:** If you do not want all requests to go to the parent cache,
 then simply configure Traffic Server to route certain requests (such as
 requests containing specific URLs) directly to the origin server. SImply
-set parent proxy rules in
-`parent.config <configuration-files/parent.config>`_
+set parent proxy rules in :file:`parent.config`
 
 The figure below illustrates a simple cache hierarchy with a Traffic
 Server node configured to use a parent cache. In the following scenario,
@@ -89,10 +86,11 @@ When you configure your Traffic Server to use more than one parent
 cache, Traffic Server detects when a parent is not available and sends
 missed requests to another parent cache. If you specify more than two
 parent caches, then the order in which the parent caches are queried
-depends upon the parent proxy rules configured in the
-`parent.config <configuration-files/parent.config>`_ configuration
-file. By default, the parent caches are queried in the order they are
-listed in the configuration file.
+depends upon the parent proxy rules configured in the file:`parent.config`
+configuration file. By default, the parent caches are queried in the
+order they are listed in the configuration file.
+
+.. _configuring-traffic-server-to-use-a-parent-cache:
 
 Configuring Traffic Server to Use a Parent Cache
 ------------------------------------------------
@@ -106,25 +104,19 @@ complete the following steps:
    cache so that when a parent cache is unavailable, requests are sent
    to another parent cache.
 
-**Note:** You need to configure the child cache only. No additional
-configuration is needed for the Traffic Server parent cache.
+.. note: You need to configure the child cache only. No additional configuration is needed for the Traffic Server parent cache.
 
 Configure Traffic Server to use a parent cache by editing the following
-variable
-`*``proxy.config.http.parent_proxy_routing_enable``* <configuration-files/records.config#proxy.config.http.parent_proxy_routing_enable>`_
-in :file:`records.config` file.
+variable :ts:cv:`proxy.config.http.parent_proxy_routing_enable` in :file:`records.config` file.
 
-Edit the ```parent.config`` <../configuration-files/parent.config>`_
-file located in the Traffic Server ``config`` directory to set parent
+Edit the :file:`parent.config` file located in the Traffic Server ``config`` directory to set parent
 proxy rules to specify the parent cache to which you want missed
 requests to be forwarded;
 
 The following example configures Traffic Server to route all requests
 containing the regular expression ``politics`` and the path
 ``/viewpoint`` directly to the origin server (bypassing any parent
-hierarchies):
-
-::
+hierarchies): ::
 
     url_regex=politics prefix=/viewpoint go_direct=true
 
@@ -133,9 +125,7 @@ requests with URLs beginning with ``http://host1`` to the parent cache
 ``parent1``. If ``parent1`` cannot serve the requests, then requests are
 forwarded to ``parent2``. Because ``round-robin=true``, Traffic Server
 goes through the parent cache list in a round-robin based on client IP
-address.
-
-::
+address.::
 
     dest_host=host1 scheme=http parent="parent1;parent2" round-robin=strict
 
@@ -176,15 +166,15 @@ Run the command :option:`traffic_line -x` to apply the configuration changes.
    * Set the ICP query timeout. 
    * Identify the ICP peers (siblings and parents) with which Traffic Server can communicate.
 
-.. To configure Traffic Server to use an ICP cache hierarchy edit the following variables in [`records.config`](../configuration-files/records.config) file:
+.. To configure Traffic Server to use an ICP cache hierarchy edit the following variables in :file:`records.config` file:
 
-.. * [_`proxy.config.icp.enabled`_](../configuration-files/records.config#proxy.config.icp.enabled)
-   * [_`proxy.config.icp.icp_port`_](../configuration-files/records.config#proxy.config.icp.port)
-   * [_`proxy.config.icp.multicast_enabled`_](../configuration-files/records.config#proxy.config.icp.multicast_enabled)
-   * [_`proxy.config.icp.query_timeout`_](../configuration-files/records.config#proxy.config.icp.query_timeout)
+.. * :ts:cv:`proxy.config.icp.enabled`
+   * :ts:cv:`proxy.config.icp.icp_port`
+   * :ts:cv:`proxy.config.icp.multicast_enabled`
+   * :ts:cv:`proxy.config.icp.query_timeout`
 
 .. Edit `icp.config` file located in the Traffic Server `config` directory: 
-   For each ICP peer you want to identify, enter a separate rule in the [icp.config](../configuration-files/icp.config) file.
+   For each ICP peer you want to identify, enter a separate rule in the :file:`icp.config` file.
 
-.. Run the command `traffic_line -x` to apply the configuration changes.
+.. Run the command :option:`traffic_line -x` to apply the configuration changes.
 
