@@ -593,7 +593,7 @@ Caching Dynamic Content
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 A URL is considered **dynamic** if it ends in **``.asp``** or contains a
-question mark (**``?``**), a semicolon (**``;``**), or **``cgi``**. By
+question mark (``?``), a semicolon (``;``), or ``cgi``. By
 default, Traffic Server caches dynamic content. You can configure the
 system to ignore dyanamic looking content, although this is recommended
 only if the content is *truely* dyanamic, but fails to advertise so with
