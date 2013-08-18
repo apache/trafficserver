@@ -29,8 +29,6 @@ As a reverse proxy cache, Traffic Server serves requests on behalf of
 origin servers. Traffic Server is configured in such a way that it
 appears to clients like a normal origin server.
 
-This chapter discusses the following topics:
-
 .. toctree::
    :maxdepth: 2
 
@@ -40,7 +38,7 @@ Understanding Reverse Proxy Caching
 
 With **forward proxy caching**, Traffic Server handles web requests to
 distant origin servers on behalf of the clients requesting the content.
-**Reverse proxy caching** (also known as \*\*server acceleration \*\*or
+**Reverse proxy caching** (also known as **server acceleration** or
 **virtual web hosting**) is different because Traffic Server acts as a
 proxy cache on behalf of the origin servers that store the content.
 Traffic Server is configured to be *the* origin server which the client
@@ -119,11 +117,9 @@ this is done by setting up the DNS entry for the origin server (i.e.,
 the origin server's 'advertised' hostname) so it resolves to the Traffic
 Server IP address. When Traffic Server is configured as the origin
 server, the browser connects to Traffic Server rather than the origin
-server. For additional information, see `HTTP Reverse
-Proxy <#HTTPReverseProxy>`_.
+server. For additional information, see `HTTP Reverse Proxy`_.
 
-**Note:** To avoid a DNS conflict, the origin server’s hostname and its
-advertised hostname must not be the same.
+.. note: To avoid a DNS conflict, the origin server’s hostname and its advertised hostname must not be the same.
 
 HTTP Reverse Proxy
 ==================
@@ -156,17 +152,15 @@ The figure above demonstrates the following steps:
 
 To configure HTTP reverse proxy, you must perform the following tasks:
 
--  Create mapping rules in the ``remap.config`` file (refer to `Creating
-   Mapping Rules for HTTP
-   Requests <#CreatingMappingRulesHTTPRequests>`_).
+-  Create mapping rules in the :file:`remap.config` file (refer to `Creating
+   Mapping Rules for HTTP Requests`_). ::
 
-   :::text # remap.config map http://www.host.com http://realhost.com
+      # remap.config
+      map http://www.host.com http://realhost.com
 
--  Enable the reverse proxy option (refer to `Enabling HTTP Reverse
-   Proxy <#EnablingHTTPReverseProxy>`_).
+-  Enable the reverse proxy option (refer to `Enabling HTTP Reverse Proxy`_).
 
-In addition to the tasks above, you can also `Set Optional HTTP Reverse
-Proxy Options <#SettingOptionalHTTPReverseProxyOptions>`_.
+In addition to the tasks above, you can also `Setting Optional HTTP Reverse Proxy Options`_.
 
 Handling Origin Server Redirect Responses
 -----------------------------------------
@@ -180,11 +174,10 @@ readdress redirects from origin servers so that browsers are redirected
 to Traffic Server and *not* to another origin server.
 
 To readdress redirects, Traffic Server uses reverse-map rules. Unless
-you have
-`proxy.config.url_remap.pristine_host_hdr <configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_
-enabled (the default) you should generally set up a reverse-map rule for
-each map rule.d To create reverse-map rules, refer to `Using Mapping
-Rules for HTTP Requests <#UsingMappingRulesHTTPRequests>`_.
+you have :ts:cv:`proxy.config.url_remap.pristine_host_hdr` enabled
+(the default) you should generally set up a reverse-map rule for
+each map rule. To create reverse-map rules, refer to `Using Mapping
+Rules for HTTP Requests`_.
 
 Using Mapping Rules for HTTP Requests
 -------------------------------------
@@ -199,8 +192,8 @@ the content is located. When Traffic Server is in reverse proxy mode and
 receives an HTTP client request, it first constructs a complete request
 URL from the relative URL and its headers. Traffic Server then looks for
 a match by comparing the complete request URL with its list of target
-URLs in the ```remap.config`` <../configuration-files/remap.config>`_
-file. For the request URL to match a target URL, the following
+URLs in the :file:`remap.config` file.
+For the request URL to match a target URL, the following
 conditions must be true:
 
 -  The scheme of both URLs must be the same
@@ -218,8 +211,7 @@ the request URL to match the replacement URL. If the URL contains path
 prefixes, then Traffic Server removes the prefix of the path that
 matches the target URL path and substitutes it with the path from the
 replacement URL. If two mappings match a request URL, then Traffic
-Server applies the first mapping listed in the
-```remap.config`` <configuration-files/remap.config>`_ file.
+Server applies the first mapping listed in the :file:`remap.config` file.
 
 reverse-map rule
 ~~~~~~~~~~~~~~~~
@@ -256,8 +248,7 @@ Creating Mapping Rules for HTTP Requests
 
 To create mapping rules
 
-1. Enter the map and reverse-map rules into the
-   ```remap.config`` <configuration-files/remap.config>`_ file
+1. Enter the map and reverse-map rules into the :file`remap.config` file
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
@@ -266,10 +257,9 @@ Enabling HTTP Reverse Proxy
 
 To enable HTTP reverse proxy, follow the steps below.
 
-1. Edit the following variable in
-   `:file:`records.config` <configuration-files/records.config>`_
+1. Edit the following variable in :file:`records.config`
 
-   -  `*``proxy.config.reverse_proxy.enabled``* <configuration-files/records.config#proxy.config.reverse_proxy.enabled>`_
+   -  :ts:cv:`proxy.config.reverse_proxy.enabled`
 
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
@@ -278,21 +268,17 @@ Setting Optional HTTP Reverse Proxy Options
 -------------------------------------------
 
 Traffic Server provides several reverse proxy configuration options in
-`:file:`records.config` <configuration-files/records.config>`_ that
-enable you to:
+:file:`records.config` that enable you to:
 
 -  Configure Traffic Server to retain the client host header information
-   in a request during translation
-   (`*``proxy.config.url_remap.pristine_host_hdr``* <configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_)
+   in a request during translation (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
 
 -  Configure Traffic Server to serve requests only to the origin servers
    listed in the mapping rules. As a result, requests to origin servers
-   not listed in the mapping rules are not served.
-   (`*``proxy.config.url_remap.remap_required``* <configuration-files/records.config#proxy.config.url_remap.remap_required>`_)
+   not listed in the mapping rules are not served. (:ts:cv:`proxy.config.url_remap.remap_required`)
 -  Specify an alternate URL to which incoming requests from older
    clients (i.e., ones that do not provide ``Host`` headers) are
-   directed
-   (`*``proxy.config.header.parse.no_host_url_reedirect``* <configuration-files/records.config#proxy.config.header.parse.no_host_url_redirect>`_)
+   directed (:ts:cv:`proxy.config.header.parse.no_host_url_redirect`)
 
 Don't forget to run the command :option:`traffic_line -x` to apply the
 configuration changes.
@@ -317,16 +303,16 @@ change for the current request only (by returning the HTTP status code
 To set redirect rules
 
 1. For each redirect you want to set enter a mapping rule in the
-   ```remap.config`` <../configuration-files/remap.config>`_ file
+   :file:`remap.config` file
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
-**Example**
+Example
+-------
 
 The following permanently redirects all HTTP requests for
-``www.server1.com`` to ``www.server2.com``:
+``www.server1.com`` to ``www.server2.com``: ::
 
-::
     redirect http://www.server1.com http://www.server2.com
 
 

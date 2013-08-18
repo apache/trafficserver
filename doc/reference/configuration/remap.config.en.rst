@@ -37,8 +37,7 @@ uses to perform the following actions:
 -  Redirect HTTP requests permanently or temporarily without Traffic
    Server having to contact any origin servers
 
-Refer to `Reverse Proxy and HTTP
-Redirects <../reverse-proxy-http-redirects>`_, for information about
+Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about
 redirecting HTTP requests and using reverse proxy.
 
 After you modify the :file:`remap.config` run the
@@ -49,12 +48,16 @@ the changes to all other nodes in the cluster.
 Format
 ======
 
-Each line in the :file:`remap.config` file must contain a mapping rule.
-Traffic Server recognizes three space-delimited fields: ``type``,
-``target``, and ``replacement``. The following list describes the format
-of each field.
+Each line in the :file:`remap.config` file must contain a mapping rule. Empty lines,
+or lines starting with ``#`` are ignored. Each line can be broken up into multiple
+lines for better readability by using ``\`` as continuation marker.
 
-*``type``* {#type}
+Traffic Server recognizes three space-delimited fields: ``type``,
+``target``, and ``replacement``. The following list describes the format of each field.
+
+.. _remap-config-format-type:
+
+``type``
     Enter one of the following:
 
     -  ``map`` --translates an incoming request URL to the appropriate
@@ -73,26 +76,28 @@ of each field.
        notify the browser of the URL change for the current request only
        (by returning an HTTP status code 307).
 
-    **Note:** use the ``regex_`` prefix to indicate that the line has a
-    regular expression (regex).
+       .. note: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
 
-*``target``* {#target}
-    Enter the origin ("from") URL. You can enter up to four components:
+.. _remap-config-format-target:
 
-    ::
-
-        scheme://host:port/path_prefix
-
-    where *``scheme``* is ``http``.
-
-*``replacement``* {#replacement}
-    Enter the origin ("from") URL. You can enter up to four components:
-
-    ::
+``target``
+    Enter the origin ("from") URL. You can enter up to four components: ::
 
         scheme://host:port/path_prefix
 
-    where *``scheme``* can be ``http`` or ``https``.
+    where ``scheme`` is ``http``.
+
+.. _remap-config-format-replacement:
+
+``replacement``
+    Enter the origin ("from") URL. You can enter up to four components: ::
+
+        scheme://host:port/path_prefix
+
+    where ``scheme`` can be ``http`` or ``https``.
+
+
+.. _remap-config-precedence:
 
 Precedence
 ==========
@@ -106,35 +111,31 @@ priority
 4. ``regex_redirect`` and ``regex_redirect_temporary``
 
 Examples
-========
+--------
 
 The following section shows example mapping rules in the
 :file:`remap.config` file.
 
 Reverse Proxy Mapping Rules
-===========================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following example shows a map rule that does not specify a path
-prefix in the target or replacement:
-
-::
+prefix in the target or replacement: ::
 
     map http://www.x.com/ http://server.hoster.com/
     reverse_map http://server.hoster.com/ http://www.x.com/
 
 This rule results in the following translations:
 
-Client Request \| Translated Request
----------------\|-------------------
-``http://www.x.com/Widgets/index.html`` \|
-``http://server.hoster.com/Widgets/index.html``
-``http://www.x.com/cgi/form/submit.sh?arg=true`` \|
-``http://server.hoster.com/cgi/form/submit.sh?arg=true``
+================================================ ========================================================
+Client Request                                   Translated Request
+================================================ ========================================================
+``http://www.x.com/Widgets/index.html``          ``http://server.hoster.com/Widgets/index.html``
+``http://www.x.com/cgi/form/submit.sh?arg=true`` ``http://server.hoster.com/cgi/form/submit.sh?arg=true``
+================================================ ========================================================
 
 The following example shows a map rule with path prefixes specified in
-the target:
-
-::
+the target: ::
 
     map http://www.y.com/marketing/ http://marketing.y.com/
     reverse_map http://marketing.y.com/ http://www.y.com/marketing/
@@ -147,18 +148,15 @@ the target:
 
 These rules result in the following translations:
 
-Client Request \| Translated Request
----------------\|-------------------
-``http://www.y.com/marketing/projects/manhattan/specs.html`` \|
-``http://marketing.y.com/projects/manhattan/specs.html``
-``http://www.y.com/stuff/marketing/projects/boston/specs.html`` \|
-``http://info.y.com/marketing/projects/boston/specs.html``
-``http://www.y.com/engineering/marketing/requirements.html`` \|
-``http://engineering.y.com/marketing/requirements.html``
+=============================================================== ==========================================================
+Client Request                                                  Translated Request
+=============================================================== ==========================================================
+``http://www.y.com/marketing/projects/manhattan/specs.html``    ``http://marketing.y.com/projects/manhattan/specs.html``
+``http://www.y.com/stuff/marketing/projects/boston/specs.html`` ``http://info.y.com/marketing/projects/boston/specs.html``
+``http://www.y.com/engineering/marketing/requirements.html``    ``http://engineering.y.com/marketing/requirements.html``
+=============================================================== ==========================================================
 
-The following example shows that the order of the rules matters:
-
-::
+The following example shows that the order of the rules matters: ::
 
     map http://www.g.com/ http://external.g.com/
     reverse_map http://external.g.com/ http://www.g.com/
@@ -167,9 +165,11 @@ The following example shows that the order of the rules matters:
 
 These rules result in the following translation.
 
-Client Request \| Translated Request
----------------\|------------------- ``http://www.g.com/stuff/a.gif`` \|
-``http://external.g.com/stuff/a.gif``
+================================ =====================================
+Client Request                   Translated Request
+================================ =====================================
+``http://www.g.com/stuff/a.gif`` ``http://external.g.com/stuff/a.gif``
+================================ =====================================
 
 In the above examples, the second rule is never applied because all URLs
 that match the second rule also match the first rule. The first rule
@@ -184,11 +184,12 @@ the target and replacement::
 
 This rule results in the following translation.
 
-Client Request \| Translated Request
----------------\|-------------------
-``http://www.h.com/a/b/c/d/doc.html`` \|
-``http://server.h.com/customers/x/y/c/d/doc.html``
-``http://www.h.com/a/index.html`` \| ``Translation fails``
+===================================== ==================================================
+Client Request                        Translated Request
+===================================== ==================================================
+``http://www.h.com/a/b/c/d/doc.html`` ``http://server.h.com/customers/x/y/c/d/doc.html``
+``http://www.h.com/a/index.html``     ``Translation fails``
+===================================== ==================================================
 
 The following example shows reverse-map rules::
 
@@ -197,40 +198,40 @@ The following example shows reverse-map rules::
 
 These rules result in the following translations.
 
-Client Request \| Translated Request
----------------\|------------------- ``http://www.x.com/Widgets`` \|
-``http://server.hoster.com/x/Widgets`` \|
+================================ =====================================
+Client Request                   Translated Request
+================================ =====================================
+``http://www.x.com/Widgets``     ``http://server.hoster.com/x/Widgets``
+================================ =====================================
 
  
 
-Client Request \| Origin server Header \| Translated Header
----------------\|----------------------\|-------------------
-``http://www.x.com/Widgets`` \| ``http://server.hoster.com/x/Widgets/``
-\| ``http://www.x.com/Widgets/``
+================================ ======================================= =============================
+Client Request                   Origin Server Header                    Translated Request
+================================ ======================================= =============================
+``http://www.x.com/Widgets``     ``http://server.hoster.com/x/Widgets/`` ``http://www.x.com/Widgets/``
+================================ ======================================= =============================
 
 When acting as a reverse proxy for multiple servers, Traffic Server is
 unable to route to URLs from older browsers that do not send the
-``Host:`` header. As a solution, set the variable
-*``proxy.config.header.parse.no_host_url_redirect``* in the
-:file:`records.config` file to the URL to which Traffic Server will redirect
+``Host:`` header. As a solution, set the variable :ts:cv:`proxy.config.header.parse.no_host_url_redirect`
+in the :file:`records.config` file to the URL to which Traffic Server will redirect
 requests without host headers.
 
 Redirect Mapping Rules
-======================
+~~~~~~~~~~~~~~~~~~~~~~
 
 The following rule permanently redirects all HTTP requests for
-``www.company.com`` to ``www.company2.com``:
-
-::
+``www.company.com`` to ``www.company2.com``: ::
 
     redirect http://www.company.com/ http://www.company2.com/
 
 The following rule *temporarily* redirects all HTTP requests for
-``www.company1.com`` to ``www.company2.com``:
-
-::
+``www.company1.com`` to ``www.company2.com``: ::
 
     redirect_temporary http://www.company1.com/ http://www.company2.com/
+
+.. _remap-config-regex:
 
 Regular Expression (regex) Remap Support
 ========================================
@@ -247,8 +248,7 @@ limitations below:
 -  The number of substitutions in the expansion string is limited to 10.
 -  There is no ``regex_`` equivalent to ``reverse_remap``, so when using
    ``regex_remap`` you should make sure the reverse path is clear by
-   setting
-   (`*``proxy.config.url_remap.pristine_host_hdr``* <../configuration-files/records.config#proxy.config.url_remap.pristine_host_hdr>`_)
+   setting (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
 
 Examples
 --------
@@ -257,6 +257,8 @@ Examples
 
     regex_map http://x([0-9]+).z.com/ http://real-x$1.z.com/
     regex_redirect http://old.(.*).z.com http://new.$1.z.com
+
+.. _remap-config-plugin-chaining:
 
 Plugin Chaining
 ===============
@@ -275,6 +277,8 @@ Examples
 will pass "1" and "2" to plugin1.so and "3" to plugin2.so.
 
 This will pass "1" and "2" to plugin1.so and "3" to plugin2.so
+
+.. _remap-config-named-filters:
 
 Named Filters
 =============
