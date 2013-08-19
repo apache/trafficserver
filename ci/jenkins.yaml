@@ -22,7 +22,7 @@
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
@@ -39,7 +39,7 @@
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
-            ./configure --enable-debug --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins
+            ./configure --enable-debug --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
