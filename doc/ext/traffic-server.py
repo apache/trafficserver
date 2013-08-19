@@ -32,6 +32,7 @@ class TSConfVar(std.Target):
         'class' : rst.directives.class_option,
         'reloadable' : rst.directives.flag,
         'deprecated' : rst.directives.flag,
+        'metric' : rst.directives.unchanged,
     }
     required_arguments = 3
     optional_arguments = 1 # default is optional, special case if omitted
@@ -95,6 +96,8 @@ class TSConfVar(std.Target):
             fl.append(self.make_field('Default', cv_default))
         else:
             fl.append(self.make_field('Default', sphinx.addnodes.literal_emphasis(text='*NONE*')))
+        if ('metric' in self.options):
+            fl.append(self.make_field('Metric', self.options['metric']))
         if ('reloadable' in self.options):
             fl.append(self.make_field('Reloadable', 'Yes'))
         if ('deprecated' in self.options):

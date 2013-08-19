@@ -1,19 +1,19 @@
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 ==============
 records.config
@@ -745,7 +745,7 @@ Negative Response Caching
    time a client requests the same page, Traffic Server serves the negative response directly from cache.
 
    .. note::
-   
+
        ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
        of the value specified for the `proxy.config.http.negative_caching_enabled`_ variable. The
        following negative responses are cached by Traffic Server:::
@@ -1153,10 +1153,15 @@ HostDB
 ======
 
 .. ts:cv:: CONFIG proxy.config.hostdb.serve_stale_for INT
+   :metric: seconds
 
-   The number of seconds for which to use a stale NS record while initiating a background fetch for the new data.
+   The number of seconds for which to use a stale NS record while initiating a
+   background fetch for the new data.
+
+   If not set then stale records are not served.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.storage_size INT 33554432
+   :metric: bytes
 
    The amount of space (in bytes) used to store ``hostdb``.
    The value of this variable must be increased if you increase the size of the
@@ -1168,30 +1173,51 @@ HostDB
 
 .. note::
 
-   For values above ``200000``, you must increase the value of the `proxy.config.hostdb.storage_size`_   variable by at least 44 bytes per entry.
+   For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.storage_size` by at least 44 bytes per entry.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.ttl_mode INT 0
    :reloadable:
 
-   The host database time to live mode. You can specify one of the
-   following:
+   A host entry will eventually time out and be discarded. This variable controls how that time is calculated. A DNS
+   request will return a TTL value and an internal value can be set with :ts:cv:`proxy.config.hostdb.timeout`. This
+   variable determines which value will be used.
 
-   -  ``0`` = obey
-   -  ``1`` = ignore
-   -  ``2`` = min(X,ttl)
-   -  ``3`` = max(X,ttl)
+   =====    ===
+   Value    TTL
+   =====    ===
+   0        The TTL from the DNS response.
+   1        The internal timeout value.
+   2        The smaller of the DNS and internal TTL values. The internal timeout value becomes a maximum TTL.
+   3        The larger of the DNS and internal TTL values. The internal timeout value become a minimum TTL.
+   =====    ===
 
 .. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 1440
+   :metric: minutes
    :reloadable:
 
-   The foreground timeout (in minutes).
+   Internal time to live value for host DB entries, **in minutes**.
+
+   See :ts:cv:`proxy.config.hostdb.ttl_mode` for when this value is used.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.strict_round_robin INT 0
    :reloadable:
 
-   When disabled (``0``), Traffic Server always uses the same origin
-   server for the same client, for as long as the origin server is
-   available.
+   Set host resolution to use strict round robin.
+
+When this and :ts:cv:`proxy.config.hostdb.timed_round_robin` are both disabled (set to ``0``), Traffic Server always
+uses the same origin server for the same client, for as long as the origin server is available. Otherwise if this is
+set then IP address is rotated on every request. This setting takes precedence over
+:ts:cv:`proxy.config.hostdb.timed_round_robin`.
+
+.. ts:cv:: CONFIG proxy.config.hostdb.timed_round_robin INT 0
+   :reloadable:
+
+   Set host resolution to use timed round robin.
+
+When this and :ts:cv:`proxy.config.hostdb.strict_round_robin` are both disabled (set to ``0``), Traffic Server always
+uses the same origin server for the same client, for as long as the origin server is available. Otherwise if this is
+set then to :arg:`N` the IP address is rotated if more than :arg:`N` seconds have past since the first time the
+current address was used.
 
 Logging Configuration
 =====================
@@ -1206,7 +1232,7 @@ Logging Configuration
    -  ``2`` = log transactions only
    -  ``3`` = full logging (errors + transactions)
 
-   Refer to `Working with Log Files <../working-log-files>`_.
+   Refer to :ref:`working-with-log-files`.
 
 .. ts:cv:: CONFIG proxy.config.log.max_secs_per_buffer INT 5
    :reloadable:
@@ -1218,23 +1244,24 @@ Logging Configuration
 
    The amount of space allocated to the logging directory (in MB).
 
+.. note::
 
-   .. note::
-       All files in the logging directory contribute to the space used, even if they are not log files. In collation client mode, if
-       there is no local disk logging, or `max_space_mb_for_orphan_logs` is set to a higher value than `max_space_mb_for_logs`_, TS will
-       take `proxy.config.log.max_space_mb_for_orphan_logs`_ for maximum allowed log space.
+   All files in the logging directory contribute to the space used, even if they are not log files. In collation client
+   mode, if there is no local disk logging, or :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` is set to a higher
+   value than :ts:cv:`proxy.config.log.max_space_mb_for_logs`, TS will take
+   :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` for maximum allowed log space.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB) if this node is acting as a collation client.
 
-   .. note::
+.. note::
 
-       When max_space_mb_for_orphan_logs is take as the maximum allowedlog space in the logging system, the same rule apply to
-       proxy.config.log.max_space_mb_for_logs also apply to proxy.config.log.max_space_mb_for_orphan_logs, ie: All files in
-       the logging directory contribute to the space used, even if they are not log files. you may need to consider this when you enable full
-       remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
+   When max_space_mb_for_orphan_logs is take as the maximum allowedlog space in the logging system, the same rule apply
+   to proxy.config.log.max_space_mb_for_logs also apply to proxy.config.log.max_space_mb_for_orphan_logs, ie: All files
+   in the logging directory contribute to the space used, even if they are not log files. you may need to consider this
+   when you enable full remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_headroom INT 10
    :reloadable:
