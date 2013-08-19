@@ -31,6 +31,23 @@
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
+- builder:
+    name: linux-debug-regression
+    builders:
+        - shell: |
+            git clean -d -f -x -q
+            mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
+            autoreconf -fi
+        - shell: |
+            ./configure --enable-debug --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins
+        - shell: make -j2 V=1
+        - shell: make check
+        - shell: make install
+        - shell: |
+            "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: |
+            rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
+
 # XXX if we can pass down a $MAKE environment variable from the project, then we can
 # remove the BSD builder and just use the linux one.
 - builder:
@@ -93,11 +110,32 @@
     builders:
         - '{builder}-regression'
 
+- job-template:
+    name: '{node}-{branch}-debug-regression'
+    node: '{node}'
+    logrotate:
+        daysToKeep: -1
+        numToKeep: 2
+        artifactDaysToKeep: -1
+        artifactNumToKeep: 2
+    scm:
+        - git:
+            url: '{repo}'
+            branches:
+                - '{branch}'
+    triggers:
+        - pollscm: 'H/2 * * * *'
+    builders:
+        - '{builder}-debug-regression'
+
 - project:
     name: centos-5-x64
     node: centos_5_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -113,6 +151,9 @@
     node: centos_5_x86
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -128,6 +169,9 @@
     node: centos_6.4_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -143,6 +187,9 @@
     node: centos_6.4_x86
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -158,6 +205,9 @@
     node: fedora_15_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -173,6 +223,9 @@
     node: fedora_15_x86
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -188,6 +241,9 @@
     node: fedora_18_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -203,6 +259,9 @@
     node: fedora_18_x86
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -218,6 +277,9 @@
     node: fedora_rawhide_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -233,6 +295,9 @@
     node: fedora_rawhide_x86
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -248,6 +313,9 @@
     node: freebsd_9.1_x64
     builder: bsd
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -263,6 +331,9 @@
     node: omnios_x64
     builder: omnios
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -278,6 +349,9 @@
     node: opensuse_12_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -293,6 +367,9 @@
     node: ubuntu_10.04_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -308,6 +385,9 @@
     node: ubuntu_12.04_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
