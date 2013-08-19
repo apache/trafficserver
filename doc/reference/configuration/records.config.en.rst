@@ -1595,10 +1595,6 @@ SSL Termination
    :file:`ssl_multicert.config` will be loaded relative to this
    path.
 
-.. ts:cv:: CONFIG proxy.config.ssl.server.private_key.filename STRING NULL
-
-   TBD
-
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
 
    The name of a file containing a global certificate chain that
