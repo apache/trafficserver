@@ -359,14 +359,14 @@ ipv6
    Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 address.
 
 tr-in
-   Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides `proxy.local.incoming_ip_to_bind`_.
+   Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides :ts:cv:`proxy.local.incoming_ip_to_bind`.
 
    Not compatible with: ``ip-in``, ``ssl``, ``blind``
 
 tr-out
-   Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides `proxy.local.outgoing_ip_to_bind`_.
+   Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides :ts:cv:`proxy.local.outgoing_ip_to_bind`.
 
-   Not compatible with: ``ip-out``, ``ssl``
+   Not compatible with: ``ip-out``, ``ssl``, ``ip-resolve``
 
 tr-full
    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
@@ -374,25 +374,27 @@ tr-full
    Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``.
 
 tr-pass
-   Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables `proxy.config.http.use_client_target_addr`_ for the transaction as there is no other place to obtain the origin server address.
+   Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables :ts:cv:`proxy.config.http.use_client_target_addr` for the transaction as there is no other place to obtain the origin server address.
 
 ip-in
-   Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this is omitted `proxy.local.incoming_ip_to_bind`_ is used.
+   Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this options is omitted :ts:cv:`proxy.local.incoming_ip_to_bind` is used.
 
    Not compatible with: ``tr-in``.
 
 ip-out
-   Set the local IP address for outbound connections. This is the address used by ATS locally when it connects to an origin server for transactions on this port. If this is omitted `proxy.local.outgoing_ip_to_bind`_ is used.
+   Set the local IP address for outbound connections. This is the address used by ATS locally when it connects to an origin server for transactions on this port. If this is omitted :ts:cv:`proxy.local.outgoing_ip_to_bind` is used.
 
    This option can used multiple times, once for each IP address family. The address used is selected by the IP address family of the origin server address.
 
    Not compatible with: ``tr-out``.
 
 ip-resolve
-   Set the IP address resolution style for the origin server for transactions on this proxy port.
+   Set the :ts:cv:`host resolution style <proxy.config.hostdb.ip_resolve>` for transactions on this proxy port.
+
+   Not compatible with: ``tr-out``.
 
 ssl
-   Require SSL termination for inbound connections. SSL must be configured for this option to provide a functional server port.
+   Require SSL termination for inbound connections. SSL :ref:`must be configured <configuring-ssl-termination>` for this option to provide a functional server port.
 
    Not compatible with: ``tr-in``, ``tr-out``, ``blind``.
 
@@ -420,7 +422,7 @@ compress
 
 .. topic:: Example
 
-   Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from `proxy.local.incoming_ip_to_bind`_.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
+   Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from :ts:cv:`proxy.local.incoming_ip_to_bind`.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
 
       8080:ipv6:tr-full 443:ssl ip-in=192.168.17.1:80:ip-out=[fc01:10:10:1::1]:ip-out=10.10.10.1
 
@@ -431,7 +433,7 @@ compress
 Traffic Server allows tunnels only to the specified ports.
 Supports both wildcards ('\*') and ranges ("0-1023").
 
-.. note:: These are the ports on the *origin server*, not `server ports <#proxy-config-http-server-ports>`_.
+.. note:: These are the ports on the *origin server*, not Traffic Server :ts:cv:`proxy ports <proxy.config.http.server_ports>`.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_request_via_str INT 1
    :reloadable:
@@ -1216,8 +1218,65 @@ set then IP address is rotated on every request. This setting takes precedence o
 
 When this and :ts:cv:`proxy.config.hostdb.strict_round_robin` are both disabled (set to ``0``), Traffic Server always
 uses the same origin server for the same client, for as long as the origin server is available. Otherwise if this is
-set then to :arg:`N` the IP address is rotated if more than :arg:`N` seconds have past since the first time the
+set to :arg:`N` the IP address is rotated if more than :arg:`N` seconds have past since the first time the
 current address was used.
+
+.. ts:cv:: CONFIG proxy.config.hostdb.ip_resolve STRING ipv4;ipv6
+
+   Set the host resolution style.
+
+This is an ordered list of keywords separated by semicolons that specify how a host name is to be resolved to an IP address. The keywords are case
+insensitive.
+
+=======  =======
+Keyword  Meaning
+=======  =======
+ipv4     Resolve to an IPv4 address.
+ipv6     Resolve to an IPv6 address.
+client   Resolve to the same family as the client IP address.
+none     Stop resolving.
+=======  =======
+
+The order of the keywords is critical. When a host name needs to be resolved it is resolved in same order as the
+keywords. If a resolution fails, the next option in the list is tried. The keyword ``none`` means to give up resolution
+entirely. The keyword list has a maximum length of three keywords, more are never needed. By default there is an
+implicit ``ipv4;ipv6`` attached to the end of the string unless the keyword ``none`` appears.
+
+.. topic:: Example
+
+   Use the incoming client family, then try IPv4 and IPv6. ::
+
+      client;ipv4;ipv6
+
+   Because of the implicit resolution this can also be expressed as just ::
+
+      client
+
+.. topic:: Example
+
+   Resolve only to IPv4. ::
+
+      ipv4;none
+
+.. topic:: Example
+
+   Resolve only to the same family as the client (do not permit cross family transactions). ::
+
+      client;none
+
+This value is a global default that can be overridden by :ts:cv:`proxy.config.http.server_ports`.
+
+.. note::
+
+   This style is used as a convenience for the administrator. During a resolution the *resolution order* will be
+   one family, then possibly the other. This is determined by changing ``client`` to ``ipv4`` or ``ipv6`` based on the
+   client IP address and then removing duplicates.
+
+.. important::
+
+   This option has no effect on outbound transparent connections The local IP address used in the connection to the
+   origin server is determined by the client, which forces the IP address family of the address used for the origin
+   server. In effect, outbound transparent connections always use a resolution style of "``client``".
 
 Logging Configuration
 =====================

@@ -5,20 +5,20 @@ Security Options
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 Traffic Server provides a number of security features.
 
@@ -62,6 +62,8 @@ To do this, we
    :ts:cv:`proxy.config.dns.splitDNS.enabled` to ``1`` to enable split DNS.
 #. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
+
+.. _configuring-ssl-termination:
 
 Using SSL Termination
 =====================
@@ -129,7 +131,7 @@ client/Traffic Server connections, you must do the following:
 
    -  Set the port number used for SSL communication using :ts:cv:`proxy.config.http.server_ports`.
    -  Edit :file:`ssl_multicert.config` to specify the filename and location of the
-     SSL certificates and provate keys.
+      SSL certificates and provate keys.
    -  (Optional) Configure the use of client certificates: Client
       certificates are located on the client. If you configure Traffic
       Server to require client certificates, then Traffic Server
@@ -144,7 +146,7 @@ client/Traffic Server connections, you must do the following:
 
 In order to accomplish this, we
 
-2. Edit the following variables in the :ref:`records-config-ssl-termination` section of
+#. Edit the following variables in the :ref:`records-config-ssl-termination` section of
    :file:`records.config`
 
    -  :ts:cv:`proxy.config.http.server_ports`
@@ -153,12 +155,12 @@ In order to accomplish this, we
    -  :ts:cv:`proxy.config.ssl.server.private_key.path`
    -  :ts:cv:`proxy.config.ssl.CA.cert.path`
 
-3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
+#. Run the command :option:`traffic_line -L` to restart Traffic Server on the
    local node or :option:`traffic_line -M` to restart Traffic Server on all
    the nodes in a cluster.
 
 
-.. XXX:: This numbering is ridiculous.
+.. This numbering is ridiculous.
 
 .. _traffic-server-and-origin-server-connections:
 
@@ -219,7 +221,7 @@ Traffic Server and origin server connections, you must do the following:
 
 In order to accomplish this, we:
 
-.. XXX:: This numbering is ridiculous. I need to re-read this doc with a fresh mind and re(number|order) it.
+.. This numbering is ridiculous. I need to re-read this doc with a fresh mind and re(number|order) it.
 
 2. Edit the following variables in the :ref:`records-config-ssl-termination` section of
    :file:`records.config`:
