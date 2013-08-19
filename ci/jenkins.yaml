@@ -22,24 +22,7 @@
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp
-        - shell: make -j2 V=1
-        - shell: make check
-        - shell: make install
-        - shell: |
-            "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
-        - shell: |
-            rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
-
-- builder:
-    name: linux-debug-regression
-    builders:
-        - shell: |
-            git clean -d -f -x -q
-            mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
-            autoreconf -fi
-        - shell: |
-            ./configure --enable-debug --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp $ENABLE_DEBUG
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
@@ -60,7 +43,7 @@
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            ./configure --enable-debug --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp $ENABLE_DEBUG
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
@@ -79,7 +62,7 @@
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_DEBUG
         - shell: gmake -j2 V=1
         - shell: gmake check
         - shell: gmake install
@@ -104,7 +87,7 @@
             export CXXFLAGS=-m64
             export CPPFLAGS=-I/opt/omni/include
             export LDFLAGS="-L/opt/omni/lib/amd64 -R/opt/omni/lib/amd64"
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG
         - shell: gmake -j2 V=1
         - shell: gmake check
         - shell: gmake install
@@ -139,6 +122,11 @@
         numToKeep: 2
         artifactDaysToKeep: -1
         artifactNumToKeep: 2
+    parameters:
+        - string:
+            name: ENABLE_DEBUG
+            default: --enable-debug
+            description: enable runtime debug checks
     scm:
         - git:
             url: '{repo}'
@@ -147,7 +135,7 @@
     triggers:
         - pollscm: 'H/2 * * * *'
     builders:
-        - '{builder}-debug-regression'
+        - '{builder}-regression'
 
 - job-template:
     name: '{node}-{branch}-clang-regression'
@@ -157,6 +145,29 @@
         numToKeep: 2
         artifactDaysToKeep: -1
         artifactNumToKeep: 2
+    scm:
+        - git:
+            url: '{repo}'
+            branches:
+                - '{branch}'
+    triggers:
+        - pollscm: 'H/2 * * * *'
+    builders:
+        - '{builder}-clang-regression'
+
+- job-template:
+    name: '{node}-{branch}-clang-debug-regression'
+    node: '{node}'
+    logrotate:
+        daysToKeep: -1
+        numToKeep: 2
+        artifactDaysToKeep: -1
+        artifactNumToKeep: 2
+    parameters:
+        - string:
+            name: ENABLE_DEBUG
+            default: --enable-debug
+            description: enable runtime debug checks
     scm:
         - git:
             url: '{repo}'
@@ -328,15 +339,18 @@
         - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
+        - '{node}-{branch}-clang-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-clang-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
 
 - project:
     name: fedora-rawhide-x86
     node: fedora_rawhide_x86
     builder: linux
     jobs:
-        - '{node}-{branch}-clang-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-debug-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
