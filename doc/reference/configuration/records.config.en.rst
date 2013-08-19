@@ -1665,6 +1665,19 @@ SSL Termination
        authenticated during the SSL handshake. Clients without a
        certificate are not allowed to access Traffic Server.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
+
+   The location of the :file:`ssl_multicert.config` file, relative
+   to the Traffic Server configuration directory. In the following
+   example, if the Traffic Server configuration directory is
+   `/etc/trafficserver`, the Traffic Server SSL configuration file
+   and the corresponding certificates are located in
+   `/etc/trafficserver/ssl`::
+
+      CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.config
+      CONFIG proxy.config.ssl.server.cert.path STRING etc/trafficserver/ssl
+      CONFIG proxy.config.ssl.server.private_key.path STRING etc/trafficserver/ssl
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
 
    The location of the SSL certificates and chains used for accepting
