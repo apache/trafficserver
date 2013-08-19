@@ -76,7 +76,7 @@
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
 - job-template:
-    name: '{node}-{name}-regression'
+    name: '{node}-{branch}-regression'
     node: '{node}'
     logrotate:
         daysToKeep: -1
@@ -98,16 +98,13 @@
     node: centos_5_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -116,16 +113,13 @@
     node: centos_5_x86
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -134,16 +128,13 @@
     node: centos_6.4_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -152,16 +143,13 @@
     node: centos_6.4_x86
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -170,16 +158,13 @@
     node: fedora_15_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -188,16 +173,13 @@
     node: fedora_15_x86
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -206,16 +188,13 @@
     node: fedora_18_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -224,16 +203,13 @@
     node: fedora_18_x86
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -242,16 +218,13 @@
     node: fedora_rawhide_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -260,16 +233,13 @@
     node: fedora_rawhide_x86
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -278,16 +248,13 @@
     node: freebsd_9.1_x64
     builder: bsd
     jobs:
-        - '{node}-{name}-regression':
-            name: freebsd-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: freebsd-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: freebsd-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -296,16 +263,13 @@
     node: omnios_x64
     builder: omnios
     jobs:
-        - '{node}-{name}-regression':
-            name: omnios-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: omnios-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: omnios-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -314,16 +278,13 @@
     node: opensuse_12_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -332,16 +293,13 @@
     node: ubuntu_10.04_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
@@ -350,16 +308,13 @@
     node: ubuntu_12.04_x64
     builder: linux
     jobs:
-        - '{node}-{name}-regression':
-            name: linux-master
+        - '{node}-{branch}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{name}-regression':
-            name: linux-3.3.x
+        - '{node}-{branch}-regression':
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{name}-regression':
-            name: linux-3.4.x
+        - '{node}-{branch}-regression':
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
