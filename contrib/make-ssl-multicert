@@ -19,13 +19,29 @@
 
 OPENSSL=${OPENSSL:-openssl}
 COUNT=${COUNT:-100001}
+NPROCS=${NPROC:-$(getconf _NPROCESSORS_ONLN)}
 
-for ((i=0 ; i < $COUNT ; i++)); do
-  $OPENSSL genrsa -out test$i.key 2048
-  $OPENSSL req -new -key test$i.key -out test$i.csr -subj /C=US/ST=CA/L=Norm/O=TrafficServer/OU=Test/CN=test${i}.com
-  $OPENSSL x509 -req -days 365 -in test$i.csr -signkey test$i.key -out test$i.crt
-  cat test$i.crt test$i.key > test$i.pem
-  rm -rf test$i.csr test$i.key test$i.crt
+makecert() {
+  name=$1
 
-  echo ssl_cert_name=test$i.pem >> ssl_multicert.config
+  $OPENSSL genrsa -out ${name}.key 2048
+  $OPENSSL req -new -key ${name}.key -out ${name}.csr \
+    -subj /C=US/ST=CA/L=Norm/O=TrafficServer/OU=Test/CN=${name}.com
+  $OPENSSL x509 -req -days 365 \
+    -in ${name}.csr -signkey ${name}.key -out ${name}.crt
+  cat ${name}.crt ${name}.key > ${name}.pem
+  rm -rf ${name}.csr ${name}.key ${name}.crt
+}
+
+for (( i = 0 ; i < $COUNT ; i += $NPROCS )); do
+
+  for ((j = i; j < (i + $NPROCS) && j < $COUNT; j++ )) ; do
+    makecert "test${j}" &
+  done
+
+  wait
+
+  for ((j = i; j < (i + $NPROCS) && j < $COUNT; j++ )) ; do
+    echo ssl_cert_name=test$i.pem
+  done >> ssl_multicert.config
 done
