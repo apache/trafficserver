@@ -126,10 +126,10 @@ client/Traffic Server connections, you must do the following:
    information that enables the client to authenticate Traffic Server
    and exchange encryption keys.
 -  Configure SSL termination options:
--  Enable the **SSL termination** option.
 
-   -  Set the port number used for SSL communication.
-   -  Specify the filename and location of the server certificate.
+   -  Set the port number used for SSL communication using :ts:cv:`proxy.config.http.server_ports`.
+   -  Edit :file:`ssl_multicert.config` to specify the filename and location of the
+     SSL certificates and provate keys.
    -  (Optional) Configure the use of client certificates: Client
       certificates are located on the client. If you configure Traffic
       Server to require client certificates, then Traffic Server
@@ -138,11 +138,6 @@ client/Traffic Server connections, you must do the following:
       require client certificates, then access to Traffic Server is
       managed through other Traffic Server options that have been set
       (such as rules in :file:`ip_allow.config`).
-   -  Specify the filename and location of the Traffic Server private
-      key (if the private key is not located in the server certificate
-      file). Traffic Server uses its private key during the SSL
-      handshake to decrypt the session encryption keys. The private key
-      must be stored and protected against theft.
    -  (Optional) Configure the use of Certification Authorities (CAs).
       CAs add security by verifying the identity of the person
       requesting a certificate.
@@ -155,9 +150,7 @@ In order to accomplish this, we
    -  :ts:cv:`proxy.config.http.server_ports`
    -  :ts:cv:`proxy.config.ssl.client.certification_level`
    -  :ts:cv:`proxy.config.ssl.server.cert.path`
-   -  :ts:cv:`proxy.config.ssl.server.private_key.filename`
    -  :ts:cv:`proxy.config.ssl.server.private_key.path`
-   -  :ts:cv:`proxy.config.ssl.CA.cert.filename`
    -  :ts:cv:`proxy.config.ssl.CA.cert.path`
 
 3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
