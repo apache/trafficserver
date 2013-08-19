@@ -14,6 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+- defaults:
+    name: global
+    logrotate:
+        daysToKeep: -1
+        numToKeep: 2
+        artifactDaysToKeep: -1
+        artifactNumToKeep: 2
+    triggers:
+        - pollscm: 'H/2 * * * *'
+
 - builder:
     name: linux-regression
     builders:
@@ -99,29 +109,17 @@
 - job-template:
     name: '{node}-{branch}-regression'
     node: '{node}'
-    logrotate:
-        daysToKeep: -1
-        numToKeep: 2
-        artifactDaysToKeep: -1
-        artifactNumToKeep: 2
     scm:
         - git:
             url: '{repo}'
             branches:
                 - '{branch}'
-    triggers:
-        - pollscm: 'H/2 * * * *'
     builders:
         - '{builder}-regression'
 
 - job-template:
     name: '{node}-{branch}-debug-regression'
     node: '{node}'
-    logrotate:
-        daysToKeep: -1
-        numToKeep: 2
-        artifactDaysToKeep: -1
-        artifactNumToKeep: 2
     parameters:
         - string:
             name: ENABLE_DEBUG
@@ -132,37 +130,23 @@
             url: '{repo}'
             branches:
                 - '{branch}'
-    triggers:
-        - pollscm: 'H/2 * * * *'
     builders:
         - '{builder}-regression'
 
 - job-template:
     name: '{node}-{branch}-clang-regression'
     node: '{node}'
-    logrotate:
-        daysToKeep: -1
-        numToKeep: 2
-        artifactDaysToKeep: -1
-        artifactNumToKeep: 2
     scm:
         - git:
             url: '{repo}'
             branches:
                 - '{branch}'
-    triggers:
-        - pollscm: 'H/2 * * * *'
     builders:
         - '{builder}-clang-regression'
 
 - job-template:
     name: '{node}-{branch}-clang-debug-regression'
     node: '{node}'
-    logrotate:
-        daysToKeep: -1
-        numToKeep: 2
-        artifactDaysToKeep: -1
-        artifactNumToKeep: 2
     parameters:
         - string:
             name: ENABLE_DEBUG
@@ -173,8 +157,6 @@
             url: '{repo}'
             branches:
                 - '{branch}'
-    triggers:
-        - pollscm: 'H/2 * * * *'
     builders:
         - '{builder}-clang-regression'
 
