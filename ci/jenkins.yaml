@@ -58,17 +58,19 @@
 
 - job-template:
     name: '{name}-regression'
+    node: '{label}'
+    logrotate:
+        daysToKeep: -1
+        numToKeep: 2
+        artifactDaysToKeep: -1
+        artifactNumToKeep: 2
     scm:
         - git:
-            url: file:///home/jenkins/git/trafficserver
+            url: '{repo}'
             branches:
                 - '{branch}'
     triggers:
-        - pollscm: '*/2 * * * *'
-    parameters:
-        - label:
-            name: '{label}'
-            description: '{label} label'
+        - pollscm: 'H/2 * * * *'
     builders:
         - '{label}-regression'
 
@@ -78,6 +80,7 @@
         - '{name}-regression':
             label: linux
             branch: master
+            repo: file:///home/jenkins/git/trafficserver
 
 - project:
     name: linux-3.3.x
@@ -85,6 +88,7 @@
         - '{name}-regression':
             label: linux
             branch: 3.3.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
 
 - project:
     name: linux-3.4.x
@@ -92,6 +96,7 @@
         - '{name}-regression':
             label: linux
             branch: 3.4.x
+            repo: file:///home/jenkins/git/trafficserver_3.4
 
 - project:
     name: omnios-master
@@ -99,6 +104,7 @@
         - '{name}-regression':
             label: omnios
             branch: master
+            repo: file:///home/jenkins/git/trafficserver
 
 - project:
     name: omnios-3.3.x
@@ -106,6 +112,7 @@
         - '{name}-regression':
             label: omnios
             branch: 3.3.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
 
 - project:
     name: omnios-3.4.x
@@ -113,5 +120,6 @@
         - '{name}-regression':
             label: omnios
             branch: 3.4.x
+            repo: file:///home/jenkins/git/trafficserver_3.4
 
 # vim: sw=4 ts=4 et ft=yaml :
