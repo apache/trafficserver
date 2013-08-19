@@ -75,50 +75,36 @@
         - '{label}-regression'
 
 - project:
-    name: linux-master
+    name: linux
+    label: linux
     jobs:
         - '{name}-regression':
-            label: linux
+            name: linux-master
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-
-- project:
-    name: linux-3.3.x
-    jobs:
         - '{name}-regression':
-            label: linux
+            name: linux-3.3.x
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-
-- project:
-    name: linux-3.4.x
-    jobs:
         - '{name}-regression':
-            label: linux
+            name: linux-3.4.x
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
 - project:
-    name: omnios-master
+    name: omnios
+    label: omnios
     jobs:
         - '{name}-regression':
-            label: omnios
+            name: omnios-master
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-
-- project:
-    name: omnios-3.3.x
-    jobs:
         - '{name}-regression':
-            label: omnios
+            name: omnios-3.3.x
             branch: 3.3.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-
-- project:
-    name: omnios-3.4.x
-    jobs:
         - '{name}-regression':
-            label: omnios
+            name: omnios-3.4.x
             branch: 3.4.x
             repo: file:///home/jenkins/git/trafficserver_3.4
 
