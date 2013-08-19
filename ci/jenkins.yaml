@@ -48,6 +48,27 @@
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
+- builder:
+    name: linux-clang-regression
+    builders:
+        - shell: |
+            git clean -d -f -x -q
+            mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
+            autoreconf -fi
+        - shell: |
+            export CC=clang
+            export CXX=clang++
+            export CXXFLAGS="-Qunused-arguments -std=c++11"
+            export WITH_LIBCPLUSPLUS=yes
+            ./configure --enable-debug --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp
+        - shell: make -j2 V=1
+        - shell: make check
+        - shell: make install
+        - shell: |
+            "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: |
+            rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
+
 # XXX if we can pass down a $MAKE environment variable from the project, then we can
 # remove the BSD builder and just use the linux one.
 - builder:
@@ -127,6 +148,24 @@
         - pollscm: 'H/2 * * * *'
     builders:
         - '{builder}-debug-regression'
+
+- job-template:
+    name: '{node}-{branch}-clang-regression'
+    node: '{node}'
+    logrotate:
+        daysToKeep: -1
+        numToKeep: 2
+        artifactDaysToKeep: -1
+        artifactNumToKeep: 2
+    scm:
+        - git:
+            url: '{repo}'
+            branches:
+                - '{branch}'
+    triggers:
+        - pollscm: 'H/2 * * * *'
+    builders:
+        - '{builder}-clang-regression'
 
 - project:
     name: centos-5-x64
@@ -295,6 +334,9 @@
     node: fedora_rawhide_x86
     builder: linux
     jobs:
+        - '{node}-{branch}-clang-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-debug-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
