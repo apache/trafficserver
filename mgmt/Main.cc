@@ -722,9 +722,17 @@ main(int argc, char **argv)
   // Now that we know our cluster ip address, add the
   //   UI record for this machine
   overviewGenerator->addSelfRecord();
+
+  lmgmt->listenForProxy();
+
+  //
+  // As listenForProxy() may change/restore euid, we should put
+  // the creation of webIntr_main thread after it. So that we
+  // can keep a consistent euid when create mgmtapi/eventapi unix
+  // sockets in webIntr_main thread.
+  //
   webThrId = ink_thread_create(webIntr_main, NULL);     /* Spin web agent thread */
   Debug("lm", "Created Web Agent thread (%"  PRId64 ")", (int64_t)webThrId);
-  lmgmt->listenForProxy();
 
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
