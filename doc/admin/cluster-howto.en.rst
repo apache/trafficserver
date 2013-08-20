@@ -135,8 +135,8 @@ Performance tweak for busy Cluster
 ==================================
 
 Starting from v3.2.0, Apache Traffic Server can handle multiple internal
-cluster connections, and we can tweak for the Cluster threads and
-connections:
+cluster connections, and we can tweak for the Cluster threads and each of
+the thread will keep one connection to all of the cluster machines:
 
 -  Increasing Cluster threads:
 
@@ -147,13 +147,8 @@ connections:
 
 .. XXX::  ET_NET and ET_CLUSTER should be documented some place. Right now, this means nothing to me.
 
--  Setup the Cluster connections:
-
-   In the Cluster, the internal connections is TCP and limited by
-   ET_CLUSTER threads and network performance, we can increase the
-   connections to archive better performance.::
-
-       traffic_line -s proxy.config.cluster.num_of_cluster_connections -v 10
+   ::
+       traffic_line -s proxy.config.cluster.threads -v 10
 
 with these tweaks, we can archive about 10gbps traffic for the internal
 cluster transfer speed.
