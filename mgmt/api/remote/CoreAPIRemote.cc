@@ -311,6 +311,15 @@ Terminate()
   if (ts_event_thread)
     ink_thread_cancel(ts_event_thread);
 
+  // Before clear, we should confirm these
+  // two threads have finished. Or the clear
+  // operation may lead them crash.
+  if (ts_test_thread)
+    ink_thread_join(ts_test_thread);
+  if (ts_event_thread)
+    ink_thread_join(ts_event_thread);
+
+  // Clear operation
   ts_test_thread = static_cast<ink_thread>(NULL);
   ts_event_thread = static_cast<ink_thread>(NULL);
   set_socket_paths(NULL);       // clear the socket_path

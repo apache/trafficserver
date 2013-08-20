@@ -1593,7 +1593,7 @@ check(void *arg)
 
     // We do this after the first round of checks, since the first "check" will spawn traffic_manager
     if (!mgmt_init) {
-      TSInit(Layout::get()->runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+      TSInit(Layout::get()->runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS));
       mgmt_init = true;
     }
   }

@@ -459,7 +459,7 @@ socket_test_thread(void *)
 {
   // loop until client process dies
   while (1) {
-    if (socket_test(main_socket_fd) <= 0) {
+    if (main_socket_fd == -1 || socket_test(main_socket_fd) <= 0) {
       // ASSUMES that in between the time the socket_test is made
       // and this reconnect call is made, the main_socket_fd remains
       // the same (eg. no one else called reconnect to TM successfully!!

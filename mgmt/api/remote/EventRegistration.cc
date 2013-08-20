@@ -161,5 +161,6 @@ event_callback_thread(void *arg)
   delete_queue(func_q);
 
   // all done!
+  ink_thread_exit(NULL);
   return NULL;
 }
