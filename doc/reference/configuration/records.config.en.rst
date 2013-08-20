@@ -291,20 +291,21 @@ Local Manager
 The nonprivileged user account designated to Traffic Server.
 
 As of version 2.1.1 if the user_id is prefixed with pound character (#) the remaining of the string is considered to be
-``numeric user identifier <http://en.wikipedia.org/wiki/User_identifier>``_.
-If the value is set to ``#-1`` Traffic Server will not change the user during startup.
+a `numeric user identifier <http://en.wikipedia.org/wiki/User_identifier>`_. If the value is set to ``#-1`` Traffic
+Server will not change the user during startup.
 
 Setting ``user_id`` to ``root`` or ``#0`` is now forbidden to
 increase security. Trying to do so, will cause the
 :program:`traffic_server` fatal failure. However there are two ways to
-bypass that restriction: Specify ``-DBIG_SECURITY_HOLE`` in
-``CXXFLAGS`` during compilation. Set the ``user_id=#-1`` and start
-trafficserver as root.
+bypass that restriction
+
+* Specify ``-DBIG_SECURITY_HOLE`` in ``CXXFLAGS`` during compilation.
+* Set the ``user_id=#-1`` and start trafficserver as root.
 
 Process Manager
 ===============
 
-.. ts:cv:: CONFIOG proxy.config.process_manager.mgmt_port  INT 8084
+.. ts:cv:: CONFIG proxy.config.process_manager.mgmt_port  INT 8084
 
    The port used for internal communication between the :program:`traffic_manager` and :program:`traffic_server` processes.
 
