@@ -106,9 +106,21 @@ Remap rules are not processed top-down, but based on an internal
 priority
 
 1. ``map`` and ``reverse_map``
-2. ``redirect`` and ``redirect_temporary``
-3. ``regex_remap``
+2. ``regex_map``
+3. ``redirect`` and ``redirect_temporary``
 4. ``regex_redirect`` and ``regex_redirect_temporary``
+
+
+Match-All
+=========
+
+A map rule with a single ``/`` acts as a wildcard, it will match any
+request. This should be use with care, and certainly only once at the
+end of the remap.config file. E.g.
+
+::
+
+    map / http://all.example.com
 
 Examples
 --------
