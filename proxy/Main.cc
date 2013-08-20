@@ -120,8 +120,7 @@ static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
 
-static int const number_of_processors = ink_number_of_processors();
-static int num_of_net_threads = number_of_processors;
+static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
 static int num_accept_threads  = 0;
 static int num_task_threads = 0;
@@ -1143,9 +1142,8 @@ getNumSSLThreads(void)
     } else {
       float autoconfig_scale = 1.5;
 
-      ink_assert(number_of_processors);
       TS_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
-      num_of_ssl_threads = (int)((float)number_of_processors * autoconfig_scale);
+      num_of_ssl_threads = (int)((float)ink_number_of_processors() * autoconfig_scale);
 
       // Last resort
       if (num_of_ssl_threads <= 0)
