@@ -1154,48 +1154,49 @@ getNumSSLThreads(void)
   return num_of_ssl_threads;
 }
 
-static void
-adjust_num_of_net_threads(void)
+static int
+adjust_num_of_net_threads(int nthreads)
 {
   float autoconfig_scale = 1.0;
   int nth_auto_config = 1;
   int num_of_threads_tmp = 1;
 
   TS_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig");
+
+  Debug("threads", "initial number of net threads is %d", nthreads);
+  Debug("threads", "net threads auto-configuration %s", nth_auto_config ? "enabled" : "disabled");
+
   if (!nth_auto_config) {
     TS_ReadConfigInteger(num_of_threads_tmp, "proxy.config.exec_thread.limit");
-    if (num_of_threads_tmp <= 0)
+
+    if (num_of_threads_tmp <= 0) {
       num_of_threads_tmp = 1;
-    else if (num_of_threads_tmp > MAX_EVENT_THREADS)
+    } else if (num_of_threads_tmp > MAX_EVENT_THREADS) {
       num_of_threads_tmp = MAX_EVENT_THREADS;
-    num_of_net_threads = num_of_threads_tmp;
-    if (is_debug_tag_set("threads")) {
-      fprintf(stderr, "# net threads Auto config - disabled - use config file settings\n");
     }
+
+    nthreads = num_of_threads_tmp;
   } else {                      /* autoconfig is enabled */
-    num_of_threads_tmp = num_of_net_threads;
+    num_of_threads_tmp = nthreads;
     TS_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
     num_of_threads_tmp = (int) ((float) num_of_threads_tmp * autoconfig_scale);
+
     if (num_of_threads_tmp) {
-      num_of_net_threads = num_of_threads_tmp;
+      nthreads = num_of_threads_tmp;
     }
+
     if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
       num_of_threads_tmp = MAX_EVENT_THREADS;
     }
-    if (is_debug_tag_set("threads")) {
-      fprintf(stderr, "# net threads Auto config - enabled\n");
-      fprintf(stderr, "# autoconfig scale: %f\n", autoconfig_scale);
-      fprintf(stderr, "# scaled number of net threads: %d\n", num_of_threads_tmp);
-    }
   }
 
-  if (is_debug_tag_set("threads")) {
-    fprintf(stderr, "# number of net threads: %d\n", num_of_net_threads);
+  if (unlikely(nthreads <= 0)) {      /* impossible case -just for protection */
+    Warning("number of net threads must be greater than 0, resetting to 1");
+    nthreads = 1;
   }
-  if (unlikely(num_of_net_threads <= 0)) {      /* impossible case -just for protection */
-    Warning("Number of Net Threads should be greater than 0");
-    num_of_net_threads = 1;
-  }
+
+  Debug("threads", "adjusted number of net threads is %d", nthreads);
+  return nthreads;
 }
 
 /**
@@ -1496,7 +1497,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // Initialize New Stat system
   initialize_all_global_stats();
 
-  adjust_num_of_net_threads();
+  num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 
   size_t stacksize;
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
