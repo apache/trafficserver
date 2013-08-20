@@ -697,16 +697,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER, data_raw);
     break;
     // Congestion Control - end
-  case INK_MGMT_SIGNAL_WDA_BILLING_CONNECTION_DIED:
-    alarm_keeper->signalAlarm(MGMT_ALARM_WDA_BILLING_CONNECTION_DIED, data_raw);
-    break;
-  case INK_MGMT_SIGNAL_WDA_BILLING_CORRUPTED_DATA:
-    alarm_keeper->signalAlarm(MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA, data_raw);
-    break;
-  case INK_MGMT_SIGNAL_WDA_XF_ENGINE_DOWN:
-    alarm_keeper->signalAlarm(MGMT_ALARM_WDA_XF_ENGINE_DOWN, data_raw);
-    break;
-    // Wireless plugin signal - end
   case INK_MGMT_SIGNAL_SAC_SERVER_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);
     break;
@@ -714,9 +704,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   default:
     break;
   }
-
-  // #define MGMT_ALARM_ACC_ALARMS_START              200
-  // #define MGMT_ALARM_ACC_ALARMS_END                299
 
   if (mh->msg_id >= INK_MGMT_SIGNAL_ACC_ALARMS_START && mh->msg_id <= INK_MGMT_SIGNAL_ACC_ALARMS_END) {
     alarm_keeper->signalAlarm(mh->msg_id, data_raw);

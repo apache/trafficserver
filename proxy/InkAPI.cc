@@ -6975,18 +6975,6 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   return TS_SUCCESS;
 }
 
-
-/* Alarm */
-/* return type is "int" currently, it should be TSReturnCode */
-void
-TSSignalWarning(TSAlarmType code, char *msg)
-{
-  sdk_assert(code >= TS_SIGNAL_WDA_BILLING_CONNECTION_DIED && code <= TS_SIGNAL_WDA_RADIUS_CORRUPTED_PACKETS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)msg) == TS_SUCCESS);
-
-  REC_SignalWarning(code, msg);
-}
-
 void
 TSICPFreshnessFuncSet(TSPluginFreshnessCalcFunc funcp)
 {
