@@ -7820,7 +7820,6 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
 {
   va_list ap;
   const char *reason_phrase;
-  URL *url;
   char *url_string;
   char body_language[256], body_type[256];
 
@@ -7832,8 +7831,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   // get the url --- remember this is dynamically allocated //
   ////////////////////////////////////////////////////////////
   if (s->hdr_info.client_request.valid()) {
-    url = s->hdr_info.client_request.url_get();
-    url_string = url ? url->string_get(&s->arena) : NULL;
+    url_string = s->hdr_info.client_request.url_string_get(&s->arena);
   } else {
     url_string = NULL;
   }
