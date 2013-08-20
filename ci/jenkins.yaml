@@ -32,6 +32,7 @@
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
+            export DEB_BUILD_HARDENING
             ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp $ENABLE_DEBUG
         - shell: make -j2 V=1
         - shell: make check
@@ -125,6 +126,25 @@
             name: ENABLE_DEBUG
             default: --enable-debug
             description: enable runtime debug checks
+    scm:
+        - git:
+            url: '{repo}'
+            branches:
+                - '{branch}'
+    builders:
+        - '{builder}-regression'
+
+# Standard regression tests with Debian build hardening compiler flags.
+# See https://wiki.ubuntu.com/Security/HardeningWrapper
+# and https://wiki.debian.org/Hardening.
+- job-template:
+    name: '{node}-{branch}-hardening-regression'
+    node: '{node}'
+    parameters:
+        - string:
+            name: DEB_BUILD_HARDENING
+            default: '1'
+            description: enable Debian hardening-wrapper
     scm:
         - git:
             url: '{repo}'
@@ -405,6 +425,9 @@
     node: ubuntu_10.04_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-hardening-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-debug-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
@@ -423,6 +446,30 @@
     node: ubuntu_12.04_x64
     builder: linux
     jobs:
+        - '{node}-{branch}-hardening-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-debug-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-regression':
+            branch: 3.3.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-regression':
+            branch: 3.4.x
+            repo: file:///home/jenkins/git/trafficserver_3.4
+
+- project:
+    name: debian-6-x64
+    node: debian_6_x64
+    builder: linux
+    jobs:
+        - '{node}-{branch}-hardening-regression':
+            branch: master
+            repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-debug-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
