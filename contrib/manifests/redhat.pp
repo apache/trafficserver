@@ -14,6 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# These packages really need to be installed before anything happens.
+package {['nfs-utils', 'redhat-lsb-core']:
+  ensure =>latest
+}
+
 $source = $lsbmajdistrelease ? {
   '5' => 'http://mirror.pnl.gov/epel/5/i386/epel-release-5-4.noarch.rpm',
   '6' => 'http://mirror.pnl.gov/epel/6/i386/epel-release-6-8.noarch.rpm',
