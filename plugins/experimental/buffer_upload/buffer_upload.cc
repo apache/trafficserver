@@ -42,9 +42,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#define true 1
-#define false 0
-
 /* #define DEBUG 1 */
 #define DEBUG_TAG "buffer_upload-dbg"
 
