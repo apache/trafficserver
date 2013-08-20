@@ -264,7 +264,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
 
  proxy.config.accept_threads
  proxy.config.task_threads
- proxy.config.admin.admin_user
  proxy.config.admin.autoconf.localhost_only
  proxy.config.admin.autoconf.pac_filename
  proxy.config.admin.autoconf_port
