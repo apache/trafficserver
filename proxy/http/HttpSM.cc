@@ -632,6 +632,11 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   //  so if we get an timeout events the sm handles them
   ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
 
+  /////////////////////////
+  // set up timeouts     //
+  /////////////////////////
+  client_vc->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
+
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, NULL);
 }

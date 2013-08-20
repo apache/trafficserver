@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.5.0
 
 
+  *) [TS-2136] Fix the first proxy.config.http.accept_no_activity_timeout is invalid.
+
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
 
