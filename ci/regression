@@ -75,12 +75,13 @@ extras() {
 }
 
 autogen() {
-  [[ -e "$SRCROOT/configure" ]] || ( cd $SRCROOT && autoreconf -fi )
+  (
+    cd "$SRCROOT"
+    [ configure -nt configure.ac -a Makefile -nt Makefile.am ] || autoreconf -fi
+  )
 }
 
 configure() {
-  [[ -e "$SRCROOT/Makefile" ]] && ( cd $SRCROOT && make distclean)
-
   (
     cd $OBJROOT
     $SRCROOT/configure \
