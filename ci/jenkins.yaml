@@ -192,7 +192,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -210,7 +210,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -228,7 +228,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -246,7 +246,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -264,7 +264,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -282,7 +282,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -300,7 +300,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -318,7 +318,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -336,7 +336,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -360,7 +360,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -378,7 +378,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -396,7 +396,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -414,7 +414,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -435,7 +435,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -456,7 +456,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
@@ -477,7 +477,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-regression':
-            branch: 3.3.x
+            branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 3.4.x
