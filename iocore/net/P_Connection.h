@@ -130,28 +130,6 @@ struct Connection
                     bool non_blocking = NON_BLOCKING,
                     unsigned char mc_ttl = 1, bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation * c = NULL);
 
-  /**
-    @deprecated preserve backward compatibility with non-IPv6 iocore
-  */
-
-  int setup_mc_send(unsigned int mc_ip, int mc_port,
-                    unsigned int my_ip, int my_port,
-                    bool non_blocking = NON_BLOCKING,
-                    unsigned char mc_ttl = 1, bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation * c = NULL)
-  {
-    struct sockaddr_in mc_addr;
-    struct sockaddr_in my_addr;
-
-    ats_ip4_set(&mc_addr, mc_ip, htons(mc_port));
-    ats_ip4_set(&my_addr, my_ip, htons(my_port));
-
-    return setup_mc_send(
-        ats_ip_sa_cast(&mc_addr), 
-        ats_ip_sa_cast(&my_addr), 
-        non_blocking, mc_ttl, mc_loopback, c);
-  }                 
-
-
   int setup_mc_receive(sockaddr const* from,
                        bool non_blocking = NON_BLOCKING, Connection * sendchan = NULL, Continuation * c = NULL);
 
