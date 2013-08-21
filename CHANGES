@@ -28,9 +28,6 @@ Changes with Apache Traffic Server 4.0.0
    v1.33, which is what RHEL5 ships with.
 
 
-  *) [TS-1597] Document remap.config filters
-    Author: Jim Riggs <jim@riggs.me>
-
 Changes with Apache Traffic Server 3.3.5
 
 
