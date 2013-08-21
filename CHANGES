@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+
+  *) [TS-2094] eliminate xcrun warnings at configure time
+
   *) TS-2141: Inconsistent euid cause bad mgmtapi/eventapi sockets.
 
   *) TS-2137: Use eventfd instread of pthread signal/wait in ATS.

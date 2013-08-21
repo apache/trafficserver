@@ -59,7 +59,7 @@ if test "x$expat_base_dir" = "x"; then
   _expat_dir_list=""
   case $host_os_def in
     darwin)
-    for dir in "`xcrun -show-sdk-path`/usr" /usr/local /usr; do
+    for dir in "`xcrun -show-sdk-path 2>/dev/null`/usr" /usr/local /usr; do
       if test -d $dir && test -f $dir/include/expat.h; then
         ats_cv_expat_dir=$dir
         break
