@@ -636,6 +636,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   // set up timeouts     //
   /////////////////////////
   client_vc->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
+  client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_active_timeout_in));
 
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, NULL);

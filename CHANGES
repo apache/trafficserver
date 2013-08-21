@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.5.0
 
 
+  *) [TS-287] Fix transaction_active_timeout_in does not trigger on the first request of a Keep-Alive connection.
+
   *) [TS-2143] Remove alarm email address support (and config).
 
   *) [TS-2136] Fix the first proxy.config.http.accept_no_activity_timeout is invalid.
