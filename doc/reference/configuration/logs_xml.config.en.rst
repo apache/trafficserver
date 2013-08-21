@@ -41,47 +41,50 @@ The :file:`logs_xml.config` file contains the specifications below:
 The :file:`logs_xml.config` file ignores extra white space, blank lines, and
 all comments.
 
+.. _LogFormat:
+
 LogFormat
 =========
 
 The following list shows ``LogFormat`` specifications.
 
-*``&lt;Name = "valid_format_name"/&gt;``* {#LogsXMLFormatName}
+.. _LogFormat-name:
+
+``<Name = "valid_format_name"/>``
     Required
     Valid format names include any name except ``squid``, ``common``,
     ``extended``, or ``extended2``, which are pre-defined formats. There
     is no default for this tag.
 
-*``&lt;Format = "valid_format_specification"/&gt;``* {#LogsXMLFormat}
+.. _LogFormat-Format:
+
+``<Format = "valid_format_specification"/>``
     Required
     A valid format specification is a printf-style string describing
     each log entry when formatted for ASCII output. Use ``%<``
-    *``field``* ``>`` as a placeholder for valid field names. For more
-    information, refer to `Custom Logging
-    Fields <../event-logging-formats#CustomLoggingFields>`_.
+    ``field`` ``>`` as a placeholder for valid field names. For more
+    information, refer to :ref:`custom-logging-fields`.
 
     The specified field can be one of the following types:
 
     Simple. For example: ``%<cqu>``
     A field within a container, such as an HTTP header or a statistic.
-    Fields of this type have the syntax:
-
-    ::
+    Fields of this type have the syntax: ::
 
          %<{ field } container>
 
     Aggregates, such as ``COUNT``, ``SUM``, ``AVG``, ``FIRST``,
     ``LAST``. Fields of this type have the syntax: ``%<operator (``
-    *``field``* ``)>``
+    ``field`` ``)>``
 
 .. note::
 
     You cannot create a format specification that contains both aggregate operators and regular fields.
 
-*``&lt;Interval = "aggregate_interval_secs"/&gt;``* {#LogsXMLInterval}
+``<Interval = "aggregate_interval_secs"/>``
     Optional
     Use this tag when the format contains aggregate operators. The value
-    "``aggregate_interval_secs``\ " represents the number of seconds
+    "``aggregate_interval_secs``\" represents the number of seconds
     between individual aggregate values being produced.
 
     The valid set of aggregate operators are:
@@ -92,23 +95,23 @@ The following list shows ``LogFormat`` specifications.
     -  FIRST
     -  LAST
 
+.. _LogFilters:
+
 LogFilters
 ==========
 
 The following list shows the ``LogFilter`` specifications.
 
-*``&lt;Name = "valid_filter_name"/&gt;``* {#LogsXMLFilterName}
+``<Name = "valid_filter_name"/>``
     Required
     All filters must be uniquely named.
 
-*``&lt;Condition = "valid_log_field valid_operator valid_comparison_value"/&gt;``*
-{#LogsXMLFilterCondition}
+``<Condition = "valid_log_field valid_operator valid_comparison_value"/>``
     Required
     This field contains the following elements:
 
     ``valid_log_field`` - the field that will be compared against
-    the given value. For more information, refer to `Logging Format
-    Cross-Reference <../event-logging-formats#LoggingFormatCrossReference>`_.
+    the given value. For more information, refer to :ref:`logging-format-cross-reference`.
 
     ``valid_operator_field`` - any one of the following: ``MATCH``,
     ``CASE_INSENSITIVE_MATCH``, ``CONTAIN``,
@@ -133,24 +136,26 @@ The following list shows the ``LogFilter`` specifications.
     specify a negative condition, then use the ``Action`` field to
     ``REJECT`` the record.
 
-*``&lt;Action = "valid_action_field"/&gt;``* {#LogsXMLFilterAction}
+``<Action = "valid_action_field"/>``
     Required: ``ACCEPT`` or ``REJECT`` .
     This instructs Traffic Server to either accept or reject records
     that satisfy the filter condition.
+
+.. _LogObject:
 
 LogObject
 =========
 
 The following list shows the ``LogObject`` specifications.
 
-*``&lt;Format = "valid_format_name"/&gt;``* {#LogsXMLObjectFormat}
+``<Format = "valid_format_name"/>``
     Required
     Valid format names include the predefined logging formats:
     ``squid``, ``common``, ``extended``, and ``extended2``, as well as
     any previously-defined custom log formats. There is no default for
     this tag.
 
-*``&lt;Filename = "file_name"/&gt;``* {#LogsXMLObjectFilename}
+``<Filename = "file_name"/>``
     Required
     The filename to which the given log file is written on the local
     file system or on a remote collation server. No local log file will
@@ -159,13 +164,15 @@ The following list shows the ``LogObject`` specifications.
 
     If the name does not contain an extension (for example, ``squid``),
     then the extension ``.log`` is automatically appended to it for
-    ASCII logs and ``.blog`` for binary logs (refer to `Mode =
-    "valid_logging_mode" <#LogsXMLOjbectMode>`_).
+    ASCII logs and ``.blog`` for binary logs (refer to :ref:`Mode =
+    "valid_logging_mode" <LogObject-Mode>`_).
 
     If you do not want an extension to be added, then end the filename
     with a single (.) dot (for example: ``squid.`` ).
 
-*``&lt;Mode = "valid_logging_mode"/&gt;``* {#LogsXMLOjbectMode}
+.. _LogObject-Mode:
+
+``<Mode = "valid_logging_mode"/>``
     Optional
     Valid logging modes include ``ascii`` , ``binary`` , and
     ``ascii_pipe`` . The default is ``ascii`` .
@@ -175,7 +182,7 @@ The following list shows the ``LogObject`` specifications.
     -  Use ``binary`` to create event log files in binary format. Binary
        log files generate lower system overhead and occupy less space on
        the disk (depending on the information being logged). You must
-       use the ``logcat`` utility to translate binary log files to ASCII
+       use the :program:`traffic_logcat` utility to translate binary log files to ASCII
        format before you can read them.
     -  Use ``ascii_pipe`` to write log entries to a UNIX named pipe (a
        buffer in memory). Other processes can then read the data using
@@ -191,47 +198,42 @@ The following list shows the ``LogObject`` specifications.
     Traffic Server starts. Pipes on a collation server, however, *are*
     created when Traffic Server starts.
 
-*``&lt;Filters = "list_of_valid_filter_names"/&gt;``*
-{#LogsXMLObjectFilters}
+``<Filters = "list_of_valid_filter_names"/>``
     Optional
     A comma-separated list of names of any previously-defined log
     filters. If more than one filter is specified, then all filters must
     accept a record for the record to be logged.
 
-*``&lt;Protocols = "list_of_valid_protocols"/&gt;``*
-{#LogsXMLObjectProtocols}
+``<Protocols = "list_of_valid_protocols"/>``
     Optional
     A comma-separated list of the protocols this object should log.
     Valid protocol names for this release are ``HTTP`` (FTP is
     deprecated).
 
-*``&lt;ServerHosts = "list_of_valid_servers"/&gt;``*
-{#LogsXMLObjectServerHosts}
+``<ServerHosts = "list_of_valid_servers"/>``
     Optional
     A comma-separated list of valid hostnames.This tag indicates that
     only entries from the named servers will be included in the file.
 
-*``&lt;CollationHosts = "list_of_valid_hostnames"/&gt;``*
-{#LogsXMLObjectCollationHosts}
+``<CollationHosts = "list_of_valid_hostnames"/>``
     Optional
     A comma-separated list of collation servers to which all log entries
     (for this object) are forwarded. Collation servers can be specified
     by name or IP address. Specify the collation port with a colon after
     the name; for example, ``host:port`` .
 
-*``&lt;Header = "header"/&gt;``* {#LogsXMLObjectHeader}
+``<Header = "header"/>``
     Optional
     The header text you want the log files to contain. The header text
     appears at the beginning of the log file, just before the first
     record.
 
-*``&lt;RollingEnabled = "truth value"/&gt;``*
-{#LogsXMLObjectRollingEnabled}
+``<RollingEnabled = "truth value"/>``
     Optional
     Enables or disables log file rolling for the ``LogObject``. This
     setting overrides the value for the
-    *``proxy.config.log.rolling_enabled``* variable in the
-    :file:`records.config` file. Set *``truth value``* to one of the
+    :ts:cv:`proxy.config.log.rolling_enabled` variable in the
+    :file:`records.config` file. Set *truth value* to one of the
     following values:
 
     -  ``0`` to disable rolling for this particular ``LogObject``.
@@ -239,36 +241,36 @@ The following list shows the ``LogObject`` specifications.
        specify time intervals with the ``RollingIntervalSec`` and
        ``RollingOffsetHr`` fields).
     -  ``2`` to roll log files when they reach a certain size (you
-       specify the size with the\ ``RollingSizeMb`` field).
+       specify the size with the ``RollingSizeMb`` field).
     -  ``3`` to roll log files at specific intervals during the day or
        when they reach a certain size (whichever occurs first).
     -  ``4`` to roll log files at specific intervals during the day when
        log files reach a specific size (at a specified time if the file
        is of the specified size).
 
-*``&lt;RollingIntervalSec = "seconds"/&gt;``*
-{#LogsXMLObjectRollingIntervalSec}
+.. XXX this is confusing ^ really, why is it a "truth value" but then it's 5 different integer values that means varias strange things?
+
+``<RollingIntervalSec = "seconds"/>``
     Optional
     The seconds between log file rolling for the ``LogObject``; enables
     you to specify different rolling intervals for different
     ``LogObjects``.
 
     This setting overrides the value for
-    *``proxy.config.log.rolling_interval_sec``* in the
+    :ts:cv:`proxy.config.log.rolling_interval_sec` in the
     :file:`records.config` file.
 
-*``&lt;RollingOffsetHr = "hour"/&gt;``* {#LogsXMLObjectRollingOffsetHr}
+``<RollingOffsetHr = "hour"/>``
     Optional
     Specifies an hour (from 0 to 23) at which rolling is guaranteed to
     align. Rolling might start before then, but a rolled file will be
     produced only at that time. The impact of this setting is only
     noticeable if the rolling interval is larger than one hour. This
     setting overrides the configuration setting for
-    *``proxy.config.log.rolling_offset_hr``* in the :file:`records.config`
+    :ts:cv:`proxy.config.log.rolling_offset_hr` in the :file:`records.config`
     file.
 
-*``&lt;RollingSizeMb = "size_in_MB"/&gt;``*
-{#LogsXMLObjectRollingSizeMb}
+``<RollingSizeMb = "size_in_MB"/>``
     Optional
     The size at which log files are rolled.
 
@@ -304,7 +306,7 @@ The following is an example of a ``LogFilter`` that will cause only
 .. note::
 
     When specifying the field in the filter condition, you can
-    omit the\ ``%<>``. This means that the filter below is equivalent to the
+    omit the ``%<>``. This means that the filter below is equivalent to the
     example directly above: ::
 
          <LogFilter>
@@ -327,9 +329,7 @@ The following is an example of a ``LogObject`` specification that
 includes only HTTP requests served by hosts in the domain
 ``company.com`` or by the specific server ``server.somewhere.com``. Log
 entries are sent to port 4000 of the collation host ``logs.company.com``
-and to port 5000 of the collation host ``209.131.52.129.``
-
-::
+and to port 5000 of the collation host ``209.131.52.129.`` ::
 
          <LogObject>
               <Format = "minimal"/>
@@ -339,6 +339,8 @@ and to port 5000 of the collation host ``209.131.52.129.``
               <CollationHosts = "logs.company.com:4000,209.131.52.129:5000"/>
          </LogObject>
 
+.. _WELF:
+
 WELF
 ====
 
@@ -346,9 +348,7 @@ Traffic Server supports WELF (WebTrends Enhanced Log Format) so you can
 analyze Traffic Server log files with WebTrends reporting tools. A
 predefined ``<LogFormat>`` that is compatible with WELF is provided in
 the :file:`logs_xml.config` file (shown below). To create a WELF format log
-file, create a ``<LogObject>`` that uses this predefined format.
-
-::
+file, create a ``<LogObject>`` that uses this predefined format. ::
 
          <LogFormat>
              <Name = "welf"/>

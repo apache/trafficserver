@@ -1,3 +1,5 @@
+.. _traffic-server-error-messages:
+
 Error Messages
 **************
 

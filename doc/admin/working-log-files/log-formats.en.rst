@@ -1,3 +1,5 @@
+.. _working-log-files-log-formats:
+
 Log Formats
 ***********
 
@@ -42,7 +44,7 @@ Squid Format
     ``crc/pssc``
     The cache result code; how the cache responded to the request:
     ``HIT``, ``MISS``, and so on. Cache result codes are described
-    `here <#squid-netscape-result-codes>`_.
+    :ref:`here <squid-netscape-result-codes>`.
      The proxy response status code (the HTTP response status code from
     Traffic Server to client).
 
@@ -103,7 +105,8 @@ Squid log in XML
 Netscape Formats
 ================
 
-**Netscape Common**
+Netscape Common
+---------------
 
 ``1``
     ``chi``
@@ -134,7 +137,8 @@ Netscape Formats
     ``pscl``
     The length of the Traffic Server response to the client in bytes.
 
-**Netscape Extended**
+Netscape Extended
+-----------------
 
 ``8``
     ``sssc``
@@ -182,7 +186,8 @@ Netscape Formats
     connection with Traffic Server and the time that Traffic Server sent
     the last byte of the response back to the client.
 
-**Netscape Extended2**
+Netscape Extended2
+------------------
 
 ``17``
     ``phr``
@@ -205,7 +210,7 @@ Netscape Formats
     ``crc``
     The cache result code; how the Traffic Server cache responded to the
     request: HIT, MISS, and so on. Cache result codes are described
-    `here <#squid-netscape-result-codes>`_.
+    :ref:`here <squid-netscape-result-codes>`.
 
 Netscape Common
 ---------------
@@ -275,6 +280,8 @@ Netscape Extended in XML
                  %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>"/>
     </LogFormat>
 
+.. _squid-netscape-result-codes:
+
 Squid- and Netscape-format: Cache Result Codes
 ==============================================
 
@@ -291,19 +298,19 @@ Netscape log files.
     the client.
 
 ``TCP_REFRESH_HIT``
-    The object was in the cache, but it was stale. Traffic Server made
-    an \* ``if-modified-since`` request to the origin server and the
-    origin server sent a \* ``304`` not-modified response. Traffic
+    The object was in the cache, but it was stale. Traffic Server made an 
+    ``if-modified-since`` request to the origin server and the
+    origin server sent a ``304`` not-modified response. Traffic
     Server sent the cached object to the client.
 
 ``TCP_REF_FAIL_HIT``
-    The object was in the cache but was stale. Traffic Server made an \*
+    The object was in the cache but was stale. Traffic Server made an
     ``if-modified-since`` request to the origin server but the server
     did not respond. Traffic Server sent the cached object to the
     client.
 
 ``TCP_REFRESH_MISS``
-    The object was in the cache but was stale. Traffic Server made an \*
+    The object was in the cache but was stale. Traffic Server made an
     ``if-modified-since`` request to the origin server and the server
     returned a new object. Traffic Server served the new object to the
     client.
@@ -315,8 +322,8 @@ Netscape log files.
     the object from cache.
 
 ``TCP_IMS_HIT``
-    The client issued an \* ``if-modified-since`` request and the object
-    was in cache & fresher than the IMS date, **or** an \*
+    The client issued an ``if-modified-since`` request and the object
+    was in cache & fresher than the IMS date, **or** an
     ``if-modified-since`` request to the origin server revealed the
     cached object was fresh. Traffic Server served the cached object to
     the client.

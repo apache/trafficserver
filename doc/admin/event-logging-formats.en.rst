@@ -18,15 +18,17 @@ Event Logging Formats
   specific language governing permissions and limitations
   under the License.
 
+This document provides a reference for all the different logging formats
+Traffic Server supports.
+Rather than just reading about those formats, you may also want to try our
+`online event log builder </logbuilder/>`_ for an interactive way of
+building and understanding log formats.
 
--  `Custom Logging Fields <#CustomLoggingFields>`_ provides descriptions
-   of logging fields.
--  `Logging Format Cross-Reference <#LoggingFormatCrossReference>`_
-   provides cross-references between Trafic Server logging fields and
-   Netscape & Squid logging fields (including Netscape Extended and
-   Extended-2 fields).
--  You may also try our `online event log builder </logbuilder/>`_ for
-   an interactive way of building and understanding log formats.
+
+.. toctree::
+   :maxdepth: 2
+
+.. _custom-logging-fields:
 
 Custom Logging Fields
 =====================
@@ -36,12 +38,12 @@ The following list describes Traffic Server custom logging fields.
 ``{HTTP header field name}cqh``
     Logs the information in the requested field of the client request
     HTTP header. For example, ``%<{Accept-Language}cqh>`` logs the
-    ``Accept-Language:``\ field in client request headers.
+    ``Accept-Language:`` field in client request headers.
 
 ``{HTTP header field name}pqh``
     Logs the information in the requested field of the proxy request
     HTTP header. For example, ``%<{Authorization}pqh>`` logs
-    the\ ``Authorization:`` field in proxy request headers.
+    the ``Authorization:`` field in proxy request headers.
 
 ``{HTTP header field name}psh``
     Logs the information in the requested field of the proxy response
@@ -107,16 +109,13 @@ The following list describes Traffic Server custom logging fields.
     value (for example, 16:01:19).
 
 ``cqtx``
-    The full HTTP client request text, minus headers; for example,
-
-    ::
+    The full HTTP client request text, minus headers; for example, ::
 
          GET http://www.company.com HTTP/1.0
 
     In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
     (according to the rules in the
-    ```remap.config`` <../configuration-files/remap.config>`_ file),
-    _not_ the pristine/unmapped URL.
+    :file:`remap.config` file), _not_ the pristine/unmapped URL.
 
 ``cqu``
     The universal resource identifier (URI) of the request from client
@@ -124,7 +123,7 @@ The following list describes Traffic Server custom logging fields.
 
     In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
     (according to the rules in the
-    ```remap.config`` <../configuration-files/remap.config>`_ file),
+    :ref:`remap.config` file),
     _not_ the pristine/unmapped URL.
 
 ``cquc``
@@ -306,6 +305,9 @@ The following list describes Traffic Server custom logging fields.
     the connection with Traffic Server and the time at which Traffic
     Server sends the last byte of the response back to the client.
 
+
+.. _logging-format-cross-reference:
+
 Logging Format Cross-Reference
 ==============================
 
@@ -319,11 +321,20 @@ Squid Logging Formats
 The following is a list of the Squid logging fields and the
 corresponding logging field symbols.
 
-Squid \| Field Symbols ------\|-------------- ``time`` \| ``cqts``
-``elapsed`` \| ``ttms`` ``client`` \| ``chi`` ``action/code`` \|
-``crc/pssc`` ``size`` \| ``psql`` ``method`` \| ``cqhm`` ``url`` \|
-``cquc`` ``ident`` \| ``caun`` ``hierarchy/from`` \| ``phr/pqsn``
-``content`` \| ``psct``
+=====              =============
+Squid              Field Symbols
+=====              =============
+``time``           ``cqts``
+``elapsed``        ``ttms``
+``client``         ``chi``
+``action/code``    ``crc/pssc``
+``size``           ``psql``
+``method``         ``cqhm``
+``url``            ``cquc``
+``ident``          ``caun``
+``hierarchy/from`` ``phr/pqsn``
+``content``        ``psct``
+=====              =============
 
 Netscape Common Logging Formats
 -------------------------------
@@ -331,9 +342,16 @@ Netscape Common Logging Formats
 The following is a list of the Netscape Common logging fields and the
 corresponding Traffic Server logging field symbols.
 
-Netscape Common \| Field Symbols ----------------\|--------------
-``host`` \| ``chi`` ``usr`` \| ``caun`` ``[time]`` \| ``[cqtn]``
-``"req"`` \| ``"cqtx"`` ``s1`` \| ``pssc`` ``c1`` \| ``pscl``
+=============== =============
+Netscape Common Field Symbols
+=============== =============
+``host``        ``chi``
+``usr``         ``caun``
+``[time]``      ``[cqtn]``
+``"req"``       ``"cqtx"``
+``s1``          ``pssc``
+``c1``          ``pscl``
+=============== =============
 
 Netscape Extended Logging Formats
 ---------------------------------
@@ -341,12 +359,25 @@ Netscape Extended Logging Formats
 The following table lists the Netscape Extended logging fields and the
 corresponding Traffic Server logging field symbols.
 
-Netscape Extended \| Field Symbols ------------------\|--------------
-``host`` \| ``chi`` ``usr`` \| ``caun`` ``[time]`` \| ``[cqtn]``
-``"req"`` \| ``"cqtx"`` ``s1`` \| ``pssc`` ``c1`` \| ``pscl`` ``s2`` \|
-``sssc`` ``c2`` \| ``sscl`` ``b1`` \| ``cqbl`` ``b2`` \| ``pqbl`` ``h1``
-\| ``cqhl`` ``h2`` \| ``pshl`` ``h3`` \| ``pqhl`` ``h4`` \| ``sshl``
-``xt`` \| ``tts``
+================= =============
+Netscape Extended Field Symbols
+================= =============
+``host``          ``chi``
+``usr``           ``caun``
+``[time]``        ``[cqtn]``
+``"req"``         ``"cqtx"``
+``s1``            ``pssc``
+``c1``            ``pscl``
+``s2``            ``sssc``
+``c2``            ``sscl``
+``b1``            ``cqbl``
+``b2``            ``pqbl``
+``h1``            ``cqhl``
+``h2``            ``pshl``
+``h3``            ``pqhl``
+``h4``            ``sshl``
+``xt``            ``tts``
+================= =============
 
 Netscape Extended-2 Logging Formats
 -----------------------------------
@@ -354,11 +385,27 @@ Netscape Extended-2 Logging Formats
 The following is a list of the Netscape Extended-2 logging fields and
 the corresponding Traffic Server logging field symbols.
 
-Netscape Extended-2 \| Field Symbols
---------------------\|--------------- ``host`` \| ``chi`` ``usr`` \|
-``caun`` ``[time]`` \| ``[cqtn]`` ``"req"`` \| ``"cqtx"`` ``s1`` \|
-``pssc`` ``c1`` \| ``pscl`` ``s2`` \| ``sssc`` ``c2`` \| ``sscl`` ``b1``
-\| ``cqbl`` ``b2`` \| ``pqbl`` ``h1`` \| ``cqhl`` ``h2`` \| ``pshl``
-``h3`` \| ``pqhl`` ``h4`` \| ``sshl`` ``xt`` \| ``tts`` ``route`` \|
-``phr`` ``pfs`` \| ``cfsc`` ``ss`` \| ``pfsc`` ``crc`` \| ``crc``
+=================== =============
+Netscape Extended-2 Field Symbols
+=================== =============
+``host``            ``chi``
+``usr``             ``caun``
+``[time]``          ``[cqtn]``
+``"req"``           ``"cqtx"``
+``s1``              ``pssc``
+``c1``              ``pscl``
+``s2``              ``sssc``
+``c2``              ``sscl``
+``b1``              ``cqbl``
+``b2``              ``pqbl``
+``h1``              ``cqhl``
+``h2``              ``pshl``
+``h3``              ``pqhl``
+``h4``              ``sshl``
+``xt``              ``tts`` 
+``route``           ``phr``
+``pfs``             ``cfsc``
+``ss``              ``pfsc``
+``crc``             ``crc``
+=================== =============
 

@@ -53,11 +53,11 @@ keeps three types of log files:
 
    All system information messages are logged with the system-wide
    logging facility :manpage:`syslog` under the daemon facility. The
-   ``syslog.conf`` configuration file (stored in the ``/etc`` directory)
+   :manpage:`syslog.conf(5)` configuration file (stored in the ``/etc`` directory)
    specifies where these messages are logged. A typical location is
    ``/var/log/messages`` (Linux).
 
-   The ``syslog`` process works on a system-wide basis, so it serves as
+   The :manpage:`syslog(8)` process works on a system-wide basis, so it serves as
    the single repository for messages from all Traffic Server processes
    (including :program:`traffic_server`, :program:`traffic_manager`, and
    :program:`traffic_cop`).
@@ -67,14 +67,13 @@ keeps three types of log files:
    logged, the hostname of the Traffic Server that reported the error,
    and a description of the error or warning.
 
-   Refer to `Traffic Server Error
-   Messages <../traffic-server-error-messages>`_ for a list of the
+   Refer to :ref:`traffic-server-error-messages` for a list of the
    messages logged by Traffic Server.
 
 By default, Traffic Server creates both error and event log files and
 records system information in system log files. You can disable event
 logging and/or error logging by setting the configuration variable
-``_proxy.config.log.logging_enabled_`` (in the :file:`records.config` file)
+:ts:cv:`proxy.config.log.logging_enabled` (in the :file:`records.config` file)
 to one of the following values:
 
 -  ``0`` to disable both event and error logging
@@ -82,8 +81,8 @@ to one of the following values:
 -  ``2`` to enable transaction logging only
 -  ``3`` to enable both transaction and error logging
 
-Understanding Event Log Files # {#UnderstandingEventLogFiles}
-=============================================================
+Understanding Event Log Files
+=============================
 
 Event log files record information about every request that Traffic
 Server processes. By analyzing the log files, you can determine how many
@@ -104,7 +103,7 @@ features and discuss how to:
 
    You can choose a central location for storing log files, set how much
    disk space to use for log files, and set how and when to roll log
-   files. Refer to `Managing Event Log Files <#ManagingEventLogFiles>`_.
+   files. Refer to `Managing Event Log Files`_.
 
 -  **Choose different event log file formats**
 
@@ -112,41 +111,36 @@ features and discuss how to:
    traffic analysis, such as Squid or Netscape. Alternatively, you can
    use the Traffic Server custom format, which is XML-based and enables
    you to institute more control over the type of information recorded
-   in log files. Refer to `Choosing Event Log File
-   Formats <#ChoosingEventLogFileFormats>`_.
+   in log files. Refer to `Choosing Event Log File Formats`_.
 
 -  **Roll event log files automatically**
 
    Configure Traffic Server to roll event log files at specific
    intervals during the day or when they reach a certain size; this
    enables you to identify and manipulate log files that are no longer
-   active. Refer to `Rolling Event Log Files <#RollingEventLogFiles>`_.
+   active. Refer to `Rolling Event Log Files`_.
 
 -  **Separate log files according to protocols and hosts**
 
    Configure Traffic Server to create separate log files for different
    protocols. You can also configure Traffic Server to generate separate
-   log files for requests served by different hosts. Refer to `Splitting
-   Event Log Files <#SplittingEventLogFiles>`_.
+   log files for requests served by different hosts. Refer to `Splitting Event Log Files`_.
 
 -  **Collate log files from different Traffic Server nodes**
 
    Designate one or more nodes on the network to serve as log collation
    servers. These servers, which might be standalone or part of Traffic
    Server, enable you to keep all logged information in well-defined
-   locations. Refer to `Collating Event Log
-   Files <#CollatingEventLogFiles>`_.
+   locations. Refer to `Collating Event Log Files`_.
 
 -  **View statistics about the logging system**
 
    Traffic Server provides statistics about the logging system; you can
-   access these statistics via Traffic Line. Refer to `Viewing Logging
-   Statistics <#ViewingLoggingStatistics>`_.
+   access these statistics via Traffic Line. Refer to `Viewing Logging Statistics`_.
 
 -  **Interpret log file entries for the log file formats**
 
-   Refer to `Example Event Log File
-   Entries <#ExampleEventLogFileEntries>`_.
+   Refer to `Example Event Log File Entries`_.
 
 Managing Event Log Files
 ------------------------
@@ -160,8 +154,7 @@ Choosing the Logging Directory
 
 By default, Traffic Server writes all event log files in the ``logs``
 directory located in the directory where you installed Traffic Server.
-To use a different directory, refer to `Setting Log File Management
-Options <#SettingLogFileManagementOptions>`_.
+To use a different directory, refer to `Setting Log File Management Options`_.
 
 Controlling Logging Space
 -------------------------
@@ -171,12 +164,11 @@ logging directory can consume. This allows the system to operate
 smoothly within a specified space window for a long period of time.
 After you establish a space limit, Traffic Server continues to monitor
 the space in the logging directory. When the free space dwindles to the
-headroom limit (see `Setting Log File Management
-Options <#SettingLogFileManagementOptions>`_), it enters a low space
-state and takes the following actions:
+headroom limit (see `Setting Log File Management Options`_), it enters
+a low space state and takes the following actions:
 
--  If the autodelete option (discussed in `Rolling Event Log
-   Files <#RollingEventLogFiles>`_) is *enabled*, then Traffic Server
+-  If the autodelete option (discussed in `Rolling Event Log Files`_)
+   is *enabled*, then Traffic Server
    identifies previously-rolled log files (i.e., log files with the
    ``.old`` extension). It starts deleting files one by one, beginning
    with the oldest file, until it emerges from the low state. Traffic
@@ -191,24 +183,26 @@ state and takes the following actions:
    available, either explicitly increase the logging space limit or
    remove files from the logging directory manually.
 
-You can run a ``cron`` script in conjunction with Traffic Server to
+You can run a :manpage:`cron(8)` script in conjunction with Traffic Server to
 automatically remove old log files from the logging directory before
 Traffic Server enters the low space state. Relocate the old log files to
 a temporary partition, where you can run a variety of log analysis
 scripts. Following analysis, either compress the logs and move to an
 archive location, or simply delete them.
 
+
+.. XXX would be nice if we provided a logrotate for this kind of junk, although it could turn out hard, given the patterns..
+
 Setting Log File Management Options
 -----------------------------------
 
 To set log management options, follow the steps below:
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file, edit the following variables
+1. In the :file:`records.config` file, edit the following variables
 
-   -  `*``proxy.config.log.logfile_dir``* <../configuration-files/records.config#proxy.config.log.logfile_dir>`_
-   -  `*``proxy.config.log.max_space_mb_for_logs``* <../configuration-files/records.config#proxy.config.log.max_space_mb_for_logs>`_
-   -  `*``proxy.config.log.max_space_mb_headroom``* <../configuration-files/records.config#proxy.config.log.max_space_mb_headroom>`_
+   -  :ts:cv:`proxy.config.log.logfile_dir`
+   -  :ts:cv:`proxy.config.log.max_space_mb_for_logs`
+   -  :ts:cv:`proxy.config.log.max_space_mb_headroom`
 
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
@@ -218,14 +212,11 @@ Choosing Event Log File Formats
 
 Traffic Server supports the following log file formats:
 
--  Standard formats, such as Squid or Netscape; refer to `Using Standard
-   Formats <#UsingStandardFormats>`_.
--  The Traffic Server custom format; refer to `Using the Custom
-   Format <#UsingCustomFormat>`_.
+-  Standard formats, such as Squid or Netscape; refer to `Using Standard Formats`_.
+-  The Traffic Server custom format; refer to `Using the Custom Format`_.
 
 In addition to the standard and custom log file format, you can choose
-whether to save log files in binary or ASCII; refer to `Choosing Binary
-or ASCII <#ChoosingBinaryASCII>`_.
+whether to save log files in binary or ASCII; refer to `Choosing Binary or ASCII`_.
 
 Event log files consume substantial disk space. Creating log entries in
 multiple formats at the same time can consume disk resources very
@@ -238,43 +229,43 @@ The standard log formats include Squid, Netscape Common, Netscape
 extended, and Netscape Extended-2. The standard log file formats can be
 analyzed with a wide variety of off-the-shelf log-analysis packages. You
 should use one of the standard event log formats unless you need
-information that these formats do not provide. Refer to `Using the
-Custom Format <#UsingCustomFormat>`_.
+information that these formats do not provide. Refer to `Using the Custom Format`_.
 
 Set standard log file format options by following the steps below:
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file, edit the following variables
+1. In the :file:`records.config` file, edit the following variables
 2. Edit the following variables to use the Squid format:
 
-   -  `*``proxy.config.log.squid_log_enabled``* <../configuration-files/records.config#proxy.config.log.squid_log_enabled>`_
-   -  `*``proxy.config.log.squid_log_is_ascii``* <../configuration-files/records.config#proxy.config.log.squid_log_is_ascii>`_
-   -  `*``proxy.config.log.squid_log_name``* <../configuration-files/records.config#proxy.config.log.squid_log_name>`_
-   -  `*``proxy.config.log.squid_log_header``* <../configuration-files/records.config#proxy.config.log.squid_log_header>`_
+   -  :ts:cv:`proxy.config.log.squid_log_enabled`
+   -  :ts:cv:`proxy.config.log.squid_log_is_ascii`
+   -  :ts:cv:`proxy.config.log.squid_log_name`
+   -  :ts:cv:`proxy.config.log.squid_log_header`
 
 3. To use the Netscape Common format, edit the following variables:
 
-   -  `*``proxy.config.log.common_log_enabled``* <../configuration-files/records.config#proxy.config.log.common_log_enabled>`_
-   -  `*``proxy.config.log.common_log_is_ascii``* <../configuration-files/records.config#proxy.config.log.common_log_is_ascii>`_
-   -  `*``proxy.config.log.common_log_name``* <../configuration-files/records.config#proxy.config.log.common_log_name>`_
-   -  `*``proxy.config.log.common_log_header``* <../configuration-files/records.config#proxy.config.log.common_log_header>`_
+   -  :ts:cv:`proxy.config.log.common_log_enabled`
+   -  :ts:cv:`proxy.config.log.common_log_is_ascii`
+   -  :ts:cv:`proxy.config.log.common_log_name`
+   -  :ts:cv:`proxy.config.log.common_log_header`
 
 4. To use the Netscape Extended format, edit the following variables:
 
-   -  `*``proxy.config.log.extended_log_enabled``* <../configuration-files/records.config#proxy.config.log.extended_log_enabled>`_
-   -  `*``proxy.config.log.extended_log_is_ascii``* <../configuration-files/records.config#proxy.config.log.extended_log_is_ascii>`_
-   -  `*``proxy.config.log.extended_log_name``* <../configuration-files/records.config#proxy.config.log.extended_log_name>`_
-   -  `*``proxy.config.log.extended_log_header``* <../configuration-files/records.config#proxy.config.log.extended_log_header>`_
+   -  :ts:cv:`proxy.config.log.extended_log_enabled`
+   -  :ts:cv:`proxy.config.log.extended_log_is_ascii`
+   -  :ts:cv:`proxy.config.log.extended_log_name`
+   -  :ts:cv:`proxy.config.log.extended_log_header`
 
 5. To use the Netscape Extended-2 format, edit the following variables:
 
-   -  `*``proxy.config.log.extended2_log_enabled``* <../configuration-files/records.config#proxy.config.log.extended2_log_enabled>`_
-   -  `*``proxy.config.log.extended2_log_is_ascii``* <../configuration-files/records.config#proxy.config.log.extended2_log_is_ascii>`_
-   -  `*``proxy.config.log.extended2_log_name``* <../configuration-files/records.config#proxy.config.log.extended2_log_name>`_
-   -  `*``proxy.config.log.extended2_log_header``* <../configuration-files/records.config#proxy.config.log.extended2_log_header>`_
+   -  :ts:cv:`proxy.config.log.extended2_log_enabled`
+   -  :ts:cv:`proxy.config.log.extended2_log_is_ascii`
+   -  :ts:cv:`proxy.config.log.extended2_log_name`
+   -  :ts:cv:`proxy.config.log.extended2_log_header`
 
 6. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
+
+.. XXX:: setting what values?
 
 Using the Custom Format
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -287,18 +278,18 @@ decide what information to record for each Traffic Server transaction
 and create filters that specify which transactions to log.
 
 The heart of the XML-based custom logging feature is the XML-based
-logging configuration file (``logs_xml.config``) that enables you to
+logging configuration file (:file:`logs_xml.config`) that enables you to
 create very modular descriptions of logging objects. The
-``logs_xml.config`` file uses three types of objects to create custom
+:file:`logs_xml.config` file uses three types of objects to create custom
 log files, as detailed below. To generate a custom log format, you must
 specify at least one ``LogObject`` definition (one log file is produced
 for each ``LogObject`` definition).
 
--  The **``LogFormat``** object defines the content of the log file
+-  The ``LogFormat`` object defines the content of the log file
    using printf-style format strings.
--  The **``LogFilter``** object defines a filter so that you include or
+-  The ``LogFilter`` object defines a filter so that you include or
    exclude certain information from the log file.
--  The **``LogObject``** object specifies all the information needed to
+-  The ``LogObject`` object specifies all the information needed to
    produce a log file.
 
    -  The name of the log file. (required)
@@ -335,10 +326,10 @@ for each ``LogObject`` definition).
 In order to accomplish this, we
 
 1. edit the following variables in the
-   `:file:`records.config` <../configuration-files/records.config>`_ file:
-2. `*``proxy.config.log.custom_logs_enabled``* <../configuration-files/records.config#proxy.config.log.custom_logs_enabled>`_
+   :file:`records.config` file:
+2. :ts:cv:`proxy.config.log.custom_logs_enabled`
 3. In the
-   ```logs_xml.config`` <../configuration-files/logs_xml.config>`_ file
+   :file:`logs_xml.config` file
 4. Add
    ```LogFormat`` <../configuration-files/logs_xml.config#LogFormat>`_,
    ```LogFilter`` <../configuration-files/logs_xml.config#LogFilters>`_,
@@ -362,7 +353,7 @@ generated.
 To generate a summary log file, create a
 ```LogFormat`` <../configuration-files/logs_xml.config#LogFormat>`_
 object in the XML-based logging configuration file
-(```logs_xml.config`` <../configuration-files/logs_xml.config>`_) using
+(:file:`logs_xml.config`) using
 the SQL-like aggregate operators below. You can apply each of these
 operators to specific fields, over a specified interval.
 
@@ -375,7 +366,7 @@ operators to specific fields, over a specified interval.
 To create a summary log file format, we
 
 1. Define the format of the log file in
-   ```logs_xml.config`` <../configuration-files/logs_xml.config>`_ as
+   :file:`logs_xml.config` as
    follows:
 
    ::
@@ -387,38 +378,33 @@ To create a summary log file format, we
          <Interval = "n"/>  
        </LogFormat>  
 
-   where *``operator``* is one of the five aggregate operators
-   (``COUNT``, ``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``), *``field``*
-   is the logging field you want to aggregate, and *``n``* is the
+   where ``operator`` is one of the five aggregate operators
+   (``COUNT``, ``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``), ``field``
+   is the logging field you want to aggregate, and ``n`` is the
    interval (in seconds) between summary log entries. You can specify
-   more than one *``operator``* in the format line. For more
-   information, refer to
-   ```logs_xml.config`` <../configuration-files/logs_xml.config>`_.
+   more than one ``operator`` in the format line. For more
+   information, refer to :file`logs_xml.config`.
 
 2. Run the command :option:`traffic_line -x` to apply configuration changes .
 
 The following example format generates one entry every 10 seconds. Each
 entry contains the timestamp of the last entry of the interval, a count
 of the number of entries seen within that 10-second interval, and the
-sum of all bytes sent to the client:
+sum of all bytes sent to the client: ::
 
-::
-
-    :::xml
     <LogFormat>
       <Name = "summary"/>
       <Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>"/>
       <Interval = "10"/>
     </LogFormat>
 
-**IMPORTANT:** You cannot create a format specification that contains
-both aggregate operators and regular fields. For example, the following
-specification would be **invalid**:
+.. important::
 
-::
+    You cannot create a format specification that contains
+    both aggregate operators and regular fields. For example, the following
+    specification would be **invalid**: ::
 
-    :::xml
-    <Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)> : %<cqu>"/>
+        <Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)> : %<cqu>"/>
 
 Choosing Binary or ASCII
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -460,8 +446,7 @@ the number of requests is roughly the same for both days, then you can
 calculate a rough metric that compares the two formats.
 
 For standard log formats, select Binary or ASCII (refer to `Setting
-Standard Log File Format
-Options <#SettingStandardLogFileFormatOptions>`_). For the custom log
+Standard Log File Format Options`). For the custom log
 format, specify ASCII or Binary mode in the
 ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
 (refer to `Using the Custom Format <#UsingCustomFormat>`_). In addition
@@ -472,8 +457,7 @@ this option is that Traffic Server does not have to write to disk, which
 frees disk space and bandwidth for other tasks. In addition, writing to
 a pipe does not stop when logging space is exhausted because the pipe
 does not use disk space. Refer to
-```logs_xml.config`` <../configuration-files/logs_xml.config>`_ for more
-information about the ``ASCII_PIPE`` option.
+:file:`logs_xml.config` for more information about the ``ASCII_PIPE`` option.
 
 
 Rolling Event Log Files
@@ -518,9 +502,7 @@ information:
 -  The suffix ``.old``, which makes it easy for automated scripts to
    find rolled log files.
 
-Timestamps have the following format:
-
-::
+Timestamps have the following format: ::
 
     %Y%M%D.%Hh%Mm%Ss-%Y%M%D.%Hh%Mm%Ss
 
@@ -544,9 +526,7 @@ The following table describes the format:
 ``%S``
     The second in two-digit format, from 00-59. For example: 36.
 
-The following is an example of a rolled log filename:
-
-::
+The following is an example of a rolled log filename: ::
 
      squid.log.mymachine.20110912.12h00m00s-20000913.12h00m00s.old
 
@@ -557,17 +537,13 @@ than the time of rolling. When the new log file is rolled, its first
 timestamp will be a lower bound for the timestamp of the first entry.
 
 For example, suppose logs are rolled every three hours, and the first
-rolled log file is:
-
-::
+rolled log file is: ::
 
     squid.log.mymachine.20110912.12h00m00s-19980912.03h00m00s.old
 
 If the lower bound for the first entry in the log buffer at 3:00:00 is
 2:59:47, then the next log file will have the following timestamp when
-rolled:
-
-::
+rolled: ::
 
     squid.log.mymachine.20110912.02h59m47s-19980912.06h00m00s.old
 
@@ -598,13 +574,12 @@ Setting Log File Rolling Options
 To set log file rolling options and/or configure Traffic Server to roll
 log files when they reach a certain size, follow the steps below:
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file, edit the following variables
+1. In the :file:`records.config` file, edit the following variables
 
-   -  `*``proxy.config.log.rolling_enabled``* <../configuration-files/records.config#proxy.config.log.rolling_enabled>`_
-   -  `*``proxy.config.log.rolling_size_mb``* <../configuration-files/records.config#proxy.config.log.rolling_size_mb>`_
-   -  `*``proxy.config.log.rolling_offset_hr``* <../configuration-files/records.config#proxy.config.log.rolling_offset_hr>`_
-   -  `*``proxy.config.log.rolling_interval_sec``* <../configuration-files/records.config#proxy.config.log.rolling_interval_sec>`_
+   -  :ts:cv:`proxy.config.log.rolling_enabled`
+   -  :ts:cv:`proxy.config.log.rolling_size_mb`
+   -  :ts:cv:`proxy.config.log.rolling_offset_hr`
+   -  :ts:cv:`proxy.config.log.rolling_interval_sec`
 
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
@@ -612,12 +587,11 @@ log files when they reach a certain size, follow the steps below:
 You can fine-tune log file rolling settings for a custom log file in the
 ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
 specification in the
-```logs_xml.config`` <../configuration-files/logs_xml.config>`_ file.
+:file:`logs_xml.config` file.
 The custom log file uses the rolling settings in its
 ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_,
 which override the default settings you specify in Traffic Manager or
-the `:file:`records.config` <../configuration-files/records.config>`_ file
-described above.
+the :file:`records.config` file described above.
 
 Splitting Event Log Files
 -------------------------
@@ -632,7 +606,7 @@ ICP Log Splitting
 
 When ICP log splitting is enabled, Traffic Server records ICP
 transactions in a separate log file with a name that contains
-**``icp``**. For example: if you enable the Squid format, then all ICP
+``icp``. For example: if you enable the Squid format, then all ICP
 transactions are recorded in the ``squid-icp.log`` file. When you
 disable ICP log splitting, Traffic Server records all ICP transactions
 in the same log file as HTTP transactions.
@@ -677,20 +651,18 @@ from the previous example, Traffic Server generates the log files below:
 ``squid.log``
     All other entries
 
-Traffic Server also enables you to create XML-based `Custom Log
-Formats <#UsingCustomFormat>`_ that offer even greater control over log
-file generation.
+Traffic Server also enables you to create XML-based :ref:`Custom Log Formats <using-custom-log-formats>`
+that offer even greater control over log file generation.
 
 Setting Log Splitting Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To set log splitting options, follow the steps below:
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file, edit the following variables
+1. In the :file:`records.config` file, edit the following variables
 
-   -  `*``proxy.config.log.separate_icp_logs``* <../configuration-files/records.config#proxy.config.log.separate_icp_logs>`_
-   -  `*``proxy.config.log.separate_host_logs``* <../configuration-files/records.config#proxy.config.log.separate_host_logs>`_
+   -  :ts:cv:`proxy.config.log.separate_icp_logs`
+   -  :ts:cv:`proxy.config.log.separate_host_logs`
 
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
@@ -698,29 +670,27 @@ To set log splitting options, follow the steps below:
 Editing the log_hosts.config File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The default ``log_hosts.config`` file is located in the Traffic Server
+The default :file:`log_hosts.config` file is located in the Traffic Server
 ``config`` directory. To record HTTP transactions for different origin
 servers in separate log files, you must specify the hostname of each
-origin server on a separate line in the ``log_hosts.config`` file. For
+origin server on a separate line in the :file:`log_hosts.config` file. For
 example, if you specify the keyword sports, then Traffic Server records
 all HTTP transactions from ``sports.yahoo.com`` and
 ``www.foxsports.com`` in a log file called ``squid-sports.log`` (if the
 Squid format is enabled).
 
-**Note:** If Traffic Server is clustered and you enable log file
-collation, then you should use the same ``log_hosts.config`` file on
-every Traffic Server node in the cluster.
+.. note::
 
-To edit the ``log_hosts.config`` file follow the steps below:
+    If Traffic Server is clustered and you enable log file
+    collation, then you should use the same :file:`log_hosts.config` file on
+    every Traffic Server node in the cluster.
 
-1. In the
-   ```log_hosts.config`` <../configuration-files/records.config>`_ file,
+To edit the :file:`log_hosts.config` file follow the steps below:
+
+1. In the :file:`log_hosts.config` file, 
    enter the hostname of each origin server on a separate line in the
-   file, e.g.:
+   file, e.g.: ::
 
-   ::
-
-       :::text
        webserver1
        webserver2
        webserver3
@@ -760,12 +730,14 @@ If log clients cannot contact their log collation server, then they
 write their log buffers to their local disks, into *orphan* log files.
 Orphan log files require manual collation.
 
-**Note:** Log collation can have an impact on network performance.
-Because all nodes are forwarding their log data buffers to the single
-collation server, a bottleneck can occur. In addition, collated log
-files contain timestamp information for each entry, but entries in the
-files do not appear in strict chronological order. You may want to sort
-collated log files before doing analysis.
+.. note::
+
+    Log collation can have an impact on network performance.
+    Because all nodes are forwarding their log data buffers to the single
+    collation server, a bottleneck can occur. In addition, collated log
+    files contain timestamp information for each entry, but entries in the
+    files do not appear in strict chronological order. You may want to sort
+    collated log files before doing analysis.
 
 To configure Traffic Server to collate event log files, you must perform
 the following tasks:
@@ -778,7 +750,7 @@ the following tasks:
 -  Add an attribute to the
    ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
    specification in the
-   ```logs_xml.config`` <../configuration-files/logs_xml.config>`_ file
+   :file:`logs_xml.config` file
    if you are using custom log file formats; refer to `Collating Custom
    Event Log Files <#CollatingCustomEventLogFiles>`_.
 
@@ -788,20 +760,20 @@ Configuring Traffic Server to Be a Collation Server
 To configure a Traffic Server node to be a collation server, simply edit
 a configuration file via the steps below.
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file, edit the following variables
+1. In the :file:`records.config`  file, edit the following variables
 
-   -  `*``proxy.config.log.collation_mode``* <../configuration-files/records.config#proxy.config.log.collation_mode>`_
-      (``1`` for server mode)
-   -  `*``proxy.config.log.collation_port``* <../configuration-files/records.config#proxy.config.log.collation_port>`_
-   -  `*``proxy.config.log.collation_secret``* <../configuration-files/records.config#proxy.config.log.collation_secret>`_
+   -  :ts:cv:`proxy.config.log.collation_mode` (``1`` for server mode)
+   -  :ts:cv:`proxy.config.log.collation_port`
+   -  :ts:cv:`proxy.config.log.collation_secret`
 
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
-**Note:** If you modify the ``collation_port`` or ``secret`` after
-connections between the collation server and collation clients have been
-established, then you must restart Traffic Server.
+.. note::
+
+    If you modify the ``collation_port`` or ``secret`` after
+    connections between the collation server and collation clients have been
+    established, then you must restart Traffic Server.
 
 Using a Standalone Collator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -822,7 +794,7 @@ To install and configure a standalone collator:
    directory to the machine serving as the standalone collator.
 4. Create a directory called ``config`` in the directory that contains
    the :program:`traffic_sac` binary.
-5. Create a directory called *``internal``* in the ``config`` directory
+5. Create a directory called ``internal`` in the ``config`` directory
    you created in Step 4 (above). This directory is used internally by
    the standalone collator to store lock files.
 6. Copy the :file:`records.config` file from a Traffic Server node
@@ -832,10 +804,10 @@ To install and configure a standalone collator:
    the port you specified when configuring Traffic Server nodes to be
    collation clients. The collation port and secret must be the same for
    all collation clients and servers.
-7. In the `:file:`records.config` <../configuration-files/records.config>`_
+7. In the :file:`records.config`
    file, edit the following variable
 
-   -  `*``proxy.config.log.logfile_dir``* <../configuration-files/records.config#proxy.config.log.logfile_dir>`_
+   -  :ts:cv:`proxy.config.log.logfile_dir`
 
 8. Enter the following command::
 
@@ -849,20 +821,17 @@ steps below. If you modify the ``collation_port`` or ``secret`` after
 connections between the collation clients and the collation server have
 been established, then you must restart Traffic Server.
 
-1. In the `:file:`records.config` <../configuration-files/records.config>`_
-   file, edit the following variables:
+1. In the :file:`records.config` file, edit the following variables:
 
-   -  `*``proxy.config.log.collation_mode``* <../configuration-files/records.config#proxy.config.log.collation_mode>`_:
-      ``2`` to configure this node as log collation client and send
+   -  :ts:cv:`proxy.config.log.collation_mode`: ``2`` to configure this node as log collation client and send
       standard formatted log entries to the collation server.
-       For XML-based formatted log entries, see
-      ```logs_xml.config`` <../configuration-files/logs_xml.config>`_
+       For XML-based formatted log entries, see :file:`logs_xml.config`
       file; refer to `Using the Custom Format <#UsingCustomFormat>`_.
-   -  `*``proxy.config.log.collation_host``* <../configuration-files/records.config#proxy.config.log.collation_host>`_
-   -  `*``proxy.config.log.collation_port``* <../configuration-files/records.config#proxy.config.log.collation_port>`_
-   -  `*``proxy.config.log.collation_secret``* <../configuration-files/records.config#proxy.config.log.collation_secret>`_
-   -  `*``proxy.config.log.collation_host_tagged``* <../configuration-files/records.config#proxy.config.log.collation_host_tagged>`_
-   -  `*``proxy.config.log.max_space_for_orphan_logs``* <../configuration-files/records.config#proxy.config.log.max_space_for_orphan_logs>`_
+   -  :ts:cv:`proxy.config.log.collation_host`
+   -  :ts:cv:`proxy.config.log.collation_port`
+   -  :ts:cv:`proxy.config.log.collation_secret`
+   -  :ts:cv:`proxy.config.log.collation_host_tagged`
+   -  :ts:cv:`proxy.config.log.max_space_for_orphan_logs`
 
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
@@ -871,13 +840,12 @@ Collating Custom Event Log Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you use custom event log files, then you must edit the
-``logs_xml.config`` file (in addition to configuring a collation server
+:file:`logs_xml.config` file (in addition to configuring a collation server
 and collation clients).
 
 To collate custom event log files
 
-1. On each collation client, edit the
-   ```logs_xml.config`` <../configuration-files/logs_xml.config>`_
+1. On each collation client, edit the `:file:`logs_xml.config` 
 2. Add the
    ```CollationHosts`` <../configuration-files/logs_xml.config#LogsXMLObjectCollationHosts>`_
    attribute to the
@@ -892,9 +860,9 @@ To collate custom event log files
          <CollationHosts="ipaddress:port"/>
        </LogObject>
 
-   where *``ipaddress``* is the hostname or IP address of the collation
+   where ``ipaddress`` is the hostname or IP address of the collation
    server to which all log entries (for this object) are forwarded, and
-   *``port``* is the port number for communication between the collation
+   ``port`` is the port number for communication between the collation
    server and collation clients.
 
 3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
