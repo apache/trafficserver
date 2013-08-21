@@ -916,7 +916,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       my_state->filename = tempnam(path, NULL);
       TSDebug(DEBUG_TAG, "temp filename: %s", my_state->filename);
 
-      my_state->fd = open(my_state->filename, O_RDWR | O_NONBLOCK | O_TRUNC | O_CREAT);
+      my_state->fd = open(my_state->filename, O_RDWR | O_NONBLOCK | O_TRUNC | O_CREAT, 0600);
       if (my_state->fd < 0) {
         LOG_ERROR("open");
         uconfig->use_disk_buffer = 0;
