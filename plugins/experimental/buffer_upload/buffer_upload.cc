@@ -40,6 +40,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 /* #define DEBUG 1 */
 #define DEBUG_TAG "buffer_upload-dbg"
@@ -60,14 +61,6 @@
 
 #define VALID_PTR(X) (X != NULL)
 #define NOT_VALID_PTR(X) (X == NULL)
-
-#define STRING_RELEASE_MASK_1 1
-#define STRING_RELEASE_MASK_2 2
-#define STRING_RELEASE_MASK_3 4
-#define STRING_RELEASE_MASK_4 8
-#define STRING_RELEASE_MASK_5 16
-#define STRING_RELEASE_MASK_6 32
-
 
 struct upload_config_t
 {
@@ -680,7 +673,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
 }
 
 static int
-attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
+attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
   TSMutex mutex;
@@ -893,7 +886,7 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
 
     if (!uconfig->use_disk_buffer && my_state->req_size > uconfig->mem_buffer_size) {
       TSDebug(DEBUG_TAG,
-              "The request size %llu is larger than memory buffer size %llu, bypass upload proxy feature for this request.",
+              "The request size %" PRId64 " is larger than memory buffer size %" PRId64 ", bypass upload proxy feature for this request.",
               my_state->req_size, uconfig->mem_buffer_size);
 
       pvc_cleanup(new_cont, my_state);
