@@ -2,6 +2,10 @@
 Changes with Apache Traffic Server 3.5.0
 
 
+  *) TS-2141: Inconsistent euid cause bad mgmtapi/eventapi sockets
+
+  *) TS-2137: Use eventfd instread of pthread signal/wait in ATS
+
   *) [TS-287] Fix transaction_active_timeout_in does not trigger on the first request of a Keep-Alive connection.
 
   *) [TS-2143] Remove alarm email address support (and config).
