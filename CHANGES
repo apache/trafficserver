@@ -1,7 +1,5 @@
                                                          -*- coding: utf-8 -*-
-
-Changes with Apache Traffic Server 3.4.0
-
+Changes with Apache Traffic Server 4.0.0
 
   *) [TS-2143] Remove alarm email address support (and config).
 
