@@ -1595,6 +1595,10 @@ Reverse Proxy
 URL Remap Rules
 ===============
 
+.. ts:cv:: CONFIG proxy.config.url_remap.filename STRING remap.config
+
+   Sets the name of the :file:`remap.config` file.
+
 .. ts:cv:: CONFIG proxy.config.url_remap.default_to_server_pac INT 0
    :reloadable:
 
