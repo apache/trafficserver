@@ -142,7 +142,6 @@ extern int cache_clustering_enabled;
 char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
-char proxy_name[MAXDNAME + 1] = "unknown";
 static char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
@@ -1460,9 +1459,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // Set up store
   if (!command_flag && initialize_store())
     ProcessFatal("unable to initialize storage, (Re)Configuration required\n");
-
-  // Read proxy name
-  TS_ReadConfigString(proxy_name, "proxy.config.proxy_name", 255);
 
   // Alter the frequecies at which the update threads will trigger
 #define SET_INTERVAL(scope, name, var) do { \
