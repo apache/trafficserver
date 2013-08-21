@@ -14,18 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS = \
- lua \
- buffer_upload \
- esi \
- rfc5861 \
- tcp_info \
- custom_redirect \
- metalink \
- spdy \
- channel_stats \
- authproxy \
- geoip_acl \
- healthchecks
-endif
+include $(top_srcdir)/build/plugins.mk
+
+pkglib_LTLIBRARIES = buffer_upload.la
+buffer_upload_la_SOURCES = buffer_upload.cc
+buffer_upload_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
