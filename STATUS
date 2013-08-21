@@ -10,7 +10,7 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    3.4.0           : Released on August XYZ, 2013
+    4.0.0           : Released on August 30, 2013
 
     3.2.5           : Released on July 17, 2013
     3.2.4           : Released on January 25, 2013
@@ -39,9 +39,9 @@ Contributors looking for a mission:
 
 RELEASE SHOWSTOPPERS:
 
-A list of all bugs open for the next development release can be found at
+A list of all bugs open for the next release can be found at
 
-  http://s.apache.org/ts-next-dev
+  http://s.apache.org/ats-next
 
 
 RELEASE PROCESS
