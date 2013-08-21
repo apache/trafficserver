@@ -26,24 +26,23 @@ Before you start
 ================
 
 Before you get started with Traffic Server you may have to decide which
-version you want to use. Traffic Server uses the same "semantic
-versioning" to denote "stability" as Apache
-`apr <http://apr.apache.org/versioning.html>`_ and
-`httpd <http://httpd.apache.org/dev/release.html>`_ do:
+version you want to use. Traffic Server follows the `Semantic Versioning
+<http://semver.org>`_ guidelines, in summary 
 
 A version is made of a version-triplet: *``MAJOR.MINOR.PATCH``*
 
-The most important thing that you need to know is that an *even
-``MINOR``* marks a production stable release (such as 3.0.3 and 3.2.5),
-while an *odd ``MINOR``* number marks a targeted at developers.
+As of v4.0.0, there are no longer any development (or unstable) releases.
+All releases are considered stable and ready for production use, releases
+within a major version are always upgrade compatible. More details are
+available on the `Wiki page
+<https://cwiki.apache.org/confluence/display/TS/New+Release+Processes>`_.
 
-Sometimes we speak of trunk, master, or when talking about actual
-releases, we will say "-unstable", or "-dev". All of these are
-interchangable: trunk or master or sometimes TIP or HEAD, refer to the
-latest code in a Version Control System. While "-dev" (or the
-unfortunately named "-unstable") qualifies that a certain release
-"3.3.1-dev" is has not had seen enough testing to be seen as production
-ready.
+Sometimes we speak of trunk, master or HEAD, all of which are used
+interchangeably: trunk or master or sometimes TIP or HEAD, refer to the
+latest code in a Git Version Control System. Master is always kept releasable,
+and compatible with the current major release version. Incompatible changes
+are sometimes committed on a next-major release branch, for example we have
+the ``5.0.x`` branch where changes incompatible with 4.x are managed.
 
 If your distribution does not come with a prepackaged Traffic Server,
 please go to `downloads </downloads>`_ to choose the version that you
