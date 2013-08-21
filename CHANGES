@@ -2,6 +2,12 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2114] buffer_upload plugin defines true and false
+    Author: Kit Chan <chanshukit@gmail.com>
+
+  *) [TS-2116] buffer_upload plugin is in the source tree but does not build
+    Author: Kit Chan <chanshukit@gmail.com>
+
   *) [TS-2094] eliminate xcrun warnings at configure time
 
   *) [TS-2141] Inconsistent euid cause bad mgmtapi/eventapi sockets.
