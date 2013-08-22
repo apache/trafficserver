@@ -362,7 +362,8 @@ http			HTTP Configuration
     Keep-Alive Timeout Outbound --- 10 s    (proxy.config.http.keep_alive_no_activity_timeout_out)
     Inactivity Timeout Inbound ---- 120 s   (proxy.config.http.transaction_no_activity_timeout_in)
     Inactivity Timeout Outbound --- 120 s   (proxy.config.http.transaction_no_activity_timeout_out)
-    Activity Timeout Inbound ------ 7200 s  (proxy.config.http.transaction_active_timeout_in)
+    Header Activity Timeout Inbound ------ 7200 s  (proxy.config.http.transaction_header_active_timeout_in)
+    Request Activity Timeout Inbound ------ 7200 s  (proxy.config.http.transaction_request_active_timeout_in)
     Activity Timeout Outbound ----- 7200 s  (proxy.config.http.transaction_active_timeout_out)
     Maximum Number of Alternates -- 3       (proxy.config.cache.limits.http.max_alts)
     Remove the following common headers
@@ -965,7 +966,8 @@ http			HTTP Configuration
           keep-alive-timeout-out   (proxy.config.http.keep_alive_no_activity_timeout_out)
           inactive-timeout-in      (proxy.config.http.transaction_no_activity_timeout_in)
           inactive-timeout-out     (proxy.config.http.transaction_no_activity_timeout_out)
-          active-timeout-in        (proxy.config.http.transaction_active_timeout_in)
+          header-active-timeout-in        (proxy.config.http.transaction_header_active_timeout_in)
+          request-active-timeout-in        (proxy.config.http.transaction_request_active_timeout_in)
           active-timeout-out       (proxy.config.http.transaction_active_timeout_out)
 
     ts# config:http keep-alive-timeout-in 10
