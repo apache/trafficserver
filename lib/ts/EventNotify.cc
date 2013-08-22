@@ -30,14 +30,14 @@
 #include "EventNotify.h"
 #include "ink_hrtime.h"
 
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
 #include <sys/epoll.h>
 #endif
 
-EventNotify::EventNotify(const char *name): m_name(name)
+EventNotify::EventNotify()
 {
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   int ret;
   struct epoll_event ev;
 
@@ -59,14 +59,14 @@ EventNotify::EventNotify(const char *name): m_name(name)
   ink_release_assert(ret != -1);
 #else
   ink_cond_init(&m_cond);
-  ink_mutex_init(&m_mutex, m_name);
+  ink_mutex_init(&m_mutex, NULL);
 #endif
 }
 
 void
 EventNotify::signal(void)
 {
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   ssize_t nr;
   uint64_t value = 1;
   nr = write(m_event_fd, &value, sizeof(uint64_t));
@@ -79,7 +79,7 @@ EventNotify::signal(void)
 void
 EventNotify::wait(void)
 {
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   ssize_t nr;
   uint64_t value = 0;
   nr = read(m_event_fd, &value, sizeof(uint64_t));
@@ -90,19 +90,12 @@ EventNotify::wait(void)
 }
 
 int
-EventNotify::timedwait(ink_timestruc *abstime)
+EventNotify::timedwait(int timeout) // milliseconds
 {
-#ifdef TS_HAS_EVENTFD
-  int timeout;
+#ifdef HAVE_EVENTFD
   ssize_t nr, nr_fd = 0;
   uint64_t value = 0;
-  struct timeval curtime;
   struct epoll_event ev;
-
-  // Convert absolute time to relative time
-  gettimeofday(&curtime, NULL);
-  timeout = (abstime->tv_sec - curtime.tv_sec) * 1000
-          + (abstime->tv_nsec / 1000  - curtime.tv_usec) / 1000;
 
   //
   // When timeout < 0, epoll_wait() will wait indefinitely, but
@@ -126,14 +119,20 @@ EventNotify::timedwait(ink_timestruc *abstime)
 
   return 0;
 #else
-  return ink_cond_timedwait(&m_cond, &m_mutex, abstime);
+  ink_timestruc abstime;
+  ink_hrtime curtime;
+
+  curtime = ink_get_hrtime_internal() + timeout * HRTIME_MSECOND;
+  abstime = ink_based_hrtime_to_timespec(curtime);
+
+  return ink_cond_timedwait(&m_cond, &m_mutex, &abstime);
 #endif
 }
 
 void
 EventNotify::lock(void)
 {
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   // do nothing
 #else
   ink_mutex_acquire(&m_mutex);
@@ -143,7 +142,7 @@ EventNotify::lock(void)
 bool
 EventNotify::trylock(void)
 {
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   return true;
 #else
   return ink_mutex_try_acquire(&m_mutex);
@@ -153,7 +152,7 @@ EventNotify::trylock(void)
 void
 EventNotify::unlock(void)
 {
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   // do nothing
 #else
   ink_mutex_release(&m_mutex);
@@ -162,7 +161,7 @@ EventNotify::unlock(void)
 
 EventNotify::~EventNotify()
 {
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   close(m_event_fd);
   close(m_epoll_fd);
 #else
