@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2147] Set server_share_sessions to 1 for 'internal' transactions in rfc5861 plugin.
+
   *) [TS-2107] split proxy.config.http.transaction_active_timeout_in to proxy.config.http.transaction_header_timeout_in
      and proxy.config.http.transaction_request_timeout_in.
 
