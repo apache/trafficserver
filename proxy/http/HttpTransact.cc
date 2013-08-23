@@ -1408,7 +1408,7 @@ HttpTransact::PPDNSLookup(State* s)
     // lookup succeeded, open connection to p.p.
     ats_ip_copy(&s->parent_info.addr, s->host_db_info.ip());
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
-    s->parent_info.dns_round_robin = s->dns_info.round_robin;
+    s->parent_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
     DebugTxn("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%" PRId64"] successful IP: %s",
@@ -1452,19 +1452,19 @@ void
 HttpTransact::ReDNSRoundRobin(State* s)
 {
   ink_assert(s->current.server == &s->server_info);
-  ink_assert(s->current.server->connect_failure);
+  ink_assert(s->current.server->had_connect_fail());
 
   if (s->dns_info.lookup_success) {
     // We using a new server now so clear the connection
     //  failure mark
-    s->current.server->connect_failure = 0;
+    s->current.server->clear_connect_fail();
 
     // Our ReDNS of the server succeeeded so update the necessary
     //  information and try again
     ats_ip_copy(&s->server_info.addr, s->host_db_info.ip());
     ats_ip_copy(&s->request_data.dest_ip, &s->server_info.addr);
     get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
-    s->server_info.dns_round_robin = s->dns_info.round_robin;
+    s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
     DebugTxn("http_trans", "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %s",
@@ -1612,7 +1612,7 @@ HttpTransact::OSDNSLookup(State* s)
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
     // In all cases we now commit to client or HostDB for our source.
-    if (s->dns_info.round_robin) {
+    if (s->host_db_info.round_robin) {
       HostDBInfo* cta = s->host_db_info.rr()->select_next(&s->current.server->addr.sa);
       if (cta) {
         // found another addr, lock in host DB.
@@ -1635,7 +1635,7 @@ HttpTransact::OSDNSLookup(State* s)
   ats_ip_copy(&s->server_info.addr, s->host_db_info.ip());
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.addr);
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
-  s->server_info.dns_round_robin = s->dns_info.round_robin;
+  s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
   char addrbuf[INET6_ADDRSTRLEN];
   DebugTxn("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
@@ -3356,7 +3356,7 @@ HttpTransact::handle_response_from_parent(State* s)
   switch (s->current.state) {
   case CONNECTION_ALIVE:
     DebugTxn("http_trans", "[hrfp] connection alive");
-    s->current.server->connect_failure = 0;
+    s->current.server->connect_result = 0;
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_SUCCESS);
     if (s->parent_result.retry) {
       s->parent_params->recordRetrySuccess(&s->parent_result);
@@ -3371,7 +3371,7 @@ HttpTransact::handle_response_from_parent(State* s)
 
       ink_assert(s->hdr_info.server_request.valid());
 
-      s->current.server->connect_failure = 1;
+      s->current.server->connect_result = ENOTCONN;
 
       char addrbuf[INET6_ADDRSTRLEN];
       DebugTxn("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
@@ -3481,14 +3481,14 @@ HttpTransact::handle_response_from_server(State* s)
   case CONNECTION_ALIVE:
     DebugTxn("http_trans", "[hrfs] connection alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_SUCCESS);
-    s->current.server->connect_failure = 0;
+    s->current.server->clear_connect_fail();
     handle_forward_server_connection_open(s);
     break;
   case CONGEST_CONTROL_CONGESTED_ON_F:
   case CONGEST_CONTROL_CONGESTED_ON_M:
     DebugTxn("http_trans", "[handle_response_from_server] Error. congestion control -- congested.");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->current.server->connect_failure = 1;
+    s->current.server->set_connect_fail(EUSERS); // too many users
     handle_server_connection_not_open(s);
     break;
   case OPEN_RAW_ERROR:
@@ -3504,7 +3504,10 @@ HttpTransact::handle_response_from_server(State* s)
   case CONNECTION_CLOSED:
     /* fall through */
   case BAD_INCOMING_RESPONSE:
-    s->current.server->connect_failure = 1;
+    // Set to generic I/O error if not already set specifically.
+    if (!s->current.server->had_connect_fail())
+      s->current.server->set_connect_fail(EIO);
+
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server;
     } else {
@@ -3549,7 +3552,7 @@ HttpTransact::handle_response_from_server(State* s)
   case ACTIVE_TIMEOUT:
     DebugTxn("http_trans", "[hrfs] connection not alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->current.server->connect_failure = 1;
+    s->current.server->set_connect_fail(ETIMEDOUT);
     handle_server_connection_not_open(s);
     break;
   default:
@@ -3582,7 +3585,7 @@ HttpTransact::delete_server_rr_entry(State* s, int max_retries)
   DebugTxn("http_trans", "[%d] failed to connect to %s", s->current.attempts,
         ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
   DebugTxn("http_trans", "[delete_server_rr_entry] marking rr entry " "down and finding next one");
-  ink_assert(s->current.server->connect_failure);
+  ink_assert(s->current.server->had_connect_fail());
   ink_assert(s->current.request_to == ORIGIN_SERVER);
   ink_assert(s->current.server == &s->server_info);
   update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
@@ -3609,7 +3612,7 @@ HttpTransact::retry_server_connection_not_open(State* s, ServerState_t conn_stat
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.state != ACTIVE_TIMEOUT);
   ink_assert(s->current.attempts <= max_retries);
-  ink_assert(s->current.server->connect_failure != 0);
+  ink_assert(s->current.server->had_connect_fail());
   char addrbuf[INET6_ADDRSTRLEN];
 
   char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
@@ -3660,7 +3663,7 @@ HttpTransact::handle_server_connection_not_open(State* s)
   DebugTxn("http_trans", "[handle_server_connection_not_open] (hscno)");
   DebugTxn("http_seq", "[HttpTransact::handle_server_connection_not_open] ");
   ink_assert(s->current.state != CONNECTION_ALIVE);
-  ink_assert(s->current.server->connect_failure != 0);
+  ink_assert(s->current.server->had_connect_fail());
 
   SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
   HTTP_INCREMENT_TRANS_STAT(http_broken_server_connections_stat);

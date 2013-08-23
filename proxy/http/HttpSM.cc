@@ -1712,7 +1712,34 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
-    call_transact_and_set_next_state(HttpTransact::HandleResponse);
+    // save the errno from the connect fail for future use (passed as negative value, flip back)
+    t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : EREMOTEIO);
+
+    /* If we get this error, then we simply can't bind to the 4-tuple to make the connection.  There's no hope of
+       retries succeeding in the near future. The best option is to just shut down the connection without further
+       comment. The only known cause for this is outbound transparency combined with use client target address / source
+       port, as noted in TS-1424. If the keep alives desync the current connection can be attempting to rebind the 4
+       tuple simultaneously with the shut down of an existing connection. Dropping the client side will cause it to pick
+       a new source port and recover from this issue.
+    */
+    if (EADDRNOTAVAIL == t_state.current.server->connect_result) {
+      if (is_debug_tag_set("http_tproxy")) {
+        ip_port_text_buffer ip_c, ip_s;
+        Debug("http_tproxy", "Force close of client connect (%s->%s) due to EADDRNOTAVAIL [%" PRId64 "]"
+              , ats_ip_nptop(&t_state.client_info.addr.sa, ip_c, sizeof ip_c)
+              , ats_ip_nptop(&t_state.server_info.addr.sa, ip_s, sizeof ip_s)
+              , sm_id
+          );
+      }
+      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE; // part of the problem, clear it.
+      if (ua_entry && ua_entry->vc) {
+        vc_table.cleanup_entry(ua_entry);
+        ua_entry = NULL;
+        ua_session = NULL;
+      }
+    } else {
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
+    }
     return 0;
   case CONGESTION_EVENT_CONGESTED_ON_F:
     t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_F;
@@ -2048,7 +2075,6 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       // current time when calling select_best_http().
       HostDBRoundRobin *rr = r->rr();
       ret = rr->select_best_http(&t_state.client_info.addr.sa, now, (int) t_state.txn_conf->down_server_timeout);
-      t_state.dns_info.round_robin = true;
 
       // set the srv target`s last_failure
       if (t_state.dns_info.srv_lookup_success) {
@@ -2068,7 +2094,6 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       }
     } else {
       ret = r;
-      t_state.dns_info.round_robin = false;
     }
     if (ret) {
       t_state.host_db_info = *ret;
@@ -2079,9 +2104,9 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
     DebugSM("http", "[%" PRId64 "] DNS lookup failed for '%s'", sm_id, t_state.dns_info.lookup_name);
 
     t_state.dns_info.lookup_success = false;
-    t_state.dns_info.round_robin = false;
     t_state.host_db_info.app.allotment.application1 = 0;
     t_state.host_db_info.app.allotment.application2 = 0;
+    ink_assert(!t_state.host_db_info.round_robin);
   }
 
   milestones.dns_lookup_end = ink_get_hrtime();
@@ -2923,10 +2948,12 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     p->read_vio = NULL;
     /* TS-1424: if we're outbound transparent and using the client
        source port for the outbound connection we must effectively
-       propagate server closes back to the client.
+       propagate server closes back to the client. Part of that is
+       disabling KeepAlive if the server closes.
     */
-    if (ua_session && ua_session->f_outbound_transparent && t_state.http_config_param->use_client_source_port)
+    if (ua_session && ua_session->f_outbound_transparent && t_state.http_config_param->use_client_source_port) {
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    }
   } else {
     server_session->attach_hostname(t_state.current.server->name);
     server_session->server_trans_stat--;
@@ -3991,7 +4018,7 @@ HttpSM::do_hostdb_update_if_necessary()
     t_state.updated_server_version = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
   }
   // Check to see if we need to report or clear a connection failure
-  if (t_state.current.server->connect_failure) {
+  if (t_state.current.server->had_connect_fail()) {
     issue_update |= 1;
     mark_host_failure(&t_state.host_db_info, t_state.client_request_time);
   } else {
@@ -4887,7 +4914,7 @@ HttpSM::mark_server_down_on_client_abort()
         wait = 0;
       }
       if (ink_hrtime_to_sec(wait) > t_state.txn_conf->client_abort_threshold) {
-        t_state.current.server->connect_failure = true;
+        t_state.current.server->set_connect_fail(ETIMEDOUT);
         do_hostdb_update_if_necessary();
       }
     }
