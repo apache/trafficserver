@@ -41,8 +41,6 @@ Changes with Apache Traffic Server 4.1.0
 
 Changes with Apache Traffic Server 4.0.0
 
-  *) [TS-2143] Remove alarm email address support (and config).
-
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
 
