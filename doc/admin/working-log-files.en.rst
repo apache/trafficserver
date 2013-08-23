@@ -5,20 +5,20 @@ Working with Log Files
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 
 Traffic Server generates log files that contain information about every
@@ -299,7 +299,7 @@ for each ``LogObject`` definition).
       ``LogFormat`` object).
    -  The file mode: ``ASCII``, ``Binary``, or ``ASCII_PIPE``. The
       default is ``ASCII``.
-       The ``ASCII_PIPE`` mode writes log entries to a UNIX-named pipe
+      The ``ASCII_PIPE`` mode writes log entries to a UNIX-named pipe
       (a buffer in memory); other processes can then read the data using
       standard I/O functions. The advantage of this option is that
       Traffic Server does not have to write to disk, which frees disk
@@ -372,11 +372,11 @@ To create a summary log file format, we
    ::
 
        :::xml
-       <LogFormat>  
-         <Name = "summary"/>  
-         <Format = "%<operator(field)> : %<operator(field)>"/>  
-         <Interval = "n"/>  
-       </LogFormat>  
+       <LogFormat>
+         <Name = "summary"/>
+         <Format = "%<operator(field)> : %<operator(field)>"/>
+         <Interval = "n"/>
+       </LogFormat>
 
    where ``operator`` is one of the five aggregate operators
    (``COUNT``, ``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``), ``field``
@@ -687,7 +687,7 @@ Squid format is enabled).
 
 To edit the :file:`log_hosts.config` file follow the steps below:
 
-1. In the :file:`log_hosts.config` file, 
+1. In the :file:`log_hosts.config` file,
    enter the hostname of each origin server on a separate line in the
    file, e.g.: ::
 
@@ -762,7 +762,7 @@ a configuration file via the steps below.
 
 1. In the :file:`records.config`  file, edit the following variables
 
-   -  :ts:cv:`proxy.config.log.collation_mode` (``1`` for server mode)
+   -  :ts:cv:`proxy.local.log.collation_mode` (``1`` for server mode)
    -  :ts:cv:`proxy.config.log.collation_port`
    -  :ts:cv:`proxy.config.log.collation_secret`
 
@@ -800,7 +800,7 @@ To install and configure a standalone collator:
 6. Copy the :file:`records.config` file from a Traffic Server node
    configured to be a log collation client to the ``config`` directory
    you created in Step 4 on the standalone collator.
-    The :file:`records.config` file contains the log collation secret and
+   The :file:`records.config` file contains the log collation secret and
    the port you specified when configuring Traffic Server nodes to be
    collation clients. The collation port and secret must be the same for
    all collation clients and servers.
@@ -811,7 +811,7 @@ To install and configure a standalone collator:
 
 8. Enter the following command::
 
-       traffic_sac -c config
+      traffic_sac -c config
 
 Configuring Traffic Server to Be a Collation Client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -823,15 +823,15 @@ been established, then you must restart Traffic Server.
 
 1. In the :file:`records.config` file, edit the following variables:
 
-   -  :ts:cv:`proxy.config.log.collation_mode`: ``2`` to configure this node as log collation client and send
+   -  :ts:cv:`proxy.local.log.collation_mode`: ``2`` to configure this node as log collation client and send
       standard formatted log entries to the collation server.
-       For XML-based formatted log entries, see :file:`logs_xml.config`
+      For XML-based formatted log entries, see :file:`logs_xml.config`
       file; refer to `Using the Custom Format <#UsingCustomFormat>`_.
    -  :ts:cv:`proxy.config.log.collation_host`
    -  :ts:cv:`proxy.config.log.collation_port`
    -  :ts:cv:`proxy.config.log.collation_secret`
    -  :ts:cv:`proxy.config.log.collation_host_tagged`
-   -  :ts:cv:`proxy.config.log.max_space_for_orphan_logs`
+   -  :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
 
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
@@ -845,7 +845,7 @@ and collation clients).
 
 To collate custom event log files
 
-1. On each collation client, edit the `:file:`logs_xml.config` 
+1. On each collation client, edit the `:file:`logs_xml.config`
 2. Add the
    ```CollationHosts`` <../configuration-files/logs_xml.config#LogsXMLObjectCollationHosts>`_
    attribute to the

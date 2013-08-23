@@ -269,6 +269,10 @@ Value Effect
    The number of threads for cluster communication. On heavy cluster, the number should be adjusted. It is recommend that take the thread
    CPU usage as a reference when adjusting.
 
+.. ts:cv:: CONFIG proxy.config.clustger.ethernet_interface STRING
+
+   Set the interface to use for cluster communications.
+
 Local Manager
 =============
 
@@ -1300,6 +1304,7 @@ Logging Configuration
    The maximum amount of time before data in the buffer is flushed to disk.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 2000
+   :metric: megabytes
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB).
@@ -1312,6 +1317,7 @@ Logging Configuration
    :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` for maximum allowed log space.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
+   :metric: megabytes
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB) if this node is acting as a collation client.
@@ -1324,9 +1330,10 @@ Logging Configuration
    when you enable full remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_headroom INT 10
+   :metric: megabytes
    :reloadable:
 
-   The tolerance for the log space limit (in bytes). If the variable `proxy.config.log.auto_delete_rolled_files`_ is set to ``1``
+   The tolerance for the log space limit (in megabytes). If the variable :ts:cv:`proxy.config.log.auto_delete_rolled_files` is set to ``1``
    (enabled), then autodeletion of log files is triggered when the amount of free space available in the logging directory is less than
    the value specified here.
 
@@ -1424,6 +1431,10 @@ Logging Configuration
 
    The `Netscape extended log <../working-log-files/log-formats#NetscapeFormats>`_ file header text.
 
+.. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
+
+   Set whether the extend log is written as ASCII (text) or binary.
+
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_enabled INT 0
    :reloadable:
 
@@ -1482,7 +1493,7 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 
 .. note:: Although Traffic Server supports traditional custom logging, you should use the more versatile XML-based custom formats.
 
-.. ts:cv:: CONFIG proxy.confg.log.collation_host STRING NULL
+.. ts:cv:: CONFIG proxy.config.log.collation_host STRING NULL
 
    The hostname of the log collation server.
 
@@ -1552,8 +1563,11 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
    :reloadable:
+   :metric: milliseconds
 
-   The number of milliseconds before a slow connection's debugging stats are dumped. Specify ``1`` to enable or ``0`` to disable.
+   If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
+   completion will cause its timing stats to be written to the :ts:cv:`debugging log file
+   <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :ref:`transaction milestones <txn-milestone-table>`.
 
 Diagnostic Logging Configuration
 ================================
