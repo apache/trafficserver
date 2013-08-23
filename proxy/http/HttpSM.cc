@@ -1508,7 +1508,7 @@ HttpSM::state_api_callout(int event, void *data)
   callout_state = HTTP_API_NO_CALLOUT;
   switch (api_next) {
   case API_RETURN_CONTINUE:
-    if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_REPONSE_HDR)
+    if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_RESPONSE_HDR)
       do_redirect();
     handle_api_return();
     break;
@@ -1562,10 +1562,10 @@ HttpSM::handle_api_return()
   case HttpTransact::HTTP_API_READ_REQUEST_HDR:
   case HttpTransact::HTTP_API_OS_DNS:
   case HttpTransact::HTTP_API_READ_CACHE_HDR:
-  case HttpTransact::HTTP_API_READ_REPONSE_HDR:
+  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
     // this part is added for automatic redirect
-    if (t_state.api_next_action == HttpTransact::HTTP_API_READ_REPONSE_HDR && t_state.api_release_server_session) {
+    if (t_state.api_next_action == HttpTransact::HTTP_API_READ_RESPONSE_HDR && t_state.api_release_server_session) {
       t_state.api_release_server_session = false;
       release_server_session();
     } else if (t_state.api_next_action == HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE &&
@@ -1583,7 +1583,7 @@ HttpSM::handle_api_return()
   case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
     setup_server_send_request();
     return;
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
     // Set back the inactivity timeout
     if (ua_session) {
       ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
@@ -1880,7 +1880,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     t_state.current.state = HttpTransact::CONNECTION_ALIVE;
     t_state.transact_return_point = HttpTransact::HandleResponse;
-    t_state.api_next_action = HttpTransact::HTTP_API_READ_REPONSE_HDR;
+    t_state.api_next_action = HttpTransact::HTTP_API_READ_RESPONSE_HDR;
 
     // YTS Team, yamsat Plugin
     // Incrementing redirection_tries according to config parameter
@@ -4732,10 +4732,10 @@ HttpSM::do_api_callout_internal()
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
     cur_hook_id = TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
     break;
-  case HttpTransact::HTTP_API_READ_REPONSE_HDR:
+  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_READ_RESPONSE_HDR_HOOK;
     break;
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     milestones.ua_begin_write = ink_get_hrtime();
     break;
@@ -5809,7 +5809,7 @@ HttpSM::setup_error_transfer()
     // Since we need to send the error message, call the API
     //   function
     ink_assert(t_state.internal_msg_buffer_size > 0);
-    t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+    t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
     do_api_callout();
   } else {
     DebugSM("http", "[setup_error_transfer] Now closing connection ...");
@@ -6795,8 +6795,8 @@ HttpSM::set_next_state()
   case HttpTransact::HTTP_API_OS_DNS:
   case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
   case HttpTransact::HTTP_API_READ_CACHE_HDR:
-  case HttpTransact::HTTP_API_READ_REPONSE_HDR:
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
     {
       t_state.api_next_action = t_state.next_action;
@@ -6977,7 +6977,7 @@ HttpSM::set_next_state()
         tunnel.tunnel_run(p);
       } else {
         ink_assert((t_state.hdr_info.client_response.valid()? true : false) == true);
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
 
         if (hooks_set) {
           do_api_callout_internal();
@@ -7013,7 +7013,7 @@ HttpSM::set_next_state()
         t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
 
         perform_cache_write_action();
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
         if (hooks_set) {
           do_api_callout_internal();
         } else {
@@ -7036,7 +7036,7 @@ HttpSM::set_next_state()
 
   case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
     {
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }
@@ -7049,10 +7049,10 @@ HttpSM::set_next_state()
       // If we're in state SEND_API_RESPONSE_HDR, it means functions
       // registered to hook SEND_RESPONSE_HDR have already been called. So we do not
       // need to call do_api_callout. Otherwise TS loops infinitely in this state !
-      if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_REPONSE_HDR) {
+      if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_RESPONSE_HDR) {
         handle_api_return();
       } else {
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
         do_api_callout();
       }
       break;
@@ -7066,7 +7066,7 @@ HttpSM::set_next_state()
       do_cache_delete_all_alts(NULL);
 
       release_server_session();
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }
@@ -7077,7 +7077,7 @@ HttpSM::set_next_state()
       cache_sm.close_read();
 
       release_server_session();
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
 
@@ -7167,7 +7167,7 @@ HttpSM::set_next_state()
 
   case HttpTransact::TRANSFORM_READ:
     {
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }

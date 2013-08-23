@@ -1335,7 +1335,7 @@ HttpTransact::HandleApiErrorJump(State* s)
     s->next_hop_scheme = URL_WKSIDX_HTTP;
   }
   // The client response may not be empty in the
-  // case the txn was reenabled in error by a plugin from hook SEND_REPONSE_HDR.
+  // case the txn was reenabled in error by a plugin from hook SEND_RESPONSE_HDR.
   // build_response doesn't clean the header. So clean it up before.
   // Do fields_clear() instead of clear() to prevent memory leak
   // and set the source to internal so chunking is handled correctly
