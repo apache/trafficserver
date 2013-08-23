@@ -43,6 +43,7 @@ CONFIG proxy.config.accept_threads INT 1
 # Local Manager
 #
 ##############################################################################
+CONFIG proxy.config.admin.admin_user STRING admin
 CONFIG proxy.config.admin.number_config_bak INT 3
 CONFIG proxy.config.admin.user_id STRING @pkgsysuser@
 ##############################################################################
