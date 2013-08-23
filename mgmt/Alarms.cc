@@ -211,6 +211,11 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   case MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER:
   case MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER:
     return;
+  case MGMT_ALARM_WDA_BILLING_CONNECTION_DIED:
+  case MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA:
+  case MGMT_ALARM_WDA_XF_ENGINE_DOWN:
+    priority = 2;
+    break;
   default:
     priority = 2;
     break;
@@ -220,12 +225,19 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   if (desc && (priority == 1 || priority == 2) && !ip) {
 
     if (strcmp(prev_alarm_text, desc) == 0) {   /* a repeated alarm */
-      time_t time_delta = time(0) - last_sent;
-      if (time_delta < 900) {
-        mgmt_log("[Alarms::signalAlarm] Skipping Alarm: '%s'\n", desc);
-        return;
-      } else {
-        last_sent = time(0);
+
+      /* INKqa11884: repeated wireless alarms always signalled */
+      if (a != MGMT_ALARM_WDA_BILLING_CONNECTION_DIED &&
+          a != MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA &&
+          a != MGMT_ALARM_WDA_XF_ENGINE_DOWN) {
+
+        time_t time_delta = time(0) - last_sent;
+        if (time_delta < 900) {
+          mgmt_log("[Alarms::signalAlarm] Skipping Alarm: '%s'\n", desc);
+          return;
+        } else {
+          last_sent = time(0);
+        }
       }
     } else {
       ink_strlcpy(prev_alarm_text, desc, sizeof(prev_alarm_text));
@@ -244,8 +256,10 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
    * don't want every node in the cluster reporting the same alarm.
    */
   if (priority == 1 && alarm_bin && alarm_bin_path && !ip) {
-    execAlarmBin(desc, a);
+    execAlarmBin(desc);
   }
+
+
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
@@ -257,8 +271,18 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     }
     snprintf(buf, sizeof(buf), "%d", a);
     if (ink_hash_table_lookup(local_alarms, buf, &hash_value) != 0) {
-      ink_mutex_release(&mutex);
-      return;
+      // INKqa11884: if wireless alarm already active, just
+      // update desc with new timestamp and skip to actions part
+      if (a == MGMT_ALARM_WDA_BILLING_CONNECTION_DIED ||
+          a == MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA ||
+          a == MGMT_ALARM_WDA_XF_ENGINE_DOWN) {
+        Debug("alarm", "[signalAlarm] wireless alarm already active");
+        atmp = (Alarm *) hash_value;
+        goto ALARM_REPEAT;
+      } else {
+        ink_mutex_release(&mutex);
+        return;
+      }
     }
   } else {
     snprintf(buf, sizeof(buf), "%d-%s", a, ip);
@@ -267,8 +291,18 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
       //   still active
       atmp = (Alarm *) hash_value;
       atmp->seen = true;
-      ink_mutex_release(&mutex);
-      return;
+
+      // INKqa11884: if wireless alarm already active, just
+      // update desc with new timstamp and skip to actions part
+      if (a == MGMT_ALARM_WDA_BILLING_CONNECTION_DIED ||
+          a == MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA ||
+          a == MGMT_ALARM_WDA_XF_ENGINE_DOWN) {
+        Debug("alarm", "[Alarms::signalAlarm] wireless alarm already active");
+        goto ALARM_REPEAT;
+      } else {
+        ink_mutex_release(&mutex);
+        return;
+      }
     }
   }
 
@@ -289,6 +323,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     ink_hash_table_insert(remote_alarms, (InkHashTableKey) (buf), (atmp));
   }
 
+ALARM_REPEAT:
   // Swap desc with time-stamped description.  Kinda hackish
   // Temporary until we get a new
   // alarm system in place.  TS 5.0.0, 02/08/2001
@@ -364,7 +399,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   }
   /* Priority 2 alarms get signalled if they are the first unsolved occurence. */
   if (priority == 2 && alarm_bin && alarm_bin_path && !ip) {
-    execAlarmBin(desc, a);
+    execAlarmBin(desc);
   }
 
   return;
@@ -504,17 +539,29 @@ Alarms::checkSystemNAlert()
 }                               /* End Alarms::checkSystenNAlert */
 
 void
-Alarms::execAlarmBin(const char *desc, alarm_t a)
+Alarms::execAlarmBin(const char *desc)
 {
   char cmd_line[1024];
-  char alarm[80];
+  char *alarm_email_from_name = 0;
+  char *alarm_email_from_addr = 0;
+  char *alarm_email_to_addr = 0;
   bool found;
+
+  // get email info
+  alarm_email_from_name = REC_readString("proxy.config.product_name", &found);
+  if (!found)
+    alarm_email_from_name = 0;
+  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", &found);
+  if (!found)
+    alarm_email_from_addr = 0;
+  alarm_email_to_addr = REC_readString("proxy.config.alarm_email", &found);
+  if (!found)
+    alarm_email_to_addr = 0;
 
   int status;
   pid_t pid;
 
   ink_filepath_make(cmd_line, sizeof(cmd_line), alarm_bin_path, alarm_bin);
-  snprintf(alarm, sizeof(alarm), "%d", a);
 
 #ifdef POSIX_THREAD
   if ((pid = fork()) < 0)
@@ -549,10 +596,21 @@ Alarms::execAlarmBin(const char *desc, alarm_t a)
       waitpid(pid, &status, 0); // to reap the thread
     }
   } else {
-    int res = execl(cmd_line, alarm_bin, desc, alarm, (char*)NULL);
-
+    int res;
+    if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
+      res = execl(cmd_line, alarm_bin, desc, alarm_email_from_name, alarm_email_from_addr, alarm_email_to_addr, (char*)NULL);
+    } else {
+      res = execl(cmd_line, alarm_bin, desc, (char*)NULL);
+    }
     _exit(res);
   }
+
+
+
+  // free memory
+  ats_free(alarm_email_from_name);
+  ats_free(alarm_email_from_addr);
+  ats_free(alarm_email_to_addr);
 }
 
 //
@@ -563,8 +621,22 @@ Alarms::execAlarmBin(const char *desc, alarm_t a)
 const char *
 Alarms::getAlarmText(alarm_t id)
 {
-  if (id < alarmTextNum)
-    return alarmText[id];
-  else
-    return alarmText[0];      // "Unknown Alarm";
+  const char *wda_conn_died = "The connection to the billing system is broken. Unable to retrieve user profile.";
+  const char *wda_corr_data =
+    "Could not read user profile or URL list from the billing system. The data received doesn't have the expected format.";
+  const char *wda_xf_down = "The XF engine heartbeat could not be properly detected. It appears dead.";
+
+  switch (id) {
+  case MGMT_ALARM_WDA_BILLING_CONNECTION_DIED:
+    return wda_conn_died;
+  case MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA:
+    return wda_corr_data;
+  case MGMT_ALARM_WDA_XF_ENGINE_DOWN:
+    return wda_xf_down;
+  default:
+    if (id < alarmTextNum)
+      return alarmText[id];
+    else
+      return alarmText[0];      // "Unknown Alarm";
+  }
 }

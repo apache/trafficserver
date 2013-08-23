@@ -314,6 +314,21 @@ extern "C"
 #define TS_NET_EVENT_DATAGRAM_OPEN	      TS_EVENT_INTERNAL_211
 #define TS_NET_EVENT_DATAGRAM_ERROR          TS_EVENT_INTERNAL_212
 
+  typedef enum
+    {
+      TS_SIGNAL_WDA_BILLING_CONNECTION_DIED = 100,
+      TS_SIGNAL_WDA_BILLING_CORRUPTED_DATA = 101,
+      TS_SIGNAL_WDA_XF_ENGINE_DOWN = 102,
+      TS_SIGNAL_WDA_RADIUS_CORRUPTED_PACKETS = 103
+    } TSAlarmType;
+
+  /* ===== Alarm ===== */
+  /****************************************************************************
+   *  ??
+   *  contact: OXYGEN
+   ****************************************************************************/
+  tsapi void TSSignalWarning(TSAlarmType code, char *msg);
+
   /*****************************************************************************
    * 			Cluster RPC API support 			     *
    *****************************************************************************/

@@ -93,6 +93,14 @@
 #define MGMT_SIGNAL_HTTP_CONGESTED_SERVER   20  /* Congestion control -- congested server */
 #define MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER  21  /* Congestion control -- alleviated server */
 
+// Wireless (WDA) plugin signal
+// Warning: 1. Don't change the # mapping 'cuase 3rd party software depends on them.
+//          2. Ensure 1:1 maps with alarms in Alarm.h
+#define INK_MGMT_SIGNAL_WDA_BILLING_CONNECTION_DIED  100
+#define INK_MGMT_SIGNAL_WDA_BILLING_CORRUPTED_DATA   101
+#define INK_MGMT_SIGNAL_WDA_XF_ENGINE_DOWN           102
+#define INK_MGMT_SIGNAL_WDA_RADIUS_CORRUPTED_PACKETS 103
+
 #define INK_MGMT_SIGNAL_ACC_ALARMS_START  200
 #define INK_MGMT_SIGNAL_ACC_ALARMS_END    299
 
