@@ -4160,7 +4160,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
     // precondition: s->cache_info.action is one of the following
     // CACHE_DO_UPDATE, CACHE_DO_WRITE, or CACHE_DO_DELETE
     if (s->api_server_response_no_store) {
-      s->api_server_response_no_store = false;
       s->cache_info.action = CACHE_DO_NO_ACTION;
     } else if (s->api_server_response_ignore &&
                server_response_code == HTTP_STATUS_OK &&
@@ -6101,7 +6100,6 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   }
   // the plugin may decide we don't want to cache the response
   if (s->api_server_response_no_store) {
-    s->api_server_response_no_store = false;
     return (false);
   }
   // default cacheability
