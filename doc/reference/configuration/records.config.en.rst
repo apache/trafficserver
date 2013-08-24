@@ -1567,7 +1567,7 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 
    If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :ref:`transaction milestones <txn-milestone-table>`.
+   <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
 
 Diagnostic Logging Configuration
 ================================

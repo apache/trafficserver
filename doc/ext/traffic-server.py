@@ -209,7 +209,8 @@ def setup(app):
                         objname='Configuration file',
                         indextemplate='pair: %s; Configuration files')
 
-    rst.roles.register_generic_role('arg', nodes.emphasis);
+    rst.roles.register_generic_role('arg', nodes.emphasis)
+    rst.roles.register_generic_role('const', nodes.literal)
 
     app.add_domain(TrafficServerDomain)
 
