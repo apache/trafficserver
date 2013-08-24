@@ -6588,16 +6588,15 @@ HttpSM::update_stats()
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.http_config_param->slow_log_threshold != 0 &&
       ink_hrtime_from_msec(t_state.http_config_param->slow_log_threshold) < total_time) {
-    // get the url to log
-    URL *url = t_state.hdr_info.client_request.url_get();
+    URL* url = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
-    if (url != NULL && url->valid()) {
-      url->string_get_buf(url_string, sizeof(url_string));
-    }
+
+    t_state.hdr_info.client_request.url_print(url_string, sizeof url_string, 0, 0);
 
     // unique id
     char unique_id_string[128] = "";
-    if (url != NULL && url->valid()) {
+    // [amc] why do we check the URL to get a MIME field?
+    if (0 != url && url->valid()) {
       int length = 0;
       const char *field = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
       if (field != NULL) {
