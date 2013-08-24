@@ -2,13 +2,19 @@
 Changes with Apache Traffic Server 4.1.0
 
 
-  *) [TS-2148] handle_cache_operation_on_forward_server_response ignores value of api_server_response_no_store
-    Author: Corey Cossentino <corey@cossentino.com>
+  *) [TS-2155] Make a new RAT exclude file that uses the regular expressions
+   now supported. Also cleanup some of minor licensing discrepancies.
 
-  *) [TS-2147] Set server_share_sessions to 1 for 'internal' transactions in rfc5861 plugin.
+  *) [TS-2148] handle_cache_operation_on_forward_server_response ignores value
+    of api_server_response_no_store.
+    Author: Corey Cossentino <corey@cossentino.com> 
 
-  *) [TS-2107] split proxy.config.http.transaction_active_timeout_in to proxy.config.http.transaction_header_timeout_in
-     and proxy.config.http.transaction_request_timeout_in.
+  *) [TS-2147] Set server_share_sessions to 1 for 'internal' transactions in
+   rfc5861 plugin.
+
+  *) [TS-2107] split proxy.config.http.transaction_active_timeout_in to
+     proxy.config.http.transaction_header_timeout_in and
+     proxy.config.http.transaction_request_timeout_in. 
 
   *) [TS-2114] buffer_upload plugin defines true and false
     Author: Kit Chan <chanshukit@gmail.com>
