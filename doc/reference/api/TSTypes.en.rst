@@ -1,0 +1,59 @@
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+.. default-domain:: c
+
+===========
+TSAPI Types
+===========
+
+Synopsis
+========
+| `#include <ts/ts.h>`
+| `#include <ts/remap.h>`
+
+Description
+===========
+
+The Apache Traffic Server API provides large number of types.
+
+.. type:: TSCont
+
+   An opaque type that represents a Traffic Server :term:`continuation`.
+
+.. type:: TSHttpHookID
+
+   An enumeration that identifies a specific type of hook for HTTP transactions.
+
+.. type:: TSHttpSsn
+
+   An opaque type that represents a Traffic Server :term:`session`.
+
+.. type:: TSHRTime
+
+   "High Resolution Time"
+
+   A 64 bit time value, measured in nanoseconds.
+
+.. type:: TSHttpTxn
+
+   An opaque type that represents a Traffic Server HTTP :term:`transaction`.
+
+.. type:: TSReturnCode
+
+   An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
+   indicates a failure and is specific to the API call.
+
