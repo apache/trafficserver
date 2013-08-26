@@ -1,4 +1,9 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 4.0.1
+
+  *) [TS-2154] Lua plugin asserts traffic_server on startup
+
+
 Changes with Apache Traffic Server 4.0.0
 
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
@@ -27,7 +32,6 @@ Changes with Apache Traffic Server 4.0.0
 
 
 Changes with Apache Traffic Server 3.3.5
-
 
   *) [TS-2051] Fix SSL crash due to excess READ_COMPLETE events.
 
