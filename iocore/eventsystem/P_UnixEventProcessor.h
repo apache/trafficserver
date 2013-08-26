@@ -36,7 +36,7 @@ n_dthreads(0),
 thread_data_used(0)
 {
   memset(all_ethreads, 0, sizeof(all_ethreads));
-  memset(dthreads, 0, sizeof(dthreads));
+  memset(all_dthreads, 0, sizeof(all_dthreads));
   memset(n_threads_for_type, 0, sizeof(n_threads_for_type));
   memset(next_thread_for_type, 0, sizeof(next_thread_for_type));
 }

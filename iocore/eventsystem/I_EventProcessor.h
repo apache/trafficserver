@@ -314,7 +314,7 @@ public:
   Event * schedule(Event * e, EventType etype, bool fast_signal = false);
   EThread *assign_thread(EventType etype);
 
-  EThread *dthreads[MAX_EVENT_THREADS];
+  EThread *all_dthreads[MAX_EVENT_THREADS];
   int n_dthreads;               // No. of dedicated threads
   volatile int thread_data_used;
 };

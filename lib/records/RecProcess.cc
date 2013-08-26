@@ -117,6 +117,13 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
+
+  for (i = 0; i < eventProcessor.n_dthreads; i++) {
+    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    total->sum += tlp->sum;
+    total->count += tlp->count;
+  }
+
   if (total->sum < 0) { // Assure that we stay positive
     total->sum = 0;
   }
@@ -144,6 +151,13 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
+
+  for (i = 0; i < eventProcessor.n_dthreads; i++) {
+    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    total.sum += tlp->sum;
+    total.count += tlp->count;
+  }
+
   if (total.sum < 0) { // Assure that we stay positive
     total.sum = 0;
   }
@@ -198,6 +212,13 @@ raw_stat_clear(RecRawStatBlock *rsb, int id)
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
+
+  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
+    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), (int64_t)0);
+    ink_atomic_swap(&(tlp->count), (int64_t)0);
+  }
+
   return REC_ERR_OKAY;
 }
 
@@ -223,6 +244,12 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
+
+  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
+    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), (int64_t)0);
+  }
+
   return REC_ERR_OKAY;
 }
 
@@ -248,6 +275,12 @@ raw_stat_clear_count(RecRawStatBlock *rsb, int id)
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
+
+  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
+    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->count), (int64_t)0);
+  }
+
   return REC_ERR_OKAY;
 }
 
