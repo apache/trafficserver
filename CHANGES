@@ -2,6 +2,10 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2158] Properly mark an IP as non-routable for IPv4 and IPv6 link local
+   addresses as well as IPv6 private addresses and IPv4 Carrier Grade NAT
+   addresses from RFC 6598.
+
   *) [TS-2155] Make a new RAT exclude file that uses the regular expressions
    now supported. Also cleanup some of minor licensing discrepancies.
 
