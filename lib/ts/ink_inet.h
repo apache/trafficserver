@@ -565,6 +565,57 @@ inline bool ats_is_ip_multicast(IpEndpoint const* ip) {
   return ats_is_ip_multicast(&ip->sa);
 }
 
+/// Check for Private.
+/// @return @true if @a ip is private.
+inline bool
+ats_is_ip_private(sockaddr const* ip) {
+  bool zret = false;
+  if (ats_is_ip4(ip)) {
+    in_addr_t a = ats_ip4_addr_cast(ip);
+    zret = ((a & htonl(0xFF000000)) == htonl(0x0A000000)) || // 10.0.0.0/8
+      ((a & htonl(0xFFC00000)) == htonl(0x64400000)) ||      // 100.64.0.0/10
+      ((a & htonl(0xFFF00000)) == htonl(0xAC100000)) ||      // 172.16.0.0/12
+      ((a & htonl(0xFFFF0000)) == htonl(0xC0A80000))         // 192.168.0.0/16
+      ;
+  } else if (ats_is_ip6(ip)) {
+    in6_addr a = ats_ip6_addr_cast(ip);
+    zret = ((a.s6_addr[0] & 0xFE) == 0xFC) // fc00::/7
+      ;
+  }
+  return zret;
+}
+
+/// Check for Private.
+/// @return @true if @a ip is private.
+inline bool
+ats_is_ip_private(IpEndpoint const* ip) {
+  return ats_is_ip_private(&ip->sa);
+}
+
+/// Check for Link Local.
+/// @return @true if @a ip is link local.
+inline bool
+ats_is_ip_linklocal(sockaddr const* ip) {
+  bool zret = false;
+  if (ats_is_ip4(ip)) {
+    in_addr_t a = ats_ip4_addr_cast(ip);
+    zret = ((a & htonl(0xFFFF0000)) == htonl(0xA9FE0000)) // 169.254.0.0/16
+      ;
+  } else if (ats_is_ip6(ip)) {
+    in6_addr a = ats_ip6_addr_cast(ip);
+    zret = ((a.s6_addr[0] == 0xFE) && ((a.s6_addr[1] & 0xC0) == 0x80)) // fe80::/10
+      ;
+  }
+  return zret;
+}
+
+/// Check for Link Local.
+/// @return @true if @a ip is link local.
+inline bool
+ats_is_ip_linklocal(IpEndpoint const* ip) {
+  return ats_is_ip_linklocal(&ip->sa);
+}
+
 /// Check for non-routable address.
 /// @return @c true if @a ip is a non-routable.
 inline bool ats_is_ip_nonroutable(sockaddr const* ip) {
