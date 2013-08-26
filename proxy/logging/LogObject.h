@@ -402,24 +402,6 @@ inline int LogObjectManager::roll_files(long time_now)
     return num_rolled;
 };
 
-inline int
-LogObjectManager::log(LogAccess * lad)
-{
-  int ret = 0;
-  for (size_t i = 0; i < _numObjects; i++) {
-    //
-    // Auto created LogObject is only applied to LogBuffer
-    // data received from network in collation host. It should
-    // be ignored here.
-    //
-    if (_objects[i]->m_auto_created)
-      continue;
-
-    ret |= _objects[i]->log(lad);
-  }
-  return ret;
-}
-
 inline void
 LogObjectManager::display(FILE * str)
 {
