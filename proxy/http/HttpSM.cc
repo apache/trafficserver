@@ -1713,7 +1713,7 @@ HttpSM::state_http_server_open(int event, void *data)
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
-    t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : EREMOTEIO);
+    t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
 
     /* If we get this error, then we simply can't bind to the 4-tuple to make the connection.  There's no hope of
        retries succeeding in the near future. The best option is to just shut down the connection without further
