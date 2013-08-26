@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2154] Lua plugin asserts traffic_server on startup
+
   *) [TS-2158] Properly mark an IP as non-routable for IPv4 and IPv6 link local
    addresses as well as IPv6 private addresses and IPv4 Carrier Grade NAT
    addresses from RFC 6598.

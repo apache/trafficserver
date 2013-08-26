@@ -29,6 +29,10 @@
 
 #define INVALID_INSTANCE_ID (instanceid_t)(-1)
 
+// InitDemuxTable() requires an initializer for every hook. Make sure that we don't
+// get out of sync with the number of hooks.
+extern void * __static_assert_hook_count[TS_HTTP_LAST_HOOK == 17 ? 0 : -1];
+
 typedef int (*LuaHookDemuxer)(TSHttpHookID, TSCont, TSEvent, void *);
 
 template <TSHttpHookID hookid, LuaHookDemuxer demuxer> int
@@ -57,6 +61,7 @@ InitDemuxTable(LuaPluginInstance::demux_table_t& table)
   table[TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK] = MakeLuaHook(demuxer, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK);
   table[TS_HTTP_PRE_REMAP_HOOK]         = MakeLuaHook(demuxer, TS_HTTP_PRE_REMAP_HOOK);
   table[TS_HTTP_POST_REMAP_HOOK]        = MakeLuaHook(demuxer, TS_HTTP_POST_REMAP_HOOK);
+  table[TS_HTTP_RESPONSE_CLIENT_HOOK]   = MakeLuaHook(demuxer, TS_HTTP_RESPONSE_CLIENT_HOOK);
 }
 
 // Global storage for Lua plugin instances. We vend instanceid_t's as an index into
