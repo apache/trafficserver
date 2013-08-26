@@ -904,6 +904,6 @@ Online Event Log XML Builder
 ============================
 
 If you need any assistance building your event log, you can try out our
-`online log builder </logbuilder/>`_. This is a work in progress, so any
+`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This is a work in progress, so any
 comments, critique or suggestions are most welcome.
 

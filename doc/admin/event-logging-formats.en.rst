@@ -21,7 +21,7 @@ Event Logging Formats
 This document provides a reference for all the different logging formats
 Traffic Server supports.
 Rather than just reading about those formats, you may also want to try our
-`online event log builder </logbuilder/>`_ for an interactive way of
+`online event log builder <http://trafficserver.apache.org/logbuilder/>`_ for an interactive way of
 building and understanding log formats.
 
 
