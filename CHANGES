@@ -4,7 +4,7 @@ Changes with Apache Traffic Server 4.0.1
   *) [TS-2154] Lua plugin asserts traffic_server on startup
 
 
-Changes with Apache Traffic Server 4.0.0
+Changes with Apache Traffic Server 4.0.0 [not released]
 
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
