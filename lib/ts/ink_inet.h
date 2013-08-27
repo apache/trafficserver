@@ -616,33 +616,6 @@ ats_is_ip_linklocal(IpEndpoint const* ip) {
   return ats_is_ip_linklocal(&ip->sa);
 }
 
-/// Check for non-routable address.
-/// @return @c true if @a ip is a non-routable.
-inline bool ats_is_ip_nonroutable(sockaddr const* ip) {
-  bool zret = false;
-  if (ats_is_ip4(ip)) {
-    in_addr_t a = ats_ip4_addr_cast(ip);
-    zret = ((a & htonl(0xFF000000)) == htonl(0x0A000000)) || // priv 10.0.0.0/8
-      ((a & htonl(0xFFC00000)) == htonl(0x64400000)) ||      // priv 100.64.0.0/10
-      ((a & htonl(0xFFF00000)) == htonl(0xAC100000)) ||      // priv 172.16.0.0/12
-      ((a & htonl(0xFFFF0000)) == htonl(0xC0A80000)) ||      // priv 192.168.0.0/16
-      ((a & htonl(0xFFFF0000)) == htonl(0xA9FE0000))         // link 169.254.0.0/16
-      ;
-  } else if (ats_is_ip6(ip)) {
-    in6_addr a = ats_ip6_addr_cast(ip);
-    zret = ((a.s6_addr[0] & 0xFE) == 0xFC) ||                     // priv fc00::/7
-      ((a.s6_addr[0] == 0xFE) && ((a.s6_addr[1] & 0xC0) == 0x80)) // link fe80::/10
-      ;
-  }
-  return zret;
-}
-
-/// Check for non-routable address.
-/// @return @c true if @a ip is a non-routable.
-inline bool ats_is_ip_nonroutable(IpEndpoint const* ip) {
-  return ats_is_ip_nonroutable(&ip->sa);
-}
-
 /// Check for being "any" address.
 /// @return @c true if @a ip is the any / unspecified address.
 inline bool ats_is_ip_any(sockaddr const* ip) {
