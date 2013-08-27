@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2161] TSHttpTxnHookAdd memory Leak
+    Author: bettydramit <b13621367396@gmail.com>
+
   *) [TS-2156] Fix stats trap in different type of threads
 
   *) [TS-2160] Remove ats_is_ip_nonroutable and replace it with the less confusing
