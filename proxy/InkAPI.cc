@@ -5209,7 +5209,8 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 }
 
 sockaddr const*
-TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp) {
+TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
+{
   HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
 
   if (cs == NULL) return 0;
@@ -5220,7 +5221,8 @@ TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp) {
   return vc->get_local_addr();
 }
 sockaddr const*
-TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
+TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
+{
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
  
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
