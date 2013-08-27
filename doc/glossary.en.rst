@@ -20,6 +20,7 @@ Glossary
 =============
 
 .. glossary::
+   :sorted:
 
    continuation
       A callable object that contains state. These are are mechanism used by Traffic Server to implement callbacks and
@@ -34,3 +35,19 @@ Glossary
    transaction
       A client request and response, either from the origin server or from the cache.
 
+   cache volume
+      Persistent storage for the cache, defined and manipulable by the user.
+      Cache volumes are defined in :file:`volume.config`. A cache volume is
+      spread across :term:`storage unit`\ s to increase performance through
+      parallel I/O. Storage units can be split across cache volumes. Each
+      such part of a storage unit in a cache volume is a :term:`volume`.
+
+   volume
+      A homogenous persistent store for the cache. A volume always resides
+      entirely on a single physical device and is treated as an
+      undifferentiated span of bytes.
+
+      See also :term:`storage unit`, :term:`cache volume`
+
+   storage unit
+      The physical storage described by a single line in :file:`storage.config`.
