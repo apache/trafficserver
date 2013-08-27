@@ -186,7 +186,7 @@ void
 FeatureAPIHooks<ID,MAX_ID>::clear()
 {
   for (int i = 0; i < MAX_ID; ++i) {
-    m_hooks->clear();
+    m_hooks[i].clear();
   }
   hooks_p = false;
 }

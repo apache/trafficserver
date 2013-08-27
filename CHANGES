@@ -3,6 +3,9 @@ Changes with Apache Traffic Server 4.0.1
 
   *) [TS-2154] Lua plugin asserts traffic_server on startup.
 
+  *) [TS-2161] TSHttpTxnHookAdd memory Leak.
+    Author: bettydramit <b13621367396@gmail.com>
+
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
 
