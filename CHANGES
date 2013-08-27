@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2160] Remove ats_is_ip_nonroutable and replace it with the less confusing
+   ats_is_ip_linklocal and ats_is_ip_private.
+
   *) [TS-2154] Lua plugin asserts traffic_server on startup
 
   *) [TS-2158] Properly mark an IP as non-routable for IPv4 and IPv6 link local
