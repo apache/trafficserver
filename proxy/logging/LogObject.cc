@@ -76,7 +76,9 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
                      const char *basename, LogFileFormat file_format,
                      const char *header, int rolling_enabled,
                      int flush_threads, int rolling_interval_sec,
-                     int rolling_offset_hr, int rolling_size_mb):
+                     int rolling_offset_hr, int rolling_size_mb,
+                     bool auto_created):
+      m_auto_created(auto_created),
       m_alt_filename (NULL),
       m_flags (0),
       m_signature (0),

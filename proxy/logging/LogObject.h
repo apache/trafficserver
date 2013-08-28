@@ -101,7 +101,7 @@ public:
                  LogFileFormat file_format, const char *header,
                  int rolling_enabled, int flush_threads,
                  int rolling_interval_sec = 0, int rolling_offset_hr = 0,
-                 int rolling_size_mb = 0);
+                 int rolling_size_mb = 0, bool auto_created = false);
   LogObject(LogObject &);
   virtual ~LogObject();
 
@@ -198,6 +198,7 @@ public:
   int do_filesystem_checks();
 
 public:
+  bool m_auto_created;
   LogFormat * m_format;
   LogFile *m_logFile;
   LogFilterList m_filter_list;
@@ -406,6 +407,14 @@ LogObjectManager::log(LogAccess * lad)
 {
   int ret = 0;
   for (size_t i = 0; i < _numObjects; i++) {
+    //
+    // Auto created LogObject is only applied to LogBuffer
+    // data received from network in collation host. It should
+    // be ignored here.
+    //
+    if (_objects[i]->m_auto_created)
+      continue;
+
     ret |= _objects[i]->log(lad);
   }
   return ret;

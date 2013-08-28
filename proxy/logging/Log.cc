@@ -1513,7 +1513,7 @@ Log::match_logobject(LogBufferHeader * header)
                               Log::config->collation_preproc_threads,
                               Log::config->rolling_interval_sec,
                               Log::config->rolling_offset_hr,
-                              Log::config->rolling_size_mb));
+                              Log::config->rolling_size_mb, true));
 
       obj->set_remote_flag();
 
