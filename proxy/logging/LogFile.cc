@@ -628,6 +628,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
   Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
   ink_assert(buffer_header != NULL);
 
+  ProxyMutex *mutex = this_thread()->mutex;
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
   int fmt_entry_count = 0;
@@ -684,6 +685,14 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
       } else {
         Error("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.",
               entry_header->entry_len);
+
+        RecIncrRawStat(log_rsb, mutex->thread_holding,
+                       log_stat_num_lost_before_flush_to_disk_stat,
+                       fmt_entry_count);
+
+        RecIncrRawStat(log_rsb, mutex->thread_holding,
+                       log_stat_bytes_lost_before_flush_to_disk_stat,
+                       fmt_buf_bytes);
       }
       // if writing to a pipe, fill the buffer with a single
       // record to avoid as much as possible overflowing the
@@ -699,8 +708,6 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
     // send the buffer to flush thread
     //
     LogFlushData *flush_data = new LogFlushData(this, ascii_buffer, fmt_buf_bytes);
-
-    ProxyMutex *mutex = this_thread()->mutex;
 
     RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat,
                    fmt_entry_count);

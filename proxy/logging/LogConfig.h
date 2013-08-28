@@ -50,14 +50,20 @@ enum
 
   // Logging Data
   log_stat_num_sent_to_network_stat,
+  log_stat_num_lost_before_sent_to_network_stat,
   log_stat_num_received_from_network_stat,
   log_stat_num_flush_to_disk_stat,
+  log_stat_num_lost_before_flush_to_disk_stat,
 
+  log_stat_bytes_lost_before_preproc_stat,
   log_stat_bytes_sent_to_network_stat,
+  log_stat_bytes_lost_before_sent_to_network_stat,
   log_stat_bytes_received_from_network_stat,
 
   log_stat_bytes_flush_to_disk_stat,
+  log_stat_bytes_lost_before_flush_to_disk_stat,
   log_stat_bytes_written_to_disk_stat,
+  log_stat_bytes_lost_before_written_to_disk_stat,
 
   // Logging I/O
   log_stat_log_files_open_stat,

@@ -1370,6 +1370,10 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       if (!logfile->is_open()) {
         Warning("File:%s was closed, have dropped (%d) bytes.",
                 logfile->m_name, total_bytes);
+
+        RecIncrRawStat(log_rsb, mutex->thread_holding,
+                       log_stat_bytes_lost_before_written_to_disk_stat,
+                       total_bytes);
         delete fdata;
         continue;
       }
@@ -1380,6 +1384,10 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
         if (Log::config->logging_space_exhausted) {
           Warning("logging space exhausted, failed to write file:%s, have dropped (%d) bytes.",
                   logfile->m_name, (total_bytes - bytes_written));
+
+          RecIncrRawStat(log_rsb, mutex->thread_holding,
+                         log_stat_bytes_lost_before_written_to_disk_stat,
+                         total_bytes - bytes_written);
           break;
         }
 
@@ -1387,8 +1395,12 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
                       total_bytes - bytes_written);
         if (len < 0) {
           Error("Failed to write log to %s: [tried %d, wrote %d, %s]",
-                logfile->m_name, total_bytes, bytes_written, strerror(errno));
-          ink_release_assert(!"test");
+                logfile->m_name, total_bytes - bytes_written,
+                bytes_written, strerror(errno));
+
+          RecIncrRawStat(log_rsb, mutex->thread_holding,
+                         log_stat_bytes_lost_before_written_to_disk_stat,
+                         total_bytes - bytes_written);
           break;
         }
         bytes_written += len;
