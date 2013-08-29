@@ -30,10 +30,12 @@ Glossary
       suspended processing. This can be considered similar to co-routines.
 
    session
-      A single connection from a client to Traffic Server, covering all requests and responses on that connection.
+      A single connection from a client to Traffic Server, covering all requests and responses on that connection. A
+      session starts when the client connection opens, and ends when the connection closes.
 
    transaction
-      A client request and response, either from the origin server or from the cache.
+      A client request and response, either from the origin server or from the cache. A transaction begins when Traffic
+      Server receives a request, and ends when Traffic Server sends the response.
 
    cache volume
       Persistent storage for the cache, defined and manipulable by the user.

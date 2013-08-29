@@ -52,6 +52,10 @@ The Apache Traffic Server API provides large number of types.
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
 
+.. type:: TSLifecycleHookID
+
+   An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-add>`.
+
 .. type:: TSReturnCode
 
    An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
