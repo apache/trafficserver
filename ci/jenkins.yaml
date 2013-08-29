@@ -33,7 +33,7 @@
             autoreconf -fi
         - shell: |
             export DEB_BUILD_HARDENING
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp $ENABLE_DEBUG
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
@@ -54,7 +54,7 @@
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins --enable-wccp $ENABLE_DEBUG
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
@@ -110,6 +110,11 @@
 - job-template:
     name: '{node}-{branch}-regression'
     node: '{node}'
+    parameters:
+        - string:
+            name: ENABLE_WCCP
+            default: '{wccp}'
+            description: enable WCCP support
     scm:
         - git:
             url: '{repo}'
@@ -126,6 +131,10 @@
             name: ENABLE_DEBUG
             default: --enable-debug
             description: enable runtime debug checks
+        - string:
+            name: ENABLE_WCCP
+            default: '{wccp}'
+            description: enable WCCP support
     scm:
         - git:
             url: '{repo}'
@@ -145,6 +154,10 @@
             name: DEB_BUILD_HARDENING
             default: '1'
             description: enable Debian hardening-wrapper
+        - string:
+            name: ENABLE_WCCP
+            default: '{wccp}'
+            description: enable WCCP support
     scm:
         - git:
             url: '{repo}'
@@ -156,6 +169,11 @@
 - job-template:
     name: '{node}-{branch}-clang-regression'
     node: '{node}'
+    parameters:
+        - string:
+            name: ENABLE_WCCP
+            default: '{wccp}'
+            description: enable WCCP support
     scm:
         - git:
             url: '{repo}'
@@ -172,6 +190,10 @@
             name: ENABLE_DEBUG
             default: --enable-debug
             description: enable runtime debug checks
+        - string:
+            name: ENABLE_WCCP
+            default: '{wccp}'
+            description: enable WCCP support
     scm:
         - git:
             url: '{repo}'
@@ -184,6 +206,7 @@
     name: centos-5-x64
     node: centos_5_x64
     builder: linux
+    wccp: --disable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -202,6 +225,7 @@
     name: centos-5-x86
     node: centos_5_x86
     builder: linux
+    wccp: --disable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -220,6 +244,7 @@
     name: centos-6.4-x64
     node: centos_6.4_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -238,6 +263,7 @@
     name: centos-6.4-x86
     node: centos_6.4_x86
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -256,6 +282,7 @@
     name: fedora-15-x64
     node: fedora_15_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -274,6 +301,7 @@
     name: fedora-15-x86
     node: fedora_15_x86
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -292,6 +320,7 @@
     name: fedora-18-x64
     node: fedora_18_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -310,6 +339,7 @@
     name: fedora-18-x86
     node: fedora_18_x86
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -328,6 +358,7 @@
     name: fedora-rawhide-x64
     node: fedora_rawhide_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -352,6 +383,7 @@
     name: fedora-rawhide-x86
     node: fedora_rawhide_x86
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -370,6 +402,7 @@
     name: freebsd-9.1-x64
     node: freebsd_9.1_x64
     builder: bsd
+    wccp: --disable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -388,6 +421,7 @@
     name: omnios-x64
     node: omnios_x64
     builder: omnios
+    wccp: --disable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -406,6 +440,7 @@
     name: opensuse-12-x64
     node: opensuse_12_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-debug-regression':
             branch: master
@@ -424,6 +459,7 @@
     name: ubuntu-10.04-x64
     node: ubuntu_10.04_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-hardening-regression':
             branch: master
@@ -445,6 +481,7 @@
     name: ubuntu-12.04-x64
     node: ubuntu_12.04_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-hardening-regression':
             branch: master
@@ -466,6 +503,7 @@
     name: debian-6-x64
     node: debian_6_x64
     builder: linux
+    wccp: --enable-wccp
     jobs:
         - '{node}-{branch}-hardening-regression':
             branch: master
