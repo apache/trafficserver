@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2163] Remove WDA_BILLING, ACC_ALARMS etc. code and definitions.
 
   *) [TS-2161] TSHttpTxnHookAdd memory Leak
     Author: bettydramit <b13621367396@gmail.com>
