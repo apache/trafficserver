@@ -18,14 +18,54 @@
 
 #
 #   Example alarm bin program. Proxy manager execs this script with
-#   a brief message as its argument, and an alarm code.
+# a brief message as its argument. This program sends mail to the
+# e-mail address passed in by the caller.  The subject of the
+# e-mail is the passed in message, and a 'date' stamp is added 
+# as the body.
 #
-if [ $# -eq 2 ]; then
-  # two parameters, from ATS
-    echo "$0: desc=$1 alarm=$2"
+ostype=`(uname -s) 2>/dev/null`
+if [ "$ostype" = "Linux" ]; then
+SENDMAIL="/usr/sbin/sendmail"
+else
+  SENDMAIL="/usr/lib/sendmail"
+fi
+
+if [ ! -x $SENDMAIL ]; then
+    echo "$0: Could not find $SENDMAIL program"
+    exit 1
+fi
+
+if [ $# -eq 1 ]; then
+  # if only one parameter, then no email information was provided
+  msg="`hostname` $1"
+  echo
+  echo "[example_alarm_bin.sh] no e-mail sent: $msg"
+  echo
+  exit 0
+
+elif [ $# -eq 4 ]; then
+  # if four parameters, the caller specified email information
+  msg="`hostname` $1"
+  email_from_name=$2
+  email_from_addr=$3
+  email_to_addr=$4
+
+  result=`(echo "From: $email_from_name <$email_from_addr>"; echo "To: $email_to_addr"; echo "Subject: $msg"; echo; date) | $SENDMAIL -bm $email_to_addr`
+  if [ "$result" = "" ]; then
+    echo
+    echo "[example_alarm_bin.sh] sent alarm: $msg";
+    echo
+    exit 0
+  else
+    echo
+    echo "[example_alarm_bin.sh] sendmail failed"
+    echo
+    exit 1
+  fi
+
 else
   # give a little help
-  echo "Usage: example_alarm_bin.sh <message> <alarm type ID>"
+  echo "Usage: example_alarm_bin.sh <message> [<email_from_name> <email_from_addr> <email_to_addr>]"
   exit
 
 fi

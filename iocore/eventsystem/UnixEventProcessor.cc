@@ -223,9 +223,9 @@ EventProcessor::spawn_thread(Continuation *cont, const char* thr_name, size_t st
   Event *e = eventAllocator.alloc();
 
   e->init(cont, 0, 0);
-  dthreads[n_dthreads] = NEW(new EThread(DEDICATED, e, sem));
-  e->ethread = dthreads[n_dthreads];
-  e->mutex = e->continuation->mutex = dthreads[n_dthreads]->mutex;
+  all_dthreads[n_dthreads] = NEW(new EThread(DEDICATED, e, sem));
+  e->ethread = all_dthreads[n_dthreads];
+  e->mutex = e->continuation->mutex = all_dthreads[n_dthreads]->mutex;
   n_dthreads++;
   e->ethread->start(thr_name, stacksize);
 

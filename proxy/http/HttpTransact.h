@@ -504,8 +504,8 @@ public:
     HTTP_API_SEND_REQUEST_HDR,
     HTTP_API_READ_CACHE_HDR,
     HTTP_API_CACHE_LOOKUP_COMPLETE,
-    HTTP_API_READ_REPONSE_HDR,
-    HTTP_API_SEND_REPONSE_HDR,
+    HTTP_API_READ_RESPONSE_HDR,
+    HTTP_API_SEND_RESPONSE_HDR,
     REDIRECT_READ,
     HTTP_API_SM_SHUTDOWN
   };
@@ -675,7 +675,7 @@ public:
     { }
   } RedirectInfo;
 
-  typedef struct _ConnectionAttributes
+  struct ConnectionAttributes
   {
     HTTPVersion http_version;
     HTTPKeepAlive keep_alive;
@@ -685,9 +685,11 @@ public:
     bool receive_chunked_response;
     bool pipeline_possible;
     bool proxy_connect_hdr;
+    /// @c errno from the most recent attempt to connect.
+    /// zero means no failure (not attempted, succeeded).
+    int connect_result;
     char *name;
     bool dns_round_robin;
-    bool connect_failure;
     TransferEncoding_t transfer_encoding;
 
     IpEndpoint addr;    // replaces 'ip' field
@@ -707,15 +709,19 @@ public:
     /// @c true if the connection is transparent.
     bool is_transparent;
 
-    _ConnectionAttributes()
+    bool had_connect_fail() const { return 0 != connect_result; }
+    void clear_connect_fail() { connect_result = 0; }
+    void set_connect_fail(int e) { connect_result = e; }
+
+    ConnectionAttributes()
       : http_version(),
         keep_alive(HTTP_KEEPALIVE_UNDEFINED),
         receive_chunked_response(false),
         pipeline_possible(false),
         proxy_connect_hdr(false),
+        connect_result(0),
         name(NULL),
         dns_round_robin(false),
-        connect_failure(false),
         transfer_encoding(NO_TRANSFER_ENCODING),
         port(0),
         state(STATE_UNDEFINED),
@@ -725,7 +731,8 @@ public:
     {
       memset(&addr, 0, sizeof(addr));
     }
-  } ConnectionAttributes;
+
+  };
 
   typedef struct _CurrentInfo
   {
@@ -768,14 +775,13 @@ public:
     char *lookup_name;
     char srv_hostname[MAXDNAME];
     LookingUp_t looking_up;
-    bool round_robin;
     bool srv_lookup_success;
     short srv_port;
     HostDBApplicationInfo srv_app;
 
     _DNSLookupInfo()
     : attempts(0), os_addr_style(OS_ADDR_TRY_DEFAULT),
-        lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP), round_robin(false),
+        lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP),
         srv_lookup_success(false), srv_port(0)
     {
       srv_hostname[0] = '\0';

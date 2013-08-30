@@ -56,7 +56,7 @@ asf-distdir:
 	@$(am__remove_distdir)
 	test -d .git && git clone . $(distdir) || svn export . $(distdir)
 	cd $(distdir) && autoreconf -i
-	rm -rf -- $(distdir)/autom4te.cache $(distdir)/.git $(distdir)/.gitignore
+	rm -rf -- $(distdir)/autom4te.cache $(distdir)/.git $(distdir)/.gitignore $(distdir)/ci
 
 asf-dist: asf-distdir
 	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2

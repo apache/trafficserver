@@ -410,6 +410,10 @@ global_dyn_stats[X].sum = 0
     _s.count += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].count; \
     _s.sum += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].sum; \
   } \
+  for (int _e = 0; _e < eventProcessor.n_dthreads ; _e++) { \
+    _s.count += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].count; \
+    _s.sum += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].sum; \
+  } \
   C = _s.count; \
   S = _s.sum; \
 } while (0)
@@ -418,6 +422,8 @@ global_dyn_stats[X].sum = 0
   ink_statval_t _s = global_dyn_stats[X].count; \
   for (int _e = 0; _e < eventProcessor.n_ethreads ; _e++) \
     _s += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].count; \
+  for (int _e = 0; _e < eventProcessor.n_dthreads ; _e++) \
+    _s += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].count; \
   C = _s; \
 } while (0)
 
@@ -425,6 +431,8 @@ global_dyn_stats[X].sum = 0
   ink_statval_t _s = global_dyn_stats[X].sum; \
   for (int _e = 0; _e < eventProcessor.n_ethreads ; _e++) \
     _s += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].sum; \
+  for (int _e = 0; _e < eventProcessor.n_dthreads ; _e++) \
+    _s += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].sum; \
   S = _s; \
 } while (0)
 

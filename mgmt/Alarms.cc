@@ -244,8 +244,10 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
    * don't want every node in the cluster reporting the same alarm.
    */
   if (priority == 1 && alarm_bin && alarm_bin_path && !ip) {
-    execAlarmBin(desc, a);
+    execAlarmBin(desc);
   }
+
+
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
@@ -292,7 +294,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   // Swap desc with time-stamped description.  Kinda hackish
   // Temporary until we get a new
   // alarm system in place.  TS 5.0.0, 02/08/2001
-
   time_t my_time_t;
   char my_ctime_str[32];
   time(&my_time_t);
@@ -364,7 +365,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   }
   /* Priority 2 alarms get signalled if they are the first unsolved occurence. */
   if (priority == 2 && alarm_bin && alarm_bin_path && !ip) {
-    execAlarmBin(desc, a);
+    execAlarmBin(desc);
   }
 
   return;
@@ -504,17 +505,29 @@ Alarms::checkSystemNAlert()
 }                               /* End Alarms::checkSystenNAlert */
 
 void
-Alarms::execAlarmBin(const char *desc, alarm_t a)
+Alarms::execAlarmBin(const char *desc)
 {
   char cmd_line[1024];
-  char alarm[80];
+  char *alarm_email_from_name = 0;
+  char *alarm_email_from_addr = 0;
+  char *alarm_email_to_addr = 0;
   bool found;
+
+  // get email info
+  alarm_email_from_name = REC_readString("proxy.config.product_name", &found);
+  if (!found)
+    alarm_email_from_name = 0;
+  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", &found);
+  if (!found)
+    alarm_email_from_addr = 0;
+  alarm_email_to_addr = REC_readString("proxy.config.alarm_email", &found);
+  if (!found)
+    alarm_email_to_addr = 0;
 
   int status;
   pid_t pid;
 
   ink_filepath_make(cmd_line, sizeof(cmd_line), alarm_bin_path, alarm_bin);
-  snprintf(alarm, sizeof(alarm), "%d", a);
 
 #ifdef POSIX_THREAD
   if ((pid = fork()) < 0)
@@ -549,10 +562,21 @@ Alarms::execAlarmBin(const char *desc, alarm_t a)
       waitpid(pid, &status, 0); // to reap the thread
     }
   } else {
-    int res = execl(cmd_line, alarm_bin, desc, alarm, (char*)NULL);
-
+    int res;
+    if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
+      res = execl(cmd_line, alarm_bin, desc, alarm_email_from_name, alarm_email_from_addr, alarm_email_to_addr, (char*)NULL);
+    } else {
+      res = execl(cmd_line, alarm_bin, desc, (char*)NULL);
+    }
     _exit(res);
   }
+
+
+
+  // free memory
+  ats_free(alarm_email_from_name);
+  ats_free(alarm_email_from_addr);
+  ats_free(alarm_email_to_addr);
 }
 
 //

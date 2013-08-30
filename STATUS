@@ -1,4 +1,4 @@
-Traffic Server 3.3 STATUS:                                              -*-text-*-
+Traffic Server 4.1 STATUS:                                              -*-text-*-
 Last modified at [$Date$]
 
 The current version of this file can be found at:
@@ -7,9 +7,10 @@ The current version of this file can be found at:
 
 
 Release history:
-    [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
-          while x.{even}.z versions are Stable/GA releases.]
 
+    4.0.0           : Released on Aug 30th, 2013
+
+    3.3.5           : Released on Aug 16th, 2013
     3.3.4           : Released on June 10th, 2013
     3.3.2           : Released on April 18th, 2013
     3.3.1           : Released on March 12th, 2013
@@ -38,26 +39,23 @@ Contributors looking for a mission:
   * Open bugs in the bug database.
 
 
-RELEASE SHOWSTOPPERS:
+UPCOMING WORK:
 
-A list of all bugs open for the next development release can be found at
+A list of all bugs open for the next release can be found at
 
-  http://s.apache.org/ts-3.3.4
+  http://s.apache.org/ats-next
 
 
 RELEASE PROCESS
 
-The Traffic Server release process is documented at
+The Traffic Server release process and support cycles are documented at
 
-    http://cwiki.apache.org/confluence/display/TS/ReleaseProcess
+    https://cwiki.apache.org/confluence/display/TS/ReleaseProcess
 
-The Traffic Server backport process is documented at
+and
 
-    http://cwiki.apache.org/confluence/display/TS/Development+Process
+    https://cwiki.apache.org/confluence/display/TS/New+Release+Processes
 
-The Traffic Server Road-Map and support cycles are documented at
-
-    https://cwiki.apache.org/confluence/display/TS/Release+and+Support+cycles
 
 Current status of all build systems is available at
 

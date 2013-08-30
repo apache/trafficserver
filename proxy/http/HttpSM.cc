@@ -164,7 +164,7 @@ HttpSM::_instantiate_func(HttpSM * prototype, HttpSM * new_instance)
 #endif
 }
 
-SparceClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator", 128, 16, HttpSM::_instantiate_func);
+SparseClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator", 128, 16, HttpSM::_instantiate_func);
 
 #define HTTP_INCREMENT_TRANS_STAT(X) HttpTransact::update_stat(&t_state, X, 1);
 
@@ -623,8 +623,11 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   // set up timeouts     //
   /////////////////////////
   client_vc->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
-  client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_active_timeout_in));
-
+  if (HttpConfig::m_master.transaction_header_active_timeout_in)
+    client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_header_active_timeout_in));
+  else if (HttpConfig::m_master.transaction_request_active_timeout_in)
+    client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_request_active_timeout_in));
+    
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, NULL);
 }
@@ -745,6 +748,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     milestones.ua_read_header_done = ink_get_hrtime();
   }
 
+  int method;
   switch (state) {
   case PARSE_ERROR:
     DebugSM("http", "[%" PRId64 "] error parsing client request header", sm_id);
@@ -752,6 +756,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     // Disable further I/O on the client
     ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
 
+    ua_session->get_netvc()->cancel_active_timeout();
     call_transact_and_set_next_state(HttpTransact::BadRequest);
     break;
 
@@ -763,6 +768,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       // Disable further I/O on the client
       ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
 
+      ua_session->get_netvc()->cancel_active_timeout();
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     } else if (event == VC_EVENT_READ_COMPLETE) {
@@ -806,6 +812,21 @@ HttpSM::state_read_client_request_header(int event, void *data)
         (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size))
       enable_redirection = HttpConfig::m_master.redirection_enabled;
 
+    method = t_state.hdr_info.client_request.method_get_wksidx();
+    if ((method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUT || (t_state.hdr_info.extension_method && t_state.hdr_info.request_content_length > 0))) {
+      // is setted HttpConfig::m_master.transaction_header_active_timeout_in, so should reset active_timeout_in
+      if (ua_session->get_netvc()->get_active_timeout() == HRTIME_SECONDS(HttpConfig::m_master.transaction_header_active_timeout_in)) {
+        if (HttpConfig::m_master.transaction_request_active_timeout_in) {
+          if (HRTIME_SECONDS(HttpConfig::m_master.transaction_request_active_timeout_in) > (milestones.ua_read_header_done - milestones.sm_start)) {
+            ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_request_active_timeout_in) - (milestones.ua_read_header_done - milestones.sm_start));
+          }
+        } else {
+          ua_session->get_netvc()->cancel_active_timeout();
+        }
+      }
+    } else {
+      ua_session->get_netvc()->cancel_active_timeout();
+    }
     call_transact_and_set_next_state(HttpTransact::ModifyRequest);
 
     break;
@@ -1474,7 +1495,7 @@ HttpSM::state_api_callout(int event, void *data)
   callout_state = HTTP_API_NO_CALLOUT;
   switch (api_next) {
   case API_RETURN_CONTINUE:
-    if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_REPONSE_HDR)
+    if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_RESPONSE_HDR)
       do_redirect();
     handle_api_return();
     break;
@@ -1528,10 +1549,10 @@ HttpSM::handle_api_return()
   case HttpTransact::HTTP_API_READ_REQUEST_HDR:
   case HttpTransact::HTTP_API_OS_DNS:
   case HttpTransact::HTTP_API_READ_CACHE_HDR:
-  case HttpTransact::HTTP_API_READ_REPONSE_HDR:
+  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
     // this part is added for automatic redirect
-    if (t_state.api_next_action == HttpTransact::HTTP_API_READ_REPONSE_HDR && t_state.api_release_server_session) {
+    if (t_state.api_next_action == HttpTransact::HTTP_API_READ_RESPONSE_HDR && t_state.api_release_server_session) {
       t_state.api_release_server_session = false;
       release_server_session();
     } else if (t_state.api_next_action == HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE &&
@@ -1549,7 +1570,7 @@ HttpSM::handle_api_return()
   case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
     setup_server_send_request();
     return;
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
     // Set back the inactivity timeout
     if (ua_session) {
       ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
@@ -1678,7 +1699,34 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
-    call_transact_and_set_next_state(HttpTransact::HandleResponse);
+    // save the errno from the connect fail for future use (passed as negative value, flip back)
+    t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
+
+    /* If we get this error, then we simply can't bind to the 4-tuple to make the connection.  There's no hope of
+       retries succeeding in the near future. The best option is to just shut down the connection without further
+       comment. The only known cause for this is outbound transparency combined with use client target address / source
+       port, as noted in TS-1424. If the keep alives desync the current connection can be attempting to rebind the 4
+       tuple simultaneously with the shut down of an existing connection. Dropping the client side will cause it to pick
+       a new source port and recover from this issue.
+    */
+    if (EADDRNOTAVAIL == t_state.current.server->connect_result) {
+      if (is_debug_tag_set("http_tproxy")) {
+        ip_port_text_buffer ip_c, ip_s;
+        Debug("http_tproxy", "Force close of client connect (%s->%s) due to EADDRNOTAVAIL [%" PRId64 "]"
+              , ats_ip_nptop(&t_state.client_info.addr.sa, ip_c, sizeof ip_c)
+              , ats_ip_nptop(&t_state.server_info.addr.sa, ip_s, sizeof ip_s)
+              , sm_id
+          );
+      }
+      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE; // part of the problem, clear it.
+      if (ua_entry && ua_entry->vc) {
+        vc_table.cleanup_entry(ua_entry);
+        ua_entry = NULL;
+        ua_session = NULL;
+      }
+    } else {
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
+    }
     return 0;
   case CONGESTION_EVENT_CONGESTED_ON_F:
     t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_F;
@@ -1846,7 +1894,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     t_state.current.state = HttpTransact::CONNECTION_ALIVE;
     t_state.transact_return_point = HttpTransact::HandleResponse;
-    t_state.api_next_action = HttpTransact::HTTP_API_READ_REPONSE_HDR;
+    t_state.api_next_action = HttpTransact::HTTP_API_READ_RESPONSE_HDR;
 
     // YTS Team, yamsat Plugin
     // Incrementing redirection_tries according to config parameter
@@ -2014,7 +2062,6 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       // current time when calling select_best_http().
       HostDBRoundRobin *rr = r->rr();
       ret = rr->select_best_http(&t_state.client_info.addr.sa, now, (int) t_state.txn_conf->down_server_timeout);
-      t_state.dns_info.round_robin = true;
 
       // set the srv target`s last_failure
       if (t_state.dns_info.srv_lookup_success) {
@@ -2034,7 +2081,6 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       }
     } else {
       ret = r;
-      t_state.dns_info.round_robin = false;
     }
     if (ret) {
       t_state.host_db_info = *ret;
@@ -2045,9 +2091,9 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
     DebugSM("http", "[%" PRId64 "] DNS lookup failed for '%s'", sm_id, t_state.dns_info.lookup_name);
 
     t_state.dns_info.lookup_success = false;
-    t_state.dns_info.round_robin = false;
     t_state.host_db_info.app.allotment.application1 = 0;
     t_state.host_db_info.app.allotment.application2 = 0;
+    ink_assert(!t_state.host_db_info.round_robin);
   }
 
   milestones.dns_lookup_end = ink_get_hrtime();
@@ -2889,10 +2935,12 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     p->read_vio = NULL;
     /* TS-1424: if we're outbound transparent and using the client
        source port for the outbound connection we must effectively
-       propagate server closes back to the client.
+       propagate server closes back to the client. Part of that is
+       disabling KeepAlive if the server closes.
     */
-    if (ua_session && ua_session->f_outbound_transparent && t_state.http_config_param->use_client_source_port)
+    if (ua_session && ua_session->f_outbound_transparent && t_state.http_config_param->use_client_source_port) {
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    }
   } else {
     server_session->attach_hostname(t_state.current.server->name);
     server_session->server_trans_stat--;
@@ -3255,6 +3303,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
   case VC_EVENT_ACTIVE_TIMEOUT:
     //  Did not complete post tunnling.  Abort the
     //   server and close the ua
+    ua_session->get_netvc()->cancel_active_timeout();
     p->handler_state = HTTP_SM_POST_UA_FAIL;
     tunnel.chain_abort_all(p);
     p->read_vio = NULL;
@@ -3284,6 +3333,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     p->handler_state = HTTP_SM_POST_SUCCESS;
     p->read_success = true;
     ua_entry->in_tunnel = false;
+    ua_session->get_netvc()->cancel_active_timeout();
 
     if (p->do_dechunking || p->do_chunked_passthru) {
       if (p->chunked_handler.truncation) {
@@ -3955,7 +4005,7 @@ HttpSM::do_hostdb_update_if_necessary()
     t_state.updated_server_version = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
   }
   // Check to see if we need to report or clear a connection failure
-  if (t_state.current.server->connect_failure) {
+  if (t_state.current.server->had_connect_fail()) {
     issue_update |= 1;
     mark_host_failure(&t_state.host_db_info, t_state.client_request_time);
   } else {
@@ -4696,10 +4746,10 @@ HttpSM::do_api_callout_internal()
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
     cur_hook_id = TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
     break;
-  case HttpTransact::HTTP_API_READ_REPONSE_HDR:
+  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_READ_RESPONSE_HDR_HOOK;
     break;
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     milestones.ua_begin_write = ink_get_hrtime();
     break;
@@ -4851,7 +4901,7 @@ HttpSM::mark_server_down_on_client_abort()
         wait = 0;
       }
       if (ink_hrtime_to_sec(wait) > t_state.txn_conf->client_abort_threshold) {
-        t_state.current.server->connect_failure = true;
+        t_state.current.server->set_connect_fail(ETIMEDOUT);
         do_hostdb_update_if_necessary();
       }
     }
@@ -5773,7 +5823,7 @@ HttpSM::setup_error_transfer()
     // Since we need to send the error message, call the API
     //   function
     ink_assert(t_state.internal_msg_buffer_size > 0);
-    t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+    t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
     do_api_callout();
   } else {
     DebugSM("http", "[setup_error_transfer] Now closing connection ...");
@@ -6552,16 +6602,15 @@ HttpSM::update_stats()
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.http_config_param->slow_log_threshold != 0 &&
       ink_hrtime_from_msec(t_state.http_config_param->slow_log_threshold) < total_time) {
-    // get the url to log
-    URL *url = t_state.hdr_info.client_request.url_get();
+    URL* url = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
-    if (url != NULL && url->valid()) {
-      url->string_get_buf(url_string, sizeof(url_string));
-    }
+
+    t_state.hdr_info.client_request.url_print(url_string, sizeof url_string, 0, 0);
 
     // unique id
     char unique_id_string[128] = "";
-    if (url != NULL && url->valid()) {
+    // [amc] why do we check the URL to get a MIME field?
+    if (0 != url && url->valid()) {
       int length = 0;
       const char *field = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
       if (field != NULL) {
@@ -6759,8 +6808,8 @@ HttpSM::set_next_state()
   case HttpTransact::HTTP_API_OS_DNS:
   case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
   case HttpTransact::HTTP_API_READ_CACHE_HDR:
-  case HttpTransact::HTTP_API_READ_REPONSE_HDR:
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
     {
       t_state.api_next_action = t_state.next_action;
@@ -6941,7 +6990,7 @@ HttpSM::set_next_state()
         tunnel.tunnel_run(p);
       } else {
         ink_assert((t_state.hdr_info.client_response.valid()? true : false) == true);
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
 
         if (hooks_set) {
           do_api_callout_internal();
@@ -6977,7 +7026,7 @@ HttpSM::set_next_state()
         t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
 
         perform_cache_write_action();
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
         if (hooks_set) {
           do_api_callout_internal();
         } else {
@@ -7000,7 +7049,7 @@ HttpSM::set_next_state()
 
   case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
     {
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }
@@ -7013,10 +7062,10 @@ HttpSM::set_next_state()
       // If we're in state SEND_API_RESPONSE_HDR, it means functions
       // registered to hook SEND_RESPONSE_HDR have already been called. So we do not
       // need to call do_api_callout. Otherwise TS loops infinitely in this state !
-      if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_REPONSE_HDR) {
+      if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_RESPONSE_HDR) {
         handle_api_return();
       } else {
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
         do_api_callout();
       }
       break;
@@ -7030,7 +7079,7 @@ HttpSM::set_next_state()
       do_cache_delete_all_alts(NULL);
 
       release_server_session();
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }
@@ -7041,7 +7090,7 @@ HttpSM::set_next_state()
       cache_sm.close_read();
 
       release_server_session();
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
 
@@ -7131,7 +7180,7 @@ HttpSM::set_next_state()
 
   case HttpTransact::TRANSFORM_READ:
     {
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
+      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }

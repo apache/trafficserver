@@ -3,20 +3,20 @@ FAQ and Troubleshooting Tips
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 .. toctree::
    :maxdepth: 2
@@ -145,24 +145,19 @@ Note that clients such as cURL automatically send Expect: for POST
 requests with large POST bodies, with a 1 second timeout if a 100
 Continue response is not received. To avoid the timeout when using cURL
 as a client to Traffic Server, you can turn off the Expect: header as
-follows:
+follows::
 
-command line:
+   curl -H"Expect:" http://www.example.com/
 
-::
-    curl -H"Expect:" http://www.example.com/
+C (libcurl)::
 
-C (libcurl):
+   struct curl_slist *header_list=NULL;
+   header_list = curl_slist_append(header_list, "Expect:");
+   curl_easy_setopt(my_curlp, CURLOPT_HTTPHEADER, header_list);
 
-::
-    struct curl_slist *header_list=NULL;
-    header_list = curl_slist_append(header_list, "Expect:");
-    curl_easy_setopt(my_curlp, CURLOPT_HTTPHEADER, header_list);
+php::
 
-php:
-
-::
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
+   curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
 
 Troubleshooting Tips
 ====================
@@ -280,7 +275,7 @@ The following messages may appear in the system log file:
 
 ::
      Feb 20 23:53:40 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.telechamada.pt/ HTTP/1.0'
-     Feb 20 23:53:46 louis last message repeated 1 time 
+     Feb 20 23:53:46 louis last message repeated 1 time
      Feb 20 23:53:58 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.ip.pt/ HTTP/1.0'
 
 These error messages indicate that a browser is sending HTTP requests to
@@ -307,10 +302,9 @@ starting :program:`traffic_manager` or performing any health checks. The
 it has been stopped with the ``stop_traffic_server`` command. Without
 this static control, Traffic Server would restart automatically upon
 system reboot. The ``no_cop`` control keeps Traffic Server off until it
-is explicitly restarted with the
+is explicitly restarted with the ::
 
-::
-    trafficserver start
+   trafficserver start
 
 command.
 
@@ -320,10 +314,9 @@ Warning in the system log file when manually editing vaddrs.config
 
 If you manually edit the vaddrs.config file as a non-root user, then
 Traffic Server issues a warning message in the system log file similar
-to the following:
+to the following::
 
-::
-         WARNING: interface is ignored: Operation not permitted
+   WARNING: interface is ignored: Operation not permitted
 
 You can safely ignore this message; Traffic Server *does* apply your
 configuration edits.
@@ -390,11 +383,13 @@ problems. In fact, RAM exhaustion can occur even if the system has
 plenty of free swap space.
 
 Symptoms of extreme memory exhaustion include the following messages in
-the system log files (``/var/log/messages``):
+the system log files (``/var/log/messages``)::
 
-::
-     WARNING: errno 105 is ENOBUFS (low on kernel memory), consider a memory upgrade `kernel: eth0: can't fill rx buffer (force 0)!
-     kernel: recvmsg bug: copied E01BA916 seq E01BAB22
+   WARNING: errno 105 is ENOBUFS (low on kernel memory), consider a memory upgrade
+
+   kernel: eth0: can't fill rx buffer (force 0)!
+
+   kernel: recvmsg bug: copied E01BA916 seq E01BAB22
 
 To avoid memory exhaustion, add more RAM to the system or reduce the
 load on Traffic Server.

@@ -356,10 +356,10 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
     return ("API_CACHE_LOOKUP_COMPLETE");
 
-  case HttpTransact::HTTP_API_READ_REPONSE_HDR:
+  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
     return ("API_READ_RESPONSE_HDR");
 
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
     return ("API_SEND_RESPONSE_HDR");
 
   case HttpTransact::PROXY_INTERNAL_100_RESPONSE:

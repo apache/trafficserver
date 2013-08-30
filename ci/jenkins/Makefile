@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 test:
-	[ -d xml ] || mkdir xml && jenkins-jobs test jenkins.yaml -o xml
+	[ -d xml ] || mkdir xml && jenkins-jobs test jobs.yaml -o xml
 
 clean:
 	-rm -rf xml

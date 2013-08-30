@@ -401,9 +401,10 @@ ats_ip_getbestaddrinfo(char const* host,
       enum {
         NA, // Not an (IP) Address.
         LO, // Loopback.
+        LL, // Link Local.
+        PR, // Private.
         MC, // Multicast.
-        NR, // Non-Routable.
-        GA  // Globally unique Address.
+        GL  // Global.
       } spot_type = NA, ip4_type = NA, ip6_type = NA;
       sockaddr const* ip4_src = 0;
       sockaddr const* ip6_src = 0;
@@ -415,9 +416,10 @@ ats_ip_getbestaddrinfo(char const* host,
         sockaddr const* ai_ip = ai_spot->ai_addr;
         if (!ats_is_ip(ai_ip)) spot_type = NA;
         else if (ats_is_ip_loopback(ai_ip)) spot_type = LO;
-        else if (ats_is_ip_nonroutable(ai_ip)) spot_type = NR;
+        else if (ats_is_ip_linklocal(ai_ip)) spot_type = LL;
+        else if (ats_is_ip_private(ai_ip)) spot_type = PR;
         else if (ats_is_ip_multicast(ai_ip)) spot_type = MC;
-        else spot_type = GA;
+        else spot_type = GL;
         
         if (spot_type == NA) continue; // Next!
 

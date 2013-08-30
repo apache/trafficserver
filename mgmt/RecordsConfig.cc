@@ -239,6 +239,8 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.pac_filename", RECD_STRING, "proxy.pac", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.admin.admin_user", RECD_STRING, "admin", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NO_ACCESS}
+  ,
   {RECT_CONFIG, "proxy.config.admin.number_config_bak", RECD_INT, "3", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.user_id", RECD_STRING, TS_PKGSYSUSER, RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
@@ -506,7 +508,9 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.http.transaction_no_activity_timeout_out", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.transaction_active_timeout_in", RECD_INT, "900", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.transaction_header_active_timeout_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.transaction_request_active_timeout_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.transaction_active_timeout_out", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,

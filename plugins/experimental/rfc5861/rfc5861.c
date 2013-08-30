@@ -569,6 +569,7 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
             else
             {
                 TSDebug(LOG_PREFIX, "Internal Request"); // This is insufficient if there are other plugins using TSHttpConnect
+                TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS, 1);
                 //TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
                 TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
                 // This might be needed in 3.2.0 to fix a timeout issue

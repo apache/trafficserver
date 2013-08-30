@@ -40,9 +40,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <stdlib.h>
-
-#define true 1
-#define false 0
+#include <inttypes.h>
 
 /* #define DEBUG 1 */
 #define DEBUG_TAG "buffer_upload-dbg"
@@ -63,7 +61,6 @@
 
 #define VALID_PTR(X) (X != NULL)
 #define NOT_VALID_PTR(X) (X == NULL)
-
 
 struct upload_config_t
 {
@@ -181,7 +178,7 @@ write_buffer_to_disk(TSIOBufferReader reader, pvc_state * my_state, TSCont contp
       LOG_ERROR_AND_RETURN("TSAIOWrite");
     }
     memcpy(pBuf, ptr, size);
-    if (TSAIOWrite(my_state->fd, my_state->write_offset, pBuf, size, contp) < 0) {
+    if (TSAIOWrite(my_state->fd, my_state->write_offset, pBuf, size, contp) == TS_ERROR) {
       LOG_ERROR_AND_RETURN("TSAIOWrite");
     }
     my_state->write_offset += size;
@@ -675,7 +672,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
 }
 
 static int
-attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
+attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
   TSMutex mutex;
@@ -690,30 +687,41 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
   int content_length = 0;
   const char *method;
   int method_len;
-  const char *str;
-  int str_len;
-  
+  const char *host_str;
+  int host_str_len;
+  const char *host_hdr_str_val;
+  int host_hdr_str_val_len;
+
+  TSDebug(DEBUG_TAG, "inside attach_pvc_plugin");
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP:
 
     // if the request is issued by the TSHttpConnect() in this plugin, don't get in the endless cycle.
-    if (TSHttpIsInternalRequest(txnp)) {
+    if (TSHttpIsInternalRequest(txnp) == TS_SUCCESS) {
+      TSDebug(DEBUG_TAG, "internal request");
       break;
     }
 
-    if (!TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc)) {
+    if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc) == TS_ERROR) {
       LOG_ERROR("Error while retrieving client request header");
       break;
     }
 
     method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
+    TSDebug(DEBUG_TAG, "inside handler");
 
     if (NOT_VALID_PTR(method) || method_len == 0) {
+      TSDebug(DEBUG_TAG, "invalid method");
+
       TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
       break;
     }
     // only deal with POST method
+    TSDebug(DEBUG_TAG, "method: %s", method);
+
     if (static_cast<size_t>(method_len) != strlen(TS_HTTP_METHOD_POST) || strncasecmp(method, TS_HTTP_METHOD_POST, method_len) != 0) {
+      TSDebug(DEBUG_TAG, "Not POST method");
+
       //TSHandleStringRelease(req_bufp, req_loc, method);
       TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
       break;
@@ -727,9 +735,11 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
       // check against URL list
       if (TSHttpHdrUrlGet(req_bufp, req_loc, &url_loc) == TS_ERROR) {
         LOG_ERROR("Couldn't get the url");
+        TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
+        break;
       }
-      str = TSUrlHostGet(req_bufp, url_loc, &str_len);
-      if (NOT_VALID_PTR(str) || str_len <= 0) {
+      host_str = TSUrlHostGet(req_bufp, url_loc, &host_str_len);
+      if (NOT_VALID_PTR(host_str) || host_str_len <= 0) {
         // reverse proxy mode
         field_loc = TSMimeHdrFieldFind(req_bufp, req_loc, TS_MIME_FIELD_HOST, -1);
         if (NOT_VALID_PTR(field_loc)) {
@@ -740,8 +750,8 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
           TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
           break;
         }
-        str = TSMimeHdrFieldValueStringGet(req_bufp, req_loc, field_loc, 0, &str_len);
-        if (NOT_VALID_PTR(str) || str_len <= 0) {
+        host_hdr_str_val = TSMimeHdrFieldValueStringGet(req_bufp, req_loc, field_loc, 0, &host_hdr_str_val_len);
+        if (NOT_VALID_PTR(host_hdr_str_val) || host_hdr_str_val_len <= 0) {
           //if (VALID_PTR(str))
           //  TSHandleStringRelease(req_bufp, field_loc, str);
           TSHandleMLocRelease(req_bufp, req_loc, field_loc);
@@ -750,12 +760,12 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
           break;
         }
 
-        char replacement_host_str[str_len + 1];
+        char replacement_host_str[host_hdr_str_val_len + 1];
         memset(replacement_host_str, 0, sizeof replacement_host_str);
-        memcpy(replacement_host_str, str, str_len);
+        memcpy(replacement_host_str, host_hdr_str_val, host_hdr_str_val_len);
         TSDebug(DEBUG_TAG, "Adding host to request url: %s", replacement_host_str);
 
-        TSUrlHostSet(req_bufp, url_loc, str, str_len);
+        TSUrlHostSet(req_bufp, url_loc, host_hdr_str_val, host_hdr_str_val_len);
 
         //TSHandleStringRelease(req_bufp, field_loc, str);
         TSHandleMLocRelease(req_bufp, req_loc, field_loc);
@@ -778,7 +788,7 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
           }
         }
 
-        //TSHandleStringRelease(req_bufp, url_loc, url);
+        TSfree(url);
       }
       TSHandleMLocRelease(req_bufp, req_loc, url_loc);
 
@@ -794,8 +804,8 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
       convert_url_func(req_bufp, req_loc);
     }
 
-    if ((field_loc = TSMimeHdrFieldFind(req_bufp, req_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) ||
-        field_loc == NULL) {
+    field_loc = TSMimeHdrFieldFind(req_bufp, req_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+    if(field_loc == NULL) {
       TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
       LOG_ERROR("TSMimeHdrFieldRetrieve");
       break;
@@ -875,7 +885,7 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
 
     if (!uconfig->use_disk_buffer && my_state->req_size > uconfig->mem_buffer_size) {
       TSDebug(DEBUG_TAG,
-              "The request size %lu is larger than memory buffer size %lu, bypass upload proxy feature for this request.",
+              "The request size %" PRId64 " is larger than memory buffer size %" PRId64 ", bypass upload proxy feature for this request.",
               my_state->req_size, uconfig->mem_buffer_size);
 
       pvc_cleanup(new_cont, my_state);
@@ -906,7 +916,7 @@ attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
       my_state->filename = tempnam(path, NULL);
       TSDebug(DEBUG_TAG, "temp filename: %s", my_state->filename);
 
-      my_state->fd = open(my_state->filename, O_RDWR | O_NONBLOCK | O_TRUNC | O_CREAT);
+      my_state->fd = open(my_state->filename, O_RDWR | O_NONBLOCK | O_TRUNC | O_CREAT, 0600);
       if (my_state->fd < 0) {
         LOG_ERROR("open");
         uconfig->use_disk_buffer = 0;
@@ -1193,6 +1203,7 @@ read_upload_config(const char *file_name)
     // default value
     uconfig->thread_num = 4;
   }
+
   return true;
 }
 
@@ -1249,3 +1260,4 @@ TSPluginInit(int argc, const char *argv[])
   contp = TSContCreate(attach_pvc_plugin, NULL);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK, contp);
 }
+

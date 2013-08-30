@@ -76,7 +76,9 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
                      const char *basename, LogFileFormat file_format,
                      const char *header, int rolling_enabled,
                      int flush_threads, int rolling_interval_sec,
-                     int rolling_offset_hr, int rolling_size_mb):
+                     int rolling_offset_hr, int rolling_size_mb,
+                     bool auto_created):
+      m_auto_created(auto_created),
       m_alt_filename (NULL),
       m_flags (0),
       m_signature (0),
@@ -515,8 +517,6 @@ int
 LogObject::log(LogAccess * lad, char *text_entry)
 {
   LogBuffer *buffer;
-  // mutex used for the statistics (used in LOG_INCREMENT_DYN_STAT macro)
-  ProxyMutex *mutex = this_ethread()->mutex;
   size_t offset = 0;            // prevent warning
   size_t bytes_needed = 0, bytes_used = 0;
 
@@ -524,14 +524,13 @@ LogObject::log(LogAccess * lad, char *text_entry)
   // likewise, send data to a remote client even if local space is exhausted
   // (if there is a remote client, m_logFile will be NULL
   if (Log::config->logging_space_exhausted && !writes_to_pipe() && m_logFile) {
-    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
+    Note("logging space exhausted, can't write to:%s, drop this entry", m_logFile->m_name);
     return Log::FULL;
   }
   // this verification must be done here in order to avoid 'dead' LogBuffers
   // with none zero 'in usage' counters (see _checkout_write for more details)
   if (!lad && !text_entry) {
     Note("Call to LogAccess without LAD or text entry; skipping");
-    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
     return Log::FAIL;
   }
 
@@ -539,7 +538,6 @@ LogObject::log(LogAccess * lad, char *text_entry)
 
   if (lad && m_filter_list.toss_this_entry(lad)) {
     Debug("log", "entry filtered, skipping ...");
-    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_skip_stat);
     return Log::SKIP;
   }
 
@@ -548,7 +546,6 @@ LogObject::log(LogAccess * lad, char *text_entry)
     // LogFormat object for aggregate formats
     if (m_format->m_agg_marshal_space == NULL) {
       Note("No temp space to marshal aggregate fields into");
-      LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
       return Log::FAIL;
     }
 
@@ -572,7 +569,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     if (time_now < m_format->m_interval_next) {
       Debug("log-agg", "Time now = %ld, next agg = %ld; not time "
             "for aggregate entry", time_now, m_format->m_interval_next);
-      return Log::LOG_OK;
+      return Log::AGGR;
     }
     // can easily compute bytes_needed because all fields are INTs
     // and will use INK_MIN_ALIGN each
@@ -585,17 +582,15 @@ LogObject::log(LogAccess * lad, char *text_entry)
 
   if (bytes_needed == 0) {
     Debug("log-buffer", "Nothing to log, bytes_needed = 0");
-    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_skip_stat);
     return Log::SKIP;
   }
-  // Now try to place this entry in the current LogBuffer.
 
+  // Now try to place this entry in the current LogBuffer.
   buffer = _checkout_write(&offset, bytes_needed);
 
   if (!buffer) {
-    Note("Traffic Server is skipping the current log entry for %s because "
-         "its size (%zu) exceeds the maximum payload space in a " "log buffer", m_basename, bytes_needed);
-    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
+    Note("Skipping the current log entry for %s because its size (%zu) exceeds "
+         "the maximum payload space in a log buffer", m_basename, bytes_needed);
     return Log::FAIL;
   }
   //
@@ -619,8 +614,6 @@ LogObject::log(LogAccess * lad, char *text_entry)
   }
 
   buffer->checkin_write(offset);
-
-  LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_stat);
 
   return Log::LOG_OK;
 }
@@ -1298,4 +1291,48 @@ LogObjectManager::transfer_objects(LogObjectManager & old_mgr)
     Debug("log-config-transfer", "Log Object List after transfer:");
     display();
   }
+}
+
+int
+LogObjectManager::log(LogAccess * lad)
+{
+  int ret = Log::SKIP;
+  ProxyMutex *mutex = this_thread()->mutex;
+
+  for (size_t i = 0; i < _numObjects; i++) {
+    //
+    // Auto created LogObject is only applied to LogBuffer
+    // data received from network in collation host. It should
+    // be ignored here.
+    //
+    if (_objects[i]->m_auto_created)
+      continue;
+
+    ret |= _objects[i]->log(lad);
+  }
+
+  //
+  // The bit-field code in *ret* are priority chain:
+  // FAIL > FULL > LOG_OK > AGGR > SKIP
+  // The if-statement should keep step with the priority order.
+  //
+  if (unlikely(ret & Log::FAIL)) {
+    RecIncrRawStat(log_rsb, mutex->thread_holding,
+                   log_stat_event_log_access_fail_stat, 1);
+  } else if (unlikely(ret & Log::FULL)) {
+    RecIncrRawStat(log_rsb, mutex->thread_holding,
+                   log_stat_event_log_access_full_stat, 1);
+  } else if (likely(ret & Log::LOG_OK)) {
+    RecIncrRawStat(log_rsb, mutex->thread_holding,
+                   log_stat_event_log_access_ok_stat, 1);
+  } else if (unlikely(ret & Log::AGGR)) {
+    RecIncrRawStat(log_rsb, mutex->thread_holding,
+                   log_stat_event_log_access_aggr_stat, 1);
+  } else if (likely(ret & Log::SKIP)) {
+    RecIncrRawStat(log_rsb, mutex->thread_holding,
+                   log_stat_event_log_access_skip_stat, 1);
+  } else
+    ink_release_assert("Unexpected result");
+
+  return ret;
 }

@@ -27,8 +27,6 @@ Contents:
    cache-data-structures.en
    cache-api.en
    cache-appendix.en
-   cache-glossary.en
    tier-storage.en
 
-..   glossary
 ..   appendix

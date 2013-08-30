@@ -28,23 +28,25 @@
 
 **************************************************************************/
 
+#ifndef EVENT_NOTIFY_H
+#define EVENT_NOTIFY_H
+
 #include "ink_thread.h"
 
 class EventNotify
 {
 public:
-  EventNotify(const char *name = NULL);
+  EventNotify();
   void signal(void);
   void wait(void);
-  int timedwait(ink_timestruc *abstime);
+  int timedwait(int timeout); // milliseconds
   void lock(void);
   bool trylock(void);
   void unlock(void);
   ~EventNotify();
 
 private:
-  const char *m_name;
-#ifdef TS_HAS_EVENTFD
+#ifdef HAVE_EVENTFD
   int m_event_fd;
   int m_epoll_fd;
 #else
@@ -52,3 +54,6 @@ private:
   ink_mutex m_mutex;
 #endif
 };
+
+#endif /* EVENT_NOTIFY_H */
+/* vim: set sw=4 ts=4 tw=79 et : */

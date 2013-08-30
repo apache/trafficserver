@@ -635,6 +635,12 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
       // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
       //m_buffer_in_iocore->convert_to_network_order();
 
+      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_sent_to_network_stat,
+                     log_buffer_header->entry_count);
+
+      RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_sent_to_network_stat,
+                     log_buffer_header->byte_count);
+
       // copy into m_send_buffer
       ink_assert(m_send_buffer != NULL);
       m_send_buffer->write((char *) &nmh, sizeof(NetMsgHeader));

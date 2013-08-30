@@ -1,19 +1,19 @@
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 .. default-domain:: c
 
@@ -29,13 +29,6 @@ Synopsis
 .. function:: void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
 .. function:: void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
 
-.. rubric:: Opaque types
-
-.. type:: TSHttpTxn
-.. type:: TSHttpSsn
-.. type:: TSHttpHookID
-.. type:: TSCont
-
 Description
 ===========
 
@@ -45,27 +38,21 @@ function for callback amounts to adding the function to a hook. You
 can register your plugin to be called back for every single
 transaction, or for specific transactions only.
 
-HTTP transaction hooks are set on a global basis using the function
+HTTP :term:`transaction` hooks are set on a global basis using the function
 :func:`TSHttpHookAdd`. This means that the continuation specified
 as the parameter to :func:`TSHttpHookAdd` is called for every
 transaction. :func:`TSHttpHookAdd` is typically called from
 :func:`TSPluginInit` or :func:`TSRemapInit`.
 
-A session consists of a single client connection to Traffic Server.
-A session can consist of several transactions in succession. The
-session starts when the client connection opens, and ends when the
-connection closes. :func:`TSHttpSsnHookAdd` adds :arg:`contp` to
-the end of the list of HTTP transaction hooks specified by :arg:`id`.
+:func:`TSHttpSsnHookAdd` adds :arg:`contp` to
+the end of the list of HTTP :term:`session` hooks specified by :arg:`id`.
 This means that :arg:`contp` is called back for every transaction
 within the session, at the point specified by the hook ID. Since
 :arg:`contp` is added to a session, it is not possible to call
 :func:`TSHttpSsnHookAdd` from the plugin initialization routine;
 the plugin needs a handle to an HTTP session.
 
-A transaction consists of a single HTTP request from a client and
-the response that Traffic Server sends to that client. A transaction
-begins when Traffic Server receives a request, and ends when Traffic
-Server sends the response. :func:`TSHttpTxnHookAdd` adds :arg:`contp`
+:func:`TSHttpTxnHookAdd` adds :arg:`contp`
 to the end of the list of HTTP transaction hooks specified by
 :arg:`id`. Since :arg:`contp` is added to a transaction, it is
 not possible to call :func:`TSHttpTxnHookAdd` from the plugin
@@ -121,4 +108,4 @@ transaction hooks::
 
 See also
 ========
-:manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`
+:manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, :manpage:`TSLifecycleHookAdd(3ts)`

@@ -2907,7 +2907,6 @@ int main(int argc __attribute__((unused)), char *argv[]) {
           server_fd = open_server(server_port + retry, accept_read);
           if (server_fd < 0) {
             if (server_fd == -EADDRINUSE) {
-              printf("here\n");
               continue;
             }
             panic_perror("open_server");

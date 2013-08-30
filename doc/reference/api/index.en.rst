@@ -8,9 +8,9 @@ API Reference
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,16 +21,18 @@ API Reference
 .. toctree::
   :maxdepth: 2
 
-  TSAPI.en.rst
-  TSDebug.en.rst
-  TSHttpHookAdd.en.rst
-  TSHttpParserCreate.en.rst
-  TSHttpTxnMilestoneGet.en.rst
-  TSIOBufferCreate.en.rst
-  TSInstallDirGet.en.rst
-  TSMBufferCreate.en.rst
-  TSPluginInit.en.rst
-  TSRemap.en.rst
-  TSTrafficServerVersionGet.en.rst
-  TSUrlCreate.en.rst
-  TSmalloc.en.rst
+  TSAPI.en
+  TSDebug.en
+  TSHttpHookAdd.en
+  TSHttpParserCreate.en
+  TSHttpTxnMilestoneGet.en
+  TSIOBufferCreate.en
+  TSInstallDirGet.en
+  TSMBufferCreate.en
+  TSPluginInit.en
+  TSRemap.en
+  TSTrafficServerVersionGet.en
+  TSUrlCreate.en
+  TSLifecycleHookAdd.en
+  TSmalloc.en
+  TSTypes.en
