@@ -217,9 +217,16 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+
 
 - project:
     name: centos-5-x86
@@ -236,7 +243,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -255,7 +268,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -274,7 +293,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -293,7 +318,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -312,7 +343,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -331,7 +368,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -350,7 +393,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -369,7 +418,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
         - '{node}-{branch}-clang-regression':
@@ -394,7 +449,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -413,7 +474,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -432,7 +499,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -451,7 +524,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -473,7 +552,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -495,7 +580,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
@@ -517,7 +608,13 @@
         - '{node}-{branch}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-debug-regression':
+            branch: 3.2.x
+            repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-debug-regression':
             branch: 4.0.x
             repo: file:///home/jenkins/git/trafficserver_4.0
 
