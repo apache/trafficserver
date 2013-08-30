@@ -34,5 +34,6 @@ API Reference
   TSTrafficServerVersionGet.en
   TSUrlCreate.en
   TSLifecycleHookAdd.en
+  TSHttpOverridableConfig.en
   TSmalloc.en
   TSTypes.en
