@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2167] Update apichecker.pl to give suggestions on additional
+   deprecated APIs
+
   *) [TS-2163] Remove WDA_BILLING, ACC_ALARMS etc. code and definitions.
 
   *) [TS-2156] Fix stats trap in different type of threads
