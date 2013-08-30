@@ -3,15 +3,10 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2163] Remove WDA_BILLING, ACC_ALARMS etc. code and definitions.
 
-  *) [TS-2161] TSHttpTxnHookAdd memory Leak
-    Author: bettydramit <b13621367396@gmail.com>
-
   *) [TS-2156] Fix stats trap in different type of threads
 
   *) [TS-2160] Remove ats_is_ip_nonroutable and replace it with the less confusing
    ats_is_ip_linklocal and ats_is_ip_private.
-
-  *) [TS-2154] Lua plugin asserts traffic_server on startup
 
   *) [TS-2158] Properly mark an IP as non-routable for IPv4 and IPv6 link local
    addresses as well as IPv6 private addresses and IPv4 Carrier Grade NAT
@@ -63,7 +58,12 @@ Changes with Apache Traffic Server 4.1.0
   *) [TS-2123] Remove useless max_entries_per_buffer option.
 
 
-Changes with Apache Traffic Server 4.0.0
+Changes with Apache Traffic Server 4.0.1
+
+  *) [TS-2161] TSHttpTxnHookAdd memory Leak.
+    Author: bettydramit <b13621367396@gmail.com>
+
+  *) [TS-2154] Lua plugin asserts traffic_server on startup
 
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
