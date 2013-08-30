@@ -177,7 +177,7 @@
     wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -209,7 +209,7 @@
     wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -240,7 +240,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -276,7 +276,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -311,7 +311,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -346,7 +346,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -381,7 +381,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -416,7 +416,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -451,7 +451,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -497,7 +497,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -532,7 +532,7 @@
     wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -567,7 +567,7 @@
     wccp: --disable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -602,7 +602,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -637,7 +637,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -677,7 +677,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -722,7 +722,7 @@
     wccp: --enable-wccp
     debug: --disable-debug
     hardening: '0'
-    experimental:
+    experimental: ''
     jobs:
         - '{node}-{branch}-{tag}-regression':
             branch: master
