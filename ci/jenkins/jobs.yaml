@@ -22,7 +22,7 @@
         artifactDaysToKeep: -1
         artifactNumToKeep: 2
     triggers:
-        - pollscm: 'H * * * *'
+        - pollscm: 'H/30 * * * *'
 
 - builder:
     name: linux-regression
