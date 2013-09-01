@@ -267,6 +267,8 @@ Set standard log file format options by following the steps below:
 
 .. XXX:: setting what values?
 
+.. _using-custom-log-formats:
+
 Using the Custom Format
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -330,13 +332,9 @@ In order to accomplish this, we
 2. :ts:cv:`proxy.config.log.custom_logs_enabled`
 3. In the
    :file:`logs_xml.config` file
-4. Add
-   ```LogFormat`` <../configuration-files/logs_xml.config#LogFormat>`_,
-   ```LogFilter`` <../configuration-files/logs_xml.config#LogFilters>`_,
-   and
-   ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
+4. Add :ref:`LogFormat`, :ref:`LogFilters`, and :ref:`LogObject`
    specifications to the configuration file.
-5. Save and close the ``log``s_xml.config`` file.
+5. Save and close the :file:`logs_xml.config` file.
 6. Run the command :option:`traffic_line -x` to apply your configuration
    changes.
 
@@ -351,8 +349,7 @@ period of time. This can significantly reduce the size of the log files
 generated.
 
 To generate a summary log file, create a
-```LogFormat`` <../configuration-files/logs_xml.config#LogFormat>`_
-object in the XML-based logging configuration file
+:ref:`LogFormat` object in the XML-based logging configuration file
 (:file:`logs_xml.config`) using
 the SQL-like aggregate operators below. You can apply each of these
 operators to specific fields, over a specified interval.
@@ -448,8 +445,8 @@ calculate a rough metric that compares the two formats.
 For standard log formats, select Binary or ASCII (refer to `Setting
 Standard Log File Format Options`). For the custom log
 format, specify ASCII or Binary mode in the
-```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
-(refer to `Using the Custom Format <#UsingCustomFormat>`_). In addition
+:ref:`LogObject`
+(refer to :ref:`Using the Custom Format <using-custom-log-formats>`). In addition
 to the ASCII and binary options, you can also write custom log entries
 to a UNIX-named pipe (i.e., a buffer in memory). Other processes can
 then read the data using standard I/O functions. The advantage of using
@@ -585,11 +582,11 @@ log files when they reach a certain size, follow the steps below:
    changes.
 
 You can fine-tune log file rolling settings for a custom log file in the
-```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
+:ref:`LogObject`
 specification in the
 :file:`logs_xml.config` file.
 The custom log file uses the rolling settings in its
-```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_,
+:ref:`LogObject`,
 which override the default settings you specify in Traffic Manager or
 the :file:`records.config` file described above.
 
@@ -617,12 +614,11 @@ HTTP Host Log Splitting
 HTTP host log splitting enables you to record HTTP transactions for
 different origin servers in separate log files. When HTTP host log
 splitting is enabled, Traffic Server creates a separate log file for
-each origin server that's listed in the
-```log_hosts.config`` <#EditingLogHostsConfigFile>`_ file. When both ICP
-and HTTP host log splitting are enabled, Traffic Server generates
+each origin server that's listed in the :file:`log_hosts.config` file.
+When both ICP and HTTP host log splitting are enabled, Traffic Server generates
 separate log files for HTTP transactions (based on the origin server)
 and places all ICP transactions in their own respective log files. For
-example, if the ``log_hosts.config`` file contains the two origin
+example, if the :file:`log_hosts.config` file contains the two origin
 servers ``uni.edu`` and ``company.com`` and Squid format is enabled,
 then Traffic Server generates the following log files:
 
@@ -743,16 +739,16 @@ To configure Traffic Server to collate event log files, you must perform
 the following tasks:
 
 -  Either `Configure Traffic Server Node to Be a Collation
-   Server <#ConfiguringTSCollationServer>`_ or install & configure a
-   `Standalone Collator <#UsingStandaloneCollator>`_.
+   Server <Configuring Traffic Server to Be a Collation Server>`_ or install & configure a
+   `Standalone Collator <Using a Standalone Collator>`_
 -  `Configure Traffic Server Nodes to Be a Collation
-   Clients <#ConfiguringTSCollationClient>`_.
+   Clients <Configuring Traffic Server to Be a Collation Server>`_.
 -  Add an attribute to the
-   ```LogObject`` <../configuration-files/logs_xml.config#LogObject>`_
+   :ref:`LogObject`
    specification in the
    :file:`logs_xml.config` file
    if you are using custom log file formats; refer to `Collating Custom
-   Event Log Files <#CollatingCustomEventLogFiles>`_.
+   Event Log Files`_.
 
 Configuring Traffic Server to Be a Collation Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -826,7 +822,7 @@ been established, then you must restart Traffic Server.
    -  :ts:cv:`proxy.local.log.collation_mode`: ``2`` to configure this node as log collation client and send
       standard formatted log entries to the collation server.
       For XML-based formatted log entries, see :file:`logs_xml.config`
-      file; refer to `Using the Custom Format <#UsingCustomFormat>`_.
+      file; refer to :ref:`Using the Custom Format <using-custom-log-formats>`.
    -  :ts:cv:`proxy.config.log.collation_host`
    -  :ts:cv:`proxy.config.log.collation_port`
    -  :ts:cv:`proxy.config.log.collation_secret`
@@ -847,12 +843,9 @@ To collate custom event log files
 
 1. On each collation client, edit the `:file:`logs_xml.config`
 2. Add the
-   ```CollationHosts`` <../configuration-files/logs_xml.config#LogsXMLObjectCollationHosts>`_
-   attribute to the
-   ```LogObject`` <../configuration-files/logs_xml.config#LogsXMLObjects>`_
-   specification:
-
-   ::
+   :ref:`CollationHost <logs-xml-logobject-collationhost>` attribute to the
+   :ref:`LogObject`
+   specification: ::
 
        <LogObject>
          <Format = "squid"/>

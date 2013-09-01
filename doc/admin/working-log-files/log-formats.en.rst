@@ -20,6 +20,8 @@ Log Formats
   specific language governing permissions and limitations
   under the License.
 
+.. _log-formats-squid-format:
+
 Squid Format
 ============
 
@@ -45,7 +47,7 @@ Squid Format
     The cache result code; how the cache responded to the request:
     ``HIT``, ``MISS``, and so on. Cache result codes are described
     :ref:`here <squid-netscape-result-codes>`.
-     The proxy response status code (the HTTP response status code from
+    The proxy response status code (the HTTP response status code from
     Traffic Server to client).
 
 ``5``

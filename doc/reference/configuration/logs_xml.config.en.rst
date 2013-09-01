@@ -215,6 +215,8 @@ The following list shows the ``LogObject`` specifications.
     A comma-separated list of valid hostnames.This tag indicates that
     only entries from the named servers will be included in the file.
 
+.. _logs-xml-logobject-collationhost:
+
 ``<CollationHosts = "list_of_valid_hostnames"/>``
     Optional
     A comma-separated list of collation servers to which all log entries

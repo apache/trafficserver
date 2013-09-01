@@ -1,3 +1,5 @@
+.. _admin-faqs:
+
 FAQ and Troubleshooting Tips
 ****************************
 
@@ -27,9 +29,9 @@ FAQs
 How do you create a raw disk for the cache if all your disks have mounted file systems?
 ---------------------------------------------------------------------------------------
 
-Create a large file on filesystem (with ``dd``) and mount it as loopback device.
-This is accomplished with ``loosetup(8)`` on Linux, ``lofiadm(1m)`` on Solaris
-and Illumos, and ``mdconfig(8)`` on FreeBSD.
+Create a large file on filesystem (with :manpage`dd(1)`) and mount it as loopback device.
+This is accomplished with :manpage:`losetup(8)` on Linux, :manpage:`lofiadm(1m)` on Solaris
+and Illumos, and :manpage:`mdconfig(8)` on FreeBSD.
 
 How do disk I/O errors affect the cache and what does Traffic Server do when a cache disk fails?
 ------------------------------------------------------------------------------------------------
@@ -61,27 +63,19 @@ Traffic Server does not execute the applets, scripts, or programs,
 however - these objects run only when the client system (ie, the one
 that sent the request) loads them.
 
-How do you apply changes to the ``logs_xml.config`` file to all nodes in a cluster?
------------------------------------------------------------------------------------
-
-Link to documentation
-
 In Squid- and Netscape-format log files, what do the cache result codes mean?
 -----------------------------------------------------------------------------
 
-This is described in detail in the `Squid log format
-documentation <../working-log-files/squid-format>`_
+This is described in detail in the :ref:`log-formats-squid-format`
 
 What is recorded by the ``cqtx`` field in a custom log file?
 ------------------------------------------------------------
 
 -  In **forward proxy mode**, the cqtx field records the complete client
-   request in the log file (for example, GET http://www.company.com
-   HTTP/1.0 ).
+   request in the log file (for example, ``GET http://www.company.com HTTP/1.0``).
 -  In **reverse proxy mode**, the cqtx field records the hostname or IP
    address of the origin server because Traffic Server first remaps the
-   request as per map rules in the
-   `remap.config <../configuration-files/remap.config>`_ file.
+   request as per map rules in the :file:`remap.config` file.
 
 Does Traffic Server refresh entries in its host database after a certain period of time if they have not been used?
 -------------------------------------------------------------------------------------------------------------------
@@ -94,9 +88,7 @@ to compare the ``ttl`` value set by the name server with the ``ttl``
 value set by Traffic Server, and then use either the lower or the higher
 value.
 
-see
-`proxy.config.hostdb.ttl_mode <../configuration-files/records.config#proxy.config.hostdb.ttl_mode>`_
-for more info
+see :ts:cv:`proxy.config.hostdb.ttl_mode` for more info
 
 Can you improve the look of your custom response pages by using images, animated .gifs, and Java applets?
 ---------------------------------------------------------------------------------------------------------
@@ -113,27 +105,24 @@ Can Traffic Server run in forward proxy and reverse proxy modes at the same time
 ---------------------------------------------------------------------------------
 
 Yes. When you enable reverse proxy mode, Traffic Server remaps incoming
-requests according to the map rules in the
-```remap.config`` <../configuration-files/remap.config>`_ file. All
+requests according to the map rules in the :file:`remap.config` file. All
 other requests that do not match a map rule are simply served in forward
 proxy mode.
 
 If you want to run in reverse proxy only mode (wherein Traffic Server
 does *not* serve requests that fail to match a map rule), then you must
-set the configuration variable
-`proxy.config.url_remap.remap_required <../configuration-files/records.config#proxy.config.url_remap.remap_required>`_
-to ``1`` in the
-`:file:`records.config` <../configuration-files/records.config>`_ file.
+set the configuration variable :ts:cv:`proxy.config.url_remap.remap_required`
+to ``1`` in the :file:`records.config` file.
 
 How do I enable forward proxy mode
 ----------------------------------
 
-Please refer to the `Forward Proxy <../forward-proxy>`_ documentation
+Please refer to the :ref:`forward-proxy` documentation
 
 How do I interpret the Via: header code?
 ----------------------------------------
 
-Take a look at our `Via decoder Ring </tools/via>`_
+Take a look at our `Via decoder Ring <http://trafficserver.apache.org/tools/via>`_
 
 Support for HTTP Expect: Header
 -------------------------------
@@ -177,26 +166,29 @@ You are unable to execute Traffic Line commands
 
 Traffic Line commands do not execute under the following conditions:
 
--  **When the :program:`traffic_manager` process is not running** Check to see
-   if the ``**traffic_manager**`` process is running by entering the
-   following command: ``ps aux | grep traffic_manager``
+- **When the traffic_manager process is not running** Check to see
+  if the :program:`traffic_manager` process is running by entering the
+  following command: ``pgrep -l traffic_manager``
 
-If the :program:`traffic_manager` process is not running, then enter the
-following command from the Traffic Server ``bin`` directory to start it:
-``./traffic_manager``
+  If the :program:`traffic_manager` process is not running, then enter the
+  following command from the Traffic Server ``bin`` directory to start it:
+  ``./traffic_manager``
 
-.. this is wrong
+  .. this is wrong
 
-You should always start and stop Traffic Server with the
-``start_traffic_server``\ and ``stop_traffic_server`` commands to ensure
-that all the processes start and stop correctly. For more information,
-refer to `Getting Started <getstart.htm>`_. \* \* **When you are not
-executing the command from ``$TSHome/bin``** If the Traffic Server
-``bin`` directory is not in your path, then prepend the Traffic Line
-commands with ``./`` (for example, ``./traffic_line -h``). \* \* *\*
-When multiple Traffic Server installations are present and you are not
-executing the Traffic Line command from the active Traffic Server path
-specified in ``/etc/trafficserver``*\ \*
+  You should always start and stop Traffic Server with the
+  :program:`trafficserver start`` and :program:`trafficserver stop` commands to ensure
+  that all the processes start and stop correctly. For more information,
+  refer to :ref:`getting-started`.
+
+- **When you are not executing the command from $TSHome/bin** If the Traffic Server
+  ``bin`` directory is not in your path, then prepend the Traffic Line
+  commands with ``./`` (for example, ``./traffic_line -h``). 
+
+- **When multiple Traffic Server installations are present and you are not
+  executing the Traffic Line command from the active Traffic Server path
+  specified in ``/etc/trafficserver``**
+
 
 You observe inconsistent behavior when one node obtains an object from another node in the cluster
 --------------------------------------------------------------------------------------------------
@@ -212,9 +204,8 @@ the latest version of xntpd, go to ``http://www.eecis.udel.edu/~ntp/``
 Web browsers display an error document with a 'data missing' message
 --------------------------------------------------------------------
 
-A message similar to the following might display in web browsers:
+A message similar to the following might display in web browsers: ::
 
-::
       Data Missing
 
       This document resulted from a POST operation and has expired from the cache. You can repost the form data to recreate the document by pressing the Reload button.
@@ -230,9 +221,8 @@ Traffic Server does not resolve any websites
 --------------------------------------------
 
 The browser indicates that it is contacting the host and then times out
-with the following message:
+with the following message: ::
 
-::
         The document contains no data; Try again later, or contact the server's Administrator...
 
 Make sure the system is configured correctly and that Traffic Server can
@@ -240,14 +230,14 @@ read the name resolution file:
 
 -  Check if the server can resolve DNS lookups by issuing the nslookup
    command (for example, ``nslookup www.myhost.com``).
--  Check if the ``/etc/resolv.conf`` file contains valid IP addresses
+-  Check if the :manpage:`resolv.conf(5)` file contains valid IP addresses
    for your DNS servers.
--  On some systems, if the ``/etc/resolv.conf`` file is unreadable or
+-  On some systems, if the :manpage:`resolv.conf(5)` file is unreadable or
    has no name server entry, then the operating system uses
    ``localhost`` as a name server. Traffic Server, however, does not use
    this convention. If you want to use ``localhost`` as a name server,
    then you must add a name server entry for ``127.0.0.1`` or
-   ``0.0.0.0`` in the ``/etc/resolv.conf`` file.
+   ``0.0.0.0`` in the :manpage:`resolv.conf(5)` file.
 -  Check that the Traffic Server user account has permission to read the
    /etc/resolv.conf file. If it does not, then change the file
    permissions to ``rw-r--r--`` (``644``)
@@ -255,25 +245,23 @@ read the name resolution file:
 'Maximum document size exceeded' message in the system log file
 ---------------------------------------------------------------
 
-The following message appears in the system log file:
+The following message appears in the system log file: ::
 
-::
          WARNING: Maximum document size exceeded
 
 A requested object was larger than the maximum size allowed in the
 Traffic Server cache, so Traffic Server provided proxy service for the
 oversized object but did not cache it. To set the object size limit for
-the cache, modify the proxy.config.cache.limits.http.max_doc_size
+the cache, modify the :ts:cv:`proxy.config.cache.limits.http.max_doc_size`
 variable in the records.config file. If you do not want to limit the
 size of objects in the cache, then set the document size
-to\ ``**0**``\ (zero).
+to ``0`` (zero).
 
 'DrainIncomingChannel' message in the system log file
 -----------------------------------------------------
 
-The following messages may appear in the system log file:
+The following messages may appear in the system log file: ::
 
-::
      Feb 20 23:53:40 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.telechamada.pt/ HTTP/1.0'
      Feb 20 23:53:46 louis last message repeated 1 time
      Feb 20 23:53:58 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.ip.pt/ HTTP/1.0'
@@ -290,16 +278,15 @@ client machines have no access to the cluster ports.
 'No cop file' message in the system log file
 --------------------------------------------
 
-The following message appears repeatedly in the system log file:
+The following message appears repeatedly in the system log file: ::
 
-::
      traffic_cop[16056]: encountered "var/trafficserver/no_cop" file...exiting
 
 The file ``var/trafficserver/no_cop`` acts as an administrative control
 that instructs the :program:`traffic_cop` process to exit immediately without
 starting :program:`traffic_manager` or performing any health checks. The
 ``no_cop`` file prevents Traffic Server from starting automatically when
-it has been stopped with the ``stop_traffic_server`` command. Without
+it has been stopped with the option:`trafficserver stop` command. Without
 this static control, Traffic Server would restart automatically upon
 system reboot. The ``no_cop`` control keeps Traffic Server off until it
 is explicitly restarted with the ::
@@ -367,7 +354,7 @@ Connection throttle events can occur under the following conditions:
 
 If necessary, you can reset the maximum number of connections supported
 by Traffic Server by editing the value of the
-``_proxy.config.net.connections_throttle _`` configuration variable in
+:ref:`proxy.config.net.connections_throttle` configuration variable in
 the records.config file. Do not increase the connection throttle limit
 unless the system has adequate memory to handle the client connections
 required. A system with limited RAM might need a throttle limit lower
