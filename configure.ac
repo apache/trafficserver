@@ -540,6 +540,7 @@ _ts_saved_CXXFLAGS="${CXXFLAGS}"
 AC_PROG_CC([cc gcc clang icc])
 AC_PROG_CXX([c++ g++ clang++ icpc])
 
+AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
