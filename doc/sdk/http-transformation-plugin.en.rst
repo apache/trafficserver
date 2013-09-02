@@ -1,4 +1,4 @@
-.. _transform-plugin:
+.. _http-transformation-plugin:
 
 HTTP Transformation Plugins
 ***************************

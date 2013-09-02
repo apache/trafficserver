@@ -1,3 +1,5 @@
+.. _programmers-guide:
+
 Programmers' Guide
 ******************
 
@@ -33,6 +35,8 @@ a previous, commercially-available version of Traffic Server that
 supported different operating systems and more functions than the
 current version. As a result, some of the sections may refer to
 functionality that no longer exists.
+
+.. These links need fixing..
 
 If you find any such issues, you may want to submit a `bug or a
 patch <https://issues.apache.org/jira/secure/CreateIssue!default.jspa?pid=12310963>`__.

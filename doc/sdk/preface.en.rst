@@ -1,3 +1,5 @@
+.. _sdk-preface:
+
 Preface
 ********
 
@@ -28,16 +30,12 @@ The *Traffic Server Software Developer's Kit* is a reference for
 creating plugins. **Plugins** are programs that add services (such as
 filtering or content transformation) or entire features (such as new
 protocol support) to Traffic Server. If you are new to writing Traffic
-Server plugins, then read the first two chapters, `Getting
-Started <../getting-started>`__ and `Creating Traffic Server
-Plugins <../how-to-create-trafficserver-plugins>`__, and use the
-remaining chapters as needed. `Header-Based Plugin
-Examples <../header-based-plugin-examples>`__ provides details about
-plugins that work on HTTP headers, while `HTTP Transformation
-Plugins <../http-transformation-plugin>`__ explains how to write a
+Server plugins, then read the first two chapters, :ref:`sdk-getting-started`
+and :ref:`how-to-create-to-create-trafficserver-plugins`, and use the
+remaining chapters as needed. :ref:`header-based-plugin-examples` provides details about
+plugins that work on HTTP headers, while :ref:`http-transformation-plugin` explains how to write a
 plugin that transforms or scans the body of an HTTP response. If you
-want to support your own protocol on Traffic Server, then reference `New
-Protocol Plugins <../new-protocol-plugins>`__.
+want to support your own protocol on Traffic Server, then reference :ref:`new-protocol-plugins`.
 
 Audience
 --------

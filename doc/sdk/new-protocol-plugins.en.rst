@@ -1,3 +1,5 @@
+.. _new-protocol-plugins:
+
 New Protocol Plugins
 ********************
 
