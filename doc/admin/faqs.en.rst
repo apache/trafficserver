@@ -66,7 +66,7 @@ that sent the request) loads them.
 In Squid- and Netscape-format log files, what do the cache result codes mean?
 -----------------------------------------------------------------------------
 
-This is described in detail in the :ref:`log-formats-squid-format`
+This is described in detail in the :ref:`log-formats-squid-format` documentation.
 
 What is recorded by the ``cqtx`` field in a custom log file?
 ------------------------------------------------------------
@@ -117,12 +117,12 @@ to ``1`` in the :file:`records.config` file.
 How do I enable forward proxy mode
 ----------------------------------
 
-Please refer to the :ref:`forward-proxy` documentation
+Please refer to the :ref:`forward-proxy` documentation.
 
 How do I interpret the Via: header code?
 ----------------------------------------
 
-Take a look at our `Via decoder Ring <http://trafficserver.apache.org/tools/via>`_
+Take a look at our `Via decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 Support for HTTP Expect: Header
 -------------------------------

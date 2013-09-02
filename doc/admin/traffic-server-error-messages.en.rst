@@ -55,7 +55,7 @@ Traffic Server Warnings
    The specified client is not allowed to connect to Traffic Server;
    the client IP address is not listed in the ``ip_allow.config`` file.
 
-``Could not rename log <filename> to <rolled filename``
+``Could not rename log <filename> to <rolled filename>``
    System error when renaming log file during roll.
 
 ``Did <this amount> of backup; still to do <remaining amount>``
@@ -143,8 +143,8 @@ Traffic Server returns detailed error messages to browser clients when
 there are problems with the HTTP transactions requested by the browser.
 These Traffic Server response messages correspond to standard HTTP
 response codes, but provide more information. A list of the more
-frequently-encountered HTTP response codes is provided in :ref:`Standard HTTP
-Response Messages`. You can customize the Traffic Server response messages, if desired.
+frequently-encountered HTTP response codes is provided in :ref:`standard-http-response-messages`.
+You can customize the Traffic Server response messages, if desired.
 
 The following table lists the hard-coded Traffic Server HTTP messages,
 with corresponding HTTP response codes and customizable files.

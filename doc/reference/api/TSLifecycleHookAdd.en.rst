@@ -39,7 +39,7 @@ once during the execution of the Traffic Server process and therefore should be 
 `TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`
    Called after the :ts:cv:`proxy server port <proxy.config.http.server_ports>` data structures have been initialized
    but before connections are accepted on those ports. The sockets corresponding to the ports may or may not be open
-   depending on how the `traffic_server` process was invoked. Other API functions that depend on server ports should be
+   depending on how the :program:`traffic_server` process was invoked. Other API functions that depend on server ports should be
    called from this hook and not :func:`TSPluginInit`.
 
    Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and `NULL` data.
@@ -99,7 +99,7 @@ to be initialized and therefore does not work if called from :func:`TSPluginInit
 History
 =======
 
-Lifecycle hooks were introduced to solve process initialization ordering issues (TS-1487). Different API calls required
+Lifecycle hooks were introduced to solve process initialization ordering issues (`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_). Different API calls required
 different modules of Traffic Server to be initialized for the call to work, but others did not work that late in initialization, which was problematic because all of them could effectively only be called from :func:`TSPluginInit` . The
 solution was to move :func:`TSPluginInit` as early as possible in the process initialization and provide hooks for API
 calls that needed to be invoked later which served essentially as additional pluging initialization points.
