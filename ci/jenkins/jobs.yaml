@@ -39,6 +39,7 @@
         - shell: make install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: make distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
@@ -60,6 +61,7 @@
         - shell: make install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: make distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
@@ -79,6 +81,7 @@
         - shell: gmake install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: gmake distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
@@ -104,6 +107,7 @@
         - shell: gmake install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: gmake distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
