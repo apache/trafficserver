@@ -947,6 +947,22 @@ StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
   case '/':
     RecData recTmp;
     RecDataClear(RECD_NULL, &recTmp);
+
+    /*
+     * Force the type of result to be RecFloat on div operation
+     */
+    if (result->m_token_type != RECD_FLOAT && result->m_token_type != RECD_CONST) {
+      RecFloat t;
+
+      result->m_token_type = RECD_FLOAT;
+
+      t = (RecFloat)l.rec_int;
+      l.rec_float = t;
+
+      t = (RecFloat)r.rec_int;
+      r.rec_float = t;
+    }
+
     if (RecDataCmp(result->m_token_type, r, recTmp)) {
       result->m_token_value = RecDataDiv(result->m_token_type, l, r);
     }
