@@ -1,4 +1,9 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 4.0.2
+
+  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue()
+
+
 Changes with Apache Traffic Server 4.0.1
 
   *) [TS-2154] Lua plugin asserts traffic_server on startup.
