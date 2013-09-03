@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue()
+
   *) [TS-2165] Introduce cluster-wide logging stats
 
   *) [TS-2167] Update apichecker.pl to give suggestions on additional

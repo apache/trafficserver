@@ -811,6 +811,7 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
       break;
 
     case RECD_INT:             // fallthought
+    case RECD_COUNTER:
     case RECD_FLOAT:
       if (cluster) {
         if (!overviewGenerator->varClusterDataFromName(token->m_token_type,
