@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2200] TS_HRTIME_xxx in experimental.h is invalid to use.
+   Author: Yu Qing
+
   *) [TS-2235] url_print should NOT output "?" for empty query string.
    Author: Yu Qing
 

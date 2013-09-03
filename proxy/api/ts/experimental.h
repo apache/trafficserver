@@ -110,20 +110,20 @@ extern "C"
   tsapi void TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength);
 
   /* ===== High Resolution Time ===== */
-#define TS_HRTIME_FOREVER  HRTIME_FOREVER
-#define TS_HRTIME_DECADE   HRTIME_DECADE
-#define TS_HRTIME_YEAR     HRTIME_YEAR
-#define TS_HRTIME_WEEK     HRTIME_WEEK
-#define TS_HRTIME_DAY      HRTIME_DAY
-#define TS_HRTIME_HOUR     HRTIME_HOUR
-#define TS_HRTIME_MINUTE   HRTIME_MINUTE
-#define TS_HRTIME_SECOND   HRTIME_SECOND
-#define TS_HRTIME_MSECOND  HRTIME_MSECOND
-#define TS_HRTIME_USECOND  HRTIME_USECOND
-#define TS_HRTIME_NSECOND  HRTIME_NSECOND
+#define TS_HRTIME_FOREVER  (10*TS_HRTIME_DECADE)
+#define TS_HRTIME_DECADE   (10*TS_HRTIME_YEAR)
+#define TS_HRTIME_YEAR     (365*TS_HRTIME_DAY+TS_HRTIME_DAY/4)
+#define TS_HRTIME_WEEK     (7*TS_HRTIME_DAY)
+#define TS_HRTIME_DAY      (24*TS_HRTIME_HOUR)
+#define TS_HRTIME_HOUR     (60*TS_HRTIME_MINUTE)
+#define TS_HRTIME_MINUTE   (60*TS_HRTIME_SECOND)
+#define TS_HRTIME_SECOND   (1000*TS_HRTIME_MSECOND)
+#define TS_HRTIME_MSECOND  (1000*TS_HRTIME_USECOND)
+#define TS_HRTIME_USECOND  (1000*TS_HRTIME_NSECOND)
+#define TS_HRTIME_NSECOND  (1LL)
 
-#define TS_HRTIME_APPROX_SECONDS(_x) HRTIME_APPROX_SECONDS(_x)
-#define TS_HRTIME_APPROX_FACTOR      HRTIME_APPROX_FACTOR
+#define TS_HRTIME_APPROX_SECONDS(_x) ((_x)>>30)    // off by 7.3%
+#define TS_HRTIME_APPROX_FACTOR      (((float)(1<<30))/(((float)HRTIME_SECOND)))
 
   /*
 ////////////////////////////////////////////////////////////////////
@@ -132,15 +132,15 @@ extern "C"
 //
 ////////////////////////////////////////////////////////////////////
 */
-#define TS_HRTIME_YEARS(_x)    HRTIME_YEARS(_x)
-#define TS_HRTIME_WEEKS(_x)    HRTIME_WEEKS(_x)
-#define TS_HRTIME_DAYS(_x)     HRTIME_DAYS(_x)
-#define TS_HRTIME_HOURS(_x)    HRTIME_HOURS(_x)
-#define TS_HRTIME_MINUTES(_x)  HRTIME_MINUTES(_x)
-#define TS_HRTIME_SECONDS(_x)  HRTIME_SECONDS(_x)
-#define TS_HRTIME_MSECONDS(_x) HRTIME_MSECONDS(_x)
-#define TS_HRTIME_USECONDS(_x) HRTIME_USECONDS(_x)
-#define TS_HRTIME_NSECONDS(_x) HRTIME_NSECONDS(_x)
+#define TS_HRTIME_YEARS(_x)    ((_x)*TS_HRTIME_YEAR)
+#define TS_HRTIME_WEEKS(_x)    ((_x)*TS_HRTIME_WEEK)
+#define TS_HRTIME_DAYS(_x)     ((_x)*TS_HRTIME_DAY)
+#define TS_HRTIME_HOURS(_x)    ((_x)*TS_HRTIME_HOUR)
+#define TS_HRTIME_MINUTES(_x)  ((_x)*TS_HRTIME_MINUTE)
+#define TS_HRTIME_SECONDS(_x)  ((_x)*TS_HRTIME_SECOND)
+#define TS_HRTIME_MSECONDS(_x) ((_x)*TS_HRTIME_MSECOND)
+#define TS_HRTIME_USECONDS(_x) ((_x)*TS_HRTIME_USECOND)
+#define TS_HRTIME_NSECONDS(_x) ((_x)*TS_HRTIME_NSECOND)
 
   tsapi TSReturnCode TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time);
 
