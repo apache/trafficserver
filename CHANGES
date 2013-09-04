@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
-  
+
+
+  *) [TS-2176] do not reset value of api_skip_cache_lookup when reading it
+    Author: Corey Cossentino <corey@omniti.com>
+
   *) [TS-2191] Do not reschedule http_sm when the sm_list`s lock is not
    acquired. This can lose items for the WebUI, which will be fixed in a
    separate bug.
