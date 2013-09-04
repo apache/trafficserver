@@ -1,7 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.0.2
 
-  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue()
+  *) [TS-2174] traffic_shell/traffic_line miss some stats value
+
+  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue().
 
 
 Changes with Apache Traffic Server 4.0.1
