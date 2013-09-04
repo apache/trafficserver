@@ -58,15 +58,15 @@ However, some operating systems have stronger requirements - see the following e
 Examples
 ========
 
-The following basic example shows 64 MB of cache storage in the
+The following basic example shows 128 MB of cache storage in the
 ``/big_dir`` directory::
 
-   /big_dir 67108864
+   /big_dir 134217728
 
 You can use the ``.`` symbol for the current directory. Here is an
 example for 64 MB of cache storage in the current directory::
 
-   . 67108864
+   . 134217728
 
 Solaris Example
 ---------------
