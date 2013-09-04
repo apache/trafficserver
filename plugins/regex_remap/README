@@ -90,6 +90,7 @@ on the right hand side:
     $p     - The original port number
     $s     - The scheme (e.g. http) of the request
     $P     - The entire path of the request
+    $l     - The entire path of the request in lowercase
     $q     - The query part of the request
     $r     - The path parameters of the request (not implemented yet)
     $c     - The cookie string from the request

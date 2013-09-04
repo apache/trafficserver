@@ -41,6 +41,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <ctype.h>
 
 // Get some specific stuff from libts, yes, we can do that now that we build inside the core.
 #include "ink_platform.h"
@@ -67,6 +68,7 @@ enum ExtraSubstitutions {
   SUB_QUERY = 17,
   SUB_MATRIX = 18,
   SUB_CLIENT_IP = 19,
+  SUB_LOWER_PATH = 20,
 };
 
 
@@ -264,6 +266,9 @@ class RemapRegex
           case 'P':
             ix = SUB_PATH;
             break;
+          case 'l':
+            ix = SUB_LOWER_PATH;
+            break;
           case 'q':
             ix = SUB_QUERY;
             break;
@@ -348,6 +353,7 @@ class RemapRegex
           len += req_url->scheme_len;
           break;
         case SUB_PATH:
+        case SUB_LOWER_PATH:
           len += req_url->path_len;
           break;
         case SUB_QUERY:
@@ -411,6 +417,7 @@ class RemapRegex
             len = req_url->scheme_len;
             break;
           case SUB_PATH:
+          case SUB_LOWER_PATH:
             str = req_url->path;
             len = req_url->path_len;
             break;
@@ -434,7 +441,17 @@ class RemapRegex
           // If one of the rules fetched a read-only string, copy it in.
           if (str && len > 0) {
             memcpy(p1, str, len);
-            p1 += len;
+            if (ix == SUB_LOWER_PATH) {
+              TSDebug(PLUGIN_NAME, "lowercasing url: %.*s", len, str);
+              char *end = p1 + len;
+              while (p1 <= end) {
+                *p1 = tolower(*p1);
+                p1++;
+              }
+              p1 = end;
+            } else {
+              p1 += len;
+            }
           }
         }
         p2 += (_sub_pos[i] - prev + 2);
