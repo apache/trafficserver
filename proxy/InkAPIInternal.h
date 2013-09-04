@@ -143,6 +143,7 @@ public:
   APIHook *get();
   void clear();
   bool is_empty() const;
+  void invoke(int event, void* data);
 
 private:
   Que(APIHook, m_link) m_hooks;
@@ -152,6 +153,12 @@ inline bool
 APIHooks::is_empty() const
 {
   return NULL == m_hooks.head;
+}
+
+inline void
+APIHooks::invoke(int event, void* data) {
+  for ( APIHook* hook = m_hooks.head ; NULL != hook ; hook = hook->next())
+    hook->invoke(event, data);
 }
 
 /** Container for API hooks for a specific feature.
@@ -183,6 +190,9 @@ public:
   APIHook *get(ID id);
   /// @return @c true if @a id is a valid id, @c false otherwise.
   static bool is_valid(ID id);
+
+  /// Invoke the callbacks for the hook @a id.
+  void invoke(ID id, int event, void* data);
 
   /// Fast check for any hooks in this container.
   ///
@@ -243,6 +253,13 @@ APIHook *
 FeatureAPIHooks<ID,N>::get(ID id)
 {
   return m_hooks[id].get();
+}
+
+template < typename ID, ID N >
+void
+FeatureAPIHooks<ID,N>::invoke(ID id, int event, void* data)
+{
+  m_hooks[id].invoke(event, data);
 }
 
 template < typename ID, ID N >
