@@ -1,3 +1,5 @@
+.. _how-to-create-traffic-server-plugins:
+
 How to Create Traffic Server Plugins
 ************************************
 

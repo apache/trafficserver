@@ -1,3 +1,5 @@
+.. _header-based-plugin-examples:
+
 Header-Based Plugin Examples
 *****************************
 

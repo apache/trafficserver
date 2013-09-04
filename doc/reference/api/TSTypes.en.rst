@@ -28,7 +28,8 @@ Synopsis
 Description
 ===========
 
-The Apache Traffic Server API provides large number of types.
+The Apache Traffic Server API provides large number of types. Many of them are specific to a particular API function or
+function group, but others are used more widely. Those are described on this page.
 
 .. type:: TSCont
 
@@ -61,3 +62,16 @@ The Apache Traffic Server API provides large number of types.
    An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
    indicates a failure and is specific to the API call.
 
+.. type:: TSRecordDataType
+
+   An enumeration that specifies the type of a value in an internal data structure that is accessible via the API.
+
+.. type:: TSMgmtInt
+
+   The type used internally for an integer. This corresponds to the value :const:`TS_RECORDDATATYPE_INT` for
+   :type:`TSRecordDataType`.
+
+.. type:: TSMgmtFloat
+
+   The type used internally for a floating point value. This corresponds to the value :const:`TS_RECORDDATATYPE_FLOAT` for
+   :type:`TSRecordDataType`.

@@ -22,7 +22,7 @@
         artifactDaysToKeep: -1
         artifactNumToKeep: 2
     triggers:
-        - pollscm: 'H * * * *'
+        - pollscm: 'H/30 * * * *'
 
 - builder:
     name: linux-regression
@@ -33,12 +33,13 @@
             autoreconf -fi
         - shell: |
             export DEB_BUILD_HARDENING
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: make distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
@@ -54,12 +55,13 @@
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
         - shell: make -j2 V=1
         - shell: make check
         - shell: make install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: make distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
@@ -79,6 +81,7 @@
         - shell: gmake install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: gmake distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
@@ -98,66 +101,39 @@
             export CXXFLAGS=-m64
             export CPPFLAGS=-I/opt/omni/include
             export LDFLAGS="-L/opt/omni/lib/amd64 -R/opt/omni/lib/amd64"
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG
+            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
         - shell: gmake -j2 V=1
         - shell: gmake check
         - shell: gmake install
         - shell: |
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
+        - shell: gmake distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
 - job-template:
-    name: '{node}-{branch}-regression'
-    node: '{node}'
-    parameters:
-        - string:
-            name: ENABLE_WCCP
-            default: '{wccp}'
-            description: enable WCCP support
-    scm:
-        - git:
-            url: '{repo}'
-            branches:
-                - '{branch}'
-    builders:
-        - '{builder}-regression'
-
-- job-template:
-    name: '{node}-{branch}-debug-regression'
+    name: '{node}-{branch}-{tag}-regression'
     node: '{node}'
     parameters:
         - string:
             name: ENABLE_DEBUG
-            default: --enable-debug
+            default: '{debug}'
             description: enable runtime debug checks
         - string:
             name: ENABLE_WCCP
             default: '{wccp}'
             description: enable WCCP support
-    scm:
-        - git:
-            url: '{repo}'
-            branches:
-                - '{branch}'
-    builders:
-        - '{builder}-regression'
-
-# Standard regression tests with Debian build hardening compiler flags.
-# See https://wiki.ubuntu.com/Security/HardeningWrapper
-# and https://wiki.debian.org/Hardening.
-- job-template:
-    name: '{node}-{branch}-hardening-regression'
-    node: '{node}'
-    parameters:
         - string:
+            # Standard regression tests with Debian build hardening compiler flags.
+            # See https://wiki.ubuntu.com/Security/HardeningWrapper
+            # and https://wiki.debian.org/Hardening.
             name: DEB_BUILD_HARDENING
-            default: '1'
+            default: '{hardening}'
             description: enable Debian hardening-wrapper
         - string:
-            name: ENABLE_WCCP
-            default: '{wccp}'
-            description: enable WCCP support
+            name: ENABLE_EXPERIMENTAL
+            default: '{experimental}'
+            description: enable experimental configure options
     scm:
         - git:
             url: '{repo}'
@@ -167,33 +143,28 @@
         - '{builder}-regression'
 
 - job-template:
-    name: '{node}-{branch}-clang-regression'
-    node: '{node}'
-    parameters:
-        - string:
-            name: ENABLE_WCCP
-            default: '{wccp}'
-            description: enable WCCP support
-    scm:
-        - git:
-            url: '{repo}'
-            branches:
-                - '{branch}'
-    builders:
-        - '{builder}-clang-regression'
-
-- job-template:
-    name: '{node}-{branch}-clang-debug-regression'
+    name: '{node}-{branch}-clang-{tag}-regression'
     node: '{node}'
     parameters:
         - string:
             name: ENABLE_DEBUG
-            default: --enable-debug
+            default: '{debug}'
             description: enable runtime debug checks
         - string:
             name: ENABLE_WCCP
             default: '{wccp}'
             description: enable WCCP support
+        - string:
+            # Standard regression tests with Debian build hardening compiler flags.
+            # See https://wiki.ubuntu.com/Security/HardeningWrapper
+            # and https://wiki.debian.org/Hardening.
+            name: DEB_BUILD_HARDENING
+            default: '{hardening}'
+            description: enable Debian hardening-wrapper
+        - string:
+            name: ENABLE_EXPERIMENTAL
+            default: '{experimental}'
+            description: enable experimental configuration options
     scm:
         - git:
             url: '{repo}'
@@ -206,319 +177,597 @@
     name: centos-5-x64
     node: centos_5_x64
     builder: linux
+    tag: normal
     wccp: --disable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+
 
 - project:
     name: centos-5-x86
     node: centos_5_x86
     builder: linux
+    tag: normal
     wccp: --disable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: centos-6.4-x64
     node: centos_6.4_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: taobao
+            experimental: --enable-linux-native-aio --enable-reclaimable-freelist --enable-interim-cache
+            repo: file:///home/jenkins/git/trafficserver
 
 - project:
     name: centos-6.4-x86
     node: centos_6.4_x86
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: fedora-15-x64
     node: fedora_15_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: fedora-15-x86
     node: fedora_15_x86
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: fedora-18-x64
     node: fedora_18_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: fedora-18-x86
     node: fedora_18_x86
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: fedora-rawhide-x64
     node: fedora_rawhide_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
-        - '{node}-{branch}-clang-regression':
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-clang-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-clang-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-clang-debug-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-clang-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: fedora-rawhide-x86
     node: fedora_rawhide_x86
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: freebsd-9.1-x64
     node: freebsd_9.1_x64
     builder: bsd
+    tag: normal
     wccp: --disable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: omnios-x64
     node: omnios_x64
     builder: omnios
+    tag: normal
     wccp: --disable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: opensuse-12-x64
     node: opensuse_12_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-debug-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: ubuntu-10.04-x64
     node: ubuntu_10.04_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-hardening-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: hardening
+            hardening: '1'
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-debug-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 - project:
     name: ubuntu-12.04-x64
     node: ubuntu_12.04_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-hardening-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: hardening
+            hardening: '0'
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-debug-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: taobao
+            experimental: --enable-linux-native-aio --enable-reclaimable-freelist --enable-interim-cache
+            repo: file:///home/jenkins/git/trafficserver
 
 - project:
     name: debian-6-x64
     node: debian_6_x64
     builder: linux
+    tag: normal
     wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
     jobs:
-        - '{node}-{branch}-hardening-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: hardening
+            hardening: '1'
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
             branch: master
             repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-debug-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
-            branch: master
-            repo: file:///home/jenkins/git/trafficserver
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
             branch: 4.0.x
-            repo: file:///home/jenkins/git/trafficserver_4.4
+            repo: file:///home/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///home/jenkins/git/trafficserver_4.0
 
 # vim: sw=4 ts=4 et ft=yaml :

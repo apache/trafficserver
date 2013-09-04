@@ -703,14 +703,16 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.origin_min_keep_alive_connections INT 0
    :reloadable:
 
-   As connection to an origin server are opened, keep at least 'n' number of connections open to that origin, even if the connection
-   isn't used for a long time period. Useful when the origin supports keep-alive, removing the time needed to set up a new connection from
+   As connection to an origin server are opened, keep at least 'n' number of connections open to that origin, even if
+   the connection isn't used for a long time period. Useful when the origin supports keep-alive, removing the time
+   needed to set up a new connection from
    the next request at the expense of added (inactive) connections. To enable, set to one (``1``).
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_rr_retries INT 2
    :reloadable:
 
-   The maximum number of failed connection attempts allowed before a round-robin entry is marked as 'down' if a server has round-robin DNS entries.
+   The maximum number of failed connection attempts allowed before a round-robin entry is marked as 'down' if a server
+   has round-robin DNS entries.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_timeout INT 30
    :reloadable:
@@ -720,7 +722,8 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
    :reloadable:
 
-   The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT`` request.
+   The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
+   request.
 
 .. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 900
    :reloadable:
@@ -730,17 +733,33 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.down_server.abort_threshold INT 10
    :reloadable:
 
-   The number of seconds before Traffic Server marks an origin server as unavailable after a client abandons a request because the origin
-   server was too slow in sending the response header.
+   The number of seconds before Traffic Server marks an origin server as unavailable after a client abandons a request
+   because the origin server was too slow in sending the response header.
 
 Congestion Control
 ==================
 
 .. ts:cv:: CONFIG proxy.config.http.congestion_control.enabled INT 0
 
-   Enables (``1``) or disables (``0``) the Congestion Control option, which configures Traffic Server to stop forwarding HTTP requests to
-   origin servers when they become congested. Traffic Server sends the client a message to retry the congested origin server later. Refer
-   to `Using Congestion Control <../http-proxy-caching#UsingCongestionControl>`_.
+   Enables (``1``) or disables (``0``) the Congestion Control option, which configures Traffic Server to stop forwarding
+   HTTP requests to origin servers when they become congested. Traffic Server sends the client a message to retry the
+   congested origin server later. Refer to `Using Congestion Control <../http-proxy-caching#UsingCongestionControl>`_.
+
+.. ts:cv:: CONFIG proxy.config.http.flow_control.enabled INT 0
+
+   Transaction buffering / flow control is enabled if this is set to a non-zero value. Otherwise no flow control is done.
+
+.. ts:cv:: CONFIG proxy.config.http.flow_control.high_water INT 65536
+   :metric: bytes
+
+   The high water mark for transaction buffer control. External source I/O is halted when the total buffer space in use
+   by the transaction exceeds this value.
+
+.. ts:cv:: CONFIG proxy.config.http.flow_control.low_water INT 65536
+   :metric: bytes
+
+   The low water mark for transaction buffer control. External source I/O is resumed when the total buffer space in use
+   by the transaction is no more than this value.
 
 Negative Response Caching
 =========================
@@ -748,8 +767,9 @@ Negative Response Caching
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_enabled INT 0
    :reloadable:
 
-   When enabled (``1``), Traffic Server caches negative responses (such as ``404 Not Found``) when a requested page does not exist. The next
-   time a client requests the same page, Traffic Server serves the negative response directly from cache.
+   When enabled (``1``), Traffic Server caches negative responses (such as ``404 Not Found``) when a requested page does
+   not exist. The next time a client requests the same page, Traffic Server serves the negative response directly from
+   cache.
 
    .. note::
 

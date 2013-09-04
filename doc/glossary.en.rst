@@ -53,3 +53,8 @@ Glossary
 
    storage unit
       The physical storage described by a single line in :file:`storage.config`.
+
+   revalidation
+      Verifying that a currently cached object is still valid. This is usually done using an `If-Modified-Since
+      <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.25>`_ request which allows the origin server to
+      validate the content without resending the content.

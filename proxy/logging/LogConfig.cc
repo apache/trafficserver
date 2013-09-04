@@ -1349,16 +1349,28 @@ LogConfig::register_stat_callbacks()
   //
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.num_sent_to_network",
-                     RECD_INT, RECP_PERSISTENT, (int) log_stat_num_sent_to_network_stat, RecRawStatSyncSum);
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_sent_to_network_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.num_lost_before_sent_to_network",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_lost_before_sent_to_network_stat, RecRawStatSyncSum);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.num_received_from_network",
-                     RECD_INT, RECP_PERSISTENT, (int) log_stat_num_received_from_network_stat, RecRawStatSyncSum);
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_received_from_network_stat, RecRawStatSyncSum);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.num_flush_to_disk",
-                     RECD_INT, RECP_PERSISTENT, (int) log_stat_num_flush_to_disk_stat, RecRawStatSyncSum);
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_flush_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.num_lost_before_flush_to_disk",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_lost_before_flush_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_preproc",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_preproc_stat, RecRawStatSyncSum);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.bytes_sent_to_network",
                      RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_sent_to_network_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_sent_to_network",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_sent_to_network_stat, RecRawStatSyncSum);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.bytes_received_from_network",
                      RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_received_from_network_stat, RecRawStatSyncSum);
@@ -1366,8 +1378,14 @@ LogConfig::register_stat_callbacks()
                      "proxy.process.log.bytes_flush_to_disk",
                      RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_flush_to_disk_stat, RecRawStatSyncSum);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_flush_to_disk",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_flush_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.bytes_written_to_disk",
                      RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_written_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_written_to_disk",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_written_to_disk_stat, RecRawStatSyncSum);
   //
   // I/O
   //

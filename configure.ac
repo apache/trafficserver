@@ -40,7 +40,7 @@ AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
-AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman 1.9.2])
+AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
 AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
@@ -540,6 +540,7 @@ _ts_saved_CXXFLAGS="${CXXFLAGS}"
 AC_PROG_CC([cc gcc clang icc])
 AC_PROG_CXX([c++ g++ clang++ icpc])
 
+AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS

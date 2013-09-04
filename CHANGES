@@ -7,6 +7,13 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue()
+
+  *) [TS-2165] Introduce cluster-wide logging stats
+
+  *) [TS-2167] Update apichecker.pl to give suggestions on additional
+   deprecated APIs
+
   *) [TS-2163] Remove WDA_BILLING, ACC_ALARMS etc. code and definitions.
 
   *) [TS-2156] Fix stats trap in different type of threads

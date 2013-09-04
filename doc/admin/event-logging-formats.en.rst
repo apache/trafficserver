@@ -1,3 +1,5 @@
+.. _event-logging-formats:
+
 Event Logging Formats
 *********************
 
@@ -123,7 +125,7 @@ The following list describes Traffic Server custom logging fields.
 
     In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
     (according to the rules in the
-    :ref:`remap.config` file),
+    :file:`remap.config` file),
     _not_ the pristine/unmapped URL.
 
 ``cquc``
@@ -321,9 +323,9 @@ Squid Logging Formats
 The following is a list of the Squid logging fields and the
 corresponding logging field symbols.
 
-=====              =============
+================== =============
 Squid              Field Symbols
-=====              =============
+================== =============
 ``time``           ``cqts``
 ``elapsed``        ``ttms``
 ``client``         ``chi``
@@ -334,7 +336,7 @@ Squid              Field Symbols
 ``ident``          ``caun``
 ``hierarchy/from`` ``phr/pqsn``
 ``content``        ``psct``
-=====              =============
+================== =============
 
 Netscape Common Logging Formats
 -------------------------------

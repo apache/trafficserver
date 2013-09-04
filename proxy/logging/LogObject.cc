@@ -51,6 +51,9 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink) {
       delete b;
       ink_atomic_increment(&_num_flush_buffers, -1);
       Warning("Dropping log buffer, can't keep up.");
+      RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
+                     log_stat_bytes_lost_before_preproc_stat,
+                     b->header()->byte_count);
     } else {
       new_q.push(b);
     }

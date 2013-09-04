@@ -5,20 +5,20 @@ HTTP Proxy Caching
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 Web proxy caching enables you to store copies of frequently-accessed web
 objects (such as documents, images, and articles) and then serve this
@@ -59,7 +59,7 @@ overview illustrates how Traffic Server serves a request.
 
 4. If the data in the cache is stale, then Traffic Server connects to
    the origin server and checks if the object is still fresh (a
-   **revalidation**). If it is, then Traffic Server immediately sends
+   :term:`revalidation`). If it is, then Traffic Server immediately sends
    the cached copy to the client.
 
 5. If the object is not in the cache (a **cache miss**) or if the server
@@ -353,9 +353,9 @@ To configure the Force Immediate Update option
 
 .. important::
 
-   When you enable the Force Immediate Update option, Traffic Server continually updates the URLs specified in :file:`update.config`
-   until you disable the option. To disable the Force Immediate Update option, set :ts:cv:`proxy.config.update.force` to ``0``
-   (zero).
+   When you enable the Force Immediate Update option, Traffic Server continually updates the URLs specified in
+   :file:`update.config` until you disable the option. To disable the Force Immediate Update option, set
+   :ts:cv:`proxy.config.update.force` to ``0`` (zero).
 
 Pushing Content into the Cache
 ==============================
@@ -402,7 +402,8 @@ place in the cache. The following is an example of a ``PUSH`` request::
 
 .. important::
 
-   Your header must include ``Content-length`` - ``Content-length`` must include both ``header`` and ``body byte count``.
+   Your header must include ``Content-length`` - ``Content-length`` must include both ``header`` and ``body byte
+   count``.
 
 Tools that will help manage pushing
 -----------------------------------
@@ -521,7 +522,7 @@ By default, Traffic Server strictly observes ``Cache-Control: no-cache``
 directives. A response from an origin server with a ``no-cache`` header
 is not stored in the cache and any previous copy of the object in the
 cache is removed. If you configure Traffic Server to ignore ``no-cache``
-headers, then Traffic Server also ignores ``no-store`` headers. The 
+headers, then Traffic Server also ignores ``no-store`` headers. The
 efault behavior of observing ``no-cache`` directives is appropriate
 in most cases.
 
@@ -730,4 +731,45 @@ tasks:
 
 #. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
+
+.. _transaction-buffering-control:
+
+Using Transaction Buffering Control
+===================================
+
+By default I/O operations are run at full speed, as fast as either Traffic Server, the network, or the cache can go.
+This can be problematic for large objects if the client side connection is significantly slower. In such cases the
+content will be buffered in ram while waiting to be sent to the client. This could potentially also happen for ``POST``
+requests if the client connection is fast and the origin server connection slow. If very large objects are being used
+this can cause the memory usage of Traffic Server to become `very large
+<https://issues.apache.org/jira/browse/TS-1496>`_.
+
+This problem can be ameloriated by controlling the amount of buffer space used by a transaction. A high water and low
+water mark are set in terms of bytes used by the transaction. If the buffer space in use exceeds the high water mark,
+the connection is throttled to prevent additional external data from arriving. Internal operations continue to proceed
+at full speed until the buffer space in use drops below the low water mark and external data I/O is re-enabled.
+
+Although this is intended primarily to limit the memory usage of Traffic Server it can also serve as a crude rate
+limiter by setting a buffer limit and then throttling the client side connection either externally or via a transform.
+This will cause the connection to the origin server to be limited to roughly the client side connection speed.
+
+Traffic Server does network I/O in large chunks (32K or so) and therefore the granularity of transaction buffering
+control is limited to a similar precision.
+
+The buffer size calculations include all elements in the transaction, including any buffers associated with :ref:`transform plugins <transform-plugin>`.
+
+Transaction buffering control can be enabled globally by using configuration variables or by :c:func:`TSHttpTxnConfigIntSet` in a plugin.
+
+================= ================================================== ========================================
+Value             Variable                                           `TSHttpTxnConfigIntSet` key
+================= ================================================== ========================================
+Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    `TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
+Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` `TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`
+Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  `TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`
+================= ================================================== ========================================
+
+Be careful to always have the low water mark equal or less than the high water mark. If you set only one, the other will
+be set to the same value.
+
+If using c:func:`TSHttpTxnConfigIntSet`, it must be called no later than `TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 
