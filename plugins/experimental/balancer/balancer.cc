@@ -41,8 +41,8 @@
 
 #include <string>
 
-#include <ts/remap.h>
 #include <ts/ts.h>
+#include <ts/remap.h>
 
 #include "resources.h"
 #include "hashkey.h"
@@ -151,24 +151,25 @@ public:
         if (TSIsDebugTagSet("balancer")) {
           TSDebug("balancer", "Making %s hash ID's using %s", secondary ? "secondary" : "primary", buf);
         }
-        ycrMD5_r(buf, key_len, id);
+        //MD5(buf, key_len, id);
       } else {
         if (secondary) {
           // Secondary ID defaults to IP (if none of the specified hashes computes)
           char buf[4];
 
-          *buf = resr.getRRI()->client_ip; // ToDo: this only works for IPv4
+          
+          //*buf = resr.getRRI()->client_ip; // ToDo: this only works for IPv4
 
           TSDebug("balancer", "Making secondary hash ID's using IP (default) = %s", buf);
-          ycrMD5_r(buf, key_len, id);
+          //MD5(buf, key_len, id);
         } else {
           // Primary ID defaults to URL (if none of the specified hashes computes)
-          char buf[resr.getRRI()->orig_url_size + 1];
+          char buf[resr._urlSize + 1];
 
-          memcpy(buf, resr.getRRI()->orig_url, resr.getRRI()->orig_url_size);
-          buf[resr.getRRI()->orig_url_size] = '\0';
+          memcpy(buf, resr._urlString, resr._urlSize);
+          buf[resr._urlSize] = '\0';
           TSDebug("balancer", "Making primary hash ID's using URL (default) = %s", buf);
-          ycrMD5_r(buf, key_len, id);
+          //MD5(buf, key_len, id);
         }
       }
     } else {
@@ -190,14 +191,14 @@ private:
 // Initialize the plugin.
 //
 int
-tsremap_init(TSREMAP_INTERFACE *api_info, char *errbuf, int errbuf_size)
+tsremap_init(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
     strncpy(errbuf, "[tsremap_init] - Invalid TSREMAP_INTERFACE argument", errbuf_size - 1);
     return -1;
   }
 
-  if (api_info->size < sizeof(TSREMAP_INTERFACE)) {
+  if (api_info->size < sizeof(TSRemapInterface)) {
     strncpy(errbuf, "[tsremap_init] - Incorrect size of TSREMAP_INTERFACE structure", errbuf_size - 1);
     return -2;
   }
@@ -216,16 +217,19 @@ tsremap_init(TSREMAP_INTERFACE *api_info, char *errbuf, int errbuf_size)
 ///////////////////////////////////////////////////////////////////////////////
 // One instance per remap.config invocation.
 //
-int
-tsremap_new_instance(int argc, char *argv[], ihandle *ih, char *errbuf, int errbuf_size)
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
+  (void) errbuf;
+  (void) errbuf_size;
+
   BalancerInstance* ri = new BalancerInstance;
 
-  *ih = static_cast<ihandle>(ri);
+  *ih = static_cast<void*>(ri);
 
   if (ri == NULL) {
     TSError("Unable to create remap instance");
-    return -5;
+    return TS_ERROR;
   }
 
   for (int ix=2; ix < argc; ++ix) {
@@ -310,13 +314,13 @@ tsremap_new_instance(int argc, char *argv[], ihandle *ih, char *errbuf, int errb
     }
   }
 
-  return 0;
+  return TS_SUCCESS;
 }
 
 void
-tsremap_delete_instance(ihandle ih)
+tsremap_delete_instance(void** ih)
 {
-  BalancerInstance* ri = static_cast<BalancerInstance*>(ih);
+  BalancerInstance* ri = static_cast<BalancerInstance*>(*ih);
 
   delete ri;
 }
@@ -325,8 +329,8 @@ tsremap_delete_instance(ihandle ih)
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main "entry" point for the plugin, called for every request.
 //
-int
-tsremap_remap(ihandle ih, rhandle rh, REMAP_REQUEST_INFO *rri)
+TSRemapStatus
+TSRemapDoRemap(void** ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   BalancerInstance* balancer;
   int error = 0;
@@ -338,9 +342,9 @@ tsremap_remap(ihandle ih, rhandle rh, REMAP_REQUEST_INFO *rri)
 
   if (NULL == ih) {
     TSDebug("balancer", "Falling back to default URL on remap without rules");
-    return 0;
+    return TSREMAP_NO_REMAP;
   }
-  balancer = static_cast<BalancerInstance*>(ih);
+  balancer = static_cast<BalancerInstance*>(*ih);
 
   // Get the rotation name to use.
 

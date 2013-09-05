@@ -31,7 +31,7 @@
 
 #include <ts/remap.h>
 #include <ts/ts.h>
-
+#include <string.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ class Resources
 {
 public:
   Resources(TSHttpTxn txnp, TSRemapRequestInfo *rri) :
-    _txnp(txnp), _rri(rri), _jar(NULL), _bufp(NULL), _hdrLoc(NULL)
+    _rri(rri), _txnp(txnp), _jar(NULL), _bufp(NULL), _hdrLoc(NULL), _urlString(NULL)
   { }
 
   ~Resources() {
@@ -54,24 +54,28 @@ public:
       TSDebug("balancer", "Destroying the cookie jar");
       // TODO - destroy cookies
     }
+
+    if (_urlString) {
+      TSfree(_urlString);
+    }
   }
 
   const TSHttpTxn getTxnp() const { return _txnp; }
     
   const TSRemapRequestInfo* getRRI() const { return _rri; }
 
-  const cookiejar_t
+  const char*
   getJar() {
     if (_jar)
       return _jar;
 
     // Setup the cookie jar for all processing
-    if (_rri->request_cookie_size > 0) {
-      char cookie_hdr[_rri->request_cookie_size + 1];
+    if (_cookie_size > 0) {
+      char cookie_hdr[_cookie_size + 1];
 
-      memcpy(cookie_hdr, _rri->request_cookie, _rri->request_cookie_size);
-      cookie_hdr[_rri->request_cookie_size] = '\0';
-      _jar = // TODO - create cookies
+      memcpy(cookie_hdr, _cookie, _cookie_size);
+      cookie_hdr[_cookie_size] = '\0';
+      _jar = NULL; // TODO - create cookies
       TSDebug("balancer", "Creating the cookie jar");
     }
 
@@ -99,12 +103,22 @@ public:
     return _hdrLoc;
   }
 
-private:
-  TSHttpTxn _txnp;
+  char* getUrl(int *size) {
+    _urlString = TSUrlStringGet(_rri->requestBufp, _rri->requestUrl, size);
+    _urlSize = *size;
+    return _urlString;
+  }
+
+public:
   TSRemapRequestInfo* _rri;
-  cookiejar_t _jar;
+  TSHttpTxn _txnp;
+  size_t _cookie_size;
+  char* _cookie;
+  char* _jar;
   TSMBuffer _bufp;
   TSMLoc _hdrLoc;
+  int _urlSize;
+  char* _urlString;
 };
 
 
