@@ -56,9 +56,6 @@ public:
   virtual int key(const void** data, Resources& resr) const = 0;
 
   virtual void free_key(const void* data, int len, Resources& resr) const {
-    (void) data;
-    (void) len;
-    (void) resr;
     // No-op by default
   }
 
@@ -89,9 +86,8 @@ class URLHashKey : public HashKey
  public:
   int
   key(const void** data, Resources& resr) const {
-    int size;
-    *data = resr.getUrl(&size);
-    return size;
+    *data = resr.getRRI()->orig_url;
+    return resr.getRRI()->orig_url_size;
   }
 };
 
@@ -104,9 +100,8 @@ class PathHashKey : public HashKey
  public:
   int
   key(const void** data, Resources& resr) const {
-    int size;
-    *data = TSUrlPathGet(resr._rri->requestBufp, resr._rri->requestUrl, &size);
-    return size;
+    *data = resr.getRRI()->request_path;
+    return resr.getRRI()->request_path_size;
   }
 };
 
@@ -157,9 +152,9 @@ class CookieHashKey : public HashKey
         const char* cookie;
 
         if (_sub) {
-          cookie = NULL; // TODO - get sub cookie
+          cookie = // TODO - get sub cookie
         } else {
-          cookie = NULL; // TODO - get full cookie
+          cookie = // TODO - get full cookie
         }
         if (cookie) {
           *data = cookie;
@@ -167,9 +162,9 @@ class CookieHashKey : public HashKey
         }
       }
     } else {
-      if (resr._cookie_size > 0) {
-        *data = resr._cookie;
-        return resr._cookie_size;
+      if (resr.getRRI()->request_cookie_size > 0) {
+        *data = resr.getRRI()->request_cookie;
+        return resr.getRRI()->request_cookie_size;
       }
     }
 
@@ -194,10 +189,8 @@ class IPHashKey : public HashKey
  public:
   int
   key(const void** data, Resources& resr) const {
-    const struct sockaddr *addr = TSHttpTxnClientAddrGet(resr._txnp);
-    (void) addr;
-    *data = NULL; // TODO set the right pointer
-    return 4; // TODO set the right size
+    *data = &(resr.getRRI()->client_ip);
+    return 4; // ToDo: This only works with IPV4, obviously
   }
 };
 
@@ -224,18 +217,31 @@ class HeaderHashKey : public HashKey
     TSMBuffer bufp = resr.getBufp();
     TSMLoc hdrLoc = resr.getHdrLoc();
     TSMLoc fieldLoc;
+    const char* val;
     int len = -1;
 
     // Note that hdrLoc is freed as part of the Resources dtor, and we free the "string" value
     // in the free_key() implementation (after we're done with it).
     if (bufp && hdrLoc && (fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, _header, _header_len))) {
-      *data = TSMimeHdrFieldValueStringGet(bufp, hdrLoc, fieldLoc, 0, &len);
+      if (TS_ERROR != TSMimeHdrFieldValueStringGet(bufp, hdrLoc, fieldLoc, 0, &val, &len)) {
+        *data = val;
+      } else {
+        *data = NULL;
+      }
       TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
     } else {
       *data = NULL;
     }
 
     return len;
+  }
+
+  void free_key(const void* data, int len, Resources& resr) const {
+    TSMBuffer bufp = resr.getBufp();
+    TSMLoc hdrLoc = resr.getHdrLoc();
+
+    if (bufp && hdrLoc)
+      TSHandleStringRelease(bufp, hdrLoc, (const char*)data);
   }
 
  private:
