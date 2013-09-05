@@ -210,7 +210,9 @@ Network
 
 Unless explicitly specified in `proxy.config.http.server_ports`_ the server port will be bound to one of these addresses, selected by IP address family. The built in default is any address. This is used if no address for a family is specified. This setting is useful if most or all server ports should be bound to the same address.
 
-.. note:: This is ignored for inbound transparent server ports because they must be able to accept connections on arbitrary IP addresses.
+.. note::
+
+   This is ignored for inbound transparent server ports because they must be able to accept connections on arbitrary IP addresses.
 
 .. topic:: Example
 
@@ -230,7 +232,9 @@ Unless explicitly specified in `proxy.config.http.server_ports`_ the server port
 
    Unless explicitly specified in `proxy.config.http.server_ports`_ one of these addresses, selected by IP address family, will be used as the local address for outbound connections. This setting is useful if most or all of the server ports should use the same outbound IP addresses.
 
-.. note:: This is ignore for outbound transparent ports as the local outbound address will be the same as the client local address.
+.. note::
+
+   This is ignored for outbound transparent ports as the local outbound address will be the same as the client local address.
 
 .. topic:: Example
 
@@ -438,7 +442,9 @@ compress
 Traffic Server allows tunnels only to the specified ports.
 Supports both wildcards ('\*') and ranges ("0-1023").
 
-.. note:: These are the ports on the *origin server*, not Traffic Server :ts:cv:`proxy ports <proxy.config.http.server_ports>`.
+.. note::
+
+   These are the ports on the *origin server*, not Traffic Server :ts:cv:`proxy ports <proxy.config.http.server_ports>`.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_request_via_str INT 1
    :reloadable:
@@ -453,7 +459,9 @@ Value Effect
 2     some extra information is added.
 ===== ============================================
 
-.. note:: the ``Via`` header string interpretation can be `decoded here. </tools/via>`_
+.. note::
+
+   The ``Via`` header string interpretation can be `decoded here. </tools/via>`_
 
 .. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 1
    :reloadable:
@@ -773,24 +781,24 @@ Negative Response Caching
 
    .. note::
 
-       ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
-       of the value specified for the `proxy.config.http.negative_caching_enabled`_ variable. The
-       following negative responses are cached by Traffic Server:::
+      ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
+      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable. The
+      following negative responses are cached by Traffic Server:::
 
-            204  No Content
-            305  Use Proxy
-            400  Bad Request
-            403  Forbidden
-            404  Not Found
-            405  Method Not Allowed
-            500  Internal Server Error
-            501  Not Implemented
-            502  Bad Gateway
-            503  Service Unavailable
-            504  Gateway Timeout
+         204  No Content
+         305  Use Proxy
+         400  Bad Request
+         403  Forbidden
+         404  Not Found
+         405  Method Not Allowed
+         500  Internal Server Error
+         501  Not Implemented
+         502  Bad Gateway
+         503  Service Unavailable
+         504  Gateway Timeout
 
-    The cache lifetime for objects cached from this setting is controlled via
-    ``proxy.config.http.negative_caching_lifetime``.
+   The cache lifetime for objects cached from this setting is controlled via
+   :ts:cv:`proxy.config.http.negative_caching_lifetime`.
 
 Proxy User Variables
 ====================
@@ -989,11 +997,11 @@ Cache Control
 
    .. note::
 
-       This option should only be enabled if you're having
-       problems with caching *and* one of the following is true:
+      This option should only be enabled if you're having
+      problems with caching *and* one of the following is true:
 
-       -  Your origin server sets ``Vary: Accept`` when doing content negotiation with ``Accept`` *OR*
-       -  The server does not send a ``406 (Not Acceptable)`` response for types that it cannot serve.
+      -  Your origin server sets ``Vary: Accept`` when doing content negotiation with ``Accept`` *OR*
+      -  The server does not send a ``406 (Not Acceptable)`` response for types that it cannot serve.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 0
    :reloadable:
@@ -1003,10 +1011,10 @@ Cache Control
 
    .. note::
 
-       This option should only be enabled if you're having
-       problems with caching and your origin server is guaranteed to set
-       ``Vary: Accept-Language`` when doing content negotiation with
-       ``Accept-Language``.
+      This option should only be enabled if you're having
+      problems with caching and your origin server is guaranteed to set
+      ``Vary: Accept-Language`` when doing content negotiation with
+      ``Accept-Language``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 0
    :reloadable:
@@ -1016,10 +1024,8 @@ Cache Control
 
    .. note::
 
-       This option should only be enabled if you're having
-       problems with caching and your origin server is guaranteed to set
-       ``Vary: Accept-Charset`` when doing content negotiation with
-       ``Accept-Charset``.
+      This option should only be enabled if you're having problems with caching and your origin server is
+      guaranteed to set ``Vary: Accept-Charset`` when doing content negotiation with ``Accept-Charset``.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
    :reloadable:
@@ -1034,22 +1040,21 @@ Cache Control
 RAM Cache
 =========
 
-
-.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.size INT -1
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.size INT -1
 
    By default the RAM cache size is automatically determined, based on
    disk cache size; approximately 10 MB of RAM cache per GB of disk cache.
    Alternatively, it can be set to a fixed value such as
    **20GB** (21474836480)
 
-.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 0
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 0
 
    Two distinct RAM caches are supported, the default (0) being the **CLFUS**
    (*Clocked Least Frequently Used by Size*). As an alternative, a simpler
    **LRU** (*Least Recently Used*) cache is also available, by changing this
    configuration to 1.
 
-.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 0
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 0
 
    Enabling this option will filter inserts into the RAM cache to ensure that
    they have been seen at least once.  For the **LRU**, this provides scan
@@ -1057,7 +1062,7 @@ RAM Cache
    before it is inserted, so for **CLFUS**, setting this option means that a
    document must be seen three times before it is added to the RAM cache.
 
-.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.compress INT 0
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.compress INT 0
 
    The **CLFUS** RAM cache also supports an optional in-memory compression.
    This is not to be confused with ``Content-Encoding: gzip`` compression.
@@ -1071,34 +1076,37 @@ RAM Cache
    - ``2`` = libz (moderate speed, reasonable compression)
    - ``3`` = liblzma (very slow, high compression)
 
-   NOTE: compression runs on task threads.  To use more cores for
-   RAM cache compression, increase :ts:cv:`proxy.config.task_threads`.
+   .. note::
+
+      Compression runs on task threads.  To use more cores for RAM cache compression, increase :ts:cv:`proxy.config.task_threads`.
 
 
 Heuristic Expiration
 ====================
 
-.. :ts:cv:: proxy.config.http.cache.heuristic_min_lifetime INT 3600
+.. ts:cv:: CONFIG proxy.config.http.cache.heuristic_min_lifetime INT 3600
    :reloadable:
 
-   The minimum amount of time an HTTP object without an expiration date can remain fresh in the cache before is considered to be stale.
+   The minimum amount of time an HTTP object without an expiration date can remain fresh in the cache before is
+   considered to be stale.
 
-.. :ts:cv:: proxy.config.http.cache.heuristic_max_lifetime INT 86400
+.. ts:cv:: CONFIG proxy.config.http.cache.heuristic_max_lifetime INT 86400
    :reloadable:
 
-   The maximum amount of time an HTTP object without an expiration date can remain fresh in the cache before is considered to be stale.
+   The maximum amount of time an HTTP object without an expiration date can remain fresh in the cache before is
+   considered to be stale.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.heuristic_lm_factor FLOAT 0.10000
    :reloadable:
 
-   The aging factor for freshness computations. Traffic Server stores an object for this percentage of the time that elapsed since it last
-   changed.
+   The aging factor for freshness computations. Traffic Server stores an object for this percentage of the time that
+   elapsed since it last changed.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 240
    :reloadable:
 
-   How often Traffic Server checks for an early refresh, during the period before the document stale time. The interval specified must
-   be in seconds.
+   How often Traffic Server checks for an early refresh, during the period before the document stale time. The interval
+   specified must be in seconds.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.00500
    :reloadable:
@@ -1975,12 +1983,16 @@ Sockets
 Undocumented
 ============
 
-.. ts:cv:: CONFIG proxy.config.http.cache.heuristic_min_lifetime INT 0
+These are referenced but not documented. Please contribute a definition.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.heuristic_max_lifetime INT 0
+.. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 0
+
+.. ts:cv:: CONFIG proxy.config.task_threads INT 0
 
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
+
+.. ts:cv:: CONFIG proxy.configl.cache.max_doc_size INT 0
 
    Enable caching HTTP content.
