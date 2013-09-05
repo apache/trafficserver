@@ -1045,8 +1045,8 @@ RAM Cache
 .. :ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 0
 
    Two distinct RAM caches are supported, the default (0) being the **CLFUS**
-   (``Clocked Least Frequently Used by Size``). As an alternative, a simpler
-   **LRU** (``Least Recently Used``) cache is also available, by changing this
+   (*Clocked Least Frequently Used by Size*). As an alternative, a simpler
+   **LRU** (*Least Recently Used*) cache is also available, by changing this
    configuration to 1.
 
 .. :ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 0
