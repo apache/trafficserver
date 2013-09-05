@@ -65,6 +65,28 @@ and reduces load on disks, especially during temporary traffic peaks.
 You can configure the RAM cache size to suit your needs, as described in
 :ref:`changing-the-size-of-the-ram-cache` below.
 
+The RAM cache supports two cache eviction algorithms, a regular **LRU**
+(``Least Recently Used``) and the more advanced **CLFUS** (``Clocked Least
+Frequently Used by Size``). The default is to use **CLFUS**, and this is
+controlled via :ts:cv:`proxy.config.cache.ram_cache.algorithm`.
+
+Both the **LRU** and **CLFUS** RAM caches support a configuration to increase
+scan resistance. In a typical **LRU**, if you request all possible objects in
+sequence, you will effectively churn the cache on every request. The option
+:ts:cv:`proxy.config.cache.ram_cache.use_seen_filter` can be set to add some
+resistance against this problem.
+
+In addition, **CLFUS** also supports compressing in the RAM cache itself.
+This can be useful for content which is not compressed by itself (e.g.
+images). This should not be confused with ``Content-Encoding: gzip``, this
+feature is only thereto save space internally in the RAM cache itself. As
+such, it is completely transparent to the User-Agent. The RAM cache
+compression is enabled with the option
+:ts:cv:`proxy.config.cache.ram_cache.compress`. The default is 0, which means
+no compression. Other possible values are 1 for **fastlz**, 2 for **libz** and
+3 for **liblzma**.
+
+
 .. _changing-the-size-of-the-ram-cache:
 
 Changing the Size of the RAM Cache

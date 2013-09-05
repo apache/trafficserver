@@ -1037,8 +1037,43 @@ RAM Cache
 
 .. :ts:cv:: CONFIG proxy.config.cache.ram_cache.size INT -1
 
-   By default the RAM cache size to is automatically determined, based on cache size (approximately 10 MB of RAM cache per GB of disk cache).
-   Alternatively, it can be set to a fixed value such as 21474836480 (20GB).
+   By default the RAM cache size is automatically determined, based on
+   disk cache size; approximately 10 MB of RAM cache per GB of disk cache.
+   Alternatively, it can be set to a fixed value such as
+   **20GB** (21474836480)
+
+.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 0
+
+   Two distinct RAM caches are supported, the default (0) being the **CLFUS**
+   (``Clocked Least Frequently Used by Size``). As an alternative, a simpler
+   **LRU** (``Least Recently Used``) cache is also available, by changing this
+   configuration to 1.
+
+.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 0
+
+   Enabling this option will filter inserts into the RAM cache to ensure that
+   they have been seen at least once.  For the **LRU**, this provides scan
+   resistance. Note that **CLFUS** already requires that a document have history
+   before it is inserted, so for **CLFUS**, setting this option means that a
+   document must be seen three times before it is added to the RAM cache.
+
+.. :ts:cv:: CONFIG proxy.config.cache.ram_cache.compress INT 0
+
+   The **CLFUS** RAM cache also supports an optional in-memory compression.
+   This is not to be confused with ``Content-Encoding: gzip`` compression.
+   The RAM cache compression is intended to try to save space in the RAM,
+   and is not visible to the User-Agent (client).
+
+   Possible values are:
+
+   - ``0`` = no compression
+   - ``1`` = fastlz (extremely fast, relatively low compression)
+   - ``2`` = libz (moderate speed, reasonable compression)
+   - ``3`` = liblzma (very slow, high compression)
+
+   NOTE: compression runs on task threads.  To use more cores for
+   RAM cache compression, increase :ts:cv:`proxy.config.task_threads`.
+
 
 Heuristic Expiration
 ====================
