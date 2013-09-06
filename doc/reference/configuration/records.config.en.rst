@@ -57,10 +57,10 @@ e.g. *32768*. They can also be expressed using more human readable values
 using standard prefixes, e.g. *32K*. The following prefixes are supported
 for all ``INT` type configurations ::
 
-   -  ``K`` Kilobytes
-   -  ``M`` Megabytes
-   -  ``G`` Gigabytes
-   -  ``T`` Terabytes
+   -  ``K`` Kilobytes (1024 bytes)
+   -  ``M`` Megabytes (1,048,576 bytes)
+   -  ``G`` Gigabytes (1,073,741,824 bytes
+   -  ``T`` Terabytes (1,099,511,627,776 bytes)
 
 .. note::
 
