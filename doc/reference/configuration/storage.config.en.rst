@@ -50,10 +50,22 @@ Specify pathnames according to your operating system requirements. See
 the following examples. In the :file:`storage.config` file, a formatted or
 raw disk must be at least 128 MB.
 
-When using raw disk or partitions, you should make sure the :ts:cv:`Traffic Server user <proxy.config.admin.user_id>`
-used by the Traffic Server process has read and write privileges on the raw disk device or partition. One good practice
-is to make sure the device file is set with 'g+rw' and the Traffic Server user is in the group which owns the device file.
-However, some operating systems have stronger requirements - see the following examples for more information.
+When using raw disk or partitions, you should make sure the :ts:cv:`Traffic
+Server user <proxy.config.admin.user_id>` used by the Traffic Server process
+has read and write privileges on the raw disk device or partition. One good
+practice is to make sure the device file is set with 'g+rw' and the Traffic
+Server user is in the group which owns the device file.  However, some
+operating systems have stronger requirements - see the following examples for
+more information.
+
+As with standard ``records.config`` integers, human readable prefixes are also
+supported. They include::
+
+   -  ``K`` Kilobytes
+   -  ``M`` Megabytes
+   -  ``G`` Gigabytes
+   -  ``T`` Terabytes
+
 
 Examples
 ========
@@ -67,6 +79,17 @@ You can use the ``.`` symbol for the current directory. Here is an
 example for 64 MB of cache storage in the current directory::
 
    . 134217728
+
+As an alternative, using the human readable prefixes, you can express a 64GB
+cache file with::
+
+   /really_big_dir 64G
+
+
+.. note::
+    When using on-filesystem cache disk storage, you can only have one such
+    directory specified. This will be address in a future version.
+   
 
 Solaris Example
 ---------------

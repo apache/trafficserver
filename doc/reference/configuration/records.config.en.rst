@@ -39,15 +39,33 @@ Each variable has the following format::
 
 where
 
-``SCOPE`` is related to clustering and is either ``CONFIG`` (all members of the cluster) or ``LOCAL`` (only the local machine)
+``SCOPE`` is related to clustering and is either ``CONFIG`` (all members of
+the cluster) or ``LOCAL`` (only the local machine)
 
-``DATATYPE`` is one of ``INT`` (integer), ``STRING`` (string), ``FLOAT`` (floating point).
+``DATATYPE`` is one of ``INT`` (integer), ``STRING`` (string), ``FLOAT``
+(floating point).
 
-A variable marked as ``Deprecated`` is still functional but should be avoided as it may be removed in a future release without warning.
+A variable marked as ``Deprecated`` is still functional but should be avoided
+as it may be removed in a future release without warning.
 
 A variable marked as ``Reloadable`` can be updated via the command::
 
    traffic_line -x
+
+``INT`` type configurations are expressed as any normal integer,
+e.g. *32768*. They can also be expressed using more human readable values
+using standard prefixes, e.g. *32K*. The following prefixes are supported
+for all ``INT` type configurations ::
+
+   -  ``K`` Kilobytes
+   -  ``M`` Megabytes
+   -  ``G`` Gigabytes
+   -  ``T`` Terabytes
+
+.. note::
+
+    Traffic Server currently writes back configurations to disk periodically,
+    and when doing so, will not preserve the prefixes.
 
 Examples
 ========
@@ -72,6 +90,12 @@ In the following example, the variable sets the cluster startup timeout
 to 10 seconds. ::
 
    CONFIG proxy.config.cluster.startup_timeout INT 10
+
+The last examples configures a 64GB RAM cache, using a human readable
+prefix. ::
+
+   CONFIG proxy.config.cache.ram_cache.size INT 64G
+
 
 Environment Overrides
 =====================
