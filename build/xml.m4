@@ -97,7 +97,7 @@ AC_DEFUN([TS_CHECK_XML_LIBXML2], [
       TS_ADDTO(LIBS, -lxml2)
       enable_xml=yes
     else
-      AC_MSG_ERROR(["Failed to find libxml2"])
+      AC_MSG_WARN(["Failed to find libxml2"])
     fi
   fi
 ])
