@@ -59,12 +59,12 @@ operating systems have stronger requirements - see the following examples for
 more information.
 
 As with standard ``records.config`` integers, human readable prefixes are also
-supported. They include::
+supported. They include
 
-   -  ``K`` Kilobytes (1024 bytes)
-   -  ``M`` Megabytes (1,048,576 bytes)
-   -  ``G`` Gigabytes (1,073,741,824 bytes
-   -  ``T`` Terabytes (1,099,511,627,776 bytes)
+   - ``K`` Kilobytes (1024 bytes)
+   - ``M`` Megabytes (1024^2 or 1,048,576 bytes)
+   - ``G`` Gigabytes (1024^3 or 1,073,741,824 bytes
+   - ``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)
 
 
 Examples

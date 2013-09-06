@@ -55,12 +55,12 @@ A variable marked as ``Reloadable`` can be updated via the command::
 ``INT`` type configurations are expressed as any normal integer,
 e.g. *32768*. They can also be expressed using more human readable values
 using standard prefixes, e.g. *32K*. The following prefixes are supported
-for all ``INT` type configurations ::
+for all ``INT` type configurations
 
-   -  ``K`` Kilobytes (1024 bytes)
-   -  ``M`` Megabytes (1,048,576 bytes)
-   -  ``G`` Gigabytes (1,073,741,824 bytes
-   -  ``T`` Terabytes (1,099,511,627,776 bytes)
+   - ``K`` Kilobytes (1024 bytes)
+   - ``M`` Megabytes (1024^2 or 1,048,576 bytes)
+   - ``G`` Gigabytes (1024^3 or 1,073,741,824 bytes
+   - ``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)
 
 .. note::
 
