@@ -1243,6 +1243,14 @@ hostname to ``host_x.y.com``.
 
    Indicates whether to use SRV records for orgin server lookup.
 
+.. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
+
+   Create and dedicate a thread entirely for DNS processing. This is probably
+   most useful on system which do a significant number of DNS lookups,
+   typically forward proxies. But even on other systems, it can avoid some
+   contention on the first worker thread (which otherwise takes on the burden of
+   all DNS lookups).
+
 HostDB
 ======
 
