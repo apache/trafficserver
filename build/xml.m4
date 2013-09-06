@@ -30,13 +30,14 @@ AC_DEFUN([TS_CHECK_XML], [
       TS_CHECK_XML_EXPAT
     elif test "$withval" = "libxml2" ; then
       TS_CHECK_XML_LIBXML2
-    elif test "x$withval" = "x" ; then
-      TS_CHECK_XML_LIBXML2
-      if test "$enable_xml" = "no"; then
-        TS_CHECK_XML_EXPAT
-      fi
     else
       AC_MSG_ERROR([Unrecognised --with-xml option])
+    fi
+  ],
+  [
+    TS_CHECK_XML_LIBXML2
+    if test "$enable_xml" = "no"; then
+      TS_CHECK_XML_EXPAT
     fi
   ])
   if test "$enable_xml" = "no"; then
