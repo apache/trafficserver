@@ -23,11 +23,83 @@ dnl TS_CHECK_XML: look for xml libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_XML], [
   enable_xml=no
-
-  TS_CHECK_XML_EXPAT
-  dnl add checks for other varieties of xml here
+  AC_MSG_CHECKING(["For XML parser"])
+  AC_ARG_WITH(xml, [AC_HELP_STRING([--with-xml=(expat|libxml2)],[select XML parser])],
+  [
+    if test "$withval" = "expat" ; then
+      TS_CHECK_XML_EXPAT
+    elif test "$withval" = "libxml2" ; then
+      TS_CHECK_XML_LIBXML2
+    elif test "x$withval" = "x" ; then
+      TS_CHECK_XML_EXPAT
+      if test "$enable_xml" = "no"; then
+        TS_CHECK_XML_LIBXML2
+      fi
+    else
+      AC_MSG_ERROR([Unrecognised --with-xml option])
+    fi
+  ])
+  if test "$enable_xml" = "no"; then
+    AC_MSG_ERROR([An XML parser (expat or libxml2) is required.])
+  fi
 ])
 dnl
+
+AC_DEFUN([TS_CHECK_XML_LIBXML2], [
+  enable_libxml2=no
+  libxml2_include=""
+  libxml2_ldflags=""
+  AC_ARG_WITH(libxml2, [AC_HELP_STRING([--with-libxml2=DIR],[use a specific libxml2 library])],
+  [
+    if test "x$withval" != "xyes" && test "x$withval" != "x"; then
+      if test "$withval" = "yes"; then
+        enable_libxml2=yes
+        libxml2_include="/usr/include/libxml2"
+      elif test "$withval" != "no"; then
+        enable_libxml2=yes
+        libxml2_include="$withval/include/libxml2"
+        libxml2_ldflags="$withval/lib"
+      fi
+    fi
+  ])
+  if test ${enable_libxml2} = "no"; then
+    enable_libxml2=yes
+    libxml2_include="/usr/include/libxml2"
+  fi
+  if test ${enable_libxml2} != "no"; then
+    AC_CACHE_CHECK([libxml2], [ts_cv_libxml2], [
+      ts_libxml2_CPPFLAGS=$CPPFLAGS
+      ts_libxml2_LIBS="$LIBS"
+      ts_libxml2_LDFLAGS="$LDFLAGS"
+      CPPFLAGS="$CPPFLAGS -I$libxml2_include"
+      LDFLAGS="$LDFLAGS $libxml2_ldflags"
+      LIBS="$LIBS -lxml2"
+      AC_TRY_LINK(
+        [#include <libxml/parser.h>],
+        [xmlSAXHandler sax; xmlCreatePushParserCtxt(&sax, NULL, NULL, 0, NULL);],
+        [ts_cv_libxml2=yes],
+        [ts_cv_libxml2=no],
+      )
+      CPPFLAGS=$ts_libxml2_CPPFLAGS
+      LIBS=$ts_libxml2_LIBS
+      LDFLAGS=$ts_libxml2_LDFLAGS
+    ])
+    if test $ts_cv_libxml2 = yes ; then
+      AC_DEFINE([HAVE_LIBXML2], 1, [Using libxml2])
+      if test -d "$libxml2_include" ; then
+        TS_ADDTO(CPPFLAGS, [-I${libxml2_include}])
+      fi
+      if test -d "$libxml2_ldflags" ; then
+        TS_ADDTO(LDFLAGS, [-L${libxml2_ldflags}])
+        TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${libxml2_ldflags}])
+      fi
+      TS_ADDTO(LIBS, -lxml2)
+      enable_xml=yes
+    else
+      AC_MSG_ERROR(["Failed to find libxml2"])
+    fi
+  fi
+])
 
 AC_DEFUN([TS_CHECK_XML_EXPAT], [
 enable_expat=no
