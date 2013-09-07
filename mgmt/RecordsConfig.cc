@@ -1938,7 +1938,6 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.stat_api.max_stats_allowed", RECD_INT, "256", RECU_RESTART_TS, RR_NULL, RECC_INT, "[256-1000]", RECA_NULL}
   ,
 
-#if TS_USE_RECLAIMABLE_FREELIST
   //############
   //#
   //# Using for Reclaimable InkFreeList memory pool
@@ -1952,7 +1951,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.allocator.debug_filter", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
   ,
-#endif /* TS_USE_RECLAIMABLE_FREELIST */
 
   //############
   //#
