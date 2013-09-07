@@ -612,7 +612,7 @@ CONFIG proxy.config.diags.show_location INT 0
 #	    --enable-reclaimable-freelist
 #
 ##############################################################################
-CONFIG proxy.config.allocator.enable_reclaim INT 0
+CONFIG proxy.config.allocator.enable_reclaim INT 1
   # The value of reclaim_factor should be in the 0.0 to 1.0 range. Allocators
   # use it to calculate size of unused memory, which is used to determine when
   # to reclaim memory. The larger the value, the more aggressive reclaims.
