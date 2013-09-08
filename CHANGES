@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in EventNotify::signal()
+
   *) [TS-2206] The trafficserver RC script does not use absolute path to
    traffic_line binary.
 
