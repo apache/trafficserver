@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
+
 Changes with Apache Traffic Server 4.0.2
+
+  *) [TS-2191] not reschedule http_sm when the sm_list`s lock is not acquired.
 
   *) [TS-2174] traffic_shell/traffic_line miss some stats value
 
