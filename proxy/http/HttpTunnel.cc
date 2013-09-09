@@ -361,7 +361,7 @@ HttpTunnelProducer::HttpTunnelProducer()
     buffer_start(NULL), vc_type(HT_HTTP_SERVER), chunking_action(TCA_PASSTHRU_DECHUNKED_CONTENT),
     do_chunking(false), do_dechunking(false), do_chunked_passthru(false),
     init_bytes_done(0), nbytes(0), ntodo(0), bytes_read(0),
-    handler_state(0), num_consumers(0), alive(false),
+    handler_state(0), last_event(0), num_consumers(0), alive(false),
     read_success(false), flow_control_source(0), name(NULL)
 {
 }
