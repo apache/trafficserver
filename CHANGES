@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-1086] Avoid edge case returning 304 to an unconditional request.
+     Diagnosis and patch by Mohamad Khateeb.
+
   *) [TS-2168] Make RecordsConfig.cc more inline with default builds.
 
   *) [TS-2174] traffic_shell/traffic_line miss some stats value

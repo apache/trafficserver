@@ -2853,12 +2853,19 @@ HttpTransact::handle_cache_write_lock(State* s)
   //  we're tunneling response anyway
   if (remove_ims) {
     s->hdr_info.server_request.field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
+    s->hdr_info.server_request.field_delete(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
     MIMEField *c_ims = s->hdr_info.client_request.field_find(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
+    MIMEField *c_inm = s->hdr_info.client_request.field_find(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
 
     if (c_ims) {
       int len;
       const char *value = c_ims->value_get(&len);
       s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, value, len);
+    }
+    if (c_inm) {
+      int len;
+      const char *value = c_inm->value_get(&len);
+      s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, value, len);
     }
   }
 
