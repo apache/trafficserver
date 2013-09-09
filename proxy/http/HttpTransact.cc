@@ -5885,9 +5885,6 @@ HttpTransact::is_request_cache_lookupable(State* s)
     return false;
   }
 
-  if (s->api_skip_cache_lookup) {
-    return false;
-  }
   // Even with "no-cache" directive, we want to do a cache lookup
   // because we need to update our cached copy.
   // Client request "no-cache" directive is handle elsewhere:

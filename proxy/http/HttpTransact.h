@@ -957,7 +957,6 @@ public:
     HdrHeapSDKHandle *cache_resp_hdr_heap_handle;
     bool api_release_server_session;
     bool api_cleanup_cache_read;
-    bool api_skip_cache_lookup;
     bool api_server_response_no_store;
     bool api_server_response_ignore;
     bool api_http_sm_shutdown;
@@ -1068,7 +1067,6 @@ public:
         cache_resp_hdr_heap_handle(NULL),
         api_release_server_session(false),
         api_cleanup_cache_read(false),
-        api_skip_cache_lookup(false),
         api_server_response_no_store(false),
         api_server_response_ignore(false),
         api_http_sm_shutdown(false),
