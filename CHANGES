@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2195] Deprecate experimental TSHttpTxnCacheLookupSkip API.
+
   *) [TS-2176] Do not reset value of api_skip_cache_lookup when reading it.
     Author: Corey Cossentino <corey@omniti.com>
 
