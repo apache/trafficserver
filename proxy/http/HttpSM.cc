@@ -520,13 +520,11 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
     int bucket = ((unsigned int) sm_id % HTTP_LIST_BUCKETS);
 
     MUTEX_TRY_LOCK(lock, HttpSMList[bucket].mutex, mutex->thread_holding);
-    if (!lock) {
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_add_to_list);
-      mutex->thread_holding->schedule_in(this, HTTP_LIST_RETRY);
-      return EVENT_DONE;
-    }
-
-    HttpSMList[bucket].sm_list.push(this);
+    // the client_vc`s timeout events can be triggered, so we should not
+    // reschedule the http_sm when the lock is not acquired.
+    // FIXME: the sm_list may miss some http_sms when the lock contention
+    if (lock)
+      HttpSMList[bucket].sm_list.push(this);
   }
 
   t_state.api_next_action = HttpTransact::HTTP_API_SM_START;
