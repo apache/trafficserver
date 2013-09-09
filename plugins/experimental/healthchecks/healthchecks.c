@@ -500,6 +500,10 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     int path_len = 0;
     const char* path = TSUrlPathGet(reqp, url_loc, &path_len);
 
+    /* Short circuit the / path, common case, and we won't allow healthecks on / */
+    if (!path || !path_len)
+      goto cleanup;
+
     while (info) {
       if (info->p_len == path_len && !memcmp(info->path, path, path_len)) {
         TSDebug(PLUGIN_NAME, "Found match for /%.*s", path_len, path);
