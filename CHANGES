@@ -1,10 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
   
-  *) [TS-2191] not reschedule http_sm when the sm_list`s lock is not acquired.
+  *) [TS-2191] Do not reschedule http_sm when the sm_list`s lock is not
+   acquired. This can lose items for the WebUI, which will be fixed in a
+   separate bug.
 
-  *) [TS-2188] Fixes to make healthcheck plugin not segfault, and parse
-   the log files properly. Author: Scott Harris <scott@harrisnet.id.au>.
+  *) [TS-2188] Fixes to make healthcheck plugin not segfault, and parse the
+   log files properly. Author: Scott Harris <scott@harrisnet.id.au>.
 
   *) [TS-1086] Avoid edge case returning 304 to an unconditional request.
      Diagnosis and patch by Mohamad Khateeb.
