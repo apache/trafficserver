@@ -152,6 +152,7 @@ public:
 
   time_t delta_thresh;
   time_t peer_timeout;
+  time_t mc_send_interval;
   time_t our_wall_clock;
   time_t startup_timeout;
   time_t startup_time;

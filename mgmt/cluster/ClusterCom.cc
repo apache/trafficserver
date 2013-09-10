@@ -423,6 +423,9 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   peer_timeout = REC_readInteger("proxy.config.cluster.peer_timeout", &found);
   ink_assert(found);
 
+  mc_send_interval = REC_readInteger("proxy.config.cluster.mc_send_interval", &found);
+  ink_assert(found);
+
   /* Launch time */
   startup_time = time(NULL);
 
@@ -1308,6 +1311,8 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
     int time_since_last_send = now - last_shared_send;
     if (last_shared_send != 0 && time_since_last_send > peer_timeout) {
       Warning("multicast send timeout exceeded.  %d seconds since" " last send.", time_since_last_send);
+    } else if (last_shared_send != 0 && time_since_last_send < mc_send_interval) {
+      return true;
     }
     last_shared_send = now;
   }
