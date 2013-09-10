@@ -565,10 +565,9 @@ LogFilterList::~LogFilterList()
 bool LogFilterList::operator==(LogFilterList & rhs)
 {
   if (m_does_conjunction == rhs.does_conjunction()) {
-    LogFilter *
-      f = first();
-    LogFilter *
-      rhsf = rhs.first();
+    LogFilter *f = first();
+    LogFilter *rhsf = rhs.first();
+
     while (true) {
       if (!(f || rhsf)) {
         return true;
