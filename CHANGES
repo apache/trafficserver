@@ -7,16 +7,40 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.1.0
 
-  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue()
 
-  *) [TS-2165] Introduce cluster-wide logging stats
+  *) [TS-1637] Fix nodes as idle/dead if we have not heard from them in awhile
+
+  *) [TS-2185] Support to control ClusterCom::sendSharedData frequency.
+
+  *) [TS-2195] Deprecate experimental TSHttpTxnCacheLookupSkip API.
+
+  *) [TS-2176] Do not reset value of api_skip_cache_lookup when reading it.
+    Author: Corey Cossentino <corey@omniti.com>
+
+  *) [TS-2191] Do not reschedule http_sm when the sm_list`s lock is not
+   acquired. This can lose items for the WebUI, which will be fixed in a
+   separate bug.
+
+  *) [TS-2188] Fixes to make healthcheck plugin not segfault, and parse the
+   log files properly. Author: Scott Harris <scott@harrisnet.id.au>.
+
+  *) [TS-1086] Avoid edge case returning 304 to an unconditional request.
+     Diagnosis and patch by Mohamad Khateeb.
+
+  *) [TS-2168] Make RecordsConfig.cc more inline with default builds.
+
+  *) [TS-2174] traffic_shell/traffic_line miss some stats value
+
+  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue().
+
+  *) [TS-2165] Introduce cluster-wide logging stats.
 
   *) [TS-2167] Update apichecker.pl to give suggestions on additional
-   deprecated APIs
+   deprecated APIs.
 
   *) [TS-2163] Remove WDA_BILLING, ACC_ALARMS etc. code and definitions.
 
-  *) [TS-2156] Fix stats trap in different type of threads
+  *) [TS-2156] Fix stats trap in different type of threads.
 
   *) [TS-2160] Remove ats_is_ip_nonroutable and replace it with the less confusing
    ats_is_ip_linklocal and ats_is_ip_private.
@@ -34,10 +58,6 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2147] Set server_share_sessions to 1 for 'internal' transactions in
    rfc5861 plugin.
-
-  *) [TS-2107] split proxy.config.http.transaction_active_timeout_in to
-     proxy.config.http.transaction_header_timeout_in and
-     proxy.config.http.transaction_request_timeout_in. 
 
   *) [TS-2114] buffer_upload plugin defines true and false
     Author: Kit Chan <chanshukit@gmail.com>

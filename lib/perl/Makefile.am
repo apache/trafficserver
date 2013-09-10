@@ -26,6 +26,9 @@ Makefile-pl: Makefile.PL
 	-[ $(srcdir) != $(builddir) ] && cp -rf $(abs_srcdir)/. $(builddir)/.
 	$(PERL) Makefile.PL INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix)
 
+distclean-local:
+	-rm -f Makefile-pl
+
 #test: check
 
 #check-local: Makefile-pl

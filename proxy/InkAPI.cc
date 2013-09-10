@@ -5031,15 +5031,11 @@ TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
 }
 
 
+// TS-2196: TSHttpTxnCacheLookupSkip will be removed in the 5.x release.
 TSReturnCode
 TSHttpTxnCacheLookupSkip(TSHttpTxn txnp)
 {
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
-  s->api_skip_cache_lookup = true;
-
-  return TS_SUCCESS;
+  return TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
 }
 
 TSReturnCode

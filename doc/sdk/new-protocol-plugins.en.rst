@@ -5,20 +5,20 @@ New Protocol Plugins
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 .. toctree::
    :maxdepth: 1
@@ -34,25 +34,23 @@ About the Sample Protocol
 
 The sample protocol enables a client to ask a server for a file. Clients
 send requests to a specific Traffic Server port (specified in
-``plugin.config``); each request has the following structure:
+:file:`plugin.config`); each request has the following structure::
 
-::
-
-    server_name file_name
+   server_name file_name
 
 Using the Protocol plugin, Traffic Server can accept these requests,
 parse them, and act as a proxy cache (i.e., request the file from the
 origin server on the client's behalf and store copies of response
 messages in cache). The Protocol plugin is a state machine that flows
 through the states illustrated in the `Sample Protocol State
-Diagram <#SampleProtocolStDiag>`__. This figure illustrates the steps
+Diagram <#SampleProtocolStDiag>`_. This figure illustrates the steps
 that Traffic Server and the Protocol plugin go through in order to
 support the sample protocol.
 
 In more specific terms, Traffic Server and the Protocol plugin must:
 
 -  Listen for and accept client connections (on the accept port
-   specified in ``plugin.config``)
+   specified in :file:`plugin.config`)
 
 -  Read incoming client requests
 
@@ -62,7 +60,7 @@ In more specific terms, Traffic Server and the Protocol plugin must:
    example does not do freshness checking)
 
 -  Open a connection to the origin server if the request is a cache miss
-   (on the server port specified in ``plugin.config``)
+   (on the server port specified in :file:`plugin.config`)
 
 -  Forward the request to the origin server
 
@@ -76,16 +74,17 @@ In more specific terms, Traffic Server and the Protocol plugin must:
    :alt: Sample Protocol State Diagram
 
    Sample Protocol State Diagram
+
 Protocol Plugin Structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To see how the Protocol plugin works, you need to understand some
 broader concepts. This section assumes you're familiar with the concepts
-of **continuation**, Traffic Server's **asynchronous event model**, and
+of :term:`continuation`, Traffic Server's **asynchronous event model**, and
 basic Traffic Server **plugin structure**. If you are not familiar with
 these concepts, then reference `Getting
-Started <../getting-started#GettingStarted>`__ and `How to Create
-Traffic Server Plugins <../how-to-create-trafficserver-plugins>`__
+Started <../getting-started#GettingStarted>`_ and `How to Create
+Traffic Server Plugins <../how-to-create-trafficserver-plugins>`_
 
 Continuations in the Protocol Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +95,7 @@ connections on the appropriate port. When Traffic Server accepts a net
 connection from a client on that port, the accept state machine is
 activated. It then creates a new continuation: a transaction state
 machine. The accept state machine creates one transaction state machine
-for each transaction (where a **transaction** consists of a client
+for each transaction (where a :term:`transaction` consists of a client
 request and Traffic Server's response). Each transaction state machine
 lives until the transaction completes; then it is destroyed. If the
 client's request for content is a cache miss, then a transaction state
@@ -104,15 +103,16 @@ machine might need to open a connection to the origin server. This is
 illustrated in the `Protocol Plugin
 Overview <#ProtocolPluginOverview>`__ diagram below.
 
-**Protocol Plugin Overview** {#ProtocolPluginOverview}
+**Protocol Plugin Overview**
 
 .. figure:: ../static/images/sdk/protocol_sm_big.jpg
    :alt: Protocol Plugin Overview
 
    Protocol Plugin Overview
+
 The first steps for writing the Protocol plugin are now clear: in
 ``TSPluginInit``, you must create a continuation that listens for net
-connections on the client port specified in ``plugin.config`` (this
+connections on the client port specified in :file:`plugin.config` (this
 continuation is the accept state machine).
 
 Below is a summary of the continuations implemented for the Protocol
@@ -156,14 +156,15 @@ connect to the origin server, then the transaction state machine
 initiates a net connection and waits for an event from the Net
 Processor.
 
-**Protocol Plugin Flow of Events** {#ProtocolPluginFlow}
+**Protocol Plugin Flow of Events**
 
 .. figure:: ../static/images/sdk/protocol_evt.jpg
    :alt: Protocol Plugin Flow of Events
 
    Protocol Plugin Flow of Events
+
 The flow of events is illustrated in the `Protocol Plugin Flow of
-Events <#ProtocolPluginFlow>`__ diagram above. The thin straight lines
+Events <#ProtocolPluginFlow>`_ diagram above. The thin straight lines
 show Net Processor event flow, the thin dashed lines represent Host
 Database event flow, and the thick dashed lines show Cache event flow.
 
@@ -244,10 +245,10 @@ Plugin" <#ImplementTransStMachine>`__.
 Plugin** {#ImplementTransStMachine}
 
 .. figure:: /images/sdk/txn_sm.jpg
-   :alt: How Transaction State Machines are Implemented in the Protocol
-   Plugin
+   :alt: How Transaction State Machines are Implemented in the Protocol Plugin
 
    How Transaction State Machines are Implemented in the Protocol Plugin
+
 Processing a Typical Transaction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -357,5 +358,3 @@ typical transaction.
     **``TS_EVENT_OPEN_READ``** (a cache hit) or
     **``TS_EVENT_OPEN_READ_FAILED``** (a cache miss),
     **``main_handler``** calls **``state_handle_cache_lookup``**.
-
-

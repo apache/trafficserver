@@ -183,10 +183,13 @@ extern "C"
    ****************************************************************************/
   tsapi TSReturnCode TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count);
   tsapi TSReturnCode TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
-  tsapi TSReturnCode TSHttpTxnCacheLookupSkip(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
   tsapi TSReturnCode TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close);
+
+  // TS-2195: TSHttpTxnCacheLookupSkip() is deprecated, because TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 0)
+  // does the same thing, but better. TSHttpTxnCacheLookupSkip will be removed in TrafficServer 5.0.
+  tsapi TS_DEPRECATED TSReturnCode TSHttpTxnCacheLookupSkip(TSHttpTxn txnp);
 
   // TS-1996: These API swill be removed after v3.4.0 is cut. Do not use them!
   tsapi TSReturnCode TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);

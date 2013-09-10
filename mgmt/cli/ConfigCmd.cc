@@ -978,11 +978,8 @@ Cmd_ConfigHttp(ClientData clientData, Tcl_Interp * interp, int argc, const char 
     case CMD_CONFIG_HTTP_INACTIVE_TIMEOUT_OUT:
       return (Cli_RecordInt_Action(action, "proxy.config.http.transaction_no_activity_timeout_out", argtable->arg_int));
 
-    case CMD_CONFIG_HTTP_HEADER_ACTIVE_TIMEOUT_IN:
-      return (Cli_RecordInt_Action(action, "proxy.config.http.transaction_header_active_timeout_in", argtable->arg_int));
-
-    case CMD_CONFIG_HTTP_REQUEST_ACTIVE_TIMEOUT_IN:
-      return (Cli_RecordInt_Action(action, "proxy.config.http.transaction_request_active_timeout_in", argtable->arg_int));
+    case CMD_CONFIG_HTTP_ACTIVE_TIMEOUT_IN:
+      return (Cli_RecordInt_Action(action, "proxy.config.http.transaction_active_timeout_in", argtable->arg_int));
 
     case CMD_CONFIG_HTTP_ACTIVE_TIMEOUT_OUT:
       return (Cli_RecordInt_Action(action, "proxy.config.http.transaction_active_timeout_out", argtable->arg_int));
@@ -1042,6 +1039,8 @@ CmdArgs_ConfigHttp()
   createArgument("inactive-timeout-out", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_HTTP_INACTIVE_TIMEOUT_OUT, "Inactive timeout outbound <seconds>",
                  (char *) NULL);
+  createArgument("active-timeout-in", 1, CLI_ARGV_OPTION_INT_VALUE,
+                 (char *) NULL, CMD_CONFIG_HTTP_ACTIVE_TIMEOUT_IN, "Active timeout inbound <seconds>", (char *) NULL);
   createArgument("active-timeout-out", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_HTTP_ACTIVE_TIMEOUT_OUT, "Active timeout outbound <seconds>", (char *) NULL);
 

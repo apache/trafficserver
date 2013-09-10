@@ -1123,6 +1123,13 @@ StatObjectList::Eval()
           }
           // scroll old values
           for (StatExprToken * token = object->m_postfix->first(); token; token = object->m_expression->next(token)) {
+
+            // in librecords, not all statistics are register at initialization
+            // must assign proper type if it is undefined.
+            if (!isOperator(token->m_arith_symbol) && token->m_token_type == RECD_NULL) {
+              token->assignTokenType();
+            }
+
             if (token->m_token_value_delta) {
               if (!varDataFromName(token->m_token_type, token->m_token_name,
                                    &tempValue)) {

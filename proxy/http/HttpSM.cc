@@ -507,13 +507,11 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
     int bucket = ((unsigned int) sm_id % HTTP_LIST_BUCKETS);
 
     MUTEX_TRY_LOCK(lock, HttpSMList[bucket].mutex, mutex->thread_holding);
-    if (!lock) {
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_add_to_list);
-      mutex->thread_holding->schedule_in(this, HTTP_LIST_RETRY);
-      return EVENT_DONE;
-    }
-
-    HttpSMList[bucket].sm_list.push(this);
+    // the client_vc`s timeout events can be triggered, so we should not
+    // reschedule the http_sm when the lock is not acquired.
+    // FIXME: the sm_list may miss some http_sms when the lock contention
+    if (lock)
+      HttpSMList[bucket].sm_list.push(this);
   }
 
   t_state.api_next_action = HttpTransact::HTTP_API_SM_START;
@@ -623,11 +621,8 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   // set up timeouts     //
   /////////////////////////
   client_vc->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
-  if (HttpConfig::m_master.transaction_header_active_timeout_in)
-    client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_header_active_timeout_in));
-  else if (HttpConfig::m_master.transaction_request_active_timeout_in)
-    client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_request_active_timeout_in));
-    
+  client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_active_timeout_in));
+
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, NULL);
 }
@@ -748,7 +743,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
     milestones.ua_read_header_done = ink_get_hrtime();
   }
 
-  int method;
   switch (state) {
   case PARSE_ERROR:
     DebugSM("http", "[%" PRId64 "] error parsing client request header", sm_id);
@@ -756,7 +750,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
     // Disable further I/O on the client
     ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
 
-    ua_session->get_netvc()->cancel_active_timeout();
     call_transact_and_set_next_state(HttpTransact::BadRequest);
     break;
 
@@ -768,7 +761,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
       // Disable further I/O on the client
       ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
 
-      ua_session->get_netvc()->cancel_active_timeout();
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
     } else if (event == VC_EVENT_READ_COMPLETE) {
@@ -812,21 +804,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
         (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size))
       enable_redirection = HttpConfig::m_master.redirection_enabled;
 
-    method = t_state.hdr_info.client_request.method_get_wksidx();
-    if ((method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUT || (t_state.hdr_info.extension_method && t_state.hdr_info.request_content_length > 0))) {
-      // is setted HttpConfig::m_master.transaction_header_active_timeout_in, so should reset active_timeout_in
-      if (ua_session->get_netvc()->get_active_timeout() == HRTIME_SECONDS(HttpConfig::m_master.transaction_header_active_timeout_in)) {
-        if (HttpConfig::m_master.transaction_request_active_timeout_in) {
-          if (HRTIME_SECONDS(HttpConfig::m_master.transaction_request_active_timeout_in) > (milestones.ua_read_header_done - milestones.sm_start)) {
-            ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_request_active_timeout_in) - (milestones.ua_read_header_done - milestones.sm_start));
-          }
-        } else {
-          ua_session->get_netvc()->cancel_active_timeout();
-        }
-      }
-    } else {
-      ua_session->get_netvc()->cancel_active_timeout();
-    }
     call_transact_and_set_next_state(HttpTransact::ModifyRequest);
 
     break;
@@ -3303,7 +3280,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
   case VC_EVENT_ACTIVE_TIMEOUT:
     //  Did not complete post tunnling.  Abort the
     //   server and close the ua
-    ua_session->get_netvc()->cancel_active_timeout();
     p->handler_state = HTTP_SM_POST_UA_FAIL;
     tunnel.chain_abort_all(p);
     p->read_vio = NULL;
@@ -3333,7 +3309,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     p->handler_state = HTTP_SM_POST_SUCCESS;
     p->read_success = true;
     ua_entry->in_tunnel = false;
-    ua_session->get_netvc()->cancel_active_timeout();
 
     if (p->do_dechunking || p->do_chunked_passthru) {
       if (p->chunked_handler.truncation) {

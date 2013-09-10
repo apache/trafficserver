@@ -1155,8 +1155,7 @@ ShowHttp()
   TSInt keepalive_timeout_out = -1;
   TSInt inactivity_timeout_in = -1;
   TSInt inactivity_timeout_out = -1;
-  TSInt header_activity_timeout_in = -1;
-  TSInt request_activity_timeout_in = -1;
+  TSInt activity_timeout_in = -1;
   TSInt activity_timeout_out = -1;
   TSInt max_alts = -1;
   TSInt remove_from = -1;
@@ -1177,8 +1176,7 @@ ShowHttp()
   Cli_RecordGetInt("proxy.config.http.keep_alive_no_activity_timeout_out", &keepalive_timeout_out);
   Cli_RecordGetInt("proxy.config.http.transaction_no_activity_timeout_in", &inactivity_timeout_in);
   Cli_RecordGetInt("proxy.config.http.transaction_no_activity_timeout_out", &inactivity_timeout_out);
-  Cli_RecordGetInt("proxy.config.http.transaction_header_active_timeout_in", &header_activity_timeout_in);
-  Cli_RecordGetInt("proxy.config.http.transaction_request_active_timeout_in", &request_activity_timeout_in);
+  Cli_RecordGetInt("proxy.config.http.transaction_active_timeout_in", &activity_timeout_in);
   Cli_RecordGetInt("proxy.config.http.transaction_active_timeout_out", &activity_timeout_out);
   Cli_RecordGetInt("proxy.config.cache.limits.http.max_alts", &max_alts);
   Cli_RecordGetInt("proxy.config.http.anonymize_remove_from", &remove_from);
@@ -1201,8 +1199,7 @@ ShowHttp()
   Cli_Printf("Keep-Alive Timeout Outbound --- %d s\n", keepalive_timeout_out);
   Cli_Printf("Inactivity Timeout Inbound ---- %d s\n", inactivity_timeout_in);
   Cli_Printf("Inactivity Timeout Outbound --- %d s\n", inactivity_timeout_out);
-  Cli_Printf("Header Activity Timeout Inbound ------ %d s\n", header_activity_timeout_in);
-  Cli_Printf("Request Activity Timeout Inbound ------ %d s\n", request_activity_timeout_in);
+  Cli_Printf("Activity Timeout Inbound ------ %d s\n", activity_timeout_in);
   Cli_Printf("Activity Timeout Outbound ----- %d s\n", activity_timeout_out);
   Cli_Printf("Maximum Number of Alternates -- %d\n", max_alts);
 

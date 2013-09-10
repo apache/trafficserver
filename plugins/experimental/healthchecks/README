@@ -6,8 +6,10 @@ This configuration contains one, or several, lines of the format
 
    <URI-path> <file-path> <mime> <file-exists-code> <file-missing-code>
 
+The URI-path can *not* be "/" only.
 
-For example,
+
+Examples:
 
    /__hc  /var/run/ts-alive  text/plain 200  403
 

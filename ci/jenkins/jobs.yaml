@@ -29,18 +29,20 @@
     builders:
         - shell: |
             git clean -d -f -x -q
+            mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
+            cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export DEB_BUILD_HARDENING
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
-        - shell: make -j2 V=1
-        - shell: make check
-        - shell: make install
-        - shell: |
+            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            make -j2 V=1
+            make check
+            make install
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
-        - shell: make distclean
+            make distclean
         - shell: |
+            rm -rf "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
 - builder:
@@ -48,21 +50,23 @@
     builders:
         - shell: |
             git clean -d -f -x -q
+            mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
+            cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export CC=clang
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
-        - shell: make -j2 V=1
-        - shell: make check
-        - shell: make install
-        - shell: |
+            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            make -j2 V=1
+            make check
+            make install
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
-        - shell: make distclean
+            make distclean
         - shell: |
+            rm -rf "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
 # XXX if we can pass down a $MAKE environment variable from the project, then we can
@@ -73,16 +77,18 @@
         - shell: |
             git clean -d -f -x -q
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
+            mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_DEBUG
-        - shell: gmake -j2 V=1
-        - shell: gmake check
-        - shell: gmake install
-        - shell: |
+            cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
+            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_DEBUG
+            gmake -j2 V=1
+            gmake check
+            gmake install
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
-        - shell: gmake distclean
+            gmake distclean
         - shell: |
+            rm -rf "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
 
 - builder:
@@ -91,8 +97,10 @@
         - shell: |
             git clean -d -f -x -q
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
+            mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             autoreconf -fi
         - shell: |
+            cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export PATH=/sbin:~/bin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/omni/bin:/opt/gcc-4.6.3/bin/:/usr/ucb:/usr/ccs/bin:/usr/sfw/bin:/usr/dt/bin:/usr/openwin/bin
             export CC=/opt/gcc-4.6.3/bin/gcc
             export CXX=/opt/gcc-4.6.3/bin/g++
@@ -101,15 +109,15 @@
             export CXXFLAGS=-m64
             export CPPFLAGS=-I/opt/omni/include
             export LDFLAGS="-L/opt/omni/lib/amd64 -R/opt/omni/lib/amd64"
-            ./configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
-        - shell: gmake -j2 V=1
-        - shell: gmake check
-        - shell: gmake install
-        - shell: |
+            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            gmake -j2 V=1
+            gmake check
+            gmake install
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
-        - shell: gmake distclean
+            gmake distclean
         - shell: |
             rm -rf "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
+            rm -rf "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
 
 - job-template:
     name: '{node}-{branch}-{tag}-regression'
