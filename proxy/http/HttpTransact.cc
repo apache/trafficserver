@@ -6780,21 +6780,21 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
     if (s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf->chunking_enabled == 1 &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
-         // we do not need chunked encoding for internal error messages
-         // that are sent to the client if the server response is not valid.
-         (( (s->source == SOURCE_HTTP_ORIGIN_SERVER || s->source == SOURCE_TRANSFORM) &&
-         s->hdr_info.server_response.valid() &&
-         // if we receive a 304, we will serve the client from the
-         // cache and thus do not need chunked encoding.
-         s->hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
-         (s->current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
-          // we can use chunked encoding if we cannot trust the content
-          // length (e.g. no Content-Length and Connection:close in HTTP/1.1 responses)
-          s->hdr_info.trust_response_cl == false)) ||
+        // we do not need chunked encoding for internal error messages
+        // that are sent to the client if the server response is not valid.
+        (((s->source == SOURCE_HTTP_ORIGIN_SERVER || s->source == SOURCE_TRANSFORM) &&
+          s->hdr_info.server_response.valid() &&
+          // if we receive a 304, we will serve the client from the
+          // cache and thus do not need chunked encoding.
+          s->hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
+          (s->current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
+           // we can use chunked encoding if we cannot trust the content
+           // length (e.g. no Content-Length and Connection:close in HTTP/1.1 responses)
+           s->hdr_info.trust_response_cl == false)) ||
          // handle serve from cache (read-while-write) case
          (s->source == SOURCE_CACHE && s->hdr_info.trust_response_cl == false) ||
-	  //any transform will potentially alter the content length. try chunking if possible
-	  (s->source == SOURCE_TRANSFORM && s->hdr_info.trust_response_cl == false ))) {
+         //any transform will potentially alter the content length. try chunking if possible
+         (s->source == SOURCE_TRANSFORM && s->hdr_info.trust_response_cl == false ))) {
       s->client_info.receive_chunked_response = true;
       heads->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED, HTTP_LEN_CHUNKED, true);
     } else {
