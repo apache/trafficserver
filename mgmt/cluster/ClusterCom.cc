@@ -104,7 +104,7 @@ drainIncomingChannel(void *arg)
     // linux: set tv.tv_set in select() loop, since linux's select()
     // will update tv with the amount of time not slept (most other
     // implementations do not do this)
-    tv.tv_sec = 30;             // interface not-responding timeout
+    tv.tv_sec = lmgmt->ccom->mc_poll_timeout;             // interface not-responding timeout
     tv.tv_usec = 0;
 
     memset(message, 0, 61440);
@@ -424,6 +424,9 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   ink_assert(found);
 
   mc_send_interval = REC_readInteger("proxy.config.cluster.mc_send_interval", &found);
+  ink_assert(found);
+
+  mc_poll_timeout = REC_readInteger("proxy.config.cluster.mc_poll_timeout", &found);
   ink_assert(found);
 
   /* Launch time */

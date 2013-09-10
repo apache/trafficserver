@@ -217,6 +217,8 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cluster.mc_send_interval", RECD_INT, "2", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.cluster.mc_poll_timeout", RECD_INT, "5", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.cluster.startup_timeout", RECD_INT, "10", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //# cluster type requires restart to change

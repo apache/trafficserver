@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-1637] Fix nodes as idle/dead if we have not heard from them in awhile
+
   *) [TS-2185] Support to control ClusterCom::sendSharedData frequency.
 
   *) [TS-2195] Deprecate experimental TSHttpTxnCacheLookupSkip API.
