@@ -103,13 +103,13 @@ eval TS_BASE="`echo $TS_ROOT | ${ESED} -e 's;@prefix@$;;'`"
 TC_NAME=${TC_NAME:-traffic_cop}
 TM_NAME=${TM_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
-TL_NAME=${TL_NAME:-traffic_line}
 TC_DAEMON=${TC_DAEMON:-$TS_BASE@exp_bindir@/traffic_cop}
 TC_DAEMON_ARGS=""
 TM_DAEMON=${TM_DAEMON:-$TS_BASE@exp_bindir@/traffic_manager}
 TM_DAEMON_ARGS=""
 TS_DAEMON=${TS_DAEMON:-$TS_BASE@exp_bindir@/traffic_server}
 TS_DAEMON_ARGS=""
+TL_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_line}
 TC_PIDFILE=${TC_PIDFILE:-$TS_BASE@exp_runtimedir@/cop.lock}
 TM_PIDFILE=${TM_PIDFILE:-$TS_BASE@exp_runtimedir@/manager.lock}
 TS_PIDFILE=${TS_PIDFILE:-$TS_BASE@exp_runtimedir@/server.lock}
@@ -346,22 +346,22 @@ case "$1" in
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
             test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${NAME}:"
             retval=0
-            $TL_NAME -x
+            $TL_BINARY -x
             test "$?" -ne 0 -a "$?" -ne 1 && retval=1
             test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Reloading ${NAME}:" $TL_NAME -x
+            action "Reloading ${NAME}:" $TL_BINARY -x
         elif [ "$DISTRIB_ID" = "suse" ]; then
             echo -n "Reloading ${NAME}"
-            $TL_NAME -x
+            $TL_BINARY -x
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Reloading ${NAME}"
-            $TL_NAME -x
+            $TL_BINARY -x
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Reloading ${NAME}"
-            $TL_NAME -x
+            $TL_BINARY -x
         else
             echo "This script needs to be ported to this OS"
             exit 1

@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2206] The trafficserver RC script does not use absolute path to
+   traffic_line binary.
+
   *) [TS-2207] CentOS5 out of tree perl module build fails.
 
   *) [TS-1637] Fix nodes as idle/dead if we have not heard from them in awhile
