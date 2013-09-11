@@ -104,7 +104,8 @@ EventNotify::wait(void)
   else
     return errno;
 #else
-  return ink_cond_wait(&m_cond, &m_mutex);
+  ink_cond_wait(&m_cond, &m_mutex);
+  return 0;
 #endif
 }
 
