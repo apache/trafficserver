@@ -179,6 +179,9 @@ class RemapRegex
         _connect_timeout = atoi(opt_val.c_str());
       } else if (opt.compare(start, 11, "dns_timeout") == 0) {
         _dns_timeout = atoi(opt_val.c_str());
+      } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
+        _lowercase_substitutions = atoi(opt_val.c_str());
+        TSDebug(PLUGIN_NAME, "lowercasing %d", _lowercase_substitutions);
       } else {
         TSError("Unknown options: %s", opt.c_str());
       }
@@ -379,7 +382,7 @@ class RemapRegex
   // length of the string as written to dest (not including the trailing '0').
   int
   substitute(char dest[], const char *src, const int ovector[], const int lengths[],
-             TSRemapRequestInfo *rri, UrlComponents *req_url)
+             TSRemapRequestInfo *rri, UrlComponents *req_url, bool lowercase_substitutions)
   {
     if (_num_subs > 0) {
       char* p1 = dest;
@@ -387,6 +390,7 @@ class RemapRegex
       int prev = 0;
 
       for (int i=0; i < _num_subs; i++) {
+        char *start = p1;
         int ix = _sub_ix[i];
 
         memcpy(p1, p2, _sub_pos[i] - prev);
@@ -441,22 +445,20 @@ class RemapRegex
           // If one of the rules fetched a read-only string, copy it in.
           if (str && len > 0) {
             memcpy(p1, str, len);
-            if (ix == SUB_LOWER_PATH) {
-              TSDebug(PLUGIN_NAME, "lowercasing url: %.*s", len, str);
-              char *end = p1 + len;
-              while (p1 <= end) {
-                *p1 = tolower(*p1);
-                p1++;
-              }
-              p1 = end;
-            } else {
-              p1 += len;
-            }
+            p1 += len;
           }
         }
         p2 += (_sub_pos[i] - prev + 2);
         prev = _sub_pos[i] + 2;
+
+        if (lowercase_substitutions == true || ix == SUB_LOWER_PATH) {
+           while (start < p1) {
+             *start = tolower(*start);
+             start++;
+            }
+         }
       }
+
       memcpy(p1, p2, _subst_len - (p2 - _subst));
       p1 += _subst_len - (p2 - _subst);
       *p1 = 0; // Make sure it's NULL terminated (for safety).
@@ -489,6 +491,7 @@ class RemapRegex
   inline int no_activity_timeout_option() const  { return _no_activity_timeout; };
   inline int connect_timeout_option() const  { return _connect_timeout; };
   inline int dns_timeout_option() const  { return _dns_timeout; };
+  inline bool lowercase_substitutions_option() const  { return _lowercase_substitutions; };
 
  private:
   char* _rex_string;
@@ -505,6 +508,7 @@ class RemapRegex
   int _order;
   TSHttpStatus _status;
   bool _simple;
+  bool _lowercase_substitutions;
   int _active_timeout;
   int _no_activity_timeout;
   int _connect_timeout;
@@ -838,6 +842,11 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         TSDebug(PLUGIN_NAME, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
       }
+      bool lowercase_substitutions = false;
+      if (re->lowercase_substitutions_option() == true) {
+        TSDebug(PLUGIN_NAME, "Setting lowercasing substitutions on");
+        lowercase_substitutions = true;
+      }
 
       // Update profiling if requested
       if (ri->profile) {
@@ -849,7 +858,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         char* dest;
 
         dest = (char*)alloca(new_len+8);
-        dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url);
+        dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, lowercase_substitutions);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
         TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
