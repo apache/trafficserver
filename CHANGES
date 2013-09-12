@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2212] Implement the <fsiz> log tag for HTTP requests. This also does
+   a small refactoring of the "atoi" functions in lib/ts, such that we now
+   consistently have both prototypes for all types (with and without a
+   string length parameter).
+
   *) [TS-2261] Add config option to restore/elevate access to reading files by
    root when loading plugins
 

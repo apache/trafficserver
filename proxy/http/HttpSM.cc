@@ -323,6 +323,7 @@ HttpSM::HttpSM()
     second_cache_sm(NULL),
     default_handler(NULL), pending_action(NULL), historical_action(NULL),
     last_action(HttpTransact::STATE_MACHINE_ACTION_UNDEFINED),
+    // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
     client_request_hdr_bytes(0), client_request_body_bytes(0),
     server_request_hdr_bytes(0), server_request_body_bytes(0),
     server_response_hdr_bytes(0), server_response_body_bytes(0),

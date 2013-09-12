@@ -976,6 +976,39 @@ LogAccessHttp::marshal_transfer_time_s(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+  Figure out the size of the object *on origin*. This is somewhat tricky
+  since there are many variations on how this can be calculated.
+  -------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_file_size(char *buf)
+{
+  if (buf) {
+    MIMEField *fld;
+    HTTPHdr *hdr = m_server_response ? m_server_response : m_cache_response;
+
+    if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE))) {
+      int len;
+      char *str = (char*)fld->value_get(&len);
+      char *pos = (char*)memchr(str, '/', len); // Find the /
+
+      // If the size is not /* (which means unknown) use it as the file_size.
+      if (pos && !memchr(pos+1, '*', len - (pos + 1 - str))) {
+        marshal_int(buf, ink_atoi64(pos+1, len - (pos + 1 - str)));
+      }
+    } else {
+      // This is semi-broken when we serveq zero length objects. See TS-2213
+      if (m_http_sm->server_response_body_bytes > 0)
+        marshal_int(buf, m_http_sm->server_response_body_bytes);
+      else if (m_http_sm->cache_response_body_bytes > 0)
+        marshal_int(buf, m_http_sm->cache_response_body_bytes);
+    }
+  }
+  // Else, we don't set the value at all (so, -)
+
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
