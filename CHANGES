@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2144] Avoid race on e.g. "traffic_server -Cclear" which would crash
+   the process intermittently.
+
   *) [TS-2217] remove the option to turn off body factory - setting it to 0 will
    result in empty responses
 
