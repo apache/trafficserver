@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2217] remove the option to turn off body factory - setting it to 0 will
+   result in empty responses
+
   *) [TS-2209] add support for lowercasing all substitutions in regex_remap
 
   *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in EventNotify::signal()
