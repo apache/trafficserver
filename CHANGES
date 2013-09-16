@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) TS-2232: log level should be change from Status to Debug.
+    Author: Yu Qing <zhuangyuan@taobao.com>
+
   *) [TS-2201] split drainIncomingChannel two thread, one handle Broadcast message and other handle Reliable(TCP)
    request for supporing large cluster.
 

@@ -1608,7 +1608,7 @@ LogConfig::update_space_used()
         Note("Traffic Server was Unable to auto-delete rolled "
              "logfile %s: %s.", candidates[victim].name, strerror(errno));
       } else {
-        Status("The rolled logfile, %s, was auto-deleted; "
+        Debug("logspace", "The rolled logfile, %s, was auto-deleted; "
                "%" PRId64 " bytes were reclaimed.", candidates[victim].name, candidates[victim].size);
         m_space_used -= candidates[victim].size;
         m_partition_space_left += candidates[victim].size;
