@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2201] split drainIncomingChannel two thread, one handle Broadcast message and other handle Reliable(TCP)
+   request for supporing large cluster.
+
   *) [TS-2144] Avoid race on e.g. "traffic_server -Cclear" which would crash
    the process intermittently.
 
