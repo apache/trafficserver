@@ -1468,19 +1468,19 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
                        buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
-  if (url->m_ptr_params) {
+  if (url->m_ptr_params && url->m_len_params > 0) {
     TRY(mime_mem_print(";", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     TRY(mime_mem_print(url->m_ptr_params, url->m_len_params,
                        buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
-  if (url->m_ptr_query) {
+  if (url->m_ptr_query && url->m_len_query > 0) {
     TRY(mime_mem_print("?", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     TRY(mime_mem_print(url->m_ptr_query, url->m_len_query,
                        buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
-  if (url->m_ptr_fragment) {
+  if (url->m_ptr_fragment && url->m_len_fragment > 0) {
     TRY(mime_mem_print("#", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     TRY(mime_mem_print(url->m_ptr_fragment, url->m_len_fragment,
                        buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
