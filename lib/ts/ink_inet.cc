@@ -473,6 +473,9 @@ ats_ip_check_characters(ts::ConstBuffer text) {
     ;
 }
 
+// Need to declare this type globally so gcc 4.4 can use it in the countof() template ...
+struct ip_parse_spec { const char * hostspec; const char * host; const char * port; };
+
 REGRESSION_TEST(Ink_Inet) (RegressionTest * t, int /* atype */, int * pstatus) {
   TestBox box(t, pstatus);
   IpEndpoint  ep;
@@ -480,18 +483,51 @@ REGRESSION_TEST(Ink_Inet) (RegressionTest * t, int /* atype */, int * pstatus) {
 
   box = REGRESSION_TEST_PASSED;
 
-  box.check(ats_ip_pton("76.14.64.156", &ep.sa) == 0, "ats_ip_pton()");
-  box.check(addr.load("76.14.64.156") == 0, "IpAddr::load()");
-  box.check(addr.family() == ep.family(), "mismatched address family");
+  // Test ats_ip_parse() ...
+  {
+    struct ip_parse_spec names[] = {
+      { "::", "::", NULL },
+      { "[::1]:99", "::1", "99" },
+      { "127.0.0.1:8080", "127.0.0.1", "8080" },
+      { "foo.example.com", "foo.example.com", NULL },
+      { "foo.example.com:99", "foo.example.com", "99" },
+    };
 
-  switch (addr.family()) {
-  case AF_INET:
-    box.check(ep.sin.sin_addr.s_addr == addr._addr._ip4, "IPv4 address mismatch");
-    break;
-  case AF_INET6:
-    box.check(memcmp(&ep.sin6.sin6_addr, &addr._addr._ip6, sizeof(in6_addr)) == 0, "IPv6 address mismatch");
-    break;
-  default:
-    ;
+    for (unsigned i = 0; i < countof(names); ++i) {
+      ts::ConstBuffer addr, port;
+
+      box.check(ats_ip_parse(ts::ConstBuffer(names[i].hostspec, strlen(names[i].hostspec)), &addr, &port) == 0,
+          "ats_ip_parse(%s)", names[i].hostspec);
+      box.check(strncmp(addr.data(), names[i].host, addr.size()) ==  0,
+          "ats_ip_parse(%s) gave addr '%.*s'", names[i].hostspec, addr.size(), addr.data());
+      if (names[i].port) {
+        box.check(strncmp(port.data(), names[i].port, port.size()) ==  0,
+          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, port.size(), port.data());
+      } else {
+        box.check(port.size() == 0,
+          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, port.size(), port.data());
+      }
+
+    }
   }
+
+  // Test ats_ip_pton() ...
+  {
+    box.check(ats_ip_pton("76.14.64.156", &ep.sa) == 0, "ats_ip_pton()");
+    box.check(addr.load("76.14.64.156") == 0, "IpAddr::load()");
+    box.check(addr.family() == ep.family(), "mismatched address family");
+
+    switch (addr.family()) {
+    case AF_INET:
+      box.check(ep.sin.sin_addr.s_addr == addr._addr._ip4, "IPv4 address mismatch");
+      break;
+    case AF_INET6:
+      box.check(memcmp(&ep.sin6.sin6_addr, &addr._addr._ip6, sizeof(in6_addr)) == 0, "IPv6 address mismatch");
+      break;
+    default:
+      ;
+    }
+  }
+
+
 }
