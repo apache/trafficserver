@@ -465,15 +465,10 @@ LogFile::roll(long interval_start, long interval_end)
 }
 
 /*-------------------------------------------------------------------------
-<<<<<<< HEAD
-  LogFile::write_and_try_delete
-=======
   LogFile::preproc_and_try_delete
 
   preprocess the given buffer data before write to target file
   and try to delete it when its reference become zero.
->>>>>>> TS-2089: introduce configurable collation preproc threads
-
   -------------------------------------------------------------------------*/
 void
 LogFile::preproc_and_try_delete(LogBuffer * lb)
