@@ -7,6 +7,26 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.1.0
 
+  *) TS-2232: log level should be change from Status to Debug.
+    Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2201] split drainIncomingChannel two thread, one handle Broadcast message and other handle Reliable(TCP)
+   request for supporing large cluster.
+
+  *) [TS-2144] Avoid race on e.g. "traffic_server -Cclear" which would crash
+   the process intermittently.
+
+  *) [TS-2217] remove the option to turn off body factory - setting it to 0 will
+   result in empty responses
+
+  *) [TS-2209] add support for lowercasing all substitutions in regex_remap
+
+  *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in EventNotify::signal()
+
+  *) [TS-2206] The trafficserver RC script does not use absolute path to
+   traffic_line binary.
+
+  *) [TS-2207] CentOS5 out of tree perl module build fails.
 
   *) [TS-1637] Fix nodes as idle/dead if we have not heard from them in awhile
 

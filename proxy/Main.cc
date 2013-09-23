@@ -1516,17 +1516,13 @@ main(int /* argc ATS_UNUSED */, char **argv)
     Note("using the new remap processor system with %d threads", num_remap_threads);
     remapProcessor.setUseSeparateThread();
   }
-  remapProcessor.start(num_remap_threads, stacksize);
-
-  RecProcessStart(stacksize);
 
   init_signals2();
   // log initialization moved down
 
   if (command_flag) {
-    // pmgmt initialization moved up, needed by RecProcessInit
-    //pmgmt->start();
     int cmd_ret = cmd_mode();
+
     if (cmd_ret != CMD_IN_PROGRESS) {
       if (cmd_ret >= 0)
         _exit(0);               // everything is OK
@@ -1534,6 +1530,8 @@ main(int /* argc ATS_UNUSED */, char **argv)
         _exit(1);               // in error
     }
   } else {
+    remapProcessor.start(num_remap_threads, stacksize);
+    RecProcessStart(stacksize);
     initCacheControl();
     initCongestionControl();
     IpAllow::startup();

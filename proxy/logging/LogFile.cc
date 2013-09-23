@@ -459,7 +459,7 @@ LogFile::roll(long interval_start, long interval_end)
   m_start_time = 0;
   m_bytes_written = 0;
 
-  Status("The logfile %s was rolled to %s.", m_name, roll_name);
+  Debug("log-file", "The logfile %s was rolled to %s.", m_name, roll_name);
 
   return 1;
 }

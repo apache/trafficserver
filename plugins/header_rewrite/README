@@ -8,15 +8,15 @@ Note that currently only static string "values" are supported. We'll add
 advanced features to allow for expansions in a future release.
 
 
-Operations
-----------
+Operators
+---------
+The following operators are available: 
 
   rm-header header-name			[flags]
-  add-header header "string"		[flags]
-  set-status status-code		[flags]
-  set-status-reason reason-string	[flags]
+  add-header header <value>		[flags]
+  set-status <status-code>		[flags]
+  set-status-reason <value>		[flags]
   no-op		    			[flags]
-
 
 The following operator(s) currently only works when instantiating the
 plugin as a remap plugin:
@@ -36,24 +36,41 @@ For example (as a remap rule):
   set-destination HOST foo.mobile.bar.com [L]
 
 
-
-Operation flags
----------------
+Operator flags
+--------------
   [L]	Last rule, do not continue
 
 
 Conditions
 ----------
+The conditions are used as qualifiers: The operators specified will
+only be evaluated if the condition(s) are met.
 
-  cond %{STATUS} operand	[flags]
-  cond %{RANDOM:nn} operand	[flags]
-  cond %{ACCESS:file}		[flags]
-  cond %{TRUE}			[flags]
-  cond %{FALSE}			[flags]
-  cond %{HEADER:header-name}	[flags]
+  cond %{STATUS} operand			[flags]
+  cond %{RANDOM:nn} operand			[flags]
+  cond %{ACCESS:file}				[flags]
+  cond %{TRUE}					[flags]
+  cond %{FALSE}					[flags]
+  cond %{HEADER:header-name} operand		[flags]
+  cond %{CLIENT-HEADER:header-name} operand	[flags]
+  cond %{METHOD} operand			[flags]
+  cond %{PROTOCOL} operand			[flags]
+  cond %{PORT} operand				[flags]
+  cond %{HOST} operand				[flags]
+  cond %{TOHOST} operand			[false]
+  cond %{FROMHOST} operand			[false]
+  cond %{PATH} operand				[false]
+  cond %{PARAMS} operand			[false]
+  cond %{QUERY} operand				[false]
 
 
-These conditions have to be first in a ruleset, and you can only have one:
+The difference between HEADER and CLIENT-HEADER is that HEADER adapts to the
+hook it's running in, whereas CLIENT-HEADER always applies to the client
+request header. The %{TRUE} condition is also the default condition if no
+other conditions are specified.
+
+These conditions have to be first in a ruleset, and you can only have one in
+each rule. This implies that a new hook condition starts a new rule as well.
 
   cond %{READ_RESPONSE_HDR_HOOK}   (this is the default hook)
   cond %{READ_REQUEST_HDR_HOOK}
@@ -63,6 +80,7 @@ These conditions have to be first in a ruleset, and you can only have one:
 
 Condition flags
 ---------------
+  [NC]  Not ase sensitive condition (when applicable)
   [AND]	AND with next condition (default)
   [OR]	OR with next condition
   [NOT]	Invert this condition
@@ -70,9 +88,35 @@ Condition flags
 
 Operands to conditions
 ----------------------
-  =val	Lexically equal
-  <val	Lexically less then
-  >val	Lexically greater then   
+  /string/  # regular expression
+  <string   # lexically lower
+  >string   # lexically greater
+  =string   # lexically equal
+
+The absense of a "matcher" means value exists).
+
+
+Values
+------
+Setting e.g. a header with a value can take the following formats:
+
+  - Any of the cond definitions, that extracts a value from the request
+  - $N 0 <= N <= 9, as grouped in a regular expression
+  - string (which can contain the above)
+  - null
+
+
+Examples
+--------
+
+cond %{HEADER:X-Y-Foobar}
+cond %{METHOD} =GET [OR]
+cond %{METHOD} =POST
+set-header X-Y-Fiefum %{HEADER:X-Y-Foobar}
+rm-header X-Y-Foobar
+rm-header Set-Cookie
+
+cond %{HEADER:X-Y-Foobar} "Some string" [AND,NC]
 
 
 

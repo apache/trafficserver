@@ -38,7 +38,7 @@ class EventNotify
 public:
   EventNotify();
   void signal(void);
-  void wait(void);
+  int wait(void);
   int timedwait(int timeout); // milliseconds
   void lock(void);
   bool trylock(void);

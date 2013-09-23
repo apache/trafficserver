@@ -32,6 +32,7 @@
 
 #ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
+#include <sys/fcntl.h>
 #include <sys/epoll.h>
 #endif
 
@@ -41,11 +42,13 @@ EventNotify::EventNotify()
   int ret;
   struct epoll_event ev;
 
-  // Don't use noblock here!
-  m_event_fd = eventfd(0, EFD_CLOEXEC);
+  m_event_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (m_event_fd < 0) {
-    // EFD_CLOEXEC invalid in <= Linux 2.6.27
+    // EFD_NONBLOCK/EFD_CLOEXEC invalid in <= Linux 2.6.27
     m_event_fd = eventfd(0, 0);
+
+    fcntl(m_event_fd, F_SETFD, FD_CLOEXEC);
+    fcntl(m_event_fd, F_SETFL, O_NONBLOCK);
   }
   ink_release_assert(m_event_fd != -1);
 
@@ -67,25 +70,41 @@ void
 EventNotify::signal(void)
 {
 #ifdef HAVE_EVENTFD
-  ssize_t nr;
   uint64_t value = 1;
-  nr = write(m_event_fd, &value, sizeof(uint64_t));
-  ink_release_assert(nr == sizeof(uint64_t));
+  //
+  // If the addition would cause the counter’s value of eventfd
+  // to exceed the maximum, write() will fail with the errno EAGAIN,
+  // which is acceptable as the receiver will be notified eventually.
+  //
+  write(m_event_fd, &value, sizeof(uint64_t));
 #else
   ink_cond_signal(&m_cond);
 #endif
 }
 
-void
+int
 EventNotify::wait(void)
 {
 #ifdef HAVE_EVENTFD
-  ssize_t nr;
+  ssize_t nr, nr_fd;
   uint64_t value = 0;
+  struct epoll_event ev;
+
+  do {
+    nr_fd = epoll_wait(m_epoll_fd, &ev, 1, -1);
+  } while (nr_fd == -1 && errno == EINTR);
+
+  if (nr_fd == -1)
+    return errno;
+
   nr = read(m_event_fd, &value, sizeof(uint64_t));
-  ink_release_assert(nr == sizeof(uint64_t));
+  if (nr == sizeof(uint64_t))
+    return 0;
+  else
+    return errno;
 #else
   ink_cond_wait(&m_cond, &m_mutex);
+  return 0;
 #endif
 }
 
@@ -115,9 +134,10 @@ EventNotify::timedwait(int timeout) // milliseconds
     return errno;
 
   nr = read(m_event_fd, &value, sizeof(uint64_t));
-  ink_release_assert(nr == sizeof(uint64_t));
-
-  return 0;
+  if (nr == sizeof(uint64_t))
+    return 0;
+  else
+    return errno;
 #else
   ink_timestruc abstime;
   ink_hrtime curtime;

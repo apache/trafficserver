@@ -100,11 +100,12 @@ on the right hand side:
 You can also provide options, similar to how you configure your
 remap.config. The following options are available
 
-    @status=<nnn>               - Force the response code to <nnn>
-    @active_timeout=<nnn>       - Active timeout (in ms)
-    @no_activity_timeout=<nnn>  - No activity timeout (in ms)
-    @connect_timeout=<nnn>      - Connect timeouts (in ms)
-    @dns_timeout=<nnn>          - Connect timeouts (in ms)
+    @status=<nnn>                   - Force the response code to <nnn>
+    @active_timeout=<nnn>           - Active timeout (in ms)
+    @no_activity_timeout=<nnn>      - No activity timeout (in ms)
+    @connect_timeout=<nnn>          - Connect timeouts (in ms)
+    @dns_timeout=<nnn>              - Connect timeouts (in ms)
+    @lowercase_substitutions=<0|1>  - Turn on lowercasing all the substitutions
 
 
 For example, this can be useful to force a particular response for some
