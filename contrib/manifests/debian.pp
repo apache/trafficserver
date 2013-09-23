@@ -32,3 +32,12 @@ package {[
   ]:
   ensure => latest
 }
+
+# if there is clang-3.4 available, install it:
+if $::lsbdistcodename == 'saucy' {
+  package {[
+      'clang-3.4', 'clang-format-3.4'
+    ]:
+    ensure => latest,
+  }
+}
