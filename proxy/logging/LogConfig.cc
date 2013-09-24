@@ -1544,7 +1544,7 @@ LogConfig::update_space_used()
   RecSetRawStatCount(log_rsb, log_stat_log_files_space_used_stat, 1);
 
   Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
-  Debug("logspace", "%" PRId64 " bytes left on parition", m_partition_space_left);
+  Debug("logspace", "%" PRId64 " bytes left on partition", m_partition_space_left);
 
   //
   // Now that we have an accurate picture of the amount of space being
