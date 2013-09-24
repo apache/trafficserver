@@ -478,27 +478,33 @@ Supports both wildcards ('\*') and ranges ("0-1023").
 ===== ============================================
 Value Effect
 ===== ============================================
-0     no extra information is added to the string.
-1     all extra information is added.
-2     some extra information is added.
+0     Do not modify / set this via header
+1     Update the via, with normal verbosity
+2     Update the via, with higher verbosity
+3     Update the via, with highest verbosity
 ===== ============================================
 
 .. note::
 
    The ``Via`` header string interpretation can be `decoded here. </tools/via>`_
 
-.. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 1
+.. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 0
    :reloadable:
 
    Set how the ``Via`` field is handled on the response to the client.
 
-===== ======================
+===== ============================================
 Value Effect
-===== ======================
-0     no extra information is added to the string.
-1     all extra information is added.
-2     some extra information is added.
-===== ======================
+===== ============================================
+0     Do not modify / set this via header
+1     Update the via, with normal verbosity
+2     Update the via, with higher verbosity
+3     Update the via, with highest verbosity
+===== ============================================
+
+.. note::
+
+   The ``Via`` header string interpretation can be `decoded here. </tools/via>`_
 
 .. ts:cv:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:
