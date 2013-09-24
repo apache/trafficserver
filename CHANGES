@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) TS-2245: cancel the trigger of CacheVC in openWriteCloseDataDone
+
   *) TS-2232: log level should be change from Status to Debug.
     Author: Yu Qing <zhuangyuan@taobao.com>
 
