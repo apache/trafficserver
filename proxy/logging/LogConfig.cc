@@ -475,7 +475,7 @@ LogConfig::read_configuration_variables()
 /* variable values from records.config                           */
 
   val = (int) REC_ConfigReadInteger("proxy.config.log.search_log_enabled");
-  if (Log::logging_mode == Log::FULL_LOGGING)
+  if (Log::logging_mode == Log::LOG_MODE_FULL)
     search_log_enabled = (val > 0);
 
 /*                                                               */

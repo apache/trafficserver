@@ -116,7 +116,7 @@
         be needed will be taken.  The data is then marshalled into the
         buffer previously allocated.
 
-      -	The LogBuffer is composed of two parts: a fixed-size part that
+      - The LogBuffer is composed of two parts: a fixed-size part that
         contains all of the statically-sized fields, and a variable-sized
         buffer that follows, containing all of the space for strings.
         Variable-size fields in the LogBuffer are actually just
@@ -143,14 +143,14 @@
         +-+---------------+
         |h|bbb|b|bbbb|bbb |
         +-+---------------+
-		 |
-	         |     **********      +---------------+
-	         +-?-> * format * ---> |abcdefghijklmno| ---> DISK
-	         |     **********      +---------------+
-	         |
-		 +-?-> DISK
-		 |
-		 +-?-> NETWORK
+           |
+           |     **********      +---------------+
+           +-?-> * format * ---> |abcdefghijklmno| ---> DISK
+           |     **********      +---------------+
+           |
+           +-?-> DISK
+           |
+           +-?-> NETWORK
 
       - The logging thread wakes up whenever there is a LogBufferSegment
         ready to be flushed.  This occurs when it is on the full_segment
@@ -365,10 +365,10 @@ public:
 
   enum LoggingMode
   {
-    LOG_NOTHING = 0,
-    LOG_ERRORS_ONLY,
-    LOG_TRANSACTIONS_ONLY,
-    FULL_LOGGING
+    LOG_MODE_NONE = 0,
+    LOG_MODE_ERRORS,        // log *only* errors
+    LOG_MODE_TRANSACTIONS,  // log *only* transactions
+    LOG_MODE_FULL
   };
 
   enum InitFlags
@@ -391,12 +391,12 @@ public:
   static void init_fields();
   inkcoreapi static bool transaction_logging_enabled()
   {
-    return (logging_mode == FULL_LOGGING || logging_mode == LOG_TRANSACTIONS_ONLY);
+    return (logging_mode == LOG_MODE_FULL || logging_mode == LOG_MODE_TRANSACTIONS);
   }
 
   inkcoreapi static bool error_logging_enabled()
   {
-    return (logging_mode == FULL_LOGGING || logging_mode == LOG_ERRORS_ONLY);
+    return (logging_mode == LOG_MODE_FULL || logging_mode == LOG_MODE_ERRORS);
   }
 
   inkcoreapi static int access(LogAccess * lad);

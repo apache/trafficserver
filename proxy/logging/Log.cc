@@ -69,7 +69,7 @@ LogConfig *Log::config = NULL;
 LogFieldList Log::global_field_list;
 LogFormat *Log::global_scrap_format = NULL;
 LogObject *Log::global_scrap_object = NULL;
-Log::LoggingMode Log::logging_mode = LOG_NOTHING;
+Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
 
 // Inactive objects
 LogObject **Log::inactive_objects;
@@ -240,8 +240,8 @@ Log::periodic_tasks(long time_now)
     if (logging_mode_changed) {
       int val = (int) REC_ConfigReadInteger("proxy.config.log.logging_enabled");
 
-      if (val<LOG_NOTHING || val> FULL_LOGGING) {
-        logging_mode = FULL_LOGGING;
+      if (val<LOG_MODE_NONE || val> LOG_MODE_FULL) {
+        logging_mode = LOG_MODE_FULL;
         Warning("proxy.config.log.logging_enabled has an invalid " "value setting it to %d", logging_mode);
       } else {
         logging_mode = (LoggingMode) val;
@@ -252,7 +252,7 @@ Log::periodic_tasks(long time_now)
     // so that log objects are flushed
     //
     change_configuration();
-  } else if (logging_mode > LOG_NOTHING || config->collation_mode == LogConfig::COLLATION_HOST ||
+  } else if (logging_mode > LOG_MODE_NONE || config->collation_mode == LogConfig::COLLATION_HOST ||
              config->has_api_objects()) {
     Debug("log-periodic", "Performing periodic tasks");
 
@@ -933,7 +933,7 @@ Log::init(int flags)
   // set the logging_mode and read config variables if needed
   //
   if (config_flags & LOGCAT) {
-    logging_mode = LOG_NOTHING;
+    logging_mode = LOG_MODE_NONE;
   } else {
     log_rsb = RecAllocateRawStatBlock((int) log_stat_count);
     LogConfig::register_stat_callbacks();
@@ -943,11 +943,11 @@ Log::init(int flags)
     collation_preproc_threads = config->collation_preproc_threads;
 
     if (config_flags & STANDALONE_COLLATOR) {
-      logging_mode = LOG_TRANSACTIONS_ONLY;
+      logging_mode = LOG_MODE_TRANSACTIONS;
     } else {
       int val = (int) REC_ConfigReadInteger("proxy.config.log.logging_enabled");
-      if (val < LOG_NOTHING || val > FULL_LOGGING) {
-        logging_mode = FULL_LOGGING;
+      if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
+        logging_mode = LOG_MODE_FULL;
         Warning("proxy.config.log.logging_enabled has an invalid "
           "value, setting it to %d", logging_mode);
       } else {
