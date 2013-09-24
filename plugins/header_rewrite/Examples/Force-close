@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cond %{READ_REQUEST_HDR_HOOK}     [AND]
+cond %{SEND_RESPONSE_HDR_HOOK}
 cond %{ACCESS:/url/local/www/html/status.html}    [NOT,OR]
 cond %{RANDOM:1000} =42
 add-header Connection "close"

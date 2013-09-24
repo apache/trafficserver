@@ -275,10 +275,9 @@ LogFile::open_file()
       writeln(m_header, strlen(m_header), m_fd, m_name);
     }
   }
-  // we use SUM_GLOBAL_DYN_STAT because INCREMENT_DYN_STAT
-  // would increment only the statistics for the flush thread (where we
-  // are running) and these won't be visible Traffic Manager
-  LOG_SUM_GLOBAL_DYN_STAT(log_stat_log_files_open_stat, 1);
+
+  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
+                 log_stat_log_files_open_stat, 1);
 
   return LOG_FILE_NO_ERROR;
 }
@@ -297,10 +296,8 @@ LogFile::close_file()
     Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
     m_fd = -1;
 
-    // we use SUM_GLOBAL_DYN_STAT because DECREMENT_DYN_STAT
-    // would decrement only the statistics for the flush thread (where we
-    // are running) and these won't be visible in Traffic Manager
-    LOG_SUM_GLOBAL_DYN_STAT(log_stat_log_files_open_stat, -1);
+    RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
+                   log_stat_log_files_open_stat, -1);
   }
 }
 
@@ -462,7 +459,7 @@ LogFile::roll(long interval_start, long interval_end)
   m_start_time = 0;
   m_bytes_written = 0;
 
-  Status("The logfile %s was rolled to %s.", m_name, roll_name);
+  Debug("log-file", "The logfile %s was rolled to %s.", m_name, roll_name);
 
   return 1;
 }
@@ -520,6 +517,14 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
     // out the buffer-dependent data from the buffer-independent data.
     //
     LogFlushData *flush_data = new LogFlushData(this, lb);
+
+    ProxyMutex *mutex = this_thread()->mutex;
+
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat,
+                   lb->header()->entry_count);
+
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat,
+                   lb->header()->byte_count);
 
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 
@@ -623,8 +628,10 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
   Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
   ink_assert(buffer_header != NULL);
 
+  ProxyMutex *mutex = this_thread()->mutex;
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
+  int fmt_entry_count = 0;
   int fmt_buf_bytes = 0;
   int total_bytes = 0;
 
@@ -647,6 +654,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
   }
 
   while ((entry_header = iter.next())) {
+    fmt_entry_count = 0;
     fmt_buf_bytes = 0;
 
     if (m_file_format == ASCII_PIPE)
@@ -673,9 +681,18 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
         fmt_buf_bytes += bytes;
         ascii_buffer[fmt_buf_bytes] = '\n';
         ++fmt_buf_bytes;
+        ++fmt_entry_count;
       } else {
         Error("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.",
               entry_header->entry_len);
+
+        RecIncrRawStat(log_rsb, mutex->thread_holding,
+                       log_stat_num_lost_before_flush_to_disk_stat,
+                       fmt_entry_count);
+
+        RecIncrRawStat(log_rsb, mutex->thread_holding,
+                       log_stat_bytes_lost_before_flush_to_disk_stat,
+                       fmt_buf_bytes);
       }
       // if writing to a pipe, fill the buffer with a single
       // record to avoid as much as possible overflowing the
@@ -691,6 +708,13 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
     // send the buffer to flush thread
     //
     LogFlushData *flush_data = new LogFlushData(this, ascii_buffer, fmt_buf_bytes);
+
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat,
+                   fmt_entry_count);
+
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat,
+                   fmt_buf_bytes);
+
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 
     Log::flush_notify->signal();

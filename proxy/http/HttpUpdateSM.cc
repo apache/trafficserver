@@ -106,7 +106,7 @@ HttpUpdateSM::handle_api_return()
   case HttpTransact::HTTP_API_SM_START:
     call_transact_and_set_next_state(&HttpTransact::ModifyRequest);
     return;
-  case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
+  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
     // we have further processing to do
     //  based on what t_state.next_action is
     break;

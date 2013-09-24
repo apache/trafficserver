@@ -1,0 +1,109 @@
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+
+.. default-domain:: c
+
+.. _ts-lifecycle-hook-add:
+
+==================
+TSLifecycleHookAdd
+==================
+
+Synopsis
+========
+`#include <ts/ts.h>`
+
+.. function:: void TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
+
+Description
+===========
+
+:func:`TSLifecycleHookAdd` adds :arg:`contp` to the list of lifecycle hooks specified by :arg:`id`. Lifecycle hooks are
+based on the Traffic Server process, not on any specific transaction or session. These will typically be called only
+once during the execution of the Traffic Server process and therefore should be added in :func:`TSPluginInit` (which could itself be considered a lifecyle hook). Unlike other hooks, lifecycle hooks may not have a well defined ordering and use of them should not assume that one of the hooks is always called before another unless specifically mentioned.
+
+`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`
+   Called after the :ts:cv:`proxy server port <proxy.config.http.server_ports>` data structures have been initialized
+   but before connections are accepted on those ports. The sockets corresponding to the ports may or may not be open
+   depending on how the :program:`traffic_server` process was invoked. Other API functions that depend on server ports should be
+   called from this hook and not :func:`TSPluginInit`.
+
+   Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and `NULL` data.
+
+`TS_LIFECYCLE_PORTS_READY_HOOK`
+   Called after enabling connections on the proxy server ports. Because Traffic Server is threaded this may or may not
+   be called before any connections are accepted. The hook code may assume that any connection to Traffic Server started
+   after this hook is called will be accepted by Traffic Server, making this a convenient place to signal external
+   processes of that.
+
+   Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_READY` and `NULL` data.
+
+`TS_LIFECYCLE_CACHE_READY_HOOK`
+   Called after Traffic Server cache initialization has finished.
+
+   Invoked with the event `TS_EVENT_LIFECYCLE_CACHE_READY` and `NULL` data.
+
+Ordering
+========
+
+`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` will always be called before `TS_LIFECYCLE_PORTS_READY_HOOK`.
+
+Examples
+========
+
+The following example demonstrates how to correctly use :func:`TSNetAcceptNamedProtocol`, which requires the proxy ports
+to be initialized and therefore does not work if called from :func:`TSPluginInit` directly. ::
+
+   #include <ts/ts.h>
+
+   #define SSL_PROTOCOL_NAME "whatever"
+
+   static int
+   ssl_proto_handler(TSCont contp, TSEvent event, void* data)
+   {
+      /// Do named protocol handling.
+   }
+
+   static int
+   local_ssl_init(TSCont contp, TSEvent event, void *edata)
+   {
+      if (TS_EVENT_LIFECYCLE_PORTS_INITIALIZED == event) { // just to be safe.
+         TSNetAcceptNamedProtocol(
+            TSContCreate(ssl_proto_handler, TSMutexCreate()),
+            SSL_PROTOCOL_NAME
+         );
+      }
+      return 0;
+   }
+
+   void
+   TSPluginInit (int argc, const char *argv[])
+   {
+      TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, TSContCreate(local_ssl_init, NULL));
+   }
+
+History
+=======
+
+Lifecycle hooks were introduced to solve process initialization ordering issues (`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_). Different API calls required
+different modules of Traffic Server to be initialized for the call to work, but others did not work that late in initialization, which was problematic because all of them could effectively only be called from :func:`TSPluginInit` . The
+solution was to move :func:`TSPluginInit` as early as possible in the process initialization and provide hooks for API
+calls that needed to be invoked later which served essentially as additional pluging initialization points.
+
+See also
+========
+:manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`

@@ -24,17 +24,13 @@
 #ifndef __INK_LOCKFILE_H__
 #define __INK_LOCKFILE_H__
 
-#ifndef INK_LOCKFILE_INCLUDE_REDUCED
 #include "ink_resource.h"
-#endif
 #include "ink_defs.h"
 #include "ink_string.h"
 
-#ifndef INK_LOCKFILE_INCLUDE_REDUCED
 #define COP_LOCK       "cop.lock"
 #define MANAGER_LOCK   "manager.lock"
 #define SERVER_LOCK    "server.lock"
-#endif
 
 class Lockfile
 {

@@ -704,10 +704,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   default:
     break;
   }
-
-  if (mh->msg_id >= INK_MGMT_SIGNAL_ACC_ALARMS_START && mh->msg_id <= INK_MGMT_SIGNAL_ACC_ALARMS_END) {
-    alarm_keeper->signalAlarm(mh->msg_id, data_raw);
-  }
 }
 
 

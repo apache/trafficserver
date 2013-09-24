@@ -600,7 +600,7 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64_t val = (int64_t) LOG_ConfigReadInteger(config_var);
+    int64_t val = (int64_t) REC_ConfigReadInteger(config_var);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -613,7 +613,7 @@ int
 LogAccess::marshal_config_str_var(char *config_var, char *buf)
 {
   char *str = NULL;
-  str = LOG_ConfigReadString(config_var);
+  str = REC_ConfigReadString(config_var);
   int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);

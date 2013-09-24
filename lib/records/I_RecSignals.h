@@ -45,7 +45,4 @@
 #define REC_SIGNAL_HTTP_CONGESTED_SERVER        20
 #define REC_SIGNAL_HTTP_ALLEVIATED_SERVER       21
 
-#define REC_SIGNAL_ACC_ALARMS_START             200
-#define REC_SIGNAL_ACC_ALARMS_END               299
-
 #endif

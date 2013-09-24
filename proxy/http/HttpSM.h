@@ -548,7 +548,7 @@ HttpSM::get_ua_entry()
 inline HttpSM *
 HttpSM::allocate()
 {
-  extern SparceClassAllocator<HttpSM> httpSMAllocator;
+  extern SparseClassAllocator<HttpSM> httpSMAllocator;
   return httpSMAllocator.alloc();
 }
 

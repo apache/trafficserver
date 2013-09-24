@@ -811,6 +811,7 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
       break;
 
     case RECD_INT:             // fallthought
+    case RECD_COUNTER:
     case RECD_FLOAT:
       if (cluster) {
         if (!overviewGenerator->varClusterDataFromName(token->m_token_type,
@@ -946,6 +947,22 @@ StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
   case '/':
     RecData recTmp;
     RecDataClear(RECD_NULL, &recTmp);
+
+    /*
+     * Force the type of result to be RecFloat on div operation
+     */
+    if (result->m_token_type != RECD_FLOAT && result->m_token_type != RECD_CONST) {
+      RecFloat t;
+
+      result->m_token_type = RECD_FLOAT;
+
+      t = (RecFloat)l.rec_int;
+      l.rec_float = t;
+
+      t = (RecFloat)r.rec_int;
+      r.rec_float = t;
+    }
+
     if (RecDataCmp(result->m_token_type, r, recTmp)) {
       result->m_token_value = RecDataDiv(result->m_token_type, l, r);
     }
@@ -1106,6 +1123,13 @@ StatObjectList::Eval()
           }
           // scroll old values
           for (StatExprToken * token = object->m_postfix->first(); token; token = object->m_expression->next(token)) {
+
+            // in librecords, not all statistics are register at initialization
+            // must assign proper type if it is undefined.
+            if (!isOperator(token->m_arith_symbol) && token->m_token_type == RECD_NULL) {
+              token->assignTokenType();
+            }
+
             if (token->m_token_value_delta) {
               if (!varDataFromName(token->m_token_type, token->m_token_name,
                                    &tempValue)) {

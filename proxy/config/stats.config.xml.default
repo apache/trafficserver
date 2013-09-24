@@ -1790,6 +1790,162 @@
         </expression>
     </statistics>
 
+    <!-- Logging -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_ok</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_ok</destination>
+        <expression>
+	    proxy.process.log.event_log_access_ok
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_skip</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_skip</destination>
+        <expression>
+	    proxy.process.log.event_log_access_skip
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_aggr</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_aggr</destination>
+        <expression>
+	    proxy.process.log.event_log_access_aggr
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_full</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_full</destination>
+        <expression>
+            proxy.process.log.event_log_access_full
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_fail</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_fail</destination>
+        <expression>
+            proxy.process.log.event_log_access_fail
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_lost_before_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.num_lost_before_sent_to_network</destination>
+        <expression>
+            proxy.process.log.num_lost_before_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.num_sent_to_network</destination>
+        <expression>
+            proxy.process.log.num_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_sent_to_network</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_sent_to_network</destination>
+        <expression>
+            proxy.process.log.bytes_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_received_from_network</destination>
+	<destination scope="cluster">proxy.cluster.log.num_received_from_network</destination>
+        <expression>
+            proxy.process.log.num_received_from_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_received_from_network</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_received_from_network</destination>
+        <expression>
+            proxy.process.log.bytes_received_from_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_preproc</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_preproc</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_preproc
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_lost_before_flush_to_disk</destination>
+	<destination scope="cluster">proxy.cluster.log.num_lost_before_flush_to_disk</destination>
+        <expression>
+            proxy.process.log.num_lost_before_flush_to_disk
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_flush_to_disk</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_flush_to_disk</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_flush_to_disk
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_written_to_disk</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_written_to_disk</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_written_to_disk
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.log.bytes_sent_to_network_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.log.bytes_sent_to_network_avg_10s</destination>
+        <expression>
+            #proxy.process.log.bytes_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.log.bytes_received_from_network_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.log.bytes_received_from_network_avg_10s</destination>
+        <expression>
+            #proxy.process.log.bytes_received_from_network
+        </expression>
+    </statistics>
+
 </ink:statistics>
 
 

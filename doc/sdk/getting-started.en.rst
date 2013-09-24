@@ -1,3 +1,5 @@
+.. _sdk-getting-started:
+
 Getting Started
 ***************
 

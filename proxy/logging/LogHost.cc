@@ -343,6 +343,14 @@ done:
 void
 LogHost::orphan_write_and_try_delete(LogBuffer * lb)
 {
+  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
+                 log_stat_num_lost_before_sent_to_network_stat,
+                 lb->header()->entry_count);
+
+  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
+                 log_stat_bytes_lost_before_sent_to_network_stat,
+                 lb->header()->byte_count);
+
   if (!Log::config->logging_space_exhausted) {
     Debug("log-host", "Sending LogBuffer to orphan file %s", m_orphan_file->get_name());
     m_orphan_file->preproc_and_try_delete(lb);

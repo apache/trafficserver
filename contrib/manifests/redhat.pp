@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 # These packages really need to be installed before anything happens.
-package {['nfs-utils', 'redhat-lsb-core']:
+package {['nfs-utils', 'redhat-lsb']:
   ensure =>latest
 }
 

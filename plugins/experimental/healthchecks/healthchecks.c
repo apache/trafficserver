@@ -312,14 +312,11 @@ parse_configs(const char* fname)
     int state = 0;
     char *ok=NULL, *miss=NULL, *mime=NULL;
 
-    prev_finfo = finfo;
-    finfo = TSmalloc(sizeof(HCFileInfo));
-    memset(finfo, 0, sizeof(HCFileInfo));
-
-    if (NULL == head_finfo)
-      head_finfo = finfo;
-    if (prev_finfo)
-      prev_finfo->_next = finfo;
+    /* Allocate a new config-info, if we don't have one already */
+    if (!finfo) {
+      finfo = TSmalloc(sizeof(HCFileInfo));
+      memset(finfo, 0, sizeof(HCFileInfo));
+    }
 
     if (fgets(buf, sizeof(buf) - 1, fd)) {
       str = strtok_r(buf, SEPARATORS, &save);
@@ -353,12 +350,25 @@ parse_configs(const char* fname)
         str = strtok_r(NULL, SEPARATORS, &save);
       }
 
-      finfo->ok = gen_header(ok, mime, &finfo->o_len);
-      finfo->miss = gen_header(miss, mime, &finfo->m_len);
-      finfo->data = TSmalloc(sizeof(HCFileData));
-      memset(finfo->data, 0, sizeof(HCFileData));
-      reload_status_file(finfo, finfo->data);
-      TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
+      /* Fill in the info if everything was ok */
+      if (state > 4) {
+        TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
+        finfo->ok = gen_header(ok, mime, &finfo->o_len);
+        finfo->miss = gen_header(miss, mime, &finfo->m_len);
+        finfo->data = TSmalloc(sizeof(HCFileData));
+        memset(finfo->data, 0, sizeof(HCFileData));
+        reload_status_file(finfo, finfo->data);
+
+        /* Add it the linked list */
+        TSDebug(PLUGIN_NAME, "Adding path=%s to linked list", finfo->path);
+        if (NULL == head_finfo) {
+          head_finfo = finfo;
+        } else {
+          prev_finfo->_next = finfo;
+        }
+        prev_finfo = finfo;
+        finfo = NULL; /* We used this one up, get a new one next iteration */
+      }
     }
   }
   fclose(fd);
@@ -490,9 +500,15 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     int path_len = 0;
     const char* path = TSUrlPathGet(reqp, url_loc, &path_len);
 
+    /* Short circuit the / path, common case, and we won't allow healthecks on / */
+    if (!path || !path_len)
+      goto cleanup;
+
     while (info) {
-      if (info->p_len == path_len && !memcmp(info->path, path, path_len))
+      if (info->p_len == path_len && !memcmp(info->path, path, path_len)) {
+        TSDebug(PLUGIN_NAME, "Found match for /%.*s", path_len, path);
         break;
+      }
       info = info->_next;
     }
 

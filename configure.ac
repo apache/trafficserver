@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[3.5.0-dev])
-m4_define([TS_VERSION_N],[3005000])
+m4_define([TS_VERSION_S],[4.1.0])
+m4_define([TS_VERSION_N],[4001000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -540,6 +540,7 @@ _ts_saved_CXXFLAGS="${CXXFLAGS}"
 AC_PROG_CC([cc gcc clang icc])
 AC_PROG_CXX([c++ g++ clang++ icpc])
 
+AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
@@ -1846,6 +1847,7 @@ AC_CONFIG_FILES([
   plugins/conf_remap/Makefile
   plugins/experimental/Makefile
   plugins/experimental/authproxy/Makefile
+  plugins/experimental/buffer_upload/Makefile
   plugins/experimental/channel_stats/Makefile
   plugins/experimental/custom_redirect/Makefile
   plugins/experimental/esi/Makefile

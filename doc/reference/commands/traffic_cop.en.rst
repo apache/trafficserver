@@ -24,12 +24,38 @@ traffic_cop
 Description
 ===========
 
+:program:`traffic_cop` is a watchdog program that is responsible
+for starting :program:`traffic_manager` and :program:`traffic_server`
+and monitoring them for responsiveness. If either of these processes
+are determined to be unresponsive, :program:`traffic_cop` will kill
+and restart them.
+
+On Linux, :program:`traffic_cop` will also monitor available memory
+and swap space, restarting the watched processes if the available
+memory falls below a minimum threshold. The memory thresholds can
+be configured with the :ts:cv:`proxy.config.cop.linux_min_swapfree_kb`
+and :ts:cv:`proxy.config.cop.linux_min_memfree_kb` variables.
+
+The following options are available:
+
 .. option:: -stop
 
-   Kill children using ``SIGSTOP`` instead of ``SIGKILL``
+   Kill children using ``SIGSTOP`` instead of ``SIGKILL``. This
+   option is primarily for debugging.
 
 .. option:: -V
 
    Print version information and exit.
 
+:program:`traffic_cop` ordinarily logs to syslog, however for
+debugging purposes, the ``--enable-cop-debug`` build option
+causes it to log trace messages to
+:file:`/tmp/traffic_cop.trace`.
+
+See also
+========
+
+:manpage:`syslog(1)`,
+:manpage:`traffic_manager(8)`,
+:manpage:`traffic_server(8)`
 

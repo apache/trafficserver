@@ -53,7 +53,6 @@ extern int fds_limit;
 extern int debug_level;
 extern char cluster_host[MAXDNAME + 1];
 extern int cluster_port_number;
-extern char proxy_name[MAXDNAME + 1];
 
 extern int remote_management_flag;
 extern char management_directory[PATH_NAME_MAX + 1];

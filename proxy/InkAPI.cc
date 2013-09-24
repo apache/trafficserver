@@ -5031,15 +5031,11 @@ TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
 }
 
 
+// TS-2196: TSHttpTxnCacheLookupSkip will be removed in the 5.x release.
 TSReturnCode
 TSHttpTxnCacheLookupSkip(TSHttpTxn txnp)
 {
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
-  s->api_skip_cache_lookup = true;
-
-  return TS_SUCCESS;
+  return TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
 }
 
 TSReturnCode
@@ -5209,7 +5205,8 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 }
 
 sockaddr const*
-TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp) {
+TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
+{
   HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
 
   if (cs == NULL) return 0;
@@ -5220,7 +5217,8 @@ TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp) {
   return vc->get_local_addr();
 }
 sockaddr const*
-TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
+TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
+{
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
  
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
@@ -6794,6 +6792,7 @@ TSTextLogObjectWrite(TSTextLogObject the_object, const char *format, ...)
   switch (((TextLogObject *) the_object)->va_write(format, ap)) {
   case (Log::LOG_OK):
   case (Log::SKIP):
+  case (Log::AGGR):
     break;
   case (Log::FULL):
     retVal = TS_ERROR;

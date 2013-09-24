@@ -201,33 +201,33 @@ LogConfig::read_configuration_variables()
   int val;
   char *ptr;
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.log_buffer_size");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.log_buffer_size");
   if (val > 0) {
     log_buffer_size = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_secs_per_buffer");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.max_secs_per_buffer");
   if (val > 0) {
     max_secs_per_buffer = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_for_logs");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_logs");
   if (val > 0) {
     max_space_mb_for_logs = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_for_" "orphan_logs");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_" "orphan_logs");
   if (val > 0) {
     max_space_mb_for_orphan_logs = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_headroom");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.max_space_mb_headroom");
   if (val > 0) {
     max_space_mb_headroom = val;
   }
 
   // TODO: We should mover this "parser" to lib/ts
-  ptr = LOG_ConfigReadString("proxy.config.log.logfile_perm");
+  ptr = REC_ConfigReadString("proxy.config.log.logfile_perm");
   if (ptr && strlen(ptr) == 9) {
     logfile_perm = 0;
     char *c = ptr;
@@ -260,13 +260,13 @@ LogConfig::read_configuration_variables()
     ats_free(ptr);
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.hostname");
+  ptr = REC_ConfigReadString("proxy.config.log.hostname");
   if (ptr != NULL) {
     ats_free(hostname);
     hostname = ptr;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.logfile_dir");
+  ptr = REC_ConfigReadString("proxy.config.log.logfile_dir");
   if (ptr != NULL) {
     ats_free(logfile_dir);
     // Make it relative from Layout
@@ -303,80 +303,80 @@ LogConfig::read_configuration_variables()
 
 
   // SQUID
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_enabled");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.squid_log_enabled");
   squid_log_enabled = (val > 0);
 
   // X-UID logging enabled.
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.xuid_logging_enabled");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.xuid_logging_enabled");
   xuid_logging_enabled = (val > 0);
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_is_ascii");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.squid_log_is_ascii");
   squid_log_is_ascii = (val > 0);
 
-  ptr = LOG_ConfigReadString("proxy.config.log.squid_log_name");
+  ptr = REC_ConfigReadString("proxy.config.log.squid_log_name");
   if (ptr != NULL) {
     ats_free(squid_log_name);
     squid_log_name = ptr;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.squid_log_header");
+  ptr = REC_ConfigReadString("proxy.config.log.squid_log_header");
   if (ptr != NULL) {
     ats_free(squid_log_header);
     squid_log_header = ptr;
   }
 
   // COMMON
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_enabled");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.common_log_enabled");
   common_log_enabled = (val > 0);
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_is_ascii");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.common_log_is_ascii");
   common_log_is_ascii = (val > 0);
 
-  ptr = LOG_ConfigReadString("proxy.config.log.common_log_name");
+  ptr = REC_ConfigReadString("proxy.config.log.common_log_name");
   if (ptr != NULL) {
     ats_free(common_log_name);
     common_log_name = ptr;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.common_log_header");
+  ptr = REC_ConfigReadString("proxy.config.log.common_log_header");
   if (ptr != NULL) {
     ats_free(common_log_header);
     common_log_header = ptr;
   }
 
   // EXTENDED
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_enabled");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.extended_log_enabled");
   extended_log_enabled = (val > 0);
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_is_ascii");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.extended_log_is_ascii");
   extended_log_is_ascii = (val > 0);
 
-  ptr = LOG_ConfigReadString("proxy.config.log.extended_log_name");
+  ptr = REC_ConfigReadString("proxy.config.log.extended_log_name");
   if (ptr != NULL) {
     ats_free(extended_log_name);
     extended_log_name = ptr;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.extended_log_header");
+  ptr = REC_ConfigReadString("proxy.config.log.extended_log_header");
   if (ptr != NULL) {
     ats_free(extended_log_header);
     extended_log_header = ptr;
   }
 
   // EXTENDED2
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_enabled");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.extended2_log_enabled");
   extended2_log_enabled = (val > 0);
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_is_ascii");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.extended2_log_is_ascii");
   extended2_log_is_ascii = (val > 0);
 
-  ptr = LOG_ConfigReadString("proxy.config.log.extended2_log_name");
+  ptr = REC_ConfigReadString("proxy.config.log.extended2_log_name");
   if (ptr != NULL) {
     ats_free(extended2_log_name);
     extended2_log_name = ptr;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.extended2_log_header");
+  ptr = REC_ConfigReadString("proxy.config.log.extended2_log_header");
   if (ptr != NULL) {
     ats_free(extended2_log_header);
     extended2_log_header = ptr;
@@ -388,50 +388,50 @@ LogConfig::read_configuration_variables()
   // 1 means splitting
   // for icp
   //   -1 means filter out (do not log and do not create split file)
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_icp_logs");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.separate_icp_logs");
   separate_icp_logs = (val > 0);
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_host_logs");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.separate_host_logs");
   separate_host_logs = (val > 0);
 
 
   // COLLATION
-  val = (int) LOG_LocalReadInteger("proxy.local.log.collation_mode");
+  val = (int) REC_ConfigReadInteger("proxy.local.log.collation_mode");
   // do not restrict value so that error message is logged if
   // collation_mode is out of range
   collation_mode = val;
 
-  ptr = LOG_ConfigReadString("proxy.config.log.collation_host");
+  ptr = REC_ConfigReadString("proxy.config.log.collation_host");
   if (ptr != NULL) {
     ats_free(collation_host);
     collation_host = ptr;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_port");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.collation_port");
   if (val >= 0) {
     collation_port = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_host_tagged");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.collation_host_tagged");
   collation_host_tagged = (val > 0);
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_preproc_threads");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.collation_preproc_threads");
   if (val > 0 && val <= 128) {
     collation_preproc_threads = val;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.collation_secret");
+  ptr = REC_ConfigReadString("proxy.config.log.collation_secret");
   if (ptr != NULL) {
     ats_free(collation_secret);
     collation_secret = ptr;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_retry_sec");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.collation_retry_sec");
   if (val >= 0) {
     collation_retry_sec = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_max_send_buffers");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.collation_max_send_buffers");
   if (val >= 0) {
     collation_max_send_buffers = val;
   }
@@ -442,53 +442,53 @@ LogConfig::read_configuration_variables()
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
-  rolling_enabled = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_enabled");
-  rolling_interval_sec = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
-  rolling_offset_hr = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
-  rolling_size_mb = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_size_mb");
+  rolling_enabled = (int) REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
+  rolling_interval_sec = (int) REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
+  rolling_offset_hr = (int) REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
+  rolling_size_mb = (int) REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log." "auto_delete_rolled_files");
+  val = (int) REC_ConfigReadInteger("proxy.config.log." "auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
 
   // CUSTOM LOGGING
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
   custom_logs_enabled = (val > 0);
 
-  ptr = LOG_ConfigReadString("proxy.config.log.xml_config_file");
+  ptr = REC_ConfigReadString("proxy.config.log.xml_config_file");
   if (ptr != NULL) {
     ats_free(xml_config_file);
     xml_config_file = ptr;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.hosts_config_file");
+  ptr = REC_ConfigReadString("proxy.config.log.hosts_config_file");
   if (ptr != NULL) {
     ats_free(hosts_config_file);
     hosts_config_file = ptr;
   }
 
   // PERFORMANCE
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.sampling_frequency");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.sampling_frequency");
   if (val > 0) {
     sampling_frequency = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.file_stat_frequency");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.file_stat_frequency");
   if (val > 0) {
     file_stat_frequency = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.space_used_frequency");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.space_used_frequency");
   if (val > 0) {
     space_used_frequency = val;
   }
 
   // ASCII BUFFER
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.ascii_buffer_size");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.ascii_buffer_size");
   if (val > 0) {
     ascii_buffer_size = val;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_line_size");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.max_line_size");
   if (val > 0) {
     max_line_size = val;
   }
@@ -496,7 +496,7 @@ LogConfig::read_configuration_variables()
 /* The following variables are initialized after reading the     */
 /* variable values from records.config                           */
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_log_enabled");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.search_log_enabled");
   if (Log::logging_mode == Log::FULL_LOGGING)
     search_log_enabled = (val > 0);
 
@@ -505,7 +505,7 @@ LogConfig::read_configuration_variables()
 /* log object. User can define the filter to exclude URLs with   */
 /* certain file extensions from being logged.                    */
 /*                                                               */
-  ptr = LOG_ConfigReadString("proxy.config.log.search_log_filters");
+  ptr = REC_ConfigReadString("proxy.config.log.search_log_filters");
   if (ptr != NULL) {
     search_log_filters = ptr;
   }
@@ -517,17 +517,17 @@ LogConfig::read_configuration_variables()
 /* sites. This file is sent to search server mentioned by the    */
 /* pair ip-address & port.                                       */
 /*                                                               */
-  ptr = LOG_ConfigReadString("proxy.config.log.search_url_filter");
+  ptr = REC_ConfigReadString("proxy.config.log.search_url_filter");
   if (ptr != NULL) {
     search_url_filter = ptr;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_top_sites");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.search_top_sites");
   if (val > 0) {
     search_top_sites = val;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log.search_server_ip_addr");
+  ptr = REC_ConfigReadString("proxy.config.log.search_server_ip_addr");
   if (ptr != NULL) {
     unsigned int ipaddr;
     ipaddr = inet_addr(ptr);
@@ -537,13 +537,13 @@ LogConfig::read_configuration_variables()
       search_server_ip_addr = 0;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_server_port");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.search_server_port");
   if (val > 0) {
     search_server_port = val;
   }
 
 /*  Rolling interval is taken care in LogObject.                 */
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_rolling_interval_sec");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.search_rolling_interval_sec");
   if (val > 0) {
     search_rolling_interval_sec = val;
   }
@@ -1219,85 +1219,85 @@ LogConfig::register_config_callbacks()
 {
   // Note: variables that are not exposed in the UI are commented out
   //
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.log_buffer_size", &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.max_secs_per_buffer",
+  REC_RegisterConfigUpdateFunc("proxy.config.log.log_buffer_size", &LogConfig::reconfigure, NULL);
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.max_secs_per_buffer",
 //                            &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_logs", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_orphan_logs", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_headroom", &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.logfile_perm",
+  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_logs", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_orphan_logs", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_headroom", &LogConfig::reconfigure, NULL);
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.logfile_perm",
 //                            &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.hostname",
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.hostname",
 //                            &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.logfile_dir", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.logfile_dir", &LogConfig::reconfigure, NULL);
 
   // SQUID
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.xuid_logging_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_header", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.xuid_logging_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_is_ascii", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_name", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_header", &LogConfig::reconfigure, NULL);
 
   // COMMON
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_header", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_is_ascii", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_name", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_header", &LogConfig::reconfigure, NULL);
 
   // EXTENDED
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_header", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_is_ascii", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_name", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_header", &LogConfig::reconfigure, NULL);
 
   // EXTENDED2
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_header", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_is_ascii", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_name", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_header", &LogConfig::reconfigure, NULL);
 
   // SPLITTING
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.separate_icp_logs", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.separate_host_logs", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.separate_icp_logs", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.separate_host_logs", &LogConfig::reconfigure, NULL);
 
   // COLLATION
-  LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_host", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_port", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_host_tagged", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_secret", &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.collation_retry_sec",
+  REC_RegisterConfigUpdateFunc("proxy.local.log.collation_mode", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_host", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_port", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_host_tagged", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_secret", &LogConfig::reconfigure, NULL);
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.collation_retry_sec",
 //                                  &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.collation_max_send_buffers",
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.collation_max_send_buffers",
 //                                  &LogConfig::reconfigure, NULL);
 
   // ROLLING
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_offset_hr", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_size_mb", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.auto_delete_rolled_files", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_interval_sec", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_offset_hr", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_size_mb", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.auto_delete_rolled_files", &LogConfig::reconfigure, NULL);
 
   // CUSTOM LOGGING
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.custom_logs_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.xml_config_file", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.hosts_config_file", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.custom_logs_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.xml_config_file", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.hosts_config_file", &LogConfig::reconfigure, NULL);
 
   // PERFORMANCE
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.sampling_frequency",
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.sampling_frequency",
 //                            &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.file_stat_frequency",
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.file_stat_frequency",
 //                            &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.space_used_frequency",
+//    REC_RegisterConfigUpdateFunc ("proxy.config.log.space_used_frequency",
 //                            &LogConfig::reconfigure, NULL);
 
 /* These are the call back function connectivities               */
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_top_sites", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_server_ip_addr", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_server_port", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_url_filter", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.search_rolling_interval_sec", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.search_log_enabled", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.search_top_sites", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.search_server_ip_addr", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.search_server_port", &LogConfig::reconfigure, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.search_url_filter", &LogConfig::reconfigure, NULL);
 
 }
 
@@ -1311,60 +1311,90 @@ LogConfig::register_config_callbacks()
 void
 LogConfig::register_stat_callbacks()
 {
-#define LOG_CLEAR_DYN_STAT(x) \
-do { \
-	RecSetRawStatSum(log_rsb, x, 0); \
-	RecSetRawStatCount(log_rsb, x, 0); \
-} while (0);
   //
-  // bytes moved
+  // events
   //
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log.bytes_buffered",
-                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_buffered_stat, RecRawStatSyncSum);
-
+                     "proxy.process.log.event_log_error_ok",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_error_ok_stat, RecRawStatSyncCount);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log.bytes_written_to_disk",
-                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_written_to_disk_stat, RecRawStatSyncSum);
-
+                     "proxy.process.log.event_log_error_skip",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_error_skip_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_error_aggr",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_error_aggr_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_error_full",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_error_full_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_error_fail",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_error_fail_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_access_ok",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_ok_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_access_skip",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_skip_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_access_aggr",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_aggr_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_access_full",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_full_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.event_log_access_fail",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_fail_stat, RecRawStatSyncCount);
+  //
+  // number vs bytes of logs
+  //
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.num_sent_to_network",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_sent_to_network_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.num_lost_before_sent_to_network",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_lost_before_sent_to_network_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.num_received_from_network",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_received_from_network_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.num_flush_to_disk",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_flush_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.num_lost_before_flush_to_disk",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_num_lost_before_flush_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_preproc",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_preproc_stat, RecRawStatSyncSum);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.bytes_sent_to_network",
                      RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_sent_to_network_stat, RecRawStatSyncSum);
-
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_sent_to_network",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_sent_to_network_stat, RecRawStatSyncSum);
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.bytes_received_from_network",
                      RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_received_from_network_stat, RecRawStatSyncSum);
-
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_flush_to_disk",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_flush_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_flush_to_disk",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_flush_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_written_to_disk",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_written_to_disk_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(log_rsb, RECT_PROCESS,
+                     "proxy.process.log.bytes_lost_before_written_to_disk",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_lost_before_written_to_disk_stat, RecRawStatSyncSum);
   //
   // I/O
   //
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.log_files_open",
                      RECD_COUNTER, RECP_NON_PERSISTENT, (int) log_stat_log_files_open_stat, RecRawStatSyncSum);
-  LOG_CLEAR_DYN_STAT(log_stat_log_files_open_stat);
-
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.log_files_space_used",
                      RECD_INT, RECP_NON_PERSISTENT, (int) log_stat_log_files_space_used_stat, RecRawStatSyncSum);
-
-  //
-  // events
-  //
-  RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log.event_log_error",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_error_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log.event_log_access",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log.event_log_access_fail",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_fail_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log.event_log_access_skip",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_skip_stat, RecRawStatSyncCount);
 }
 
 /*-------------------------------------------------------------------------
@@ -1377,7 +1407,7 @@ do { \
 void
 LogConfig::register_mgmt_callbacks()
 {
-  LOG_RegisterMgmtCallback(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables, NULL);
+  RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables, NULL);
 }
 
 
@@ -1538,7 +1568,8 @@ LogConfig::update_space_used()
   //
   m_space_used = total_space_used;
   m_partition_space_left = partition_space_left;
-  LOG_SET_DYN_STAT(log_stat_log_files_space_used_stat, 1, m_space_used);
+  RecSetRawStatSum(log_rsb, log_stat_log_files_space_used_stat, m_space_used);
+  RecSetRawStatCount(log_rsb, log_stat_log_files_space_used_stat, 1);
 
   Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
   Debug("logspace", "%" PRId64 " bytes left on parition", m_partition_space_left);
@@ -1577,7 +1608,7 @@ LogConfig::update_space_used()
         Note("Traffic Server was Unable to auto-delete rolled "
              "logfile %s: %s.", candidates[victim].name, strerror(errno));
       } else {
-        Status("The rolled logfile, %s, was auto-deleted; "
+        Debug("logspace", "The rolled logfile, %s, was auto-deleted; "
                "%" PRId64 " bytes were reclaimed.", candidates[victim].name, candidates[victim].size);
         m_space_used -= candidates[victim].size;
         m_partition_space_left += candidates[victim].size;

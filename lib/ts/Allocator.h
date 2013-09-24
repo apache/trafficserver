@@ -183,7 +183,7 @@ public:
   all of the members.
 
 */
-template<class C> class SparceClassAllocator:public ClassAllocator<C> {
+template<class C> class SparseClassAllocator:public ClassAllocator<C> {
 public:
 
   /** Allocates objects of the templated type. */
@@ -201,7 +201,7 @@ public:
 
 
   /**
-    Create a new class specific SparceClassAllocator.
+    Create a new class specific SparseClassAllocator.
 
     @param name some identifying name, used for mem tracking purposes.
     @param chunk_size number of units to be allocated if free pool is empty.
@@ -209,7 +209,7 @@ public:
     @param instantiate_func
 
   */
-  SparceClassAllocator(const char *name, unsigned int chunk_size = 128,
+  SparseClassAllocator(const char *name, unsigned int chunk_size = 128,
                        unsigned int alignment = 16,
                        void (*instantiate_func) (C * proto, C * instance) = NULL)
     : ClassAllocator<C>(name, chunk_size, alignment)

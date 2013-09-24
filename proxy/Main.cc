@@ -142,7 +142,6 @@ extern int cache_clustering_enabled;
 char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
-char proxy_name[MAXDNAME + 1] = "unknown";
 static char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
@@ -1461,9 +1460,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   if (!command_flag && initialize_store())
     ProcessFatal("unable to initialize storage, (Re)Configuration required\n");
 
-  // Read proxy name
-  TS_ReadConfigString(proxy_name, "proxy.config.proxy_name", 255);
-
   // Alter the frequecies at which the update threads will trigger
 #define SET_INTERVAL(scope, name, var) do { \
   RecInt tmpint; \
@@ -1520,17 +1516,13 @@ main(int /* argc ATS_UNUSED */, char **argv)
     Note("using the new remap processor system with %d threads", num_remap_threads);
     remapProcessor.setUseSeparateThread();
   }
-  remapProcessor.start(num_remap_threads, stacksize);
-
-  RecProcessStart(stacksize);
 
   init_signals2();
   // log initialization moved down
 
   if (command_flag) {
-    // pmgmt initialization moved up, needed by RecProcessInit
-    //pmgmt->start();
     int cmd_ret = cmd_mode();
+
     if (cmd_ret != CMD_IN_PROGRESS) {
       if (cmd_ret >= 0)
         _exit(0);               // everything is OK
@@ -1538,6 +1530,8 @@ main(int /* argc ATS_UNUSED */, char **argv)
         _exit(1);               // in error
     }
   } else {
+    remapProcessor.start(num_remap_threads, stacksize);
+    RecProcessStart(stacksize);
     initCacheControl();
     initCongestionControl();
     IpAllow::startup();

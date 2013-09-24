@@ -35,51 +35,44 @@
    */
 enum
 {
-  log_stat_bytes_buffered_stat,
-  log_stat_bytes_written_to_disk_stat,
+  // Logging Events
+  log_stat_event_log_error_ok_stat,
+  log_stat_event_log_error_skip_stat,
+  log_stat_event_log_error_aggr_stat,
+  log_stat_event_log_error_full_stat,
+  log_stat_event_log_error_fail_stat,
+
+  log_stat_event_log_access_ok_stat,
+  log_stat_event_log_access_skip_stat,
+  log_stat_event_log_access_aggr_stat,
+  log_stat_event_log_access_full_stat,
+  log_stat_event_log_access_fail_stat,
+
+  // Logging Data
+  log_stat_num_sent_to_network_stat,
+  log_stat_num_lost_before_sent_to_network_stat,
+  log_stat_num_received_from_network_stat,
+  log_stat_num_flush_to_disk_stat,
+  log_stat_num_lost_before_flush_to_disk_stat,
+
+  log_stat_bytes_lost_before_preproc_stat,
   log_stat_bytes_sent_to_network_stat,
+  log_stat_bytes_lost_before_sent_to_network_stat,
   log_stat_bytes_received_from_network_stat,
+
+  log_stat_bytes_flush_to_disk_stat,
+  log_stat_bytes_lost_before_flush_to_disk_stat,
+  log_stat_bytes_written_to_disk_stat,
+  log_stat_bytes_lost_before_written_to_disk_stat,
+
   // Logging I/O
   log_stat_log_files_open_stat,
   log_stat_log_files_space_used_stat,
-  // Logging Events
-  log_stat_event_log_error_stat,
-  log_stat_event_log_access_stat,
-  log_stat_event_log_access_fail_stat,
-  log_stat_event_log_access_skip_stat,
+
   log_stat_count
 };
 
 extern RecRawStatBlock *log_rsb;
-
-/* Stats should only be accessed using these macros */
-
-#define LOG_SET_DYN_STAT(x,C, S) \
-do { \
-	RecSetRawStatSum(log_rsb, x, S); \
-        RecSetRawStatCount(log_rsb, x, C); \
-} while (0);
-#define LOG_INCREMENT_DYN_STAT(x) \
-	RecIncrRawStat(log_rsb, mutex->thread_holding, (int) x, 1);
-#define LOG_DECREMENT_DYN_STAT(x) \
-	RecIncrRawStat(log_rsb, mutex->thread_holding, (int) x, -1);
-#define LOG_SUM_DYN_STAT(x, y) \
-	RecIncrRawStat(log_rsb, mutex->thread_holding, (int) x, y);
-#define LOG_SUM_GLOBAL_DYN_STAT(x, y) \
-	RecIncrGlobalRawStatSum(log_rsb,x,y)
-#define LOG_CLEAR_DYN_STAT(x) \
-do { \
-	RecSetRawStatSum(log_rsb, x, 0); \
-	RecSetRawStatCount(log_rsb, x, 0); \
-} while (0);
-
-#define LOG_ConfigReadInteger         REC_ConfigReadInteger
-#define LOG_LocalReadInteger          REC_ConfigReadInteger
-#define LOG_ConfigReadString          REC_ConfigReadString
-#define LOG_RegisterConfigUpdateFunc  REC_RegisterConfigUpdateFunc
-#define LOG_RegisterLocalUpdateFunc   REC_RegisterConfigUpdateFunc
-#define LOG_RegisterMgmtCallback      RecRegisterManagerCb
-
 
 struct dirent;
 

@@ -356,10 +356,11 @@ public:
 
   enum ReturnCodeFlags
   {
-    LOG_OK = 0,
-    SKIP = 1,
-    FAIL = 2,
-    FULL = 4
+    LOG_OK = 1,
+    SKIP = 2,
+    AGGR = 4,
+    FAIL = 8,
+    FULL = 16
   };
 
   enum LoggingMode

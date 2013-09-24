@@ -119,7 +119,7 @@ public:
   void clearUnSeen(char *ip);
 
   void checkSystemNAlert();
-  void execAlarmBin(const char *desc, alarm_t a);
+  void execAlarmBin(const char *desc);
 
   const char *getAlarmText(alarm_t id);
   InkHashTable *getLocalAlarms()

@@ -167,6 +167,8 @@ net_signal_hook_callback(EThread *thread) {
 #if HAVE_EVENTFD
   uint64_t counter;
   ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
+#elif TS_USE_PORT
+  /* Nothing to drain or do */
 #else
   char dummy[1024];
   ATS_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
@@ -178,6 +180,9 @@ net_signal_hook_function(EThread *thread) {
 #if HAVE_EVENTFD
   uint64_t counter = 1;
   ATS_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64_t)));
+#elif TS_USE_PORT
+  PollDescriptor *pd = get_PollDescriptor(thread);
+  ATS_UNUSED_RETURN(port_send(pd->port_fd, 0, thread->ep));
 #else
   char dummy = 1;
   ATS_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));

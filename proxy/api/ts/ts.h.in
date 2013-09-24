@@ -1372,7 +1372,7 @@ extern "C"
   tsapi TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc* locp);
 
   /**
-      Copies the contents of the URL at lcoation src_loc within the
+      Copies the contents of the URL at location src_loc within the
       marshal buffer src_bufp to the location dest_loc within the marshal
       buffer dest_bufp. TSUrlCopy() works correctly even if src_bufp
       and dest_bufp point to different marshal buffers. Important: create
@@ -1946,7 +1946,7 @@ extern "C"
   tsapi TSMLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr, int idx);
 
   /**
-      Retrieves the TSMLoc location of a specfied MIME field from within
+      Retrieves the TSMLoc location of a specified MIME field from within
       the MIME header located at hdr. The name and length parameters
       specify which field to retrieve. For each MIME field in the MIME
       header, a case insensitive string comparison is done between
@@ -2246,7 +2246,7 @@ extern "C"
   tsapi void TSContDataSet(TSCont contp, void* data);
   tsapi void* TSContDataGet(TSCont contp);
   tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout, TSThreadPool tp);
-  tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every, TSThreadPool tp);
+  tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
   tsapi TSAction TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout);
   tsapi int TSContCall(TSCont contp, TSEvent event, void* edata);
   tsapi TSMutex TSContMutexGet(TSCont contp);
@@ -2328,7 +2328,7 @@ extern "C"
       connected to Traffic Server for transaction @a txnp. The
       return structure is the generic socket address storage in
       order to be address-family agnostic. The user of this function
-      can then go on to do the approriate thing with the type
+      can then go on to do the appropriate thing with the type
       specified in the ss_family field of the structure whether
       that be for IPv4, IPv6, or any other address family.
 
@@ -2510,7 +2510,7 @@ extern "C"
 
   /**
          Set the transaction specific debugging flag for this transaction.
-         When turned on, internal debug messeges related to this transaction
+         When turned on, internal debug messages related to this transaction
          will be written even if the debug tag isn't on.
 
       @param txnp transaction to change.
@@ -2526,7 +2526,7 @@ extern "C"
   tsapi int TSHttpTxnDebugGet(TSHttpTxn txnp);
   /**
          Set the session specific debugging flag for this client session.
-         When turned on, internal debug messeges related to this session and all transactions
+         When turned on, internal debug messages related to this session and all transactions
          in the session will be written even if the debug tag isn't on.
 
       @param ssnp Client session to change.
@@ -2582,7 +2582,7 @@ extern "C"
       TS_HTTP_READ_CACHE_HDR_HOOK. If a connection to the server is
       not necessary, contp is not called.
 
-      The reponse from the plugin is cached subject to standard
+      The response from the plugin is cached subject to standard
       and configured http caching rules. Should the plugin wish the
       response not be cached, the plugin must use appropriate http
       response headers to prevent caching. The primary purpose of
@@ -2926,7 +2926,7 @@ extern "C"
    tsapi struct sockaddr const* TSNetVConnLocalAddrGet(TSVConn vc);
 
   /* --------------------------------------------------------------------------
-     Stats and configs based on librecords raw stats (this is prefered API until we
+     Stats and configs based on librecords raw stats (this is preferred API until we
      rewrite stats). This system has a limitation of up to 1,500 stats max, controlled
      via proxy.config.stat_api.max_stats_allowed (default is 512).
 
@@ -3281,7 +3281,7 @@ extern "C"
      an error.
 
      @param txnp the transaction pointer
-     @param milestone the requested milstone timer
+     @param milestone the requested milestone timer
      was created.
      @param time a pointer to a TSHRTime where we will store the timer
 

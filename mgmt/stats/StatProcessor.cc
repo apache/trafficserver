@@ -65,7 +65,8 @@ startElement(void * /* userData ATS_UNUSED */, const char *name, const char **at
     statObject = NEW(new StatObject(++statCount));
     Debug(MODULE_INIT, "\nStat #: ----------------------- %d -----------------------\n", statCount);
 
-    for (i = 0; atts[i]; i += 2) {
+    if (atts)
+     for (i = 0; atts[i]; i += 2) {
       ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
 
       if (!strcmp(atts[i], "minimum")) {
@@ -93,7 +94,8 @@ startElement(void * /* userData ATS_UNUSED */, const char *name, const char **at
     nodeVar = true;
     sumClusterVar = true;       // Should only be used with cluster variable
 
-    for (i = 0; atts[i]; i += 2) {
+    if (atts)
+     for (i = 0; atts[i]; i += 2) {
       ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
       if (!strcmp(atts[i], "scope")) {
         nodeVar = (!strcmp(atts[i + 1], "node") ? true : false);
@@ -137,14 +139,14 @@ endElement(void * /* userData ATS_UNUSED */, const char */* name ATS_UNUSED */)
 
 
 void
-charDataHandler(void * /* userData ATS_UNUSED */, const XML_Char * name, int /* len ATS_UNUSED */)
+charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar * name, int /* len ATS_UNUSED */)
 {
   if (currentTag != EXPR_TAG && currentTag != DST_TAG) {
     return;
   }
 
   char content[BUFSIZ * 10];
-  if (XML_extractContent(name, content, BUFSIZ * 10) == 0) {
+  if (XML_extractContent((const char*)name, content, BUFSIZ * 10) == 0) {
     return;
   }
 
@@ -184,6 +186,7 @@ StatProcessor::rereadConfig()
   fileBuffer = fileContent->bufPtr();
   fileLen = strlen(fileBuffer);
 
+#if HAVE_LIBEXPAT
   /*
    * Start the XML Praser -- the package used is EXPAT
    */
@@ -214,6 +217,25 @@ StatProcessor::rereadConfig()
    * Cleaning upt
    */
   XML_ParserFree(parser);
+#else
+  /* Parse XML with libxml2 */
+  xmlSAXHandler sax;
+  memset(&sax, 0, sizeof(xmlSAXHandler));
+  sax.startElement = startElement;
+  sax.endElement = endElement;
+  sax.characters = charDataHandler;
+  sax.initialized = 1;
+  xmlParserCtxtPtr parser = xmlCreatePushParserCtxt(&sax, NULL, NULL, 0, NULL);
+
+  int status = xmlParseChunk(parser, fileBuffer, fileLen, 1);
+  if (status != 0) {
+    xmlErrorPtr errptr = xmlCtxtGetLastError(parser);
+    mgmt_log(stderr, "%s at %s:%d\n", errptr->message, errptr->file, errptr->line);
+  }
+  xmlFreeParserCtxt(parser);
+#endif
+
+
   delete fileContent;
 
   Debug(MODULE_INIT, "\n\n---------- END OF PARSING & INITIALIZING ---------\n\n");

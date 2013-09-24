@@ -48,6 +48,76 @@
 int MultiCastMessages = 0;
 long LastHighestDelta = -1L;
 
+
+void *
+drainIncomingChannel_broadcast(void *arg)
+{
+  char message[61440];
+  fd_set fdlist;
+  void *ret = arg;
+
+  time_t t;
+  time_t last_multicast_receive_time = time(NULL);
+  struct timeval tv;
+
+  /* Avert race condition, thread spun during constructor */
+  while (!lmgmt->ccom || !lmgmt->ccom->init) {
+    mgmt_sleep_sec(1);
+  }
+
+  lmgmt->syslogThrInit();
+
+  for (;;) {                    /* Loop draining mgmt network channels */
+    // linux: set tv.tv_set in select() loop, since linux's select()
+    // will update tv with the amount of time not slept (most other
+    // implementations do not do this)
+    tv.tv_sec = lmgmt->ccom->mc_poll_timeout;             // interface not-responding timeout
+    tv.tv_usec = 0;
+
+    memset(message, 0, 61440);
+    FD_ZERO(&fdlist);
+
+    if (lmgmt->ccom->cluster_type != NO_CLUSTER) {
+      if (lmgmt->ccom->receive_fd > 0) {
+        FD_SET(lmgmt->ccom->receive_fd, &fdlist);       /* Multicast fd */
+      }
+    }
+
+    mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &tv);
+
+    if (lmgmt->ccom->cluster_type != NO_CLUSTER) {
+      // Multicast timeout considerations
+      if ((lmgmt->ccom->receive_fd < 0) || !FD_ISSET(lmgmt->ccom->receive_fd, &fdlist)) {
+        t = time(NULL);
+        if ((t - last_multicast_receive_time) > (tv.tv_sec - 1)) {
+          // Timeout on multicast receive channel, reset channel.
+          if (lmgmt->ccom->receive_fd > 0) {
+            close(lmgmt->ccom->receive_fd);
+          }
+          lmgmt->ccom->receive_fd = -1;
+          Debug("ccom", "Timeout, resetting multicast receive channel");
+          if (lmgmt->ccom->establishReceiveChannel(0)) {
+            Debug("ccom", "establishReceiveChannel failed");
+            lmgmt->ccom->receive_fd = -1;
+          }
+          last_multicast_receive_time = t;      // next action at next interval
+        }
+      } else {
+        last_multicast_receive_time = time(NULL);       // valid multicast msg
+      }
+    }
+
+    /* Broadcast message */
+    if (lmgmt->ccom->cluster_type != NO_CLUSTER &&
+        lmgmt->ccom->receive_fd > 0 &&
+        FD_ISSET(lmgmt->ccom->receive_fd, &fdlist) &&
+        (lmgmt->ccom->receiveIncomingMessage(message, 61440) > 0)) {
+      lmgmt->ccom->handleMultiCastMessage(message);
+    }
+  }
+  return ret;
+}                               /* End drainIncomingChannel */
+
 /*
  * drainIncomingChannel
  *   This function is blocking, it never returns. It is meant to allow for
@@ -89,8 +159,6 @@ drainIncomingChannel(void *arg)
   // to reopen the channel (e.g. opening the socket would fail if the
   // interface was down).  In this case, the ccom->receive_fd is set
   // to '-1' and the open is retried until it succeeds.
-  time_t t;
-  time_t last_multicast_receive_time = time(NULL);
   struct timeval tv;
 
   /* Avert race condition, thread spun during constructor */
@@ -104,50 +172,19 @@ drainIncomingChannel(void *arg)
     // linux: set tv.tv_set in select() loop, since linux's select()
     // will update tv with the amount of time not slept (most other
     // implementations do not do this)
-    tv.tv_sec = 30;             // interface not-responding timeout
+    tv.tv_sec = lmgmt->ccom->mc_poll_timeout;             // interface not-responding timeout
     tv.tv_usec = 0;
 
     memset(message, 0, 61440);
     FD_ZERO(&fdlist);
 
     if (lmgmt->ccom->cluster_type != NO_CLUSTER) {
-      if (lmgmt->ccom->receive_fd > 0) {
-        FD_SET(lmgmt->ccom->receive_fd, &fdlist);       /* Multicast fd */
-      }
       FD_SET(lmgmt->ccom->reliable_server_fd, &fdlist);   /* TCP Server fd */
     }
 
     mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &tv);
 
-    if (lmgmt->ccom->cluster_type != NO_CLUSTER) {
-      // Multicast timeout considerations
-      if ((lmgmt->ccom->receive_fd < 0) || !FD_ISSET(lmgmt->ccom->receive_fd, &fdlist)) {
-        t = time(NULL);
-        if ((t - last_multicast_receive_time) > (tv.tv_sec - 1)) {
-          // Timeout on multicast receive channel, reset channel.
-          if (lmgmt->ccom->receive_fd > 0) {
-            close(lmgmt->ccom->receive_fd);
-          }
-          lmgmt->ccom->receive_fd = -1;
-          Debug("ccom", "Timeout, resetting multicast receive channel");
-          if (lmgmt->ccom->establishReceiveChannel(0)) {
-            Debug("ccom", "establishReceiveChannel failed");
-            lmgmt->ccom->receive_fd = -1;
-          }
-          last_multicast_receive_time = t;      // next action at next interval
-        }
-      } else {
-        last_multicast_receive_time = time(NULL);       // valid multicast msg
-      }
-    }
-
-    /* Broadcast message */
-    if (lmgmt->ccom->cluster_type != NO_CLUSTER &&
-        lmgmt->ccom->receive_fd > 0 &&
-        FD_ISSET(lmgmt->ccom->receive_fd, &fdlist) &&
-        (lmgmt->ccom->receiveIncomingMessage(message, 61440) > 0)) {
-      lmgmt->ccom->handleMultiCastMessage(message);
-    } else if (FD_ISSET(lmgmt->ccom->reliable_server_fd, &fdlist)) {
+    if (FD_ISSET(lmgmt->ccom->reliable_server_fd, &fdlist)) {
       /* Reliable(TCP) request */
       int clilen = sizeof(cli_addr);
       int req_fd = mgmt_accept(lmgmt->ccom->reliable_server_fd, (struct sockaddr *) &cli_addr, &clilen);
@@ -423,6 +460,12 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   peer_timeout = REC_readInteger("proxy.config.cluster.peer_timeout", &found);
   ink_assert(found);
 
+  mc_send_interval = REC_readInteger("proxy.config.cluster.mc_send_interval", &found);
+  ink_assert(found);
+
+  mc_poll_timeout = REC_readInteger("proxy.config.cluster.mc_poll_timeout", &found);
+  ink_assert(found);
+
   /* Launch time */
   startup_time = time(NULL);
 
@@ -436,8 +479,10 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   peers = ink_hash_table_create(InkHashTableKeyType_String);
   mismatchLog = ink_hash_table_create(InkHashTableKeyType_String);
 
-  if (cluster_type != NO_CLUSTER)
+  if (cluster_type != NO_CLUSTER) {
+    ink_thread_create(drainIncomingChannel_broadcast, 0);   /* Spin drainer thread */
     ink_thread_create(drainIncomingChannel, 0);   /* Spin drainer thread */
+  }
   return;
 }                               /* End ClusterCom::ClusterCom */
 
@@ -1308,6 +1353,8 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
     int time_since_last_send = now - last_shared_send;
     if (last_shared_send != 0 && time_since_last_send > peer_timeout) {
       Warning("multicast send timeout exceeded.  %d seconds since" " last send.", time_since_last_send);
+    } else if (last_shared_send != 0 && time_since_last_send < mc_send_interval) {
+      return true;
     }
     last_shared_send = now;
   }

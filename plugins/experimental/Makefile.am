@@ -17,6 +17,7 @@
 if BUILD_EXPERIMENTAL_PLUGINS
 SUBDIRS = \
  lua \
+ buffer_upload \
  esi \
  rfc5861 \
  tcp_info \

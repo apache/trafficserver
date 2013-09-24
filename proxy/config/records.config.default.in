@@ -43,6 +43,7 @@ CONFIG proxy.config.accept_threads INT 1
 # Local Manager
 #
 ##############################################################################
+CONFIG proxy.config.admin.admin_user STRING admin
 CONFIG proxy.config.admin.number_config_bak INT 3
 CONFIG proxy.config.admin.user_id STRING @pkgsysuser@
 ##############################################################################
@@ -605,27 +606,24 @@ CONFIG proxy.config.diags.show_location INT 0
 #
 # Configuration for Reclaimable InkFreeList memory pool
 #
-# NOTE: The following options are not meaningful unless compiles TrafficServer
-#	with '--enable-reclaimable-freelist' option. Looks like:
-#	$ ./configure --enable-reclaimable-freelist
+# NOTE: The following options are meaningfull only when Traffic Server is
+#       compiled with the following option to configure:
+#
+#	    --enable-reclaimable-freelist
 #
 ##############################################################################
-  # Dump debug information according bit mask of debug_filter, if a bit is set
-  # in the mask, then debug information of the corresponding action are dumped:
-  #  bit 0: reclaim memory in ink_freelist_new
-  #  bit 1: allocate memory from partial-free Chunks(if exist) or OS
-CONFIG proxy.config.allocator.debug_filter INT 0
-  # The value of enable_reclaim should be 0 or 1. Default 1, reclaim enabled.
-CONFIG proxy.config.allocator.enable_reclaim INT @use_reclaimable_freelist@
-  # The value of reclaim_factor should be in 0.0 ~ 1.0, allocator use it to
-  # calculate average value of idle memory in InkFreeList, which will determine
-  # when to reclaim memory. The larger the value, the faster the reclaiming.
-  # This value is effective only when enable_reclaim is 1.
+CONFIG proxy.config.allocator.enable_reclaim INT 1
+  # The value of reclaim_factor should be in the 0.0 to 1.0 range. Allocators
+  # use it to calculate size of unused memory, which is used to determine when
+  # to reclaim memory. The larger the value, the more aggressive reclaims.
 CONFIG proxy.config.allocator.reclaim_factor FLOAT 0.300000
   # Allocator will reclaim memory only when it continuously satisfy the reclaim
-  # condition for max_overage times. This value is effective only when
-  # enable_reclaim is 1.
+  # condition for max_overage continuous checks.
 CONFIG proxy.config.allocator.max_overage INT 3
+  #  For debugging, enable debug_filter, which is a bit-map with these fields:
+  #     bit 0: reclaim memory in ink_freelist_new
+  #     bit 1: allocate memory from partial-free Chunks(if exist) or OS
+CONFIG proxy.config.allocator.debug_filter INT 0
 
 ##############################################################################
 #

@@ -99,9 +99,10 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
       enum {
         NA, // Not an (IP) Address.
         LO, // Loopback.
-        NR, // Non-Routable.
+        LL, // Link Local
+        PR, // Private.
         MC, // Multicast.
-        GA  // Globally unique Address.
+        GL  // Global.
       } spot_type = NA, ip4_type = NA, ip6_type = NA;
       sockaddr const* ifip;
       for (
@@ -119,9 +120,10 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
 
         if (!ats_is_ip(ifip)) spot_type = NA;
         else if (ats_is_ip_loopback(ifip)) spot_type = LO;
-        else if (ats_is_ip_nonroutable(ifip)) spot_type = NR;
+        else if (ats_is_ip_linklocal(ifip)) spot_type = LL;
+        else if (ats_is_ip_private(ifip)) spot_type = PR;
         else if (ats_is_ip_multicast(ifip)) spot_type = MC;
-        else spot_type = GA;
+        else spot_type = GL;
 
         if (spot_type == NA) continue; // Next!
 

@@ -1,9 +1,93 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
-  *) TS-2141: Inconsistent euid cause bad mgmtapi/eventapi sockets.
+  *) TS-2245: cancel the trigger of CacheVC in openWriteCloseDataDone
 
-  *) TS-2137: Use eventfd instread of pthread signal/wait in ATS.
+  *) TS-2232: log level should be change from Status to Debug.
+    Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2201] split drainIncomingChannel two thread, one handle Broadcast
+   message and other handle Reliable(TCP) request for supporing large cluster.
+
+  *) [TS-2144] Avoid race on e.g. "traffic_server -Cclear" which would crash
+   the process intermittently.
+
+  *) [TS-2217] remove the option to turn off body factory - setting it to 0
+   will result in empty responses.
+
+  *) [TS-2209] add support for lowercasing all substitutions in regex_remap.
+
+  *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in
+   EventNotify::signal().
+
+  *) [TS-2206] The trafficserver RC script does not use absolute path to
+   traffic_line binary.
+
+  *) [TS-2207] CentOS5 out of tree perl module build fails.
+
+  *) [TS-1637] Fix nodes as idle/dead if we have not heard from them in
+   awhile.
+
+  *) [TS-2185] Support to control ClusterCom::sendSharedData frequency.
+
+  *) [TS-2195] Deprecate experimental TSHttpTxnCacheLookupSkip API.
+
+  *) [TS-2176] Do not reset value of api_skip_cache_lookup when reading it.
+    Author: Corey Cossentino <corey@omniti.com>
+
+  *) [TS-2191] Do not reschedule http_sm when the sm_list`s lock is not
+   acquired. This can lose items for the WebUI, which will be fixed in a
+   separate bug.
+
+  *) [TS-2188] Fixes to make healthcheck plugin not segfault, and parse the
+   log files properly. Author: Scott Harris <scott@harrisnet.id.au>.
+
+  *) [TS-1086] Avoid edge case returning 304 to an unconditional request.
+   Diagnosis and patch by Mohamad Khateeb.
+
+  *) [TS-2168] Make RecordsConfig.cc more inline with default builds.
+
+  *) [TS-2174] traffic_shell/traffic_line miss some stats value
+
+  *) [TS-2173] RECD_COUNTER type is missing in setTokenValue().
+
+  *) [TS-2165] Introduce cluster-wide logging stats.
+
+  *) [TS-2167] Update apichecker.pl to give suggestions on additional
+   deprecated APIs.
+
+  *) [TS-2163] Remove WDA_BILLING, ACC_ALARMS etc. code and definitions.
+
+  *) [TS-2156] Fix stats trap in different type of threads.
+
+  *) [TS-2160] Remove ats_is_ip_nonroutable and replace it with the less
+   confusing ats_is_ip_linklocal and ats_is_ip_private.
+
+  *) [TS-2158] Properly mark an IP as non-routable for IPv4 and IPv6 link
+   local addresses as well as IPv6 private addresses and IPv4 Carrier Grade
+   NAT addresses from RFC 6598.
+
+  *) [TS-2155] Make a new RAT exclude file that uses the regular expressions
+   now supported. Also cleanup some of minor licensing discrepancies.
+
+  *) [TS-2148] handle_cache_operation_on_forward_server_response ignores value
+    of api_server_response_no_store.
+    Author: Corey Cossentino <corey@cossentino.com> 
+
+  *) [TS-2147] Set server_share_sessions to 1 for 'internal' transactions in
+   rfc5861 plugin.
+
+  *) [TS-2114] buffer_upload plugin defines true and false
+    Author: Kit Chan <chanshukit@gmail.com>
+
+  *) [TS-2116] buffer_upload plugin is in the source tree but does not build
+    Author: Kit Chan <chanshukit@gmail.com>
+
+  *) [TS-2094] eliminate xcrun warnings at configure time
+
+  *) [TS-2141] Inconsistent euid cause bad mgmtapi/eventapi sockets.
+
+  *) [TS-2137] Use eventfd instread of pthread signal/wait in ATS.
 
   *) [TS-287] Fix transaction_active_timeout_in does not trigger on the first
    request of a Keep-Alive connection. Author: Li Gang <quehan@taobao.com>.
@@ -25,9 +109,12 @@ Changes with Apache Traffic Server 4.1.0
   *) [TS-2123] Remove useless max_entries_per_buffer option.
 
 
-Changes with Apache Traffic Server 4.0.0
+Changes with Apache Traffic Server 4.0.1
 
-  *) [TS-2143] Remove alarm email address support (and config).
+  *) [TS-2161] TSHttpTxnHookAdd memory Leak.
+    Author: bettydramit <b13621367396@gmail.com>
+
+  *) [TS-2154] Lua plugin asserts traffic_server on startup
 
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
