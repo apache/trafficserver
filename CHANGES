@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+
+  *) [ TS-2295] update statvfs usage
+
   *) [TS-2139] Fix PURGE twice to remove object in cache if enable-interim-cache
 
   *) [TS-2216] Fix cquuh log tag, which does not calculate the right

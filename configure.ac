@@ -1419,7 +1419,7 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
-AC_CHECK_HEADERS([sys/types.h sys/mman.h])
+TS_FLAG_HEADERS([sys/types.h sys/mman.h])
 TS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
                   sys/param.h \
@@ -1503,6 +1503,8 @@ AC_SUBST(mathh)
 AC_SUBST(net_ppp_defsh)
 AC_SUBST(ifaddrsh)
 AC_SUBST(readline_readlineh)
+
+TS_FLAG_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
 
 TS_FLAG_HEADERS([sys/sysctl.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H

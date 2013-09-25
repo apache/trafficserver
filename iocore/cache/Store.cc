@@ -25,6 +25,18 @@
 #include "P_Cache.h"
 #include "I_Layout.h"
 
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+
+#if HAVE_SYS_DISK_H
+#include <sys/disk.h>
+#endif
+
+#if HAVE_SYS_DISKLABEL_H
+#include <sys/disklabel.h>
+#endif
+
 // Global
 Store theStore;
 
@@ -449,19 +461,6 @@ Store::write_config_data(int fd)
 }
 
 #if defined(freebsd) || defined(darwin) || defined(openbsd)
-// TODO: Those are probably already included from the ink_platform.h
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/mount.h>
-#if defined(freebsd)
-#include <sys/disk.h>
-#include <sys/disklabel.h>
-#elif defined(darwin)
-#include <sys/disk.h>
-#include <sys/statvfs.h>
-#endif
-#include <string.h>
 
 const char *
 Span::init(char *an, int64_t size)
@@ -511,11 +510,11 @@ Span::init(char *an, int64_t size)
     return "unable to open";
   }
 
-  struct statfs fs;
-  if ((ret = fstatfs(fd, &fs)) < 0) {
-    Warning("unable to statfs '%s': %d %d, %s", n, ret, errno, strerror(errno));
+  struct statvfs fs;
+  if ((ret = fstatvfs(fd, &fs)) < 0) {
+    Warning("unable to statvfs '%s': %d %d, %s", n, ret, errno, strerror(errno));
     socketManager.close(fd);
-    return "unable to statfs";
+    return "unable to statvfs";
   }
 
   hw_sector_size = fs.f_bsize;
@@ -581,17 +580,10 @@ Lfail:
   socketManager.close(fd);
   return err;
 }
+
 #endif
 
 #if defined(solaris)
-// TODO: Those are probably already included from the ink_platform.h
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/statvfs.h>
-#include <string.h>
 
 const char *
 Span::init(char *filename, int64_t size)
@@ -679,10 +671,6 @@ Lfail:
 #endif
 
 #if defined(linux)
-// TODO: Axe extra includes
-#include <stdlib.h>
-#include <stdio.h>
-#include <fcntl.h>
 #include <unistd.h>             /* for close() */
 #include <sys/ioctl.h>
 #include <linux/hdreg.h>        /* for struct hd_geometry */

@@ -27,22 +27,9 @@
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_MOUNT_H
-#include <sys/mount.h>
-#endif
-
-#include <dirent.h>
-
-#if defined(linux)
-#include <sys/statfs.h>
-#elif defined(solaris)
-#include <sys/statfs.h>
-#include <sys/statvfs.h>
-#elif !defined(freebsd)
-#include <sys/statvfs.h>
-#endif  // linux
 
 #include "ink_platform.h"
+#include "ink_file.h"
 
 #include "Main.h"
 #include "List.h"
@@ -63,15 +50,6 @@
 
 #if defined(IOCORE_LOG_COLLATION)
 #include "LogCollationAccept.h"
-#endif
-
-#if defined(linux)
-#include <sys/vfs.h>
-#else
-extern "C"
-{
-  int statvfs(const char *, struct statvfs *);
-}
 #endif
 
 #define DISK_IS_CONFIG_FULL_MESSAGE \
@@ -1550,16 +1528,10 @@ LogConfig::update_space_used()
   // Now check the partition to see if there is enough *actual* space.
   //
   partition_space_left = m_partition_space_left;
-#if defined(solaris)
+
   struct statvfs fs;
-  ::memset(&fs, 0, sizeof(fs));
-  int ret =::statvfs(logfile_dir, &fs);
-#else
-  struct statfs fs;
-  ::memset(&fs, 0, sizeof(fs));
-  int ret =::statfs(logfile_dir, &fs);
-#endif
-  if (ret >= 0) {
+
+  if (::statvfs(logfile_dir, &fs) >= 0) {
     partition_space_left = (int64_t) fs.f_bavail * (int64_t) fs.f_bsize;
   }
 
