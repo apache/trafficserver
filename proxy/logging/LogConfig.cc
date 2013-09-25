@@ -1195,88 +1195,64 @@ LogConfig::reconfigure(const char * /* name ATS_UNUSED */, RecDataT /* data_type
 void
 LogConfig::register_config_callbacks()
 {
-  // Note: variables that are not exposed in the UI are commented out
-  //
-  REC_RegisterConfigUpdateFunc("proxy.config.log.log_buffer_size", &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.max_secs_per_buffer",
-//                            &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_logs", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_orphan_logs", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_headroom", &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.logfile_perm",
-//                            &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.hostname",
-//                            &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.logfile_dir", &LogConfig::reconfigure, NULL);
+  static const char * names[] = {
+    "proxy.config.log.log_buffer_size",
+    "proxy.config.log.max_secs_per_buffer",
+    "proxy.config.log.max_space_mb_for_logs",
+    "proxy.config.log.max_space_mb_for_orphan_logs",
+    "proxy.config.log.max_space_mb_headroom",
+    "proxy.config.log.logfile_perm",
+    "proxy.config.log.hostname",
+    "proxy.config.log.logfile_dir",
+    "proxy.config.log.squid_log_enabled",
+    "proxy.config.log.xuid_logging_enabled",
+    "proxy.config.log.squid_log_is_ascii",
+    "proxy.config.log.squid_log_name",
+    "proxy.config.log.squid_log_header",
+    "proxy.config.log.common_log_enabled",
+    "proxy.config.log.common_log_is_ascii",
+    "proxy.config.log.common_log_name",
+    "proxy.config.log.common_log_header",
+    "proxy.config.log.extended_log_enabled",
+    "proxy.config.log.extended_log_is_ascii",
+    "proxy.config.log.extended_log_name",
+    "proxy.config.log.extended_log_header",
+    "proxy.config.log.extended2_log_enabled",
+    "proxy.config.log.extended2_log_is_ascii",
+    "proxy.config.log.extended2_log_name",
+    "proxy.config.log.extended2_log_header",
+    "proxy.config.log.separate_icp_logs",
+    "proxy.config.log.separate_host_logs",
+    "proxy.local.log.collation_mode",
+    "proxy.config.log.collation_host",
+    "proxy.config.log.collation_port",
+    "proxy.config.log.collation_host_tagged",
+    "proxy.config.log.collation_secret",
+    "proxy.config.log.collation_retry_sec",
+    "proxy.config.log.collation_max_send_buffers",
+    "proxy.config.log.rolling_enabled",
+    "proxy.config.log.rolling_interval_sec",
+    "proxy.config.log.rolling_offset_hr",
+    "proxy.config.log.rolling_size_mb",
+    "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.custom_logs_enabled",
+    "proxy.config.log.xml_config_file",
+    "proxy.config.log.hosts_config_file",
+    "proxy.config.log.sampling_frequency",
+    "proxy.config.log.file_stat_frequency",
+    "proxy.config.log.space_used_frequency",
+    "proxy.config.log.search_rolling_interval_sec",
+    "proxy.config.log.search_log_enabled",
+    "proxy.config.log.search_top_sites",
+    "proxy.config.log.search_server_ip_addr",
+    "proxy.config.log.search_server_port",
+    "proxy.config.log.search_url_filter",
+  };
 
-  // SQUID
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.xuid_logging_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_header", &LogConfig::reconfigure, NULL);
 
-  // COMMON
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_header", &LogConfig::reconfigure, NULL);
-
-  // EXTENDED
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_header", &LogConfig::reconfigure, NULL);
-
-  // EXTENDED2
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_header", &LogConfig::reconfigure, NULL);
-
-  // SPLITTING
-  REC_RegisterConfigUpdateFunc("proxy.config.log.separate_icp_logs", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.separate_host_logs", &LogConfig::reconfigure, NULL);
-
-  // COLLATION
-  REC_RegisterConfigUpdateFunc("proxy.local.log.collation_mode", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_host", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_port", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_host_tagged", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_secret", &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.collation_retry_sec",
-//                                  &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.collation_max_send_buffers",
-//                                  &LogConfig::reconfigure, NULL);
-
-  // ROLLING
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_offset_hr", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_size_mb", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.auto_delete_rolled_files", &LogConfig::reconfigure, NULL);
-
-  // CUSTOM LOGGING
-  REC_RegisterConfigUpdateFunc("proxy.config.log.custom_logs_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.xml_config_file", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.hosts_config_file", &LogConfig::reconfigure, NULL);
-
-  // PERFORMANCE
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.sampling_frequency",
-//                            &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.file_stat_frequency",
-//                            &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.space_used_frequency",
-//                            &LogConfig::reconfigure, NULL);
-
-/* These are the call back function connectivities               */
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_top_sites", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_server_ip_addr", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_server_port", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_url_filter", &LogConfig::reconfigure, NULL);
-
+  for (unsigned i = 0; i < countof(names); ++i) {
+    REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, NULL);
+  }
 }
 
 /*-------------------------------------------------------------------------
