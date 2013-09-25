@@ -506,11 +506,7 @@ LogUtils::file_is_writeable(const char *full_filename,
     // stat succeeded, check if full_filename points to a regular
     // file/fifo and if so, check if file has write permission
     //
-#ifdef ASCII_PIPE_FORMAT_SUPPORTED
     if (!(stat_data.st_mode & S_IFREG || stat_data.st_mode & S_IFIFO)) {
-#else
-    if (!(stat_data.st_mode & S_IFREG)) {
-#endif
       ret_val = 1;
     } else if (!(stat_data.st_mode & S_IWUSR)) {
       errno = EACCES;

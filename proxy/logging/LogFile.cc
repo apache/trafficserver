@@ -220,7 +220,6 @@ LogFile::open_file()
   int flags, perms;
 
   if (m_file_format == ASCII_PIPE) {
-#ifdef ASCII_PIPE_FORMAT_SUPPORTED
     if (mkfifo(m_name, S_IRUSR | S_IWUSR) < 0) {
       if (errno != EEXIST) {
         Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
@@ -231,10 +230,6 @@ LogFile::open_file()
     }
     flags = O_WRONLY | O_NDELAY;
     perms = 0;
-#else
-    Error("ASCII_PIPE mode not supported, could not create named pipe %s" " for logging", m_name);
-    return LOG_FILE_PIPE_MODE_NOT_SUPPORTED;
-#endif
   } else {
     flags = O_WRONLY | O_APPEND | O_CREAT;
     perms = Log::config->logfile_perm;

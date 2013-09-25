@@ -100,14 +100,7 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
     if (file_format == BINARY_LOG) {
         m_flags |= BINARY;
     } else if (file_format == ASCII_PIPE) {
-#ifdef ASCII_PIPE_FORMAT_SUPPORTED
         m_flags |= WRITES_TO_PIPE;
-#else
-        // ASCII_PIPE not supported, reset to ASCII_LOG
-        Warning("ASCII_PIPE Mode not supported, resetting Mode to ASCII_LOG "
-                "for LogObject %s", basename);
-        file_format = ASCII_LOG;
-#endif
     }
 
     generate_filenames(log_dir, basename, file_format);
@@ -1040,7 +1033,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 
         bool roll_file = true;
 
-#ifdef ASCII_PIPE_FORMAT_SUPPORTED
         if (log_object->writes_to_pipe()) {
           // determine if existing file is a pipe, and remove it if
           // that is the case so the right metadata for the new pipe
@@ -1064,7 +1056,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
             }
           }
         }
-#endif
         if (roll_file) {
           Warning("File %s will be rolled because a LogObject with "
                   "different format is requesting the same " "filename", filename);
