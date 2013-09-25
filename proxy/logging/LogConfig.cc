@@ -1456,7 +1456,7 @@ LogConfig::update_space_used()
   if (!logfile_dir) {
     const char *msg = "Logging directory not specified";
     Error("%s", msg);
-    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg);
+    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, "%s", msg);
     m_log_directory_inaccessible = true;
     return;
   }

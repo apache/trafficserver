@@ -54,14 +54,6 @@
 
 
 /*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-LogUtils::LogUtils(DoNotConstruct /* object ATS_UNUSED */)
-{
-  ink_release_assert(!"you can't construct a LogUtils object");
-}
-
-/*-------------------------------------------------------------------------
   LogUtils::timestamp_to_str
 
   This routine will convert a timestamp (seconds) into a short string,
