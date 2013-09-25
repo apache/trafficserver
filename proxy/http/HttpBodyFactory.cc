@@ -149,8 +149,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   ///////////////////////////////////
   if (buffer && (*resulting_buffer_length > max_buffer_length)) {
     if (enable_logging) {
-      Log::error(("BODY_FACTORY: template '%s/%s' consumed %d bytes, "
-                  "exceeding %d byte limit, using internal default"),
+      Log::error(("BODY_FACTORY: template '%s/%s' consumed %" PRId64 " bytes, "
+                  "exceeding %" PRId64 " byte limit, using internal default"),
                  set, type, *resulting_buffer_length, max_buffer_length);
     }
     *resulting_buffer_length = 0;

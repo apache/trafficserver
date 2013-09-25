@@ -400,8 +400,8 @@ public:
   }
 
   inkcoreapi static int access(LogAccess * lad);
-  inkcoreapi static int error(const char *format, ...);
-  inkcoreapi static int va_error(char *format, va_list ap);
+  inkcoreapi static int va_error(const char *format, va_list ap);
+  inkcoreapi static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
   // public data members
   inkcoreapi static TextLogObject *error_log;

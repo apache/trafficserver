@@ -24,14 +24,12 @@
 /***************************************************************************
  Log.cc
 
-
  This file defines the implementation of the static Log class, which is
  primarily used as a namespace.  That is, there are no Log objects, but the
  class scope and static members provide a protected namespace for all of
  the logging routines and enumerated types.  When C++ namespaces are more
  widely-implemented, Log could be implemented as a namespace rather than a
  class.
-
 
  ***************************************************************************/
 #include "libts.h"
@@ -202,7 +200,6 @@ struct PeriodicWakeup : Continuation
       SET_HANDLER ((PeriodicWakeupHandler)&PeriodicWakeup::wakeup);
   }
 };
-
 
 /*-------------------------------------------------------------------------
   Log::periodic_tasks
@@ -896,7 +893,6 @@ Log::init_fields()
   init_status |= FIELDS_INITIALIZED;
 }
 
-
 /*-------------------------------------------------------------------------
 
   Initialization functions
@@ -1170,15 +1166,25 @@ done:
 int
 Log::error(const char *format, ...)
 {
+  va_list ap;
+  int ret;
+
+  va_start(ap, format);
+  ret = Log::va_error(format, ap);
+  va_end(ap);
+
+  return ret;
+}
+
+int
+Log::va_error(const char *format, va_list ap)
+{
   int ret_val = Log::SKIP;
   ProxyMutex *mutex = this_ethread()->mutex;
 
   if (error_log) {
     ink_assert(format != NULL);
-    va_list ap;
-    va_start(ap, format);
     ret_val = error_log->va_write(format, ap);
-    va_end(ap);
 
     switch (ret_val) {
     case Log::LOG_OK:
@@ -1210,44 +1216,6 @@ Log::error(const char *format, ...)
 
   RecIncrRawStat(log_rsb, mutex->thread_holding,
                  log_stat_event_log_error_skip_stat, 1);
-  return ret_val;
-}
-
-int
-Log::va_error(char *format, va_list ap)
-{
-  int ret_val = Log::SKIP;
-
-  if (error_log) {
-    ink_assert(format != NULL);
-    ProxyMutex *mutex = this_ethread()->mutex; 
-    ret_val = error_log->va_write(format, ap);
-
-    switch (ret_val) {
-    case Log::LOG_OK:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_ok_stat, 1);
-      break;
-    case Log::SKIP:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_skip_stat, 1);
-      break;
-    case Log::AGGR:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_aggr_stat, 1);
-      break;
-    case Log::FULL:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_full_stat, 1);
-      break;
-    case Log::FAIL:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_fail_stat, 1);
-      break;
-    default:
-      ink_release_assert(!"Unexpected result");
-    }
-  }
 
   return ret_val;
 }
@@ -1433,7 +1401,6 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
   int bytes_read;
   int sock_id;
   int new_client;
-
 
   Debug("log-thread", "Log collation thread is alive ...");
 
