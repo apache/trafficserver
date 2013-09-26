@@ -76,9 +76,7 @@ extern RecRawStatBlock *log_rsb;
 
 struct dirent;
 
-#if defined(IOCORE_LOG_COLLATION)
 struct LogCollationAccept;
-#endif
 
 /*-------------------------------------------------------------------------
   LogConfig
@@ -290,9 +288,7 @@ private:
   //
   bool use_orphan_log_space_value;
 
-#if defined(IOCORE_LOG_COLLATION)
   LogCollationAccept *m_log_collation_accept;
-#endif
 
   struct dirent *m_dir_entry;
   char *m_pDir;

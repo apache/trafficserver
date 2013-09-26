@@ -48,9 +48,7 @@
 #include "Log.h"
 #include "SimpleTokenizer.h"
 
-#if defined(IOCORE_LOG_COLLATION)
 #include "LogCollationAccept.h"
-#endif
 
 #define DISK_IS_CONFIG_FULL_MESSAGE \
     "Access logging to local log directory suspended - " \
@@ -540,9 +538,7 @@ LogConfig::LogConfig()
   : initialized(false),
     reconfiguration_needed(false),
     logging_space_exhausted(false), m_space_used(0), m_partition_space_left((int64_t) UINT_MAX),
-#if defined (IOCORE_LOG_COLLATION)
     m_log_collation_accept(NULL),
-#endif
     m_dir_entry(NULL),
     m_pDir(NULL),
     m_disk_full(false),
@@ -564,12 +560,10 @@ LogConfig::LogConfig()
 LogConfig::~LogConfig()
 {
 
-#if defined(IOCORE_LOG_COLLATION)
 // we don't delete the log collation accept because it may be transferred
 // to another LogConfig object
 //
 //    delete m_log_collation_accept;
-#endif
 
   ats_free(hostname);
   ats_free(logfile_dir);
@@ -619,7 +613,6 @@ LogConfig::setup_collation(LogConfig * prev_config)
       Note("Cannot activate log collation, \"%s\" is and invalid " "collation host", collation_host);
     } else {
       if (collation_mode == COLLATION_HOST) {
-#if defined(IOCORE_LOG_COLLATION)
 
         ink_assert(m_log_collation_accept == 0);
 
@@ -635,23 +628,13 @@ LogConfig::setup_collation(LogConfig * prev_config)
           Log::collation_port = collation_port;
           m_log_collation_accept = NEW(new LogCollationAccept(collation_port));
         }
-#else
-        // since we are the collation host, we need to signal the
-        // collate_cond variable so that our collation thread wakes up.
-        //
-        Log::collate_notify.signal();
-#endif
         Debug("log", "I am a collation host listening on port %d.", collation_port);
       } else {
         Debug("log", "I am a collation client (%d)."
               " My collation host is %s:%d", collation_mode, collation_host, collation_port);
       }
 
-#ifdef IOCORE_LOG_COLLATION
       Debug("log", "using iocore log collation");
-#else
-      Debug("log", "using socket log collation");
-#endif
       if (collation_host_tagged) {
         LogFormat::turn_tagging_on();
       } else {

@@ -27,7 +27,6 @@
 
 #define PROGRAM_NAME        "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE  65536
-#undef IOCORE_LOG_COLLATION
 
 #include <poll.h>
 

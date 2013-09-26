@@ -1075,23 +1075,6 @@ Log::create_threads()
     sprintf(desc, "[LOG_FLUSH]");
     eventProcessor.spawn_thread(flush_cont, desc, stacksize);
 
-#if !defined(IOCORE_LOG_COLLATION)
-    // start the collation thread if we are not using iocore log collation
-    //
-    // for the collation thread, we start one on each machine (done here)
-    // and then block it on a mutex variable that is only released (from
-    // LogConfig) on the machine configured to be the collation server.
-    // When it is no longer needed (say after a reconfiguration), it will
-    // be blocked again on it's condition variable.  This makes it easy to
-    // start and stop the collation thread, and assumes that there is not
-    // much overhead associated with keeping an ink_thread blocked on a
-    // condition variable.
-    //
-    Continuation *collate_continuation = NEW(new LoggingCollateContinuation);
-    sprintf(desc, "[LOG_COLLATION]");
-    Event *collate_event = eventProcessor.spawn_thread(collate_continuation, desc);
-    collate_thread = collate_event->ethread->tid;
-#endif
     init_status |= THREADS_CREATED;
   }
 }
