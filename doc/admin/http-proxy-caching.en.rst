@@ -780,9 +780,9 @@ When an object can not be served from cache, the request will be proxied to the 
 this can result in many near simultaneous requests to the origin server, potentially overwhelming it or associated
 resources. There are several features in Traffic Server that can be used to avoid this scenario.
 
-Read While Write
-----------------
-When Traffic Server goes to fetch something from origin, and upon receiving the response, any number of clients can be allowed to start serving out of the partially filled cache object (it starts serving the object once background_fill_completed_threshold % of the object has been received). The difference is that Squid allows this as soon as it goes to origin, whereas ATS can not do it until we get the complete response header. The reason for this is that we make no distinction between cache refresh, and cold cache, so we have no way to know if a response is going to be cacheable, and therefore allow read-while-write functionality.
+Read While Writer
+-----------------
+When Traffic Server goes to fetch something from origin, and upon receiving the response, any number of clients can be allowed to start serving the partially filled cache object once background_fill_completed_threshold % of the object has been received. The difference is that Squid allows this as soon as it goes to origin, whereas ATS can not do it until we get the complete response header. The reason for this is that we make no distinction between cache refresh, and cold cache, so we have no way to know if a response is going to be cacheable, and therefore allow read-while-writer functionality.
 
 The configurations necessary to enable this in ATS are:
 
@@ -793,7 +793,7 @@ CONFIG :ts:cv:`proxy.config.cache.max_doc_size` ``INT 0``
 All four configurations are required, for the following reasons:
 
 -  enable_read_while_writer turns the feature on. It's off (0) by default
--  The background fill feature must be allowed to kick in for every request. This is necessary, in case the owning consumer ("client session") goes away, someone needs to take over the session. The original client's request can go away after background_fill_active_timeout seconds, and the object will continue fetching in the background. The object then can start being served to another request after background_fill_completed_threshold % of the object has been fetched from origin.
+-  The background fill feature should be allowed to kick in for every possible request. This is necessary, in case the writer ("first client session") goes away, someone needs to take over the session. The original client's request can go away after background_fill_active_timeout seconds, and the object will continue fetching in the background. The object then can start being served to another request after background_fill_completed_threshold % of the object has been fetched from origin.
 -  The proxy.config.cache.max_doc_size should be unlimited (set to 0), since the object size may be unknown, and going over this limit would cause a disconnect on the objects being served.
 
 Once all this enabled, you have something that is very close, but not quite the same, as Squid's Collapsed Forwarding.
@@ -825,7 +825,7 @@ The open read retry configurations attempt to reduce the number of concurrent re
 
 These settings are inappropriate when objects are uncacheable. In those cases, requests for an object effectively become serialized. The subsequent requests would await at least open_read_retry_time milliseconds before being proxies to the origin.
 
-Similarly, this setting should be used in conjunction with Read While Write for big (those that take longer than (max_open_read_retries x open_read_retry_time) milliseconds to transfer) cacheable objects. Without the read-while-write settings enabled, while the initial fetch is ongoing, not only would subsequent requests be delayed by the maximum time, but also, those requests would result in another request to the origin server.
+Similarly, this setting should be used in conjunction with Read While Writer for big (those that take longer than (max_open_read_retries x open_read_retry_time) milliseconds to transfer) cacheable objects. Without the read-while-writer settings enabled, while the initial fetch is ongoing, not only would subsequent requests be delayed by the maximum time, but also, those requests would result in another request to the origin server.
 
 Since ATS now supports setting these settings per-request or remap rule, you can configure this to be suitable for your setup much more easily.
 
