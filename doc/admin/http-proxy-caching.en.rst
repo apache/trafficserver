@@ -786,10 +786,10 @@ When Traffic Server goes to fetch something from origin, and upon receiving the 
 
 The configurations necessary to enable this in ATS are:
 
-CONFIG :ts:cv:`proxy.config.cache.enable_read_while_writer` ``INT 1``
-CONFIG :ts:cv:`proxy.config.http.background_fill_active_timeout` ``INT 0``
-CONFIG :ts:cv:`proxy.config.http.background_fill_completed_threshold` ``FLOAT 0.000000``
-CONFIG :ts:cv:`proxy.config.cache.max_doc_size` ``INT 0`` 
+   CONFIG :ts:cv:`proxy.config.cache.enable_read_while_writer` ``INT 1``
+   CONFIG :ts:cv:`proxy.config.http.background_fill_active_timeout` ``INT 0``
+   CONFIG :ts:cv:`proxy.config.http.background_fill_completed_threshold` ``FLOAT 0.000000``
+   CONFIG :ts:cv:`proxy.config.cache.max_doc_size` ``INT 0`` 
 All four configurations are required, for the following reasons:
 
 -  enable_read_while_writer turns the feature on. It's off (0) by default
@@ -803,9 +803,9 @@ Fuzzy Revalidation
 ------------------
 Traffic Server can be set to attempt to revalidate an object before it becomes stale in cache. :file:`records.config`:: contains the settings:
 
-CONFIG :ts:cv:`proxy.config.http.cache.fuzz.time` ``INT 240``
-CONFIG :ts:cv:`proxy.config.http.cache.fuzz.min_time` ``INT 0``
-CONFIG :ts:cv:`proxy.config.http.cache.fuzz.probability` ``FLOAT 0.005``
+   CONFIG :ts:cv:`proxy.config.http.cache.fuzz.time` ``INT 240``
+   CONFIG :ts:cv:`proxy.config.http.cache.fuzz.min_time` ``INT 0``
+   CONFIG :ts:cv:`proxy.config.http.cache.fuzz.probability` ``FLOAT 0.005``
 
 For every request for an object that occurs "fuzz.time" before (in the example above, 240 seconds) the object is set to become stale, there is a small
 chance (fuzz.probability == 0.5%) that the request will trigger a revalidation request to the origin. For objects getting a few requests per second, this would likely not trigger, but then this feature is not necessary anyways since odds are only 1 or a small number of connections would hit origin upon objects going stale. The defaults are a good compromise, for objects getting roughly 4 requests / second or more, it's virtually guaranteed to trigger a revalidate event within the 240s. These configs are also overridable per remap rule or via a plugin, so can be adjusted per request if necessary.  
@@ -831,7 +831,7 @@ Since ATS now supports setting these settings per-request or remap rule, you can
 
 The configurations are (with defaults):
 
-CONFIG :ts:cv:`proxy.config.http.cache.max_open_read_retries` ``INT -1``
-CONFIG :ts:cv:`proxy.config.http.cache.open_read_retry_time` ``INT 10``
+   CONFIG :ts:cv:`proxy.config.http.cache.max_open_read_retries` ``INT -1``
+   CONFIG :ts:cv:`proxy.config.http.cache.open_read_retry_time` ``INT 10``
 
 The default means that the feature is disabled, and every connection is allowed to go to origin instantly. When enabled, you will try max_open_read_retries times, each with a open_read_retry_time timeout.
