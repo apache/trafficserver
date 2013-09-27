@@ -1629,6 +1629,9 @@ LogConfig::update_space_used()
 
 
   if (!space_to_write(headroom)) {
+    if (!logging_space_exhausted)
+      Note("Logging space exhausted, any logs writing to local disk will be dropped!");
+
     logging_space_exhausted = true;
     //
     // Despite our best efforts, we still can't write to the disk.
@@ -1673,6 +1676,9 @@ LogConfig::update_space_used()
     //
     // We have enough space to log again; clear any previous messages
     //
+    if (logging_space_exhausted)
+      Note("Logging space is no longer exhausted.");
+
     logging_space_exhausted = false;
     if (m_disk_full || m_partition_full) {
       Note("Logging disk is no longer full; " "access logging to local log directory resumed.");
