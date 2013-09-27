@@ -36,6 +36,8 @@ EXTRA_DIST = LogStandalone.cc
 noinst_LIBRARIES = liblogging.a liblogcollation.a
 
 liblogging_a_SOURCES = \
+  Log.cc \
+  Log.h \
   LogAccess.cc \
   LogAccess.h \
   LogAccessHttp.cc \
@@ -45,14 +47,12 @@ liblogging_a_SOURCES = \
   LogBuffer.cc \
   LogBuffer.h \
   LogBufferSink.h \
-  Log.cc \
-  Log.h \
   LogConfig.cc \
   LogConfig.h \
-  LogFieldAliasMap.cc \
-  LogFieldAliasMap.h \
   LogField.cc \
   LogField.h \
+  LogFieldAliasMap.cc \
+  LogFieldAliasMap.h \
   LogFile.cc \
   LogFile.h \
   LogFilter.cc \
@@ -60,13 +60,15 @@ liblogging_a_SOURCES = \
   LogFormat.cc \
   LogFormat.h \
   LogFormatType.h \
+  LogHost.cc \
+  LogHost.h \
   LogLimits.h \
   LogObject.cc \
   LogObject.h \
+  LogPredefined.cc \
+  LogPredefined.h \
   LogSock.cc \
   LogSock.h \
-  LogHost.cc \
-  LogHost.h \
   LogUtils.cc \
   LogUtils.h
 
