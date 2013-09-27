@@ -43,7 +43,6 @@
 #include "LogAccess.h"
 #include "LogConfig.h"
 #include "LogBuffer.h"
-#include "LogFormatType.h"
 #include "Log.h"
 
 
@@ -626,11 +625,11 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
   -------------------------------------------------------------------------*/
 int
 LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
-                    char *buf, int buf_len, char *symbol_str, char *printf_str,
-                    unsigned buffer_version, char *alt_format)
+                    char *buf, int buf_len, const char *symbol_str, char *printf_str,
+                    unsigned buffer_version, const char *alt_format)
 {
   ink_assert(entry != NULL);
-  ink_assert(type >= 0 && type < N_LOG_TYPES);
+  ink_assert(type == CUSTOM_LOG || type == TEXT_LOG);
   ink_assert(buf != NULL);
 
   char *read_from;              // keeps track of where we're reading from entry

@@ -831,7 +831,7 @@ TextLogObject::TextLogObject(const char *name, const char *log_dir,
                              int rolling_enabled, int flush_threads,
                              int rolling_interval_sec, int rolling_offset_hr,
                              int rolling_size_mb)
-  : LogObject(NEW(new LogFormat(TEXT_LOG)), log_dir, name, ASCII_LOG, header,
+  : LogObject(MakeTextLogFormat(), log_dir, name, ASCII_LOG, header,
               rolling_enabled, flush_threads, rolling_interval_sec,
               rolling_offset_hr, rolling_size_mb)
 {

@@ -35,7 +35,6 @@
 #include "List.h"
 #include "InkXml.h"
 
-#include "LogFormatType.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
@@ -49,6 +48,7 @@
 #include "SimpleTokenizer.h"
 
 #include "LogCollationAccept.h"
+#include "LogPredefined.h"
 
 #define DISK_IS_CONFIG_FULL_MESSAGE \
     "Access logging to local log directory suspended - " \
@@ -782,63 +782,6 @@ LogConfig::display(FILE * fd)
   global_format_list.display(fd);
 }
 
-//-----------------------------------------------------------------------------
-// setup_pre_defined_info
-//
-// This function adds all the pre defined formats to the global_format_list
-// and gathers the information for the active formats in a single place
-// (an entry in a PreDefinedFormatInfo list)
-//
-void
-LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
-{
-  LogFormat *fmt;
-  PreDefinedFormatInfo *pdfi;
-
-  Log::config->xuid_logging_enabled = xuid_logging_enabled;
-  fmt = NEW(new LogFormat(SQUID_LOG));
-
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "squid format added to the global format list");
-
-  if (squid_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, squid_log_name, squid_log_is_ascii, squid_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-  fmt = NEW(new LogFormat(COMMON_LOG));
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "common format added to the global format list");
-
-  if (common_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, common_log_name, common_log_is_ascii, common_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-  fmt = NEW(new LogFormat(EXTENDED_LOG));
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "extended format added to the global format list");
-
-  if (extended_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, extended_log_name, extended_log_is_ascii, extended_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-  fmt = NEW(new LogFormat(EXTENDED2_LOG));
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "extended2 format added to the global format list");
-
-  if (extended2_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, extended2_log_name, extended2_log_is_ascii, extended2_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-}
-
 /*                                                               */
 /* The user defined filters are added to the search_one          */
 /* log object. These filters are defined to filter the images    */
@@ -878,13 +821,13 @@ LogConfig::add_filters_to_search_log_object(const char *format_name)
 //
 
 void
-LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list, size_t num_filters,
+LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatList & predef, size_t num_filters,
                                                   LogFilter ** filter, const char *filt_name, bool force_extension)
 {
   PreDefinedFormatInfo *pdi;
 
-  for (pdi = pre_def_info_list.head; pdi != NULL; pdi = (pdi->link).next) {
-    char *obj_fname;
+  for (pdi = predef.formats.head; pdi != NULL; pdi = (pdi->link).next) {
+    const char *obj_fname;
     char obj_filt_fname[PATH_NAME_MAX];
     if (filt_name) {
       ink_string_concatenate_strings_n(obj_filt_fname, PATH_NAME_MAX, pdi->filename, "-", filt_name, NULL);
@@ -943,7 +886,7 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
 // pre-defined formats.
 //
 LogFilter *
-LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
+LogConfig::split_by_protocol(const PreDefinedFormatList & predef)
 {
   if (!separate_icp_logs) {
     return NULL;
@@ -968,7 +911,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
   if (separate_icp_logs) {
     if (separate_icp_logs == 1) {
       filter[0] = NEW(new LogFilterInt(filter_name[icp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[icp]));
-      create_pre_defined_objects_with_filter(pre_def_info_list, 1, filter, name[icp]);
+      create_pre_defined_objects_with_filter(predef, 1, filter, name[icp]);
       delete filter[0];
     }
     filter_val[n++] = value[icp];
@@ -991,7 +934,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
 }
 
 size_t
-  LogConfig::split_by_hostname(const PreDefinedFormatInfoList & pre_def_info_list, LogFilter * reject_protocol_filter)
+  LogConfig::split_by_hostname(const PreDefinedFormatList & predef, LogFilter * reject_protocol_filter)
 {
   size_t n_hosts;
   char **host = read_log_hosts_file(&n_hosts);  // allocates memory for array
@@ -1017,7 +960,7 @@ size_t
         NEW(new LogFilterString(filter_name,
                                 shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]));
 
-      create_pre_defined_objects_with_filter(pre_def_info_list, num_filt + 1, rp_ah, host[i], true);
+      create_pre_defined_objects_with_filter(predef, num_filt + 1, rp_ah, host[i], true);
       delete rp_ah[num_filt];
     }
 
@@ -1037,7 +980,7 @@ size_t
     // hosts other than those specified in the hosts file and for
     // those protocols that do not have their own file
     //
-    create_pre_defined_objects_with_filter(pre_def_info_list, num_filt + 1, rp_rh);
+    create_pre_defined_objects_with_filter(predef, num_filt + 1, rp_rh);
     delete rp_rh[num_filt];
 
     delete[]host;               // deallocate memory allocated by
@@ -1075,18 +1018,19 @@ LogConfig::setup_log_objects()
 
   // gather the config information for the pre-defined formats
   //
-  PreDefinedFormatInfoList pre_def_info_list;
-  setup_pre_defined_info(&pre_def_info_list);
+  PreDefinedFormatList predef;
+
+  predef.init(this);
 
   // do protocol splitting
   //
-  LogFilter *reject_protocol_filter = split_by_protocol(pre_def_info_list);
+  LogFilter *reject_protocol_filter = split_by_protocol(predef);
 
   // do host splitting
   //
   size_t num_hosts = 0;
   if (separate_host_logs) {
-    num_hosts = split_by_hostname(pre_def_info_list, reject_protocol_filter);
+    num_hosts = split_by_hostname(predef, reject_protocol_filter);
   }
 
   if (num_hosts == 0) {
@@ -1097,7 +1041,7 @@ LogConfig::setup_log_objects()
     //
     LogFilter *f[1];
     f[0] = reject_protocol_filter;
-    create_pre_defined_objects_with_filter(pre_def_info_list, 1, f);
+    create_pre_defined_objects_with_filter(predef, 1, f);
   }
 
   delete reject_protocol_filter;
@@ -1140,12 +1084,6 @@ LogConfig::setup_log_objects()
 
   if (is_debug_tag_set("log")) {
     log_object_manager.display();
-  }
-
-  PreDefinedFormatInfo *pdfi;
-  while (!pre_def_info_list.empty()) {
-    pdfi = pre_def_info_list.pop();
-    delete pdfi;
   }
 }
 

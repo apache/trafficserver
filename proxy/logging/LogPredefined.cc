@@ -27,16 +27,18 @@
 #include "LogFormat.h"
 
 // predefined formats
-static const char squid_format[] =
+const char * const PreDefinedFormatInfo::squid =
   "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct> %<xid>";
 
-static const char common_format[] = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>";
+const char * const PreDefinedFormatInfo::common =
+  "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>";
 
-static const char extended_format[] =
+const char * const PreDefinedFormatInfo::extended =
   "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
   "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>";
 
-static const char extended2_format[] = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
+const char * const PreDefinedFormatInfo::extended2 =
+  "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
   "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>";
 
 PreDefinedFormatList::PreDefinedFormatList()
@@ -46,8 +48,8 @@ PreDefinedFormatList::PreDefinedFormatList()
 PreDefinedFormatList::~PreDefinedFormatList()
 {
   PreDefinedFormatInfo * info;
-  while (!this->list.empty()) {
-    info = this->list.pop();
+  while (!this->formats.empty()) {
+    info = this->formats.pop();
     delete info;
   }
 }
@@ -57,36 +59,36 @@ PreDefinedFormatList::init(LogConfig * config)
 {
   LogFormat *fmt;
 
-  fmt = NEW(new LogFormat("squid", squid_format));
+  fmt = NEW(new LogFormat("squid", PreDefinedFormatInfo::squid));
   config->global_format_list.add(fmt, false);
   Debug("log", "squid format added to the global format list");
 
   if (config->squid_log_enabled) {
-    this->list.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->squid_log_name, config->squid_log_is_ascii, config->squid_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->squid_log_name, config->squid_log_is_ascii, config->squid_log_header)));
   }
 
-  fmt = NEW(new LogFormat("common", common_format));
+  fmt = NEW(new LogFormat("common", PreDefinedFormatInfo::common));
   config->global_format_list.add(fmt, false);
   Debug("log", "common format added to the global format list");
 
   if (config->common_log_enabled) {
-    this->list.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->common_log_name, config->common_log_is_ascii, config->common_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->common_log_name, config->common_log_is_ascii, config->common_log_header)));
   }
 
-  fmt = NEW(new LogFormat("extended", extended_format));
+  fmt = NEW(new LogFormat("extended", PreDefinedFormatInfo::extended));
   config->global_format_list.add(fmt, false);
   Debug("log", "extended format added to the global format list");
 
   if (config->extended_log_enabled) {
-    this->list.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended_log_name, config->extended_log_is_ascii, config->extended_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended_log_name, config->extended_log_is_ascii, config->extended_log_header)));
   }
 
-  fmt = NEW(new LogFormat("extended2", extended2_format));
+  fmt = NEW(new LogFormat("extended2", PreDefinedFormatInfo::extended2));
   config->global_format_list.add(fmt, false);
   Debug("log", "extended2 format added to the global format list");
 
   if (config->extended2_log_enabled) {
-    this->list.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended2_log_name, config->extended2_log_is_ascii, config->extended2_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended2_log_name, config->extended2_log_is_ascii, config->extended2_log_header)));
   }
 
 }

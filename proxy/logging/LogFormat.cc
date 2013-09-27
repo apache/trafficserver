@@ -52,31 +52,19 @@
 //
 bool LogFormat::m_tagging_on = false;
 
-// predefined formats
-//
-const char *const LogFormat::squid_format =
-  "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct> %<xid>";
-
-const char *const LogFormat::common_format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>";
-
-const char *const LogFormat::extended_format =
-  "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
-  "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>";
-
-const char *const LogFormat::extended2_format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
-  "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>";
-
 /*-------------------------------------------------------------------------
   LogFormat::setup
   -------------------------------------------------------------------------*/
 
-void
+bool
 LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec)
 {
-  if (name == NULL && format_str == NULL) {
-    Note("No name or field symbols for this format");
-    m_valid = false;
-  } else {
+  if (name == NULL) {
+    Note("missing log format name");
+    return false;
+  }
+
+  if (format_str) {
     const char *tag = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
     m_format_str = (char *)ats_malloc(m_format_str_size);
@@ -100,7 +88,14 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
 
     ats_free(fieldlist_str);
     ats_free(printf_str);
+
+    // We are only valid if init_variables() says we are.
+    return true;
   }
+
+  // We don't have a format string (ie. this will be a raw text log, so we are always valid.
+  m_valid = true;
+  return true;
 }
 
 /*-------------------------------------------------------------------------
@@ -176,57 +171,6 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
   }
 }
 
-
-/*-------------------------------------------------------------------------
-  LogFormat::LogFormat
-
-  This constructor builds a LogFormat object for one of the pre-defined
-  format types.  Only the type is needed since we know everything else we
-  need to about the pre-defined formats.
-  -------------------------------------------------------------------------*/
-
-LogFormat::LogFormat(LogFormatType type)
-  : m_interval_sec(0),
-    m_interval_next(0),
-    m_agg_marshal_space(NULL),
-    m_valid(false),
-    m_name_str(NULL),
-    m_name_id(0),
-    m_fieldlist_str(NULL),
-    m_fieldlist_id(0),
-    m_field_count(0),
-    m_printf_str(NULL),
-    m_aggregate(false),
-    m_format_str(NULL)
-{
-  switch (type) {
-  case SQUID_LOG:
-    setup("squid", (char *) squid_format);
-    break;
-  case COMMON_LOG:
-    setup("common", (char *) common_format);
-    break;
-  case EXTENDED_LOG:
-    setup("extended", (char *) extended_format);
-    break;
-  case EXTENDED2_LOG:
-    setup("extended2", (char *) extended2_format);
-    break;
-    // For text logs, there is no format string; we'll simply log the
-    // entire entry as a string without any field substitutions.  To
-    // indicate this, the format_str will be NULL
-    //
-  case TEXT_LOG:
-    m_name_str = ats_strdup("text");
-    m_valid = true;
-    break;
-  default:
-    Note("Invalid log format type %d", type);
-    m_valid = false;
-  }
-  m_format_type = type;
-}
-
 /*-------------------------------------------------------------------------
   LogFormat::LogFormat
 
@@ -251,7 +195,10 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
     m_format_str(NULL)
 {
   setup(name, format_str, interval_sec);
-  m_format_type = CUSTOM_LOG;
+
+  // A TEXT_LOG is a log without a format string, everything else is a CUSTOM_LOG. It's possible that we could get
+  // rid of log types altogether, but LogFile currently tests whether a format is a TEXT_LOG format ...
+  m_format_type = format_str ? CUSTOM_LOG : TEXT_LOG;
 }
 
 //-----------------------------------------------------------------------------
@@ -776,17 +723,6 @@ LogFormatList::find_by_name(const char *name) const
 {
   for (LogFormat * f = first(); f; f = next(f)) {
     if (!strcmp(f->name(), name)) {
-      return f;
-    }
-  }
-  return NULL;
-}
-
-LogFormat *
-LogFormatList::find_by_type(LogFormatType type, int32_t id) const
-{
-  for (LogFormat * f = first(); f; f = next(f)) {
-    if ((f->type() == type) && (f->name_id() == id)) {
       return f;
     }
   }

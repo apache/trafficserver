@@ -30,7 +30,6 @@
 #include <stdio.h>
 
 #include "libts.h"
-#include "LogFormatType.h"
 #include "LogBufferSink.h"
 
 class LogSock;
@@ -155,8 +154,8 @@ public:
     return (m_file_format == BINARY_LOG ? "binary" : (m_file_format == ASCII_PIPE ? "ascii_pipe" : "ascii"));
   }
 
-  static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, char *alt_format = NULL);
-  int write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format = NULL);
+  static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, const char *alt_format = NULL);
+  int write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt_format = NULL);
   static bool rolled_logfile(char *file);
   static bool exists(const char *pathname);
 

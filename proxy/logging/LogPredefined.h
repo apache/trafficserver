@@ -41,7 +41,14 @@ struct PreDefinedFormatInfo
   PreDefinedFormatInfo(LogFormat * fmt, const char * fname, bool ascii, const char * hdr)
     :format(fmt), filename(fname), is_ascii(ascii), header(hdr)
   { }
+
+  static const char * const squid;
+  static const char * const common;
+  static const char * const extended;
+  static const char * const extended2;
 };
+
+typedef Queue<PreDefinedFormatInfo> PreDefinedFormatInfoList;
 
 struct PreDefinedFormatList
 {
@@ -52,7 +59,7 @@ struct PreDefinedFormatList
   // adding the predefined LogFormats to the LogConfig global_format_list.
   void init(LogConfig * config);
 
-  Queue<PreDefinedFormatInfo> list;
+  PreDefinedFormatInfoList formats;
 };
 
 #endif /* LOG_PREDEFINED_H */

@@ -49,8 +49,6 @@
 
 #include "LogUtils.h"
 #include "LogLimits.h"
-#include "LogFormatType.h"
-
 
 
 /*-------------------------------------------------------------------------

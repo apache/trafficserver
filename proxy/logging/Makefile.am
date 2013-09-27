@@ -59,7 +59,6 @@ liblogging_a_SOURCES = \
   LogFilter.h \
   LogFormat.cc \
   LogFormat.h \
-  LogFormatType.h \
   LogHost.cc \
   LogHost.h \
   LogLimits.h \

@@ -43,6 +43,7 @@
 #include "LogBuffer.h"
 #include "LogUtils.h"
 #include "LogSock.h"
+#include "LogPredefined.h"
 #include "Log.h"
 
 // logcat-specific command-line flags
@@ -163,15 +164,15 @@ process_file(int in_fd, int out_fd)
     // see if there is an alternate format request from the command
     // line
     //
-    char *alt_format = NULL;
+    const char * alt_format = NULL;
     if (squid_flag)
-      alt_format = (char *) LogFormat::squid_format;
+      alt_format = PreDefinedFormatInfo::squid;
     if (clf_flag)
-      alt_format = (char *) LogFormat::common_format;
+      alt_format = PreDefinedFormatInfo::common;
     if (elf_flag)
-      alt_format = (char *) LogFormat::extended_format;
+      alt_format = PreDefinedFormatInfo::extended;
     if (elf2_flag)
-      alt_format = (char *) LogFormat::extended2_format;
+      alt_format = PreDefinedFormatInfo::extended2;
 
     // convert the buffer to ascii entries and place onto stdout
     //

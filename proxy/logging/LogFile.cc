@@ -554,7 +554,7 @@ done:
   -------------------------------------------------------------------------*/
 
 int
-LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, char *alt_format)
+LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, const char *alt_format)
 {
   ink_assert(buffer_header != NULL);
   ink_assert(fd >= 0);
@@ -618,7 +618,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
 }
 
 int
-LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format)
+LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt_format)
 {
   Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
   ink_assert(buffer_header != NULL);

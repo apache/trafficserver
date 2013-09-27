@@ -1011,7 +1011,7 @@ Log::init_when_enabled()
     }
     // setup global scrap object
     //
-    global_scrap_format = NEW(new LogFormat(TEXT_LOG));
+    global_scrap_format = MakeTextLogFormat();
     global_scrap_object =
       NEW(new LogObject(global_scrap_format,
                         Log::config->logfile_dir,
