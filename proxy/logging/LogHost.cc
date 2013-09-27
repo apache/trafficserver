@@ -241,7 +241,7 @@ LogHost::create_orphan_LogFile_object()
 
   // should check for conflicts with orphan filename
   //
-  m_orphan_file = NEW(new LogFile(name_buf, NULL, ASCII_LOG, m_object_signature));
+  m_orphan_file = NEW(new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature));
   ink_assert(m_orphan_file != NULL);
   ats_free(name_buf);
 }

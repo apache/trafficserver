@@ -196,9 +196,9 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
 {
   setup(name, format_str, interval_sec);
 
-  // A TEXT_LOG is a log without a format string, everything else is a CUSTOM_LOG. It's possible that we could get
-  // rid of log types altogether, but LogFile currently tests whether a format is a TEXT_LOG format ...
-  m_format_type = format_str ? CUSTOM_LOG : TEXT_LOG;
+  // A LOG_FORMAT_TEXT is a log without a format string, everything else is a LOG_FORMAT_CUSTOM. It's possible that we could get
+  // rid of log types altogether, but LogFile currently tests whether a format is a LOG_FORMAT_TEXT format ...
+  m_format_type = format_str ? LOG_FORMAT_CUSTOM : LOG_FORMAT_TEXT;
 }
 
 //-----------------------------------------------------------------------------
@@ -224,7 +224,7 @@ LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *pr
     m_format_str(NULL)
 {
   init_variables(name, fieldlist_str, printf_str, interval_sec);
-  m_format_type = CUSTOM_LOG;
+  m_format_type = LOG_FORMAT_CUSTOM;
 }
 
 /*-------------------------------------------------------------------------
@@ -249,7 +249,7 @@ LogFormat::LogFormat(const LogFormat & rhs)
     m_format_type(rhs.m_format_type)
 {
   if (m_valid) {
-    if (m_format_type == TEXT_LOG) {
+    if (m_format_type == LOG_FORMAT_TEXT) {
       m_name_str = ats_strdup(rhs.m_name_str);
     } else {
       m_format_str = rhs.m_format_str ? ats_strdup(rhs.m_format_str) : 0;
@@ -387,9 +387,9 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
     return NULL;
   }
   if (!strcasecmp(token, "ASCII")) {
-    *file_type = ASCII_LOG;
+    *file_type = LOG_FILE_ASCII;
   } else if (!strcasecmp(token, "BINARY")) {
-    *file_type = BINARY_LOG;
+    *file_type = LOG_FILE_BINARY;
   } else {
     Debug("log-format", "%s is not a valid file format (ASCII or BINARY)", token);
     return NULL;
@@ -654,8 +654,8 @@ LogFormat::display(FILE * fd)
     "COMMON_LOG",
     "EXTENDED_LOG",
     "EXTENDED2_LOG",
-    "CUSTOM_LOG",
-    "TEXT_LOG"
+    "LOG_FORMAT_CUSTOM",
+    "LOG_FORMAT_TEXT"
   };
 
   fprintf(fd, "--------------------------------------------------------\n");

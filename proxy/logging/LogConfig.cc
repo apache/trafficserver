@@ -839,14 +839,14 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatList & p
     if (force_extension) {
       ink_string_append(obj_filt_fname,
                         (char *) (pdi->is_ascii ?
-                                  ASCII_LOG_OBJECT_FILENAME_EXTENSION :
-                                  BINARY_LOG_OBJECT_FILENAME_EXTENSION), PATH_NAME_MAX);
+                                  LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION :
+                                  LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION), PATH_NAME_MAX);
     }
     // create object with filters
     //
     LogObject *obj;
     obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
-                            pdi->is_ascii ? ASCII_LOG : BINARY_LOG,
+                            pdi->is_ascii ? LOG_FILE_ASCII : LOG_FILE_BINARY,
                             pdi->header, rolling_enabled,
                             collation_preproc_threads, rolling_interval_sec,
                             rolling_offset_hr, rolling_size_mb));
@@ -2061,12 +2061,12 @@ LogConfig::read_xml_log_config(int from_memory)
       }
       // file format
       //
-      LogFileFormat file_type = ASCII_LOG;      // default value
+      LogFileFormat file_type = LOG_FILE_ASCII;      // default value
       if (mode.count()) {
         char *mode_str = mode.dequeue();
         file_type = (strncasecmp(mode_str, "bin", 3) == 0 ||
                      (mode_str[0] == 'b' && mode_str[1] == 0) ?
-                     BINARY_LOG : (strcasecmp(mode_str, "ascii_pipe") == 0 ? ASCII_PIPE : ASCII_LOG));
+                     LOG_FILE_BINARY : (strcasecmp(mode_str, "ascii_pipe") == 0 ? LOG_FILE_PIPE : LOG_FILE_ASCII));
       }
       // rolling
       //

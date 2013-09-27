@@ -151,7 +151,7 @@ public:
 
   LogFileFormat get_format() const { return m_file_format; }
   const char *get_format_name() const {
-    return (m_file_format == BINARY_LOG ? "binary" : (m_file_format == ASCII_PIPE ? "ascii_pipe" : "ascii"));
+    return (m_file_format == LOG_FILE_BINARY ? "binary" : (m_file_format == LOG_FILE_PIPE ? "ascii_pipe" : "ascii"));
   }
 
   static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, const char *alt_format = NULL);
@@ -162,7 +162,7 @@ public:
   void display(FILE * fd = stdout);
   int open_file();
 
-  off_t get_size_bytes() const { return m_file_format != ASCII_PIPE? m_bytes_written : 0; };
+  off_t get_size_bytes() const { return m_file_format != LOG_FILE_PIPE? m_bytes_written : 0; };
   int do_filesystem_checks() { return 0; }; // TODO: this need to be tidy up when to redo the file checking
 
 public:

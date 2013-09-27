@@ -329,12 +329,12 @@ public:
   ~LogFlushData()
   {
     switch (m_logfile->m_file_format) {
-    case BINARY_LOG:
+    case LOG_FILE_BINARY:
       logbuffer = (LogBuffer *)m_data;
       LogBuffer::destroy(logbuffer);
       break;
-    case ASCII_LOG:
-    case ASCII_PIPE:
+    case LOG_FILE_ASCII:
+    case LOG_FILE_PIPE:
       free(m_data);
       break;
     case N_LOGFILE_TYPES:

@@ -283,8 +283,8 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   int error = NO_ERROR;
 
   if (n_file_arguments) {
-    int bin_ext_len = strlen(BINARY_LOG_OBJECT_FILENAME_EXTENSION);
-    int ascii_ext_len = strlen(ASCII_LOG_OBJECT_FILENAME_EXTENSION);
+    int bin_ext_len = strlen(LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION);
+    int ascii_ext_len = strlen(LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION);
 
     for (unsigned i = 0; i < n_file_arguments; ++i) {
       int in_fd = open(file_arguments[i], O_RDONLY);
@@ -301,13 +301,13 @@ main(int /* argc ATS_UNUSED */, char *argv[])
           //
           int n = strlen(file_arguments[i]);
           int copy_len = (n >= bin_ext_len ? (strcmp(&file_arguments[i][n - bin_ext_len],
-                                                     BINARY_LOG_OBJECT_FILENAME_EXTENSION) ==
+                                                     LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION) ==
                                               0 ? n - bin_ext_len : n) : n);
 
           char *out_filename = (char *)ats_malloc(copy_len + ascii_ext_len + 1);
 
           memcpy(out_filename, file_arguments[i], copy_len);
-          memcpy(&out_filename[copy_len], ASCII_LOG_OBJECT_FILENAME_EXTENSION, ascii_ext_len);
+          memcpy(&out_filename[copy_len], LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION, ascii_ext_len);
           out_filename[copy_len + ascii_ext_len] = 0;
 
           out_fd = open_output_file(out_filename);

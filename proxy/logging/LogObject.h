@@ -48,9 +48,9 @@
   consist of a list of LogObjects.
   -------------------------------------------------------------------------*/
 
-#define ASCII_LOG_OBJECT_FILENAME_EXTENSION ".log"
-#define BINARY_LOG_OBJECT_FILENAME_EXTENSION ".blog"
-#define ASCII_PIPE_OBJECT_FILENAME_EXTENSION ".pipe"
+#define LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION ".log"
+#define LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION ".blog"
+#define LOG_FILE_PIPE_OBJECT_FILENAME_EXTENSION ".pipe"
 
 #define FLUSH_ARRAY_SIZE (512*4)
 

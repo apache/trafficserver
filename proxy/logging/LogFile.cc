@@ -219,7 +219,7 @@ LogFile::open_file()
 
   int flags, perms;
 
-  if (m_file_format == ASCII_PIPE) {
+  if (m_file_format == LOG_FILE_PIPE) {
     if (mkfifo(m_name, S_IRUSR | S_IWUSR) < 0) {
       if (errno != EEXIST) {
         Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
@@ -268,7 +268,7 @@ LogFile::open_file()
   // file.
   //
   if (!file_exists) {
-    if (m_file_format != BINARY_LOG && m_header != NULL) {
+    if (m_file_format != LOG_FILE_BINARY && m_header != NULL) {
       Debug("log-file", "writing header to LogFile %s", m_name);
       writeln(m_header, strlen(m_header), m_fd, m_name);
     }
@@ -501,7 +501,7 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
     m_start_time = buffer_header->low_timestamp;
   m_end_time = buffer_header->high_timestamp;
 
-  if (m_file_format == BINARY_LOG) {
+  if (m_file_format == LOG_FILE_BINARY) {
     //
     // Ok, now we need to write the binary buffer to the file, and we
     // can do so in one swift write.  The question is, do we write the
@@ -529,7 +529,7 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
     //
     return 0;
   }
-  else if (m_file_format == ASCII_LOG || m_file_format == ASCII_PIPE) {
+  else if (m_file_format == LOG_FILE_ASCII || m_file_format == LOG_FILE_PIPE) {
     write_ascii_logbuffer3(buffer_header);
     ret = 0;
   }
@@ -652,7 +652,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt
     fmt_entry_count = 0;
     fmt_buf_bytes = 0;
 
-    if (m_file_format == ASCII_PIPE)
+    if (m_file_format == LOG_FILE_PIPE)
       ascii_buffer = (char *)malloc(m_max_line_size);
     else
       ascii_buffer = (char *)malloc(m_ascii_buffer_size);
@@ -693,7 +693,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt
       // record to avoid as much as possible overflowing the
       // pipe buffer
       //
-      if (m_file_format == ASCII_PIPE)
+      if (m_file_format == LOG_FILE_PIPE)
         break;
 
       if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size)

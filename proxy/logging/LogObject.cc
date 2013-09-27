@@ -97,9 +97,9 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
     m_format = new LogFormat(*format);
     m_buffer_manager = new LogBufferManager[m_flush_threads];
 
-    if (file_format == BINARY_LOG) {
+    if (file_format == LOG_FILE_BINARY) {
         m_flags |= BINARY;
-    } else if (file_format == ASCII_PIPE) {
+    } else if (file_format == LOG_FILE_PIPE) {
         m_flags |= WRITES_TO_PIPE;
     }
 
@@ -226,16 +226,16 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
   int ext_len = 0;
   if (i < 0) {                  // no extension, add one
     switch (file_format) {
-    case ASCII_LOG:
-      ext = ASCII_LOG_OBJECT_FILENAME_EXTENSION;
+    case LOG_FILE_ASCII:
+      ext = LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION;
       ext_len = 4;
       break;
-    case BINARY_LOG:
-      ext = BINARY_LOG_OBJECT_FILENAME_EXTENSION;
+    case LOG_FILE_BINARY:
+      ext = LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION;
       ext_len = 5;
       break;
-    case ASCII_PIPE:
-      ext = ASCII_PIPE_OBJECT_FILENAME_EXTENSION;
+    case LOG_FILE_PIPE:
+      ext = LOG_FILE_PIPE_OBJECT_FILENAME_EXTENSION;
       ext_len = 5;
       break;
     default:
@@ -831,7 +831,7 @@ TextLogObject::TextLogObject(const char *name, const char *log_dir,
                              int rolling_enabled, int flush_threads,
                              int rolling_interval_sec, int rolling_offset_hr,
                              int rolling_size_mb)
-  : LogObject(MakeTextLogFormat(), log_dir, name, ASCII_LOG, header,
+  : LogObject(MakeTextLogFormat(), log_dir, name, LOG_FILE_ASCII, header,
               rolling_enabled, flush_threads, rolling_interval_sec,
               rolling_offset_hr, rolling_size_mb)
 {
@@ -1064,7 +1064,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
         if (roll_file) {
           Warning("File %s will be rolled because a LogObject with "
                   "different format is requesting the same " "filename", filename);
-          LogFile logfile(filename, NULL, ASCII_LOG, 0);
+          LogFile logfile(filename, NULL, LOG_FILE_ASCII, 0);
           long time_now = LogUtils::timestamp();
 
           if (logfile.roll(time_now - log_object->get_rolling_interval(), time_now) == 0) {

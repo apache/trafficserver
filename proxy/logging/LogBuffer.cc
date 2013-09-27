@@ -629,7 +629,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
                     unsigned buffer_version, const char *alt_format)
 {
   ink_assert(entry != NULL);
-  ink_assert(type == CUSTOM_LOG || type == TEXT_LOG);
+  ink_assert(type == LOG_FORMAT_CUSTOM || type == LOG_FORMAT_TEXT);
   ink_assert(buf != NULL);
 
   char *read_from;              // keeps track of where we're reading from entry
@@ -638,7 +638,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
   read_from = (char *) entry + sizeof(LogEntryHeader);
   write_to = buf;
 
-  if (type == TEXT_LOG) {
+  if (type == LOG_FORMAT_TEXT) {
     //
     // text log entries are just strings, so simply move it into the
     // format buffer.

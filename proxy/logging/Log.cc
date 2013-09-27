@@ -1016,7 +1016,7 @@ Log::init_when_enabled()
       NEW(new LogObject(global_scrap_format,
                         Log::config->logfile_dir,
                         "scrapfile.log",
-                        BINARY_LOG, NULL,
+                        LOG_FILE_BINARY, NULL,
                         Log::config->rolling_enabled,
                         Log::config->collation_preproc_threads,
                         Log::config->rolling_interval_sec,
@@ -1277,7 +1277,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       bytes_written = 0;
       logfile = fdata->m_logfile;
 
-      if (logfile->m_file_format == BINARY_LOG) {
+      if (logfile->m_file_format == LOG_FILE_BINARY) {
 
         logbuffer = (LogBuffer *)fdata->m_data;
         LogBufferHeader *buffer_header = logbuffer->header();
@@ -1285,8 +1285,8 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
         buf = (char *)buffer_header;
         total_bytes = buffer_header->byte_count;
 
-      } else if (logfile->m_file_format == ASCII_LOG
-                 || logfile->m_file_format == ASCII_PIPE){
+      } else if (logfile->m_file_format == LOG_FILE_ASCII
+                 || logfile->m_file_format == LOG_FILE_PIPE){
 
         buf = (char *)fdata->m_data;
         total_bytes = fdata->m_len;
@@ -1505,8 +1505,8 @@ Log::match_logobject(LogBufferHeader * header)
     LogFormat *fmt = NEW(new LogFormat("__collation_format__", header->fmt_fieldlist(), header->fmt_printf()));
 
     if (fmt->valid()) {
-      LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ? BINARY_LOG :
-        (header->log_object_flags & LogObject::WRITES_TO_PIPE ? ASCII_PIPE : ASCII_LOG);
+      LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ? LOG_FILE_BINARY :
+        (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
 
       obj = NEW(new LogObject(fmt, Log::config->logfile_dir,
                               header->log_filename(), file_format, NULL,
