@@ -107,10 +107,10 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size,
   f->type_size = type_size;
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 
-  f->count = 0;
+  f->used = 0;
   f->allocated = 0;
   f->allocated_base = 0;
-  f->count_base = 0;
+  f->used_base = 0;
   *fl = f;
 #endif
 }
@@ -195,7 +195,7 @@ ink_freelist_new(InkFreeList * f)
 #endif /* MEMPROTECT */
 
       }
-      ink_atomic_increment((int *) &f->count, f->chunk_size);
+      ink_atomic_increment((int *) &f->used, f->chunk_size);
       ink_atomic_increment(&fastalloc_mem_in_use, (int64_t) f->chunk_size * f->type_size);
 
     } else {
@@ -223,7 +223,7 @@ ink_freelist_new(InkFreeList * f)
   while (result == 0);
   ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item))&(((uintptr_t)f->alignment)-1)));
 
-  ink_atomic_increment((int *) &f->count, 1);
+  ink_atomic_increment((int *) &f->used, 1);
   ink_atomic_increment(&fastalloc_mem_in_use, (int64_t) f->type_size);
 
   return TO_PTR(FREELIST_POINTER(item));
@@ -287,7 +287,7 @@ ink_freelist_free(InkFreeList * f, void *item)
   }
   while (result == 0);
 
-  ink_atomic_increment((int *) &f->count, -1);
+  ink_atomic_increment((int *) &f->used, -1);
   ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size);
 #endif /* TS_USE_RECLAIMABLE_FREELIST */
 #else
@@ -306,7 +306,7 @@ ink_freelists_snap_baseline()
   fll = freelists;
   while (fll) {
     fll->fl->allocated_base = fll->fl->allocated;
-    fll->fl->count_base = fll->fl->count;
+    fll->fl->used_base = fll->fl->used;
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST
@@ -332,8 +332,8 @@ ink_freelists_dump_baselinerel(FILE * f)
     if (a != 0) {
       fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %7u | %10u | memory/%s\n",
               (uint64_t)(fll->fl->allocated - fll->fl->allocated_base) * (uint64_t)fll->fl->type_size,
-              (uint64_t)(fll->fl->count - fll->fl->count_base) * (uint64_t)fll->fl->type_size,
-              fll->fl->count - fll->fl->count_base, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
+              (uint64_t)(fll->fl->used- fll->fl->used_base) * (uint64_t)fll->fl->type_size,
+              fll->fl->used - fll->fl->used_base, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     }
     fll = fll->next;
   }
@@ -357,7 +357,7 @@ ink_freelists_dump(FILE * f)
   while (fll) {
     fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n",
             (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
-            (uint64_t)fll->fl->count * (uint64_t)fll->fl->type_size, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
+            (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST

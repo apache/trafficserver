@@ -156,8 +156,8 @@ extern "C"
   {
     volatile head_p head;
     const char *name;
-    uint32_t type_size, chunk_size, count, allocated, alignment;
-    uint32_t allocated_base, count_base;
+    uint32_t type_size, chunk_size, used, allocated, alignment;
+    uint32_t allocated_base, used_base;
   };
 
   inkcoreapi extern volatile int64_t fastalloc_mem_in_use;
