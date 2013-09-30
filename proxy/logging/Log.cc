@@ -1382,7 +1382,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       //
       while (total_bytes - bytes_written) {
         if (Log::config->logging_space_exhausted) {
-          Warning("logging space exhausted, failed to write file:%s, have dropped (%d) bytes.",
+          Debug("log", "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.",
                   logfile->m_name, (total_bytes - bytes_written));
 
           RecIncrRawStat(log_rsb, mutex->thread_holding,

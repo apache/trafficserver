@@ -71,6 +71,7 @@ LogCollationClientSM::LogCollationClientSM(LogHost * log_host)
     m_pending_event(NULL),
     m_abort_vio(NULL),
     m_abort_buffer(NULL),
+    m_host_is_up(false),
     m_buffer_send_list(NULL),
     m_buffer_in_iocore(NULL),
     m_flow(LOG_COLL_FLOW_ALLOW),
@@ -262,6 +263,7 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
     Debug("log-coll", "[%d]client::client_auth - WRITE_COMPLETE", m_id);
 
     Note("[log-coll] host up [%s:%u]", m_log_host->ip_addr().toString(ipb, sizeof(ipb)), m_log_host->port());
+    m_host_is_up = true;
 
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
 
@@ -403,13 +405,15 @@ LogCollationClientSM::client_fail(int event, void * /* data ATS_UNUSED */)
     Debug("log-coll", "[%d]client::client_fail - SWITCH", m_id);
     m_client_state = LOG_COLL_CLIENT_FAIL;
 
-    Note("[log-coll] host down [%s:%u]", m_log_host->ip_addr().toString(ipb, sizeof ipb), m_log_host->m_port);
-    {
+    // avoid flooding log when host is down
+    if (m_host_is_up) {
+      Note("[log-coll] host down [%s:%u]", m_log_host->ip_addr().toString(ipb, sizeof ipb), m_log_host->m_port);
       char msg_buf[128];
       snprintf(msg_buf, sizeof(msg_buf), "Collation host %s:%u down",
                m_log_host->ip_addr().toString(ipb, sizeof ipb), m_log_host->m_port
       );
       REC_SignalManager(400, msg_buf);
+      m_host_is_up = false;
     }
 
     // close our NetVConnection (do I need to delete this)
