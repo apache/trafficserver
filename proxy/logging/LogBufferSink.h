@@ -42,7 +42,9 @@ public:
   // Of course, this function may not free memory directly, it
   // can delegate another function to do it.
   //
-  virtual void preproc_and_try_delete(LogBuffer * buffer) = 0;
+  // return 0 if success, -1 on error.
+  //
+  virtual int preproc_and_try_delete(LogBuffer * buffer) = 0;
   virtual ~ LogBufferSink()
   {
   };

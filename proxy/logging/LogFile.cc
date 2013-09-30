@@ -470,14 +470,15 @@ LogFile::roll(long interval_start, long interval_end)
   preprocess the given buffer data before write to target file
   and try to delete it when its reference become zero.
   -------------------------------------------------------------------------*/
-void
+int
 LogFile::preproc_and_try_delete(LogBuffer * lb)
 {
+  int ret = -1;
   LogBufferHeader *buffer_header;
 
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogFile %s; LogBuffer is NULL", m_name);
-    return;
+    return -1;
   }
 
   ink_atomic_increment(&lb->m_references, 1);
@@ -528,10 +529,11 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
     //
     // LogBuffer will be deleted in flush thread
     //
-    return;
+    return 0;
   }
   else if (m_file_format == ASCII_LOG || m_file_format == ASCII_PIPE) {
     write_ascii_logbuffer3(buffer_header);
+    ret = 0;
   }
   else {
     Note("Cannot write LogBuffer to LogFile %s; invalid file format: %d",
@@ -540,7 +542,7 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
 
 done:
   LogBuffer::destroy(lb);
-  return;
+  return ret;
 }
 
 /*-------------------------------------------------------------------------

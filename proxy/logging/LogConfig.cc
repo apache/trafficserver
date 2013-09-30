@@ -2308,13 +2308,24 @@ LogConfig::read_xml_log_config(int from_memory)
         char *host;
         SimpleTokenizer tok(collationHosts_str, ',');
         while (host = tok.getNext(), host != 0) {
-          LogHost *lh = NEW(new LogHost(obj->get_full_filename(), obj->get_signature()));
 
-          if (lh->set_name_or_ipstr(host)) {
-            Warning("Could not set \"%s\" as collation host", host);
-            delete lh;
-          } else {
-            obj->add_loghost(lh, false);
+          LogHost *prev = NULL;
+          char *failover_str;
+          SimpleTokenizer failover_tok(host, '|'); // split failover hosts
+
+          while (failover_str = failover_tok.getNext(), failover_str != 0) {
+            LogHost *lh = NEW(new LogHost(obj->get_full_filename(), obj->get_signature()));
+
+            if (lh->set_name_or_ipstr(failover_str)) {
+              Warning("Could not set \"%s\" as collation host", host);
+              delete lh;
+            } else if (!prev){
+              obj->add_loghost(lh, false);
+              prev = lh;
+            } else {
+              prev->failover_link.next = lh;
+              prev = lh;
+            }
           }
         }
       }
