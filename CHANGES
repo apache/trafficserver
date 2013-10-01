@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2260] Avoid flooding log when log host is down.
+
+  *) [TS-2259] Introduce failover hosts for logging system.
+
   *) [TS-2256] Mem stats info is bad when enable reclaimable-freelist.
 
   *) [TS-2255] TS should not flood printing after log space reach the limit.
