@@ -44,7 +44,7 @@ the cluster) or ``LOCAL`` (only the local machine)
 
 ``DATATYPE`` is one of ``INT`` (integer), ``STRING`` (string), ``FLOAT``
 (floating point).
-
+:
 A variable marked as ``Deprecated`` is still functional but should be avoided
 as it may be removed in a future release without warning.
 
@@ -181,7 +181,7 @@ otherwise, Traffic Server uses the Traffic Server user account name as the defau
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
    The facility used to record system log files. Refer to
-   `Understanding Traffic Server Log Files <../working-log-files#UnderstandingTrafficServerLogFiles>`_.
+   :ref:`Understanding Traffic Server Log Files <working-log-files.en.html#understanding-traffic-server-log-files>`_.
 
 .. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
 
@@ -622,7 +622,7 @@ Parent Proxy Configuration
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the parent caching option. Refer to Hierarchical Caching <../hierachical-caching>_.
+   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`Hierarchical Caching <../hierachical-caching>`.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
@@ -781,7 +781,7 @@ Congestion Control
 
    Enables (``1``) or disables (``0``) the Congestion Control option, which configures Traffic Server to stop forwarding
    HTTP requests to origin servers when they become congested. Traffic Server sends the client a message to retry the
-   congested origin server later. Refer to `Using Congestion Control <../http-proxy-caching#UsingCongestionControl>`_.
+   congested origin server later. Refer to :ref:`Using Congestion Control <http-proxy-caching#UsingCongestionControl>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.enabled INT 0
 
@@ -911,7 +911,7 @@ Cache Control
    :reloadable:
 
    Enables (``1``) or disables (``0``) ability to a read cached object while the another connection is completing the write to cache for
-   the same object.
+   the same object. Several other configuration values need to be set for this to become active. See :ref:`Reducing Origin Server Requests <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>` 
 
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 512
    :reloadable:
@@ -1013,11 +1013,6 @@ Cache Control
    Enables (``1``) or disables (``0``) the ability to read a cached object while another connection is completing a write to cache
    for the same object.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
-   :reloadable:
-
-   Sets a minimum fuzz time; the default value is ``0``. **Effective fuzz time** is a calculation in the range
-   (``fuzz.min_time`` - ``fuzz.min_time``).
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 0
    :reloadable:
@@ -1061,6 +1056,10 @@ Cache Control
    :reloadable:
 
    When enabled (``1``), Traffic Server ignores any ``Cache-Control:  max-age`` headers from the client.
+
+.. ts:cv:: CONFIG proxy.config.cache.max_doc_size INT 0
+
+   Specifies the maximum object size that will be cached. ``0`` is unlimited.
 
 .. ts:cv:: CONFIG proxy.config.cache.permit.pinning INT 0
    :reloadable:
@@ -1136,12 +1135,17 @@ Heuristic Expiration
    :reloadable:
 
    How often Traffic Server checks for an early refresh, during the period before the document stale time. The interval
-   specified must be in seconds.
+   specified must be in seconds. See :ref:`Fuzzy Revalidation <http-proxy-caching.en.html#fuzzy-revalidation>`
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.00500
    :reloadable:
 
    The probability that a refresh is made on a document during the specified fuzz time.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
+   :reloadable:
+
+   Handles requests with a TTL less than fuzz.time – it allows for different times to evaluate the probability of revalidation for small TTLs and big TTLs. Objects with small TTLs will start "rolling the revalidation dice" near the fuzz.min_time, while objects with large TTLs would start at fuzz.time. A logarithmic like function between determines the revalidation evaluation start time (which will be between fuzz.min_time and fuzz.time). As the object gets closer to expiring, the window start becomes more likely. By default this setting is not enabled, but should be enabled anytime you have objects with small TTLs. The default value is ``0``.
 
 Dynamic Content & Content Negotiation
 =====================================
@@ -2031,6 +2035,4 @@ These are referenced but not documented. Please contribute a definition.
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 
-.. ts:cv:: CONFIG proxy.configl.cache.max_doc_size INT 0
 
-   Enable caching HTTP content.
