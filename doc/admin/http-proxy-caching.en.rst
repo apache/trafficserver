@@ -801,7 +801,7 @@ Once all this enabled, you have something that is very close, but not quite the 
 
 Fuzzy Revalidation
 ------------------
-Traffic Server can be set to attempt to revalidate an object before it becomes stale in cache. :file:`records.config`:: contains the settings:
+Traffic Server can be set to attempt to revalidate an object before it becomes stale in cache. :file:`records.config` contains the settings:
 
    CONFIG :ts:cv:`proxy.config.http.cache.fuzz.time` ``INT 240``
    CONFIG :ts:cv:`proxy.config.http.cache.fuzz.min_time` ``INT 0``
