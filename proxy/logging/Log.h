@@ -404,7 +404,7 @@ public:
   inkcoreapi static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
   // public data members
-  inkcoreapi static TextLogObject *error_log;
+  inkcoreapi static LogObject *error_log;
   static LogConfig *config;
   static LogFieldList global_field_list;
 //    static LogBufferList global_buffer_full_list; vl: not used
@@ -413,12 +413,6 @@ public:
   static LogFormat *global_scrap_format;
   static LogObject *global_scrap_object;
   static LoggingMode logging_mode;
-
-  // keep track of inactive objects
-  static LogObject **inactive_objects;
-  static size_t numInactiveObjects;
-  static size_t maxInactiveObjects;
-  static void add_to_inactive(LogObject * obj);
 
   // logging thread stuff
   static EventNotify *preproc_notify;
@@ -442,6 +436,7 @@ public:
 
   Log();                        // shut up stupid DEC C++ compiler
 
+  friend void RegressionTest_LogObjectManager_Transfer(RegressionTest *, int, int *);
 private:
 
   static void periodic_tasks(long time_now);

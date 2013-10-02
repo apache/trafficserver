@@ -75,7 +75,7 @@ private:
   void _build_name(const char *filename);
 
 public:
- MetaInfo(char *filename)
+ MetaInfo(const char *filename)
    : _flags(0)
   {
     _build_name(filename);
@@ -144,10 +144,10 @@ public:
 
   int roll(long interval_start, long interval_end);
 
-  char *get_name() const { return m_name; }
+  const char *get_name() const { return m_name; }
 
   void change_header(const char *header);
-  void change_name(char *new_name);
+  void change_name(const char *new_name);
 
   LogFileFormat get_format() const { return m_file_format; }
   const char *get_format_name() const {
@@ -175,7 +175,9 @@ public:
 
 public:
   LogFileFormat m_file_format;
+private:
   char *m_name;
+public:
   char *m_header;
   uint64_t m_signature;           // signature of log object stored
   MetaInfo *m_meta_info;

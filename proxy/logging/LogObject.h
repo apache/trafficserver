@@ -148,9 +148,9 @@ public:
   void displayAsXML(FILE * fd = stdout, bool extended = false);
   static uint64_t compute_signature(LogFormat * format, char *filename, unsigned int flags);
 
-  char *get_original_filename() const { return m_filename; }
-  char *get_full_filename() const { return (m_alt_filename ? m_alt_filename : m_filename); }
-  char *get_base_filename() const { return m_basename; }
+  const char *get_original_filename() const { return m_filename; }
+  const char *get_full_filename() const { return (m_alt_filename ? m_alt_filename : m_filename); }
+  const char *get_base_filename() const { return m_basename; }
 
   off_t get_file_size_bytes();
 
@@ -325,7 +325,7 @@ public:
 private:
 
   int _manage_object(LogObject * log_object, bool is_api_object, int maxConflicts);
-  static bool _has_internal_filename_conflict(char *filename, LogObject ** objects, int numObjects);
+  static bool _has_internal_filename_conflict(const char *filename, LogObject ** objects, int numObjects);
   int _solve_filename_conflicts(LogObject * log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject * log_obj, int maxConflicts, int fileNum = 0);
   void _add_object(LogObject * object);
@@ -333,28 +333,8 @@ private:
   int _roll_files(long time_now, bool roll_only_if_needed);
 
 public:
- LogObjectManager()
-   : _numObjects(0), _maxObjects(LOG_OBJECT_ARRAY_DELTA), _numAPIobjects(0), _maxAPIobjects(LOG_OBJECT_ARRAY_DELTA)
-  {
-    _objects = new LogObject *[_maxObjects];
-    _APIobjects = new LogObject *[_maxAPIobjects];
-    _APImutex = NEW(new ink_mutex);
-    ink_mutex_init(_APImutex, "_APImutex");
-  }
-
-  ~LogObjectManager() {
-    for (unsigned int i = 0; i < _maxObjects; i++) {
-      delete _objects[i];
-    }
-    delete[] _objects;
-
-    for (unsigned int i = 0; i < _maxAPIobjects; i++) {
-      delete _APIobjects[i];
-    }
-    delete[] _APIobjects;
-
-    delete _APImutex;
-  }
+  LogObjectManager();
+  ~LogObjectManager();
 
   // we don't define a destructor because the objects that the
   // LogObjectManager manages are either passed along to another
@@ -371,6 +351,9 @@ public:
   // return success
   bool unmanage_api_object(LogObject * logObject);
 
+  // Flush the buffers on all the managed log objects.
+  void flush_all_objects();
+
   LogObject *get_object_with_signature(uint64_t signature);
   void check_buffer_expiration(long time_now);
   size_t get_num_objects() const { return _numObjects; }
@@ -380,58 +363,15 @@ public:
   int log(LogAccess * lad);
   void display(FILE * str = stdout);
   void add_filter_to_all(LogFilter * filter);
-  LogObject *find_by_format_name(const char *name);
+  LogObject *find_by_format_name(const char *name) const ;
   size_t preproc_buffers(int idx);
   void open_local_pipes();
   void transfer_objects(LogObjectManager & mgr);
 
   bool has_api_objects() const  { return (_numAPIobjects > 0); }
 
-  size_t get_num_collation_clients();
+  size_t get_num_collation_clients() const;
 };
-
-inline int LogObjectManager::roll_files(long time_now)
-{
-    int num_rolled = 0;
-    for (size_t i=0; i < _numObjects; i++) {
-      num_rolled += _objects[i]->roll_files(time_now);
-    }
-    for (size_t i=0; i < _numAPIobjects; i++) {
-      num_rolled += _APIobjects[i]->roll_files(time_now);
-    }
-    return num_rolled;
-};
-
-inline void
-LogObjectManager::display(FILE * str)
-{
-  for (size_t i = 0; i < _numObjects; i++) {
-    _objects[i]->display(str);
-  }
-}
-
-inline LogObject *
-LogObjectManager::find_by_format_name(const char *name)
-{
-  for (size_t i = 0; i < _numObjects; i++) {
-    if (_objects[i]->m_format->name_id() == LogFormat::id_from_name(name)) {
-      return _objects[i];
-    }
-  }
-  return NULL;
-}
-
-inline size_t
-LogObjectManager::get_num_collation_clients()
-{
-  size_t coll_clients = 0;
-  for (size_t i = 0; i < _numObjects; i++) {
-    if (_objects[i]->is_collation_client()) {
-      ++coll_clients;
-    }
-  }
-  return coll_clients;
-}
 
 inline bool
 LogObject::operator==(LogObject & old)

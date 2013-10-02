@@ -39,7 +39,7 @@ class LogHost
   friend class LogCollationClientSM;
 
 public:
-  LogHost(char *object_filename, uint64_t object_signature);
+  LogHost(const char *object_filename, uint64_t object_signature);
   LogHost(const LogHost &);
   ~LogHost();
 

@@ -62,17 +62,11 @@
 #define PERIODIC_TASKS_INTERVAL 5 // TODO: Maybe this should be done as a config option
 
 // Log global objects
-inkcoreapi TextLogObject *Log::error_log = NULL;
-LogConfig *Log::config = NULL;
+inkcoreapi LogObject *Log::error_log = NULL;
 LogFieldList Log::global_field_list;
 LogFormat *Log::global_scrap_format = NULL;
 LogObject *Log::global_scrap_object = NULL;
 Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
-
-// Inactive objects
-LogObject **Log::inactive_objects;
-size_t Log::numInactiveObjects;
-size_t Log::maxInactiveObjects;
 
 // Flush thread stuff
 EventNotify *Log::preproc_notify;
@@ -102,54 +96,52 @@ RecRawStatBlock *log_rsb;
   This routine is invoked when the current LogConfig object says it needs
   to be changed (as the result of a manager callback).
   -------------------------------------------------------------------------*/
+
+LogConfig *Log::config = NULL;
+static unsigned log_configid = 0;
+
 void
 Log::change_configuration()
 {
+  LogConfig * prev = Log::config;
+  LogConfig * new_config = NULL;
+
   Debug("log-config", "Changing configuration ...");
 
-  LogConfig *new_config = NEW(new LogConfig);
+  new_config = NEW(new LogConfig);
   ink_assert(new_config != NULL);
   new_config->read_configuration_variables();
 
   // grab the _APImutex so we can transfer the api objects to
   // the new config
   //
-  ink_mutex_acquire(Log::config->log_object_manager._APImutex);
+  ink_mutex_acquire(prev->log_object_manager._APImutex);
   Debug("log-api-mutex", "Log::change_configuration acquired api mutex");
 
   new_config->init(Log::config);
 
-  // Swap in the new config object
-  //
+  // Make the new LogConfig active.
   ink_atomic_swap(&Log::config, new_config);
 
-  // Force new buffers for inactive objects
-  //
-  for (size_t i = 0; i < numInactiveObjects; i++) {
-    inactive_objects[i]->force_new_buffer();
-  }
+  // XXX There is a race condition with API objects. If TSTextLogObjectCreate()
+  // is called before the Log::config swap, then it will be blocked on the lock
+  // on the *old* LogConfig and register it's LogObject with that manager. If
+  // this happens, then the new TextLogObject will be immediately lost. Traffic
+  // Server would crash the next time the plugin referenced the freed object.
 
-  ink_mutex_release(Log::config->log_object_manager._APImutex);
+  ink_mutex_release(prev->log_object_manager._APImutex);
   Debug("log-api-mutex", "Log::change_configuration released api mutex");
 
+  // Register the new config in the config processor; the old one will now be scheduled for a
+  // future deletion. We don't need to do anything magical with refcounts, since the
+  // configProcessor will keep a reference count, and drop it when the deletion is scheduled.
+  configProcessor.set(log_configid, new_config);
+
+  // If we replaced the logging configuration, flush any log
+  // objects that weren't transferred to the new config ...
+  prev->log_object_manager.flush_all_objects();
+
   Debug("log-config", "... new configuration in place");
-}
-
-void
-Log::add_to_inactive(LogObject * object)
-{
-  if (Log::numInactiveObjects == Log::maxInactiveObjects) {
-    Log::maxInactiveObjects += LOG_OBJECT_ARRAY_DELTA;
-    LogObject **new_objects = new LogObject *[Log::maxInactiveObjects];
-
-    for (size_t i = 0; i < Log::numInactiveObjects; i++) {
-      new_objects[i] = Log::inactive_objects[i];
-    }
-    delete[]Log::inactive_objects;
-    Log::inactive_objects = new_objects;
-  }
-
-  Log::inactive_objects[Log::numInactiveObjects++] = object;
 }
 
 /*-------------------------------------------------------------------------
@@ -211,25 +203,7 @@ struct PeriodicWakeup : Continuation
 void
 Log::periodic_tasks(long time_now)
 {
-  // delete inactive objects
-  //
-  // we don't care if we miss an object that may be added to the set of
-  // inactive objects just after we have read numInactiveObjects and found
-  // it to be zero; we will get a chance to delete it next time
-  //
-
   Debug("log-api-mutex", "entering Log::periodic_tasks");
-  if (numInactiveObjects) {
-    ink_mutex_acquire(Log::config->log_object_manager._APImutex);
-    Debug("log-api-mutex", "Log::periodic_tasks acquired api mutex");
-    Debug("log-periodic", "Deleting inactive_objects");
-    for (size_t i = 0; i < numInactiveObjects; i++) {
-      delete inactive_objects[i];
-    }
-    numInactiveObjects = 0;
-    ink_mutex_release(Log::config->log_object_manager._APImutex);
-    Debug("log-api-mutex", "Log::periodic_tasks released api mutex");
-  }
 
   if (logging_mode_changed || Log::config->reconfiguration_needed) {
     Debug("log-config", "Performing reconfiguration, init status = %d", init_status);
@@ -258,12 +232,11 @@ Log::periodic_tasks(long time_now)
     if (config->space_is_short() || time_now % config->space_used_frequency == 0) {
       Log::config->update_space_used();
     }
+
     // See if there are any buffers that have expired
     //
     Log::config->log_object_manager.check_buffer_expiration(time_now);
-    if (error_log) {
-      error_log->check_buffer_expiration(time_now);
-    }
+
     // Check if we received a request to roll, and roll if so, otherwise
     // give objects a chance to roll if they need to
     //
@@ -910,10 +883,6 @@ Log::handle_logging_mode_change(const char */* name ATS_UNUSED */, RecDataT /* d
 void
 Log::init(int flags)
 {
-  maxInactiveObjects = LOG_OBJECT_ARRAY_DELTA;
-  numInactiveObjects = 0;
-  inactive_objects = new LogObject*[maxInactiveObjects];
-
   collation_preproc_threads = 1;
   collation_accept_file_descriptor = NO_FD;
 
@@ -922,9 +891,10 @@ Log::init(int flags)
   config_flags = flags;
 
   // create the configuration object
-  //
-  config = NEW (new LogConfig);
+  config = NEW(new LogConfig());
   ink_assert (config != NULL);
+
+  log_configid = configProcessor.set(log_configid, config);
 
   // set the logging_mode and read config variables if needed
   //
@@ -1215,7 +1185,6 @@ Log::va_error(const char *format, va_list ap)
 void *
 Log::preproc_thread_main(void *args)
 {
-  size_t buffers_preproced;
   int idx = *(int *)args;
 
   Debug("log-preproc", "log preproc thread is alive ...");
@@ -1223,16 +1192,20 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
-    buffers_preproced = config->log_object_manager.preproc_buffers(idx);
+    size_t buffers_preproced;
+    LogConfig * current = (LogConfig *)configProcessor.get(log_configid);
 
-    if (error_log)
-      buffers_preproced += error_log->preproc_buffers(idx);
+    if (current) {
+      buffers_preproced = current->log_object_manager.preproc_buffers(idx);
+    }
 
     // config->increment_space_used(bytes_to_disk);
     // TODO: the bytes_to_disk should be set to Log
 
-    Debug("log-preproc","%zu buffers preprocessed this round",
-          buffers_preproced);
+    Debug("log-preproc","%zu buffers preprocessed from LogConfig %p (refcount=%d) this round",
+          buffers_preproced, current, current->m_refcount);
+
+    configProcessor.release(log_configid, current);
 
     // wait for more work; a spurious wake-up is ok since we'll just
     // check the queue and find there is nothing to do, then wait
@@ -1299,7 +1272,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       logfile->check_fd();
       if (!logfile->is_open()) {
         Warning("File:%s was closed, have dropped (%d) bytes.",
-                logfile->m_name, total_bytes);
+                logfile->get_name(), total_bytes);
 
         RecIncrRawStat(log_rsb, mutex->thread_holding,
                        log_stat_bytes_lost_before_written_to_disk_stat,
@@ -1313,7 +1286,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       while (total_bytes - bytes_written) {
         if (Log::config->logging_space_exhausted) {
           Debug("log", "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.",
-                  logfile->m_name, (total_bytes - bytes_written));
+                  logfile->get_name(), (total_bytes - bytes_written));
 
           RecIncrRawStat(log_rsb, mutex->thread_holding,
                          log_stat_bytes_lost_before_written_to_disk_stat,
@@ -1325,7 +1298,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
                       total_bytes - bytes_written);
         if (len < 0) {
           Error("Failed to write log to %s: [tried %d, wrote %d, %s]",
-                logfile->m_name, total_bytes - bytes_written,
+                logfile->get_name(), total_bytes - bytes_written,
                 bytes_written, strerror(errno));
 
           RecIncrRawStat(log_rsb, mutex->thread_holding,

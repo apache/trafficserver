@@ -62,4 +62,8 @@ struct PreDefinedFormatList
   PreDefinedFormatInfoList formats;
 };
 
+// Return a PreDefinedFormatInfo structure for the ASCII error log.
+PreDefinedFormatInfo *
+MakePredefinedErrorLog(LogConfig * config);
+
 #endif /* LOG_PREDEFINED_H */

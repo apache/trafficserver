@@ -162,7 +162,7 @@ bool LogFile::exists(const char *pathname)
   -------------------------------------------------------------------------*/
 
 void
-LogFile::change_name(char *new_name)
+LogFile::change_name(const char *new_name)
 {
   ats_free(m_name);
   m_name = ats_strdup(new_name);
@@ -794,6 +794,7 @@ LogFile::check_fd()
   stat_check_count++;
 
   int err = open_file();
+  // XXX if open_file() returns, LOG_FILE_FILESYSTEM_CHECKS_FAILED, raise a more informative alarm ...
   if (err != LOG_FILE_NO_ERROR && err != LOG_FILE_NO_PIPE_READERS) {
     if (!failure_last_call) {
       LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, "Traffic Server could not open logfile %s.", m_name);

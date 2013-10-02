@@ -41,6 +41,16 @@ const char * const PreDefinedFormatInfo::extended2 =
   "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
   "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>";
 
+PreDefinedFormatInfo *
+MakePredefinedErrorLog(LogConfig * config)
+{
+  LogFormat * fmt;
+
+  fmt = MakeTextLogFormat("error");
+  config->global_format_list.add(fmt, false);
+  return NEW(new PreDefinedFormatInfo(fmt, "error.log", true /* always ascii */, NULL /* no log header */));
+}
+
 PreDefinedFormatList::PreDefinedFormatList()
 {
 }
@@ -57,7 +67,7 @@ PreDefinedFormatList::~PreDefinedFormatList()
 void
 PreDefinedFormatList::init(LogConfig * config)
 {
-  LogFormat *fmt;
+  LogFormat * fmt;
 
   fmt = NEW(new LogFormat("squid", PreDefinedFormatInfo::squid));
   config->global_format_list.add(fmt, false);

@@ -51,7 +51,7 @@
   LogHost
   -------------------------------------------------------------------------*/
 
-LogHost::LogHost(char *object_filename, uint64_t object_signature)
+LogHost::LogHost(const char *object_filename, uint64_t object_signature)
   : m_object_filename(ats_strdup(object_filename)),
     m_object_signature(object_signature),
     m_port(0),

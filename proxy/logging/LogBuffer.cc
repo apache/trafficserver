@@ -330,7 +330,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
 
 
 unsigned
-LogBuffer::add_header_str(char *str, char *buf_ptr, unsigned buf_len)
+LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
 {
   unsigned len = 0;
   // This was ambiguous - should it be the real strlen or the 

@@ -224,7 +224,7 @@ private:
 
   // private functions
   size_t _add_buffer_header();
-  unsigned add_header_str(char *str, char *buf_ptr, unsigned buf_len);
+  unsigned add_header_str(const char *str, char *buf_ptr, unsigned buf_len);
 
   // -- member functions that are not allowed --
   LogBuffer();

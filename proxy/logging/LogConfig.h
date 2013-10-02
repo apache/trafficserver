@@ -27,8 +27,8 @@
 #define LOG_CONFIG_H
 
 #include "libts.h"
-
 #include "P_RecProcess.h"
+#include "ProxyConfig.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -105,7 +105,7 @@ struct PreDefinedFormatInfo;
         for this new variable if it is exposed in the GUI
   -------------------------------------------------------------------------*/
 
-class LogConfig
+class LogConfig : public ConfigInfo
 {
 
 public:

@@ -651,55 +651,47 @@ LogConfig::setup_collation(LogConfig * prev_config)
 void
 LogConfig::init(LogConfig * prev_config)
 {
+  LogObject * errlog = NULL;
+
   ink_assert(!initialized);
 
   setup_collation(prev_config);
 
   update_space_used();
 
-  // setup the error log before the rest of the log objects since
-  // we don't do filename conflict checking for it
-  //
-  TextLogObject *old_elog = Log::error_log;
-  TextLogObject *new_elog = 0;
-
-  // swap new error log for old error log unless
-  // -there was no error log and we don't want one
-  // -there was an error log, and the new one is identical
-  //  (the logging directory did not change)
-  //
-  if (!((!old_elog && !Log::error_logging_enabled()) ||
-        (old_elog && Log::error_logging_enabled() &&
-         (prev_config ? !strcmp(prev_config->logfile_dir, logfile_dir) : 0)))) {
-    if (Log::error_logging_enabled()) {
-      new_elog = NEW(new TextLogObject("error.log", logfile_dir, true, NULL,
-                                       rolling_enabled, collation_preproc_threads,
-                                       rolling_interval_sec, rolling_offset_hr,
-                                       rolling_size_mb));
-      if (new_elog->do_filesystem_checks() < 0) {
-        const char *msg = "The log file %s did not pass filesystem checks. " "No output will be produced for this log";
-        Error(msg, new_elog->get_full_filename());
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, new_elog->get_full_filename());
-        delete new_elog;
-        new_elog = 0;
-      }
-    }
-    ink_atomic_swap(&Log::error_log, new_elog);
-    if (old_elog) {
-      old_elog->force_new_buffer();
-      Log::add_to_inactive(old_elog);
-    }
-  }
   // create log objects
   //
   if (Log::transaction_logging_enabled()) {
     setup_log_objects();
   }
-  // transfer objects from previous configuration
-  //
-  if (prev_config) {
-    transfer_objects(prev_config);
+
+  // ----------------------------------------------------------------------
+  // Construct a new error log object candidate.
+  if (Log::error_logging_enabled()) {
+    PreDefinedFormatInfo * info;
+
+    Debug("log", "creating predefined error log object");
+    info = MakePredefinedErrorLog(this);
+    errlog = this->create_predefined_object(info, 0, NULL);
+    errlog->set_fmt_timestamps();
+    delete info;
+  } else {
+    Log::error_log = NULL;
   }
+
+  if (prev_config) {
+    // Transfer objects from previous configuration.
+    transfer_objects(prev_config);
+
+    // After transferring objects, we are going to keep either the new error log or the old one. Figure out
+    // which one we are keeping and make that the global ...
+    if (Log::error_log) {
+      errlog = this->log_object_manager.find_by_format_name(Log::error_log->m_format->name());
+    }
+  }
+
+  ink_atomic_swap(&Log::error_log, errlog);
+
   // determine if we should use the orphan log space value or not
   // we use it if all objects are collation clients, or if some are and
   // the specified space for collation is larger than that for local files
@@ -867,8 +859,11 @@ LogConfig::create_predefined_object(const PreDefinedFormatInfo * pdi, size_t num
   }
 
   // give object to object manager
-  //
-  log_object_manager.manage_object(obj);
+  if (log_object_manager.manage_object(obj) != LogObjectManager::NO_FILENAME_CONFLICTS) {
+    delete obj;
+    return NULL;
+  }
+
   return obj;
 }
 

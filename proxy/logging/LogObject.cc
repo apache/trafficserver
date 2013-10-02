@@ -37,7 +37,7 @@
 #include "LogConfig.h"
 #include "LogAccess.h"
 #include "Log.h"
-#include "LogObject.h"
+#include "ts/TestBox.h"
 
 size_t
 LogBufferManager::preproc_buffers(LogBufferSink *sink) {
@@ -75,7 +75,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink) {
   LogObject
   -------------------------------------------------------------------------*/
 
-LogObject::LogObject(LogFormat *format, const char *log_dir,
+LogObject::LogObject(const LogFormat *format, const char *log_dir,
                      const char *basename, LogFileFormat file_format,
                      const char *header, int rolling_enabled,
                      int flush_threads, int rolling_interval_sec,
@@ -551,7 +551,7 @@ LogObject::log(LogAccess * lad, const char *text_entry)
   // likewise, send data to a remote client even if local space is exhausted
   // (if there is a remote client, m_logFile will be NULL
   if (Log::config->logging_space_exhausted && !writes_to_pipe() && m_logFile) {
-    Debug("log", "logging space exhausted, can't write to:%s, drop this entry", m_logFile->m_name);
+    Debug("log", "logging space exhausted, can't write to:%s, drop this entry", m_logFile->get_name());
     return Log::FULL;
   }
   // this verification must be done here in order to avoid 'dead' LogBuffers
@@ -884,6 +884,33 @@ TextLogObject::va_write(const char *format, va_list ap)
 /*-------------------------------------------------------------------------
   LogObjectManager
   -------------------------------------------------------------------------*/
+
+LogObjectManager::LogObjectManager()
+   : _numObjects(0), _maxObjects(LOG_OBJECT_ARRAY_DELTA), _numAPIobjects(0), _maxAPIobjects(LOG_OBJECT_ARRAY_DELTA)
+{
+  _objects = new LogObject *[_maxObjects];
+  _APIobjects = new LogObject *[_maxAPIobjects];
+  _APImutex = NEW(new ink_mutex);
+  ink_mutex_init(_APImutex, "_APImutex");
+
+  memset(_objects, 0, sizeof(LogObject *) * _maxObjects);
+  memset(_APIobjects, 0, sizeof(LogObject *) * _maxAPIobjects);
+}
+
+LogObjectManager::~LogObjectManager()
+{
+  for (unsigned i = 0; i < _maxObjects; i++) {
+    delete _objects[i];
+  }
+
+  for (unsigned i = 0; i < _maxAPIobjects; i++) {
+    delete _APIobjects[i];
+  }
+
+  delete[] _objects;
+  delete[] _APIobjects;
+  delete _APImutex;
+}
 void
 LogObjectManager::_add_object(LogObject * object)
 {
@@ -891,9 +918,8 @@ LogObjectManager::_add_object(LogObject * object)
     _maxObjects += LOG_OBJECT_ARRAY_DELTA;
     LogObject **_new_objects = new LogObject *[_maxObjects];
 
-    for (size_t i = 0; i < _numObjects; i++) {
-      _new_objects[i] = _objects[i];
-    }
+    memset(_new_objects, 0, sizeof(LogObject *) * _maxObjects);
+    memcpy(_new_objects, _objects, sizeof(LogObject *) * _numObjects);
     delete[]_objects;
     _objects = _new_objects;
   }
@@ -911,9 +937,8 @@ LogObjectManager::_add_api_object(LogObject * object)
     _maxAPIobjects += LOG_OBJECT_ARRAY_DELTA;
     LogObject **_new_objects = new LogObject *[_maxAPIobjects];
 
-    for (size_t i = 0; i < _numAPIobjects; i++) {
-      _new_objects[i] = _APIobjects[i];
-    }
+    memset(_new_objects, 0, sizeof(LogObject *) * _maxAPIobjects);
+    memcpy(_new_objects, _APIobjects, sizeof(LogObject *) * _numAPIobjects);
     delete[]_APIobjects;
     _APIobjects = _new_objects;
   }
@@ -988,12 +1013,12 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 {
   int retVal = NO_FILENAME_CONFLICTS;
 
-  char *filename = log_object->get_full_filename();
+  const char *filename = log_object->get_full_filename();
 
   if (access(filename, F_OK)) {
     if (errno != ENOENT) {
       const char *msg = "Cannot access log file %s: %s";
-      char *se = strerror(errno);
+      const char *se = strerror(errno);
 
       Error(msg, filename, se);
       LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, se);
@@ -1086,7 +1111,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 
 
 bool
-LogObjectManager::_has_internal_filename_conflict(char *filename, LogObject ** objects, int numObjects)
+LogObjectManager::_has_internal_filename_conflict(const char *filename, LogObject ** objects, int numObjects)
 {
   for (int i = 0; i < numObjects; i++) {
     LogObject *obj = objects[i];
@@ -1109,7 +1134,7 @@ int
 LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int maxConflicts, int fileNum)
 {
   int retVal = NO_FILENAME_CONFLICTS;
-  char *filename = log_object->get_full_filename();
+  const char *filename = log_object->get_full_filename();
 
   if (_has_internal_filename_conflict(filename, _objects, _numObjects) ||
       _has_internal_filename_conflict(filename, _APIobjects, _numAPIobjects)) {
@@ -1152,25 +1177,34 @@ LogObjectManager::check_buffer_expiration(long time_now)
   size_t i;
 
   for (i = 0; i < _numObjects; i++) {
-    _objects[i]->check_buffer_expiration(time_now);
+    if (_objects[i]) {
+      _objects[i]->check_buffer_expiration(time_now);
+    }
   }
   for (i = 0; i < _numAPIobjects; i++) {
-    _APIobjects[i]->check_buffer_expiration(time_now);
+    if (_APIobjects[i]) {
+      _APIobjects[i]->check_buffer_expiration(time_now);
+    }
   }
 }
 
-size_t LogObjectManager::preproc_buffers(int idx)
+size_t
+LogObjectManager::preproc_buffers(int idx)
 {
-  size_t i;
   size_t buffers_preproced = 0;
 
-  for (i = 0; i < _numObjects; i++) {
-    buffers_preproced += _objects[i]->preproc_buffers(idx);
+  for (unsigned i = 0; i < _numObjects; i++) {
+    if (_objects[i]) {
+      buffers_preproced += _objects[i]->preproc_buffers(idx);
+    }
   }
 
-  for (i = 0; i < _numAPIobjects; i++) {
+  for (unsigned i = 0; i < _numAPIobjects; i++) {
+    if (_APIobjects[i]) {
       buffers_preproced += _APIobjects[i]->preproc_buffers(idx);
+    }
   }
+
   return buffers_preproced;
 }
 
@@ -1183,8 +1217,9 @@ LogObjectManager::unmanage_api_object(LogObject * logObject)
   for (size_t i = 0; i < _numAPIobjects; i++) {
     if (logObject == _APIobjects[i]) {
 
-      Log::add_to_inactive(logObject);
+      // Force a buffer flush, then schedule this LogObject to be deleted on the eventProcessor.
       logObject->force_new_buffer();
+      new_Deleter(logObject, HRTIME_SECONDS(60));
 
       for (size_t j = i + 1; j < _numAPIobjects; j++) {
         _APIobjects[j - 1] = _APIobjects[j];
@@ -1227,69 +1262,117 @@ LogObjectManager::open_local_pipes()
 void
 LogObjectManager::transfer_objects(LogObjectManager & old_mgr)
 {
-  LogObject *old_obj, *obj;
-  size_t i;
-  size_t num_kept_objects = 0;
+  unsigned num_kept_objects = 0;
 
   if (is_debug_tag_set("log-config-transfer")) {
     Debug("log-config-transfer", "TRANSFER OBJECTS: list of old objects");
-    for (i = 0; i < old_mgr._numObjects; i++) {
+    for (unsigned i = 0; i < old_mgr._numObjects; i++) {
       Debug("log-config-transfer", "%s", old_mgr._objects[i]->get_original_filename());
     }
 
     Debug("log-config-transfer", "TRANSFER OBJECTS : list of new objects");
-    for (i = 0; i < _numObjects; i++) {
+    for (unsigned i = 0; i < _numObjects; i++) {
       Debug("log-config-transfer", "%s", _objects[i]->get_original_filename());
     }
   }
 
-  for (i = 0; i < old_mgr._numAPIobjects; i++) {
+  // Transfer the API objects to the new manager.
+  for (unsigned i = 0; i < old_mgr._numAPIobjects; i++) {
     _add_api_object(old_mgr._APIobjects[i]);
   }
 
-  LogObject **old_objects = old_mgr._objects;
+  // And nuke them from the old manager ...
+  memset(old_mgr._APIobjects, 0, sizeof(LogObject *) * old_mgr._numAPIobjects);
+  old_mgr._numAPIobjects = 0;
 
-  for (i = 0; i < old_mgr._numObjects; i++) {
-    old_obj = old_objects[i];
+  for (unsigned i = 0; i < old_mgr._numObjects; ++i) {
+    LogObject * old_obj = old_mgr._objects[i];
+    LogObject * new_obj;
 
     Debug("log-config-transfer", "examining existing object %s", old_obj->get_base_filename());
 
-    // see if any of the new objects is just a copy of an old one,
-    // if so, keep the old one and delete the new one
-    //
-    size_t j = _numObjects;
-
+    // See if any of the new objects is just a copy of an old one. If so, transfer the
+    // old one to the new manager and delete the new one.
     if (num_kept_objects < _numObjects) {
-      for (j = 0; j < _numObjects; j++) {
-        obj = _objects[j];
+      for (unsigned j = 0; j < _numObjects; j++) {
+        new_obj = _objects[j];
 
         Debug("log-config-transfer",
-              "comparing existing object %s to new object %s", old_obj->get_base_filename(), obj->get_base_filename());
+              "comparing existing object %s to new object %s", old_obj->get_base_filename(), new_obj->get_base_filename());
 
-        if (*obj == *old_obj) {
+        if (*new_obj == *old_obj) {
           Debug("log-config-transfer", "keeping existing object %s", old_obj->get_base_filename());
 
-          _objects[j] = old_obj;
-          delete obj;
+          this->_objects[j] = old_obj;
+          old_mgr._objects[i] = NULL;
+
+          delete new_obj;
           ++num_kept_objects;
           break;
         }
       }
     }
-    // if old object is not in the new list, move it to list of
-    // inactive objects
-    //
-    if (j == _numObjects) {
-      Debug("log-config-transfer", "moving existing object %s to inactive list", old_obj->get_base_filename());
-
-      Log::add_to_inactive(old_obj);
-    }
   }
+
+  // At this point, the old manager has a sparse object array (ie. some NULL entries). This is unfortunate, but
+  // we don't want to modify the old manager in a non-atomic way because another thread might be flushing the
+  // log objects as we do this. We know the manager will be destroyed soon after log object transfer, so this
+  // intermediate state should not last very long.
 
   if (is_debug_tag_set("log-config-transfer")) {
     Debug("log-config-transfer", "Log Object List after transfer:");
     display();
   }
+}
+
+int
+LogObjectManager::roll_files(long time_now)
+{
+  int num_rolled = 0;
+  for (size_t i=0; i < _numObjects; i++) {
+    if (_objects[i]) {
+      num_rolled += _objects[i]->roll_files(time_now);
+    }
+  }
+  for (size_t i=0; i < _numAPIobjects; i++) {
+    if (_APIobjects[i]) {
+      num_rolled += _APIobjects[i]->roll_files(time_now);
+    }
+  }
+  return num_rolled;
+}
+
+void
+LogObjectManager::display(FILE * str)
+{
+  for (size_t i = 0; i < _numObjects; i++) {
+    if (_objects[i]) {
+      _objects[i]->display(str);
+    }
+  }
+}
+
+LogObject *
+LogObjectManager::find_by_format_name(const char *name) const
+{
+  for (unsigned i = 0; i < _numObjects; ++i) {
+    if (_objects[i] && _objects[i]->m_format->name_id() == LogFormat::id_from_name(name)) {
+      return _objects[i];
+    }
+  }
+  return NULL;
+}
+
+size_t
+LogObjectManager::get_num_collation_clients() const
+{
+  size_t coll_clients = 0;
+  for (unsigned i = 0; i < _numObjects; ++i) {
+    if (_objects[i] && _objects[i]->is_collation_client()) {
+      ++coll_clients;
+    }
+  }
+  return coll_clients;
 }
 
 int
@@ -1335,3 +1418,67 @@ LogObjectManager::log(LogAccess * lad)
 
   return ret;
 }
+
+void
+LogObjectManager::flush_all_objects()
+{
+  for (unsigned i = 0; i < this->_numObjects; ++i) {
+    if (this->_objects[i]) {
+      this->_objects[i]->force_new_buffer();
+    }
+  }
+
+  for (unsigned i = 0; i < this->_numAPIobjects; ++i) {
+    if (this->_APIobjects[i]) {
+      this->_APIobjects[i]->force_new_buffer();
+    }
+  }
+}
+
+#if TS_HAS_TESTS
+
+static LogObject *
+MakeTestLogObject(const char * name)
+{
+  const char * tmpdir = getenv("TMPDIR");
+  LogFormat format("testfmt", NULL);
+
+  if (!tmpdir) {
+    tmpdir = "/tmp";
+  }
+
+  return NEW(new LogObject(&format, tmpdir, name,
+                 LOG_FILE_ASCII /* file_format */, name /* header */,
+                 1 /* rolling_enabled */, 1 /* flush_threads */));
+}
+
+REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest * t, int /* atype ATS_UNUSED */, int * pstatus)
+{
+  TestBox box(t, pstatus);
+
+  // There used to be a lot of confusion around whether LogObjects were owned by ome or more LogObjectManager
+  // objects, or handed off to static storage in the Log class. This test just verifies that this is no longer
+  // the case.
+  {
+    LogObjectManager mgr1;
+    LogObjectManager mgr2;
+
+    mgr1.manage_object(MakeTestLogObject("object1"));
+    mgr1.manage_object(MakeTestLogObject("object2"));
+    mgr1.manage_object(MakeTestLogObject("object3"));
+    mgr1.manage_object(MakeTestLogObject("object4"));
+
+    mgr2.transfer_objects(mgr1);
+
+    rprintf(t, "mgr1 has %d objects, mgr2 has %d objects\n",
+        (int)mgr1.get_num_objects(), (int)mgr2.get_num_objects());
+
+    rprintf(t, "running Log::periodoc_tasks()\n");
+    Log::periodic_tasks(ink_get_hrtime() / HRTIME_SECOND);
+    rprintf(t, "Log::periodoc_tasks() done\n");
+  }
+
+  box = REGRESSION_TEST_PASSED;
+}
+
+#endif
