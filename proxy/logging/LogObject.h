@@ -88,7 +88,8 @@ public:
   {
     BINARY = 1,
     REMOTE_DATA = 2,
-    WRITES_TO_PIPE = 4
+    WRITES_TO_PIPE = 4,
+    LOG_OBJECT_FMT_TIMESTAMP = 8, // always format a timestamp into each log line (for raw text logs)
   };
 
   // BINARY: log is written in binary format (rather than ascii)
@@ -110,8 +111,10 @@ public:
   void add_loghost(LogHost * host, bool copy = true);
 
   void set_remote_flag() { m_flags |= REMOTE_DATA; };
+  void set_fmt_timestamps() { m_flags |= LOG_OBJECT_FMT_TIMESTAMP; }
 
-  int log(LogAccess * lad, char *text_entry = NULL);
+  int log(LogAccess * lad, const char *text_entry = NULL);
+  int va_log(LogAccess * lad, const char * fmt, va_list ap);
 
   int roll_files(long time_now = 0);
 
@@ -259,11 +262,8 @@ public:
                            int rolling_offset_hr = 0,
                            int rolling_size_mb = 0);
 
-  inkcoreapi int write(const char *format, ...);
+  inkcoreapi int write(const char *format, ...) TS_PRINTFLIKE(2, 3);
   inkcoreapi int va_write(const char *format, va_list ap);
-
-private:
-    bool m_timestamps;
 };
 
 /*-------------------------------------------------------------------------

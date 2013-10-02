@@ -510,7 +510,38 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
 
 
 int
-LogObject::log(LogAccess * lad, char *text_entry)
+LogObject::va_log(LogAccess * lad, const char * fmt, va_list ap)
+{
+  static const unsigned MAX_ENTRY = 16 * LOG_KILOBYTE; // 16K? Really?
+  char entry[MAX_ENTRY];
+  unsigned len = 0;
+
+  ink_assert(fmt != NULL);
+  len = 0;
+
+  if (this->m_flags & LOG_OBJECT_FMT_TIMESTAMP) {
+    len = LogUtils::timestamp_to_str(LogUtils::timestamp(), entry, MAX_ENTRY);
+    if (len <= 0) {
+      return Log::FAIL;
+    }
+
+    // Add a space after the timestamp
+    entry[len++] = ' ';
+
+    if (len >= MAX_ENTRY) {
+      return Log::FAIL;
+    }
+  }
+
+  len += vsnprintf(&entry[len], MAX_ENTRY - len, fmt, ap);
+
+  // Now that we have an entry and it's length (len), we can place it
+  // into the associated logbuffer.
+  return this->log(lad, entry);
+}
+
+int
+LogObject::log(LogAccess * lad, const char *text_entry)
 {
   LogBuffer *buffer;
   size_t offset = 0;            // prevent warning
@@ -802,8 +833,11 @@ TextLogObject::TextLogObject(const char *name, const char *log_dir,
                              int rolling_size_mb)
   : LogObject(NEW(new LogFormat(TEXT_LOG)), log_dir, name, ASCII_LOG, header,
               rolling_enabled, flush_threads, rolling_interval_sec,
-              rolling_offset_hr, rolling_size_mb), m_timestamps(timestamps)
+              rolling_offset_hr, rolling_size_mb)
 {
+  if (timestamps) {
+    this->set_fmt_timestamps();
+  }
 }
 
 
@@ -843,36 +877,7 @@ TextLogObject::write(const char *format, ...)
 int
 TextLogObject::va_write(const char *format, va_list ap)
 {
-  static const int MAX_ENTRY = 16 * LOG_KILOBYTE;
-  char entry[MAX_ENTRY];
-  int len;
-
-  ink_assert(format != NULL);
-  len = 0;
-
-  if (m_timestamps) {
-    len = LogUtils::timestamp_to_str(LogUtils::timestamp(), entry, MAX_ENTRY);
-    if (len <= 0) {
-      return Log::FAIL;
-    }
-    //
-    // Add a space after the timestamp
-    //
-    entry[len++] = ' ';
-  }
-
-  if (len >= MAX_ENTRY) {
-    return Log::FAIL;
-  }
-
-  len += vsnprintf(&entry[len], MAX_ENTRY - len, format, ap);
-
-  //
-  // Now that we have an entry and it's length (len), we can place it
-  // into the associated logbuffer.
-  //
-
-  return log(NULL, entry);
+  return this->va_log(NULL, format, ap);
 }
 
 

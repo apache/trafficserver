@@ -1167,7 +1167,7 @@ Log::va_error(const char *format, va_list ap)
 
   if (error_log) {
     ink_assert(format != NULL);
-    ret_val = error_log->va_write(format, ap);
+    ret_val = error_log->va_log(NULL, format, ap);
 
     switch (ret_val) {
     case Log::LOG_OK:
