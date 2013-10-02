@@ -820,54 +820,66 @@ LogConfig::add_filters_to_search_log_object(const char *format_name)
 // This function adds the pre-defined objects to the global_object_list.
 //
 
-void
-LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatList & predef, size_t num_filters,
+LogObject *
+LogConfig::create_predefined_object(const PreDefinedFormatInfo * pdi, size_t num_filters,
                                                   LogFilter ** filter, const char *filt_name, bool force_extension)
+{
+  const char *obj_fname;
+  char obj_filt_fname[PATH_NAME_MAX];
+
+  ink_release_assert(pdi != NULL);
+
+  if (filt_name) {
+    ink_string_concatenate_strings_n(obj_filt_fname, PATH_NAME_MAX, pdi->filename, "-", filt_name, NULL);
+    obj_fname = obj_filt_fname;
+  } else {
+    obj_fname = pdi->filename;
+  }
+
+  if (force_extension) {
+    ink_string_append(obj_filt_fname,
+                      (char *) (pdi->is_ascii ?
+                                LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION :
+                                LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION), PATH_NAME_MAX);
+  }
+
+  // create object with filters
+  //
+  LogObject *obj;
+  obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
+                          pdi->is_ascii ? LOG_FILE_ASCII : LOG_FILE_BINARY,
+                          pdi->header, rolling_enabled,
+                          collation_preproc_threads, rolling_interval_sec,
+                          rolling_offset_hr, rolling_size_mb));
+
+  if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
+
+    LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
+                                       obj->get_signature()));
+    ink_assert(loghost != NULL);
+
+    loghost->set_name_port(collation_host, collation_port);
+    obj->add_loghost(loghost, false);
+  }
+
+  for (size_t i = 0; i < num_filters; ++i) {
+    obj->add_filter(filter[i]);
+  }
+
+  // give object to object manager
+  //
+  log_object_manager.manage_object(obj);
+  return obj;
+}
+
+void
+LogConfig::create_predefined_objects_with_filter(const PreDefinedFormatList & predef, size_t nfilters,
+                                                  LogFilter ** filters, const char * filt_name, bool force_extension)
 {
   PreDefinedFormatInfo *pdi;
 
   for (pdi = predef.formats.head; pdi != NULL; pdi = (pdi->link).next) {
-    const char *obj_fname;
-    char obj_filt_fname[PATH_NAME_MAX];
-    if (filt_name) {
-      ink_string_concatenate_strings_n(obj_filt_fname, PATH_NAME_MAX, pdi->filename, "-", filt_name, NULL);
-      obj_fname = obj_filt_fname;
-    } else {
-      obj_fname = pdi->filename;
-    }
-
-    if (force_extension) {
-      ink_string_append(obj_filt_fname,
-                        (char *) (pdi->is_ascii ?
-                                  LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION :
-                                  LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION), PATH_NAME_MAX);
-    }
-    // create object with filters
-    //
-    LogObject *obj;
-    obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
-                            pdi->is_ascii ? LOG_FILE_ASCII : LOG_FILE_BINARY,
-                            pdi->header, rolling_enabled,
-                            collation_preproc_threads, rolling_interval_sec,
-                            rolling_offset_hr, rolling_size_mb));
-
-    if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
-
-      LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
-                                         obj->get_signature()));
-      ink_assert(loghost != NULL);
-
-      loghost->set_name_port(collation_host, collation_port);
-      obj->add_loghost(loghost, false);
-    }
-
-    for (size_t i = 0; i < num_filters; ++i) {
-      obj->add_filter(filter[i]);
-    }
-
-    // give object to object manager
-    //
-    log_object_manager.manage_object(obj);
+    this->create_predefined_object(pdi, nfilters, filters, filt_name, force_extension);
   }
 }
 
@@ -904,14 +916,15 @@ LogConfig::split_by_protocol(const PreDefinedFormatList & predef)
   int64_t filter_val[http];    // protocols to reject
   size_t n = 0;
 
-  LogFilter *filter[1];
   LogField *etype_field = Log::global_field_list.find_by_symbol("etype");
   ink_assert(etype_field);
 
   if (separate_icp_logs) {
     if (separate_icp_logs == 1) {
+      LogFilter * filter[1];
+
       filter[0] = NEW(new LogFilterInt(filter_name[icp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[icp]));
-      create_pre_defined_objects_with_filter(predef, 1, filter, name[icp]);
+      create_predefined_objects_with_filter(predef, countof(filter), filter, name[icp]);
       delete filter[0];
     }
     filter_val[n++] = value[icp];
@@ -934,7 +947,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatList & predef)
 }
 
 size_t
-  LogConfig::split_by_hostname(const PreDefinedFormatList & predef, LogFilter * reject_protocol_filter)
+LogConfig::split_by_hostname(const PreDefinedFormatList & predef, LogFilter * reject_protocol_filter)
 {
   size_t n_hosts;
   char **host = read_log_hosts_file(&n_hosts);  // allocates memory for array
@@ -960,7 +973,7 @@ size_t
         NEW(new LogFilterString(filter_name,
                                 shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]));
 
-      create_pre_defined_objects_with_filter(predef, num_filt + 1, rp_ah, host[i], true);
+      create_predefined_objects_with_filter(predef, num_filt + 1, rp_ah, host[i], true);
       delete rp_ah[num_filt];
     }
 
@@ -980,7 +993,7 @@ size_t
     // hosts other than those specified in the hosts file and for
     // those protocols that do not have their own file
     //
-    create_pre_defined_objects_with_filter(predef, num_filt + 1, rp_rh);
+    create_predefined_objects_with_filter(predef, num_filt + 1, rp_rh);
     delete rp_rh[num_filt];
 
     delete[]host;               // deallocate memory allocated by
@@ -1041,7 +1054,7 @@ LogConfig::setup_log_objects()
     //
     LogFilter *f[1];
     f[0] = reject_protocol_filter;
-    create_pre_defined_objects_with_filter(predef, 1, f);
+    create_predefined_objects_with_filter(predef, countof(f), f);
   }
 
   delete reject_protocol_filter;
