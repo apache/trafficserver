@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2257] Healthcheck plugin can stop watching some events.
+
   *) [TS-2260] Avoid flooding log when log host is down.
 
   *) [TS-2259] Introduce failover hosts for logging system.
