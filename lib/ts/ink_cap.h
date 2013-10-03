@@ -44,4 +44,51 @@ extern int EnableCoreFile(
   bool flag ///< New enable state.
 );
 
+
+
+#if TS_USE_POSIX_CAP
+bool elevateFileAccess(bool);
+#else
+bool restoreRootPriv(uid_t *old_euid = NULL);
+bool removeRootPriv(uid_t euid);
+#endif
+
+
+class ElevateAccess {
+public:
+  ElevateAccess(const bool state): elevated(false), saved_uid(0) {
+    if (state == true) {
+      elevate();
+    }
+  }
+
+  void elevate() {
+#if TS_USE_POSIX_CAP
+    elevateFileAccess(true);
+#else
+    restoreRootPriv(&saved_uid);
+#endif
+    elevated = true;
+  }
+
+  void demote() {
+#if TS_USE_POSIX_CAP
+    elevateFileAccess(false);
+#else
+    removeRootPriv(saved_uid);
+#endif
+    elevated = false;
+  }
+
+  ~ElevateAccess() {
+    if (elevated == true) {
+      demote();
+    }
+  }
+
+private:
+  bool elevated;
+  uid_t saved_uid;
+};
+
 #endif

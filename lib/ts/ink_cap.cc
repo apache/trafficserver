@@ -65,6 +65,7 @@ PreserveCapabilities() {
 # if TS_USE_POSIX_CAP
     zret = prctl(PR_SET_KEEPCAPS, 1);
 # endif
+  Debug("proxy_priv", "[PreserveCapabilities] zret : %d\n", zret);
   return zret;
 }
 
@@ -75,14 +76,17 @@ RestrictCapabilities() {
 # if TS_USE_POSIX_CAP
     cap_t caps = cap_init(); // start with nothing.
     // Capabilities we need.
-    cap_value_t cap_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK };
-    static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
+    cap_value_t perm_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE};
+    static int const PERM_CAP_COUNT = sizeof(perm_list)/sizeof(*perm_list);
+    cap_value_t eff_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
+    static int const EFF_CAP_COUNT = sizeof(eff_list)/sizeof(*eff_list);
 
-    cap_set_flag(caps, CAP_PERMITTED, CAP_COUNT, cap_list, CAP_SET);
-    cap_set_flag(caps, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
+    cap_set_flag(caps, CAP_PERMITTED, PERM_CAP_COUNT, perm_list, CAP_SET);
+    cap_set_flag(caps, CAP_EFFECTIVE, EFF_CAP_COUNT, eff_list, CAP_SET);
     zret = cap_set_proc(caps);
     cap_free(caps);
 #  endif
+  Debug("proxy_priv", "[RestrictCapabilities] zret : %d\n", zret);
   return zret;
 }
 
@@ -98,5 +102,74 @@ EnableCoreFile(bool flag) {
       Warning("Call to set PR_DUMPABLE was ineffective");
     }
 # endif  // linux check
+  Debug("proxy_priv", "[EnableCoreFile] zret : %d\n", zret);
   return zret;
 }
+
+#if TS_USE_POSIX_CAP
+/** Control file access privileges to bypass DAC.
+    @parm state Use @c true to enable elevated privileges,
+    @c false to disable.
+    @return @c true if successful, @c false otherwise.
+
+    @internal After some pondering I decided that the file access
+    privilege was worth the effort of restricting. Unlike the network
+    privileges this can protect a host system from programming errors
+    by not (usually) permitting such errors to access arbitrary
+    files. This is particularly true since none of the config files
+    current enable this feature so it's not actually called. Still,
+    best to program defensively and have it available.
+ */
+bool
+elevateFileAccess(bool state)
+{
+  Debug("proxy_priv", "[elevateFileAccess] state : %d\n", state);
+
+  bool zret = false; // return value.
+  cap_t cap_state = cap_get_proc(); // current capabilities
+  // Make a list of the capabilities we changed.
+  cap_value_t cap_list[] = { CAP_DAC_OVERRIDE };
+  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
+
+  cap_set_flag(cap_state, CAP_EFFECTIVE, CAP_COUNT, cap_list, state ? CAP_SET : CAP_CLEAR);
+  zret = (0 == cap_set_proc(cap_state));
+  cap_free(cap_state);
+  Debug("proxy_priv", "[elevateFileAccess] zret : %d\n", zret);
+  return zret;
+}
+#else
+//  bool removeRootPriv()
+//
+//    - Returns true on success
+//      and false on failure
+bool
+removeRootPriv(uid_t euid)
+{
+  if (seteuid(euid) < 0) {
+    Debug("proxy_priv", "[removeRootPriv] seteuid failed : %s\n", strerror(errno));
+    return false;
+  }
+
+  Debug("proxy_priv", "[removeRootPriv] removed root privileges.  Euid is %d\n", euid);
+  return true;
+}
+
+//  bool restoreRootPriv()
+//
+//    - Returns true on success
+//      and false on failure
+bool
+restoreRootPriv(uid_t *old_euid)
+{
+  if (old_euid)
+    *old_euid = geteuid();
+  if (seteuid(0) < 0) {
+    Debug("proxy_priv", "[restoreRootPriv] seteuid root failed : %s\n", strerror(errno));
+    return false;
+  }
+
+  Debug("proxy_priv", "[restoreRootPriv] restored root privileges.  Euid is %d\n", 0);
+
+  return true;
+}
+#endif

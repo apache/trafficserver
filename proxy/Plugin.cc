@@ -35,6 +35,7 @@
 #include "InkAPIInternal.h"
 #include "Main.h"
 #include "Plugin.h"
+#include "ink_cap.h"
 
 // HPUX:
 //   LD_SHAREDCMD=ld -b
@@ -136,7 +137,14 @@ plugin_load(int argc, char *argv[])
     abort();
   }
 
-  init(argc, argv);
+  // elevate the access to read files as root if compiled with capabilities, if not
+  // change the effective user to root
+  {
+    uint32_t elevate_access = 0;
+    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    ElevateAccess access(elevate_access != 0);
+    init(argc, argv);
+  } // done elevating access
 
   plugin_reg_list.push(plugin_reg_current);
   plugin_reg_current = NULL;

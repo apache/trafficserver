@@ -29,6 +29,7 @@
 #include "Compatability.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
+#include "ink_cap.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -1084,70 +1085,6 @@ LocalManager::listenForProxy()
   return;
 }
 
-#if TS_USE_POSIX_CAP
-/** Control file access privileges to bypass DAC.
-    @parm state Use @c true to enable elevated privileges,
-    @c false to disable.
-    @return @c true if successful, @c false otherwise.
-
-    @internal After some pondering I decided that the file access
-    privilege was worth the effort of restricting. Unlike the network
-    privileges this can protect a host system from programming errors
-    by not (usually) permitting such errors to access arbitrary
-    files. This is particularly true since none of the config files
-    current enable this feature so it's not actually called. Still,
-    best to program defensively and have it available.
- */
-bool
-elevateFileAccess(bool state)
-{
-  bool zret = false; // return value.
-  cap_t cap_state = cap_get_proc(); // current capabilities
-  // Make a list of the capabilities we changed.
-  cap_value_t cap_list[] = { CAP_DAC_OVERRIDE };
-  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
-
-  cap_set_flag(cap_state, CAP_EFFECTIVE, CAP_COUNT, cap_list, state ? CAP_SET : CAP_CLEAR);
-  zret = (0 == cap_set_proc(cap_state));
-  cap_free(cap_state);
-  return zret;
-}
-#else
-//  bool removeRootPriv()
-//
-//    - Returns true on success
-//      and false on failure
-bool
-removeRootPriv(uid_t euid)
-{
-  if (seteuid(euid) < 0) {
-    Debug("lm", "[removeRootPriv] seteuid failed : %s\n", strerror(errno));
-    return false;
-  }
-
-  Debug("lm", "[removeRootPriv] removed root privileges.  Euid is %d\n", euid);
-  return true;
-}
-
-//  bool restoreRootPriv()
-//
-//    - Returns true on success
-//      and false on failure
-bool
-restoreRootPriv(uid_t *old_euid)
-{
-  if (old_euid)
-    *old_euid = geteuid();
-  if (seteuid(0) < 0) {
-    Debug("lm", "[restoreRootPriv] seteuid root failed : %s\n", strerror(errno));
-    return false;
-  }
-
-  Debug("lm", "[restoreRootPriv] restored root privileges.  Euid is %d\n", 0);
-
-  return true;
-}
-#endif
 
 /*
  * bindProxyPort()
