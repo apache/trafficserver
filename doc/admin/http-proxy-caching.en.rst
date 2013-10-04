@@ -784,7 +784,7 @@ Read While Writer
 -----------------
 When Traffic Server goes to fetch something from origin, and upon receiving the response, any number of clients can be allowed to start serving the partially filled cache object once background_fill_completed_threshold % of the object has been received. The difference is that Squid allows this as soon as it goes to origin, whereas ATS can not do it until we get the complete response header. The reason for this is that we make no distinction between cache refresh, and cold cache, so we have no way to know if a response is going to be cacheable, and therefore allow read-while-writer functionality.
 
-The configurations necessary to enable this in ATS are:
+The configurations necessary to enable this in ATS are::
 
    CONFIG :ts:cv:`proxy.config.cache.enable_read_while_writer` ``INT 1``
    CONFIG :ts:cv:`proxy.config.http.background_fill_active_timeout` ``INT 0``
@@ -801,7 +801,7 @@ Once all this enabled, you have something that is very close, but not quite the 
 
 Fuzzy Revalidation
 ------------------
-Traffic Server can be set to attempt to revalidate an object before it becomes stale in cache. :file:`records.config` contains the settings:
+Traffic Server can be set to attempt to revalidate an object before it becomes stale in cache. :file:`records.config` contains the settings::
 
    CONFIG :ts:cv:`proxy.config.http.cache.fuzz.time` ``INT 240``
    CONFIG :ts:cv:`proxy.config.http.cache.fuzz.min_time` ``INT 0``
@@ -829,7 +829,7 @@ Similarly, this setting should be used in conjunction with Read While Writer for
 
 Since ATS now supports setting these settings per-request or remap rule, you can configure this to be suitable for your setup much more easily.
 
-The configurations are (with defaults):
+The configurations are (with defaults)::
 
    CONFIG :ts:cv:`proxy.config.http.cache.max_open_read_retries` ``INT -1``
    CONFIG :ts:cv:`proxy.config.http.cache.open_read_retry_time` ``INT 10``
