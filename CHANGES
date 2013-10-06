@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2266] Add a "make rat" Makefile target, to create a RAT report. This
+   is used for verifying licensing compliance on the entire source tree.
+
   *) [TS-2212] Implement the <fsiz> log tag for HTTP requests. This also does
    a small refactoring of the "atoi" functions in lib/ts, such that we now
    consistently have both prototypes for all types (with and without a
