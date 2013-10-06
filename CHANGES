@@ -7,28 +7,45 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.1.0
 
-  *) TS-2232: log level should be change from Status to Debug.
+  *) [TS-2261] Add config option to restore/elevate access to reading files by
+   root when loading plugins
+
+  *) [TS-2257] Healthcheck plugin can stop watching some events.
+
+  *) [TS-2260] Avoid flooding log when log host is down.
+
+  *) [TS-2259] Introduce failover hosts for logging system.
+
+  *) [TS-2256] Mem stats info is bad when enable reclaimable-freelist.
+
+  *) [TS-2255] TS should not flood printing after log space reach the limit.
+
+  *) [TS-2245] cancel the trigger of CacheVC in openWriteCloseDataDone.
+
+  *) [TS-2232] log level should be change from Status to Debug.
     Author: Yu Qing <zhuangyuan@taobao.com>
 
-  *) [TS-2201] split drainIncomingChannel two thread, one handle Broadcast message and other handle Reliable(TCP)
-   request for supporing large cluster.
+  *) [TS-2201] split drainIncomingChannel two thread, one handle Broadcast
+   message and other handle Reliable(TCP) request for supporing large cluster.
 
   *) [TS-2144] Avoid race on e.g. "traffic_server -Cclear" which would crash
    the process intermittently.
 
-  *) [TS-2217] remove the option to turn off body factory - setting it to 0 will
-   result in empty responses
+  *) [TS-2217] remove the option to turn off body factory - setting it to 0
+   will result in empty responses.
 
-  *) [TS-2209] add support for lowercasing all substitutions in regex_remap
+  *) [TS-2209] add support for lowercasing all substitutions in regex_remap.
 
-  *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in EventNotify::signal()
+  *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in
+   EventNotify::signal().
 
   *) [TS-2206] The trafficserver RC script does not use absolute path to
    traffic_line binary.
 
   *) [TS-2207] CentOS5 out of tree perl module build fails.
 
-  *) [TS-1637] Fix nodes as idle/dead if we have not heard from them in awhile
+  *) [TS-1637] Fix nodes as idle/dead if we have not heard from them in
+   awhile.
 
   *) [TS-2185] Support to control ClusterCom::sendSharedData frequency.
 
@@ -45,7 +62,7 @@ Changes with Apache Traffic Server 4.1.0
    log files properly. Author: Scott Harris <scott@harrisnet.id.au>.
 
   *) [TS-1086] Avoid edge case returning 304 to an unconditional request.
-     Diagnosis and patch by Mohamad Khateeb.
+   Diagnosis and patch by Mohamad Khateeb.
 
   *) [TS-2168] Make RecordsConfig.cc more inline with default builds.
 
@@ -62,12 +79,12 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2156] Fix stats trap in different type of threads.
 
-  *) [TS-2160] Remove ats_is_ip_nonroutable and replace it with the less confusing
-   ats_is_ip_linklocal and ats_is_ip_private.
+  *) [TS-2160] Remove ats_is_ip_nonroutable and replace it with the less
+   confusing ats_is_ip_linklocal and ats_is_ip_private.
 
-  *) [TS-2158] Properly mark an IP as non-routable for IPv4 and IPv6 link local
-   addresses as well as IPv6 private addresses and IPv4 Carrier Grade NAT
-   addresses from RFC 6598.
+  *) [TS-2158] Properly mark an IP as non-routable for IPv4 and IPv6 link
+   local addresses as well as IPv6 private addresses and IPv4 Carrier Grade
+   NAT addresses from RFC 6598.
 
   *) [TS-2155] Make a new RAT exclude file that uses the regular expressions
    now supported. Also cleanup some of minor licensing discrepancies.

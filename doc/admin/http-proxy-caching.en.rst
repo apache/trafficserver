@@ -523,7 +523,7 @@ directives. A response from an origin server with a ``no-cache`` header
 is not stored in the cache and any previous copy of the object in the
 cache is removed. If you configure Traffic Server to ignore ``no-cache``
 headers, then Traffic Server also ignores ``no-store`` headers. The
-efault behavior of observing ``no-cache`` directives is appropriate
+default behavior of observing ``no-cache`` directives is appropriate
 in most cases.
 
 To configure Traffic Server to ignore server ``no-cache`` headers
@@ -773,3 +773,65 @@ be set to the same value.
 
 If using c:func:`TSHttpTxnConfigIntSet`, it must be called no later than `TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 
+Reducing Origin Server Requests (Avoiding the Thundering Herd)
+==============================================================
+
+When an object can not be served from cache, the request will be proxied to the origin server. For a popular object,
+this can result in many near simultaneous requests to the origin server, potentially overwhelming it or associated
+resources. There are several features in Traffic Server that can be used to avoid this scenario.
+
+Read While Writer
+-----------------
+When Traffic Server goes to fetch something from origin, and upon receiving the response, any number of clients can be allowed to start serving the partially filled cache object once background_fill_completed_threshold % of the object has been received. The difference is that Squid allows this as soon as it goes to origin, whereas ATS can not do it until we get the complete response header. The reason for this is that we make no distinction between cache refresh, and cold cache, so we have no way to know if a response is going to be cacheable, and therefore allow read-while-writer functionality.
+
+The configurations necessary to enable this in ATS are::
+
+   CONFIG :ts:cv:`proxy.config.cache.enable_read_while_writer` ``INT 1``
+   CONFIG :ts:cv:`proxy.config.http.background_fill_active_timeout` ``INT 0``
+   CONFIG :ts:cv:`proxy.config.http.background_fill_completed_threshold` ``FLOAT 0.000000``
+   CONFIG :ts:cv:`proxy.config.cache.max_doc_size` ``INT 0`` 
+All four configurations are required, for the following reasons:
+
+-  enable_read_while_writer turns the feature on. It's off (0) by default
+-  The background fill feature should be allowed to kick in for every possible request. This is necessary, in case the writer ("first client session") goes away, someone needs to take over the session. The original client's request can go away after background_fill_active_timeout seconds, and the object will continue fetching in the background. The object then can start being served to another request after background_fill_completed_threshold % of the object has been fetched from origin.
+-  The proxy.config.cache.max_doc_size should be unlimited (set to 0), since the object size may be unknown, and going over this limit would cause a disconnect on the objects being served.
+
+Once all this enabled, you have something that is very close, but not quite the same, as Squid's Collapsed Forwarding.
+
+
+Fuzzy Revalidation
+------------------
+Traffic Server can be set to attempt to revalidate an object before it becomes stale in cache. :file:`records.config` contains the settings::
+
+   CONFIG :ts:cv:`proxy.config.http.cache.fuzz.time` ``INT 240``
+   CONFIG :ts:cv:`proxy.config.http.cache.fuzz.min_time` ``INT 0``
+   CONFIG :ts:cv:`proxy.config.http.cache.fuzz.probability` ``FLOAT 0.005``
+
+For every request for an object that occurs "fuzz.time" before (in the example above, 240 seconds) the object is set to become stale, there is a small
+chance (fuzz.probability == 0.5%) that the request will trigger a revalidation request to the origin. For objects getting a few requests per second, this would likely not trigger, but then this feature is not necessary anyways since odds are only 1 or a small number of connections would hit origin upon objects going stale. The defaults are a good compromise, for objects getting roughly 4 requests / second or more, it's virtually guaranteed to trigger a revalidate event within the 240s. These configs are also overridable per remap rule or via a plugin, so can be adjusted per request if necessary.  
+
+Note that if the revalidation occurs, the requested object is no longer available to be served from cache.  Subsequent
+requests for that object will be proxied to the origin. 
+
+Finally, the fuzz.min_time is there to be able to handle requests with a TTL less than fuzz.time – it allows for different times to evaluate the probability of revalidation for small TTLs and big TTLs. Objects with small TTLs will start "rolling the revalidation dice" near the fuzz.min_time, while objects with large TTLs would start at fuzz.time. A logarithmic like function between determines the revalidation evaluation start time (which will be between fuzz.min_time and fuzz.time). As the object gets closer to expiring, the window start becomes more likely. By default this setting is not enabled, but should be enabled anytime you have objects with small TTLs. Note that this option predates overridable configurations, so you can achieve something similar with a plugin or remap.config conf_remap.so configs.
+
+These configurations are similar to Squid's refresh_stale_hit configuration option.
+
+
+Open Read Retry Timeout
+------------------
+
+The open read retry configurations attempt to reduce the number of concurrent requests to the origin for a given object. While an object is being fetched from the origin server, subsequent requests would wait open_read_retry_time milliseconds before checking if the object can be served from cache. If the object is still being fetched, the subsequent requests will retry max_open_read_retries times. Thus, subsequent requests may wait a total of (max_open_read_retries x open_read_retry_time) milliseconds before establishing an origin connection of its own. For instance, if they are set to 5 and 10 respectively, connections will wait up to 50ms for a response to come back from origin from a previous request, until this request is allowed through.
+
+These settings are inappropriate when objects are uncacheable. In those cases, requests for an object effectively become serialized. The subsequent requests would await at least open_read_retry_time milliseconds before being proxies to the origin.
+
+Similarly, this setting should be used in conjunction with Read While Writer for big (those that take longer than (max_open_read_retries x open_read_retry_time) milliseconds to transfer) cacheable objects. Without the read-while-writer settings enabled, while the initial fetch is ongoing, not only would subsequent requests be delayed by the maximum time, but also, those requests would result in another request to the origin server.
+
+Since ATS now supports setting these settings per-request or remap rule, you can configure this to be suitable for your setup much more easily.
+
+The configurations are (with defaults)::
+
+   CONFIG :ts:cv:`proxy.config.http.cache.max_open_read_retries` ``INT -1``
+   CONFIG :ts:cv:`proxy.config.http.cache.open_read_retry_time` ``INT 10``
+
+The default means that the feature is disabled, and every connection is allowed to go to origin instantly. When enabled, you will try max_open_read_retries times, each with a open_read_retry_time timeout.

@@ -23,7 +23,8 @@
 
 #include "ink_defs.h"
 #include "UrlMapping.h"
-
+#include "I_RecCore.h"
+#include "ink_cap.h"
 /**
  *
 **/
@@ -77,8 +78,14 @@ url_mapping::delete_instance(unsigned int index)
   void *ih = get_instance(index);
   remap_plugin_info* p = get_plugin(index);
 
-  if (ih && p && p->fp_tsremap_delete_instance)
+  if (ih && p && p->fp_tsremap_delete_instance) {
+    // elevate the access to read files as root if compiled with capabilities, if not
+    // change the effective user to root
+    uint32_t elevate_access = 0;
+    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    ElevateAccess access(elevate_access != 0);
     p->fp_tsremap_delete_instance(ih);
+  } // done elevating access
 }
 
 

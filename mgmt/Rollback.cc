@@ -29,7 +29,7 @@
 #include "MgmtUtils.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
-
+#include "ink_cap.h"
 
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2

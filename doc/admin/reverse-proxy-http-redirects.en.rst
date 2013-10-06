@@ -142,8 +142,7 @@ The figure above demonstrates the following steps:
    advertised hostname resolves to Traffic Server).
 2. Traffic Server locates a map rule in the ``remap.config`` file and
    remaps the request to the specified origin server (``realhost.com``).
-3. Traffic Server opens an HTTP connection to the origin server. (This
-   step is optional)
+3. Traffic Server opens an HTTP connection to the origin server. (If the request is not able to be served from cache)
 4. If the request is a cache hit and the content is fresh, then Traffic
    Server sends the requested object to the client from the cache.
    Otherwise, Traffic Server obtains the requested object from the

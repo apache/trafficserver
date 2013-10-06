@@ -1629,6 +1629,9 @@ LogConfig::update_space_used()
 
 
   if (!space_to_write(headroom)) {
+    if (!logging_space_exhausted)
+      Note("Logging space exhausted, any logs writing to local disk will be dropped!");
+
     logging_space_exhausted = true;
     //
     // Despite our best efforts, we still can't write to the disk.
@@ -1673,6 +1676,9 @@ LogConfig::update_space_used()
     //
     // We have enough space to log again; clear any previous messages
     //
+    if (logging_space_exhausted)
+      Note("Logging space is no longer exhausted.");
+
     logging_space_exhausted = false;
     if (m_disk_full || m_partition_full) {
       Note("Logging disk is no longer full; " "access logging to local log directory resumed.");
@@ -2302,13 +2308,24 @@ LogConfig::read_xml_log_config(int from_memory)
         char *host;
         SimpleTokenizer tok(collationHosts_str, ',');
         while (host = tok.getNext(), host != 0) {
-          LogHost *lh = NEW(new LogHost(obj->get_full_filename(), obj->get_signature()));
 
-          if (lh->set_name_or_ipstr(host)) {
-            Warning("Could not set \"%s\" as collation host", host);
-            delete lh;
-          } else {
-            obj->add_loghost(lh, false);
+          LogHost *prev = NULL;
+          char *failover_str;
+          SimpleTokenizer failover_tok(host, '|'); // split failover hosts
+
+          while (failover_str = failover_tok.getNext(), failover_str != 0) {
+            LogHost *lh = NEW(new LogHost(obj->get_full_filename(), obj->get_signature()));
+
+            if (lh->set_name_or_ipstr(failover_str)) {
+              Warning("Could not set \"%s\" as collation host", host);
+              delete lh;
+            } else if (!prev){
+              obj->add_loghost(lh, false);
+              prev = lh;
+            } else {
+              prev->failover_link.next = lh;
+              prev = lh;
+            }
           }
         }
       }

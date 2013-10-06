@@ -326,7 +326,7 @@ ink_chunk_create(InkFreeList *f, InkThreadCache *pCache)
   }
   *(void **)curr = NULL;
 
-  ink_atomic_increment(&f->count, chunk_size);
+  ink_atomic_increment(&f->allocated, chunk_size);
   ink_atomic_increment(&total_mem_in_byte, f->chunk_byte_size);
 
   pCache->free_chunk_list.push(pChunk);
@@ -349,7 +349,7 @@ ink_chunk_delete(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
     ink_fatal(1, "Failed to munmap %u bytes, %s", f->chunk_byte_size, strerror(errno));
   }
 
-  ink_atomic_increment((int *)&f->count, -f->chunk_size);
+  ink_atomic_increment((int *)&f->allocated, -f->chunk_size);
 
   /*
    * TODO: I had used ink_atomic_increment() here, but it would
@@ -385,8 +385,6 @@ malloc_whole_chunk(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
   pChunk->inner_free_list = NULL;
   pCache->nr_total += chunk_size;
 
-  ink_atomic_increment(&f->allocated, chunk_size);
-
   return item;
 }
 
@@ -399,7 +397,6 @@ malloc_from_chunk(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
     pChunk->inner_free_list  = *(void **)item;
     pChunk->allocated++;
     pCache->nr_total++;
-    ink_atomic_increment(&f->allocated, 1);
   }
 
   return item;
@@ -412,7 +409,6 @@ free_to_chunk(InkFreeList *f, InkThreadCache *pCache, void *item)
 
   pChunk = get_chunk_info_addr(f, item);
   pChunk->allocated--;
-  ink_atomic_increment((int *)&f->allocated, -1);
   pCache->nr_total--;
 
   *(void **)item = pChunk->inner_free_list;
@@ -537,10 +533,10 @@ reclaimable_freelist_init(InkFreeList **fl, const char *name,
   freelists = fll;
 
   f->name = name;
-  f->count = 0;
+  f->used = 0;
   f->allocated = 0;
   f->allocated_base = 0;
-  f->count_base = 0;
+  f->used_base = 0;
 
   memory_alignment_init(f, type_size, chunk_size, alignment);
 
@@ -563,6 +559,8 @@ reclaimable_freelist_new(InkFreeList *f)
   uint32_t num_to_move;
   InkChunkInfo *pChunk = NULL;
   InkThreadCache *pCache, *pNextCache;
+
+  ink_atomic_increment(&f->used, 1);
 
   /* no thread cache, create it */
   if (unlikely((pCache = ThreadCaches[f->thread_cache_idx]) == NULL)) {
@@ -683,5 +681,6 @@ reclaimable_freelist_free(InkFreeList *f, void *item)
 
   ink_atomic_increment(&pCache->nr_free, 1);
   ink_atomiclist_push(&pCache->outer_free_list, item);
+  ink_atomic_increment(&f->used, -1);
 }
 #endif

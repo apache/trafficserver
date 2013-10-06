@@ -34,6 +34,7 @@
 #include "UrlMappingPathIndex.h"
 
 #include "ink_string.h"
+#include "ink_cap.h"
 
 
 unsigned long
@@ -1699,10 +1700,18 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     ri.size = sizeof(ri);
     ri.tsremap_version = TSREMAP_VERSION;
 
-    if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
-      Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
-      return -5;
-    }
+    // elevate the access to read files as root if compiled with capabilities, if not
+    // change the effective user to root
+    {
+      uint32_t elevate_access = 0;
+      REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+      ElevateAccess access(elevate_access != 0);
+
+      if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
+        Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
+        return -5;
+      }
+    } // done elevating access
     Debug("remap_plugin", "Remap plugin \"%s\" - initialization completed", c);
   }
 
@@ -1756,7 +1765,16 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
   void* ih;
 
   Debug("remap_plugin", "creating new plugin instance");
-  TSReturnCode res = pi->fp_tsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
+
+  TSReturnCode res = TS_ERROR;
+  // elevate the access to read files as root if compiled with capabilities, if not
+  // change the effective user to root
+  {
+    uint32_t elevate_access = 0;
+    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    ElevateAccess access(elevate_access != 0);
+    res = pi->fp_tsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
+  } // done elevating access
 
   Debug("remap_plugin", "done creating new plugin instance");
 

@@ -104,6 +104,7 @@ private:
   // to detect server closes (there's got to be a better way to do this)
   VIO *m_abort_vio;
   MIOBuffer *m_abort_buffer;
+  bool m_host_is_up;
 
   // send stuff
   LogBufferList *m_buffer_send_list;

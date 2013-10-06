@@ -65,12 +65,11 @@ typedef struct HCDirEntry_t
 /* Information about a status file. This is never modified (only replaced, see HCFileInfo_t) */
 typedef struct HCFileData_t
 {
-  time_t mtime;                   /* Last modified time of file */
-  int exists;                     /* Does this file exist ? */
+  int exists;                     /* Does this file exist */
   char body[MAX_BODY_LEN];        /* Body from fname. NULL means file is missing */
   int b_len;                      /* Length of data */
   time_t remove;                  /* Used for deciding when the old object can be permanently removed */
-  struct HCFileData_t *_next;     /* Only used when removing these bad boys */
+  struct HCFileData_t *_next;     /* Only used when these guys end up on the freelist */
 } HCFileData;
 
 /* The only thing that should change in this struct is data, atomically swapping ptrs */
@@ -78,7 +77,7 @@ typedef struct HCFileInfo_t
 {
   char fname[MAX_FILENAME_LEN];   /* Filename */
   char *basename;                 /* The "basename" of the file */
-  char path[MAX_PATH_LEN];        /* Path for this HC */
+  char path[MAX_PATH_LEN];        /* URL path for this HC */
   int p_len;                      /* Length of path */
   const char *ok;                 /* Header for an OK result */
   int o_len;                      /* Length of OK header */
@@ -118,23 +117,17 @@ reload_status_file(HCFileInfo *info, HCFileData *data)
 {
   struct stat buf;
 
-  data->exists = 0;
+  memset(data, 0, sizeof(HCFileData));
   if (!stat(info->fname, &buf)) {
     FILE *fd;
 
     if (NULL != (fd = fopen(info->fname, "r"))) {
-      if ((data->b_len = fread(data->body, 1, MAX_BODY_LEN, fd)) > 0) {
-        data->exists = 1;
-        data->mtime = buf.st_mtime;
-        data->remove = 0;
-      }
+      data->exists = 1;
+      do {
+        data->b_len = fread(data->body, 1, MAX_BODY_LEN, fd);
+      } while (!feof(fd)); /*  Only save the last 16KB of the file ... */
       fclose(fd);
     }
-  }
-  if (!data->exists) {
-    data->body[0] = '\0';
-    data->b_len = 0;
-    data->mtime = 0;
   }
 }
 
@@ -161,9 +154,12 @@ setup_watchers(int fd)
 
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF|IN_CLOSE_WRITE);
+    TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
     strncpy(fname, conf->fname, MAX_FILENAME_LEN - 1);
     dname = dirname(fname);
-    if (!(dir = find_direntry(dname, head_dir))) {     /* Make sure to only watch each directory once */
+    /* Make sure to only watch each directory once */
+    if (!(dir = find_direntry(dname, head_dir))) {
+      TSDebug(PLUGIN_NAME, "Setting up a watcher for directory %s", dname);
       dir = TSmalloc(sizeof(HCDirEntry));
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_FILENAME_LEN - 1);
@@ -190,7 +186,7 @@ hc_thread(void *data ATS_UNUSED)
   int fd = inotify_init();
   HCDirEntry *dirs;
   int len;
-  HCFileData *fl = NULL;
+  HCFileData *fl_head = NULL;
   char buffer[INOTIFY_BUFLEN];
   struct timeval last_free, now;
 
@@ -200,44 +196,51 @@ hc_thread(void *data ATS_UNUSED)
   dirs = setup_watchers(fd);
 
   while (1) {
-    int i = 0;
+    HCFileData *fdata = fl_head, *fdata_prev = NULL;
 
-    /* First clean out anything old from the freelist */
+    /* Read the inotify events, blocking until we get something */
+    len  = read(fd, buffer, INOTIFY_BUFLEN);
     gettimeofday(&now, NULL);
-    if ((now.tv_sec  - last_free.tv_sec) > FREELIST_TIMEOUT) {
-      HCFileData *fdata = fl, *prev_fdata = fl;
 
-      TSDebug(PLUGIN_NAME, "Checking the freelist");
-      memcpy(&last_free, &now, sizeof(struct timeval));
-      while(fdata) {
-        if (fdata->remove > now.tv_sec) {
-          if (prev_fdata)
-            prev_fdata->_next = fdata->_next;
-          fdata = fdata->_next;
+    /* The fl_head is a linked list of previously released data entries. They
+       are ordered "by time", so once we find one that is scheduled for deletion,
+       we can also delete all entries after it in the linked list. */
+    while (fdata) {
+      if (now.tv_sec > fdata->remove) {
+        /* Now drop off the "tail" from the freelist */
+        if (fdata_prev)
+          fdata_prev->_next = NULL;
+        else
+          fl_head = NULL;
+
+        /* free() everything in the "tail" */
+        do {
+          HCFileData *next = fdata->_next;
+
           TSDebug(PLUGIN_NAME, "Cleaning up entry from frelist");
           TSfree(fdata);
-        } else {
-          prev_fdata = fdata;
-          fdata = fdata->_next;
-        }
+          fdata = next;
+        } while (fdata);
+        break; /* Stop the loop, there's nothing else left to examine */
       }
+      fdata_prev = fdata;
+      fdata = fdata->_next;
     }
 
-    /* Read the inotify events, blocking! */
-    len  = read(fd, buffer, INOTIFY_BUFLEN);
     if (len >= 0) {
+      int i = 0;
+
       while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
-        int wd = event->wd;
         HCFileInfo *finfo = g_config;
 
-        while (finfo) {
-          if ((wd == finfo->wd) || (wd == finfo->dir->wd && !strncmp(event->name, finfo->basename, event->len)))
-            break;
+        while (finfo && !((event->wd == finfo->wd) ||
+                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
           finfo = finfo->_next;
         }
         if (finfo) {
           HCFileData *new_data = TSmalloc(sizeof(HCFileData));
+          HCFileData *old_data;
 
           if (event->mask & (IN_CLOSE_WRITE)) {
             TSDebug(PLUGIN_NAME, "Modify file event (%d) on %s", event->mask, finfo->fname);
@@ -248,12 +251,16 @@ hc_thread(void *data ATS_UNUSED)
             TSDebug(PLUGIN_NAME, "Delete file event (%d) on %s", event->mask, finfo->fname);
             finfo->wd = inotify_rm_watch(fd, finfo->wd);
           }
+          /* Load the new data and then swap this atomically */
           memset(new_data, 0, sizeof(HCFileData));
           reload_status_file(finfo, new_data);
-          finfo->data->_next = fl;
-          finfo->data->remove = now.tv_sec + FREELIST_TIMEOUT;
-          fl = finfo->data;
-          ink_atomic_swap_ptr(&(finfo->data), new_data);
+          TSDebug(PLUGIN_NAME, "Reloaded %s, len == %d, exists == %d", finfo->fname, new_data->b_len, new_data->exists);
+          old_data = ink_atomic_swap_ptr(&(finfo->data), new_data);
+
+          /* Add the old data to the head of the freelist */
+          old_data->remove = now.tv_sec + FREELIST_TIMEOUT;
+          old_data->_next = fl_head;
+          fl_head = old_data;
         }
         i += sizeof(struct inotify_event) + event->len;
       }

@@ -35,7 +35,6 @@
 #include "LogBuffer.h"
 #include "LogAccess.h"
 #include "LogFilter.h"
-#include "SimpleTokenizer.h"
 
 /*-------------------------------------------------------------------------
   LogObject

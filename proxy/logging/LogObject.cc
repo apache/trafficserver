@@ -527,7 +527,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
   // likewise, send data to a remote client even if local space is exhausted
   // (if there is a remote client, m_logFile will be NULL
   if (Log::config->logging_space_exhausted && !writes_to_pipe() && m_logFile) {
-    Note("logging space exhausted, can't write to:%s, drop this entry", m_logFile->m_name);
+    Debug("log", "logging space exhausted, can't write to:%s, drop this entry", m_logFile->m_name);
     return Log::FULL;
   }
   // this verification must be done here in order to avoid 'dead' LogBuffers

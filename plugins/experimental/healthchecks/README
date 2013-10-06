@@ -14,4 +14,8 @@ Examples:
    /__hc  /var/run/ts-alive  text/plain 200  403
 
 
-The content of the file, if any, is sent as the body of the response.
+The content of the file, if any, is sent as the body of the response. The
+existence of the file is sufficient to get an "OK" status. Performance wise,
+everything is served out of memory, and it only stats / opens files as
+necessary. However, the content of the status file is limited to 16KB, so
+this is not a generic static file serving plugin.

@@ -263,14 +263,15 @@ LogHost::create_orphan_LogFile_object()
 // preprocess the given buffer data before sent to target host
 // and try to delete it when its reference become zero.
 //
-void
+int
 LogHost::preproc_and_try_delete (LogBuffer *lb)
 {
+  int ret = -1;
   int bytes;
 
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
-    return;
+    return -1;
   }
   LogBufferHeader *buffer_header = lb->header();
   if (buffer_header == NULL) {
@@ -291,7 +292,7 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
     if (!connect ()) {
       Note("Cannot write LogBuffer to LogHost %s; not connected", name());
       orphan_write_and_try_delete(lb);
-      return;
+      return -1;
     }
   }
 
@@ -308,8 +309,9 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
     // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
     // lb->convert_to_host_order ();
     orphan_write_and_try_delete(lb);
-    return;
+    return -1;
   }
+  ret = 0;
 
 #else // !defined(IOCORE_LOG_COLLATION)
   // create a new collation client if necessary
@@ -326,14 +328,15 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
     Debug("log-buftrak", "[%d]LogHost::preproc_and_try_delete - orphan write complete",
         lb->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
+    return -1;
   }
 
-  return;
+  return 0;
 #endif // !defined(IOCORE_LOG_COLLATION)
 
 done:
   LogBuffer::destroy(lb);
-  return;
+  return ret;
 }
 
 //
@@ -355,7 +358,7 @@ LogHost::orphan_write_and_try_delete(LogBuffer * lb)
     Debug("log-host", "Sending LogBuffer to orphan file %s", m_orphan_file->get_name());
     m_orphan_file->preproc_and_try_delete(lb);
   } else {
-    Note("logging space exhausted, failed to write orphan file, drop(%" PRIu32 ") bytes",
+    Debug("log-host", "logging space exhausted, failed to write orphan file, drop(%" PRIu32 ") bytes",
          lb->header()->byte_count);
     LogBuffer::destroy(lb);
   }
@@ -454,9 +457,10 @@ LogHostList::clear()
   }
 }
 
-void
+int
 LogHostList::preproc_and_try_delete(LogBuffer * lb)
 {
+  int ret;
   unsigned nr_host, nr;
 
   ink_release_assert(lb->m_references == 0);
@@ -465,12 +469,21 @@ LogHostList::preproc_and_try_delete(LogBuffer * lb)
   ink_atomic_increment(&lb->m_references, nr_host);
 
   for (LogHost * host = first(); host && nr; host = next(host)) {
-    host->preproc_and_try_delete(lb);
+    LogHost *lh = host;
+
+    do {
+      ink_atomic_increment(&lb->m_references, 1);
+      ret = lh->preproc_and_try_delete(lb);
+    } while (ret < 0 && (lh = lh->failover_link.next));
+
+    LogBuffer::destroy(lb);
     nr--;
   }
 
   if (nr_host == 0)
     delete lb;
+
+  return 0;
 }
 
 void

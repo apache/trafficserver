@@ -56,7 +56,7 @@ public:
   // preprocess the given buffer data before sent to target host
   // and try to delete it when its reference become zero.
   //
-  void preproc_and_try_delete(LogBuffer * lb);
+  int preproc_and_try_delete(LogBuffer * lb);
 
   char const* name() const { return m_name ? m_name : "UNKNOWN"; }
   IpAddr const& ip_addr() const { return m_ip; }
@@ -96,6 +96,7 @@ private:
 
 public:
   LINK(LogHost, link);
+  SLINK(LogHost, failover_link);
 
 private:
   // -- member functions not allowed --
@@ -115,7 +116,7 @@ public:
   void add(LogHost * host, bool copy = true);
   unsigned count();
   void clear();
-  void preproc_and_try_delete(LogBuffer * lb);
+  int preproc_and_try_delete(LogBuffer * lb);
 
   LogHost *first() { return m_host_list.head; }
   LogHost *next(LogHost * here) { return (here->link).next; }
