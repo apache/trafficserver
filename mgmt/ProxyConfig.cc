@@ -24,6 +24,7 @@
 #include "libts.h"
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
+#include "ts/TestBox.h"
 
 ConfigProcessor configProcessor;
 
@@ -124,7 +125,7 @@ ConfigProcessor::ConfigProcessor()
 }
 
 unsigned int
-ConfigProcessor::set(unsigned int id, ConfigInfo * info)
+ConfigProcessor::set(unsigned int id, ConfigInfo * info, unsigned timeout_secs)
 {
   ConfigInfo *old_info;
   int idx;
@@ -135,7 +136,13 @@ ConfigProcessor::set(unsigned int id, ConfigInfo * info)
     ink_assert(id <= MAX_CONFIGS);
   }
 
-  info->m_refcount = 1;
+  // Don't be an idiot and use a zero timeout ...
+  ink_assert(timeout_secs > 0);
+
+  // New objects *must* start with a zero refcount. The config
+  // processor holds it's own refcount. We should be the only
+  // refcount holder at this point.
+  ink_release_assert(info->refcount_inc() == 1);
 
   if (id > MAX_CONFIGS) {
     // invalid index
@@ -146,11 +153,14 @@ ConfigProcessor::set(unsigned int id, ConfigInfo * info)
   idx = id - 1;
 
   do {
-    old_info = (ConfigInfo *) infos[idx];
-  } while (!ink_atomic_cas( & infos[idx], old_info, info));
+    old_info = infos[idx];
+  } while (!ink_atomic_cas(&infos[idx], old_info, info));
 
   if (old_info) {
-    eventProcessor.schedule_in(NEW(new ConfigInfoReleaser(id, old_info)), HRTIME_SECONDS(60));
+    // The ConfigInfoReleaser now takes our refcount, but
+    // someother thread might also have one ...
+    ink_assert(old_info->refcount() > 0);
+    eventProcessor.schedule_in(NEW(new ConfigInfoReleaser(id, old_info)), HRTIME_SECONDS(timeout_secs));
   }
 
   return id;
@@ -171,18 +181,17 @@ ConfigProcessor::get(unsigned int id)
   }
 
   idx = id - 1;
-  info = (ConfigInfo *) infos[idx];
-  if (ink_atomic_increment((int *) &info->m_refcount, 1) < 0) {
-    ink_assert(!"not reached");
-  }
+  info = infos[idx];
 
+  // Hand out a refcount to the caller. We should still have out
+  // own refcount, so it should be at least 2.
+  ink_release_assert(info->refcount_inc() > 1);
   return info;
 }
 
 void
 ConfigProcessor::release(unsigned int id, ConfigInfo * info)
 {
-  int val;
   int idx;
 
   ink_assert(id != 0);
@@ -194,9 +203,91 @@ ConfigProcessor::release(unsigned int id, ConfigInfo * info)
   }
 
   idx = id - 1;
-  val = ink_atomic_increment((int *) &info->m_refcount, -1);
 
-  if ((infos[idx] != info) && (val == 1)) {
+  if (info->refcount_dec() == 0) {
+    // When we release, we should already have replaced this object in the index.
+    ink_release_assert(info != this->infos[idx]);
     delete info;
   }
 }
+
+#if TS_HAS_TESTS
+
+enum {
+  REGRESSION_CONFIG_FIRST   = 1,   // last config in a sequence
+  REGRESSION_CONFIG_LAST    = 2,   // last config in a sequence
+  REGRESSION_CONFIG_SINGLE  = 4, // single-owner config
+};
+
+struct RegressionConfig : public ConfigInfo
+{
+
+  RegressionConfig(RegressionTest * r, int * ps, unsigned f)
+      : test(r), pstatus(ps), flags(f) {
+    if (this->flags & REGRESSION_CONFIG_SINGLE) {
+      TestBox box(this->test, this->pstatus);
+      box.check(this->refcount() == 1, "invalid refcount %d (should be 1)", this->refcount());
+    }
+  }
+
+  ~RegressionConfig() {
+    TestBox box(this->test, this->pstatus);
+
+    box.check(this->refcount() == 0, "invalid refcount %d (should be 0)", this->refcount());
+
+    // If we are the last config to be scheduled, pass the test.
+    // Otherwise, verify that the test is still running ...
+    if (REGRESSION_CONFIG_LAST & flags) {
+      *this->pstatus = REGRESSION_TEST_PASSED;
+    } else {
+      box.check(*this->pstatus == REGRESSION_TEST_INPROGRESS, "intermediate config out of sequence");
+    }
+  }
+
+  RegressionTest * test;
+  int *     pstatus;
+  unsigned  flags;
+};
+
+// Test that ConfigProcessor::set() correctly releases the old ConfigInfo after a timeout.
+REGRESSION_TEST(ProxyConfig_Set)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
+{
+  int configid = 0;
+  *pstatus = REGRESSION_TEST_INPROGRESS;
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_LAST), 2);
+
+  // Push one more RegressionConfig to force the tagged one to
+  // get destroyed.
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, 0), 4);
+
+  return;
+}
+
+// Test that ConfigProcessor::release() correctly releases the old ConfigInfo across an implicit
+// release timeout.
+REGRESSION_TEST(ProxyConfig_Release)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
+{
+  int configid = 0;
+  RegressionConfig * config;
+
+  *pstatus = REGRESSION_TEST_INPROGRESS;
+
+  // Set an initial config, then get it back to hold a reference count.
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_LAST), 1);
+  config = (RegressionConfig *)configProcessor.get(configid);
+
+  // Now update the config a few times.
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+
+  sleep(2);
+
+  // Release the reference count. Since we were keeping this alive, it should be the last to die.
+  configProcessor.release(configid, config);
+}
+
+#endif /* TS_HAS_TESTS */

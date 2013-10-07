@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2296] improve ConfigProcessor reference counting
+
   *) [ TS-2295] update statvfs usage
 
   *) [TS-2139] Fix PURGE twice to remove object in cache if enable-interim-cache
