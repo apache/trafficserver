@@ -115,14 +115,14 @@ Objects are rooted in a :cpp:class:Doc structure stored in the cache. This is te
 
 |TS| supports `varying content <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.44>`_ for objects. These are called *alternates*. All metadata for all alternates is stored in the first ``Doc`` including the set of alternates and the HTTP headers for them. This enables `alternate selection <http://trafficserver.apache.org/docs/trunk/sdk/http-hooks-and-transactions/http-alternate-selection.en.html>`_ to be done after the initial read from disk. An object that has more than one alternate will have the alternate content stored separately from the first ``Doc``. For objects with only one alternate the content may or may not be in the same (first) fragment as the metadata. Each separate alternate content is allocated a volume directory entry and the key for that entry is stored in the first ``Doc`` metadata.
 
-Prior to version 3.2.0 the header data was stored in the :cpp:class:`CacheHTTPInfoVector` class which was marshaled to a variable length area of the on disk image.
+Prior to version 3.2.0 only the header data (not the fragment data) was stored in the :cpp:class:`CacheHTTPInfoVector` class which was marshaled to a variable length area of the on disk image.
 
 .. figure:: images/ats-cache-doc-layout-pre-3-2-0.png
    :align: center
 
    ``Doc`` layout, pre 3.2.0
 
-This had the problem that with only one fragment table it could not be reliable accurate for objects with more than one alternate [#]_. Therefore the fragment data was moved from being a separate variable length section of the metadata to being directly incorporated in to the :cpp:class:`CacheHTTPInfoVector`, yielding a layout of the following form.
+This had the problem that with only one fragment table it could not be reliable accurate for objects with more than one alternate [#]_. Therefore the fragment data was moved from being a separate variable length section of the metadata to being directly incorporated in to the :cpp:class:`CacheHTTPInfoVector` along with the header data, yielding a layout of the following form.
 
 .. figure:: images/ats-cache-doc-layout.png
    :align: center
@@ -131,7 +131,7 @@ This had the problem that with only one fragment table it could not be reliable 
 
 Each element in the vector contains for each alternate, in addition to the HTTP headers and the fragment table (if any), a cache key. This cache key identifies a volume directory entry that is referred to as the "earliest ``Doc``". This is the location where the content for the alternate begins.
 
-When the object is first cached, it will have a single alternate and that will be stored (if not too large) in first ``Doc``. This is termed a *resident alternate* in the code. Resident alternates are not liked and the next time the header information is updated the object content will be separated.
+When the object is first cached, it will have a single alternate and that will be stored (if not too large) in first ``Doc``. This is termed a *resident alternate* in the code. Resident alternates are not linked and the next time the header information is updated the object content will be separated.
 
 .. note:: The :cpp:class:`CacheHTTPInfoVector` is stored only in the first ``Doc``. Subsequent ``Doc`` instances will have an ``hlen`` of zero.
 
@@ -419,20 +419,20 @@ Aggregation Buffer
 ------------------
 
 Disk writes to cache are handled through an *aggregation buffer*. There is one for each :cpp:class:`Vol` instance.
-To minimize the number of system calls data is written to disk in units of roughly :ref:`target fragment size <target-fragment-size>` bytes. The algorithm used is simple - data is piled up in the aggregation buffer until no more will fit without going over the targer fragment size, at which point the buffer is written to disk and the volume directory entries for objects with data in the buffer are updated with the actual disk locations for those objects (which are determined by the write to disk action). After the buffer is written it is cleared and process repeats. There is a special lookup table for the aggregation buffer so that object lookup can find cache data in that memory.
+To minimize the number of system calls data is written to disk in units of roughly :ref:`target fragment size <target-fragment-size>` bytes. The algorithm used is simple - data is piled up in the aggregation buffer until no more will fit without going over the target fragment size, at which point the buffer is written to disk and the volume directory entries for objects with data in the buffer are updated with the actual disk locations for those objects (which are determined by the write to disk action). After the buffer is written it is cleared and process repeats. There is a special lookup table for the aggregation buffer so that object lookup can find cache data in that memory.
 
 Because data in the aggregation buffer is visible to other parts of the cache, particularly `cache lookup`_, there is no need to push a partial filled aggregation buffer to disk. In effect any such data is effectively memory cached until enough additional cache content arrives to fill the buffer.
 
-The target fragment size has little effect on small objects because the fragment sized is used only to parcel out disk write operations. For larger objects the effect very significant as it causes those objects to be broken up in to fragments at different locations on in the volume. Each fragment write has its own entry in the volume directory which are computational chained (each cache key is computed from the previous one). If possible a fragment table is accumulated in the earliest ``Doc`` which has the offsets of the first byte for each fragment.
+The target fragment size has little effect on small objects because the fragmen size is used only to parcel out disk write operations. For larger objects the effect very significant as it causes those objects to be broken up in to fragments at different locations on in the volume. Each fragment write has its own entry in the volume directory which are computationally chained (each cache key is computed from the previous one). If possible a fragment table is accumulated in the first ``Doc`` which has the offsets of the first byte for each fragment.
 
 Evacuation
 ----------
 
 By default the write cursor will overwrite (de facto evict from cache) objects as it proceeds once it has gone around the volume content at least once. In some cases this is not acceptable and the object is *evacuated* by reading it from the cache and then writing it back to cache which moves the physical storage of the object from in front of the write cursor to behind the write cursor. Objects that are evacuated are those that are active in either a read or write operation, or objects that are pinned [#]_.
 
-Evacuation starts by dividing up the volume content in to a set of regions of ``EVACUATION_BUCKET_SIZE`` bytes. The :cpp:member:`Vol::evacuate` member is an array with an element for each region. Each element is a doubly linked list of :cpp:class:`EvacuationBlock` instances. Each instance contains a :cpp:class:`Dir` that specifies the document to evacuate. Objects to be evacuated are descrinbed in an ``EvacuationBlock`` which is put in to an evacuation bucket based on the offset of the storage location.
+Evacuation starts by dividing up the volume content in to a set of regions of ``EVACUATION_BUCKET_SIZE`` bytes. The :cpp:member:`Vol::evacuate` member is an array with an element for each region. Each element is a doubly linked list of :cpp:class:`EvacuationBlock` instances. Each instance contains a :cpp:class:`Dir` that specifies the document to evacuate. Objects to be evacuated are described in an ``EvacuationBlock`` which is put into an evacuation bucket based on the offset of the storage location.
 
-There are two types of evacuations, reader based and forced. The ``EvacuationBlock`` has a reader count to track this. If the reader count is zero, then it is a forced evacuation and the the target, if it exists, will be evacuated when the write cursor gets close. If the reader value is non-zero then it is a count of entities that are currently expecting to be able to read the object. Readers increment the count when they require read access to the object, or create the ``EvacuationBlock`` with a count of 1. When a reader is finished with the object it decrements the count and removes the ``EvacuationBlock`` if the count goes to zero. If the ``EvacuationBlock`` already exists with a count of zero, the count is not modified and the number of readers is not tracked, so the evacuation be valid as long as the object exists.
+There are two types of evacuations, reader based and forced. The ``EvacuationBlock`` has a reader count to track this. If the reader count is zero, then it is a forced evacuation and the target, if it exists, will be evacuated when the write cursor gets close. If the reader value is non-zero then it is a count of entities that are currently expecting to be able to read the object. Readers increment the count when they require read access to the object, or create the ``EvacuationBlock`` with a count of 1. When a reader is finished with the object it decrements the count and removes the ``EvacuationBlock`` if the count goes to zero. If the ``EvacuationBlock`` already exists with a count of zero, the count is not modified and the number of readers is not tracked, so the evacuation be valid as long as the object exists.
 
 Objects are evacuated as the write cursor approaches. The volume calculates the current amount of
 

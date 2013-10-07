@@ -21,7 +21,7 @@ Architecture
 Introduction
 --------------
 
-The original architectural documents for Traffic Server were lost in the transation to an open source project. The documents in this section are provision and were written based on the existing code. The purpose is to have a high level description of aspects of Traffic Server to better inform ongoing work.
+The original architectural documents for Traffic Server were lost in the transation to an open source project. The documents in this section are provisional and were written based on the existing code. The purpose is to have a high level description of aspects of Traffic Server to better inform ongoing work.
 
 Contents:
 
