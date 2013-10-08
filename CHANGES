@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2268] Add support for opening protocol traffic sockets through the 
+   traffic_manager. Added TSPluginDescriptorAccept into expiremental API.
+
   *) [TS-2266] Add a "make rat" Makefile target, to create a RAT report. This
    is used for verifying licensing compliance on the entire source tree.
 
