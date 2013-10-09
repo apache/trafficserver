@@ -562,7 +562,7 @@ LogSock::read_alloc(int cid, int *size)
 
 /**
 */
-bool LogSock::is_connected(int cid, bool ping)
+bool LogSock::is_connected(int cid, bool ping) const
 {
   int
     i,
