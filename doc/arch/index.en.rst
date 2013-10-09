@@ -8,9 +8,9 @@ Architecture
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,7 +21,13 @@ Architecture
 Introduction
 --------------
 
-The original architectural documents for Traffic Server were lost in the transation to an open source project. The documents in this section are provisional and were written based on the existing code. The purpose is to have a high level description of aspects of Traffic Server to better inform ongoing work.
+The original architectural documents for Traffic Server were lost in the transation to an open source project. The
+documents in this section are provisional and were written based on the existing code. The purpose is to have a high
+level description of aspects of Traffic Server to better inform ongoing work.
+
+In addition, future proposed architectural changes are included in the *Proposals* section. These are not current, and
+may not be implemented in the future, and if implemented may be signficantly changed. They are included here to provide
+direction for those interested in working on the Traffic Server architecture.
 
 Contents:
 
@@ -29,3 +35,10 @@ Contents:
    :maxdepth: 2
 
    cache/cache.en
+
+Proposals
+
+.. toctree::
+   :maxdepth: 1
+
+   proposals/hostdb.en
