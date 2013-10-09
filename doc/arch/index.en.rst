@@ -25,20 +25,9 @@ The original architectural documents for Traffic Server were lost in the transat
 documents in this section are provisional and were written based on the existing code. The purpose is to have a high
 level description of aspects of Traffic Server to better inform ongoing work.
 
-In addition, future proposed architectural changes are included in the *Proposals* section. These are not current, and
-may not be implemented in the future, and if implemented may be signficantly changed. They are included here to provide
-direction for those interested in working on the Traffic Server architecture.
-
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
    cache/cache.en
-
-Proposals
-
-.. toctree::
-   :maxdepth: 1
-
-   proposals/hostdb.en

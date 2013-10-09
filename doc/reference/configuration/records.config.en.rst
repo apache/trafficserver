@@ -1218,7 +1218,7 @@ hostname to ``host_x.y.com``.
    :reloadable:
 
    Enables (``1``) or disables (``0``) DNS server selection. When enabled, Traffic Server refers to the :file:`splitdns.config` file for
-   the selection specification. Refer to `Configuring DNS Server Selection (Split DNS) <../security-options#ConfiguringDNSServerSelectionSplit>`_.
+   the selection specification. Refer to :ref:`Configuring DNS Server Selection (Split DNS) <configuring-dns-server-selection-split-dns>`.
 
 .. ts:cv:: CONFIG proxy.config.dns.url_expansions STRING NULL
 
