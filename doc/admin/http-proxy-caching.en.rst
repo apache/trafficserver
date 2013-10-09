@@ -794,7 +794,7 @@ The configurations necessary to enable this in ATS are:
 All four configurations are required, for the following reasons:
 
 -  enable_read_while_writer turns the feature on. It's off (0) by default
--  The background fill feature should be allowed to kick in for every possible request. This is necessary, in case the writer ("first client session") goes away, someone needs to take over the session. The original client's request can go away after background_fill_active_timeout seconds, and the object will continue fetching in the background. The object then can start being served to another request after background_fill_completed_threshold % of the object has been fetched from origin.
+-  The background fill feature should be allowed to kick in for every possible request. This is necessary, in case the writer ("first client session") goes away, someone needs to take over the session. Hence, you should set the background fill timeouts and threshold to zero; this assures they never times out and always is allowed to kick in. 
 -  The proxy.config.cache.max_doc_size should be unlimited (set to 0), since the object size may be unknown, and going over this limit would cause a disconnect on the objects being served.
 
 Once all this enabled, you have something that is very close, but not quite the same, as Squid's Collapsed Forwarding.
