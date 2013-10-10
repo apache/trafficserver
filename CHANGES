@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2270] ESI Plugin can have infinite loop while doing gunzip on
+   responses. Author: Kit Chan.
+
   *) [TS-2268] Add support for opening protocol traffic sockets through the 
    traffic_manager. Added TSPluginDescriptorAccept into expiremental API.
 
