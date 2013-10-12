@@ -301,6 +301,25 @@ Value Effect
 
    Set the interface to use for cluster communications.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.cluster_cache_local INT 0
+
+   This turns on the local caching of objects in cluster mode. The point of
+   this is to allow for popular or **hot** content to be cached on all nodes
+   in a cluster. Be aware that the primary way to configure this behavior is
+   via the :file:`cache.config` configuration file using
+   ``action=cluster-cache-local`` directives.
+
+   This particular :file:`records.config` configuration can be controlled per
+   transaction or per remap rule. As such, it augments the
+   :file:`cache.config` directives, since you can turn on the local caching
+   feature without complex regular expression matching.
+
+   This implies that turning this on in your global :file:`records.config` is
+   almost never what you want; instead, you want to use this either via
+   e.g. ``conf_remap.so`` overrides for a certain remap rule, or through a
+   custom plugin using the appropriate APIs.
+
+
 Local Manager
 =============
 
