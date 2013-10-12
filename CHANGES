@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2254] On ARM arch, ink_atomic_increment returns wrong value.
+   Author: Yu Qing.
+
   *) [TS-2269] regex_remap plugin does not deal with empty path's properly.
    Author: Kit Chan.
 
