@@ -800,9 +800,10 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   *(match_buf + match_len) = '/';
+  match_len++;
   if (req_url.path && req_url.path_len > 0) {
-    memcpy(match_buf + match_len + 1, req_url.path, req_url.path_len);
-    match_len += (req_url.path_len + 1);
+    memcpy(match_buf + match_len, req_url.path, req_url.path_len);
+    match_len += (req_url.path_len);
   }
 
   if (ri->matrix_params && req_url.matrix && req_url.matrix_len > 0) {
