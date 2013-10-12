@@ -124,6 +124,9 @@ The following list shows possible actions and their allowed values.
       ``Cache-Control: no-cache`` headers from client requests.
    -  ``ignore-server-no-cache`` configures Traffic Server to ignore
       ``Cache-Control: no-cache`` headers from origin server responses.
+   -  ``cluster-cache-local`` configures the cluster cache to allow for
+      this content to be stored locally on every cluster node.
+
 
 .. _cache-config-format-pin-in-cache:
 
