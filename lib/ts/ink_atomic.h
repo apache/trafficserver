@@ -202,7 +202,7 @@ ink_atomic_increment<int64_t>(pvint64 mem, int64_t value) {
   curr = *mem;
   *mem = curr + value;
   ink_mutex_release(&__global_death);
-  return curr + value;
+  return curr;
 }
 
 template<>
