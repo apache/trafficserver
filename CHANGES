@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2269] regex_remap plugin does not deal with empty path's properly.
+   Author: Kit Chan.
+
   *) [TS-2270] ESI Plugin can have infinite loop while doing gunzip on
    responses. Author: Kit Chan.
 
