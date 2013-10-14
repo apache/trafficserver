@@ -647,20 +647,11 @@ HttpSM::setup_client_read_request_header()
 {
   ink_assert(ua_entry->vc_handler == &HttpSM::state_read_client_request_header);
 
+  ua_entry->read_vio = ua_session->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
   // The header may already be in the buffer if this
   //  a request from a keep-alive connection
-  if (ua_buffer_reader->read_avail() > 0) {
-    int r = state_read_client_request_header(VC_EVENT_READ_READY,
-                                             ua_entry->read_vio);
-
-    // If we're done parsing the header, no need to issue an IO
-    //   which we can't cancel later
-    if (r == EVENT_DONE) {
-      return;
-    }
-  }
-
-  ua_entry->read_vio = ua_session->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
+  if (ua_buffer_reader->read_avail() > 0)
+    handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
 }
 
 void
