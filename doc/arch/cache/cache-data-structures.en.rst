@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -89,6 +89,10 @@ Cache Data Structures
 
       Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there is one bucket for every evacuation span.
 
+   .. cpp:member:: off_t len
+
+      Length of stripe in bytes.
+
 .. cpp:function:: int Vol::evac_range(off_t low, off_t high, int evac_phase)
 
    Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the range from *low* to *high*. Return 0 if no evacuation was started, non-zero otherwise.
@@ -152,6 +156,8 @@ Cache Data Structures
    .. cpp:member:: uint32_t checksum
 
       Unknown. (A checksum of some sort)
+
+.. cpp:class:: VolHeaderFooter
 
 .. rubric:: Footnotes
 
