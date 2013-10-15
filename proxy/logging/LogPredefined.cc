@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "LogPredefined.h"
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogFormat.h"
+#include "LogPredefined.h"
 
 // predefined formats
 const char * const PreDefinedFormatInfo::squid =
@@ -48,7 +48,9 @@ MakePredefinedErrorLog(LogConfig * config)
 
   fmt = MakeTextLogFormat("error");
   config->global_format_list.add(fmt, false);
-  return NEW(new PreDefinedFormatInfo(fmt, "error.log", true /* always ascii */, NULL /* no log header */));
+
+  // The error log is always ASCII, and currently does not work correctly with log collation.
+  return NEW(new PreDefinedFormatInfo(fmt, "error.log", NULL /* no log header */, LOG_FILE_ASCII, false));
 }
 
 PreDefinedFormatList::PreDefinedFormatList()
@@ -69,12 +71,16 @@ PreDefinedFormatList::init(LogConfig * config)
 {
   LogFormat * fmt;
 
+  // All these predefined formats work with log collation. They are optionally binary or ASCII, each
+  // with a different config option.
+#define make_format(is_ascii)  ((is_ascii) ? LOG_FILE_ASCII : LOG_FILE_BINARY )
+
   fmt = NEW(new LogFormat("squid", PreDefinedFormatInfo::squid));
   config->global_format_list.add(fmt, false);
   Debug("log", "squid format added to the global format list");
 
   if (config->squid_log_enabled) {
-    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->squid_log_name, config->squid_log_is_ascii, config->squid_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->squid_log_name, config->squid_log_header, make_format(config->squid_log_is_ascii), true)));
   }
 
   fmt = NEW(new LogFormat("common", PreDefinedFormatInfo::common));
@@ -82,7 +88,7 @@ PreDefinedFormatList::init(LogConfig * config)
   Debug("log", "common format added to the global format list");
 
   if (config->common_log_enabled) {
-    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->common_log_name, config->common_log_is_ascii, config->common_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->common_log_name, config->common_log_header, make_format(config->common_log_is_ascii), true)));
   }
 
   fmt = NEW(new LogFormat("extended", PreDefinedFormatInfo::extended));
@@ -90,7 +96,7 @@ PreDefinedFormatList::init(LogConfig * config)
   Debug("log", "extended format added to the global format list");
 
   if (config->extended_log_enabled) {
-    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended_log_name, config->extended_log_is_ascii, config->extended_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended_log_name, config->extended_log_header, make_format(config->extended_log_is_ascii), true)));
   }
 
   fmt = NEW(new LogFormat("extended2", PreDefinedFormatInfo::extended2));
@@ -98,8 +104,9 @@ PreDefinedFormatList::init(LogConfig * config)
   Debug("log", "extended2 format added to the global format list");
 
   if (config->extended2_log_enabled) {
-    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended2_log_name, config->extended2_log_is_ascii, config->extended2_log_header)));
+    this->formats.enqueue(NEW(new PreDefinedFormatInfo(fmt, config->extended2_log_name, config->extended2_log_header, make_format(config->extended2_log_is_ascii), true)));
   }
 
+#undef make_format
 }
 

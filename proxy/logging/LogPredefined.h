@@ -34,12 +34,14 @@ struct PreDefinedFormatInfo
 {
   LogFormat *   format;
   const char *  filename;
-  bool          is_ascii;
   const char *  header;
+  LogFileFormat filefmt;
+  bool          collatable; // whether log collation is supported
+
   LINK(PreDefinedFormatInfo, link);
 
-  PreDefinedFormatInfo(LogFormat * fmt, const char * fname, bool ascii, const char * hdr)
-    :format(fmt), filename(fname), is_ascii(ascii), header(hdr)
+  PreDefinedFormatInfo(LogFormat * fmt, const char * fname, const char * hdr, LogFileFormat _f, bool _c)
+    :format(fmt), filename(fname), header(hdr), filefmt(_f), collatable(_c)
   { }
 
   static const char * const squid;

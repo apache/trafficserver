@@ -260,9 +260,9 @@ private:
   LogFilter *split_by_protocol(const PreDefinedFormatList & pre_def_info_list);
   size_t split_by_hostname(const PreDefinedFormatList & pre_def_info_list, LogFilter * reject_protocol);
   LogObject * create_predefined_object(const PreDefinedFormatInfo * pdi, size_t nfilters,
-                                              LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
+        LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
   void create_predefined_objects_with_filter(const PreDefinedFormatList &pre_def_info_list, size_t nfilters,
-                                              LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
+        LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
 
   void add_filters_to_search_log_object(const char *format_name);
 

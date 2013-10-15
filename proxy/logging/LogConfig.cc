@@ -829,29 +829,36 @@ LogConfig::create_predefined_object(const PreDefinedFormatInfo * pdi, size_t num
   }
 
   if (force_extension) {
-    ink_string_append(obj_filt_fname,
-                      (char *) (pdi->is_ascii ?
-                                LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION :
-                                LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION), PATH_NAME_MAX);
+    switch (pdi->filefmt) {
+      case LOG_FILE_ASCII:
+        ink_string_append(obj_filt_fname, (char *)LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION, PATH_NAME_MAX);
+        break;
+      case LOG_FILE_BINARY:
+        ink_string_append(obj_filt_fname, (char *)LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION, PATH_NAME_MAX);
+        break;
+      default:
+        break;
+    }
   }
 
   // create object with filters
   //
   LogObject *obj;
   obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
-                          pdi->is_ascii ? LOG_FILE_ASCII : LOG_FILE_BINARY,
-                          pdi->header, rolling_enabled,
+                          pdi->filefmt, pdi->header, rolling_enabled,
                           collation_preproc_threads, rolling_interval_sec,
                           rolling_offset_hr, rolling_size_mb));
 
-  if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
+  if (pdi->collatable) {
+    if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
 
-    LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
-                                       obj->get_signature()));
-    ink_assert(loghost != NULL);
+      LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
+                                         obj->get_signature()));
+      ink_assert(loghost != NULL);
 
-    loghost->set_name_port(collation_host, collation_port);
-    obj->add_loghost(loghost, false);
+      loghost->set_name_port(collation_host, collation_port);
+      obj->add_loghost(loghost, false);
+    }
   }
 
   for (size_t i = 0; i < num_filters; ++i) {
@@ -1643,7 +1650,7 @@ LogConfig::read_xml_log_config(int from_memory)
   if (!from_memory) {
 
     if (log_config.parse() < 0) {
-      Note("Error parsing log config file; ensure that it is XML-based.");
+      Note("Error parsing log config file %s; ensure that it is XML-based", config_path);
       return;
     }
 
@@ -1657,7 +1664,7 @@ LogConfig::read_xml_log_config(int from_memory)
     char *ptr = (char *)ats_malloc(ptr_size);
 
     if (pipe(filedes) != 0) {
-      Note("xml parsing: Error in Opening a pipe\n");
+      Note("xml parsing: Error in Opening a pipe");
       return;
     }
 
