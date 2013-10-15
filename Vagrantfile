@@ -78,6 +78,9 @@ Vagrant.configure("2") do |config|
   # because it's faster and vboxfs doesn't support links.
   config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => true
 
+  # Always forward SSH keys to VMs.
+  config.ssh.forward_agent = true
+
   # Ubuntu 13.04 (Raring Ringtail)
   # Ubuntu 12.10 (Quantal Quetzal)
   # Ubuntu 12.04 LTS (Precise Pangolin)
