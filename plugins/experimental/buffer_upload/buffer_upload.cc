@@ -59,8 +59,8 @@
     return TS_ERROR;				\
   }
 
-#define VALID_PTR(X) (X != NULL)
-#define NOT_VALID_PTR(X) (X == NULL)
+#define VALID_PTR(X) (NULL != X)
+#define NOT_VALID_PTR(X) (NULL == X)
 
 struct upload_config_t
 {
