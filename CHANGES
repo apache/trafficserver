@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2138] Fix the bug that restarting ats cause cache data loss if
+  enable the native-aio.
+
   *) [TS-2197] Use HttpSM::main_handler to handle the client request stuff.
 
   *) [TS-2254] On ARM arch, ink_atomic_increment returns wrong value.

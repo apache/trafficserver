@@ -197,13 +197,14 @@ struct DiskInit : public Continuation
 
   int mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */) {
     disk->open(s, blocks, askip, ahw_sector_size, fildes, clear);
+    ats_free(s);
     mutex.clear();
     delete this;
     return EVENT_DONE;
   }
 
   DiskInit(CacheDisk *d, char *str, off_t b, off_t skip, int sector, int f, bool c) : Continuation(d->mutex),
-      disk(d), s(str), blocks(b), askip(skip), ahw_sector_size(sector), fildes(f), clear(c) {
+      disk(d), s(ats_strdup(str)), blocks(b), askip(skip), ahw_sector_size(sector), fildes(f), clear(c) {
     SET_HANDLER(&DiskInit::mainEvent);
   }
 };
