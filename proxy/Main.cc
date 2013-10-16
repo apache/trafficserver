@@ -1224,7 +1224,7 @@ change_uid_gid(const char *user)
     // Not root so can't change user ID. Logging isn't operational yet so
     // we have to write directly to stderr. Perhaps this should be fatal?
     fprintf(stderr,
-          "Can't change user to '%s' because running with effective uid=%d",
+          "Can't change user to '%s' because running with effective uid=%d\n",
           user, geteuid());
   }
   else {
