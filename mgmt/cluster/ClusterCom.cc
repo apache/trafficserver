@@ -647,8 +647,11 @@ ClusterCom::checkPeers(time_t * ticker)
     delete buff;
     ink_mutex_release(&(mutex));        /* Release cluster lock */
     if (signal_alarm) {
+      /*
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
                                        "[TrafficManager] Unable to write cluster.config, membership unchanged");
+      */
+      mgmt_elog(0, "[TrafficManager] Unable to write cluster.config, membership unchanged");
     }
     *ticker = t;
   }
@@ -795,9 +798,11 @@ ClusterCom::handleMultiCastMessage(char *message)
   if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* OS of sender */
   if (!strstr(line, "os: ") || !strstr(line, sys_name)) {
+    /*
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
                                      "Received Multicast message from peer running mis-match"
                                      " Operating system, please investigate");
+    */
     Debug("ccom", "[ClusterCom::handleMultiCastMessage] Received message from peer "
               "running different os/release '%s'(ours os: '%s' rel: '%s'\n", line, sys_name, sys_release);
   }
@@ -805,9 +810,11 @@ ClusterCom::handleMultiCastMessage(char *message)
   if ((line = strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* OS-Version of sender */
   if (!strstr(line, "rel: ") || !strstr(line, sys_release)) {
+    /*
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
                                      "Received Multicast message from peer running mis-match"
                                      " Operating system release, please investigate");
+    */
     Debug("ccom", "[ClusterCom::handleMultiCastMessage] Received message from peer "
               "running different os/release '%s'(ours os: '%s' rel: '%s'\n", line, sys_name, sys_release);
   }
