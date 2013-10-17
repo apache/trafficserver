@@ -112,7 +112,7 @@ public:
     @return event object representing the start of the thread.
 
   */
-  Event *spawn_thread(Continuation * cont, const char *thr_name, size_t stacksize, ink_sem * sem = NULL);
+  Event *spawn_thread(Continuation * cont, const char *thr_name, size_t stacksize = 0, ink_sem * sem = NULL);
 
   /**
     Spawns a group of threads for an event type. Spawns the number of
