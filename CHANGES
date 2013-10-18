@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2227] Allow for multiple config files for a header_rewrite plugin
+   invocation (be it in remap.config or plugin.config).
+
+  *) [TS-2230] header_rewrite should support the same hook-management that
+  header_filter does for remap rules. This allows per-remap rules that
+  triggers in hooks other than the remap phase.
 
   *) [TS-2228] Add a set-config operator for header_rewrite plugin.
 

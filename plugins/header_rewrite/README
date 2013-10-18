@@ -7,6 +7,24 @@ this rolling asap.
 Note that currently only static string "values" are supported. We'll add
 advanced features to allow for expansions in a future release.
 
+Using the plugin
+----------------
+
+This plugin can be used as both a global plugin, enabled in plugin.config:
+
+  header_rewrite.so config_file_1.conf config_file_2.conf ...
+
+These are global rules, which would apply to all requests. Another option is
+to use per remap rules in remap.config
+
+  map http://a http://b @plugin=header_rewrite.so @pparam=rules1.conf ...
+
+
+In the second example, hooks which are not to be executed during the remap
+phase (the default) causes a transaction hook to be instantiated and used
+at a later time. This allows you to setup e.g. a rule that gets executed
+during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
+
 
 Operators
 ---------
@@ -77,6 +95,10 @@ each rule. This implies that a new hook condition starts a new rule as well.
   cond %{READ_REQUEST_HDR_HOOK}
   cond %{SEND_REQUEST_HDR_HOOK}
   cond %{SEND_RESPONSE_HDR_HOOK}
+
+For remap.config plugin instanations, the default hook is named
+REMAP_PSEUDO_HOOK. This can be useful if you are mixing other hooks in a
+configuration, but being the default it is also optional.
 
 
 Condition flags
