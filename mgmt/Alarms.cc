@@ -347,21 +347,9 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   for (entry = ink_hash_table_iterator_first(cblist, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {
-    char *tmp, *tmp2;
     AlarmCallbackFunc func = (AlarmCallbackFunc) ink_hash_table_entry_value(remote_alarms, entry);
-    if (ip) {
-      tmp = (char *)ats_strdup(ip);
-    } else {
-      tmp = NULL;
-    }
-
-    if (desc) {
-      tmp2 = ats_strdup(desc);
-    } else {
-      tmp2 = NULL;
-    }
     Debug("alarm", "[Alarms::signalAlarm] invoke callback for %d", a);
-    (*(func)) (a, tmp, tmp2);
+    (*(func)) (a, ip, desc);
   }
   /* Priority 2 alarms get signalled if they are the first unsolved occurence. */
   if (priority == 2 && alarm_bin && alarm_bin_path && !ip) {

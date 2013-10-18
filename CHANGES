@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2276] manager memory leak in some case.
+   Author: Yu Qing
+
   *( [TS-1638] less strict on kernel version checking in clustering.
    Author: Yu Qing
 

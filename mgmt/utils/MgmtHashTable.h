@@ -81,9 +81,25 @@ public:
 
   int mgmt_hash_table_delete(InkHashTableKey key)
   {
+    InkHashTableEntry *entry;
     int ret;
     ink_mutex_acquire(&mutex);
-    ret = ink_hash_table_delete(ht, key);
+    if (destroy_and_free) {
+      entry = ink_hash_table_lookup_entry(ht, key);
+      if (entry != NULL) {
+        InkHashTableValue value = ink_hash_table_entry_value(ht, entry);
+        if (value != NULL) {
+          ats_free(value);
+        }
+        ret = ink_hash_table_delete(ht, key);
+      }
+      else {  //not found
+        ret = 0;
+      }
+    }
+    else {
+      ret = ink_hash_table_delete(ht, key);
+    }
     ink_mutex_release(&mutex);
     return ret;
   }                             /* End MgmtHashTable::mgmt_hash_table_delete */
