@@ -480,6 +480,19 @@ AC_ARG_ENABLE([experimental-plugins],
 AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
+
+#
+# build c++ api
+#
+AC_MSG_CHECKING([whether to build c++ api])
+AC_ARG_ENABLE([cppapi],
+  [AS_HELP_STRING([--enable-cppapi],[Build the c++ api])],
+  [],
+  [enable_cppapi="no"]
+)
+AC_MSG_RESULT([$enable_cppapi])
+AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
+
 #
 # Installation directories
 # For each var the following is evaluated
@@ -996,15 +1009,17 @@ AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host
 
 #
 # CPP 11 API
+# TODO: briang, this needs to be translated to a define
+# that can be used in the c++ api to enable c++11 api features.
 #
-AC_MSG_CHECKING([whether to enable c++11 api])
-AC_ARG_WITH([cpp11api],
-  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=auto]])],
-  [cpp11api=$withval],
-  [cpp11api=$enable_cxx_11_support]
-)
-AC_MSG_RESULT([$cpp11api])
-AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
+#AC_MSG_CHECKING([whether to enable c++11 api])
+#AC_ARG_WITH([cpp11api],
+#  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=auto]])],
+#  [cpp11api=$withval],
+#  [cpp11api=$enable_cxx_11_support]
+#)
+#AC_MSG_RESULT([$cpp11api])
+#AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
 
 # Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
@@ -1825,11 +1840,34 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/cpp11api/Makefile
   lib/records/Makefile
   lib/ts/Makefile
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
+  lib/atscppapi/Makefile
+  lib/atscppapi/src/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/examples/helloworld/Makefile
+  lib/atscppapi/examples/globalhook/Makefile
+  lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
+  lib/atscppapi/examples/clientrequest/Makefile
+  lib/atscppapi/examples/data_caching/Makefile
+  lib/atscppapi/examples/serverresponse/Makefile
+  lib/atscppapi/examples/clientredirect/Makefile
+  lib/atscppapi/examples/customresponse/Makefile
+  lib/atscppapi/examples/null_transformation_plugin/Makefile
+  lib/atscppapi/examples/post_buffer/Makefile
+  lib/atscppapi/examples/logger_example/Makefile
+  lib/atscppapi/examples/detachedrequest/Makefile
+  lib/atscppapi/examples/stat_example/Makefile
+  lib/atscppapi/examples/async_http_fetch/Makefile
+  lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/gzip_transformation/Makefile
+  lib/atscppapi/examples/timeout_example/Makefile
+  lib/atscppapi/examples/internal_transaction_handling/Makefile
+  lib/atscppapi/examples/async_timer/Makefile
+  lib/atscppapi/examples/request_cookies/Makefile
   lib/wccp/Makefile
   lib/perl/Makefile
   mgmt/Makefile
