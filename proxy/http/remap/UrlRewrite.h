@@ -26,6 +26,7 @@
 
 #include "UrlMapping.h"
 #include "HttpTransact.h"
+#include "lua.hpp"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -74,8 +75,10 @@ public:
   void SetReverseFlag(int flag);
   void Print();
   bool is_valid() const { return _valid; };
+  int lua_mapstuff(lua_State *L);
 //  private:
 
+  static void luaopen(lua_State *L);
   static const int MAX_REGEX_SUBS = 10;
 
   struct RegexMapping
@@ -115,6 +118,7 @@ public:
   url_mapping *SetupPacMapping();       // manager proxy-autconfig mapping
   url_mapping *SetupBackdoorMapping();
   void PrintStore(MappingsStore &store);
+  int loadLua(BUILD_TABLE_INFO *);
 
   void DestroyStore(MappingsStore &store)
   {

@@ -89,6 +89,7 @@ extern "C" int plock(int);
 #include "XmlUtils.h"
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
+#include "luaConfig.h"
 
 #include <ts/ink_cap.h>
 
@@ -363,6 +364,8 @@ initialize_process_manager()
     LibRecordsConfigInit();
     RecordsConfigOverrideFromEnvironment();
   }
+
+  luaConfigInit();
   //
   // Start up manager
   //

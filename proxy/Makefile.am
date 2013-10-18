@@ -52,7 +52,8 @@ AM_CPPFLAGS = \
   -I$(srcdir)/api/ts \
   -I. \
   -I./api/ts \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  $(LUA_CFLAGS)
 
 noinst_HEADERS = \
   ConfigParse.h \
@@ -103,6 +104,8 @@ traffic_server_SOURCES = \
   InkXml.h \
   IPAllow.cc \
   IPAllow.h \
+  luaConfig.cc \
+  luaConfig.h \
   Main.cc \
   Main.h \
   ParentSelection.cc \
@@ -136,7 +139,7 @@ if BUILD_TESTS
     RegressionSM.cc
 endif
 
-traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+traffic_server_LDFLAGS = @LUA_LUAJIT_LDFLAGS@ @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_server_LDADD = \
   http/libhttp.a \
   http/remap/libhttp_remap.a \
@@ -161,6 +164,7 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(which_libts) \
   @hwloc_LIBS@ \
+  @LUA_LIBS@ \
   @LIBPCRE@ \
   @LIBSSL@ \
   @LIBTCL@ \
@@ -172,10 +176,6 @@ traffic_server_LDADD = \
   @LIBLZMA@ \
   @LIBPROFILER@ \
   -lm
-
-if BUILD_LUA_SUPPORT
-traffic_server_LDFLAGS += @LUA_LUAJIT_LDFLAGS@
-endif
 
 traffic_logcat_SOURCES = \
   logcat.cc \
@@ -238,9 +238,10 @@ traffic_sac_SOURCES = \
   InkAPI.cc \
   FetchSM.cc \
   InkIOCoreAPI.cc \
+  luaConfig.cc \
   InkXml.cc
 
-traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+traffic_sac_LDFLAGS = @LUA_LUAJIT_LDFLAGS@ @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_sac_LDADD = \
   http/libhttp.a \
   http/remap/libhttp_remap.a \
@@ -262,6 +263,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+  @LUA_LIBS@ \
   @LIBRESOLV@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ -lm
 

@@ -32,6 +32,7 @@
 #include "Tokenizer.h"
 #include "api/ts/remap.h"
 #include "UrlMappingPathIndex.h"
+#include "luaConfig.h"
 
 #include "ink_string.h"
 #include "ink_cap.h"
@@ -1040,6 +1041,527 @@ UrlRewrite::_addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMap
   return retval;
 }
 
+struct luabuilder_crutch {
+  int line; // fake line number for ordering
+  UrlRewrite *urlrewrite;
+  BUILD_TABLE_INFO *bti;
+};
+
+static int
+UrlRewrite_lua_filterstuff(lua_State *L) {
+  int startN = 0;
+  bool flg;
+  const char *func;
+  const char *filtername;
+  struct luabuilder_crutch *lbc;
+  acl_filter_rule *rp, **rpp;
+
+  lbc = (struct luabuilder_crutch *)lua_touserdata(L, lua_upvalueindex(1));
+  func = lua_tostring(L, lua_upvalueindex(2));
+
+  // we were called as a method
+  if(lua_gettop(L) > 0 && lua_isuserdata(L,1)) startN++;
+
+  if(lua_gettop(L) < (startN+1) || !lua_isstring(L,(startN+1)))
+    luaL_error(L, "filter function require a filter name");
+  filtername = lua_tostring(L,(startN+1));
+
+  if(!strcmp(func, "deletefilter")) {
+    acl_filter_rule::delete_byname(&lbc->bti->rules_list, filtername);
+    return 0;
+  }
+  else if(!strcmp(func, "activatefilter")) {
+    if ((rp = acl_filter_rule::find_byname(lbc->bti->rules_list, filtername)) == NULL)
+      luaL_error(L, "Undefined filter \"%s\" in directive \"%s\"", filtername, func);
+    acl_filter_rule::requeue_in_active_list(&lbc->bti->rules_list, rp);
+    return 0;
+  }
+  else if(!strcmp(func, "deactivatefilter")) {
+    if ((rp = acl_filter_rule::find_byname(lbc->bti->rules_list, filtername)) == NULL)
+      luaL_error(L, "Undefined filter \"%s\" in directive \"%s\"", filtername, func);
+    acl_filter_rule::requeue_in_passive_list(&lbc->bti->rules_list, rp);
+    return 0;
+  }
+  else if(!strcmp(func, "definefilter")) {
+    const char *cstr = NULL;
+    int argc = 0;
+    char *argv[256];
+    char errStrBuf[1024];
+
+    if(lua_gettop(L) != (startN+2) || !lua_istable(L,(startN+2)))
+      luaL_error(L, "Invalid arguments to UrlRewrite:definefilter");
+
+    lua_pushnil(L); /* first key */
+    while (lua_next(L, (startN+2)) != 0) {
+      char pbuf[512];
+      if(lua_istable(L,-1)) {
+         lua_pushnil(L);
+         while (lua_next(L, -2) != 0) {
+           snprintf(pbuf, sizeof(pbuf), "%s=%s", lua_tostring(L,-4), lua_tostring(L,-1));
+           argv[argc++] = ats_strdup(pbuf);
+           lua_pop(L,1);
+         }
+      }
+      else {
+        snprintf(pbuf, sizeof(pbuf), "%s=%s", lua_tostring(L,-2), lua_tostring(L,-1));
+        argv[argc++] = ats_strdup(pbuf);
+      }
+      if(argc >= 256) luaL_error(L, "too many arguments to definefilter");
+      lua_pop(L, 1);
+    }
+    if(argc == 0) luaL_error(L, "filter require arguments");
+
+    flg = ((rp = acl_filter_rule::find_byname(lbc->bti->rules_list, filtername)) == NULL) ? true : false;
+    // coverity[alloc_arg]
+    if ((cstr = validate_filter_args(&rp, argv, argc, errStrBuf, sizeof(errStrBuf))) == NULL && rp) {
+      if (flg) {                  // new filter - add to list
+        Debug("url_rewrite", "[parse_directive] new rule \"%s\" was created", filtername);
+        for (rpp = &lbc->bti->rules_list; *rpp; rpp = &((*rpp)->next));
+        (*rpp = rp)->name(filtername);
+      }
+      Debug("url_rewrite", "[parse_directive] %d argument(s) were added to rule \"%s\"", argc, filtername);
+      rp->add_argv(argc, argv);       // store string arguments for future processing
+    }
+    for(;argc>0;argc--) ats_free(argv[argc-1]);
+    if(cstr) luaL_error(L, "filter issue: %s", cstr);
+    return 0;
+  }
+  luaL_error(L, "filter helper encountered impossible upvalue: %s\n", func);
+  return 0;
+}
+
+int
+UrlRewrite::lua_mapstuff(lua_State *L) {
+  int startN = 0, i = 0, argc = 0, nargs;
+  char *argv[256];
+  const char *errStr;
+  char *tag = NULL;
+  struct luabuilder_crutch *lbc;
+  char errStrBuf[1024];
+  bool alarm_already = false;
+
+  // Vars to build the mapping
+  const char *fromScheme, *toScheme;
+  int fromSchemeLen, toSchemeLen;
+  const char *fromHost, *toHost;
+  int fromHostLen, toHostLen;
+  char *map_from = NULL, *map_from_start;
+  char *map_to = NULL, *map_to_start;
+  const char *tmp;              // Appease the DEC compiler
+  char *fromHost_lower = NULL;
+  char *fromHost_lower_ptr = NULL;
+  char fromHost_lower_buf[1024];
+  url_mapping *new_mapping = NULL;
+  mapping_type maptype = FORWARD_MAP;
+  referer_info *ri;
+  int origLength;
+  int length;
+  int rparse;
+
+  RegexMapping* reg_map;
+  bool is_cur_mapping_regex;
+  bool add_result;
+
+  lbc = (struct luabuilder_crutch *)lua_touserdata(L, lua_upvalueindex(1));
+  maptype = (mapping_type)lua_tointeger(L, lua_upvalueindex(2));
+  is_cur_mapping_regex = (bool)lua_toboolean(L, lua_upvalueindex(3));
+
+  // we were called as a method
+  nargs = lua_gettop(L);
+  if(nargs > 0 && lua_isuserdata(L,1)) startN++;
+
+  if(nargs < (startN+2)) luaL_error(L, "wrong number of argument to mapping");
+  if(!lua_isstring(L, (startN+1)) || !lua_isstring(L, (startN+2)))
+    luaL_error(L, "mapping requires to and from");
+
+  // bump our fake line number...
+  lbc->line++;
+
+  // process parameters
+
+  // loop through and create paramstrings
+  for(i=startN+2;i<=nargs;i++) {
+    char pbuf[512];
+    if(lua_istable(L,i)) {
+      lua_pushnil(L);  /* first key */
+      while (lua_next(L, i) != 0) {
+         if(lua_istable(L,-1)) {
+           lua_pushnil(L);
+           while (lua_next(L, -2) != 0) {
+             // internal tables use that outside table's key
+             if(lua_isboolean(L,-1) && lua_toboolean(L,-1))
+               snprintf(pbuf, sizeof(pbuf), "%s", lua_tostring(L,-4));
+             else
+               snprintf(pbuf, sizeof(pbuf), "%s=%s", lua_tostring(L,-4), lua_tostring(L,-1));
+             argv[argc++] = ats_strdup(pbuf);
+             lua_pop(L,1);
+             if(argc >= 256) {
+               errStr = "too many arguments to mapping";
+               goto LUA_MAP_ERROR;
+             }
+           }
+         }
+         else {
+           if(lua_isboolean(L,-1) && lua_toboolean(L,-1))
+             snprintf(pbuf, sizeof(pbuf), "%s", lua_tostring(L,-2));
+           else
+             snprintf(pbuf, sizeof(pbuf), "%s=%s", lua_tostring(L,-2), lua_tostring(L,-1));
+           argv[argc++] = ats_strdup(pbuf);
+         }
+         lua_pop(L, 1);
+         if(argc >= 256) {
+           errStr = "too many arguments to mapping";
+           goto LUA_MAP_ERROR;
+         }
+      }
+    }
+  }
+
+  lbc->bti->remap_optflg = check_remap_option(argv, argc); 
+  // if FORWARD_MAP and @map_with_referer is set, we need tup update
+  if(maptype == FORWARD_MAP &&
+     (lbc->bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER))
+    maptype = FORWARD_MAP_REFERER;
+   
+  new_mapping = NEW(new url_mapping(lbc->line));  // use line # for rank for now
+
+  // apply filter rules if we have to
+  if ((errStr = process_filter_opt(new_mapping, lbc->bti, errStrBuf, sizeof(errStrBuf))) != NULL)
+    goto LUA_MAP_ERROR;
+
+  new_mapping->map_id = 0;
+  if ((lbc->bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
+    int idx = 0;
+    char *c;
+    int ret = check_remap_option(argv, argc, REMAP_OPTFLG_MAP_ID, &idx);
+    if (ret & REMAP_OPTFLG_MAP_ID) {
+      c = strchr(argv[idx], (int) '=');
+      new_mapping->map_id = (unsigned int) atoi(++c);
+    }
+  }
+
+  map_from = ats_strdup(lua_tostring(L,(startN+1)));
+  length = UrlWhack(map_from, &origLength);
+
+  if ((tmp = (map_from_start = map_from)) != NULL && length > 2 && tmp[length - 1] == '/' && tmp[length - 2] == '/') {
+    new_mapping->unique = true;
+    length -= 2;
+  }
+
+  new_mapping->fromURL.create(NULL);
+  rparse = new_mapping->fromURL.parse_no_path_component_breakdown(tmp, length);
+
+  map_from_start[origLength] = '\0';  // Unwhack
+
+  if (rparse != PARSE_DONE) {
+    errStr = "Malformed From URL";
+    goto LUA_MAP_ERROR;
+  }
+
+  map_to = ats_strdup(lua_tostring(L,(startN+2)));
+  length = UrlWhack(map_to, &origLength);
+  map_to_start = map_to;
+  tmp = map_to;
+
+  new_mapping->toUrl.create(NULL);
+  rparse = new_mapping->toUrl.parse_no_path_component_breakdown(tmp, length);
+  map_to_start[origLength] = '\0';    // Unwhack
+
+  if (rparse != PARSE_DONE) {
+    errStr = "Malformed From URL";
+    goto LUA_MAP_ERROR;
+  }
+
+  fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+  if (fromScheme == NULL || fromSchemeLen == 0) {
+    new_mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
+    fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+    new_mapping->wildcard_from_scheme = true;
+  }
+  toScheme = new_mapping->toUrl.scheme_get(&toSchemeLen);
+
+  if ((fromScheme != URL_SCHEME_HTTP && fromScheme != URL_SCHEME_HTTPS &&
+       fromScheme != URL_SCHEME_FILE &&
+       fromScheme != URL_SCHEME_TUNNEL) ||
+      (toScheme != URL_SCHEME_HTTP && toScheme != URL_SCHEME_HTTPS &&
+       toScheme != URL_SCHEME_TUNNEL)) {
+    errStr = "Only http, https, and tunnel remappings are supported";
+    goto LUA_MAP_ERROR;
+  }
+
+  if(lua_isstring(L,(startN+3))) {
+    tag = ats_strdup(lua_tostring(L,(startN+3)));
+    if (maptype == FORWARD_MAP_REFERER) {
+      int j;
+      new_mapping->filter_redirect_url = ats_strdup(tag);
+      if (!strcasecmp(tag, "<default>") || !strcasecmp(tag, "default") ||
+          !strcasecmp(tag, "<default_redirect_url>") || !strcasecmp(tag, "default_redirect_url"))
+        new_mapping->default_redirect_url = true;
+      new_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(tag);
+
+      j = startN+4;
+      while(lua_isstring(L,j) && j<=nargs) j++;
+      for (; j > (startN + 3); j--) {
+        char refinfo_error_buf[1024];
+        bool refinfo_error = false;
+
+        ri = NEW(new referer_info((char *) lua_tostring(L,j), &refinfo_error, refinfo_error_buf,
+                                  sizeof(refinfo_error_buf)));
+        if (refinfo_error) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "%s Incorrect Referer regular expression \"%s\" - %s",
+                   modulePrefix, lua_tostring(L,j), refinfo_error_buf);
+          SignalError(errStrBuf, alarm_already);
+          delete ri;
+          ri = 0;
+        }
+
+        if (ri && ri->negative) {
+          if (ri->any) {
+            new_mapping->optional_referer = true;   /* referer header is optional */
+            delete ri;
+            ri = 0;
+          } else {
+            new_mapping->negative_referer = true;   /* we have negative referer in list */
+          }
+        }
+        if (ri) {
+          ri->next = new_mapping->referer_list;
+          new_mapping->referer_list = ri;
+        }
+      }
+    } else {
+      new_mapping->tag = ats_strdup(lua_tostring(L,(startN+3)));
+    }
+  }
+
+  fromHost = new_mapping->fromURL.host_get(&fromHostLen);
+  if (fromHost == NULL || fromHostLen <= 0) {
+    if (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) {
+      if (*map_from_start != '/') {
+        errStr = "Relative remappings must begin with a /";
+        goto LUA_MAP_ERROR;
+      } else {
+        fromHost = "";
+        fromHostLen = 0;
+      }
+    } else {
+      errStr = "Remap source in reverse mappings requires a hostname";
+      goto LUA_MAP_ERROR;
+    }
+  }
+
+  toHost = new_mapping->toUrl.host_get(&toHostLen);
+  if (toHost == NULL || toHostLen <= 0) {
+    errStr = "The remap destinations require a hostname";
+    goto LUA_MAP_ERROR;
+  }
+
+  if (unlikely(fromHostLen >= (int) sizeof(fromHost_lower_buf))) {
+    fromHost_lower = (fromHost_lower_ptr = (char *)ats_malloc(fromHostLen + 1));
+  } else {
+    fromHost_lower = &fromHost_lower_buf[0];
+  }
+  memcpy(fromHost_lower, fromHost, fromHostLen);
+  fromHost_lower[fromHostLen] = 0;
+  LowerCaseStr(fromHost_lower);
+
+  new_mapping->fromURL.host_set(fromHost_lower, fromHostLen);
+
+  reg_map = NULL;
+  if (is_cur_mapping_regex) {
+    reg_map = NEW(new RegexMapping);
+    if (!_processRegexMappingConfig(fromHost_lower, new_mapping, reg_map)) {
+      errStr = "Could not process regex mapping config line";
+      goto LUA_MAP_ERROR;
+    }
+    Debug("url_rewrite_regex", "Configured regex rule for host [%s]", fromHost_lower);
+  }
+
+  if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
+      fromScheme == URL_SCHEME_TUNNEL && (fromHost_lower[0]<'0' || fromHost_lower[0]> '9')) {
+    addrinfo* ai_records; // returned records.
+    ip_text_buffer ipb; // buffer for address string conversion.
+    if (0 == getaddrinfo(fromHost_lower, 0, 0, &ai_records)) {
+      for ( addrinfo* ai_spot = ai_records ; ai_spot ; ai_spot = ai_spot->ai_next) {
+        if (ats_is_ip(ai_spot->ai_addr) &&
+            !ats_is_ip_any(ai_spot->ai_addr)) {
+          url_mapping *u_mapping;
+
+          ats_ip_ntop(ai_spot->ai_addr, ipb, sizeof ipb);
+          u_mapping = NEW(new url_mapping);
+          u_mapping->fromURL.create(NULL);
+          u_mapping->fromURL.copy(&new_mapping->fromURL);
+          u_mapping->fromURL.host_set(ipb, strlen(ipb));
+          u_mapping->toUrl.create(NULL);
+          u_mapping->toUrl.copy(&new_mapping->toUrl);
+          if (lua_isstring(L,(startN+3)))
+            u_mapping->tag = ats_strdup(lua_tostring(L,(startN+3)));
+          bool insert_result = (maptype != FORWARD_MAP_WITH_RECV_PORT) ? 
+            TableInsert(forward_mappings.hash_lookup, u_mapping, ipb) :
+            TableInsert(forward_mappings_with_recv_port.hash_lookup, u_mapping, ipb);
+          if (!insert_result) {
+            errStr = "Unable to add mapping rule to lookup table";
+            goto LUA_MAP_ERROR;
+          }
+          (maptype != FORWARD_MAP_WITH_RECV_PORT) ? ++num_rules_forward : ++num_rules_forward_with_recv_port;
+          SetHomePageRedirectFlag(u_mapping, u_mapping->toUrl);
+        }
+      }
+      freeaddrinfo(ai_records);
+    }
+  }
+
+  if ((lbc->bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 && (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER ||
+                                                              maptype == FORWARD_MAP_WITH_RECV_PORT)) {
+    int tok_count;
+    if ((check_remap_option(argv, argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
+      int plugin_found_at = 0;
+      int jump_to_argc = 0;
+
+      // this loads the first plugin
+      if (load_remap_plugin(argv, argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at)) {
+        Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
+        errStr = errStrBuf;
+        goto LUA_MAP_ERROR;
+      }
+      //this loads any subsequent plugins (if present)
+      while (plugin_found_at) {
+        jump_to_argc += plugin_found_at;
+        if (load_remap_plugin(argv, argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc, &plugin_found_at)) {
+          Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
+          errStr = errStrBuf;
+          goto LUA_MAP_ERROR;
+        }
+      }
+    }
+  }
+
+  // Now add the mapping to appropriate container
+  add_result = false;
+  switch (maptype) {
+  case FORWARD_MAP:
+  case FORWARD_MAP_REFERER:
+    if ((add_result = _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower,
+                                  is_cur_mapping_regex, num_rules_forward)) == true) {
+      // @todo: is this applicable to regex mapping too?
+      SetHomePageRedirectFlag(new_mapping, new_mapping->toUrl);
+    }
+    break;
+  case REVERSE_MAP:
+    add_result = _addToStore(reverse_mappings, new_mapping, reg_map, fromHost_lower,
+                             is_cur_mapping_regex, num_rules_reverse);
+    new_mapping->homePageRedirect = false;
+    break;
+  case PERMANENT_REDIRECT:
+    add_result = _addToStore(permanent_redirects, new_mapping, reg_map, fromHost_lower,
+                             is_cur_mapping_regex, num_rules_redirect_permanent);
+    break;
+  case TEMPORARY_REDIRECT:
+    add_result = _addToStore(temporary_redirects, new_mapping, reg_map, fromHost_lower,
+                             is_cur_mapping_regex, num_rules_redirect_temporary);
+    break;
+  case FORWARD_MAP_WITH_RECV_PORT:
+    add_result = _addToStore(forward_mappings_with_recv_port, new_mapping, reg_map, fromHost_lower,
+                             is_cur_mapping_regex, num_rules_forward_with_recv_port);
+    break;
+  default:
+    // 'default' required to avoid compiler warning; unsupported map
+    // type would have been dealt with much before this
+    break;
+  }
+  if (!add_result) {
+    errStr = "Unable to add mapping rule to lookup table";
+    goto LUA_MAP_ERROR;
+  }
+
+  fromHost_lower_ptr = (char *)ats_free_null(fromHost_lower_ptr);
+
+  errStr = NULL;
+ LUA_MAP_ERROR:
+  if(map_from) ats_free(map_from);
+  if(map_to) ats_free(map_to);
+  if(tag) ats_free(tag);
+  for(;argc>0;argc--) ats_free(argv[argc-1]);
+  if(errStr) luaL_error(L, errStr);
+  return 0;
+}
+
+static int
+UrlRewrite_lua_mapstuff(lua_State *L) {
+  struct luabuilder_crutch *lbc;
+  lbc = (struct luabuilder_crutch *)lua_touserdata(L, lua_upvalueindex(1));
+  return lbc->urlrewrite->lua_mapstuff(L);
+}
+
+static int
+UrlRewrite_lua_index_func(lua_State *L) {
+  bool is_cur_mapping_regex;
+  bool should_domap;
+  mapping_type maptype = FORWARD_MAP;
+  const char *func;
+  const char *mapfunc;
+  struct luabuilder_crutch *lbc;
+  lbc = (struct luabuilder_crutch *)lua_touserdata(L,1);
+  func = lua_tostring(L,2);
+  if(!strcmp(func,"definefilter") ||
+     !strcmp(func,"deletefilter") ||
+     !strcmp(func,"activatefilter") ||
+     !strcmp(func,"deactivatefilter")) {
+    lua_pushlightuserdata(L, lbc);
+    lua_pushstring(L, func);
+    lua_pushcclosure(L, UrlRewrite_lua_filterstuff, 2);
+    return 1;
+  }
+
+  mapfunc = func;
+  should_domap = true;
+  is_cur_mapping_regex = (strncasecmp("regex_", mapfunc, 6) == 0);
+  if(is_cur_mapping_regex) mapfunc += 6;
+  if (!strcasecmp("reverse_map", mapfunc)) maptype = REVERSE_MAP;
+  else if (!strcasecmp("map", mapfunc)) maptype = FORWARD_MAP; // update late for optflg
+  else if (!strcasecmp("redirect", mapfunc)) maptype = PERMANENT_REDIRECT;
+  else if (!strcasecmp("redirect_temporary", mapfunc)) maptype = TEMPORARY_REDIRECT;
+  else if (!strcasecmp("map_with_referer", mapfunc)) maptype = FORWARD_MAP_REFERER;
+  else if (!strcasecmp("map_with_recv_port", mapfunc)) maptype = FORWARD_MAP_WITH_RECV_PORT;
+  else if (is_cur_mapping_regex) luaL_error(L, "ats.UrlRewite doen't have a method '%s'", mapfunc);
+  else should_domap = false;
+
+  if(should_domap) {
+    lua_pushlightuserdata(L, lbc);
+    lua_pushinteger(L, maptype);
+    lua_pushboolean(L, is_cur_mapping_regex);
+    lua_pushcclosure(L, UrlRewrite_lua_mapstuff, 3);
+    return 1;
+  }
+
+  luaL_error(L, "ats.UrlRewite doen't have a method '%s'", func);
+  return 0;
+}
+
+void UrlRewrite::luaopen(lua_State *L) {
+  luaL_newmetatable(L, "ats.UrlRewrite");
+  lua_pushcclosure(L, UrlRewrite_lua_index_func, 0);
+  lua_setfield(L, -2, "__index");
+}
+/**
+  Runs lua to finiah building
+
+  @return zero on success and non-zero on failure.
+
+*/
+int
+UrlRewrite::loadLua(BUILD_TABLE_INFO *bti)
+{
+  lua_State *L = globalLuaConfig.getL();
+  struct luabuilder_crutch lbc;
+  lbc.urlrewrite = this;
+  lbc.bti = bti;
+  lua_pushlightuserdata(L, (void *)&lbc);
+  luaL_getmetatable(L, "ats.UrlRewrite");
+  lua_setmetatable(L, -2);
+  return globalLuaConfig.call(L, "config_remap", 1);
+}
+
 /**
   Reads the configuration file and creates a new hash table.
 
@@ -1499,6 +2021,12 @@ UrlRewrite::BuildTable()
   clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));
   clear_xstr_array(bti.argv, sizeof(bti.argv) / sizeof(char *));
   bti.paramc = (bti.argc = 0);
+
+  if(loadLua(&bti)) {
+    Warning("Could not add rules via lua");
+    SignalError("Could not add rules via lua", alarm_already);
+    return 2;
+  }
 
   // Add the mapping for backdoor urls if enabled.
   // This needs to be before the default PAC mapping for ""

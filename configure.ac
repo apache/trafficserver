@@ -1379,6 +1379,12 @@ no)
   ;;
 esac
 
+AS_IF([ test "x${enable_lua_support}" = "xno"], [
+  AC_MSG_ERROR([lua required but not found])
+  ], [
+  ])
+
+TS_ADDTO(CPPFLAGS, [$LUA_CFLAGS])
 AC_SUBST(LUA_CFLAGS)
 AC_SUBST(LUA_LIBS)
 AC_MSG_CHECKING([whether to enable Lua support])
@@ -1389,7 +1395,7 @@ AC_MSG_RESULT([$enable_lua_support])
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
 case $host_os in
-  darwin)
+  darwin*)
     if test "x${enable_lua_support}" = "xLuaJIT"; then
       LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     fi

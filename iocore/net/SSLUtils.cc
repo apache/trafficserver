@@ -23,6 +23,8 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "P_Net.h"
+#include "luaConfig.h"
+#include "lua.hpp"
 
 #include <openssl/err.h>
 #include <openssl/bio.h>
@@ -632,6 +634,39 @@ ssl_extract_certificate(
   return true;
 }
 
+static int
+SSLUtils_lua_ssl_store_ssl_context(lua_State *L) {
+  const SSLConfigParams * params;
+  SSLCertLookup * lookup;
+  xptr<char> dest_ip, ssl_key_name, ssl_ca_name, ssl_cert_name;
+  params = (const SSLConfigParams *) lua_touserdata(L, lua_upvalueindex(1));
+  lookup = (SSLCertLookup *) lua_touserdata(L, lua_upvalueindex(2));
+#define LUAGETF(name) do { \
+  lua_getfield(L,-1,#name); \
+  name = (char *)lua_tostring(L,1); \
+  lua_pop(L,1); \
+} while(0)
+  LUAGETF(dest_ip);
+  LUAGETF(ssl_key_name);
+  LUAGETF(ssl_ca_name);
+  LUAGETF(ssl_cert_name);
+  if(!ssl_store_ssl_context(params, lookup, dest_ip, ssl_cert_name, ssl_ca_name, ssl_key_name))
+    lua_pushboolean(L,0);
+  else
+    lua_pushboolean(L,1);
+  return 1;
+}
+
+void
+SSLUtils_lua_ssl_context(
+    lua_State *             L,
+    const SSLConfigParams * params,
+    SSLCertLookup *         lookup) {
+  lua_pushlightuserdata(L, (void *)params);
+  lua_pushlightuserdata(L, (void *)lookup);
+  lua_pushcclosure(L, SSLUtils_lua_ssl_store_ssl_context, 2);
+}
+
 bool
 SSLParseCertificateConfiguration(
     const SSLConfigParams * params,
@@ -701,6 +736,11 @@ SSLParseCertificateConfiguration(
 
     line = tokLine(NULL, &tok_state);
   }
+
+ 
+  lua_State *L = globalLuaConfig.getL(); 
+  SSLUtils_lua_ssl_context(L, params, lookup);
+  globalLuaConfig.call(L, "config_ssl", 1);
 
   // We *must* have a default context even if it can't possibly work. The default context is used to
   // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
