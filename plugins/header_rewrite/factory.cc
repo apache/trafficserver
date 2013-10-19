@@ -35,6 +35,8 @@ operator_factory(const std::string& op)
 
   if (op == "rm-header") {
     o = new OperatorRMHeader();
+  } else if (op == "set-header") {
+    o = new OperatorSetHeader();
   } else if (op == "add-header") {
     o = new OperatorAddHeader();
   } else if (op == "set-status") {

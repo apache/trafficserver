@@ -33,26 +33,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Operator declarations.
 //
-class OperatorRMHeader : public Operator
-{
-public:
-  OperatorRMHeader()
-    : _header("")
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMHeader");
-  }
-  void initialize(Parser& p);
-
-protected:
-  void exec(const Resources& res) const;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(OperatorRMHeader);
-
-  std::string _header;
-};
-
-
 class OperatorSetStatus : public Operator
 {
 public:
@@ -93,27 +73,6 @@ private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetStatusReason);
 
   Value _reason;
-};
-
-
-class OperatorAddHeader : public Operator
-{
-public:
-  OperatorAddHeader()
-    : _header("")
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddHeader");
-  }
-  void initialize(Parser& p);
-
-protected:
-  void exec(const Resources& res) const;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(OperatorAddHeader);
-
-  std::string _header;
-  Value _value;
 };
 
 
@@ -200,6 +159,61 @@ private:
 
   TimeoutOutType _type;
   Value _timeout;
+};
+
+
+// All the header operators share a base class
+class OperatorRMHeader : public OperatorHeaders
+{
+public:
+  OperatorRMHeader()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMHeader");
+  }
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorRMHeader);
+};
+
+
+class OperatorAddHeader : public OperatorHeaders
+{
+public:
+  OperatorAddHeader()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddHeader");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorAddHeader);
+
+  Value _value;
+};
+
+
+class OperatorSetHeader : public OperatorHeaders
+{
+public:
+  OperatorSetHeader()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetHeader");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetHeader);
+
+  Value _value;
 };
 
 

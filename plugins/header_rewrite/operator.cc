@@ -15,6 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 // operator.cc: Implementation of the operator base class
 //
@@ -42,4 +43,16 @@ Operator::initialize(Parser& p) {
     _mods = static_cast<OperModifiers>(_mods | OPER_QSA);
   }
 
+}
+
+void
+OperatorHeaders::initialize(Parser& p) {
+  Operator::initialize(p);
+
+  _header = p.get_arg();
+
+  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
 }

@@ -70,4 +70,28 @@ private:
   OperModifiers _mods;
 };
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Base class for all Header based Operators, this is obviously also an
+// Operator interface.
+//
+class OperatorHeaders : public Operator
+{
+public:
+  OperatorHeaders()
+    : _header("")
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders");
+  }
+
+  void initialize(Parser& p);
+
+protected:
+  std::string _header;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorHeaders);
+};
+
+
 #endif // __OPERATOR_H
