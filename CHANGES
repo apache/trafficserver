@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2228] Add a set-config operator for header_rewrite plugin.
+
   *) [TS-2226] Add a set-header operator for header_rewrite plugin.
 
   *) [TS-2296] improve ConfigProcessor reference counting

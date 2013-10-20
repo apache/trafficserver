@@ -33,6 +33,30 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Operator declarations.
 //
+class OperatorSetConfig : public Operator
+{
+public:
+  OperatorSetConfig()
+    : _key(TS_CONFIG_NULL), _type(TS_RECORDDATATYPE_NULL)
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConfig");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetConfig);
+
+  TSOverridableConfigKey _key;
+  TSRecordDataType _type;
+
+  std::string _config;
+  Value _value;
+};
+
+
 class OperatorSetStatus : public Operator
 {
 public:

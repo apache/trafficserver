@@ -82,7 +82,7 @@ parse_config(const std::string fname, TSHttpHookID default_hook)
 
   f.open(filename.c_str(), std::ios::in);
   if (!f.is_open()) {
-    TSError("header_rewrite: unable to open %s", filename.c_str());
+    TSError("%s: unable to open %s", PLUGIN_NAME, filename.c_str());
     return false;
   }
 
@@ -181,7 +181,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     hook = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     break;
   default:
-    TSError("header_rewrite: unknown event for this plugin");
+    TSError("%s: unknown event for this plugin", PLUGIN_NAME);
     TSDebug(PLUGIN_NAME, "unknown event for this plugin");
     break;
   }
@@ -221,12 +221,12 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char*)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_3_0 , &info)) {
-    TSError("header_rewrite: plugin registration failed.\n"); 
+    TSError("%s: plugin registration failed.\n", PLUGIN_NAME);
   }
 
   TSDebug(PLUGIN_NAME, "number of arguments: %d", argc);
   if (argc != 2) {
-    TSError("usage: %s <config-file>\n", argv[0] );
+    TSError("%s usage: %s <config-file> ... \n", PLUGIN_NAME, argv[0]);
     assert(argc == 2);
   }
 
@@ -245,7 +245,7 @@ TSPluginInit(int argc, const char *argv[])
       }
     }
   } else {
-    TSError("header_rewrite: failed to parse configuration file");
+    TSError("%s: failed to parse configuration file", PLUGIN_NAME);
   }
 }
 
@@ -283,7 +283,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   TSDebug(PLUGIN_NAME, "initializing the remap plugin header_rewrite");
 
   if (argc < 3) {
-    TSError("Unable to create remap instance, need config file");
+    TSError("%s: Unable to create remap instance, need config file", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -291,7 +291,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   // remap instantiation.
   all_rules[TS_REMAP_PSEUDO_HOOK] = NULL;
   if (!parse_config(argv[2], TS_REMAP_PSEUDO_HOOK)) {
-    TSError("Unable to create remap instance");
+    TSError("%s: Unable to create remap instance", PLUGIN_NAME);
     return TS_ERROR;
   }
 

@@ -25,6 +25,49 @@
 
 #include "operators.h"
 
+// OperatorConfig
+void
+OperatorSetConfig::initialize(Parser& p) {
+  Operator::initialize(p);
+  _config = p.get_arg();
+
+  if (TS_SUCCESS == TSHttpTxnConfigFind(_config.c_str(), _config.size(), &_key, &_type)) {
+    _value.set_value(p.get_value());
+  } else {
+    _key = TS_CONFIG_NULL;
+    TSError("%s: no such records config: %s", PLUGIN_NAME, _config.c_str());
+  }
+}
+
+
+void
+OperatorSetConfig::exec(const Resources& res) const
+{
+  if (TS_CONFIG_NULL != _key) {
+    switch (_type) {
+    case TS_RECORDDATATYPE_INT:
+      if (TS_SUCCESS == TSHttpTxnConfigIntSet(res.txnp, _key, _value.get_int_value())) {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%d", _config.c_str(), _value.get_int_value());
+      }
+      break;
+    case TS_RECORDDATATYPE_FLOAT:
+      if (TS_SUCCESS == TSHttpTxnConfigFloatSet(res.txnp, _key, _value.get_float_value())) {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%f", _config.c_str(), _value.get_float_value());
+      }
+      break;
+    case TS_RECORDDATATYPE_STRING:
+      if (TS_SUCCESS == TSHttpTxnConfigStringSet(res.txnp, _key, _value.get_value().c_str(), _value.size())) {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%s", _config.c_str(), _value.get_value().c_str());
+      }
+      break;
+    default:
+      TSError("%s: unknown data type, whut?", PLUGIN_NAME);
+      break;
+    }
+  }
+}
+
+
 // OperatorSetStatus
 void
 OperatorSetStatus::initialize(Parser& p)
@@ -34,7 +77,7 @@ OperatorSetStatus::initialize(Parser& p)
   _status.set_value(p.get_arg());
 
   if (NULL == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
-    TSError("header_rewrite: unknown status %d", _status.get_int_value());
+    TSError("%s: unknown status %d", PLUGIN_NAME, _status.get_int_value());
     _reason_len = 0;
   } else {
     _reason_len = strlen(_reason);
@@ -195,7 +238,7 @@ OperatorSetRedirect::initialize(Parser& p)
 
   if ((_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_PERMANENTLY) &&
       (_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_TEMPORARILY)) {
-    TSError("header_rewrite: unsupported redirect status %d", _status.get_int_value());
+    TSError("%s: unsupported redirect status %d", PLUGIN_NAME, _status.get_int_value());
   }
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
@@ -267,7 +310,7 @@ OperatorSetTimeoutOut::initialize(Parser& p)
     _type = TO_OUT_DNS;
   } else {
     _type = TO_OUT_UNDEFINED;
-    TSError("header_rewrite: unsupported timeout qualifier: %s", p.get_arg().c_str());
+    TSError("%s: unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
   }
 
   _timeout.set_value(p.get_value());
@@ -298,7 +341,7 @@ OperatorSetTimeoutOut::exec(const Resources& res) const
     TSHttpTxnDNSTimeoutSet(res.txnp, _timeout.get_int_value());
     break;
   default:
-    TSError("header_rewrite: unsupported timeout");
+    TSError("%s: unsupported timeout", PLUGIN_NAME);
     break;
   }
 }
