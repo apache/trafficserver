@@ -530,13 +530,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cfsc", field);
 
-  field = NEW(new LogField("client_gid", "cgid",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_gid,
-                           &LogAccess::unmarshal_str));
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "cgid", field);
-
   // proxy -> client fields
   field = NEW(new LogField("proxy_resp_content_type", "psct",
                            LogField::STRING,
@@ -647,20 +640,6 @@ Log::init_fields()
                            (Ptr<LogFieldAliasMap>) cache_code_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "crc", field);
-
-  field = NEW(new LogField("proxy_resp_origin_bytes", "prob",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_resp_origin_bytes,
-                           &LogAccess::unmarshal_int_to_str));
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "prob", field);
-
-  field = NEW(new LogField("proxy_resp_cache_bytes", "prcb",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_resp_cache_bytes,
-                           &LogAccess::unmarshal_int_to_str));
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "prcb", field);
 
   // proxy -> server fields
   field = NEW(new LogField("proxy_req_header_len", "pqhl",

@@ -217,15 +217,6 @@ LogAccess::marshal_client_finish_status_code(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_client_gid(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
 LogAccess::marshal_client_accelerator_id(char *buf)
 {
   DEFAULT_STR_FIELD;
@@ -272,24 +263,6 @@ LogAccess::marshal_proxy_resp_status_code(char *buf)
 
 int
 LogAccess::marshal_proxy_resp_header_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccess::marshal_proxy_resp_origin_bytes(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccess::marshal_proxy_resp_cache_bytes(char *buf)
 {
   DEFAULT_INT_FIELD;
 }

@@ -189,7 +189,7 @@ The following list describes Traffic Server custom logging fields.
     Server.
 
 ``cwr``
-    The cache write result (``-``, ``FIN``, ``ERR`` and so on)
+    The cache write result (``-``, ``WL_MISS``, ``INTR```, ``ERR`` or ``FIN``)
 
 ``cwtr``
     The cache write transform result
@@ -199,8 +199,8 @@ The following list describes Traffic Server custom logging fields.
 
 ``pfsc``
     The proxy finish status code; specifies whether the Traffic Server
-    request to the origin server was successfully completed (``FIN``) or
-    interrupted (``INTR``).
+    request to the origin server was successfully completed (``FIN``),
+    interrupted (``INTR``) or timed out (``TIMEOUT``).
 
 ``phn``
     The hostname of the Traffic Server that generated the log entry in
@@ -229,13 +229,6 @@ The following list describes Traffic Server custom logging fields.
 ``pqsn``
     The proxy request server name; the name of the server that fulfilled
     the request.
-
-``prcb``
-    The number of proxy response bytes to the client from the cache.
-
-``prob``
-    The number of proxy response bytes to the client from the origin
-    server.
 
 ``pscl``
     The length of the Traffic Server response to the client (in bytes).
