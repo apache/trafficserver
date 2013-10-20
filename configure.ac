@@ -1896,6 +1896,7 @@ AC_CONFIG_FILES([
   plugins/experimental/spdy/Makefile
   plugins/experimental/tcp_info/Makefile
   plugins/experimental/healthchecks/Makefile
+  plugins/experimental/remap_stats/Makefile
   plugins/gzip/Makefile
   plugins/libloader/Makefile
   plugins/header_filter/Makefile

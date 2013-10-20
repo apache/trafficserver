@@ -14,19 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS = \
- lua \
- buffer_upload \
- esi \
- rfc5861 \
- tcp_info \
- custom_redirect \
- metalink \
- spdy \
- channel_stats \
- authproxy \
- geoip_acl \
- healthchecks \
- remap_stats
-endif
+include $(top_srcdir)/build/plugins.mk
+
+pkglib_LTLIBRARIES = remap_stats.la
+remap_stats_la_SOURCES = remap_stats.c
+remap_stats_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
