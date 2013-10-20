@@ -1242,8 +1242,8 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   info.plugin_name = const_cast<char*>("buffer_upload");
-  info.vendor_name = const_cast<char*>("");
-  info.support_email = const_cast<char*>("");
+  info.vendor_name = const_cast<char*>("Apache Software Foundation");
+  info.support_email = const_cast<char*>("dev@trafficserver.apache.org");
 
   if (uconfig->use_disk_buffer && !create_directory()) {
     TSError("Directory creation failed.");

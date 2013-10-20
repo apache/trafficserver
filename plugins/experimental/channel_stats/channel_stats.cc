@@ -807,8 +807,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"wkl";
-  info.support_email = (char *)"conanmind@gmail.com";
+  info.vendor_name = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     fatal("plugin registration failed.");

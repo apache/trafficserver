@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2242] Update core plugins' support_email and vendor_name for
+   consistency.
+
   *) [TS-1988] cquuc and cquup log tags can have no values.
 
   *) [TS-2159] Force first log rotation at proxy.config.log.rolling_size_mb

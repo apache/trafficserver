@@ -445,8 +445,8 @@ void TSPluginInit(int argc, const char *argv[]) {
     pr_list *prl;
 
     info.plugin_name = PLUGIN_NAME;
-    info.vendor_name = "OmniTI";
-    info.support_email = "sa@omniti.com";
+    info.vendor_name = "Apache Software Foundation";
+    info.support_email = "dev@trafficserver.apache.org";
 
     if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
         initialization_error("Plugin registration failed.");
