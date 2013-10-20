@@ -1163,6 +1163,24 @@ vol_init_dir(Vol *d)
   }
 }
 
+#if TS_USE_INTERIM_CACHE == 1
+void
+interimvol_clear_init(InterimCacheVol *d)
+{
+  memset(d->header, 0, sizeof(InterimVolHeaderFooter));
+  d->header->magic = VOL_MAGIC;
+  d->header->version.ink_major = CACHE_DB_MAJOR_VERSION;
+  d->header->version.ink_minor = CACHE_DB_MINOR_VERSION;
+  d->header->agg_pos = d->header->write_pos = d->start;
+  d->header->last_write_pos = d->header->write_pos;
+  d->header->phase = 0;
+  d->header->cycle = 0;
+  d->header->create_time = time(NULL);
+  d->header->dirty = 0;
+  d->sector_size = d->header->sector_size = d->disk->hw_sector_size;
+}
+#endif
+
 void
 vol_clear_init(Vol *d)
 {
@@ -1180,6 +1198,12 @@ vol_clear_init(Vol *d)
   d->header->dirty = 0;
   d->sector_size = d->header->sector_size = d->disk->hw_sector_size;
   *d->footer = *d->header;
+
+#if TS_USE_INTERIM_CACHE == 1
+  for (int i = 0; i < d->num_interim_vols; i++) {
+    interimvol_clear_init(&(d->interim_vols[i]));
+  }
+#endif
 }
 
 int
@@ -1251,11 +1275,6 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   header = (VolHeaderFooter *) raw_dir;
   footer = (VolHeaderFooter *) (raw_dir + vol_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
 
-  if (clear) {
-    Note("clearing cache directory '%s'", hash_id);
-    return clear_dir();
-  }
-
 #if TS_USE_INTERIM_CACHE == 1
   num_interim_vols = good_interim_disks;
   ink_assert(num_interim_vols >= 0 && num_interim_vols <= 8);
@@ -1264,10 +1283,15 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
     off_t vlen = off_t (r * g_interim_disks[i]->len * STORE_BLOCK_SIZE);
     vlen = (vlen / STORE_BLOCK_SIZE) * STORE_BLOCK_SIZE;
     off_t start = ink_atomic_increment(&g_interim_disks[i]->skip, vlen);
-    interim_vols[i].init(start, vlen, g_interim_disks[i], this);
+    interim_vols[i].init(start, vlen, g_interim_disks[i], this, &(this->header->interim_header[i]));
     ink_assert(interim_vols[i].start + interim_vols[i].len <= g_interim_disks[i]->len * STORE_BLOCK_SIZE);
   }
 #endif
+
+  if (clear) {
+    Note("clearing cache directory '%s'", hash_id);
+    return clear_dir();
+  }
 
   init_info = new VolInitInfo();
   int footerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
@@ -1349,11 +1373,30 @@ Vol::handle_dir_read(int event, void *data)
     return EVENT_DONE;
   }
   CHECK_DIR(this);
-#if TS_USE_INTERIM_CACHE == 1
-  if (gn_interim_disks > 0)
-    clear_interim_dir(this);
-#endif
+
   sector_size = header->sector_size;
+
+#if TS_USE_INTERIM_CACHE == 1
+  if (num_interim_vols > 0) {
+    interim_done = 0;
+    for (int i = 0; i < num_interim_vols; i++) {
+      interim_vols[i].recover_data();
+    }
+  } else {
+#endif
+
+  return this->recover_data();
+
+#if TS_USE_INTERIM_CACHE == 1
+  }
+#endif
+
+  return EVENT_CONT;
+}
+
+int
+Vol::recover_data()
+{
   SET_HANDLER(&Vol::handle_recover_from_data);
   return handle_recover_from_data(EVENT_IMMEDIATE, 0);
 }
@@ -1731,6 +1774,221 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */ )
     return EVENT_DONE;
   }
 }
+
+#if TS_USE_INTERIM_CACHE == 1
+int
+InterimCacheVol::recover_data()
+{
+  io.aiocb.aio_fildes = fd;
+  io.action = this;
+  io.thread = AIO_CALLBACK_THREAD_ANY;
+  io.then = 0;
+
+  SET_HANDLER(&InterimCacheVol::handle_recover_from_data);
+  return handle_recover_from_data(EVENT_IMMEDIATE, 0);
+}
+
+int
+InterimCacheVol::handle_recover_from_data(int event, void *data)
+{
+  (void)data;
+  uint32_t got_len = 0;
+  uint32_t max_sync_serial = header->sync_serial;
+  char *s, *e;
+  int ndone, offset;
+
+  if (event == EVENT_IMMEDIATE) {
+    if (header->magic != VOL_MAGIC || header->version.ink_major != CACHE_DB_MAJOR_VERSION) {
+      Warning("bad header in cache directory for '%s', clearing", hash_id);
+      goto Lclear;
+    } else if (header->sync_serial == 0) {
+      io.aiocb.aio_buf = NULL;
+      goto Lfinish;
+    }
+
+    // initialize
+    recover_wrapped = 0;
+    last_sync_serial = 0;
+    last_write_serial = 0;
+    recover_pos = header->last_write_pos;
+    if (recover_pos >= skip + len) {
+      recover_wrapped = 1;
+      recover_pos = start;
+    }
+
+    io.aiocb.aio_buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), RECOVERY_SIZE);
+    io.aiocb.aio_nbytes = RECOVERY_SIZE;
+    if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
+      io.aiocb.aio_nbytes = (skip + len) - recover_pos;
+
+  } else if (event == AIO_EVENT_DONE) {
+    if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
+      Warning("disk read error on recover '%s', clearing", hash_id);
+      goto Lclear;
+    }
+
+    if (io.aiocb.aio_offset == header->last_write_pos) {
+      uint32_t to_check = header->write_pos - header->last_write_pos;
+      ink_assert(to_check && to_check < (uint32_t)io.aiocb.aio_nbytes);
+      uint32_t done = 0;
+      s = (char *) io.aiocb.aio_buf;
+      while (done < to_check) {
+        Doc *doc = (Doc *) (s + done);
+        if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
+          Warning("no valid directory found while recovering '%s', clearing", hash_id);
+          goto Lclear;
+        }
+        done += round_to_approx_size(doc->len);
+        if (doc->sync_serial > last_write_serial)
+          last_sync_serial = doc->sync_serial;
+      }
+      ink_assert(done == to_check);
+
+      got_len = io.aiocb.aio_nbytes - done;
+      recover_pos += io.aiocb.aio_nbytes;
+      s = (char *) io.aiocb.aio_buf + done;
+      e = s + got_len;
+    } else {
+      got_len = io.aiocb.aio_nbytes;
+      recover_pos += io.aiocb.aio_nbytes;
+      s = (char *) io.aiocb.aio_buf;
+      e = s + got_len;
+    }
+  }
+
+  // examine what we got
+  if (got_len) {
+
+    Doc *doc = NULL;
+
+    if (recover_wrapped && start == io.aiocb.aio_offset) {
+      doc = (Doc *) s;
+      if (doc->magic != DOC_MAGIC || doc->write_serial < last_write_serial) {
+        recover_pos = skip + len - EVACUATION_SIZE;
+        goto Ldone;
+      }
+    }
+
+    while (s < e) {
+      doc = (Doc *) s;
+
+      if (doc->magic != DOC_MAGIC || doc->sync_serial != last_sync_serial) {
+
+        if (doc->magic == DOC_MAGIC) {
+          if (doc->sync_serial > header->sync_serial)
+            max_sync_serial = doc->sync_serial;
+
+          if (doc->sync_serial > last_sync_serial && doc->sync_serial <= header->sync_serial + 1) {
+            last_sync_serial = doc->sync_serial;
+            s += round_to_approx_size(doc->len);
+            continue;
+
+          } else if (recover_pos - (e - s) > (skip + len) - AGG_SIZE) {
+            recover_wrapped = 1;
+            recover_pos = start;
+            io.aiocb.aio_nbytes = RECOVERY_SIZE;
+            break;
+          }
+
+          recover_pos -= e - s;
+          goto Ldone;
+
+        } else {
+          recover_pos -= e - s;
+          if (recover_pos > (skip + len) - AGG_SIZE) {
+            recover_wrapped = 1;
+            recover_pos = start;
+            io.aiocb.aio_nbytes = RECOVERY_SIZE;
+            break;
+          }
+
+          goto Ldone;
+        }
+      }
+
+      last_write_serial = doc->write_serial;
+      s += round_to_approx_size(doc->len);
+    }
+
+    if (s >= e) {
+
+      if (s > e)
+        s -= round_to_approx_size(doc->len);
+
+      recover_pos -= e - s;
+      if (recover_pos >= skip + len)
+        recover_pos = start;
+
+      io.aiocb.aio_nbytes = RECOVERY_SIZE;
+      if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
+        io.aiocb.aio_nbytes = (skip + len) - recover_pos;
+    }
+  }
+
+  if (recover_pos == prev_recover_pos)
+    goto Lclear;
+
+  prev_recover_pos = recover_pos;
+  io.aiocb.aio_offset = recover_pos;
+  ink_assert(ink_aio_read(&io));
+  return EVENT_CONT;
+
+Ldone: {
+
+    if (recover_pos == header->write_pos && recover_wrapped) {
+      goto Lfinish;
+    }
+
+    recover_pos += EVACUATION_SIZE;
+    if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
+      Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
+      Warning("no valid directory found while recovering '%s', clearing", hash_id);
+      goto Lclear;
+    }
+
+    if (recover_pos > skip + len)
+      recover_pos -= skip + len;
+
+    uint32_t next_sync_serial = max_sync_serial + 1;
+    if (!(header->sync_serial & 1) == !(next_sync_serial & 1))
+      next_sync_serial++;
+
+    off_t clear_start = offset_to_vol_offset(this, header->write_pos);
+    off_t clear_end = offset_to_vol_offset(this, recover_pos);
+
+    if (clear_start <= clear_end)
+      dir_clean_range_interimvol(clear_start, clear_end, this);
+    else {
+      dir_clean_range_interimvol(clear_end, DIR_OFFSET_MAX, this);
+      dir_clean_range_interimvol(1, clear_start, this);
+    }
+
+    header->sync_serial = next_sync_serial;
+
+    goto Lfinish;
+  }
+
+Lclear:
+
+  interimvol_clear_init(this);
+  offset = this - vol->interim_vols;
+  clear_interimvol_dir(vol, offset);          // remove this interimvol dir
+
+Lfinish:
+
+  free((char*)io.aiocb.aio_buf);
+  io.aiocb.aio_buf = NULL;
+
+  set_io_not_in_progress();
+
+  ndone = ink_atomic_increment(&vol->interim_done, 1);
+  if (ndone == vol->num_interim_vols - 1) {         // all interim finished
+    return vol->recover_data();
+  }
+
+  return EVENT_CONT;
+}
+#endif
 
 // explicit pair for random table in build_vol_hash_table
 struct rtable_pair {

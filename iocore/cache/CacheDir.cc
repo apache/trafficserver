@@ -373,12 +373,12 @@ dir_clean_vol(Vol *d)
 
 #if TS_USE_INTERIM_CACHE == 1
 static inline void
-interim_dir_clean_bucket(Dir *b, int s, Vol *vol)
+interim_dir_clean_bucket(Dir *b, int s, Vol *vol, int offset)
 {
   Dir *e = b, *p = NULL;
   Dir *seg = dir_segment(s, vol);
   do {
-    if (dir_ininterim(e)) {
+    if (dir_ininterim(e) && dir_get_index(e) == offset) {
       e = dir_delete_entry(e, p, s, vol);
       continue;
     }
@@ -388,12 +388,12 @@ interim_dir_clean_bucket(Dir *b, int s, Vol *vol)
 }
 
 void
-clear_interim_dir(Vol *v)
+clear_interimvol_dir(Vol *v, int offset)
 {
   for (int i = 0; i < v->segments; i++) {
     Dir *seg = dir_segment(i, v);
     for (int j = 0; j < v->buckets; j++) {
-      interim_dir_clean_bucket(dir_bucket(j, seg), i, v);
+      interim_dir_clean_bucket(dir_bucket(j, seg), i, v, offset);
     }
   }
 }
@@ -437,12 +437,29 @@ dir_clean_segment(int s, InterimCacheVol *d)
   }
 }
 void
-clean_interimvol(InterimCacheVol *d)
+dir_clean_interimvol(InterimCacheVol *d)
 {
-  Warning("Note: clean interim");
   for (int i = 0; i < d->vol->segments; i++)
     dir_clean_segment(i, d);
   CHECK_DIR(d);
+}
+
+void
+dir_clean_range_interimvol(off_t start, off_t end, InterimCacheVol *svol)
+{
+  Vol *vol = svol->vol;
+  int offset = svol - vol->interim_vols;
+
+  for (int i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
+    Dir *e = dir_index(vol, i);
+    if (dir_ininterim(e) && dir_get_index(e) == offset && !dir_token(e) &&
+            dir_offset(e) >= (int64_t)start && dir_offset(e) < (int64_t)end) {
+      CACHE_DEC_DIR_USED(vol->mutex);
+      dir_set_offset(e, 0);     // delete
+    }
+  }
+
+  dir_clean_interimvol(svol);
 }
 #endif
 
@@ -1068,6 +1085,12 @@ sync_cache_dir_on_shutdown(void)
       Debug("cache_dir_sync", "Periodic dir sync in progress -- overwriting");
     }
     d->footer->sync_serial = d->header->sync_serial;
+
+#if TS_USE_INTERIM_CACHE == 1
+    for (int j = 0; j < d->num_interim_vols; j++) {
+      d->interim_vols[j].header->sync_serial = d->header->sync_serial;
+    }
+#endif
     CHECK_DIR(d);
     memcpy(buf, d->raw_dir, dirlen);
     size_t B = d->header->sync_serial & 1;
@@ -1172,6 +1195,11 @@ Lrestart:
       }
       d->header->sync_serial++;
       d->footer->sync_serial = d->header->sync_serial;
+#if TS_USE_INTERIM_CACHE == 1
+      for (int j = 0; j < d->num_interim_vols; j++) {
+          d->interim_vols[j].header->sync_serial = d->header->sync_serial;
+      }
+#endif
       CHECK_DIR(d);
       memcpy(buf, d->raw_dir, dirlen);
       d->dir_sync_in_progress = 1;
