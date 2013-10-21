@@ -315,18 +315,19 @@ LogAccessHttp::marshal_client_req_unmapped_url_canon(char *buf)
 {
   int len = INK_MIN_ALIGN;
 
-  if (buf) {
-    validate_unmapped_url();
-    if (0 == m_client_req_unmapped_url_canon_len) {
-      // If the unmapped URL isn't populated, we'll fall back to the original
-      // client URL. This helps for example server intercepts to continue to
-      // log the requests, even when there is no remap rule for it.
-      len = marshal_client_req_url_canon(buf);
-    } else {
-      len = round_strlen(m_client_req_unmapped_url_canon_len + 1);      // +1 for eos
+  validate_unmapped_url();
+  if (0 == m_client_req_unmapped_url_canon_len) {
+    // If the unmapped URL isn't populated, we'll fall back to the original
+    // client URL. This helps for example server intercepts to continue to
+    // log the requests, even when there is no remap rule for it.
+    len = marshal_client_req_url_canon(buf);
+  } else {
+    len = round_strlen(m_client_req_unmapped_url_canon_len + 1);      // +1 for eos
+    if (buf) {
       marshal_mem(buf, m_client_req_unmapped_url_canon_str, m_client_req_unmapped_url_canon_len, len);
     }
   }
+
   return len;
 }
 
@@ -338,13 +339,14 @@ LogAccessHttp::marshal_client_req_unmapped_url_path(char *buf)
 {
   int len = INK_MIN_ALIGN;
 
-  if (buf) {
-    validate_unmapped_url();
-    validate_unmapped_url_path();
-    if (0 == m_client_req_unmapped_url_path_len) {
-      len = marshal_client_req_url_path(buf);
-    } else {
-      len = round_strlen(m_client_req_unmapped_url_path_len + 1);   // +1 for eos
+  validate_unmapped_url();
+  validate_unmapped_url_path();
+
+  if (0 == m_client_req_unmapped_url_path_len) {
+    len = marshal_client_req_url_path(buf);
+  } else {
+    len = round_strlen(m_client_req_unmapped_url_path_len + 1);   // +1 for eos
+    if (buf) {
       marshal_mem(buf, m_client_req_unmapped_url_path_str, m_client_req_unmapped_url_path_len, len);
     }
   }
