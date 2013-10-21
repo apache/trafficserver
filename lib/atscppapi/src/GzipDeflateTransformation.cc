@@ -43,8 +43,8 @@ const int ONE_KB = 1024;
 struct atscppapi::transformations::GzipDeflateTransformationState: noncopyable {
   z_stream z_stream_;
   bool z_stream_initialized_;
-  int64_t bytes_produced_;
   TransformationPlugin::Type transformation_type_;
+  int64_t bytes_produced_;
 
   GzipDeflateTransformationState(TransformationPlugin::Type type) :
         z_stream_initialized_(false), transformation_type_(type), bytes_produced_(0) {
@@ -93,29 +93,29 @@ void GzipDeflateTransformation::consume(const string &data) {
 
   // For small payloads the size can actually be greater than the original input
   // so we'll use twice the original size to avoid needless repeated calls to deflate.
-  unsigned long buffer_size = data.length() < ONE_KB ? 2 * ONE_KB : data.length();
+  unsigned long buffer_size = data.length() < static_cast<string::size_type>(ONE_KB ? 2 * ONE_KB : data.length());
   vector<unsigned char> buffer(buffer_size);
 
   do {
-    LOG_DEBUG("Iteration %d: Deflate will compress %d bytes", ++iteration, data.size());
+    LOG_DEBUG("Iteration %d: Deflate will compress %ld bytes", ++iteration, data.size());
     state_->z_stream_.avail_out = buffer_size;
     state_->z_stream_.next_out = &buffer[0];
 
     int err = deflate(&state_->z_stream_, Z_SYNC_FLUSH);
     if (Z_OK != err) {
-      LOG_ERROR("Iteration %d: Deflate failed to compress %d bytes with error code '%d'", iteration, data.size(), err);
+      LOG_ERROR("Iteration %d: Deflate failed to compress %ld bytes with error code '%d'", iteration, data.size(), err);
       return;
     }
 
     int bytes_to_write = buffer_size - state_->z_stream_.avail_out;
     state_->bytes_produced_ += bytes_to_write;
 
-    LOG_DEBUG("Iteration %d: Deflate compressed %d bytes to %d bytes, producing output...", iteration, data.size(), bytes_to_write);
+    LOG_DEBUG("Iteration %d: Deflate compressed %ld bytes to %d bytes, producing output...", iteration, data.size(), bytes_to_write);
     produce(string(reinterpret_cast<char *>(&buffer[0]), static_cast<size_t>(bytes_to_write)));
   } while (state_->z_stream_.avail_out == 0);
 
   if (state_->z_stream_.avail_in != 0) {
-    LOG_ERROR("Inflate finished with data still remaining in the buffer of size '%d'", state_->z_stream_.avail_in);
+    LOG_ERROR("Inflate finished with data still remaining in the buffer of size '%u'", state_->z_stream_.avail_in);
   }
 }
 
@@ -148,7 +148,7 @@ void GzipDeflateTransformation::handleInputComplete() {
 
   int64_t bytes_written = setOutputComplete();
   if (state_->bytes_produced_ != bytes_written) {
-    LOG_ERROR("Gzip bytes produced sanity check failed, deflated bytes = %d != written bytes = %d", state_->bytes_produced_, bytes_written);
+    LOG_ERROR("Gzip bytes produced sanity check failed, deflated bytes = %ld != written bytes = %ld", state_->bytes_produced_, bytes_written);
   }
 }
 

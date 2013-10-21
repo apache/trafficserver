@@ -47,7 +47,7 @@ struct atscppapi::transformations::GzipInflateTransformationState: noncopyable {
   TransformationPlugin::Type transformation_type_;
 
   GzipInflateTransformationState(TransformationPlugin::Type type) :
-        z_stream_initialized_(false), transformation_type_(type), bytes_produced_(0) {
+        z_stream_initialized_(false), bytes_produced_(0), transformation_type_(type) {
 
     memset(&z_stream_, 0, sizeof(z_stream_));
 
@@ -122,7 +122,7 @@ void GzipInflateTransformation::consume(const string &data) {
 void GzipInflateTransformation::handleInputComplete() {
   int64_t bytes_written = setOutputComplete();
   if (state_->bytes_produced_ != bytes_written) {
-    LOG_ERROR("Gzip bytes produced sanity check failed, inflated bytes = %d != written bytes = %d", state_->bytes_produced_, bytes_written);
+    LOG_ERROR("Gzip bytes produced sanity check failed, inflated bytes = %ld != written bytes = %ld", state_->bytes_produced_, bytes_written);
   }
 }
 

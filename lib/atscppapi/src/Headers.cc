@@ -122,8 +122,8 @@ bool Headers::checkAndInitHeaders() const {
   }
   state_->name_values_map_.getValueRef().clear();
   string key;
-  const char *name, *value;
-  int name_len, num_values, value_len;
+  const char *name;
+  int name_len;
   pair<NameValuesMap::iterator, bool> insert_result;
   TSMLoc field_loc = TSMimeHdrFieldGet(state_->hdr_buf_, state_->hdr_loc_, FIRST_INDEX);
   while (field_loc) {
@@ -455,7 +455,7 @@ bool Headers::addCookie(const ResponseCookie &response_cookie) {
     return false;
   }
   if (!checkAndInitHeaders()) {
-    false;
+    return false;
   }
   // @TODO Do logic here
   return true;

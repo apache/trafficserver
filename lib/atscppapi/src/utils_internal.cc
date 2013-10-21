@@ -50,8 +50,7 @@ int handleTransactionEvents(TSCont cont, TSEvent event, void *edata) {
   Transaction &transaction = utils::internal::getTransaction(ats_txn_handle);
   LOG_DEBUG("Got event %d on continuation %p for transaction (ats pointer %p, object %p)", event, cont,
             ats_txn_handle, &transaction);
-  TSMBuffer hdr_buf;
-  TSMLoc hdr_loc;
+
   switch (event) {
   case TS_EVENT_HTTP_POST_REMAP:
     transaction.getClientRequest().getUrl().reset();
@@ -170,7 +169,6 @@ TSHttpHookID utils::internal::convertInternalHookToTsHook(Plugin::HookType hookt
 }
 
 TSHttpHookID utils::internal::convertInternalTransformationTypeToTsHook(TransformationPlugin::Type type) {
-  TSHttpHookID hook_id;
   switch (type) {
     case TransformationPlugin::RESPONSE_TRANSFORMATION:
       return TS_HTTP_RESPONSE_TRANSFORM_HOOK;

@@ -175,6 +175,8 @@ void Logger::flush() {
 namespace {
 const int DEFAULT_BUFFER_SIZE_FOR_VARARGS = 8*1024;
 
+// We use a macro here because varargs would be a pain to forward via a helper
+// function
 #define TS_TEXT_LOG_OBJECT_WRITE(level) \
     char buffer[DEFAULT_BUFFER_SIZE_FOR_VARARGS]; \
     int n; \
@@ -183,11 +185,11 @@ const int DEFAULT_BUFFER_SIZE_FOR_VARARGS = 8*1024;
      va_start(ap, fmt); \
      n = vsnprintf (&buffer[0], sizeof(buffer), fmt, ap); \
      va_end(ap); \
-     if (n > -1 && n < sizeof(buffer)) { \
+     if (n > -1 && n < static_cast<int>(sizeof(buffer))) { \
        LOG_DEBUG("logging a " level " to '%s' with length %d", state_->filename_.c_str(), n); \
        TSTextLogObjectWrite(state_->text_log_obj_, const_cast<char*>("[" level "] %s"), buffer); \
      } else { \
-       LOG_ERROR("Unable to log " level " message to '%s' due to size exceeding %d bytes.", state_->filename_.c_str(), sizeof(buffer)); \
+       LOG_ERROR("Unable to log " level " message to '%s' due to size exceeding %lud bytes.", state_->filename_.c_str(), sizeof(buffer)); \
      } \
      return; \
     }

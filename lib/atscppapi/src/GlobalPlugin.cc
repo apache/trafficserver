@@ -34,8 +34,9 @@ using namespace atscppapi;
  */
 struct atscppapi::GlobalPluginState : noncopyable {
   TSCont cont_;
-  bool ignore_internal_transactions_;
   GlobalPlugin *global_plugin_;
+  bool ignore_internal_transactions_;
+
   GlobalPluginState(GlobalPlugin *global_plugin, bool ignore_internal_transactions)
     : global_plugin_(global_plugin), ignore_internal_transactions_(ignore_internal_transactions) { }
 };
