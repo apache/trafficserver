@@ -361,11 +361,11 @@ LogAccessHttp::marshal_client_req_unmapped_url_host(char *buf)
 {
   int len = INK_MIN_ALIGN;
 
-  if (buf) {
-    validate_unmapped_url();
-    validate_unmapped_url_path();
+  validate_unmapped_url();
+  validate_unmapped_url_path();
 
-    len = round_strlen(m_client_req_unmapped_url_host_len + 1);      // +1 for eos
+  len = round_strlen(m_client_req_unmapped_url_host_len + 1);      // +1 for eos
+  if (buf) {
     marshal_mem(buf, m_client_req_unmapped_url_host_str, m_client_req_unmapped_url_host_len, len);
   }
   return len;
