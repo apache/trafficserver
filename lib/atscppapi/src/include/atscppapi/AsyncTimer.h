@@ -33,7 +33,7 @@
 namespace atscppapi {
 
 // forward declarations
-class AsyncTimerState;
+struct AsyncTimerState;
 
 /**
  * @brief This class provides an implementation of AsyncProvider that

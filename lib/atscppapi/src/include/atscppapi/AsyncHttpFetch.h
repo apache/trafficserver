@@ -33,7 +33,7 @@
 namespace atscppapi {
 
 // forward declarations
-class AsyncHttpFetchState;
+struct AsyncHttpFetchState;
 namespace utils { class internal; }
 
 /**

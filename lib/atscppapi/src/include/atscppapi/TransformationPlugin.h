@@ -30,7 +30,7 @@
 
 namespace atscppapi {
 
-class TransformationPluginState;
+struct TransformationPluginState;
 
 /**
  * @brief The interface used when you wish to transform Request or Response body content.

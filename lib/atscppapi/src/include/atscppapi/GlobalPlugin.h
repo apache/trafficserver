@@ -29,7 +29,7 @@
 
 namespace atscppapi {
 
-class GlobalPluginState;
+struct GlobalPluginState;
 
 /**
  * @brief The interface used when creating a GlobalPlugin.

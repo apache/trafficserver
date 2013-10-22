@@ -29,7 +29,7 @@
 
 namespace atscppapi {
 
-class UrlState;
+struct UrlState;
 
 /**
  * @brief This class contains all properties of a Url.
@@ -68,17 +68,17 @@ public:
   ~Url();
 
   /**
-   * @return The full url as a string, such a url might be http://www.linkedin.com/profile/view?id=2941
+   * @return The full url as a string, such a url might be http://trafficserver.apache.org/search?q=blah
    */
   const std::string &getUrlString() const;
 
   /**
-   * @return The path only portion of the url, such as /profile/view
+   * @return The path only portion of the url, such as /search
    */
   const std::string &getPath() const;
 
   /**
-   * @return The query only portion of the url, which might be id=1234
+   * @return The query only portion of the url, which might be q=blah
    */
   const std::string &getQuery() const;
 
@@ -88,7 +88,7 @@ public:
   const std::string &getScheme() const;
 
   /**
-   * @return The host only of the url, this might be www.linkedin.com
+   * @return The host only of the url, this might be www.google.com
    */
   const std::string &getHost() const;
 

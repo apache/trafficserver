@@ -127,7 +127,7 @@ extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1,2);
 
 namespace atscppapi {
 
-class LoggerState;
+struct LoggerState;
 
 /**
  * @brief Create log files that are automatically rolled and cleaned up as space is required.

@@ -36,7 +36,7 @@ namespace transformations {
  * Internal state for Inflate Transformations
  * @private
  */
-class GzipInflateTransformationState;
+struct GzipInflateTransformationState;
 
 /**
  * @brief A TransformationPlugin to easily add gzip inflate to your TransformationPlugin chain.

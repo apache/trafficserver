@@ -36,7 +36,7 @@ namespace transformations {
  * Internal state for Deflate Transformations
  * @private
  */
-class GzipDeflateTransformationState;
+struct GzipDeflateTransformationState;
 
 /**
  * @brief A TransformationPlugin to easily add gzip deflate to your TransformationPlugin chain.
