@@ -131,7 +131,7 @@ create_stat_name(char *hostname, char *basename)
 }
 
 static int
-handle_read_req_hdr(TSCont cont, TSEvent event, void *edata)
+handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;
@@ -149,7 +149,7 @@ handle_read_req_hdr(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-handle_post_remap(TSCont cont, TSEvent event, void *edata)
+handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;
@@ -176,7 +176,7 @@ handle_post_remap(TSCont cont, TSEvent event, void *edata)
 }
 
 static int
-handle_txn_close(TSCont cont, TSEvent event, void *edata)
+handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;

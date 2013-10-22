@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2216] Fix cquuh log tag, which does not calculate the right
+   string length.
+
   *) [TS-2275] fix interim cache lossing data if the server process crash
    Author: Gang Li.
 
