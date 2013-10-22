@@ -15,11 +15,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CXXFLAGS = -Iinclude
+TS_PLUGIN_CPPFLAGS = \
+  -D__STDC_LIMIT_MACROS=1 \
+  -D__STDC_FORMAT_MACROS=1 \
+  -I$(top_builddir)/proxy/api \
+  -I$(top_srcdir)/proxy/api \
+  -I$(top_builddir)/lib/ts \
+  -I$(top_srcdir)/lib/ts
+
+AM_CXXFLAGS = -Iinclude $(TS_PLUGIN_CPPFLAGS)
 
 # build the library
 lib_LTLIBRARIES = libatscppapi.la
-libatscppapi_la_LDFLAGS=-lz -lpthread -lrt -version-info @TS_LIBTOOL_VERSION@
+libatscppapi_la_LDFLAGS=-lz -lpthread -version-info @TS_LIBTOOL_VERSION@
 
 libatscppapi_la_SOURCES = GlobalPlugin.cc \
 			  Plugin.cc \
