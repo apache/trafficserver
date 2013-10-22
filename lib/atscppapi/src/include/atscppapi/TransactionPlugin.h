@@ -38,7 +38,7 @@ namespace utils {
 /**
  * @private
  */
-class TransactionPluginState;
+struct TransactionPluginState;
 
 /**
  * @brief The interface used when creating a TransactionPlugin.

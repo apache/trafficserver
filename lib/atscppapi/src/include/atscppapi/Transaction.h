@@ -35,7 +35,7 @@ namespace atscppapi {
 
 // forward declarations
 class TransactionPlugin;
-class TransactionState;
+struct TransactionState;
 namespace utils { class internal; }
 
 /**
