@@ -15,13 +15,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/include
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include
 
 target=StatExample.so
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = StatExample.la
 StatExample_la_SOURCES = StatExample.cc
-StatExample_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir) -latscppapi
+StatExample_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
 
 all:
 	ln -sf .libs/$(target)

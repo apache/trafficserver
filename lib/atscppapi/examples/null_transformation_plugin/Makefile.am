@@ -15,13 +15,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/include
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include
 
 target=NullTransformationPlugin.so
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = NullTransformationPlugin.la
 NullTransformationPlugin_la_SOURCES = NullTransformationPlugin.cc
-NullTransformationPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir) -latscppapi
+NullTransformationPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
 
 all:
 	ln -sf .libs/$(target)

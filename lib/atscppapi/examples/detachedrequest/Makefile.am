@@ -15,13 +15,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/include
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include
 
 target=DetachedRequest.so
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = DetachedRequest.la
 DetachedRequest_la_SOURCES = DetachedRequest.cc
-DetachedRequest_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir) -latscppapi
+DetachedRequest_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
 
 all:
 	ln -sf .libs/$(target)

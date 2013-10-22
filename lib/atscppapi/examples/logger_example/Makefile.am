@@ -15,13 +15,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/include
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include
 
 target=LoggerExample.so
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = LoggerExample.la
 LoggerExample_la_SOURCES = LoggerExample.cc
-LoggerExample_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir) -latscppapi
+LoggerExample_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
 
 all:
 	ln -sf .libs/$(target)

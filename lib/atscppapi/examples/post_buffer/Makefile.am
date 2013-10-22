@@ -14,13 +14,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-AM_CPPFLAGS = -I$(top_srcdir)/src/include
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include
 
 target=PostBuffer.so
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = PostBuffer.la
 PostBuffer_la_SOURCES = PostBuffer.cc
-PostBuffer_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir) -latscppapi
+PostBuffer_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
 
 all:
 	ln -sf .libs/$(target)
