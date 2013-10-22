@@ -959,6 +959,14 @@ Cache Control
 
    Enables (``1``) or disables (``0``) caching of HTTP requests.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 0
+   :reloadable:
+
+   Enables (``1``) or disables (``0``) caching objects that have an empty
+   response body. This is particularly useful for caching 301 or 302 responses
+   with a ``Location`` header but no document body. This only works if the
+   origin response also has a ``Content-Length`` header.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_no_cache INT 0
    :reloadable:
 
