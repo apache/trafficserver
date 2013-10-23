@@ -1786,6 +1786,14 @@ AC_CHECK_TYPE([struct tcp_info],
 )
 AM_CONDITIONAL([BUILD_TCPINFO_PLUGIN], [ test "x${enable_tcpinfo_plugin}" != "xno" ])
 
+AC_SEARCH_LIBS([hcreate_r],
+  [],
+  [enable_remap_stats_plugin=yes],
+  [enable_remap_stats_plugin=no],
+  []
+)
+AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN], [ test "x${enable_remap_stats_plugin}" != "xno" ])
+
 #
 # use modular IOCORE
 #

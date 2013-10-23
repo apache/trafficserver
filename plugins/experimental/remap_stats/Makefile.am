@@ -16,6 +16,10 @@
 
 include $(top_srcdir)/build/plugins.mk
 
+if BUILD_REMAP_STATS_PLUGIN
+
 pkglib_LTLIBRARIES = remap_stats.la
 remap_stats_la_SOURCES = remap_stats.c
 remap_stats_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+endif
