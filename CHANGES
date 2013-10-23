@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.2.6
 
 
+  *) [TS-2297] fix out of tree build for TSConfig
+
 Changes with Apache Traffic Server 3.2.5
 
   *) [TS-1923] Fix memory issue caused by resolve_logfield_string()
