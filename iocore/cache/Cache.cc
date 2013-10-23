@@ -2720,6 +2720,13 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   Lcollision:
     // check for collision
     if (dir_probe(&key, vol, &dir, &last_collision) > 0) {
+#if TS_USE_INTERIM_CACHE == 1
+      if (dir_ininterim(&dir)) {
+        dir_delete(&key, vol, &dir);
+        last_collision = NULL;
+        goto Lcollision;
+      }
+#endif
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN)
         goto Lread;
