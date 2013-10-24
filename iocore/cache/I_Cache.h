@@ -134,7 +134,7 @@ struct CacheProcessor:public Processor
                 CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = 0, int host_len = 0);
   static int IsCacheEnabled();
 
-  static unsigned int IsCacheReady(CacheFragType type);
+  static bool IsCacheReady(CacheFragType type);
 
   /// Type for callback function.
   typedef void (*CALLBACK_FUNC)();

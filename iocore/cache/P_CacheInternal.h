@@ -60,8 +60,6 @@ struct EvacuationBlock;
 // retry read from writer delay
 #define WRITER_RETRY_DELAY  HRTIME_MSECONDS(50)
 
-#define CACHE_READY(_x) (CacheProcessor::cache_ready & (1 << (_x)))
-
 #ifndef CACHE_LOCK_FAIL_RATE
 #define CACHE_TRY_LOCK(_l, _m, _t) MUTEX_TRY_LOCK(_l, _m, _t)
 #else
@@ -1382,12 +1380,12 @@ CacheProcessor::IsCacheEnabled()
   return CacheProcessor::initialized;
 }
 
-TS_INLINE unsigned int
+TS_INLINE bool
 CacheProcessor::IsCacheReady(CacheFragType type)
 {
   if (IsCacheEnabled() != CACHE_INITIALIZED)
     return 0;
-  return (cache_ready & (1 << type));
+  return (bool)(cache_ready & (1 << type));
 }
 
 TS_INLINE Cache *

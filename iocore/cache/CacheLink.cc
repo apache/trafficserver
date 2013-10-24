@@ -27,7 +27,7 @@ Action *
 Cache::link(Continuation * cont, CacheKey * from, CacheKey * to, CacheFragType type, char *hostname, int host_len)
 {
 
-  if (!CACHE_READY(type)) {
+  if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LINK_FAILED, 0);
     return ACTION_RESULT_DONE;
   }
@@ -75,7 +75,7 @@ Action *
 Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *hostname, int host_len)
 {
 
-  if (!CACHE_READY(type)) {
+  if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_DEREF_FAILED, 0);
     return ACTION_RESULT_DONE;
   }

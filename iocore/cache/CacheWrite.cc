@@ -1613,7 +1613,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
                   int options, time_t apin_in_cache, char *hostname, int host_len)
 {
 
-  if (!CACHE_READY(frag_type)) {
+  if (!CacheProcessor::IsCacheReady(frag_type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
@@ -1681,7 +1681,7 @@ Action *
 Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
                   CacheKey */* key1 ATS_UNUSED */, CacheFragType type, char *hostname, int host_len)
 {
-  if (!CACHE_READY(type)) {
+  if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
