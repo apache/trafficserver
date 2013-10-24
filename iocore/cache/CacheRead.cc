@@ -510,7 +510,6 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
   CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
   if (!lock)
     VC_SCHED_LOCK_RETRY();
-#ifdef HIT_EVACUATE
   if (f.hit_evacuate && dir_valid(vol, &first_dir) && closed > 0) {
     if (f.single_fragment)
       vol->force_evacuate_head(&first_dir, dir_pinned(&first_dir));
@@ -519,7 +518,6 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
       vol->force_evacuate_head(&earliest_dir, dir_pinned(&earliest_dir));
     }
   }
-#endif
   vol->close_read(this);
   return free_CacheVC(this);
 }
@@ -836,7 +834,6 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     doc_pos = doc->prefix_len();
     next_CacheKey(&key, &doc->key);
     vol->begin_read(this);
-#ifdef HIT_EVACUATE
     if (vol->within_hit_evacuate_window(&earliest_dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)
 #if TS_USE_INTERIM_CACHE == 1
@@ -847,7 +844,6 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
             dir_offset(&earliest_dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
-#endif
     goto Lsuccess;
 Lread:
     if (dir_probe(&key, vol, &earliest_dir, &last_collision) ||
@@ -1134,7 +1130,6 @@ CacheVC::openReadStartHead(int event, Event * e)
     if (!f.single_fragment)
       goto Learliest;
 
-#ifdef HIT_EVACUATE
     if (vol->within_hit_evacuate_window(&dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)
 #if TS_USE_INTERIM_CACHE == 1
@@ -1145,7 +1140,6 @@ CacheVC::openReadStartHead(int event, Event * e)
             dir_offset(&dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
-#endif
 
     first_buf = buf;
     vol->begin_read(this);

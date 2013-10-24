@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+
+  *) [TS-2300] Remove the HIT_EVACUATE build option.
+
   *) [TS-2227] Allow for multiple config files for a header_rewrite plugin
    invocation (be it in remap.config or plugin.config).
 

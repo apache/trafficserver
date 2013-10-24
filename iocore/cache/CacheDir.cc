@@ -1023,10 +1023,8 @@ sync_cache_dir_on_shutdown(void)
       Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_id);
       continue;
     }
-#ifdef HIT_EVACUATE
     // recompute hit_evacuate_window
     d->hit_evacuate_window = (d->data_blocks * cache_config_hit_evacuate_percent) / 100;
-#endif
 
 
     // check if we have data in the agg buffer
@@ -1147,10 +1145,8 @@ Lrestart:
     }
     Vol *d = gvol[vol];
 
-#ifdef HIT_EVACUATE
     // recompute hit_evacuate_window
     d->hit_evacuate_window = (d->data_blocks * cache_config_hit_evacuate_percent) / 100;
-#endif
 
     if (DISK_BAD(d->disk))
       goto Ldone;

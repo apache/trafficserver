@@ -69,10 +69,8 @@ int cache_config_max_doc_size = 0;
 int cache_config_min_average_object_size = ESTIMATED_OBJECT_SIZE;
 int64_t cache_config_ram_cache_cutoff = AGG_SIZE;
 int cache_config_max_disk_errors = 5;
-#ifdef HIT_EVACUATE
 int cache_config_hit_evacuate_percent = 10;
 int cache_config_hit_evacuate_size_limit = 0;
-#endif
 int cache_config_force_sector_size = 0;
 int cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
 int cache_config_agg_write_backlog = AGG_SIZE * 2;
@@ -1259,9 +1257,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   start = dir_skip;
   vol_init_data(this);
   data_blocks = (len - (start - skip)) / STORE_BLOCK_SIZE;
-#ifdef HIT_EVACUATE
   hit_evacuate_window = (data_blocks * cache_config_hit_evacuate_percent) / 100;
-#endif
 
   evacuate_size = (int) (len / EVACUATION_BUCKET_SIZE) + 2;
   int evac_len = (int) evacuate_size * sizeof(DLL<EvacuationBlock>);
@@ -3382,14 +3378,12 @@ ink_cache_init(ModuleVersion v)
       _exit(1);
     }
   }
-  // TODO: These are left here, since they are only registered if HIT_EVACUATE is enabled.
-#ifdef HIT_EVACUATE
+
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
-#endif
 
   REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
   REC_EstablishStaticConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
