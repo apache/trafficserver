@@ -36,7 +36,6 @@
 #include "ink_string.h"
 #include "ink_cap.h"
 
-
 unsigned long
 check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret_idx = NULL, char **argptr = NULL)
 {
@@ -95,7 +94,6 @@ check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret
         ret_flags |= REMAP_OPTFLG_MAP_ID;
       }
 
-
       if ((findmode & ret_flags) && !argptr) {
         if (_ret_idx)
           *_ret_idx = idx;
@@ -128,35 +126,42 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
   new_mapping->homePageRedirect = (from_path && !to_path) ? true : false;
 }
 
-
 // ===============================================================================
-static int
-is_inkeylist(char *key, ...)
+static bool
+is_inkeylist(const char * key, ...)
 {
-  int i, idx, retcode = 0;
+  unsigned i;
+  va_list ap;
 
-  if (likely(key && key[0])) {
-    char tmpkey[512];
-    va_list ap;
-    va_start(ap, key);
-    for (i = 0; i < (int) (sizeof(tmpkey) - 2) && (tmpkey[i] = *key++) != 0;)
-      if (tmpkey[i] != '_' && tmpkey[i] != '.')
-        i++;
-    tmpkey[i] = 0;
-
-    if (tmpkey[0]) {
-      char *str = va_arg(ap, char *);
-      for (idx = 1; str; idx++) {
-        if (!strcasecmp(tmpkey, str)) {
-          retcode = idx;
-          break;
-        }
-        str = va_arg(ap, char *);
-      }
-    }
-    va_end(ap);
+  if (unlikely(key == NULL || key[0] == '\0')) {
+    return false;
   }
-  return retcode;
+
+  char tmpkey[512];
+  va_start(ap, key);
+
+  for (i = 0; i < (sizeof(tmpkey) - 2) && (tmpkey[i] = *key++) != 0;) {
+    if (tmpkey[i] != '_' && tmpkey[i] != '.') {
+      i++;
+    }
+  }
+
+  tmpkey[i] = 0;
+
+  if (tmpkey[0]) {
+    const char *str = va_arg(ap, const char *);
+    for (unsigned idx = 1; str; idx++) {
+      if (!strcasecmp(tmpkey, str)) {
+        va_end(ap);
+        return true;
+      }
+
+      str = va_arg(ap, const char *);
+    }
+  }
+
+  va_end(ap);
+  return false;
 }
 
 /**
@@ -355,14 +360,99 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
   return NULL;                  /* success */
 }
 
-
 static const char *
-parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, int errbufsize)
+parse_define_directive(const char * directive, BUILD_TABLE_INFO * bti, char * errbuf, size_t errbufsize)
 {
   bool flg;
-  char *directive = NULL;
-  acl_filter_rule *rp, **rpp;
-  const char *cstr = NULL;
+  acl_filter_rule * rp;
+  acl_filter_rule ** rpp;
+  const char * cstr = NULL;
+
+  if (bti->paramc < 2) {
+    snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+    Debug("url_rewrite", "[parse_directive] %s", errbuf);
+    return (const char *) errbuf;
+  }
+  if (bti->argc < 1) {
+    snprintf(errbuf, errbufsize, "Directive \"%s\" must have filter parameter(s)", directive);
+    Debug("url_rewrite", "[parse_directive] %s", errbuf);
+    return (const char *) errbuf;
+  }
+
+  flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) ? true : false;
+  // coverity[alloc_arg]
+  if ((cstr = validate_filter_args(&rp, bti->argv, bti->argc, errbuf, errbufsize)) == NULL && rp) {
+    if (flg) {                  // new filter - add to list
+      Debug("url_rewrite", "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
+      for (rpp = &bti->rules_list; *rpp; rpp = &((*rpp)->next));
+      (*rpp = rp)->name(bti->paramv[1]);
+    }
+    Debug("url_rewrite", "[parse_directive] %d argument(s) were added to rule \"%s\"", bti->argc, bti->paramv[1]);
+    rp->add_argv(bti->argc, bti->argv);       // store string arguments for future processing
+  }
+
+  return cstr;
+}
+
+static const char *
+parse_delete_directive(const char * directive, BUILD_TABLE_INFO * bti, char * errbuf, size_t errbufsize)
+{
+  if (bti->paramc < 2) {
+    snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+    Debug("url_rewrite", "[parse_directive] %s", errbuf);
+    return (const char *) errbuf;
+  }
+
+  acl_filter_rule::delete_byname(&bti->rules_list, (const char *) bti->paramv[1]);
+  return NULL;
+}
+
+static const char *
+parse_activate_directive(const char * directive, BUILD_TABLE_INFO * bti, char * errbuf, size_t errbufsize)
+{
+  acl_filter_rule * rp;
+
+  if (bti->paramc < 2) {
+    snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+    Debug("url_rewrite", "[parse_directive] %s", errbuf);
+    return (const char *) errbuf;
+  }
+
+  if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) {
+    snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
+    Debug("url_rewrite", "[parse_directive] %s", errbuf);
+    return (const char *) errbuf;
+  }
+
+  acl_filter_rule::requeue_in_active_list(&bti->rules_list, rp);
+  return NULL;
+}
+
+static const char *
+parse_deactivate_directive(const char * directive, BUILD_TABLE_INFO * bti, char * errbuf, size_t errbufsize)
+{
+  acl_filter_rule * rp;
+
+  if (bti->paramc < 2) {
+    snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+    Debug("url_rewrite", "[parse_directive] %s", errbuf);
+    return (const char *) errbuf;
+  }
+
+  if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) {
+    snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
+    Debug("url_rewrite", "[parse_directive] %s", errbuf);
+    return (const char *) errbuf;
+  }
+
+  acl_filter_rule::requeue_in_passive_list(&bti->rules_list, rp);
+  return NULL;
+}
+
+static const char *
+parse_directive(BUILD_TABLE_INFO *bti, char * errbuf, size_t errbufsize)
+{
+  const char * directive = NULL;
 
   // Check arguments
   if (unlikely(!bti || !errbuf || errbufsize <= 0 || !bti->paramc || (directive = bti->paramv[0]) == NULL)) {
@@ -377,70 +467,24 @@ parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, int errbufsize)
     Debug("url_rewrite", "[parse_directive] %s", errbuf);
     return (const char *) errbuf;
   }
-  if (is_inkeylist(&directive[1], "definefilter", "deffilter", "defflt", NULL)) {
-    if (bti->paramc < 2) {
-      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
-      Debug("url_rewrite", "[parse_directive] %s", errbuf);
-      return (const char *) errbuf;
-    }
-    if (bti->argc < 1) {
-      snprintf(errbuf, errbufsize, "Directive \"%s\" must have filter parameter(s)", directive);
-      Debug("url_rewrite", "[parse_directive] %s", errbuf);
-      return (const char *) errbuf;
-    }
 
-    flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) ? true : false;
-    // coverity[alloc_arg]
-    if ((cstr = validate_filter_args(&rp, bti->argv, bti->argc, errbuf, errbufsize)) == NULL && rp) {
-      if (flg) {                  // new filter - add to list
-        Debug("url_rewrite", "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
-        for (rpp = &bti->rules_list; *rpp; rpp = &((*rpp)->next));
-        (*rpp = rp)->name(bti->paramv[1]);
-      }
-      Debug("url_rewrite", "[parse_directive] %d argument(s) were added to rule \"%s\"", bti->argc, bti->paramv[1]);
-      rp->add_argv(bti->argc, bti->argv);       // store string arguments for future processing
-    }
-  } else if (is_inkeylist(&directive[1], "deletefilter", "delfilter", "delflt", NULL)) {
-    if (bti->paramc < 2) {
-      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
-      Debug("url_rewrite", "[parse_directive] %s", errbuf);
-      return (const char *) errbuf;
-    }
-    acl_filter_rule::delete_byname(&bti->rules_list, (const char *) bti->paramv[1]);
-  } else if (is_inkeylist(&directive[1], "usefilter", "activefilter", "activatefilter", "useflt", NULL)) {
-    if (bti->paramc < 2) {
-      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
-      Debug("url_rewrite", "[parse_directive] %s", errbuf);
-      return (const char *) errbuf;
-    }
-    if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) {
-      snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
-      Debug("url_rewrite", "[parse_directive] %s", errbuf);
-      return (const char *) errbuf;
-    }
-    acl_filter_rule::requeue_in_active_list(&bti->rules_list, rp);
-  } else
-    if (is_inkeylist(&directive[1], "unusefilter", "deactivatefilter", "unactivefilter", "deuseflt", "unuseflt", NULL))
+  if (is_inkeylist(directive, ".definefilter", ".deffilter", ".defflt", NULL)) {
+    return parse_define_directive(&directive[1], bti, errbuf, errbufsize);
+  } else if (is_inkeylist(directive, ".deletefilter", ".delfilter", ".delflt", NULL)) {
+    return parse_delete_directive(directive, bti, errbuf, errbufsize);
+  } else if (is_inkeylist(directive, ".usefilter", ".activefilter", ".activatefilter", ".useflt", NULL)) {
+    return parse_activate_directive(directive, bti, errbuf, errbufsize);
+  } else if (is_inkeylist(directive, ".unusefilter", ".deactivatefilter", ".unactivefilter", ".deuseflt", ".unuseflt", NULL))
   {
-    if (bti->paramc < 2) {
-      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
-      Debug("url_rewrite", "[parse_directive] %s", errbuf);
-      return (const char *) errbuf;
-    }
-    if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) {
-      snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
-      Debug("url_rewrite", "[parse_directive] %s", errbuf);
-      return (const char *) errbuf;
-    }
-    acl_filter_rule::requeue_in_passive_list(&bti->rules_list, rp);
+    return parse_deactivate_directive(directive, bti, errbuf, errbufsize);
   } else {
     snprintf(errbuf, errbufsize, "Unknown directive \"%s\"", directive);
     Debug("url_rewrite", "[parse_directive] %s", errbuf);
     return (const char *) errbuf;
   }
-  return cstr;
-}
 
+  return NULL;
+}
 
 static const char *
 process_filter_opt(url_mapping *mp, BUILD_TABLE_INFO *bti, char *errStrBuf, int errStrBufSize)
@@ -480,7 +524,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
 {
 
   forward_mappings.hash_lookup = reverse_mappings.hash_lookup =
-    permanent_redirects.hash_lookup = temporary_redirects.hash_lookup = 
+    permanent_redirects.hash_lookup = temporary_redirects.hash_lookup =
     forward_mappings_with_recv_port.hash_lookup = NULL;
 
   char *config_file = NULL;
@@ -534,7 +578,6 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
 }
-
 
 UrlRewrite::~UrlRewrite()
 {
@@ -784,7 +827,6 @@ url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *req
   }
 }
 
-
 /** Used to do the backwards lookups. */
 #define N_URL_HEADERS 4
 bool
@@ -840,7 +882,6 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
   }
   return remap_found;
 }
-
 
 /** Perform fast ACL filtering. */
 void
@@ -1161,7 +1202,6 @@ UrlRewrite::BuildTable()
     // just check all major flags/optional arguments
     bti.remap_optflg = check_remap_option(bti.argv, bti.argc);
 
-
     // Check directive keywords (starting from '.')
     if (bti.paramv[0][0] == '.') {
       if ((errStr = parse_directive(&bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
@@ -1351,7 +1391,6 @@ UrlRewrite::BuildTable()
     // the rest of the system assumes that trailing slashes have
     // been removed.
 
-
     if (unlikely(fromHostLen >= (int) sizeof(fromHost_lower_buf))) {
       fromHost_lower = (fromHost_lower_ptr = (char *)ats_malloc(fromHostLen + 1));
     } else {
@@ -1402,7 +1441,7 @@ UrlRewrite::BuildTable()
             u_mapping->toUrl.copy(&new_mapping->toUrl);
             if (bti.paramv[3] != NULL)
               u_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
-            bool insert_result = (maptype != FORWARD_MAP_WITH_RECV_PORT) ? 
+            bool insert_result = (maptype != FORWARD_MAP_WITH_RECV_PORT) ?
               TableInsert(forward_mappings.hash_lookup, u_mapping, ipb) :
               TableInsert(forward_mappings_with_recv_port.hash_lookup, u_mapping, ipb);
             if (!insert_result) {
