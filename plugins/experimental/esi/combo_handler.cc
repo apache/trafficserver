@@ -24,6 +24,7 @@
 #include <list>
 #include <string>
 #include <time.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 
 #include "ts/ts.h"
