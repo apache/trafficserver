@@ -12,16 +12,17 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2226] Add a set-header operator for header_rewrite plugin.
 
-  *) [TS-2296] improve ConfigProcessor reference counting
+  *) [TS-2296] improve ConfigProcessor reference counting.
 
-  *) [ TS-2295] update statvfs usage
+  *) [ TS-2295] update statvfs usage.
 
-  *) [TS-2139] Fix PURGE twice to remove object in cache if enable-interim-cache
+  *) [TS-2139] Fix PURGE twice to remove object in cache if
+   enable-interim-cache.
 
   *) [TS-2216] Fix cquuh log tag, which does not calculate the right
    string length.
 
-  *) [TS-2275] fix interim cache lossing data if the server process crash
+  *) [TS-2275] fix interim cache lossing data if the server process crash.
    Author: Gang Li.
 
   *) [TS-2291] Add remap_stats plugin to experimental.
@@ -31,7 +32,7 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-1988] cquuc and cquup log tags can have no values.
 
-  *) [TS-2159] Force first log rotation at proxy.config.log.rolling_size_mb
+  *) [TS-2159] Force first log rotation at proxy.config.log.rolling_size_mb.
 
   *) [TS-2138] Fix the bug that restarting ats cause cache data loss if
   enable the native-aio.
@@ -59,7 +60,7 @@ Changes with Apache Traffic Server 4.1.0
    string length parameter).
 
   *) [TS-2261] Add config option to restore/elevate access to reading files by
-   root when loading plugins
+   root when loading plugins.
 
   *) [TS-2257] Healthcheck plugin can stop watching some events.
 
