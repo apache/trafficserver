@@ -37,21 +37,9 @@
 #define URL_REMAP_FILTER_REFERER      0x00000001        /* enable "referer" header validation */
 #define URL_REMAP_FILTER_REDIRECT_FMT 0x00010000        /* enable redirect URL formatting */
 
-#define modulePrefix "[ReverseProxy]"
 #define BUILD_TABLE_MAX_ARGS 2048
 
-/**
- *
-**/
-typedef struct s_build_table_info
-{
-  unsigned long remap_optflg;
-  int paramc;
-  int argc;
-  char *paramv[BUILD_TABLE_MAX_ARGS];
-  char *argv[BUILD_TABLE_MAX_ARGS];
-  acl_filter_rule *rules_list;  // all rules defined in config files as .define_filter foobar @src_ip=.....
-} BUILD_TABLE_INFO;
+struct BUILD_TABLE_INFO ;
 
 /**
  * used for redirection, mapping, and reverse mapping
@@ -161,8 +149,6 @@ public:
                           request_host_len, mapping_container);
   }
 
-  int UrlWhack(char *toWhack, int *origLength);
-
   int load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *errbuf, int errbufsize, int jump_to_argc,
                         int *plugin_found_at);
 
@@ -188,6 +174,8 @@ public:
 
 private:
   bool _valid;
+
+  bool _parseRemapConfigFile(const char * path, BUILD_TABLE_INFO * bti);
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host,
                       int request_host_len, UrlMappingContainer &mapping_container);
   url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url, int request_port, char *request_host,

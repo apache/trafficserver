@@ -36,7 +36,45 @@
 #include "ink_string.h"
 #include "ink_cap.h"
 
-unsigned long
+#define modulePrefix "[ReverseProxy]"
+
+struct BUILD_TABLE_INFO
+{
+  unsigned long remap_optflg;
+  int paramc;
+  int argc;
+  char *paramv[BUILD_TABLE_MAX_ARGS];
+  char *argv[BUILD_TABLE_MAX_ARGS];
+  acl_filter_rule *rules_list;  // all rules defined in config files as .define_filter foobar @src_ip=.....
+};
+
+/**
+  Returns the length of the URL.
+
+  Will replace the terminator with a '/' if this is a full URL and
+  there are no '/' in it after the the host.  This ensures that class
+  URL parses the URL correctly.
+
+*/
+static int
+UrlWhack(char *toWhack, int *origLength)
+{
+  int length = strlen(toWhack);
+  char *tmp;
+  *origLength = length;
+
+  // Check to see if this a full URL
+  tmp = strstr(toWhack, "://");
+  if (tmp != NULL) {
+    if (strchr(tmp + 3, '/') == NULL) {
+      toWhack[length] = '/';
+      length++;
+    }
+  }
+  return length;
+}
+
+static unsigned long
 check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret_idx = NULL, char **argptr = NULL)
 {
   unsigned long ret_flags = 0;
@@ -1036,32 +1074,6 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   return NONE;
 }
 
-/**
-  Returns the length of the URL.
-
-  Will replace the terminator with a '/' if this is a full URL and
-  there are no '/' in it after the the host.  This ensures that class
-  URL parses the URL correctly.
-
-*/
-int
-UrlRewrite::UrlWhack(char *toWhack, int *origLength)
-{
-  int length = strlen(toWhack);
-  char *tmp;
-  *origLength = length;
-
-  // Check to see if this a full URL
-  tmp = strstr(toWhack, "://");
-  if (tmp != NULL) {
-    if (strchr(tmp + 3, '/') == NULL) {
-      toWhack[length] = '/';
-      length++;
-    }
-  }
-  return length;
-}
-
 inline bool
 UrlRewrite::_addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map,
                         char *src_host, bool is_cur_mapping_regex, int &count)
@@ -1089,7 +1101,97 @@ int
 UrlRewrite::BuildTable()
 {
   BUILD_TABLE_INFO bti;
-  char *file_buf, errBuf[1024], errStrBuf[1024];
+  url_mapping * new_mapping = NULL;
+
+  ink_assert(forward_mappings.empty());
+  ink_assert(reverse_mappings.empty());
+  ink_assert(permanent_redirects.empty());
+  ink_assert(temporary_redirects.empty());
+  ink_assert(forward_mappings_with_recv_port.empty());
+  ink_assert(num_rules_forward == 0);
+  ink_assert(num_rules_reverse == 0);
+  ink_assert(num_rules_redirect_permanent == 0);
+  ink_assert(num_rules_redirect_temporary == 0);
+  ink_assert(num_rules_forward_with_recv_port == 0);
+
+  memset(&bti, 0, sizeof(bti));
+
+  forward_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
+  reverse_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
+  permanent_redirects.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
+  temporary_redirects.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
+  forward_mappings_with_recv_port.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
+
+  bti.paramc = (bti.argc = 0);
+  memset(bti.paramv, 0, sizeof(bti.paramv));
+  memset(bti.argv, 0, sizeof(bti.argv));
+
+  if (!this->_parseRemapConfigFile(config_file_path, &bti)) {
+    // XXX handle file reload error
+  }
+
+  clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));
+  clear_xstr_array(bti.argv, sizeof(bti.argv) / sizeof(char *));
+  bti.paramc = (bti.argc = 0);
+
+  // Add the mapping for backdoor urls if enabled.
+  // This needs to be before the default PAC mapping for ""
+  // since this is more specific
+  if (unlikely(backdoor_enabled)) {
+    new_mapping = SetupBackdoorMapping();
+    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
+      num_rules_forward++;
+    } else {
+      Warning("Could not insert backdoor mapping into store");
+      delete new_mapping;
+      return 3;
+    }
+  }
+  // Add the default mapping to the manager PAC file
+  //  if we need it
+  if (default_to_pac) {
+    new_mapping = SetupPacMapping();
+    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
+      num_rules_forward++;
+    } else {
+      Warning("Could not insert pac mapping into store");
+      delete new_mapping;
+      return 3;
+    }
+  }
+  // Destroy unused tables
+  if (num_rules_forward == 0) {
+    forward_mappings.hash_lookup = ink_hash_table_destroy(forward_mappings.hash_lookup);
+  } else {
+    if (ink_hash_table_isbound(forward_mappings.hash_lookup, "")) {
+      nohost_rules = 1;
+    }
+  }
+
+  if (num_rules_reverse == 0) {
+    reverse_mappings.hash_lookup = ink_hash_table_destroy(reverse_mappings.hash_lookup);
+  }
+
+  if (num_rules_redirect_permanent == 0) {
+    permanent_redirects.hash_lookup = ink_hash_table_destroy(permanent_redirects.hash_lookup);
+  }
+
+  if (num_rules_redirect_temporary == 0) {
+    temporary_redirects.hash_lookup = ink_hash_table_destroy(temporary_redirects.hash_lookup);
+  }
+
+  if (num_rules_forward_with_recv_port == 0) {
+    forward_mappings_with_recv_port.hash_lookup = ink_hash_table_destroy(
+      forward_mappings_with_recv_port.hash_lookup);
+  }
+
+  return 0;
+}
+
+bool
+UrlRewrite::_parseRemapConfigFile(const char * config_file_path, BUILD_TABLE_INFO * bti)
+{
+  char errBuf[1024], errStrBuf[1024];
   Tokenizer whiteTok(" \t");
   bool alarm_already = false;
   const char *errStr;
@@ -1121,41 +1223,19 @@ UrlRewrite::BuildTable()
   const char *type_id_str;
   bool add_result;
 
-  ink_assert(forward_mappings.empty());
-  ink_assert(reverse_mappings.empty());
-  ink_assert(permanent_redirects.empty());
-  ink_assert(temporary_redirects.empty());
-  ink_assert(forward_mappings_with_recv_port.empty());
-  ink_assert(num_rules_forward == 0);
-  ink_assert(num_rules_reverse == 0);
-  ink_assert(num_rules_redirect_permanent == 0);
-  ink_assert(num_rules_redirect_temporary == 0);
-  ink_assert(num_rules_forward_with_recv_port == 0);
-
-  memset(&bti, 0, sizeof(bti));
-
-  if ((file_buf = readIntoBuffer(config_file_path, modulePrefix, NULL)) == NULL) {
+  xptr<char> file_buf(readIntoBuffer(config_file_path, modulePrefix, NULL));
+  if (!file_buf) {
     Warning("Can't load remapping configuration file - %s", config_file_path);
-    return 1;
+    return false;
   }
-
-  forward_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
-  reverse_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
-  permanent_redirects.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
-  temporary_redirects.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
-  forward_mappings_with_recv_port.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
-
-  bti.paramc = (bti.argc = 0);
-  memset(bti.paramv, 0, sizeof(bti.paramv));
-  memset(bti.argv, 0, sizeof(bti.argv));
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
 
   for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != NULL;) {
     errStrBuf[0] = 0;
-    clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));
-    clear_xstr_array(bti.argv, sizeof(bti.argv) / sizeof(char *));
-    bti.paramc = (bti.argc = 0);
+    clear_xstr_array(bti->paramv, sizeof(bti->paramv) / sizeof(char *));
+    clear_xstr_array(bti->argv, sizeof(bti->argv) / sizeof(char *));
+    bti->paramc = (bti->argc = 0);
 
     // Strip leading whitespace
     while (*cur_line && isascii(*cur_line) && isspace(*cur_line))
@@ -1187,24 +1267,24 @@ UrlRewrite::BuildTable()
     for (int j = 0; j < tok_count; j++) {
       if (((char *) whiteTok[j])[0] == '@') {
         if (((char *) whiteTok[j])[1])
-          bti.argv[bti.argc++] = ats_strdup(&(((char *) whiteTok[j])[1]));
+          bti->argv[bti->argc++] = ats_strdup(&(((char *) whiteTok[j])[1]));
       } else {
-        bti.paramv[bti.paramc++] = ats_strdup((char *) whiteTok[j]);
+        bti->paramv[bti->paramc++] = ats_strdup((char *) whiteTok[j]);
       }
     }
 
     // Initial verification for number of arguments
-    if (bti.paramc<1 || (bti.paramc < 3 && bti.paramv[0][0] != '.') || bti.paramc> BUILD_TABLE_MAX_ARGS) {
+    if (bti->paramc<1 || (bti->paramc < 3 && bti->paramv[0][0] != '.') || bti->paramc> BUILD_TABLE_MAX_ARGS) {
       snprintf(errBuf, sizeof(errBuf), "%s Malformed line %d in file %s", modulePrefix, cln + 1, config_file_path);
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
     // just check all major flags/optional arguments
-    bti.remap_optflg = check_remap_option(bti.argv, bti.argc);
+    bti->remap_optflg = check_remap_option(bti->argv, bti->argc);
 
     // Check directive keywords (starting from '.')
-    if (bti.paramv[0][0] == '.') {
-      if ((errStr = parse_directive(&bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
+    if (bti->paramv[0][0] == '.') {
+      if ((errStr = parse_directive(bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
         snprintf(errBuf, sizeof(errBuf) - 1, "%s Error on line %d - %s", modulePrefix, cln + 1, errStr);
         errStr = errStrBuf;
         goto MAP_ERROR;
@@ -1215,8 +1295,8 @@ UrlRewrite::BuildTable()
       continue;
     }
 
-    is_cur_mapping_regex = (strncasecmp("regex_", bti.paramv[0], 6) == 0);
-    type_id_str = is_cur_mapping_regex ? (bti.paramv[0] + 6) : bti.paramv[0];
+    is_cur_mapping_regex = (strncasecmp("regex_", bti->paramv[0], 6) == 0);
+    type_id_str = is_cur_mapping_regex ? (bti->paramv[0] + 6) : bti->paramv[0];
 
     // Check to see whether is a reverse or forward mapping
     if (!strcasecmp("reverse_map", type_id_str)) {
@@ -1224,8 +1304,8 @@ UrlRewrite::BuildTable()
       maptype = REVERSE_MAP;
     } else if (!strcasecmp("map", type_id_str)) {
       Debug("url_rewrite", "[BuildTable] - %s",
-            ((bti.remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "FORWARD_MAP" : "FORWARD_MAP_REFERER");
-      maptype = ((bti.remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? FORWARD_MAP : FORWARD_MAP_REFERER;
+            ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "FORWARD_MAP" : "FORWARD_MAP_REFERER");
+      maptype = ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? FORWARD_MAP : FORWARD_MAP_REFERER;
     } else if (!strcasecmp("redirect", type_id_str)) {
       Debug("url_rewrite", "[BuildTable] - PERMANENT_REDIRECT");
       maptype = PERMANENT_REDIRECT;
@@ -1247,22 +1327,22 @@ UrlRewrite::BuildTable()
     new_mapping = NEW(new url_mapping(cln));  // use line # for rank for now
 
     // apply filter rules if we have to
-    if ((errStr = process_filter_opt(new_mapping, &bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
+    if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
       goto MAP_ERROR;
     }
 
     new_mapping->map_id = 0;
-    if ((bti.remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
+    if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
       char *c;
-      int ret = check_remap_option(bti.argv, bti.argc, REMAP_OPTFLG_MAP_ID, &idx);
+      int ret = check_remap_option(bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        c = strchr(bti.argv[idx], (int) '=');
+        c = strchr(bti->argv[idx], (int) '=');
         new_mapping->map_id = (unsigned int) atoi(++c);
       }
     }
 
-    map_from = bti.paramv[1];
+    map_from = bti->paramv[1];
     length = UrlWhack(map_from, &origLength);
 
     // FIX --- what does this comment mean?
@@ -1284,7 +1364,7 @@ UrlRewrite::BuildTable()
       goto MAP_ERROR;
     }
 
-    map_to = bti.paramv[2];
+    map_to = bti->paramv[2];
     length = UrlWhack(map_to, &origLength);
     map_to_start = map_to;
     tmp = map_to;
@@ -1319,23 +1399,23 @@ UrlRewrite::BuildTable()
       goto MAP_ERROR;
     }
     // Check if a tag is specified.
-    if (bti.paramv[3] != NULL) {
+    if (bti->paramv[3] != NULL) {
       if (maptype == FORWARD_MAP_REFERER) {
-        new_mapping->filter_redirect_url = ats_strdup(bti.paramv[3]);
-        if (!strcasecmp(bti.paramv[3], "<default>") || !strcasecmp(bti.paramv[3], "default") ||
-            !strcasecmp(bti.paramv[3], "<default_redirect_url>") || !strcasecmp(bti.paramv[3], "default_redirect_url"))
+        new_mapping->filter_redirect_url = ats_strdup(bti->paramv[3]);
+        if (!strcasecmp(bti->paramv[3], "<default>") || !strcasecmp(bti->paramv[3], "default") ||
+            !strcasecmp(bti->paramv[3], "<default_redirect_url>") || !strcasecmp(bti->paramv[3], "default_redirect_url"))
           new_mapping->default_redirect_url = true;
-        new_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(bti.paramv[3]);
-        for (int j = bti.paramc; j > 4; j--) {
-          if (bti.paramv[j - 1] != NULL) {
+        new_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(bti->paramv[3]);
+        for (int j = bti->paramc; j > 4; j--) {
+          if (bti->paramv[j - 1] != NULL) {
             char refinfo_error_buf[1024];
             bool refinfo_error = false;
 
-            ri = NEW(new referer_info((char *) bti.paramv[j - 1], &refinfo_error, refinfo_error_buf,
+            ri = NEW(new referer_info((char *) bti->paramv[j - 1], &refinfo_error, refinfo_error_buf,
                                       sizeof(refinfo_error_buf)));
             if (refinfo_error) {
               snprintf(errBuf, sizeof(errBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s",
-                           modulePrefix, bti.paramv[j - 1], cln + 1, refinfo_error_buf);
+                           modulePrefix, bti->paramv[j - 1], cln + 1, refinfo_error_buf);
               SignalError(errBuf, alarm_already);
               delete ri;
               ri = 0;
@@ -1357,7 +1437,7 @@ UrlRewrite::BuildTable()
           }
         }
       } else {
-        new_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
+        new_mapping->tag = ats_strdup(&(bti->paramv[3][0]));
       }
     }
     // Check to see the fromHost remapping is a relative one
@@ -1428,8 +1508,7 @@ UrlRewrite::BuildTable()
       ip_text_buffer ipb; // buffer for address string conversion.
       if (0 == getaddrinfo(fromHost_lower, 0, 0, &ai_records)) {
         for ( addrinfo* ai_spot = ai_records ; ai_spot ; ai_spot = ai_spot->ai_next) {
-          if (ats_is_ip(ai_spot->ai_addr) &&
-              !ats_is_ip_any(ai_spot->ai_addr)) {
+          if (ats_is_ip(ai_spot->ai_addr) && !ats_is_ip_any(ai_spot->ai_addr)) {
             url_mapping *u_mapping;
 
             ats_ip_ntop(ai_spot->ai_addr, ipb, sizeof ipb);
@@ -1439,15 +1518,18 @@ UrlRewrite::BuildTable()
             u_mapping->fromURL.host_set(ipb, strlen(ipb));
             u_mapping->toUrl.create(NULL);
             u_mapping->toUrl.copy(&new_mapping->toUrl);
-            if (bti.paramv[3] != NULL)
-              u_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
-            bool insert_result = (maptype != FORWARD_MAP_WITH_RECV_PORT) ?
-              TableInsert(forward_mappings.hash_lookup, u_mapping, ipb) :
-              TableInsert(forward_mappings_with_recv_port.hash_lookup, u_mapping, ipb);
+
+            if (bti->paramv[3] != NULL) {
+              u_mapping->tag = ats_strdup(&(bti->paramv[3][0]));
+            }
+
+            bool insert_result = (maptype != FORWARD_MAP_WITH_RECV_PORT) ? TableInsert(forward_mappings.hash_lookup, u_mapping, ipb)
+                                                                        : TableInsert(forward_mappings_with_recv_port.hash_lookup, u_mapping, ipb);
             if (!insert_result) {
               errStr = "Unable to add mapping rule to lookup table";
               goto MAP_ERROR;
             }
+
             (maptype != FORWARD_MAP_WITH_RECV_PORT) ? ++num_rules_forward : ++num_rules_forward_with_recv_port;
             SetHomePageRedirectFlag(u_mapping, u_mapping->toUrl);
           }
@@ -1457,14 +1539,14 @@ UrlRewrite::BuildTable()
     }
 
     // Check "remap" plugin options and load .so object
-    if ((bti.remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 && (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER ||
+    if ((bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 && (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER ||
                                                           maptype == FORWARD_MAP_WITH_RECV_PORT)) {
-      if ((check_remap_option(bti.argv, bti.argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
+      if ((check_remap_option(bti->argv, bti->argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
         int plugin_found_at = 0;
         int jump_to_argc = 0;
 
         // this loads the first plugin
-        if (load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at)) {
+        if (load_remap_plugin(bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at)) {
           Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
           errStr = errStrBuf;
           goto MAP_ERROR;
@@ -1472,7 +1554,7 @@ UrlRewrite::BuildTable()
         //this loads any subsequent plugins (if present)
         while (plugin_found_at) {
           jump_to_argc += plugin_found_at;
-          if (load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc, &plugin_found_at)) {
+          if (load_remap_plugin(bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc, &plugin_found_at)) {
             Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
             errStr = errStrBuf;
             goto MAP_ERROR;
@@ -1533,63 +1615,7 @@ UrlRewrite::BuildTable()
     return 2;
   }                             /* end of while(cur_line != NULL) */
 
-  clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));
-  clear_xstr_array(bti.argv, sizeof(bti.argv) / sizeof(char *));
-  bti.paramc = (bti.argc = 0);
-
-  // Add the mapping for backdoor urls if enabled.
-  // This needs to be before the default PAC mapping for ""
-  // since this is more specific
-  if (unlikely(backdoor_enabled)) {
-    new_mapping = SetupBackdoorMapping();
-    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
-      num_rules_forward++;
-    } else {
-      Warning("Could not insert backdoor mapping into store");
-      delete new_mapping;
-      return 3;
-    }
-  }
-  // Add the default mapping to the manager PAC file
-  //  if we need it
-  if (default_to_pac) {
-    new_mapping = SetupPacMapping();
-    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
-      num_rules_forward++;
-    } else {
-      Warning("Could not insert pac mapping into store");
-      delete new_mapping;
-      return 3;
-    }
-  }
-  // Destroy unused tables
-  if (num_rules_forward == 0) {
-    forward_mappings.hash_lookup = ink_hash_table_destroy(forward_mappings.hash_lookup);
-  } else {
-    if (ink_hash_table_isbound(forward_mappings.hash_lookup, "")) {
-      nohost_rules = 1;
-    }
-  }
-
-  if (num_rules_reverse == 0) {
-    reverse_mappings.hash_lookup = ink_hash_table_destroy(reverse_mappings.hash_lookup);
-  }
-
-  if (num_rules_redirect_permanent == 0) {
-    permanent_redirects.hash_lookup = ink_hash_table_destroy(permanent_redirects.hash_lookup);
-  }
-
-  if (num_rules_redirect_temporary == 0) {
-    temporary_redirects.hash_lookup = ink_hash_table_destroy(temporary_redirects.hash_lookup);
-  }
-
-  if (num_rules_forward_with_recv_port == 0) {
-    forward_mappings_with_recv_port.hash_lookup = ink_hash_table_destroy(
-      forward_mappings_with_recv_port.hash_lookup);
-  }
-  ats_free(file_buf);
-
-  return 0;
+  return true;
 }
 
 /**
