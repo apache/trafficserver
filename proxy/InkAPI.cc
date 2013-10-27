@@ -8204,7 +8204,7 @@ TSPortDescriptorParse(const char * descriptor)
 TSReturnCode
 TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
-  Action * action;
+  Action * action = NULL;
   HttpProxyPort * port = (HttpProxyPort *)descp;
   NetProcessor::AcceptOptions net(make_net_accept_options(*port, 0 /* nthreads */));
 
@@ -8216,6 +8216,23 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 
   return action ? TS_SUCCESS : TS_ERROR;
 }
+
+TSReturnCode
+TSPluginDescriptorAccept(TSCont contp)
+{
+  Action * action = NULL;
+
+  HttpProxyPort::Group& proxy_ports = HttpProxyPort::global();
+  for ( int i = 0 , n = proxy_ports.length() ; i < n ; ++i ) {
+    HttpProxyPort& port = proxy_ports[i];
+    if (port.isPlugin()) {
+      NetProcessor::AcceptOptions net(make_net_accept_options(port, 0 /* nthreads */));
+      action = netProcessor.main_accept((INKContInternal *)contp, port.m_fd, net);
+    }
+  }
+  return action ? TS_SUCCESS : TS_ERROR;
+}
+
 
 int
 TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)

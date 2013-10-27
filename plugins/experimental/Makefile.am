@@ -27,5 +27,6 @@ SUBDIRS = \
  channel_stats \
  authproxy \
  geoip_acl \
- healthchecks
+ healthchecks \
+ remap_stats
 endif

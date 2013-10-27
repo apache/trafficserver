@@ -94,7 +94,8 @@ public:
     TRANSPORT_DEFAULT = 0, ///< Default (normal HTTP).
     TRANSPORT_COMPRESSED, ///< Compressed HTTP.
     TRANSPORT_BLIND_TUNNEL, ///< Blind tunnel (no processing).
-    TRANSPORT_SSL ///< SSL connection.
+    TRANSPORT_SSL, ///< SSL connection.
+    TRANSPORT_PLUGIN /// < Protocol plugin connection
   };
 
   int m_fd; ///< Pre-opened file descriptor if present.
@@ -133,6 +134,9 @@ public:
 
   /// Check for SSL port.
   bool isSSL() const;
+
+  /// Check for SSL port.
+  bool isPlugin() const;
 
   /// Process options text.
   /// @a opts should not contain any whitespace, only the option string.
@@ -258,6 +262,7 @@ public:
   static char const* const OPT_TRANSPARENT_FULL; ///< Full transparency.
   static char const* const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
   static char const* const OPT_SSL; ///< SSL (experimental)
+  static char const* const OPT_PLUGIN; ///< Protocol Plugin handle (experimental)
   static char const* const OPT_BLIND_TUNNEL; ///< Blind tunnel.
   static char const* const OPT_COMPRESSED; ///< Compressed.
   static char const* const OPT_HOST_RES_PREFIX; ///< Set DNS family preference.
@@ -270,6 +275,7 @@ protected:
 };
 
 inline bool HttpProxyPort::isSSL() const { return TRANSPORT_SSL == m_type; }
+inline bool HttpProxyPort::isPlugin() const { return TRANSPORT_PLUGIN == m_type; }
 
 inline IpAddr&
 HttpProxyPort::outboundIp(uint16_t family) {

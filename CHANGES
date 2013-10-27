@@ -7,8 +7,71 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.1.0
 
+
+  *) [TS-2301] Replace the CACHE_READY macro with CacheProcessor::IsCacheReady.
+
+  *) [TS-2300] Remove the HIT_EVACUATE build option.
+
+  *) [TS-2227] Allow for multiple config files for a header_rewrite plugin
+   invocation (be it in remap.config or plugin.config).
+
+  *) [TS-2230] header_rewrite should support the same hook-management that
+  header_filter does for remap rules. This allows per-remap rules that
+  triggers in hooks other than the remap phase.
+
+  *) [TS-2228] Add a set-config operator for header_rewrite plugin.
+
+  *) [TS-2226] Add a set-header operator for header_rewrite plugin.
+
+  *) [TS-2296] improve ConfigProcessor reference counting.
+
+  *) [ TS-2295] update statvfs usage.
+
+  *) [TS-2139] Fix PURGE twice to remove object in cache if
+   enable-interim-cache.
+
+  *) [TS-2216] Fix cquuh log tag, which does not calculate the right
+   string length.
+
+  *) [TS-2275] fix interim cache lossing data if the server process crash.
+   Author: Gang Li.
+
+  *) [TS-2291] Add remap_stats plugin to experimental.
+
+  *) [TS-2242] Update core plugins' support_email and vendor_name for
+   consistency.
+
+  *) [TS-1988] cquuc and cquup log tags can have no values.
+
+  *) [TS-2159] Force first log rotation at proxy.config.log.rolling_size_mb.
+
+  *) [TS-2138] Fix the bug that restarting ats cause cache data loss if
+  enable the native-aio.
+
+  *) [TS-2197] Use HttpSM::main_handler to handle the client request stuff.
+
+  *) [TS-2254] On ARM arch, ink_atomic_increment returns wrong value.
+   Author: Yu Qing.
+
+  *) [TS-2269] regex_remap plugin does not deal with empty path's properly.
+   Author: Kit Chan.
+
+  *) [TS-2270] ESI Plugin can have infinite loop while doing gunzip on
+   responses. Author: Kit Chan.
+
+  *) [TS-2268] Add support for opening protocol traffic sockets through the 
+   traffic_manager. Added TSPluginDescriptorAccept into expiremental API.
+
+  *) [TS-2266] Add a "make rat" Makefile target, to create a RAT report. This
+   is used for verifying licensing compliance on the entire source tree.
+
+  *) [TS-2212] Implement the <fsiz> log tag for HTTP requests. This also does
+   a small refactoring of the "atoi" functions in lib/ts, such that we now
+   consistently have both prototypes for all types (with and without a
+   string length parameter).
+
   *) [TS-2261] Add config option to restore/elevate access to reading files by
-   root when loading plugins
+   root when loading plugins.
 
   *) [TS-2257] Healthcheck plugin can stop watching some events.
 

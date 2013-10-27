@@ -862,7 +862,7 @@ RecordElement RecordsConfig[] = {
   ,
   //##############################################################################
   //#
-  //# HIT_EVACUATE
+  //# Hit Evacuation
   //#
   //##############################################################################
   {RECT_CONFIG, "proxy.config.cache.hit_evacuate_percent", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}

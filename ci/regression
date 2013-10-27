@@ -87,7 +87,6 @@ configure() {
     $SRCROOT/configure \
       --prefix=$DSTROOT \
       --enable-debug \
-      --enable-wccp \
       --enable-experimental-plugins \
       $(extras) \
       CC="$CC" \

@@ -225,6 +225,23 @@ A value of ``0`` means no signal will be sent.
 
    The new default thread stack size, for all threads. The original default is set at 1 MB.
 
+.. ts:cv: CONFIG proxy.config.exec_thread.affinity INT 0
+
+   Bind threads to specific CPUs or CPU cores.
+
+===== ====================
+Value Effect
+===== ====================
+1     assign threads to sockets
+2     assign threads to real cores
+3     assign threads to logical cores
+0     don't assign threads to any cores
+===== ====================
+
+.. note::
+
+   This option only has an affect when Traffic Server has been compiled with ``--enable-hwloc``.
+
 Network
 =======
 
@@ -300,6 +317,25 @@ Value Effect
 .. ts:cv:: CONFIG proxy.config.clustger.ethernet_interface STRING
 
    Set the interface to use for cluster communications.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.cluster_cache_local INT 0
+
+   This turns on the local caching of objects in cluster mode. The point of
+   this is to allow for popular or **hot** content to be cached on all nodes
+   in a cluster. Be aware that the primary way to configure this behavior is
+   via the :file:`cache.config` configuration file using
+   ``action=cluster-cache-local`` directives.
+
+   This particular :file:`records.config` configuration can be controlled per
+   transaction or per remap rule. As such, it augments the
+   :file:`cache.config` directives, since you can turn on the local caching
+   feature without complex regular expression matching.
+
+   This implies that turning this on in your global :file:`records.config` is
+   almost never what you want; instead, you want to use this either via
+   e.g. ``conf_remap.so`` overrides for a certain remap rule, or through a
+   custom plugin using the appropriate APIs.
+
 
 Local Manager
 =============
@@ -923,6 +959,14 @@ Cache Control
 
    Enables (``1``) or disables (``0``) caching of HTTP requests.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 0
+   :reloadable:
+
+   Enables (``1``) or disables (``0``) caching objects that have an empty
+   response body. This is particularly useful for caching 301 or 302 responses
+   with a ``Location`` header but no document body. This only works if the
+   origin response also has a ``Content-Length`` header.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_no_cache INT 0
    :reloadable:
 
@@ -1218,7 +1262,7 @@ hostname to ``host_x.y.com``.
    :reloadable:
 
    Enables (``1``) or disables (``0``) DNS server selection. When enabled, Traffic Server refers to the :file:`splitdns.config` file for
-   the selection specification. Refer to `Configuring DNS Server Selection (Split DNS) <../security-options#ConfiguringDNSServerSelectionSplit>`_.
+   the selection specification. Refer to :ref:`Configuring DNS Server Selection (Split DNS) <configuring-dns-server-selection-split-dns>`.
 
 .. ts:cv:: CONFIG proxy.config.dns.url_expansions STRING NULL
 

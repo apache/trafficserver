@@ -219,6 +219,22 @@ extern "C"
    ****************************************************************************/
   tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
 
+  /**
+     Attempt to attach the contp continuation to sockets that have already been
+     opened by the traffic manager and defined as belonging to plugins (based on
+     records.config configuration). If a connection is successfully accepted,
+     the TS_EVENT_NET_ACCEPT is delivered to the continuation. The event
+     data will be a valid TSVConn bound to the accepted connection.
+     In order to configure such a socket, add the "plugin" keyword to a port
+     in proxy.config.http.server_ports like "8082:plugin"
+     Transparency/IP settings can also be defined, but a port cannot have
+     both the "ssl" or "plugin" keywords configured.
+
+     Need to update records.config comments on proxy.config.http.server_ports
+     when this option is promoted from experimental.
+   */
+  tsapi TSReturnCode TSPluginDescriptorAccept(TSCont contp);
+
 
   /**
       Opens a network connection to the host specified by the 'to' sockaddr

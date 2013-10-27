@@ -261,6 +261,9 @@ LogFile::open_file()
     return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
   }
 
+  // set m_bytes_written to force the rolling based on filesize.
+  m_bytes_written = lseek( m_fd, 0, SEEK_CUR );
+
   Debug("log-file", "LogFile %s is now open (fd=%d)", m_name, m_fd);
 
   //

@@ -130,8 +130,8 @@ TSPluginInit (int argc, const char *argv[])
 
 /*
     info.plugin_name = (char*)"";
-    info.vendor_name = (char*)"";
-    info.support_email = (char*)"";
+    info.vendor_name = (char*)"Apache Software Foundation";
+    info.support_email = (char*)"dev@trafficserver.apache.org";
 */ 
     /* This plugin supports following types of url redirect here:
      * 

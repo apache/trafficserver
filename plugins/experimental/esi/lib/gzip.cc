@@ -163,14 +163,19 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list) {
   do {
     zstrm.next_out = reinterpret_cast<Bytef *>(raw_buf);
     zstrm.avail_out = BUF_SIZE;
-    inflate_result = inflate(&zstrm, Z_FINISH);
+    inflate_result = inflate(&zstrm, Z_SYNC_FLUSH);
     curr_buf_size = -1;
     if ((inflate_result == Z_OK) || (inflate_result == Z_BUF_ERROR)) {
       curr_buf_size = BUF_SIZE;
     } else if (inflate_result == Z_STREAM_END) {
       curr_buf_size = BUF_SIZE - zstrm.avail_out;
     }
-    if (curr_buf_size == -1) {
+    if (curr_buf_size > BUF_SIZE) {
+      Utils::ERROR_LOG("[%s] buf too large", __FUNCTION__);
+      break;
+    }
+    if (curr_buf_size < 1) {
+      Utils::ERROR_LOG("[%s] buf below zero", __FUNCTION__);
       break;
     }
     unzipped_data_size += curr_buf_size;
@@ -185,7 +190,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list) {
     if (inflate_result == Z_STREAM_END) {
       break;
     }
-  } while (true);
+  } while (zstrm.avail_in > 0);
   inflateEnd(&zstrm);
   if (inflate_result != Z_STREAM_END) {
     Utils::ERROR_LOG("[%s] Failure while inflating; error code %d", __FUNCTION__, inflate_result);

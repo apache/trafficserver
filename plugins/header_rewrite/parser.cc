@@ -54,7 +54,7 @@ Parser::preprocess(std::vector<std::string>& tokens)
       else
         _arg = "";
     } else {
-      TSError("header_rewrite: conditions must be embraced in %%{}");
+      TSError("%s: conditions must be embraced in %%{}", PLUGIN_NAME);
       return;
     }
   } else {
@@ -87,7 +87,7 @@ Parser::preprocess(std::vector<std::string>& tokens)
         }
       } else {
         // Syntax error
-        TSError("header_rewrite: mods have to be embraced in []");
+        TSError("%s: mods have to be embraced in []", PLUGIN_NAME);
         return;
       }
     }

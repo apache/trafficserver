@@ -332,7 +332,7 @@ ConditionDBM::initialize(Parser& p)
     //   TSError("Failed to open DBM file: %s", _file.c_str());
     // }
   } else {
-    TSError("Malformed DBM condition");
+    TSError("%s: Malformed DBM condition", PLUGIN_NAME);
   }
 }
 

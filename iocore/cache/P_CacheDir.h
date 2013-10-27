@@ -28,6 +28,7 @@
 #include "P_CacheHttp.h"
 
 struct Vol;
+struct InterimCacheVol;
 struct CacheVC;
 
 /*
@@ -191,6 +192,8 @@ struct FreeDir
                           (((uint64_t)(_e)->w[4]) << 24)))
 
 void clear_interim_dir(Vol *v);
+void clear_interimvol_dir(Vol *v, int offset);
+void dir_clean_range_interimvol(off_t start, off_t end, InterimCacheVol *svol);
 
 #else
 #define dir_offset(_e) ((int64_t)                                         \

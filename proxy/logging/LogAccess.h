@@ -184,7 +184,6 @@ public:
   inkcoreapi virtual int marshal_client_req_header_len(char *); // INT
   inkcoreapi virtual int marshal_client_req_body_len(char *);   // INT
   inkcoreapi virtual int marshal_client_finish_status_code(char *);     // INT
-  inkcoreapi virtual int marshal_client_gid(char *);    // INT
   inkcoreapi virtual int marshal_client_accelerator_id(char *); // INT
 
   //
@@ -195,8 +194,6 @@ public:
   inkcoreapi virtual int marshal_proxy_resp_content_len(char *);        // INT
   inkcoreapi virtual int marshal_proxy_resp_status_code(char *);        // INT
   inkcoreapi virtual int marshal_proxy_resp_header_len(char *); // INT
-  inkcoreapi virtual int marshal_proxy_resp_origin_bytes(char *);       // INT
-  inkcoreapi virtual int marshal_proxy_resp_cache_bytes(char *);        // INT
   inkcoreapi virtual int marshal_proxy_finish_status_code(char *);      // INT
   inkcoreapi virtual int marshal_cache_result_code(char *);     // INT
 

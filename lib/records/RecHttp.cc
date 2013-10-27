@@ -77,6 +77,7 @@ char const* const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND = "tr-out";
 char const* const HttpProxyPort::OPT_TRANSPARENT_FULL = "tr-full";
 char const* const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
 char const* const HttpProxyPort::OPT_SSL = "ssl";
+char const* const HttpProxyPort::OPT_PLUGIN = "plugin";
 char const* const HttpProxyPort::OPT_BLIND_TUNNEL = "blind";
 char const* const HttpProxyPort::OPT_COMPRESSED = "compressed";
 
@@ -264,6 +265,8 @@ HttpProxyPort::processOptions(char const* opts) {
     } else if (0 == strcasecmp(OPT_SSL, item)) {
       m_type = TRANSPORT_SSL;
       m_inbound_transparent_p = m_outbound_transparent_p = false;
+    } else if (0 == strcasecmp(OPT_PLUGIN, item)) {
+      m_type = TRANSPORT_PLUGIN;
     } else if (0 == strcasecmp(OPT_TRANSPARENT_INBOUND, item)) {
 # if TS_USE_TPROXY
       m_inbound_transparent_p = true;
@@ -399,6 +402,8 @@ HttpProxyPort::print(char* out, size_t n) {
     zret += snprintf(out+zret, n-zret, ":%s", OPT_BLIND_TUNNEL);
   else if (TRANSPORT_SSL == m_type)
     zret += snprintf(out+zret, n-zret, ":%s", OPT_SSL);
+  else if (TRANSPORT_PLUGIN == m_type)
+    zret += snprintf(out+zret, n-zret, ":%s", OPT_PLUGIN);
   else if (TRANSPORT_COMPRESSED == m_type)
     zret += snprintf(out+zret, n-zret, ":%s", OPT_COMPRESSED);
   if (zret >= n) return n;

@@ -35,8 +35,12 @@ operator_factory(const std::string& op)
 
   if (op == "rm-header") {
     o = new OperatorRMHeader();
+  } else if (op == "set-header") {
+    o = new OperatorSetHeader();
   } else if (op == "add-header") {
     o = new OperatorAddHeader();
+  } else if (op == "set-config") {
+    o = new OperatorSetConfig();
   } else if (op == "set-status") {
     o = new OperatorSetStatus();
   } else if (op == "set-status-reason") {
@@ -50,7 +54,7 @@ operator_factory(const std::string& op)
   } else if (op == "no-op") {
     o = new OperatorNoOp();
   } else {
-    TSError("header_rewrite: unknown operator in header_rewrite: %s", op.c_str());
+    TSError("%s:unknown operator in header_rewrite: %s", PLUGIN_NAME, op.c_str());
     return NULL;
   }
 
@@ -98,7 +102,7 @@ condition_factory(const std::string& cond)
   } else if (c_name == "DBM") {
     c = new ConditionDBM();
   } else {
-    TSError("header_rewrite: unknown condition in header_rewrite: %s",c_name.c_str());
+    TSError("%s: unknown condition in header_rewrite: %s", PLUGIN_NAME, c_name.c_str());
     return NULL;
   }
 

@@ -1613,7 +1613,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
                   int options, time_t apin_in_cache, char *hostname, int host_len)
 {
 
-  if (!CACHE_READY(frag_type)) {
+  if (!CacheProcessor::IsCacheReady(frag_type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
@@ -1681,7 +1681,7 @@ Action *
 Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
                   CacheKey */* key1 ATS_UNUSED */, CacheFragType type, char *hostname, int host_len)
 {
-  if (!CACHE_READY(type)) {
+  if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
@@ -1834,6 +1834,9 @@ Lagain:
     if (!mts->notMigrate) {
       old_off = dir_get_offset(&mts->dir);
       Dir old_dir = mts->dir;
+      doc->sync_serial = header->sync_serial;
+      doc->write_serial = header->write_serial;
+
       memcpy(agg_buffer + agg_buf_pos, doc, doc->len);
       off_t o = header->write_pos + agg_buf_pos;
       dir_set_offset(&mts->dir, offset_to_vol_offset(this, o));
@@ -1876,7 +1879,7 @@ Lagain:
 
       header->cycle++;
       header->agg_pos = header->write_pos;
-      clean_interimvol(this);
+      dir_clean_interimvol(this);
       goto Lagain;
     }
     return EVENT_CONT;

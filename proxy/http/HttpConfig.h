@@ -728,14 +728,6 @@ public:
   MgmtByte referer_filter_enabled;
   MgmtByte referer_format_redirect;
 
-  //////////////////
-  // Transparency //
-  //////////////////
-  /// Accept connections on foreign addresses.
-  bool client_transparency_enabled;
-  /// Use client address to connect to origin server.
-  bool server_transparency_enabled;
-
   ///////////////////
   // reverse proxy //
   ///////////////////
@@ -924,8 +916,6 @@ HttpConfigParams::HttpConfigParams()
     push_method_enabled(0),
     referer_filter_enabled(0),
     referer_format_redirect(0),
-    client_transparency_enabled(false),
-    server_transparency_enabled(false),
     reverse_proxy_enabled(0),
     url_remap_required(1),
     record_cop_page(0),

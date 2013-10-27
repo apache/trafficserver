@@ -33,13 +33,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Operator declarations.
 //
-class OperatorRMHeader : public Operator
+class OperatorSetConfig : public Operator
 {
 public:
-  OperatorRMHeader()
-    : _header("")
+  OperatorSetConfig()
+    : _key(TS_CONFIG_NULL), _type(TS_RECORDDATATYPE_NULL)
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMHeader");
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConfig");
   }
   void initialize(Parser& p);
 
@@ -47,9 +47,13 @@ protected:
   void exec(const Resources& res) const;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(OperatorRMHeader);
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetConfig);
 
-  std::string _header;
+  TSOverridableConfigKey _key;
+  TSRecordDataType _type;
+
+  std::string _config;
+  Value _value;
 };
 
 
@@ -93,27 +97,6 @@ private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetStatusReason);
 
   Value _reason;
-};
-
-
-class OperatorAddHeader : public Operator
-{
-public:
-  OperatorAddHeader()
-    : _header("")
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddHeader");
-  }
-  void initialize(Parser& p);
-
-protected:
-  void exec(const Resources& res) const;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(OperatorAddHeader);
-
-  std::string _header;
-  Value _value;
 };
 
 
@@ -200,6 +183,61 @@ private:
 
   TimeoutOutType _type;
   Value _timeout;
+};
+
+
+// All the header operators share a base class
+class OperatorRMHeader : public OperatorHeaders
+{
+public:
+  OperatorRMHeader()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMHeader");
+  }
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorRMHeader);
+};
+
+
+class OperatorAddHeader : public OperatorHeaders
+{
+public:
+  OperatorAddHeader()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddHeader");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorAddHeader);
+
+  Value _value;
+};
+
+
+class OperatorSetHeader : public OperatorHeaders
+{
+public:
+  OperatorSetHeader()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetHeader");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetHeader);
+
+  Value _value;
 };
 
 

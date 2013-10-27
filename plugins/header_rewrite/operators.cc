@@ -25,34 +25,44 @@
 
 #include "operators.h"
 
-// OperatorRMHeader
+// OperatorConfig
 void
-OperatorRMHeader::initialize(Parser& p) {
+OperatorSetConfig::initialize(Parser& p) {
   Operator::initialize(p);
+  _config = p.get_arg();
 
-  _header = p.get_arg();
-
-  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
-  require_resources(RSRC_SERVER_REQUEST_HEADERS);
-  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
-  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
+  if (TS_SUCCESS == TSHttpTxnConfigFind(_config.c_str(), _config.size(), &_key, &_type)) {
+    _value.set_value(p.get_value());
+  } else {
+    _key = TS_CONFIG_NULL;
+    TSError("%s: no such records config: %s", PLUGIN_NAME, _config.c_str());
+  }
 }
 
 
 void
-OperatorRMHeader::exec(const Resources& res) const
+OperatorSetConfig::exec(const Resources& res) const
 {
-  TSMLoc field_loc, tmp;
-
-  if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on header %s", _header.c_str());
-    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
-    while (field_loc) {
-      TSDebug(PLUGIN_NAME, "\tdeleting header %s", _header.c_str());
-      tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
-      TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
-      TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
-      field_loc = tmp;
+  if (TS_CONFIG_NULL != _key) {
+    switch (_type) {
+    case TS_RECORDDATATYPE_INT:
+      if (TS_SUCCESS == TSHttpTxnConfigIntSet(res.txnp, _key, _value.get_int_value())) {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%d", _config.c_str(), _value.get_int_value());
+      }
+      break;
+    case TS_RECORDDATATYPE_FLOAT:
+      if (TS_SUCCESS == TSHttpTxnConfigFloatSet(res.txnp, _key, _value.get_float_value())) {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%f", _config.c_str(), _value.get_float_value());
+      }
+      break;
+    case TS_RECORDDATATYPE_STRING:
+      if (TS_SUCCESS == TSHttpTxnConfigStringSet(res.txnp, _key, _value.get_value().c_str(), _value.size())) {
+        TSDebug(PLUGIN_NAME, "OperatorSetConfig::exec() invoked on %s=%s", _config.c_str(), _value.get_value().c_str());
+      }
+      break;
+    default:
+      TSError("%s: unknown data type, whut?", PLUGIN_NAME);
+      break;
     }
   }
 }
@@ -60,13 +70,14 @@ OperatorRMHeader::exec(const Resources& res) const
 
 // OperatorSetStatus
 void
-OperatorSetStatus::initialize(Parser& p) {
+OperatorSetStatus::initialize(Parser& p)
+{
   Operator::initialize(p);
 
   _status.set_value(p.get_arg());
 
   if (NULL == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
-    TSError("header_rewrite: unknown status %d", _status.get_int_value());
+    TSError("%s: unknown status %d", PLUGIN_NAME, _status.get_int_value());
     _reason_len = 0;
   } else {
     _reason_len = strlen(_reason);
@@ -79,7 +90,8 @@ OperatorSetStatus::initialize(Parser& p) {
 
 
 void
-OperatorSetStatus::initialize_hooks() {
+OperatorSetStatus::initialize_hooks()
+{
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
@@ -98,7 +110,8 @@ OperatorSetStatus::exec(const Resources& res) const
 
 // OperatorSetStatusReason
 void
-OperatorSetStatusReason::initialize(Parser& p) {
+OperatorSetStatusReason::initialize(Parser& p)
+{
   Operator::initialize(p);
 
   _reason.set_value(p.get_arg());
@@ -127,57 +140,11 @@ OperatorSetStatusReason::exec(const Resources& res) const {
 }
 
 
-// OperatorAddHeader
-void
-OperatorAddHeader::initialize(Parser& p) {
-  Operator::initialize(p);
-
-  _header = p.get_arg();
-  _value.set_value(p.get_value());
-  
-  require_resources(RSRC_SERVER_RESPONSE_HEADERS);
-  require_resources(RSRC_SERVER_REQUEST_HEADERS);
-  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
-  require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
-}
-
-
-void
-OperatorAddHeader::exec(const Resources& res) const
-{
-//  int IP = TSHttpTxnServerIPGet(res.txnp);
-//  inet_ntop(AF_INET, &IP, buf, sizeof(buf));
-  std::string value;
-
-  _value.append_value(value, res);
-
-  // Never set an empty header (I don't think that ever makes sense?)
-  if (value.empty()) {
-    TSDebug(PLUGIN_NAME, "Would set header %s to an empty value, skipping", _header.c_str());
-    return;
-  }
-  
-  if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorAddHeader::exec() invoked on header %s: %s", _header.c_str(), value.c_str());
-    TSMLoc field_loc;
-    
-    if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
-      if (TS_SUCCESS == TSMimeHdrFieldValueStringInsert(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-        TSDebug(PLUGIN_NAME, "   adding header %s", _header.c_str());
-        //INKHttpHdrPrint(res.bufp, res.hdr_loc, reqBuff);
-        TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
-      }
-      TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
-    }
-      
-  }
-}
-
-
 /// TODO and XXX: These currently only support when running as remap plugin.
 // OperatorSetDestination
 void
-OperatorSetDestination::initialize(Parser& p) {
+OperatorSetDestination::initialize(Parser& p)
+{
   Operator::initialize(p);
 
   _url_qual = parse_url_qualifier(p.get_arg());
@@ -262,7 +229,8 @@ OperatorSetDestination::exec(const Resources& res) const
 /// TODO and XXX: These currently only support when running as remap plugin.
 // OperatorSetRedirect
 void
-OperatorSetRedirect::initialize(Parser& p) {
+OperatorSetRedirect::initialize(Parser& p)
+{
   Operator::initialize(p);
 
   _status.set_value(p.get_arg());
@@ -270,7 +238,7 @@ OperatorSetRedirect::initialize(Parser& p) {
 
   if ((_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_PERMANENTLY) &&
       (_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_TEMPORARILY)) {
-    TSError("header_rewrite: unsupported redirect status %d", _status.get_int_value());
+    TSError("%s: unsupported redirect status %d", PLUGIN_NAME, _status.get_int_value());
   }
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
@@ -328,7 +296,8 @@ OperatorSetRedirect::exec(const Resources& res) const
 
 // OperatorSetTimeoutOut
 void
-OperatorSetTimeoutOut::initialize(Parser& p) {
+OperatorSetTimeoutOut::initialize(Parser& p)
+{
   Operator::initialize(p);
 
   if (p.get_arg() == "active") {
@@ -341,7 +310,7 @@ OperatorSetTimeoutOut::initialize(Parser& p) {
     _type = TO_OUT_DNS;
   } else {
     _type = TO_OUT_UNDEFINED;
-    TSError("header_rewrite: unsupported timeout qualifier: %s", p.get_arg().c_str());
+    TSError("%s: unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
   }
 
   _timeout.set_value(p.get_value());
@@ -372,8 +341,122 @@ OperatorSetTimeoutOut::exec(const Resources& res) const
     TSHttpTxnDNSTimeoutSet(res.txnp, _timeout.get_int_value());
     break;
   default:
-    TSError("header_rewrite: unsupported timeout");
+    TSError("%s: unsupported timeout", PLUGIN_NAME);
     break;
   }
 }
 
+
+// OperatorRMHeader
+void
+OperatorRMHeader::exec(const Resources& res) const
+{
+  TSMLoc field_loc, tmp;
+
+  if (res.bufp && res.hdr_loc) {
+    TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on header %s", _header.c_str());
+    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+    while (field_loc) {
+      TSDebug(PLUGIN_NAME, "\tdeleting header %s", _header.c_str());
+      tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
+      TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
+      TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
+      field_loc = tmp;
+    }
+  }
+}
+
+
+// OperatorAddHeader
+void
+OperatorAddHeader::initialize(Parser& p)
+{
+  OperatorHeaders::initialize(p);
+
+  _value.set_value(p.get_value());
+}
+
+void
+OperatorAddHeader::exec(const Resources& res) const
+{
+  std::string value;
+
+  _value.append_value(value, res);
+
+  // Never set an empty header (I don't think that ever makes sense?)
+  if (value.empty()) {
+    TSDebug(PLUGIN_NAME, "Would set header %s to an empty value, skipping", _header.c_str());
+    return;
+  }
+
+  if (res.bufp && res.hdr_loc) {
+    TSDebug(PLUGIN_NAME, "OperatorAddHeader::exec() invoked on header %s: %s", _header.c_str(), value.c_str());
+    TSMLoc field_loc;
+
+    if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
+      if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
+        TSDebug(PLUGIN_NAME, "   adding header %s", _header.c_str());
+        TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
+      }
+      TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
+    }
+  }
+}
+
+
+// OperatorSetHeader
+void
+OperatorSetHeader::initialize(Parser& p)
+{
+  OperatorHeaders::initialize(p);
+
+  _value.set_value(p.get_value());
+}
+
+void
+OperatorSetHeader::exec(const Resources& res) const
+{
+  std::string value;
+
+  _value.append_value(value, res);
+
+  // Never set an empty header (I don't think that ever makes sense?)
+  if (value.empty()) {
+    TSDebug(PLUGIN_NAME, "Would set header %s to an empty value, skipping", _header.c_str());
+    return;
+  }
+
+  if (res.bufp && res.hdr_loc) {
+    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+
+    TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on header %s: %s", _header.c_str(), value.c_str());
+
+    if (!field_loc) {
+      // No existing header, so create one
+      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
+        if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
+          TSDebug(PLUGIN_NAME, "   adding header %s", _header.c_str());
+          TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
+        }
+        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
+      }
+    } else {
+      TSMLoc tmp = NULL;
+      bool first = true;
+
+      while (field_loc) {
+        if (first) {
+          first = false;
+          if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
+            TSDebug(PLUGIN_NAME, "   overwriting header %s", _header.c_str());
+          }
+        } else {
+          TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
+        }
+        tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
+        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
+        field_loc = tmp;
+      }
+    }
+  }
+}

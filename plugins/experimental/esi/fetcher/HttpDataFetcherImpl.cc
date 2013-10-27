@@ -25,6 +25,7 @@
 #include "lib/Utils.h"
 #include "lib/gzip.h"
 
+#include <stdlib.h>
 #include <arpa/inet.h>
 
 using std::string;

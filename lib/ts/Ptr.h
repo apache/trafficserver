@@ -272,6 +272,7 @@ public:
   volatile int m_refcount;
 };
 
+// Increment the reference count, returning the new count.
 inline int
 RefCountObj::refcount_inc()
 {
@@ -280,6 +281,7 @@ RefCountObj::refcount_inc()
 
 #define REF_COUNT_OBJ_REFCOUNT_INC(_x) (_x)->refcount_inc()
 
+// Decrement the reference count, returning the new count.
 inline int
 RefCountObj::refcount_dec()
 {

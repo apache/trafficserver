@@ -7,16 +7,35 @@ this rolling asap.
 Note that currently only static string "values" are supported. We'll add
 advanced features to allow for expansions in a future release.
 
+Using the plugin
+----------------
+
+This plugin can be used as both a global plugin, enabled in plugin.config:
+
+  header_rewrite.so config_file_1.conf config_file_2.conf ...
+
+These are global rules, which would apply to all requests. Another option is
+to use per remap rules in remap.config
+
+  map http://a http://b @plugin=header_rewrite.so @pparam=rules1.conf ...
+
+
+In the second example, hooks which are not to be executed during the remap
+phase (the default) causes a transaction hook to be instantiated and used
+at a later time. This allows you to setup e.g. a rule that gets executed
+during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
+
 
 Operators
 ---------
 The following operators are available: 
 
-  rm-header header-name			[flags]
-  add-header header <value>		[flags]
-  set-status <status-code>		[flags]
-  set-status-reason <value>		[flags]
-  no-op		    			[flags]
+  rm-header header-name                 [flags]
+  add-header header <value>             [flags]
+  set-status <status-code>              [flags]
+  set-status-reason <value>             [flags]
+  set-config config <value>             [flags]
+  no-op                                 [flags]
 
 The following operator(s) currently only works when instantiating the
 plugin as a remap plugin:
@@ -38,7 +57,7 @@ For example (as a remap rule):
 
 Operator flags
 --------------
-  [L]	Last rule, do not continue
+  [L]   Last rule, do not continue
 
 
 Conditions
@@ -46,22 +65,22 @@ Conditions
 The conditions are used as qualifiers: The operators specified will
 only be evaluated if the condition(s) are met.
 
-  cond %{STATUS} operand			[flags]
-  cond %{RANDOM:nn} operand			[flags]
-  cond %{ACCESS:file}				[flags]
-  cond %{TRUE}					[flags]
-  cond %{FALSE}					[flags]
-  cond %{HEADER:header-name} operand		[flags]
-  cond %{CLIENT-HEADER:header-name} operand	[flags]
-  cond %{METHOD} operand			[flags]
-  cond %{PROTOCOL} operand			[flags]
-  cond %{PORT} operand				[flags]
-  cond %{HOST} operand				[flags]
-  cond %{TOHOST} operand			[false]
-  cond %{FROMHOST} operand			[false]
-  cond %{PATH} operand				[false]
-  cond %{PARAMS} operand			[false]
-  cond %{QUERY} operand				[false]
+  cond %{STATUS} operand                        [flags]
+  cond %{RANDOM:nn} operand                     [flags]
+  cond %{ACCESS:file}                           [flags]
+  cond %{TRUE}                                  [flags]
+  cond %{FALSE}                                 [flags]
+  cond %{HEADER:header-name} operand            [flags]
+  cond %{CLIENT-HEADER:header-name} operand     [flags]
+  cond %{METHOD} operand                        [flags]
+  cond %{PROTOCOL} operand                      [flags]
+  cond %{PORT} operand                          [flags]
+  cond %{HOST} operand                          [flags]
+  cond %{TOHOST} operand                        [false]
+  cond %{FROMHOST} operand                      [false]
+  cond %{PATH} operand                          [false]
+  cond %{PARAMS} operand                        [false]
+  cond %{QUERY} operand                         [false]
 
 
 The difference between HEADER and CLIENT-HEADER is that HEADER adapts to the
@@ -77,13 +96,17 @@ each rule. This implies that a new hook condition starts a new rule as well.
   cond %{SEND_REQUEST_HDR_HOOK}
   cond %{SEND_RESPONSE_HDR_HOOK}
 
+For remap.config plugin instanations, the default hook is named
+REMAP_PSEUDO_HOOK. This can be useful if you are mixing other hooks in a
+configuration, but being the default it is also optional.
+
 
 Condition flags
 ---------------
   [NC]  Not ase sensitive condition (when applicable)
-  [AND]	AND with next condition (default)
-  [OR]	OR with next condition
-  [NOT]	Invert this condition
+  [AND] AND with next condition (default)
+  [OR]  OR with next condition
+  [NOT] Invert this condition
 
 
 Operands to conditions
@@ -112,7 +135,7 @@ Examples
 cond %{HEADER:X-Y-Foobar}
 cond %{METHOD} =GET [OR]
 cond %{METHOD} =POST
-set-header X-Y-Fiefum %{HEADER:X-Y-Foobar}
+add-header X-Y-Fiefum %{HEADER:X-Y-Foobar}
 rm-header X-Y-Foobar
 rm-header Set-Cookie
 

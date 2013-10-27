@@ -5443,29 +5443,22 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
   //  when they are configured to use a proxy.  Proxy-Connection
   //  is not in the spec but was added to prevent problems
   //  with a dumb proxy forwarding all headers (including "Connection")
-  //  to the origin server and confusing it.  However, the
-  //  "Proxy-Connection" solution breaks down with transparent
-  //  backbone caches since the request could be from dumb
-  //  downstream caches that are forwarding the "Proxy-Connection"
-  //  header.  Therefore, we disable keep-alive if we are transparent
-  //  and see "Proxy-Connection" header
-  //
+  //  to the origin server and confusing it.  In cases of transparent
+  //  deployments we use the Proxy-Connect hdr (to be as transparent
+  //  as possible).
   MIMEField *pc = incoming_request->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
 
-  if (!s->txn_conf->keep_alive_enabled_in || (s->http_config_param->server_transparency_enabled && pc != NULL)) {
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  // If we need to send a close header later check to see if it should be "Proxy-Connection"
+  if (pc != NULL) {
+    s->client_info.proxy_connect_hdr = true;
+  }
 
-    // If we need to send a close header later,
-    //   check to see if it should be "Proxy-Connection"
-    if (pc != NULL) {
-      s->client_info.proxy_connect_hdr = true;
-    }
+  if (!s->txn_conf->keep_alive_enabled_in) {
+    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
-    // If there is a Proxy-Connection header use that,
-    //   otherwise use the Connection header
+    // If there is a Proxy-Connection header use that, otherwise use the Connection header
     if (pc != NULL) {
       s->client_info.keep_alive = is_header_keep_alive(s->client_info.http_version, s->client_info.http_version, pc);
-      s->client_info.proxy_connect_hdr = true;
     } else {
       MIMEField *c = incoming_request->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
 
@@ -6202,27 +6195,15 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
 
     DebugTxn("http_trans", "[is_request_valid] missing host field");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    // Transparent client side, but client did not provide any HOST information
-    // (neither in the URL nor a HOST header).
-    if (s->http_config_param->client_transparency_enabled) {
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required",
-                           "interception#no_host", 
-                           "An attempt was made to transparently proxy your request, "
-                           "but this attempt failed because your browser did not "
-                           "send an HTTP 'Host' header.<p>Please manually configure "
-                           "your browser to use 'http://%s' as an HTTP proxy. "
-                           "Please refer to your browser's documentation for details. ",
-                           s->http_config_param->proxy_hostname);
-    } else if (s->http_config_param->reverse_proxy_enabled) {   // host header missing, and transparency off but reverse
-      // proxy on
+    if (s->http_config_param->reverse_proxy_enabled) {   // host header missing and reverse proxy on
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host",
-                           // This too is all one long string
+                           // This is all one long string
                            "Your browser did not send \"Host:\" HTTP header field, "
                            "and therefore the virtual host being requested could "
                            "not be determined.  To access this site you will need "
                            "to upgrade to a browser that supports the HTTP " "\"Host:\" header field.");
     } else {
-      // host header missing, and transparency & reverse proxy off
+      // host header missing and reverse proxy off
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Required In Request", "request#no_host",
                            // This too is all one long string
                            "Your browser did not send a hostname as part of "

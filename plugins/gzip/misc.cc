@@ -145,7 +145,7 @@ register_plugin()
   TSPluginRegistrationInfo info;
 
   info.plugin_name = (char*)"gzip";
-  info.vendor_name = (char*)"Apache";
+  info.vendor_name = (char*)"Apache Software Foundation";
   info.support_email = (char*)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {

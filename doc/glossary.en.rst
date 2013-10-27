@@ -40,19 +40,22 @@ Glossary
    cache volume
       Persistent storage for the cache, defined and manipulable by the user.
       Cache volumes are defined in :file:`volume.config`. A cache volume is
-      spread across :term:`storage unit`\ s to increase performance through
+      spread across :term:`cache span`\ s to increase performance through
       parallel I/O. Storage units can be split across cache volumes. Each
-      such part of a storage unit in a cache volume is a :term:`volume`.
+      such part of a storage unit in a cache volume is a :term:`cache stripe`.
 
-   volume
+   cache stripe
       A homogenous persistent store for the cache. A volume always resides
       entirely on a single physical device and is treated as an
       undifferentiated span of bytes.
 
-      See also :term:`storage unit`, :term:`cache volume`
+      See also :term:`cache span`, :term:`cache volume`
+
+   cache span
+      The physical storage described by a single line in :file:`storage.config`.
 
    storage unit
-      The physical storage described by a single line in :file:`storage.config`.
+      Obsolete term for :term:`cache span`.
 
    revalidation
       Verifying that a currently cached object is still valid. This is usually done using an `If-Modified-Since

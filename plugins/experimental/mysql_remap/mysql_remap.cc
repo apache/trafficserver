@@ -190,7 +190,7 @@ TSPluginInit(int argc, const char *argv[]) {
   
   info.plugin_name   = const_cast<char*>(PLUGIN_NAME);
   info.vendor_name   = const_cast<char*>("Apache Software Foundation");
-  info.support_email = const_cast<char*>("eric@ericbalsa.com");
+  info.support_email = const_cast<char*>("dev@trafficserver.apache.org");
 
   if (TSPluginRegister(TS_SDK_VERSION_2_0 , &info) != TS_SUCCESS) {
     TSError("mysql_remap: plugin registration failed.\n"); 

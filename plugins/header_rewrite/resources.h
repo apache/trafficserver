@@ -57,7 +57,7 @@ public:
   Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri) :
     txnp(txnptr), contp(NULL),
     bufp(NULL), hdr_loc(NULL), client_bufp(NULL), client_hdr_loc(NULL), resp_status(TS_HTTP_STATUS_NONE),
-    _rri(rri), _ready(false)
+      _rri(rri), changed_url(false), _ready(false)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (RemapAPI)");
     TSDebug(PLUGIN_NAME, "rri: %p", _rri);

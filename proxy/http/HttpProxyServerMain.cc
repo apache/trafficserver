@@ -233,7 +233,7 @@ start_HttpProxyServer()
     if (port.isSSL()) {
       if (NULL == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt))
         return;
-    } else {
+    } else if (! port.isPlugin()) {
       if (NULL == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt))
         return;
     }

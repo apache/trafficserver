@@ -42,7 +42,7 @@ class Value : Statement
 {
 public:
   Value()
-    : _value(""), _int_value(-1), _cond_val(NULL)
+    : _value(""), _int_value(0), _float_value(0.0), _cond_val(NULL)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value");
   };
@@ -58,8 +58,10 @@ public:
       if (_cond_val) {
         _cond_val->initialize(parser);
       }
+    } else {
+      _int_value = strtol(_value.c_str(), NULL, 10);
+      _float_value = strtod(_value.c_str(), NULL);
     }
-    _int_value = strtol(_value.c_str(), NULL, 10);
   }
 
   void
@@ -72,7 +74,9 @@ public:
   }
 
   const std::string& get_value() const { return _value; }
+  size_t size() const { return _value.size(); }
   int get_int_value() const { return _int_value; }
+  double get_float_value() const { return _float_value; }
 
   bool empty() const { return _value.empty(); }
 
@@ -81,6 +85,7 @@ private:
 
   std::string _value;
   int _int_value;
+  double _float_value;
   Condition* _cond_val;
 };
 

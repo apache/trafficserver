@@ -71,6 +71,26 @@
 
 #define sizeofDoc (((uint32_t)(uintptr_t)&((Doc*)0)->checksum)+(uint32_t)sizeof(uint32_t))
 
+#if TS_USE_INTERIM_CACHE == 1
+struct InterimVolHeaderFooter
+{
+  unsigned int magic;
+  VersionNumber version;
+  time_t create_time;
+  off_t write_pos;
+  off_t last_write_pos;
+  off_t agg_pos;
+  uint32_t generation;            // token generation (vary), this cannot be 0
+  uint32_t phase;
+  uint32_t cycle;
+  uint32_t sync_serial;
+  uint32_t write_serial;
+  uint32_t dirty;
+  uint32_t sector_size;
+  int32_t unused;                // pad out to 8 byte boundary
+};
+#endif
+
 struct Cache;
 struct Vol;
 struct CacheDisk;
@@ -94,6 +114,9 @@ struct VolHeaderFooter
   uint32_t dirty;
   uint32_t sector_size;
   uint32_t unused;                // pad out to 8 byte boundary
+#if TS_USE_INTERIM_CACHE == 1
+  InterimVolHeaderFooter interim_header[8];
+#endif
   uint16_t freelist[1];
 };
 
@@ -132,6 +155,7 @@ struct EvacuationBlock
 #define MIGRATE_BUCKETS                 1021
 extern int migrate_threshold;
 extern int good_interim_disks;
+
 
 union AccessEntry {
   uintptr_t v[2];
@@ -313,8 +337,15 @@ struct MigrateToInterimCache
 
 struct InterimCacheVol: public Continuation
 {
-  VolHeaderFooter hh;
-  VolHeaderFooter *header;
+  char *hash_id;
+  InterimVolHeaderFooter *header;
+
+  off_t recover_pos;
+  off_t prev_recover_pos;
+  uint32_t last_sync_serial;
+  uint32_t last_write_serial;
+  bool recover_wrapped;
+
   off_t scan_pos;
   off_t skip; // start of headers
   off_t start; // start of data
@@ -335,6 +366,9 @@ struct InterimCacheVol: public Continuation
     return io.aiocb.aio_fildes != AIO_NOT_IN_PROGRESS;
   }
 
+  int recover_data();
+  int handle_recover_from_data(int event, void *data);
+
   void set_io_not_in_progress() {
     io.aiocb.aio_fildes = AIO_NOT_IN_PROGRESS;
   }
@@ -346,7 +380,11 @@ struct InterimCacheVol: public Continuation
     return INK_ALIGN(ll, disk->hw_sector_size);
   }
 
-  void init(off_t s, off_t l, CacheDisk *interim, Vol *v) {
+  void init(off_t s, off_t l, CacheDisk *interim, Vol *v, InterimVolHeaderFooter *hptr) {
+    const size_t hash_id_size = strlen(interim->path) + 32;
+    hash_id = (char *)ats_malloc(hash_id_size);
+    snprintf(hash_id, hash_id_size, "%s %" PRIu64 ":%" PRIu64 "", interim->path, s, l);
+
     skip = start = s;
     len = l;
     disk = interim;
@@ -355,17 +393,7 @@ struct InterimCacheVol: public Continuation
     transistor_range_threshold = len / 5; // 20% storage size for transistor
     sync = false;
 
-    header = &hh;
-    header->magic = VOL_MAGIC;
-    header->version.ink_major = CACHE_DB_MAJOR_VERSION;
-    header->version.ink_minor = CACHE_DB_MINOR_VERSION;
-    header->agg_pos = header->write_pos = start;
-    header->last_write_pos = header->write_pos;
-    header->phase = 0;
-    header->cycle = 0;
-    header->create_time = time(NULL);
-    header->dirty = 0;
-    sector_size = header->sector_size = disk->hw_sector_size;
+    header = hptr;
 
     agg_todo_size = 0;
     agg_buf_pos = 0;
@@ -379,7 +407,7 @@ struct InterimCacheVol: public Continuation
 
 void dir_clean_bucket(Dir *b, int s, InterimCacheVol *d);
 void dir_clean_segment(int s, InterimCacheVol *d);
-void clean_interimvol(InterimCacheVol *d);
+void dir_clean_interimvol(InterimCacheVol *d);
 
 #endif
 
@@ -445,6 +473,7 @@ struct Vol: public Continuation
   AccessHistory history;
   uint32_t interim_index;
   Queue<MigrateToInterimCache, MigrateToInterimCache::Link_hash_link> mig_hash[MIGRATE_BUCKETS];
+  volatile int interim_done;
 
 
   bool migrate_probe(CacheKey *key, MigrateToInterimCache **result) {
@@ -477,6 +506,8 @@ struct Vol: public Continuation
 
   void cancel_trigger();
 
+  int recover_data();
+
   int open_write(CacheVC *cont, int allow_if_writers, int max_writers);
   int open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
   int close_write(CacheVC *cont);
@@ -499,6 +530,10 @@ struct Vol: public Continuation
   int handle_recover_from_data(int event, void *data);
   int handle_recover_write_dir(int event, void *data);
   int handle_header_read(int event, void *data);
+
+#if TS_USE_INTERIM_CACHE == 1
+  int recover_interim_vol();
+#endif
 
   int dir_init_done(int event, void *data);
 

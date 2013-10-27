@@ -76,6 +76,9 @@ install-examples: examples
 install-data-hook:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) install-man
 
+rat:
+	java -jar $(top_srcdir)/ci/apache-rat-0.11-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
+
 help:
 	@echo 'all              default target for building the package' && \
 	echo 'check            run the test suite, if any' && \
@@ -86,6 +89,7 @@ help:
 	echo 'asf-dist         recreate source package' && \
 	echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
 	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
+	echo 'rat              produce a RAT licence compliance report of the source' && \
 	echo 'doxygen          generate doxygen docs in doc/html dir' && \
 	echo 'help             display this list of make targets' && \
 	echo 'install          install by copying the built files to system-wide dirs' && \

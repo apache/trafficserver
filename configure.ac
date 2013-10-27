@@ -40,7 +40,7 @@ AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
-AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman 1.9.2])
+AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
 AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
@@ -479,6 +479,19 @@ AC_ARG_ENABLE([experimental-plugins],
 )
 AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
+
+
+#
+# build c++ api
+#
+AC_MSG_CHECKING([whether to build c++ api])
+AC_ARG_ENABLE([cppapi],
+  [AS_HELP_STRING([--enable-cppapi],[Build the c++ api])],
+  [],
+  [enable_cppapi="no"]
+)
+AC_MSG_RESULT([$enable_cppapi])
+AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
 
 #
 # Installation directories
@@ -996,15 +1009,17 @@ AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host
 
 #
 # CPP 11 API
+# TODO: briang, this needs to be translated to a define
+# that can be used in the c++ api to enable c++11 api features.
 #
-AC_MSG_CHECKING([whether to enable c++11 api])
-AC_ARG_WITH([cpp11api],
-  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=auto]])],
-  [cpp11api=$withval],
-  [cpp11api=$enable_cxx_11_support]
-)
-AC_MSG_RESULT([$cpp11api])
-AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
+#AC_MSG_CHECKING([whether to enable c++11 api])
+#AC_ARG_WITH([cpp11api],
+#  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=auto]])],
+#  [cpp11api=$withval],
+#  [cpp11api=$enable_cxx_11_support]
+#)
+#AC_MSG_RESULT([$cpp11api])
+#AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
 
 # Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
@@ -1404,7 +1419,7 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
-AC_CHECK_HEADERS([sys/types.h sys/mman.h])
+TS_FLAG_HEADERS([sys/types.h sys/mman.h])
 TS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
                   sys/param.h \
@@ -1488,6 +1503,8 @@ AC_SUBST(mathh)
 AC_SUBST(net_ppp_defsh)
 AC_SUBST(ifaddrsh)
 AC_SUBST(readline_readlineh)
+
+TS_FLAG_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
 
 TS_FLAG_HEADERS([sys/sysctl.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H
@@ -1771,6 +1788,19 @@ AC_CHECK_TYPE([struct tcp_info],
 )
 AM_CONDITIONAL([BUILD_TCPINFO_PLUGIN], [ test "x${enable_tcpinfo_plugin}" != "xno" ])
 
+# See if we can build the remap_stats plugin
+AS_IF([test "x$enable_experimental_plugins" = xyes],
+  [
+    AC_CHECK_HEADERS([search.h])
+    AS_IF([test "x$ac_cv_header_search_h" = "xyes"],
+      [
+        AC_CHECK_TYPE([struct hsearch_data],[],[],[[#include <search.h>]])
+        AC_CHECK_FUNCS([hcreate_r hsearch_r])
+      ])
+  ])
+AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
+  [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
+
 #
 # use modular IOCORE
 #
@@ -1825,11 +1855,34 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/cpp11api/Makefile
   lib/records/Makefile
   lib/ts/Makefile
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
+  lib/atscppapi/Makefile
+  lib/atscppapi/src/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/examples/helloworld/Makefile
+  lib/atscppapi/examples/globalhook/Makefile
+  lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
+  lib/atscppapi/examples/clientrequest/Makefile
+  lib/atscppapi/examples/data_caching/Makefile
+  lib/atscppapi/examples/serverresponse/Makefile
+  lib/atscppapi/examples/clientredirect/Makefile
+  lib/atscppapi/examples/customresponse/Makefile
+  lib/atscppapi/examples/null_transformation_plugin/Makefile
+  lib/atscppapi/examples/post_buffer/Makefile
+  lib/atscppapi/examples/logger_example/Makefile
+  lib/atscppapi/examples/detachedrequest/Makefile
+  lib/atscppapi/examples/stat_example/Makefile
+  lib/atscppapi/examples/async_http_fetch/Makefile
+  lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/gzip_transformation/Makefile
+  lib/atscppapi/examples/timeout_example/Makefile
+  lib/atscppapi/examples/internal_transaction_handling/Makefile
+  lib/atscppapi/examples/async_timer/Makefile
+  lib/atscppapi/examples/request_cookies/Makefile
   lib/wccp/Makefile
   lib/perl/Makefile
   mgmt/Makefile
@@ -1858,6 +1911,7 @@ AC_CONFIG_FILES([
   plugins/experimental/spdy/Makefile
   plugins/experimental/tcp_info/Makefile
   plugins/experimental/healthchecks/Makefile
+  plugins/experimental/remap_stats/Makefile
   plugins/gzip/Makefile
   plugins/libloader/Makefile
   plugins/header_filter/Makefile

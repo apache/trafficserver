@@ -29,6 +29,7 @@
 
 #include "ink_defs.h"
 #include "ink_apidefs.h"
+#include "ink_platform.h"
 
 typedef unsigned int CTypeResult;
 
@@ -818,201 +819,46 @@ ink_get_hex(char c)
   return (int) ((c - 'a') + 10);
 }
 
+int64_t ink_atoi64(const char *);
+uint64_t ink_atoui64(const char *);
+int64_t ink_atoi64(const char *, int);
+
+
 static inline int
 ink_atoi(const char *str)
 {
-  int num = 0;
-  int negative = 0;
+  int64_t val = ink_atoi64(str);
 
-  while (*str && ParseRules::is_wslfcr(*str))
-    str += 1;
-
-  if (unlikely(str[0] == '0' && str[1] == 'x')) {
-    str += 2;
-    while (*str && ParseRules::is_hex(*str))
-      num = (num << 4) + ink_get_hex(*str++);
-  } else {
-    if (unlikely(*str == '-')) {
-      negative = 1;
-      str += 1;
-    }
-
-    /*
-       NOTE: we first compute the value as negative then correct the
-       sign back to positive. This enables us to correctly parse MININT.
-     */
-    while (*str && ParseRules::is_digit(*str))
-      num = (num * 10) - (*str++ - '0');
-#if USE_SI_MULTILIERS
-    if (*str) {
-      if (*str == 'K')
-        num = num * (1 << 10);
-      else if (*str == 'M')
-        num = num * (1 << 20);
-      else if (*str == 'G')
-        num = num * (1 << 30);
-    }
-#endif
-
-    if (!negative)
-      num = -num;
-  }
-
-  return num;
+  if (val > INT_MAX)
+    return INT_MAX;
+  else if (val < INT_MIN)
+    return INT_MIN;
+  else
+    return static_cast<int>(val);
 }
 
 static inline int
 ink_atoi(const char *str, int len)
 {
-  int num = 0;
-  int negative = 0;
+  int64_t val = ink_atoi64(str, len);
 
-  while (len > 0 && *str && ParseRules::is_wslfcr(*str)) {
-    str += 1;
-    len--;
-  }
-
-  if (len <= 1)
-    return 0;
-
-  if (unlikely(str[0] == '0' && len > 1 && str[1] == 'x')) {
-    str += 2;
-    while (len > 0 && *str && ParseRules::is_hex(*str)) {
-      num = (num << 4) + ink_get_hex(*str++);
-      len--;
-    }
-  } else {
-    if (unlikely(*str == '-')) {
-      negative = 1;
-      str += 1;
-    }
-
-    /*
-       NOTE: we first compute the value as negative then correct the
-       sign back to positive. This enables us to correctly parse MININT.
-     */
-    while (len > 0 && *str && ParseRules::is_digit(*str)) {
-      num = (num * 10) - (*str++ - '0');
-      len--;
-    }
-#if USE_SI_MULTILIERS
-    if (len > 0 && *str) {
-      if (*str == 'K')
-        num = num * (1 << 10);
-      else if (*str == 'M')
-        num = num * (1 << 20);
-      else if (*str == 'G')
-        num = num * (1 << 30);
-    }
-#endif
-
-    if (!negative)
-      num = -num;
-  }
-  return num;
+  if (val > INT_MAX)
+    return INT_MAX;
+  else if (val < INT_MIN)
+    return INT_MIN;
+  else
+    return static_cast<int>(val);
 }
 
 static inline unsigned int
 ink_atoui(const char *str)
 {
-  unsigned int num = 0;
+  uint64_t val = ink_atoui64(str);
 
-  while (*str && ParseRules::is_wslfcr(*str))
-    str += 1;
-
-  if (unlikely(str[0] == '0' && str[1] == 'x')) {
-    str += 2;
-    while (*str && ParseRules::is_hex(*str))
-      num = (num << 4) + ink_get_hex(*str++);
-  } else {
-    while (*str && ParseRules::is_digit(*str))
-      num = (num * 10) + (*str++ - '0');
-#if USE_SI_MULTILIERS
-    if (*str) {
-      if (*str == 'K')
-        num = num * (1 << 10);
-      else if (*str == 'M')
-        num = num * (1 << 20);
-      else if (*str == 'G')
-        num = num * (1 << 30);
-    }
-#endif
-  }
-  return num;
-}
-
-static inline int64_t
-ink_atoi64(const char *str)
-{
-  int64_t num = 0;
-  int negative = 0;
-
-  while (*str && ParseRules::is_wslfcr(*str))
-    str += 1;
-
-  if (unlikely(str[0] == '0' && str[1] == 'x')) {
-    str += 2;
-    while (*str && ParseRules::is_hex(*str))
-      num = (num << 4) + ink_get_hex(*str++);
-  } else {
-    if (unlikely(*str == '-')) {
-      negative = 1;
-      str += 1;
-    }
-
-    /*
-    NOTE: we first compute the value as negative then correct the
-    sign back to positive. This enables us to correctly parse MININT.
-    */
-    while (*str && ParseRules::is_digit(*str))
-      num = (num * 10) - (*str++ - '0');
-#if USE_SI_MULTILIERS
-    if (*str) {
-      if (*str == 'K')
-        num = num * (1LL << 10);
-      else if (*str == 'M')
-        num = num * (1LL << 20);
-      else if (*str == 'G')
-        num = num * (1LL << 30);
-      else if (*str == 'T')
-        num = num * (1LL << 40);
-    }
-#endif
-    if (!negative)
-      num = -num;
-  }
-  return num;
-}
-
-static inline uint64_t
-ink_atoui64(const char *str)
-{
-  uint64_t num = 0;
-
-  while (*str && ParseRules::is_wslfcr(*str))
-    str += 1;
-
-  if (unlikely(str[0] == '0' && str[1] == 'x')) {
-    str += 2;
-    while (*str && ParseRules::is_hex(*str))
-      num = (num << 4) + ink_get_hex(*str++);
-  } else {
-    while (*str && ParseRules::is_digit(*str))
-      num = (num * 10) + (*str++ - '0');
-#if USE_SI_MULTILIERS
-    if (*str) {
-      if (*str == 'K')
-        num = num * (1LL << 10);
-      else if (*str == 'M')
-        num = num * (1LL << 20);
-      else if (*str == 'G')
-        num = num * (1LL << 30);
-      else if (*str == 'T')
-        num = num * (1LL << 40);
-    }
-#endif
-  }
-  return num;
+  if (val > INT_MAX)
+    return INT_MAX;
+  else
+    return static_cast<int>(val);
 }
 
 #endif /* #if !defined (_ParseRules_h_) */

@@ -58,7 +58,7 @@ void TSPluginInit(int argc, const char *argv[])
 
     info.plugin_name = (char *)"libloader";
     info.vendor_name = (char *)"Apache Software Foundation";
-    info.support_email = (char *)"users@trafficserver.apache.org";
+    info.support_email = (char *)"dev@trafficserver.apache.org";
 
     if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
         TSError("[libloader] Plugin registration failed.\n");

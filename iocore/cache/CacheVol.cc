@@ -32,7 +32,7 @@ Action *
 Cache::scan(Continuation * cont, char *hostname, int host_len, int KB_per_second)
 {
   Debug("cache_scan_truss", "inside scan");
-  if (!CACHE_READY(CACHE_FRAG_TYPE_HTTP)) {
+  if (!CacheProcessor::IsCacheReady(CACHE_FRAG_TYPE_HTTP)) {
     cont->handleEvent(CACHE_EVENT_SCAN_FAILED, 0);
     return ACTION_RESULT_DONE;
   }

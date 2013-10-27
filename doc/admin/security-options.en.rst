@@ -101,24 +101,11 @@ Server connections only**.
 
 The figure above depicts the following:
 
-# The client sends an HTTPS request for content. Traffic
-Server receives the request and performs the SSL 'handshake' to
-authenticate the client (depending on the authentication options
-configured) and determine the encryption method that will be used. If
-the client is allowed access, then Traffic Server checks its cache for
-the requested content.
+#. The client sends an HTTPS request for content. Traffic Server receives the request and performs the SSL 'handshake' to authenticate the client (depending on the authentication options configured) and determine the encryption method that will be used. If the client is allowed access, then Traffic Server checks its cache for the requested content.  
 
-# If the request is a cache hit and the content is fresh, then
-Traffic Server encrypts the content and sends it to the client. The
-client decrypts the content (using the method determined during the
-handshake) and displays it.
+#. If the request is a cache hit and the content is fresh, then Traffic Server encrypts the content and sends it to the client. The client decrypts the content (using the method determined during the handshake) and displays it.
 
-# If the request is a cache miss or cached content is stale,
-then Traffic Server communicates with the origin server via HTTP and
-obtains a plain text version of the content. Traffic Server saves the
-plain text version of the content in its cache, encrypts the content,
-and sends it to the client. The client decrypts and displays the
-content.
+#. If the request is a cache miss or cached content is stale, then Traffic Server communicates with the origin server via HTTP and obtains a plain text version of the content. Traffic Server saves the plain text version of the content in its cache, encrypts the content, and sends it to the client. The client decrypts and displays the content.
 
 To configure Traffic Server to use the SSL termination option for
 client/Traffic Server connections, you must do the following:

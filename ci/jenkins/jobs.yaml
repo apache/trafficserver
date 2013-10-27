@@ -28,14 +28,13 @@
     name: linux-regression
     builders:
         - shell: |
-            git clean -d -f -x -q
             mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
-            autoreconf -fi
+            ( cd "${WORKSPACE}/src" && git clean -dfxq  && autoreconf -fi )
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export DEB_BUILD_HARDENING
-            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -49,17 +48,16 @@
     name: linux-clang-regression
     builders:
         - shell: |
-            git clean -d -f -x -q
             mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
-            autoreconf -fi
+            ( cd "${WORKSPACE}/src" && git clean -dfxq  && autoreconf -fi )
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export CC=clang
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -75,13 +73,12 @@
     name: bsd-regression
     builders:
         - shell: |
-            git clean -d -f -x -q
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
-            autoreconf -fi
+            ( cd "${WORKSPACE}/src" && git clean -dfxq  && autoreconf -fi )
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
-            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_DEBUG
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_DEBUG
             gmake -j2 V=1
             gmake check
             gmake install
@@ -95,10 +92,9 @@
     name: 'omnios-regression'
     builders:
         - shell: |
-            git clean -d -f -x -q
             mkdir -p "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"
             mkdir -p "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
-            autoreconf -fi
+            ( cd "${WORKSPACE}/src" && git clean -dfxq  && autoreconf -fi )
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export PATH=/sbin:~/bin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/omni/bin:/opt/gcc-4.6.3/bin/:/usr/ucb:/usr/ccs/bin:/usr/sfw/bin:/usr/dt/bin:/usr/openwin/bin
@@ -109,7 +105,7 @@
             export CXXFLAGS=-m64
             export CPPFLAGS=-I/opt/omni/include
             export LDFLAGS="-L/opt/omni/lib/amd64 -R/opt/omni/lib/amd64"
-            "${WORKSPACE}"/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             gmake -j2 V=1
             gmake check
             gmake install
@@ -145,6 +141,7 @@
     scm:
         - git:
             url: '{repo}'
+            basedir: 'src'
             branches:
                 - '{branch}'
     builders:
@@ -176,6 +173,7 @@
     scm:
         - git:
             url: '{repo}'
+            basedir: 'src'
             branches:
                 - '{branch}'
     builders:
@@ -777,5 +775,48 @@
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4.0
+
+- project:
+    name: mac-os-x
+    node: mac_os_x
+    builder: linux
+    tag: normal
+    wccp: --enable-wccp
+    debug: --disable-debug
+    hardening: '0'
+    experimental: ''
+    jobs:
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            tag: debug
+            debug: --enable-debug
+            repo: file:///Users/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
+            branch: master
+            repo: file:///Users/jenkins/git/trafficserver
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            repo: file:///Users/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
+            branch: 3.2.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///Users/jenkins/git/trafficserver_3.2
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            repo: file:///Users/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///Users/jenkins/git/trafficserver_4.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 5.0.x
+            repo: file:///Users/jenkins/git/trafficserver_5.0
+        - '{node}-{branch}-{tag}-regression':
+            branch: 5.0.x
+            tag: debug
+            debug: --enable-debug
+            repo: file:///Users/jenkins/git/trafficserver_5.0
 
 # vim: sw=4 ts=4 et ft=yaml :

@@ -126,6 +126,7 @@ public:
   //
   virtual int marshal_transfer_time_ms(char *); // INT
   virtual int marshal_transfer_time_s(char *);  // INT
+  virtual int marshal_file_size(char *); // INT
 
   //
   // named fields from within a http header
