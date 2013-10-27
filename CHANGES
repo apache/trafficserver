@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2265] Remove unused log tags for prob, prcb and cgid.
+
   *) [TS-2301] Replace the CACHE_READY macro with CacheProcessor::IsCacheReady.
 
   *) [TS-2300] Remove the HIT_EVACUATE build option.
