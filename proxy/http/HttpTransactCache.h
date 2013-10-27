@@ -40,10 +40,10 @@ class CacheLookupHttpConfig
 public:
   bool cache_global_user_agent_header;  // 'global' user agent flag (don't need to marshal/unmarshal)
   bool cache_enable_default_vary_headers;
-  bool ignore_accept_mismatch;
-  bool ignore_accept_language_mismatch;
-  bool ignore_accept_encoding_mismatch;
-  bool ignore_accept_charset_mismatch;
+  unsigned ignore_accept_mismatch;
+  unsigned ignore_accept_language_mismatch;
+  unsigned ignore_accept_encoding_mismatch;
+  unsigned ignore_accept_charset_mismatch;
   char *cache_vary_default_text;
   char *cache_vary_default_images;
   char *cache_vary_default_other;
@@ -55,10 +55,10 @@ public:
   CacheLookupHttpConfig():
     cache_global_user_agent_header(false),
     cache_enable_default_vary_headers(false),
-    ignore_accept_mismatch(false),
-    ignore_accept_language_mismatch(false),
-    ignore_accept_encoding_mismatch(false),
-    ignore_accept_charset_mismatch(false),
+    ignore_accept_mismatch(0),
+    ignore_accept_language_mismatch(0),
+    ignore_accept_encoding_mismatch(0),
+    ignore_accept_charset_mismatch(0),
     cache_vary_default_text(NULL), cache_vary_default_images(NULL), cache_vary_default_other(NULL)
   { }
 

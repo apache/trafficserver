@@ -1523,10 +1523,10 @@ HttpConfig::reconfigure()
   params->oride.cache_urls_that_look_dynamic = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
   params->cache_enable_default_vary_headers = INT_TO_BOOL(m_master.cache_enable_default_vary_headers);
 
-  params->ignore_accept_mismatch = INT_TO_BOOL(m_master.ignore_accept_mismatch);
-  params->ignore_accept_language_mismatch = INT_TO_BOOL(m_master.ignore_accept_language_mismatch);
-  params->ignore_accept_encoding_mismatch = INT_TO_BOOL(m_master.ignore_accept_encoding_mismatch);
-  params->ignore_accept_charset_mismatch = INT_TO_BOOL(m_master.ignore_accept_charset_mismatch);
+  params->ignore_accept_mismatch = m_master.ignore_accept_mismatch;
+  params->ignore_accept_language_mismatch = m_master.ignore_accept_language_mismatch;
+  params->ignore_accept_encoding_mismatch = m_master.ignore_accept_encoding_mismatch;
+  params->ignore_accept_charset_mismatch = m_master.ignore_accept_charset_mismatch;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->cache_when_to_add_no_cache_to_msie_requests = m_master.cache_when_to_add_no_cache_to_msie_requests;

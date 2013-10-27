@@ -1061,45 +1061,76 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 0
    :reloadable:
 
-   When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Type:`` header that does not match the ``Accept:``
-   header of the request.
+   When with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Type:`` header that does not match the ``Accept:`` header of the
+   request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
-
-      This option should only be enabled if you're having
-      problems with caching *and* one of the following is true:
-
-      -  Your origin server sets ``Vary: Accept`` when doing content negotiation with ``Accept`` *OR*
-      -  The server does not send a ``406 (Not Acceptable)`` response for types that it cannot serve.
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept`` or doesn't respond with ``406 (Not Acceptable)``,
+      you can also enable this configuration with a ``1`.
+     
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 0
    :reloadable:
 
-   When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Language:`` header that does not match the
-   ``Accept-Language:`` header of the request.
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Language:`` header that does not match the ``Accept-Language:``
+   header of the request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
 
-      This option should only be enabled if you're having
-      problems with caching and your origin server is guaranteed to set
-      ``Vary: Accept-Language`` when doing content negotiation with
-      ``Accept-Language``.
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept-Language`` or doesn't respond with ``406 (Not Acceptable)``,
+      you can also enable this configuration with a ``1`.
+
+
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 0
+   :reloadable:
+
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Encoding:`` header that does not match the ``Accept-Encoding:``
+   header of the request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
+
+   .. note::
+
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept-Encoding`` or doesn't respond with ``406 (Not Acceptable)``
+      you can also enable this configuration with a ``1`.
+
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 0
    :reloadable:
 
-   When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Type:`` header that does not match the
-   ``Accept-Charset:`` header of the request.
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Type:`` header that does not match the ``Accept-Charset:`` header
+   of the request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
 
-      This option should only be enabled if you're having problems with caching and your origin server is
-      guaranteed to set ``Vary: Accept-Charset`` when doing content negotiation with ``Accept-Charset``.
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept-Charset`` or doesn't respond with ``406 (Not Acceptable)``,
+      you can also enable this configuration with a ``1`.
+
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
    :reloadable:
 
-   When enabled (``1``), Traffic Server ignores any ``Cache-Control:  max-age`` headers from the client.
+   When enabled (``1``), Traffic Server ignores any ``Cache-Control:
+   max-age`` headers from the client. This technically violates the HTTP RFC,
+   but avoids a problem where a client can forcefully invalidate a cached object.
 
 .. ts:cv:: CONFIG proxy.config.cache.max_doc_size INT 0
 
