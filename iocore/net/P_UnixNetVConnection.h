@@ -182,7 +182,7 @@ public:
     (void) state;
   }
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
-  virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf);
+  virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf, int &needs);
   void readDisable(NetHandler *nh);
   void readSignalError(NetHandler *nh, int err);
   int readSignalDone(int event, NetHandler *nh);

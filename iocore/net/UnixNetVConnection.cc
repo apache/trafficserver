@@ -384,7 +384,10 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       nh->read_ready_list.remove(vc);
       vc->write.triggered = 0;
       nh->write_ready_list.remove(vc);
-      write_reschedule(nh, vc);
+      if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT)
+        read_reschedule(nh, vc);
+      else
+        write_reschedule(nh, vc);
     } else if (ret == EVENT_DONE) {
       vc->write.triggered = 1;
       if (vc->write.enabled)
@@ -438,7 +441,8 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   }
 
   int64_t total_wrote = 0, wattempted = 0;
-  int64_t r = vc->load_buffer_and_write(towrite, wattempted, total_wrote, buf);
+  int needs = 0;
+  int64_t r = vc->load_buffer_and_write(towrite, wattempted, total_wrote, buf, needs);
 
   // if we have already moved some bytes successfully, summarize in r
   if (total_wrote != wattempted) {
@@ -451,8 +455,16 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   if (r <= 0) {                 // if the socket was not ready,add to WaitList
     if (r == -EAGAIN || r == -ENOTCONN) {
       NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_nodata_stat, 1);
-      vc->write.triggered = 0;
-      nh->write_ready_list.remove(vc);
+      if((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
+        vc->write.triggered = 0;
+        nh->write_ready_list.remove(vc);
+        write_reschedule(nh, vc);
+      }
+      if((needs & EVENTIO_READ) == EVENTIO_READ) {
+        vc->read.triggered = 0;
+        nh->read_ready_list.remove(vc);
+        read_reschedule(nh, vc);
+      }
       return;
     }
     if (!r || r == -ECONNRESET) {
@@ -487,13 +499,18 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         write_reschedule(nh, vc);
         return;
       }
-      if (s->vio.ntodo() <= 0 || !buf.reader()->read_avail()) {
-        write_disable(nh, vc);
-        return;
-      }
+    }
+    if (!buf.reader()->read_avail()) {
+      write_disable(nh, vc);
+      return;
     }
 
-    write_reschedule(nh, vc);
+    if((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
+      write_reschedule(nh, vc);
+    }
+    if((needs & EVENTIO_READ) == EVENTIO_READ) {
+      read_reschedule(nh, vc);
+    }
     return;
   }
 }
@@ -823,7 +840,7 @@ UnixNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 // (SSL read does not support overlapped i/o)
 // without duplicating all the code in write_to_net.
 int64_t
-UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf)
+UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf, int &needs)
 {
   int64_t r = 0;
 
@@ -867,6 +884,8 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
     ProxyMutex *mutex = thread->mutex;
     NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_stat, 1);
   } while (r == wattempted && total_wrote < towrite);
+
+  needs |= EVENTIO_WRITE;
 
   return (r);
 }
