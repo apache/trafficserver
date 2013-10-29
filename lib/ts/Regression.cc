@@ -179,12 +179,15 @@ rprintf(RegressionTest *t, const char *format, ...)
 {
   int l;
   char buffer[8192];
-  char format2[8192];
-  snprintf(format2, sizeof(format2), "RPRINT %s: %s", t->name, format);
+
+  snprintf(buffer, sizeof(buffer), "RPRINT %s: ", t->name);
+  fputs(buffer, stderr);
+
   va_list ap;
   va_start(ap, format);
-  l = ink_bvsprintf(buffer, format2, ap);
+  l = vsnprintf(buffer, sizeof(buffer), format, ap);
   va_end(ap);
+
   fputs(buffer, stderr);
   return (l);
 }
