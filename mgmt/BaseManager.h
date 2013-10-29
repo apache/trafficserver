@@ -63,6 +63,7 @@
 #define MGMT_EVENT_HTTP_CLUSTER_DELTA    10007
 #define MGMT_EVENT_ROLL_LOG_FILES        10008
 #define MGMT_EVENT_LIBRECORDS            10009
+#define MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION   10010
 
 /***********************************************************************
  *

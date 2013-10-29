@@ -164,17 +164,7 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
       }
 
       currentVersion = highestSeen + 1;
-
-      // Try again stating the file.  It really ought to be there since
-      //   we just went through a load trouble to put it there
-      // But if we can not get it, just give up, assume the error
-      //   is transient and use the current time
-      if (statFile(ACTIVE_VERSION, &fileInfo) < 0) {
-        fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
-      } else {
-        fileLastModified = (time(NULL) - ink_timezone()) * 1000000000;
-      }
-
+      setLastModifiedTime();
     } else {
       // If is there but we can not stat it, it is unusable to manager
       //   probably due to permissions problems.  Bail!
@@ -389,19 +379,19 @@ Rollback::closeFile(int fd)
 
 
 RollBackCodes
-Rollback::updateVersion(textBuffer * buf, version_t basedOn, version_t newVersion, bool notifyChange)
+Rollback::updateVersion(textBuffer * buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
 {
   RollBackCodes returnCode;
 
   this->acquireLock();
-  returnCode = this->updateVersion_ml(buf, basedOn, newVersion, notifyChange);
+  returnCode = this->updateVersion_ml(buf, basedOn, newVersion, notifyChange, incVersion);
   this->releaseLock();
 
   return returnCode;
 }
 
 RollBackCodes
-Rollback::updateVersion_ml(textBuffer * buf, version_t basedOn, version_t newVersion, bool notifyChange)
+Rollback::updateVersion_ml(textBuffer * buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
 {
 
   RollBackCodes returnCode;
@@ -409,7 +399,7 @@ Rollback::updateVersion_ml(textBuffer * buf, version_t basedOn, version_t newVer
   if (basedOn != currentVersion) {
     returnCode = VERSION_NOT_CURRENT_ROLLBACK;
   } else {
-    returnCode = internalUpdate(buf, newVersion, notifyChange);
+    returnCode = internalUpdate(buf, newVersion, notifyChange, incVersion);
   }
 
   return returnCode;
@@ -440,7 +430,7 @@ Rollback::forceUpdate_ml(textBuffer * buf, version_t newVersion)
 //  Creates a version from buf.  Callee must be holding the lock
 //
 RollBackCodes
-Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChange)
+Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChange, bool incVersion)
 {
   RollBackCodes returnCode;
   char *activeVersion;
@@ -448,7 +438,6 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
   char *nextVersion;
   int writeBytes;
   int diskFD;
-  struct stat fileInfo;
   versionInfo *toRemove;
   versionInfo *newBak;
   bool failedLink = false;
@@ -460,6 +449,9 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
   //   is telling us to use the next version in squence
   if (newVersion < 0) {
     newVersion = this->currentVersion + 1;
+    if (incVersion) {
+      incVersion = false;  //because the version already increment
+    }
   } else {
     // We need to make sure that the specified version is valid
     //  We can NOT go back in time to a smaller version number
@@ -522,16 +514,7 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
     goto UPDATE_CLEANUP;
   }
 
-  // Now we need to get the modification time off of the new active file
-  if (statFile(ACTIVE_VERSION, &fileInfo) >= 0) {
-    fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
-  } else {
-    // We really shoudn't fail to stat the file since we just
-    //  created it.  If we do, just punt and just use the current
-    //  time.
-    fileLastModified = (time(NULL) - ink_timezone()) * 1000000000;
-  }
-
+  setLastModifiedTime();
   // Check to see if we need to delete an excess backup versions
   //
   //  We subtract one from numVersions to exclude the active
@@ -563,8 +546,9 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
   returnCode = OK_ROLLBACK;
 
   // Post the change to the config file manager
-  if (notifyChange)
-    configFiles->fileChanged(fileName);
+  if (notifyChange) {
+    configFiles->fileChanged(fileName, incVersion);
+  }
 
 UPDATE_CLEANUP:
 
@@ -960,6 +944,24 @@ Rollback::statVersion(version_t version, struct stat *buf)
   ink_mutex_release(&fileAccessLock);
 
   return r;
+}
+
+bool
+Rollback::setLastModifiedTime()
+{
+  struct stat fileInfo;
+
+  // Now we need to get the modification time off of the new active file
+  if (statFile(ACTIVE_VERSION, &fileInfo) >= 0) {
+    fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
+    return true;
+  } else {
+    // We really shoudn't fail to stat the file since we just
+    //  created it.  If we do, just punt and just use the current
+    //  time.
+    fileLastModified = (time(NULL) - ink_timezone()) * 1000000000;
+    return false;
+  }
 }
 
 // bool Rollback::checkForUserUpdate()

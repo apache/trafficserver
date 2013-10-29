@@ -102,23 +102,36 @@ sync_thr(void *data)
 {
   textBuffer *tb = NEW(new textBuffer(65536));
   Rollback *rb;
+  bool inc_version;
+  bool written;
 
   while (1) {
     send_push_message();
     RecSyncStatsFile();
-    if (RecSyncConfigToTB(tb) == REC_ERR_OKAY) {
+    if (RecSyncConfigToTB(tb, &inc_version) == REC_ERR_OKAY) {
+      written = false;
       if (configFiles->getRollbackObj(REC_CONFIG_FILE, &rb)) {
-        RecDebug(DL_Note, "Rollback: '%s'", REC_CONFIG_FILE);
-        version_t ver = rb->getCurrentVersion();
-        if ((rb->updateVersion(tb, ver, -1, false)) != OK_ROLLBACK) {
-          RecDebug(DL_Note, "Rollback failed: '%s'", REC_CONFIG_FILE);
+        if (inc_version) {
+          RecDebug(DL_Note, "Rollback: '%s'", REC_CONFIG_FILE);
+          version_t ver = rb->getCurrentVersion();
+          if ((rb->updateVersion(tb, ver, -1, false)) != OK_ROLLBACK) {
+            RecDebug(DL_Note, "Rollback failed: '%s'", REC_CONFIG_FILE);
+          }
+          written = true;
         }
-      } else {
+      }
+      else {
+        rb = NULL;
+      }
+      if (!written) {
         int nbytes;
         RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
         RecHandle h_file = RecFileOpenW(g_rec_config_fpath);
         RecFileWrite(h_file, tb->bufPtr(), tb->spaceUsed(), &nbytes);
         RecFileClose(h_file);
+        if (rb != NULL) {
+          rb->setLastModifiedTime();
+        }
       }
     }
     usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);

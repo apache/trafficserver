@@ -295,8 +295,7 @@ drainIncomingChannel(void *arg)
               stat = false;
               mgmt_log(stderr, "[drainIncomingChannel] Failed file req: %s v: %d\n", fname, ver);
             } else {
-              mgmt_log(stderr,
-                       "[drainIncomingChannel] file req: %s v: %d bytes: %d\n", fname, ver, strlen(buff->bufPtr()));
+              Debug("ccom", "[drainIncomingChannel] file req: %s v: %d bytes: %d\n", fname, ver, (int)strlen(buff->bufPtr()));
             }
           } else {
             mgmt_elog("[drainIncomingChannel] Error file req: %s ver: %d\n", fname, ver);
@@ -1224,7 +1223,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
           }
         }
 
-        if (!file_update_failure && (rb->updateVersion(reply, our_ver, ver) != OK_ROLLBACK)) {
+        if (!file_update_failure && (rb->updateVersion(reply, our_ver, ver, true, false) != OK_ROLLBACK)) {
           file_update_failure = true;
         }
 
@@ -2361,7 +2360,7 @@ checkBackDoor(int req_fd, char *message)
       return false;
     }
     // TODO: I think this is correct, it used to do lmgmt->record_data-> ...
-    if (RecSetRecordConvert(variable, value) == REC_ERR_OKAY) {
+    if (RecSetRecordConvert(variable, value, true, false) == REC_ERR_OKAY) {
       ink_strlcpy(reply, "\nRecord Updated\n\n", sizeof(reply));
       mgmt_writeline(req_fd, reply, strlen(reply));
     } else {

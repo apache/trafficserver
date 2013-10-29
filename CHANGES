@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2292] the version of records.config increases unexpectly.
+   Author: Yu Qing
+
   *) [TS-2277] cluster alarm messages broadcast infinitely.
    Author: Yu Qing
 

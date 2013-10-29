@@ -41,7 +41,7 @@
 
 class Rollback;
 
-typedef void (*FileCallbackFunc) (char *);
+typedef void (*FileCallbackFunc) (char *, bool);
 
 struct callbackListable
 {
@@ -115,7 +115,7 @@ public:
   void addFile(const char *baseFileName, bool root_access_needed);
   bool getRollbackObj(const char *baseFileName, Rollback ** rbPtr);
   void registerCallback(FileCallbackFunc func);
-  void fileChanged(const char *baseFileName);
+  void fileChanged(const char *baseFileName, bool incVersion);
   textBuffer *filesManaged();
   void rereadConfig();
   //SnapResult takeSnap(const char* snapName);

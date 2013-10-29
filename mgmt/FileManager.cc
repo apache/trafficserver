@@ -223,7 +223,7 @@ FileManager::getRollbackObj(const char *baseFileName, Rollback ** rbPtr)
 //
 //
 void
-FileManager::fileChanged(const char *baseFileName)
+FileManager::fileChanged(const char *baseFileName, bool incVersion)
 {
 
   callbackListable *cb;
@@ -236,7 +236,7 @@ FileManager::fileChanged(const char *baseFileName)
     // Dup the string for each callback to be
     //  defensive incase it modified when it is not supposed to be
     filenameCopy = ats_strdup(baseFileName);
-    (*cb->func) (filenameCopy);
+    (*cb->func) (filenameCopy, incVersion);
     ats_free(filenameCopy);
   }
   ink_mutex_release(&cbListLock);
@@ -767,7 +767,7 @@ FileManager::rereadConfig()
   int enabled = (int) REC_readInteger("proxy.config.body_factory.enable_customizations",
                                       &found);
   if (found && enabled) {
-    fileChanged("proxy.config.body_factory.template_sets_dir");
+    fileChanged("proxy.config.body_factory.template_sets_dir", true);
   }
 }
 

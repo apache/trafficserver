@@ -312,6 +312,7 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr * mh)
     signalMgmtEntity(MGMT_EVENT_HTTP_CLUSTER_DELTA, data_raw);
     break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
+  case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:
     /*
       librecords -- we don't do anything in here because we are traffic_server
       and we are not the owner of proxy.config.* variables.

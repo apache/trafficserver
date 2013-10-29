@@ -991,7 +991,7 @@ printUsage()
 }                               /* End printUsage */
 
 void
-fileUpdated(char *fname)
+fileUpdated(char *fname, bool incVersion)
 {
   if (strcmp(fname, "cluster.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cluster.cluster_configuration");
@@ -1003,7 +1003,7 @@ fileUpdated(char *fname)
     lmgmt->signalFileChange("proxy.config.socks.socks_config_file");
 
   } else if (strcmp(fname, "records.config") == 0) {
-    lmgmt->signalFileChange("records.config");
+    lmgmt->signalFileChange("records.config", incVersion);
 
   } else if (strcmp(fname, "cache.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.control.filename");
