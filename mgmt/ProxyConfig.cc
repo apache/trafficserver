@@ -105,7 +105,7 @@ public:
   {
     configProcessor.release(m_id, m_info);
     delete this;
-    return 0;
+    return EVENT_DONE;
   }
 
 public:
@@ -221,6 +221,36 @@ enum {
 
 struct RegressionConfig : public ConfigInfo
 {
+  static volatile int nobjects; // count of outstanding RegressionConfig objects (not-reentrant)
+
+  // DeferredCall is a simple function call wrapper that defers itself until the RegressionConfig
+  // object count drops below the specified count.
+  template <typename CallType>
+  struct DeferredCall : public Continuation
+  {
+    DeferredCall(int _r, CallType _c) : remain(_r), call(_c) {
+      SET_HANDLER(&DeferredCall::handleEvent);
+    }
+
+    int handleEvent(int event, Event * e) {
+      if (RegressionConfig::nobjects > this->remain) {
+        e->schedule_in(HRTIME_MSECONDS(500));
+        return EVENT_CONT;
+      }
+
+      call();
+      delete this;
+      return EVENT_DONE;
+    }
+
+    int       remain; // Number of remaining RegressionConfig objects to wait for.
+    CallType  call;
+  };
+
+  template <typename CallType>
+  static void defer(int count, CallType call) {
+      eventProcessor.schedule_in(NEW(new RegressionConfig::DeferredCall<CallType>(count, call)), HRTIME_MSECONDS(500));
+  }
 
   RegressionConfig(RegressionTest * r, int * ps, unsigned f)
       : test(r), pstatus(ps), flags(f) {
@@ -228,6 +258,8 @@ struct RegressionConfig : public ConfigInfo
       TestBox box(this->test, this->pstatus);
       box.check(this->refcount() == 1, "invalid refcount %d (should be 1)", this->refcount());
     }
+
+    ink_atomic_increment(&nobjects, 1);
   }
 
   ~RegressionConfig() {
@@ -240,8 +272,10 @@ struct RegressionConfig : public ConfigInfo
     if (REGRESSION_CONFIG_LAST & flags) {
       *this->pstatus = REGRESSION_TEST_PASSED;
     } else {
-      box.check(*this->pstatus == REGRESSION_TEST_INPROGRESS, "intermediate config out of sequence");
+      box.check(*this->pstatus == REGRESSION_TEST_INPROGRESS, "intermediate config out of sequence, *pstatus is %d", *pstatus);
     }
+
+    ink_atomic_increment(&nobjects, -1);
   }
 
   RegressionTest * test;
@@ -249,31 +283,68 @@ struct RegressionConfig : public ConfigInfo
   unsigned  flags;
 };
 
+volatile int RegressionConfig::nobjects = 0;
+
+struct ProxyConfig_Set_Completion
+{
+  ProxyConfig_Set_Completion(int _id, RegressionConfig * _c)
+    : configid(_id), config(_c) {
+  }
+
+  void operator() (void) const {
+    // Push one more RegressionConfig to force the LAST-tagged one to get destroyed.
+    rprintf(config->test, "setting LAST config object %p\n", config);
+    configProcessor.set(configid, config, 1);
+  }
+
+  int configid;
+  RegressionConfig * config;
+};
+
 // Test that ConfigProcessor::set() correctly releases the old ConfigInfo after a timeout.
-REGRESSION_TEST(ProxyConfig_Set)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
+EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Set)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
 {
   int configid = 0;
+
   *pstatus = REGRESSION_TEST_INPROGRESS;
-  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
-  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
-  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
-  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_LAST), 2);
+  RegressionConfig::nobjects = 0;
 
-  // Push one more RegressionConfig to force the tagged one to
-  // get destroyed.
-  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, 0), 4);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_LAST), 1);
 
-  return;
+  // Wait until there's only 2 objects remaining, the one in ConfigProcessor, and the one we make here.
+  RegressionConfig::defer(2, ProxyConfig_Set_Completion(configid, new RegressionConfig(test, pstatus, 0)));
 }
+
+struct ProxyConfig_Release_Completion
+{
+  ProxyConfig_Release_Completion(int _id, RegressionConfig * _c)
+    : configid(_id), config(_c) {
+  }
+
+  void operator() (void) const {
+    // Release the reference count. Since we were keeping this alive, it should be the last to die.
+    configProcessor.release(configid, config);
+  }
+
+  int configid;
+  RegressionConfig * config;
+};
 
 // Test that ConfigProcessor::release() correctly releases the old ConfigInfo across an implicit
 // release timeout.
-REGRESSION_TEST(ProxyConfig_Release)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
+EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Release)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
 {
   int configid = 0;
   RegressionConfig * config;
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
+  RegressionConfig::nobjects = 0;
 
   // Set an initial config, then get it back to hold a reference count.
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_LAST), 1);
@@ -284,10 +355,11 @@ REGRESSION_TEST(ProxyConfig_Release)(RegressionTest * test, int /* atype ATS_UNU
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
 
-  sleep(2);
+  configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, 0), 1);
 
-  // Release the reference count. Since we were keeping this alive, it should be the last to die.
-  configProcessor.release(configid, config);
+  // Defer the release of the object that we held back until there are only 2 left. The one we are holding
+  // and the one in the ConfigProcessor. Then releasing the one we hold will trigger the LAST check
+  RegressionConfig::defer(2, ProxyConfig_Release_Completion(configid, config));
 }
 
 #endif /* TS_HAS_TESTS */
