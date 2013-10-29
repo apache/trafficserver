@@ -15,7 +15,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=AsyncTimer.so
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = AsyncTimer.la

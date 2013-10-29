@@ -94,7 +94,7 @@ private:
   char big_buffer_14kb_[14*1024];
 };
 
-void TSPluginInit(int argc, const char *argv[]) {
+void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   // Create a new logger
   // This will create a log file with the name logger_example.log (since we left off
   //    the extension it will automatically add .log)

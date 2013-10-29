@@ -62,7 +62,7 @@ public:
    */
   AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms = 0);
 
-  ~AsyncTimer();
+  virtual ~AsyncTimer();
 
   /**
    * Starts the timer.

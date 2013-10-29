@@ -120,6 +120,7 @@ bool Headers::checkAndInitHeaders() const {
               state_->hdr_loc_);
     return false;
   }
+
   state_->name_values_map_.getValueRef().clear();
   string key;
   const char *name;

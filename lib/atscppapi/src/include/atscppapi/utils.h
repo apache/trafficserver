@@ -30,6 +30,10 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 
+#ifndef ATSCPPAPI_UNUSED
+#define ATSCPPAPI_UNUSED __attribute__ ((unused))
+#endif
+
 namespace atscppapi {
 namespace utils {
 

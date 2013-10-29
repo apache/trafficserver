@@ -65,7 +65,7 @@ private:
 
 namespace {
 
-int handlePostRemap(TSCont cont, TSEvent event, void *edata) {
+int handlePostRemap(TSCont cont ATSCPPAPI_UNUSED, TSEvent event ATSCPPAPI_UNUSED, void *edata) {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
   TSMBuffer hdr_buf;
   TSMLoc hdr_loc, field_loc;
@@ -86,7 +86,7 @@ int handlePostRemap(TSCont cont, TSEvent event, void *edata) {
 
 }
 
-void TSPluginInit(int argc, const char *argv[]) {
+void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   int do_overwrite = 1;
   setenv(utils::DISABLE_DATA_CACHING_ENV_FLAG.c_str(), "true", do_overwrite);
 
