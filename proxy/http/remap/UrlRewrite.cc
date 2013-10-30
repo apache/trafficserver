@@ -487,6 +487,34 @@ parse_deactivate_directive(const char * directive, BUILD_TABLE_INFO * bti, char 
   return NULL;
 }
 
+struct remap_directive
+{
+  const char * name;
+  const char * (*parser)(const char *, BUILD_TABLE_INFO *, char *, size_t);
+};
+
+static const remap_directive directives[] = {
+
+  { ".definefilter", parse_define_directive},
+  { ".deffilter", parse_define_directive},
+  { ".defflt", parse_define_directive},
+
+  { ".deletefilter", parse_delete_directive},
+  { ".delfilter", parse_delete_directive},
+  { ".delflt", parse_delete_directive},
+
+  { ".usefilter", parse_activate_directive},
+  { ".activefilter", parse_activate_directive},
+  { ".activatefilter", parse_activate_directive},
+
+  { ".unusefilter", parse_deactivate_directive},
+  { ".deactivatefilter", parse_deactivate_directive},
+  { ".unactivefilter", parse_deactivate_directive},
+  { ".deuseflt", parse_deactivate_directive},
+  { ".unuseflt", parse_deactivate_directive},
+
+};
+
 static const char *
 parse_directive(BUILD_TABLE_INFO *bti, char * errbuf, size_t errbufsize)
 {
@@ -498,30 +526,15 @@ parse_directive(BUILD_TABLE_INFO *bti, char * errbuf, size_t errbufsize)
     return "Invalid argument(s)";
   }
 
-  Debug("url_rewrite", "[parse_directive] Start processing \"%s\" directive", directive);
-
-  if (directive[0] != '.' || directive[1] == 0) {
-    snprintf(errbuf, errbufsize, "Invalid directive \"%s\"", directive);
-    Debug("url_rewrite", "[parse_directive] %s", errbuf);
-    return (const char *) errbuf;
+  for (unsigned i = 0; i < countof(directives); ++i) {
+    if (strcmp(directive, directives[i].name) == 0) {
+      return directives[i].parser(directive, bti, errbuf, errbufsize);
+    }
   }
 
-  if (is_inkeylist(directive, ".definefilter", ".deffilter", ".defflt", NULL)) {
-    return parse_define_directive(&directive[1], bti, errbuf, errbufsize);
-  } else if (is_inkeylist(directive, ".deletefilter", ".delfilter", ".delflt", NULL)) {
-    return parse_delete_directive(directive, bti, errbuf, errbufsize);
-  } else if (is_inkeylist(directive, ".usefilter", ".activefilter", ".activatefilter", ".useflt", NULL)) {
-    return parse_activate_directive(directive, bti, errbuf, errbufsize);
-  } else if (is_inkeylist(directive, ".unusefilter", ".deactivatefilter", ".unactivefilter", ".deuseflt", ".unuseflt", NULL))
-  {
-    return parse_deactivate_directive(directive, bti, errbuf, errbufsize);
-  } else {
-    snprintf(errbuf, errbufsize, "Unknown directive \"%s\"", directive);
-    Debug("url_rewrite", "[parse_directive] %s", errbuf);
-    return (const char *) errbuf;
-  }
-
-  return NULL;
+  snprintf(errbuf, errbufsize, "Unknown directive \"%s\"", directive);
+  Debug("url_rewrite", "[parse_directive] %s", errbuf);
+  return (const char *) errbuf;
 }
 
 static const char *
