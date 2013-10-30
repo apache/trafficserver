@@ -1,7 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
- *) [TS-1955] Range: requests during read-while-writer gets the wrong
+
+  *) [TS-2322] Set PCRE malloc hooks globally.
+
+  *) [TS-1955] Range: requests during read-while-writer gets the wrong
   Content-Length.
 
   *) [TS-2245] This adds a '2' config state to the ignore mismatch configs.

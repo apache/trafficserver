@@ -1292,6 +1292,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
   mcheck_pedantic(NULL);
 #endif
 
+  pcre_malloc = ats_malloc;
+  pcre_free = ats_free;
+
   // Verify system dependent 'constants'
   check_system_constants();
 

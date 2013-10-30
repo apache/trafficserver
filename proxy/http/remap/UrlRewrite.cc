@@ -527,11 +527,9 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
 
   if (0 == this->BuildTable()) {
     _valid = true;
-    pcre_malloc = &ats_malloc;
-    pcre_free = &ats_free;
-
-    if (is_debug_tag_set("url_rewrite"))
+    if (is_debug_tag_set("url_rewrite")) {
       Print();
+    }
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
