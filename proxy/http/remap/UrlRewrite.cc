@@ -83,19 +83,6 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 
   new_mapping->homePageRedirect = (from_path && !to_path) ? true : false;
 }
-/**
-  Cleanup *char[] array - each item in array must be allocated via
-  ats_malloc or similar "x..." function.
-
-*/
-static void
-clear_xstr_array(char *v[], int vsize)
-{
-  if (v && vsize > 0) {
-    for (int i = 0; i < vsize; i++)
-      v[i] = (char *)ats_free_null(v[i]);
-  }
-}
 
 static const char *
 process_filter_opt(url_mapping *mp, BUILD_TABLE_INFO *bti, char *errStrBuf, int errStrBufSize)
@@ -687,7 +674,6 @@ UrlRewrite::BuildTable()
   ink_assert(num_rules_redirect_temporary == 0);
   ink_assert(num_rules_forward_with_recv_port == 0);
 
-  memset(&bti, 0, sizeof(bti));
 
   forward_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
   reverse_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
@@ -695,17 +681,9 @@ UrlRewrite::BuildTable()
   temporary_redirects.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
   forward_mappings_with_recv_port.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
 
-  bti.paramc = (bti.argc = 0);
-  memset(bti.paramv, 0, sizeof(bti.paramv));
-  memset(bti.argv, 0, sizeof(bti.argv));
-
   if (!this->_parseRemapConfigFile(config_file_path, &bti)) {
     // XXX handle file reload error
   }
-
-  clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));
-  clear_xstr_array(bti.argv, sizeof(bti.argv) / sizeof(char *));
-  bti.paramc = (bti.argc = 0);
 
   // Add the mapping for backdoor urls if enabled.
   // This needs to be before the default PAC mapping for ""
@@ -806,9 +784,7 @@ UrlRewrite::_parseRemapConfigFile(const char * config_file_path, BUILD_TABLE_INF
 
   for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != NULL;) {
     errStrBuf[0] = 0;
-    clear_xstr_array(bti->paramv, sizeof(bti->paramv) / sizeof(char *));
-    clear_xstr_array(bti->argv, sizeof(bti->argv) / sizeof(char *));
-    bti->paramc = (bti->argc = 0);
+    bti->reset();
 
     // Strip leading whitespace
     while (*cur_line && isascii(*cur_line) && isspace(*cur_line))

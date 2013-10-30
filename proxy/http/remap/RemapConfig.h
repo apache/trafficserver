@@ -41,12 +41,23 @@
 
 struct BUILD_TABLE_INFO
 {
+  BUILD_TABLE_INFO();
+  ~BUILD_TABLE_INFO();
+
   unsigned long remap_optflg;
   int paramc;
   int argc;
   char *paramv[BUILD_TABLE_MAX_ARGS];
   char *argv[BUILD_TABLE_MAX_ARGS];
   acl_filter_rule *rules_list;  // all rules defined in config files as .define_filter foobar @src_ip=.....
+
+  // Clear the argument vector.
+  void reset();
+
+private:
+  BUILD_TABLE_INFO(const BUILD_TABLE_INFO&); // disabled
+  BUILD_TABLE_INFO& operator=(const BUILD_TABLE_INFO&); // disabled
+
 };
 
 const char *

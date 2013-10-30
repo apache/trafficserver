@@ -25,6 +25,39 @@
 #include "libts.h"
 #include "HTTP.h"
 
+/**
+  Cleanup *char[] array - each item in array must be allocated via
+  ats_malloc or similar "x..." function.
+
+*/
+static void
+clear_xstr_array(char *v[], size_t vsize)
+{
+  for (unsigned i = 0; i < vsize; i++) {
+    v[i] = (char *)ats_free_null(v[i]);
+  }
+}
+
+BUILD_TABLE_INFO::BUILD_TABLE_INFO()
+  : remap_optflg(0), paramc(0), argc(0)
+{
+  memset(this->paramv, 0, sizeof(this->paramv));
+  memset(this->argv, 0, sizeof(this->argv));
+}
+
+BUILD_TABLE_INFO::~BUILD_TABLE_INFO()
+{
+  this->reset();
+}
+
+void
+BUILD_TABLE_INFO::reset()
+{
+  this->paramc = this->argc = 0;
+  clear_xstr_array(this->paramv, sizeof(this->paramv) / sizeof(char *));
+  clear_xstr_array(this->argv, sizeof(this->argv) / sizeof(char *));
+}
+
 static bool
 is_inkeylist(const char * key, ...)
 {
@@ -49,7 +82,6 @@ is_inkeylist(const char * key, ...)
   va_end(ap);
   return false;
 }
-
 
 static const char *
 parse_define_directive(const char * directive, BUILD_TABLE_INFO * bti, char * errbuf, size_t errbufsize)
