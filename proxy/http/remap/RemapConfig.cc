@@ -28,34 +28,22 @@
 static bool
 is_inkeylist(const char * key, ...)
 {
-  unsigned i;
   va_list ap;
 
   if (unlikely(key == NULL || key[0] == '\0')) {
     return false;
   }
 
-  char tmpkey[512];
   va_start(ap, key);
 
-  for (i = 0; i < (sizeof(tmpkey) - 2) && (tmpkey[i] = *key++) != 0;) {
-    if (tmpkey[i] != '_' && tmpkey[i] != '.') {
-      i++;
+  const char *str = va_arg(ap, const char *);
+  for (unsigned idx = 1; str; idx++) {
+    if (!strcasecmp(key, str)) {
+      va_end(ap);
+      return true;
     }
-  }
 
-  tmpkey[i] = 0;
-
-  if (tmpkey[0]) {
-    const char *str = va_arg(ap, const char *);
-    for (unsigned idx = 1; str; idx++) {
-      if (!strcasecmp(tmpkey, str)) {
-        va_end(ap);
-        return true;
-      }
-
-      str = va_arg(ap, const char *);
-    }
+    str = va_arg(ap, const char *);
   }
 
   va_end(ap);
