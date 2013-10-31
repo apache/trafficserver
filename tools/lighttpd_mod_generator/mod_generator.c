@@ -245,6 +245,26 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
   // get the size in bytes form the url
   int64_t bytes = strtoll(start, &end, 10);
 
+  switch (*end) {
+  case 'k':
+  case 'K':
+    bytes *= 1024;
+    ++end;
+    break;
+  case 'm':
+  case 'M':
+    bytes *= 1024*1024;
+    ++end;
+    break;
+  case 'g':
+  case 'G':
+    bytes *= 1024*1024*1024;
+    ++end;
+    break;
+  default:
+    break;
+  }
+
   if (start == end && bytes <= 0 && *start != '-') {
     log_error_write(srv, __FILE__, __LINE__,  "s", "can't find size in bytes");
     return HANDLER_GO_ON;
