@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2302] Log collation causes error logging to stop.
+
   *) [TS-2200] TS_HRTIME_xxx in experimental.h is invalid to use.
    Author: Yu Qing
 
@@ -17,7 +19,7 @@ Changes with Apache Traffic Server 4.1.0
   *) [TS-2276] manager memory leak in some case.
    Author: Yu Qing
 
-  *( [TS-1638] less strict on kernel version checking in clustering.
+  *) [TS-1638] less strict on kernel version checking in clustering.
    Author: Yu Qing
 
   *) [TS-2265] Remove unused log tags for prob, prcb and cgid.
