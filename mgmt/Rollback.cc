@@ -81,9 +81,9 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
   }
 
   if ((err = stat(system_config_directory, &s)) < 0) {
-    mgmt_elog("[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n",
+    mgmt_elog(0, "[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n",
               system_config_directory, err, errno, strerror(errno));
-    mgmt_elog("[Rollback::Rollback] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+    mgmt_elog(0, "[Rollback::Rollback] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
     _exit(1);
   }
 
@@ -157,7 +157,7 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
           ats_free(alarmMsg);
           closeFile(fd);
         } else {
-          mgmt_fatal(stderr,
+          mgmt_fatal(stderr, 0,
                      "[RollBack::Rollback] Unable to find configuration file %s.\n\tCreation of a placeholder failed : %s\n",
                      fileName, strerror(errno));
         }
@@ -168,7 +168,7 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
     } else {
       // If is there but we can not stat it, it is unusable to manager
       //   probably due to permissions problems.  Bail!
-      mgmt_fatal(stderr, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n",
+      mgmt_fatal(stderr, 0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n",
                  fileName, strerror(errno));
     }
   } else {

@@ -523,7 +523,7 @@ Alarms::execAlarmBin(const char *desc)
   if ((pid = fork1()) < 0)
 #endif
   {
-    mgmt_elog(stderr, "[Alarms::execAlarmBin] Unable to fork1 process\n");
+    mgmt_elog(stderr, errno, "[Alarms::execAlarmBin] Unable to fork1 process\n");
   } else if (pid > 0) {         /* Parent */
     // INKqa11769
     bool script_done = false;

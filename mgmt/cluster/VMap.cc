@@ -116,7 +116,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
     int len;
 
     if ((tmp_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-      mgmt_fatal(stderr, "[VMap::VMap] Unable to create socket for interface ioctls\n");
+      mgmt_fatal(stderr, errno, "[VMap::VMap] Unable to create socket for interface ioctls\n");
     }
     // INKqa06739
     // Fetch the list of network interfaces
@@ -131,7 +131,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
       ifc.ifc_buf = ifbuf;
       if (ioctl(tmp_socket, SIOCGIFCONF, &ifc) < 0) {
         if (errno != EINVAL || lastlen != 0) {
-          mgmt_fatal(stderr, "[VMap::VMap] Unable to read network interface configuration\n");
+          mgmt_fatal(stderr, errno, "[VMap::VMap] Unable to read network interface configuration\n");
         }
       } else {
         if (ifc.ifc_len == lastlen) {
@@ -273,7 +273,7 @@ VMap::lt_runGambit()
         ink_strlcpy(raddr, inet_ntoa(real_addr), sizeof(raddr));
         rl_remote_map(vaddr, raddr);
       } else if (!rl_map(vaddr)) {      /* We are the winner, map it to us */
-        mgmt_elog(stderr, "[VMap::lt_runGambit] Map failed for vaddr: %s\n", vaddr);
+        mgmt_elog(stderr, 0, "[VMap::lt_runGambit] Map failed for vaddr: %s\n", vaddr);
       } else {
         mgmt_log(stderr, "[VMap::lt_runGambit] Map succeeded for vaddr: %s\n", vaddr);
       }
@@ -379,7 +379,7 @@ VMap::lt_readAListFile(char *data)
                  " virtual ips\n", tmp_interface);
       }
     } else {
-      mgmt_elog(stderr, "[VMap::lt_readAListFile] VIP in config file but no interface"
+      mgmt_elog(stderr, 0, "[VMap::lt_readAListFile] VIP in config file but no interface"
                 " '%s' present on node.\n", tmp_interface);
     }
   }
@@ -455,7 +455,7 @@ VMap::rl_remote_map(char *virt_ip, char *real_ip)
 
   snprintf((char *) buf, sizeof(buf), "map: %s", virt_ip);
   if (!(lmgmt->ccom->sendReliableMessage(inet_addr(real_ip), buf, strlen(buf), reply, 4096, false))) {
-    mgmt_elog(stderr, "[VMap::rl_remote_map] Reliable send failed\n");
+    mgmt_elog(stderr, errno, "[VMap::rl_remote_map] Reliable send failed\n");
     return false;
   } else if (strcmp(reply, "map: failed") == 0) {
     mgmt_log(stderr, "[VMap::rl_remote_map] Mapping failed\n");
@@ -477,7 +477,7 @@ VMap::rl_remote_unmap(char *virt_ip, char *real_ip)
 
   snprintf((char *) buf, sizeof(buf), "unmap: %s", virt_ip);
   if (!(lmgmt->ccom->sendReliableMessage(inet_addr(real_ip), buf, strlen(buf), reply, 4096, false))) {
-    mgmt_elog(stderr, "[VMap::rl_remote_unmap] Reliable send failed\n");
+    mgmt_elog(stderr, errno, "[VMap::rl_remote_unmap] Reliable send failed\n");
     return false;
   } else if (strcmp((char *) reply, "unmap: failed") == 0) {
     mgmt_log(stderr, "[VMap::rl_remote_unmap] Mapping failed\n");
@@ -518,7 +518,7 @@ VMap::rl_map(char *virt_ip, char *real_ip)
   *entry = true;
 
   if (!real_ip) {
-    mgmt_elog("[VMap::rl_map] no real ip associated with virtual ip %s, mapping to local\n", buf);
+    mgmt_elog(0, "[VMap::rl_map] no real ip associated with virtual ip %s, mapping to local\n", buf);
     last_map_change = time(NULL);
   }
   ink_hash_table_insert(tmp, buf, (void *) entry);
@@ -593,7 +593,7 @@ VMap::rl_checkConflict(char *virt_ip)
       buf++;
       ink_strlcpy(buf2, buf, sizeof(buf2));
     } else {
-      mgmt_fatal(stderr, "[VMap::rl_checkConflict] Corrupt VMap entry('%s'), bailing\n", key);
+      mgmt_fatal(stderr, 0, "[VMap::rl_checkConflict] Corrupt VMap entry('%s'), bailing\n", key);
     }
     return ats_strdup(buf2);
   }
@@ -754,7 +754,7 @@ VMap::rl_boundTo(char *virt_ip)
         buf++;
         ink_strlcpy(buf2, buf, sizeof(buf2));
       } else {
-        mgmt_fatal(stderr, "[VMap::rl_boundTo] Corrupt VMap entry('%s'), bailing\n", key);
+        mgmt_fatal(stderr, 0, "[VMap::rl_boundTo] Corrupt VMap entry('%s'), bailing\n", key);
       }
       return (inet_addr(buf2));
     }

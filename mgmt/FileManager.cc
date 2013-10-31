@@ -67,7 +67,7 @@ FileManager::FileManager()
   ink_mutex_init(&cbListLock, "File Changed Callback Mutex");
 
   if (varStrFromName("proxy.config.config_dir", configTmp, sizeof(configTmp)) == false) {
-    mgmt_fatal(stderr,
+    mgmt_fatal(stderr, 0,
                "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
   }
   if (configTmp[0] != '/') {
@@ -77,9 +77,9 @@ FileManager::FileManager()
   if (access(configTmp, R_OK) == -1) {
     ink_strlcpy(configTmp, system_config_directory,sizeof(configTmp));
     if (access(configTmp, R_OK) == -1) {
-        mgmt_elog("[FileManager::FileManager] unable to access() directory '%s': %d, %s\n",
+        mgmt_elog(0, "[FileManager::FileManager] unable to access() directory '%s': %d, %s\n",
                 mgmt_path, errno, strerror(errno));
-        mgmt_elog("[FileManager::FileManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+        mgmt_elog(0, "[FileManager::FileManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
         _exit(1);
     }
   }
@@ -98,7 +98,7 @@ FileManager::FileManager()
   if (access(snapshotDir, F_OK) == -1) {
     if (mkdir(snapshotDir, DIR_MODE) < 0) {
       // Failed to create the snapshot directory
-      mgmt_fatal(stderr, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", snapshotDir, strerror(errno));
+      mgmt_fatal(stderr, 0, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", snapshotDir, strerror(errno));
     }
   }
 }
@@ -349,7 +349,7 @@ FileManager::abortRestore(const char *abortTo)
 
     currentVersion = bind->rb->getCurrentVersion();
     if (bind->rb->revertToVersion_ml(currentVersion - 1) != OK_ROLLBACK) {
-      mgmt_fatal(stderr,
+      mgmt_fatal(stderr, 0,
                  "[FileManager::abortRestore] Unable to abort a failed snapshot restore.  Configuration files have been left in a inconsistent state\n");
     }
   }
@@ -708,7 +708,7 @@ FileManager::WalkSnaps(ExpandingArray * snapList)
   //ink_assert(found);
 
   if (varStrFromName("proxy.config.config_dir", config_dir, 256) == false) {
-    mgmt_fatal(stderr,
+    mgmt_fatal(stderr, 0,
                "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
   }
 
