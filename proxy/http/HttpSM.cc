@@ -6538,6 +6538,11 @@ HttpSM::update_stats()
 
   ink_hrtime total_time = milestones.sm_finish - milestones.sm_start;
 
+  // ua_close will not be assigned properly in some exceptional situation.
+  // TODO: Assign ua_close with situable value when HttpTunnel terminates abnormally.
+  if (milestones.ua_close == 0 && milestones.ua_read_header_done > 0)
+    milestones.ua_close = ink_get_hrtime();
+
   // request_process_time  = The time after the header is parsed to the completion of the transaction
   ink_hrtime request_process_time = milestones.ua_close - milestones.ua_read_header_done;
 

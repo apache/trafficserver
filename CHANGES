@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2247] ua close time in milestone may not set.
+   Author: Gang Li
+
   *) [TS-2302] Log collation causes error logging to stop.
 
   *) [TS-2200] TS_HRTIME_xxx in experimental.h is invalid to use.
