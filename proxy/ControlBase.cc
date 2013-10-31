@@ -364,6 +364,38 @@ void TextMod::set(const char * value) {
   this->text.set(ats_strdup(value), strlen(value));
 }
 
+struct MultiTextMod : public ControlBase::Modifier {
+  Vec<ts::Buffer> text_vec;
+  MultiTextMod();
+  ~MultiTextMod();
+
+  // Copy the value to the MultiTextMod buffer.
+  void set(char * value);
+
+  // Calls name() which the subclass must provide.
+  virtual void print(FILE* f) const;
+};
+
+MultiTextMod::MultiTextMod() {}
+MultiTextMod::~MultiTextMod() {
+  text_vec.clear();
+}
+
+void MultiTextMod::print(FILE* f) const {
+  for_Vec(ts::Buffer, text_iter, this->text_vec)
+    fprintf(f, "%s=%*s ", this->name(),static_cast<int>(text_iter.size()),text_iter.data());
+}
+
+void MultiTextMod::set(char * value) {
+  Tokenizer rangeTok(",");
+  int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
+  for(int i = 0; i < num_tok; i++){
+    ts::Buffer text(0);
+    text.set(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
+    this->text_vec.push_back(text);
+  }
+}
+
 // ----------
 struct MethodMod : public TextMod {
   static char const * const NAME;
@@ -429,7 +461,7 @@ PrefixMod::make(char * value, char const ** /* error ATS_UNUSED */) {
 }
 
 // ----------
-struct SuffixMod : public TextMod {
+struct SuffixMod : public MultiTextMod {
   static char const * const NAME;
 
   virtual Type type() const;
@@ -443,9 +475,13 @@ char const * SuffixMod::name() const { return NAME; }
 bool SuffixMod::check(HttpRequestData* req) const {
   int path_len;
   char const* path = req->hdr->url_get()->path_get(&path_len);
-  return path_len >= static_cast<int>(text.size())
-    && 0 == strncasecmp(path + path_len - text.size(), text.data(), text.size())
-    ;
+  if(1 == static_cast<int>(this->text_vec.count()) && 1 == static_cast<int>(this->text_vec[0].size()) && 0 == strcmp(this->text_vec[0].data(),"*"))
+    return true;
+  for_Vec(ts::Buffer, text_iter, this->text_vec){
+    if (path_len >= static_cast<int>(text_iter.size()) && 0 == strncasecmp(path + path_len - text_iter.size(), text_iter.data(), text_iter.size()))
+      return true;
+  }
+  return false;
 }
 SuffixMod*
 SuffixMod::make(char * value, char const ** /* error ATS_UNUSED */) {

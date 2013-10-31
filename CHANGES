@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2208] Cache control with multiple suffixes.
+    Author: bettydramit <b13621367396@gmail.com>
+
   *) [TS-2247] ua close time in milestone may not set.
    Author: Gang Li
 
