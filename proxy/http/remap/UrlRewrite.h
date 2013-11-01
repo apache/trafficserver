@@ -52,9 +52,10 @@ enum mapping_type
 class UrlRewrite
 {
 public:
-  UrlRewrite(const char *file_var_in);
+  UrlRewrite();
   ~UrlRewrite();
-  int BuildTable();
+
+  int BuildTable(const char * path);
   mapping_type Remap_redirect(HTTPHdr * request_header, URL *redirect_url);
   bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
@@ -160,8 +161,6 @@ public:
   int default_to_pac;
   int default_to_pac_port;
 
-  char config_file_path[PATH_NAME_MAX];
-  char *file_var;
   char *ts_name;                // Used to send redirects when no host info
 
   char *http_default_redirect_url;      // Used if redirect in "referer" filtering was not defined properly

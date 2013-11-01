@@ -33,6 +33,7 @@
 #include "api/ts/remap.h"
 #include "UrlMappingPathIndex.h"
 #include "RemapConfig.h"
+#include "I_Layout.h"
 
 #include "ink_string.h"
 
@@ -60,9 +61,9 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 //
 // CTOR / DTOR for the UrlRewrite class.
 //
-UrlRewrite::UrlRewrite(const char *file_var_in)
+UrlRewrite::UrlRewrite()
  : nohost_rules(0), reverse_proxy(0), backdoor_enabled(0),
-   mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), file_var(NULL), ts_name(NULL),
+   mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), ts_name(NULL),
    http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
    num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0), _valid(false)
 {
@@ -71,14 +72,10 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
     permanent_redirects.hash_lookup = temporary_redirects.hash_lookup =
     forward_mappings_with_recv_port.hash_lookup = NULL;
 
-  char *config_file = NULL;
+  char * config_file = NULL;
+  char * config_file_path = NULL;
 
-  ink_assert(file_var_in != NULL);
-  this->file_var = ats_strdup(file_var_in);
-  config_file_path[0] = '\0';
-
-  REC_ReadConfigStringAlloc(config_file, file_var_in);
-
+  REC_ReadConfigStringAlloc(config_file, "proxy.config.url_remap.filename");
   if (config_file == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
     Warning("%s Unable to locate remap.config.  No remappings in effect", modulePrefix);
@@ -108,12 +105,9 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   REC_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
   REC_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
 
-  ink_strlcpy(config_file_path, system_config_directory, sizeof(config_file_path));
-  ink_strlcat(config_file_path, "/", sizeof(config_file_path));
-  ink_strlcat(config_file_path, config_file, sizeof(config_file_path));
-  ats_free(config_file);
+  config_file_path = Layout::relative_to(Layout::get()->sysconfdir, config_file);
 
-  if (0 == this->BuildTable()) {
+  if (0 == this->BuildTable(config_file_path)) {
     _valid = true;
     if (is_debug_tag_set("url_rewrite")) {
       Print();
@@ -121,11 +115,13 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
+
+  ats_free(config_file_path);
+  ats_free(config_file);
 }
 
 UrlRewrite::~UrlRewrite()
 {
-  ats_free(this->file_var);
   ats_free(this->ts_name);
   ats_free(this->http_default_redirect_url);
 
@@ -676,7 +672,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping * mapping, co
 
 */
 int
-UrlRewrite::BuildTable()
+UrlRewrite::BuildTable(const char * path)
 {
   BUILD_TABLE_INFO bti;
   url_mapping * new_mapping = NULL;
@@ -699,7 +695,7 @@ UrlRewrite::BuildTable()
   temporary_redirects.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
   forward_mappings_with_recv_port.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
 
-  if (!remap_parse_config(config_file_path, this)) {
+  if (!remap_parse_config(path, this)) {
     // XXX handle file reload error
     return 3;
   }
