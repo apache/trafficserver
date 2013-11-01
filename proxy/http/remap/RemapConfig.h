@@ -26,6 +26,8 @@
 
 #include "AclFiltering.h"
 
+class UrlRewrite;
+
 #define BUILD_TABLE_MAX_ARGS 2048
 
 // Remap inline options
@@ -62,11 +64,14 @@ private:
 
 const char *
 remap_parse_directive(BUILD_TABLE_INFO * bti, char * errbuf, size_t errbufsize);
-const char *
 
-remap_validate_filter_args(acl_filter_rule ** rule_pp, char ** argv, int argc, char * errStrBuf, size_t errStrBufSize);
+const char *
+remap_validate_filter_args(acl_filter_rule ** rule_pp, const char ** argv, int argc, char * errStrBuf, size_t errStrBufSize);
 
 unsigned long
-remap_check_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret_idx = NULL, char **argptr = NULL);
+remap_check_option(const char ** argv, int argc, unsigned long findmode = 0, int *_ret_idx = NULL, const char ** argptr = NULL);
+
+bool
+remap_parse_config(const char * path, UrlRewrite * rewrite);
 
 #endif /* REMAPCONFIG_H_E862FB4C_EFFC_4F2A_8BF2_9AB6E1E5E9CF */

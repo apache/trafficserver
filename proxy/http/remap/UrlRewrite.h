@@ -108,6 +108,10 @@ public:
     _destroyList(store.regex_list);
   }
 
+  bool InsertForwardMapping(mapping_type maptype, url_mapping * mapping, const char * src_host);
+  bool InsertMapping(mapping_type maptype, url_mapping *new_mapping, RegexMapping *reg_map,
+                        const char * src_host, bool is_cur_mapping_regex);
+
   bool TableInsert(InkHashTable *h_table, url_mapping *mapping, const char *src_host);
 
   MappingsStore forward_mappings;
@@ -147,9 +151,6 @@ public:
                           request_host_len, mapping_container);
   }
 
-  int load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *errbuf, int errbufsize, int jump_to_argc,
-                        int *plugin_found_at);
-
   int nohost_rules;
   int reverse_proxy;
   int backdoor_enabled;
@@ -173,7 +174,6 @@ public:
 private:
   bool _valid;
 
-  bool _parseRemapConfigFile(const char * path, BUILD_TABLE_INFO * bti);
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host,
                       int request_host_len, UrlMappingContainer &mapping_container);
   url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url, int request_port, char *request_host,
@@ -183,10 +183,9 @@ private:
                            UrlMappingContainer &mapping_container);
   int _expandSubstitutions(int *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
                            int dest_buf_size);
-  bool _processRegexMappingConfig(const char *from_host_lower, url_mapping *new_mapping, RegexMapping *reg_map);
   void _destroyTable(InkHashTable *h_table);
   void _destroyList(RegexMappingList &regexes);
-  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, char *src_host,
+  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, const char *src_host,
                           bool is_cur_mapping_regex, int &count);
 };
 
