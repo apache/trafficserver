@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2323] Implement a .include directive for remap.config.
+
   *) [TS-2322] Set PCRE malloc hooks globally.
 
   *) [TS-1955] Range: requests during read-while-writer gets the wrong

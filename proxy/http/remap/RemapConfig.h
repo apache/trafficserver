@@ -51,7 +51,9 @@ struct BUILD_TABLE_INFO
   int argc;
   char *paramv[BUILD_TABLE_MAX_ARGS];
   char *argv[BUILD_TABLE_MAX_ARGS];
+
   acl_filter_rule *rules_list;  // all rules defined in config files as .define_filter foobar @src_ip=.....
+  UrlRewrite *  rewrite;        // Pointer to the UrlRewrite object we are parsing for.
 
   // Clear the argument vector.
   void reset();

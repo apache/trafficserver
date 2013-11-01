@@ -24,11 +24,14 @@
 #include "RemapConfig.h"
 #include "UrlRewrite.h"
 #include "ReverseProxy.h"
+#include "I_Layout.h"
 #include "HTTP.h"
 #include "libts.h"
 #include "ink_cap.h"
 
 #define modulePrefix "[ReverseProxy]"
+
+static bool remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti);
 
 /**
   Returns the length of the URL.
@@ -70,7 +73,7 @@ clear_xstr_array(char *v[], size_t vsize)
 }
 
 BUILD_TABLE_INFO::BUILD_TABLE_INFO()
-  : remap_optflg(0), paramc(0), argc(0)
+  : remap_optflg(0), paramc(0), argc(0), rules_list(NULL), rewrite(NULL)
 {
   memset(this->paramv, 0, sizeof(this->paramv));
   memset(this->argv, 0, sizeof(this->argv));
@@ -230,6 +233,46 @@ parse_deactivate_directive(const char * directive, BUILD_TABLE_INFO * bti, char 
   return NULL;
 }
 
+static const char *
+parse_include_directive(const char * directive, BUILD_TABLE_INFO * bti, char * errbuf, size_t errbufsize)
+{
+
+  if (bti->paramc < 2) {
+    snprintf(errbuf, errbufsize, "Directive \"%s\" must have a path argument", directive);
+    Debug("url_rewrite", "[%s] %s", __func__, errbuf);
+    return (const char *) errbuf;
+  }
+
+  for (unsigned i = 1; i < bti->paramc; ++i) {
+    // We need to create a new bti so that we don't clobber any state in the parent parse, but we want
+    // to keep the ACL rules from the parent because ACLs must be global across the full set of config
+    // files.
+    BUILD_TABLE_INFO nbti;
+    char * path;
+    bool success;
+
+    nbti.rules_list = bti->rules_list;
+    nbti.rewrite = bti->rewrite;
+
+    // The included path is relative to SYSCONFDIR, just like remap.config is.
+    path = Layout::relative_to(Layout::get()->sysconfdir, bti->paramv[i]);
+
+    Debug("url_rewrite", "[%s] including remap configuration from %s", __func__, path);
+    success = remap_parse_config_bti(path, &nbti);
+
+    // The sub-parse might have updated the rules list, so push it up to the parent parse.
+    bti->rules_list = nbti.rules_list;
+    ats_free(path);
+
+    if (!success) {
+      snprintf(errbuf, errbufsize, "failed to parse included file %s", bti->paramv[i]);
+      return (const char *)errbuf;
+    }
+  }
+
+  return NULL;
+}
+
 struct remap_directive
 {
   const char * name;
@@ -256,6 +299,7 @@ static const remap_directive directives[] = {
   { ".deuseflt", parse_deactivate_directive},
   { ".unuseflt", parse_deactivate_directive},
 
+  { ".include", parse_include_directive },
 };
 
 const char *
@@ -834,10 +878,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   return false;
 }
 
-bool
-remap_parse_config(const char * path, UrlRewrite * rewrite)
+static bool
+remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
 {
-  BUILD_TABLE_INFO bti;
 
   char errBuf[1024], errStrBuf[1024];
   Tokenizer whiteTok(" \t");
@@ -880,7 +923,7 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
 
   for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != NULL;) {
     errStrBuf[0] = 0;
-    bti.reset();
+    bti->reset();
 
     // Strip leading whitespace
     while (*cur_line && isascii(*cur_line) && isspace(*cur_line))
@@ -912,24 +955,24 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
     for (int j = 0; j < tok_count; j++) {
       if (((char *) whiteTok[j])[0] == '@') {
         if (((char *) whiteTok[j])[1])
-          bti.argv[bti.argc++] = ats_strdup(&(((char *) whiteTok[j])[1]));
+          bti->argv[bti->argc++] = ats_strdup(&(((char *) whiteTok[j])[1]));
       } else {
-        bti.paramv[bti.paramc++] = ats_strdup((char *) whiteTok[j]);
+        bti->paramv[bti->paramc++] = ats_strdup((char *) whiteTok[j]);
       }
     }
 
     // Initial verification for number of arguments
-    if (bti.paramc<1 || (bti.paramc < 3 && bti.paramv[0][0] != '.') || bti.paramc> BUILD_TABLE_MAX_ARGS) {
+    if (bti->paramc<1 || (bti->paramc < 3 && bti->paramv[0][0] != '.') || bti->paramc> BUILD_TABLE_MAX_ARGS) {
       snprintf(errBuf, sizeof(errBuf), "%s Malformed line %d in file %s", modulePrefix, cln + 1, path);
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
     // just check all major flags/optional arguments
-    bti.remap_optflg = remap_check_option((const char **)bti.argv, bti.argc);
+    bti->remap_optflg = remap_check_option((const char **)bti->argv, bti->argc);
 
     // Check directive keywords (starting from '.')
-    if (bti.paramv[0][0] == '.') {
-      if ((errStr = remap_parse_directive(&bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
+    if (bti->paramv[0][0] == '.') {
+      if ((errStr = remap_parse_directive(bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
         snprintf(errBuf, sizeof(errBuf) - 1, "%s Error on line %d - %s", modulePrefix, cln + 1, errStr);
         errStr = errStrBuf;
         goto MAP_ERROR;
@@ -940,8 +983,8 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
       continue;
     }
 
-    is_cur_mapping_regex = (strncasecmp("regex_", bti.paramv[0], 6) == 0);
-    type_id_str = is_cur_mapping_regex ? (bti.paramv[0] + 6) : bti.paramv[0];
+    is_cur_mapping_regex = (strncasecmp("regex_", bti->paramv[0], 6) == 0);
+    type_id_str = is_cur_mapping_regex ? (bti->paramv[0] + 6) : bti->paramv[0];
 
     // Check to see whether is a reverse or forward mapping
     if (!strcasecmp("reverse_map", type_id_str)) {
@@ -949,8 +992,8 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
       maptype = REVERSE_MAP;
     } else if (!strcasecmp("map", type_id_str)) {
       Debug("url_rewrite", "[BuildTable] - %s",
-            ((bti.remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "FORWARD_MAP" : "FORWARD_MAP_REFERER");
-      maptype = ((bti.remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? FORWARD_MAP : FORWARD_MAP_REFERER;
+            ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? "FORWARD_MAP" : "FORWARD_MAP_REFERER");
+      maptype = ((bti->remap_optflg & REMAP_OPTFLG_MAP_WITH_REFERER) == 0) ? FORWARD_MAP : FORWARD_MAP_REFERER;
     } else if (!strcasecmp("redirect", type_id_str)) {
       Debug("url_rewrite", "[BuildTable] - PERMANENT_REDIRECT");
       maptype = PERMANENT_REDIRECT;
@@ -972,22 +1015,22 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
     new_mapping = NEW(new url_mapping(cln));  // use line # for rank for now
 
     // apply filter rules if we have to
-    if ((errStr = process_filter_opt(new_mapping, &bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
+    if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
       goto MAP_ERROR;
     }
 
     new_mapping->map_id = 0;
-    if ((bti.remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
+    if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
       char *c;
-      int ret = remap_check_option((const char **)bti.argv, bti.argc, REMAP_OPTFLG_MAP_ID, &idx);
+      int ret = remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        c = strchr(bti.argv[idx], (int) '=');
+        c = strchr(bti->argv[idx], (int) '=');
         new_mapping->map_id = (unsigned int) atoi(++c);
       }
     }
 
-    map_from = bti.paramv[1];
+    map_from = bti->paramv[1];
     length = UrlWhack(map_from, &origLength);
 
     // FIX --- what does this comment mean?
@@ -1009,7 +1052,7 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
       goto MAP_ERROR;
     }
 
-    map_to = bti.paramv[2];
+    map_to = bti->paramv[2];
     length = UrlWhack(map_to, &origLength);
     map_to_start = map_to;
     tmp = map_to;
@@ -1044,23 +1087,23 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
       goto MAP_ERROR;
     }
     // Check if a tag is specified.
-    if (bti.paramv[3] != NULL) {
+    if (bti->paramv[3] != NULL) {
       if (maptype == FORWARD_MAP_REFERER) {
-        new_mapping->filter_redirect_url = ats_strdup(bti.paramv[3]);
-        if (!strcasecmp(bti.paramv[3], "<default>") || !strcasecmp(bti.paramv[3], "default") ||
-            !strcasecmp(bti.paramv[3], "<default_redirect_url>") || !strcasecmp(bti.paramv[3], "default_redirect_url"))
+        new_mapping->filter_redirect_url = ats_strdup(bti->paramv[3]);
+        if (!strcasecmp(bti->paramv[3], "<default>") || !strcasecmp(bti->paramv[3], "default") ||
+            !strcasecmp(bti->paramv[3], "<default_redirect_url>") || !strcasecmp(bti->paramv[3], "default_redirect_url"))
           new_mapping->default_redirect_url = true;
-        new_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(bti.paramv[3]);
-        for (int j = bti.paramc; j > 4; j--) {
-          if (bti.paramv[j - 1] != NULL) {
+        new_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(bti->paramv[3]);
+        for (int j = bti->paramc; j > 4; j--) {
+          if (bti->paramv[j - 1] != NULL) {
             char refinfo_error_buf[1024];
             bool refinfo_error = false;
 
-            ri = NEW(new referer_info((char *) bti.paramv[j - 1], &refinfo_error, refinfo_error_buf,
+            ri = NEW(new referer_info((char *) bti->paramv[j - 1], &refinfo_error, refinfo_error_buf,
                                       sizeof(refinfo_error_buf)));
             if (refinfo_error) {
               snprintf(errBuf, sizeof(errBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s",
-                           modulePrefix, bti.paramv[j - 1], cln + 1, refinfo_error_buf);
+                           modulePrefix, bti->paramv[j - 1], cln + 1, refinfo_error_buf);
               SignalError(errBuf, alarm_already);
               delete ri;
               ri = 0;
@@ -1082,7 +1125,7 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
           }
         }
       } else {
-        new_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
+        new_mapping->tag = ats_strdup(&(bti->paramv[3][0]));
       }
     }
     // Check to see the fromHost remapping is a relative one
@@ -1164,11 +1207,11 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
             u_mapping->toUrl.create(NULL);
             u_mapping->toUrl.copy(&new_mapping->toUrl);
 
-            if (bti.paramv[3] != NULL) {
-              u_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
+            if (bti->paramv[3] != NULL) {
+              u_mapping->tag = ats_strdup(&(bti->paramv[3][0]));
             }
 
-            if (!rewrite->InsertForwardMapping(maptype, u_mapping, ipb)) {
+            if (!bti->rewrite->InsertForwardMapping(maptype, u_mapping, ipb)) {
               errStr = "Unable to add mapping rule to lookup table";
               freeaddrinfo(ai_records);
               goto MAP_ERROR;
@@ -1181,14 +1224,14 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
     }
 
     // Check "remap" plugin options and load .so object
-    if ((bti.remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 && (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER ||
+    if ((bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 && (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER ||
                                                           maptype == FORWARD_MAP_WITH_RECV_PORT)) {
-      if ((remap_check_option((const char **)bti.argv, bti.argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
+      if ((remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
         int plugin_found_at = 0;
         int jump_to_argc = 0;
 
         // this loads the first plugin
-        if (remap_load_plugin((const char **)bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at)) {
+        if (remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at)) {
           Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
           errStr = errStrBuf;
           goto MAP_ERROR;
@@ -1196,7 +1239,7 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
         //this loads any subsequent plugins (if present)
         while (plugin_found_at) {
           jump_to_argc += plugin_found_at;
-          if (remap_load_plugin((const char **)bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc, &plugin_found_at)) {
+          if (remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc, &plugin_found_at)) {
             Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
             errStr = errStrBuf;
             goto MAP_ERROR;
@@ -1206,7 +1249,7 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
     }
 
     // Now add the mapping to appropriate container
-    if (!rewrite->InsertMapping(maptype, new_mapping, reg_map, fromHost_lower, is_cur_mapping_regex)) {
+    if (!bti->rewrite->InsertMapping(maptype, new_mapping, reg_map, fromHost_lower, is_cur_mapping_regex)) {
       errStr = "Unable to add mapping rule to lookup table";
       goto MAP_ERROR;
     }
@@ -1222,8 +1265,17 @@ remap_parse_config(const char * path, UrlRewrite * rewrite)
     Warning("Could not add rule at line #%d; Aborting!", cln + 1);
     snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
-    return 2;
+    return false;
   }                             /* end of while(cur_line != NULL) */
 
   return true;
+}
+
+bool
+remap_parse_config(const char * path, UrlRewrite * rewrite)
+{
+    BUILD_TABLE_INFO bti;
+
+    bti.rewrite = rewrite;
+    return remap_parse_config_bti(path, &bti);
 }
