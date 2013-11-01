@@ -6532,12 +6532,11 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
         //   response content length in init_state_vars_from_response()
         if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED)
           break;
-      case SOURCE_CACHE:
 
+      case SOURCE_CACHE:
         // if we are doing a single Range: request, calculate the new
         // C-L: header
         if (s->range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
-          Debug("http_trans", "Partial content requested, re-calculating content-length");
           change_response_header_because_of_range_request(s,header);
           s->hdr_info.trust_response_cl = true;
         }
@@ -6554,13 +6553,18 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
           s->hdr_info.trust_response_cl = false;
         }
         break;
+
       case SOURCE_TRANSFORM:
-        if (s->hdr_info.transform_response_cl == HTTP_UNDEFINED_CL) {
+        if (s->range_setup == HttpTransact::RANGE_REQUESTED) {
+          change_response_header_because_of_range_request(s, header);
+          s->hdr_info.trust_response_cl = true;
+        } else if (s->hdr_info.transform_response_cl == HTTP_UNDEFINED_CL) {
           s->hdr_info.trust_response_cl = false;
         } else {
           s->hdr_info.trust_response_cl = true;
         }
         break;
+
       default:
         ink_release_assert(0);
         break;
@@ -6588,7 +6592,6 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
       else if (s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
         // if we are doing a single Range: request, calculate the new
         // C-L: header
-        Debug("http_trans", "Partial content requested, re-calculating content-length");
         change_response_header_because_of_range_request(s,header);
         s->hdr_info.trust_response_cl = true;
       }
@@ -8663,6 +8666,8 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
 {
   MIMEField *field;
   char *reason_phrase;
+
+  Debug("http_trans", "Partial content requested, re-calculating content-length");
 
   header->status_set(HTTP_STATUS_PARTIAL_CONTENT);
   reason_phrase = (char *) (http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));
