@@ -247,22 +247,31 @@ parse_include_directive(const char * directive, BUILD_TABLE_INFO * bti, char * e
     // We need to create a new bti so that we don't clobber any state in the parent parse, but we want
     // to keep the ACL rules from the parent because ACLs must be global across the full set of config
     // files.
-    BUILD_TABLE_INFO nbti;
-    char * path;
-    bool success;
-
-    nbti.rules_list = bti->rules_list;
-    nbti.rewrite = bti->rewrite;
+    BUILD_TABLE_INFO  nbti;
+    xptr<char>        path;
+    bool              success;
 
     // The included path is relative to SYSCONFDIR, just like remap.config is.
     path = Layout::relative_to(Layout::get()->sysconfdir, bti->paramv[i]);
 
-    Debug("url_rewrite", "[%s] including remap configuration from %s", __func__, path);
+    // XXX including directories is not supported (yet!).
+    if (ink_file_is_directory(path)) {
+      snprintf(errbuf, errbufsize, "included path %s is a directory", bti->paramv[i]);
+      return (const char *)errbuf;
+    }
+
+    nbti.rules_list = bti->rules_list;
+    nbti.rewrite = bti->rewrite;
+
+    // XXX at this point, we need to register the included file(s) with the management subsystem
+    // so that we can correctly reload them when they change. Otherwise, the operator will have to
+    // touch remap.config before reloading the configuration.
+
+    Debug("url_rewrite", "[%s] including remap configuration from %s", __func__, (const char *)path);
     success = remap_parse_config_bti(path, &nbti);
 
     // The sub-parse might have updated the rules list, so push it up to the parent parse.
     bti->rules_list = nbti.rules_list;
-    ats_free(path);
 
     if (!success) {
       snprintf(errbuf, errbufsize, "failed to parse included file %s", bti->paramv[i]);
