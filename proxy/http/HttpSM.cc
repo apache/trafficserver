@@ -637,8 +637,18 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   client_vc->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
   client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_active_timeout_in));
 
+  ++reentrancy_count;
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, NULL);
+  // This is another external entry point and it is possible for the state machine to get terminated
+  // while down the call chain from @c state_add_to_list. So we need to use the reentrancy_count to
+  // prevent cleanup there and do it here as we return to the external caller.
+  if (terminate_sm == true && reentrancy_count == 1) {
+    kill_this();
+  } else {
+    --reentrancy_count;
+    ink_assert(reentrancy_count >= 0);
+  }
 }
 
 
@@ -1701,11 +1711,7 @@ HttpSM::state_http_server_open(int event, void *data)
           );
       }
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE; // part of the problem, clear it.
-      if (ua_entry && ua_entry->vc) {
-        vc_table.cleanup_entry(ua_entry);
-        ua_entry = NULL;
-        ua_session = NULL;
-      }
+      terminate_sm = true;
     } else {
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
