@@ -109,8 +109,8 @@ represented by :cpp:class:`Dir`. Each entry refers to a chunk of contiguous stor
 variously as "fragments", "segments", "docs" / "documents", and a few other things. This document will use the term
 "fragment" as that is the most common reference in the code. The term "Doc" (for :cpp:class:`Doc`) will be used to refer
 to the header data for a fragment. Overall the directory is treated as a hash with a "cache ID" as the key. A cache ID
-is a 128 value generated in various ways depending on context. This key is reduced and used as an index in to the
-directory to locate an entry in the standard way.
+is a 128 bit (16 byte) value generated in various ways depending on context. This ID is reduced and used as an index in
+to the directory to locate an entry in the standard way.
 
 The directory is used as a memory resident structure which means a directory entry is as small as possible (currently 10
 bytes). This forces some compromises on the data that can be stored there. On the other hand this means that most cache
@@ -125,14 +125,16 @@ there is enough memory to run |TS| with an empty cache there is enough to run it
 .. figure:: images/cache-directory-structure.png
    :align: center
 
-Each entry stores the cache ID as the key, along with an offset in the stripe and a size. The size stored in the
-directory entry is an :ref:`approximate size <dir-size>` which is at least as big as the actual data. Exact size data is
-stored in the fragment header on disk.
+Each entry stores an offset in the stripe and a size. The size stored in the directory entry is an :ref:`approximate
+size <dir-size>` which is at least as big as the actual data. Exact size data is stored in the fragment header on disk.
 
 .. note::
 
    Data in HTTP headers cannot be examined without disk I/O. This includes the original URL for the object. The original
    source of the cache ID is not stored anywhere.
+
+.. _dir-segment:
+.. _dir-bucket:
 
 The entries in a directory are grouped. The first level grouping is a *bucket*. This is a fixed number (currently 4 -
 defined as ``DIR_DEPTH``) of entries. The index generated from a cache ID is used as a bucket index (not an entry index).
@@ -146,7 +148,12 @@ entries in a segment. Note that all segments in the same stripe will have the sa
 Each entry has a previous and next index value which is used to link the entries in the same segment. The index size is
 16 bits which suffices to index any entry in the same segment. The stripe header contains an array of entry indices
 which are used as the roots of a free list. When a stripe is initialized the first entry in each bucket is zeroed
-(marked unused) and all other entries are put in the corresponding segment free list rooted in the stripe header.
+(marked unused) and all other entries are put in the corresponding segment free list rooted in the stripe header. In
+essence the first element of each fixed bucket is used as a root for that bucket. The other entries in the fixed bucker
+are preferentially preferred for adding to that bucket but this is not required. The segment free lists are initialized
+such that the extra bucket entries are added in order - all the seconds, then the thirds, then the fourths. Because the
+free lists are FIFOs this means extra entries will be selected from the fourth entries across all the buckets first,
+then the thirds, etc. This maximizes locality for bucket searching.
 
 .. figure:: images/dir-bucket-assign.png
    :align: center
@@ -290,7 +297,12 @@ computed by::
 
 where ``next_key`` is a global function that deterministically computes a new cache key from an existing cache key.
 
-Objects with multiple fragments are laid out such that the data fragments (including the earliest ``Doc``) are written first and the first ``Doc`` is written last. When read from disk, both the first and earliest ``Doc`` are validated (tested to ensure that they haven't been overwritten by the write cursor) to verify that the entire document is present on disk (as they bookend the other fragments - the write cursor cannot overwrite them without overwriting at leastone of the verified ``Doc`` instances). Note that while the fragments of a single object are ordered they are not necessarily contiguous as data from different objects are interleaved as the data arrives in |TS|.
+Objects with multiple fragments are laid out such that the data fragments (including the earliest ``Doc``) are written
+first and the first ``Doc`` is written last. When read from disk, both the first and earliest ``Doc`` are validated
+(tested to ensure that they haven't been overwritten by the write cursor) to verify that the entire document is present
+on disk (as they bookend the other fragments - the write cursor cannot overwrite them without overwriting at leastone of
+the verified ``Doc`` instances). Note that while the fragments of a single object are ordered they are not necessarily
+contiguous as data from different objects are interleaved as the data arrives in |TS|.
 
 .. figure:: images/cache-multi-fragment.png
    :align: center
@@ -320,11 +332,21 @@ Some general observations on the data structures.
 Cyclone buffer
 --------------
 
-Because the cache is a cyclone cache objects are not preserved for an indefinite time. Even if the object is not stale it can be overwritten as the cache cycles through its volume. Marking an object as ``pinned`` preserves the object through the passage of the write cursor but this is done by copying the object across the gap, in effect re-storing it in the cache. Pinning large objects or a large number objects can lead to a excessive disk activity. The original purpose of pinning seems to have been for small, frequently used objects explicitly marked by the administrator.
+Because the cache is a cyclone cache objects are not preserved for an indefinite time. Even if the object is not stale
+it can be overwritten as the cache cycles through its volume. Marking an object as ``pinned`` preserves the object
+through the passage of the write cursor but this is done by copying the object across the gap, in effect re-storing it
+in the cache. Pinning large objects or a large number objects can lead to a excessive disk activity. The original
+purpose of pinning seems to have been for small, frequently used objects explicitly marked by the administrator.
 
-This means the purpose of expiration data on objects is simply to prevent them from being served to clients. They are not in the standard sense deleted or cleaned up. The space can't be immediately reclaimed in any event because writing only happens at the write cursor. Deleting an object consists only of removing the directory entries in the volume directory which suffices to (eventually) free the space and render the document inaccessible.
+This means the purpose of expiration data on objects is simply to prevent them from being served to clients. They are
+not in the standard sense deleted or cleaned up. The space can't be immediately reclaimed in any event because writing
+only happens at the write cursor. Deleting an object consists only of removing the directory entries in the volume
+directory which suffices to (eventually) free the space and render the document inaccessible.
 
-Historically the cache is designed this way because web content was relatively small and not particularly consistent. The design also provides high performance and low consistency requirements. There are no fragmentation issues for the storage, and both cache misses and object deletions require no disk I/O. It does not deal particularly well with long term storage of large objects. See the :ref:`volume tagging` appendix for details on some work in this area.
+Historically the cache is designed this way because web content was relatively small and not particularly consistent.
+The design also provides high performance and low consistency requirements. There are no fragmentation issues for the
+storage, and both cache misses and object deletions require no disk I/O. It does not deal particularly well with long
+term storage of large objects. See the :ref:`volume tagging` appendix for details on some work in this area.
 
 Disk Failure
 ------------
@@ -338,7 +360,7 @@ Restoring a disk to active duty is quite a bit more difficult task. Changing the
 Implementation Details
 ======================
 
-Volume Directory
+Stripe Directory
 ----------------
 
 .. _directory-entry:
@@ -353,18 +375,18 @@ The in memory volume directory entries are defined as described below.
    Name        Type                Use
    =========== =================== ===================================================
    offset      unsigned int:24     Offset of first byte of metadata (volume relative)
-   big         unsigned in:2       Offset multiplier
+   big         unsigned in:2       Size multiplier
    size        unsigned int:6      Size
    tag         unsigned int:12     Partial key (fast collision check)
    phase       unsigned int:1      Unknown
-   head        unsigned int:1      Flag: first segment in a document
+   head        unsigned int:1      Flag: first fragment in an object
    pinned      unsigned int:1      Flag: document is pinned
    token       unsigned int:1      Flag: Unknown
    next        unsigned int:16     Segment local index of next entry.
    offset_high inku16              High order offset bits
    =========== =================== ===================================================
 
-   The volume directory is an array of ``Dir`` instances. Each entry refers to a span in the volume which contains a cached object. Because every object in the cache has at least one directory entry this data has been made as small as possible.
+   The stripe directory is an array of ``Dir`` instances. Each entry refers to a span in the volume which contains a cached object. Because every object in the cache has at least one directory entry this data has been made as small as possible.
 
    The offset value is the starting byte of the object in the volume. It is 40 bits long split between the *offset* (lower 24 bits) and *offset_high* (upper 16 bits) members. Note that since there is a directory for every storage unit in a cache volume, this is the offset in to the slice of a storage unit attached to that volume.
 
@@ -384,14 +406,14 @@ The in memory volume directory entries are defined as described below.
 
    .. _big-mult:
 
-   ===== ===============   ===============
+   ===== ===============   ========================
    *big* Multiplier        Maximum Size
-   ===== ===============   ===============
+   ===== ===============   ========================
      0   512 (2^9)         32768 (2^15)
      1   4096 (2^12)       262144 (2^18)
      2   32768 (2^15)      2097152 (2^21)
      3   262144 (2^18)     16777216 (2^24)
-   ===== ===============   ===============
+   ===== ===============   ========================
 
    Note also that *size* is effectively offset by one, so a value of 0 indicates a single unit of the multiplier.
 
@@ -401,24 +423,63 @@ The target fragment size can set with the :file:`records.config` value
 
    ``proxy.config.cache.target_fragment_size``
 
-This value should be chosen so that it is a multiple of a :ref:`cache entry multiplier <big-mult>`. It is not necessary to make it a power of 2 [#]_. Larger fragments increase I/O efficiency but lead to more wasted space. The default size (1M, 2^20) is a reasonable choice in most circumstances altough in very specific cases there can be benefit from tuning this parameter. |TS| imposes an internal maximum of a 4194232 bytes which is 4M (2^22) less the size of a struct :cpp:class:`Doc`. In practice then the largest reasonable target fragment size is 4M - 262144 = 3932160.
+This value should be chosen so that it is a multiple of a :ref:`cache entry multiplier <big-mult>`. It is not necessary
+to make it a power of 2 [#]_. Larger fragments increase I/O efficiency but lead to more wasted space. The default size
+(1M, 2^20) is a reasonable choice in most circumstances altough in very specific cases there can be benefit from tuning
+this parameter. |TS| imposes an internal maximum of a 4194232 bytes which is 4M (2^22) less the size of a struct
+:cpp:class:`Doc`. In practice then the largest reasonable target fragment size is 4M - 262144 = 3932160.
 
-When a fragment is stored to disk the size data in the cache index entry is set to the finest granularity permitted by the size of the fragment. To determine this consult the :ref:`cache entry multipler <big-mult>` table, find the smallest maximum size that is at least as large as the fragment. That will indicate the value of *big* selected and therefore the granularity of the approximate size. That represents the largest possible amount of wasted disk I/O when the fragment is read from disk.
+When a fragment is stored to disk the size data in the cache index entry is set to the finest granularity permitted by
+the size of the fragment. To determine this consult the :ref:`cache entry multipler <big-mult>` table, find the smallest
+maximum size that is at least as large as the fragment. That will indicate the value of *big* selected and therefore the
+granularity of the approximate size. That represents the largest possible amount of wasted disk I/O when the fragment is
+read from disk.
 
-.. note:: The cache index entry size is used only for reading the fragment from disk. The actual size on disk, and the amount of cache space consumed, is the actual size of the content rounded up to the disk sector size (default 512 bytes).
+.. note:: The cache index entry size is used only for reading the fragment from disk. The actual size on disk, and the
+amount of cache space consumed, is the actual size of the content rounded up to the disk sector size (default 512
+bytes).
 
 .. index:: DIR_DEPTH, index segment, index buckets
 
-The set of index entries for a volume are grouped in to *segments*. The number of segments for an index is selected so that there are as few segments as possible such that no segment has more than 2^16 entries.  Intra-segment references can therefore use a 16 bit value to refer to any other entry in the segment.
+The set of index entries for a volume are grouped in to *segments*. The number of segments for an index is selected so
+that there are as few segments as possible such that no segment has more than 2^16 entries. Intra-segment references can
+therefore use a 16 bit value to refer to any other entry in the segment.
 
-Index entries in a segment are grouped *buckets* each of ``DIR_DEPTH`` (currently 4) entries. These are handled in the standard hash table way, giving somewhat less than 2^14 buckets per segment.
-
-Object Metadata
----------------
-
-The metadata for an object is stored in a :cpp:class:`Doc`.
+Index entries in a segment are grouped *buckets* each of ``DIR_DEPTH`` (currently 4) entries. These are handled in the
+standard hash table way, giving somewhat less than 2^14 buckets per segment.
 
 .. [#] The comment in :file:`records.config` is simply wrong.
+
+.. _dir-probe:
+
+Directory Probing
+-----------------
+
+Directory probing is locating a specific directory entry in the stripe directory based on a cache ID. This is handled
+primarily by the function :cpp:func:`dir_probe()`. This is passed the cache ID (:arg:`key`), a stripe (:arg:`d`), and a
+last collision (:arg:`last_collision`). The last of these is an in and out parameter, updated as useful during the
+probe.
+
+Given an ID, the top half (64 bits) is used as a :ref:`segment <dir-segment>` index, taken modulo the number of segments in
+the directory. The bottom half is used as a :ref:`bucket <dir-bucket>` index, taken modulo the number of buckets per
+segment. The :arg:`last_collision` value is used to mark the last matching entry returned by `dir_probe`.
+
+After computing the appropriate bucket, the entries in that bucket are searched to find a match. In this case a match is
+detected by comparison of the bottom 12 bits of the cache ID (the *cache tag*). The search starts at the base entry for
+the bucket and then proceeds via the linked list of entries from that first entry. If a tag match is found and there is
+no :arg:`collision` then that entry is returned and :arg:`last_collision` is updated to that entry. If :arg:`collision`
+is set, then if it isn't the current match the search continues down the linked list, otherwise :arg:`collision` is
+cleared and the search continues. The effect of this is that matches are skipped until the last returned match
+(:arg:`last_collision`) is found, after which the next match (if any) is returned. If the search falls off the end of
+the linked list then a miss result is returned (if no last collision), otherwise the probe is restarted after clearing
+the collision on the presumption that the entry for the collision has been removed from the bucket. This can lead to
+repeats among the returned values but guarantees that no valid entry will be skipped.
+
+Last collision can therefore be used to restart a probe at a later time. This is important because the match returned
+may not be the actual object - although the hashing of the cache ID to a bucket and the tag matching is unlikely to
+create false positives, that is possible. When a fragment is read the full cache ID is available and checked and if
+wrong, that read can be discarded and the next possible match from the directory found because the cache virtual
+connection tracks the last collision value.
 
 ----------------
 Cache Operations
@@ -487,11 +548,11 @@ There are three basic steps to a cache lookup.
 
    This is normally computed using the request URL but it can be overridden :ref:`by a plugin <cache-key>` . As far as I can tell the cache index string is not stored anywhere, it presumed computable from the client request header.
 
-#. The cache volume is determined (based on the cache key).
+#. The cache stripe is determined (based on the cache key).
 
    The cache key is used as a hash key in to an array of :cpp:class:`Vol` instances. The construction and arrangement of this array is the essence of how volumes are assigned.
 
-#. The cache volume directory is probed using the index key computed from the cache key.
+#. The cache stripe directory :ref:`is probed <dir-probe>` using the index key computed from the cache key.
 
    Various other lookaside directories are checked as well, such as the :ref:`aggregation buffer <aggregation-buffer>`.
 
@@ -675,6 +736,22 @@ Updates to the directory are done when the write for the evacuated fragment comp
 detected after the read completes for a fragment. If it is not the first fragment then the next fragment is marked for
 evacuation (which in turn, when it is read, will pull the subsequent fragment). The logic doesn't seem to check the
 length and presumes that the end of the alternate is when the next key is not in the directory.
+
+This interacts with the "one at a time" strategy of the aggregation write logic. If a fragment is close to the fragment being evacuated it may end up in the same evacuation bucket. Because the aggregation write checks every time for the "next" fragment to evacuate it will find that next fragment and evacuate it before it is overwritten.
+
+.. note
+
+   I do not understand the extra key list that is present in an evacuation block. It is labeled as needed for
+   "collisions" but I am unclear on what might be colliding. The bucket entries are stored and matched by stripe offset
+   but if two fragments collide on their offset, only one can be valid. Based on how :ref:`directory probing
+   <dir-probe>` works and the logic of :cpp:func:`evacuate_fragments()` it appears that rather than determine which
+   entry in a directory bucket is the correct one, all of them are marked for evacuation (thereby handling
+   "collisions"). However, each one could have a distinct fragment size and that is set for all of the reads by the
+   first fragment found in the directory. The intent seems to be to read all fragments that collide at the same starting
+   offset and then figure out which one was really on the disk after the read by looking through the key list. However,
+   this seems to presume those fragments will all be the same size, which seems unreasonable. I would think it would
+   also be necessary to update the size in the :cpp:class:`Dir` instance in the evacuation block to the be largest size
+   found among the collisions.
 
 Evacuation Operation
 --------------------
