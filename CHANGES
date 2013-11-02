@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2315] ESI Plugin: fetcher does not handle error gracefully.
+   Author: Kit Chan.
+
   *) [TS-2115] buffer_upload hard-codes "nobody" user/group.
    Author: Kit Chan.
 
