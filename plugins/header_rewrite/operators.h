@@ -16,7 +16,7 @@
   limitations under the License.
 */
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Implement the classes for the various types of hash keys we support.
 //
 #ifndef __OPERATORS_H__

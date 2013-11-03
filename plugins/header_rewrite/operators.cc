@@ -258,10 +258,10 @@ OperatorSetRedirect::exec(const Resources& res) const
       std::string value;
 
       _location.append_value(value, res);
-         
+
       // Replace %{PATH} to original path
       size_t pos_path = 0;
-      
+
       if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
           value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
           int path_len = 0;
@@ -271,7 +271,7 @@ OperatorSetRedirect::exec(const Resources& res) const
             value.insert(pos_path, path, path_len);
           }
       }
-       
+
       // Append the original query string
       int query_len = 0;
       const char *query = TSUrlHttpQueryGet(res._rri->requestBufp, res._rri->requestUrl, &query_len);
@@ -287,10 +287,10 @@ OperatorSetRedirect::exec(const Resources& res) const
       const char *start = value.c_str();
       const char *end = value.size() + start;
       TSUrlParse(res._rri->requestBufp, res._rri->requestUrl, &start, end);
-      TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", 
+      TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d",
               value.c_str(), _status.get_int_value());
     }
-    
+
   } else {
     // TODO: Handle the non-remap case here (InkAPI hooks)
   }

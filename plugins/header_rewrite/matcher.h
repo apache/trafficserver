@@ -16,7 +16,7 @@
   limitations under the License.
 */
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Implement the classes for the various types of hash keys we support.
 //
 #ifndef __MATCHER_H__
@@ -80,7 +80,7 @@ public:
 
   // Getters / setters
   const T get() const { return _data; };
- 
+
   void setRegex(const std::string /* data ATS_UNUSED */)
   {
     if (!helper.setRegexMatch(_data)) {
@@ -94,7 +94,7 @@ public:
   void setRegex(const TSHttpStatus /* t ATS_UNUSED */) { return; }
 
   void set (const T d)
-  { 
+  {
     _data = d;
     if(_op == MATCH_REGULAR_EXPRESSION)
       setRegex(d);
@@ -152,7 +152,7 @@ private:
    // Not supported
    return false;
  }
-  
+
   bool test_reg(const std::string t) const
   {
       TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());

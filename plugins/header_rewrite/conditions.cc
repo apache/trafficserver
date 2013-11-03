@@ -226,7 +226,7 @@ ConditionPath::initialize(Parser& p)
 
 void
 ConditionPath::append_value(std::string& s, const Resources& res)
-{ 
+{
   int path_len = 0;
   const char *path = TSUrlPathGet(res._rri->requestBufp, res._rri->requestUrl, &path_len);
   TSDebug(PLUGIN_NAME, "Appending PATH to evaluation value: %.*s", path_len, path);

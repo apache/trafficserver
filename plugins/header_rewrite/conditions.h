@@ -16,7 +16,7 @@
   limitations under the License.
 */
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Declarations for all conditionals / conditional values we support.
 //
 #ifndef __CONDITIONS_H__
@@ -168,7 +168,7 @@ private:
   bool _client;
 };
 
-// path 
+// path
 class ConditionPath : public Condition
 {
 public:
@@ -239,7 +239,7 @@ class ConditionDBM : public Condition
 {
 public:
   ConditionDBM()
-    : 
+    :
     //_dbm(NULL),
       _file("")
   {

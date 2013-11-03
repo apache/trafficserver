@@ -31,10 +31,10 @@ public:
     regexHelper():
         regex(NULL),regexExtra(NULL),regexCcount(0)
     {
-    
+
     }
 
-  ~regexHelper() 
+  ~regexHelper()
   {
       if (regex)
           pcre_free(regex);
