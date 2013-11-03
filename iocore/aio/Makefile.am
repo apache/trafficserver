@@ -51,6 +51,6 @@ test_AIO_LDADD = \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/libUglyLogStubs.a \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@
 

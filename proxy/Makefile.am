@@ -18,7 +18,7 @@
 
 # Note that hdrs is targeted from ../Makefile.am
 if STANDALONE_IOCORE
-noinst_LIBRARIES = libTrafficServerStandalone.a liberror.a libdiagsconfig.a libUglyLogStubs.a
+noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 else
 SUBDIRS = congest http logging config
@@ -46,6 +46,7 @@ AM_CPPFLAGS = \
   -I$(srcdir)/logging \
   -I$(srcdir)/http/remap  \
   -I$(srcdir)/hdrs \
+  -I$(srcdir)/shared \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
@@ -80,11 +81,7 @@ traffic_server_SOURCES = \
   ControlMatcher.h \
   CoreUtils.cc \
   CoreUtils.h \
-  DiagsConfig.cc \
-  DiagsConfig.h \
   DynamicStats.h \
-  Error.cc \
-  Error.h \
   EventName.cc \
   HttpTransStats.h \
   ICP.cc \
@@ -144,6 +141,8 @@ traffic_server_LDADD = \
   logging/liblogging.a \
   logging/liblogcollation.a \
   hdrs/libhdrs.a  \
+  shared/liberror.a  \
+  shared/libdiagsconfig.a  \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
@@ -180,12 +179,12 @@ endif
 traffic_logcat_SOURCES = \
   logcat.cc \
   signals.cc \
-  InkXml.cc \
-  DiagsConfig.cc \
-  UglyLogStubs.cc
+  InkXml.cc
 traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logcat_LDADD = \
   logging/liblogging.a \
+  shared/libdiagsconfig.a \
+  shared/libUglyLogStubs.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/lib/records/librecprocess.a \
@@ -197,12 +196,12 @@ traffic_logcat_LDADD = \
 traffic_logstats_SOURCES = \
   logstats.cc \
   signals.cc \
-  InkXml.cc \
-  DiagsConfig.cc \
-  UglyLogStubs.cc
+  InkXml.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logstats_LDADD = \
   logging/liblogging.a \
+  shared/libdiagsconfig.a \
+  shared/libUglyLogStubs.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/lib/records/librecprocess.a \
@@ -225,9 +224,7 @@ traffic_sac_SOURCES = \
   StatSystem.cc \
   ReverseProxy.cc \
   signals.cc \
-  Error.cc \
   EventName.cc \
-  DiagsConfig.cc \
   StatPages.cc \
   PluginVC.cc \
   AbstractBuffer.cc \
@@ -243,11 +240,13 @@ traffic_sac_SOURCES = \
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_sac_LDADD = \
   http/libhttp.a \
+  shared/libdiagsconfig.a \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
   logging/liblogcollation.a \
   hdrs/libhdrs.a \
+  shared/liberror.a \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
@@ -271,22 +270,11 @@ endif
 
 libTrafficServerStandalone_a_SOURCES = \
   signals.cc \
-  Error.cc \
   EventName.cc \
-  DiagsConfig.cc \
   StatPages.cc \
   StatSystem.cc \
   AbstractBuffer.cc \
   Initialize.cc
-
-liberror_a_SOURCES = \
-  Error.cc
-
-libdiagsconfig_a_SOURCES = \
-  DiagsConfig.cc
-
-libUglyLogStubs_a_SOURCES = \
-  UglyLogStubs.cc
 
 test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc
 test_xml_parser_LDADD = \

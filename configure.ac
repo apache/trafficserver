@@ -1925,6 +1925,7 @@ AC_CONFIG_FILES([
   proxy/config/storage.config.default
   proxy/congest/Makefile
   proxy/hdrs/Makefile
+  proxy/shared/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
   proxy/logging/Makefile

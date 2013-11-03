@@ -47,7 +47,7 @@ libmgmtapilocal_a_SOURCES = \
   TSControlMain.cc \
   TSControlMain.h
 
-lib_LTLIBRARIES = libtsmgmt.la libtsmgmtshare.la
+lib_LTLIBRARIES = libtsmgmtshare.la libtsmgmt.la
 libtsmgmtshare_la_SOURCES = \
   CfgContextImpl.cc \
   CfgContextImpl.h \

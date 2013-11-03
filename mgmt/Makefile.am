@@ -26,6 +26,7 @@ AM_CPPFLAGS = $(ink_with_modules_local) \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
@@ -100,8 +101,8 @@ traffic_manager_LDADD = \
   $(top_builddir)/lib/records/libreclocal.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/liberror.a \
-  $(top_builddir)/proxy/libdiagsconfig.a \
+  $(top_builddir)/proxy/shared/liberror.a \
+  $(top_builddir)/proxy/shared/libdiagsconfig.a \
   @LIBRESOLV@ @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ \
   -lm
 
