@@ -34,7 +34,7 @@ public:
     Async::execute<AsyncTimer>(this, timer_, shared_ptr<Mutex>()); // letting the system create the mutex
   }
 
-  void handleAsyncComplete(AsyncTimer &timer) {
+  void handleAsyncComplete(AsyncTimer &timer ATSCPPAPI_UNUSED) {
     TS_DEBUG(TAG, "Got timer event in object %p!", this);
     if ((type_ == AsyncTimer::TYPE_ONE_OFF) || (max_instances_ && (++instance_count_ == max_instances_))) {
       TS_DEBUG(TAG, "Stopping timer in object %p!", this);
@@ -53,7 +53,7 @@ private:
   AsyncTimer *timer_;
 };
 
-void TSPluginInit(int argc, const char *argv[]) {
+void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   int period_in_ms = 1000;
   TimerEventReceiver *timer1 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms);
   TS_DEBUG(TAG, "Created periodic timer %p with initial period 0, regular period %d and max instances 0", timer1,

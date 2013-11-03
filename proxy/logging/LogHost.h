@@ -36,12 +36,10 @@ class LogCollationClientSM;
 class LogHost
 {
 
-//#if defined(IOCORE_LOG_COLLATION)
   friend class LogCollationClientSM;
-//#endif
 
 public:
-  LogHost(char *object_filename, uint64_t object_signature);
+  LogHost(const char *object_filename, uint64_t object_signature);
   LogHost(const LogHost &);
   ~LogHost();
 
@@ -90,9 +88,7 @@ private:
   int m_sock_fd;
   bool m_connected;
   LogFile *m_orphan_file;
-#if defined(IOCORE_LOG_COLLATION)
   LogCollationClientSM *m_log_collation_client_sm;
-#endif
 
 public:
   LINK(LogHost, link);

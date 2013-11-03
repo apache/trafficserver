@@ -162,7 +162,7 @@ bool LogFile::exists(const char *pathname)
   -------------------------------------------------------------------------*/
 
 void
-LogFile::change_name(char *new_name)
+LogFile::change_name(const char *new_name)
 {
   ats_free(m_name);
   m_name = ats_strdup(new_name);
@@ -219,8 +219,7 @@ LogFile::open_file()
 
   int flags, perms;
 
-  if (m_file_format == ASCII_PIPE) {
-#ifdef ASCII_PIPE_FORMAT_SUPPORTED
+  if (m_file_format == LOG_FILE_PIPE) {
     if (mkfifo(m_name, S_IRUSR | S_IWUSR) < 0) {
       if (errno != EEXIST) {
         Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
@@ -231,10 +230,6 @@ LogFile::open_file()
     }
     flags = O_WRONLY | O_NDELAY;
     perms = 0;
-#else
-    Error("ASCII_PIPE mode not supported, could not create named pipe %s" " for logging", m_name);
-    return LOG_FILE_PIPE_MODE_NOT_SUPPORTED;
-#endif
   } else {
     flags = O_WRONLY | O_APPEND | O_CREAT;
     perms = Log::config->logfile_perm;
@@ -273,7 +268,7 @@ LogFile::open_file()
   // file.
   //
   if (!file_exists) {
-    if (m_file_format != BINARY_LOG && m_header != NULL) {
+    if (m_file_format != LOG_FILE_BINARY && m_header != NULL) {
       Debug("log-file", "writing header to LogFile %s", m_name);
       writeln(m_header, strlen(m_header), m_fd, m_name);
     }
@@ -506,7 +501,7 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
     m_start_time = buffer_header->low_timestamp;
   m_end_time = buffer_header->high_timestamp;
 
-  if (m_file_format == BINARY_LOG) {
+  if (m_file_format == LOG_FILE_BINARY) {
     //
     // Ok, now we need to write the binary buffer to the file, and we
     // can do so in one swift write.  The question is, do we write the
@@ -534,7 +529,7 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
     //
     return 0;
   }
-  else if (m_file_format == ASCII_LOG || m_file_format == ASCII_PIPE) {
+  else if (m_file_format == LOG_FILE_ASCII || m_file_format == LOG_FILE_PIPE) {
     write_ascii_logbuffer3(buffer_header);
     ret = 0;
   }
@@ -559,7 +554,7 @@ done:
   -------------------------------------------------------------------------*/
 
 int
-LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, char *alt_format)
+LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, const char *alt_format)
 {
   ink_assert(buffer_header != NULL);
   ink_assert(fd >= 0);
@@ -623,7 +618,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
 }
 
 int
-LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format)
+LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt_format)
 {
   Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
   ink_assert(buffer_header != NULL);
@@ -657,7 +652,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
     fmt_entry_count = 0;
     fmt_buf_bytes = 0;
 
-    if (m_file_format == ASCII_PIPE)
+    if (m_file_format == LOG_FILE_PIPE)
       ascii_buffer = (char *)malloc(m_max_line_size);
     else
       ascii_buffer = (char *)malloc(m_ascii_buffer_size);
@@ -698,7 +693,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
       // record to avoid as much as possible overflowing the
       // pipe buffer
       //
-      if (m_file_format == ASCII_PIPE)
+      if (m_file_format == LOG_FILE_PIPE)
         break;
 
       if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size)
@@ -799,6 +794,7 @@ LogFile::check_fd()
   stat_check_count++;
 
   int err = open_file();
+  // XXX if open_file() returns, LOG_FILE_FILESYSTEM_CHECKS_FAILED, raise a more informative alarm ...
   if (err != LOG_FILE_NO_ERROR && err != LOG_FILE_NO_PIPE_READERS) {
     if (!failure_last_call) {
       LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, "Traffic Server could not open logfile %s.", m_name);

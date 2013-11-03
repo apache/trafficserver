@@ -1065,7 +1065,7 @@ setHostnameVar()
 
   // Get Our HostName
   if (gethostname(ourHostName, MAXDNAME) < 0) {
-    mgmt_fatal(stderr, "[setHostnameVar] Can not determine our hostname");
+    mgmt_fatal(stderr, errno, "[setHostnameVar] Can not determine our hostname");
   }
 
   res_init();

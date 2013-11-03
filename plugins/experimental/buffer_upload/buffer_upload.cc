@@ -36,7 +36,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <pwd.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -946,25 +945,15 @@ create_directory()
   int i;
   DIR *dir;
   struct dirent *d;
-  struct passwd *pwd;
 
   if (getcwd(cwd, 4096) == NULL) {
     TSError("getcwd fails");
     return 0;
   }
 
-  if ((pwd = getpwnam("nobody")) == NULL) {
-    TSError("can't get passwd entry for \"nobody\"");
-    goto error_out;
-  }
-
   if (chdir(uconfig->base_dir) < 0) {
     if (mkdir(uconfig->base_dir, S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
       TSError("Unable to enter or create %s", uconfig->base_dir);
-      goto error_out;
-    }
-    if (chown(uconfig->base_dir, pwd->pw_uid, pwd->pw_gid) < 0) {
-      TSError("Unable to chown %s", uconfig->base_dir);
       goto error_out;
     }
     if (chdir(uconfig->base_dir) < 0) {
@@ -977,10 +966,6 @@ create_directory()
     if (chdir(str) < 0) {
       if (mkdir(str, S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
         TSError("Unable to enter or create %s/%s", uconfig->base_dir, str);
-        goto error_out;
-      }
-      if (chown(str, pwd->pw_uid, pwd->pw_gid) < 0) {
-        TSError("Unable to chown %s", str);
         goto error_out;
       }
       if (chdir(str) < 0) {

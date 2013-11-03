@@ -200,7 +200,7 @@ delete_event_queue(LLQ * q)
  * note: None
  *********************************************************************/
 void
-apiEventCallback(alarm_t newAlarm, char * /* ip ATS_UNUSED */, char *desc)
+apiEventCallback(alarm_t newAlarm, const char * /* ip ATS_UNUSED */, const char *desc)
 {
   // create an TSEvent
   // addEvent(new_alarm, ip, desc) // adds event to mgmt_events

@@ -67,7 +67,7 @@ socket_flush(struct SocketInfo sock_info)
         continue;
 
       Debug("ts_main", "[socket_read_n] socket read for version byte failed.\n");
-      mgmt_elog("[socket_flush] (TS_ERR_NET_READ) %s\n", strerror(errno));
+      mgmt_elog(0, "[socket_flush] (TS_ERR_NET_READ) %s\n", strerror(errno));
       return TS_ERR_NET_READ;
     }
 
@@ -79,7 +79,7 @@ socket_flush(struct SocketInfo sock_info)
     byte_read += ret;
   }
 
-  mgmt_elog("[socket_flush] uh oh! didn't finish flushing socket!\n");
+  mgmt_elog(0, "[socket_flush] uh oh! didn't finish flushing socket!\n");
   return TS_ERR_FAIL;
 }
 
@@ -110,7 +110,7 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
         continue;
 
       Debug("ts_main", "[socket_read_n] socket read for version byte failed.\n");
-      mgmt_elog("[socket_read_n] (TS_ERR_NET_READ) %s\n", strerror(errno));
+      mgmt_elog(0, "[socket_read_n] (TS_ERR_NET_READ) %s\n", strerror(errno));
       return TS_ERR_NET_READ;
     }
 
@@ -148,7 +148,7 @@ socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
 
     if (ret < 0) {
       Debug("ts_main", "[socket_write_n] return error %s \n", strerror(errno));
-      mgmt_elog("[socket_write_n] %s\n", strerror(errno));
+      mgmt_elog(0, "[socket_write_n] %s\n", strerror(errno));
       if (errno == EAGAIN)
         continue;
 
@@ -156,7 +156,7 @@ socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
     }
 
     if (ret == 0) {
-      mgmt_elog("[socket_write_n] %s\n", strerror(errno));
+      mgmt_elog(0, "[socket_write_n] %s\n", strerror(errno));
       return TS_ERR_NET_EOF;
     }
     // we are all good here
@@ -198,7 +198,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
 
   // check if invalid op type
   if ((int) op > UNDEFINED_OP) {
-    mgmt_elog("[preprocess_msg] ERROR: %d is invalid op type\n", op);
+    mgmt_elog(0, "[preprocess_msg] ERROR: %d is invalid op type\n", op);
 
     // need to flush the invalid message from the socket
     if ((ret = socket_flush(sock_info)) != TS_ERR_NET_EOF)
@@ -211,7 +211,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
   // now read the request msg size
   ret = socket_read_n(sock_info, (char *) &req_len, SIZE_LEN);
   if (ret != TS_ERR_OKAY) {
-    mgmt_elog("[preprocess_msg] ERROR %d reading msg size\n", ret);
+    mgmt_elog(0, "[preprocess_msg] ERROR %d reading msg size\n", ret);
     Debug("ts_main", "[preprocess_msg] ERROR %d reading msg size\n", ret);
     goto Lerror;
   }

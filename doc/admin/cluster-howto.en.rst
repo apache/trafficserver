@@ -98,7 +98,7 @@ individually. You may following these instructions:
 
 1. setup the same cluster name, with :ts:cv:`proxy.config.proxy_name`, e.g. MyCluster.
 
-2. Set :ts:cv:`proxy.config.proxy_name` to ``1``, to enable cluster mode.
+2. Set :ts:cv:`proxy.local.cluster.type` to ``1``, to enable cluster mode.
 
 3. Setup a :ts:cv:`proxy.config.cluster.ethernet_interface`, e.g.: ``eth0``.
    This should be replaced by your real interface; we recommends a

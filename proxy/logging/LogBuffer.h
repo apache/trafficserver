@@ -26,7 +26,7 @@
 #define LOG_BUFFER_H
 
 #include "libts.h"
-#include "LogFormatType.h"
+#include "LogFormat.h"
 #include "LogLimits.h"
 #include "LogAccess.h"
 
@@ -181,8 +181,8 @@ public:
   // static functions
   static size_t max_entry_bytes();
   static int to_ascii(LogEntryHeader * entry, LogFormatType type,
-                      char *buf, int max_len, char *symbol_str, char *printf_str,
-                      unsigned buffer_version, char *alt_format = NULL);
+                      char *buf, int max_len, const char *symbol_str, char *printf_str,
+                      unsigned buffer_version, const char *alt_format = NULL);
   static int resolve_custom_entry(LogFieldList * fieldlist,
                                   char *printf_str, char *read_from, char *write_to,
                                   int write_to_len, long timestamp, long timestamp_us,
@@ -224,7 +224,7 @@ private:
 
   // private functions
   size_t _add_buffer_header();
-  unsigned add_header_str(char *str, char *buf_ptr, unsigned buf_len);
+  unsigned add_header_str(const char *str, char *buf_ptr, unsigned buf_len);
 
   // -- member functions that are not allowed --
   LogBuffer();

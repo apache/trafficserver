@@ -83,7 +83,7 @@ Stripe Structure
 
 |TS| treats the storage associated with a cache stripe as an undifferentiated span of bytes. Internally each stripe is
 treated almost entirely independently. The data structures described in this section are duplicated for each stripe.
-Interally the term "volume" is used for these stripes and implemented primarily in :cpp:class:`Vol`. What a user thinks
+Internally the term "volume" is used for these stripes and implemented primarily in :cpp:class:`Vol`. What a user thinks
 of as a volume (what this document calls a "cache volume") is represented by :cpp:class:`CacheVol`.
 
 .. note::
@@ -107,16 +107,17 @@ Cache Directory
 Content in a stripe is tracked via a directory. We call each element of the directory a "directory entry" and each is
 represented by :cpp:class:`Dir`. Each entry refers to a chunk of contiguous storage in the cache. These are referred to
 variously as "fragments", "segments", "docs" / "documents", and a few other things. This document will use the term
-"fragment" as that is the most common reference in the code. Overall the directory is treated as a hash with a "cache
-ID" as the key. A cache ID is a 128 value generated in various ways depending on context. This key is reduced and used
-as an index in to the directory to locate an entry in the standard way.
+"fragment" as that is the most common reference in the code. The term "Doc" (for :cpp:class:`Doc`) will be used to refer
+to the header data for a fragment. Overall the directory is treated as a hash with a "cache ID" as the key. A cache ID
+is a 128 bit (16 byte) value generated in various ways depending on context. This ID is reduced and used as an index in
+to the directory to locate an entry in the standard way.
 
 The directory is used as a memory resident structure which means a directory entry is as small as possible (currently 10
-bytes). This forces some compromises on the data that can be stored there. On the hand this means that most cache misses
-do not require disk I/O which has a large performance benefit.
+bytes). This forces some compromises on the data that can be stored there. On the other hand this means that most cache
+misses do not require disk I/O which has a large performance benefit.
 
 An additional point is the directory is always fully sized. Once a stripe is initialized the directory size is
-fixed and is never changed. This size is related (roughly linearly) to the size of the stripe. It is for this reason the
+fixed and never changed. This size is related (roughly linearly) to the size of the stripe. It is for this reason the
 memory footprint of |TS| depends strongly on the size of the disk cache. Because the directory size does not change,
 neither does this memory requirement so |TS| does not consume more memory as more content is stored in the cache. If
 there is enough memory to run |TS| with an empty cache there is enough to run it with a full cache.
@@ -124,29 +125,45 @@ there is enough memory to run |TS| with an empty cache there is enough to run it
 .. figure:: images/cache-directory-structure.png
    :align: center
 
-Each entry stores the cache ID as the key, along with an offset in to the stripe and a size. The size stored in the
-directory entry is an :ref:`approximate size <dir-size>` which is at least as big as the actual data. Exact size data is
-stored in the fragment on disk.
+Each entry stores an offset in the stripe and a size. The size stored in the directory entry is an :ref:`approximate
+size <dir-size>` which is at least as big as the actual data. Exact size data is stored in the fragment header on disk.
 
 .. note::
 
    Data in HTTP headers cannot be examined without disk I/O. This includes the original URL for the object. The original
    source of the cache ID is not stored anywhere.
 
+.. _dir-segment:
+.. _dir-bucket:
+
 The entries in a directory are grouped. The first level grouping is a *bucket*. This is a fixed number (currently 4 -
-defined a ``DIR_DEPTH``) of entries. The index generated from a cache ID is used as a bucket index (not an entry index).
+defined as ``DIR_DEPTH``) of entries. The index generated from a cache ID is used as a bucket index (not an entry index).
 Buckets are grouped in to *segments*. All segments in a stripe have the same number of buckets. The number of segments
-in a stripe is chosen so that each segment has as many buckets as possible without exceeeding 65535 entries in a
-segment. Note that all segments in the same stripe will have the same number of buckets.
+in a stripe is chosen so that each segment has as many buckets as possible without exceeeding 65535 (2\ :sup:`16`\ -1)
+entries in a segment. Note that all segments in the same stripe will have the same number of buckets.
+
+.. figure:: images/dir-segment-bucket.png
+   :align: center
 
 Each entry has a previous and next index value which is used to link the entries in the same segment. The index size is
 16 bits which suffices to index any entry in the same segment. The stripe header contains an array of entry indices
-which are used as the roots of a free list. When a stripe is initialized all entries in a segment are put in the
-corresponding free list rooted in the stripe header. Entries are removed from this list when used and returned when no
-longer in use. Entries are allocated from the bucket indexed by a cache key if possible. The entries in the bucket are
-searched first and if any are on the free list, that entry is used. If none are available than the first entry on the
-segment free list is used. This entry is attached to the bucket via the same next and previous indices used for the free
-list so that it can be found when doing a lookup of a cache ID.
+which are used as the roots of a free list. When a stripe is initialized the first entry in each bucket is zeroed
+(marked unused) and all other entries are put in the corresponding segment free list rooted in the stripe header. In
+essence the first element of each fixed bucket is used as a root for that bucket. The other entries in the fixed bucker
+are preferentially preferred for adding to that bucket but this is not required. The segment free lists are initialized
+such that the extra bucket entries are added in order - all the seconds, then the thirds, then the fourths. Because the
+free lists are FIFOs this means extra entries will be selected from the fourth entries across all the buckets first,
+then the thirds, etc. This maximizes locality for bucket searching.
+
+.. figure:: images/dir-bucket-assign.png
+   :align: center
+
+Entries are removed from the free list when used and returned when no longer in use. When a fragment needs to be put in
+to the directory the cache ID is used to locate a bucket (which also determines the segment). If the first entry in the
+bucket is marked unused, it is used. If not then the other entries in the bucket are searched and if any are on the free
+list, that entry is used. If none are available then the first entry on the segment free list is used. This entry is
+attached to the bucket via the same next and previous indices used for the free list so that it can be found when doing
+a lookup of a cache ID.
 
 Storage Layout
 --------------
@@ -154,9 +171,9 @@ Storage Layout
 The storage layout is the stripe metadata followed by cached content. The metadata consists of three parts - the stripe
 header, the directory, and the stripe footer. The metadata is stored twice. The header and the footer are instances of
 :cpp:class:`VolHeaderFooter`. This is a stub structure which can have a trailing variable sized array. This array is
-used as the segment free lists in the directory. Each contains the segment index of the first element of the free list
-for the segment. The footer is a copy of the header without the segment free lists. This makes the size of the header
-dependent on the directory but not the footer.
+used as the segment free list roots in the directory. Each contains the segment index of the first element of the free
+list for the segment. The footer is a copy of the header without the segment free lists. This makes the size of the
+header dependent on the directory but not that of the footer.
 
 .. figure:: images/cache-stripe-layout.png
    :align: center
@@ -181,18 +198,15 @@ data length
 The total size of the directory (the number of entries) is computed by taking the size of the stripe and dividing by the
 average object size. The directory always consumes this amount of memory which has the effect that if cache size is
 increased so is the memory requirement for |TS|. The average object size defaults to 8000 bytes but can be configured
-using the value::
-
-   proxy.config.cache.min_average_object_size
-
-in :file:`records.config`. Increasing the average object size will reduce the memory footprint of the directory at the
-expense of reducing the number of distinct objects that can be stored in the cache [#]_.
+using :ts:cv:`proxy.config.cache.min_average_object_size`. Increasing the average object size will reduce the memory
+footprint of the directory at the expense of reducing the number of distinct objects that can be stored in the cache
+[#]_.
 
 .. index: write cursor
 .. _write-cursor:
 
 The content area stores the actual objects and is used as a circular buffer where new objects overwrite the least
-recently cached objects. The location in a volume where new cache data is written is called the *write cursor*. This
+recently cached objects. The location in a stripe where new cache data is written is called the *write cursor*. This
 means that objects can be de facto evicted from cache even if they have not expired if the data is overwritten by the
 write cursor. If an object is overwritten this is not detected at that time and the directory is not updated. Instead it
 will be noted if the object is accessed in the future and the disk read of the fragment fails.
@@ -222,7 +236,9 @@ Objects are rooted in a :cpp:class:`Doc` structure stored in the cache. :cpp:cla
 fragment and is contained at the start of every fragment. The first fragment for an object is termed the "first ``Doc``"
 and always contains the object metadata. Any operation on the object will read this fragment first. The fragment is
 located by converting the cache key for the object to a cache ID and then doing a lookup for a directory entry with that
-key. The directory entry has the offset and approximate size of the first fragment which is then read from the disk. This fragment will contain the request header and response along with overall object properties (such as content length).
+key. The directory entry has the offset and approximate size of the first fragment which is then read from the disk.
+This fragment will contain the request header and response along with overall object properties (such as content
+length).
 
 .. index:: alternate
 
@@ -230,12 +246,14 @@ key. The directory entry has the offset and approximate size of the first fragme
 are called *alternates*. All metadata for all alternates is stored in the first fragment including the set of alternates
 and the HTTP headers for them. This enables `alternate selection
 <http://trafficserver.apache.org/docs/trunk/sdk/http-hooks-and-transactions/http-alternate-selection.en.html>`_ to be
-done after the initial read from disk. An object that has more than one alternate will have the alternate content stored
-separately from the first fragment. For objects with only one alternate the content may or may not be in the same (first)
-fragment as the metadata. Each separate alternate content is allocated a directory entry and the key for that
-entry is stored in the first fragment metadata.
+done after the first ``Doc`` is read from disk. An object that has more than one alternate will have the alternate
+content stored separately from the first fragment. For objects with only one alternate the content may or may not be in
+the same (first) fragment as the metadata. Each separate alternate content is allocated a directory entry and the key
+for that entry is stored in the first fragment metadata.
 
-Prior to version 4.0.1 the header data was stored in the :cpp:class:`CacheHTTPInfoVector` class which was marshaled to a variable length area of the on disk image, followed by information about additional fragments if needed to store the object.
+Prior to version 4.0.1 the header data was stored in the :cpp:class:`CacheHTTPInfoVector` class which was marshaled to a
+variable length area of the on disk image, followed by information about additional fragments if needed to store the
+object.
 
 .. figure:: images/cache-doc-layout-3-2-0.png
    :align: center
@@ -251,22 +269,40 @@ directly incorporated in to the :cpp:class:`CacheHTTPInfoVector`, yielding a lay
 
    ``Doc`` layout 4.0.1
 
-Each element in the vector contains for each alternate, in addition to the HTTP headers and the fragment table (if any), a cache key. This cache key identifies a directory entry that is referred to as the "earliest ``Doc``". This is the location where the content for the alternate begins.
+Each element in the vector contains for each alternate, in addition to the HTTP headers and the fragment table (if any),
+a cache key. This cache key identifies a directory entry that is referred to as the "earliest ``Doc``". This is the
+location where the content for the alternate begins.
 
-When the object is first cached, it will have a single alternate and that will be stored (if not too large) in first ``Doc``. This is termed a *resident alternate* in the code. This can only happen on the initial store of the object. If the metadata is updated (such as a ``304`` response to an ``If-Modified-Since`` request) then unless the object is small, the object data will be left in the original fragment and a new fragment written as the first fragment, making the alternate non-resident. "Small" is defined as less than the value :ts:cv:`proxy.config.cache.alt_rewrite_max_size`.
+When the object is first cached, it will have a single alternate and that will be stored (if not too large) in first
+``Doc``. This is termed a *resident alternate* in the code. This can only happen on the initial store of the object. If
+the metadata is updated (such as a ``304`` response to an ``If-Modified-Since`` request) then unless the object is
+small, the object data will be left in the original fragment and a new fragment written as the first fragment, making
+the alternate non-resident. "Small" is defined as a length smaller than :ts:cv:`proxy.config.cache.alt_rewrite_max_size`.
 
 .. note::
 
    The :cpp:class:`CacheHTTPInfoVector` is stored only in the first ``Doc``. Subsequent ``Doc`` instances for the
    object, including the earliest ``Doc``, should have an ``hlen`` of zero and if not, it is ignored.
 
-Large objects are split in to multiple fragments when written to the cache. This is indicated by a total document length that is longer than the content in first ``Doc`` or an earliest ``Doc``. In such a case a fragment offset table is stored. This contains the byte offset in the object content of the first byte of content data for each fragment past the first (as the offset for the first is always zero). This allows range requests to be serviced much more efficiently for large objects, as intermediate fragments can be skipped the first fragment with relevant data loaded next after the first/earliest ``Doc``.  The last fragment in the sequence is detected by the fragment size and offset reaching the end of the total size of the object, there is no explicit end mark. Each fragment is computationally chained from the previous in that the cache key for fragment N is computed by::
+Large objects are split in to multiple fragments when written to the cache. This is indicated by a total document length
+that is longer than the content in first ``Doc`` or an earliest ``Doc``. In such a case a fragment offset table is
+stored. This contains the byte offset in the object content of the first byte of content data for each fragment past the
+first (as the offset for the first is always zero). This allows range requests to be serviced much more efficiently for
+large objects, as intermediate fragments that do not contain data in the range can be skipped. The last fragment in the
+sequence is detected by the fragment size and offset reaching the end of the total size of the object, there is no
+explicit end mark. Each fragment is computationally chained from the previous in that the cache key for fragment N is
+computed by::
 
    key_for_N_plus_one = next_key(key_for_N);
 
 where ``next_key`` is a global function that deterministically computes a new cache key from an existing cache key.
 
-Objects with multiple fragments are laid out such that the data fragments (including the earliest ``Doc``) are written first and the first ``Doc`` is written last. When read from disk, both the first and earliest ``Doc`` are validated (tested to ensure that they haven't been overwritten by the write cursor) to verify that the entire document is present on disk (as they bookend the other fragments - the write cursor cannot overwrite them without overwriting at leastone of the verified ``Doc`` instances). Note that while the fragments of a single object are ordered they are not necessarily contiguous as data from different objects are interleaved as the data arrives in |TS|.
+Objects with multiple fragments are laid out such that the data fragments (including the earliest ``Doc``) are written
+first and the first ``Doc`` is written last. When read from disk, both the first and earliest ``Doc`` are validated
+(tested to ensure that they haven't been overwritten by the write cursor) to verify that the entire document is present
+on disk (as they bookend the other fragments - the write cursor cannot overwrite them without overwriting at leastone of
+the verified ``Doc`` instances). Note that while the fragments of a single object are ordered they are not necessarily
+contiguous as data from different objects are interleaved as the data arrives in |TS|.
 
 .. figure:: images/cache-multi-fragment.png
    :align: center
@@ -296,11 +332,21 @@ Some general observations on the data structures.
 Cyclone buffer
 --------------
 
-Because the cache is a cyclone cache objects are not preserved for an indefinite time. Even if the object is not stale it can be overwritten as the cache cycles through its volume. Marking an object as ``pinned`` preserves the object through the passage of the write cursor but this is done by copying the object across the gap, in effect re-storing it in the cache. Pinning large objects or a large number objects can lead to a excessive disk activity. The original purpose of pinning seems to have been for small, frequently used objects explicitly marked by the administrator.
+Because the cache is a cyclone cache objects are not preserved for an indefinite time. Even if the object is not stale
+it can be overwritten as the cache cycles through its volume. Marking an object as ``pinned`` preserves the object
+through the passage of the write cursor but this is done by copying the object across the gap, in effect re-storing it
+in the cache. Pinning large objects or a large number objects can lead to a excessive disk activity. The original
+purpose of pinning seems to have been for small, frequently used objects explicitly marked by the administrator.
 
-This means the purpose of expiration data on objects is simply to prevent them from being served to clients. They are not in the standard sense deleted or cleaned up. The space can't be immediately reclaimed in any event because writing only happens at the write cursor. Deleting an object consists only of removing the directory entries in the volume directory which suffices to (eventually) free the space and render the document inaccessible.
+This means the purpose of expiration data on objects is simply to prevent them from being served to clients. They are
+not in the standard sense deleted or cleaned up. The space can't be immediately reclaimed in any event because writing
+only happens at the write cursor. Deleting an object consists only of removing the directory entries in the volume
+directory which suffices to (eventually) free the space and render the document inaccessible.
 
-Historically the cache is designed this way because web content was relatively small and not particularly consistent. The design also provides high performance and low consistency requirements. There are no fragmentation issues for the storage, and both cache misses and object deletions require no disk I/O. It does not deal particularly well with long term storage of large objects. See the :ref:`volume tagging` appendix for details on some work in this area.
+Historically the cache is designed this way because web content was relatively small and not particularly consistent.
+The design also provides high performance and low consistency requirements. There are no fragmentation issues for the
+storage, and both cache misses and object deletions require no disk I/O. It does not deal particularly well with long
+term storage of large objects. See the :ref:`volume tagging` appendix for details on some work in this area.
 
 Disk Failure
 ------------
@@ -314,7 +360,7 @@ Restoring a disk to active duty is quite a bit more difficult task. Changing the
 Implementation Details
 ======================
 
-Volume Directory
+Stripe Directory
 ----------------
 
 .. _directory-entry:
@@ -329,18 +375,18 @@ The in memory volume directory entries are defined as described below.
    Name        Type                Use
    =========== =================== ===================================================
    offset      unsigned int:24     Offset of first byte of metadata (volume relative)
-   big         unsigned in:2       Offset multiplier
+   big         unsigned in:2       Size multiplier
    size        unsigned int:6      Size
    tag         unsigned int:12     Partial key (fast collision check)
    phase       unsigned int:1      Unknown
-   head        unsigned int:1      Flag: first segment in a document
+   head        unsigned int:1      Flag: first fragment in an object
    pinned      unsigned int:1      Flag: document is pinned
    token       unsigned int:1      Flag: Unknown
    next        unsigned int:16     Segment local index of next entry.
    offset_high inku16              High order offset bits
    =========== =================== ===================================================
 
-   The volume directory is an array of ``Dir`` instances. Each entry refers to a span in the volume which contains a cached object. Because every object in the cache has at least one directory entry this data has been made as small as possible.
+   The stripe directory is an array of ``Dir`` instances. Each entry refers to a span in the volume which contains a cached object. Because every object in the cache has at least one directory entry this data has been made as small as possible.
 
    The offset value is the starting byte of the object in the volume. It is 40 bits long split between the *offset* (lower 24 bits) and *offset_high* (upper 16 bits) members. Note that since there is a directory for every storage unit in a cache volume, this is the offset in to the slice of a storage unit attached to that volume.
 
@@ -360,14 +406,14 @@ The in memory volume directory entries are defined as described below.
 
    .. _big-mult:
 
-   ===== ===============   ===============
+   ===== ===============   ========================
    *big* Multiplier        Maximum Size
-   ===== ===============   ===============
+   ===== ===============   ========================
      0   512 (2^9)         32768 (2^15)
      1   4096 (2^12)       262144 (2^18)
      2   32768 (2^15)      2097152 (2^21)
      3   262144 (2^18)     16777216 (2^24)
-   ===== ===============   ===============
+   ===== ===============   ========================
 
    Note also that *size* is effectively offset by one, so a value of 0 indicates a single unit of the multiplier.
 
@@ -377,24 +423,63 @@ The target fragment size can set with the :file:`records.config` value
 
    ``proxy.config.cache.target_fragment_size``
 
-This value should be chosen so that it is a multiple of a :ref:`cache entry multiplier <big-mult>`. It is not necessary to make it a power of 2 [#]_. Larger fragments increase I/O efficiency but lead to more wasted space. The default size (1M, 2^20) is a reasonable choice in most circumstances altough in very specific cases there can be benefit from tuning this parameter. |TS| imposes an internal maximum of a 4194232 bytes which is 4M (2^22) less the size of a struct :cpp:class:`Doc`. In practice then the largest reasonable target fragment size is 4M - 262144 = 3932160.
+This value should be chosen so that it is a multiple of a :ref:`cache entry multiplier <big-mult>`. It is not necessary
+to make it a power of 2 [#]_. Larger fragments increase I/O efficiency but lead to more wasted space. The default size
+(1M, 2^20) is a reasonable choice in most circumstances altough in very specific cases there can be benefit from tuning
+this parameter. |TS| imposes an internal maximum of a 4194232 bytes which is 4M (2^22) less the size of a struct
+:cpp:class:`Doc`. In practice then the largest reasonable target fragment size is 4M - 262144 = 3932160.
 
-When a fragment is stored to disk the size data in the cache index entry is set to the finest granularity permitted by the size of the fragment. To determine this consult the :ref:`cache entry multipler <big-mult>` table, find the smallest maximum size that is at least as large as the fragment. That will indicate the value of *big* selected and therefore the granularity of the approximate size. That represents the largest possible amount of wasted disk I/O when the fragment is read from disk.
+When a fragment is stored to disk the size data in the cache index entry is set to the finest granularity permitted by
+the size of the fragment. To determine this consult the :ref:`cache entry multipler <big-mult>` table, find the smallest
+maximum size that is at least as large as the fragment. That will indicate the value of *big* selected and therefore the
+granularity of the approximate size. That represents the largest possible amount of wasted disk I/O when the fragment is
+read from disk.
 
-.. note:: The cache index entry size is used only for reading the fragment from disk. The actual size on disk, and the amount of cache space consumed, is the actual size of the content rounded up to the disk sector size (default 512 bytes).
+.. note:: The cache index entry size is used only for reading the fragment from disk. The actual size on disk, and the
+amount of cache space consumed, is the actual size of the content rounded up to the disk sector size (default 512
+bytes).
 
 .. index:: DIR_DEPTH, index segment, index buckets
 
-The set of index entries for a volume are grouped in to *segments*. The number of segments for an index is selected so that there are as few segments as possible such that no segment has more than 2^16 entries.  Intra-segment references can therefore use a 16 bit value to refer to any other entry in the segment.
+The set of index entries for a volume are grouped in to *segments*. The number of segments for an index is selected so
+that there are as few segments as possible such that no segment has more than 2^16 entries. Intra-segment references can
+therefore use a 16 bit value to refer to any other entry in the segment.
 
-Index entries in a segment are grouped *buckets* each of ``DIR_DEPTH`` (currently 4) entries. These are handled in the standard hash table way, giving somewhat less than 2^14 buckets per segment.
-
-Object Metadata
----------------
-
-The metadata for an object is stored in a :cpp:class:`Doc`.
+Index entries in a segment are grouped *buckets* each of ``DIR_DEPTH`` (currently 4) entries. These are handled in the
+standard hash table way, giving somewhat less than 2^14 buckets per segment.
 
 .. [#] The comment in :file:`records.config` is simply wrong.
+
+.. _dir-probe:
+
+Directory Probing
+-----------------
+
+Directory probing is locating a specific directory entry in the stripe directory based on a cache ID. This is handled
+primarily by the function :cpp:func:`dir_probe()`. This is passed the cache ID (:arg:`key`), a stripe (:arg:`d`), and a
+last collision (:arg:`last_collision`). The last of these is an in and out parameter, updated as useful during the
+probe.
+
+Given an ID, the top half (64 bits) is used as a :ref:`segment <dir-segment>` index, taken modulo the number of segments in
+the directory. The bottom half is used as a :ref:`bucket <dir-bucket>` index, taken modulo the number of buckets per
+segment. The :arg:`last_collision` value is used to mark the last matching entry returned by `dir_probe`.
+
+After computing the appropriate bucket, the entries in that bucket are searched to find a match. In this case a match is
+detected by comparison of the bottom 12 bits of the cache ID (the *cache tag*). The search starts at the base entry for
+the bucket and then proceeds via the linked list of entries from that first entry. If a tag match is found and there is
+no :arg:`collision` then that entry is returned and :arg:`last_collision` is updated to that entry. If :arg:`collision`
+is set, then if it isn't the current match the search continues down the linked list, otherwise :arg:`collision` is
+cleared and the search continues. The effect of this is that matches are skipped until the last returned match
+(:arg:`last_collision`) is found, after which the next match (if any) is returned. If the search falls off the end of
+the linked list then a miss result is returned (if no last collision), otherwise the probe is restarted after clearing
+the collision on the presumption that the entry for the collision has been removed from the bucket. This can lead to
+repeats among the returned values but guarantees that no valid entry will be skipped.
+
+Last collision can therefore be used to restart a probe at a later time. This is important because the match returned
+may not be the actual object - although the hashing of the cache ID to a bucket and the tag matching is unlikely to
+create false positives, that is possible. When a fragment is read the full cache ID is available and checked and if
+wrong, that read can be discarded and the next possible match from the directory found because the cache virtual
+connection tracks the last collision value.
 
 ----------------
 Cache Operations
@@ -463,11 +548,11 @@ There are three basic steps to a cache lookup.
 
    This is normally computed using the request URL but it can be overridden :ref:`by a plugin <cache-key>` . As far as I can tell the cache index string is not stored anywhere, it presumed computable from the client request header.
 
-#. The cache volume is determined (based on the cache key).
+#. The cache stripe is determined (based on the cache key).
 
    The cache key is used as a hash key in to an array of :cpp:class:`Vol` instances. The construction and arrangement of this array is the essence of how volumes are assigned.
 
-#. The cache volume directory is probed using the index key computed from the cache key.
+#. The cache stripe directory :ref:`is probed <dir-probe>` using the index key computed from the cache key.
 
    Various other lookaside directories are checked as well, such as the :ref:`aggregation buffer <aggregation-buffer>`.
 
@@ -596,20 +681,25 @@ fragments at different locations on in the volume. Each fragment write has its o
 are computational chained (each cache key is computed from the previous one). If possible a fragment table is
 accumulated in the earliest ``Doc`` which has the offsets of the first byte for each fragment.
 
-Evacuation
-----------
+Evacuation Mechanics
+--------------------
 
 By default the write cursor will overwrite (de facto evict from cache) objects as it proceeds once it has gone around
-the volume content at least once. In some cases this is not acceptable and the object is *evacuated* by reading it from
+the cache stripe at least once. In some cases this is not acceptable and the object is *evacuated* by reading it from
 the cache and then writing it back to cache which moves the physical storage of the object from in front of the write
-cursor to behind the write cursor. Objects that are evacuated are those that are active in either a read or write
-operation, or objects that are pinned [#]_.
+cursor to behind the write cursor. Objects that are evacuated are handled in this way based on data in stripe data
+structures (attached to the :cpp:class:`Vol` instance).
 
-Evacuation starts by dividing up the volume content in to a set of regions of ``EVACUATION_BUCKET_SIZE`` bytes. The
-:cpp:member:`Vol::evacuate` member is an array with an element for each region. Each element is a doubly linked list of
-:cpp:class:`EvacuationBlock` instances. Each instance contains a :cpp:class:`Dir` that specifies the document to
-evacuate. Objects to be evacuated are descrinbed in an ``EvacuationBlock`` which is put in to an evacuation bucket based
-on the offset of the storage location.
+Evacuation data structures are defined by dividing up the volume content in to a disjoint and contiguous set of regions
+of ``EVACUATION_BUCKET_SIZE`` bytes. The :cpp:member:`Vol::evacuate` member is an array with an element for each
+evacuation region. Each element is a doubly linked list of :cpp:class:`EvacuationBlock` instances. Each instance
+contains a :cpp:class:`Dir` that specifies the fragment to evacuate. It is assumed that an evacuation block is placed in
+the evacuation bucket (array element) that corresponds to the evacuation region in which the fragment is located
+although no ordering per bucket is enforced in the linked list (this sorting is handled during evacuation). Objects are
+evacuated by specifying the first or earliest fragment in the evactuation block. The evactuation operation will then
+continue the evacuation for subsequent fragments in the object by adding those fragments in evacuation blocks. Note that
+the actual evacuation of those fragments is delayed until the write cursor reaches the fragments, it is not ncessarily
+done at the time the first / earliest fragment is evacuated.
 
 There are two types of evacuations, reader based and forced. The ``EvacuationBlock`` has a reader count to track this.
 If the reader count is zero, then it is a forced evacuation and the the target, if it exists, will be evacuated when the
@@ -617,11 +707,60 @@ write cursor gets close. If the reader value is non-zero then it is a count of e
 be able to read the object. Readers increment the count when they require read access to the object, or create the
 ``EvacuationBlock`` with a count of 1. When a reader is finished with the object it decrements the count and removes the
 ``EvacuationBlock`` if the count goes to zero. If the ``EvacuationBlock`` already exists with a count of zero, the count
-is not modified and the number of readers is not tracked, so the evacuation be valid as long as the object exists.
+is not modified and the number of readers is not tracked, so the evacuation is valid as long as the object exists.
 
-Objects are evacuated as the write cursor approaches. The volume calculates the current amount of
+Evacuation is driven by cache writes, essentially in :cpp:member:`Vol::aggWrite`. This method processes the pending
+cache virtual connections that are trying to write to the stripe. Some of these may be evacuation virtual connections.
+If so then the completion callback for that virtual connection is called as the data is put in to the aggregation
+buffer.
 
-Before doing a write, the method :cpp:func:`Vol::evac_range()` is called to start an evacuation. If an eva
+When no more cache virtual connections can be processed (due to an empty queue or the aggregation buffer filling) then
+:cpp:member:`Vol::evac_range` is called to clear the range to be overwritten plus an additional
+:ts:const:`EVACUATION_SIZE` range. The buckets covering that range are checked. If there are any items in the buckets a
+new cache virtual connection (a "doc evacuator") is created and used to read the evacuation item closest to the write
+cursor (i.e. with the smallest offset in the stripe) instead of the aggregation write proceeding. When the read
+completes it is checked for validity and if valid, the cache virtual connection for it is placed at the front of the
+write queue for the stripe and the write aggregation resumed.
+
+Before doing a write, the method :cpp:func:`Vol::evac_range()` is called to start an evacuation. If any fragments are
+found in the buckets in the range the earliest such fragment (smallest offset, closest to the write cursor) is selected
+and read from disk and the aggregation buffer write is suspended. The read is done via a cache virtual connection which
+also effectively serves as the read buffer. Once the read is complete, that cache virtual connection instance (the "doc
+evacuator") is place at the front of the stripe write queue and written out in turn. Because the fragment data is now in
+memory it is acceptable to overwrite the disk image.
+
+Note that when normal stripe writing is resumed, this same check is done again, each time evauating (if needed) a
+fragment and queuing them for writing in turn.
+
+Updates to the directory are done when the write for the evacuated fragment completes. Multi-fragment objects are
+detected after the read completes for a fragment. If it is not the first fragment then the next fragment is marked for
+evacuation (which in turn, when it is read, will pull the subsequent fragment). The logic doesn't seem to check the
+length and presumes that the end of the alternate is when the next key is not in the directory.
+
+This interacts with the "one at a time" strategy of the aggregation write logic. If a fragment is close to the fragment being evacuated it may end up in the same evacuation bucket. Because the aggregation write checks every time for the "next" fragment to evacuate it will find that next fragment and evacuate it before it is overwritten.
+
+.. note
+
+   I do not understand the extra key list that is present in an evacuation block. It is labeled as needed for
+   "collisions" but I am unclear on what might be colliding. The bucket entries are stored and matched by stripe offset
+   but if two fragments collide on their offset, only one can be valid. Based on how :ref:`directory probing
+   <dir-probe>` works and the logic of :cpp:func:`evacuate_fragments()` it appears that rather than determine which
+   entry in a directory bucket is the correct one, all of them are marked for evacuation (thereby handling
+   "collisions"). However, each one could have a distinct fragment size and that is set for all of the reads by the
+   first fragment found in the directory. The intent seems to be to read all fragments that collide at the same starting
+   offset and then figure out which one was really on the disk after the read by looking through the key list. However,
+   this seems to presume those fragments will all be the same size, which seems unreasonable. I would think it would
+   also be necessary to update the size in the :cpp:class:`Dir` instance in the evacuation block to the be largest size
+   found among the collisions.
+
+Evacuation Operation
+--------------------
+
+The primary source of fragments to be evacuated are active fragments. That is fragments which are currently open, to be read or written. This is tracked by the reader value in the evacuation blocks noted above.
+
+If object pinning is enabled then a scan is done on a regular basis as the write cursor moves to detected pinned objects and mark them for evacuation.
+
+Fragments can also be evacuated through *hit evacuation*. This is configured by :ts:cv:`proxy.config.cache.hit_evacuate_percent` and :ts:cv:`proxy.config.cache.hit_evacuate_size_limit`. When a fragment is read it is checked to see if it is close and in front of the write cursor, close being less than the specified percent of the size of the stripe. If set at the default value of 10, then if the fragment is withing 10% of the size of the stripe it is marked for evacuation. This is cleared if the write cursor passes through the fragment while it remains open (as all open objects are evacuated). If when the object is closed the fragment is still marked then it is placed in the appropriate evacuation bucket.
 
 Initialization
 ==============

@@ -30,7 +30,6 @@
 #include <stdio.h>
 
 #include "libts.h"
-#include "LogFormatType.h"
 #include "LogBufferSink.h"
 
 class LogSock;
@@ -76,7 +75,7 @@ private:
   void _build_name(const char *filename);
 
 public:
- MetaInfo(char *filename)
+ MetaInfo(const char *filename)
    : _flags(0)
   {
     _build_name(filename);
@@ -145,25 +144,25 @@ public:
 
   int roll(long interval_start, long interval_end);
 
-  char *get_name() const { return m_name; }
+  const char *get_name() const { return m_name; }
 
   void change_header(const char *header);
-  void change_name(char *new_name);
+  void change_name(const char *new_name);
 
   LogFileFormat get_format() const { return m_file_format; }
   const char *get_format_name() const {
-    return (m_file_format == BINARY_LOG ? "binary" : (m_file_format == ASCII_PIPE ? "ascii_pipe" : "ascii"));
+    return (m_file_format == LOG_FILE_BINARY ? "binary" : (m_file_format == LOG_FILE_PIPE ? "ascii_pipe" : "ascii"));
   }
 
-  static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, char *alt_format = NULL);
-  int write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format = NULL);
+  static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, const char *alt_format = NULL);
+  int write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt_format = NULL);
   static bool rolled_logfile(char *file);
   static bool exists(const char *pathname);
 
   void display(FILE * fd = stdout);
   int open_file();
 
-  off_t get_size_bytes() const { return m_file_format != ASCII_PIPE? m_bytes_written : 0; };
+  off_t get_size_bytes() const { return m_file_format != LOG_FILE_PIPE? m_bytes_written : 0; };
   int do_filesystem_checks() { return 0; }; // TODO: this need to be tidy up when to redo the file checking
 
 public:
@@ -176,7 +175,9 @@ public:
 
 public:
   LogFileFormat m_file_format;
+private:
   char *m_name;
+public:
   char *m_header;
   uint64_t m_signature;           // signature of log object stored
   MetaInfo *m_meta_info;

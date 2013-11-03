@@ -164,7 +164,7 @@ public:
   RollBackCodes revertToVersion_ml(version_t version);
   RollBackCodes getVersion_ml(version_t version, textBuffer ** buffer);
   RollBackCodes updateVersion_ml(textBuffer * buf, version_t basedOn,
-                                 version_t newVersion = -1, bool notifyChange = true);
+                                 version_t newVersion = -1, bool notifyChange = true, bool incVersion = true);
   RollBackCodes forceUpdate_ml(textBuffer * buf, version_t newVersion = -1);
   version_t findVersions_ml(ExpandingArray * listNames);
   version_t findVersions_ml(Queue<versionInfo> &q);
@@ -176,11 +176,12 @@ public:
   RollBackCodes removeVersion(version_t version);
   RollBackCodes revertToVersion(version_t version);
   RollBackCodes getVersion(version_t version, textBuffer ** buffer);
-  RollBackCodes updateVersion(textBuffer * buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true);
+  RollBackCodes updateVersion(textBuffer * buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true, bool incVersion = true);
   RollBackCodes forceUpdate(textBuffer * buf, version_t newVersion = -1);
   version_t findVersions(ExpandingArray *);
   time_t versionTimeStamp(version_t version);
   int statVersion(version_t, struct stat *buf);
+  bool setLastModifiedTime();
 
   // Lock not necessary since these are only valid for a
   //  snap shot in time
@@ -205,7 +206,7 @@ private:
   int closeFile(int fd);
   int statFile(version_t version, struct stat *buf);
   char *createPathStr(version_t version);
-  RollBackCodes internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChange = true);
+  RollBackCodes internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChange = true, bool incVersion = true);
   char *configDir;
   ink_mutex fileAccessLock;
   char *fileName;

@@ -21,8 +21,6 @@
   limitations under the License.
  */
 
-
-
 #ifndef LOG_FORMAT_H
 #define LOG_FORMAT_H
 
@@ -30,8 +28,23 @@
 
 #include "libts.h"
 #include "LogField.h"
-#include "LogFormatType.h"
 #include "InkXml.h"
+
+enum LogFormatType
+{
+  // We start the numbering at 4 to compatibility with Traffic Server 4.x, which used
+  // to have the predefined log formats enumerated above ...
+  LOG_FORMAT_CUSTOM = 4,
+  LOG_FORMAT_TEXT = 5
+};
+
+enum LogFileFormat
+{
+  LOG_FILE_BINARY,
+  LOG_FILE_ASCII,
+  LOG_FILE_PIPE, // ie. ASCII pipe
+  N_LOGFILE_TYPES
+};
 
 /*-------------------------------------------------------------------------
   LogFormat
@@ -43,7 +56,6 @@
 class LogFormat
 {
 public:
-  LogFormat(LogFormatType type);
   LogFormat(const char *name, const char *format_str, unsigned interval_sec = 0);
   LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec = 0);
   LogFormat(const LogFormat & rhs);
@@ -77,7 +89,7 @@ public:
   static void turn_tagging_off() { m_tagging_on = false; }
 
 private:
-  void setup(const char *name, const char *format_str, unsigned interval_sec = 0);
+  bool setup(const char *name, const char *format_str, unsigned interval_sec = 0);
   void init_variables(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec);
 
 public:
@@ -85,11 +97,6 @@ public:
   long m_interval_sec;
   long m_interval_next;
   char *m_agg_marshal_space;
-
-  static const char *const squid_format;        // pre defined formats
-  static const char *const common_format;
-  static const char *const extended_format;
-  static const char *const extended2_format;
 
 private:
   static bool m_tagging_on;     // flag to control tagging, class
@@ -114,6 +121,14 @@ private:
   LogFormat & operator=(LogFormat & rhs);
 };
 
+// For text logs, there is no format string; we'll simply log the
+// entire entry as a string without any field substitutions.  To
+// indicate this, the format_str will be NULL.
+static inline LogFormat *
+MakeTextLogFormat(const char * name = "text") {
+  return NEW(new LogFormat(name, NULL /* format_str */));
+}
+
 /*-------------------------------------------------------------------------
   LogFormatList
   -------------------------------------------------------------------------*/
@@ -126,7 +141,6 @@ public:
 
   void add(LogFormat * format, bool copy = true);
   LogFormat *find_by_name(const char *name) const;
-  LogFormat *find_by_type(LogFormatType type, int32_t id) const;
 
   LogFormat *first() const { return m_format_list.head; }
   LogFormat *next(LogFormat * here) const { return (here->link).next; }

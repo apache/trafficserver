@@ -326,7 +326,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 
 
 int64_t
-SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf)
+SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf, int &needs)
 {
   ProxyMutex *mutex = this_ethread()->mutex;
   int64_t r = 0;
@@ -369,6 +369,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
   if (r > 0) {
     if (total_wrote != wattempted) {
       Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, wrote some bytes, but not all requested.");
+      // I'm not sure how this could happen. We should have tried and hit an EAGAIN.
+      needs |= EVENTIO_WRITE;
       return (r);
     } else {
       Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, write successful.");
@@ -381,9 +383,14 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     case SSL_ERROR_NONE:
       Debug("ssl", "SSL_write-SSL_ERROR_NONE");
       break;
-    case SSL_ERROR_WANT_WRITE:
     case SSL_ERROR_WANT_READ:
+      needs |= EVENTIO_READ;
+      r = -EAGAIN;
+      Debug("ssl", "SSL_write-SSL_ERROR_WANT_READ");
+      break;
+    case SSL_ERROR_WANT_WRITE:
     case SSL_ERROR_WANT_X509_LOOKUP:
+      needs |= EVENTIO_WRITE;
       r = -EAGAIN;
       Debug("ssl", "SSL_write-SSL_ERROR_WANT_WRITE");
       break;

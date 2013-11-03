@@ -35,7 +35,6 @@
 #include "List.h"
 #include "InkXml.h"
 
-#include "LogFormatType.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
@@ -48,9 +47,8 @@
 #include "Log.h"
 #include "SimpleTokenizer.h"
 
-#if defined(IOCORE_LOG_COLLATION)
 #include "LogCollationAccept.h"
-#endif
+#include "LogPredefined.h"
 
 #define DISK_IS_CONFIG_FULL_MESSAGE \
     "Access logging to local log directory suspended - " \
@@ -475,7 +473,7 @@ LogConfig::read_configuration_variables()
 /* variable values from records.config                           */
 
   val = (int) REC_ConfigReadInteger("proxy.config.log.search_log_enabled");
-  if (Log::logging_mode == Log::FULL_LOGGING)
+  if (Log::logging_mode == Log::LOG_MODE_FULL)
     search_log_enabled = (val > 0);
 
 /*                                                               */
@@ -540,9 +538,7 @@ LogConfig::LogConfig()
   : initialized(false),
     reconfiguration_needed(false),
     logging_space_exhausted(false), m_space_used(0), m_partition_space_left((int64_t) UINT_MAX),
-#if defined (IOCORE_LOG_COLLATION)
     m_log_collation_accept(NULL),
-#endif
     m_dir_entry(NULL),
     m_pDir(NULL),
     m_disk_full(false),
@@ -564,12 +560,10 @@ LogConfig::LogConfig()
 LogConfig::~LogConfig()
 {
 
-#if defined(IOCORE_LOG_COLLATION)
 // we don't delete the log collation accept because it may be transferred
 // to another LogConfig object
 //
 //    delete m_log_collation_accept;
-#endif
 
   ats_free(hostname);
   ats_free(logfile_dir);
@@ -619,7 +613,6 @@ LogConfig::setup_collation(LogConfig * prev_config)
       Note("Cannot activate log collation, \"%s\" is and invalid " "collation host", collation_host);
     } else {
       if (collation_mode == COLLATION_HOST) {
-#if defined(IOCORE_LOG_COLLATION)
 
         ink_assert(m_log_collation_accept == 0);
 
@@ -635,23 +628,13 @@ LogConfig::setup_collation(LogConfig * prev_config)
           Log::collation_port = collation_port;
           m_log_collation_accept = NEW(new LogCollationAccept(collation_port));
         }
-#else
-        // since we are the collation host, we need to signal the
-        // collate_cond variable so that our collation thread wakes up.
-        //
-        Log::collate_notify.signal();
-#endif
         Debug("log", "I am a collation host listening on port %d.", collation_port);
       } else {
         Debug("log", "I am a collation client (%d)."
               " My collation host is %s:%d", collation_mode, collation_host, collation_port);
       }
 
-#ifdef IOCORE_LOG_COLLATION
       Debug("log", "using iocore log collation");
-#else
-      Debug("log", "using socket log collation");
-#endif
       if (collation_host_tagged) {
         LogFormat::turn_tagging_on();
       } else {
@@ -668,55 +651,47 @@ LogConfig::setup_collation(LogConfig * prev_config)
 void
 LogConfig::init(LogConfig * prev_config)
 {
+  LogObject * errlog = NULL;
+
   ink_assert(!initialized);
 
   setup_collation(prev_config);
 
   update_space_used();
 
-  // setup the error log before the rest of the log objects since
-  // we don't do filename conflict checking for it
-  //
-  TextLogObject *old_elog = Log::error_log;
-  TextLogObject *new_elog = 0;
-
-  // swap new error log for old error log unless
-  // -there was no error log and we don't want one
-  // -there was an error log, and the new one is identical
-  //  (the logging directory did not change)
-  //
-  if (!((!old_elog && !Log::error_logging_enabled()) ||
-        (old_elog && Log::error_logging_enabled() &&
-         (prev_config ? !strcmp(prev_config->logfile_dir, logfile_dir) : 0)))) {
-    if (Log::error_logging_enabled()) {
-      new_elog = NEW(new TextLogObject("error.log", logfile_dir, true, NULL,
-                                       rolling_enabled, collation_preproc_threads,
-                                       rolling_interval_sec, rolling_offset_hr,
-                                       rolling_size_mb));
-      if (new_elog->do_filesystem_checks() < 0) {
-        const char *msg = "The log file %s did not pass filesystem checks. " "No output will be produced for this log";
-        Error(msg, new_elog->get_full_filename());
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, new_elog->get_full_filename());
-        delete new_elog;
-        new_elog = 0;
-      }
-    }
-    ink_atomic_swap(&Log::error_log, new_elog);
-    if (old_elog) {
-      old_elog->force_new_buffer();
-      Log::add_to_inactive(old_elog);
-    }
-  }
   // create log objects
   //
   if (Log::transaction_logging_enabled()) {
     setup_log_objects();
   }
-  // transfer objects from previous configuration
-  //
-  if (prev_config) {
-    transfer_objects(prev_config);
+
+  // ----------------------------------------------------------------------
+  // Construct a new error log object candidate.
+  if (Log::error_logging_enabled()) {
+    PreDefinedFormatInfo * info;
+
+    Debug("log", "creating predefined error log object");
+    info = MakePredefinedErrorLog(this);
+    errlog = this->create_predefined_object(info, 0, NULL);
+    errlog->set_fmt_timestamps();
+    delete info;
+  } else {
+    Log::error_log = NULL;
   }
+
+  if (prev_config) {
+    // Transfer objects from previous configuration.
+    transfer_objects(prev_config);
+
+    // After transferring objects, we are going to keep either the new error log or the old one. Figure out
+    // which one we are keeping and make that the global ...
+    if (Log::error_log) {
+      errlog = this->log_object_manager.find_by_format_name(Log::error_log->m_format->name());
+    }
+  }
+
+  ink_atomic_swap(&Log::error_log, errlog);
+
   // determine if we should use the orphan log space value or not
   // we use it if all objects are collation clients, or if some are and
   // the specified space for collation is larger than that for local files
@@ -799,63 +774,6 @@ LogConfig::display(FILE * fd)
   global_format_list.display(fd);
 }
 
-//-----------------------------------------------------------------------------
-// setup_pre_defined_info
-//
-// This function adds all the pre defined formats to the global_format_list
-// and gathers the information for the active formats in a single place
-// (an entry in a PreDefinedFormatInfo list)
-//
-void
-LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
-{
-  LogFormat *fmt;
-  PreDefinedFormatInfo *pdfi;
-
-  Log::config->xuid_logging_enabled = xuid_logging_enabled;
-  fmt = NEW(new LogFormat(SQUID_LOG));
-
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "squid format added to the global format list");
-
-  if (squid_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, squid_log_name, squid_log_is_ascii, squid_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-  fmt = NEW(new LogFormat(COMMON_LOG));
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "common format added to the global format list");
-
-  if (common_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, common_log_name, common_log_is_ascii, common_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-  fmt = NEW(new LogFormat(EXTENDED_LOG));
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "extended format added to the global format list");
-
-  if (extended_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, extended_log_name, extended_log_is_ascii, extended_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-  fmt = NEW(new LogFormat(EXTENDED2_LOG));
-  ink_assert(fmt != 0);
-  global_format_list.add(fmt, false);
-  Debug("log", "extended2 format added to the global format list");
-
-  if (extended2_log_enabled) {
-    pdfi = NEW(new PreDefinedFormatInfo(fmt, extended2_log_name, extended2_log_is_ascii, extended2_log_header));
-    preDefInfoList->enqueue(pdfi);
-  }
-
-}
-
 /*                                                               */
 /* The user defined filters are added to the search_one          */
 /* log object. These filters are defined to filter the images    */
@@ -894,37 +812,44 @@ LogConfig::add_filters_to_search_log_object(const char *format_name)
 // This function adds the pre-defined objects to the global_object_list.
 //
 
-void
-LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list, size_t num_filters,
+LogObject *
+LogConfig::create_predefined_object(const PreDefinedFormatInfo * pdi, size_t num_filters,
                                                   LogFilter ** filter, const char *filt_name, bool force_extension)
 {
-  PreDefinedFormatInfo *pdi;
+  const char *obj_fname;
+  char obj_filt_fname[PATH_NAME_MAX];
 
-  for (pdi = pre_def_info_list.head; pdi != NULL; pdi = (pdi->link).next) {
-    char *obj_fname;
-    char obj_filt_fname[PATH_NAME_MAX];
-    if (filt_name) {
-      ink_string_concatenate_strings_n(obj_filt_fname, PATH_NAME_MAX, pdi->filename, "-", filt_name, NULL);
-      obj_fname = obj_filt_fname;
-    } else {
-      obj_fname = pdi->filename;
+  ink_release_assert(pdi != NULL);
+
+  if (filt_name) {
+    ink_string_concatenate_strings_n(obj_filt_fname, PATH_NAME_MAX, pdi->filename, "-", filt_name, NULL);
+    obj_fname = obj_filt_fname;
+  } else {
+    obj_fname = pdi->filename;
+  }
+
+  if (force_extension) {
+    switch (pdi->filefmt) {
+      case LOG_FILE_ASCII:
+        ink_string_append(obj_filt_fname, (char *)LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION, PATH_NAME_MAX);
+        break;
+      case LOG_FILE_BINARY:
+        ink_string_append(obj_filt_fname, (char *)LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION, PATH_NAME_MAX);
+        break;
+      default:
+        break;
     }
+  }
 
-    if (force_extension) {
-      ink_string_append(obj_filt_fname,
-                        (char *) (pdi->is_ascii ?
-                                  ASCII_LOG_OBJECT_FILENAME_EXTENSION :
-                                  BINARY_LOG_OBJECT_FILENAME_EXTENSION), PATH_NAME_MAX);
-    }
-    // create object with filters
-    //
-    LogObject *obj;
-    obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
-                            pdi->is_ascii ? ASCII_LOG : BINARY_LOG,
-                            pdi->header, rolling_enabled,
-                            collation_preproc_threads, rolling_interval_sec,
-                            rolling_offset_hr, rolling_size_mb));
+  // create object with filters
+  //
+  LogObject *obj;
+  obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
+                          pdi->filefmt, pdi->header, rolling_enabled,
+                          collation_preproc_threads, rolling_interval_sec,
+                          rolling_offset_hr, rolling_size_mb));
 
+  if (pdi->collatable) {
     if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
 
       LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
@@ -934,14 +859,29 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
       loghost->set_name_port(collation_host, collation_port);
       obj->add_loghost(loghost, false);
     }
+  }
 
-    for (size_t i = 0; i < num_filters; ++i) {
-      obj->add_filter(filter[i]);
-    }
+  for (size_t i = 0; i < num_filters; ++i) {
+    obj->add_filter(filter[i]);
+  }
 
-    // give object to object manager
-    //
-    log_object_manager.manage_object(obj);
+  // give object to object manager
+  if (log_object_manager.manage_object(obj) != LogObjectManager::NO_FILENAME_CONFLICTS) {
+    delete obj;
+    return NULL;
+  }
+
+  return obj;
+}
+
+void
+LogConfig::create_predefined_objects_with_filter(const PreDefinedFormatList & predef, size_t nfilters,
+                                                  LogFilter ** filters, const char * filt_name, bool force_extension)
+{
+  PreDefinedFormatInfo *pdi;
+
+  for (pdi = predef.formats.head; pdi != NULL; pdi = (pdi->link).next) {
+    this->create_predefined_object(pdi, nfilters, filters, filt_name, force_extension);
   }
 }
 
@@ -960,7 +900,7 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
 // pre-defined formats.
 //
 LogFilter *
-LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
+LogConfig::split_by_protocol(const PreDefinedFormatList & predef)
 {
   if (!separate_icp_logs) {
     return NULL;
@@ -978,14 +918,15 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
   int64_t filter_val[http];    // protocols to reject
   size_t n = 0;
 
-  LogFilter *filter[1];
   LogField *etype_field = Log::global_field_list.find_by_symbol("etype");
   ink_assert(etype_field);
 
   if (separate_icp_logs) {
     if (separate_icp_logs == 1) {
+      LogFilter * filter[1];
+
       filter[0] = NEW(new LogFilterInt(filter_name[icp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[icp]));
-      create_pre_defined_objects_with_filter(pre_def_info_list, 1, filter, name[icp]);
+      create_predefined_objects_with_filter(predef, countof(filter), filter, name[icp]);
       delete filter[0];
     }
     filter_val[n++] = value[icp];
@@ -1008,7 +949,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
 }
 
 size_t
-  LogConfig::split_by_hostname(const PreDefinedFormatInfoList & pre_def_info_list, LogFilter * reject_protocol_filter)
+LogConfig::split_by_hostname(const PreDefinedFormatList & predef, LogFilter * reject_protocol_filter)
 {
   size_t n_hosts;
   char **host = read_log_hosts_file(&n_hosts);  // allocates memory for array
@@ -1034,7 +975,7 @@ size_t
         NEW(new LogFilterString(filter_name,
                                 shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]));
 
-      create_pre_defined_objects_with_filter(pre_def_info_list, num_filt + 1, rp_ah, host[i], true);
+      create_predefined_objects_with_filter(predef, num_filt + 1, rp_ah, host[i], true);
       delete rp_ah[num_filt];
     }
 
@@ -1054,7 +995,7 @@ size_t
     // hosts other than those specified in the hosts file and for
     // those protocols that do not have their own file
     //
-    create_pre_defined_objects_with_filter(pre_def_info_list, num_filt + 1, rp_rh);
+    create_predefined_objects_with_filter(predef, num_filt + 1, rp_rh);
     delete rp_rh[num_filt];
 
     delete[]host;               // deallocate memory allocated by
@@ -1092,18 +1033,19 @@ LogConfig::setup_log_objects()
 
   // gather the config information for the pre-defined formats
   //
-  PreDefinedFormatInfoList pre_def_info_list;
-  setup_pre_defined_info(&pre_def_info_list);
+  PreDefinedFormatList predef;
+
+  predef.init(this);
 
   // do protocol splitting
   //
-  LogFilter *reject_protocol_filter = split_by_protocol(pre_def_info_list);
+  LogFilter *reject_protocol_filter = split_by_protocol(predef);
 
   // do host splitting
   //
   size_t num_hosts = 0;
   if (separate_host_logs) {
-    num_hosts = split_by_hostname(pre_def_info_list, reject_protocol_filter);
+    num_hosts = split_by_hostname(predef, reject_protocol_filter);
   }
 
   if (num_hosts == 0) {
@@ -1114,7 +1056,7 @@ LogConfig::setup_log_objects()
     //
     LogFilter *f[1];
     f[0] = reject_protocol_filter;
-    create_pre_defined_objects_with_filter(pre_def_info_list, 1, f);
+    create_predefined_objects_with_filter(predef, countof(f), f);
   }
 
   delete reject_protocol_filter;
@@ -1158,12 +1100,6 @@ LogConfig::setup_log_objects()
   if (is_debug_tag_set("log")) {
     log_object_manager.display();
   }
-
-  PreDefinedFormatInfo *pdfi;
-  while (!pre_def_info_list.empty()) {
-    pdfi = pre_def_info_list.pop();
-    delete pdfi;
-  }
 }
 
 /*-------------------------------------------------------------------------
@@ -1195,88 +1131,64 @@ LogConfig::reconfigure(const char * /* name ATS_UNUSED */, RecDataT /* data_type
 void
 LogConfig::register_config_callbacks()
 {
-  // Note: variables that are not exposed in the UI are commented out
-  //
-  REC_RegisterConfigUpdateFunc("proxy.config.log.log_buffer_size", &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.max_secs_per_buffer",
-//                            &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_logs", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_orphan_logs", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_headroom", &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.logfile_perm",
-//                            &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.hostname",
-//                            &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.logfile_dir", &LogConfig::reconfigure, NULL);
+  static const char * names[] = {
+    "proxy.config.log.log_buffer_size",
+    "proxy.config.log.max_secs_per_buffer",
+    "proxy.config.log.max_space_mb_for_logs",
+    "proxy.config.log.max_space_mb_for_orphan_logs",
+    "proxy.config.log.max_space_mb_headroom",
+    "proxy.config.log.logfile_perm",
+    "proxy.config.log.hostname",
+    "proxy.config.log.logfile_dir",
+    "proxy.config.log.squid_log_enabled",
+    "proxy.config.log.xuid_logging_enabled",
+    "proxy.config.log.squid_log_is_ascii",
+    "proxy.config.log.squid_log_name",
+    "proxy.config.log.squid_log_header",
+    "proxy.config.log.common_log_enabled",
+    "proxy.config.log.common_log_is_ascii",
+    "proxy.config.log.common_log_name",
+    "proxy.config.log.common_log_header",
+    "proxy.config.log.extended_log_enabled",
+    "proxy.config.log.extended_log_is_ascii",
+    "proxy.config.log.extended_log_name",
+    "proxy.config.log.extended_log_header",
+    "proxy.config.log.extended2_log_enabled",
+    "proxy.config.log.extended2_log_is_ascii",
+    "proxy.config.log.extended2_log_name",
+    "proxy.config.log.extended2_log_header",
+    "proxy.config.log.separate_icp_logs",
+    "proxy.config.log.separate_host_logs",
+    "proxy.local.log.collation_mode",
+    "proxy.config.log.collation_host",
+    "proxy.config.log.collation_port",
+    "proxy.config.log.collation_host_tagged",
+    "proxy.config.log.collation_secret",
+    "proxy.config.log.collation_retry_sec",
+    "proxy.config.log.collation_max_send_buffers",
+    "proxy.config.log.rolling_enabled",
+    "proxy.config.log.rolling_interval_sec",
+    "proxy.config.log.rolling_offset_hr",
+    "proxy.config.log.rolling_size_mb",
+    "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.custom_logs_enabled",
+    "proxy.config.log.xml_config_file",
+    "proxy.config.log.hosts_config_file",
+    "proxy.config.log.sampling_frequency",
+    "proxy.config.log.file_stat_frequency",
+    "proxy.config.log.space_used_frequency",
+    "proxy.config.log.search_rolling_interval_sec",
+    "proxy.config.log.search_log_enabled",
+    "proxy.config.log.search_top_sites",
+    "proxy.config.log.search_server_ip_addr",
+    "proxy.config.log.search_server_port",
+    "proxy.config.log.search_url_filter",
+  };
 
-  // SQUID
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.xuid_logging_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.squid_log_header", &LogConfig::reconfigure, NULL);
 
-  // COMMON
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.common_log_header", &LogConfig::reconfigure, NULL);
-
-  // EXTENDED
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended_log_header", &LogConfig::reconfigure, NULL);
-
-  // EXTENDED2
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_is_ascii", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_name", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_header", &LogConfig::reconfigure, NULL);
-
-  // SPLITTING
-  REC_RegisterConfigUpdateFunc("proxy.config.log.separate_icp_logs", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.separate_host_logs", &LogConfig::reconfigure, NULL);
-
-  // COLLATION
-  REC_RegisterConfigUpdateFunc("proxy.local.log.collation_mode", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_host", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_port", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_host_tagged", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.collation_secret", &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.collation_retry_sec",
-//                                  &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.collation_max_send_buffers",
-//                                  &LogConfig::reconfigure, NULL);
-
-  // ROLLING
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_offset_hr", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.rolling_size_mb", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.auto_delete_rolled_files", &LogConfig::reconfigure, NULL);
-
-  // CUSTOM LOGGING
-  REC_RegisterConfigUpdateFunc("proxy.config.log.custom_logs_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.xml_config_file", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.hosts_config_file", &LogConfig::reconfigure, NULL);
-
-  // PERFORMANCE
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.sampling_frequency",
-//                            &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.file_stat_frequency",
-//                            &LogConfig::reconfigure, NULL);
-//    REC_RegisterConfigUpdateFunc ("proxy.config.log.space_used_frequency",
-//                            &LogConfig::reconfigure, NULL);
-
-/* These are the call back function connectivities               */
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_log_enabled", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_top_sites", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_server_ip_addr", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_server_port", &LogConfig::reconfigure, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.log.search_url_filter", &LogConfig::reconfigure, NULL);
-
+  for (unsigned i = 0; i < countof(names); ++i) {
+    REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, NULL);
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -1456,7 +1368,7 @@ LogConfig::update_space_used()
   if (!logfile_dir) {
     const char *msg = "Logging directory not specified";
     Error("%s", msg);
-    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg);
+    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, "%s", msg);
     m_log_directory_inaccessible = true;
     return;
   }
@@ -1544,7 +1456,7 @@ LogConfig::update_space_used()
   RecSetRawStatCount(log_rsb, log_stat_log_files_space_used_stat, 1);
 
   Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
-  Debug("logspace", "%" PRId64 " bytes left on parition", m_partition_space_left);
+  Debug("logspace", "%" PRId64 " bytes left on partition", m_partition_space_left);
 
   //
   // Now that we have an accurate picture of the amount of space being
@@ -1738,7 +1650,7 @@ LogConfig::read_xml_log_config(int from_memory)
   if (!from_memory) {
 
     if (log_config.parse() < 0) {
-      Note("Error parsing log config file; ensure that it is XML-based.");
+      Note("Error parsing log config file %s; ensure that it is XML-based", config_path);
       return;
     }
 
@@ -1752,7 +1664,7 @@ LogConfig::read_xml_log_config(int from_memory)
     char *ptr = (char *)ats_malloc(ptr_size);
 
     if (pipe(filedes) != 0) {
-      Note("xml parsing: Error in Opening a pipe\n");
+      Note("xml parsing: Error in Opening a pipe");
       return;
     }
 
@@ -2164,12 +2076,12 @@ LogConfig::read_xml_log_config(int from_memory)
       }
       // file format
       //
-      LogFileFormat file_type = ASCII_LOG;      // default value
+      LogFileFormat file_type = LOG_FILE_ASCII;      // default value
       if (mode.count()) {
         char *mode_str = mode.dequeue();
         file_type = (strncasecmp(mode_str, "bin", 3) == 0 ||
                      (mode_str[0] == 'b' && mode_str[1] == 0) ?
-                     BINARY_LOG : (strcasecmp(mode_str, "ascii_pipe") == 0 ? ASCII_PIPE : ASCII_LOG));
+                     LOG_FILE_BINARY : (strcasecmp(mode_str, "ascii_pipe") == 0 ? LOG_FILE_PIPE : LOG_FILE_ASCII));
       }
       // rolling
       //

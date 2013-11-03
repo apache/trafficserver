@@ -27,8 +27,8 @@
 #define LOG_CONFIG_H
 
 #include "libts.h"
-
 #include "P_RecProcess.h"
+#include "ProxyConfig.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -75,10 +75,9 @@ enum
 extern RecRawStatBlock *log_rsb;
 
 struct dirent;
-
-#if defined(IOCORE_LOG_COLLATION)
 struct LogCollationAccept;
-#endif
+struct PreDefinedFormatList;
+struct PreDefinedFormatInfo;
 
 /*-------------------------------------------------------------------------
   LogConfig
@@ -106,7 +105,7 @@ struct LogCollationAccept;
         for this new variable if it is exposed in the GUI
   -------------------------------------------------------------------------*/
 
-class LogConfig
+class LogConfig : public ConfigInfo
 {
 
 public:
@@ -253,34 +252,17 @@ public:
 
 private:
 
-  // this struct collects all the necesary info to build a pre-defined object
-  //
-  struct PreDefinedFormatInfo
-  {
-    LogFormat *format;
-    char *filename;
-    int is_ascii;
-    char *header;
-    LINK(PreDefinedFormatInfo, link);
-
-    PreDefinedFormatInfo(LogFormat * fmt, char *fname, int ascii,
-                         char *hdr):format(fmt), filename(fname), is_ascii(ascii), header(hdr)
-    { }
-  };
-
-
-  typedef Queue<PreDefinedFormatInfo> PreDefinedFormatInfoList;
-
   void read_xml_log_config(int from_memory);
   char **read_log_hosts_file(size_t * nhosts);
 
   void setup_default_values();
   void setup_collation(LogConfig * prev_config);
-  void setup_pre_defined_info(PreDefinedFormatInfoList * pre_def_info_list);
-  LogFilter *split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list);
-  size_t split_by_hostname(const PreDefinedFormatInfoList & pre_def_info_list, LogFilter * reject_protocol);
-  void create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList &pre_def_info_list, size_t num_filt,
-                                              LogFilter ** filter, const char *filt_name = 0, bool force_extension = false);
+  LogFilter *split_by_protocol(const PreDefinedFormatList & pre_def_info_list);
+  size_t split_by_hostname(const PreDefinedFormatList & pre_def_info_list, LogFilter * reject_protocol);
+  LogObject * create_predefined_object(const PreDefinedFormatInfo * pdi, size_t nfilters,
+        LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
+  void create_predefined_objects_with_filter(const PreDefinedFormatList &pre_def_info_list, size_t nfilters,
+        LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
 
   void add_filters_to_search_log_object(const char *format_name);
 
@@ -290,9 +272,7 @@ private:
   //
   bool use_orphan_log_space_value;
 
-#if defined(IOCORE_LOG_COLLATION)
   LogCollationAccept *m_log_collation_accept;
-#endif
 
   struct dirent *m_dir_entry;
   char *m_pDir;

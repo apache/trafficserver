@@ -24,6 +24,8 @@
 #ifndef ATSCPPAPI_PLUGININIT_H_
 #define ATSCPPAPI_PLUGININIT_H_
 
+#include <atscppapi/utils.h>
+
 extern "C" {
 
 /** 

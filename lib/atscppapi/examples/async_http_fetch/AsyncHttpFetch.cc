@@ -137,7 +137,7 @@ public:
   }
 };
 
-void TSPluginInit(int argc, const char *argv[]) {
+void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
   GlobalPlugin *instance = new GlobalHookPlugin();
 }

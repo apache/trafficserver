@@ -24,14 +24,12 @@
 /***************************************************************************
  Log.cc
 
-
  This file defines the implementation of the static Log class, which is
  primarily used as a namespace.  That is, there are no Log objects, but the
  class scope and static members provide a protected namespace for all of
  the logging routines and enumerated types.  When C++ namespaces are more
  widely-implemented, Log could be implemented as a namespace rather than a
  class.
-
 
  ***************************************************************************/
 #include "libts.h"
@@ -64,17 +62,11 @@
 #define PERIODIC_TASKS_INTERVAL 5 // TODO: Maybe this should be done as a config option
 
 // Log global objects
-inkcoreapi TextLogObject *Log::error_log = NULL;
-LogConfig *Log::config = NULL;
+inkcoreapi LogObject *Log::error_log = NULL;
 LogFieldList Log::global_field_list;
 LogFormat *Log::global_scrap_format = NULL;
 LogObject *Log::global_scrap_object = NULL;
-Log::LoggingMode Log::logging_mode = LOG_NOTHING;
-
-// Inactive objects
-LogObject **Log::inactive_objects;
-size_t Log::numInactiveObjects;
-size_t Log::maxInactiveObjects;
+Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
 
 // Flush thread stuff
 EventNotify *Log::preproc_notify;
@@ -104,54 +96,52 @@ RecRawStatBlock *log_rsb;
   This routine is invoked when the current LogConfig object says it needs
   to be changed (as the result of a manager callback).
   -------------------------------------------------------------------------*/
+
+LogConfig *Log::config = NULL;
+static unsigned log_configid = 0;
+
 void
 Log::change_configuration()
 {
+  LogConfig * prev = Log::config;
+  LogConfig * new_config = NULL;
+
   Debug("log-config", "Changing configuration ...");
 
-  LogConfig *new_config = NEW(new LogConfig);
+  new_config = NEW(new LogConfig);
   ink_assert(new_config != NULL);
   new_config->read_configuration_variables();
 
   // grab the _APImutex so we can transfer the api objects to
   // the new config
   //
-  ink_mutex_acquire(Log::config->log_object_manager._APImutex);
+  ink_mutex_acquire(prev->log_object_manager._APImutex);
   Debug("log-api-mutex", "Log::change_configuration acquired api mutex");
 
   new_config->init(Log::config);
 
-  // Swap in the new config object
-  //
+  // Make the new LogConfig active.
   ink_atomic_swap(&Log::config, new_config);
 
-  // Force new buffers for inactive objects
-  //
-  for (size_t i = 0; i < numInactiveObjects; i++) {
-    inactive_objects[i]->force_new_buffer();
-  }
+  // XXX There is a race condition with API objects. If TSTextLogObjectCreate()
+  // is called before the Log::config swap, then it will be blocked on the lock
+  // on the *old* LogConfig and register it's LogObject with that manager. If
+  // this happens, then the new TextLogObject will be immediately lost. Traffic
+  // Server would crash the next time the plugin referenced the freed object.
 
-  ink_mutex_release(Log::config->log_object_manager._APImutex);
+  ink_mutex_release(prev->log_object_manager._APImutex);
   Debug("log-api-mutex", "Log::change_configuration released api mutex");
 
+  // Register the new config in the config processor; the old one will now be scheduled for a
+  // future deletion. We don't need to do anything magical with refcounts, since the
+  // configProcessor will keep a reference count, and drop it when the deletion is scheduled.
+  configProcessor.set(log_configid, new_config);
+
+  // If we replaced the logging configuration, flush any log
+  // objects that weren't transferred to the new config ...
+  prev->log_object_manager.flush_all_objects();
+
   Debug("log-config", "... new configuration in place");
-}
-
-void
-Log::add_to_inactive(LogObject * object)
-{
-  if (Log::numInactiveObjects == Log::maxInactiveObjects) {
-    Log::maxInactiveObjects += LOG_OBJECT_ARRAY_DELTA;
-    LogObject **new_objects = new LogObject *[Log::maxInactiveObjects];
-
-    for (size_t i = 0; i < Log::numInactiveObjects; i++) {
-      new_objects[i] = Log::inactive_objects[i];
-    }
-    delete[]Log::inactive_objects;
-    Log::inactive_objects = new_objects;
-  }
-
-  Log::inactive_objects[Log::numInactiveObjects++] = object;
 }
 
 /*-------------------------------------------------------------------------
@@ -203,7 +193,6 @@ struct PeriodicWakeup : Continuation
   }
 };
 
-
 /*-------------------------------------------------------------------------
   Log::periodic_tasks
 
@@ -214,25 +203,7 @@ struct PeriodicWakeup : Continuation
 void
 Log::periodic_tasks(long time_now)
 {
-  // delete inactive objects
-  //
-  // we don't care if we miss an object that may be added to the set of
-  // inactive objects just after we have read numInactiveObjects and found
-  // it to be zero; we will get a chance to delete it next time
-  //
-
   Debug("log-api-mutex", "entering Log::periodic_tasks");
-  if (numInactiveObjects) {
-    ink_mutex_acquire(Log::config->log_object_manager._APImutex);
-    Debug("log-api-mutex", "Log::periodic_tasks acquired api mutex");
-    Debug("log-periodic", "Deleting inactive_objects");
-    for (size_t i = 0; i < numInactiveObjects; i++) {
-      delete inactive_objects[i];
-    }
-    numInactiveObjects = 0;
-    ink_mutex_release(Log::config->log_object_manager._APImutex);
-    Debug("log-api-mutex", "Log::periodic_tasks released api mutex");
-  }
 
   if (logging_mode_changed || Log::config->reconfiguration_needed) {
     Debug("log-config", "Performing reconfiguration, init status = %d", init_status);
@@ -240,8 +211,8 @@ Log::periodic_tasks(long time_now)
     if (logging_mode_changed) {
       int val = (int) REC_ConfigReadInteger("proxy.config.log.logging_enabled");
 
-      if (val<LOG_NOTHING || val> FULL_LOGGING) {
-        logging_mode = FULL_LOGGING;
+      if (val<LOG_MODE_NONE || val> LOG_MODE_FULL) {
+        logging_mode = LOG_MODE_FULL;
         Warning("proxy.config.log.logging_enabled has an invalid " "value setting it to %d", logging_mode);
       } else {
         logging_mode = (LoggingMode) val;
@@ -252,7 +223,7 @@ Log::periodic_tasks(long time_now)
     // so that log objects are flushed
     //
     change_configuration();
-  } else if (logging_mode > LOG_NOTHING || config->collation_mode == LogConfig::COLLATION_HOST ||
+  } else if (logging_mode > LOG_MODE_NONE || config->collation_mode == LogConfig::COLLATION_HOST ||
              config->has_api_objects()) {
     Debug("log-periodic", "Performing periodic tasks");
 
@@ -261,12 +232,11 @@ Log::periodic_tasks(long time_now)
     if (config->space_is_short() || time_now % config->space_used_frequency == 0) {
       Log::config->update_space_used();
     }
+
     // See if there are any buffers that have expired
     //
     Log::config->log_object_manager.check_buffer_expiration(time_now);
-    if (error_log) {
-      error_log->check_buffer_expiration(time_now);
-    }
+
     // Check if we received a request to roll, and roll if so, otherwise
     // give objects a chance to roll if they need to
     //
@@ -896,7 +866,6 @@ Log::init_fields()
   init_status |= FIELDS_INITIALIZED;
 }
 
-
 /*-------------------------------------------------------------------------
 
   Initialization functions
@@ -914,10 +883,6 @@ Log::handle_logging_mode_change(const char */* name ATS_UNUSED */, RecDataT /* d
 void
 Log::init(int flags)
 {
-  maxInactiveObjects = LOG_OBJECT_ARRAY_DELTA;
-  numInactiveObjects = 0;
-  inactive_objects = new LogObject*[maxInactiveObjects];
-
   collation_preproc_threads = 1;
   collation_accept_file_descriptor = NO_FD;
 
@@ -926,14 +891,15 @@ Log::init(int flags)
   config_flags = flags;
 
   // create the configuration object
-  //
-  config = NEW (new LogConfig);
+  config = NEW(new LogConfig());
   ink_assert (config != NULL);
+
+  log_configid = configProcessor.set(log_configid, config);
 
   // set the logging_mode and read config variables if needed
   //
   if (config_flags & LOGCAT) {
-    logging_mode = LOG_NOTHING;
+    logging_mode = LOG_MODE_NONE;
   } else {
     log_rsb = RecAllocateRawStatBlock((int) log_stat_count);
     LogConfig::register_stat_callbacks();
@@ -943,11 +909,11 @@ Log::init(int flags)
     collation_preproc_threads = config->collation_preproc_threads;
 
     if (config_flags & STANDALONE_COLLATOR) {
-      logging_mode = LOG_TRANSACTIONS_ONLY;
+      logging_mode = LOG_MODE_TRANSACTIONS;
     } else {
       int val = (int) REC_ConfigReadInteger("proxy.config.log.logging_enabled");
-      if (val < LOG_NOTHING || val > FULL_LOGGING) {
-        logging_mode = FULL_LOGGING;
+      if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
+        logging_mode = LOG_MODE_FULL;
         Warning("proxy.config.log.logging_enabled has an invalid "
           "value, setting it to %d", logging_mode);
       } else {
@@ -1015,12 +981,12 @@ Log::init_when_enabled()
     }
     // setup global scrap object
     //
-    global_scrap_format = NEW(new LogFormat(TEXT_LOG));
+    global_scrap_format = MakeTextLogFormat();
     global_scrap_object =
       NEW(new LogObject(global_scrap_format,
                         Log::config->logfile_dir,
                         "scrapfile.log",
-                        BINARY_LOG, NULL,
+                        LOG_FILE_BINARY, NULL,
                         Log::config->rolling_enabled,
                         Log::config->collation_preproc_threads,
                         Log::config->rolling_interval_sec,
@@ -1079,23 +1045,6 @@ Log::create_threads()
     sprintf(desc, "[LOG_FLUSH]");
     eventProcessor.spawn_thread(flush_cont, desc, stacksize);
 
-#if !defined(IOCORE_LOG_COLLATION)
-    // start the collation thread if we are not using iocore log collation
-    //
-    // for the collation thread, we start one on each machine (done here)
-    // and then block it on a mutex variable that is only released (from
-    // LogConfig) on the machine configured to be the collation server.
-    // When it is no longer needed (say after a reconfiguration), it will
-    // be blocked again on it's condition variable.  This makes it easy to
-    // start and stop the collation thread, and assumes that there is not
-    // much overhead associated with keeping an ink_thread blocked on a
-    // condition variable.
-    //
-    Continuation *collate_continuation = NEW(new LoggingCollateContinuation);
-    sprintf(desc, "[LOG_COLLATION]");
-    Event *collate_event = eventProcessor.spawn_thread(collate_continuation, desc);
-    collate_thread = collate_event->ethread->tid;
-#endif
     init_status |= THREADS_CREATED;
   }
 }
@@ -1170,15 +1119,25 @@ done:
 int
 Log::error(const char *format, ...)
 {
+  va_list ap;
+  int ret;
+
+  va_start(ap, format);
+  ret = Log::va_error(format, ap);
+  va_end(ap);
+
+  return ret;
+}
+
+int
+Log::va_error(const char *format, va_list ap)
+{
   int ret_val = Log::SKIP;
   ProxyMutex *mutex = this_ethread()->mutex;
 
   if (error_log) {
     ink_assert(format != NULL);
-    va_list ap;
-    va_start(ap, format);
-    ret_val = error_log->va_write(format, ap);
-    va_end(ap);
+    ret_val = error_log->va_log(NULL, format, ap);
 
     switch (ret_val) {
     case Log::LOG_OK:
@@ -1210,44 +1169,6 @@ Log::error(const char *format, ...)
 
   RecIncrRawStat(log_rsb, mutex->thread_holding,
                  log_stat_event_log_error_skip_stat, 1);
-  return ret_val;
-}
-
-int
-Log::va_error(char *format, va_list ap)
-{
-  int ret_val = Log::SKIP;
-
-  if (error_log) {
-    ink_assert(format != NULL);
-    ProxyMutex *mutex = this_ethread()->mutex; 
-    ret_val = error_log->va_write(format, ap);
-
-    switch (ret_val) {
-    case Log::LOG_OK:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_ok_stat, 1);
-      break;
-    case Log::SKIP:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_skip_stat, 1);
-      break;
-    case Log::AGGR:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_aggr_stat, 1);
-      break;
-    case Log::FULL:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_full_stat, 1);
-      break;
-    case Log::FAIL:
-      RecIncrRawStat(log_rsb, mutex->thread_holding,
-                     log_stat_event_log_error_fail_stat, 1);
-      break;
-    default:
-      ink_release_assert(!"Unexpected result");
-    }
-  }
 
   return ret_val;
 }
@@ -1264,7 +1185,6 @@ Log::va_error(char *format, va_list ap)
 void *
 Log::preproc_thread_main(void *args)
 {
-  size_t buffers_preproced;
   int idx = *(int *)args;
 
   Debug("log-preproc", "log preproc thread is alive ...");
@@ -1272,16 +1192,20 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
-    buffers_preproced = config->log_object_manager.preproc_buffers(idx);
+    size_t buffers_preproced;
+    LogConfig * current = (LogConfig *)configProcessor.get(log_configid);
 
-    if (error_log)
-      buffers_preproced += error_log->preproc_buffers(idx);
+    if (current) {
+      buffers_preproced = current->log_object_manager.preproc_buffers(idx);
+    }
 
     // config->increment_space_used(bytes_to_disk);
     // TODO: the bytes_to_disk should be set to Log
 
-    Debug("log-preproc","%zu buffers preprocessed this round",
-          buffers_preproced);
+    Debug("log-preproc","%zu buffers preprocessed from LogConfig %p (refcount=%d) this round",
+          buffers_preproced, current, current->m_refcount);
+
+    configProcessor.release(log_configid, current);
 
     // wait for more work; a spurious wake-up is ok since we'll just
     // check the queue and find there is nothing to do, then wait
@@ -1326,7 +1250,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       bytes_written = 0;
       logfile = fdata->m_logfile;
 
-      if (logfile->m_file_format == BINARY_LOG) {
+      if (logfile->m_file_format == LOG_FILE_BINARY) {
 
         logbuffer = (LogBuffer *)fdata->m_data;
         LogBufferHeader *buffer_header = logbuffer->header();
@@ -1334,8 +1258,8 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
         buf = (char *)buffer_header;
         total_bytes = buffer_header->byte_count;
 
-      } else if (logfile->m_file_format == ASCII_LOG
-                 || logfile->m_file_format == ASCII_PIPE){
+      } else if (logfile->m_file_format == LOG_FILE_ASCII
+                 || logfile->m_file_format == LOG_FILE_PIPE){
 
         buf = (char *)fdata->m_data;
         total_bytes = fdata->m_len;
@@ -1348,7 +1272,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       logfile->check_fd();
       if (!logfile->is_open()) {
         Warning("File:%s was closed, have dropped (%d) bytes.",
-                logfile->m_name, total_bytes);
+                logfile->get_name(), total_bytes);
 
         RecIncrRawStat(log_rsb, mutex->thread_holding,
                        log_stat_bytes_lost_before_written_to_disk_stat,
@@ -1362,7 +1286,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       while (total_bytes - bytes_written) {
         if (Log::config->logging_space_exhausted) {
           Debug("log", "logging space exhausted, failed to write file:%s, have dropped (%d) bytes.",
-                  logfile->m_name, (total_bytes - bytes_written));
+                  logfile->get_name(), (total_bytes - bytes_written));
 
           RecIncrRawStat(log_rsb, mutex->thread_holding,
                          log_stat_bytes_lost_before_written_to_disk_stat,
@@ -1374,7 +1298,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
                       total_bytes - bytes_written);
         if (len < 0) {
           Error("Failed to write log to %s: [tried %d, wrote %d, %s]",
-                logfile->m_name, total_bytes - bytes_written,
+                logfile->get_name(), total_bytes - bytes_written,
                 bytes_written, strerror(errno));
 
           RecIncrRawStat(log_rsb, mutex->thread_holding,
@@ -1433,7 +1357,6 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
   int bytes_read;
   int sock_id;
   int new_client;
-
 
   Debug("log-thread", "Log collation thread is alive ...");
 
@@ -1555,8 +1478,8 @@ Log::match_logobject(LogBufferHeader * header)
     LogFormat *fmt = NEW(new LogFormat("__collation_format__", header->fmt_fieldlist(), header->fmt_printf()));
 
     if (fmt->valid()) {
-      LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ? BINARY_LOG :
-        (header->log_object_flags & LogObject::WRITES_TO_PIPE ? ASCII_PIPE : ASCII_LOG);
+      LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ? LOG_FILE_BINARY :
+        (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
 
       obj = NEW(new LogObject(fmt, Log::config->logfile_dir,
                               header->log_filename(), file_format, NULL,

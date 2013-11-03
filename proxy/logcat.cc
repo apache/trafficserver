@@ -27,7 +27,6 @@
 
 #define PROGRAM_NAME        "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE  65536
-#undef IOCORE_LOG_COLLATION
 
 #include <poll.h>
 
@@ -44,6 +43,7 @@
 #include "LogBuffer.h"
 #include "LogUtils.h"
 #include "LogSock.h"
+#include "LogPredefined.h"
 #include "Log.h"
 
 // logcat-specific command-line flags
@@ -164,15 +164,15 @@ process_file(int in_fd, int out_fd)
     // see if there is an alternate format request from the command
     // line
     //
-    char *alt_format = NULL;
+    const char * alt_format = NULL;
     if (squid_flag)
-      alt_format = (char *) LogFormat::squid_format;
+      alt_format = PreDefinedFormatInfo::squid;
     if (clf_flag)
-      alt_format = (char *) LogFormat::common_format;
+      alt_format = PreDefinedFormatInfo::common;
     if (elf_flag)
-      alt_format = (char *) LogFormat::extended_format;
+      alt_format = PreDefinedFormatInfo::extended;
     if (elf2_flag)
-      alt_format = (char *) LogFormat::extended2_format;
+      alt_format = PreDefinedFormatInfo::extended2;
 
     // convert the buffer to ascii entries and place onto stdout
     //
@@ -283,8 +283,8 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   int error = NO_ERROR;
 
   if (n_file_arguments) {
-    int bin_ext_len = strlen(BINARY_LOG_OBJECT_FILENAME_EXTENSION);
-    int ascii_ext_len = strlen(ASCII_LOG_OBJECT_FILENAME_EXTENSION);
+    int bin_ext_len = strlen(LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION);
+    int ascii_ext_len = strlen(LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION);
 
     for (unsigned i = 0; i < n_file_arguments; ++i) {
       int in_fd = open(file_arguments[i], O_RDONLY);
@@ -301,13 +301,13 @@ main(int /* argc ATS_UNUSED */, char *argv[])
           //
           int n = strlen(file_arguments[i]);
           int copy_len = (n >= bin_ext_len ? (strcmp(&file_arguments[i][n - bin_ext_len],
-                                                     BINARY_LOG_OBJECT_FILENAME_EXTENSION) ==
+                                                     LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION) ==
                                               0 ? n - bin_ext_len : n) : n);
 
           char *out_filename = (char *)ats_malloc(copy_len + ascii_ext_len + 1);
 
           memcpy(out_filename, file_arguments[i], copy_len);
-          memcpy(&out_filename[copy_len], ASCII_LOG_OBJECT_FILENAME_EXTENSION, ascii_ext_len);
+          memcpy(&out_filename[copy_len], LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION, ascii_ext_len);
           out_filename[copy_len + ascii_ext_len] = 0;
 
           out_fd = open_output_file(out_filename);

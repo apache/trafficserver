@@ -101,6 +101,7 @@ event_int_to_string(int event, int blen, char *buffer)
     case MGMT_EVENT_RESTART: return "MGMT_EVENT_RESTART";
     case MGMT_EVENT_BOUNCE: return "MGMT_EVENT_BOUNCE";
     case MGMT_EVENT_CONFIG_FILE_UPDATE: return "MGMT_EVENT_CONFIG_FILE_UPDATE";
+    case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION: return "MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION";
     case MGMT_EVENT_CLEAR_STATS: return "MGMT_EVENT_CLEAR_STATS";
 
   default:

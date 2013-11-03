@@ -151,7 +151,7 @@ ProcessManager::processSignalQueue()
     Debug("pmgmt", "[ProcessManager] ==> Signalling local manager '%d'\n", mh->msg_id);
 
     if (require_lm && mgmt_write_pipe(local_manager_sockfd, (char *) mh, sizeof(MgmtMessageHdr) + mh->data_len) <= 0) {
-      mgmt_fatal(stderr, "[ProcessManager::processSignalQueue] Error writing message!");
+      mgmt_fatal(stderr, errno, "[ProcessManager::processSignalQueue] Error writing message!");
       //ink_assert(enqueue(mgmt_signal_queue, mh));
     } else {
       ats_free(mh);
@@ -188,15 +188,15 @@ ProcessManager::initLMConnection()
   servlen = strlen(serv_addr.sun_path) + sizeof(serv_addr.sun_family);
 #endif
   if ((local_manager_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-    mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Unable to create socket\n");
+    mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Unable to create socket\n");
   }
 
   if (fcntl(local_manager_sockfd, F_SETFD, 1) < 0) {
-    mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Unable to set close-on-exec\n");
+    mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Unable to set close-on-exec\n");
   }
 
   if ((connect(local_manager_sockfd, (struct sockaddr *) &serv_addr, servlen)) < 0) {
-    mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Connect failed\n");
+    mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Connect failed\n");
   }
 
   data_len = sizeof(pid_t);
@@ -205,19 +205,19 @@ ProcessManager::initLMConnection()
   mh_full->data_len = data_len;
   memcpy((char *) mh_full + sizeof(MgmtMessageHdr), &(pid), data_len);
   if (mgmt_write_pipe(local_manager_sockfd, (char *) mh_full, sizeof(MgmtMessageHdr) + data_len) <= 0) {
-    mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Error writing message!\n");
+    mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Error writing message!\n");
   }
 
   /* Read SYNC_KEY from manager */
   if (mgmt_read_pipe(local_manager_sockfd, (char *) &mh_hdr, sizeof(MgmtMessageHdr)) <= 0) {
-    mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Error reading sem message!\n");
+    mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Error reading sem message!\n");
   } else {
     // coverity[uninit_use]
     mh_full = (MgmtMessageHdr *) alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
     memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
     sync_key_raw = (char *) mh_full + sizeof(MgmtMessageHdr);
     if (mgmt_read_pipe(local_manager_sockfd, sync_key_raw, mh_hdr.data_len) < 0) {
-      mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Error reading sem message!\n");
+      mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Error reading sem message!\n");
     }
   }
 
@@ -266,19 +266,19 @@ ProcessManager::pollLMConnection()
           Debug("pmgmt", "[ProcessManager::pollLMConnection] Message: '%d'", mh_full->msg_id);
           handleMgmtMsgFromLM(mh_full);
         } else if (res < 0) {
-          mgmt_fatal(stderr, "[ProcessManager::pollLMConnection] Error in read!");
+          mgmt_fatal(stderr, errno, "[ProcessManager::pollLMConnection] Error in read!");
         }
       } else if (res < 0) {
-        mgmt_fatal(stderr, "[ProcessManager::pollLMConnection] Error in read!");
+        mgmt_fatal(stderr, errno, "[ProcessManager::pollLMConnection] Error in read!");
       }
       // handle EOF
       if (res == 0) {
         close_socket(local_manager_sockfd);
-        mgmt_fatal(stderr, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
+        mgmt_fatal(stderr, 0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
       }
 
     } else if (num < 0) {       /* Error */
-      mgmt_elog(stderr, "[ProcessManager::pollLMConnection] select failed or was interrupted (%d)\n", errno);
+      mgmt_elog(stderr, 0, "[ProcessManager::pollLMConnection] select failed or was interrupted (%d)\n", errno);
     }
 
   }
@@ -312,6 +312,7 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr * mh)
     signalMgmtEntity(MGMT_EVENT_HTTP_CLUSTER_DELTA, data_raw);
     break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
+  case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:
     /*
       librecords -- we don't do anything in here because we are traffic_server
       and we are not the owner of proxy.config.* variables.
@@ -331,7 +332,7 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr * mh)
     signalMgmtEntity(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
     break;
   default:
-    mgmt_elog(stderr, "[ProcessManager::pollLMConnection] unknown type %d\n", mh->msg_id);
+    mgmt_elog(stderr, 0, "[ProcessManager::pollLMConnection] unknown type %d\n", mh->msg_id);
     break;
   }
 }

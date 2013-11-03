@@ -378,7 +378,7 @@ RecRegisterConfigCounter(RecT rec_type, const char *name,
 // RecSetRecordXXX
 //-------------------------------------------------------------------------
 int
-RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, bool lock)
+RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, bool lock, bool inc_version)
 {
   int err = REC_ERR_OKAY;
   RecRecord *r1;
@@ -423,6 +423,9 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
 
         if (RecDataSet(data_type, &(r1->data), data)) {
           r1->sync_required = REC_SYNC_REQUIRED;
+          if (inc_version) {
+            r1->sync_required |= REC_INC_CONFIG_VERSION;
+          }
           if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
             r1->config_meta.update_required = REC_UPDATE_REQUIRED;
           }
@@ -479,43 +482,43 @@ Ldone:
 }
 
 int
-RecSetRecordConvert(const char *name, const RecString rec_string, bool lock)
+RecSetRecordConvert(const char *name, const RecString rec_string, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, NULL, lock);
+  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, NULL, lock, inc_version);
 }
 
 int
-RecSetRecordInt(const char *name, RecInt rec_int, bool lock)
+RecSetRecordInt(const char *name, RecInt rec_int, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_int = rec_int;
-  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, NULL, lock);
+  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, NULL, lock, inc_version);
 }
 
 int
-RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock)
+RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_float = rec_float;
-  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, NULL, lock);
+  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, NULL, lock, inc_version);
 }
 
 int
-RecSetRecordString(const char *name, const RecString rec_string, bool lock)
+RecSetRecordString(const char *name, const RecString rec_string, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, NULL, lock);
+  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, NULL, lock, inc_version);
 }
 
 int
-RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock)
+RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_counter = rec_counter;
-  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, NULL, lock);
+  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, NULL, lock, inc_version);
 }
 
 
@@ -591,25 +594,23 @@ RecSyncStatsFile()
   return REC_ERR_OKAY;
 }
 
-
-//-------------------------------------------------------------------------
-// RecReadConfigFile
-//-------------------------------------------------------------------------
-
 // Consume a parsed record, pushing it into the records hash table.
 static void
-RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char * name, const char * value)
+RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char * name, const char * value, bool inc_version)
 {
     RecData data;
 
     memset(&data, 0, sizeof(RecData));
     RecDataSetFromString(data_type, &data, value);
-    RecSetRecord(rec_type, name, data_type, &data, NULL, false);
+    RecSetRecord(rec_type, name, data_type, &data, NULL, false, inc_version);
     RecDataClear(data_type, &data);
 }
 
+//-------------------------------------------------------------------------
+// RecReadConfigFile
+//-------------------------------------------------------------------------
 int
-RecReadConfigFile()
+RecReadConfigFile(bool inc_version)
 {
   RecDebug(DL_Note, "Reading '%s'", g_rec_config_fpath);
 
@@ -617,7 +618,7 @@ RecReadConfigFile()
   ink_rwlock_wrlock(&g_records_rwlock);
 
   // Parse the actual fileand hash the values.
-  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry);
+  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry, inc_version);
 
   // release our hash table
   ink_rwlock_unlock(&g_records_rwlock);
@@ -630,10 +631,13 @@ RecReadConfigFile()
 // RecSyncConfigFile
 //-------------------------------------------------------------------------
 int
-RecSyncConfigToTB(textBuffer * tb)
+RecSyncConfigToTB(textBuffer * tb, bool *inc_version)
 {
   int err = REC_ERR_FAIL;
 
+  if (inc_version != NULL) {
+    *inc_version = false;
+  }
   /*
    * g_mode_type should be initialized by
    * RecLocalInit() or RecProcessInit() earlier.
@@ -664,6 +668,12 @@ RecSyncConfigToTB(textBuffer * tb)
           }
           r->sync_required = r->sync_required & ~REC_DISK_SYNC_REQUIRED;
           sync_to_disk = true;
+          if (r->sync_required & REC_INC_CONFIG_VERSION) {
+            r->sync_required = r->sync_required & ~REC_INC_CONFIG_VERSION;
+            if (inc_version != NULL) {
+              *inc_version = true;
+            }
+          }
         }
       }
       rec_mutex_release(&(r->lock));

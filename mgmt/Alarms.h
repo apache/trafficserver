@@ -88,7 +88,7 @@ const int minOEMkey = 1000;     // used as offset
 const int maxOEMkey = 6000;
 
 typedef int alarm_t;
-typedef void (*AlarmCallbackFunc) (alarm_t, char *, char *);
+typedef void (*AlarmCallbackFunc) (alarm_t, const char *, const char *);
 
 typedef struct _alarm
 {

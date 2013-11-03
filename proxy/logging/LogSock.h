@@ -98,7 +98,7 @@ public:
     return ct[0].port;
   }
 
-  bool is_connected(int cid, bool ping = false);
+  bool is_connected(int cid, bool ping = false) const;
   void check_connections();
   bool authorized_client(int cid, char *key);
   char *connected_host(int cid);

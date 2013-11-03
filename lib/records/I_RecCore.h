@@ -40,10 +40,10 @@ int RecSetDiags(Diags * diags);
 //-------------------------------------------------------------------------
 // Config File Parsing
 //-------------------------------------------------------------------------
-typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char * name, const char * value);
+typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char * name, const char * value, bool inc_version);
 
 void RecConfigFileInit(void);
-int RecConfigFileParse(const char * path, RecConfigEntryCallback handler);
+int RecConfigFileParse(const char * path, RecConfigEntryCallback handler, bool inc_version);
 
 // Test whether the named configuration value is overridden by an environment variable. Return either
 // the overridden value, or the original value. Caller MUST NOT free the result.
@@ -105,11 +105,11 @@ int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb, int id
 // already been taken out for the callback.
 
 // RecSetRecordConvert -> WebMgmtUtils.cc::varSetFromStr()
-int RecSetRecordConvert(const char *name, const RecString rec_string, bool lock = true);
-int RecSetRecordInt(const char *name, RecInt rec_int, bool lock = true);
-int RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock = true);
-int RecSetRecordString(const char *name, const RecString rec_string, bool lock = true);
-int RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock = true);
+int RecSetRecordConvert(const char *name, const RecString rec_string, bool lock = true, bool inc_version = true);
+int RecSetRecordInt(const char *name, RecInt rec_int, bool lock = true, bool inc_version = true);
+int RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock = true, bool inc_version = true);
+int RecSetRecordString(const char *name, const RecString rec_string, bool lock = true, bool inc_version = true);
+int RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock = true, bool inc_version = true);
 
 int RecGetRecordInt(const char *name, RecInt * rec_int, bool lock = true);
 int RecGetRecordFloat(const char *name, RecFloat * rec_float, bool lock = true);

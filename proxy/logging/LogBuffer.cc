@@ -43,7 +43,6 @@
 #include "LogAccess.h"
 #include "LogConfig.h"
 #include "LogBuffer.h"
-#include "LogFormatType.h"
 #include "Log.h"
 
 
@@ -331,7 +330,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
 
 
 unsigned
-LogBuffer::add_header_str(char *str, char *buf_ptr, unsigned buf_len)
+LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
 {
   unsigned len = 0;
   // This was ambiguous - should it be the real strlen or the 
@@ -626,11 +625,11 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
   -------------------------------------------------------------------------*/
 int
 LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
-                    char *buf, int buf_len, char *symbol_str, char *printf_str,
-                    unsigned buffer_version, char *alt_format)
+                    char *buf, int buf_len, const char *symbol_str, char *printf_str,
+                    unsigned buffer_version, const char *alt_format)
 {
   ink_assert(entry != NULL);
-  ink_assert(type >= 0 && type < N_LOG_TYPES);
+  ink_assert(type == LOG_FORMAT_CUSTOM || type == LOG_FORMAT_TEXT);
   ink_assert(buf != NULL);
 
   char *read_from;              // keeps track of where we're reading from entry
@@ -639,7 +638,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
   read_from = (char *) entry + sizeof(LogEntryHeader);
   write_to = buf;
 
-  if (type == TEXT_LOG) {
+  if (type == LOG_FORMAT_TEXT) {
     //
     // text log entries are just strings, so simply move it into the
     // format buffer.

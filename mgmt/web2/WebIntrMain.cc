@@ -202,7 +202,7 @@ newUNIXsocket(char *fpath)
   // Set the close on exec flag so our children do not
   //  have this socket open
   if (fcntl(socketFD, F_SETFD, 1) < 0) {
-    mgmt_elog(stderr, "[newUNIXSocket] Unable to set close on exec flag\n");
+    mgmt_elog(stderr, errno, "[newUNIXSocket] Unable to set close on exec flag\n");
   }
 
   return socketFD;
@@ -228,7 +228,7 @@ newTcpSocket(int port)
 
   // Create the new TCP Socket
   if ((socketFD = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    mgmt_fatal(stderr, "[newTcpSocket]: %s", "Unable to Create Socket\n");
+    mgmt_fatal(stderr, errno, "[newTcpSocket]: %s", "Unable to Create Socket\n");
     return -1;
   }
   // Specify our port number is network order
@@ -239,24 +239,24 @@ newTcpSocket(int port)
 
   // Allow for immediate re-binding to port
   if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-    mgmt_fatal(stderr, "[newTcpSocket] Unable to set socket options.\n");
+    mgmt_fatal(stderr, errno, "[newTcpSocket] Unable to set socket options.\n");
   }
   // Bind the port to the socket
   if (bind(socketFD, (sockaddr *) & socketInfo, sizeof(socketInfo)) < 0) {
-    mgmt_elog(stderr, "[newTcpSocket] Unable to bind port %d to socket: %s\n", port, strerror(errno));
+    mgmt_elog(stderr, 0, "[newTcpSocket] Unable to bind port %d to socket: %s\n", port, strerror(errno));
     close_socket(socketFD);
     return -1;
   }
   // Listen on the new socket
   if (listen(socketFD, 5) < 0) {
-    mgmt_elog(stderr, "[newTcpSocket] %s\n", "Unable to listen on the socket");
+    mgmt_elog(stderr, errno, "[newTcpSocket] %s\n", "Unable to listen on the socket");
     close_socket(socketFD);
     return -1;
   }
   // Set the close on exec flag so our children do not
   //  have this socket open
   if (fcntl(socketFD, F_SETFD, 1) < 0) {
-    mgmt_elog(stderr, "[newTcpSocket] Unable to set close on exec flag\n");
+    mgmt_elog(stderr, errno, "[newTcpSocket] Unable to set close on exec flag\n");
   }
 
   return socketFD;
@@ -408,7 +408,7 @@ webIntr_main(void *)
   ink_assert(found);
 
   if (autoconfContext.docRoot == NULL) {
-    mgmt_fatal(stderr, "[WebIntrMain] No Client AutoConf Root\n");
+    mgmt_fatal(stderr, 0, "[WebIntrMain] No Client AutoConf Root\n");
   } else {
     struct stat s;
     int err;
@@ -417,10 +417,10 @@ webIntr_main(void *)
       ats_free(autoconfContext.docRoot);
       autoconfContext.docRoot = ats_strdup(system_config_directory);
       if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
-        mgmt_elog("[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
+        mgmt_elog(0, "[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
                 autoconfContext.docRoot, err, errno, strerror(errno));
-        mgmt_elog("[WebIntrMain] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
-        mgmt_fatal(stderr, "[WebIntrMain] No Client AutoConf Root\n");
+        mgmt_elog(0, "[WebIntrMain] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+        mgmt_fatal(stderr, 0, "[WebIntrMain] No Client AutoConf Root\n");
       }
     }
     autoconfContext.docRootLen = strlen(autoconfContext.docRoot);
@@ -467,7 +467,7 @@ webIntr_main(void *)
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, pacFailMsg);
   } else {
     if ((autoconfFD = newTcpSocket(publicPort)) < 0) {
-      mgmt_elog(stderr, "[WebIntrMain] Unable to start client autoconf server\n");
+      mgmt_elog(stderr, errno, "[WebIntrMain] Unable to start client autoconf server\n");
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, pacFailMsg);
     }
   }
@@ -553,7 +553,7 @@ webIntr_main(void *)
               wGlobals.serviceThrArray[i].threadId = thrId;
             } else {
               // Failed to create thread
-              mgmt_elog(stderr, "[WebIntrMain] Failed to create service thread\n");
+              mgmt_elog(stderr, errno, "[WebIntrMain] Failed to create service thread\n");
               wGlobals.serviceThrArray[i].threadId = 0;
               wGlobals.serviceThrArray[i].fd = -1;
               close_socket(clientFD);
@@ -567,7 +567,7 @@ webIntr_main(void *)
 
             break;
           } else if (i == MAX_SERVICE_THREADS - 1) {
-            mgmt_fatal(stderr, "[WebIntrMain] Syncronizaion Failure\n");
+            mgmt_fatal(stderr, 0, "[WebIntrMain] Syncronizaion Failure\n");
             _exit(1);
           }
         }

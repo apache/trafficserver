@@ -54,12 +54,12 @@ public:
   virtual void handleReadRequestHeadersPostRemap(Transaction &transaction) {
     TS_DEBUG(TAG, "Received a request, incrementing the counter.");
     stat.increment();
-    TS_DEBUG(TAG, "Stat '%s' value = %lld", STAT_NAME.c_str(), stat.get());
+    TS_DEBUG(TAG, "Stat '%s' value = %ld", STAT_NAME.c_str(), stat.get());
     transaction.resume();
   }
 };
 
-void TSPluginInit(int argc, const char *argv[]) {
+void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "Loaded stat_example plugin");
 
   // Since this stat is not persistent it will be initialized to 0.

@@ -77,6 +77,6 @@ public:
 
 };
 
-void TSPluginInit(int argc, const char *argv[]) {
+void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   GlobalPlugin *instance = new ClientRedirectGlobalPlugin();
 }

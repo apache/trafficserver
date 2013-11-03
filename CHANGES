@@ -8,6 +8,40 @@ Changes with Apache Traffic Server 5.0.0
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2315] ESI Plugin: fetcher does not handle error gracefully.
+   Author: Kit Chan.
+
+  *) [TS-2115] buffer_upload hard-codes "nobody" user/group.
+   Author: Kit Chan.
+
+  *) [TS-2208] Cache control with multiple suffixes.
+    Author: bettydramit <b13621367396@gmail.com>
+
+  *) [TS-2247] ua close time in milestone may not set.
+   Author: Gang Li
+
+  *) [TS-2302] Log collation causes error logging to stop.
+
+  *) [TS-2200] TS_HRTIME_xxx in experimental.h is invalid to use.
+   Author: Yu Qing
+
+  *) [TS-2235] url_print should NOT output "?" for empty query string.
+   Author: Yu Qing
+
+  *) [TS-2292] the version of records.config increases unexpectly.
+   Author: Yu Qing
+
+  *) [TS-2277] cluster alarm messages broadcast infinitely.
+   Author: Yu Qing
+
+  *) [TS-2276] manager memory leak in some case.
+   Author: Yu Qing
+
+  *) [TS-1638] less strict on kernel version checking in clustering.
+   Author: Yu Qing
+
+  *) [TS-2265] Remove unused log tags for prob, prcb and cgid.
+
   *) [TS-2301] Replace the CACHE_READY macro with CacheProcessor::IsCacheReady.
 
   *) [TS-2300] Remove the HIT_EVACUATE build option.

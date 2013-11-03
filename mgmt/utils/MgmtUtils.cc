@@ -304,7 +304,7 @@ mgmt_log(const char *message_format, ...)
  *   Same as above, but intended for errors.
  */
 void
-mgmt_elog(FILE * log, const char *message_format, ...)
+mgmt_elog(FILE * log, const int lerrno, const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
@@ -313,23 +313,27 @@ mgmt_elog(FILE * log, const char *message_format, ...)
 
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
-    int lerrno = errno;
-
     diags->print_va(NULL, DL_Error, NULL, message_format, ap);
-    diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    if (lerrno != 0) {
+      diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    }
   } else {
 #endif
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
       syslog(LOG_ERR, "%s", message);
-      syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
+      if (lerrno != 0) {
+        syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
+      }
     } else {
       snprintf(extended_format, sizeof(extended_format), "[E. Mgmt] ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
       ink_assert(fwrite(message, strlen(message), 1, log) == 1);
-      snprintf(message, sizeof(message), "(last system error %d: %s)", errno, strerror(errno));
-      ink_assert(fwrite(message, strlen(message), 1, log) == 1);
+      if (lerrno != 0) {
+        snprintf(message, sizeof(message), "(last system error %d: %s)", lerrno, strerror(lerrno));
+        ink_assert(fwrite(message, strlen(message), 1, log) == 1);
+      }
     }
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
@@ -341,7 +345,7 @@ mgmt_elog(FILE * log, const char *message_format, ...)
 
 
 void
-mgmt_elog(const char *message_format, ...)
+mgmt_elog(const int lerrno, const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
@@ -350,9 +354,10 @@ mgmt_elog(const char *message_format, ...)
 
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
-    int lerrno = errno;
     diags->print_va(NULL, DL_Error, NULL, message_format, ap);
-    diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    if (lerrno != 0) {
+      diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    }
   } else {
 #endif
 
@@ -360,13 +365,17 @@ mgmt_elog(const char *message_format, ...)
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
       syslog(LOG_ERR, "%s", message);
-      syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
+      if (lerrno != 0) {
+        syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
+      }
     } else {
       snprintf(extended_format, sizeof(extended_format), "Manager ERROR: %s", message_format);
       vsprintf(message, extended_format, ap);
       ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
-      snprintf(message, sizeof(message), "(last system error %d: %s)", errno, strerror(errno));
-      ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
+      if (lerrno != 0) {
+        snprintf(message, sizeof(message), "(last system error %d: %s)", lerrno, strerror(lerrno));
+        ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
+      }
     }
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
@@ -382,7 +391,7 @@ mgmt_elog(const char *message_format, ...)
  * asserts false.
  */
 void
-mgmt_fatal(FILE * log, const char *message_format, ...)
+mgmt_fatal(FILE * log, const int lerrno, const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
@@ -392,9 +401,10 @@ mgmt_fatal(FILE * log, const char *message_format, ...)
 
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
-    int lerrno = errno;
     diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
-    diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    if (lerrno != 0) {
+      diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    }
   } else {
 #endif
 
@@ -407,13 +417,13 @@ mgmt_fatal(FILE * log, const char *message_format, ...)
       syslog(LOG_ERR, "%s", message);
     }
 
-
-
-    perror("[E. Mgmt] ");
-
-    if (use_syslog) {
-      syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
+    if (lerrno != 0) {
+      fprintf(stderr, "[E. Mgmt] last system error %d: %s", lerrno, strerror(lerrno));
+      if (use_syslog) {
+        syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
+      }
     }
+
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
 #endif
@@ -427,7 +437,7 @@ mgmt_fatal(FILE * log, const char *message_format, ...)
 
 
 void
-mgmt_fatal(const char *message_format, ...)
+mgmt_fatal(const int lerrno, const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
@@ -436,9 +446,10 @@ mgmt_fatal(const char *message_format, ...)
 
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
-    int lerrno = errno;
     diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
-    diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    if (lerrno != 0) {
+      diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+    }
   } else {
 #endif
 
@@ -451,12 +462,12 @@ mgmt_fatal(const char *message_format, ...)
       syslog(LOG_ERR, "%s", message);
     }
 
+    if (lerrno != 0) {
+      fprintf(stderr, "[E. Mgmt] last system error %d: %s", lerrno, strerror(lerrno));
 
-
-    perror("[E. Mgmt] ");
-
-    if (use_syslog) {
-      syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
+      if (use_syslog) {
+        syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
+      }
     }
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
@@ -512,7 +523,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
   memset(addr, 0, sizeof(struct in_addr));
 
   if ((fakeSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    mgmt_fatal(stderr, "[getAddrForIntr] Unable to create socket\n");
+    mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to create socket\n");
   }
   // INKqa06739
   // Fetch the list of network interfaces
@@ -527,7 +538,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
     ifc.ifc_buf = ifbuf;
     if (ioctl(fakeSocket, SIOCGIFCONF, &ifc) < 0) {
       if (errno != EINVAL || lastlen != 0) {
-        mgmt_fatal(stderr, "[getAddrForIntr] Unable to read network interface configuration\n");
+        mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to read network interface configuration\n");
       }
     } else {
       if (ifc.ifc_len == lastlen) {

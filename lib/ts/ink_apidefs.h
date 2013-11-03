@@ -63,6 +63,14 @@
 #endif
 #endif
 
+#if !defined(TS_NONNULL)
+#if defined(__GNUC__) || defined(__clang__)
+#define TS_NONNULL(...) __attribute__((nonnull (__VA_ARGS__)))
+#else
+#define TS_NONNULL(...)
+#endif
+#endif
+
 #if !defined(TS_INLINE)
 #define TS_INLINE inline
 #endif

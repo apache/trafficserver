@@ -42,9 +42,7 @@
 #include "LogConfig.h"
 #include "Log.h"
 
-#if defined(IOCORE_LOG_COLLATION)
 #include "LogCollationClientSM.h"
-#endif
 
 #define PING 	true
 #define NOPING 	false
@@ -53,7 +51,7 @@
   LogHost
   -------------------------------------------------------------------------*/
 
-LogHost::LogHost(char *object_filename, uint64_t object_signature)
+LogHost::LogHost(const char *object_filename, uint64_t object_signature)
   : m_object_filename(ats_strdup(object_filename)),
     m_object_signature(object_signature),
     m_port(0),
@@ -62,9 +60,7 @@ LogHost::LogHost(char *object_filename, uint64_t object_signature)
     m_sock_fd(-1),
     m_connected(false),
     m_orphan_file(NULL)
-#if defined (IOCORE_LOG_COLLATION)
   , m_log_collation_client_sm(NULL)
-#endif
 {
   ink_zero(m_ip);
   ink_zero(m_ipstr);
@@ -80,9 +76,7 @@ LogHost::LogHost(const LogHost & rhs)
     m_sock_fd(-1),
     m_connected(false),
     m_orphan_file(NULL)
-#if defined (IOCORE_LOG_COLLATION)
   , m_log_collation_client_sm(NULL)
-#endif
 {
   memcpy(m_ipstr, rhs.m_ipstr, sizeof(m_ipstr));
   create_orphan_LogFile_object();
@@ -111,13 +105,6 @@ LogHost::set_name_port(char *hostname, unsigned int pt)
 
   clear();                      // remove all previous state for this LogHost
 
-#if !defined(IOCORE_LOG_COLLATION)
-  IpEndpoint ip4, ip6;
-  m_ip.invalidate();
-  if (0 == ats_ip_getbestaddrinfo(hostname, &ip4, &ip6))
-    m_ip.assign(ip4.isIp4() ? &ip4 : &ip6)
-  m_ip.toString(m_ipstr, sizeof m_ipstr);
-#endif
   m_name = ats_strdup(hostname);
   m_port = pt;
 
@@ -254,7 +241,7 @@ LogHost::create_orphan_LogFile_object()
 
   // should check for conflicts with orphan filename
   //
-  m_orphan_file = NEW(new LogFile(name_buf, NULL, ASCII_LOG, m_object_signature));
+  m_orphan_file = NEW(new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature));
   ink_assert(m_orphan_file != NULL);
   ats_free(name_buf);
 }
@@ -284,36 +271,6 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
     goto done;
   }
 
-#if !defined(IOCORE_LOG_COLLATION)
-
-  // make sure we're connected & authenticated
-
-  if (!connected(NOPING)) {
-    if (!connect ()) {
-      Note("Cannot write LogBuffer to LogHost %s; not connected", name());
-      orphan_write_and_try_delete(lb);
-      return -1;
-    }
-  }
-
-  // try sending the logbuffer
-
-  int bytes_to_send, bytes_sent;
-  bytes_to_send = buffer_header->byte_count;
-  // lb->convert_to_network_order();
-  bytes_sent = m_sock->write (m_sock_fd, buffer_header, bytes_to_send);
-  if (bytes_to_send != bytes_sent) {
-    Note("Bad write to LogHost %s; bad send count %d/%d",
-        name(), bytes_sent, bytes_to_send);
-    disconnect();
-    // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
-    // lb->convert_to_host_order ();
-    orphan_write_and_try_delete(lb);
-    return -1;
-  }
-  ret = 0;
-
-#else // !defined(IOCORE_LOG_COLLATION)
   // create a new collation client if necessary
   if (m_log_collation_client_sm == NULL) {
     m_log_collation_client_sm = NEW(new LogCollationClientSM(this));
@@ -332,7 +289,6 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
   }
 
   return 0;
-#endif // !defined(IOCORE_LOG_COLLATION)
 
 done:
   LogBuffer::destroy(lb);
