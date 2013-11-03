@@ -27,7 +27,8 @@
 
 // OperatorConfig
 void
-OperatorSetConfig::initialize(Parser& p) {
+OperatorSetConfig::initialize(Parser& p)
+{
   Operator::initialize(p);
   _config = p.get_arg();
 
@@ -121,13 +122,15 @@ OperatorSetStatusReason::initialize(Parser& p)
 
 
 void
-OperatorSetStatusReason::initialize_hooks() {
+OperatorSetStatusReason::initialize_hooks()
+{
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
 void
-OperatorSetStatusReason::exec(const Resources& res) const {
+OperatorSetStatusReason::exec(const Resources& res) const
+{
   if (res.bufp && res.hdr_loc) {
     std::string reason;
 

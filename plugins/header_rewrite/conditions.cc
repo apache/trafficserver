@@ -46,21 +46,24 @@ ConditionStatus::initialize(Parser& p)
 
 
 void
-ConditionStatus::initialize_hooks() {
+ConditionStatus::initialize_hooks()
+{
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
 
 bool
-ConditionStatus::eval(const Resources& res) {
+ConditionStatus::eval(const Resources& res)
+{
   TSDebug(PLUGIN_NAME, "Evaluating STATUS()"); // TODO: It'd be nice to get the args here ...
   return static_cast<const Matchers<TSHttpStatus>*>(_matcher)->test(res.resp_status);
 }
 
 
 void
-ConditionStatus::append_value(std::string& s, const Resources& res) {
+ConditionStatus::append_value(std::string& s, const Resources& res)
+{
   s += boost::lexical_cast<std::string>(res.resp_status);
   TSDebug(PLUGIN_NAME, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
 }
@@ -86,7 +89,8 @@ ConditionRandom::initialize(Parser& p)
 
 
 bool
-ConditionRandom::eval(const Resources& /* res ATS_UNUSED */) {
+ConditionRandom::eval(const Resources& /* res ATS_UNUSED */)
+{
   TSDebug(PLUGIN_NAME, "Evaluating RANDOM(%d)", _max);
   return static_cast<const Matchers<unsigned int>*>(_matcher)->test(rand_r(&_seed) % _max);
 }
@@ -288,7 +292,8 @@ ConditionUrl::initialize(Parser& /* p ATS_UNUSED */)
 
 
 void
-ConditionUrl::set_qualifier(const std::string& q) {
+ConditionUrl::set_qualifier(const std::string& q)
+{
   Condition::set_qualifier(q);
 
   _url_qual = parse_url_qualifier(q);

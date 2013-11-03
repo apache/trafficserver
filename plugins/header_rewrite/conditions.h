@@ -188,19 +188,7 @@ private:
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// query
 class ConditionQuery : public Condition
 {
 public:
