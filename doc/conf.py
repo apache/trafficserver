@@ -93,6 +93,7 @@ if os.environ.get('READTHEDOCS') == 'True':
           mo_file = base + ".mo"
           po = polib.pofile(po_file)
           po.save_as_mofile(fpath=mo_file)
+  print "done"
 ## End of HACK
 
 # There are two options for replacing |today|: either, you set today to some
