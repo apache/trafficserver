@@ -224,13 +224,19 @@ ConditionPath::initialize(Parser& p)
   _matcher = match;
 }
 
-void
-ConditionPath::append_value(std::string& s, const Resources& res)
-{
-  int path_len = 0;
-  const char *path = TSUrlPathGet(res._rri->requestBufp, res._rri->requestUrl, &path_len);
-  TSDebug(PLUGIN_NAME, "Appending PATH to evaluation value: %.*s", path_len, path);
-  s.append(path, path_len);
+void ConditionPath::append_value(std::string& s, const Resources& res) {
+  TSMBuffer bufp;
+  TSMLoc url_loc;
+
+  if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url_loc) == TS_SUCCESS) {
+    int path_length;
+    const char *path = TSUrlPathGet(bufp, url_loc, &path_length);
+
+    if (path && path_length)
+      s.append(path, path_length);
+
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
+  }
 }
 
 bool
