@@ -5580,7 +5580,14 @@ HttpTransact::initialize_state_variables_from_response(State* s, HTTPHdr* incomi
   if (s->current.server->keep_alive == HTTP_KEEPALIVE) {
     if (!s->cop_test_page)
       DebugTxn("http_hdrs", "[initialize_state_variables_from_response]" "Server is keep-alive.");
+  } else if (s->state_machine->ua_session && s->state_machine->ua_session->f_outbound_transparent && s->state_machine->t_state.http_config_param->use_client_source_port) {
+    /* If we are reusing the client<->ATS 4-tuple for ATS<->server then if the server side is closed, we can't
+       re-open it because the 4-tuple may still be in the processing of shutting down. So if the server isn't
+       keep alive we must turn that off for the client as well.
+    */
+    s->state_machine->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
   }
+
 
   HTTPStatus status_code = incoming_response->status_get();
   if (is_response_body_precluded(status_code, s->method)) {
