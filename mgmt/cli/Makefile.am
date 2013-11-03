@@ -74,7 +74,7 @@ libtrafficshell_a_SOURCES = \
 traffic_shell_LDFLAGS =	@EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_shell_LDADD = \
   libtrafficshell.a \
-  $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
+  $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(LIBTCL) $(LIBREADLINE) \
@@ -84,6 +84,6 @@ traffic_shell_LDADD = \
 
 traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_line_LDADD = \
-  $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
+  $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBTCL@ @LIBSSL@

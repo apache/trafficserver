@@ -1886,7 +1886,6 @@ AC_CONFIG_FILES([
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/api/remote/Makefile
   mgmt/cli/Makefile
   mgmt/cluster/Makefile
   mgmt/preparse/Makefile

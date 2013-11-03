@@ -91,10 +91,11 @@ test_LDADD = \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/libUglyLogStubs.a \
   @LIBTCL@
 
-test_Buffer_SOURCES = ../../proxy/UglyLogStubs.cc test_Buffer.cc
-test_Event_SOURCES = ../../proxy/UglyLogStubs.cc test_Event.cc
+test_Buffer_SOURCES = test_Buffer.cc
+test_Event_SOURCES = test_Event.cc
 test_Buffer_CXXFLAGS = $(test_CXXFLAGS)
 test_Event_CXXFLAGS = $(test_CXXFLAGS)
 

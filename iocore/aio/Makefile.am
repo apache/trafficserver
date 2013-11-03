@@ -30,8 +30,7 @@ check_PROGRAMS = test_AIO
 
 libinkaio_a_SOURCES = AIO.cc I_AIO.h P_AIO.h Inline.cc
 test_AIO_SOURCES = \
-  test_AIO.cc \
-  ../../proxy/UglyLogStubs.cc
+  test_AIO.cc
 
 test_AIO_CXXFLAGS = \
   $(iocore_include_dirs) \
@@ -52,5 +51,6 @@ test_AIO_LDADD = \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/libUglyLogStubs.a \
   @LIBTCL@
 

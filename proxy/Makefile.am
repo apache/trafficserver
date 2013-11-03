@@ -18,7 +18,7 @@
 
 # Note that hdrs is targeted from ../Makefile.am
 if STANDALONE_IOCORE
-noinst_LIBRARIES = libTrafficServerStandalone.a
+noinst_LIBRARIES = libTrafficServerStandalone.a liberror.a libdiagsconfig.a libUglyLogStubs.a
 bin_PROGRAMS =
 else
 SUBDIRS = congest http logging config
@@ -278,6 +278,15 @@ libTrafficServerStandalone_a_SOURCES = \
   StatSystem.cc \
   AbstractBuffer.cc \
   Initialize.cc
+
+liberror_a_SOURCES = \
+  Error.cc
+
+libdiagsconfig_a_SOURCES = \
+  DiagsConfig.cc
+
+libUglyLogStubs_a_SOURCES = \
+  UglyLogStubs.cc
 
 test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc
 test_xml_parser_LDADD = \
