@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2178] Force keep alive off if re-using client 4-tuple and server is not keep alive.
+
+  *) [TS-2264] Fixed problem with EADDR_NOTAVAIL handling.
 
   *) [TS-2317] Read/write mutex of PluginVC may be held without release.
    Author: portl4t.cn@gmail.com
