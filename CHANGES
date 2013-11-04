@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.1.0
 
 
+  *) [TS-2317] Read/write mutex of PluginVC may be held without release.
+   Author: portl4t.cn@gmail.com
+
   *) [TS-2315] ESI Plugin: fetcher does not handle error gracefully.
    Author: Kit Chan.
 
