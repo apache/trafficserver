@@ -37,7 +37,9 @@
 #include "I_Version.h"
 
 #include "Initialize.h" // TODO: move to I_Initialize.h ???
+#include "ink_sys_control.h"
 
+extern char* admin_user;
 
 //
 // Initialize operating system related information/services
@@ -61,7 +63,7 @@ init_system_settings(void)
 #endif
 
 static int
-set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_token)
+set_core_size(const char */* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void */* opaque_token ATS_UNUSED */)
 {
 
   RecInt size = data.rec_int;
@@ -237,6 +239,35 @@ init_system_reconfigure_diags(void)
 
 }
 
+void
+chown_file_to_user(const char *file, const char *user)
+{
+  struct passwd *pwd = NULL;
+
+  if (user && *user) {
+    if (*user == '#') {
+      int uid = atoi(user + 1);
+      if (uid == -1) {
+        // XXX: Can this call hapen after setuid?
+        uid = (int)geteuid();
+      }
+      pwd = getpwuid((uid_t)uid);
+    } else {
+      pwd = getpwnam(user);
+    }
+    if (pwd) {
+      if (chown(file, pwd->pw_uid, pwd->pw_gid) < 0) {
+          diags->print(NULL, DL_Warning, __FILE__, __FUNCTION__, __LINE__, "cop couldn't chown the  file: '%s' [%d] %s\n",
+         file, errno, strerror(errno)
+       );
+      }
+    } else {
+        diags->print(NULL, DL_Warning, __FILE__, __FUNCTION__, __LINE__, "can't get passwd entry for the admin user '%s' - [%d] %s\n", user, errno, strerror(errno));
+    }
+  } else {
+      diags->print(NULL, DL_Warning, __FILE__, __FUNCTION__, __LINE__, "Admin user was the empty string.\n");
+  }
+}
 
 void
 init_system_diags(char *bdt, char *bat)
@@ -250,7 +281,7 @@ init_system_diags(char *bdt, char *bat)
   diags_log_fp = fopen(diags_logpath, "w");
   if (diags_log_fp) {
     int status;
-    chown_file_to_user(diag_logpath,admin_user);
+    chown_file_to_user(diags_logpath, admin_user);
     status = setvbuf(diags_log_fp, NULL, _IOLBF, 512);
     if (status != 0) {
       fclose(diags_log_fp);
@@ -262,10 +293,10 @@ init_system_diags(char *bdt, char *bat)
   if (diags_log_fp == NULL) {
     SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
 
-    diags->print(NULL, DL_Warning, NULL, &loc,
+    diags->print(NULL, DL_Warning, __FILE__, __FUNCTION__, __LINE__,
                  "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
   } else {
-    diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);
+    diags->print(NULL, DL_Status, "STATUS", NULL, 0, "opened %s", diags_logpath);
   }
 
   init_system_reconfigure_diags();
