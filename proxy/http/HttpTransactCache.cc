@@ -326,7 +326,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
   //
   // A true value means the check for that config can be skipped. Note: from a users
   // perspective, the configs are simply 0, 1 or 2.
-  unsigned int vary_skip_mask = obj_origin_server_response->presence(MIME_PRESENCE_VARY) ? 0b01 : 0b11;
+  unsigned int vary_skip_mask = obj_origin_server_response->presence(MIME_PRESENCE_VARY) ? 1 : 3;
 
   // Make debug output happy
   q[1] = (q[2] = (q[3] = -2.0));
