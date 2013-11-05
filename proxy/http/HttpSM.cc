@@ -7393,17 +7393,11 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
     if (host != NULL) {
       int port = clientUrl.port_get();
-#if defined(__GNUC__)
       char buf[host_len + 7];
-#else
-      char *buf = (char *)ats_malloc(host_len + 7);
-#endif
-      ink_strlcpy(buf, host, host_len+1);
+
+      memcpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, sizeof(buf) - host_len, ":%d", port);
       t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
-#if !defined(__GNUC__)
-      ats_free(buf);
-#endif
     } else {
       // the client request didn't have a host, so remove it from the headers
       t_state.hdr_info.client_request.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
