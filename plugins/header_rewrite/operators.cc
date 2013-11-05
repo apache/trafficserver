@@ -466,3 +466,40 @@ OperatorSetHeader::exec(const Resources& res) const
     }
   }
 }
+
+// OperatorCounter
+void
+OperatorCounter::initialize(Parser& p) {
+  Operator::initialize(p);
+
+  _counter_name = p.get_arg();
+
+  // Sanity
+  if (_counter_name.length() == 0) {
+    TSError("%s: counter name is empty", PLUGIN_NAME);
+    return;
+  }
+
+  // Check if counter already created by another rule
+  if (TSStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
+    _counter = TSStatCreate(_counter_name.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+    if (_counter == TS_ERROR) {
+      TSError("%s: TSStatCreate() failed. Can't create counter: %s", PLUGIN_NAME, _counter_name.c_str());
+      return;
+    }
+    TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) created counter with id: %d", _counter_name.c_str(), _counter);
+  } else {
+    TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) reusing id: %d", _counter_name.c_str(), _counter);
+  }
+}
+
+void
+OperatorCounter::exec(const Resources& res) const
+{
+  // Sanity
+  if (_counter == TS_ERROR)
+    return;
+
+  TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on counter %s", _counter_name.c_str());
+  TSStatIntIncrement(_counter, 1);
+}

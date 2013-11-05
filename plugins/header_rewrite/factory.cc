@@ -53,6 +53,8 @@ operator_factory(const std::string& op)
     o = new OperatorSetTimeoutOut();
   } else if (op == "no-op") {
     o = new OperatorNoOp();
+  } else if (op == "counter") {
+    o = new OperatorCounter();
   } else {
     TSError("%s: unknown operator: %s", PLUGIN_NAME, op.c_str());
     return NULL;
