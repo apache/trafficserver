@@ -384,6 +384,9 @@ OperatorAddHeader::exec(const Resources& res) const
 {
   std::string value;
 
+  VariableExpander ve(value);
+  value = ve.expand(res);
+
   _value.append_value(value, res);
 
   // Never set an empty header (I don't think that ever makes sense?)
