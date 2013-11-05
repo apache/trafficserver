@@ -7398,7 +7398,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 #else
       char *buf = (char *)ats_malloc(host_len + 7);
 #endif
-      ink_strlcpy(buf, host, host_len);
+      ink_strlcpy(buf, host, host_len+1);
       host_len += snprintf(buf + host_len, sizeof(buf) - host_len, ":%d", port);
       t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
 #if !defined(__GNUC__)
