@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+
+  *) [TS-2712] Explicitly use subdir-objects in automake init.
+
   *) [TS-2309] Allow mod_generator plugin for lighttpd to accept "SI" postfixes.
 
 
