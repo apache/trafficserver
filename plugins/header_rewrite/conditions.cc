@@ -385,3 +385,68 @@ ConditionDBM::eval(const Resources& res)
 
   return static_cast<const Matchers<std::string>*>(_matcher)->test(s);
 }
+
+
+// ConditionCookie: request or response header
+void ConditionCookie::initialize(Parser& p)
+{
+  Condition::initialize(p);
+
+  Matchers<std::string>* match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+
+  _matcher = match;
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void ConditionCookie::append_value(std::string& s, const Resources& res)
+{
+  TSMBuffer bufp = res.client_bufp;
+  TSMLoc hdr_loc = res.client_hdr_loc;
+  TSMLoc field_loc;
+  int error;
+  int cookies_len;
+  int cookie_value_len;
+  const char *cookies;
+  const char *cookie_value;
+  const char * const cookie_name = _qualifier.c_str();
+  const int cookie_name_len = _qualifier.length();
+
+  // Sanity
+  if (bufp == NULL || hdr_loc == NULL)
+    return;
+
+  // Find Cookie
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
+  if (field_loc == NULL)
+    return;
+
+  // Get all cookies
+  // NB! Cookie field does not support commas, so we use index == 0
+  cookies = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &cookies_len);
+  if (cookies == NULL || cookies_len <= 0)
+    goto out_release_field;
+
+  // Find particular cookie's value
+  error = get_cookie_value(cookies, cookies_len, cookie_name, cookie_name_len, &cookie_value, &cookie_value_len);
+  if (error == TS_ERROR)
+    goto out_release_field;
+
+  TSDebug(PLUGIN_NAME, "Appending COOKIE(%s) to evaluation value -> %.*s", cookie_name, cookie_value_len, cookie_value);
+  s.append(cookie_value, cookie_value_len);
+
+  // Unwind
+out_release_field:
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+}
+
+bool ConditionCookie::eval(const Resources& res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+  TSDebug(PLUGIN_NAME, "Evaluating COOKIE(%s): %s: rval: %d", _qualifier.c_str(), s.c_str(), rval);
+  return rval;
+}

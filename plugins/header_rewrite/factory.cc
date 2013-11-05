@@ -89,6 +89,8 @@ condition_factory(const std::string& cond)
     c = new ConditionRandom();
   } else if (c_name == "ACCESS") {
     c = new ConditionAccess();
+  } else if (c_name == "COOKIE") {
+    c = new ConditionCookie();
   } else if (c_name == "HEADER") { // This condition adapts to the hook
     c = new ConditionHeader();
   } else if (c_name == "PATH") {
