@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2245] This adds a '2' config state to the ignore mismatch configs.
+
   *) [TS-2178] Force keep alive off if re-using client 4-tuple and server is not keep alive.
 
   *) [TS-2264] Fixed problem with EADDR_NOTAVAIL handling.
