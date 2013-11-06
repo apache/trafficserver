@@ -232,7 +232,7 @@ struct RegressionConfig : public ConfigInfo
       SET_HANDLER(&DeferredCall::handleEvent);
     }
 
-    int handleEvent(int event, Event * e) {
+    int handleEvent(int event ATS_UNUSED, Event * e) {
       if (RegressionConfig::nobjects > this->remain) {
         e->schedule_in(HRTIME_MSECONDS(500));
         return EVENT_CONT;

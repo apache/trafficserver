@@ -243,7 +243,7 @@ parse_include_directive(const char * directive, BUILD_TABLE_INFO * bti, char * e
     return (const char *) errbuf;
   }
 
-  for (unsigned i = 1; i < bti->paramc; ++i) {
+  for (unsigned i = 1; i < (unsigned) bti->paramc; ++i) {
     // We need to create a new bti so that we don't clobber any state in the parent parse, but we want
     // to keep the ACL rules from the parent because ACLs must be global across the full set of config
     // files.
@@ -606,7 +606,7 @@ remap_load_plugin(const char ** argv, int argc, url_mapping *mp, char *errbuf, i
   memset(new_argv, 0, sizeof(new_argv));
   tmpbuf[0] = 0;
 
-  ink_assert(argc < countof(new_argv));
+  ink_assert((unsigned) argc < countof(new_argv));
 
   if (jump_to_argc != 0) {
     argc -= jump_to_argc;
@@ -626,7 +626,7 @@ remap_load_plugin(const char ** argv, int argc, url_mapping *mp, char *errbuf, i
     }
   }
 
-  if (unlikely((c = strchr(argv[idx], (int) '=')) == NULL || !(*(++c)))) {
+  if (unlikely((c = (char *) strchr(argv[idx], (int) '=')) == NULL || !(*(++c)))) {
     snprintf(errbuf, errbufsize, "Can't find remap plugin file name in \"@%s\"", argv[idx]);
     return -2;                  /* incorrect input data */
   }
