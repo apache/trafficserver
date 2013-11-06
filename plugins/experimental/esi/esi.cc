@@ -1334,19 +1334,24 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header, b
       break; // found internal header; no other detection required
     }
 
-    // allow response with specific status code to be transformable
+    // allow response with valid status code to be transformable
     resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
     if (static_cast<int>(resp_status) == static_cast<int>(TS_ERROR)) {
       TSError("[%s] Error while getting http status", __FUNCTION__);
       break;
     }
     if (resp_status != TS_HTTP_STATUS_OK) {
-      TSDebug(DEBUG_TAG, "[%s] Not handling non-OK response status %d", __FUNCTION__, resp_status);
-      break;
+      TSDebug(DEBUG_TAG, "[%s] non-OK response status %d", __FUNCTION__, resp_status);
     }
 
-    if (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
-          "text/", 5, true)) {
+    if ((!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
+          "text/", 5, true)) &&
+        (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
+          "application/javascript", 22, true)) &&
+        (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
+          "application/x-javascript", 24, true)) &&
+        (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
+          "multipart/mixed", 15, true))) {
       TSDebug(DEBUG_TAG, "[%s] Not text content", __FUNCTION__);
       break;
     }
@@ -1623,6 +1628,7 @@ static int esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptio
   }
 
   memset(pOptionInfo, 0, sizeof(struct OptionInfo));
+
   if (argc > 1) {
     int c;
     static const struct option longopts[] = {

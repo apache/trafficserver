@@ -1,5 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
+
+
+  *) [TS-2311] ESI: Support responses that are of other text content type as well as non-200 status response.
+   Author: Kit Chan
+
   *) [TS-2321] C++ API: Clean up header code to not use STL containers and use structures directly
 
   *) [TS-2323] Implement a .include directive for remap.config.
