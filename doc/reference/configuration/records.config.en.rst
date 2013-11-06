@@ -55,7 +55,7 @@ A variable marked as ``Reloadable`` can be updated via the command::
 ``INT`` type configurations are expressed as any normal integer,
 e.g. *32768*. They can also be expressed using more human readable values
 using standard prefixes, e.g. *32K*. The following prefixes are supported
-for all ``INT` type configurations
+for all ``INT`` type configurations
 
    - ``K`` Kilobytes (1024 bytes)
    - ``M`` Megabytes (1024^2 or 1,048,576 bytes)
@@ -181,7 +181,7 @@ otherwise, Traffic Server uses the Traffic Server user account name as the defau
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
    The facility used to record system log files. Refer to
-   :ref:`Understanding Traffic Server Log Files <working-log-files.en.html#understanding-traffic-server-log-files>`_.
+   :ref:`Understanding Traffic Server Log Files <working-log-files.en.html#understanding-traffic-server-log-files>`.
 
 .. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
 
@@ -817,7 +817,7 @@ Congestion Control
 
    Enables (``1``) or disables (``0``) the Congestion Control option, which configures Traffic Server to stop forwarding
    HTTP requests to origin servers when they become congested. Traffic Server sends the client a message to retry the
-   congested origin server later. Refer to :ref:`Using Congestion Control <http-proxy-caching#UsingCongestionControl>`_.
+   congested origin server later. Refer to :ref:`Using Congestion Control <http-proxy-caching#UsingCongestionControl>`.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.enabled INT 0
 
@@ -947,7 +947,7 @@ Cache Control
    :reloadable:
 
    Enables (``1``) or disables (``0``) ability to a read cached object while the another connection is completing the write to cache for
-   the same object. Several other configuration values need to be set for this to become active. See :ref:`Reducing Origin Server Requests <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>` 
+   the same object. Several other configuration values need to be set for this to become active. See :ref:`Reducing Origin Server Requests <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`
 
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 512
    :reloadable:
@@ -1052,12 +1052,6 @@ Cache Control
 
    When enabled (``1``), Traffic Server looks up range requests in the cache.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.enable_read_while_writer INT 0
-
-   Enables (``1``) or disables (``0``) the ability to read a cached object while another connection is completing a write to cache
-   for the same object.
-
-
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 0
    :reloadable:
 
@@ -1071,8 +1065,8 @@ Cache Control
       problems with caching *and* you origin server doesn't set the ``Vary``
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept`` or doesn't respond with ``406 (Not Acceptable)``,
-      you can also enable this configuration with a ``1`.
-     
+      you can also enable this configuration with a ``1``.
+
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 0
    :reloadable:
@@ -1088,7 +1082,7 @@ Cache Control
       problems with caching *and* you origin server doesn't set the ``Vary``
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept-Language`` or doesn't respond with ``406 (Not Acceptable)``,
-      you can also enable this configuration with a ``1`.
+      you can also enable this configuration with a ``1``.
 
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 0
@@ -1105,7 +1099,7 @@ Cache Control
       problems with caching *and* you origin server doesn't set the ``Vary``
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept-Encoding`` or doesn't respond with ``406 (Not Acceptable)``
-      you can also enable this configuration with a ``1`.
+      you can also enable this configuration with a ``1``.
 
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 0
@@ -1122,7 +1116,7 @@ Cache Control
       problems with caching *and* you origin server doesn't set the ``Vary``
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept-Charset`` or doesn't respond with ``406 (Not Acceptable)``,
-      you can also enable this configuration with a ``1`.
+      you can also enable this configuration with a ``1``.
 
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
@@ -1140,6 +1134,23 @@ Cache Control
    :reloadable:
 
    When enabled (``1``), Traffic Server will keep certain HTTP objects in the cache for a certain time as specified in cache.config.
+
+.. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_percent INT 10
+
+   The size of the region (as a percentage of the total content storage in a :term:`cache stripe`) in front of the
+   :term:`write cursor` that constitutes a recent access hit for evacutating the accessed object.
+
+   When an object is accessed it can be marked for evacuation, that is to be copied over the write cursor and
+   thereby preserved from being overwritten. This is done if it is no more than a specific number of bytes in front of
+   the write cursor. The number of bytes is a percentage of the total number of bytes of content storage in the cache
+   stripe where the object is stored and that percentage is set by this variable.
+
+.. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_size_limit INT 0
+   :metric: bytes
+
+   Limit the size of objects that are hit evacuated.
+
+   Objects larger than the limit are not hit evacuated. A value of 0 disables the limit.
 
 RAM Cache
 =========
@@ -2109,5 +2120,3 @@ These are referenced but not documented. Please contribute a definition.
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
-
-
