@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2252] Fix bison version check on Ubuntu.
+
   *) [TS-2108] Fix TSConfig to build with bison 3.0
 
   *) [TS-2311] ESI: Support responses that are of other text content type as well as non-200 status response.

@@ -677,7 +677,7 @@ BISON_POINT=1
 AC_CHECK_PROG([YACC],[bison],[bison])
 AS_IF([test -n "$YACC"],
       [ bison_version_check=`$YACC --version 2>&1 | \
-        $SED -n '/bison/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\)[[^0-9]]*$/\1/p' | \
+        $SED -n '/bison/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\).*$/\1/p' | \
         $AWK "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && (NR == 2 || \\$3 >= $BISON_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
@@ -779,7 +779,7 @@ case $host_os_def in
       # 1720 is "operator new" has no corresponding member operator delete"
       # 2256 is "non-pointer conversion from "int" to "unsigned char" "
       # 2259 is "non-pointer conversion from "int" to "unsigned char" "
-      # 
+      #
       # TODO: We should try to eliminate more of these -wd exclusions.
       common_opt="-pipe -Wall -wd111 -wd279 -wd383 -wd522 -wd444 -wd873 -wd981 -wd1418 -wd1419 -wd1572 -wd1720 -wd2256 -wd2259"
       debug_opt="-ggdb3 $common_opt"
