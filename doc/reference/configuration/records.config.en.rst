@@ -1054,8 +1054,8 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 0
    :reloadable:
 
-   When with a value of ``1``, Traffic Server serves documents from cache with a
-   ``Content-Type:`` header that does not match the ``Accept:`` header of the
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Type:`` header even if it does not match the ``Accept:`` header of the
    request. If set to ``2``, this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
@@ -1071,7 +1071,7 @@ Cache Control
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
-   ``Content-Language:`` header that does not match the ``Accept-Language:``
+   ``Content-Language:`` header even if it does not match the ``Accept-Language:``
    header of the request. If set to ``2``, this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
@@ -1088,7 +1088,7 @@ Cache Control
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
-   ``Content-Encoding:`` header that does not match the ``Accept-Encoding:``
+   ``Content-Encoding:`` header even if it does not match the ``Accept-Encoding:``
    header of the request. If set to ``2``, this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
@@ -1105,7 +1105,7 @@ Cache Control
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
-   ``Content-Type:`` header that does not match the ``Accept-Charset:`` header
+   ``Content-Type:`` header even if it does not match the ``Accept-Charset:`` header
    of the request. If set to ``2``, this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
