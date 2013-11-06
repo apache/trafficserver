@@ -1874,7 +1874,6 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/null_transformation_plugin/Makefile
   lib/atscppapi/examples/post_buffer/Makefile
   lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/detachedrequest/Makefile
   lib/atscppapi/examples/stat_example/Makefile
   lib/atscppapi/examples/async_http_fetch/Makefile
   lib/atscppapi/examples/remap_plugin/Makefile
@@ -1882,7 +1881,6 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/timeout_example/Makefile
   lib/atscppapi/examples/internal_transaction_handling/Makefile
   lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/request_cookies/Makefile
   lib/wccp/Makefile
   lib/perl/Makefile
   mgmt/Makefile

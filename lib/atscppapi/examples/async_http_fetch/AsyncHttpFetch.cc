@@ -98,11 +98,9 @@ private:
       TS_DEBUG(TAG, "Response version is [%s], status code %d, reason phrase [%s]",
                HTTP_VERSION_STRINGS[response.getVersion()].c_str(), response.getStatusCode(), 
                response.getReasonPhrase().c_str());
-      for (Headers::const_iterator iter = response.getHeaders().begin(), end = response.getHeaders().end();
-           iter != end; ++iter) {
-        TS_DEBUG(TAG, "*************** Response header: name [%s], values [%s]", iter->first.c_str(), 
-                 Headers::getJoinedValues(iter->second).c_str());;
-      }
+
+      TS_DEBUG(TAG, "Reponse Headers: \n%s\n", response.getHeaders().str().c_str());
+
       const void *body;
       size_t body_size;
       async_http_fetch.getResponseBody(body, body_size);

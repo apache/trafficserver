@@ -46,13 +46,13 @@ struct ResponseState: noncopyable {
 
 Response::Response() {
   state_ = new ResponseState();
-  state_->headers_.setType(Headers::TYPE_RESPONSE);
+//  state_->headers_.setType(Headers::TYPE_RESPONSE);
 }
 
 void Response::init(void *hdr_buf, void *hdr_loc) {
   state_->hdr_buf_ = static_cast<TSMBuffer>(hdr_buf);
   state_->hdr_loc_ = static_cast<TSMLoc>(hdr_loc);
-  state_->headers_.init(state_->hdr_buf_, state_->hdr_loc_);
+  state_->headers_.reset(state_->hdr_buf_, state_->hdr_loc_);
   LOG_DEBUG("Initializing response %p with hdr_buf=%p and hdr_loc=%p", this, state_->hdr_buf_, state_->hdr_loc_);
 }
 
