@@ -180,8 +180,7 @@ otherwise, Traffic Server uses the Traffic Server user account name as the defau
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
-   The facility used to record system log files. Refer to
-   :ref:`Understanding Traffic Server Log Files <working-log-files.en.html#understanding-traffic-server-log-files>`.
+   The facility used to record system log files. Refer to :ref:`understanding-traffic-server-log-files`.
 
 .. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
 
@@ -658,7 +657,7 @@ Parent Proxy Configuration
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`Hierarchical Caching <../hierachical-caching>`.
+   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`hierarchical-caching`.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
@@ -817,7 +816,7 @@ Congestion Control
 
    Enables (``1``) or disables (``0``) the Congestion Control option, which configures Traffic Server to stop forwarding
    HTTP requests to origin servers when they become congested. Traffic Server sends the client a message to retry the
-   congested origin server later. Refer to :ref:`Using Congestion Control <http-proxy-caching#UsingCongestionControl>`.
+   congested origin server later. Refer to :ref:`using-congestion-control`.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.enabled INT 0
 
@@ -947,7 +946,7 @@ Cache Control
    :reloadable:
 
    Enables (``1``) or disables (``0``) ability to a read cached object while the another connection is completing the write to cache for
-   the same object. Several other configuration values need to be set for this to become active. See :ref:`Reducing Origin Server Requests <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`
+   the same object. Several other configuration values need to be set for this to become active. See :ref:`reducing-origin-server-requests-avoiding-the-thundering-herd`
 
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 512
    :reloadable:
@@ -1221,7 +1220,7 @@ Heuristic Expiration
    :reloadable:
 
    How often Traffic Server checks for an early refresh, during the period before the document stale time. The interval
-   specified must be in seconds. See :ref:`Fuzzy Revalidation <http-proxy-caching.en.html#fuzzy-revalidation>`
+   specified must be in seconds. See :ref:`fuzzy-revalidation`
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.00500
    :reloadable:
