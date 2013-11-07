@@ -24,13 +24,12 @@
 #ifndef __I_SOCKS_H__
 #define __I_SOCKS_H__
 
-#ifdef NON_MODULAR
 /*When this is being compiled with TS, we enable more features the use
   non modularized stuff. namely:
   ip_ranges and multiple socks server support.
 */
 #define SOCKS_WITH_TS
-#endif
+
 
 #define SOCKS_DEFAULT_VERSION 0 //defined the configuration variable
 #define SOCKS4_VERSION  4

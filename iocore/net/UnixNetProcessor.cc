@@ -24,9 +24,7 @@
 #include "P_Net.h"
 
 // For Stat Pages
-#ifdef NON_MODULAR
 #include "StatPages.h"
-#endif
 
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
@@ -439,11 +437,9 @@ UnixNetProcessor::start(int, size_t)
 /*
  * Stat pages
  */
-#ifdef NON_MODULAR
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
   if (etype == ET_NET)
     statPagesManager.register_http("net", register_ShowNet);
-#endif
   return 1;
 }
 

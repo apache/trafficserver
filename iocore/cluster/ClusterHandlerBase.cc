@@ -754,9 +754,7 @@ ClusterHandler::machine_down()
 #else
   Note("machine down %u.%u.%u.%u:%d", DOT_SEPARATED(ip), id);
 #endif
-#ifdef NON_MODULAR
   machine_offline_APIcallout(ip);
-#endif
   snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
   REC_SignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
@@ -1145,9 +1143,8 @@ failed:
         }
 
         this->needByteSwap = !clusteringVersion.NativeByteOrder();
-#ifdef NON_MODULAR
         machine_online_APIcallout(ip);
-#endif
+
         // Signal the manager
         snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
         REC_SignalManager(REC_SIGNAL_MACHINE_UP, textbuf);

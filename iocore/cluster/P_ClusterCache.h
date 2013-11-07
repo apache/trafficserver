@@ -828,7 +828,6 @@ ClusterFunctionDescriptor clusterFunction[]
    /*********************************************
     * RESERVED for Cluster RPC API use		*
     *********************************************/
-#ifdef NON_MODULAR
   {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
   {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
   {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
@@ -859,7 +858,6 @@ ClusterFunctionDescriptor clusterFunction[]
   {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
   {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
   {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0}
-#endif
   // ********** ADD NEW ENTRIES ABOVE THIS LINE ************
 }
 #endif

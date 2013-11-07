@@ -699,10 +699,8 @@ ClusterProcessor::init()
   REC_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");
 
   create_this_cluster_machine();
-#ifdef NON_MODULAR
   // Cluster API Initializations
   clusterAPI_init();
-#endif
   // Start global Cluster periodic event
   PeriodicClusterEvent = NEW(new GlobalClusterPeriodicEvent);
   PeriodicClusterEvent->init();

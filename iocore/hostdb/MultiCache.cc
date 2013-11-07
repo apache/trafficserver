@@ -30,13 +30,7 @@
 
 #include "libts.h"
 #include "I_Layout.h"
-#ifdef NON_MODULAR
 #include "P_HostDB.h"
-#else
-//extern const char *system_config_directory;
-extern int hostdb_sync_frequency;
-#endif
-
 #include "P_MultiCache.h"
 #include "P_EventSystem.h"      // FIXME: need to have this in I_* header files.
 #include "ink_file.h"

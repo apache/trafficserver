@@ -25,10 +25,8 @@
 #include "P_Cache.h"
 
 // Cache Inspector and State Pages
-#ifdef NON_MODULAR
 #include "P_CacheTest.h"
 #include "StatPages.h"
-#endif
 
 #include "I_Layout.h"
 
@@ -580,7 +578,7 @@ static const int DEFAULT_CACHE_OPTIONS = (O_RDWR | _O_ATTRIB_OVERLAPPED);
 int
 CacheProcessor::start_internal(int flags)
 {
-#ifdef NON_MODULAR
+
   ink_assert((int)TS_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
   ink_assert((int)TS_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
   ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE == (int)CACHE_EVENT_OPEN_WRITE);
@@ -593,7 +591,6 @@ CacheProcessor::start_internal(int flags)
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
-#endif
 
 #if AIO_MODE == AIO_MODE_NATIVE
   int etype = ET_NET;
@@ -2218,12 +2215,10 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
 
 int
 Cache::open_done() {
-#ifdef NON_MODULAR
   Action *register_ShowCache(Continuation * c, HTTPHdr * h);
   Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
-#endif
   if (total_good_nvol == 0) {
     ready = CACHE_INIT_FAILED;
     cacheProcessor.cacheInitialized();
@@ -2645,7 +2640,6 @@ Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostn
     return ACTION_RESULT_DONE;
 }
 
-#ifdef NON_MODULAR
 Action *
 Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
 {
@@ -2656,7 +2650,6 @@ Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
   const char *hostname = url->host_get(&len);
   return lookup(cont, &md5, type, (char *) hostname, len);
 }
-#endif
 
 int
 CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
@@ -3417,7 +3410,6 @@ ink_cache_init(ModuleVersion v)
 #endif
 }
 
-#ifdef NON_MODULAR
 //----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
@@ -3483,4 +3475,3 @@ CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, C
   return caches[frag_type]->remove(cont, &md5, frag_type, true, false, const_cast<char*>(hostname), len);
 }
 
-#endif
