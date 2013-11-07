@@ -17,10 +17,6 @@
 #  limitations under the License.
 
 # Note that hdrs is targeted from ../Makefile.am
-if STANDALONE_IOCORE
-noinst_LIBRARIES = libTrafficServerStandalone.a
-bin_PROGRAMS =
-else
 SUBDIRS = congest http logging config
 noinst_LIBRARIES =
 bin_PROGRAMS = \
@@ -28,7 +24,6 @@ bin_PROGRAMS = \
   traffic_logcat \
   traffic_logstats \
   traffic_sac
-endif
 
 noinst_PROGRAMS = \
   test_xml_parser
@@ -57,8 +52,6 @@ noinst_HEADERS = \
   ConfigParse.h \
   Show.h
 
-EXTRA_LIBRARIES	= \
-  libTrafficServerStandalone.a
 
 if STATIC_LIBTS
    which_libts = $(top_builddir)/lib/ts/.libs/libtsutil.a
@@ -260,13 +253,6 @@ if BUILD_TESTS
   traffic_sac_SOURCES += RegressionSM.cc
 endif
 
-libTrafficServerStandalone_a_SOURCES = \
-  signals.cc \
-  EventName.cc \
-  StatPages.cc \
-  StatSystem.cc \
-  AbstractBuffer.cc \
-  Initialize.cc
 
 test_xml_parser_SOURCES = test_xml_parser.cc
 test_xml_parser_LDADD = \

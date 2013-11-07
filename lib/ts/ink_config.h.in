@@ -81,7 +81,6 @@
 #define TS_HAS_128BIT_CAS              @has_128bit_cas@
 
 /* API */
-#define TS_HAS_STANDALONE_IOCORE       @has_standalone_iocore@
 #define TS_HAS_TESTS                   @has_tests@
 #define TS_HAS_WCCP                    @has_wccp@
 
@@ -92,14 +91,11 @@
 
 # define TS_MAX_API_STATS               @max_api_stats@
 
-#if TS_HAS_STANDALONE_IOCORE
-# define STANDALONE_IOCORE              1
-#else
+
 # define FIXME_NONMODULAR               1
 # define SPLIT_DNS                      1
 # define NON_MODULAR                    1
 # define HTTP_CACHE                     1
-#endif
 
 /* Defaults for user / group */
 #define TS_PKGSYSUSER                   "@pkgsysuser@"

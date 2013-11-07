@@ -406,10 +406,8 @@ UnixNetProcessor::start(int, size_t)
   netthreads = eventProcessor.eventthread[etype];
   for (int i = 0; i < n_netthreads; ++i) {
     initialize_thread_for_net(netthreads[i]);
-#ifndef STANDALONE_IOCORE
     extern void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
     initialize_thread_for_http_sessions(netthreads[i], i);
-#endif
   }
 
   RecData d;

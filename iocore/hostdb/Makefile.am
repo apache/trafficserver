@@ -16,15 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if STANDALONE_IOCORE
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts
-else
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
@@ -36,10 +27,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/preparse
-endif
-
-
-DEFS += @IOCORE_MODULARIZED_DEFS@
 
 EXTRA_DIST = I_HostDB.h
 
