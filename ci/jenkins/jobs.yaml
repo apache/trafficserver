@@ -718,7 +718,7 @@
         - '{node}-{branch}-{tag}-regression':
             branch: master
             tag: hardening
-            hardening: '0'
+            hardening: '1'
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -738,6 +738,11 @@
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
+            repo: file:///home/jenkins/git/trafficserver_4.1
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.1.x
+            tag: hardening
+            hardening: '1'
             repo: file:///home/jenkins/git/trafficserver_4.1
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
