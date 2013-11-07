@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2309] Allow mod_generator plugin for lighttpd to accept "SI" postfixes.
+
+
 Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2252] Fix bison version check on Ubuntu.
