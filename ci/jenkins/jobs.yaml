@@ -23,6 +23,20 @@
         artifactNumToKeep: 2
     triggers:
         - pollscm: 'H/30 * * * *'
+    # Time builds out (and fail them) after 60mins.
+    wrappers:
+        - timeout:
+            timeout: 60
+            fail: true
+    publishers:
+        - email:
+            recipients: 'commits@trafficserver.apache.org'
+            send-to-individuals: true
+        - workspace-cleanup:
+            dirmatch: true
+            include:
+                - 'build/*'
+                - 'install/*'
 
 - builder:
     name: linux-regression
