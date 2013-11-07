@@ -1,4 +1,6 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 4.2.0
+
 Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2252] Fix bison version check on Ubuntu.
