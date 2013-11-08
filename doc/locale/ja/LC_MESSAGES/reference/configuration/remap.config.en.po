@@ -1,0 +1,441 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/configuration/remap.config.en.rst:20
+msgid "remap.config"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:28
+msgid ""
+"The :file:`remap.config` file contains mapping rules that Traffic Server "
+"uses to perform the following actions:"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:31
+msgid ""
+"Map URL requests for a specific origin server to the appropriate location on"
+" Traffic Server when Traffic Server acts as a reverse proxy for that "
+"particular origin server"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:34
+msgid ""
+"Reverse-map server location headers so that when origin servers respond to a"
+" request with a location header that redirects the client to another "
+"location, the clients do not bypass Traffic Server"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:37
+msgid ""
+"Redirect HTTP requests permanently or temporarily without Traffic Server "
+"having to contact any origin servers"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:40
+msgid ""
+"Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about "
+"redirecting HTTP requests and using reverse proxy."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:43
+msgid ""
+"After you modify the :file:`remap.config` run the :option:`traffic_line -x` "
+"to apply the changes. When you apply the changes to one node in a cluster, "
+"Traffic Server automatically applies the changes to all other nodes in the "
+"cluster."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:49
+msgid "Format"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:51
+msgid ""
+"Each line in the :file:`remap.config` file must contain a mapping rule. "
+"Empty lines, or lines starting with ``#`` are ignored. Each line can be "
+"broken up into multiple lines for better readability by using ``\\`` as "
+"continuation marker."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:55
+msgid ""
+"Traffic Server recognizes three space-delimited fields: ``type``, "
+"``target``, and ``replacement``. The following list describes the format of "
+"each field."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:79
+msgid "``type``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:61
+msgid "Enter one of the following:"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:63
+msgid ""
+"``map`` --translates an incoming request URL to the appropriate origin "
+"server URL."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:66
+msgid ""
+"``reverse_map`` --translates the URL in origin server redirect responses to "
+"point to the Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:69
+msgid ""
+"``redirect`` --redirects HTTP requests permanently without having to contact"
+" the origin server. Permanent redirects notify the browser of the URL change"
+" (by returning an HTTP status code 301) so that the browser can update "
+"bookmarks."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:74
+msgid ""
+"``redirect_temporary`` --redirects HTTP requests temporarily without having "
+"to contact the origin server. Temporary redirects notify the browser of the "
+"URL change for the current request only (by returning an HTTP status code "
+"307)."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:88
+msgid "``target``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:84
+#: ../../reference/configuration/remap.config.en.rst:93
+msgid "Enter the origin (\"from\") URL. You can enter up to four components: ::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:88
+msgid "where ``scheme`` is ``http``."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:98
+msgid "``replacement``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:97
+msgid "where ``scheme`` can be ``http`` or ``https``."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:103
+msgid "Precedence"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:105
+msgid ""
+"Remap rules are not processed top-down, but based on an internal priority"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:108
+msgid "``map`` and ``reverse_map``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:109
+msgid "``regex_map``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:110
+msgid "``redirect`` and ``redirect_temporary``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:111
+msgid "``regex_redirect`` and ``regex_redirect_temporary``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:115
+msgid "Match-All"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:117
+msgid ""
+"A map rule with a single ``/`` acts as a wildcard, it will match any "
+"request. This should be use with care, and certainly only once at the end of"
+" the remap.config file. E.g."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:126
+#: ../../reference/configuration/remap.config.en.rst:266
+#: ../../reference/configuration/remap.config.en.rst:283
+#: ../../reference/configuration/remap.config.en.rst:306
+msgid "Examples"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:128
+msgid ""
+"The following section shows example mapping rules in the "
+":file:`remap.config` file."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:132
+msgid "Reverse Proxy Mapping Rules"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:134
+msgid ""
+"The following example shows a map rule that does not specify a path prefix "
+"in the target or replacement: ::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:140
+msgid "This rule results in the following translations:"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:143
+#: ../../reference/configuration/remap.config.en.rst:164
+#: ../../reference/configuration/remap.config.en.rst:181
+#: ../../reference/configuration/remap.config.en.rst:200
+#: ../../reference/configuration/remap.config.en.rst:214
+#: ../../reference/configuration/remap.config.en.rst:222
+msgid "Client Request"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:143
+#: ../../reference/configuration/remap.config.en.rst:164
+#: ../../reference/configuration/remap.config.en.rst:181
+#: ../../reference/configuration/remap.config.en.rst:200
+#: ../../reference/configuration/remap.config.en.rst:214
+#: ../../reference/configuration/remap.config.en.rst:222
+msgid "Translated Request"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:145
+msgid "``http://www.x.com/Widgets/index.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:145
+msgid "``http://server.hoster.com/Widgets/index.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:146
+msgid "``http://www.x.com/cgi/form/submit.sh?arg=true``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:146
+msgid "``http://server.hoster.com/cgi/form/submit.sh?arg=true``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:149
+msgid ""
+"The following example shows a map rule with path prefixes specified in the "
+"target: ::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:161
+msgid "These rules result in the following translations:"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:166
+msgid "``http://www.y.com/marketing/projects/manhattan/specs.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:166
+msgid "``http://marketing.y.com/projects/manhattan/specs.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:167
+msgid "``http://www.y.com/stuff/marketing/projects/boston/specs.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:167
+msgid "``http://info.y.com/marketing/projects/boston/specs.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:168
+msgid "``http://www.y.com/engineering/marketing/requirements.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:168
+msgid "``http://engineering.y.com/marketing/requirements.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:171
+msgid "The following example shows that the order of the rules matters: ::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:178
+msgid "These rules result in the following translation."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:183
+msgid "``http://www.g.com/stuff/a.gif``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:183
+msgid "``http://external.g.com/stuff/a.gif``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:186
+msgid ""
+"In the above examples, the second rule is never applied because all URLs "
+"that match the second rule also match the first rule. The first rule takes "
+"precedence because it appears earlier in the :file:`remap.config` file."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:191
+msgid ""
+"The following example shows a mapping with a path prefix specified in the "
+"target and replacement::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:197
+msgid "This rule results in the following translation."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:202
+msgid "``http://www.h.com/a/b/c/d/doc.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:202
+msgid "``http://server.h.com/customers/x/y/c/d/doc.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:203
+msgid "``http://www.h.com/a/index.html``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:203
+msgid "``Translation fails``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:206
+msgid "The following example shows reverse-map rules::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:211
+msgid "These rules result in the following translations."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:216
+#: ../../reference/configuration/remap.config.en.rst:224
+msgid "``http://www.x.com/Widgets``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:216
+msgid "``http://server.hoster.com/x/Widgets``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:222
+msgid "Origin Server Header"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:224
+msgid "``http://server.hoster.com/x/Widgets/``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:224
+msgid "``http://www.x.com/Widgets/``"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:227
+msgid ""
+"When acting as a reverse proxy for multiple servers, Traffic Server is "
+"unable to route to URLs from older browsers that do not send the ``Host:`` "
+"header. As a solution, set the variable "
+":ts:cv:`proxy.config.header.parse.no_host_url_redirect` in the "
+":file:`records.config` file to the URL to which Traffic Server will redirect"
+" requests without host headers."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:234
+msgid "Redirect Mapping Rules"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:236
+msgid ""
+"The following rule permanently redirects all HTTP requests for "
+"``www.company.com`` to ``www.company2.com``: ::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:241
+msgid ""
+"The following rule *temporarily* redirects all HTTP requests for "
+"``www.company1.com`` to ``www.company2.com``: ::"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:249
+msgid "Regular Expression (regex) Remap Support"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:251
+msgid ""
+"Regular expressions can be specified in remapping rules, with the "
+"limitations below:"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:254
+msgid ""
+"Only the ``host`` field can contain a regex; the ``scheme``, ``port``, and "
+"other fields cannot. For path manipulation via regexes, use the "
+"``regex_remap`` plugin."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:257
+msgid ""
+"The number of capturing subpatterns is limited to 9. This means that ``$0`` "
+"through ``$9`` can be used as subtraction placeholders (``$0`` will be the "
+"entire input string)."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:260
+msgid "The number of substitutions in the expansion string is limited to 10."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:261
+msgid ""
+"There is no ``regex_`` equivalent to ``reverse_remap``, so when using "
+"``regex_remap`` you should make sure the reverse path is clear by setting "
+"(:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:276
+msgid "Plugin Chaining"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:278
+msgid ""
+"Plugins can be configured to be evaluated in a specific order, passing the "
+"results from one in to the next (unless a plugin returns 0, then the "
+"\"chain\" is broken)."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:289
+msgid "will pass \"1\" and \"2\" to plugin1.so and \"3\" to plugin2.so."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:291
+msgid "This will pass \"1\" and \"2\" to plugin1.so and \"3\" to plugin2.so"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:296
+msgid "Named Filters"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:298
+msgid ""
+"Named filters can be created and applied to blocks of mappings using the "
+"``.definefilter``, ``.activatefilter``, and ``.deactivatefilter`` "
+"directives. Named filters must be defined using ``.definefilter`` before "
+"being used. Once defined, ``.activatefilter`` can used to activate a filter "
+"for all mappings that follow until deactivated with ``.deactivatefilter``."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:323
+msgid ""
+"The filter `disable_delete_purge` will be applied to all of the mapping "
+"rules. (It is activated before any mappings and is never deactivated.) The "
+"filter `internal_only` will only be applied to the second mapping."
+msgstr ""

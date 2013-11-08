@@ -1,0 +1,97 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/api/TSTypes.en.rst:21
+msgid "TSAPI Types"
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:24
+msgid "Synopsis"
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:25
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:26
+msgid "`#include <ts/remap.h>`"
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:29
+msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:31
+msgid ""
+"The Apache Traffic Server API provides large number of types. Many of them "
+"are specific to a particular API function or function group, but others are "
+"used more widely. Those are described on this page."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:36
+msgid "An opaque type that represents a Traffic Server :term:`continuation`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:40
+msgid ""
+"An enumeration that identifies a specific type of hook for HTTP "
+"transactions."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:44
+msgid "An opaque type that represents a Traffic Server :term:`session`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:48
+msgid "\"High Resolution Time\""
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:50
+msgid "A 64 bit time value, measured in nanoseconds."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:54
+msgid ""
+"An opaque type that represents a Traffic Server HTTP :term:`transaction`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:58
+msgid ""
+"An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-"
+"add>`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:62
+msgid ""
+"An indicator of the results of an API call. A value of :const:`TS_SUCCESS` "
+"means the call was successful. Any other value indicates a failure and is "
+"specific to the API call."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:67
+msgid ""
+"An enumeration that specifies the type of a value in an internal data "
+"structure that is accessible via the API."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:71
+msgid ""
+"The type used internally for an integer. This corresponds to the value "
+":const:`TS_RECORDDATATYPE_INT` for :type:`TSRecordDataType`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:76
+msgid ""
+"The type used internally for a floating point value. This corresponds to the"
+" value :const:`TS_RECORDDATATYPE_FLOAT` for :type:`TSRecordDataType`."
+msgstr ""

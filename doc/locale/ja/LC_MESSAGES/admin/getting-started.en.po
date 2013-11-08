@@ -1,0 +1,269 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../admin/getting-started.en.rst:5
+msgid "Getting Started"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:29
+msgid "Before you start"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:31
+msgid ""
+"Before you get started with Traffic Server you may have to decide which "
+"version you want to use. Traffic Server follows the `Semantic Versioning "
+"<http://semver.org>`_ guidelines, in summary"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:35
+msgid "A version is made of a version-triplet: ``MAJOR.MINOR.PATCH``"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:37
+msgid ""
+"As of v4.0.0, there are no longer any development (or unstable) releases. "
+"All releases are considered stable and ready for production use, releases "
+"within a major version are always upgrade compatible. More details are "
+"available on the `Wiki page "
+"<https://cwiki.apache.org/confluence/display/TS/New+Release+Processes>`_."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:43
+msgid ""
+"Sometimes we speak of trunk, master or HEAD, all of which are used "
+"interchangeably: trunk or master or sometimes TIP or HEAD, refer to the "
+"latest code in a Git Version Control System. Master is always kept "
+"releasable, and compatible with the current major release version. "
+"Incompatible changes are sometimes committed on a next-major release branch,"
+" for example we have the ``5.0.x`` branch where changes incompatible with "
+"4.x are managed."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:50
+msgid ""
+"If your distribution does not come with a prepackaged Traffic Server, please"
+" go to `downloads </downloads>`_ to choose the version that you consider "
+"most appropriate for yourself. If you want to really be on the bleeding edge"
+" you can clone our `git repository <https://git-wip-"
+"us.apache.org/repos/asf/trafficserver.git>`_."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:56
+msgid ""
+"Please note that while we do have a `GitHub Mirror "
+"<https://github.com/apache/trafficserver>`_ that you can also use to submit "
+"pull requests, it may not be entirely up-to-date."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:61
+msgid "Building Traffic Server"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:63
+msgid ""
+"In order to build Traffic Server from source you will need the following "
+"(development) packages:"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:66
+msgid "pkgconfig"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:67
+msgid "libtool"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:68
+msgid "gcc (>= 4.3 or clang > 3.0)"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:69
+msgid "make (GNU Make!)"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:70
+msgid "openssl"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:71
+msgid "tcl"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:72
+msgid "expat"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:73
+msgid "pcre"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:74
+msgid "libcap"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:75
+msgid "flex (for TPROXY)"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:76
+msgid "hwloc"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:77
+msgid "lua"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:78
+msgid "curses"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:79
+msgid "curl (both for tstop)"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:81
+msgid "if you're building from a git clone, you'll also need"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:83
+msgid "git"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:84
+msgid "autoconf"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:85
+msgid "automake"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:87
+msgid "We will show-case a build from git::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:91
+msgid "Next, we ``cd trafficserver`` and run::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:95
+msgid ""
+"This will generate a ``configure`` file from ``configure.ac``, so now we can"
+" run that::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:100
+msgid ""
+"Note well, that by default Traffic Server uses the user ``nobody``, as well "
+"as user's primary group as Traffic Server user. If you want to change that, "
+"you can override it here::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:106
+msgid ""
+"If dependencies are not in standard paths (``/usr/local`` or ``/usr``), you "
+"need to pass options to ``configure`` to account for that::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:111
+msgid ""
+"Most ``configure`` path-options accept a format of "
+"``\"INCLUDE_PATH:LIBRARY_PATH\"``::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:117
+msgid ""
+"We can run ``make`` to build the project. We highly recommend to run ``make "
+"check`` to verify the build's general sanity::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:123
+msgid ""
+"We can finally run ``make install`` to install (you may have to switch to "
+"root to do this)::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:128
+msgid ""
+"We also recommend to run a regression test. Please note that this will only "
+"work successfully with the default ``layout``::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:134
+msgid ""
+"After you have installed Traffic Server on your system, you can do any of "
+"the following:"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:140
+msgid "Start Traffic Server"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:142
+msgid ""
+"To start Traffic Server manually, issue the ``trafficserver`` command, "
+"passing in the attribute ``start``. This command starts all the processes "
+"that work together to process Traffic Server requests as well as manage, "
+"control, and monitor the health of the Traffic Server system."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:147
+msgid "To run the ``trafficserver start`` command, e.g.::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:151
+msgid ""
+"At this point your server is up and running in the default configuration of "
+"a :ref:`reverse-proxy-and-http-redirects`."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:157
+msgid "Start Traffic Line"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:159
+msgid ""
+"Traffic Line provides a quick way of viewing Traffic Server statistics and "
+"configuring the Traffic Server system via command-line interface. To execute"
+" individual commands or script multiple commands, refer to "
+":program:`traffic_line`."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:164
+msgid "Traffic Line commands take the following form::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:168
+msgid "For a list of :program:`traffic_line` commands, enter::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:172
+msgid ""
+"Please note that :program:`traffic_line`, while a fine tool for an "
+"administrator, is a poor choice for automation, especially that of "
+"monitoring. See our chapter on :ref:`monitoring-traffic` for how to do that "
+"better."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:180
+msgid "Stop Traffic Server"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:182
+msgid ""
+"To stop Traffic Server, always use the :program:`trafficserver` command, "
+"passing in the attribute ``stop``. This command stops all the Traffic Server"
+" processes (:program:`traffic_manager`, :program:`traffic_server`, and "
+":program:`traffic_cop`). Do not manually stop processes, as this can lead to"
+" unpredictable results.::"
+msgstr ""

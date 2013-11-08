@@ -1,0 +1,887 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../admin/event-logging-formats.en.rst:4
+msgid "Event Logging Formats"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:23
+msgid ""
+"This document provides a reference for all the different logging formats "
+"Traffic Server supports. Rather than just reading about those formats, you "
+"may also want to try our `online event log builder "
+"<http://trafficserver.apache.org/logbuilder/>`_ for an interactive way of "
+"building and understanding log formats."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:36
+msgid "Custom Logging Fields"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:38
+msgid "The following list describes Traffic Server custom logging fields."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:43
+msgid "``{HTTP header field name}cqh``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:41
+msgid ""
+"Logs the information in the requested field of the client request HTTP "
+"header. For example, ``%<{Accept-Language}cqh>`` logs the ``Accept-"
+"Language:`` field in client request headers."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:48
+msgid "``{HTTP header field name}pqh``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:46
+msgid ""
+"Logs the information in the requested field of the proxy request HTTP "
+"header. For example, ``%<{Authorization}pqh>`` logs the ``Authorization:`` "
+"field in proxy request headers."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:53
+msgid "``{HTTP header field name}psh``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:51
+msgid ""
+"Logs the information in the requested field of the proxy response HTTP "
+"header. For example, ``%<{Retry-After}psh>`` logs the ``Retry-After:`` field"
+" in proxy response headers."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:58
+msgid "``{HTTP header field name}ssh``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:56
+msgid ""
+"Logs the information in the requested field of the server response HTTP "
+"header. For example, ``%<{Age}ssh>`` logs the ``Age:`` field in server "
+"response headers."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:62
+#: ../../admin/event-logging-formats.en.rst:329
+#: ../../admin/event-logging-formats.en.rst:344
+#: ../../admin/event-logging-formats.en.rst:361
+#: ../../admin/event-logging-formats.en.rst:387
+msgid "``caun``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:61
+msgid ""
+"The client authenticated username; result of the RFC931/ident lookup of the "
+"client username."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:67
+#: ../../admin/event-logging-formats.en.rst:402
+msgid "``cfsc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:65
+msgid ""
+"The client finish status code; specifies whether the client request to "
+"Traffic Server was successfully completed (``FIN``) or interrupted "
+"(``INTR``)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:70
+#: ../../admin/event-logging-formats.en.rst:324
+#: ../../admin/event-logging-formats.en.rst:343
+#: ../../admin/event-logging-formats.en.rst:360
+#: ../../admin/event-logging-formats.en.rst:386
+msgid "``chi``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:70
+msgid "The IP address of the client's host machine."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:73
+msgid "``chih``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:73
+msgid "The IP address of the client's host machine in hexadecimal."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:77
+#: ../../admin/event-logging-formats.en.rst:368
+#: ../../admin/event-logging-formats.en.rst:394
+msgid "``cqbl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:76
+msgid ""
+"The client request transfer length; the body length in the client request to"
+" Traffic Server (in bytes)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:81
+#: ../../admin/event-logging-formats.en.rst:370
+#: ../../admin/event-logging-formats.en.rst:396
+msgid "``cqhl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:80
+msgid ""
+"The client request header length; the header length in the client request to"
+" Traffic Server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:85
+#: ../../admin/event-logging-formats.en.rst:327
+msgid "``cqhm``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:84
+msgid ""
+"The HTTP method in the client request to Traffic Server: ``GET``, ``POST``, "
+"and so on (subset of ``cqtx``)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:88
+msgid "``cqhv``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:88
+msgid "The client request HTTP version."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:93
+msgid "``cqtd``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:91
+msgid ""
+"The client request timestamp. Specifies the date of the client request in "
+"the format yyyy-mm-dd, where yyyy is the 4-digit year, mm is the 2-digit "
+"month, and dd is the 2-digit day."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:97
+msgid "``cqtn``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:96
+msgid ""
+"The client request timestamp; date and time of the client's request (in the "
+"Netscape timestamp format)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:100
+msgid "``cqtq``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:100
+msgid "The client request timestamp, with millisecond resolution."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:105
+#: ../../admin/event-logging-formats.en.rst:322
+msgid "``cqts``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:103
+msgid ""
+"The client-request timestamp in Squid format; the time of the client request"
+" since January 1, 1970 UTC. Time is expressed in seconds, with millisecond "
+"resolution."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:111
+msgid "``cqtt``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:108
+msgid ""
+"The client request timestamp. The time of the client request in the format "
+"hh:mm:ss, where hh is the two-digit hour in 24-hour format, mm is the two-"
+"digit minutes value, and ss is the 2-digit seconds value (for example, "
+"16:01:19)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:120
+msgid "``cqtx``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:114
+msgid "The full HTTP client request text, minus headers; for example, ::"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:118
+#: ../../admin/event-logging-formats.en.rst:126
+msgid ""
+"In reverse proxy mode, Traffic Server logs the rewritten/mapped URL "
+"(according to the rules in the :file:`remap.config` file), _not_ the "
+"pristine/unmapped URL."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:129
+msgid "``cqu``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:123
+msgid ""
+"The universal resource identifier (URI) of the request from client to "
+"Traffic Server (subset of ``cqtx`` )."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:138
+#: ../../admin/event-logging-formats.en.rst:328
+msgid "``cquc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:132
+msgid ""
+"The client request canonical URL. This differs from ``cqu`` in that blanks "
+"(and other characters that might not be parsed by log analysis tools) are "
+"replaced by escape sequences. The escape sequence is a percentage sign "
+"followed by the ASCII code number in hex."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:138
+msgid "See `cquuc`_."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:146
+msgid "``cqup``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:141
+msgid ""
+"The client request URL path; specifies the argument portion of the URL "
+"(everything after the host). For example, if the URL is "
+"``http://www.company.com/images/x.gif``, then this field displays "
+"``/images/x.gif``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:146
+msgid "See `cquup`_."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:149
+msgid "``cqus``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:149
+msgid "The client request URL scheme."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:155
+msgid "``cquuc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:154
+msgid ""
+"The client request unmapped URL canonical. This field records a URL before "
+"it is remapped (reverse proxy mode)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:161
+msgid "``cquup``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:160
+msgid ""
+"The client request unmapped URL path. This field records a URL path before "
+"it is remapped (reverse proxy mode)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:167
+msgid "``cquuh``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:166
+msgid ""
+"The client request unmapped URL host. This field records a URL's host before"
+" it is remapped (reverse proxy mode)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:170
+msgid "``crat``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:170
+msgid "The Retry-After time in seconds, if specified by the origin server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:174
+#: ../../admin/event-logging-formats.en.rst:404
+#: ../../admin/event-logging-formats.en.rst:404
+msgid "``crc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:173
+msgid ""
+"The cache result code; specifies how the cache responded to the request "
+"(``HIT``, ``MISS``, and so on)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:178
+msgid "``csscl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:177
+msgid ""
+"The cached response length (in bytes) from origin server to Traffic Server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:182
+msgid "``csshl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:181
+msgid ""
+"The cached header length in the origin server response to Traffic Server (in"
+" bytes)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:185
+msgid "``csshv``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:185
+msgid "The cached server response HTTP version (1.0, 1.1, etc.)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:189
+msgid "``csssc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:188
+msgid ""
+"The cached HTTP response status code from origin server to Traffic Server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:192
+msgid "``cwr``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:192
+msgid ""
+"The cache write result (``-``, ``WL_MISS``, ``INTR```, ``ERR`` or ``FIN``)"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:195
+msgid "``cwtr``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:195
+msgid "The cache write transform result"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:198
+msgid "``fsiz``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:198
+msgid "The size of the file (*n* bytes) as seen by the origin server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:203
+#: ../../admin/event-logging-formats.en.rst:403
+msgid "``pfsc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:201
+msgid ""
+"The proxy finish status code; specifies whether the Traffic Server request "
+"to the origin server was successfully completed (``FIN``), interrupted "
+"(``INTR``) or timed out (``TIMEOUT``)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:207
+msgid "``phn``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:206
+msgid ""
+"The hostname of the Traffic Server that generated the log entry in collated "
+"log files."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:211
+msgid "``phi``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:210
+msgid ""
+"The IP of the Traffic Server that generated the log entry in collated log "
+"files."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:215
+#: ../../admin/event-logging-formats.en.rst:401
+msgid "``phr``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:214
+msgid ""
+"The proxy hierarchy route; the route Traffic Server used to retrieve the "
+"object."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:219
+#: ../../admin/event-logging-formats.en.rst:369
+#: ../../admin/event-logging-formats.en.rst:395
+msgid "``pqbl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:218
+msgid ""
+"The proxy request transfer length; the body length in Traffic Server's "
+"request to the origin server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:223
+#: ../../admin/event-logging-formats.en.rst:372
+#: ../../admin/event-logging-formats.en.rst:398
+msgid "``pqhl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:222
+msgid ""
+"The proxy request header length; the header length in Traffic Server's "
+"request to the origin server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:227
+msgid "``pqsi``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:226
+msgid ""
+"The proxy request server IP address (0 on cache hits and parent-ip for "
+"requests to parent proxies)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:231
+msgid "``pqsn``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:230
+msgid ""
+"The proxy request server name; the name of the server that fulfilled the "
+"request."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:234
+#: ../../admin/event-logging-formats.en.rst:348
+#: ../../admin/event-logging-formats.en.rst:365
+#: ../../admin/event-logging-formats.en.rst:391
+msgid "``pscl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:234
+msgid "The length of the Traffic Server response to the client (in bytes)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:238
+#: ../../admin/event-logging-formats.en.rst:331
+msgid "``psct``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:237
+msgid ""
+"The content type of the document from server response header: (for example, "
+"``img/gif`` )."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:241
+#: ../../admin/event-logging-formats.en.rst:371
+#: ../../admin/event-logging-formats.en.rst:397
+msgid "``pshl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:241
+msgid "The header length in Traffic Server's response to the client."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:245
+#: ../../admin/event-logging-formats.en.rst:326
+msgid "``psql``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:244
+msgid ""
+"The proxy response transfer length in Squid format (includes header and "
+"content length)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:248
+#: ../../admin/event-logging-formats.en.rst:347
+#: ../../admin/event-logging-formats.en.rst:364
+#: ../../admin/event-logging-formats.en.rst:390
+msgid "``pssc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:248
+msgid "The HTTP response status code from Traffic Server to the client."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:259
+msgid "``shi``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:251
+msgid ""
+"The IP address resolved from the DNS name lookup of the host in the request."
+" For hosts with multiple IP addresses, this field records the IP address "
+"resolved from that particular DNS lookup."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:255
+msgid ""
+"This can be misleading for cached documents. For example: if the first "
+"request was a cache miss and came from **``IP1``** for server **``S``** and "
+"the second request for server **``S``** resolved to **``IP2``** but came "
+"from the cache, then the log entry for the second request will show "
+"**``IP2``**."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:262
+msgid "``shn``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:262
+msgid "The hostname of the origin server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:265
+#: ../../admin/event-logging-formats.en.rst:367
+#: ../../admin/event-logging-formats.en.rst:393
+msgid "``sscl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:265
+msgid "The response length (in bytes) from origin server to Traffic Server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:269
+#: ../../admin/event-logging-formats.en.rst:373
+#: ../../admin/event-logging-formats.en.rst:399
+msgid "``sshl``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:268
+msgid ""
+"The header length in the origin server response to Traffic Server (in "
+"bytes)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:272
+msgid "``sshv``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:272
+msgid "The server response HTTP version (1.0, 1.1, etc.)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:275
+#: ../../admin/event-logging-formats.en.rst:366
+#: ../../admin/event-logging-formats.en.rst:392
+msgid "``sssc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:275
+msgid "The HTTP response status code from origin server to Traffic Server."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:281
+#: ../../admin/event-logging-formats.en.rst:323
+msgid "``ttms``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:278
+msgid ""
+"The time Traffic Server spends processing the client request; the number of "
+"milliseconds between the time the client establishes the connection with "
+"Traffic Server and the time Traffic Server sends the last byte of the "
+"response back to the client."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:284
+msgid "``ttmsh``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:284
+msgid "Same as ``ttms`` but in hexadecimal."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:295
+msgid "``ttmsf``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:287
+msgid ""
+"The time Traffic Server spends processing the client request as a fractional"
+" number of seconds. Time is specified in millisecond resolution; however, "
+"instead of formatting the output as an integer (as with ``ttms``), the "
+"display is formatted as a floating-point number representing a fractional "
+"number of seconds."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:293
+msgid ""
+"For example: if the time is 1500 milliseconds, then this field displays 1.5 "
+"while the ``ttms`` field displays 1500 and the ``tts`` field displays 1."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:302
+#: ../../admin/event-logging-formats.en.rst:374
+#: ../../admin/event-logging-formats.en.rst:400
+msgid "``tts``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:298
+msgid ""
+"The time Traffic Server spends processing the client request; the number of "
+"seconds between the time at which the client establishes the connection with"
+" Traffic Server and the time at which Traffic Server sends the last byte of "
+"the response back to the client."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:307
+msgid "Logging Format Cross-Reference"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:309
+msgid ""
+"The following sections illustrate the correspondence between Traffic Server "
+"logging fields and standard logging fields for the Squid and Netscape "
+"formats."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:314
+msgid "Squid Logging Formats"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:316
+msgid ""
+"The following is a list of the Squid logging fields and the corresponding "
+"logging field symbols."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:320
+msgid "Squid"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:320
+#: ../../admin/event-logging-formats.en.rst:341
+#: ../../admin/event-logging-formats.en.rst:358
+#: ../../admin/event-logging-formats.en.rst:384
+msgid "Field Symbols"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:322
+msgid "``time``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:323
+msgid "``elapsed``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:324
+msgid "``client``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:325
+msgid "``action/code``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:325
+msgid "``crc/pssc``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:326
+msgid "``size``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:327
+msgid "``method``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:328
+msgid "``url``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:329
+msgid "``ident``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:330
+msgid "``hierarchy/from``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:330
+msgid "``phr/pqsn``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:331
+msgid "``content``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:335
+msgid "Netscape Common Logging Formats"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:337
+msgid ""
+"The following is a list of the Netscape Common logging fields and the "
+"corresponding Traffic Server logging field symbols."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:341
+msgid "Netscape Common"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:343
+#: ../../admin/event-logging-formats.en.rst:360
+#: ../../admin/event-logging-formats.en.rst:386
+msgid "``host``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:344
+#: ../../admin/event-logging-formats.en.rst:361
+#: ../../admin/event-logging-formats.en.rst:387
+msgid "``usr``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:345
+#: ../../admin/event-logging-formats.en.rst:362
+#: ../../admin/event-logging-formats.en.rst:388
+msgid "``[time]``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:345
+#: ../../admin/event-logging-formats.en.rst:362
+#: ../../admin/event-logging-formats.en.rst:388
+msgid "``[cqtn]``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:346
+#: ../../admin/event-logging-formats.en.rst:363
+#: ../../admin/event-logging-formats.en.rst:389
+msgid "``\"req\"``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:346
+#: ../../admin/event-logging-formats.en.rst:363
+#: ../../admin/event-logging-formats.en.rst:389
+msgid "``\"cqtx\"``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:347
+#: ../../admin/event-logging-formats.en.rst:364
+#: ../../admin/event-logging-formats.en.rst:390
+msgid "``s1``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:348
+#: ../../admin/event-logging-formats.en.rst:365
+#: ../../admin/event-logging-formats.en.rst:391
+msgid "``c1``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:352
+msgid "Netscape Extended Logging Formats"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:354
+msgid ""
+"The following table lists the Netscape Extended logging fields and the "
+"corresponding Traffic Server logging field symbols."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:358
+msgid "Netscape Extended"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:366
+#: ../../admin/event-logging-formats.en.rst:392
+msgid "``s2``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:367
+#: ../../admin/event-logging-formats.en.rst:393
+msgid "``c2``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:368
+#: ../../admin/event-logging-formats.en.rst:394
+msgid "``b1``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:369
+#: ../../admin/event-logging-formats.en.rst:395
+msgid "``b2``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:370
+#: ../../admin/event-logging-formats.en.rst:396
+msgid "``h1``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:371
+#: ../../admin/event-logging-formats.en.rst:397
+msgid "``h2``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:372
+#: ../../admin/event-logging-formats.en.rst:398
+msgid "``h3``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:373
+#: ../../admin/event-logging-formats.en.rst:399
+msgid "``h4``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:374
+#: ../../admin/event-logging-formats.en.rst:400
+msgid "``xt``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:378
+msgid "Netscape Extended-2 Logging Formats"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:380
+msgid ""
+"The following is a list of the Netscape Extended-2 logging fields and the "
+"corresponding Traffic Server logging field symbols."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:384
+msgid "Netscape Extended-2"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:401
+msgid "``route``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:402
+msgid "``pfs``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:403
+msgid "``ss``"
+msgstr ""

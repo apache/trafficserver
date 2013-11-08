@@ -1,0 +1,140 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/plugins/balancer.en.rst:4
+msgid "Balancer Plugin"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:24
+msgid ""
+"This is a plugin for Traffic Server, that allows you to configure mapping "
+"rules."
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:27
+msgid "To use this plugin, configure a remap.config rule like"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:30
+#: ../../reference/plugins/balancer.en.rst:42
+#: ../../reference/plugins/balancer.en.rst:52
+#: ../../reference/plugins/balancer.en.rst:59
+#: ../../reference/plugins/balancer.en.rst:64
+#: ../../reference/plugins/balancer.en.rst:71
+msgid "::"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:30
+msgid ""
+"map http://foo.com http://bar.com @plugin=balancer.so @pparam=rotation:news"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:32
+msgid ""
+"The \"To-Url\" in the remap.config rule is generally not used, unless the "
+"lookup completely fails (i.e. this is a backup URL for extreme error cases)."
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:36
+msgid "This is a list of all available options (set via @pparam):"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:39
+msgid ""
+"rotation      The name of the rotation (e.g. news) [to-host in remap] hash"
+"      What to hash on, url, path, cookie, ip, header (primary) hash2     "
+"Optional, secondary hash, to hash within a multi-host bucket bucketw   Width"
+" of each hash bucket [1]"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:44
+msgid ""
+"The rotation parameter specifies which rotation to do the lookup on. If not "
+"specified, we will default to the same name as used in the To URL in the "
+"remap rule."
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:48
+msgid ""
+"The bucket width specifies how many hosts a particular hash bucket should "
+"contain, for example:"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:52
+msgid "@pparam=bucketw:2"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:54
+msgid ""
+"The hash parameter can be used zero or more times, without it, no hashing is"
+" done at all. If you have more than one hash keys, they are concatenated in "
+"the order specified. For example:"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:59
+msgid "@pparam=hash:ip @pparam=hash:cookie/B"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:61
+msgid "The \"header\" hash key takes a required extra value, for example:"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:64
+msgid "@pparam=hash:header/Host"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:66
+msgid ""
+"For \"cookie\" hash keys, you can optionally specify an identifier for which"
+" cookie to use (without it, the entire cookie header is used). For example:"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:71
+msgid "@pparam=hash:cookie/B"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:73
+msgid ""
+"The secondary hash (\"hash2\") is used to provide \"stickiness\" within a "
+"bucket that's larger than one host (i.e. bucketw > 1). This allows you to "
+"(for example) have a primary hash on the URL, where each URL is served by "
+"some number of servers. A secondary hash on B-cookie would then provide user"
+" stickiness, so that for a particular URL, a particular user will always hit"
+" the same server."
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:80
+msgid ""
+"If the hashes you've requested (either \"hash\" or \"hash2\") can not be "
+"generated, we default to using the URL instead for the primary hash. For the"
+" secondary hash, if set, we'll default to the src-IP. If these defaults are "
+"not desirable, make sure that you have at least one hash key that is "
+"guaranteed to exist (e.g. @pparam=hash:ip)."
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:86
+msgid ""
+"If no \"hash\" parameters are specified, no hashing is done. This is the "
+"default behavior, obviously. In this cash, the \"hash2\" directive has no "
+"effect as well."
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:90
+msgid ""
+"Finally, a couple of \"flag\" options (parameters) are available, to control"
+" some of the lookup mechanisms:"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:93
+msgid "@pparam=hostip will use the IP returned by the lookup"
+msgstr ""

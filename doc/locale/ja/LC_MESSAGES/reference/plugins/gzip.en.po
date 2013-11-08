@@ -1,0 +1,125 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/plugins/gzip.en.rst:2
+msgid "gzip / deflate Plugin"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:22
+msgid ""
+"This plugin gzips or deflates responses, whichever is applicable. It can "
+"compress origin respones as well as cached responses. The plugin is built "
+"and installed as part of the normal Apache Traffic Server installation "
+"process."
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:28
+msgid "Installation"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:30
+msgid ""
+"Add the following line to ```plugin.config`` <../../configuration-"
+"files/plugin.config>`_::"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:35
+msgid "In this case, the plugin will use the default behaviour:"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:37
+msgid "Enable caching"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:38
+msgid "Compress text/\\* for every origin"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:39
+msgid ""
+"Don't hide accept encoding from origin servers (for an offloading reverse "
+"proxy)"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:41
+msgid "No urls are disallowed from compression"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:44
+msgid "Configuration"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:46
+msgid "Alternatively, a configuration can also be specified::"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:50
+msgid ""
+"After modifying plugin.cofnig, restart traffic server (sudo traffic_line -L)"
+" the configuration is re-read when a management update is given (sudo "
+"traffic_line -x)"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:55
+msgid "Options"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:57
+msgid "Flags and options are:"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:59
+msgid ""
+"``enabled``: (``true`` or ``false``) Enable or disable compression for a "
+"host."
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:62
+msgid ""
+"``remove-accept-encoding``: (``true`` or ``false``) Sets whether the plugin "
+"should hide the accept encoding from origin servers:"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:65
+msgid "To ease the load on the origins."
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:66
+msgid ""
+"For when the proxy parses responses, and the resulting "
+"compression/decompression is wasteful."
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:69
+msgid ""
+"``cache``: (``true`` or ``false``) When set, the plugin stores the "
+"uncompressed and compressed response as alternates."
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:72
+msgid ""
+"``compressible-content-type``: Wildcard pattern for matching compressible "
+"content types."
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:75
+msgid "``disallow``: Wildcard pattern for disabling compression on urls."
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:77
+msgid "Options can be set globally or on a per-site basis, as such::"
+msgstr ""
+
+#: ../../reference/plugins/gzip.en.rst:91
+msgid "See example.gzip.config for example configurations."
+msgstr ""

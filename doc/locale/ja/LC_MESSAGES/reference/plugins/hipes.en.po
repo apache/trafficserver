@@ -1,0 +1,111 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/plugins/hipes.en.rst:2
+msgid "HIPES system (undocumented)"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:22
+msgid "This plugin implements the HIPES system."
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:25
+msgid "Configuration"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:28
+msgid "``server:<host>``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:28
+msgid "Name of the server to send this request to"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:32
+msgid "``urlp:<name>``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:31
+msgid "Default: ``url`` Name of the query parameter for the service URL"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:36
+msgid "``path:<path>``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:35
+msgid "Default: ``/`` Path to use for the service URL"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:40
+msgid "``ssl``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:39
+msgid "Default: ``no`` Use SSL when connecting to the service"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:43
+msgid "``service``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:43
+msgid "Service server, ``host[:port]``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:47
+msgid "``server``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:46
+msgid "Default: ``hipes.yimg.com`` Name of HIPES server, ``host[:port]``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:50
+msgid "``active_timeout``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:50
+msgid "The active connection timeout in ms"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:53
+msgid "``no_activity_timeout``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:53
+msgid "The no activity timeout in ms"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:56
+msgid "``connect_timeout``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:56
+msgid "The connect timeout in ms"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:59
+msgid "``dns_timeout``"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:59
+msgid "The DNS timeout"
+msgstr ""
+
+#: ../../reference/plugins/hipes.en.rst:61
+msgid ""
+"The timeout options override the server defaults (from ```records.config`` "
+"<../../configuration-files/records.config>`_), and only apply to the "
+"connection to the specific \"service\" host."
+msgstr ""
