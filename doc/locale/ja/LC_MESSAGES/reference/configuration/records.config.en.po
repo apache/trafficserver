@@ -1,0 +1,3010 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/configuration/records.config.en.rst:20
+msgid "records.config"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:24
+msgid ""
+"The :file:`records.config` file is a list of configurable variables used by "
+"the Traffic Server software. Many of the variables in the "
+":file:`records.config` file are set automatically when you set configuration"
+" options in Traffic Line or Traffic Shell. After you modify the "
+":file:`records.config` file, run the command :option:`traffic_line -x` to "
+"apply the changes. When you apply changes to one node in a cluster, Traffic "
+"Server automatically applies the changes to all other nodes in the cluster."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:34
+msgid "Format"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:36
+msgid "Each variable has the following format::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:40
+msgid "where"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:42
+msgid ""
+"``SCOPE`` is related to clustering and is either ``CONFIG`` (all members of "
+"the cluster) or ``LOCAL`` (only the local machine)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:45
+msgid ""
+"``DATATYPE`` is one of ``INT`` (integer), ``STRING`` (string), ``FLOAT`` "
+"(floating point). : A variable marked as ``Deprecated`` is still functional "
+"but should be avoided as it may be removed in a future release without "
+"warning."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:51
+msgid "A variable marked as ``Reloadable`` can be updated via the command::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:55
+msgid ""
+"``INT`` type configurations are expressed as any normal integer, e.g. "
+"*32768*. They can also be expressed using more human readable values using "
+"standard prefixes, e.g. *32K*. The following prefixes are supported for all "
+"``INT`` type configurations"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:60
+msgid "``K`` Kilobytes (1024 bytes)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:61
+msgid "``M`` Megabytes (1024^2 or 1,048,576 bytes)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:62
+msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:63
+msgid "``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:67
+msgid ""
+"Traffic Server currently writes back configurations to disk periodically, "
+"and when doing so, will not preserve the prefixes."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:71
+msgid "Examples"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:73
+msgid ""
+"In the following example, the variable `proxy.config.proxy_name`_ is a "
+"``STRING`` datatype with the value ``my_server``. This means that the name "
+"of the Traffic Server proxy is ``my_server``. ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:79
+msgid "If the server name should be ``that_server`` the line would be ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:83
+msgid ""
+"In the following example, the variable ``proxy.config.arm.enabled`` is a "
+"yes/no flag. A value of ``0`` (zero) disables the option; a value of ``1`` "
+"enables the option. ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:89
+msgid ""
+"In the following example, the variable sets the cluster startup timeout to "
+"10 seconds. ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:94
+msgid ""
+"The last examples configures a 64GB RAM cache, using a human readable "
+"prefix. ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:101
+msgid "Environment Overrides"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:103
+msgid ""
+"Every :file:`records.config` configuration variable can be overridden by a "
+"corresponding environment variable. This can be useful in situations where "
+"you need a static :file:`records.config` but still want to tweak one or two "
+"settings. The override variable is formed by converting the "
+":file:`records.config` variable name to upper case, and replacing any dot "
+"separators with an underscore."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:110
+msgid ""
+"Overriding a variable from the environment is permanent and will not be "
+"affected by future configuration changes made in :file:`records.config` or "
+"applied with :program:`traffic_line`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:114
+msgid ""
+"For example, we could override the `proxy.config.product_company`_ variable "
+"like this::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:123
+msgid "Configuration Variables"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:125
+msgid ""
+"The following list describes the configuration variables available in the "
+":file:`records.config` file."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:129
+msgid "System Variables"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:133
+msgid "The name of the organization developing Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:137
+msgid "The name of the vendor providing Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:141
+msgid "The name of the product."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:146
+msgid "The name of the Traffic Server node."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:150
+msgid "The location of the Traffic Server ``bin`` directory."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:154
+msgid ""
+"The name of the executable that runs the :program:`traffic_server` process."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:158
+msgid "The command-line options for starting Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:162
+msgid ""
+"The name of the executable that runs the :program:`traffic_manager` process."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:166
+msgid ""
+"The script executed before the :program:`traffic_manager` process spawns the"
+" :program:`traffic_server` process."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:171
+msgid "The directory that contains Traffic Server configuration files."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:176
+msgid "The email address to which Traffic Server sends alarm messages."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:178
+msgid ""
+"During a custom Traffic Server installation, you can specify the email "
+"address; otherwise, Traffic Server uses the Traffic Server user account name"
+" as the default value for this variable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:183
+msgid ""
+"The facility used to record system log files. Refer to :ref:`understanding-"
+"traffic-server-log-files`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:187
+msgid ""
+"The signal sent to :program:`traffic_cop`'s managed processes to stop them."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:189
+msgid "A value of ``0`` means no signal will be sent."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:193
+msgid ""
+"The minimum amount of free swap space allowed before Traffic Server stops "
+"the :program:`traffic_server` and :program:`traffic_manager` processes to "
+"prevent the system from hanging. This configuration variable applies if swap"
+" is enabled in Linux 2.2 only."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:198
+msgid ""
+"The name and location of the file that contains warnings, status messages, "
+"and error messages produced by the Traffic Server processes. If no path is "
+"specified, then Traffic Server creates the file in its logging directory."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:203
+msgid ""
+"The directory in which Traffic Server stores configuration snapshots on the "
+"local system. Unless you specify an absolute path, this directory is located"
+" in the Traffic Server ``config`` directory."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:208
+msgid ""
+"When enabled (the default, ``1``), Traffic Server scales threads according "
+"to the available CPU cores. See the config option below."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:212
+msgid ""
+"Factor by which Traffic Server scales the number of threads. The multiplier "
+"is usually the number of available CPU cores. By default this is scaling "
+"factor is ``1.5``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:217
+msgid "*XXX* What does this do?"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:221
+msgid ""
+"When enabled (``1``), runs a separate thread for accept processing. If "
+"disabled (``0``), then only 1 thread can be created."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:225
+msgid ""
+"The new default thread stack size, for all threads. The original default is "
+"set at 1 MB."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:232
+#: ../../reference/configuration/records.config.en.rst:299
+#: ../../reference/configuration/records.config.en.rst:514
+#: ../../reference/configuration/records.config.en.rst:532
+#: ../../reference/configuration/records.config.en.rst:1383
+#: ../../reference/configuration/records.config.en.rst:1672
+msgid "Value"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:232
+#: ../../reference/configuration/records.config.en.rst:299
+#: ../../reference/configuration/records.config.en.rst:514
+#: ../../reference/configuration/records.config.en.rst:532
+#: ../../reference/configuration/records.config.en.rst:1672
+msgid "Effect"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:234
+#: ../../reference/configuration/records.config.en.rst:301
+#: ../../reference/configuration/records.config.en.rst:517
+#: ../../reference/configuration/records.config.en.rst:535
+#: ../../reference/configuration/records.config.en.rst:1386
+#: ../../reference/configuration/records.config.en.rst:1675
+msgid "1"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:234
+msgid "assign threads to sockets"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:235
+#: ../../reference/configuration/records.config.en.rst:302
+#: ../../reference/configuration/records.config.en.rst:518
+#: ../../reference/configuration/records.config.en.rst:536
+#: ../../reference/configuration/records.config.en.rst:1387
+#: ../../reference/configuration/records.config.en.rst:1676
+msgid "2"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:235
+msgid "assign threads to real cores"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:236
+#: ../../reference/configuration/records.config.en.rst:303
+#: ../../reference/configuration/records.config.en.rst:519
+#: ../../reference/configuration/records.config.en.rst:537
+#: ../../reference/configuration/records.config.en.rst:1388
+#: ../../reference/configuration/records.config.en.rst:1677
+msgid "3"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:236
+msgid "assign threads to logical cores"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:237
+#: ../../reference/configuration/records.config.en.rst:516
+#: ../../reference/configuration/records.config.en.rst:534
+#: ../../reference/configuration/records.config.en.rst:1385
+#: ../../reference/configuration/records.config.en.rst:1674
+msgid "0"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:237
+msgid "don't assign threads to any cores"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:242
+msgid ""
+"This option only has an affect when Traffic Server has been compiled with "
+"``--enable-hwloc``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:245
+msgid "Network"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:249
+msgid ""
+"Controls the global default IP addresses to which to bind proxy server "
+"ports. The value is a space separated list of IP addresses, one per "
+"supported IP address family (currently IPv4 and IPv6)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:251
+msgid ""
+"Unless explicitly specified in `proxy.config.http.server_ports`_ the server "
+"port will be bound to one of these addresses, selected by IP address family."
+" The built in default is any address. This is used if no address for a "
+"family is specified. This setting is useful if most or all server ports "
+"should be bound to the same address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:255
+msgid ""
+"This is ignored for inbound transparent server ports because they must be "
+"able to accept connections on arbitrary IP addresses."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+#: ../../reference/configuration/records.config.en.rst:0
+msgid "Example"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:259
+msgid ""
+"Set the global default for IPv4 to ``192.168.101.18`` and leave the global "
+"default for IPv6 as any address.::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:265
+msgid ""
+"Set the global default for IPv4 to ``191.68.101.18`` and the global default "
+"for IPv6 to ``fc07:192:168:101::17``.::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:271
+msgid ""
+"This controls the global default for the local IP address for outbound "
+"connections to origin servers. The value is a list of space separated IP "
+"addresses, one per supported IP address family (currently IPv4 and IPv6)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:273
+msgid ""
+"Unless explicitly specified in `proxy.config.http.server_ports`_ one of "
+"these addresses, selected by IP address family, will be used as the local "
+"address for outbound connections. This setting is useful if most or all of "
+"the server ports should use the same outbound IP addresses."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:277
+msgid ""
+"This is ignored for outbound transparent ports as the local outbound address"
+" will be the same as the client local address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:281
+msgid ""
+"Set the default local outbound IP address for IPv4 connectionsn to "
+"``192.168.101.18``.::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:287
+msgid ""
+"Set the default local outbound IP address to ``192.168.101.17`` for IPv4 and"
+" ``fc07:192:168:101::17`` for IPv6.::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:292
+msgid "Cluster"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:296
+msgid "Sets the clustering mode:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:301
+msgid "full-clustering mode"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:302
+msgid "management-only mode"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:303
+msgid "no clustering"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:308
+msgid ""
+"The reliable service port. The reliable service port is used to send "
+"configuration information between the nodes in a cluster. All nodes in a "
+"cluster must use the same reliable service port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:313
+msgid ""
+"The number of threads for cluster communication. On heavy cluster, the "
+"number should be adjusted. It is recommend that take the thread CPU usage as"
+" a reference when adjusting."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:318
+msgid "Set the interface to use for cluster communications."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:322
+msgid ""
+"This turns on the local caching of objects in cluster mode. The point of "
+"this is to allow for popular or **hot** content to be cached on all nodes in"
+" a cluster. Be aware that the primary way to configure this behavior is via "
+"the :file:`cache.config` configuration file using ``action=cluster-cache-"
+"local`` directives."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:328
+msgid ""
+"This particular :file:`records.config` configuration can be controlled per "
+"transaction or per remap rule. As such, it augments the :file:`cache.config`"
+" directives, since you can turn on the local caching feature without complex"
+" regular expression matching."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:333
+msgid ""
+"This implies that turning this on in your global :file:`records.config` is "
+"almost never what you want; instead, you want to use this either via e.g. "
+"``conf_remap.so`` overrides for a certain remap rule, or through a custom "
+"plugin using the appropriate APIs."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:340
+msgid "Local Manager"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:344
+msgid "The semaphore ID for the local manager."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:348
+msgid "The autoconfiguration port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:352
+msgid "The maximum number of copies of rolled configuration files to keep."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:356
+msgid ""
+"Option used to specify who to run the :program:`traffic_server` process as; "
+"also used to specify ownership of config and log files."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:358
+msgid "The nonprivileged user account designated to Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:360
+msgid ""
+"As of version 2.1.1 if the user_id is prefixed with pound character (#) the "
+"remaining of the string is considered to be a `numeric user identifier "
+"<http://en.wikipedia.org/wiki/User_identifier>`_. If the value is set to "
+"``#-1`` Traffic Server will not change the user during startup."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:364
+msgid ""
+"Setting ``user_id`` to ``root`` or ``#0`` is now forbidden to increase "
+"security. Trying to do so, will cause the :program:`traffic_server` fatal "
+"failure. However there are two ways to bypass that restriction"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:369
+msgid "Specify ``-DBIG_SECURITY_HOLE`` in ``CXXFLAGS`` during compilation."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:370
+msgid "Set the ``user_id=#-1`` and start trafficserver as root."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:373
+msgid "Process Manager"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:377
+msgid ""
+"The port used for internal communication between the "
+":program:`traffic_manager` and :program:`traffic_server` processes."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:380
+msgid "Alarm Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:384
+msgid ""
+"Name of the script file that can execute certain actions when an alarm is "
+"signaled. The default file is a sample script named ``example_alarm_bin.sh``"
+" located in the ``bin`` directory. You must dit the script to suit your "
+"needs."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:389
+msgid ""
+"The full path to the script file that sends email to alert someone bout "
+"Traffic Server problems."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:392
+msgid "HTTP Engine"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:396
+msgid "Ports used for proxying HTTP traffic."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:398
+msgid ""
+"This is a list, separated by space or comma, of :index:`port descriptors`. "
+"Each descriptor is a sequence of keywords and values separated by colons. "
+"Not all keywords have values, those that do are specifically noted. Keywords"
+" with values can have an optional '=' character separating the keyword and "
+"value. The case of keywords is ignored. The order of keywords is irrelevant "
+"but unspecified results may occur if incompatible options are used (noted "
+"below). Options without values are idempotent. Options with values use the "
+"last (right most) value specified, except for ``ip-out`` as detailed later."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:400
+msgid "Quick reference chart."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:403
+msgid "Name"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:403
+msgid "Note"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:403
+msgid "Definition"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:405
+#: ../../reference/configuration/records.config.en.rst:421
+msgid "*number*"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:405
+msgid "**Required**"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:405
+msgid "The local port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:406
+#: ../../reference/configuration/records.config.en.rst:424
+#: ../../reference/configuration/records.config.en.rst:1429
+msgid "ipv4"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:406
+msgid "**Default**"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:406
+msgid "Bind to IPv4 address family."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:407
+#: ../../reference/configuration/records.config.en.rst:427
+#: ../../reference/configuration/records.config.en.rst:1430
+msgid "ipv6"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:407
+msgid "Bind to IPv6 address family."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:408
+#: ../../reference/configuration/records.config.en.rst:432
+msgid "tr-in"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:408
+msgid "Inbound transparent."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:409
+#: ../../reference/configuration/records.config.en.rst:437
+msgid "tr-out"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:409
+msgid "Outbound transparent."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:410
+#: ../../reference/configuration/records.config.en.rst:442
+msgid "tr-full"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:410
+msgid "Fully transparent (inbound and outbound)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:411
+#: ../../reference/configuration/records.config.en.rst:445
+msgid "tr-pass"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:411
+msgid "Pass through enabled."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:412
+#: ../../reference/configuration/records.config.en.rst:467
+msgid "ssl"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:412
+msgid "SSL terminated."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:413
+#: ../../reference/configuration/records.config.en.rst:450
+msgid "ip-in"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:413
+#: ../../reference/configuration/records.config.en.rst:414
+#: ../../reference/configuration/records.config.en.rst:415
+msgid "**Value**"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:413
+msgid "Local inbound IP address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:414
+#: ../../reference/configuration/records.config.en.rst:457
+msgid "ip-out"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:414
+msgid "Local outbound IP address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:415
+#: ../../reference/configuration/records.config.en.rst:462
+msgid "ip-resolve"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:415
+msgid "IP address resolution style."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:416
+#: ../../reference/configuration/records.config.en.rst:472
+msgid "blind"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:416
+msgid "Blind (``CONNECT``) port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:417
+#: ../../reference/configuration/records.config.en.rst:475
+msgid "compress"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:417
+msgid "**N/I**"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:417
+msgid "Compressed. Not implemented."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:421
+msgid ""
+"Local IP port to bind. This is the port to which ATS clients will connect."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:424
+msgid ""
+"Use IPv4. This is the default and is included primarily for completeness. "
+"This forced if the ``ip-in`` option is used with an IPv4 address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:427
+msgid ""
+"Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 "
+"address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:430
+msgid ""
+"Inbound transparent. The proxy port will accept connections to any IP "
+"address on the port. To have IPv6 inbound transparent you must use this and "
+"the ``ipv6`` option. This overrides "
+":ts:cv:`proxy.local.incoming_ip_to_bind`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:432
+msgid "Not compatible with: ``ip-in``, ``ssl``, ``blind``"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:435
+msgid ""
+"Outbound transparent. If ATS connects to an origin server for a transaction "
+"on this port, it will use the client's address as its local address. This "
+"overrides :ts:cv:`proxy.local.outgoing_ip_to_bind`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:437
+msgid "Not compatible with: ``ip-out``, ``ssl``, ``ip-resolve``"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:440
+msgid ""
+"Fully transparent. This is a convenience option and is identical to "
+"specifying both ``tr-in`` and ``tr-out``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:442
+msgid ""
+"Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:445
+msgid ""
+"Transparent pass through. This option is useful only for inbound transparent"
+" proxy ports. If the parsing of the expected HTTP header fails, then the "
+"transaction is switched to a blind tunnel instead of generating an error "
+"response to the client. It effectively enables "
+":ts:cv:`proxy.config.http.use_client_target_addr` for the transaction as "
+"there is no other place to obtain the origin server address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:448
+msgid ""
+"Set the local IP address for the port. This is the address to which clients "
+"will connect. This forces the IP address family for the port. The ``ipv4`` "
+"or ``ipv6`` can be used but it is optional and is an error for it to "
+"disagree with the IP address family of this value. An IPv6 address **must** "
+"be enclosed in square brackets. If this options is omitted "
+":ts:cv:`proxy.local.incoming_ip_to_bind` is used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:450
+msgid "Not compatible with: ``tr-in``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:453
+msgid ""
+"Set the local IP address for outbound connections. This is the address used "
+"by ATS locally when it connects to an origin server for transactions on this"
+" port. If this is omitted :ts:cv:`proxy.local.outgoing_ip_to_bind` is used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:455
+msgid ""
+"This option can used multiple times, once for each IP address family. The "
+"address used is selected by the IP address family of the origin server "
+"address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:457
+#: ../../reference/configuration/records.config.en.rst:462
+msgid "Not compatible with: ``tr-out``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:460
+msgid ""
+"Set the :ts:cv:`host resolution style <proxy.config.hostdb.ip_resolve>` for "
+"transactions on this proxy port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:465
+msgid ""
+"Require SSL termination for inbound connections. SSL :ref:`must be "
+"configured <configuring-ssl-termination>` for this option to provide a "
+"functional server port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:467
+msgid "Not compatible with: ``tr-in``, ``tr-out``, ``blind``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:470
+msgid "Accept only ``CONNECT`` transactions on this port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:472
+msgid "Not compatible with: ``tr-in``, ``ssl``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:475
+msgid ""
+"Compress the connection. Retained only by inertia, should be considered "
+"\"not implemented\"."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:479
+msgid "Listen on port 80 on any address for IPv4 and IPv6.::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:485
+msgid ""
+"Listen transparently on any IPv4 address on port 8080, and transparently on "
+"port 8080 on local address ``fc01:10:10:1::1`` (which implies ``ipv6``).::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:493
+msgid ""
+"Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. "
+"These ports will use the IP address from "
+":ts:cv:`proxy.local.incoming_ip_to_bind`.  Listen on IP address "
+"``192.168.17.1``, port 80, IPv4, and connect to origin servers using the "
+"local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:499
+msgid ""
+"The range of origin server ports that can be used for tunneling via "
+"``CONNECT``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:501
+msgid ""
+"Traffic Server allows tunnels only to the specified ports. Supports both "
+"wildcards ('\\*') and ranges (\"0-1023\")."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:506
+msgid ""
+"These are the ports on the *origin server*, not Traffic Server :ts:cv:`proxy"
+" ports <proxy.config.http.server_ports>`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:511
+msgid ""
+"Set how the ``Via`` field is handled on a request to the origin server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:516
+#: ../../reference/configuration/records.config.en.rst:534
+msgid "Do not modify / set this via header"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:517
+#: ../../reference/configuration/records.config.en.rst:535
+msgid "Update the via, with normal verbosity"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:518
+#: ../../reference/configuration/records.config.en.rst:536
+msgid "Update the via, with higher verbosity"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:519
+#: ../../reference/configuration/records.config.en.rst:537
+msgid "Update the via, with highest verbosity"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:524
+#: ../../reference/configuration/records.config.en.rst:542
+msgid ""
+"The ``Via`` header string interpretation can be `decoded here. "
+"</tools/via>`_"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:529
+msgid "Set how the ``Via`` field is handled on the response to the client."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:547
+msgid "You can specify one of the following:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:549
+msgid "``0`` no Server: header is added to the response."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:550
+msgid "``1`` the Server: header is added (see string below)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:551
+msgid ""
+"``2`` the Server: header is added only if the response from rigin does not "
+"have one already."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:556
+msgid ""
+"This option specifies whether Traffic Server should insert an ``Age`` header"
+" in the response. The Age field value is the cache's estimate of the amount "
+"of time since the response was generated or revalidated by the origin "
+"server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:559
+msgid "``0`` no ``Age`` header is added"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:560
+msgid "``1`` the ``Age`` header is added"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:565
+msgid ""
+"The Server: string that ATS will insert in a response header (if requested, "
+"see above). Note that the current version number is always appended to this "
+"string."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:571
+msgid ""
+"Enables (``1``) or disables (``0``) ``.com`` domain expansion. This "
+"configures the Traffic Server to resolve unqualified hostnames by prepending"
+" with ``www.`` and appending with ``.com`` before redirecting to the "
+"expanded address. For example: if a client makes a request to ``host``, then"
+" Traffic Server redirects the request to ``www.host.com``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:578
+msgid "Specifies whether Traffic Sever can generate a chunked response:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:580
+msgid "``0`` Never"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:581
+msgid "``1`` Always"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:582
+msgid ""
+"``2`` Generate a chunked response if the server has returned HTTP/1.1 before"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:583
+msgid ""
+"``3`` = Generate a chunked response if the client request is HTTP/1.1 and "
+"the origin server has returned HTTP/1.1 before"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:587
+msgid ""
+"If HTTP/1.1 is used, then Traffic Server can use keep-alive connections with"
+" pipelining to origin servers. If HTTP/0.9 is used, then Traffic Server does"
+" not use ``keep-alive`` connections to origin servers. If HTTP/1.0 is used, "
+"then Traffic Server can use ``keep-alive`` connections without pipelining to"
+" origin servers."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:596
+msgid "Enables (``1``) or disables (``0``) the reuse of server sessions."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:601
+msgid ""
+"Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat ogging."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:605
+msgid ""
+"For fully transparent ports use the same origin server address as the "
+"client."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:607
+msgid ""
+"This option causes Traffic Server to avoid where possible doing DNS lookups "
+"in forward transparent proxy mode. The option is only effective if the "
+"following three conditions are true -"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:611
+msgid "Traffic Server is in forward proxy mode."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:612
+msgid "The proxy port is inbound transparent."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:613
+msgid "The target URL has not been modified by either remapping or a plugin."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:615
+msgid ""
+"If any of these conditions are not true, then normal DNS processing is done "
+"for the connection."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:618
+msgid ""
+"If all of these conditions are met, then the origin server IP address is "
+"retrieved from the original client connection, rather than through HostDB or"
+" DNS lookup. In effect, client DNS resolution is used instead of Traffic "
+"Server DNS."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:623
+msgid ""
+"This can be used to be a little more efficient (looking up the target once "
+"by the client rather than by both the client and Traffic Server) but the "
+"primary use is when client DNS resolution can differ from that of Traffic "
+"Server. Two known uses cases are:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:628
+msgid ""
+"Embedded IP addresses in a protocol with DNS load sharing. In this case, "
+"even though Traffic Server and the client both make the same request to the "
+"same DNS resolver chain, they may get different origin server addresses. If "
+"the address is embedded in the protocol then the overall exchange will fail."
+" One current example is Microsoft Windows update, which presumably embeds "
+"the address as a security measure."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:636
+msgid ""
+"The client has access to local DNS zone information which is not available "
+"to Traffic Server. There are corporate nets with local DNS information for "
+"internal servers which, by design, is not propagated outside the core "
+"corporate network. Depending a network topology it can be the case that "
+"Traffic Server can access the servers by IP address but cannot resolve such "
+"addresses by name. In such as case the client supplied target address must "
+"be used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:645
+msgid ""
+"This solution must be considered interim. In the longer term, it should be "
+"possible to arrange for much finer grained control of DNS lookup so that "
+"wildcard domain can be set to use Traffic Server or client resolution. In "
+"both known use cases, marking specific domains as client determined (rather "
+"than a single global switch) would suffice. It is possible to do this "
+"crudely with this flag by enabling it and then use identity URL mappings to "
+"re-disable it for specific domains."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:655
+msgid "Parent Proxy Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:660
+msgid ""
+"Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref"
+":`hierarchical-caching`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:665
+msgid ""
+"The amount of time allowed between connection retries to a parent cache that"
+" is unavailable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:670
+msgid ""
+"The number of times the connection to the parent cache can fail before "
+"Traffic Server considers the parent unavailable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:675
+msgid ""
+"The total number of connection attempts allowed to a parent cache before "
+"Traffic Server bypasses the parent or fails the request (depending on the "
+"``go_direct`` option in the :file:`parent.config` file)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:681
+msgid ""
+"The total number of connection attempts allowed per parent, if multiple "
+"parents are used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:686
+msgid "The timeout value (in seconds) for parent cache connection attempts."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:691
+msgid ""
+"Configures Traffic Server to send proxy authentication headers on to the "
+"parent cache."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:696
+msgid ""
+"Don't try to resolve DNS, forward all DNS requests to the parent. This is "
+"off (``0``) by default."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:699
+msgid "HTTP Connection Timeouts"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:704
+msgid ""
+"Specifies how long Traffic Server keeps connections to clients open for a "
+"subsequent request after a transaction ends."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:709
+msgid ""
+"Specifies how long Traffic Server keeps connections to origin servers open "
+"for a subsequent transfer of data after a transaction ends."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:714
+msgid ""
+"Specifies how long Traffic Server keeps connections to clients open if a "
+"transaction stalls."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:719
+msgid ""
+"Specifies how long Traffic Server keeps connections to origin servers open "
+"if the transaction stalls."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:724
+msgid ""
+"The maximum amount of time Traffic Server can remain connected to a client. "
+"If the transfer to the client is not complete before this timeout expires, "
+"then Traffic Server closes the connection."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:727
+#: ../../reference/configuration/records.config.en.rst:735
+msgid "The default value of ``0`` specifies that there is no timeout."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:732
+msgid ""
+"The maximum amount of time Traffic Server waits for fulfillment of a "
+"connection request to an origin server. If Traffic Server does not complete "
+"the transfer to the origin server before this timeout expires, then Traffic "
+"Server terminates the connection request."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:740
+msgid ""
+"The timeout interval in seconds before Traffic Server closes a connection "
+"that has no activity."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:745
+msgid ""
+"Specifies how long Traffic Server continues a background fill before giving "
+"up and dropping the origin server connection."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:750
+msgid ""
+"The proportion of total document size already transferred when a client "
+"aborts at which the proxy continues fetching the document from the origin "
+"server to get it into the cache (a **background fill**)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:754
+msgid "Origin Server Connect Attempts"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:759
+msgid ""
+"The maximum number of connection retries Traffic Server can make when the "
+"origin server is not responding."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:764
+msgid ""
+"The maximum number of connection retries Traffic Server can make when the "
+"origin server is unavailable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:769
+msgid ""
+"Limits the number of socket connections across all origin servers to the "
+"value specified. To disable, set to zero (``0``)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:774
+msgid ""
+"Limits the number of socket connections per origin server to the value "
+"specified. To enable, set to one (``1``)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:779
+msgid ""
+"As connection to an origin server are opened, keep at least 'n' number of "
+"connections open to that origin, even if the connection isn't used for a "
+"long time period. Useful when the origin supports keep-alive, removing the "
+"time needed to set up a new connection from the next request at the expense "
+"of added (inactive) connections. To enable, set to one (``1``)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:787
+msgid ""
+"The maximum number of failed connection attempts allowed before a round-"
+"robin entry is marked as 'down' if a server has round-robin DNS entries."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:793
+msgid "The timeout value (in seconds) for an origin server connection."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:798
+msgid ""
+"The timeout value (in seconds) for an origin server connection when the "
+"client request is a ``POST`` or ``PUT`` request."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:804
+msgid ""
+"Specifies how long (in seconds) Traffic Server remembers that an origin "
+"server was unreachable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:809
+msgid ""
+"The number of seconds before Traffic Server marks an origin server as "
+"unavailable after a client abandons a request because the origin server was "
+"too slow in sending the response header."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:813
+msgid "Congestion Control"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:817
+msgid ""
+"Enables (``1``) or disables (``0``) the Congestion Control option, which "
+"configures Traffic Server to stop forwarding HTTP requests to origin servers"
+" when they become congested. Traffic Server sends the client a message to "
+"retry the congested origin server later. Refer to :ref:`using-congestion-"
+"control`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:823
+msgid ""
+"Transaction buffering / flow control is enabled if this is set to a non-zero"
+" value. Otherwise no flow control is done."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:828
+msgid ""
+"The high water mark for transaction buffer control. External source I/O is "
+"halted when the total buffer space in use by the transaction exceeds this "
+"value."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:834
+msgid ""
+"The low water mark for transaction buffer control. External source I/O is "
+"resumed when the total buffer space in use by the transaction is no more "
+"than this value."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:838
+msgid "Negative Response Caching"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:843
+msgid ""
+"When enabled (``1``), Traffic Server caches negative responses (such as "
+"``404 Not Found``) when a requested page does not exist. The next time a "
+"client requests the same page, Traffic Server serves the negative response "
+"directly from cache."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:849
+msgid ""
+"``Cache-Control`` directives from the server forbidding ache are ignored for"
+" the following HTTP response codes, regardless of the value specified for "
+"the :ts:cv:`proxy.config.http.negative_caching_enabled` variable. The "
+"following negative responses are cached by Traffic Server:::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:865
+msgid ""
+"The cache lifetime for objects cached from this setting is controlled via "
+":ts:cv:`proxy.config.http.negative_caching_lifetime`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:869
+msgid "Proxy User Variables"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:874
+msgid ""
+"When enabled (``1``), Traffic Server removes the ``From`` header to protect "
+"the privacy of your users."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:879
+msgid ""
+"When enabled (``1``), Traffic Server removes the ``Referrer`` header to "
+"protect the privacy of your site and users."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:884
+msgid ""
+"When enabled (``1``), Traffic Server removes the ``User-agent`` header to "
+"protect the privacy of your site and users."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:889
+msgid ""
+"When enabled (``1``), Traffic Server removes the ``Cookie`` header to "
+"protect the privacy of your site and users."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:894
+msgid ""
+"When enabled (``1``), Traffic Server removes ``Client-IP`` headers for more "
+"privacy."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:899
+msgid ""
+"When enabled (``1``), Traffic Server inserts ``Client-IP`` headers to retain"
+" the client IP address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:903
+msgid ""
+"When enabled (``1``), Traffic Server appends ``X-Forwards`` headers to "
+"outgoing requests."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:908
+msgid "The headers Traffic Server should remove from outgoing requests."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:913
+msgid ""
+"When enabled (``1``), Traffic Server adds the client IP address to the ``X"
+"-Forwarded-For`` header."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:918
+msgid ""
+"Enable (``1``) to normalize all ``Accept-Encoding:`` headers to one of the "
+"following:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:920
+msgid ""
+"``Accept-Encoding: gzip`` (if the header has ``gzip`` or ``x-gzip`` with any"
+" ``q``) **OR**"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:921
+msgid "*blank* (for any header that does not include ``gzip``)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:923
+msgid ""
+"This is useful for minimizing cached alternates of documents (e.g. ``gzip, "
+"deflate`` vs. ``deflate, gzip``). Enabling this option is recommended if "
+"your origin servers use no encodings other than ``gzip``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:928
+msgid "Security"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:933
+msgid ""
+"Enables (``1``) or disables (``0``) the HTTP ``PUSH`` option, which allows "
+"you to deliver content directly to the cache without a user request."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:938
+msgid ""
+"If you enable this option, then you must also specify a filtering rule in "
+"the ip_allow.config file to allow only certain machines to push content into"
+" the cache."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:943
+msgid "Cache Control"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:948
+msgid ""
+"Enables (``1``) or disables (``0``) ability to a read cached object while "
+"the another connection is completing the write to cache for the same object."
+" Several other configuration values need to be set for this to become "
+"active. See :ref:`reducing-origin-server-requests-avoiding-the-thundering-"
+"herd`"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:954
+msgid "Forces the use of a specific hardware sector size (512 - 8192 bytes)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:959
+msgid "Enables (``1``) or disables (``0``) caching of HTTP requests."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:964
+msgid ""
+"Enables (``1``) or disables (``0``) caching objects that have an empty "
+"response body. This is particularly useful for caching 301 or 302 responses "
+"with a ``Location`` header but no document body. This only works if the "
+"origin response also has a ``Content-Length`` header."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:972
+msgid ""
+"When enabled (``1``), Traffic Server ignores client requests to bypass the "
+"cache."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:977
+msgid ""
+"When enabled (``1``), Traffic Server issues a conditional request to the "
+"origin server if an incoming request has a ``No-Cache`` header."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:982
+msgid ""
+"When enabled (``1``), Traffic Server ignores origin server requests to "
+"bypass the cache."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:987
+msgid "Specifies how cookies are cached:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:989
+msgid "``0`` = do not cache any responses to cookies"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:990
+msgid "``1`` = cache for any content-type"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:991
+msgid "``2`` = cache only for image types"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:992
+msgid "``3`` = cache for all but text content-types"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:996
+msgid ""
+"When enabled (``1``), Traffic Server ignores ``WWW-Authentication`` headers "
+"in responses ``WWW-Authentication`` headers are removed and not cached."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1002
+msgid ""
+"Enables (``1``) or disables (``0``) caching of URLs that look dynamic, i.e.:"
+" URLs that end in *``.asp``* or contain a question mark (*``?``*), a "
+"semicolon (*``;``*), or *``cgi``*. For a full list, please refer to "
+"`HttpTransact::url_looks_dynamic </link/to/doxygen>`_"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1009
+msgid ""
+"Enables (``1``) or disables (``0``) caching of alternate versions of HTTP "
+"objects that do not contain the ``Vary`` header."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1014
+msgid "Specifies when to revalidate content:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1016
+msgid "``0`` = use cache directives or heuristic (the default value)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1017
+msgid "``1`` = stale if heuristic"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1018
+msgid "``2`` = always stale (always revalidate)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1019
+msgid "``3`` = never stale"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1021
+msgid "``4`` = use cache directives or heuristic (0) unless the request"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1021
+msgid "has an ``If-Modified-Since`` header"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1023
+msgid ""
+"If the request contains the ``If-Modified-Since`` header, then Traffic "
+"Server always revalidates the cached content and uses the client's ``If-"
+"Modified-Since`` header for the proxy request."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1030
+msgid ""
+"Specifies when to add ``no-cache`` directives to Microsoft Internet Explorer"
+" requests. You can specify the following:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1032
+msgid "``0`` = ``no-cache`` is *not* added to MSIE requests"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1033
+msgid "``1`` = ``no-cache`` is added to IMS MSIE requests"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1034
+msgid "``2`` = ``no-cache`` is added to all MSIE requests"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1039
+msgid ""
+"The type of headers required in a request for the request to be cacheable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1041
+msgid "``0`` = no headers required to make document cacheable"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1042
+msgid ""
+"``1`` = either the ``Last-Modified`` header, or an explicit lifetime header,"
+" ``Expires`` or ``Cache-Control: max-age``, is required"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1043
+msgid ""
+"``2`` = explicit lifetime is required, ``Expires`` or ``Cache-Control: max-"
+"age``"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1048
+msgid ""
+"The maximum age allowed for a stale response before it cannot be cached."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1052
+msgid ""
+"When enabled (``1``), Traffic Server looks up range requests in the cache."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1057
+msgid ""
+"When enabled with a value of ``1``, Traffic Server serves documents from "
+"cache with a ``Content-Type:`` header even if it does not match the "
+"``Accept:`` header of the request. If set to ``2``, this logic only happens "
+"in the absence of a ``Vary`` header in the cached response (which is the "
+"recommended and safe use)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1063
+msgid ""
+"This option should only be enabled with ``1`` if you're having problems with"
+" caching *and* you origin server doesn't set the ``Vary`` header. "
+"Alternatively, if the origin is incorrectly setting ``Vary: Accept`` or "
+"doesn't respond with ``406 (Not Acceptable)``, you can also enable this "
+"configuration with a ``1``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1073
+msgid ""
+"When enabled with a value of ``1``, Traffic Server serves documents from "
+"cache with a ``Content-Language:`` header even if it does not match the "
+"``Accept-Language:`` header of the request. If set to ``2``, this logic only"
+" happens in the absence of a ``Vary`` header in the cached response (which "
+"is the recommended and safe use)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1080
+msgid ""
+"This option should only be enabled with ``1`` if you're having problems with"
+" caching *and* you origin server doesn't set the ``Vary`` header. "
+"Alternatively, if the origin is incorrectly setting ``Vary: Accept-"
+"Language`` or doesn't respond with ``406 (Not Acceptable)``, you can also "
+"enable this configuration with a ``1``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1090
+msgid ""
+"When enabled with a value of ``1``, Traffic Server serves documents from "
+"cache with a ``Content-Encoding:`` header even if it does not match the "
+"``Accept-Encoding:`` header of the request. If set to ``2``, this logic only"
+" happens in the absence of a ``Vary`` header in the cached response (which "
+"is the recommended and safe use)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1097
+msgid ""
+"This option should only be enabled with ``1`` if you're having problems with"
+" caching *and* you origin server doesn't set the ``Vary`` header. "
+"Alternatively, if the origin is incorrectly setting ``Vary: Accept-"
+"Encoding`` or doesn't respond with ``406 (Not Acceptable)`` you can also "
+"enable this configuration with a ``1``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1107
+msgid ""
+"When enabled with a value of ``1``, Traffic Server serves documents from "
+"cache with a ``Content-Type:`` header even if it does not match the "
+"``Accept-Charset:`` header of the request. If set to ``2``, this logic only "
+"happens in the absence of a ``Vary`` header in the cached response (which is"
+" the recommended and safe use)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1114
+msgid ""
+"This option should only be enabled with ``1`` if you're having problems with"
+" caching *and* you origin server doesn't set the ``Vary`` header. "
+"Alternatively, if the origin is incorrectly setting ``Vary: Accept-Charset``"
+" or doesn't respond with ``406 (Not Acceptable)``, you can also enable this "
+"configuration with a ``1``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1124
+msgid ""
+"When enabled (``1``), Traffic Server ignores any ``Cache-Control: max-age`` "
+"headers from the client. This technically violates the HTTP RFC, but avoids "
+"a problem where a client can forcefully invalidate a cached object."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1130
+msgid ""
+"Specifies the maximum object size that will be cached. ``0`` is unlimited."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1135
+msgid ""
+"When enabled (``1``), Traffic Server will keep certain HTTP objects in the "
+"cache for a certain time as specified in cache.config."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1139
+msgid ""
+"The size of the region (as a percentage of the total content storage in a "
+":term:`cache stripe`) in front of the :term:`write cursor` that constitutes "
+"a recent access hit for evacutating the accessed object."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1142
+msgid ""
+"When an object is accessed it can be marked for evacuation, that is to be "
+"copied over the write cursor and thereby preserved from being overwritten. "
+"This is done if it is no more than a specific number of bytes in front of "
+"the write cursor. The number of bytes is a percentage of the total number of"
+" bytes of content storage in the cache stripe where the object is stored and"
+" that percentage is set by this variable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1150
+msgid "Limit the size of objects that are hit evacuated."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1152
+msgid ""
+"Objects larger than the limit are not hit evacuated. A value of 0 disables "
+"the limit."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1155
+msgid "RAM Cache"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1159
+msgid ""
+"By default the RAM cache size is automatically determined, based on disk "
+"cache size; approximately 10 MB of RAM cache per GB of disk cache. "
+"Alternatively, it can be set to a fixed value such as **20GB** (21474836480)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1166
+msgid ""
+"Two distinct RAM caches are supported, the default (0) being the **CLFUS** "
+"(*Clocked Least Frequently Used by Size*). As an alternative, a simpler "
+"**LRU** (*Least Recently Used*) cache is also available, by changing this "
+"configuration to 1."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1173
+msgid ""
+"Enabling this option will filter inserts into the RAM cache to ensure that "
+"they have been seen at least once.  For the **LRU**, this provides scan "
+"resistance. Note that **CLFUS** already requires that a document have "
+"history before it is inserted, so for **CLFUS**, setting this option means "
+"that a document must be seen three times before it is added to the RAM "
+"cache."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1181
+msgid ""
+"The **CLFUS** RAM cache also supports an optional in-memory compression. "
+"This is not to be confused with ``Content-Encoding: gzip`` compression. The "
+"RAM cache compression is intended to try to save space in the RAM, and is "
+"not visible to the User-Agent (client)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1186
+msgid "Possible values are:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1188
+msgid "``0`` = no compression"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1189
+msgid "``1`` = fastlz (extremely fast, relatively low compression)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1190
+msgid "``2`` = libz (moderate speed, reasonable compression)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1191
+msgid "``3`` = liblzma (very slow, high compression)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1195
+msgid ""
+"Compression runs on task threads.  To use more cores for RAM cache "
+"compression, increase :ts:cv:`proxy.config.task_threads`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1199
+msgid "Heuristic Expiration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1204
+msgid ""
+"The minimum amount of time an HTTP object without an expiration date can "
+"remain fresh in the cache before is considered to be stale."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1210
+msgid ""
+"The maximum amount of time an HTTP object without an expiration date can "
+"remain fresh in the cache before is considered to be stale."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1216
+msgid ""
+"The aging factor for freshness computations. Traffic Server stores an object"
+" for this percentage of the time that elapsed since it last changed."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1222
+msgid ""
+"How often Traffic Server checks for an early refresh, during the period "
+"before the document stale time. The interval specified must be in seconds. "
+"See :ref:`fuzzy-revalidation`"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1228
+msgid ""
+"The probability that a refresh is made on a document during the specified "
+"fuzz time."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1233
+msgid ""
+"Handles requests with a TTL less than fuzz.time – it allows for different "
+"times to evaluate the probability of revalidation for small TTLs and big "
+"TTLs. Objects with small TTLs will start \"rolling the revalidation dice\" "
+"near the fuzz.min_time, while objects with large TTLs would start at "
+"fuzz.time. A logarithmic like function between determines the revalidation "
+"evaluation start time (which will be between fuzz.min_time and fuzz.time). "
+"As the object gets closer to expiring, the window start becomes more likely."
+" By default this setting is not enabled, but should be enabled anytime you "
+"have objects with small TTLs. The default value is ``0``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1236
+msgid "Dynamic Content & Content Negotiation"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1241
+msgid "The header on which Traffic Server varies for text documents."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1243
+msgid ""
+"For example: if you specify ``User-agent``, then Traffic Server caches all "
+"the different user-agent versions of documents it encounters."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1249
+msgid "The header on which Traffic Server varies for images."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1254
+msgid ""
+"The header on which Traffic Server varies for anything other than text and "
+"images."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1257
+msgid "Customizable User Response Pages"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1263
+msgid "``0`` = disable customizable user response pages"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1264
+msgid ""
+"``1`` = enable customizable user response pages in the default directory "
+"only"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1265
+msgid "``2`` = enable language-targeted user response pages"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1269
+msgid ""
+"Enables (``1``) or disables (``0``) logging for customizable response pages."
+" When enabled, Traffic Server records a message in the error log each time a"
+" customized response page is used or modified."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1274
+msgid "The customizable response page default directory."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1278
+msgid "Specifies when Traffic Server suppresses generated response pages:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1280
+msgid "``0`` = never suppress generated response pages"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1281
+msgid "``1`` = always suppress generated response pages"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1282
+msgid "``2`` = suppress response pages only for intercepted traffic"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1286
+msgid "Enable the user interface page."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1289
+msgid "DNS"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1294
+msgid "Enables (``1``) or disables (``0``) local domain expansion."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1296
+msgid ""
+"Traffic Server can attempt to resolve unqualified hostnames by expanding to "
+"the local domain. For example if a client makes a request to an unqualified "
+"host (``host_x``) and the Traffic Server local domain is ``y.com`` , then "
+"Traffic Server will expand the hostname to ``host_x.y.com``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1305
+msgid ""
+"Enables (``1``) or disables (``0``) DNS server selection. When enabled, "
+"Traffic Server refers to the :file:`splitdns.config` file for the selection "
+"specification. Refer to :ref:`Configuring DNS Server Selection (Split DNS) "
+"<configuring-dns-server-selection-split-dns>`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1310
+msgid ""
+"Specifies a list of hostname extensions that are automatically added to the "
+"hostname after a failed lookup. For example: if you want Traffic Server to "
+"add the hostname extension .org, then specify ``org`` as the value for this "
+"variable (Traffic Server automatically adds the dot (.))."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1316
+msgid ""
+"If the variable :ts:cv:`proxy.config.http.enable_url_expandomatic` is set to"
+" ``1`` (the default value), then you do not have to add *``www.``* and "
+"*``.com``* to this list because Traffic Server automatically tries www. and "
+".com after trying the values you've specified."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1322
+msgid ""
+"Allows to specify which ``resolv.conf`` file to use for finding resolvers. "
+"While the format of this file must be the same as the standard "
+"``resolv.conf`` file, this option allows an administrator to manage the set "
+"of resolvers in an external configuration file, without affecting how the "
+"rest of the operating system uses DNS."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1329
+msgid "Enables (``1``) or disables (``0``) DNS server round-robin."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1334
+msgid "The DNS servers."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1339
+msgid "Indicates whether to use SRV records for orgin server lookup."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1343
+msgid ""
+"Create and dedicate a thread entirely for DNS processing. This is probably "
+"most useful on system which do a significant number of DNS lookups, "
+"typically forward proxies. But even on other systems, it can avoid some "
+"contention on the first worker thread (which otherwise takes on the burden "
+"of all DNS lookups)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1350
+msgid "HostDB"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1355
+msgid ""
+"The number of seconds for which to use a stale NS record while initiating a "
+"background fetch for the new data."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1358
+msgid "If not set then stale records are not served."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1363
+msgid ""
+"The amount of space (in bytes) used to store ``hostdb``. The value of this "
+"variable must be increased if you increase the size of the "
+"`proxy.config.hostdb.size`_ variable."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1369
+msgid "The maximum number of entries that can be stored in the database."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1373
+msgid ""
+"For values above ``200000``, you must increase "
+":ts:cv:`proxy.config.hostdb.storage_size` by at least 44 bytes per entry."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1378
+msgid ""
+"A host entry will eventually time out and be discarded. This variable "
+"controls how that time is calculated. A DNS request will return a TTL value "
+"and an internal value can be set with :ts:cv:`proxy.config.hostdb.timeout`. "
+"This variable determines which value will be used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1383
+msgid "TTL"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1385
+msgid "The TTL from the DNS response."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1386
+msgid "The internal timeout value."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1387
+msgid ""
+"The smaller of the DNS and internal TTL values. The internal timeout value "
+"becomes a maximum TTL."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1388
+msgid ""
+"The larger of the DNS and internal TTL values. The internal timeout value "
+"become a minimum TTL."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1395
+msgid "Internal time to live value for host DB entries, **in minutes**."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1397
+msgid "See :ts:cv:`proxy.config.hostdb.ttl_mode` for when this value is used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1402
+msgid "Set host resolution to use strict round robin."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1404
+msgid ""
+"When this and :ts:cv:`proxy.config.hostdb.timed_round_robin` are both "
+"disabled (set to ``0``), Traffic Server always uses the same origin server "
+"for the same client, for as long as the origin server is available. "
+"Otherwise if this is set then IP address is rotated on every request. This "
+"setting takes precedence over "
+":ts:cv:`proxy.config.hostdb.timed_round_robin`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1412
+msgid "Set host resolution to use timed round robin."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1414
+msgid ""
+"When this and :ts:cv:`proxy.config.hostdb.strict_round_robin` are both "
+"disabled (set to ``0``), Traffic Server always uses the same origin server "
+"for the same client, for as long as the origin server is available. "
+"Otherwise if this is set to :arg:`N` the IP address is rotated if more than "
+":arg:`N` seconds have past since the first time the current address was "
+"used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1421
+msgid "Set the host resolution style."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1423
+msgid ""
+"This is an ordered list of keywords separated by semicolons that specify how"
+" a host name is to be resolved to an IP address. The keywords are case "
+"insensitive."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1427
+msgid "Keyword"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1427
+msgid "Meaning"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1429
+msgid "Resolve to an IPv4 address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1430
+msgid "Resolve to an IPv6 address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1431
+msgid "client"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1431
+msgid "Resolve to the same family as the client IP address."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1432
+msgid "none"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1432
+msgid "Stop resolving."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1435
+msgid ""
+"The order of the keywords is critical. When a host name needs to be resolved"
+" it is resolved in same order as the keywords. If a resolution fails, the "
+"next option in the list is tried. The keyword ``none`` means to give up "
+"resolution entirely. The keyword list has a maximum length of three "
+"keywords, more are never needed. By default there is an implicit "
+"``ipv4;ipv6`` attached to the end of the string unless the keyword ``none`` "
+"appears."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1442
+msgid "Use the incoming client family, then try IPv4 and IPv6. ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1446
+msgid ""
+"Because of the implicit resolution this can also be expressed as just ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1452
+msgid "Resolve only to IPv4. ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1458
+msgid ""
+"Resolve only to the same family as the client (do not permit cross family "
+"transactions). ::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1462
+msgid ""
+"This value is a global default that can be overridden by "
+":ts:cv:`proxy.config.http.server_ports`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1466
+msgid ""
+"This style is used as a convenience for the administrator. During a "
+"resolution the *resolution order* will be one family, then possibly the "
+"other. This is determined by changing ``client`` to ``ipv4`` or ``ipv6`` "
+"based on the client IP address and then removing duplicates."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1472
+msgid ""
+"This option has no effect on outbound transparent connections The local IP "
+"address used in the connection to the origin server is determined by the "
+"client, which forces the IP address family of the address used for the "
+"origin server. In effect, outbound transparent connections always use a "
+"resolution style of \"``client``\"."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1477
+msgid "Logging Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1482
+msgid "Enables and disables event logging:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1484
+msgid "``0`` = logging disabled"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1485
+msgid "``1`` = log errors only"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1486
+msgid "``2`` = log transactions only"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1487
+msgid "``3`` = full logging (errors + transactions)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1489
+msgid "Refer to :ref:`working-with-log-files`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1494
+msgid ""
+"The maximum amount of time before data in the buffer is flushed to disk."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1500
+msgid "The amount of space allocated to the logging directory (in MB)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1504
+msgid ""
+"All files in the logging directory contribute to the space used, even if "
+"they are not log files. In collation client mode, if there is no local disk "
+"logging, or :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` is set to"
+" a higher value than :ts:cv:`proxy.config.log.max_space_mb_for_logs`, TS "
+"will take :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` for maximum"
+" allowed log space."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1513
+msgid ""
+"The amount of space allocated to the logging directory (in MB) if this node "
+"is acting as a collation client."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1517
+msgid ""
+"When max_space_mb_for_orphan_logs is take as the maximum allowedlog space in"
+" the logging system, the same rule apply to "
+"proxy.config.log.max_space_mb_for_logs also apply to "
+"proxy.config.log.max_space_mb_for_orphan_logs, ie: All files in the logging "
+"directory contribute to the space used, even if they are not log files. you "
+"may need to consider this when you enable full remote logging, and bump to "
+"the same size as proxy.config.log.max_space_mb_for_logs."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1526
+msgid ""
+"The tolerance for the log space limit (in megabytes). If the variable "
+":ts:cv:`proxy.config.log.auto_delete_rolled_files` is set to ``1`` "
+"(enabled), then autodeletion of log files is triggered when the amount of "
+"free space available in the logging directory is less than the value "
+"specified here."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1533
+msgid "The hostname of the machine running Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1538
+msgid ""
+"The full path to the logging directory. This can be an absolute path or a "
+"path relative to the directory in which Traffic Server is installed."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1540
+msgid "The directory you specify must already exist."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1545
+msgid ""
+"The log file permissions. The standard UNIX file permissions are used "
+"(owner, group, other). Permissible values are:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1547
+msgid ""
+"``-`` no permission ``r`` read permission ``w`` write permission ``x`` "
+"execute permission"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1549
+msgid ""
+"Permissions are subject to the umask settings for the Traffic Server "
+"process. This means that a umask setting of\\ ``002`` will not allow write "
+"permission for others, even if specified in the configuration file. "
+"Permissions for existing log files are not changed when the configuration is"
+" changed."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1556
+msgid "Enables (``1``) or disables (``0``) custom logging."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1561
+msgid ""
+"Enables (``1``) or disables (``0``) the `squid log file format <../working-"
+"log-files/log-formats#SquidFormat>`_."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1566
+msgid "The squid log file type:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1568
+#: ../../reference/configuration/records.config.en.rst:1590
+#: ../../reference/configuration/records.config.en.rst:1612
+#: ../../reference/configuration/records.config.en.rst:1638
+msgid "``1`` = ASCII"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1569
+#: ../../reference/configuration/records.config.en.rst:1591
+#: ../../reference/configuration/records.config.en.rst:1613
+#: ../../reference/configuration/records.config.en.rst:1639
+msgid "``0`` = binary"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1574
+msgid ""
+"The `squid log <../working-log-files/log-formats#SquidFormat>`_ filename."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1578
+msgid ""
+"The `squid log <../working-log-files/log-formats#SquidFormat>`_ file header "
+"text."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1583
+msgid ""
+"Enables (``1``) or disables (``0``) the `Netscape common log file format "
+"<../working-log-files/log-formats#NetscapeFormats>`_."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1588
+msgid ""
+"The `Netscape common log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ file type:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1596
+msgid ""
+"The `Netscape common log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ filename."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1601
+msgid ""
+"The `Netscape common log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ file header text."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1606
+msgid ""
+"Enables (``1``) or disables (``0``) the `Netscape extended log file format "
+"<../working-log-files/log-formats#NetscapeFormats>`_."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1610
+msgid ""
+"The `Netscape extended log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ file type:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1617
+msgid ""
+"The `Netscape extended log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ filename."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1622
+msgid ""
+"The `Netscape extended log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ file header text."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1626
+msgid "Set whether the extend log is written as ASCII (text) or binary."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1631
+msgid ""
+"Enables (``1``) or disables (``0``) the `Netscape Extended-2 log file format"
+" <../working-log-files/log-formats#NetscapeFormats>`_."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1636
+msgid ""
+"The `Netscape Extended-2 log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ file type:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1644
+msgid ""
+"The `Netscape Extended-2 log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ filename."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1649
+msgid ""
+"The `Netscape Extended-2 log <../working-log-files/log-"
+"formats#NetscapeFormats>`_ file header text."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1654
+msgid ""
+"When enabled (``1``), configures Traffic Server to store ICP transactions in"
+" a separate log file."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1656
+msgid ""
+"``0`` = separation is disabled, all ICP transactions are recorded in the "
+"same file as HTTP transactions"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1657
+msgid "``1`` = all ICP transactions are recorded in a separate log file."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1658
+msgid ""
+"``-1`` = filter all ICP transactions from the default log files; ICP "
+"transactions are not logged anywhere."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1663
+msgid ""
+"When enabled (``1``), configures Traffic Server to create a separate log "
+"file for HTTP transactions for each origin server listed in the "
+":file:`log_hosts.config` file. Refer to `HTTP Host Log Splitting "
+"<../working-log-files#HTTPHostLogSplitting>`_."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1669
+msgid "Set the log collation mode."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1674
+msgid "collation is disabled"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1675
+msgid "this host is a log collation server"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1676
+msgid ""
+"this host is a collation client and sends entries using standard formats to "
+"the collation server"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1677
+msgid ""
+"this host is a collation client and sends entries using the traditional "
+"custom formats to the collation server"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1678
+msgid "4"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1678
+msgid ""
+"this host is a collation client and sends entries that use both the standard"
+" and traditional custom formats to the collation server"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1681
+msgid ""
+"For information on sending XML-based custom formats to the collation server,"
+" refer to `logs_xml.config <logs_xml.config>`_."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1684
+msgid ""
+"Although Traffic Server supports traditional custom logging, you should use "
+"the more versatile XML-based custom formats."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1688
+msgid "The hostname of the log collation server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1693
+msgid ""
+"The port used for communication between the collation server and client."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1698
+msgid ""
+"The password used to validate logging data and prevent the exchange of "
+"unauthorized information when a collation server is being used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1703
+msgid ""
+"When enabled (``1``), configures Traffic Server to include the hostname of "
+"the collation client that generated the log entry in each entry."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1708
+msgid "The number of seconds between collation server connection retries."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1713
+msgid ""
+"Specifies how log files are rolled. You can specify the following values:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1715
+msgid "``0`` = disables log file rolling"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1716
+msgid ""
+"``1`` = enables log file rolling at specific intervals during the day "
+"(specified with the"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1717
+msgid ""
+"`proxy.config.log.rolling_interval_sec`_ and "
+"`proxy.config.log.rolling_offset_hr`_ variables)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1718
+msgid ""
+"``2`` = enables log file rolling when log files reach a specific size "
+"(specified with the `proxy.config.log.rolling_size_mb`_ variable)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1719
+msgid ""
+"``3`` = enables log file rolling at specific intervals during the day or "
+"when log files reach a specific size (whichever occurs first)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1720
+msgid ""
+"``4`` = enables log file rolling at specific intervals during the day when "
+"log files reach a specific size (i.e., at a specified"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1721
+msgid "time if the file is of the specified size)"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1726
+msgid ""
+"The log file rolling interval, in seconds. The minimum value is ``300`` (5 "
+"minutes). The maximum, and default, value is 86400 seconds (one day)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1728
+msgid ""
+"If you start Traffic Server within a few minutes of the next rolling time, "
+"then rolling might not occur until the next rolling time."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1733
+msgid ""
+"The file rolling offset hour. The hour of the day that starts the log "
+"rolling period."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1738
+msgid "The size that log files must reach before rolling takes place."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1743
+msgid ""
+"Enables (``1``) or disables (``0``) automatic deletion of rolled files."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1748
+msgid ""
+"Configures Traffic Server to log only a sample of transactions rather than "
+"every transaction. You can specify the following values:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1750
+msgid "``1`` = log every transaction"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1751
+msgid "``2`` = log every second transaction"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1752
+msgid "``3`` = log every third transaction and so on..."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1758
+msgid ""
+"If set to a non-zero value :arg:`N` then any connection that takes longer "
+"than :arg:`N` milliseconds from accept to completion will cause its timing "
+"stats to be written to the :ts:cv:`debugging log file "
+"<proxy.config.output.logfile>`. This is identifying data about the "
+"transaction and all of the :c:type:`transaction milestones "
+"<TSMilestonesType>`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1763
+msgid "Diagnostic Logging Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1771
+msgid ""
+"control where Traffic Server should log diagnostic output. Messages at "
+"diagnostic level can be directed to any combination of diagnostic "
+"destinations. Valid diagnostic message destinations are:::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1781
+msgid "To log debug diagnostics to both syslog and diags.log:::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1786
+msgid "Reverse Proxy"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1791
+msgid "Enables (``1``) or disables (``0``) HTTP reverse proxy."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1796
+msgid ""
+"The URL to which to redirect requests with no host headers (reverse proxy)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1800
+msgid "URL Remap Rules"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1804
+msgid "Sets the name of the :file:`remap.config` file."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1809
+msgid ""
+"Enables (``1``) or disables (``0``) requests for a PAC file on the proxy "
+"service port (8080 by default) to be redirected to the PAC port. For this "
+"type of redirection to work, the variable "
+"`proxy.config.reverse_proxy.enabled`_ must be set to ``1``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1815
+msgid ""
+"Sets the PAC port so that PAC requests made to the Traffic Server proxy "
+"service port are redirected this port. ``-1`` is the default setting that "
+"sets the PAC port to the autoconfiguration port (the default "
+"autoconfiguration port is 8083). This variable can be used together with the"
+" `proxy.config.url_remap.default_to_server_pac`_ variable to get a PAC file "
+"from a different port. You must create and run a process that serves a PAC "
+"file on this port. For example: if you create a Perl script that listens on "
+"port 9000 and writes a PAC file in response to any request, then you can set"
+" this variable to ``9000``. Browsers that request the PAC file from a proxy "
+"server on port 8080 will get the PAC file served by the Perl script."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1830
+msgid ""
+"Set this variable to ``1`` if you want Traffic Server to serve requests only"
+" from origin servers listed in the mapping rules of the :file:`remap.config`"
+" file. If a request does not match, then the browser will receive an error."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1838
+msgid ""
+"Set this variable to ``1`` if you want to retain the client host header in a"
+" request during remapping."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1844
+msgid "SSL Termination"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1848
+msgid "Enables (``1``) or disables (``0``) SSLv2. Please don't enable it."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1852
+msgid "Enables (``1``) or disables (``0``) SSLv3."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1856
+msgid "Enables (``1``) or disables (``0``) TLSv1."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1860
+msgid "Sets the client certification level:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1865
+msgid "``0`` = no client certificates are required. Traffic Server does"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1863
+msgid ""
+"not verify client certificates during the SSL handshake. Access to Traffic "
+"Server depends on Traffic Server configuration options (such as access "
+"control lists)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1871
+msgid "``1`` = client certificates are optional. If a client has a"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1868
+msgid ""
+"certificate, then the certificate is validated. If the client does not have "
+"a certificate, then the client is still allowed access to Traffic Server "
+"unless access is denied through other Traffic Server configuration options."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1874
+msgid "``2`` = client certificates are required. The client must be"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1874
+msgid ""
+"authenticated during the SSL handshake. Clients without a certificate are "
+"not allowed to access Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1879
+msgid ""
+"The location of the :file:`ssl_multicert.config` file, relative to the "
+"Traffic Server configuration directory. In the following example, if the "
+"Traffic Server configuration directory is `/etc/trafficserver`, the Traffic "
+"Server SSL configuration file and the corresponding certificates are located"
+" in `/etc/trafficserver/ssl`::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1892
+msgid ""
+"The location of the SSL certificates and chains used for accepting and "
+"validation new SSL sessions. If this is a relative path, it is appended to "
+"the Traffic Server installation PREFIX. All certificates and certificate "
+"chains listed in :file:`ssl_multicert.config` will be loaded relative to "
+"this path."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1900
+msgid ""
+"The location of the SSL certificate private keys. Change this variable only "
+"if the private key is not located in the SSL certificate file. All private "
+"keys listed in :file:`ssl_multicert.config` will be loaded relative to this "
+"path."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1908
+msgid ""
+"The name of a file containing a global certificate chain that should be used"
+" with every server certificate. This file is only used if there are "
+"certificates defined in :file:`ssl_multicert.config`. Unless this is an "
+"absolute path, it is loaded relative to the path specified by "
+":ts:cv:`proxy.config.ssl.server.cert.path`."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1916
+msgid ""
+"The location of the certificate authority file that client certificates will"
+" be verified against."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1921
+msgid ""
+"The filename of the certificate authority that client certificates will be "
+"verified against."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1926
+msgid "TBD"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1929
+msgid "Client-Related Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1933
+msgid ""
+"Configures Traffic Server to verify the origin server certificate with the "
+"Certificate Authority (CA)."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1938
+msgid "The filename of SSL client certificate installed on Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1942
+msgid ""
+"The location of the SSL client certificate installed on Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1947
+msgid ""
+"The filename of the Traffic Server private key. Change this variable only if"
+" the private key is not located in the Traffic Server SSL client certificate"
+" file."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1953
+msgid ""
+"The location of the Traffic Server private key. Change this variable only if"
+" the private key is not located in the SSL client certificate file."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1959
+msgid ""
+"The filename of the certificate authority against which the origin server "
+"will be verified."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1964
+msgid ""
+"Specifies the location of the certificate authority file against which the "
+"origin server will be verified."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1968
+msgid "ICP Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1972
+msgid "Sets ICP mode for hierarchical caching:"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1974
+msgid "``0`` = disables ICP"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1975
+msgid "``1`` = allows Traffic Server to receive ICP queries only"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1976
+msgid "``2`` = allows Traffic Server to send and receive ICP queries"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1978
+msgid "Refer to `ICP Peering <../hierachical-caching#ICPPeering>`_."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1982
+msgid "Specifies the network interface used for ICP traffic."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1986
+msgid ""
+"The Traffic Server installation script detects your network interface and "
+"sets this variable appropriately. If your system has multiple network "
+"interfaces, check that this variable specifies the correct interface."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1994
+msgid "Specifies the UDP port that you want to use for ICP messages."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1999
+msgid "Specifies the timeout used for ICP queries."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2002
+msgid "Scheduled Update Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2006
+msgid "Enables (``1``) or disables (``0``) the Scheduled Update option."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2011
+msgid ""
+"Enables (``1``) or disables (``0``) a force immediate update. When enabled, "
+"Traffic Server overrides the scheduling expiration time for all scheduled "
+"update entries and initiates updates until this option is disabled."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2019
+msgid ""
+"Specifies the number of times Traffic Server can retry the scheduled update "
+"of a URL in the event of failure."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2025
+msgid ""
+"Specifies the delay (in seconds) between each scheduled update retry for a "
+"URL in the event of failure."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2031
+msgid ""
+"Specifies the maximum simultaneous update requests allowed at any time. This"
+" option prevents the scheduled update process from overburdening the host."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2036
+msgid "Remap Plugin Processor"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2040
+msgid ""
+"Enables (``1``) or disables (``0``) the ability to run separate threads for "
+"remap plugin processing."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2044
+msgid ""
+"Specifies the number of threads that will be used for remap plugin "
+"rocessing."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2047
+msgid "Plug-in Configuration"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2051
+msgid "Specifies the location of Traffic Server plugins."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2054
+msgid "Sockets"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2058
+msgid ""
+"default: ``1`` meaning ``on`` all Platforms except Linux: ``45`` seconds"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2060
+msgid ""
+"This directive enables operating system specific optimizations for a "
+"listening socket. ``defer_accept`` holds a call to ``accept(2)`` back until "
+"data has arrived. In Linux' special case this is up to a maximum of 45 "
+"seconds."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2065
+msgid ""
+"Sets the send buffer size for connections from the client to Traffic Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2069
+msgid ""
+"Sets the receive buffer size for connections from the client to Traffic "
+"Server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2073
+msgid ""
+"Turns different options \"on\" for the socket handling client connections:::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2080
+#: ../../reference/configuration/records.config.en.rst:2102
+msgid ""
+"This is a flag and you look at the bits set. Therefore, you must set the "
+"value to ``3`` if you want to enable both options above."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2086
+msgid ""
+"Sets the send buffer size for connections from Traffic Server to the origin "
+"server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2090
+msgid ""
+"Sets the receive buffer size for connections from Traffic Server to the "
+"origin server."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2095
+msgid "Turns different options \"on\" for the origin server socket:::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2108
+msgid ""
+"Same as the command line option ``--accept_mss`` that sets the MSS for all "
+"incoming requests."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2111
+msgid "Undocumented"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2113
+msgid ""
+"These are referenced but not documented. Please contribute a definition."
+msgstr ""

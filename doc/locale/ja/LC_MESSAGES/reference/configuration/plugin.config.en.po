@@ -1,0 +1,46 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/configuration/plugin.config.en.rst:20
+msgid "plugin.config"
+msgstr ""
+
+#: ../../reference/configuration/plugin.config.en.rst:24
+msgid ""
+"The :file:`plugin.config` file controls run-time loadable plugins available "
+"to the Traffic Server, as well as their configuration."
+msgstr ""
+
+#: ../../reference/configuration/plugin.config.en.rst:28
+msgid "Example"
+msgstr ""
+
+#: ../../reference/configuration/plugin.config.en.rst:41
+msgid ""
+"Each configuration line consists of a path to an ``.so`` file. This path can"
+" either be absolute, or relative to the plugin-directory (usually "
+"``/usr/local/libexec/trafficserver``). Such a line tells Traffic Server to "
+"load said plugin."
+msgstr ""
+
+#: ../../reference/configuration/plugin.config.en.rst:46
+msgid ""
+"A plugin can have any number of configuration parameters listed. Please "
+"refer to our `plugins' documentation <../plugins>`_ for their reference."
+msgstr ""
+
+#: ../../reference/configuration/plugin.config.en.rst:49
+msgid ""
+"Plugins should only be listed *once*. The order in which the plugins are "
+"listed is also the order in which they are chained for the processing."
+msgstr ""

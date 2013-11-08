@@ -1,0 +1,228 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../arch/cache/cache-data-structures.en.rst:19
+msgid "Cache Data Structures"
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:25
+msgid ""
+"An open directory entry. It contains all the information of a "
+":cpp:class:`Dir` plus additional information from the first "
+":cpp:class:`Doc`."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:29
+msgid "A virtual connection class which accepts input for writing to cache."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:33
+msgid "Do the initial read for a cached object."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:37
+msgid "Do the initial read for an alternate of an object."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:41
+msgid ""
+"Data transfer driver. This contains a set of *producers*. Each producer is "
+"connected to one or more *consumers*. The tunnel handles events and buffers "
+"so that data moves from producers to consumers. The data, as much as "
+"possible, is kept in reference counted buffers so that copies are done only "
+"when the data is modified or for sources (which acquire data from outside "
+"|TS|) and sinks (which move data to outside |TS|)."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:45
+msgid "Holds the data from a line in :file:`cache.config`."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:49
+msgid ""
+"Defined in |P-CacheHttp.h|_. This is an array of :cpp:class:`HTTPInfo` "
+"objects and serves as the respository of information about alternates of an "
+"object. It is marshaled as part of the metadata for an object in the cache."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:53
+#: ../../arch/cache/cache-data-structures.en.rst:63
+msgid "Defined in |HTTP.h|_."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:55
+msgid ""
+"This class is a wrapper for :cpp:class:`HTTPCacheAlt`. It provides the "
+"external API for accessing data in the wrapped class. It contains only a "
+"pointer (possibly ``NULL``) to an instance of the wrapped class."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:59
+msgid "A typedef for :cpp:class:`HTTPInfo`."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:65
+msgid ""
+"This is the metadata for a single alternate for a cached object. In contains"
+" among other data"
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:67
+msgid "The key for the earliest ``Doc`` of the alternate."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:68
+msgid "The request and response headers."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:69
+msgid "The fragment offset table. [#]_"
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:70
+msgid "Timestamps for request and response from origin server."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:74
+msgid "Record for evacuation."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:78
+msgid "This represents a storage unit inside a cache volume."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:82
+msgid ""
+"The number of segments in the volume. This will be roughly the total number "
+"of entries divided by the number of entries in a segment. It will be rounded"
+" up to cover all entries."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:86
+msgid ""
+"The number of buckets in the volume. This will be roughly the number of "
+"entries in a segment divided by ``DIR_DEPTH``. For currently defined values "
+"this is around 16,384 (2^16 / 4). Buckets are used as the targets of the "
+"index hash."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:90
+msgid ""
+"Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there is "
+"one bucket for every evacuation span."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:94
+msgid "Length of stripe in bytes."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:98
+msgid ""
+"Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the "
+"range from *low* to *high*. Return 0 if no evacuation was started, non-zero "
+"otherwise."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:102
+msgid "A cache volume as described in :file:`volume.config`."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:106
+msgid "Defined in |P-CacheVol.h|_."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:110
+msgid "Validity check value. Set to ``DOC_MAGIC`` for a valid document."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:114
+msgid ""
+"The length of this segment including the header length, fragment table, and "
+"this structure."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:118
+msgid ""
+"Total length of the entire document not including meta data but including "
+"headers."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:122
+msgid ""
+"First index key in the document (the index key used to locate this object in"
+" the volume index)."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:126
+msgid ""
+"The index key for this fragment. Fragment keys are computationally chained "
+"so that the key for the next and previous fragments can be computed from "
+"this key."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:130
+msgid ""
+"Document header (metadata) length. This is not the length of the HTTP "
+"headers."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:134
+msgid ""
+"Fragment type. Currently only `CACHE_FRAG_TYPE_HTTP` is used. Other types "
+"may be used for cache extensions if those are ever used / implemented."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:138
+msgid ""
+"Fragment table length, if any. Only the first ``Doc`` in an object should "
+"contain a fragment table."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:140
+msgid ""
+"The fragment table is a list of offsets relative to the HTTP content (not "
+"counting metadata or HTTP headers). Each offset is the byte offset of the "
+"first byte in the fragment. The first element in the table is the second "
+"fragment (what would be index 1 for an array). The offset for the first "
+"fragment is of course always zero and so not stored. The purpose of this is "
+"to enable a fast seek for range requests - given the first ``Doc`` the "
+"fragment containing the first byte in the range can be computed and loaded "
+"directly without further disk access."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:142
+msgid "Removed as of version 3.3.0."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:146
+#: ../../arch/cache/cache-data-structures.en.rst:150
+msgid "Unknown."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:154
+msgid "Flag and timer for pinned objects."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:158
+msgid "Unknown. (A checksum of some sort)"
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:163
+msgid "Footnotes"
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:164
+msgid ""
+"Changed in version 3.2.0. This previously resided in the first ``Doc`` but "
+"that caused different alternates to share the same fragment table."
+msgstr ""

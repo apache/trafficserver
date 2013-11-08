@@ -1,0 +1,71 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:24
+msgid "TSHttpOverridableConfig"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:27
+msgid "Synopsis"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:28
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:41
+msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:43
+msgid ""
+"Some of the values that are set in :file:`records.config` can be changed for"
+" a specific transaction. It is important to note that these functions change"
+" the configuration values stored for the transation, which is not quite the "
+"same as changing the actual operating values of the transaction. The "
+"critical effect is the value must be changed before it is used by the "
+"transaction - after that, changes will not have any effect."
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:48
+msgid ""
+"All of the ``...Get`` functions store the internal value in the storage "
+"indicated by the :arg:`value` argument. For strings :arg:`length*` will "
+"receive the length of the string."
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:50
+msgid ""
+"The values are identified by the enumeration :type:`TSOverridableConfigKey`."
+" String values can be used indirectly by first passing them to "
+":func:`TSHttpTxnConfigFind` which, if the string matches an overridable "
+"value, return the key and data type."
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:55
+msgid "Examples"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:57
+msgid ""
+"Enable :ref:`transaction buffer control <transaction-buffering-control>` "
+"with a high water mark of 262144 and a low water mark of 65536. ::"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:69
+msgid "See also"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:70
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ""
