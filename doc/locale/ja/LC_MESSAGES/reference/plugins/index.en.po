@@ -1,0 +1,59 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/plugins/index.en.rst:2
+msgid "Plugin Reference"
+msgstr ""
+
+#: ../../reference/plugins/index.en.rst:22
+msgid "Overview"
+msgstr ""
+
+#: ../../reference/plugins/index.en.rst:24
+msgid ""
+"One of the key features of Apache Traffic Server is modularity. Features "
+"that aren't needed in the core simply aren't there. This is a good thing, "
+"because it guarantees that our core can remain fast by concentrating on the "
+"things that we always provide: Caching and proxying."
+msgstr ""
+
+#: ../../reference/plugins/index.en.rst:30
+msgid ""
+"All other things can be moved into plugins, by opening up a consistent C "
+"API, everyone can implement their own functionality, without having to touch"
+" the core."
+msgstr ""
+
+#: ../../reference/plugins/index.en.rst:35
+msgid "Stable plugins"
+msgstr ""
+
+#: ../../reference/plugins/index.en.rst:37
+msgid ""
+"Plugins that are considered stable are installed by default in Apache "
+"Traffic Server releases."
+msgstr ""
+
+#: ../../reference/plugins/index.en.rst:51
+msgid "Experimental plugins"
+msgstr ""
+
+#: ../../reference/plugins/index.en.rst:53
+msgid ""
+"Plugins that are considered experimental are located in the "
+"```plugins/experimental`` <https://git-wip-"
+"us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_"
+" directory in the Apache Traffic Server source tree. Exmperimental plugins "
+"can be compiled by passing the `--enable-experimental-plugins` option to "
+"`configure`::"
+msgstr ""

@@ -1,0 +1,380 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../admin/security-options.en.rst:4
+msgid "Security Options"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:23
+msgid "Traffic Server provides a number of security features."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:28
+msgid "Controlling Client Access to the Proxy Cache"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:30
+msgid ""
+"You can configure Traffic Server to allow only certain clients to use the "
+"proxy cache by editing a configuration file."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:33
+msgid ""
+"Add a line in :file:`ip_allow.config` for each IP address or range of IP "
+"addresses allowed to access Traffic Server."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:35
+#: ../../admin/security-options.en.rst:63
+msgid ""
+"Run the command :option:`traffic_line -x` to apply the configuration "
+"changes."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:41
+msgid "Configuring DNS Server Selection (Split DNS)"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:43
+msgid ""
+"The **Split DNS** option enables you to configure Traffic Server to use "
+"multiple DNS servers, as dictated by your security requirements. For "
+"example, you might configure Traffic Server to use one set of DNS servers to"
+" resolve hostnames on your internal network, while allowing DNS servers "
+"outside the firewall to resolve hosts on the Internet. This maintains the "
+"security of your intranet, while continuing to provide direct access to "
+"sites outside your organization."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:51
+msgid "To configure Split DNS, you must do the following:"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:53
+msgid ""
+"Specify the rules for performing DNS server selection based on the "
+"destination domain, the destination host, or a URL regular expression."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:56
+msgid "Enable the **Split DNS** option."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:58
+msgid "To do this, we"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:60
+msgid "Add rules to :file:`splitdns.config`."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:61
+msgid ""
+"In :file:`records.config` set the variable "
+":ts:cv:`proxy.config.dns.splitDNS.enabled` to ``1`` to enable split DNS."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:69
+msgid "Using SSL Termination"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:71
+msgid ""
+"The Traffic Server **SSL termination** option enables you to secure "
+"connections in reverse proxy mode between a client and a Traffic Server "
+"and/or Traffic Server and an origin server."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:75
+msgid ""
+"The following sections describe how to enable and configure the SSL "
+"termination option."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:78
+msgid ""
+"Enable and configure SSL termination for client/Traffic Server connections: "
+":ref:`client-and-traffic-server-connections`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:80
+msgid ""
+"Enable and configure SSL termination for Traffic Server/origin server "
+"connections: :ref:`traffic-server-and-origin-server-connections`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:82
+msgid ""
+"Enable and configure SSL termination for both client/Traffic Server and "
+"Traffic Server/origin server connections:  :ref:`client-and-traffic-server-"
+"connections` :ref:`traffic-server-and-origin-server-connections`, "
+"respectively."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:89
+msgid "Client and Traffic Server Connections"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:91
+msgid ""
+"The figure below illustrates communication between a client and Traffic "
+"Server (and between Traffic Server and an origin server) when the SSL "
+"termination option is enabled & configured for **client/Traffic Server "
+"connections only**."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:100
+msgid "Client and Traffic Server communication using SSL termination"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:102
+#: ../../admin/security-options.en.rst:167
+msgid "The figure above depicts the following:"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:104
+msgid ""
+"The client sends an HTTPS request for content. Traffic Server receives the "
+"request and performs the SSL 'handshake' to authenticate the client "
+"(depending on the authentication options configured) and determine the "
+"encryption method that will be used. If the client is allowed access, then "
+"Traffic Server checks its cache for the requested content."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:106
+msgid ""
+"If the request is a cache hit and the content is fresh, then Traffic Server "
+"encrypts the content and sends it to the client. The client decrypts the "
+"content (using the method determined during the handshake) and displays it."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:108
+msgid ""
+"If the request is a cache miss or cached content is stale, then Traffic "
+"Server communicates with the origin server via HTTP and obtains a plain text"
+" version of the content. Traffic Server saves the plain text version of the "
+"content in its cache, encrypts the content, and sends it to the client. The "
+"client decrypts and displays the content."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:110
+msgid ""
+"To configure Traffic Server to use the SSL termination option for "
+"client/Traffic Server connections, you must do the following:"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:113
+msgid ""
+"Obtain and install an SSL server certificate from a recognized certificate "
+"authority. The SSL server certificate contains information that enables the "
+"client to authenticate Traffic Server and exchange encryption keys."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:117
+#: ../../admin/security-options.en.rst:194
+msgid "Configure SSL termination options:"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:119
+msgid ""
+"Set the port number used for SSL communication using "
+":ts:cv:`proxy.config.http.server_ports`."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:120
+msgid ""
+"Edit :file:`ssl_multicert.config` to specify the filename and location of "
+"the SSL certificates and provate keys."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:122
+msgid ""
+"(Optional) Configure the use of client certificates: Client certificates are"
+" located on the client. If you configure Traffic Server to require client "
+"certificates, then Traffic Server verifies the client certificate during the"
+" SSL handshake that authenticates the client. If you configure Traffic "
+"Server to *not* require client certificates, then access to Traffic Server "
+"is managed through other Traffic Server options that have been set (such as "
+"rules in :file:`ip_allow.config`)."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:130
+msgid ""
+"(Optional) Configure the use of Certification Authorities (CAs). CAs add "
+"security by verifying the identity of the person requesting a certificate."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:134
+msgid "In order to accomplish this, we"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:136
+msgid ""
+"Edit the following variables in the :ref:`records-config-ssl-termination` "
+"section of :file:`records.config`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:139
+#: ../../admin/security-options.en.rst:217
+msgid ":ts:cv:`proxy.config.http.server_ports`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:140
+msgid ":ts:cv:`proxy.config.ssl.client.certification_level`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:141
+msgid ":ts:cv:`proxy.config.ssl.server.cert.path`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:142
+msgid ":ts:cv:`proxy.config.ssl.server.private_key.path`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:143
+msgid ":ts:cv:`proxy.config.ssl.CA.cert.path`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:145
+#: ../../admin/security-options.en.rst:226
+msgid ""
+"Run the command :option:`traffic_line -L` to restart Traffic Server on the "
+"local node or :option:`traffic_line -M` to restart Traffic Server on all the"
+" nodes in a cluster."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:155
+msgid "Traffic Server and Origin Server Connections"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:157
+msgid ""
+"The figure below illustrates communication between Traffic Server and an "
+"origin server when the SSL termination option is enabled for **Traffic "
+"Server/origin server connections**."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:165
+msgid "Traffic Server and origin server communication using SSL termination"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:169
+msgid ""
+"**Step 1:** If a client request is a cache miss or is stale, then Traffic "
+"Server sends an HTTPS request for the content to the origin server. The "
+"origin server receives the request and performs the SSL handshake to "
+"authenticate Traffic Server and determine the encryption method to be used."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:175
+msgid ""
+"**Step 2:** If Traffic Server is allowed access, then the origin server "
+"encrypts the content and sends it to Traffic Server, where it is decrypted "
+"(using the method determined during the handshake). A plain text version of "
+"the content is saved in the cache."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:180
+msgid ""
+"**Step 3:** If SSL termination is enabled for client /Traffic Server "
+"connections, then Traffic Server re-encrypts the content and sends it to the"
+" client via HTTPS, where it is decrypted and displayed. If SSL termination "
+"is not enabled for client/Traffic Server connections, then Traffic Server "
+"sends the plain text version of the content to the client via HTTP."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:187
+msgid ""
+"To configure Traffic Server to use the SSL termination option for Traffic "
+"Server and origin server connections, you must do the following:"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:190
+msgid ""
+"Obtain and install an SSL client certificate from a recognized certificate "
+"authority. The SSL client certificate contains information that allows the "
+"origin server to authenticate Traffic Server (the client certificate is "
+"optional)."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:195
+msgid "Enable the SSL termination option."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:197
+msgid "Set the port number used for SSL communication."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:198
+msgid ""
+"Specify the filename and location of the SSL client certificate (if you "
+"choose to use a client certificate)."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:200
+msgid ""
+"Specify the filename and location of the Traffic Server private key (if the "
+"private key is not located in the client certificate file). Traffic Server "
+"uses its private key during the SSL handshake to decrypt the session "
+"encryption keys. The private key must be stored and protected against theft."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:205
+msgid ""
+"Configure the use of CAs. CAs allow the Traffic Server that's acting as a "
+"client to verify the identity of the server with which it is communicating, "
+"thereby enabling exchange of encryption keys."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:209
+msgid "In order to accomplish this, we:"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:213
+msgid ""
+"Edit the following variables in the :ref:`records-config-ssl-termination` "
+"section of :file:`records.config`:"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:216
+msgid ":ts:cv:`proxy.config.ssl.auth.enabled`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:218
+msgid ":ts:cv:`proxy.config.ssl.client.verify.server`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:219
+msgid ":ts:cv:`proxy.config.ssl.client.cert.filename`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:220
+msgid ":ts:cv:`proxy.config.ssl.client.cert.path`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:221
+msgid ":ts:cv:`proxy.config.ssl.client.private_key.filename`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:222
+msgid ":ts:cv:`proxy.config.ssl.client.private_key.path`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:223
+msgid ":ts:cv:`proxy.config.ssl.client.CA.cert.filename`"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:224
+msgid ":ts:cv:`proxy.config.ssl.client.CA.cert.path`"
+msgstr ""

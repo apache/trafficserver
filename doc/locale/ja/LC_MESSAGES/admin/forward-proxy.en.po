@@ -1,0 +1,114 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../admin/forward-proxy.en.rst:4
+msgid "Forward Proxy"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:23
+msgid ""
+"The Apache Traffic Server is a general purpose *proxy*. As such it can also "
+"be used as forward proxy."
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:26
+msgid ""
+"A forward proxy is can be used as a central tool in your infrastructure to "
+"access the web. In combination with a cache that means overall reduced "
+"bandwidth usage."
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:30
+msgid ""
+"If your forward proxy is not also configured as :ref:`transparent-proxy` "
+"your clients will have to be configured to actually use it."
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:33
+msgid ""
+"The main difference between a forward and a transparent proxy is that User "
+"Agents *know* that they are accessing a proxy, thus forming their requests "
+"like so: ::"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:39
+msgid "This request, then is translated by the proxy to::"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:44
+msgid ""
+"Apache Traffic Server offers two ways to User Agents: They can either be "
+"pointed directly to the default ``8080`` port. Alternatively, they can be "
+"pointed to the more dynamic "
+":ts:cv:`proxy.config.url_remap.default_to_server_pac`"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:48
+msgid ""
+"This port will then serve a JavaScript like configuration that User Agents "
+"can use to determine where to send their requests to."
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:52
+msgid "Configuration"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:54
+msgid ""
+"In order to configure Apache Traffic Server as forward proxy you will have "
+"to edit `:file:`records.config` and set"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:57
+msgid ":ts:cv:`proxy.config.url_remap.remap_required` to  ``0``"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:59
+msgid ""
+"If your proxy is serving as *pure* forward proxy, you will also want to set"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:62
+msgid ":ts:cv:`proxy.config.reverse_proxy.enabled` to  ``0``"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:64
+msgid "Other configuration variables to consider:"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:66
+msgid ":ts:cv:`proxy.config.http.no_dns_just_forward_to_parent`"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:67
+msgid ":ts:cv:`proxy.config.http.forward.proxy_auth_to_parent`"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:68
+msgid ":ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:71
+msgid "Security Considerations"
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:73
+msgid ""
+"It's important to note that once your Apache Traffic Server is configured as"
+" forward proxy it will indiscriminately accept proxy requests from anyone. "
+"That means, if it's reachable on the internet, you have configured an *Open "
+"Proxy*. Most of the time, this is *not* what you want, so you'll have to "
+"make sure it's either only reachable within your NAT or is secured by "
+"firewall rules that permit only those clients to access it which you want to"
+" it to access."
+msgstr ""

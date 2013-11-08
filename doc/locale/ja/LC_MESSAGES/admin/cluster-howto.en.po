@@ -1,0 +1,228 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../admin/cluster-howto.en.rst:4
+msgid "Traffic Server Cluster"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:25
+msgid ""
+"Traffic Server scales from a single node to multiple nodes that form a "
+"cluster allowing you to improve system performance and reliability."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:32
+msgid "Understanding Traffic Server Clusters"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:34
+msgid ""
+"A Traffic Server cluster consists of multiple Traffic Server nodes. The "
+"nodes in a cluster share configuration information and can form a single "
+"logical cache. Traffic Server detects the addition and deletion of nodes in "
+"the cluster automatically and can detect when a node is unavailable. Traffic"
+" Server uses its own protocol for clustering, which is multicast for node "
+"location and heartbeat, but unicast for all data exchange within the "
+"cluster. Traffic Server has two clustering modes:"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:42
+msgid "Management-only mode; refer to `Management-Only Clustering`_ below."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:43
+msgid "Full-clustering mode; refer to `Full Clustering`_"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:46
+msgid "Management-Only Clustering"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:48
+msgid ""
+"In management-only clustering mode, Traffic Server cluster nodes share "
+"configuration information. You can administer all the nodes at the same "
+"time. Traffic Server uses a multicast management protocol to provide a "
+"single system image of your Traffic Server cluster. Information about "
+"cluster membership, configuration, and exceptions is shared across all "
+"nodes, and the :program:`traffic_manager` process automatically propagates "
+"configuration changes to all the nodes."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:57
+msgid "Full Clustering"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:59
+msgid ""
+"In full-clustering mode, as well as sharing configuration information, a "
+"Traffic Server cluster distributes its cache across its nodes into a single,"
+" virtual object store, rather than replicating the cache node by node. "
+"Traffic Server can provide an enormous aggregate cache size and can maximize"
+" cache hit rate by storing objects only once across the entire cluster."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:66
+msgid ""
+"A fully clustered Traffic Server maps objects to specific nodes in the "
+"cluster. When a node receives a request, it checks to see if the request is "
+"a hit somewhere in the cluster. If the request is a hit on a different node,"
+" the node handling the request obtains the object from the hit node and "
+"serves it to the client. Traffic Server uses its own communication protocol "
+"to obtain an object from sibling cluster nodes."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:73
+msgid ""
+"If a node fails or is shut down and removed, Traffic Server removes "
+"references to the missing node on all nodes in the cluster."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:76
+msgid ""
+"Full clustering recommends a dedicated network interface for cluster "
+"communication to get better performance."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:80
+msgid "Enabling Clustering Mode"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:82
+msgid ""
+"Before you put a node into a cluster, please make sure the following things "
+"are in order:"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:85
+msgid "You are using the same operation system on all nodes:"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:87
+msgid "Using the same distribution, e.g.: RHEL 5.5"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:88
+msgid "Have same kernel, e.g.: 2.6.18-194.17.1.el5"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:89
+msgid "The same architecture, e.g.: ``x86_64``"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:91
+msgid "You have the same version of Traffic Server installed"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:92
+msgid "The same hardware"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:93
+msgid "On the same switch or same VLAN."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:95
+msgid ""
+"Traffic Server does not apply the clustering mode change to all the nodes in"
+" the cluster. You must change the clustering mode on each node individually."
+" You may following these instructions:"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:99
+msgid ""
+"setup the same cluster name, with :ts:cv:`proxy.config.proxy_name`, e.g. "
+"MyCluster."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:101
+msgid ""
+"Set :ts:cv:`proxy.local.cluster.type` to ``1``, to enable cluster mode."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:103
+msgid ""
+"Setup a :ts:cv:`proxy.config.cluster.ethernet_interface`, e.g.: ``eth0``. "
+"This should be replaced by your real interface; we recommends a dedicated "
+"interface here. Refer to :ts:cv:`proxy.local.cluster.type` for a full "
+"description."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:107
+msgid "enable: ::"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:111
+msgid "restart: ::"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:115
+msgid ""
+"The :program:`traffic_server` and :program:`traffic_manager` processes will "
+"need to restart after the change of :ts:cv:`proxy.local.cluster.type` and "
+":ts:cv:`proxy.config.cluster.ethernet_interface` have taken place."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:119
+msgid ""
+"Traffic Server will join the cluster in about 10 seconds, and you can run "
+":option:`traffic_line -r` `proxy.process.cluster.nodes` to check the hosts "
+"in the cluster, or check out the :file:`cluster.config` in the configuration"
+" directory."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:125
+msgid ""
+"After a successful join of the cluster, all changes of global configurations"
+" on any node, will take effect on **all** nodes."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:129
+msgid "Deleting Nodes from a Cluster"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:131
+msgid ""
+"To delete a node from the Traffic Server cluster, just roll back "
+":ts:cv:`proxy.config.cluster.type` to the default value 3 and reload."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:135
+msgid "Performance tweak for busy Cluster"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:137
+msgid ""
+"Starting from v3.2.0, Apache Traffic Server can handle multiple internal "
+"cluster connections, and we can tweak for the Cluster threads and each of "
+"the thread will keep one connection to all of the cluster machines:"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:141
+msgid "Increasing Cluster threads:"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:143
+msgid ""
+"In the cluster env, the current performance of the Cluster threads will "
+"consume the same cpu usage as net threads, so you may adapt the ET_NET & "
+"ET_CLUSTER at about 1:1. For example, on a 24 cores system, set ET_NET "
+"threads & ET_CLUSTER threads to 10, by setting "
+":ts:cv:`proxy.config.cluster.threads` to ``10``."
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:153
+msgid ""
+"with these tweaks, we can archive about 10gbps traffic for the internal "
+"cluster transfer speed."
+msgstr ""

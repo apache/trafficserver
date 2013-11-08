@@ -1,0 +1,154 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:20
+msgid "ssl_multicert.config"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:24
+msgid ""
+"The :file:`ssl_multicert.config` file lets you configure Traffic Server to "
+"use multiple SSL server certificates to terminate the SSL sessions. If you "
+"have a Traffic Server system with more than one IP address assigned to it, "
+"then you can assign a different SSL certificate to be served when a client "
+"requests a particular IP address or host name."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:31
+msgid ""
+"At configuration time, certificates are parsed to extract the certificate "
+"subject and all the DNS `subject alternative names "
+"<http://en.wikipedia.org/wiki/SubjectAltName>`_.  A certificate will be "
+"presented for connections requesting any of the hostnames found in the "
+"certificate. Wildcard names are supported, but only of the form "
+"`*.domain.com`, ie. where `*` is the leftmost domain component."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:39
+msgid ""
+"Changes to :file:`ssl_multicert.config` can be applied to a running Traffic "
+"Server using :option:`traffic_line -x`."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:43
+msgid "Format"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:45
+msgid ""
+"Each :file:`ssl_multicert.config` line consists of a sequence of `key=value`"
+" fields that specify how Traffic Server should use a particular SSL "
+"certificate."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:53
+msgid "ssl_cert_name=PATH"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:50
+msgid ""
+"The name of the file containing the TLS certificate. `PATH` is located "
+"relative to the directory specified by the "
+":ts:cv:`proxy.config.ssl.server.cert.path` configuration variable. This is "
+"the only field that is required to be present."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:64
+msgid "dest_ip=ADDRESS"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:56
+msgid ""
+"The IP (v4 or v6) address that the certificate should be presented on. This "
+"is now only used as a fallback in the case that the TLS "
+"SubjectNameIndication extension is not supported. If `ADDRESS` is `*`, the "
+"corresponding certificate will be used as the global default fallback if no "
+"other match can be made.  The address may contain a port specifier, in which"
+" case the corresponding certificate will only match for connections accepted"
+" on the specified port. IPv6 addresses must be enclosed by square brackets "
+"if they have a port, eg, [::1]:80."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:70
+msgid "ssl_key_name=PATH"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:67
+msgid ""
+"The name of the file containing the private key for this certificate. If the"
+" key is contained in the certificate file, this field can be omitted, "
+"otherwise `PATH` is resolved relative to the "
+":ts:cv:`proxy.config.ssl.server.private_key.path` configuration variable."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:76
+msgid "ssl_ca_name=FILENAME"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:73
+msgid ""
+"If the certificate is issued by an authority that is not in the system CA "
+"bundle, additional certificates may be needed to validate the certificate "
+"chain. `PATH` is resolved relative to the "
+":ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:79
+msgid "Certificate Selection"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:81
+msgid ""
+"Traffic Server attempts two certificate selections during SSL connection "
+"setup. An initial selection is made when a TCP connection is accepted. This "
+"selection examines the IP address and port that the client is connecting to "
+"and chooses the best certificate from the those that have a ``dest_ip`` "
+"specification. If no matching certificates are found, a default certificate "
+"is chosen.  The final certificate selection is made during the SSL "
+"handshake.  At this point, the client may use `Server Name Indication "
+"<http://en.wikipedia.org/wiki/Server_Name_Indication>`_ to request a "
+"specific hostname. Traffic Server will use this request to select a "
+"certificate with a matching subject or subject alternative name. Failing "
+"that, a wildcard certificate match is attempted. If no match can be made, "
+"the initial certificate selection remains in force."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:95
+msgid ""
+"In all cases, Traffic Server attempts to select the most specific match. An "
+"address specification that contains a port number will take precedence over "
+"a specification that does not contain a port number. A specific certificate "
+"subject will take precedence over a wildcard certificate."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:103
+msgid "Examples"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:105
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` for all requests to the IP address 111.11.11.1 and the SSL "
+"certificate ``server1.pem`` for all requests to the IP address 11.1.1.1. "
+"Connections from all other IP addresses are terminated with the "
+"``default.pem`` certificate. Since the private key is included in the "
+"certificate files, no private key name is specified."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:119
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` and the private key ``serverKey.pem`` for all requests to "
+"port 8443 on IP address 111.11.11.1. The ``general.pem`` certificate is used"
+" for server name matches."
+msgstr ""

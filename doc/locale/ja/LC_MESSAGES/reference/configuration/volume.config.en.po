@@ -1,0 +1,74 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/configuration/volume.config.en.rst:20
+msgid "volume.config"
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:24
+msgid ""
+"The :file:`volume.config` file enables you to manage your cache space more "
+"efficiently and restrict disk usage by creating cache volumes of different "
+"sizes for specific protocols. You can further configure these volumes to "
+"store data from certain origin servers and/or domains in the "
+":file:`hosting.config` file."
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:32
+msgid ""
+"The volume configuration must be the same on all nodes in a cluster. You "
+"must stop Traffic Server before you change the cache volume size and "
+"protocol assignment. For step-by-step instructions about partitioning the "
+"cache, refer to :ref:`partitioning-the-cache`."
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:38
+msgid "Format"
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:40
+msgid ""
+"For each volume you want to create, enter a line with the following format: "
+"::"
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:45
+msgid ""
+"where ``volume_number`` is a number between 1 and 255 (the maximum number of"
+" volumes is 255) and ``protocol_type`` is ``http``. Traffic Server supports "
+"``http`` for HTTP volume types; ``volume_size`` is the amount of cache space"
+" allocated to the volume. This value can be either a percentage of the total"
+" cache space or an absolute value. The absolute value must be a multiple of "
+"128 MB, where 128 MB is the smallest value. If you specify a percentage, "
+"then the size is rounded down to the closest multiple of 128 MB."
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:54
+msgid ""
+"Each volume is striped across several disks to achieve parallel I/O. For "
+"example: if there are four disks, then a 1-GB volume will have 256 MB on "
+"each disk (assuming each disk has enough free space available). If you do "
+"not allocate all the disk space in the cache, then the extra disk space is "
+"not used. You can use the extra space later to create new volumes without "
+"deleting and clearing the existing volumes."
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:62
+msgid "Examples"
+msgstr ""
+
+#: ../../reference/configuration/volume.config.en.rst:64
+msgid ""
+"The following example partitions the cache evenly between HTTP and HTTPS "
+"requests::"
+msgstr ""

@@ -1,0 +1,114 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../glossary.en.rst:20
+msgid "Glossary"
+msgstr ""
+
+#: ../../glossary.en.rst:48
+msgid "cache span"
+msgstr ""
+
+#: ../../glossary.en.rst:50
+msgid ""
+"The physical storage described by a single line in :file:`storage.config`."
+msgstr ""
+
+#: ../../glossary.en.rst:44
+msgid "cache stripe"
+msgstr ""
+
+#: ../../glossary.en.rst:46
+msgid ""
+"A homogenous persistent store for the cache in a single :term:`cache span`. "
+"A stripe always resides entirely on a single physical device and is treated "
+"as an undifferentiated span of bytes."
+msgstr ""
+
+#: ../../glossary.en.rst:39
+msgid "cache volume"
+msgstr ""
+
+#: ../../glossary.en.rst:41
+msgid ""
+"A user defined unit of persistent storage for the cache. Cache volumes are "
+"defined in :file:`volume.config`. A cache volume is by default spread across"
+" :term:`cache span`\\ s to increase robustness. Each section of a cache "
+"volume on a specific cache span is a :term:`cache stripe`."
+msgstr ""
+
+#: ../../glossary.en.rst:24
+msgid "continuation"
+msgstr ""
+
+#: ../../glossary.en.rst:26
+msgid ""
+"A callable object that contains state. These are are mechanism used by "
+"Traffic Server to implement callbacks and continued computations. Continued "
+"computations are critical to efficient processing of traffic because by "
+"avoiding any blocking operations that wait on external events. In any such "
+"case a continuation is used so that other processing can continue until the "
+"external event occurs. At that point the continuation is invoked to continue"
+" the suspended processing. This can be considered similar to co-routines."
+msgstr ""
+
+#: ../../glossary.en.rst:54
+msgid "revalidation"
+msgstr ""
+
+#: ../../glossary.en.rst:56
+msgid ""
+"Verifying that a currently cached object is still valid. This is usually "
+"done using an `If-Modified-Since "
+"<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.25>`_ request "
+"which allows the origin server to validate the content without resending the"
+" content."
+msgstr ""
+
+#: ../../glossary.en.rst:31
+msgid "session"
+msgstr ""
+
+#: ../../glossary.en.rst:33
+msgid ""
+"A single connection from a client to Traffic Server, covering all requests "
+"and responses on that connection. A session starts when the client "
+"connection opens, and ends when the connection closes."
+msgstr ""
+
+#: ../../glossary.en.rst:51
+msgid "storage unit"
+msgstr ""
+
+#: ../../glossary.en.rst:53
+msgid "Obsolete term for :term:`cache span`."
+msgstr ""
+
+#: ../../glossary.en.rst:35
+msgid "transaction"
+msgstr ""
+
+#: ../../glossary.en.rst:37
+msgid ""
+"A client request and response, either from the origin server or from the "
+"cache. A transaction begins when Traffic Server receives a request, and ends"
+" when Traffic Server sends the response."
+msgstr ""
+
+#: ../../glossary.en.rst:59
+msgid "write cursor"
+msgstr ""
+
+#: ../../glossary.en.rst:61
+msgid "The location in a :term:`cache stripe` where new data is written."
+msgstr ""

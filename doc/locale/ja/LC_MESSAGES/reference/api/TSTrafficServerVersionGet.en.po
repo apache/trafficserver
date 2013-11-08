@@ -1,0 +1,51 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:21
+msgid "TSTrafficServerVersionGet"
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:24
+msgid "Synopsis"
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:26
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:34
+msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:36
+msgid ""
+":func:`TSTrafficServerVersionGet` returns a pointer to a string of "
+"characters that indicates the Traffic Server release version. This string "
+"must not be modified."
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:40
+msgid "The other APIs return an integer version number."
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:43
+msgid "Example"
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:96
+msgid "See also"
+msgstr ""
+
+#: ../../reference/api/TSTrafficServerVersionGet.en.rst:98
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ""

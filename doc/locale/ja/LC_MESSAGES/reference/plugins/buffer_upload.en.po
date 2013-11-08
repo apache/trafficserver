@@ -1,0 +1,111 @@
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/plugins/buffer_upload.en.rst:2
+msgid "Buffer Upload Plugin"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:24
+msgid "Upload proxy specs for phase I:"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:26
+msgid ""
+"Memory buffering (buffer the entire POST data in IOBuffer before connecting "
+"to OS) 1.1. Memory buffer size is configured with \"mem_buffer_size\" in "
+"config file. Default and minimum value is 32K You can increase it in the "
+"config file. If the size of a request is larger than the \"mem_buffer_size\""
+" value specifiied in the config file, then the upload proxy feature will be "
+"disabled for this particular request"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:34
+msgid ""
+"Disk buffering (buffer the entire POST data on disk before connecting to OS)"
+" 2.1. Use disk async IO. This involved some changes in ATS core . new APIs "
+"wrapping around ink_aio_read() and ink_aio_write() . change to distinguish "
+"between api call's AIO and cache's AIO . guarantee api call's AIO only "
+"involves certain amount of threads . the number of threads is configurable "
+"in plugin's config file (default is 4)"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:44
+msgid ""
+"Directories and files generated on disk . base directory: "
+"FOOBAR/var/buffer_upload_tmp/ (configurable in config file) . number of "
+"subdirectories: 64 (configurable in config file) . filename are randomly "
+"generated . files will be removed when the entire data have been sent out to"
+" OS . remove dangling files (left on disk due to transaction interruption or"
+" traffic server crash) at startup time"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:54
+msgid ""
+"Default chunk size when reading from disk: 16K, configurable in config file"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:57
+msgid ""
+"Default buffering mode: disk aio buffering mode 3.1. to turn off disk "
+"buffering, add a \"use_disk_buffer 0\" line in config file"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:60
+msgid ""
+"Trigger POST buffering on certain URLs 4.1. certain URLs will be provided in"
+" a plain text file (one URL each line) 4.2. specify filename in config file "
+"by \"url_list_file\" 4.3. max length of each URL: 4096 (configurable in "
+"config file) 4.4. use exact match, don't support regex for now"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:66
+msgid ""
+"URL conversion for Mail's specific URL format 5.1. for now check if the "
+"\"host\" part in the URL is same as the proxy server name, then will do this"
+" conversion 5.2. To turn on URL conversion feature, set \"convert_url 1\" in"
+" config file"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:71
+msgid ""
+"All request headers inlcuding cookies plus the entire POST data will be "
+"buffered (either in memory or on disk)"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:74
+msgid ""
+"Config file can be explicitly sepcified as a parameter in command line (in "
+"plugin.config file)"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:77
+msgid "a sample config file:"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:79
+msgid ""
+"use_disk_buffer 1 convert_url 1 chunk_size 1024 url_list_file "
+"/tmp/url_list.conf max_url_length 10000 base_dir /tmp/test1 subdir_num 100 "
+"thread_num 10 mem_buffer_size 40000"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:83
+msgid "default config file: FOOBAR/etc/upload.conf"
+msgstr ""
+
+#: ../../reference/plugins/buffer_upload.en.rst:85
+msgid ""
+"default config values: use_disk_buffer 1 convert_url 0 chunk_size 16384 "
+"url_list_file none max_url_length 4096 base_dir FOOBAR/var/buffer_upload_tmp"
+" subdir_num 64 thread_num 4 mem_buffer_size 32768"
+msgstr ""
