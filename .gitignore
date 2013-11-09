@@ -38,6 +38,7 @@ config.h
 doc/Doxyfile
 doc/html/
 doc/docbuild/
+doc/locale/pot
 
 MYMETA.*
 pm_to_blib
