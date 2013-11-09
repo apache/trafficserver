@@ -276,7 +276,7 @@ man_pages = [
    ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
 
    ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
-   ('reference/commands/tstop.en','tstop', u'Display Traffic Server statistics', None, '1'),
+   ('reference/commands/traffic_top.en','traffic_top', u'Display Traffic Server statistics', None, '1'),
    ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
 
    ('reference/configuration/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),

@@ -1,6 +1,6 @@
 /** @file
 
-    Main file for the tstop application.
+    Main file for the traffic_top application.
 
     @section license License
 
@@ -155,12 +155,16 @@ static void help(const string &host, const string &version) {
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
 
     //clear();
-    attron(A_BOLD); mvprintw(0, 0, "Overview:"); attroff(A_BOLD); 
-    mvprintw(1, 0, "tstop is a top like program for Apache Traffic Server (ATS).  There is a lot of statistical information gathered by ATS.  This program tries to show some of the more important stats and gives a good overview of what the proxy server is doing.  Hopefully this can be used as a tool to diagnosing the proxy server is there are problems.");
+    attron(A_BOLD); mvprintw(0, 0, "Overview:"); attroff(A_BOLD);
+    mvprintw(1, 0,
+      "traffic_top is a top like program for Apache Traffic Server (ATS). "
+      "There is a lot of statistical information gathered by ATS. "
+      "This program tries to show some of the more important stats and gives a good overview of what the proxy server is doing. "
+      "Hopefully this can be used as a tool for diagnosing the proxy server if there are problems.");
 
-    attron(A_BOLD); mvprintw(7, 0, "Definitions:"); attroff(A_BOLD); 
-    mvprintw(8, 0, "Fresh      => Requests that were servered by fresh entries in cache");
-    mvprintw(9, 0, "Revalidate => Requests that contacted the origin to verify if still valid");
+    attron(A_BOLD); mvprintw(7, 0, "Definitions:"); attroff(A_BOLD);
+    mvprintw(8,  0, "Fresh      => Requests that were servered by fresh entries in cache");
+    mvprintw(9,  0, "Revalidate => Requests that contacted the origin to verify if still valid");
     mvprintw(10, 0, "Cold       => Requests that were not in cache at all");
     mvprintw(11, 0, "Changed    => Requests that required entries in cache to be updated");
     mvprintw(12, 0, "Changed    => Requests that can't be cached for some reason");
@@ -178,11 +182,11 @@ static void help(const string &host, const string &version) {
   }
 }
 
-static void usage(char **argv) {
-  fprintf(stderr, "Usage: %s [-s seconds] hostname|hostname:port\n", argv[0]);
+static void usage()
+{
+  fprintf(stderr, "Usage: traffic_top [-s seconds] hostname|hostname:port\n");
   exit(1);
 }
-
 
 //----------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -196,7 +200,7 @@ int main(int argc, char **argv)
       sleep_time = atoi(optarg) * 1000;
       break;
     default:
-      usage(argv);
+      usage();
     }
   }
 
@@ -204,7 +208,7 @@ int main(int argc, char **argv)
   if (optind >= argc) {
     if (TS_ERR_OKAY != TSInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
       fprintf(stderr, "Error: missing hostname on command line or error connecting to the local manager\n");
-      usage(argv);
+      usage();
     }
   } else {
     host = argv[optind];
@@ -220,10 +224,9 @@ int main(int argc, char **argv)
 
   initscr();
   curs_set(0);
-  
 
   start_color();			/* Start color functionality	*/
-  
+
   init_pair(colorPair::red, COLOR_RED, COLOR_BLACK);
   init_pair(colorPair::yellow, COLOR_YELLOW, COLOR_BLACK);
   init_pair(colorPair::grey, COLOR_BLACK, COLOR_BLACK);
@@ -272,7 +275,6 @@ int main(int argc, char **argv)
     cache1.push_back("dns_hits");
     makeTable(0, 1, cache1, stats);
 
-
     list<string> cache2;
     cache2.push_back("ram_ratio");
     cache2.push_back("fresh");
@@ -304,7 +306,6 @@ int main(int argc, char **argv)
     response1.push_back("abort");
     makeTable(41, 1, response1, stats);
 
-
     list<string> response2;
     response2.push_back("200");
     response2.push_back("206");
@@ -330,7 +331,6 @@ int main(int argc, char **argv)
     client1.push_back("client_actv_conn");
     makeTable(0, 17, client1, stats);
 
-
     list<string> client2;
     client2.push_back("client_head");
     client2.push_back("client_body");
@@ -346,14 +346,12 @@ int main(int argc, char **argv)
     server1.push_back("server_curr_conn");
     makeTable(41, 17, server1, stats);
 
-
     list<string> server2;
     server2.push_back("server_head");
     server2.push_back("server_body");
     server2.push_back("server_avg_size");
     server2.push_back("server_net");
     makeTable(62, 17, server2, stats);
-
 
     curs_set(0);
     refresh();

@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2348] Rename tstop to traffic_top.
+
   *) [TS-2340] Fix TextLogObject log rolling.
    Author: bettydramit <b13621367396@gmail.com>
 
