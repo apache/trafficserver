@@ -27,5 +27,4 @@ noinst_LIBRARIES = libpreparse.a
 libpreparse_a_SOURCES = \
   IPRange.h \
   RemapReadConfig.cc \
-  SocksParser.cc \
   StoreReadConfig.cc
