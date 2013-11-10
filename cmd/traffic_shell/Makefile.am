@@ -17,8 +17,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUFFIXES = .java .class .jar .my .def .stb .html
-
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
@@ -29,7 +27,7 @@ bin_PROGRAMS = traffic_shell
 traffic_shell_SOURCES = \
   cliAppInit.cc \
   CliCreateCommands.h \
-  cliMain.cc \
+  traffic_shell.cc \
   CliMgmtUtils.h \
   ConfigCmd.h \
   createArgument.h \

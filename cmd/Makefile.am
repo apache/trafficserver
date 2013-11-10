@@ -15,4 +15,4 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = traffic_top traffic_cop traffic_line
+SUBDIRS = traffic_top traffic_cop traffic_line traffic_shell

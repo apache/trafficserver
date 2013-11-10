@@ -1844,6 +1844,7 @@ AC_CONFIG_FILES([
   cmd/Makefile
   cmd/traffic_cop/Makefile
   cmd/traffic_line/Makefile
+  cmd/traffic_shell/Makefile
   cmd/traffic_top/Makefile
   doc/Doxyfile
   doc/Makefile
@@ -1889,7 +1890,6 @@ AC_CONFIG_FILES([
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/cli/Makefile
   mgmt/cluster/Makefile
   mgmt/preparse/Makefile
   mgmt/stats/Makefile
