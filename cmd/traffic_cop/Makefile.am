@@ -31,7 +31,7 @@ DEFS += $(MGMT_DEFS)
 bin_PROGRAMS = traffic_cop
 
 traffic_cop_SOURCES = \
-  TrafficCop.cc
+  traffic_cop.cc
 
 traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
