@@ -58,6 +58,7 @@ libmgmt_p_a_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/lib
+
 libmgmt_p_a_SOURCES = \
   BaseManager.cc \
   BaseManager.h \

@@ -45,9 +45,52 @@ libtsutil_la_SOURCES = \
   Diags.cc \
   Diags.h \
   DynArray.h \
+  EventNotify.cc \
+  EventNotify.h \
   HostLookup.cc \
   HostLookup.h \
+  INK_MD5.h \
+  I_Layout.h \
+  I_Version.h \
+  InkErrno.h \
+  InkPool.h \
+  IntrusiveDList.h \
+  IpMap.cc \
+  IpMap.h \
+  IpMapConf.cc \
+  IpMapConf.h \
+  Layout.cc \
+  List.h \
+  Map.h \
+  MatcherUtils.cc \
+  MatcherUtils.h \
+  MimeTable.cc \
+  MimeTable.h \
+  ParseRules.cc \
+  ParseRules.h \
+  Ptr.h \
+  RawHashTable.cc \
+  RawHashTable.h \
+  Regex.cc \
+  Regex.h \
+  Regression.cc \
+  Regression.h \
+  Resource.cc \
+  Resource.h \
+  SimpleTokenizer.h \
+  TestBox.h \
+  TextBuffer.cc \
+  TextBuffer.h \
+  Tokenizer.cc \
+  Tokenizer.h \
+  Trie.h \
+  TsBuffer.h \
+  Vec.cc \
+  Vec.h \
+  Version.cc \
   defalloc.h \
+  fastlz.c \
+  fastlz.h \
   ink_aiocb.h \
   ink_align.h \
   ink_apidefs.h \
@@ -60,12 +103,12 @@ libtsutil_la_SOURCES = \
   ink_auth_api.h \
   ink_base64.cc \
   ink_base64.h \
-  ink_cap.cc ink_cap.h \
+  ink_cap.cc \
+  ink_cap.h \
   ink_code.cc \
   ink_code.h \
   ink_defs.cc \
   ink_defs.h \
-  InkErrno.h \
   ink_error.cc \
   ink_error.h \
   ink_exception.h \
@@ -80,13 +123,11 @@ libtsutil_la_SOURCES = \
   ink_inout.h \
   ink_llqueue.h \
   ink_lockfile.h \
-  INK_MD5.h \
   ink_memory.cc \
   ink_memory.h \
   ink_mutex.cc \
   ink_mutex.h \
   ink_platform.h \
-  InkPool.h \
   ink_queue.cc \
   ink_queue.h \
   ink_queue_ext.cc \
@@ -107,55 +148,30 @@ libtsutil_la_SOURCES = \
   ink_sprintf.h \
   ink_stack_trace.cc \
   ink_stack_trace.h \
-  ink_string.cc \
   ink_string++.cc \
-  ink_string.h \
   ink_string++.h \
+  ink_string.cc \
+  ink_string.h \
   ink_sys_control.cc \
   ink_sys_control.h \
   ink_syslog.cc \
   ink_syslog.h \
   ink_thread.cc \
   ink_thread.h \
-  EventNotify.h \
-  EventNotify.cc \
   ink_time.cc \
   ink_time.h \
-  inktomi++.h \
-  fastlz.h \
-  fastlz.c \
-  I_Version.h \
-  List.h \
+  libts.h \
   llqueue.cc \
-  lockfile.cc \
-  I_Layout.h \
-  IntrusiveDList.h \
-  IpMap.h IpMap.cc IpMapConf.h IpMapConf.cc IpMapTest.cc \
-  Layout.cc \
-  MatcherUtils.cc \
-  MatcherUtils.h \
-  MimeTable.cc \
-  MimeTable.h \
-  ParseRules.h \
-  ParseRules.cc \
-  Ptr.h \
-  RawHashTable.cc \
-  RawHashTable.h \
-  Regex.cc \
-  Regex.h \
-  Regression.cc \
-  Regression.h \
-  Resource.cc \
-  Resource.h \
-  SimpleTokenizer.h \
-  TextBuffer.cc \
-  TextBuffer.h \
-  Tokenizer.cc \
-  Tokenizer.h \
-  Vec.h \
-  Vec.cc \
-  Map.h \
-  Version.cc
+  lockfile.cc
+
+
+#test_UNUSED_SOURCES = \
+#  load_http_hdr.cc \
+#  IntrusivePtrTest.cc \
+#  IpMapTest.cc \
+#  TestHttpHeader.cc \
+#  test_memchr.cc \
+#  test_strings.cc
 
 # Special hacks to generate the parser rules
 $(srcdir)/ParseRules.cc: ParseRulesCType

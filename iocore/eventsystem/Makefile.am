@@ -28,6 +28,7 @@ noinst_LIBRARIES = libinkevent.a
 
 libinkevent_a_SOURCES = \
   EventSystem.cc \
+  IOBuffer.cc \
   I_Action.h \
   I_Continuation.h \
   I_EThread.h \
@@ -36,24 +37,22 @@ libinkevent_a_SOURCES = \
   I_EventSystem.h \
   I_IOBuffer.h \
   I_Lock.h \
-  IOBuffer.cc \
   I_PriorityEventQueue.h \
   I_Processor.h \
   I_ProtectedQueue.h \
   I_ProxyAllocator.h \
-  ProxyAllocator.cc \
   I_SocketManager.h \
+  I_Tasks.h \
   I_Thread.h \
   I_VConnection.h \
   I_VIO.h \
+  Inline.cc \
   Lock.cc \
+  PQ-List.cc \
   P_EventSystem.h \
   P_Freer.h \
   P_IOBuffer.h \
   P_ProtectedQueue.h \
-  PQ-List.cc \
-  Processor.cc \
-  ProtectedQueue.cc \
   P_Thread.h \
   P_UnixEThread.h \
   P_UnixEvent.h \
@@ -61,14 +60,15 @@ libinkevent_a_SOURCES = \
   P_UnixSocketManager.h \
   P_VConnection.h \
   P_VIO.h \
+  Processor.cc \
+  ProtectedQueue.cc \
+  ProxyAllocator.cc \
   SocketManager.cc \
+  Tasks.cc \
   Thread.cc \
   UnixEThread.cc \
   UnixEvent.cc \
-  UnixEventProcessor.cc \
-  Inline.cc \
-  Tasks.cc \
-  I_Tasks.h
+  UnixEventProcessor.cc 
 
 check_PROGRAMS = test_Buffer test_Event
 
@@ -94,11 +94,22 @@ test_LDADD = \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@
 
-test_Buffer_SOURCES = test_Buffer.cc
-test_Event_SOURCES = test_Event.cc
+test_Buffer_SOURCES = \
+  test_Buffer.cc
+
+#test_UNUSED_SOURCES = \
+#  test_I_Buffer.cc \
+#  test_P_Buffer.cc
+
+test_Event_SOURCES = \
+  test_Event.cc
+
+#test_UNUSED_SOURCES = \
+#  test_I_Event.cc \
+#  test_P_Event.cc
+
 test_Buffer_CXXFLAGS = $(test_CXXFLAGS)
 test_Event_CXXFLAGS = $(test_CXXFLAGS)
 
 test_Buffer_LDADD = $(test_LDADD)
 test_Event_LDADD = $(test_LDADD)
-

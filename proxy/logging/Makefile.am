@@ -80,3 +80,7 @@ liblogcollation_a_SOURCES = \
   LogCollationClientSM.h \
   LogCollationHostSM.cc \
   LogCollationHostSM.h
+
+#test_UNUSED_SOURCES = \
+#  LogAccessTest.cc \
+#  LogAccessTest.h
