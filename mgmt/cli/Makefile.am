@@ -25,8 +25,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/mgmt/api/include
 
-
-bin_PROGRAMS = traffic_shell traffic_line
+bin_PROGRAMS = traffic_shell
 traffic_shell_SOURCES = \
   cliAppInit.cc \
   CliCreateCommands.h \
@@ -38,9 +37,6 @@ traffic_shell_SOURCES = \
   definitions.h \
   hashtable.h \
   ShowCmd.h
-
-traffic_line_SOURCES = \
-  TrafficLine.cc
 
 noinst_LIBRARIES = libtrafficshell.a
 libtrafficshell_a_SOURCES = \
@@ -80,9 +76,3 @@ traffic_shell_LDADD = \
   @LIBRESOLV@ @LIBEXPAT@ @LIBSSL@ \
   @LIBPCRE@ @LIBREADLINE@ \
   -lm
-
-traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
-traffic_line_LDADD = \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBTCL@ @LIBSSL@
