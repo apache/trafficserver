@@ -97,8 +97,8 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
       hdr_loc = client_hdr_loc;
     }
     break;
-    
-    
+
+
   default:
     break;
   }

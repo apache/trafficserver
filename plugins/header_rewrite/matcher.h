@@ -16,7 +16,7 @@
   limitations under the License.
 */
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Implement the classes for the various types of hash keys we support.
 //
 #ifndef __MATCHER_H__
@@ -51,7 +51,8 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher");
   }
 
-  virtual ~Matcher() {
+  virtual ~Matcher()
+  {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher");
     free_pdata();
   }
@@ -79,7 +80,7 @@ public:
 
   // Getters / setters
   const T get() const { return _data; };
- 
+
   void setRegex(const std::string /* data ATS_UNUSED */)
   {
     if (!helper.setRegexMatch(_data)) {
@@ -93,7 +94,7 @@ public:
   void setRegex(const TSHttpStatus /* t ATS_UNUSED */) { return; }
 
   void set (const T d)
-  { 
+  {
     _data = d;
     if(_op == MATCH_REGULAR_EXPRESSION)
       setRegex(d);
@@ -124,30 +125,36 @@ public:
 
 private:
   // For basic types
-  bool test_eq(const T t) const {
+  bool test_eq(const T t) const
+  {
     // std::cout << "Testing: " << t << " == " << _data << std::endl;
     return t == _data;
   }
-  bool test_lt(const T t) const {
+  bool test_lt(const T t) const
+  {
     // std::cout << "Testing: " << t << " < " << _data << std::endl;
     return t < _data;
   }
-  bool test_gt(const T t) const {
+  bool test_gt(const T t) const
+  {
     // std::cout << "Testing: " << t << " > " << _data << std::endl;
     return t > _data;
   }
 
-  bool test_reg(const unsigned int /* t ATS_UNUSED */) const {
+  bool test_reg(const unsigned int /* t ATS_UNUSED */) const
+  {
     // Not supported
     return false;
   }
 
-  bool test_reg(const TSHttpStatus /* t ATS_UNUSED */) const {
+  bool test_reg(const TSHttpStatus /* t ATS_UNUSED */) const
+  {
    // Not supported
    return false;
  }
-  
-  bool test_reg(const std::string t) const {
+
+  bool test_reg(const std::string t) const
+  {
       TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
           int ovector[OVECCOUNT];
           if (helper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
