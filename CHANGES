@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2338] Remove IPRange.cc and .h, and SocksParser.cc.
+
   *) [TS-2333] Change the SAX callbacks to not clash with libxml2, which broke
    synthetic metric completely.
 
