@@ -651,6 +651,25 @@ suffice. It is possible to do this crudely with this flag by
 enabling it and then use identity URL mappings to re-disable it for
 specific domains.
 
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_in  INT 0
+
+   Enables (``1``) or disables (``0``) incoming keep-alive connections.
+
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_out  INT 0
+
+   Enables (``1``) or disables (``0``) outgoing keep-alive connections.
+
+  .. note::
+        Enabling keep-alive does not automatically enable purging of keep-alive
+        requests when nearing the connection limit, that is controlled by
+        ```proxy.config.http.server_max_connections``.
+
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 0
+
+   Controls wether new POST requests re-use keep-alive sessions (``1``) or
+   create new connections per request (``0``).
+
+
 Parent Proxy Configuration
 ==========================
 
@@ -768,6 +787,11 @@ Origin Server Connect Attempts
 
    Limits the number of socket connections across all origin servers to the value specified. To disable, set to zero (``0``).
 
+   .. note::
+        This value is used in determining when and if to prune active origin sessions. Without this value set connections
+        to origins can consume all the way up to ``proxy.config.net.connections_throttle`` connections, which in turn can
+        starve incoming requests from available connections.
+
 .. ts:cv:: CONFIG proxy.config.http.origin_max_connections INT 0
    :reloadable:
 
@@ -842,13 +866,14 @@ Negative Response Caching
 
    When enabled (``1``), Traffic Server caches negative responses (such as ``404 Not Found``) when a requested page does
    not exist. The next time a client requests the same page, Traffic Server serves the negative response directly from
-   cache.
+   cache. When disabled (``0``) Traffic Server will only cache the response if the response has ``Cache-Control`` headers.
 
    .. note::
 
       ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
-      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable. The
-      following negative responses are cached by Traffic Server:::
+      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable.
+
+      The following negative responses are cached by Traffic Server:
 
          204  No Content
          305  Use Proxy
