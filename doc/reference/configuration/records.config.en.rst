@@ -842,13 +842,14 @@ Negative Response Caching
 
    When enabled (``1``), Traffic Server caches negative responses (such as ``404 Not Found``) when a requested page does
    not exist. The next time a client requests the same page, Traffic Server serves the negative response directly from
-   cache.
+   cache. When disabled (``0``) Traffic Server will only cache the response if the response has ``Cache-Control`` headers.
 
    .. note::
 
       ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
-      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable. The
-      following negative responses are cached by Traffic Server:::
+      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable.
+
+      The following negative responses are cached by Traffic Server:
 
          204  No Content
          305  Use Proxy
