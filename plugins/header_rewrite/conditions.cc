@@ -46,21 +46,24 @@ ConditionStatus::initialize(Parser& p)
 
 
 void
-ConditionStatus::initialize_hooks() {
+ConditionStatus::initialize_hooks()
+{
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
 
 bool
-ConditionStatus::eval(const Resources& res) {
+ConditionStatus::eval(const Resources& res)
+{
   TSDebug(PLUGIN_NAME, "Evaluating STATUS()"); // TODO: It'd be nice to get the args here ...
   return static_cast<const Matchers<TSHttpStatus>*>(_matcher)->test(res.resp_status);
 }
 
 
 void
-ConditionStatus::append_value(std::string& s, const Resources& res) {
+ConditionStatus::append_value(std::string& s, const Resources& res)
+{
   s += boost::lexical_cast<std::string>(res.resp_status);
   TSDebug(PLUGIN_NAME, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
 }
@@ -86,7 +89,8 @@ ConditionRandom::initialize(Parser& p)
 
 
 bool
-ConditionRandom::eval(const Resources& /* res ATS_UNUSED */) {
+ConditionRandom::eval(const Resources& /* res ATS_UNUSED */)
+{
   TSDebug(PLUGIN_NAME, "Evaluating RANDOM(%d)", _max);
   return static_cast<const Matchers<unsigned int>*>(_matcher)->test(rand_r(&_seed) % _max);
 }
@@ -188,10 +192,10 @@ ConditionHeader::append_value(std::string& s, const Resources& res)
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size());
     TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
     if (field_loc != NULL) {
-      value = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, 0, &len);
+      value = TSMimeHdrFieldValueStringGet(bufp, res.hdr_loc, field_loc, 0, &len);
       TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
-      TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
+      TSHandleMLocRelease(bufp, res.hdr_loc, field_loc);
     }
   }
 }
@@ -220,13 +224,19 @@ ConditionPath::initialize(Parser& p)
   _matcher = match;
 }
 
-void
-ConditionPath::append_value(std::string& s, const Resources& res)
-{ 
-  int path_len = 0;
-  const char *path = TSUrlPathGet(res._rri->requestBufp, res._rri->requestUrl, &path_len);
-  TSDebug(PLUGIN_NAME, "Appending PATH to evaluation value: %.*s", path_len, path);
-  s.append(path, path_len);
+void ConditionPath::append_value(std::string& s, const Resources& res) {
+  TSMBuffer bufp;
+  TSMLoc url_loc;
+
+  if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url_loc) == TS_SUCCESS) {
+    int path_length;
+    const char *path = TSUrlPathGet(bufp, url_loc, &path_length);
+
+    if (path && path_length)
+      s.append(path, path_length);
+
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
+  }
 }
 
 bool
@@ -288,7 +298,8 @@ ConditionUrl::initialize(Parser& /* p ATS_UNUSED */)
 
 
 void
-ConditionUrl::set_qualifier(const std::string& q) {
+ConditionUrl::set_qualifier(const std::string& q)
+{
   Condition::set_qualifier(q);
 
   _url_qual = parse_url_qualifier(q);
@@ -373,4 +384,69 @@ ConditionDBM::eval(const Resources& res)
   TSDebug(PLUGIN_NAME, "Evaluating DBM(%s, \"%s\")", _file.c_str(), s.c_str());
 
   return static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+}
+
+
+// ConditionCookie: request or response header
+void ConditionCookie::initialize(Parser& p)
+{
+  Condition::initialize(p);
+
+  Matchers<std::string>* match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+
+  _matcher = match;
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void ConditionCookie::append_value(std::string& s, const Resources& res)
+{
+  TSMBuffer bufp = res.client_bufp;
+  TSMLoc hdr_loc = res.client_hdr_loc;
+  TSMLoc field_loc;
+  int error;
+  int cookies_len;
+  int cookie_value_len;
+  const char *cookies;
+  const char *cookie_value;
+  const char * const cookie_name = _qualifier.c_str();
+  const int cookie_name_len = _qualifier.length();
+
+  // Sanity
+  if (bufp == NULL || hdr_loc == NULL)
+    return;
+
+  // Find Cookie
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
+  if (field_loc == NULL)
+    return;
+
+  // Get all cookies
+  // NB! Cookie field does not support commas, so we use index == 0
+  cookies = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &cookies_len);
+  if (cookies == NULL || cookies_len <= 0)
+    goto out_release_field;
+
+  // Find particular cookie's value
+  error = get_cookie_value(cookies, cookies_len, cookie_name, cookie_name_len, &cookie_value, &cookie_value_len);
+  if (error == TS_ERROR)
+    goto out_release_field;
+
+  TSDebug(PLUGIN_NAME, "Appending COOKIE(%s) to evaluation value -> %.*s", cookie_name, cookie_value_len, cookie_value);
+  s.append(cookie_value, cookie_value_len);
+
+  // Unwind
+out_release_field:
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+}
+
+bool ConditionCookie::eval(const Resources& res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+  TSDebug(PLUGIN_NAME, "Evaluating COOKIE(%s): %s: rval: %d", _qualifier.c_str(), s.c_str(), rval);
+  return rval;
 }

@@ -4,9 +4,6 @@ perform various header "rewrite" rules (operations) on a request or
 response. Currently, only one operation is supported, since we had to get
 this rolling asap.
 
-Note that currently only static string "values" are supported. We'll add
-advanced features to allow for expansions in a future release.
-
 Using the plugin
 ----------------
 
@@ -28,7 +25,7 @@ during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
 
 Operators
 ---------
-The following operators are available: 
+The following operators are available:
 
   rm-header header-name                 [flags]
   add-header header <value>             [flags]
@@ -36,6 +33,7 @@ The following operators are available:
   set-status-reason <value>             [flags]
   set-config config <value>             [flags]
   no-op                                 [flags]
+  counter counter-name                  [flags]
 
 The following operator(s) currently only works when instantiating the
 plugin as a remap plugin:
@@ -60,6 +58,18 @@ Operator flags
   [L]   Last rule, do not continue
 
 
+Variable expansion
+------------------
+Currntly only limited variable expansion is supported in add-header. Supported
+substitutions include:
+  %<proto>      Protocol
+  %<port>       Port
+  %<chi>        Client IP
+  %<cqhl>       Client request length
+  %<cqhm>       Client HTTP method
+  %<cquup>      Client unmapped URI
+
+
 Conditions
 ----------
 The conditions are used as qualifiers: The operators specified will
@@ -71,8 +81,8 @@ only be evaluated if the condition(s) are met.
   cond %{TRUE}                                  [flags]
   cond %{FALSE}                                 [flags]
   cond %{HEADER:header-name} operand            [flags]
+  cond %{COOKIE:cookie-name} operand            [flags]
   cond %{CLIENT-HEADER:header-name} operand     [flags]
-  cond %{METHOD} operand                        [flags]
   cond %{PROTOCOL} operand                      [flags]
   cond %{PORT} operand                          [flags]
   cond %{HOST} operand                          [flags]
@@ -103,7 +113,7 @@ configuration, but being the default it is also optional.
 
 Condition flags
 ---------------
-  [NC]  Not ase sensitive condition (when applicable)
+  [NC]  Not case sensitive condition (when applicable)
   [AND] AND with next condition (default)
   [OR]  OR with next condition
   [NOT] Invert this condition
@@ -133,11 +143,12 @@ Examples
 --------
 
 cond %{HEADER:X-Y-Foobar}
-cond %{METHOD} =GET [OR]
-cond %{METHOD} =POST
+cond %{COOKIE:X-DC}  =DC1
 add-header X-Y-Fiefum %{HEADER:X-Y-Foobar}
+add-header X-Forwarded-For %<chi>
 rm-header X-Y-Foobar
 rm-header Set-Cookie
+counter plugin.header_rewrite.x-y-foobar-dc1
 
 cond %{HEADER:X-Y-Foobar} "Some string" [AND,NC]
 
@@ -164,13 +175,13 @@ Version 1.6.9 (10,17,11,cdoshi)
  - Support for PATH condition
 
 Version 1.6.8 (10/17/11,cdoshi)
- -  Replace the INKHttpHdrStatusSet with INKHttptxnSetHttpRetStatus 
+ -  Replace the INKHttpHdrStatusSet with INKHttptxnSetHttpRetStatus
 
 Version 1.6.7 (07/21/11, bcall)
   - [bug 4699620] - Removed some extra printf()'s
 
 Version 1.6.6 (cdoshi)
-  - when Host adder is added setHostChange will be called 
+  - when Host adder is added setHostChange will be called
 
 Version 1.6.5 (cdoshi)
   - fix QSA for set-destination
@@ -185,7 +196,7 @@ Version 1.6.2 (cdoshi)
   - Support for regex matcher
 
 Version 1.6.1 (09/15/10, leif)
-  - [bug 3985913] 
+  - [bug 3985913]
 
 Version 1.6.0 (07/14/10, leif)
   - Added support for the timeout-out operator.

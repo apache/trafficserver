@@ -24,7 +24,8 @@
 #include "operator.h"
 
 const OperModifiers
-Operator::get_oper_modifiers() const {
+Operator::get_oper_modifiers() const
+{
   if (_next)
     return static_cast<OperModifiers>(_mods | static_cast<Operator*>(_next)->get_oper_modifiers());
 
@@ -32,7 +33,8 @@ Operator::get_oper_modifiers() const {
 }
 
 void
-Operator::initialize(Parser& p) {
+Operator::initialize(Parser& p)
+{
   Statement::initialize(p);
 
   if (p.mod_exist("L")) {
@@ -46,7 +48,8 @@ Operator::initialize(Parser& p) {
 }
 
 void
-OperatorHeaders::initialize(Parser& p) {
+OperatorHeaders::initialize(Parser& p)
+{
   Operator::initialize(p);
 
   _header = p.get_arg();

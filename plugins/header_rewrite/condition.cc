@@ -30,20 +30,20 @@ parse_matcher_op(std::string& arg)
 {
   switch (arg[0]) {
   case '=':
-    arg.erase(0,1);
+    arg.erase(0, 1);
     return MATCH_EQUAL;
     break;
   case '<':
-    arg.erase(0,1);
+    arg.erase(0, 1);
     return MATCH_LESS_THEN;
     break;
   case '>':
-    arg.erase(0,1);
+    arg.erase(0, 1);
     return MATCH_GREATER_THEN;
     break;
   case '/':
-    arg.erase(0,1);
-    arg.erase(arg.length() -1 , arg.length());
+    arg.erase(0, 1);
+    arg.erase(arg.length() - 1, arg.length());
     return MATCH_REGULAR_EXPRESSION;
     break;
   default:
