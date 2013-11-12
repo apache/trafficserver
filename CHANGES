@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.1
 
+  *) [TS-2341] Cast TSHttpStatus to int to suppress compiler warning in clang
+
   *) [TS-2303] Incorrect docs for negative_caching_enabled.
     Author: Thomas Jackson <jacksontj.89@gmail.com>
 
