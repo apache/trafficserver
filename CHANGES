@@ -1,5 +1,10 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 4.1.0
+Changes with Apache Traffic Server 4.1.1
+
+  *) [TS-2303] Incorrect docs for negative_caching_enabled.
+    Author: Thomas Jackson <jacksontj.89@gmail.com>
+
+Changes with Apache Traffic Server 4.1.0 (was not released)
 
   *) [TS-2252] Fix bison version check on Ubuntu.
 
