@@ -86,7 +86,6 @@ extern "C" int plock(int);
 #include "Update.h"
 #include "congest/Congestion.h"
 #include "RemapProcessor.h"
-#include "XmlUtils.h"
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 
