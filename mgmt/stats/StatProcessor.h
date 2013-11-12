@@ -52,7 +52,7 @@
 typedef XML_Char xmlchar;
 #elif HAVE_LIBXML2
 #include <libxml/parser.h>
-#include <libxml/SAX2.h>
+#include <libxml/SAX.h>
 typedef xmlChar xmlchar;
 #else
 # error "No XML parser - please configure expat or libxml2"
