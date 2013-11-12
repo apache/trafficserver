@@ -651,6 +651,25 @@ suffice. It is possible to do this crudely with this flag by
 enabling it and then use identity URL mappings to re-disable it for
 specific domains.
 
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_in  INT 0
+
+   Enables (``1``) or disables (``0``) incoming keep-alive connections.
+
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_out  INT 0
+
+   Enables (``1``) or disables (``0``) outgoing keep-alive connections.
+
+  .. note::
+        Enabling keep-alive does not automatically enable purging of keep-alive
+        requests when nearing the connection limit, that is controlled by
+        ```proxy.config.http.server_max_connections``.
+
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 0
+
+   Controls wether new POST requests re-use keep-alive sessions (``1``) or
+   create new connections per request (``0``).
+
+
 Parent Proxy Configuration
 ==========================
 
@@ -767,6 +786,11 @@ Origin Server Connect Attempts
    :reloadable:
 
    Limits the number of socket connections across all origin servers to the value specified. To disable, set to zero (``0``).
+
+   .. note::
+        This value is used in determining when and if to prune active origin sessions. Without this value set connections
+        to origins can consume all the way up to ``proxy.config.net.connections_throttle`` connections, which in turn can
+        starve incoming requests from available connections.
 
 .. ts:cv:: CONFIG proxy.config.http.origin_max_connections INT 0
    :reloadable:
