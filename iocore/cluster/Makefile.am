@@ -47,6 +47,7 @@ libinkcluster_a_SOURCES = \
   ClusterProcessor.cc \
   ClusterRPC.cc \
   ClusterVConnection.cc \
+  Inline.cc \
   P_Cluster.h \
   P_ClusterCache.h \
   P_ClusterCacheInternal.h \
@@ -56,6 +57,8 @@ libinkcluster_a_SOURCES = \
   P_ClusterLib.h \
   P_ClusterLoadMonitor.h \
   P_ClusterMachine.h \
-  P_TimeTrace.h \
-  Inline.cc
+  P_TimeTrace.h
 
+#test_Cluster_SOURCES = \
+#  test_I_Cluster.cc \
+#  test_P_Cluster.cc

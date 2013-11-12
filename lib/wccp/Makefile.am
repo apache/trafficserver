@@ -31,11 +31,13 @@ noinst_LIBRARIES = libwccp.a
 
 libwccp_a_SOURCES = \
   Wccp.h \
-  WccpLocal.h \
-  WccpStatic.cc \
-  WccpMsg.cc \
+  WccpConfig.cc \
   WccpEndPoint.cc \
-  WccpConfig.cc
+  WccpLocal.h \
+  WccpMeta.h \
+  WccpMsg.cc \
+  WccpStatic.cc \
+  WccpUtil.h
 
 #test_cache_SOURCES = \
-#  wccp-test-cache.cc
+#  wccp-test-cache.cc wccp-test-router.cc

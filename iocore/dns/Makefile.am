@@ -50,12 +50,15 @@ libinkdns_a_SOURCES = \
   I_DNSProcessor.h \
   I_SplitDNS.h \
   I_SplitDNSProcessor.h \
+  Inline.cc \
   P_DNS.h \
   P_DNSConnection.h \
   P_DNSProcessor.h \
   P_SplitDNS.h \
   P_SplitDNSProcessor.h \
-  SplitDNS.cc \
   SRV.h \
-  Inline.cc
+  SplitDNS.cc
 
+#test_UNUSED_SOURCES = \
+#  test_I_DNS.cc \
+#  test_P_DNS.cc

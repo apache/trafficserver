@@ -33,16 +33,19 @@ BUILT_SOURCES = \
 CLEANFILES = $(BUILT_SOURCES)
 
 libtsconfig_la_SOURCES = \
-  TsConfigGrammar.y \
-  TsConfigSyntax.l \
   Errata.cc \
   Errata.h \
-  TsErrataUtil.cc \
-  TsBuffer.h \
-  NumericType.h \
   IntrusivePtr.h \
+  NumericType.h \
   TsBuilder.cc \
   TsBuilder.h \
+  TsConfigGrammar.y \
+  TsConfigLexer.h \
+  TsConfigParseEvents.h \
+  TsConfigSyntax.l \
+  TsConfigTypes.h \
+  TsErrataUtil.cc \
+  TsErrataUtil.h \
   TsValue.cc \
   TsValue.h
 

@@ -63,12 +63,13 @@ libinkcache_a_SOURCES = \
   CacheLink.cc \
   CachePages.cc \
   CachePagesInternal.cc \
-  CacheVol.cc \
   CacheRead.cc \
+  CacheVol.cc \
   CacheWrite.cc \
   I_Cache.h \
   I_CacheDefs.h \
   I_Store.h \
+  Inline.cc \
   P_Cache.h \
   P_CacheArray.h \
   P_CacheDir.h \
@@ -78,7 +79,7 @@ libinkcache_a_SOURCES = \
   P_CacheInternal.h \
   P_CacheVol.h \
   P_RamCache.h \
-  RamCacheLRU.cc \
   RamCacheCLFUS.cc \
+  RamCacheLRU.cc \
   Store.cc \
-  Inline.cc $(ADD_SRC)
+  $(ADD_SRC)

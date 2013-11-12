@@ -51,7 +51,6 @@ libtrafficshell_a_SOURCES = \
   CliMgmtUtils.cc \
   CliMgmtUtils.h \
   cliParseArg.cc \
-  cli_scriptpaths.h \
   commandOptions.h \
   ConfigCmd.cc \
   ConfigCmd.h \

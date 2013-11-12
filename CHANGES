@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2339] Cleanup Makefile.am, fixing missing / wrong _SOURCES entries.
 
   *) [TS-2341] Cast TSHttpStatus to int to suppress compiler warning in clang
 

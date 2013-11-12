@@ -110,10 +110,8 @@ traffic_server_SOURCES = \
   PluginVC.h \
   Prefetch.cc \
   Prefetch.h \
-  Raf.h \
   ReverseProxy.cc \
   ReverseProxy.h \
-  RniTransStats.h \
   signals.cc \
   signals.h \
   SocksProxy.cc \
