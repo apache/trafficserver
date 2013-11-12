@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
+  *) [TS-2316] header_rewrite: numerous improvements: cookie based conditions,
+   rule counters, improved documentation.
+   Author: Alexey Ivanov <aivanov@linkedin.com>
 
   *) [TS-2338] Remove IPRange.cc and .h, and SocksParser.cc.
 
