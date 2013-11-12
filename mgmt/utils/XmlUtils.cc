@@ -386,7 +386,7 @@ XMLNode::getAttributeValueByName(const char *pAName)
   return p;
 }
 
-void /*XMLDom:: */
+static void /*XMLDom:: */
 elementStart(void *pObj, const xmlchar *el, const xmlchar **attr)
 {
   XMLDom *pDom = (XMLDom *) pObj;
@@ -427,7 +427,7 @@ elementStart(void *pObj, const xmlchar *el, const xmlchar **attr)
   }
 }
 
-void /*XMLDom:: */
+static void /*XMLDom:: */
 elementEnd(void *pObj, const xmlchar * /* el ATS_UNUSED */)
 {
   /*ASSERT(strcmp(el, pCur->pNodeName) == 0); */
@@ -435,7 +435,7 @@ elementEnd(void *pObj, const xmlchar * /* el ATS_UNUSED */)
   pDom->m_pCur = pDom->m_pCur->m_pParentNode;
 }
 
-void /*XMLDom:: */
+static void /*XMLDom:: */
 charHandler(void *pObj, const xmlchar *s, int len)
 {
   XMLNode *pNode = ((XMLDom *) pObj)->m_pCur;

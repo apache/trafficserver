@@ -43,19 +43,39 @@ static unsigned statCount = 0;  // global statistics object counter
 bool nodeVar;
 bool sumClusterVar;
 
+// These helpers are used to work around the unsigned char'iness of xmlchar when
+// using libxml2. We don't have any tags (now) which uses UTF8.
+static int
+xml_atoi(const xmlchar *nptr)
+{
+  return atoi((const char*)nptr);
+}
 
-void
-startElement(void * /* userData ATS_UNUSED */, const char *name, const char **atts)
+static double
+xml_atof(const xmlchar *nptr)
+{
+  return atof((const char*)nptr);
+}
+
+static int
+xml_strcmp(const xmlchar *s1, const char *s2)
+{
+  return strcmp((const char *)s1, s2);
+}
+
+
+static void
+elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlchar **atts)
 {
   int i = 0;
 
-  if (!strcmp(name, "ink:statistics"))
+  if (!xml_strcmp(name, "ink:statistics"))
     currentTag = ROOT_TAG;
-  else if (!strcmp(name, "statistics"))
+  else if (!xml_strcmp(name, "statistics"))
     currentTag = STAT_TAG;
-  else if (!strcmp(name, "destination"))
+  else if (!xml_strcmp(name, "destination"))
     currentTag = DST_TAG;
-  else if (!strcmp(name, "expression"))
+  else if (!xml_strcmp(name, "expression"))
     currentTag = EXPR_TAG;
   else
     currentTag = INVALID_TAG;
@@ -69,15 +89,15 @@ startElement(void * /* userData ATS_UNUSED */, const char *name, const char **at
      for (i = 0; atts[i]; i += 2) {
       ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
 
-      if (!strcmp(atts[i], "minimum")) {
-        statObject->m_stats_min = (MgmtFloat) atof(atts[i + 1]);
+      if (!xml_strcmp(atts[i], "minimum")) {
+        statObject->m_stats_min = (MgmtFloat) xml_atof(atts[i + 1]);
         statObject->m_has_min = true;
-      } else if (!strcmp(atts[i], "maximum")) {
-        statObject->m_stats_max = (MgmtFloat) atof(atts[i + 1]);
+      } else if (!xml_strcmp(atts[i], "maximum")) {
+        statObject->m_stats_max = (MgmtFloat) xml_atof(atts[i + 1]);
         statObject->m_has_max = true;
-      } else if (!strcmp(atts[i], "interval")) {
-        statObject->m_update_interval = (ink_hrtime) atoi(atts[i + 1]);
-      } else if (!strcmp(atts[i], "debug")) {
+      } else if (!xml_strcmp(atts[i], "interval")) {
+        statObject->m_update_interval = (ink_hrtime) xml_atoi(atts[i + 1]);
+      } else if (!xml_strcmp(atts[i], "debug")) {
         statObject->m_debug = (atts[i + 1] && atts[i + 1][0] == '1');
       }
 
@@ -97,10 +117,10 @@ startElement(void * /* userData ATS_UNUSED */, const char *name, const char **at
     if (atts)
      for (i = 0; atts[i]; i += 2) {
       ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
-      if (!strcmp(atts[i], "scope")) {
-        nodeVar = (!strcmp(atts[i + 1], "node") ? true : false);
-      } else if (!strcmp(atts[i], "operation")) {
-        sumClusterVar = (!strcmp(atts[i + 1], "sum") ? true : false);
+      if (!xml_strcmp(atts[i], "scope")) {
+        nodeVar = (!xml_strcmp(atts[i + 1], "node") ? true : false);
+      } else if (!xml_strcmp(atts[i], "operation")) {
+        sumClusterVar = (!xml_strcmp(atts[i + 1], "sum") ? true : false);
       }
 
       Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
@@ -118,8 +138,8 @@ startElement(void * /* userData ATS_UNUSED */, const char *name, const char **at
 }
 
 
-void
-endElement(void * /* userData ATS_UNUSED */, const char */* name ATS_UNUSED */)
+static void
+elementEnd(void * /* userData ATS_UNUSED */, const xmlchar */* name ATS_UNUSED */)
 {
   switch (currentTag) {
   case STAT_TAG:
@@ -138,7 +158,7 @@ endElement(void * /* userData ATS_UNUSED */, const char */* name ATS_UNUSED */)
 }
 
 
-void
+static void
 charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar * name, int /* len ATS_UNUSED */)
 {
   if (currentTag != EXPR_TAG && currentTag != DST_TAG) {
@@ -192,7 +212,7 @@ StatProcessor::rereadConfig()
    */
   XML_Parser parser = XML_ParserCreate(NULL);
   XML_SetUserData(parser, NULL);
-  XML_SetElementHandler(parser, startElement, endElement);
+  XML_SetElementHandler(parser, elementStart, elementEnd);
   XML_SetCharacterDataHandler(parser, charDataHandler);
 
   /*
@@ -221,8 +241,8 @@ StatProcessor::rereadConfig()
   /* Parse XML with libxml2 */
   xmlSAXHandler sax;
   memset(&sax, 0, sizeof(xmlSAXHandler));
-  sax.startElement = startElement;
-  sax.endElement = endElement;
+  sax.startElement = elementStart;
+  sax.endElement = elementEnd;
   sax.characters = charDataHandler;
   sax.initialized = 1;
   xmlParserCtxtPtr parser = xmlCreatePushParserCtxt(&sax, NULL, NULL, 0, NULL);
