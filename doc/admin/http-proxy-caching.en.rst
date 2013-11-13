@@ -707,6 +707,9 @@ object (the default is 3).
    #. Edit the variable :ts:cv:`proxy.config.cache.limits.http.max_alts`
    #. Run the command :option:`traffic_line -x` to apply the configuration changes.
 
+
+.. _using-congestion-control:
+
 Using Congestion Control
 ========================
 
@@ -773,6 +776,8 @@ be set to the same value.
 
 If using c:func:`TSHttpTxnConfigIntSet`, it must be called no later than `TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 
+.. _reducing-origin-server-requests-avoiding-the-thundering-herd:
+
 Reducing Origin Server Requests (Avoiding the Thundering Herd)
 ==============================================================
 
@@ -799,6 +804,9 @@ All four configurations are required, for the following reasons:
 
 Once all this enabled, you have something that is very close, but not quite the same, as Squid's Collapsed Forwarding.
 
+
+
+.. _fuzzy-revalidation:
 
 Fuzzy Revalidation
 ------------------

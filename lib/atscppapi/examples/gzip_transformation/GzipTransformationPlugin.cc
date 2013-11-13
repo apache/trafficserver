@@ -49,19 +49,19 @@ using std::string;
 class Helpers {
 public:
   static bool clientAcceptsGzip(Transaction &transaction) {
-    return transaction.getClientRequest().getHeaders().getJoinedValues("Accept-Encoding").find("gzip") != string::npos;
+    return transaction.getClientRequest().getHeaders().values("Accept-Encoding").find("gzip") != string::npos;
   }
 
   static bool serverReturnedGzip(Transaction &transaction) {
-    return transaction.getServerResponse().getHeaders().getJoinedValues("Content-Encoding").find("gzip") != string::npos;
+    return transaction.getServerResponse().getHeaders().values("Content-Encoding").find("gzip") != string::npos;
   }
 
   enum ContentType { UNKNOWN = 0, TEXT_HTML  = 1, TEXT_PLAIN = 2 };
 
   static ContentType getContentType(Transaction &transaction) {
-    if (transaction.getServerResponse().getHeaders().getJoinedValues("Content-Type").find("text/html") != string::npos) {
+    if (transaction.getServerResponse().getHeaders().values("Content-Type").find("text/html") != string::npos) {
       return TEXT_HTML;
-    } else if (transaction.getServerResponse().getHeaders().getJoinedValues("Content-Type").find("text/plain") != string::npos) {
+    } else if (transaction.getServerResponse().getHeaders().values("Content-Type").find("text/plain") != string::npos) {
       return TEXT_PLAIN;
     } else {
       return UNKNOWN;
@@ -78,7 +78,7 @@ public:
 
   void handleSendResponseHeaders(Transaction &transaction) {
     TS_DEBUG(TAG, "Added X-Content-Transformed header");
-    transaction.getClientResponse().getHeaders().set("X-Content-Transformed", "1");
+    transaction.getClientResponse().getHeaders()["X-Content-Transformed"] = "1";
     transaction.resume();
   }
 
@@ -117,10 +117,10 @@ public:
     // Since we can only decompress gzip we will change the accept encoding header
     // to gzip, even if the user cannot accept gziped content we will return to them
     // uncompressed content in that case since we have to be able to transform the content.
-    string original_accept_encoding = transaction.getServerRequest().getHeaders().getJoinedValues("Accept-Encoding");
+    string original_accept_encoding = transaction.getServerRequest().getHeaders().values("Accept-Encoding");
 
     // Make sure it's done on the server request to avoid clobbering the clients original accept encoding header.
-    transaction.getServerRequest().getHeaders().set("Accept-Encoding", "gzip");
+    transaction.getServerRequest().getHeaders()["Accept-Encoding"] = "gzip";
     TS_DEBUG(TAG, "Changed the servers request accept encoding header from \"%s\" to gzip", original_accept_encoding.c_str());
 
     transaction.resume();
@@ -154,10 +154,10 @@ public:
     // set to gzip or identity.
     if (Helpers::clientAcceptsGzip(transaction)) {
       TS_DEBUG(TAG,"Setting the client response content-encoding to gzip since the user supported it, that's what they got.");
-      transaction.getClientResponse().getHeaders().set("Content-Encoding", "gzip");
+      transaction.getClientResponse().getHeaders()["Content-Encoding"] = "gzip";
     } else {
       TS_DEBUG(TAG,"Setting the client response content-encoding to identity since the user didn't support gzip");
-      transaction.getClientResponse().getHeaders().set("Content-Encoding", "identity");
+      transaction.getClientResponse().getHeaders()["Content-Encoding"] = "identity";
     }
     transaction.resume();
   }

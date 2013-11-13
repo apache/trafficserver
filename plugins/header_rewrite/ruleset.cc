@@ -29,7 +29,8 @@
 // Class implementation (no reason to have these inline)
 //
 void
-RuleSet::append(RuleSet* rule) {
+RuleSet::append(RuleSet* rule)
+{
   RuleSet* tmp = this;
 
   TSReleaseAssert(rule->next == NULL);
@@ -41,7 +42,8 @@ RuleSet::append(RuleSet* rule) {
 
 
 void
-RuleSet::add_condition(Parser& p) {
+RuleSet::add_condition(Parser& p)
+{
   Condition* c = condition_factory(p.get_op());
 
   if (NULL != c) {
@@ -65,7 +67,8 @@ RuleSet::add_condition(Parser& p) {
 
 
 void
-RuleSet::add_operator(Parser& p) {
+RuleSet::add_operator(Parser& p)
+{
   Operator* o = operator_factory(p.get_op());
 
   if (NULL != o) {

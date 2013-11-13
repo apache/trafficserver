@@ -29,7 +29,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/ts
 
-noinst_LIBRARIES = libreclocal.a librecprocess.a
+noinst_LIBRARIES = libreclocal.a librecprocess.a librec4cop.a
 
 libreclocal_a_CXXFLAGS = $(ink_with_modules_local)
 libreclocal_a_SOURCES = \
@@ -91,3 +91,9 @@ librecprocess_a_SOURCES = \
   RecDebug.cc \
   RecConfigParse.cc
 
+
+librec4cop_a_CXXFLAGS = $(ink_with_modules_process)
+librec4cop_a_SOURCES = \
+  RecConfigParse.cc \
+  RecFile.cc \
+  RecDebug.cc

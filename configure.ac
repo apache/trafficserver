@@ -32,15 +32,15 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[4.1.0])
-m4_define([TS_VERSION_N],[4001000])
+m4_define([TS_VERSION_S],[4.2.0])
+m4_define([TS_VERSION_N],[4002000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
-AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman 1.9.2])
+AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
 AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
@@ -677,7 +677,7 @@ BISON_POINT=1
 AC_CHECK_PROG([YACC],[bison],[bison])
 AS_IF([test -n "$YACC"],
       [ bison_version_check=`$YACC --version 2>&1 | \
-        $SED -n '/bison/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\)[[^0-9]]*$/\1/p' | \
+        $SED -n '/bison/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\).*$/\1/p' | \
         $AWK "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && (NR == 2 || \\$3 >= $BISON_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
@@ -779,7 +779,7 @@ case $host_os_def in
       # 1720 is "operator new" has no corresponding member operator delete"
       # 2256 is "non-pointer conversion from "int" to "unsigned char" "
       # 2259 is "non-pointer conversion from "int" to "unsigned char" "
-      # 
+      #
       # TODO: We should try to eliminate more of these -wd exclusions.
       common_opt="-pipe -Wall -wd111 -wd279 -wd383 -wd522 -wd444 -wd873 -wd981 -wd1418 -wd1419 -wd1572 -wd1720 -wd2256 -wd2259"
       debug_opt="-ggdb3 $common_opt"
@@ -1874,7 +1874,6 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/null_transformation_plugin/Makefile
   lib/atscppapi/examples/post_buffer/Makefile
   lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/detachedrequest/Makefile
   lib/atscppapi/examples/stat_example/Makefile
   lib/atscppapi/examples/async_http_fetch/Makefile
   lib/atscppapi/examples/remap_plugin/Makefile
@@ -1882,13 +1881,11 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/timeout_example/Makefile
   lib/atscppapi/examples/internal_transaction_handling/Makefile
   lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/request_cookies/Makefile
   lib/wccp/Makefile
   lib/perl/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/api/remote/Makefile
   mgmt/cli/Makefile
   mgmt/cluster/Makefile
   mgmt/preparse/Makefile
@@ -1928,6 +1925,7 @@ AC_CONFIG_FILES([
   proxy/config/storage.config.default
   proxy/congest/Makefile
   proxy/hdrs/Makefile
+  proxy/shared/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
   proxy/logging/Makefile

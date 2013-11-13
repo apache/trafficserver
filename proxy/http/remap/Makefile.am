@@ -25,9 +25,9 @@ AM_CPPFLAGS = \
   -I$(top_builddir)/proxy/api/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/proxy/http
 
 noinst_LIBRARIES = libhttp_remap.a
@@ -35,6 +35,8 @@ noinst_LIBRARIES = libhttp_remap.a
 libhttp_remap_a_SOURCES = \
   AclFiltering.cc \
   AclFiltering.h \
+  RemapConfig.cc \
+  RemapConfig.h \
   RemapPluginInfo.cc \
   RemapPluginInfo.h \
   RemapPlugins.cc \
@@ -43,7 +45,7 @@ libhttp_remap_a_SOURCES = \
   RemapProcessor.h \
   UrlMapping.cc \
   UrlMapping.h \
-  UrlRewrite.cc \
-  UrlRewrite.h \
+  UrlMappingPathIndex.cc \
   UrlMappingPathIndex.h \
-  UrlMappingPathIndex.cc
+  UrlRewrite.cc \
+  UrlRewrite.h

@@ -227,7 +227,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
                     stat_name = create_stat_name(remap, "status_3xx");
                 else if ((status_code >= 400) && (status_code <= 499))
                     stat_name = create_stat_name(remap, "status_4xx");
-                else if ((status_code >= 500) && (status_code <= 599))
+                else if ((status_code >= 500) && ((int)status_code <= 599))
                     stat_name = create_stat_name(remap, "status_5xx");
                 else
                     stat_name = create_stat_name(remap, "status_other");

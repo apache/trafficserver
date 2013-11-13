@@ -21,6 +21,7 @@
 #include <atscppapi/PluginInit.h>
 #include <atscppapi/Logger.h>
 #include <vector>
+#include <map>
 #include <sstream>
 
 using namespace std;

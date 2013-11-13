@@ -39,7 +39,7 @@ public:
   }
 
   void handleSendResponseHeaders(Transaction &transaction) {
-    transaction.getClientResponse().getHeaders().set("X-Content-Transformed", "1");
+    transaction.getClientResponse().getHeaders()["X-Content-Transformed"] = "1";
     transaction.resume();
   }
 

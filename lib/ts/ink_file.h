@@ -99,4 +99,8 @@ int ink_filepath_make(char *path, int pathsz, const char *rootpath,
  */
 int ink_file_fd_zerofill(int fd, off_t size);
 
+/**
+ Return true if the path is a directory.
+ */
+bool ink_file_is_directory(const char * path);
 #endif // _ink_file_h_

@@ -27,7 +27,6 @@
 
 #include "Main.h"
 #include "MgmtUtils.h"
-#include "MgmtSchema.h"
 #include "WebMgmtUtils.h"
 #include "WebIntrMain.h"
 #include "WebOverview.h"
@@ -77,9 +76,6 @@ static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024] = "";
 static char action_tags[1024] = "";
 static bool proxy_on = true;
-
-static bool schema_on = false;
-static char *schema_path = NULL;
 
 // TODO: Check if really need those
 char system_root_dir[PATH_NAME_MAX + 1];
@@ -519,11 +515,6 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-proxyBackDoor") == 0) {
             ++i;
             proxy_backdoor = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-schema") == 0) {
-            // hidden option
-            ++i;
-            schema_path = argv[i];
-            schema_on = true;
           } else {
             printUsage();
           }
@@ -695,14 +686,6 @@ main(int argc, char **argv)
     group_addr = REC_readString("proxy.config.cluster.mc_group_addr", &found);
     ink_assert(found);
   }
-
-  if (schema_on) {
-    XMLDom schema;
-    schema.LoadFile(schema_path);
-    bool validate = validateRecordsConfig(&schema);
-    ink_release_assert(validate);
-  }
-
 
   in_addr_t min_ip = inet_network("224.0.0.255");
   in_addr_t max_ip = inet_network("239.255.255.255");

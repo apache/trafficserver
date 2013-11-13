@@ -16,7 +16,7 @@
   limitations under the License.
 */
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Implement the classes for the various types of hash keys we support.
 //
 #ifndef __RULESET_H__
@@ -54,11 +54,13 @@ public:
   const TSHttpHookID get_hook() const { return _hook; }
 
   // Inline
-  const ResourceIDs get_all_resource_ids() const {
+  const ResourceIDs get_all_resource_ids() const
+  {
     return _ids;
   }
 
-  bool eval(const Resources& res) const {
+  bool eval(const Resources& res) const
+  {
     if (NULL == _cond) {
       return true;
     } else {
@@ -66,11 +68,13 @@ public:
     }
   }
 
-  bool last() const {
+  bool last() const
+  {
     return _last;
   }
 
-  OperModifiers exec(const Resources& res) const {
+  OperModifiers exec(const Resources& res) const
+  {
     _oper->do_exec(res);
     return _opermods;
   }

@@ -61,7 +61,6 @@ Request::Request(const string &url_str, HttpMethod method, HttpVersion version) 
   state_->version_.setValue(version);
   state_->destroy_buf_ = true;
   state_->hdr_buf_ = TSMBufferCreate();
-  state_->headers_.initDetached();
   if (TSUrlCreate(state_->hdr_buf_, &state_->url_loc_) == TS_SUCCESS) {
     const char *url_str_start = url_str.c_str();
     const char *url_str_end = url_str_start + url_str.size();
@@ -86,7 +85,7 @@ void Request::init(void *hdr_buf, void *hdr_loc) {
   }
   state_->hdr_buf_ = static_cast<TSMBuffer>(hdr_buf);
   state_->hdr_loc_ = static_cast<TSMLoc>(hdr_loc);
-  state_->headers_.init(state_->hdr_buf_, state_->hdr_loc_);
+  state_->headers_.reset(state_->hdr_buf_, state_->hdr_loc_);
   state_->url_loc_ = NULL;
   TSHttpHdrUrlGet(state_->hdr_buf_, state_->hdr_loc_, &state_->url_loc_);
   if (!state_->url_loc_) {

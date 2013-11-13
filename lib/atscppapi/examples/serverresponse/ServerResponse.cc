@@ -49,7 +49,7 @@ public:
       transaction.resume();
     }
     cout << "Server request headers are" << endl;
-    printHeaders(transaction.getServerRequest().getHeaders());
+    cout << transaction.getServerRequest().getHeaders() << endl;
   }
 
   void handleReadResponseHeaders(Transaction &transaction) {
@@ -57,14 +57,16 @@ public:
     cout << "Server response headers are" << endl;
     Response &server_response = transaction.getServerResponse();
     cout << "Reason phrase is " << server_response.getReasonPhrase() << endl;
-    printHeaders(server_response.getHeaders());
+    cout << transaction.getServerRequest().getHeaders() << endl;
     transaction.resume();
   }
 
   void handleSendResponseHeaders(Transaction &transaction) {
     cout << "Hello from handleSendResponseHeaders!" << endl;
     cout << "Client response headers are" << endl;
-    printHeaders(transaction.getClientResponse().getHeaders());
+    transaction.getClientResponse().getHeaders()["X-Foo-Header"] = "1";
+
+    printHeadersManual(transaction.getClientResponse().getHeaders());
 
     //
     // If the url contains a query parameter redirect=1 we will send the
@@ -75,7 +77,7 @@ public:
 
     if(transaction.getClientRequest().getUrl().getQuery().find("redirect=1") != string::npos) {
       cout << "Sending this guy to google." << endl;
-      transaction.getClientResponse().getHeaders().set("Location", "http://www.google.com");
+      transaction.getClientResponse().getHeaders().append("Location", "http://www.google.com");
       transaction.getClientResponse().setStatusCode(HTTP_STATUS_MOVED_TEMPORARILY);
       transaction.getClientResponse().setReasonPhrase("Come Back Later");
       // HTTP/1.1 302 Come Back Later
@@ -85,17 +87,20 @@ public:
   }
 
 private:
-  void printHeaders(const Headers &headers) {
-    for (Headers::const_iterator header_iter = headers.begin(), header_end = headers.end();
+  void printHeadersManual(Headers &headers) {
+
+    for (Headers::iterator header_iter = headers.begin(), header_end = headers.end();
          header_iter != header_end; ++header_iter) {
-      const string &name = header_iter->first;
-      const list<string> &value_list = header_iter->second;
-      cout << "Header. " << name <<  ": " << endl;
-      for (list<string>::const_iterator value_iter = value_list.begin(), value_end = value_list.end();
-           value_iter != value_end; ++value_iter) {
+
+      cout << "Header " << (*header_iter).name() <<  ": " << endl;
+
+      for (HeaderField::iterator value_iter = (*header_iter).begin(), values_end = (*header_iter).end();
+          value_iter != values_end; ++value_iter) {
         cout << "\t" << *value_iter << endl;
       }
+
     }
+
     cout << endl;
   }
 };

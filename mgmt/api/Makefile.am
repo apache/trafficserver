@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = remote include
+SUBDIRS = include
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -37,25 +37,54 @@ noinst_LIBRARIES = libmgmtapilocal.a
 libmgmtapilocal_a_SOURCES = \
   include/mgmtapi.h \
   CfgContextDefs.h \
+  CoreAPI.cc \
+  CoreAPI.h \
+  EventControlMain.cc \
+  EventControlMain.h \
+  NetworkUtilsDefs.h \
+  NetworkUtilsLocal.cc \
+  NetworkUtilsLocal.h \
+  TSControlMain.cc \
+  TSControlMain.h
+
+lib_LTLIBRARIES = libtsmgmtshare.la libtsmgmt.la
+libtsmgmtshare_la_SOURCES = \
   CfgContextImpl.cc \
   CfgContextImpl.h \
   CfgContextManager.cc \
   CfgContextManager.h \
   CfgContextUtils.cc \
   CfgContextUtils.h \
-  CoreAPI.cc \
-  CoreAPI.h \
   CoreAPIShared.cc \
   CoreAPIShared.h \
   EventCallback.cc \
   EventCallback.h \
-  EventControlMain.cc \
-  EventControlMain.h \
   GenericParser.cc \
   GenericParser.h \
-  INKMgmtAPI.cc \
-  NetworkUtilsDefs.h \
-  NetworkUtilsLocal.cc \
-  NetworkUtilsLocal.h \
-  TSControlMain.cc \
-  TSControlMain.h
+  INKMgmtAPI.cc
+
+if BUILD_TESTS
+  noinst_PROGRAMS = traffic_api_cli_remote
+endif
+
+
+libtsmgmt_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
+libtsmgmt_la_LIBADD = @LIBOBJS@ \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  libtsmgmtshare.la
+
+libtsmgmt_la_SOURCES = \
+  CoreAPIRemote.cc \
+  EventRegistration.cc \
+  EventRegistration.h \
+  NetworkUtilsRemote.cc \
+  NetworkUtilsRemote.h
+
+if BUILD_TESTS
+  traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
+endif
+
+traffic_api_cli_remote_LDADD = \
+  libtsmgmt.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBTCL@ @LIBSSL@

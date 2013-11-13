@@ -74,7 +74,7 @@ init_reverse_proxy()
 {
   ink_assert(rewrite_table == NULL);
   reconfig_mutex = new_ProxyMutex();
-  rewrite_table = NEW(new UrlRewrite("proxy.config.url_remap.filename"));
+  rewrite_table = NEW(new UrlRewrite());
 
   if (!rewrite_table->is_valid()) {
     Warning("Can not load the remap table, exiting out!");
@@ -178,7 +178,7 @@ reloadUrlRewrite()
   UrlRewrite *newTable;
 
   Debug("url_rewrite", "remap.config updated, reloading...");
-  newTable = new UrlRewrite("proxy.config.url_remap.filename");
+  newTable = NEW(new UrlRewrite());
   if (newTable->is_valid()) {
     eventProcessor.schedule_in(new UR_FreerContinuation(rewrite_table), URL_REWRITE_TIMEOUT, ET_TASK);
     Debug("url_rewrite", "remap.config done reloading!");

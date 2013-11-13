@@ -55,7 +55,7 @@ A variable marked as ``Reloadable`` can be updated via the command::
 ``INT`` type configurations are expressed as any normal integer,
 e.g. *32768*. They can also be expressed using more human readable values
 using standard prefixes, e.g. *32K*. The following prefixes are supported
-for all ``INT` type configurations
+for all ``INT`` type configurations
 
    - ``K`` Kilobytes (1024 bytes)
    - ``M`` Megabytes (1024^2 or 1,048,576 bytes)
@@ -180,8 +180,7 @@ otherwise, Traffic Server uses the Traffic Server user account name as the defau
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
-   The facility used to record system log files. Refer to
-   :ref:`Understanding Traffic Server Log Files <working-log-files.en.html#understanding-traffic-server-log-files>`_.
+   The facility used to record system log files. Refer to :ref:`understanding-traffic-server-log-files`.
 
 .. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
 
@@ -652,13 +651,32 @@ suffice. It is possible to do this crudely with this flag by
 enabling it and then use identity URL mappings to re-disable it for
 specific domains.
 
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_in  INT 0
+
+   Enables (``1``) or disables (``0``) incoming keep-alive connections.
+
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_out  INT 0
+
+   Enables (``1``) or disables (``0``) outgoing keep-alive connections.
+
+  .. note::
+        Enabling keep-alive does not automatically enable purging of keep-alive
+        requests when nearing the connection limit, that is controlled by
+        ```proxy.config.http.server_max_connections``.
+
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 0
+
+   Controls wether new POST requests re-use keep-alive sessions (``1``) or
+   create new connections per request (``0``).
+
+
 Parent Proxy Configuration
 ==========================
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`Hierarchical Caching <../hierachical-caching>`.
+   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`hierarchical-caching`.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
@@ -769,6 +787,11 @@ Origin Server Connect Attempts
 
    Limits the number of socket connections across all origin servers to the value specified. To disable, set to zero (``0``).
 
+   .. note::
+        This value is used in determining when and if to prune active origin sessions. Without this value set connections
+        to origins can consume all the way up to ``proxy.config.net.connections_throttle`` connections, which in turn can
+        starve incoming requests from available connections.
+
 .. ts:cv:: CONFIG proxy.config.http.origin_max_connections INT 0
    :reloadable:
 
@@ -817,7 +840,7 @@ Congestion Control
 
    Enables (``1``) or disables (``0``) the Congestion Control option, which configures Traffic Server to stop forwarding
    HTTP requests to origin servers when they become congested. Traffic Server sends the client a message to retry the
-   congested origin server later. Refer to :ref:`Using Congestion Control <http-proxy-caching#UsingCongestionControl>`_.
+   congested origin server later. Refer to :ref:`using-congestion-control`.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.enabled INT 0
 
@@ -843,13 +866,14 @@ Negative Response Caching
 
    When enabled (``1``), Traffic Server caches negative responses (such as ``404 Not Found``) when a requested page does
    not exist. The next time a client requests the same page, Traffic Server serves the negative response directly from
-   cache.
+   cache. When disabled (``0``) Traffic Server will only cache the response if the response has ``Cache-Control`` headers.
 
    .. note::
 
       ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
-      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable. The
-      following negative responses are cached by Traffic Server:::
+      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable.
+
+      The following negative responses are cached by Traffic Server:::
 
          204  No Content
          305  Use Proxy
@@ -947,7 +971,7 @@ Cache Control
    :reloadable:
 
    Enables (``1``) or disables (``0``) ability to a read cached object while the another connection is completing the write to cache for
-   the same object. Several other configuration values need to be set for this to become active. See :ref:`Reducing Origin Server Requests <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>` 
+   the same object. Several other configuration values need to be set for this to become active. See :ref:`reducing-origin-server-requests-avoiding-the-thundering-herd`
 
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 512
    :reloadable:
@@ -1052,54 +1076,79 @@ Cache Control
 
    When enabled (``1``), Traffic Server looks up range requests in the cache.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.enable_read_while_writer INT 0
-
-   Enables (``1``) or disables (``0``) the ability to read a cached object while another connection is completing a write to cache
-   for the same object.
-
-
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 0
    :reloadable:
 
-   When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Type:`` header that does not match the ``Accept:``
-   header of the request.
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Type:`` header even if it does not match the ``Accept:`` header of the
+   request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept`` or doesn't respond with ``406 (Not Acceptable)``,
+      you can also enable this configuration with a ``1``.
 
-      This option should only be enabled if you're having
-      problems with caching *and* one of the following is true:
-
-      -  Your origin server sets ``Vary: Accept`` when doing content negotiation with ``Accept`` *OR*
-      -  The server does not send a ``406 (Not Acceptable)`` response for types that it cannot serve.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 0
    :reloadable:
 
-   When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Language:`` header that does not match the
-   ``Accept-Language:`` header of the request.
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Language:`` header even if it does not match the ``Accept-Language:``
+   header of the request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
 
-      This option should only be enabled if you're having
-      problems with caching and your origin server is guaranteed to set
-      ``Vary: Accept-Language`` when doing content negotiation with
-      ``Accept-Language``.
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept-Language`` or doesn't respond with ``406 (Not Acceptable)``,
+      you can also enable this configuration with a ``1``.
+
+
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 0
+   :reloadable:
+
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Encoding:`` header even if it does not match the ``Accept-Encoding:``
+   header of the request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
+
+   .. note::
+
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept-Encoding`` or doesn't respond with ``406 (Not Acceptable)``
+      you can also enable this configuration with a ``1``.
+
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 0
    :reloadable:
 
-   When enabled (``1``), Traffic Server serves documents from cache with a ``Content-Type:`` header that does not match the
-   ``Accept-Charset:`` header of the request.
+   When enabled with a value of ``1``, Traffic Server serves documents from cache with a
+   ``Content-Type:`` header even if it does not match the ``Accept-Charset:`` header
+   of the request. If set to ``2``, this logic only happens in the absence of a
+   ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
 
-      This option should only be enabled if you're having problems with caching and your origin server is
-      guaranteed to set ``Vary: Accept-Charset`` when doing content negotiation with ``Accept-Charset``.
+      This option should only be enabled with ``1`` if you're having
+      problems with caching *and* you origin server doesn't set the ``Vary``
+      header. Alternatively, if the origin is incorrectly setting
+      ``Vary: Accept-Charset`` or doesn't respond with ``406 (Not Acceptable)``,
+      you can also enable this configuration with a ``1``.
+
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
    :reloadable:
 
-   When enabled (``1``), Traffic Server ignores any ``Cache-Control:  max-age`` headers from the client.
+   When enabled (``1``), Traffic Server ignores any ``Cache-Control:
+   max-age`` headers from the client. This technically violates the HTTP RFC,
+   but avoids a problem where a client can forcefully invalidate a cached object.
 
 .. ts:cv:: CONFIG proxy.config.cache.max_doc_size INT 0
 
@@ -1109,6 +1158,23 @@ Cache Control
    :reloadable:
 
    When enabled (``1``), Traffic Server will keep certain HTTP objects in the cache for a certain time as specified in cache.config.
+
+.. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_percent INT 10
+
+   The size of the region (as a percentage of the total content storage in a :term:`cache stripe`) in front of the
+   :term:`write cursor` that constitutes a recent access hit for evacutating the accessed object.
+
+   When an object is accessed it can be marked for evacuation, that is to be copied over the write cursor and
+   thereby preserved from being overwritten. This is done if it is no more than a specific number of bytes in front of
+   the write cursor. The number of bytes is a percentage of the total number of bytes of content storage in the cache
+   stripe where the object is stored and that percentage is set by this variable.
+
+.. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_size_limit INT 0
+   :metric: bytes
+
+   Limit the size of objects that are hit evacuated.
+
+   Objects larger than the limit are not hit evacuated. A value of 0 disables the limit.
 
 RAM Cache
 =========
@@ -1179,7 +1245,7 @@ Heuristic Expiration
    :reloadable:
 
    How often Traffic Server checks for an early refresh, during the period before the document stale time. The interval
-   specified must be in seconds. See :ref:`Fuzzy Revalidation <http-proxy-caching.en.html#fuzzy-revalidation>`
+   specified must be in seconds. See :ref:`fuzzy-revalidation`
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.00500
    :reloadable:
@@ -2078,5 +2144,3 @@ These are referenced but not documented. Please contribute a definition.
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
-
-

@@ -27,6 +27,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/http \
   -I$(top_srcdir)/proxy/http/remap \
   -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils
@@ -79,3 +80,7 @@ liblogcollation_a_SOURCES = \
   LogCollationClientSM.h \
   LogCollationHostSM.cc \
   LogCollationHostSM.h
+
+#test_UNUSED_SOURCES = \
+#  LogAccessTest.cc \
+#  LogAccessTest.h

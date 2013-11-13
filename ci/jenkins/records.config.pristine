@@ -1,0 +1,1 @@
+CONFIG proxy.config.url_remap.pristine_host_hdr INT 0

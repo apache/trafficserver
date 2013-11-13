@@ -52,7 +52,8 @@ Statement::get_resource_ids() const
 
 
 bool
-Statement::set_hook(TSHttpHookID hook) {
+Statement::set_hook(TSHttpHookID hook)
+{
   bool ret = std::find(_allowed_hooks.begin(), _allowed_hooks.end(), hook) != _allowed_hooks.end();
 
   if (ret)
@@ -64,7 +65,8 @@ Statement::set_hook(TSHttpHookID hook) {
 
 // This should be overridden for any Statement which only supports some hooks
 void
-Statement::initialize_hooks() {
+Statement::initialize_hooks()
+{
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK);
   add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
@@ -76,7 +78,8 @@ Statement::initialize_hooks() {
 
 // Parse URL qualifiers
 UrlQualifiers
-Statement::parse_url_qualifier(const std::string& q) {
+Statement::parse_url_qualifier(const std::string& q)
+{
   UrlQualifiers qual = URL_QUAL_NONE;
 
   if (q == "HOST")

@@ -45,7 +45,7 @@ public:
   void handleSendResponseHeaders(Transaction &transaction) {
     transaction.getClientResponse().setStatusCode(HTTP_STATUS_MOVED_TEMPORARILY);
     transaction.getClientResponse().setReasonPhrase("Moved Temporarily");
-    transaction.getClientResponse().getHeaders().set("Location", location_);
+    transaction.getClientResponse().getHeaders()["Location"] = location_;
     transaction.resume();
   }
 

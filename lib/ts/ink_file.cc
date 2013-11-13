@@ -23,6 +23,9 @@
 
 #include "libts.h"
 
+#if HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 
 int
 ink_fputln(FILE * stream, const char *s)
@@ -349,4 +352,16 @@ ink_file_fd_zerofill(int fd, off_t size)
   }
   return 0;
 #endif
+}
+
+bool
+ink_file_is_directory(const char * path)
+{
+  struct stat sbuf;
+
+  if (stat(path, &sbuf) == -1) {
+    return false;
+  }
+
+  return S_ISDIR(sbuf.st_mode);
 }

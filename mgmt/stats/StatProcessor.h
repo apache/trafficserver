@@ -46,15 +46,18 @@
 #define _FOOTER
 #include "DynamicStats.h"
 #include "StatType.h"
+
 #if HAVE_LIBEXPAT
 #include "expat.h"
 typedef XML_Char xmlchar;
 #elif HAVE_LIBXML2
 #include <libxml/parser.h>
+#include <libxml/SAX.h>
 typedef xmlChar xmlchar;
 #else
 # error "No XML parser - please configure expat or libxml2"
 #endif
+
 #include <string.h>
 #include <stdlib.h>
 

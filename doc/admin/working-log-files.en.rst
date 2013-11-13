@@ -31,6 +31,8 @@ This chapter discusses the following topics:
 
    working-log-files/log-formats.en
 
+.. _understanding-traffic-server-log-files:
+
 Understanding Traffic Server Log Files
 ======================================
 

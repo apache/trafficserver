@@ -38,18 +38,13 @@ Glossary
       Server receives a request, and ends when Traffic Server sends the response.
 
    cache volume
-      Persistent storage for the cache, defined and manipulable by the user.
-      Cache volumes are defined in :file:`volume.config`. A cache volume is
-      spread across :term:`cache span`\ s to increase performance through
-      parallel I/O. Storage units can be split across cache volumes. Each
-      such part of a storage unit in a cache volume is a :term:`cache stripe`.
+      A user defined unit of persistent storage for the cache. Cache volumes are defined in :file:`volume.config`. A
+      cache volume is by default spread across :term:`cache span`\ s to increase robustness. Each section of a cache
+      volume on a specific cache span is a :term:`cache stripe`.
 
    cache stripe
-      A homogenous persistent store for the cache. A volume always resides
-      entirely on a single physical device and is treated as an
-      undifferentiated span of bytes.
-
-      See also :term:`cache span`, :term:`cache volume`
+      A homogenous persistent store for the cache in a single :term:`cache span`. A stripe always resides
+      entirely on a single physical device and is treated as an undifferentiated span of bytes.
 
    cache span
       The physical storage described by a single line in :file:`storage.config`.
@@ -61,3 +56,6 @@ Glossary
       Verifying that a currently cached object is still valid. This is usually done using an `If-Modified-Since
       <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.25>`_ request which allows the origin server to
       validate the content without resending the content.
+
+   write cursor
+      The location in a :term:`cache stripe` where new data is written.

@@ -53,12 +53,12 @@ public:
   }
 
 private:
-  void checkForSpecialHeader(const Headers &headers) {
-    Headers::const_iterator iter = headers.find(SPECIAL_HEADER);
+  void checkForSpecialHeader(Headers &headers) {
+    Headers::iterator iter = headers.find(SPECIAL_HEADER);
     if (iter == headers.end()) {
       cout << "Special header is absent" << endl;
     } else {
-      cout << "Special header is present with value " << iter->second.front() << endl;
+      cout << "Special header is present with value " << (*iter).str() << endl;
     }
   }
 };

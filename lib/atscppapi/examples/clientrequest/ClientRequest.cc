@@ -79,7 +79,7 @@ public:
 
     Headers &client_request_headers = client_request.getHeaders();
 
-    Headers::const_iterator ii = client_request_headers.find("AccepT-EncodinG");
+    Headers::iterator ii = client_request_headers.find("AccepT-EncodinG");
     if(ii != client_request_headers.end()) {
       cout << "Deleting accept-encoding header" << endl;
       client_request_headers.erase("AccepT-EnCoDing"); // Case Insensitive
@@ -87,20 +87,15 @@ public:
 
     // These will be split back up into a list of three values automatically (see header output below).
     cout << "Adding back Accept-Encoding." << endl;
-    client_request_headers.set("accept-encoding", "gzip, identity, my_special_format");
+    client_request_headers["accept-encoding"] = "gzip, identity";
+    client_request_headers.append("accept-ENCODING", "my_special_format");
 
     cout << "Adding a new accept type accept header" << endl;
     client_request_headers.append("accept", "text/blah");
 
-    for (Headers::const_iterator header_iter = client_request_headers.begin(),
+    for (Headers::iterator header_iter = client_request_headers.begin(),
            header_end = client_request_headers.end(); header_iter != header_end; ++header_iter) {
-      const string &name = header_iter->first;
-      const list<string> &value_list = header_iter->second;
-      cout << "Header. " << name <<  ": " << endl;
-      for (list<string>::const_iterator value_iter = value_list.begin(), value_end = value_list.end();
-           value_iter != value_end; ++value_iter) {
-        cout << "\t" << *value_iter << endl;
-      }
+      cout << (*header_iter).str() << endl;
     }
 
     /*
@@ -109,9 +104,9 @@ public:
      * Joining the accept encoding header gives: gzip,identity,my_special_format
      * Joining the accept encoding header with space gives: gzip identity my_special_format
      */
-    cout << "Joining on a non-existant header gives: " << client_request_headers.getJoinedValues("i_dont_exist") << endl;
-    cout << "Joining the accept encoding header gives: " << client_request_headers.getJoinedValues("accept-encoding") << endl;
-    cout << "Joining the accept encoding header with space gives: " << client_request_headers.getJoinedValues("accept-encoding", ' ') << endl;
+    cout << "Joining on a non-existant header gives: " << client_request_headers.values("i_dont_exist") << endl;
+    cout << "Joining the accept encoding header gives: " << client_request_headers.values("accept-encoding") << endl;
+    cout << "Joining the accept encoding header with space gives: " << client_request_headers.values("accept-encoding", ' ') << endl;
 
     transaction.resume();
   }

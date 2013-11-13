@@ -1223,11 +1223,13 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
     if (!fragment) {
       ink_assert(key == earliest_key);
       earliest_dir = dir;
+#ifdef HTTP_CACHE
     } else {
       // Store the offset only if there is a table.
       // Currently there is no alt (and thence no table) for non-HTTP.
       if (alternate.valid())
         alternate.push_frag_offset(write_pos);
+#endif
     }
     fragment++;
     write_pos += write_len;
@@ -1318,11 +1320,13 @@ CacheVC::openWriteWriteDone(int event, Event *e)
     if (!fragment) {
       ink_assert(key == earliest_key);
       earliest_dir = dir;
+#ifdef HTTP_CACHE
     } else {
       // Store the offset only if there is a table.
       // Currently there is no alt (and thence no table) for non-HTTP.
       if (alternate.valid())
         alternate.push_frag_offset(write_pos);
+#endif
     }
     ++fragment;
     write_pos += write_len;

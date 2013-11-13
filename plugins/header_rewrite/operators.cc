@@ -27,7 +27,8 @@
 
 // OperatorConfig
 void
-OperatorSetConfig::initialize(Parser& p) {
+OperatorSetConfig::initialize(Parser& p)
+{
   Operator::initialize(p);
   _config = p.get_arg();
 
@@ -121,13 +122,15 @@ OperatorSetStatusReason::initialize(Parser& p)
 
 
 void
-OperatorSetStatusReason::initialize_hooks() {
+OperatorSetStatusReason::initialize_hooks()
+{
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
 void
-OperatorSetStatusReason::exec(const Resources& res) const {
+OperatorSetStatusReason::exec(const Resources& res) const
+{
   if (res.bufp && res.hdr_loc) {
     std::string reason;
 
@@ -255,10 +258,10 @@ OperatorSetRedirect::exec(const Resources& res) const
       std::string value;
 
       _location.append_value(value, res);
-         
+
       // Replace %{PATH} to original path
       size_t pos_path = 0;
-      
+
       if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
           value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
           int path_len = 0;
@@ -268,7 +271,7 @@ OperatorSetRedirect::exec(const Resources& res) const
             value.insert(pos_path, path, path_len);
           }
       }
-       
+
       // Append the original query string
       int query_len = 0;
       const char *query = TSUrlHttpQueryGet(res._rri->requestBufp, res._rri->requestUrl, &query_len);
@@ -284,10 +287,10 @@ OperatorSetRedirect::exec(const Resources& res) const
       const char *start = value.c_str();
       const char *end = value.size() + start;
       TSUrlParse(res._rri->requestBufp, res._rri->requestUrl, &start, end);
-      TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", 
+      TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d",
               value.c_str(), _status.get_int_value());
     }
-    
+
   } else {
     // TODO: Handle the non-remap case here (InkAPI hooks)
   }
@@ -381,6 +384,9 @@ OperatorAddHeader::exec(const Resources& res) const
 {
   std::string value;
 
+  VariableExpander ve(value);
+  value = ve.expand(res);
+
   _value.append_value(value, res);
 
   // Never set an empty header (I don't think that ever makes sense?)
@@ -459,4 +465,41 @@ OperatorSetHeader::exec(const Resources& res) const
       }
     }
   }
+}
+
+// OperatorCounter
+void
+OperatorCounter::initialize(Parser& p) {
+  Operator::initialize(p);
+
+  _counter_name = p.get_arg();
+
+  // Sanity
+  if (_counter_name.length() == 0) {
+    TSError("%s: counter name is empty", PLUGIN_NAME);
+    return;
+  }
+
+  // Check if counter already created by another rule
+  if (TSStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
+    _counter = TSStatCreate(_counter_name.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+    if (_counter == TS_ERROR) {
+      TSError("%s: TSStatCreate() failed. Can't create counter: %s", PLUGIN_NAME, _counter_name.c_str());
+      return;
+    }
+    TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) created counter with id: %d", _counter_name.c_str(), _counter);
+  } else {
+    TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) reusing id: %d", _counter_name.c_str(), _counter);
+  }
+}
+
+void
+OperatorCounter::exec(const Resources& res) const
+{
+  // Sanity
+  if (_counter == TS_ERROR)
+    return;
+
+  TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on counter %s", _counter_name.c_str());
+  TSStatIntIncrement(_counter, 1);
 }

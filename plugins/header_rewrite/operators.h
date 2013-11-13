@@ -16,7 +16,7 @@
   limitations under the License.
 */
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Implement the classes for the various types of hash keys we support.
 //
 #ifndef __OPERATORS_H__
@@ -240,5 +240,24 @@ private:
   Value _value;
 };
 
+class OperatorCounter : public Operator
+{
+public:
+  OperatorCounter()
+    : _counter_name(""), _counter(TS_ERROR)
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCounter");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorCounter);
+
+  std::string _counter_name;
+  int _counter;
+};
 
 #endif // __OPERATORS_H

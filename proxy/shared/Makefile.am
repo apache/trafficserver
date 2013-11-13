@@ -1,3 +1,5 @@
+# proxy Makefile.am
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,46 +16,37 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Note that hdrs is targeted from ../Makefile.am
+noinst_LIBRARIES = liberror.a libdiagsconfig.a libUglyLogStubs.a
+bin_PROGRAMS =
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/utils \
+  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/mgmt/api \
-  -I$(top_srcdir)/mgmt/api/include
+  -I$(top_srcdir)/mgmt/api/include \
+  -I$(top_srcdir)/mgmt/cluster \
+  -I$(top_srcdir)/mgmt/preparse \
+  -I$(top_srcdir)/mgmt/utils \
+  -I$(top_srcdir)/. \
+  -I$(top_builddir)/proxy \
+  -I$(top_builddir)/proxy/api/ts \
+  -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/proxy/http \
+  -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/api/ts \
+  -I$(top_srcdir)/proxy/logging \
+  -I$(top_srcdir)/lib
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS  += $(MGMT_DEFS)
+liberror_a_SOURCES = \
+  Error.cc
 
-if BUILD_TESTS
-  noinst_PROGRAMS = traffic_api_cli_remote
-endif
+libdiagsconfig_a_SOURCES = \
+  DiagsConfig.cc
 
-lib_LTLIBRARIES = libtsmgmt.la
+libUglyLogStubs_a_SOURCES = \
+  UglyLogStubs.cc
 
-libtsmgmt_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
-libtsmgmt_la_LIBADD = @LIBOBJS@ $(top_builddir)/lib/ts/libtsutil.la
-
-libtsmgmt_la_SOURCES = \
-  ../CfgContextImpl.cc \
-  ../CfgContextManager.cc \
-  ../CfgContextUtils.cc \
-  ../CoreAPIShared.cc \
-  ../EventCallback.cc \
-  ../GenericParser.cc \
-  ../INKMgmtAPI.cc \
-  CoreAPIRemote.cc \
-  EventRegistration.cc \
-  EventRegistration.h \
-  NetworkUtilsRemote.cc \
-  NetworkUtilsRemote.h
-
-if BUILD_TESTS
-  traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
-endif
-
-traffic_api_cli_remote_LDADD = \
-  libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @LIBSSL@

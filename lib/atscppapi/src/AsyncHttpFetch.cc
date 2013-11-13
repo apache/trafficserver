@@ -130,13 +130,14 @@ void AsyncHttpFetch::run(shared_ptr<AsyncDispatchControllerBase> sender) {
   request_str += HTTP_VERSION_STRINGS[state_->request_.getVersion()];
   request_str += "\r\n";
 
-  for (Headers::const_iterator iter = state_->request_.getHeaders().begin(),
+ /* for (Headers::const_iterator iter = state_->request_.getHeaders().begin(),
          end = state_->request_.getHeaders().end(); iter != end; ++iter) {
     request_str += iter->first;
     request_str += ": ";
     request_str += Headers::getJoinedValues(iter->second);
     request_str += "\r\n";
   }
+*/
   request_str += "\r\n";
 
   LOG_DEBUG("Issing TSFetchUrl with request\n[%s]", request_str.c_str());

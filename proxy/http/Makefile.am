@@ -30,6 +30,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/proxy/http/remap \
   -I$(top_srcdir)/proxy/logging
 
@@ -54,16 +55,17 @@ libhttp_a_SOURCES = \
   HttpPages.cc \
   HttpPages.h \
   HttpProxyServerMain.cc \
+  HttpProxyServerMain.h \
+  HttpSM.cc \
+  HttpSM.h \
   HttpServerSession.cc \
   HttpServerSession.h \
   HttpSessionManager.cc \
   HttpSessionManager.h \
-  HttpSM.cc \
-  HttpSM.h \
-  HttpTransactCache.cc \
-  HttpTransactCache.h \
   HttpTransact.cc \
   HttpTransact.h \
+  HttpTransactCache.cc \
+  HttpTransactCache.h \
   HttpTransactHeaders.cc \
   HttpTransactHeaders.h \
   HttpTunnel.cc \
@@ -74,3 +76,9 @@ libhttp_a_SOURCES = \
 if BUILD_TESTS
   libhttp_a_SOURCES += HttpUpdateTester.cc
 endif
+
+#test_UNUSED_SOURCES = \
+#  TestHttpTransact.cc \
+#  TestUrl.cc \
+#  test_socket_close.cc \
+#  testheaders.cc

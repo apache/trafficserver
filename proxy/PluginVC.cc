@@ -168,6 +168,15 @@ PluginVC::main_handler(int event, void *data)
 
   if (closed) {
     process_close();
+
+    if (read_mutex_held) {
+      Mutex_unlock(read_side_mutex, my_ethread);
+    }
+
+    if (write_mutex_held) {
+      Mutex_unlock(write_side_mutex, my_ethread);
+    }
+
     return 0;
   }
   // We can get closed while we're calling back the

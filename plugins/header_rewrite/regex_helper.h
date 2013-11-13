@@ -25,15 +25,16 @@
 
 const int OVECCOUNT = 30; // We support $1 - $9 only, and this needs to be 3x that
 
-class regexHelper{
+class regexHelper
+{
 public:
     regexHelper():
         regex(NULL),regexExtra(NULL),regexCcount(0)
     {
-    
+
     }
 
-  ~regexHelper() 
+  ~regexHelper()
   {
       if (regex)
           pcre_free(regex);

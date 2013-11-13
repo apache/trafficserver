@@ -1192,7 +1192,7 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
-    size_t buffers_preproced;
+    size_t buffers_preproced = 0;
     LogConfig * current = (LogConfig *)configProcessor.get(log_configid);
 
     if (current) {

@@ -18,7 +18,7 @@
 #include "regex_helper.h"
 
 bool
-regexHelper::setRegexMatch(const std::string& s) 
+regexHelper::setRegexMatch(const std::string& s)
 {
 
     const char* errorComp = NULL;
@@ -28,12 +28,12 @@ regexHelper::setRegexMatch(const std::string& s)
     regexString = s;
     regex = pcre_compile(regexString.c_str(), 0, &errorComp, &erroffset, NULL);
 
-    if (regex == NULL) 
+    if (regex == NULL)
     {
         return false;
     }
     regexExtra = pcre_study(regex, 0, &errorStudy);
-    if ((regexExtra == NULL) && (errorStudy != 0)) 
+    if ((regexExtra == NULL) && (errorStudy != 0))
     {
         return false;
     }
@@ -43,13 +43,13 @@ regexHelper::setRegexMatch(const std::string& s)
   }
 
 const std::string&
-regexHelper::getRegexString() const 
+regexHelper::getRegexString() const
 {
     return regexString;
 }
 
 int
-regexHelper::getRegexCcount() const 
+regexHelper::getRegexCcount() const
 {
     return regexCcount;
 }

@@ -290,14 +290,11 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector, HTTP
 
 */
 float
-HttpTransactCache::calculate_quality_of_match(HttpConfigParams * http_config_param, HTTPHdr * client_request,
-                                              HTTPHdr * obj_client_request, HTTPHdr * obj_origin_server_response)
+HttpTransactCache::calculate_quality_of_match(HttpConfigParams * http_config_param,
+                                              HTTPHdr * client_request,
+                                              HTTPHdr * obj_client_request,
+                                              HTTPHdr * obj_origin_server_response)
 {
-  float q[4], Q;
-  MIMEField *accept_field;
-  MIMEField *cached_accept_field;
-  MIMEField *content_field;
-
   // For PURGE requests, any alternate is good really.
   if (client_request->method_get_wksidx() == HTTP_WKSIDX_PURGE)
     return (float)1.0;
@@ -307,37 +304,67 @@ HttpTransactCache::calculate_quality_of_match(HttpConfigParams * http_config_par
   if (obj_origin_server_response->status_get() != HTTP_STATUS_OK)
     return (float)1.0;
 
-  q[1] = (q[2] = (q[3] = -2.0));        /* just to make debug output happy :) */
+  // Now calculate a quality based on all sorts of logic
+  float q[4], Q;
+  MIMEField *accept_field;
+  MIMEField *cached_accept_field;
+  MIMEField *content_field;
 
-  // Accept //
-  // A NULL Accept or a NULL Content-Type field are perfect matches.
+  // vary_skip_mask is used as a bitmask, 0b01 or 0b11 depending on the presence of Vary.
+  // This allows us to AND each of the four configs against it; Table:
+  //
+  //   Conf   Mask          Conf   Mask         Conf   Mask
+  //   ----   ----          ----   ----         ----   ----
+  //    00  &  01 == false   01  &  01 == true   10  &  01 == false
+  //    00  &  11 == false   01  &  11 == true   10  &  11 == true
+  //
+  // A true value means the check for that config can be skipped. Note: from a users
+  // perspective, the configs are simply 0, 1 or 2.
+  unsigned int vary_skip_mask = obj_origin_server_response->presence(MIME_PRESENCE_VARY) ? 1 : 3;
+
+  // Make debug output happy
+  q[1] = (q[2] = (q[3] = -2.0));
+
+  // This content_field is used for a couple of headers, so get it first
   content_field = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
-  accept_field = client_request->field_find(MIME_FIELD_ACCEPT, MIME_LEN_ACCEPT);
-  q[0] = (content_field != 0 && accept_field != 0 && !http_config_param->ignore_accept_mismatch) ?
-    calculate_quality_of_accept_match(accept_field, content_field) : 1.0;
+
+  // Accept: header
+  if (http_config_param->ignore_accept_mismatch & vary_skip_mask) {
+    // Ignore it
+    q[0] = 1.0;
+  } else {
+    accept_field = client_request->field_find(MIME_FIELD_ACCEPT, MIME_LEN_ACCEPT);
+
+    // A NULL Accept or a NULL Content-Type field are perfect matches.
+    if (content_field == NULL || accept_field == NULL) {
+      q[0] = 1.0; // TODO: Why should this not be 1.001 ?? // leif
+    } else {
+      q[0] = calculate_quality_of_accept_match(accept_field, content_field);
+    }
+  }
 
   if (q[0] >= 0.0) {
-    // Accept-Charset
-    if (http_config_param->ignore_accept_charset_mismatch) {    //Bug 2393700 /ebalsa
+    // Accept-Charset: header
+    if (http_config_param->ignore_accept_charset_mismatch & vary_skip_mask) {
+      // Ignore it
       q[1] = 1.0;
     } else {
       accept_field = client_request->field_find(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET);
       cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET);
-      // content_field lookup is same as above
-      // content_field = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
       // absence in both requests counts as exact match
       if (accept_field == NULL && cached_accept_field == NULL) {
-        Debug("http_alternate", "Exact match for ACCEPT CHARSET");
-        q[1] = 1.001;           //slightly higher weight to this guy
+        Debug("http_alternate", "Exact match for ACCEPT CHARSET (not in request nor cache)");
+        q[1] = 1.001; //slightly higher weight to this guy
       } else {
         q[1] = calculate_quality_of_accept_charset_match(accept_field, content_field, cached_accept_field);
       }
     }
 
     if (q[1] >= 0.0) {
-      // Accept-Encoding //
-      if (http_config_param->ignore_accept_encoding_mismatch) { //Bug 2393700 /ebalsa
+      // Accept-Encoding: header
+      if (http_config_param->ignore_accept_encoding_mismatch & vary_skip_mask) {
+        // Ignore it
         q[2] = 1.0;
       } else {
         accept_field = client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
@@ -346,27 +373,27 @@ HttpTransactCache::calculate_quality_of_match(HttpConfigParams * http_config_par
 
         // absence in both requests counts as exact match
         if (accept_field == NULL && cached_accept_field == NULL) {
-          Debug("http_alternate", "Exact match for ACCEPT ENCODING");
-          q[2] = 1.001;         //slightly higher weight to this guy
+          Debug("http_alternate", "Exact match for ACCEPT ENCODING (not in request nor cache)");
+          q[2] = 1.001; //slightly higher weight to this guy
         } else {
           q[2] = calculate_quality_of_accept_encoding_match(accept_field, content_field, cached_accept_field);
         }
       }
 
       if (q[2] >= 0.0) {
-        // Accept-Language //
-        if (http_config_param->ignore_accept_language_mismatch) {       //Bug 2393700 /ebalsa
+        // Accept-Language: header
+        if (http_config_param->ignore_accept_language_mismatch & vary_skip_mask) {
+          // Ignore it
           q[3] = 1.0;
         } else {
           accept_field = client_request->field_find(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE);
-          content_field =
-            obj_origin_server_response->field_find(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE);
+          content_field = obj_origin_server_response->field_find(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE);
           cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE);
 
           // absence in both requests counts as exact match
           if (accept_field == NULL && cached_accept_field == NULL) {
-            Debug("http_alternate", "Exact match for ACCEPT LANGUAGE");
-            q[3] = 1.001;       //slightly higher weight to this guy
+            Debug("http_alternate", "Exact match for ACCEPT LANGUAGE (not in request nor cache)");
+            q[3] = 1.001; //slightly higher weight to this guy
           } else {
             q[3] = calculate_quality_of_accept_language_match(accept_field, content_field, cached_accept_field);
           }
@@ -444,14 +471,14 @@ HttpTransactCache::calculate_quality_of_match(HttpConfigParams * http_config_par
     }
 
     Debug("http_match", "    CalcQualityOfMatch: CalcVariability says variability = %d",
-            (variability != VARIABILITY_NONE));
+          (variability != VARIABILITY_NONE));
     Debug("http_seq", "    CalcQualityOfMatch: CalcVariability says variability = %d",
-            (variability != VARIABILITY_NONE));
-
+          (variability != VARIABILITY_NONE));
     Debug("http_match", "    CalcQualityOfMatch: Returning final Q = %g", Q);
     Debug("http_seq", "    CalcQualityOfMatch: Returning final Q = %g", Q);
   }
-  return (Q);
+
+  return Q;
 }
 
 /**
@@ -1105,7 +1132,6 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField * accept
                                       &wildcard_present, &wildcard_q, &q, &a_range_length)) {
       min_q = (min_q < q ? min_q : q);
       match_found = true;
-//          goto language_wildcard;
     }
   }
   if (match_found) {
@@ -1141,33 +1167,29 @@ HttpTransactCache::CalcVariability(HttpConfigParams * http_config_params, HTTPHd
   ink_assert(obj_origin_server_response != NULL);
 
   Variability_t variability = VARIABILITY_NONE;
-
-  if (http_config_params->cache_enable_default_vary_headers || obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
-
-    StrList vary_list;
-
+  if (http_config_params->cache_enable_default_vary_headers ||
+      obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
     ///////////////////////////////////////////////////////////////////////
     // If the origin server sent a Vary header in the response, use that //
     // Vary, otherwise use the default. Ivry adds: However if the origin //
     // server was a non-compliant 1.1 and did not send a Vary header,    //
     // treat as 1.0 with no Vary header.                                 //
     ///////////////////////////////////////////////////////////////////////
-
+    StrList vary_list;
     int num_vary_values = obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list);
 
-    if (num_vary_values <= 0)   // no vary hdr, so use defaults if enabled
-    {
+    if (num_vary_values <= 0) {   // no vary hdr, so use defaults if enabled
       const char *vary_values = NULL;
       const char *content_type;
       int content_type_len;
       char type[32], subtype[32];
 
-      content_type =
-        obj_origin_server_response->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &content_type_len);
+      content_type = obj_origin_server_response->value_get(MIME_FIELD_CONTENT_TYPE,
+                                                           MIME_LEN_CONTENT_TYPE, &content_type_len);
 
       if (content_type) {
-        HttpCompat::parse_mime_type_with_len(content_type, content_type_len,
-                                             type, subtype, sizeof(type), sizeof(subtype));
+        HttpCompat::parse_mime_type_with_len(content_type, content_type_len, type, subtype, sizeof(type),
+                                             sizeof(subtype));
       } else {
         type[0] = '\0';
         subtype[0] = '\0';
@@ -1197,8 +1219,7 @@ HttpTransactCache::CalcVariability(HttpConfigParams * http_config_params, HTTPHd
     }
 
     // for each field that varies, see if current & original hdrs match //
-    Str *field;
-    for (field = vary_list.head; field != NULL; field = field->next) {
+    for (Str *field = vary_list.head; field != NULL; field = field->next) {
       if (field->len == 0)
         continue;
 
@@ -1228,8 +1249,6 @@ HttpTransactCache::CalcVariability(HttpConfigParams * http_config_params, HTTPHd
       if (http_config_params->ignore_accept_encoding_mismatch && 
           !strcasecmp((char *) field->str, "Accept-Encoding"))
         continue;
-
-
 
       ///////////////////////////////////////////////////////////////////
       // Take the current vary field and look up the headers in        //
@@ -1263,7 +1282,7 @@ HttpTransactCache::CalcVariability(HttpConfigParams * http_config_params, HTTPHd
     }
   }
 
-  return (variability);
+  return variability;
 }
 
 /**

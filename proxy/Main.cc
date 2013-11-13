@@ -86,7 +86,6 @@ extern "C" int plock(int);
 #include "Update.h"
 #include "congest/Congestion.h"
 #include "RemapProcessor.h"
-#include "XmlUtils.h"
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 
@@ -1291,6 +1290,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
 #if defined(DEBUG) && defined(HAVE_MCHECK_PEDANTIC)
   mcheck_pedantic(NULL);
 #endif
+
+  pcre_malloc = ats_malloc;
+  pcre_free = ats_free;
 
   // Verify system dependent 'constants'
   check_system_constants();

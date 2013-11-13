@@ -26,5 +26,4 @@ noinst_LIBRARIES = libpreparse.a
 
 libpreparse_a_SOURCES = \
   RemapReadConfig.cc \
-  SocksParser.cc \
   StoreReadConfig.cc

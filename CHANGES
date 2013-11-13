@@ -5,8 +5,64 @@ Changes with Apache Traffic Server 5.0.0
    compatibility, so all cluster nodes should be upgraded simultaneously.
 
 
+Changes with Apache Traffic Server 4.2.0
+
+  *) [TS-2340] Fix TextLogObject log rolling.
+   Author: bettydramit <b13621367396@gmail.com>
+
+  *) [TS-2343] Remove the --schema option from Traffic Manager, and the code
+   around it.
+
+  *) [TS-2316] header_rewrite: numerous improvements: cookie based conditions,
+   rule counters, improved documentation.
+   Author: Alexey Ivanov <aivanov@linkedin.com>
+
+  *) [TS-2338] Remove IPRange.cc and .h, and SocksParser.cc.
+
+  *) [TS-2333] Change the SAX callbacks to not clash with libxml2, which broke
+   synthetic metric completely.
+
+  *) [TS-2339] Cleanup Makefile.am, fixing missing / wrong _SOURCES entries.
+
+  *) [TS-2341] Cast TSHttpStatus to int to suppress compiler warning in clang
+
+  *) [TS-2303] Incorrect docs for negative_caching_enabled.
+    Author: Thomas Jackson <jacksontj.89@gmail.com>
+
+  *) [TS-2082] fix build with --enable-standalone-iocore.
+
+  *) [TS-2712] Explicitly use subdir-objects in automake init.
+
+  *) [TS-2309] Allow mod_generator plugin for lighttpd to accept "SI" postfixes.
+
+
 Changes with Apache Traffic Server 4.1.0
 
+  *) [TS-2252] Fix bison version check on Ubuntu.
+
+  *) [TS-2108] Fix TSConfig to build with bison 3.0
+
+  *) [TS-2311] ESI: Support responses that are of other text content type as well as non-200 status response.
+   Author: Kit Chan
+
+  *) [TS-2321] C++ API: Clean up header code to not use STL containers and use structures directly
+
+  *) [TS-2323] Implement a .include directive for remap.config.
+
+  *) [TS-2322] Set PCRE malloc hooks globally.
+
+  *) [TS-1955] Range: requests during read-while-writer gets the wrong
+  Content-Length.
+
+  *) [TS-2245] This adds a '2' config state to the ignore mismatch configs.
+
+  *) [TS-2178] Force keep alive off if re-using client 4-tuple and server is
+  not keep alive.
+
+  *) [TS-2264] Fixed problem with EADDR_NOTAVAIL handling.
+
+  *) [TS-2317] Read/write mutex of PluginVC may be held without release.
+   Author: portl4t.cn@gmail.com
 
   *) [TS-2315] ESI Plugin: fetcher does not handle error gracefully.
    Author: Kit Chan.

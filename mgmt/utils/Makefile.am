@@ -42,17 +42,11 @@ libutils_lm_a_CPPFLAGS = $(ink_with_modules_local) $(AM_CPPFLAGS)
 libutils_lm_a_SOURCES = \
   ExpandingArray.cc \
   ExpandingArray.h \
-  MgmtSchema.cc \
-  MgmtSchema.h \
   MgmtUtils.cc \
   MgmtUtils.h \
   WebMgmtUtils.cc \
-  WebMgmtUtils.h \
-  XmlUtils.cc \
-  XmlUtils.h
+  WebMgmtUtils.h
 
 libutils_p_a_SOURCES = \
   MgmtUtils.cc \
-  MgmtUtils.h \
-  XmlUtils.cc \
-  XmlUtils.h
+  MgmtUtils.h

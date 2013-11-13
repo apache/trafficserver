@@ -258,9 +258,9 @@ public:
   inkcoreapi TextLogObject(const char *name, const char *log_dir,
                            bool timestamps, const char *header,
                            int rolling_enabled, int flush_threads,
-                           int rolling_interval_sec = 0,
-                           int rolling_offset_hr = 0,
-                           int rolling_size_mb = 0);
+                           int rolling_interval_sec,
+                           int rolling_offset_hr,
+                           int rolling_size_mb);
 
   inkcoreapi int write(const char *format, ...) TS_PRINTFLIKE(2, 3);
   inkcoreapi int va_write(const char *format, va_list ap);

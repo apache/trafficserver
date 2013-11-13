@@ -632,6 +632,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       vio.ndone = doc_len;
       return calluser(VC_EVENT_EOS);
     }
+#ifdef HTTP_CACHE
     HTTPInfo::FragOffset* frags = alternate.get_frag_table();
     if (is_debug_tag_set("cache_seek")) {
       char b[33], c[33];
@@ -699,6 +700,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       key.toHexStr(target_key_str);
       Debug("cache_seek", "Read # %d @ %" PRId64"/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
     }
+#endif
   }
   if (ntodo <= 0)
     return EVENT_CONT;
@@ -1123,7 +1125,13 @@ CacheVC::openReadStartHead(int event, Event * e)
       Debug("cache_read", "CacheReadStartHead - read %s target %s - %s %d of %" PRId64" bytes, %d fragments",
             doc->key.toHexStr(xt), key.toHexStr(yt),
             f.single_fragment ? "single" : "multi",
-            doc->len, doc->total_len, alternate.get_frag_offset_count());
+            doc->len, doc->total_len,
+#ifdef HTTP_CACHE
+            alternate.get_frag_offset_count()
+#else
+            0
+#endif
+            );
     }
     // the first fragment might have been gc'ed. Make sure the first
     // fragment is there before returning CACHE_EVENT_OPEN_READ

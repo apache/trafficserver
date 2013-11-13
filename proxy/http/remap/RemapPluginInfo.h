@@ -27,17 +27,6 @@
 #include "api/ts/ts.h"
 #include "api/ts/remap.h"
 
-// Remap inline options
-#define REMAP_OPTFLG_MAP_WITH_REFERER 0x01      /* "map_with_referer" option */
-#define REMAP_OPTFLG_PLUGIN           0x02      /* "plugin=" option (per remap plugin) */
-#define REMAP_OPTFLG_PPARAM           0x04      /* "pparam=" option (per remap plugin option) */
-#define REMAP_OPTFLG_METHOD           0x08      /* "method=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_SRC_IP           0x10      /* "src_ip=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_ACTION           0x20      /* "action=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_MAP_ID          0x800      /* associate a map ID with this rule */
-#define REMAP_OPTFLG_INVERT           0x80000000        /* "invert" the rule (for src_ip at least) */
-#define REMAP_OPTFLG_ALL_FILTERS (REMAP_OPTFLG_METHOD|REMAP_OPTFLG_SRC_IP|REMAP_OPTFLG_ACTION)
-
 #define TSREMAP_FUNCNAME_INIT "TSRemapInit"
 #define TSREMAP_FUNCNAME_DONE "TSRemapDone"
 #define TSREMAP_FUNCNAME_NEW_INSTANCE "TSRemapNewInstance"

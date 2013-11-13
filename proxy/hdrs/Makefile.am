@@ -27,15 +27,15 @@ EXTRA_PROGRAMS = load_http_hdr
 
 # Http library source files.
 libhdrs_a_SOURCES = \
-  HdrHeap.cc \
-  HdrHeap.h \
-  HdrToken.cc \
-  HdrToken.h \
-  HdrTSOnly.cc \
-  HdrUtils.cc \
-  HdrUtils.h \
   HTTP.cc \
   HTTP.h \
+  HdrHeap.cc \
+  HdrHeap.h \
+  HdrTSOnly.cc \
+  HdrToken.cc \
+  HdrToken.h \
+  HdrUtils.cc \
+  HdrUtils.h \
   HttpCompat.cc \
   HttpCompat.h \
   MIME.cc \
@@ -44,17 +44,22 @@ libhdrs_a_SOURCES = \
   URL.h
 
 if BUILD_TESTS
-  libhdrs_a_SOURCES += HdrTest.cc \
+  libhdrs_a_SOURCES += \
+    HdrTest.cc \
     HdrTest.h
 endif
 
 load_http_hdr_SOURCES = \
-  HdrHeap.h \
   HTTP.h \
-  load_http_hdr.cc \
-  MIME.h
+  HdrHeap.h \
+  MIME.h \
+  load_http_hdr.cc
 
 load_http_hdr_LDADD = -L. -lhdrs \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTCL@
 load_http_hdr_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
+#test_UNUSED_SOURCES = \
+#  test_header.cc \
+#  test_urlhash.cc
