@@ -6758,6 +6758,7 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
                                               (bool) mode & TS_LOG_MODE_ADD_TIMESTAMP,
                                               NULL,
                                               Log::config->rolling_enabled,
+                                              Log::config->collation_preproc_threads,
                                               Log::config->rolling_interval_sec,
                                               Log::config->rolling_offset_hr,
                                               Log::config->rolling_size_mb));
