@@ -214,7 +214,7 @@
     installbuilddir: ${datadir}/build
     includedir:    ${prefix}/include+
     localstatedir: /var+
-    runtimedir:    /var/run+
+    runtimedir:    /run+
     logdir:        /var/log+
     cachedir:      /var/cache+
 </Layout>
