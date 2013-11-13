@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
+
+  *) [TS-2343] Remove the --schema option from Traffic Manager, and the code
+   around it.
+
   *) [TS-2316] header_rewrite: numerous improvements: cookie based conditions,
    rule counters, improved documentation.
    Author: Alexey Ivanov <aivanov@linkedin.com>
