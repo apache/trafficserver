@@ -40,6 +40,9 @@ DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUI
 
 EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README-EC2 REVIEWERS
 
+# Default value when creating release candidates
+RC = 0
+
 # igalic can't remember if this is make check or make test and neither should you.
 test: check
 
@@ -54,7 +57,7 @@ doxygen:
 
 asf-distdir:
 	@$(am__remove_distdir)
-	test -d .git && git clone . $(distdir) || svn export . $(distdir)
+	test -d .git && git clone . $(distdir)
 	cd $(distdir) && autoreconf -i
 	rm -rf -- $(distdir)/autom4te.cache $(distdir)/.git $(distdir)/.gitignore $(distdir)/ci
 
@@ -66,6 +69,13 @@ asf-dist-sign: asf-dist
 	md5sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
 	sha1sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha1
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
+
+release: asf-dist-sign
+	git tag -fs -m "Release $(VERSION)" $(VERSION)
+
+rel-candidate:
+	$(MAKE) asf-dist-sign VERSION=$(VERSION)-rc$(RC)
+	git tag -fs -m "Release Candidate $(VERSION)-rc$(RC)" $(VERSION)-rc$(RC)
 
 examples: all
 	@cd example && $(MAKE) $(AM_MAKEFLAGS)
@@ -88,6 +98,8 @@ help:
 	echo 'examples         make examples' && \
 	echo 'asf-dist         recreate source package' && \
 	echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
+	echo 'release          recreate a signed release source package and a signed git tag' && \
+	echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag' && \
 	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
 	echo 'rat              produce a RAT licence compliance report of the source' && \
 	echo 'doxygen          generate doxygen docs in doc/html dir' && \
