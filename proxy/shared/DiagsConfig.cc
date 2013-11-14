@@ -26,11 +26,11 @@
 #include "DiagsConfig.h"
 #ifdef LOCAL_MANAGER
 
-#include "../mgmt/Main.h"
+#include "mgmt/Main.h"
 #define DIAGS_LOG_FILE "manager.log"
 
 #else
-#include "Main.h"
+#include "proxy/Main.h"
 #include "ProxyConfig.h"
 #define DIAGS_LOG_FILE "diags.log"
 

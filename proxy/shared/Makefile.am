@@ -17,8 +17,12 @@
 #  limitations under the License.
 
 # Note that hdrs is targeted from ../Makefile.am
-noinst_LIBRARIES = liberror.a libdiagsconfig.a libUglyLogStubs.a
-bin_PROGRAMS =
+noinst_LIBRARIES = \
+  liberror.a \
+  libdiagsconfig.a \
+  libUglyLogStubs.a \
+  libsignals.a \
+  libxml.a
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -31,7 +35,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/. \
+  -I$(top_srcdir) \
   -I$(top_builddir)/proxy \
   -I$(top_builddir)/proxy/api/ts \
   -I$(top_srcdir)/proxy \
@@ -50,3 +54,10 @@ libdiagsconfig_a_SOURCES = \
 libUglyLogStubs_a_SOURCES = \
   UglyLogStubs.cc
 
+libxml_a_SOURCES = \
+  InkXml.cc \
+  InkXml.h
+
+libsignals_a_SOURCES = \
+  signals.cc \
+  signals.h
