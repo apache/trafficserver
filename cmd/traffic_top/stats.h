@@ -54,11 +54,33 @@ namespace constant {
   const char end[] = "\",\n";
 };
 
+
 //----------------------------------------------------------------------------
 class Stats {
 public:
-  Stats(const string &host) {
-    _host = host;
+  Stats(const string &url): _url(url) {
+
+    if (url != "") {
+      if (_url.substr(0, 4) != "http") {
+        // looks like it is a host using it the old way
+        _url = "http://" + _url + "/_stats";
+      }
+
+      // set the host
+      int start = _url.find(":");
+      int end = _url.find("/", start + 3);
+      _host = _url.substr(start + 3, end - start - 3);
+      end = _host.find(":");
+      if (end != string::npos) {
+        _host = _host.substr(0, end);
+      }
+    } else {
+      char hostname[25];
+      hostname[sizeof(hostname) - 1] = '\0';
+      gethostname(hostname, sizeof(hostname) - 1);
+      _host = hostname;
+    }
+
     _stats = NULL;
     _old_stats = NULL;
     _absolute = false;
@@ -130,18 +152,51 @@ public:
     lookup_table.insert(make_pair("get", LookupItem("GET", "proxy.process.http.get_requests", 5)));
     lookup_table.insert(make_pair("head", LookupItem("HEAD", "proxy.process.http.head_requests", 5)));
     lookup_table.insert(make_pair("post", LookupItem("POST", "proxy.process.http.post_requests", 5)));
-    lookup_table.insert(make_pair("2xx", LookupItem("2xx", "proxy.process.http.2xx_responses", 5)));
-    lookup_table.insert(make_pair("3xx", LookupItem("3xx", "proxy.process.http.3xx_responses", 5)));
-    lookup_table.insert(make_pair("4xx", LookupItem("4xx", "proxy.process.http.4xx_responses", 5)));
-    lookup_table.insert(make_pair("5xx", LookupItem("5xx", "proxy.process.http.5xx_responses", 5)));
 
+    lookup_table.insert(make_pair("100", LookupItem("100", "proxy.process.http.100_responses", 5)));
+    lookup_table.insert(make_pair("101", LookupItem("101", "proxy.process.http.101_responses", 5)));
+    lookup_table.insert(make_pair("1xx", LookupItem("1xx", "proxy.process.http.1xx_responses", 5)));
     lookup_table.insert(make_pair("200", LookupItem("200", "proxy.process.http.200_responses", 5)));
+    lookup_table.insert(make_pair("201", LookupItem("201", "proxy.process.http.201_responses", 5)));
+    lookup_table.insert(make_pair("202", LookupItem("202", "proxy.process.http.202_responses", 5)));
+    lookup_table.insert(make_pair("203", LookupItem("203", "proxy.process.http.203_responses", 5)));
+    lookup_table.insert(make_pair("204", LookupItem("204", "proxy.process.http.204_responses", 5)));
+    lookup_table.insert(make_pair("205", LookupItem("205", "proxy.process.http.205_responses", 5)));
     lookup_table.insert(make_pair("206", LookupItem("206", "proxy.process.http.206_responses", 5)));
+    lookup_table.insert(make_pair("2xx", LookupItem("2xx", "proxy.process.http.2xx_responses", 5)));
+    lookup_table.insert(make_pair("300", LookupItem("300", "proxy.process.http.300_responses", 5)));
     lookup_table.insert(make_pair("301", LookupItem("301", "proxy.process.http.301_responses", 5)));
     lookup_table.insert(make_pair("302", LookupItem("302", "proxy.process.http.302_responses", 5)));
+    lookup_table.insert(make_pair("303", LookupItem("303", "proxy.process.http.303_responses", 5)));
     lookup_table.insert(make_pair("304", LookupItem("304", "proxy.process.http.304_responses", 5)));
+    lookup_table.insert(make_pair("305", LookupItem("305", "proxy.process.http.305_responses", 5)));
+    lookup_table.insert(make_pair("307", LookupItem("307", "proxy.process.http.307_responses", 5)));
+    lookup_table.insert(make_pair("3xx", LookupItem("3xx", "proxy.process.http.3xx_responses", 5)));
+    lookup_table.insert(make_pair("400", LookupItem("400", "proxy.process.http.400_responses", 5)));
+    lookup_table.insert(make_pair("401", LookupItem("401", "proxy.process.http.401_responses", 5)));
+    lookup_table.insert(make_pair("402", LookupItem("402", "proxy.process.http.402_responses", 5)));
+    lookup_table.insert(make_pair("403", LookupItem("403", "proxy.process.http.403_responses", 5)));
     lookup_table.insert(make_pair("404", LookupItem("404", "proxy.process.http.404_responses", 5)));
+    lookup_table.insert(make_pair("405", LookupItem("405", "proxy.process.http.405_responses", 5)));
+    lookup_table.insert(make_pair("406", LookupItem("406", "proxy.process.http.406_responses", 5)));
+    lookup_table.insert(make_pair("407", LookupItem("407", "proxy.process.http.407_responses", 5)));
+    lookup_table.insert(make_pair("408", LookupItem("408", "proxy.process.http.408_responses", 5)));
+    lookup_table.insert(make_pair("409", LookupItem("409", "proxy.process.http.409_responses", 5)));
+    lookup_table.insert(make_pair("410", LookupItem("410", "proxy.process.http.410_responses", 5)));
+    lookup_table.insert(make_pair("411", LookupItem("411", "proxy.process.http.411_responses", 5)));
+    lookup_table.insert(make_pair("412", LookupItem("412", "proxy.process.http.412_responses", 5)));
+    lookup_table.insert(make_pair("413", LookupItem("413", "proxy.process.http.413_responses", 5)));
+    lookup_table.insert(make_pair("414", LookupItem("414", "proxy.process.http.414_responses", 5)));
+    lookup_table.insert(make_pair("415", LookupItem("415", "proxy.process.http.415_responses", 5)));
+    lookup_table.insert(make_pair("416", LookupItem("416", "proxy.process.http.416_responses", 5)));
+    lookup_table.insert(make_pair("4xx", LookupItem("4xx", "proxy.process.http.4xx_responses", 5)));
+    lookup_table.insert(make_pair("500", LookupItem("500", "proxy.process.http.500_responses", 5)));
+    lookup_table.insert(make_pair("501", LookupItem("501", "proxy.process.http.501_responses", 5)));
     lookup_table.insert(make_pair("502", LookupItem("502", "proxy.process.http.502_responses", 5)));
+    lookup_table.insert(make_pair("503", LookupItem("503", "proxy.process.http.503_responses", 5)));
+    lookup_table.insert(make_pair("504", LookupItem("504", "proxy.process.http.504_responses", 5)));
+    lookup_table.insert(make_pair("505", LookupItem("505", "proxy.process.http.505_responses", 5)));
+    lookup_table.insert(make_pair("5xx", LookupItem("5xx", "proxy.process.http.5xx_responses", 5)));
 
     lookup_table.insert(make_pair("s_100", LookupItem("100 B", "proxy.process.http.response_document_size_100", 5)));
     lookup_table.insert(make_pair("s_1k", LookupItem("1 KB", "proxy.process.http.response_document_size_1K", 5)));
@@ -169,7 +224,7 @@ public:
 
   void getStats() {
 
-    if (_host == "") {
+    if (_url == "") {
       int64_t value = 0;
       if (_old_stats != NULL) {
         delete _old_stats;
@@ -187,7 +242,7 @@ public:
 
         if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
           if (strcmp(item.pretty, "Version") == 0) {
-            // special case for Version informaion
+            // special case for Version information
             TSString strValue = NULL;
             assert(TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY);
             string key = item.name;
@@ -211,8 +266,7 @@ public:
 
       curl = curl_easy_init();
       if (curl) {
-        string url = "http://" + _host + "/_stats";
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, _url.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
         curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
 
@@ -238,6 +292,9 @@ public:
           _old_time = _now;
           _now = now;
           _time_diff = _now - _old_time;
+        } else {
+          fprintf(stderr, "Can't fetch url %s", _url.c_str());
+          abort();
         }
 
         /* always cleanup */ 
@@ -248,7 +305,9 @@ public:
 
   int64_t getValue(const string &key, const map<string, string> *stats) const {
     map<string, string>::const_iterator stats_it = stats->find(key);
-    assert(stats_it != stats->end());
+    printf("trying to find %s\n", key.c_str());
+    if (stats_it == stats->end())
+      return 0;
     int64_t value = atoll(stats_it->second.c_str());
     return value;
   }
@@ -266,8 +325,10 @@ public:
     const LookupItem &item = lookup_it->second;
     
     map<string, string>::const_iterator stats_it = _stats->find(item.name);
-    assert(stats_it != _stats->end());
-    value = stats_it->second.c_str();
+    if (stats_it == _stats->end())
+      value = "";
+    else
+      value = stats_it->second.c_str();
   }
 
   void getStat(const string &key, double &value, string &prettyName, int &type, int overrideType = 0) {
@@ -371,6 +432,8 @@ public:
     }
   }
 
+  const string& getHost() const { return _host; }
+
   ~Stats() {
     if (_stats != NULL) {
       delete _stats;
@@ -384,6 +447,7 @@ private:
   map<string, string> *_stats;
   map<string, string> *_old_stats;
   map<string, LookupItem> lookup_table;
+  string _url;
   string _host;
   double _old_time;
   double _now;

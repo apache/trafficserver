@@ -143,8 +143,69 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, void * /* stream */)
 }
 
 //----------------------------------------------------------------------------
-static void help(const string &host, const string &version) {
+static void response_code_page(Stats &stats) {
+  attron(COLOR_PAIR(colorPair::border));
+  attron(A_BOLD);
+  mvprintw(0, 0, "                              RESPONSE CODES                                   ");
+  attroff(COLOR_PAIR(colorPair::border));
+  attroff(A_BOLD);
 
+  list<string> response1;
+  response1.push_back("100");
+  response1.push_back("101");
+  response1.push_back("1xx");
+  response1.push_back("200");
+  response1.push_back("201");
+  response1.push_back("202");
+  response1.push_back("203");
+  response1.push_back("204");
+  response1.push_back("205");
+  response1.push_back("206");
+  response1.push_back("2xx");
+  response1.push_back("300");
+  response1.push_back("301");
+  response1.push_back("302");
+  response1.push_back("303");
+  response1.push_back("304");
+  response1.push_back("305");
+  response1.push_back("307");
+  response1.push_back("3xx");
+  makeTable(0, 1, response1, stats);
+
+  list<string> response2;
+  response2.push_back("400");
+  response2.push_back("401");
+  response2.push_back("402");
+  response2.push_back("403");
+  response2.push_back("404");
+  response2.push_back("405");
+  response2.push_back("406");
+  response2.push_back("407");
+  response2.push_back("408");
+  response2.push_back("409");
+  response2.push_back("410");
+  response2.push_back("411");
+  response2.push_back("412");
+  response2.push_back("413");
+  response2.push_back("414");
+  response2.push_back("415");
+  response2.push_back("416");
+  response2.push_back("4xx");
+  makeTable(21, 1, response2, stats);
+
+  list<string> response3;
+  response3.push_back("500");
+  response3.push_back("501");
+  response3.push_back("502");
+  response3.push_back("503");
+  response3.push_back("504");
+  response3.push_back("505");
+  response3.push_back("5xx");
+  makeTable(42, 1, response3, stats);
+}
+
+//----------------------------------------------------------------------------
+static void help(const string &host, const string &version) {
   timeout(1000);
 
   while(1) {
@@ -184,8 +245,121 @@ static void help(const string &host, const string &version) {
 
 static void usage()
 {
-  fprintf(stderr, "Usage: traffic_top [-s seconds] hostname|hostname:port\n");
+  fprintf(stderr, "Usage: traffic_top [-s seconds] [URL|hostname|hostname:port]\n");
   exit(1);
+}
+
+//----------------------------------------------------------------------------
+void main_stats_page(Stats &stats)
+{
+  attron(COLOR_PAIR(colorPair::border));
+  attron(A_BOLD);
+  mvprintw(0, 0, "         CACHE INFORMATION             ");
+  mvprintw(0, 40, "       CLIENT REQUEST & RESPONSE        ");
+  mvprintw(16, 0, "             CLIENT                    ");
+  mvprintw(16, 40, "           ORIGIN SERVER                ");
+
+  for (int i = 0; i <= 22; ++i) {
+    mvprintw(i, 39, " ");
+  }
+  attroff(COLOR_PAIR(colorPair::border));
+  attroff(A_BOLD);
+
+  list<string> cache1;
+  cache1.push_back("disk_used");
+  cache1.push_back("disk_total");
+  cache1.push_back("ram_used");
+  cache1.push_back("ram_total");
+  cache1.push_back("lookups");
+  cache1.push_back("cache_writes");
+  cache1.push_back("cache_updates");
+  cache1.push_back("cache_deletes");
+  cache1.push_back("read_active");
+  cache1.push_back("write_active");
+  cache1.push_back("update_active");
+  cache1.push_back("entries");
+  cache1.push_back("avg_size");
+  cache1.push_back("dns_lookups");
+  cache1.push_back("dns_hits");
+  makeTable(0, 1, cache1, stats);
+
+  list<string> cache2;
+  cache2.push_back("ram_ratio");
+  cache2.push_back("fresh");
+  cache2.push_back("reval");
+  cache2.push_back("cold");
+  cache2.push_back("changed");
+  cache2.push_back("not");
+  cache2.push_back("no");
+  cache2.push_back("fresh_time");
+  cache2.push_back("reval_time");
+  cache2.push_back("cold_time");
+  cache2.push_back("changed_time");
+  cache2.push_back("not_time");
+  cache2.push_back("no_time");
+  cache2.push_back("dns_ratio");
+  cache2.push_back("dns_time");
+  makeTable(21, 1, cache2, stats);
+
+  list<string> response1;
+  response1.push_back("get");
+  response1.push_back("head");
+  response1.push_back("post");
+  response1.push_back("2xx");
+  response1.push_back("3xx");
+  response1.push_back("4xx");
+  response1.push_back("5xx");
+  response1.push_back("conn_fail");
+  response1.push_back("other_err");
+  response1.push_back("abort");
+  makeTable(41, 1, response1, stats);
+
+  list<string> response2;
+  response2.push_back("200");
+  response2.push_back("206");
+  response2.push_back("301");
+  response2.push_back("302");
+  response2.push_back("304");
+  response2.push_back("404");
+  response2.push_back("502");
+  response2.push_back("s_100");
+  response2.push_back("s_1k");
+  response2.push_back("s_3k");
+  response2.push_back("s_5k");
+  response2.push_back("s_10k");
+  response2.push_back("s_1m");
+  response2.push_back("s_>1m");
+  makeTable(62, 1, response2, stats);
+
+  list<string> client1;
+  client1.push_back("client_req");
+  client1.push_back("client_req_conn");
+  client1.push_back("client_conn");
+  client1.push_back("client_curr_conn");
+  client1.push_back("client_actv_conn");
+  makeTable(0, 17, client1, stats);
+
+  list<string> client2;
+  client2.push_back("client_head");
+  client2.push_back("client_body");
+  client2.push_back("client_avg_size");
+  client2.push_back("client_net");
+  client2.push_back("client_req_time");
+  makeTable(21, 17, client2, stats);
+
+  list<string> server1;
+  server1.push_back("server_req");
+  server1.push_back("server_req_conn");
+  server1.push_back("server_conn");
+  server1.push_back("server_curr_conn");
+  makeTable(41, 17, server1, stats);
+
+  list<string> server2;
+  server2.push_back("server_head");
+  server2.push_back("server_body");
+  server2.push_back("server_avg_size");
+  server2.push_back("server_net");
+  makeTable(62, 17, server2, stats);
 }
 
 //----------------------------------------------------------------------------
@@ -204,23 +378,18 @@ int main(int argc, char **argv)
     }
   }
 
-  string host = "";
+  string url = "";
   if (optind >= argc) {
     if (TS_ERR_OKAY != TSInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
-      fprintf(stderr, "Error: missing hostname on command line or error connecting to the local manager\n");
+      fprintf(stderr, "Error: missing URL on command line or error connecting to the local manager\n");
       usage();
     }
   } else {
-    host = argv[optind];
+    url = argv[optind];
   }
-  Stats stats(host);
-
-  if (host == "") {
-    char hostname[25];
-    hostname[sizeof(hostname) - 1] = '\0';
-    gethostname(hostname, sizeof(hostname) - 1);
-    host = hostname;
-  }
+  Stats stats(url);
+  stats.getStats();
+  const string &host = stats.getHost();
 
   initscr();
   curs_set(0);
@@ -236,140 +405,60 @@ int main(int argc, char **argv)
   init_pair(colorPair::border, COLOR_WHITE, COLOR_BLUE);
   //  mvchgat(0, 0, -1, A_BLINK, 1, NULL);
 
-  stats.getStats();
+
+  enum Page {MAIN_PAGE, RESPONSE_PAGE};
+  Page page = MAIN_PAGE;
+  string page_alt = "(r)esponse";
+
   while(1) {
     attron(COLOR_PAIR(colorPair::border));
     attron(A_BOLD);
-    for (int i = 0; i <= 22; ++i) {
-      mvprintw(i, 39, " ");
-    }
+
     string version;
     time_t now = time(NULL);
     struct tm *nowtm = localtime(&now);
     char timeBuf[32];
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
     stats.getStat("version", version);
-    mvprintw(0, 0, "         CACHE INFORMATION             ");
-    mvprintw(0, 40, "       CLIENT REQUEST & RESPONSE        ");
-    mvprintw(16, 0, "             CLIENT                    ");
-    mvprintw(16, 40, "           ORIGIN SERVER                ");
-    mvprintw(23, 0, "%8.8s - %-10.10s - %-24.24s      (q)uit (h)elp (%c)bsolute  ", timeBuf, version.c_str(), host.c_str(), absolute ? 'A' : 'a');
+
+    mvprintw(23, 0, "%-20.20s   %30s (q)uit (h)elp (%c)bsolute  ", host.c_str(), page_alt.c_str(), absolute ? 'A' : 'a');
     attroff(COLOR_PAIR(colorPair::border));
     attroff(A_BOLD);
 
-    list<string> cache1;
-    cache1.push_back("disk_used");
-    cache1.push_back("disk_total");
-    cache1.push_back("ram_used");
-    cache1.push_back("ram_total");
-    cache1.push_back("lookups");
-    cache1.push_back("cache_writes");
-    cache1.push_back("cache_updates");
-    cache1.push_back("cache_deletes");
-    cache1.push_back("read_active");
-    cache1.push_back("write_active");
-    cache1.push_back("update_active");
-    cache1.push_back("entries");
-    cache1.push_back("avg_size");
-    cache1.push_back("dns_lookups");
-    cache1.push_back("dns_hits");
-    makeTable(0, 1, cache1, stats);
 
-    list<string> cache2;
-    cache2.push_back("ram_ratio");
-    cache2.push_back("fresh");
-    cache2.push_back("reval");
-    cache2.push_back("cold");
-    cache2.push_back("changed");
-    cache2.push_back("not");
-    cache2.push_back("no");
-    cache2.push_back("fresh_time");
-    cache2.push_back("reval_time");
-    cache2.push_back("cold_time");
-    cache2.push_back("changed_time");
-    cache2.push_back("not_time");
-    cache2.push_back("no_time");
-    cache2.push_back("dns_ratio");
-    cache2.push_back("dns_time");
-    makeTable(21, 1, cache2, stats);
-
-    list<string> response1;
-    response1.push_back("get");
-    response1.push_back("head");
-    response1.push_back("post");
-    response1.push_back("2xx");
-    response1.push_back("3xx");
-    response1.push_back("4xx");
-    response1.push_back("5xx");
-    response1.push_back("conn_fail");
-    response1.push_back("other_err");
-    response1.push_back("abort");
-    makeTable(41, 1, response1, stats);
-
-    list<string> response2;
-    response2.push_back("200");
-    response2.push_back("206");
-    response2.push_back("301");
-    response2.push_back("302");
-    response2.push_back("304");
-    response2.push_back("404");
-    response2.push_back("502");
-    response2.push_back("s_100");
-    response2.push_back("s_1k");
-    response2.push_back("s_3k");
-    response2.push_back("s_5k");
-    response2.push_back("s_10k");
-    response2.push_back("s_1m");
-    response2.push_back("s_>1m");
-    makeTable(62, 1, response2, stats);
-
-    list<string> client1;
-    client1.push_back("client_req");
-    client1.push_back("client_req_conn");
-    client1.push_back("client_conn");
-    client1.push_back("client_curr_conn");
-    client1.push_back("client_actv_conn");
-    makeTable(0, 17, client1, stats);
-
-    list<string> client2;
-    client2.push_back("client_head");
-    client2.push_back("client_body");
-    client2.push_back("client_avg_size");
-    client2.push_back("client_net");
-    client2.push_back("client_req_time");
-    makeTable(21, 17, client2, stats);
-
-    list<string> server1;
-    server1.push_back("server_req");
-    server1.push_back("server_req_conn");
-    server1.push_back("server_conn");
-    server1.push_back("server_curr_conn");
-    makeTable(41, 17, server1, stats);
-
-    list<string> server2;
-    server2.push_back("server_head");
-    server2.push_back("server_body");
-    server2.push_back("server_avg_size");
-    server2.push_back("server_net");
-    makeTable(62, 17, server2, stats);
+    if (page == MAIN_PAGE) {
+      main_stats_page(stats);
+    } else if (page == RESPONSE_PAGE) {
+      response_code_page(stats);
+    }
 
     curs_set(0);
     refresh();
     timeout(sleep_time);
 
     int x = getch();
-    if (x == 'q')
-      break;
-    if (x == 'h') {
+    switch (x) {
+    case 'h':
       help(host, version);
-    }
-    if (x == 'a') {
+      break;
+    case 'q':
+      goto quit;
+    case 'm':
+      page = MAIN_PAGE;
+      page_alt = "(r)esponse";
+      break;
+    case 'r':
+      page = RESPONSE_PAGE;
+      page_alt = "(m)ain";
+      break;
+    case 'a':
       absolute = stats.toggleAbsolute();
     }
-    if (x == -1)
-      stats.getStats();
+    stats.getStats();
     clear();
   }
+
+quit:
   endwin();
 
   return 0;
