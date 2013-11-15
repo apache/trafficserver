@@ -181,7 +181,7 @@ HdrHeap::destroy()
     m_ronly_heap[i].m_ref_count_ptr = NULL;
 
   if (m_size == HDR_HEAP_DEFAULT_SIZE) {
-    THREAD_FREE(this, hdrHeapAllocator, this_ethread());
+    THREAD_FREE(this, hdrHeapAllocator, this_thread());
   } else {
     ats_free(this);
   }
@@ -1105,7 +1105,7 @@ void
 HdrStrHeap::free()
 {
   if (m_heap_size == HDR_STR_HEAP_DEFAULT_SIZE) {
-    THREAD_FREE(this, strHeapAllocator, this_ethread());
+    THREAD_FREE(this, strHeapAllocator, this_thread());
   } else {
     ats_free(this);
   }

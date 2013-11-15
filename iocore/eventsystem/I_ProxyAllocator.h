@@ -47,6 +47,7 @@ struct ProxyAllocator
 
 template<class C> inline C * thread_alloc(ClassAllocator<C> &a, ProxyAllocator & l)
 {
+#if TS_USE_FREELIST && !TS_USE_RECLAIMABLE_FREELIST
   if (l.freelist) {
     C *v = (C *) l.freelist;
     l.freelist = *(C **) l.freelist;
@@ -54,11 +55,15 @@ template<class C> inline C * thread_alloc(ClassAllocator<C> &a, ProxyAllocator &
     *(void **) v = *(void **) &a.proto.typeObject;
     return v;
   }
+#else
+  (void)l;
+#endif
   return a.alloc();
 }
 
 template<class C> inline C * thread_alloc_init(ClassAllocator<C> &a, ProxyAllocator & l)
 {
+#if TS_USE_FREELIST && !TS_USE_RECLAIMABLE_FREELIST
   if (l.freelist) {
     C *v = (C *) l.freelist;
     l.freelist = *(C **) l.freelist;
@@ -66,7 +71,22 @@ template<class C> inline C * thread_alloc_init(ClassAllocator<C> &a, ProxyAlloca
     memcpy((void *) v, (void *) &a.proto.typeObject, sizeof(C));
     return v;
   }
+#else
+  (void)l;
+#endif
   return a.alloc();
+}
+
+template<class C> inline void
+thread_free(ClassAllocator<C> &a, C *p)
+{
+  a.free(p);
+}
+
+static inline void
+thread_free(Allocator &a, void *p)
+{
+  a.free_void(p);
 }
 
 template<class C> inline void
@@ -84,26 +104,21 @@ thread_freeup(ClassAllocator<C> &a, ProxyAllocator & l)
 void* thread_alloc(Allocator &a, ProxyAllocator &l);
 void thread_freeup(Allocator &a, ProxyAllocator &l);
 
-#if defined(TS_USE_FREELIST)
-
 #define THREAD_ALLOC(_a, _t) thread_alloc(::_a, _t->_a)
 #define THREAD_ALLOC_INIT(_a, _t) thread_alloc_init(::_a, _t->_a)
-#define THREAD_FREE_TO(_p, _a, _t, _m) do { \
-  *(char **)_p = (char*)_t->_a.freelist;    \
-  _t->_a.freelist = _p;                     \
-  _t->_a.allocated++;                       \
-  if (_t->_a.allocated > _m)                \
-    thread_freeup(::_a, _t->_a);            \
+#if TS_USE_FREELIST && !TS_USE_RECLAIMABLE_FREELIST
+#define THREAD_FREE(_p, _a, _t) do {            \
+  *(char **)_p = (char*)_t->_a.freelist;        \
+  _t->_a.freelist = _p;                         \
+  _t->_a.allocated++;                           \
+  if (_t->_a.allocated > thread_freelist_size)  \
+    thread_freeup(::_a, _t->_a);                \
 } while (0)
-
-#else /* !defined(TS_USE_FREELIST) */
-
-#define THREAD_ALLOC(_a, _t) ::_a.alloc()
-#define THREAD_ALLOC_INIT(_a, _t) ::_a.alloc()
-#define THREAD_FREE_TO(_p, _a, _t, _m) ::_a.free(_p)
-
-#endif /* defined(TS_USE_FREELIST */
-
-#define THREAD_FREE(_p, _a, _t) THREAD_FREE_TO(_p, _a, _t, thread_freelist_size)
+#else /* !TS_USE_FREELIST || TS_USE_RECLAIMABLE_FREELIST */
+#define THREAD_FREE(_p, _a, _t) do {  \
+  (void)_t;                           \
+  thread_free(::_a, _p);              \
+} while (0)
+#endif
 
 #endif /* _ProxyAllocator_h_ */

@@ -27,12 +27,16 @@ int thread_freelist_size = 512;
 void*
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {
+#if TS_USE_FREELIST && !TS_USE_RECLAIMABLE_FREELIST
   if (l.freelist) {
     void *v = (void *) l.freelist;
     l.freelist = *(void **) l.freelist;
     l.allocated--;
     return v;
   }
+#else
+  (void)l;
+#endif
   return a.alloc_void();
 }
 
@@ -46,4 +50,4 @@ thread_freeup(Allocator &a, ProxyAllocator &l)
     a.free_void(v);                  // we could use a bulk free here
   }
   ink_assert(!l.allocated);
- }
+}

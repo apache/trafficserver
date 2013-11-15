@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2352] refine THREAD_ALLOC feature.
+
   *) [TS-2364] Introduce slice notation to field syntax in log format.
 
   *) [TS-2360] Fix usage of TSMimeHdrFieldValueStringGet() IDX in some plugins.

@@ -131,7 +131,7 @@ RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -e->data->block_size());
   DDebug("ram_cache", "put %X %d %d FREED", e->key.word(3), e->auxkey1, e->auxkey2);
   e->data = NULL;
-  THREAD_FREE(e, ramCacheLRUEntryAllocator, this_ethread());
+  THREAD_FREE(e, ramCacheLRUEntryAllocator, this_thread());
   objects--;
   return ret;
 }

@@ -305,7 +305,7 @@ Lfree:
   uint32_t b = e->key.word(3) % nbuckets;
   bucket[b].remove(e);
   DDebug("ram_cache", "put %X %d %d size %d FREED", e->key.word(3), e->auxkey1, e->auxkey2, e->size);
-  THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_ethread());
+  THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
 }
 
 void
@@ -348,7 +348,7 @@ RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e)
   uint32_t b = e->key.word(3) % nbuckets;
   bucket[b].remove(e);
   DDebug("ram_cache", "put %X %d %d DESTROYED", e->key.word(3), e->auxkey1, e->auxkey2);
-  THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_ethread());
+  THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
   return ret;
 }
 
