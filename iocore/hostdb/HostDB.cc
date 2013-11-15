@@ -2460,7 +2460,7 @@ run_HostDBTest()
   if (is_action_tag_set("hostdb_test_rr"))
     eventProcessor.schedule_every(new HostDBTestRR, HRTIME_SECONDS(1), ET_NET);
   if (is_action_tag_set("hostdb_test_reverse")) {
-    eventProcessor.schedule_imm(new HostDBTestReverse, ET_CALL);
+    eventProcessor.schedule_imm(new HostDBTestReverse, ET_CACHE);
   }
 }
 #endif

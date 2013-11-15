@@ -19,9 +19,6 @@
 if STANDALONE_IOCORE
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts
 else

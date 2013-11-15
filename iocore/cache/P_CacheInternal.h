@@ -357,17 +357,18 @@ struct CacheVC: public CacheVConnection
 #ifdef HTTP_CACHE
   virtual void set_http_info(CacheHTTPInfo *info);
   virtual void get_http_info(CacheHTTPInfo ** info);
-  /** Get the fragment table.
-      @return The address of the start of the fragment table,
-      or @c NULL if there is no fragment table.
-  */
-  virtual HTTPInfo::FragOffset* get_frag_table();
 #endif
   virtual bool is_pread_capable();
   virtual bool set_pin_in_cache(time_t time_pin);
   virtual time_t get_pin_in_cache();
   virtual bool set_disk_io_priority(int priority);
   virtual int get_disk_io_priority();
+
+  /** Get the fragment table.
+      @return The address of the start of the fragment table,
+      or @c NULL if there is no fragment table.
+  */
+  virtual HTTPInfo::FragOffset* get_frag_table();
 
   // offsets from the base stat
 #define CACHE_STAT_ACTIVE  0
