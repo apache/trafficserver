@@ -54,9 +54,6 @@ static const char* PLUGIN_NAME = "regex_remap";
 static const int OVECCOUNT = 30; // We support $0 - $9 x2 ints, and this needs to be 1.5x that
 static const int MAX_SUBS = 32;   // No more than 32 substitution variables in the subst string
 
-// TODO: This should be "autoconf'ed" or something ...
-#define DEFAULT_PATH "/usr/local/etc/regex_remap/"
-
 // Substitutions other than regex matches
 enum ExtraSubstitutions {
   SUB_HOST = 11,
@@ -600,8 +597,13 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     return TS_ERROR;
   }
 
+  if (argc < 3) {
+    TSError("%s missing configuration file", PLUGIN_NAME);
+    return TS_ERROR;
+  }
+
   // Really simple (e.g. basic) config parser
-  for (int i=2; i < argc; ++i) {
+  for (int i = 3; i < argc; ++i) {
     if (strncmp(argv[i], "profile", 7) == 0) {
       ri->profile = true;
     } else if (strncmp(argv[i], "no-profile", 10) == 0) {
@@ -619,92 +621,104 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     } else if (strncmp(argv[i], "no-matrix-parameters", 18) == 0) {
       ri->matrix_params = false;
     } else {
-      if (0 != access(argv[2], R_OK)) {
-        ri->filename = DEFAULT_PATH;
-        ri->filename += argv[2];
-      } else {
-        ri->filename = argv[2];
-      }
+      TSError("%s: invalid option '%s'", PLUGIN_NAME, argv[i]);
+    }
+  }
 
-      f.open((ri->filename).c_str(), std::ios::in);
-      if (!f.is_open()) { // Try with the default path instead
-        TSError("unable to open %s", (ri->filename).c_str());
-        return TS_ERROR;
-      }
-      TSDebug(PLUGIN_NAME, "loading regular expression maps from %s", (ri->filename).c_str());
+  if (*argv[2] == '/') {
+    // Absolute path, just use it.
+    ri->filename = argv[2];
+  } else {
+    // Relative path. Make it relative to the configuration directory.
+    ri->filename = TSConfigDirGet();
+    ri->filename += "/";
+    ri->filename += argv[2];
+  }
 
-      while (!f.eof()) {
-        std::string line, regex, subst, options;
-        std::string::size_type pos1, pos2;
+  if (0 != access(ri->filename.c_str(), R_OK)) {
+    TSError("%s: failed to access %s: %s", PLUGIN_NAME, ri->filename.c_str(), strerror(errno));
+    return TS_ERROR;
+  }
 
-        getline(f, line);
-        ++lineno;
-        if (line.empty())
-          continue;
-        pos1 = line.find_first_not_of(" \t\n");
-        if (line[pos1] == '#')
-          continue;  // Skip comment lines
+  f.open((ri->filename).c_str(), std::ios::in);
+  if (!f.is_open()) {
+    TSError("%s: unable to open %s", PLUGIN_NAME, (ri->filename).c_str());
+    return TS_ERROR;
+  }
+  TSDebug(PLUGIN_NAME, "loading regular expression maps from %s", (ri->filename).c_str());
 
+  while (!f.eof()) {
+    std::string line, regex, subst, options;
+    std::string::size_type pos1, pos2;
+
+    getline(f, line);
+    ++lineno;
+    if (line.empty())
+      continue;
+    pos1 = line.find_first_not_of(" \t\n");
+    if (line[pos1] == '#')
+      continue;  // Skip comment lines
+
+    if (pos1 != std::string::npos) {
+      pos2 = line.find_first_of(" \t\n", pos1);
+      if (pos2 != std::string::npos) {
+        regex = line.substr(pos1, pos2-pos1);
+        pos1 = line.find_first_not_of(" \t\n#", pos2);
         if (pos1 != std::string::npos) {
           pos2 = line.find_first_of(" \t\n", pos1);
-          if (pos2 != std::string::npos) {
-            regex = line.substr(pos1, pos2-pos1);
-            pos1 = line.find_first_not_of(" \t\n#", pos2);
-            if (pos1 != std::string::npos) {
-              pos2 = line.find_first_of(" \t\n", pos1);
-              if (pos2 == std::string::npos)
-                pos2 = line.length();
-              subst = line.substr(pos1, pos2-pos1);
-              pos1 = line.find_first_not_of(" \t\n#", pos2);
-              if (pos1 != std::string::npos) {
-                pos2 = line.find_first_of("\n#", pos1);
-                if (pos2 == std::string::npos)
-                  pos2 = line.length();
-                options = line.substr(pos1, pos2-pos1);
-              }
-            }
+          if (pos2 == std::string::npos)
+            pos2 = line.length();
+          subst = line.substr(pos1, pos2-pos1);
+          pos1 = line.find_first_not_of(" \t\n#", pos2);
+          if (pos1 != std::string::npos) {
+            pos2 = line.find_first_of("\n#", pos1);
+            if (pos2 == std::string::npos)
+              pos2 = line.length();
+            options = line.substr(pos1, pos2-pos1);
           }
-        }
-
-        if (regex.empty()) {
-          // No regex found on this line
-          TSError("no regexp found in %s: line %d", (ri->filename).c_str(), lineno);
-          continue;
-        }
-        if (subst.empty() && options.empty()) {
-          // No substitution found on this line (and no options)
-          TSError("no substitution string found in %s: line %d", (ri->filename).c_str(), lineno);
-          continue;
-        }
-
-        // Got a regex and substitution string
-        RemapRegex* cur = new RemapRegex(regex, subst, options);
-
-        if (cur == NULL) {
-          TSError("can't create a new regex remap rule");
-          continue;
-        }
-
-        if (cur->compile(&error, &erroffset) < 0) {
-          TSError("PCRE failed in %s (line %d) at offset %d: %s", (ri->filename).c_str(), lineno, erroffset, error);
-          delete(cur);
-        } else {
-          TSDebug(PLUGIN_NAME, "added regex=%s with substitution=%s and options `%s'",
-                   regex.c_str(), subst.c_str(), options.c_str());
-          cur->set_order(++count);
-          if (ri->first == NULL)
-            ri->first = cur;
-          else
-            ri->last->set_next(cur);
-          ri->last = cur;
         }
       }
     }
+
+    if (regex.empty()) {
+      // No regex found on this line
+      TSError("no regexp found in %s: line %d", (ri->filename).c_str(), lineno);
+      continue;
+    }
+    if (subst.empty() && options.empty()) {
+      // No substitution found on this line (and no options)
+      TSError("no substitution string found in %s: line %d", (ri->filename).c_str(), lineno);
+      continue;
+    }
+
+    // Got a regex and substitution string
+    RemapRegex* cur = new RemapRegex(regex, subst, options);
+
+    if (cur == NULL) {
+      TSError("%s: can't create a new regex remap rule", PLUGIN_NAME);
+      continue;
+    }
+
+    if (cur->compile(&error, &erroffset) < 0) {
+      TSError("%s: PCRE failed in %s (line %d) at offset %d: %s",
+          PLUGIN_NAME, (ri->filename).c_str(), lineno, erroffset, error);
+      delete(cur);
+    } else {
+      TSDebug(PLUGIN_NAME, "added regex=%s with substitution=%s and options `%s'",
+               regex.c_str(), subst.c_str(), options.c_str());
+      cur->set_order(++count);
+      if (ri->first == NULL)
+        ri->first = cur;
+      else
+        ri->last->set_next(cur);
+      ri->last = cur;
+    }
+
   }
 
   // Make sure we got something...
   if (ri->first == NULL) {
-    TSError("Got no regular expressions from the maps");
+    TSError("%s: no regular expressions from the maps", PLUGIN_NAME);
     return TS_ERROR;
   }
 

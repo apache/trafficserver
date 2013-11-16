@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2361] Load regex_remap configuration relative to the configuration directory.
+
   *) [TS-2359] Make install over existing installation can fail.
 
   *) [TS-2350] Enhancements to traffic_top
