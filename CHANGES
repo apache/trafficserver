@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+
+  *) [TS-2359] Make install over existing installation can fail.
+
   *) [TS-2350] Enhancements to traffic_top
 
   *) [TS-2348] Rename tstop to traffic_top.

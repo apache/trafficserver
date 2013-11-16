@@ -36,5 +36,5 @@ traffic_top_LDADD = \
 
 # Install a compatibility symlink because traffic_top was named tstop in previous releases.
 install-exec-hook:
-	cd $(DESTDIR)$(bindir) && $(LN_S) traffic_top tstop
+	cd $(DESTDIR)$(bindir) && $(RM) tstop && $(LN_S) traffic_top tstop
 endif
