@@ -1,10 +1,10 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2013-11-16 14:55+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -13,25 +13,27 @@ msgstr ""
 
 #: ../../admin/index.en.rst:4
 msgid "Administrators' Guide"
-msgstr ""
+msgstr "管理者ガイド"
 
 #: ../../admin/index.en.rst:24
 msgid ""
-"Apache Traffic Server™ speeds Internet access, enhances website performance,"
-" and delivers unprecedented web hosting capabilities."
+"Apache Traffic Server™ speeds Internet access, enhances website performance, "
+"and delivers unprecedented web hosting capabilities."
 msgstr ""
+"Apache Traffic Server™ はインターネットアクセスを加速させ、ウェブサイトのパ"
+"フォーマンスを高め、かつて無いウェブホスティング性能を提供します。"
 
 #: ../../admin/index.en.rst:27
 msgid "This chapter discusses how:"
-msgstr ""
+msgstr "この章は次のようなトピックについて書いてあります。"
 
 #: ../../admin/index.en.rst:29
 msgid "Contents:"
-msgstr ""
+msgstr "内容:"
 
 #: ../../admin/index.en.rst:53
 msgid "What Is Apache Traffic Server?"
-msgstr ""
+msgstr "Apache Traffic Server とは"
 
 #: ../../admin/index.en.rst:55
 msgid ""
@@ -43,59 +45,84 @@ msgid ""
 "networks. It can be challenging to consistently and reliably accommodate "
 "society’s growing data demands."
 msgstr ""
+"グローバルなデータネットワークの利用は日常生活の一部となりました。インター"
+"ネットユーザーは日常生活の基盤の上で数１０億ものドキュメントやテラバイトの"
+"データを世界の隅から隅へリクエストします。不幸なことに、グローバルデータネッ"
+"トワーキングは過負荷なサーバーや混雑したネットワークと格闘している IT 専門家"
+"にとっては悪夢です。増え続けるデータ需要を絶えず、期待通りに動くように対応す"
+"ることはチャレンジングなことです。"
 
 #: ../../admin/index.en.rst:63
 msgid ""
 "Traffic Server is a high-performance web proxy cache that improves network "
-"efficiency and performance by caching frequently-accessed information at the"
-" edge of the network. This brings content physically closer to end users, "
+"efficiency and performance by caching frequently-accessed information at the "
+"edge of the network. This brings content physically closer to end users, "
 "while enabling faster delivery and reduced bandwidth use. Traffic Server is "
 "designed to improve content delivery for enterprises, Internet service "
 "providers (ISPs), backbone providers, and large intranets by maximizing "
 "existing and available bandwidth."
 msgstr ""
+"Traffic Server は高性能なウェブプロキシーキャッシュで、ネットワーク効率と パ"
+"フォーマンスを頻繁にアクセスされる情報をネットワークの端でキャッシュすること"
+"で 改善します。これはエンドユーザーに物理的に近いコンテンツを届ける一方で配信"
+"と 帯域使用量を減らすことを可能とします。Traffic Server は商用のコンテンツ配"
+"信や インターネットサービスプロバイダー( ISP )やバックボーンプロバイダーや 巨"
+"大なイントラネットを現行の利用可能な帯域を最大化することで改善するように デザ"
+"インされています。"
 
 #: ../../admin/index.en.rst:72
 msgid "Traffic Server Deployment Options"
-msgstr ""
+msgstr "Traffic Server デプロイメントオプション"
 
 #: ../../admin/index.en.rst:74
 msgid ""
 "To best suit your needs, Traffic Server can be deployed in several ways:"
 msgstr ""
+"必要に応じて、Traffic Server はいくつかの方法で配置することができます。"
 
 #: ../../admin/index.en.rst:76
 msgid "As a web proxy cache"
-msgstr ""
+msgstr "ウェブプロキシーキャッシュとして"
 
 #: ../../admin/index.en.rst:77
 msgid "As a reverse proxy"
-msgstr ""
+msgstr "リバースプロキシーとして"
 
 #: ../../admin/index.en.rst:78
 msgid "In a cache hierarchy"
-msgstr ""
+msgstr "キャッシュ階層の一部として"
 
 #: ../../admin/index.en.rst:80
 msgid ""
 "The following sections provide a summary of these Traffic Server deployment "
-"options. Please keep in mind that with every of these options Traffic Server"
-" can be run as a *single instance*, or as a *multi-node cluster*."
+"options. Please keep in mind that with every of these options Traffic Server "
+"can be run as a *single instance*, or as a *multi-node cluster*."
 msgstr ""
+"次のセクションではこれらの Traffic Server のデプロイメントオプションの概要を"
+"説明します。これらのすべてのプションで Traffic Server は *シングルインスタン"
+"ス* としても *マルチノードクラスター* としても動作することを覚えておいて下さ"
+"い。"
 
 #: ../../admin/index.en.rst:86
 msgid "Traffic Server as a Web Proxy Cache"
-msgstr ""
+msgstr "ウェブプロキシーキャッシュとしての Traffic Server"
 
 #: ../../admin/index.en.rst:88
 msgid ""
 "As a web proxy cache, Traffic Server receives user requests for web content "
 "as those requests travel to the destined web server (origin server). If "
 "Traffic Server contains the requested content, then it serves the content "
-"directly. If the requested content is not available from cache, then Traffic"
-" Server acts as a proxy: it obtains the content from the origin server on "
-"the user’s behalf and also keeps a copy to satisfy future requests."
+"directly. If the requested content is not available from cache, then Traffic "
+"Server acts as a proxy: it obtains the content from the origin server on the "
+"user’s behalf and also keeps a copy to satisfy future requests."
 msgstr ""
+"ウェブプロキシーキャッシュとして、Traffic Server はウェブコンテンツへのユー"
+"ザーリクエストを受け取り、宛先のウェブサーバー(オリジンサーバー)へ届けます。 "
+"Traffic Server がリクエストされたコンテンツを持っている場合、そのコンテンツを"
+"直接配信します。リクエストされたコンテンツがキャッシュから使えない場合、 "
+"Traffic Server はプロキシーとして振る舞います。つまり、コンテンツをユーザーに"
+"代わってコンテンツを取得し、また将来のリクエストを満たすためにコピーを保持し"
+"ます。"
 
 #: ../../admin/index.en.rst:96
 msgid ""
@@ -104,10 +131,14 @@ msgid ""
 "Explicit proxy caching is described in the :ref:`explicit-proxy-caching` "
 "chapter."
 msgstr ""
+"Traffic Server は明確なプロキシーキャッシュを提供します。この場合ユーザーのク"
+"ライアントソフトウェアは Traffic Server に直接リクエストを送るように設定され"
+"ていなければなりません。明確なプロキシーキャッシュについては :ref:`explicit-"
+"proxy-caching` の章で述べています。"
 
 #: ../../admin/index.en.rst:103
 msgid "Traffic Server as a Reverse Proxy"
-msgstr ""
+msgstr "リバースプロキシーとしての Traffic Server"
 
 #: ../../admin/index.en.rst:105
 msgid ""
@@ -118,29 +149,41 @@ msgid ""
 "acceleration. Reverse proxy is described in more detail in :ref:`reverse-"
 "proxy-and-http-redirects`."
 msgstr ""
+"リバースプロキシーとして Traffc Server はユーザーが接続しようとするオリジン"
+"サーバーとして設定されています。(一般的に、オリジンサーバーとして公開されたホ"
+"スト名は Traffic Server に解決され、実際のオリジンサーバーのように振る舞いま"
+"す。)リバースプロキシー機能はサーバーアクセラレーションとも呼ばれます。リバー"
+"スプロキシーは :ref:`reverse-proxy-http-redirects` で詳しく述べられています。"
 
 #: ../../admin/index.en.rst:112
 msgid "Traffic Server in a Cache Hierarchy"
-msgstr ""
+msgstr "キャッシュ階層での Traffic Server"
 
 #: ../../admin/index.en.rst:114
 msgid ""
 "Traffic Server can participate in flexible cache hierarchies, in which "
 "Internet requests not fulfilled from one cache are routed to other regional "
-"caches, thereby leveraging the contents and proximity of nearby caches. In a"
-" hierarchy of proxy servers, Traffic Server can act either as a parent or a "
+"caches, thereby leveraging the contents and proximity of nearby caches. In a "
+"hierarchy of proxy servers, Traffic Server can act either as a parent or a "
 "child cache to other Traffic Server systems or to similar caching products."
 msgstr ""
+"Traffic Server は柔軟にキャッシュヒエラルキーに参加することができます。その中"
+"で１つのキャッシュからは満たされないインターネットリクエストは他の局地的な"
+"キャッシュに送られます。プロキシーサーバーの階層の中で Traffic Server は他の"
+"Traffic Server システムや似たキャッシングプロダクトの親や子として振る舞いま"
+"す。"
 
 #: ../../admin/index.en.rst:121
 msgid ""
 "Traffic Server supports ICP (Internet Cache Protocol) peering. Hierarchical "
 "caching is described in more detail in :ref:`hierarchical-caching`."
 msgstr ""
+"Traffic Server は ICP(Internet Cache Protocol) のピアイングをサポートしていま"
+"す。階層的キャッシュは :ref:`hierachical-caching` で詳しく述べられています。"
 
 #: ../../admin/index.en.rst:125
 msgid "Deployment Limitations"
-msgstr ""
+msgstr "Deployment Limitations"
 
 #: ../../admin/index.en.rst:127
 msgid ""
@@ -149,16 +192,22 @@ msgid ""
 "in some cases Traffic Server's internal APIs or architectural restrictions "
 "won't make it easy:"
 msgstr ""
+"Traffic Server がサポートしていないデプロイメントオプションがいくつかありま"
+"す。そのような機能はプラグインで実装されていることもあります。またいくつかの"
+"場合 Traffic Server の内部的な API やアーキテクチャ的な制限が実装を難しくして"
+"いることもあります。"
 
 #: ../../admin/index.en.rst:131
 msgid ""
-"Load Balancing - note that there is an experimental plugin for this: :ref"
-":`balancer-plugin`."
+"Load Balancing - note that there is an experimental plugin for this: :ref:"
+"`balancer-plugin`."
 msgstr ""
+"ロードバランシング - このための実験的なプラクインがあることに注意してくださ"
+"い。 :ref:`balancer-plugin`"
 
 #: ../../admin/index.en.rst:134
 msgid "Traffic Server Components"
-msgstr ""
+msgstr "Traffic Server Components"
 
 #: ../../admin/index.en.rst:136
 msgid ""
@@ -166,22 +215,34 @@ msgid ""
 "web proxy cache you can easily monitor and configure. These main components "
 "are described below."
 msgstr ""
+"Traffic Server は簡単に監視や設定が行えるウェブプロキシーキャッシュを構成する"
+"ために協力するいくつかのコンポーネントから成り立っています。これらのコンポー"
+"ネントについて次に述べます。"
 
 #: ../../admin/index.en.rst:141
 msgid "The Traffic Server Cache"
-msgstr ""
+msgstr "The Traffic Server Cache"
 
 #: ../../admin/index.en.rst:143
 msgid ""
-"The Traffic Server cache consists of a high-speed object database called the"
-" object store. The object store indexes objects according to URLs and "
+"The Traffic Server cache consists of a high-speed object database called the "
+"object store. The object store indexes objects according to URLs and "
 "associated headers. Using sophisticated object management, the object store "
 "can cache alternate versions of the same object (perhaps in a different "
 "language or encoding type). It can also efficiently store very small and "
-"very large objects, thereby minimizing wasted space. When the cache is full,"
-" Traffic Server removes stale data to ensure that the most requested objects"
-" are readily available and fresh."
+"very large objects, thereby minimizing wasted space. When the cache is full, "
+"Traffic Server removes stale data to ensure that the most requested objects "
+"are readily available and fresh."
 msgstr ""
+"Traffic Server キャッシュはオブジェクトストアと呼ばれるハイスピードオブジェク"
+"トデータベースによって構成されます。オブジェクトは URL と関連するヘッダーに基"
+"づいたインデックスオブジェクトを保存します。洗練されたオブジェクト管理によ"
+"り、オブジェクトストアは同じオブジェクトの（言語やエンコーディングタイプなど"
+"が）異なるバージョンをキャッシュすることができます。これは無駄なスペースを最"
+"小化することによって、とても小さかったり、 大きかったりするオブジェクトを効率"
+"的に保存することもできます。キャッシュがいっぱいになった場合、Traffic Server "
+"は最もリクエストされるオブジェクトがすぐに利用可能で 新しい状態であることを保"
+"証するために、古いデータを削除します。"
 
 #: ../../admin/index.en.rst:152
 msgid ""
@@ -193,10 +254,17 @@ msgid ""
 "data for specific protocols and origin servers. For more information about "
 "the cache, see :ref:`configuring-the-cache`."
 msgstr ""
+"Traffic Server はすべてのキャッシュディスクのあらゆるディスク不良を許容するよ"
+"うにデザインされています。完全にディスクが壊れてしまった場合、Traffic Server "
+"はそのディスクを破損したと印をつけ、残りのディスクを使い続けます。すべての"
+"ディスクが壊れた場合、 Traffic Server は proxy-only モードに切り替わります。 "
+"特定のプロトコルやオリジンサーバーのデータを保存するための一定のディスクス"
+"ペースを予約するためにキャッシュを分割することができます。 キャッシュに関する"
+"より詳しい情報は :ref:`configure-the-cache` を参照してください。"
 
 #: ../../admin/index.en.rst:161
 msgid "The RAM Cache"
-msgstr ""
+msgstr "The RAM Cache"
 
 #: ../../admin/index.en.rst:163
 msgid ""
@@ -206,39 +274,52 @@ msgid ""
 "can configure the RAM cache size to suit your needs; for detailed "
 "information, refer to :ref:`changing-the-size-of-the-ram-cache`."
 msgstr ""
+"Traffic Server はとても頻繁にアクセスされるオブジェクトを含む小さな RAM "
+"キャッシュを持っています。特に一時的なトラフィックのピークの間に、 この RAM "
+"キャッシュは最もポピュラーなオブジェクトを可能な限り速く提供し、 ディスクから"
+"のロードを減らします。この RAM キャッシュのサイズは必要な量に設定することがで"
+"きます。より詳しい情報は :ref:`changing-the-size-of-the-ram-cache` を参照して"
+"ください。"
 
 #: ../../admin/index.en.rst:170
 msgid "The Host Database"
-msgstr ""
+msgstr "The Host Database"
 
 #: ../../admin/index.en.rst:172
 msgid ""
-"The Traffic Server host database stores the domain name server (DNS) entries"
-" of origin servers to which Traffic Server connects to fulfill user "
-"requests. This information is used to adapt future protocol interactions and"
-" optimize performance. Along with other information, the host database "
-"tracks:"
+"The Traffic Server host database stores the domain name server (DNS) entries "
+"of origin servers to which Traffic Server connects to fulfill user requests. "
+"This information is used to adapt future protocol interactions and optimize "
+"performance. Along with other information, the host database tracks:"
 msgstr ""
+"Traffic Server は Traffic Server がユーザーリクエストを満たすために接続するオ"
+"リジンサーバーのドメインネームサーバー(DNS) のエントリを保存するデーターベー"
+"スをホストします。この情報は将来のプロトコルインタラクションへの対応とパ"
+"フォーマンスの最適化のために使われます。加えて、ホストデータベースは次の情報"
+"を保存します。"
 
 #: ../../admin/index.en.rst:178
 msgid "DNS information (for fast conversion of hostnames to IP addresses)"
-msgstr ""
+msgstr "DNS 情報(ホストネームから IP アドレスを高速に引くため)"
 
 #: ../../admin/index.en.rst:179
 msgid ""
 "The HTTP version of each host (so advanced protocol features can be used "
 "with hosts running modern servers)"
 msgstr ""
+"各ホストの HTTP バージョン(最新のプロトコルの機能はモダンなサーバーで使われて"
+"いるかもしれないため)"
 
 #: ../../admin/index.en.rst:181
 msgid ""
 "Host reliability and availability information (so users will not wait for "
 "servers that are not running)"
 msgstr ""
+"信頼性と可用性の情報(ユーザーが起動していないサーバーを待つことがないように)"
 
 #: ../../admin/index.en.rst:185
 msgid "The DNS Resolver"
-msgstr ""
+msgstr "The DNS Resolver"
 
 #: ../../admin/index.en.rst:187
 msgid ""
@@ -246,20 +327,29 @@ msgid ""
 "conversion of hostnames to IP addresses. Traffic Server implements the DNS "
 "resolver natively by directly issuing DNS command packets rather than "
 "relying on slower, conventional resolver libraries. Since many DNS queries "
-"can be issued in parallel and a fast DNS cache maintains popular bindings in"
-" memory, DNS traffic is reduced."
+"can be issued in parallel and a fast DNS cache maintains popular bindings in "
+"memory, DNS traffic is reduced."
 msgstr ""
+"Traffic Server はホスト名から IP アドレスへの変換を統合するために、高速で非同"
+"期な DNS リゾルバも含んでいます。Traffic Server は遅くて月並みなリゾルバライ"
+"ブラリに渡すよりも、直接 DNS コマンドパケットを渡すことに よって、DNS リゾル"
+"バをネイティブに実行します。多くの DNS クエリが並列で渡され、高速な DNS "
+"キャッシュがポピュラーなバインディングをメモリに保存することにより、DNS トラ"
+"フィックは減ります。"
 
 #: ../../admin/index.en.rst:195
 msgid "Traffic Server Processes"
-msgstr ""
+msgstr "Traffic Server Processes"
 
 #: ../../admin/index.en.rst:197
 msgid ""
-"Traffic Server contains three processes that work together to serve requests"
-" and manage/control/monitor the health of the system. The three processes "
-"are described below:"
+"Traffic Server contains three processes that work together to serve requests "
+"and manage/control/monitor the health of the system. The three processes are "
+"described below:"
 msgstr ""
+"Traffic Server はリクエストを返し、システムの状態を管理/制御/監視することを協"
+"調して動くための3つのプロセスを含んでいます。この３つのプロセスは下に説明され"
+"ています。"
 
 #: ../../admin/index.en.rst:201
 msgid ""
@@ -267,63 +357,91 @@ msgid ""
 "of Traffic Server. It is responsible for accepting connections, processing "
 "protocol requests, and serving documents from the cache or origin server."
 msgstr ""
+":program:`traffic_server` プロセスは Traffic Server のトランザクションプロ"
+"セッシングエンジンです。コネクションをアクセプトしたり、プロトコルリクエスト"
+"を処理したり、キャッシュやオリジンサーバーからドキュメントを提供することに責"
+"任を持ちます。"
 
 #: ../../admin/index.en.rst:206
 msgid ""
 "The :program:`traffic_manager` process is the command and control facility "
 "of the Traffic Server, responsible for launching, monitoring, and "
-"reconfiguring the :program:`traffic_server` process. The "
-":program:`traffic_manager` process is also responsible for the proxy "
+"reconfiguring the :program:`traffic_server` process. The :program:"
+"`traffic_manager` process is also responsible for the proxy "
 "autoconfiguration port, the statistics interface, cluster administration, "
 "and virtual IP failover."
 msgstr ""
+":program:`traffic_manager` プロセスは Traffic Server への命令と管理機能です。"
+"起動や監視と :program:`traffic_server` プロセスを再設定したりすることに責任を"
+"持ちます。 :program:`traffic_manager` プロセスはプロキシオートコンフィギュ"
+"レーションポートや統計のインターフェイスやクラスター管理とバーチャル IP フェ"
+"イルオーバーについても責任を持ちます。"
 
 #: ../../admin/index.en.rst:213
 msgid ""
-"If the :program:`traffic_manager` process detects a "
-":program:`traffic_server` process failure, it instantly restarts the process"
-" but also maintains a connection queue of all incoming requests. All "
-"incoming connections that arrive in the several seconds before full server "
-"restart are saved in the connection queue and processed in first-come, "
-"first-served order. This connection queueing shields users from any server "
-"restart downtime."
+"If the :program:`traffic_manager` process detects a :program:"
+"`traffic_server` process failure, it instantly restarts the process but also "
+"maintains a connection queue of all incoming requests. All incoming "
+"connections that arrive in the several seconds before full server restart "
+"are saved in the connection queue and processed in first-come, first-served "
+"order. This connection queueing shields users from any server restart "
+"downtime."
 msgstr ""
+":program:`traffic_manager` プロセスが :program:`traffic_server` プロセスが失"
+"敗していることを検知した場合、即座にプロセスを再起動するだけでなく、すべての"
+"リクエストのコネクションキューをメンテナンスします。 サーバーが完全に再起動す"
+"る数秒前に到着したすべてのインカミングコネクションはコネクションキューに格納"
+"され、最初に来たものから順に処理されます。 このコネクションキューはすべての"
+"サーバーの再起動の際のダウンタイムからユーザーを守ります。"
 
 #: ../../admin/index.en.rst:221
 msgid ""
-"The :program:`traffic_cop` process monitors the health of both the "
-":program:`traffic_server` and :program:`traffic_manager` processes. The "
-":program:`traffic_cop` process periodically (several times each minute) "
-"queries the :program:`traffic_server` and :program:`traffic_manager` process"
-" by issuing heartbeat requests to fetch synthetic web pages. In the event of"
-" failure (if no response is received within a timeout interval or if an "
-"incorrect response is received), :program:`traffic_cop` restarts the "
-":program:`traffic_manager` and :program:`traffic_server` processes."
+"The :program:`traffic_cop` process monitors the health of both the :program:"
+"`traffic_server` and :program:`traffic_manager` processes. The :program:"
+"`traffic_cop` process periodically (several times each minute) queries the :"
+"program:`traffic_server` and :program:`traffic_manager` process by issuing "
+"heartbeat requests to fetch synthetic web pages. In the event of failure (if "
+"no response is received within a timeout interval or if an incorrect "
+"response is received), :program:`traffic_cop` restarts the :program:"
+"`traffic_manager` and :program:`traffic_server` processes."
 msgstr ""
+":program:`traffic_cop` プロセスは :program:`traffic_server` と :program:"
+"`traffic_manager` プロセスの両方の状態をモニターします。 :program:"
+"`traffic_cop` プロセスは定期的(毎分数回)に静的なウェブページを取得するハート"
+"ビートリクエストを渡すことで :program:`traffic_server` と :program:"
+"`traffic_manager` に問い合わせます。 失敗したとき(一定期間の間にレスポンスが"
+"帰って来ないときや不正な レスポンスを受け取ったとき) :program:`traffic_cop` "
+"は :program:`traffic_manager` と :program:`traffic_server` プロセスを再起動し"
+"ます。"
 
 #: ../../admin/index.en.rst:230
 msgid "The figure below illustrates the three Traffic Server processes."
-msgstr ""
+msgstr "次の図は Traffic Server の3つのイラストです。"
 
 #: ../../admin/index.en.rst:236
 msgid "Illustration of the three Traffic Server Processes"
-msgstr ""
+msgstr "Illustration of the three Traffic Server Processes"
 
 #: ../../admin/index.en.rst:239
 msgid "Administration Tools"
-msgstr ""
+msgstr "Administration Tools"
 
 #: ../../admin/index.en.rst:241
 msgid "Traffic Server offers the following administration options:"
-msgstr ""
+msgstr "Traffic Server は次のような管理オプションを提供しています。"
 
 #: ../../admin/index.en.rst:243
 msgid ""
-"The Traffic Line command-line interface is a text-based interface from which"
-" you can monitor Traffic Server performance and network traffic, as well as "
+"The Traffic Line command-line interface is a text-based interface from which "
+"you can monitor Traffic Server performance and network traffic, as well as "
 "configure the Traffic Server system. From Traffic Line, you can execute "
 "individual commands or script a series of commands in a shell."
 msgstr ""
+"Traffic Line コマンドラインインターフェイスはテキストベースのインターフェース"
+"です。Traffic Server のパフォーマンスとネットワークトラフィックを監視できま"
+"す。また同じように、Traffic Server システムを設定することもできます。Traffic "
+"Line によって独立したコマンドや一連のコマンドのスクリプトをシェルで実行するこ"
+"とができます。"
 
 #: ../../admin/index.en.rst:248
 msgid ""
@@ -331,84 +449,118 @@ msgid ""
 "that enables you to execute individual commands that monitor and configure "
 "the Traffic Server system."
 msgstr ""
+"Traffic Shell コマンドラインインターフェイスは追加のコマンドラインツールで、"
+"Traffic Server システムを監視したり設定したりする独立したコマンドを実行するこ"
+"とができます。 Traffic Line や Traffic Shell を通じたどんな変更も自動的に設定"
+"ファイルを作ります。"
 
 #: ../../admin/index.en.rst:251
 msgid ""
-"Various configuration files enable you to configure Traffic Server through a"
-" simple file-editing and signal-handling interface. Any changes you make "
+"Various configuration files enable you to configure Traffic Server through a "
+"simple file-editing and signal-handling interface. Any changes you make "
 "through Traffic Line or Traffic Shell are automatically made to the "
 "configuration files as well."
 msgstr ""
+"様々な設定ファイルはシンプルなファイル編集とシグナルハンドリングインター"
+"フェースを通して、 Traffic Server を設定することを可能とします。 Traffic "
+"Line か Traffic Shell を通じたどのような変更でも自動的に設定ファイルに書き込"
+"まれます。"
 
 #: ../../admin/index.en.rst:255
 msgid ""
-"Finally there is a clean C API which can be put to good use from a multitude"
-" of languages. The Traffic Server Admin Client demonstrates this for Perl."
+"Finally there is a clean C API which can be put to good use from a multitude "
+"of languages. The Traffic Server Admin Client demonstrates this for Perl."
 msgstr ""
+"最後に、多くのな言語から使うことのできるクリーンな C API があります。 "
+"Traffic Server Admin Client は Perl でこのことを示しています。"
 
 #: ../../admin/index.en.rst:260
 msgid "Traffic Analysis Options"
-msgstr ""
+msgstr "Traffic Analysis Options"
 
 #: ../../admin/index.en.rst:262
 msgid ""
 "Traffic Server provides several options for network traffic analysis and "
 "monitoring:"
 msgstr ""
+"Traffic Server はネットワークトラフィックの分析と監視のためのいくつかのオプ"
+"ションを提供しています。"
 
 #: ../../admin/index.en.rst:265
 msgid ""
 "Traffic Line and Traffic Shell enable you to collect and process statistics "
 "obtained from network traffic information."
 msgstr ""
+"Traffic Line と Traffic Shell はネットワークトラフィック情報から入手した統計"
+"情報を集めて処理することを可能にします。"
 
 #: ../../admin/index.en.rst:268
 msgid ""
 "Transaction logging enables you to record information (in a log file) about "
 "every request Traffic Server receives and every error it detects. By "
-"analyzing the log files, you can determine how many clients used the Traffic"
-" Server cache, how much information each of them requested, and what pages "
+"analyzing the log files, you can determine how many clients used the Traffic "
+"Server cache, how much information each of them requested, and what pages "
 "were most popular. You can also see why a particular transaction was in "
 "error and what state the Traffic Server was in at a particular time; for "
 "example, you can see that Traffic Server was restarted or that cluster "
 "communication timed out."
 msgstr ""
+"トランザクションロギングは Traffic Server が処理したへすべてのリクエストとす"
+"べての検知したエラーの情報を (ログファイルの中に) 記録することを可能にしま"
+"す。 ログファイルを分析することによって、どれほどのクライアントが Traffic "
+"Sever キャッシュを使用し、どれくらいの情報がリクエストされ、どのページがポ"
+"ピュラーなのかを確認することができます。 特定のトランザクションがなぜエラーに"
+"なり、 そのときの Traffic Server の状態がどうだったのかみることもできます。例"
+"えば、Traffic Server が再起動したときや、 クラスターコミュニケーションがタイ"
+"ムアウトしたときなどです。"
 
 #: ../../admin/index.en.rst:277
 msgid ""
-"Traffic Server supports several standard log file formats, such as Squid and"
-" Netscape, and its own custom format. You can analyze the standard format "
-"log files with off-the-shelf analysis packages. To help with log file "
-"analysis, you can separate log files so that they contain information "
-"specific to protocol or hosts."
+"Traffic Server supports several standard log file formats, such as Squid and "
+"Netscape, and its own custom format. You can analyze the standard format log "
+"files with off-the-shelf analysis packages. To help with log file analysis, "
+"you can separate log files so that they contain information specific to "
+"protocol or hosts."
 msgstr ""
+"Traffic Server は Squid や Netscape などのいくつかの標準的なログフォーマット"
+"や固有のフォーマットをサポートしています。 off-the-shelf 分析パッケージによっ"
+"て標準的なフォーマットのログを分析することが できます。ログファイルの分析を助"
+"けるために、特定のプロトコルやホストの情報を含むようにログファイルを分割する"
+"ことができます。"
 
 #: ../../admin/index.en.rst:283
 msgid ""
 "Traffic analysis options are described in more detail in :ref:`monitoring-"
 "traffic`."
 msgstr ""
+"トラフィック分析オプションは :ref:`monitoring-traffic` により 詳しく書かれて"
+"います。"
 
 #: ../../admin/index.en.rst:285
 msgid ""
 "Traffic Server logging options are described in :ref:`working-with-log-"
 "files`."
 msgstr ""
+"Traffic Server ロギングオプションは :ref:`working-log-files` に書かれていま"
+"す。"
 
 #: ../../admin/index.en.rst:288
 msgid "Traffic Server Security Options"
-msgstr ""
+msgstr "Traffic Server Security Options"
 
 #: ../../admin/index.en.rst:290
 msgid ""
-"Traffic Server provides numerous options that enable you to establish secure"
-" communication between the Traffic Server system and other computers on the "
+"Traffic Server provides numerous options that enable you to establish secure "
+"communication between the Traffic Server system and other computers on the "
 "network. Using the security options, you can do the following:"
 msgstr ""
+"Traffic Server は Traffic Server システムと他のコンピュータネットワーク間のセ"
+"キュアな通信を確立することを可能にする多数のオプションを提供しています。セ"
+"キュリティオプションを使うことによって、 次のようなことができます。"
 
 #: ../../admin/index.en.rst:295
 msgid "Control client access to the Traffic Server proxy cache."
-msgstr ""
+msgstr "Traffic Server プロキシーキャッシュにアクセスするクライアントの管理"
 
 #: ../../admin/index.en.rst:296
 msgid ""
@@ -419,12 +571,19 @@ msgid ""
 "configuration secure while continuing to provide transparent access to "
 "external sites on the Internet."
 msgstr ""
+"あなたのサイトのセキュリティ設定に合わせて複数の DNS サーバーを使うような "
+"Traffic Server の設定。例えば、Traffic Server はホストネームを解決する必要が"
+"あるのがファイアーウォールの内側か外側かによって異なる DNS サーバーを使うこと"
+"ができます。 これは透過的にインターネット上の外部サイトにアクセスすることを提"
+"供しつつ、 インターナルネットワーク設定をセキュアに保つことを可能にします。"
 
 #: ../../admin/index.en.rst:302
 msgid ""
 "Configure Traffic Server to verify that clients are authenticated before "
 "they can access content from the Traffic Server cache."
 msgstr ""
+"クライアントが Traffic Server キャッシュからコンテンツにアクセスできるように"
+"なる前に、クライアントが認証されていることを検証する Traffic Server 設定"
 
 #: ../../admin/index.en.rst:304
 msgid ""
@@ -432,13 +591,18 @@ msgid ""
 "Server, and Traffic Server and the origin server, using the SSL termination "
 "option."
 msgstr ""
+"SSL ターミネーションオプションを使うことによる、リバースプロキシーモードでの"
+"クライアントと Traffic Server 間と Traffic Server とオリジンサーバー間の安全"
+"な接続"
 
 #: ../../admin/index.en.rst:307
 msgid "Control access via SSL (Secure Sockets Layer)."
-msgstr ""
+msgstr "SSL (Secure Socket Layer) によるアクセスの管理"
 
 #: ../../admin/index.en.rst:309
 msgid ""
-"Traffic Server security options are described in more detail in :ref"
-":`security-options`."
+"Traffic Server security options are described in more detail in :ref:"
+"`security-options`."
 msgstr ""
+"Traffic Server セキュリティオプションは :ref:`security-options` に詳しく述べ"
+"られています。"
