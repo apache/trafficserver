@@ -1,10 +1,10 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2013-11-16 15:34+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -13,11 +13,11 @@ msgstr ""
 
 #: ../../reference/plugins/index.en.rst:2
 msgid "Plugin Reference"
-msgstr ""
+msgstr "Plugin Reference"
 
 #: ../../reference/plugins/index.en.rst:22
 msgid "Overview"
-msgstr ""
+msgstr "Overview"
 
 #: ../../reference/plugins/index.en.rst:24
 msgid ""
@@ -26,34 +26,46 @@ msgid ""
 "because it guarantees that our core can remain fast by concentrating on the "
 "things that we always provide: Caching and proxying."
 msgstr ""
+"Apache Traffic Server の重要な機能の一つはモジュール性です。コアに不要な機能"
+"はコアの中には存在しません。これは良いことです。なぜならば、それはコアが常に"
+"提供するキャッシュとプロキシーに集中することにより、速い状態を保つことができ"
+"るからです。"
 
 #: ../../reference/plugins/index.en.rst:30
 msgid ""
 "All other things can be moved into plugins, by opening up a consistent C "
-"API, everyone can implement their own functionality, without having to touch"
-" the core."
+"API, everyone can implement their own functionality, without having to touch "
+"the core."
 msgstr ""
+"他の全てのことはプラグインに移すことができます。安定した C API を使うことによ"
+"り、コアに触ること無く、誰でも独自の機能を実装することができます。"
 
 #: ../../reference/plugins/index.en.rst:35
 msgid "Stable plugins"
-msgstr ""
+msgstr "Stable plugins"
 
 #: ../../reference/plugins/index.en.rst:37
 msgid ""
 "Plugins that are considered stable are installed by default in Apache "
 "Traffic Server releases."
 msgstr ""
+"安定的なプラグインです。これらは Apache Traffic Server のリリースにデフォルト"
+"でインストールされれています。"
 
 #: ../../reference/plugins/index.en.rst:51
 msgid "Experimental plugins"
-msgstr ""
+msgstr "Experimental plugins"
 
 #: ../../reference/plugins/index.en.rst:53
 msgid ""
-"Plugins that are considered experimental are located in the "
-"```plugins/experimental`` <https://git-wip-"
-"us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_"
-" directory in the Apache Traffic Server source tree. Exmperimental plugins "
-"can be compiled by passing the `--enable-experimental-plugins` option to "
-"`configure`::"
+"Plugins that are considered experimental are located in the ```plugins/"
+"experimental`` <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
+"a=tree;f=plugins/experimental;hb=HEAD>`_ directory in the Apache Traffic "
+"Server source tree. Exmperimental plugins can be compiled by passing the `--"
+"enable-experimental-plugins` option to `configure`::"
 msgstr ""
+"実験的なプラグインです。 Apache Traffic Server ソースツリーの ```plugins/"
+"experimental`` <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
+"a=tree;f=plugins/experimental;hb=HEAD>`_ ディレクトリにあります。実験的プラグ"
+"インは `configure` を実行する際に `--enable-experimental-plugins` オプション"
+"をつけることでコンパイルされます。"
