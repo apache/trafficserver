@@ -13,15 +13,15 @@ msgstr ""
 
 #: ../../admin/configuring-traffic-server.en.rst:5
 msgid "Configuring Traffic Server"
-msgstr ""
+msgstr "Traffic Server の設定"
 
 #: ../../admin/configuring-traffic-server.en.rst:24
 msgid "Traffic Server provides several options for configuring the system."
-msgstr ""
+msgstr "Traffic Server はシステムを設定するためのいくつかの方法を提供しています。"
 
 #: ../../admin/configuring-traffic-server.en.rst:32
 msgid "Configure Traffic Server Using Traffic Line"
-msgstr ""
+msgstr "Traffic Line を使用して Traffic Server を設定する"
 
 #: ../../admin/configuring-traffic-server.en.rst:34
 msgid ""
@@ -29,30 +29,36 @@ msgid ""
 "configuration via command-line interface. Alternatively, you can also use "
 ":program:`traffic_shell` to configure Traffic Server."
 msgstr ""
+"Traffic Line はコマンドラインインターフェースで手早く簡単に Traffic Server "
+"の設定を変更することを可能にします。あるいは Traffic Server を設定するために"
+" :program:`traffic_shell` を使用することもできます。"
 
 #: ../../admin/configuring-traffic-server.en.rst:39
 msgid "View Configuration Options in Traffic Line"
-msgstr ""
+msgstr "Traffic Line で設定項目を見る"
 
 #: ../../admin/configuring-traffic-server.en.rst:41
 msgid "To view a configuration setting, enter the following command::"
-msgstr ""
+msgstr "設定内容を見るには次のコマンドを入力してください"
 
 #: ../../admin/configuring-traffic-server.en.rst:45
 msgid ""
 "where ``var`` is the variable associated with the configuration option. For "
 "a list of variables, refer to :ref:`configuration-variables`."
 msgstr ""
+"``var`` の部分は設定項目に対応する変数です。変数の一覧については "
+":ref:`configuration-variables` を参照してください。"
 
 #: ../../admin/configuring-traffic-server.en.rst:49
 msgid "Change Configuration Options in Traffic Line"
-msgstr ""
+msgstr "Traffic Line で設定項目を変更する"
 
 #: ../../admin/configuring-traffic-server.en.rst:51
 msgid ""
 "To change the value of a configuration setting, enter the following "
 "command::"
 msgstr ""
+"設定内容の値を変更するには次のコマンドを入力してください。"
 
 #: ../../admin/configuring-traffic-server.en.rst:56
 msgid ""
@@ -60,10 +66,12 @@ msgid ""
 "``value`` is the value you want to use. For a list of the variables, see "
 ":ref:`configuration-variables`."
 msgstr ""
+"``var`` の部分は設定項目に対応する変数、``value`` は設定したい値です。"
+"変数の一覧については :ref:`configuration-variables` を見てください。"
 
 #: ../../admin/configuring-traffic-server.en.rst:61
 msgid "Configure Traffic Server Using Configuration Files"
-msgstr ""
+msgstr "設定ファイルを使用して Traffic Server を設定する"
 
 #: ../../admin/configuring-traffic-server.en.rst:63
 msgid ""
@@ -74,14 +82,21 @@ msgid ""
 "files: enter the Traffic Line command :option:`traffic_line -x`. You may "
 "need to restart Traffic Server to apply some of the configuration changes."
 msgstr ""
+"Traffic Line や Traffic Shell を使用する代わりに、:file:`records.config` "
+"ファイルの具体的な変数を手動で編集することで Traffic Server の設定項目を"
+"変更することができます。:file:`records.config` ファイルの修正後、"
+"Traffic Server は必ず設定ファイルを再読み込みしなくてはなりません。"
+"Traffic Line コマンド :option:`traffic_line -x` を入力してください。"
+"いくつかの設定の変更を適用するには Traffic Server を再起動する必要がある"
+"かもしれません。"
 
 #: ../../admin/configuring-traffic-server.en.rst:71
 msgid "The following is a sample portion of the :file:`records.config` file:"
-msgstr ""
+msgstr "以下は :file:`records.config` ファイルの部分的なサンプルです"
 
 #: ../../admin/configuring-traffic-server.en.rst:78
 msgid "Sample records.config file"
-msgstr ""
+msgstr "records.config ファイルのサンプル"
 
 #: ../../admin/configuring-traffic-server.en.rst:80
 msgid ""
@@ -90,3 +105,8 @@ msgid ""
 "can manually edit all configuration files as described in :ref"
 ":`configuration-file-reference`."
 msgstr ""
+":file:`records.config` ファイルに加え、Traffic Server は特定の機能を設定する"
+"ために使用されるその他の複数の設定ファイルを提供します。"
+":ref:`configuration-file-reference` で説明されているように、すべての設定"
+"ファイルを手動で編集することができます。"
+
