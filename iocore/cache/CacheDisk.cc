@@ -133,11 +133,24 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
     return openDone(EVENT_IMMEDIATE, 0);
   }
 
-  if (header->magic != DISK_HEADER_MAGIC || header->num_blocks != (uint64_t)len) {
-    Warning("disk header different for disk %s: clearing the disk", path);
-    SET_HANDLER(&CacheDisk::clearDone);
-    clearDisk();
-    return EVENT_DONE;
+  if (header->magic != DISK_HEADER_MAGIC || header->num_blocks != static_cast<uint64_t>(len)) {
+    uint64_t delta_3_2 =  skip - (skip >> STORE_BLOCK_SHIFT); // block count change from 3.2
+    if (static_cast<uint64_t>(len) == header->num_blocks + delta_3_2) {
+      header->num_blocks += delta_3_2;
+      // Only recover the space if there is a single stripe on this disk. The stripe space allocation logic can fail if
+      // there is any difference at all in splitting the disk into stripes. The problem is we can add only to the last
+      // stripe, because otherwise the stripe offsets are wrong. But if the stripes didn't split evenly and the last
+      // stripe isn't the short one, the split will be different this time.
+      // Further - the size is encoded in to the disk hash so if the size changes, the data is effectively lost anyway.
+      // So no space recovery.
+//      if (header->num_diskvol_blks == 1)
+//        header->vol_info[0].len += delta_3_2;
+    } else {
+      Warning("disk header different for disk %s: clearing the disk", path);
+      SET_HANDLER(&CacheDisk::clearDone);
+      clearDisk();
+      return EVENT_DONE;
+    }
   }
 
   cleared = 0;

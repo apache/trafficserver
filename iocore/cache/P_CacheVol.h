@@ -623,13 +623,15 @@ struct CacheVol
 struct Doc
 {
   uint32_t magic;         // DOC_MAGIC
-  uint32_t len;           // length of this segment (including hlen, flen & sizeof(Doc), unrounded)
+  uint32_t len;           // length of this fragment (including hlen & sizeof(Doc), unrounded)
   uint64_t total_len;     // total length of document
-  CryptoHash first_key;    // first key in document (http: vector)
-  CryptoHash key;
-  uint32_t hlen;          // header length
-  uint32_t ftype:8;       // fragment type CACHE_FRAG_TYPE_XX
-  uint32_t _flen:24;       // fragment table length [amc] NOT USED
+  CryptoHash first_key;    ///< first key in object.
+  CryptoHash key; ///< Key for this doc.
+  uint32_t hlen; ///< Length of this header.
+  uint32_t doc_type:8;       ///< Doc type - indicates the format of this structure and its content.
+  uint32_t v_major:8;   ///< Major version number.
+  uint32_t v_minor:8; ///< Minor version number.
+  uint32_t unused:8; ///< Unused, forced to zero.
   uint32_t sync_serial;
   uint32_t write_serial;
   uint32_t pinned;        // pinned until
@@ -774,31 +776,31 @@ vol_relative_length(Vol *v, off_t start_offset)
 TS_INLINE uint32_t
 Doc::prefix_len()
 {
-  return sizeofDoc + hlen + _flen;
+  return sizeofDoc + hlen;
 }
 
 TS_INLINE uint32_t
 Doc::data_len()
 {
-  return len - sizeofDoc - hlen - _flen;
+  return len - sizeofDoc - hlen;
 }
 
 TS_INLINE int
 Doc::single_fragment()
 {
-  return (data_len() == total_len);
+  return data_len() == total_len;
 }
 
 TS_INLINE char *
 Doc::hdr()
 {
-  return ((char *) this) + sizeofDoc + _flen;
+  return reinterpret_cast<char*>(this) + sizeofDoc;
 }
 
 TS_INLINE char *
 Doc::data()
 {
-  return ((char *) this) + sizeofDoc + _flen + hlen;
+  return this->hdr() +  hlen;
 }
 
 int vol_dir_clear(Vol *d);

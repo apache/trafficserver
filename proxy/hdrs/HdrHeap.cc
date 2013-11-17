@@ -879,7 +879,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
     return -1;
   }
 
-  int unmarshal_size = m_size + m_ronly_heap[0].m_heap_len;
+  int unmarshal_size = this->unmarshal_size();
   if (unmarshal_size > buf_length) {
     ink_assert(!"HdrHeap::unmarshal truncated header");
     return -1;

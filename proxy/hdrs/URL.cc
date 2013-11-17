@@ -1703,7 +1703,6 @@ url_MD5_get_general(URLImpl * url, CryptoContext& ctx, CryptoHash& hash)
 
   ctx.update(&port, sizeof(port));
   ctx.finalize(hash);
-  Debug("amc", "hash 0x%" PRIx64 ":%" PRIx64, hash[0], hash[1]);
 }
 
 void

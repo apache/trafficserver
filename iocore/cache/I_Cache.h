@@ -67,7 +67,9 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor:public Processor
 {
   CacheProcessor()
-    : cb_after_init(0)
+    : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION)
+    , max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION)
+    , cb_after_init(0)
   {}
 
   virtual int start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
@@ -184,6 +186,10 @@ struct CacheProcessor:public Processor
   static int fix;
   static int start_internal_flags;
   static int auto_clear_flag;
+  
+  VersionNumber min_stripe_version;
+  VersionNumber max_stripe_version;
+
   CALLBACK_FUNC cb_after_init;
 };
 

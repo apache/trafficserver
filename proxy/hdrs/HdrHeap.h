@@ -198,6 +198,10 @@ public:
   inkcoreapi int marshal_length();
   inkcoreapi int marshal(char *buf, int length);
   int unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, RefCountObj * block_ref);
+  /// Computes the valid data size of an unmarshalled instance.
+  /// Callers should round up to HDR_PTR_SIZE to get the actual footprint.
+  int unmarshal_size() const; // TBD - change this name, it's confusing.
+  // One option - overload marshal_length to return this value if @a magic is HDR_BUF_MAGIC_MARSHALED.
 
   void inherit_string_heaps(const HdrHeap * inherit_from);
   int attach_block(IOBufferBlock * b, const char *use_start);
@@ -305,6 +309,11 @@ HdrHeap::free_string(const char *s, int len)
   if (s && len > 0) {
     m_lost_string_space += len;
   }
+}
+
+inline int
+HdrHeap::unmarshal_size() const {
+  return m_size + m_ronly_heap[0].m_heap_len;
 }
 
 

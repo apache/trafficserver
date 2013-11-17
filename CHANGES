@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2362] Make cache backwards compatible to 3.2.0.
+
   *) [TS-2357] Add option to cache POST requests
 
   *) [TS-2996] Add consistent hash method to parent selection.

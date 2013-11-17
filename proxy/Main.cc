@@ -396,6 +396,18 @@ CB_After_Cache_Init()
   int start;
 
   start = ink_atomic_swap(&delay_listen_for_cache_p, -1);
+
+  // Check for cache BC after the cache is initialized and before listen, if possible.
+  if (cacheProcessor.min_stripe_version.ink_major < CACHE_DB_MAJOR_VERSION) {
+    // Versions before 23 need the MMH hash.
+    if (cacheProcessor.min_stripe_version.ink_major < 23) {
+      Debug("cache_bc", "Pre 4.0 stripe (cache version %d.%d) found, forcing MMH hash for cache URLs"
+        , cacheProcessor.min_stripe_version.ink_major, cacheProcessor.min_stripe_version.ink_minor
+        );
+      URLHashContext::Setting = URLHashContext::MMH;
+    }
+  }
+
   if (1 == start) {
     Debug("http_listen", "Delayed listen enable, cache initialization finished");
     start_HttpProxyServer();

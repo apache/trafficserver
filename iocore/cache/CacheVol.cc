@@ -217,7 +217,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       continue;
     }
       
-    if (doc->ftype != CACHE_FRAG_TYPE_HTTP || !doc->hlen)
+    if (doc->doc_type != CACHE_FRAG_TYPE_HTTP || !doc->hlen)
       goto Lskip;
 
     last_collision = NULL;

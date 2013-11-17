@@ -1076,11 +1076,12 @@ CacheVC::openReadStartHead(int event, Event * e)
             if (info && info->m_alt) alt_length += info->m_alt->m_unmarshal_len;
           }
           Note("OpenReadHead failed for cachekey %X : vector inconsistency - "
-               "unmarshalled %d expecting %d in %d (base=%d, flen=%d) "
+               "unmarshalled %d expecting %d in %d (base=%d, ver=%d:%d) "
                "- vector n=%d size=%d"
                "first alt=%d[%s]"
                , key.slice32(0)
-               , uml, doc->hlen, doc->len, sizeofDoc, doc->_flen
+               , uml, doc->hlen, doc->len, sizeofDoc
+               , doc->v_major, doc->v_minor
                , vector.count(), alt_length
                , alt->m_magic
                , (CACHE_ALT_MAGIC_ALIVE == alt->m_magic ? "alive"

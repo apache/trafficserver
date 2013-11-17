@@ -400,7 +400,7 @@ CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
     goto Lcollision;
 #ifdef HTTP_CACHE
   alternate_tmp = 0;
-  if (doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
+  if (doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
     // its an http document
     if (vector.get_handles(doc->hdr(), doc->hlen) != doc->hlen) {
       Note("bad vector detected during evacuation");
@@ -751,8 +751,9 @@ agg_copy(char *p, CacheVC *vc)
     doc->magic = DOC_MAGIC;
     doc->len = len;
     doc->hlen = vc->header_len;
-    doc->ftype = vc->frag_type;
-    doc->_flen = 0;
+    doc->doc_type = vc->frag_type;
+    doc->v_major = CACHE_DB_MAJOR_VERSION;
+    doc->v_minor = CACHE_DB_MINOR_VERSION;
     doc->total_len = vc->total_len;
     doc->first_key = vc->first_key;
     doc->sync_serial = vol->header->sync_serial;
