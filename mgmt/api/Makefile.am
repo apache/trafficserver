@@ -35,10 +35,8 @@ DEFS += $(MGMT_DEFS)
 
 noinst_LIBRARIES = libmgmtapilocal.a
 libmgmtapilocal_a_SOURCES = \
-  include/mgmtapi.h \
   CfgContextDefs.h \
   CoreAPI.cc \
-  CoreAPI.h \
   EventControlMain.cc \
   EventControlMain.h \
   NetworkUtilsDefs.h \
@@ -61,6 +59,8 @@ libtsmgmtshare_la_SOURCES = \
   EventCallback.h \
   GenericParser.cc \
   GenericParser.h \
+  include/mgmtapi.h \
+  CoreAPI.h \
   INKMgmtAPI.cc
 
 if BUILD_TESTS
@@ -85,6 +85,7 @@ if BUILD_TESTS
 endif
 
 traffic_api_cli_remote_LDADD = \
+  libtsmgmtshare.la \
   libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTCL@ @LIBSSL@

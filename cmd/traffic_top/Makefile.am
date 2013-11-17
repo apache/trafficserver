@@ -31,6 +31,7 @@ traffic_top_CXXFLAGS = \
 
 traffic_top_SOURCES = traffic_top.cc
 traffic_top_LDADD = \
+  $(top_builddir)/mgmt/api/libtsmgmtshare.la \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   @CURL_LIBS@ @CURSES_LIB@
 

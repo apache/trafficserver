@@ -67,6 +67,7 @@ libtrafficshell_a_SOURCES = \
 traffic_shell_LDFLAGS =	@EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_shell_LDADD = \
   libtrafficshell.a \
+  $(top_builddir)/mgmt/api/libtsmgmtshare.la \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
