@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2360] Fix usage of TSMimeHdrFieldValueStringGet() IDX in some plugins.
 
   *) [TS-2361] Load regex_remap configuration relative to the configuration directory.
 
