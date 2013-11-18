@@ -3688,6 +3688,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField) (RegressionTest * test, int /* atype ATS
   const char *field1Value3Get;
   const char *field1Value4Get;
   const char *field1Value5Get;
+  const char *field1ValueAllGet;
   const char *field1ValueNewGet;
 
   int lengthField1Value1;
@@ -3695,6 +3696,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField) (RegressionTest * test, int /* atype ATS
   int lengthField1Value3;
   int lengthField1Value4;
   int lengthField1Value5;
+  int lengthField1ValueAll;
   int lengthField1ValueNew;
 
   time_t field2Value1 = time(NULL);
@@ -3996,13 +3998,20 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField) (RegressionTest * test, int /* atype ATS
       field1Value3Get = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 2, &lengthField1Value3);
       field1Value4Get = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 3, &lengthField1Value4);
       field1Value5Get = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 4, &lengthField1Value5);
+      field1ValueAllGet = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, -1, &lengthField1ValueAll);
       if (((strncmp(field1Value1Get, field1Value1, lengthField1Value1) == 0) && lengthField1Value1 == (int) strlen(field1Value1)) &&
           ((strncmp(field1Value2Get, field1Value2, lengthField1Value2) == 0) && lengthField1Value2 == (int) strlen(field1Value2)) &&
           ((strncmp(field1Value3Get, field1Value3, lengthField1Value3) == 0) && lengthField1Value3 == (int) strlen(field1Value3)) &&
           ((strncmp(field1Value4Get, field1Value4, lengthField1Value4) == 0) && lengthField1Value4 == (int) strlen(field1Value4)) &&
-          ((strncmp(field1Value5Get, field1Value5, lengthField1Value5) == 0) && lengthField1Value5 == (int) strlen(field1Value5))) {
+          ((strncmp(field1Value5Get, field1Value5, lengthField1Value5) == 0) && lengthField1Value5 == (int) strlen(field1Value5)) &&
+          (strstr(field1ValueAllGet, field1Value1Get) == field1Value1Get) &&
+          (strstr(field1ValueAllGet, field1Value2Get) == field1Value2Get) &&
+          (strstr(field1ValueAllGet, field1Value3Get) == field1Value3Get) &&
+          (strstr(field1ValueAllGet, field1Value4Get) == field1Value4Get) &&
+          (strstr(field1ValueAllGet, field1Value5Get) == field1Value5Get)) {
         SDK_RPRINT(test, "TSMimeHdrFieldValueStringInsert", "TestCase1&2&3&4&5", TC_PASS, "ok");
         SDK_RPRINT(test, "TSMimeHdrFieldValueStringGet", "TestCase1&2&3&4&5", TC_PASS, "ok");
+        SDK_RPRINT(test, "TSMimeHdrFieldValueStringGet with IDX=-1", "TestCase1&2&3&4&5", TC_PASS, "ok");
         test_passed_Mime_Hdr_Field_Value_String_Insert = true;
         test_passed_Mime_Hdr_Field_Value_String_Get = true;
 

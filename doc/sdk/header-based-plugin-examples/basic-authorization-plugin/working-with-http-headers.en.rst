@@ -50,7 +50,7 @@ are present and valid:
 ::
 
     :::c
-    val = TSMimeHdrFieldValueStringGet (bufp, hdr_loc, field_loc, 0, &authval_length);
+    val = TSMimeHdrFieldValueStringGet (bufp, hdr_loc, field_loc, -1, &authval_length);
     if (!val) {
         TSError ("no value in Proxy-Authorization field\n");
         TSHandleMLocRelease (bufp, hdr_loc, field_loc);

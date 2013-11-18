@@ -68,7 +68,7 @@ bool do_mysql_remap(TSCont contp,TSHttpTxn txnp) {
       goto release_url;
   }
   
-  request_host = TSMimeHdrFieldValueStringGet (reqp, hdr_loc, field_loc, 0, &request_host_length);
+  request_host = TSMimeHdrFieldValueStringGet (reqp, hdr_loc, field_loc, -1, &request_host_length);
   if (!request_host_length) {
     TSDebug(PLUGIN_NAME,"couldn't find request HOST header");
     goto release_field;

@@ -29,6 +29,7 @@ API Reference
   TSIOBufferCreate.en
   TSInstallDirGet.en
   TSMBufferCreate.en
+  TSMimeHdrFieldValueStringGet.en
   TSPluginInit.en
   TSRemap.en
   TSTrafficServerVersionGet.en

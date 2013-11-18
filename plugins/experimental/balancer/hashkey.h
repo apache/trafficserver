@@ -223,7 +223,7 @@ class HeaderHashKey : public HashKey
     // Note that hdrLoc is freed as part of the Resources dtor, and we free the "string" value
     // in the free_key() implementation (after we're done with it).
     if (bufp && hdrLoc && (fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, _header, _header_len))) {
-      if (TS_ERROR != TSMimeHdrFieldValueStringGet(bufp, hdrLoc, fieldLoc, 0, &val, &len)) {
+      if (TS_ERROR != TSMimeHdrFieldValueStringGet(bufp, hdrLoc, fieldLoc, -1, &val, &len)) {
         *data = val;
       } else {
         *data = NULL;

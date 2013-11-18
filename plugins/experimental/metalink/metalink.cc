@@ -565,7 +565,7 @@ http_send_response_hdr(TSCont contp, void *edata)
   /* If can't parse or lookup "Location: ..." URL, should still check if
    * response has "Digest: SHA-256=..." header? No: Can't parse or lookup URL
    * in "Location: ..." header is error */
-  value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->location_loc, 0, &length);
+  value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->location_loc, -1, &length);
   if (TSUrlParse(data->resp_bufp, data->url_loc, &value, value + length) != TS_PARSE_DONE) {
 
     TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->url_loc);

@@ -90,7 +90,7 @@ http_send_response(
         }
 
         value.first = TSMimeHdrFieldValueStringGet(buffer, header,
-                field, 0, &value.second);
+                field, -1, &value.second);
         kvblock.insert(std::string(name.first, name.second),
                 std::string(value.first, value.second));
 

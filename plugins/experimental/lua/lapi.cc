@@ -389,7 +389,7 @@ LuaRemapHeaderIndex(lua_State * lua)
     return 1;
   }
 
-  value = TSMimeHdrFieldValueStringGet(hdrs->buffer, hdrs->headers, field, 0, &vlen);
+  value = TSMimeHdrFieldValueStringGet(hdrs->buffer, hdrs->headers, field, -1, &vlen);
   lua_pushlstring(lua, value, vlen);
   return 1;
 }

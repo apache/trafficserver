@@ -555,7 +555,7 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configur
     return 0;
   }
 
-  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &len);
+  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
 
   int rv = host_configuration->ContentTypeIsCompressible(value, len);
   if (!rv) { 

@@ -163,7 +163,7 @@ HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
         const char * str;
         int len;
 
-        str = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, 0 /* index */, &len);
+        str = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */, &len);
         if (str && len) {
             ischunked = (strncmp("chunked", str, len) == 0);
         }
@@ -184,7 +184,7 @@ HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char * name, size_t namelen)
     // depends on whether pristine_host_hdr is set.
     mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_HOST, -1);
     if (mloc != TS_NULL_MLOC) {
-        host = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, 0 /* index */, &len);
+        host = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */, &len);
         TSHandleMLocRelease(mbuf, mhdr, mloc);
 
         if (host) {

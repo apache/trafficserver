@@ -749,7 +749,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
           TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
           break;
         }
-        host_hdr_str_val = TSMimeHdrFieldValueStringGet(req_bufp, req_loc, field_loc, 0, &host_hdr_str_val_len);
+        host_hdr_str_val = TSMimeHdrFieldValueStringGet(req_bufp, req_loc, field_loc, -1, &host_hdr_str_val_len);
         if (NOT_VALID_PTR(host_hdr_str_val) || host_hdr_str_val_len <= 0) {
           //if (VALID_PTR(str))
           //  TSHandleStringRelease(req_bufp, field_loc, str);
