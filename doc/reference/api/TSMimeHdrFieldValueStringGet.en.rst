@@ -73,13 +73,15 @@ does not have date-time semantics always returns :data:`0`.
 Examples
 ========
 
+This examples show how to retrieve and copy a specific header.
+
 ::
 
     #include <string.h>
     #include <ts/ts.h>
 
     int
-    get_content_type(TSHttpTxn txnp, char* buf)
+    get_content_type(TSHttpTxn txnp, char* buf, size_t buf_size)
     {
       TSMBuffer bufp;
       TSMLoc hdrs;
@@ -92,6 +94,8 @@ Examples
         if (TS_NULL_MLOC != ctype_field) {
           const char* str = TSMimeHdrFieldValueStringGet(bufp, hdrs, ctype_field, -1, &len);
 
+          if (len > buf_size)
+            len = buf_size;
           memcpy(buf, str, len);
           TSHandleMLocRelease(bufp, hdrs, ctype_field);
         }
