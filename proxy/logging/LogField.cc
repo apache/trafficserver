@@ -65,6 +65,78 @@ const char *aggregate_names[] = {
   ""
 };
 
+LogSlice::LogSlice(char *str)
+{
+  char *a, *b, *c;
+
+  m_enable = false;
+  m_start = 0;
+  m_end = INT_MAX;
+
+  if ((a = strchr(str, '[')) == NULL)
+    return;
+
+  *a++ = '\0';
+  if ((b = strchr(a, ':')) == NULL)
+    return;
+
+  *b++ = '\0';
+  if ((c = strchr(b, ']')) == NULL)
+    return;
+
+  m_enable = true;
+
+  // eat space
+  while (a != b && *a == ' ') a++;
+
+  if (a != b)
+    m_start = atoi(a);
+
+  // eat space
+  while (b != c && *b == ' ') b++;
+
+  if (b != c)
+    m_end = atoi(b);
+}
+
+int
+LogSlice::toStrOffset(int strlen, int *offset)
+{
+  int i, j, len;
+
+  // letf index
+  if (m_start >= 0)
+    i = m_start;
+  else
+    i = m_start + strlen;
+
+  if (i >= strlen)
+    return 0;
+
+  if (i < 0)
+    i = 0;
+
+  // right index
+  if (m_end >= 0)
+    j = m_end;
+  else
+    j = m_end + strlen;
+
+  if (j <= 0)
+    return 0;
+
+  if (j > strlen)
+    j = strlen;
+
+  // available length
+  len = j - i;
+
+  if (len > 0)
+    *offset = i;
+
+  return len;
+}
+
 /*-------------------------------------------------------------------------
   LogField::LogField
   -------------------------------------------------------------------------*/
@@ -131,7 +203,7 @@ LogField::LogField(const char *field, Container container)
   case ESSH:
   case ECSSH:
   case SCFG:
-    m_unmarshal_func = &(LogAccess::unmarshal_str);
+    m_unmarshal_func = (UnmarshalFunc)&(LogAccess::unmarshal_str);
     break;
 
   case ICFG:
@@ -300,6 +372,11 @@ unsigned
 LogField::unmarshal(char **buf, char *dest, int len)
 {
   if (m_alias_map == NULL) {
+    if (m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_str
+        || m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_http_text) {
+      UnmarshalFuncWithSlice func = (UnmarshalFuncWithSlice)m_unmarshal_func;
+      return (*func) (buf, dest, len, &m_slice);
+    }
     return (*m_unmarshal_func) (buf, dest, len);
   } else {
     return (*m_unmarshal_func_map) (buf, dest, len, m_alias_map);
