@@ -363,3 +363,35 @@ epub_copyright = u'2013, dev@trafficserver.apache.org'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
+
+if __name__ == '__main__':
+  # Use optparse instead of argparse because this needs to work on old Python versions.
+  import optparse
+
+  parser = optparse.OptionParser(description='Traffic Server Sphinx docs configuration')
+  parser.add_option('--check-version', action='store_true', dest='checkvers')
+  parser.add_option('--man-pages', action='store_true', dest='manpages')
+  parser.add_option('--section', type=int, default=0, dest='section')
+
+  (options, args) = parser.parse_args()
+
+  # Print the names of the man pages for the requested manual section.
+  if options.manpages:
+    for page in man_pages:
+      if options.section == 0 or options.section == int(page[4][0]):
+        print page[1] + '.' + page[4]
+
+  # Check whether we have a recent version of sphinx. EPEL and CentOS are completely crazy and I don't understand their
+  # packaging at all. The test below works on Ubuntu and places where sphinx is installed sanely AFAICT.
+  if options.checkvers:
+    print 'checking for sphinx version >= 1.1... ',
+    try:
+      import sphinx
+      version = sphinx.__version__
+      (major, minor, micro) = version.split('.')
+      if (int(major) > 1) or (int(major) == 1 and int(minor) >= 1):
+        print 'found ' + sphinx.__version__
+      sys.exit(0)
+    except Exception as e:
+      print e
+      sys.exit(1)

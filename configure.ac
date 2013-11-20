@@ -669,6 +669,41 @@ AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
 
+AM_PATH_PYTHON([2.4], [
+  dnl action-if-found
+  TS_MAN1_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+  TS_MAN3_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+  TS_MAN5_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+  TS_MAN8_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+
+  # If we have python, check if the Sphinx version looks OK.
+  AS_IF(["$PYTHON" "$srcdir/doc/conf.py" --check-version], [
+    sphinx_version_check=yes
+  ])
+
+], [
+  dnl action-if-not-found
+  :
+])
+
+AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
+AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
+AC_CHECK_PROG([SPHINXBUILD], [sphinx-build], [sphinx-build], [false])
+
+AC_SUBST(TS_MAN1_MANPAGES)
+AC_SUBST(TS_MAN3_MANPAGES)
+AC_SUBST(TS_MAN5_MANPAGES)
+AC_SUBST(TS_MAN8_MANPAGES)
+
+AC_MSG_CHECKING([whether to build man pages])
+AS_IF([test "x$sphinx_version_check" = "xyes" -a "x$SPHINXBUILD" != "xfalse"], [
+  AM_CONDITIONAL([BUILD_MANPAGES], [true])
+  AC_MSG_RESULT([yes])
+], [
+  AM_CONDITIONAL([BUILD_MANPAGES], [false])
+  AC_MSG_RESULT([no])
+])
+
 # Do bison check by hand because we must do a version check.
 # Use YACC because it makes autotools shut up.
 BISON_MAJOR=2
