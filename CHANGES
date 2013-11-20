@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2381] Reorganize TSUrlCreate docs into separate files.
+
   *) [TS-2377] Install man pages as part of the build.
 
   *) [TS-2379] Add a new field: '%<chp>', "client_host_port" to LogFormat.
