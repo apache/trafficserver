@@ -36,30 +36,31 @@ Synopsis
 Description
 ===========
 
-MIME headers and fields can be components of request headers, response
-headers, or standalone headers created within your plugin. The various
-functions here are all used to access header values of specific types, but it
-is up to the caller to know if a header has appropriate semantics for the API
-used. For all but :func:`TSMimeHdrFieldValueStringGet`, an appropriate data
-conversion algorithm is applied to the header field string.
+MIME headers and fields can be components of request headers,
+response headers, or standalone headers created within a Traffic
+Server plugin. The functions here are all used to access header
+values of specific types, but it is up to the caller to know if a
+header has appropriate semantics for the API used. For all but
+:func:`TSMimeHdrFieldValueStringGet`, an appropriate data conversion
+algorithm is applied to the header field string.
 
-All APIs takes an argument with the :type:`TSMBuffer` marshal buffer, and the
-:type:`TSMLoc` for the location to headers. In addition, the required
-:data:`field` argument is the locator of a specific header value, as returned
-by e.g. :func:`TSMimeHdrFieldFind`.
+All the APIs take a :type:`TSMBuffer` marshal buffer argument, and
+a :type:`TSMLoc` argument indicating the location of the HTTP
+headers. The required :data:`field` argument is the locator of a
+specific header value, as returned by an accessor function such as
+:func:`TSMimeHdrFieldFind`.
 
-Within the header field, comma separated values can be retrieved with an index
-(:data:`idx`) ranging from 0 to the max number of fields for this value; this
-max is retrieved using :func:`TSMimeHdrFieldValuesCount`. An :data:`idx` value of
+Within the header field, comma-separated values can be retrieved with an index
+(:data:`idx`) ranging from 0 to the maximum number of fields for this value; this
+maximum is retrieved using :func:`TSMimeHdrFieldValuesCount`. An :data:`idx` value of
 ``-1`` has the semantics of retrieving the entire header value, regardless of
-how many comma separated values there are. If a header is not comma separated,
+how many comma-separated values there are. If a header is not comma-separated,
 an :data:`idx` of :data:`0` or :data:`-1` are the same, but the latter is
-definitely preferred and recommended.
+preferred.
 
-For :func:`TSMimeHdrFieldValueStringGet`, an additional parameter can be
-provided, which is populated with the length of the string returned. If this
-argument is NULL, it is not derefenced and no length is returned.
-
+:func:`TSMimeHdrFieldValueStringGet` returns a pointer to the header
+value, and populated :data:`value_len_ptr` with the length of the
+value in bytes. The returned header value is not NUL-terminated.
 
 Return values
 =============
@@ -67,8 +68,6 @@ Return values
 All functions returns the header value with a type matching the respective
 function name. Using :func:`TSMimeHdrFieldValueDateGet` on a header which
 does not have date-time semantics always returns :data:`0`.
-
-
 
 Examples
 ========
@@ -109,4 +108,4 @@ This examples show how to retrieve and copy a specific header.
 See also
 ========
 
-:manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:`TSMimeHdrFieldValuesCount`
+:manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:`TSMimeHdrFieldValuesCount(3ts)`
