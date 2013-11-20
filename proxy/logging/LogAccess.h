@@ -168,6 +168,7 @@ public:
   // client -> proxy fields
   //
   inkcoreapi virtual int marshal_client_host_ip(char *);        // STR
+  inkcoreapi virtual int marshal_client_host_port(char *);      // INT
   inkcoreapi virtual int marshal_client_auth_user_name(char *); // STR
   int marshal_client_req_timestamp_sec(char *); // INT
 

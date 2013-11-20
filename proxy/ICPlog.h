@@ -52,6 +52,7 @@ public:
   }
   ink_hrtime GetElapsedTime();
   sockaddr const* GetClientIP();
+  in_port_t GetClientPort();
   SquidLogCode GetAction();
   const char *GetCode();
   int GetSize();

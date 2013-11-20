@@ -84,6 +84,15 @@ LogAccess::marshal_client_host_ip(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_host_port(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_auth_user_name(char *buf)
 {
   DEFAULT_STR_FIELD;

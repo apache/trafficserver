@@ -346,6 +346,13 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chi", field);
 
+  field = NEW(new LogField("client_host_port", "chp",
+                           LogField::sINT,
+                           &LogAccess::marshal_client_host_port,
+                           &LogAccess::unmarshal_int_to_str));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "chp", field);
+
   field = NEW(new LogField("client_host_ip_hex", "chih",
                            LogField::IP,
                            &LogAccess::marshal_client_host_ip,
