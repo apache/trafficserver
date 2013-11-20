@@ -380,8 +380,10 @@ init_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData dat
   else
     dump_mem_info_frequency = REC_ConfigReadInteger("proxy.config.dump_mem_info_frequency");
   Debug("tracker", "init_tracker called [%d]\n", dump_mem_info_frequency);
-  if (tracker_event)
+  if (tracker_event) {
     tracker_event->cancel();
+    tracker_event = NULL;
+  }
   if (dump_mem_info_frequency > 0) {
     tracker_event = eventProcessor.schedule_every(new TrackerContinuation,
                                                   HRTIME_SECONDS(dump_mem_info_frequency), ET_CALL);
