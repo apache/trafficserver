@@ -265,7 +265,11 @@ man_pages = [
    ('reference/api/TSPluginInit.en', 'TSPluginInit', u'Traffic Server plugin loading and registration', None, u'3ts'),
    ('reference/api/TSRemap.en', 'TSRemap', u'Traffic Server remap plugin entry points ', None, u'3ts'),
    ('reference/api/TSTrafficServerVersionGet.en', 'TSTrafficServerVersionGet', u'return Traffic Server version information', None, u'3ts'),
-   ('reference/api/TSUrlCreate.en', 'TSUrlCreate', u'Traffic Server URL manipulation API', None, u'3ts'),
+   ('reference/api/TSUrlCreate.en', 'TSUrlCreate', u'Traffic Server URL object construction API', None, u'3ts'),
+   ('reference/api/TSUrlHostGet.en', 'TSUrlHostGet', u'Traffic Server URL component retrieval API', None, u'3ts'),
+   ('reference/api/TSUrlHostSet.en', 'TSUrlHostSet', u'Traffic Server URL component manipulation API', None, u'3ts'),
+   ('reference/api/TSUrlPercentEncode.en', 'TSUrlPercentEncode', u'Traffic Server URL percent encoding API', None, u'3ts'),
+   ('reference/api/TSUrlStringGet.en', 'TSUrlStringGet', u'Traffic Server URL string representations API', None, u'3ts'),
    ('reference/api/TSMimeHdrFieldValueStringGet.en', 'TSMimeHdrFieldValueStringGet', u'Get HTTP MIME header values', None, u'3ts'),
 
    ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
