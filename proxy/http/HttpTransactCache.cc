@@ -305,11 +305,6 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
   if (client_request->method_get_wksidx() == HTTP_WKSIDX_PURGE)
     return (float)1.0;
 
-  // BZ49848 - for cached negative respones, we don't check for the
-  // Accept* headers. This should also be good for the 301 response.
-  if (obj_origin_server_response->status_get() != HTTP_STATUS_OK)
-    return (float)1.0;
-
   // Now calculate a quality based on all sorts of logic
   float q[4], Q;
   MIMEField *accept_field;
