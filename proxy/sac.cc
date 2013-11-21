@@ -46,7 +46,6 @@
 #include "DiagsConfig.h"
 #include "I_Machine.h"
 
-extern int CacheClusteringEnabled;
 int auto_clear_cache_flag = 0;
 
 // sac-specific command-line flags
