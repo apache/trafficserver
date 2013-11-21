@@ -4,6 +4,27 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-1919] Eliminate CacheLookupHttpConfig. This breaks cluster
    compatibility, so all cluster nodes should be upgraded simultaneously.
 
+  *) [TS-2379] Add a new field: '%<chp>', "client_host_port" to LogFormat.
+
+  *) [TS-2374] Abort the producer if the none of it`s consumers is alive.
+
+  *) [TS-2327] TSRedirectUrlSet does not perform DNS lookup of redirected OS
+
+  *) [TS-1468] Check vary and accept headers on non-200 responses in cache
+
+  *) [TS-2352] refine THREAD_ALLOC feature.
+
+  *) [TS-2364] Introduce slice notation to field syntax in log format.
+
+  *) [TS-2360] Fix usage of TSMimeHdrFieldValueStringGet() IDX in some plugins.
+
+  *) [TS-2361] Load regex_remap configuration relative to the configuration directory.
+
+  *) [TS-2359] Make install over existing installation can fail.
+
+  *) [TS-2350] Enhancements to traffic_top
+
+  *) [TS-2348] Rename tstop to traffic_top.
 
 Changes with Apache Traffic Server 4.2.0
 
@@ -28,8 +49,6 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2303] Incorrect docs for negative_caching_enabled.
     Author: Thomas Jackson <jacksontj.89@gmail.com>
-
-  *) [TS-2082] fix build with --enable-standalone-iocore.
 
   *) [TS-2712] Explicitly use subdir-objects in automake init.
 

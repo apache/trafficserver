@@ -280,6 +280,6 @@ extern ClassAllocator<Event> eventAllocator;
   if (_p->globally_allocated)    \
     ::_a.free(_p);               \
   else                           \
-    THREAD_FREE_TO(_p, _a, _t, thread_freelist_size)
+    THREAD_FREE(_p, _a, _t)
 
 #endif /*_Event_h_*/

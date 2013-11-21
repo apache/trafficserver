@@ -68,7 +68,7 @@ handle_response (TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
                   redirect_url_loc = TSMimeHdrFieldFind (resp_bufp, resp_loc, redirect_url_header, redirect_url_header_len);
 
                     if (redirect_url_loc) {
-                        redirect_url_str = TSMimeHdrFieldValueStringGet (resp_bufp, resp_loc, redirect_url_loc, 0, &redirect_url_length);
+                        redirect_url_str = TSMimeHdrFieldValueStringGet (resp_bufp, resp_loc, redirect_url_loc, -1, &redirect_url_length);
                         if (redirect_url_str) {
                             if (redirect_url_length > 0) {
                               TSRedirectUrlSet(txnp, redirect_url_str, redirect_url_length);

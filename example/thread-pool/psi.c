@@ -911,7 +911,7 @@ transformable(TSHttpTxn txnp)
     return 0;
   }
 
-  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, NULL);
+  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, NULL);
   if ((value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);

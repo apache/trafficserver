@@ -64,7 +64,8 @@
 -- -include I_Event.h or P_Event.h
 #endif
 #include "libts.h"
-  class Thread;
+#include "I_ProxyAllocator.h"
+class Thread;
 class ProxyMutex;
 
 #define THREADAPI
@@ -124,6 +125,24 @@ public:
   static ink_hrtime cur_time;
   inkcoreapi static ink_thread_key thread_data_key;
   Ptr<ProxyMutex> mutex_ptr;
+
+  // For THREAD_ALLOC
+  ProxyAllocator eventAllocator;
+  ProxyAllocator netVCAllocator;
+  ProxyAllocator sslNetVCAllocator;
+  ProxyAllocator httpClientSessionAllocator;
+  ProxyAllocator httpServerSessionAllocator;
+  ProxyAllocator hdrHeapAllocator;
+  ProxyAllocator strHeapAllocator;
+  ProxyAllocator cacheVConnectionAllocator;
+  ProxyAllocator openDirEntryAllocator;
+  ProxyAllocator ramCacheCLFUSEntryAllocator;
+  ProxyAllocator ramCacheLRUEntryAllocator;
+  ProxyAllocator evacuationBlockAllocator;
+  ProxyAllocator ioDataAllocator;
+  ProxyAllocator ioAllocator;
+  ProxyAllocator ioBlockAllocator;
+  ProxyAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
 private:
   // prevent unauthorized copies (Not implemented)

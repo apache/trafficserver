@@ -18,7 +18,7 @@ Author: Jason Giedymin
 4.0 FAQ
 4.1 I use EC2 and I'm still confused!?
 4.2 What is EC2?
-4.3 I don't use EC2 or have an AWS account, can I still use these scripts on 
+4.3 I don't use EC2 or have an AWS account, can I still use these scripts on
     my Virtual Machine or dedicated Ubuntu/Fedora Linux Box?
 4.4 How do I contact you for help?
 4.5 Will these AMIs be updated in the future?
@@ -34,7 +34,7 @@ Author: Jason Giedymin
     i386 AMI: ami-5ba34d32, kernel: aki-5f15f636, Ramdisk: ari-d5709dbc
 
 1.2 What is installed?
-  All packages other than Apache TrafficServer are from the ec2 ubuntu 
+  All packages other than Apache TrafficServer are from the ec2 ubuntu
   package repositories.  All software installed should be open source.
     * Official Canonical Ubuntu Karmic 9.10 EC2 AMI
     * Dist Upgraded as of 4/1/2010
@@ -52,7 +52,7 @@ Author: Jason Giedymin
     i386 AMI: ami-53a04e3a, kernel: aki-6eaa4907, Ramdisk: ari-42b95a2b
 
 2.2 What is installed?
-  All packages other than Apache TrafficServer are from the ec2 fedora 
+  All packages other than Apache TrafficServer are from the ec2 fedora
   package repositories.  All software installed should be open source.
     * Official Fedora Core 8 EC2 AMI
     * Dist Upgraded as of 4/1/2010
@@ -65,26 +65,26 @@ Author: Jason Giedymin
 3.0 The ATS Installation
   Apache Traffic Server is installed in: '/ats'.
   The installation script used to install ATS is contained within the contrib
-  directory, part of the ATS source distribution.  The script is included 
-  within the '/ats' folder for actual use.  
+  directory, part of the ATS source distribution.  The script is included
+  within the '/ats' folder for actual use.
 
 3.1 Additional Update Functionality
-  The EC2 images provided contain additional scripts to maintain freshness 
-  of the install scripts.  At one time the scripts provided 'auto-heal' 
-  functionality but that has been removed.  Running /ats/install_update.sh 
+  The EC2 images provided contain additional scripts to maintain freshness
+  of the install scripts.  At one time the scripts provided 'auto-heal'
+  functionality but that has been removed.  Running /ats/install_update.sh
   will keep the ATS installation up to date.
 
 3.2 User customized settings
   Any customized settings will be lost if the update/install scripts are run.
   Upon executing the install/update scripts you may copy your files back into
-  the config directory.  Users should periodically backup your config files, 
+  the config directory.  Users should periodically backup your config files,
   and keep abrest of any config changes as new versions of ATS are released.
-  The latter reason being why I did not auto-copy configs.  While I've tried 
-  to lessen as much pain for any Sys Admins, ultimately you must take charge 
-  of these critical settings as updates will and do happen frequently to the 
+  The latter reason being why I did not auto-copy configs.  While I've tried
+  to lessen as much pain for any Sys Admins, ultimately you must take charge
+  of these critical settings as updates will and do happen frequently to the
   ATS source.
 
-  An example script which alters settings can be found in 
+  An example script which alters settings can be found in
     '/ats/contrib/set_trafficserver.sh'
   This has been used on the AMIs already provided.
 
@@ -93,36 +93,36 @@ Author: Jason Giedymin
  ats
  |-- contrib
      | -- install_trafficserver.sh : installs ATS. Try not to run this directly.
-     | -- set_trafficserver.sh : sample config/testing/benchmark base script. 
+     | -- set_trafficserver.sh : sample config/testing/benchmark base script.
             You may want to learn from/use this script.
-     ` -- update_scripts.sh : used to update install_trafficserver.sh, 
+     ` -- update_scripts.sh : used to update install_trafficserver.sh,
             and set_trafficserver.sh from trunk.
- |-- install_update.sh : the 'easy button' script to re-install ATS. 
-       Executes update_scripts.sh, then install_trafficserver.sh. 
+ |-- install_update.sh : the 'easy button' script to re-install ATS.
+       Executes update_scripts.sh, then install_trafficserver.sh.
        This is what you want to run.
  `-- readme : extra information.
 
 4.0 FAQ
 
 4.1 I use EC2 and I'm still confused!?
-  With your EC2 account, refer to one of the AMIs listed in this doc 
-  (Ubuntu/Fedora).  Image architectures provided are i386, and x86_64.  
+  With your EC2 account, refer to one of the AMIs listed in this doc
+  (Ubuntu/Fedora).  Image architectures provided are i386, and x86_64.
   64bit is offered for those who need to spin up a big high powered instances.
-  Once running (and it may take a while) you will find yourself with a Linux 
-  distribution with Apache Traffic Server already installed.  If you'd like 
-  to re-install ATS against trunk, run '/ats/install_update.sh'.  Note that 
-  you will have to backup and/or optimize your configuration (see 3.2).  
-  To further setup ATS see the TrafficServer wiki @ 
+  Once running (and it may take a while) you will find yourself with a Linux
+  distribution with Apache Traffic Server already installed.  If you'd like
+  to re-install ATS against trunk, run '/ats/install_update.sh'.  Note that
+  you will have to backup and/or optimize your configuration (see 3.2).
+  To further setup ATS see the TrafficServer wiki @
 
     http://cwiki.apache.org/confluence/display/TS/
 
 4.2 What is EC2?
   See http://aws.amazon.com/
 
-4.3 I don't use EC2 or have an AWS account, can I still use these scripts on 
+4.3 I don't use EC2 or have an AWS account, can I still use these scripts on
     my Virtual Machine or dedicated Ubuntu/Fedora Linux Box?
-  Absolutely!  The /contrib scripts are actually meant for Ubuntu/Linux 
-  Installs first, EC2 second.  You can find them on the ATS SVN/Git 
+  Absolutely!  The /contrib scripts are actually meant for Ubuntu/Linux
+  Installs first, EC2 second.  You can find them on the ATS SVN/Git
   repository under '/contrib'.
 
 4.4 How do I contact you for help?

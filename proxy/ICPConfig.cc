@@ -1301,6 +1301,12 @@ ICPlog::GetClientIP()
   return &_s->_sender.sa;
 }
 
+in_port_t
+ICPlog::GetClientPort()
+{
+  return _s->_sender.port();
+}
+
 SquidLogCode ICPlog::GetAction()
 {
   if (_s->_queryResult == CACHE_EVENT_LOOKUP)

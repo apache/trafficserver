@@ -17,20 +17,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUFFIXES = .java .class .jar .my .def .stb .html
-
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/mgmt/api/include
 
-
-bin_PROGRAMS = traffic_shell traffic_line
+bin_PROGRAMS = traffic_shell
 traffic_shell_SOURCES = \
   cliAppInit.cc \
   CliCreateCommands.h \
-  cliMain.cc \
+  traffic_shell.cc \
   CliMgmtUtils.h \
   ConfigCmd.h \
   createArgument.h \
@@ -38,9 +35,6 @@ traffic_shell_SOURCES = \
   definitions.h \
   hashtable.h \
   ShowCmd.h
-
-traffic_line_SOURCES = \
-  TrafficLine.cc
 
 noinst_LIBRARIES = libtrafficshell.a
 libtrafficshell_a_SOURCES = \
@@ -73,6 +67,7 @@ libtrafficshell_a_SOURCES = \
 traffic_shell_LDFLAGS =	@EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_shell_LDADD = \
   libtrafficshell.a \
+  $(top_builddir)/mgmt/api/libtsmgmtshare.la \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -80,9 +75,3 @@ traffic_shell_LDADD = \
   @LIBRESOLV@ @LIBEXPAT@ @LIBSSL@ \
   @LIBPCRE@ @LIBREADLINE@ \
   -lm
-
-traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
-traffic_line_LDADD = \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBTCL@ @LIBSSL@

@@ -74,6 +74,19 @@ LogAccessICP::marshal_client_host_ip(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessICP::marshal_client_host_port(char *buf)
+{
+  if (buf) {
+    uint16_t port = ntohs(m_icp_log->GetClientPort());
+    marshal_int(buf, port);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessICP::marshal_client_auth_user_name(char *buf)
 {
   char *str = (char *) m_icp_log->GetIdent();

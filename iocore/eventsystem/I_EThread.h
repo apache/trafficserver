@@ -28,7 +28,6 @@
 #include "libts.h"
 #include "I_Thread.h"
 #include "I_PriorityEventQueue.h"
-#include "I_ProxyAllocator.h"
 #include "I_ProtectedQueue.h"
 
 // TODO: This would be much nicer to have "run-time" configurable (or something),
@@ -264,22 +263,6 @@ public:
   Event *schedule_local(Event *e);
 
   InkRand generator;
-  ProxyAllocator eventAllocator;
-  ProxyAllocator netVCAllocator;
-  ProxyAllocator sslNetVCAllocator;
-  ProxyAllocator httpClientSessionAllocator;
-  ProxyAllocator httpServerSessionAllocator;
-  ProxyAllocator hdrHeapAllocator;
-  ProxyAllocator strHeapAllocator;
-  ProxyAllocator cacheVConnectionAllocator;
-  ProxyAllocator openDirEntryAllocator;
-  ProxyAllocator ramCacheCLFUSEntryAllocator;
-  ProxyAllocator ramCacheLRUEntryAllocator;
-  ProxyAllocator evacuationBlockAllocator;
-  ProxyAllocator ioDataAllocator;
-  ProxyAllocator ioAllocator;
-  ProxyAllocator ioBlockAllocator;
-  ProxyAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
 private:
   // prevent unauthorized copies (Not implemented)

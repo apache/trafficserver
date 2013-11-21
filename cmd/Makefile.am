@@ -1,6 +1,4 @@
 #
-# Makefile.am for the Enterprise Management module.
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,26 +15,4 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/api/include
-
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
-
-bin_PROGRAMS = traffic_cop
-
-traffic_cop_SOURCES = \
-  TrafficCop.cc
-
-traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
-
-traffic_cop_LDADD = \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/records/librec4cop.a \
-  @LIBRESOLV@ @LIBSSL@
+SUBDIRS = traffic_top traffic_cop traffic_line traffic_shell

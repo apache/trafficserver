@@ -168,6 +168,7 @@ public:
   // client -> proxy fields
   //
   inkcoreapi virtual int marshal_client_host_ip(char *);        // STR
+  inkcoreapi virtual int marshal_client_host_port(char *);      // INT
   inkcoreapi virtual int marshal_client_auth_user_name(char *); // STR
   int marshal_client_req_timestamp_sec(char *); // INT
 
@@ -277,10 +278,10 @@ public:
   static int unmarshal_itox(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
   static int unmarshal_int_to_str(char **buf, char *dest, int len);
   static int unmarshal_int_to_str_hex(char **buf, char *dest, int len);
-  static int unmarshal_str(char **buf, char *dest, int len);
+  static int unmarshal_str(char **buf, char *dest, int len, LogSlice *slice = NULL);
   static int unmarshal_ttmsf(char **buf, char *dest, int len);
   static int unmarshal_http_version(char **buf, char *dest, int len);
-  static int unmarshal_http_text(char **buf, char *dest, int len);
+  static int unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice = NULL);
   static int unmarshal_http_status(char **buf, char *dest, int len);
   static int unmarshal_ip(char** buf, IpEndpoint* dest);
   static int unmarshal_ip_to_str(char **buf, char *dest, int len);

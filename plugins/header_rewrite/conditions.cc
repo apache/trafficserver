@@ -192,7 +192,7 @@ ConditionHeader::append_value(std::string& s, const Resources& res)
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size());
     TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
     if (field_loc != NULL) {
-      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &len);
+      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
       TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -423,8 +423,7 @@ void ConditionCookie::append_value(std::string& s, const Resources& res)
     return;
 
   // Get all cookies
-  // NB! Cookie field does not support commas, so we use index == 0
-  cookies = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &cookies_len);
+  cookies = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &cookies_len);
   if (cookies == NULL || cookies_len <= 0)
     goto out_release_field;
 

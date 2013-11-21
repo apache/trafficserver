@@ -293,12 +293,12 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_DATE, -1)) != TS_NULL_MLOC) {
     fprintf(stderr, "We have \"Date\" header in request\n");
-    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, 0, NULL);
+    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, NULL);
     fprintf(stderr, "Header value: %s\n", value);
   }
   if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, "MyHeader", sizeof("MyHeader") - 1)) != TS_NULL_MLOC) {
     fprintf(stderr, "We have \"MyHeader\" header in request\n");
-    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, 0, NULL);
+    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, NULL);
     fprintf(stderr, "Header value: %s\n", value);
   }
 

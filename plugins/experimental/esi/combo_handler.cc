@@ -349,7 +349,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
     return false;
   }
 
-  host = TSMimeHdrFieldValueStringGet(bufp, hdr_obj, field_loc, 0, &host_len);
+  host = TSMimeHdrFieldValueStringGet(bufp, hdr_obj, field_loc, -1, &host_len);
   if (!host || host_len <= 0) {
     LOG_ERROR("Error Extracting Host Header");
     TSHandleMLocRelease (bufp, hdr_obj, field_loc);

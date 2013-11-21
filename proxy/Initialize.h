@@ -49,7 +49,7 @@ void init_system_syslog_log_configure(void);
 //void init_system_logging();
 void init_system_reconfigure_diags(void);
 void init_system_diags(char *bdt, char *bat);
-void chown_file_to_user(const char *file, const char *user);
+
 void init_system_adjust_num_of_net_threads(void);
 
 //void initialize_standalone();

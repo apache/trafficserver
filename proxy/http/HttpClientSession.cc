@@ -108,7 +108,7 @@ HttpClientSession::destroy()
 {
   this->cleanup();
   if (proxy_allocated)
-    THREAD_FREE(this, httpClientSessionAllocator, this_ethread());
+    THREAD_FREE(this, httpClientSessionAllocator, this_thread());
   else
     httpClientSessionAllocator.free(this);
 }

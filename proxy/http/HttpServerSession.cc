@@ -52,7 +52,7 @@ HttpServerSession::destroy()
 
   mutex.clear();
   if (2 == share_session)
-    THREAD_FREE(this, httpServerSessionAllocator, this_ethread());
+    THREAD_FREE(this, httpServerSessionAllocator, this_thread());
   else
     httpServerSessionAllocator.free(this);
 }

@@ -292,32 +292,6 @@ private:
   void validate_ip();
 };
 
-/* --------------------------------------------------------------
-   **                struct DNSServer
-
-   A record for an single server
-   -------------------------------------------------------------- */
-struct DNSServer
-{
-  IpEndpoint x_server_ip[MAXNS];
-  char x_dns_ip_line[MAXDNAME * 2];
-
-  char x_def_domain[MAXDNAME];
-  char x_domain_srch_list[MAXDNAME];
-
-  DNSHandler *x_dnsH;
-
-  DNSServer()
-  : x_dnsH(NULL)
-  {
-    memset(x_server_ip, 0, sizeof(x_server_ip));
-
-    memset(x_def_domain, 0, MAXDNAME);
-    memset(x_domain_srch_list, 0, MAXDNAME);
-    memset(x_dns_ip_line, 0, MAXDNAME * 2);
-  }
-};
-
 
 TS_INLINE DNSHandler::DNSHandler()
  : Continuation(NULL), n_con(0), options(0), in_flight(0), name_server(0), in_write_dns(0),

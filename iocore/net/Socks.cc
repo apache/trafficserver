@@ -122,7 +122,7 @@ SocksEntry::findServer()
 #else
   if (nattempts > netProcessor.socks_conf_stuff->connection_attempts)
     memset(&server_addr, 0, sizeof(server_addr));
-  else ats_ip_copy(&server_addr, &g_socks_conf_stuff->server_addr);
+  else ats_ip_copy(server_addr, g_socks_conf_stuff->socks_server);
 #endif // SOCKS_WITH_TS
 
   char buff[INET6_ADDRSTRLEN];

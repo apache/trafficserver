@@ -157,7 +157,7 @@ modify_header(TSHttpTxn txnp)
     }
 
     /* Get the cached MIME value for this name in this HTTP header */
-    chkptr = TSMimeHdrFieldValueStringGet(cached_bufp, cached_loc, cached_field_loc, 0, &chklength);
+    chkptr = TSMimeHdrFieldValueStringGet(cached_bufp, cached_loc, cached_field_loc, -1, &chklength);
     if (NULL == chkptr || !chklength) {
       TSError("Could not find value for cached MIME field name %s", mimehdr1_name);
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);

@@ -1841,7 +1841,11 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 
 AC_CONFIG_FILES([
   Makefile
-  cop/Makefile
+  cmd/Makefile
+  cmd/traffic_cop/Makefile
+  cmd/traffic_line/Makefile
+  cmd/traffic_shell/Makefile
+  cmd/traffic_top/Makefile
   doc/Doxyfile
   doc/Makefile
   example/Makefile
@@ -1886,7 +1890,6 @@ AC_CONFIG_FILES([
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/cli/Makefile
   mgmt/cluster/Makefile
   mgmt/preparse/Makefile
   mgmt/stats/Makefile

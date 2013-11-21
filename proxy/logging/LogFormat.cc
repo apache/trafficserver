@@ -502,6 +502,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         name = symbol + 1;
         *name_end = 0;          // changes '}' to '\0'
         sym = name_end + 1;     // start of container symbol
+        LogSlice slice(sym);
         Debug("log-format", "Name = %s, symbol = %s", name, sym);
         container = LogField::valid_container_name(sym);
         if (container == LogField::NO_CONTAINER) {
@@ -509,6 +510,11 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         } else {
           f = NEW(new LogField(name, container));
           ink_assert(f != NULL);
+          if (slice.m_enable) {
+            f->m_slice = slice;
+            Debug("log-slice", "symbol = %s, [%d:%d]", sym,
+                  f->m_slice.m_start, f->m_slice.m_end);
+          }
           field_list->add(f, false);
           field_count++;
           Debug("log-format", "Container field {%s}%s added", name, sym);
@@ -521,10 +527,17 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     // treat this like a regular field symbol
     //
     else {
+      LogSlice slice(symbol);
       Debug("log-format", "Regular field symbol: %s", symbol);
       f = Log::global_field_list.find_by_symbol(symbol);
       if (f != NULL) {
-        field_list->add(f);
+        LogField *cpy = NEW(new LogField(*f));
+        if (slice.m_enable) {
+          cpy->m_slice = slice;
+          Debug("log-slice", "symbol = %s, [%d:%d]", symbol,
+                cpy->m_slice.m_start, cpy->m_slice.m_end);
+        }
+        field_list->add(cpy, false);
         field_count++;
         Debug("log-format", "Regular field %s added", symbol);
       } else {

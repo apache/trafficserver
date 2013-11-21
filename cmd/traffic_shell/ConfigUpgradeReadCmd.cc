@@ -29,7 +29,7 @@
 #include <CliMgmtUtils.h>
 #include <ConfigUpgradeCmd.h>
 #include <string.h>
-#include "../api/include/mgmtapi.h"
+#include <mgmtapi.h>
 
 
 extern Tcl_Interp *interp;

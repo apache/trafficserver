@@ -274,7 +274,7 @@ CacheHTTPInfoVector::~CacheHTTPInfoVector()
   -------------------------------------------------------------------------*/
 
 int
-CacheHTTPInfoVector::insert(CacheHTTPInfo */* info ATS_UNUSED */, int index)
+CacheHTTPInfoVector::insert(CacheHTTPInfo * info, int index)
 {
   ink_assert(0);
   return index;
@@ -285,7 +285,7 @@ CacheHTTPInfoVector::insert(CacheHTTPInfo */* info ATS_UNUSED */, int index)
 
 
 void
-CacheHTTPInfoVector::detach(int /* idx ATS_UNUSED */, CacheHTTPInfo */* r ATS_UNUSED */)
+CacheHTTPInfoVector::detach(int idx, CacheHTTPInfo * r)
 {
   ink_assert(0);
 }
@@ -294,7 +294,7 @@ CacheHTTPInfoVector::detach(int /* idx ATS_UNUSED */, CacheHTTPInfo */* r ATS_UN
   -------------------------------------------------------------------------*/
 
 void
-CacheHTTPInfoVector::remove(int /* idx ATS_UNUSED */, bool /* destroy ATS_UNUSED */)
+CacheHTTPInfoVector::remove(int idx, bool destroy)
 {
   ink_assert(0);
 }
@@ -303,7 +303,7 @@ CacheHTTPInfoVector::remove(int /* idx ATS_UNUSED */, bool /* destroy ATS_UNUSED
   -------------------------------------------------------------------------*/
 
 void
-CacheHTTPInfoVector::clear(bool /* destroy ATS_UNUSED */)
+CacheHTTPInfoVector::clear(bool destroy)
 {
 }
 
@@ -311,7 +311,7 @@ CacheHTTPInfoVector::clear(bool /* destroy ATS_UNUSED */)
   -------------------------------------------------------------------------*/
 
 void
-CacheHTTPInfoVector::print(char */* buffer ATS_UNUSED */, size_t /* buf_size ATS_UNUSED */, bool /* temps ATS_UNUSED */)
+CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
 {
   ink_assert(0);
 }
@@ -329,14 +329,14 @@ CacheHTTPInfoVector::marshal_length()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
-CacheHTTPInfoVector::marshal(char */* buf ATS_UNUSED */, int length)
+CacheHTTPInfoVector::marshal(char *buf, int length)
 {
   ink_assert(0);
   return length;
 }
 
 int
-CacheHTTPInfoVector::unmarshal(const char */* buf ATS_UNUSED */, int /* length ATS_UNUSED */, RefCountObj */* block_ptr ATS_UNUSED */)
+CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj * block_ptr)
 {
   ink_assert(0);
   return 0;
@@ -346,7 +346,7 @@ CacheHTTPInfoVector::unmarshal(const char */* buf ATS_UNUSED */, int /* length A
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 uint32_t
-CacheHTTPInfoVector::get_handles(const char */* buf ATS_UNUSED */, int /* length ATS_UNUSED */, RefCountObj */* block_ptr ATS_UNUSED */)
+CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * block_ptr)
 {
   ink_assert(0);
   return 0;

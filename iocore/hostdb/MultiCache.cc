@@ -34,7 +34,6 @@
 #include "P_HostDB.h"
 #else
 //extern const char *system_config_directory;
-extern int hostdb_sync_frequency;
 #endif
 
 #include "P_MultiCache.h"

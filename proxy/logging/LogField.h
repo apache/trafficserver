@@ -31,6 +31,35 @@
 
 class LogAccess;
 
+struct LogSlice
+{
+  bool m_enable;
+  int m_start;
+  int m_end;
+
+  LogSlice() {
+    m_enable = false;
+    m_start = 0;
+    m_end = INT_MAX;
+  }
+
+  //
+  // Initialize LogSlice by slice notation,
+  // the str looks like: "xxx[0:30]".
+  //
+  LogSlice(char *str);
+
+  //
+  // Convert slice notation to target string's offset,
+  // return the available length belongs to this slice.
+  //
+  // Use the offset and return value, we can locate the
+  // string content indicated by this slice.
+  //
+  int toStrOffset(int strlen, int *offset);
+};
+
+
 /*-------------------------------------------------------------------------
   LogField
 
@@ -47,6 +76,7 @@ class LogField
 public:
   typedef int (LogAccess::*MarshalFunc) (char *buf);
   typedef int (*UnmarshalFunc) (char **buf, char *dest, int len);
+  typedef int (*UnmarshalFuncWithSlice) (char **buf, char *dest, int len, LogSlice *slice);
   typedef int (*UnmarshalFuncWithMap) (char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
 
@@ -152,6 +182,7 @@ private:
 
 public:
   LINK(LogField, link);
+  LogSlice m_slice;
 
 private:
 // luis, check where this is used and what it does

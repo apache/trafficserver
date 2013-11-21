@@ -23,12 +23,24 @@ specifications (a '*' denotes a tag that is required):
        A valid format specification is a printf-style string that describes
        what each log entry looks like when formatted for ascii output.
        Placeholders for valid Inktomi field names are specified using the
-       notation '%<field>'.  The specified field can be of two types: 
-           (1) simple; example %<cqu> 
-	   (2) container field, which is a field within a container (such
-	   as an http header or an Inktomi stat).  Fields of this type have
-	   the syntax: '%<{field}container>'.  See documentation for valid
-	   container names.
+       notation '%<field>'.  The specified field can be of two types:
+           (1) simple field: '%<field>', for example %<cqu>.
+           (2) container field: '%<field>container', which is a field within
+               a container (such as an http header or an Inktomi stat).  See
+               documentation for valid container names.
+       To limit the length of field's output, we can use slice notation with
+       above two types:
+           (1) simple field with slice: '%<field[start:end]>',
+           (2) container field with slice: '%<field>container[start:end]'.
+           Here is same example about slice notation:
+            '%<cqup>[:]'    # the whole characters of <cqup>.
+            '%<cqup[0:30]>' # the first 30 characters of <cqup>.
+            '%<cqup[-10:]>' # the last 10 characters of <cqup>.
+            '%<cqup[:-5]>'  # everything except the last 5 characters of <cqup>.
+          Note: slice notation makes sense only when:
+            * the target field is a string type, and
+            * it shouldn't be ip/timestamp which are converted
+              to string from integer internally.
        If you want to include quotes within the format string, escape them
        with a backslash. For example, to quote the client request url (cqu),
        you would type something like

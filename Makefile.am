@@ -29,9 +29,9 @@ export CCACHE_BASEDIR
 # proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
 if STANDALONE_IOCORE
-SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cop plugins tools example
+SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy plugins cmd tools example
 else
-SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cop rc doc plugins tools example
+SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy rc doc plugins cmd tools example
 endif
 
 DIST_BUILD_USER=`id -nu`
@@ -39,6 +39,9 @@ DIST_BUILD_USER_GROUP=`id -ng`
 DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUILD_USER_GROUP}
 
 EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README-EC2 REVIEWERS
+
+# Default value when creating release candidates
+RC = 0
 
 # igalic can't remember if this is make check or make test and neither should you.
 test: check
@@ -54,18 +57,33 @@ doxygen:
 
 asf-distdir:
 	@$(am__remove_distdir)
-	test -d .git && git clone . $(distdir) || svn export . $(distdir)
+	test -d .git && git clone . $(distdir)
 	cd $(distdir) && autoreconf -i
 	rm -rf -- $(distdir)/autom4te.cache $(distdir)/.git $(distdir)/.gitignore $(distdir)/ci
 
 asf-dist: asf-distdir
-	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
+	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir).tar.bz2
+	@$(am__remove_distdir)
+
+asf-dist-rc: asf-distdir
+	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir)-rc$(RC).tar.bz2
 	@$(am__remove_distdir)
 
 asf-dist-sign: asf-dist
 	md5sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
 	sha1sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha1
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
+
+asf-dist-sign-rc: asf-dist-rc
+	md5sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.md5
+	sha1sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.sha1
+	gpg --armor --output $(distdir)-rc$(RC).tar.bz2.asc  --detach-sig $(distdir)-rc$(RC).tar.bz2
+
+release: asf-dist-sign
+	git tag -fs -m "Release $(VERSION)" $(VERSION)
+
+rel-candidate: asf-dist-sign-rc
+	git tag -fs -m "Release Candidate $(VERSION)-rc$(RC)" $(VERSION)-rc$(RC)
 
 examples: all
 	@cd example && $(MAKE) $(AM_MAKEFLAGS)
@@ -88,6 +106,8 @@ help:
 	echo 'examples         make examples' && \
 	echo 'asf-dist         recreate source package' && \
 	echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
+	echo 'release          recreate a signed release source package and a signed git tag' && \
+	echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag' && \
 	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
 	echo 'rat              produce a RAT licence compliance report of the source' && \
 	echo 'doxygen          generate doxygen docs in doc/html dir' && \

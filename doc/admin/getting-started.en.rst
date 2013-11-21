@@ -76,7 +76,7 @@ In order to build Traffic Server from source you will need the following
 -  hwloc
 -  lua
 -  curses
--  curl (both for tstop)
+-  curl (both for :program:`traffic_top`)
 
 if you're building from a git clone, you'll also need
 

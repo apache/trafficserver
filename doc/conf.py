@@ -266,6 +266,7 @@ man_pages = [
    ('reference/api/TSRemap.en', 'TSRemap', u'Traffic Server remap plugin entry points ', None, u'3ts'),
    ('reference/api/TSTrafficServerVersionGet.en', 'TSTrafficServerVersionGet', u'return Traffic Server version information', None, u'3ts'),
    ('reference/api/TSUrlCreate.en', 'TSUrlCreate', u'Traffic Server URL manipulation API', None, u'3ts'),
+   ('reference/api/TSMimeHdrFieldValueStringGet.en', 'TSMimeHdrFieldValueStringGet', u'Get HTTP MIME header values', None, u'3ts'),
 
    ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
    ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
@@ -276,7 +277,7 @@ man_pages = [
    ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
 
    ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
-   ('reference/commands/tstop.en','tstop', u'Display Traffic Server statistics', None, '1'),
+   ('reference/commands/traffic_top.en','traffic_top', u'Display Traffic Server statistics', None, '1'),
    ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
 
    ('reference/configuration/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),

@@ -77,7 +77,7 @@ RulesEntry::execute(TSMBuffer& reqp, TSMLoc& hdr_loc) const
         bool nuke = false;
       
         if (_q_type != QUAL_NONE)
-          val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, 0, &val_len);
+          val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, -1, &val_len);
 
         switch (_q_type) {
         case QUAL_NONE:

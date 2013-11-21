@@ -101,4 +101,4 @@ prepend the Traffic Line command with ``./`` (for example:
 :option:`traffic_line -r` ``variable``).
 
 
-.. XXX: We're missing docs on how to use tstop here.
+.. XXX: We're missing docs on how to use traffic_top here.

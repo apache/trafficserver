@@ -84,6 +84,15 @@ LogAccess::marshal_client_host_ip(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_host_port(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_auth_user_name(char *buf)
 {
   DEFAULT_STR_FIELD;
@@ -998,7 +1007,7 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_str(char **buf, char *dest, int len)
+LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
 {
   ink_assert(buf != NULL);
   ink_assert(*buf != NULL);
@@ -1008,6 +1017,21 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len)
   int val_len = (int)::strlen(val_buf);
 
   *buf += LogAccess::strlen(val_buf);   // this is how it was stored
+
+  if (slice && slice->m_enable) {
+    int offset, n;
+
+    n = slice->toStrOffset(val_len, &offset);
+    if (n <= 0)
+      return 0;
+
+    if (n >= len)
+      return -1;
+
+    memcpy(dest, (val_buf + offset), n);
+    return n;
+  }
+
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);
     return val_len;
@@ -1093,7 +1117,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_http_text(char **buf, char *dest, int len)
+LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
 {
   ink_assert(buf != NULL);
   ink_assert(*buf != NULL);
@@ -1108,7 +1132,7 @@ LogAccess::unmarshal_http_text(char **buf, char *dest, int len)
   }
   p += res1;
   *p++ = ' ';
-  int res2 = unmarshal_str(buf, p, len - res1 - 1);
+  int res2 = unmarshal_str(buf, p, len - res1 - 1, slice);
   if (res2 < 0) {
     return -1;
   }
