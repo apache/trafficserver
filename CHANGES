@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2379] Add a new field: '%<chp>', "client_host_port" to LogFormat.
+
   *) [TS-2374] Abort the producer if the none of it`s consumers is alive.
 
   *) [TS-2327] TSRedirectUrlSet does not perform DNS lookup of redirected OS
