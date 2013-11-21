@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2327] TSRedirectUrlSet does not perform DNS lookup of redirected OS
+
   *) [TS-1468] Check vary and accept headers on non-200 responses in cache
 
   *) [TS-2352] refine THREAD_ALLOC feature.

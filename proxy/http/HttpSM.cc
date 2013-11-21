@@ -7384,6 +7384,8 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   t_state.response_received_time = 0;
   t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
   t_state.next_action = HttpTransact::REDIRECT_READ;
+  // we have a new OS and need to have DNS lookup the new OS
+  t_state.dns_info.lookup_success = false;
 
   // check to see if the client request passed a host header, if so copy the host and port from the redirect url and
   // make a new host header
