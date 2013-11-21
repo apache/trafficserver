@@ -247,7 +247,7 @@ Creating Mapping Rules for HTTP Requests
 
 To create mapping rules
 
-1. Enter the map and reverse-map rules into the :file`remap.config` file
+1. Enter the map and reverse-map rules into the :file:`remap.config` file
 2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
