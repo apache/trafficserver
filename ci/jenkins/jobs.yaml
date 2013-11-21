@@ -223,10 +223,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 
 - project:
@@ -259,10 +259,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: centos-6.4-x64
@@ -294,10 +294,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: master
             tag: taobao
@@ -334,10 +334,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: fedora-15-x64
@@ -369,10 +369,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: fedora-15-x86
@@ -404,10 +404,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: fedora-18-x64
@@ -439,10 +439,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: fedora-18-x86
@@ -474,10 +474,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: fedora-rawhide-x64
@@ -509,10 +509,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-clang-{tag}-regression':
             branch: master
             tag: debug
@@ -523,7 +523,7 @@
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-clang-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: fedora-rawhide-x86
@@ -555,10 +555,10 @@
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: freebsd-9.1-x64
@@ -588,12 +588,12 @@
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: omnios-x64
@@ -623,12 +623,12 @@
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: opensuse-12-x64
@@ -658,12 +658,12 @@
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: ubuntu-10.04-x64
@@ -698,12 +698,12 @@
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: ubuntu-12.04-x64
@@ -738,17 +738,17 @@
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: hardening
             hardening: '1'
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: master
             tag: taobao
@@ -788,12 +788,12 @@
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///home/jenkins/git/trafficserver_4.1
+            repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
     name: mac-os-x
@@ -823,19 +823,19 @@
             repo: file:///Users/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
-            repo: file:///Users/jenkins/git/trafficserver_4.1
+            repo: file:///Users/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 4.1.x
             tag: debug
             debug: --enable-debug
-            repo: file:///Users/jenkins/git/trafficserver_4.1
+            repo: file:///Users/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: 5.0.x
-            repo: file:///Users/jenkins/git/trafficserver_5.0
+            repo: file:///Users/jenkins/git/trafficserver_5
         - '{node}-{branch}-{tag}-regression':
             branch: 5.0.x
             tag: debug
             debug: --enable-debug
-            repo: file:///Users/jenkins/git/trafficserver_5.0
+            repo: file:///Users/jenkins/git/trafficserver_5
 
 # vim: sw=4 ts=4 et ft=yaml :
