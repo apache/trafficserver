@@ -1,0 +1,32 @@
+README
+======
+
+This is a collection of little tidbits on how we manage our Jenkins build
+system. Please update it.
+
+
+
+Update the jobs queue
+---------------------
+
+Step 1: Update the jobs.yaml in ci/jenkins. Don't break it.
+
+Step 2: Create your user config file, e.g.
+
+     [jenkins]
+     user=zwoop
+     password=yep-this-is-it
+     url=https://ci.trafficserver.apache.org
+
+
+Step 3: Make sure you have the jenkins-job command line utility:
+
+     $ pip install jenkins-job-builder
+
+
+Step 4: Run the jenkins-job update, e.g.
+
+     $ jenkins-jobs --conf zwoop.conf update jenkins/ci/jobs.yaml
+
+
+Step 5: Profit.
