@@ -3249,6 +3249,9 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer * c)
 
     HTTP_INCREMENT_TRANS_STAT(http_cache_write_errors);
     DebugSM("http", "[%" PRId64 "] aborting cache write due %s event from cache", sm_id, HttpDebugNames::get_event_name(event));
+    // abort the producer if the cache_writevc is the only consumer.
+    if (c->producer->alive && c->producer->num_consumers == 1)
+      tunnel.chain_abort_all(c->producer);
     break;
   case VC_EVENT_WRITE_COMPLETE:
     // if we've never initiated a cache write
