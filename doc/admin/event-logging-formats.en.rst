@@ -72,6 +72,9 @@ The following list describes Traffic Server custom logging fields.
 ``chih``
     The IP address of the client's host machine in hexadecimal.
 
+``chp``
+    The port number of the client's host machine.
+
 ``cqbl``
     The client request transfer length; the body length in the client
     request to Traffic Server (in bytes).
