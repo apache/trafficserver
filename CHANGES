@@ -50,6 +50,8 @@ Changes with Apache Traffic Server 4.2.0
   *) [TS-2303] Incorrect docs for negative_caching_enabled.
     Author: Thomas Jackson <jacksontj.89@gmail.com>
 
+  *) [TS-2082] fix build with --enable-standalone-iocore.
+
   *) [TS-2712] Explicitly use subdir-objects in automake init.
 
   *) [TS-2309] Allow mod_generator plugin for lighttpd to accept "SI" postfixes.
