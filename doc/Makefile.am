@@ -87,6 +87,11 @@ man8_MANS = $(TS_MAN8_MANPAGES)
 
 $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS): man
 
+# Hook the 'all' target so that the man pages get generated in the "all" target, prior
+# to "make install". If we leave it to "make install" time, then the man pages are likely
+# to me generated as root.
+all-am: $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
+
 endif
 
 EXTRA_DIST = \
