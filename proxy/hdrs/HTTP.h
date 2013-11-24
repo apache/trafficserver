@@ -1307,8 +1307,8 @@ struct HTTPCacheAlt
   int32_t m_id;
   int32_t m_rid;
 
-  INK_MD5 m_object_key;
-  int64_t m_object_size;
+  int32_t m_object_key[4];
+  int32_t m_object_size[2];
 
   HTTPHdr m_request_hdr;
   HTTPHdr m_response_hdr;
@@ -1447,37 +1447,65 @@ HTTPInfo::operator =(const HTTPInfo & m)
 inline INK_MD5
 HTTPInfo::object_key_get()
 {
-  return m_alt->m_object_key;
+  INK_MD5 val;
+  int32_t* pi = reinterpret_cast<int32_t*>(&val);
+
+  pi[0] = m_alt->m_object_key[0];
+  pi[1] = m_alt->m_object_key[1];
+  pi[2] = m_alt->m_object_key[2];
+  pi[3] = m_alt->m_object_key[3];
+
+  return val;
 }
 
 inline void
 HTTPInfo::object_key_get(INK_MD5 *md5)
 {
-  *md5 = m_alt->m_object_key;
+  int32_t* pi = reinterpret_cast<int32_t*>(md5);
+  pi[0] = m_alt->m_object_key[0];
+  pi[1] = m_alt->m_object_key[1];
+  pi[2] = m_alt->m_object_key[2];
+  pi[3] = m_alt->m_object_key[3];
 }
 
 inline bool
 HTTPInfo::compare_object_key(const INK_MD5 *md5)
 {
-  return m_alt->m_object_key == *md5;
+  int32_t const* pi = reinterpret_cast<int32_t const*>(md5);
+  return ((m_alt->m_object_key[0] == pi[0]) &&
+          (m_alt->m_object_key[1] == pi[1]) &&
+          (m_alt->m_object_key[2] == pi[2]) &&
+          (m_alt->m_object_key[3] == pi[3])
+         );
 }
 
 inline int64_t
 HTTPInfo::object_size_get()
 {
-  return m_alt->m_object_size;
+  int64_t val;
+  int32_t* pi = reinterpret_cast<int32_t*>(&val);
+
+  pi[0] = m_alt->m_object_size[0];
+  pi[1] = m_alt->m_object_size[1];
+  return val;
 }
 
 inline void
 HTTPInfo::object_key_set(INK_MD5 & md5)
 {
-  m_alt->m_object_key = md5;
+  int32_t* pi = reinterpret_cast<int32_t*>(&md5);
+  m_alt->m_object_key[0] = pi[0];
+  m_alt->m_object_key[1] = pi[1];
+  m_alt->m_object_key[2] = pi[2];
+  m_alt->m_object_key[3] = pi[3];
 }
 
 inline void
 HTTPInfo::object_size_set(int64_t size)
 {
-  m_alt->m_object_size = size;
+  int32_t* pi = reinterpret_cast<int32_t*>(&size);
+  m_alt->m_object_size[0] = pi[0];
+  m_alt->m_object_size[1] = pi[1];
 }
 
 inline HTTPInfo::FragOffset*
