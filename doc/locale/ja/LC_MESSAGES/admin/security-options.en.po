@@ -13,27 +13,31 @@ msgstr ""
 
 #: ../../admin/security-options.en.rst:4
 msgid "Security Options"
-msgstr ""
+msgstr "セキュリティオプション"
 
 #: ../../admin/security-options.en.rst:23
 msgid "Traffic Server provides a number of security features."
-msgstr ""
+msgstr "Traffic Server はいくつものセキュリティ機能を提供します。"
 
 #: ../../admin/security-options.en.rst:28
 msgid "Controlling Client Access to the Proxy Cache"
-msgstr ""
+msgstr "クライアントからプロキシーキャッシュへのアクセスの制御"
 
 #: ../../admin/security-options.en.rst:30
 msgid ""
 "You can configure Traffic Server to allow only certain clients to use the "
 "proxy cache by editing a configuration file."
 msgstr ""
+"設定ファイルを編集することで、信頼できるクライアントのみにプロキシー"
+"キャッシュの使用を許すように Traffic Server を設定することができます。"
 
 #: ../../admin/security-options.en.rst:33
 msgid ""
 "Add a line in :file:`ip_allow.config` for each IP address or range of IP "
 "addresses allowed to access Traffic Server."
 msgstr ""
+":file:`ip_allow.config` に Traffic Server へのアクセスを許す個々の IP "
+"アドレスもしくは IP アドレスの範囲を 1 行書き足してください。"
 
 #: ../../admin/security-options.en.rst:35
 #: ../../admin/security-options.en.rst:63
@@ -41,10 +45,11 @@ msgid ""
 "Run the command :option:`traffic_line -x` to apply the configuration "
 "changes."
 msgstr ""
+":option:`traffic_line -x` を実行して設定の変更を適用してください。"
 
 #: ../../admin/security-options.en.rst:41
 msgid "Configuring DNS Server Selection (Split DNS)"
-msgstr ""
+msgstr "DNS サーバー選択 (Split DNS) の設定"
 
 #: ../../admin/security-options.en.rst:43
 msgid ""
@@ -56,38 +61,49 @@ msgid ""
 "security of your intranet, while continuing to provide direct access to "
 "sites outside your organization."
 msgstr ""
+"**Split DNS** オプションはセキュリティ要件に規定されたとおりに "
+"Traffic Server が複数の DNS サーバーを使用するように設定することを可能に"
+"します。例えば、Traffic Server が内部ネットワークのホスト名を解決するために"
+" 1 組の DNS サーバーを使用する一方で、ファイアーウォールの外にある DNS "
+"サーバーにはインターネット上のホストの解決を許すように設定してもよいでしょう。"
+"これはイントラネットのセキュリティを維持すると同時に、組織外のサイトへの"
+"直接アクセスも提供し続けます。"
 
 #: ../../admin/security-options.en.rst:51
 msgid "To configure Split DNS, you must do the following:"
-msgstr ""
+msgstr "Split DNS を設定するには次のことをしなければなりません"
 
 #: ../../admin/security-options.en.rst:53
 msgid ""
 "Specify the rules for performing DNS server selection based on the "
 "destination domain, the destination host, or a URL regular expression."
 msgstr ""
+"DNS サーバーが宛先ドメイン、宛先ホストもしくは URL の正規表現をもとに"
+"動作するためのルールを指定する"
 
 #: ../../admin/security-options.en.rst:56
 msgid "Enable the **Split DNS** option."
-msgstr ""
+msgstr "**Split DNS** オプションを有効化する"
 
 #: ../../admin/security-options.en.rst:58
 msgid "To do this, we"
-msgstr ""
+msgstr "これを行うためには"
 
 #: ../../admin/security-options.en.rst:60
 msgid "Add rules to :file:`splitdns.config`."
-msgstr ""
+msgstr ":file:`splitdns.config` にルールを追加してください。"
 
 #: ../../admin/security-options.en.rst:61
 msgid ""
 "In :file:`records.config` set the variable "
 ":ts:cv:`proxy.config.dns.splitDNS.enabled` to ``1`` to enable split DNS."
 msgstr ""
+"Split DNS を有効にするために :file:`records.config` の"
+":ts:cv:`proxy.config.dns.splitDNS.enabled` 変数を ``1`` に設定してください。"
 
 #: ../../admin/security-options.en.rst:69
 msgid "Using SSL Termination"
-msgstr ""
+msgstr "SSL ターミネーションの使用"
 
 #: ../../admin/security-options.en.rst:71
 msgid ""
@@ -95,24 +111,32 @@ msgid ""
 "connections in reverse proxy mode between a client and a Traffic Server "
 "and/or Traffic Server and an origin server."
 msgstr ""
+"Traffic Server の **SSL ターミネーション**\\ オプションはリバースプロキシー"
+"モードでクライアントと Traffic Server の間および/もしくは Traffic Server "
+"とオリジンサーバーの間の接続を安全にすることを可能にします。"
 
 #: ../../admin/security-options.en.rst:75
 msgid ""
 "The following sections describe how to enable and configure the SSL "
 "termination option."
 msgstr ""
+"次の章では SSL ターミネーションをどうのように設定し有効化するかを説明します。"
 
 #: ../../admin/security-options.en.rst:78
 msgid ""
 "Enable and configure SSL termination for client/Traffic Server connections: "
 ":ref:`client-and-traffic-server-connections`"
 msgstr ""
+"クライアントと Traffic Server 間の接続で SSL ターミネーションを設定し有効化する"
+"には :ref:`client-and-traffic-server-connections` を参照してください。"
 
 #: ../../admin/security-options.en.rst:80
 msgid ""
 "Enable and configure SSL termination for Traffic Server/origin server "
 "connections: :ref:`traffic-server-and-origin-server-connections`"
 msgstr ""
+"Traffic Server とオリジンサーバー間の接続で SSL ターミネーションを設定し有効化する"
+"には :ref:`traffic-server-and-origin-server-connections` を参照してください。"
 
 #: ../../admin/security-options.en.rst:82
 msgid ""
@@ -121,10 +145,14 @@ msgid ""
 "connections` :ref:`traffic-server-and-origin-server-connections`, "
 "respectively."
 msgstr ""
+"クライアントと Traffic Server 間の接続、Traffic Server とオリジンサーバー間の接続"
+"の両方で SSL ターミネーションを設定し有効化するには "
+":ref:`client-and-traffic-server-connections` と "
+":ref:`traffic-server-and-origin-server-connections` をそれぞれ参照してください。"
 
 #: ../../admin/security-options.en.rst:89
 msgid "Client and Traffic Server Connections"
-msgstr ""
+msgstr "クライアントと Traffic Server の接続"
 
 #: ../../admin/security-options.en.rst:91
 msgid ""
@@ -133,15 +161,20 @@ msgid ""
 "termination option is enabled & configured for **client/Traffic Server "
 "connections only**."
 msgstr ""
+"以下の図は\\ **クライアントと Traffic Server の間の接続だけ**\\ で SSL "
+"ターミネーションオプションを有効化し、設定した際のクライアントと "
+"Traffic Server の通信 (Traffic Server とオリジンサーバー間も含む) を"
+"説明します。"
 
 #: ../../admin/security-options.en.rst:100
 msgid "Client and Traffic Server communication using SSL termination"
-msgstr ""
+msgstr "SSL ターミネーションを使用したクライアントと Traffic Server "
+"の通信"
 
 #: ../../admin/security-options.en.rst:102
 #: ../../admin/security-options.en.rst:167
 msgid "The figure above depicts the following:"
-msgstr ""
+msgstr "上の図は次のことを説明しています"
 
 #: ../../admin/security-options.en.rst:104
 msgid ""
@@ -151,6 +184,11 @@ msgid ""
 "encryption method that will be used. If the client is allowed access, then "
 "Traffic Server checks its cache for the requested content."
 msgstr ""
+"クライアントがコンテンツのために HTTPS リクエストを送信します。"
+"Traffic Server はリクエストを受け取り、クライアントの認証 (認証オプション"
+"の設定によります) と使用される暗号化方式の決定をするために SSL "
+"'ハンドシェイク' を行います。クライアントがアクセスを許されると、Traffic "
+"Server はリクエストされたコンテンツのキャッシュを確認します。"
 
 #: ../../admin/security-options.en.rst:106
 msgid ""
@@ -158,6 +196,9 @@ msgid ""
 "encrypts the content and sends it to the client. The client decrypts the "
 "content (using the method determined during the handshake) and displays it."
 msgstr ""
+"リクエストがキャッシュヒットかつコンテンツが新鮮な場合、Traffic Server は"
+"コンテンツを暗号化しクライアントに送信します。クライアントはコンテンツを "
+"(ハンドシェイクの間に決定した方式で) 復号化し表示します。"
 
 #: ../../admin/security-options.en.rst:108
 msgid ""
@@ -167,12 +208,19 @@ msgid ""
 "content in its cache, encrypts the content, and sends it to the client. The "
 "client decrypts and displays the content."
 msgstr ""
+"リクエストがキャッシュミスもしくはキャッシュされたコンテンツが新鮮でない"
+"場合、Traffic Server はオリジンサーバーと HTTP で通信し平文のコンテンツを"
+"取得します。Traffic Server は平文のコンテンツをキャッシュに保存し、コンテンツ"
+"を暗号化し、クライアントに送信します。クライアントはコンテンツを復号化し表示"
+"します。"
 
 #: ../../admin/security-options.en.rst:110
 msgid ""
 "To configure Traffic Server to use the SSL termination option for "
 "client/Traffic Server connections, you must do the following:"
-msgstr ""
+msgstr "Traffic Server がクライアントと Traffic Server の間の接続で"
+" SSL ターミネーションオプションを使用するように設定するには、次の"
+"ことを行わなければなりません"
 
 #: ../../admin/security-options.en.rst:113
 msgid ""
@@ -180,23 +228,30 @@ msgid ""
 "authority. The SSL server certificate contains information that enables the "
 "client to authenticate Traffic Server and exchange encryption keys."
 msgstr ""
+"SSL サーバー証明書を認められた認証局から取得しインストールする。SSL "
+"サーバー証明書はクライアントが Traffic Server を認証し暗号化鍵を交換する"
+"ことを可能にする情報を含んでいます。"
 
 #: ../../admin/security-options.en.rst:117
 #: ../../admin/security-options.en.rst:194
 msgid "Configure SSL termination options:"
-msgstr ""
+msgstr "SSL ターミネーションオプションを設定する"
 
 #: ../../admin/security-options.en.rst:119
 msgid ""
 "Set the port number used for SSL communication using "
 ":ts:cv:`proxy.config.http.server_ports`."
 msgstr ""
+":ts:cv:`proxy.config.http.server_ports` で SSL 通信に使用されるポート番号を"
+"設定する"
 
 #: ../../admin/security-options.en.rst:120
 msgid ""
 "Edit :file:`ssl_multicert.config` to specify the filename and location of "
 "the SSL certificates and provate keys."
 msgstr ""
+"SSL 証明書と秘密鍵のファイル名と場所を指定するために "
+":file:`ssl_multicert.config` を編集する"
 
 #: ../../admin/security-options.en.rst:122
 msgid ""
@@ -208,43 +263,53 @@ msgid ""
 "is managed through other Traffic Server options that have been set (such as "
 "rules in :file:`ip_allow.config`)."
 msgstr ""
+"(任意) クライアント証明書の使用を設定する。クライアント証明書はクライアント上"
+"に置かれます。Traffic Server がクライアント証明書を必要とするように設定すると"
+" Traffic Server は クライアントを認証する SSL ハンドシェイクの中でクライアント"
+"証明書を検証します。Traffic Server がクライアント証明書を必要と\\ *しない*\\ "
+"ように設定すると、Traffic Server へのアクセスは (:file:`ip_allow.config` の"
+"ルールなどの) 他に設定されている Traffic Server オプションによって管理されます。"
 
 #: ../../admin/security-options.en.rst:130
 msgid ""
 "(Optional) Configure the use of Certification Authorities (CAs). CAs add "
 "security by verifying the identity of the person requesting a certificate."
 msgstr ""
+"(任意) 認証局 (CA) の使用を設定する。認証局は証明を要求した人の同一性を"
+"検証することでセキュリティを追加します。"
 
 #: ../../admin/security-options.en.rst:134
 msgid "In order to accomplish this, we"
-msgstr ""
+msgstr "これを実現するためには"
 
 #: ../../admin/security-options.en.rst:136
 msgid ""
 "Edit the following variables in the :ref:`records-config-ssl-termination` "
 "section of :file:`records.config`"
 msgstr ""
+":file:`records.config` の :ref:`records-config-ssl-termination` の章にある"
+"次の変数を編集してください。"
 
 #: ../../admin/security-options.en.rst:139
 #: ../../admin/security-options.en.rst:217
 msgid ":ts:cv:`proxy.config.http.server_ports`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.http.server_ports`"
 
 #: ../../admin/security-options.en.rst:140
 msgid ":ts:cv:`proxy.config.ssl.client.certification_level`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.certification_level`"
 
 #: ../../admin/security-options.en.rst:141
 msgid ":ts:cv:`proxy.config.ssl.server.cert.path`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.server.cert.path`"
 
 #: ../../admin/security-options.en.rst:142
 msgid ":ts:cv:`proxy.config.ssl.server.private_key.path`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.server.private_key.path`"
 
 #: ../../admin/security-options.en.rst:143
 msgid ":ts:cv:`proxy.config.ssl.CA.cert.path`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.CA.cert.path`"
 
 #: ../../admin/security-options.en.rst:145
 #: ../../admin/security-options.en.rst:226
@@ -253,10 +318,13 @@ msgid ""
 "local node or :option:`traffic_line -M` to restart Traffic Server on all the"
 " nodes in a cluster."
 msgstr ""
+"ローカルノード上の Traffic Server をリスタートするために "
+":option:`traffic_line -L` を、もしくはクラスター内のすべての Traffic Server "
+"をリスタートするためには :option:`traffic_line -M` を実行してください。"
 
 #: ../../admin/security-options.en.rst:155
 msgid "Traffic Server and Origin Server Connections"
-msgstr ""
+msgstr "Traffic Server とオリジンサーバーの接続"
 
 #: ../../admin/security-options.en.rst:157
 msgid ""
@@ -264,10 +332,13 @@ msgid ""
 "origin server when the SSL termination option is enabled for **Traffic "
 "Server/origin server connections**."
 msgstr ""
+"以下の図は SSL ターミネーションオプションを \\ **Traffic Server "
+"とオリジンサーバーの間の接続**\\ で有効化した際の Traffic Server と"
+"オリジンサーバーの通信を説明します。"
 
 #: ../../admin/security-options.en.rst:165
 msgid "Traffic Server and origin server communication using SSL termination"
-msgstr ""
+msgstr "SSL ターミネーションを使用したTraffic Server とオリジンサーバーの通信"
 
 #: ../../admin/security-options.en.rst:169
 msgid ""
@@ -276,6 +347,10 @@ msgid ""
 "origin server receives the request and performs the SSL handshake to "
 "authenticate Traffic Server and determine the encryption method to be used."
 msgstr ""
+"**ステップ 1:** クライアントのリクエストがキャッシュミスもしくは新鮮でない"
+"場合、Traffic Server は コンテンツのための HTTPS リクエストをオリジンサーバー"
+"に送信します。オリジンサーバーはリクエストを受け取り、Traffic Server の認証"
+"と使用される暗号化方式の決定をするために SSL ハンドシェイク を行います。"
 
 #: ../../admin/security-options.en.rst:175
 msgid ""
@@ -284,6 +359,10 @@ msgid ""
 "(using the method determined during the handshake). A plain text version of "
 "the content is saved in the cache."
 msgstr ""
+"**ステップ 2:** Traffic Server がアクセスを許されると、オリジンサーバーは"
+"コンテンツを暗号化して Traffic Server に送信し、そこで (ハンドシェイクの中で"
+"決定した方式を使用して) 復号化されます。平文のコンテンツはキャッシュ"
+"に保存されます。"
 
 #: ../../admin/security-options.en.rst:180
 msgid ""
@@ -293,12 +372,19 @@ msgid ""
 "is not enabled for client/Traffic Server connections, then Traffic Server "
 "sends the plain text version of the content to the client via HTTP."
 msgstr ""
+"**ステップ 3:** SSL ターミネーションがクライアントと Traffic Server の間で"
+"有効化されている場合、Traffic Server はコンテンツを再暗号化して HTTPS で"
+"クライアントに送信し、そこで復号化され表示されます。SSL ターミネーション"
+"がクライアントと Traffic Server の間で有効化されていない場合、Traffic "
+"Server は平文のコンテンツを HTTP でクライアントに送信します。"
 
 #: ../../admin/security-options.en.rst:187
 msgid ""
 "To configure Traffic Server to use the SSL termination option for Traffic "
 "Server and origin server connections, you must do the following:"
 msgstr ""
+"Traffic Server が Traffic Server とオリジンサーバーの間で SSL ターミネーション"
+"を使用するように設定するには、次のことを行わなければなりません"
 
 #: ../../admin/security-options.en.rst:190
 msgid ""
@@ -307,20 +393,25 @@ msgid ""
 "origin server to authenticate Traffic Server (the client certificate is "
 "optional)."
 msgstr ""
+"SSL クライアント証明書を認められた認証局から取得しインストールする。SSL "
+"クライアント証明書はオリジンサーバーが Traffic Server を認証することを可能に"
+"する情報を含んでいます (クライアント証明書は任意です) 。"
 
 #: ../../admin/security-options.en.rst:195
 msgid "Enable the SSL termination option."
-msgstr ""
+msgstr "SSL ターミネーションオプションを有効化する"
 
 #: ../../admin/security-options.en.rst:197
 msgid "Set the port number used for SSL communication."
-msgstr ""
+msgstr "SSL 通信に使用されるポート番号を設定する。"
 
 #: ../../admin/security-options.en.rst:198
 msgid ""
 "Specify the filename and location of the SSL client certificate (if you "
 "choose to use a client certificate)."
 msgstr ""
+"SSL クライアント証明書のファイル名と場所を指定する (クライアント証明書"
+"を使用することを選択する場合) 。"
 
 #: ../../admin/security-options.en.rst:200
 msgid ""
@@ -329,6 +420,10 @@ msgid ""
 "uses its private key during the SSL handshake to decrypt the session "
 "encryption keys. The private key must be stored and protected against theft."
 msgstr ""
+"Traffic Server の秘密鍵のファイル名と場所を指定する (秘密鍵がクライアント"
+"証明書ファイル内に無い場合) 。Traffic Server はセッション暗号化鍵を復号化する"
+"ために SSL ハンドシェイクの中で自身の秘密鍵を使用します。秘密鍵は盗難から保護"
+"されて置かれていなければなりません。"
 
 #: ../../admin/security-options.en.rst:205
 msgid ""
@@ -336,45 +431,50 @@ msgid ""
 "client to verify the identity of the server with which it is communicating, "
 "thereby enabling exchange of encryption keys."
 msgstr ""
+"CA の使用を設定する。CA は 通信しているサーバーの同一性を検証するために "
+"Traffic Server がクライアントとして振る舞うことを許し、それによって暗号化鍵"
+"の交換を可能にしています。"
 
 #: ../../admin/security-options.en.rst:209
 msgid "In order to accomplish this, we:"
-msgstr ""
+msgstr "これを実現するためには"
 
 #: ../../admin/security-options.en.rst:213
 msgid ""
 "Edit the following variables in the :ref:`records-config-ssl-termination` "
 "section of :file:`records.config`:"
 msgstr ""
+":file:`records.config`: の :ref:`records-config-ssl-termination` の章に"
+"ある次の変数を編集してください。"
 
 #: ../../admin/security-options.en.rst:216
 msgid ":ts:cv:`proxy.config.ssl.auth.enabled`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.auth.enabled`"
 
 #: ../../admin/security-options.en.rst:218
 msgid ":ts:cv:`proxy.config.ssl.client.verify.server`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.verify.server`"
 
 #: ../../admin/security-options.en.rst:219
 msgid ":ts:cv:`proxy.config.ssl.client.cert.filename`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.cert.filename`"
 
 #: ../../admin/security-options.en.rst:220
 msgid ":ts:cv:`proxy.config.ssl.client.cert.path`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.cert.path`"
 
 #: ../../admin/security-options.en.rst:221
 msgid ":ts:cv:`proxy.config.ssl.client.private_key.filename`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.private_key.filename`"
 
 #: ../../admin/security-options.en.rst:222
 msgid ":ts:cv:`proxy.config.ssl.client.private_key.path`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.private_key.path`"
 
 #: ../../admin/security-options.en.rst:223
 msgid ":ts:cv:`proxy.config.ssl.client.CA.cert.filename`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.CA.cert.filename`"
 
 #: ../../admin/security-options.en.rst:224
 msgid ":ts:cv:`proxy.config.ssl.client.CA.cert.path`"
-msgstr ""
+msgstr ":ts:cv:`proxy.config.ssl.client.CA.cert.path`"
