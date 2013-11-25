@@ -121,7 +121,6 @@ struct pvc_state_t
   TSMutex disk_io_mutex;
 
   int fd;
-  char *filename;
 
   int64_t req_finished;
   int64_t resp_finished;
@@ -239,13 +238,7 @@ pvc_cleanup(TSCont contp, pvc_state * my_state)
 
   if (uconfig->use_disk_buffer && my_state->fd != -1) {
     close(my_state->fd);
-    remove(my_state->filename);
     my_state->fd = -1;
-  }
-
-  if (my_state->filename) {
-    free(my_state->filename);
-    my_state->filename = NULL;
   }
 
   if (my_state->chunk_buffer) {
@@ -334,7 +327,6 @@ pvc_process_p_read(TSCont contp, TSEvent event, pvc_state * my_state)
           LOG_ERROR("write_buffer_to_disk");
           uconfig->use_disk_buffer = 0;
           close(my_state->fd);
-          remove(my_state->filename);
           my_state->fd = -1;
         }
         TSMutexUnlock(my_state->disk_io_mutex);
@@ -399,7 +391,6 @@ pvc_process_p_read(TSCont contp, TSEvent event, pvc_state * my_state)
       // if client aborted the uploading in middle, need to cleanup the file from disk
       if (event == TS_EVENT_VCONN_EOS && uconfig->use_disk_buffer && my_state->fd != -1) {
         close(my_state->fd);
-        remove(my_state->filename);
         my_state->fd = -1;
       }
 
@@ -448,7 +439,6 @@ pvc_process_n_write(TSCont contp, TSEvent event, pvc_state * my_state)
 
     if (uconfig->use_disk_buffer && my_state->fd != -1) {
       close(my_state->fd);
-      remove(my_state->filename);
       my_state->fd = -1;
     }
     pvc_check_done(contp, my_state);
@@ -585,7 +575,6 @@ pvc_plugin(TSCont contp, TSEvent event, void *edata)
       my_state->size_read += size;
       if (my_state->size_read >= my_state->req_size && my_state->fd != -1) {
         close(my_state->fd);
-        remove(my_state->filename);
         my_state->fd = -1;
       }
       my_state->is_reading_from_disk = 0;
@@ -849,7 +838,6 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     my_state->req_reader = NULL;
     my_state->resp_buffer = NULL;
     my_state->resp_reader = NULL;
-    my_state->filename = NULL;
     my_state->fd = -1;
     my_state->disk_io_mutex = NULL;
 
@@ -899,27 +887,16 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       char path[500];
       int index = (int) (random() % uconfig->subdir_num);
 
-      sprintf(path, "%s/%02X", uconfig->base_dir, index);
+      sprintf(path, "%s/%02X/tmp-XXXXXX", uconfig->base_dir, index);
 
-      /* 
-       * Possible issue with tempnam:
-       * From: http://www.gnu.org/s/hello/manual/libc/Temporary-Files.html
-       * Warning: Between the time the pathname is constructed and the 
-       * file is created another process might have created a file with 
-       * the same name using tempnam, leading to a possible security 
-       * hole. The implementation generates names which can hardly be 
-       * predicted, but when opening the file you should use the O_EXCL 
-       * flag. Using tmpfile or mkstemp is a safe way to avoid this problem.
-       */
-
-      my_state->filename = tempnam(path, NULL);
-      TSDebug(DEBUG_TAG, "temp filename: %s", my_state->filename);
-
-      my_state->fd = open(my_state->filename, O_RDWR | O_NONBLOCK | O_TRUNC | O_CREAT, 0600);
+      my_state->fd = mkstemp(path);
+      unlink(path);
       if (my_state->fd < 0) {
         LOG_ERROR("open");
         uconfig->use_disk_buffer = 0;
         my_state->fd = -1;
+      } else {
+        TSDebug(DEBUG_TAG, "temp filename: %s", path);
       }
     }
 
