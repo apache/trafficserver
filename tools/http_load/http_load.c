@@ -1180,7 +1180,7 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
     /* Make SSL connection. */
     if (ssl_ctx == (SSL_CTX *) 0) {
       SSL_load_error_strings();
-      SSLeay_add_ssl_algorithms();
+      SSL_library_init();
       ssl_ctx = SSL_CTX_new(SSLv23_client_method());
       /* For some reason this does not seem to work, but indications are that it should...
          Maybe something with how we create connections? TODO: Fix it... */
