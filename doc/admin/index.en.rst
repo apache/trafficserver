@@ -46,6 +46,7 @@ Contents:
    working-log-files.en
    event-logging-formats.en
    traffic-server-error-messages.en
+   performance-tuning.en
    faqs.en
 
 
@@ -308,3 +309,10 @@ following:
 
 Traffic Server security options are described in more detail in
 :ref:`security-options`.
+
+Tuning Traffic Server
+=====================
+
+Finally this last chapter on :ref:`performance-tuning` discusses the vast
+number of options that allow to optimally tune Apache Traffic Server for
+maximum performance.
