@@ -466,6 +466,7 @@ SSLNetVConnection::free(EThread * t) {
   sslHandShakeComplete = false;
   sslClientConnection = false;
   npnSet = NULL;
+  npnEndPoint= NULL;
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);  
