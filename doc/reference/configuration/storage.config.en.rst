@@ -119,6 +119,11 @@ following rules are targeted for an Ubuntu system, and stored in
    # make the assignment final, no later changes allowed to the group!
    SUBSYSTEM=="block", KERNEL=="sd[ef]", GROUP:="tserver"
 
+In order to apply these settings, trigger a reload with :manpage:`udevadm(8)`:::
+
+   udevadm trigger --subsystem-match=block
+
+
 FreeBSD Example
 ---------------
 
