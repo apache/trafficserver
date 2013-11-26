@@ -290,7 +290,6 @@ CONFIG proxy.config.http.enable_http_stats INT 1
 # Customizable User Response Pages
 #
 ##############################################################################
-   # 0 - turn off customizable user response pages
    # 1 - enable customizable user response pages in only the "default" directory
    # 2 - enable language-targeted user response pages
 CONFIG proxy.config.body_factory.enable_customizations INT 1
