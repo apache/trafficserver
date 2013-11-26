@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2372] Enable TLS perfect forward security with ECDHE.
+
   *) [TS-2416] Make TLS the session timeout threshold configurable.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 
