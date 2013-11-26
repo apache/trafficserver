@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2396] UrlRewrite.cc does not free the queue correctly.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
   *) [TS-2382] Partial fix for make install creating man files as root.
 
   *) [TS-2381] Reorganize TSUrlCreate docs into separate files.
