@@ -1281,11 +1281,10 @@ all the different user-agent versions of documents it encounters.
 Customizable User Response Pages
 ================================
 
-.. ts:cv:: CONFIG proxy.config.body_factory.enable_customizations INT 0
-   Specifies whether customizable response pages are enabled or
-   disabled and which response pages are used:
+.. ts:cv:: CONFIG proxy.config.body_factory.enable_customizations INT 1
+   Specifies whether customizable response pages are language specific
+   or not:
 
-   -  ``0`` = disable customizable user response pages
    -  ``1`` = enable customizable user response pages in the default directory only
    -  ``2`` = enable language-targeted user response pages
 
