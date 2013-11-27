@@ -110,7 +110,6 @@
 #define TS_BUILD_BINDIR "@rel_bindir@"
 #define TS_BUILD_SBINDIR "@rel_sbindir@"
 #define TS_BUILD_SYSCONFDIR "@rel_sysconfdir@"
-#define TS_BUILD_SYSCONFIGDIR "@exp_sysconfdir@"
 #define TS_BUILD_DATADIR "@rel_datadir@"
 #define TS_BUILD_INCLUDEDIR "@rel_includedir@"
 #define TS_BUILD_LIBDIR "@rel_libdir@"
