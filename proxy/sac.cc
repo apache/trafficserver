@@ -89,14 +89,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);
   process_args(argument_descriptions, countof(argument_descriptions), argv);
 
-  // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-  if (access(system_log_dir, R_OK) == -1) {
-    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
-    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    exit(1);
-  }
-
   // check for the version number request
   //
   if (version_flag) {

@@ -80,7 +80,6 @@ static bool proxy_on = true;
 // TODO: Check if really need those
 char system_runtime_dir[PATH_NAME_MAX + 1];
 char system_config_directory[PATH_NAME_MAX + 1];
-char system_log_dir[PATH_NAME_MAX + 1];
 
 char mgmt_path[PATH_NAME_MAX + 1];
 
@@ -285,14 +284,6 @@ init_dirs()
   if (access(system_runtime_dir, R_OK) == -1) {
     mgmt_elog(0, "unable to access() local state dir '%s': %d, %s\n", system_runtime_dir, errno, strerror(errno));
     mgmt_elog(0, "please set 'proxy.config.local_state_dir'\n");
-    _exit(1);
-  }
-
-  REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
-  Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
-  if (access(system_log_dir, W_OK) == -1) {
-    mgmt_elog(0, "unable to access() log dir'%s': %d, %s\n", system_log_dir, errno, strerror(errno));
-    mgmt_elog(0, "please set 'proxy.config.log.logfile_dir'\n");
     _exit(1);
   }
 }

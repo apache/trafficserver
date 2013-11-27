@@ -58,7 +58,6 @@ char proxy_name[MAXDNAME + 1] = "unknown";
 
 char system_config_directory[PATH_NAME_MAX + 1] = "";
 char system_runtime_dir[PATH_NAME_MAX + 1] = "";
-char system_log_dir[PATH_NAME_MAX + 1] = "";
 
 char error_tags[1024] = "";
 char action_tags[1024] = "";

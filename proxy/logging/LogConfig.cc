@@ -66,8 +66,6 @@
 
 #define PARTITION_HEADROOM_MB 	10
 
-char *ink_prepare_dir(char *logfile_dir);
-
 void
 LogConfig::setup_default_values()
 {
@@ -248,20 +246,18 @@ LogConfig::read_configuration_variables()
     // Make it relative from Layout
     logfile_dir = Layout::get()->relative(ptr);
     ats_free(ptr);
-    if (access(logfile_dir, W_OK) == -1) {
-      ats_free(logfile_dir);
-      logfile_dir = NULL;
-      if (access(system_log_dir, W_OK) == -1) {
-        // Try 'system_root_dir/var/log/trafficserver' directory
-        fprintf(stderr,"unable to access() log dir'%s': %d, %s\n",
-                system_log_dir, errno, strerror(errno));
-        fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
-        _exit(1);
-      }
-      logfile_dir = ats_strdup(system_log_dir);
-    }
+  } else {
+    ats_free(logfile_dir);
+    logfile_dir = ats_strdup(Layout::get()->logdir);
   }
 
+  if (access(logfile_dir, R_OK | W_OK | X_OK) == -1) {
+    // Try 'system_root_dir/var/log/trafficserver' directory
+    fprintf(stderr,"unable to access log directory '%s': %d, %s\n",
+            logfile_dir, errno, strerror(errno));
+    fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
+    _exit(1);
+  }
 
   //
   // for each predefined logging format, we need to know:

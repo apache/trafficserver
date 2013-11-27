@@ -276,7 +276,7 @@ init_system_diags(char *bdt, char *bat)
   char diags_logpath[PATH_NAME_MAX + 1];
 
   ink_filepath_make(diags_logpath, sizeof(diags_logpath),
-                    system_log_dir, DIAGS_LOG_FILE);
+                    Layout::get()->logdir, DIAGS_LOG_FILE);
 
   diags_log_fp = fopen(diags_logpath, "w");
   if (diags_log_fp) {

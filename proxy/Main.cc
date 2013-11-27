@@ -146,7 +146,6 @@ int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
 char system_runtime_dir[PATH_NAME_MAX + 1];  // Layout->runtimedir
 char system_config_directory[PATH_NAME_MAX + 1]; // Layout->sysconfdir
-char system_log_dir[PATH_NAME_MAX + 1];          // Layout->logdir
 
 static char error_tags[1024] = "";
 static char action_tags[1024] = "";
@@ -288,7 +287,6 @@ init_dirs(void)
 
   ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
   ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
 
   /*
    * XXX: There is not much sense in the following code
@@ -314,17 +312,6 @@ init_dirs(void)
       fprintf(stderr,"unable to access() local state dir '%s': %d, %s\n",
               system_runtime_dir, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
-      _exit(1);
-    }
-  }
-
-  if (access(system_log_dir, W_OK) == -1) {
-    REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
-    Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
-    if (access(system_log_dir, W_OK) == -1) {
-      fprintf(stderr,"unable to access() log dir'%s':%d, %s\n",
-              system_log_dir, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
       _exit(1);
     }
   }

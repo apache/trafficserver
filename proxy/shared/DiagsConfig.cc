@@ -288,6 +288,8 @@ DiagsConfig::RegisterDiagConfig()
 DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
 {
   char diags_logpath[PATH_NAME_MAX + 1];
+  xptr<char> logpath;
+
   callbacks_established = false;
   diags_log_fp = (FILE *) NULL;
   diags = NULL;
@@ -303,23 +305,26 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
     config_diags_norecords();
     return;
   }
-  ////////////////////////
-  // open the diags log //
-  ////////////////////////
 
-  if (access(system_log_dir, R_OK) == -1) {
-    REC_ReadConfigString(diags_logpath, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
-    Layout::get()->relative(system_log_dir, PATH_NAME_MAX, diags_logpath);
+  // Open the diagnostics log. If proxy.config.log.logfile_dir is set use that, otherwise fall
+  // back to the configured log directory.
 
-    if (access(system_log_dir, R_OK) == -1) {
-      fprintf(stderr,"unable to access() log dir'%s': %d, %s\n",
-              system_log_dir, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
-      _exit(1);
-    }
+  diags_logpath[0] = '\0';
+  REC_ReadConfigString(diags_logpath, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
+  if (strlen(diags_logpath) > 0) {
+    logpath = Layout::get()->relative(diags_logpath);
+  } else {
+    logpath = ats_strdup(Layout::get()->logdir);
   }
-  ink_filepath_make(diags_logpath, sizeof(diags_logpath),
-                    system_log_dir, DIAGS_LOG_FILE);
+
+  if (access(logpath, W_OK | R_OK) == -1) {
+    fprintf(stderr, "unable to access log directory '%s': %d, %s\n",
+            (const char *)logpath, errno, strerror(errno));
+    fprintf(stderr, "please set 'proxy.config.log.logfile_dir'\n");
+    _exit(1);
+  }
+
+  ink_filepath_make(diags_logpath, sizeof(diags_logpath), logpath, DIAGS_LOG_FILE);
 
   // open write append
   // diags_log_fp = fopen(diags_logpath,"w");
