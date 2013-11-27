@@ -122,7 +122,7 @@ initialize_process_manager()
 
   //
   // Start up manager
-  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory));
+  pmgmt = NEW(new ProcessManager(remote_management_flag));
 
   pmgmt->start();
 

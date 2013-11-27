@@ -365,7 +365,7 @@ initialize_process_manager()
   //
   // Start up manager
   //
-  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory));
+  pmgmt = NEW(new ProcessManager(remote_management_flag));
 
   pmgmt->start();
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);

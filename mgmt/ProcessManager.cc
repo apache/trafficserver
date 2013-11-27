@@ -66,7 +66,7 @@ startProcessManager(void *arg)
   return ret;
 }                               /* End startProcessManager */
 
-ProcessManager::ProcessManager(bool rlm, char * /* mpath ATS_UNUSED */):
+ProcessManager::ProcessManager(bool rlm):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0), cbtable(NULL)
 {
   ink_strlcpy(pserver_path, Layout::get()->runtimedir, sizeof(pserver_path));
