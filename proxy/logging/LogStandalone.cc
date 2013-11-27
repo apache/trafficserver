@@ -60,7 +60,6 @@ char system_root_dir[PATH_NAME_MAX + 1] = "";
 char system_config_directory[PATH_NAME_MAX + 1] = "";
 char system_runtime_dir[PATH_NAME_MAX + 1] = "";
 char system_log_dir[PATH_NAME_MAX + 1] = "";
-char management_directory[PATH_NAME_MAX + 1] = "";
 
 char error_tags[1024] = "";
 char action_tags[1024] = "";
@@ -98,16 +97,6 @@ initialize_process_manager()
   // Temporary Hack to Enable Communuication with LocalManager
   if (getenv("PROXY_REMOTE_MGMT")) {
     remote_management_flag = true;
-  }
-
-  if (management_directory[0] == '\0') {
-    ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
-    if (access(management_directory, R_OK) == -1) {
-      fprintf(stderr,"unable to access() management path '%s': %d, %s\n",
-              management_directory, errno, strerror(errno));
-      fprintf(stderr,"please set management path via command line '-d <management directory>'\n");
-      _exit(1);
-    }
   }
 
   // diags should have been initialized by caller, e.g.: sac.cc

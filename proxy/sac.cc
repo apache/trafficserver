@@ -97,9 +97,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     exit(1);
   }
 
-  management_directory[0] = 0;
-  ink_strlcat(management_directory, system_config_directory, sizeof(management_directory));
-
   // check for the version number request
   //
   if (version_flag) {

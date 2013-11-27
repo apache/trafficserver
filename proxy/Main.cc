@@ -144,7 +144,6 @@ char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 static char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
-char management_directory[PATH_NAME_MAX+1];      // Layout->sysconfdir
 char system_root_dir[PATH_NAME_MAX + 1];         // Layout->prefix
 char system_runtime_dir[PATH_NAME_MAX + 1];  // Layout->runtimedir
 char system_config_directory[PATH_NAME_MAX + 1]; // Layout->sysconfdir
@@ -210,7 +209,6 @@ static const ArgumentDescription argument_descriptions[] = {
 
   {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", NULL},
   {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
-  {"management_dir", 'd', "Management Directory", "S255", &management_directory, "PROXY_MANAGEMENT_DIRECTORY", NULL},
   {"command", 'C', "Maintenance Command to Execute", "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
   {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
   {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
@@ -345,15 +343,6 @@ initialize_process_manager()
   // Temporary Hack to Enable Communication with LocalManager
   if (getenv("PROXY_REMOTE_MGMT")) {
     remote_management_flag = true;
-  }
-
-  if (access(management_directory, R_OK) == -1) {
-    ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
-    if (access(management_directory, R_OK) == -1) {
-      fprintf(stderr,"unable to access() management path '%s': %d, %s\n", management_directory, errno, strerror(errno));
-      fprintf(stderr,"please set management path via command line '-d <management directory>'\n");
-      _exit(1);
-    }
   }
 
   RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags);
@@ -1303,7 +1292,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // Before accessing file system initialize Layout engine
   Layout::create();
   ink_strlcpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
-  ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(argument_descriptions, countof(argument_descriptions), argv);
