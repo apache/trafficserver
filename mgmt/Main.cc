@@ -78,7 +78,6 @@ static char action_tags[1024] = "";
 static bool proxy_on = true;
 
 // TODO: Check if really need those
-char system_root_dir[PATH_NAME_MAX + 1];
 char system_runtime_dir[PATH_NAME_MAX + 1];
 char system_config_directory[PATH_NAME_MAX + 1];
 char system_log_dir[PATH_NAME_MAX + 1];
@@ -301,13 +300,14 @@ init_dirs()
 static void
 chdir_root()
 {
+  const char * prefix = Layout::get()->prefix;
 
-  if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
-    mgmt_elog(0, "unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
+  if (chdir(prefix) < 0) {
+    mgmt_elog(0, "unable to change to root directory \"%s\" [%d '%s']\n", prefix, errno, strerror(errno));
     mgmt_elog(0, " please set correct path in env variable TS_ROOT \n");
     exit(1);
   } else {
-    mgmt_log("[TrafficManager] using root directory '%s'\n",system_root_dir);
+    mgmt_log("[TrafficManager] using root directory '%s'\n", prefix);
   }
 }
 
@@ -370,7 +370,6 @@ main(int argc, char **argv)
 {
   // Before accessing file system initialize Layout engine
   Layout::create();
-  ink_strlcpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
   ink_strlcpy(mgmt_path, Layout::get()->sysconfdir, sizeof(mgmt_path));
 
   // change the directory to the "root" directory

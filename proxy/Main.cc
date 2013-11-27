@@ -144,7 +144,6 @@ char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 static char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
-char system_root_dir[PATH_NAME_MAX + 1];         // Layout->prefix
 char system_runtime_dir[PATH_NAME_MAX + 1];  // Layout->runtimedir
 char system_config_directory[PATH_NAME_MAX + 1]; // Layout->sysconfdir
 char system_log_dir[PATH_NAME_MAX + 1];          // Layout->logdir
@@ -1099,13 +1098,15 @@ run_RegressionTest()
 static void
 chdir_root()
 {
-  if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
+  const char * prefix = Layout::get()->prefix;
+
+  if (chdir(prefix) < 0) {
     fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n",
-            system_root_dir, errno, strerror(errno));
+            prefix, errno, strerror(errno));
     fprintf(stderr," please set correct path in env variable TS_ROOT \n");
     _exit(1);
   } else {
-    printf("[TrafficServer] using root directory '%s'\n", system_root_dir);
+    printf("[TrafficServer] using root directory '%s'\n", prefix);
   }
 }
 
@@ -1291,7 +1292,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
   // Before accessing file system initialize Layout engine
   Layout::create();
-  ink_strlcpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(argument_descriptions, countof(argument_descriptions), argv);

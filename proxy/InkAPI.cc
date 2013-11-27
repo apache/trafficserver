@@ -1705,7 +1705,7 @@ TShrtime()
 const char *
 TSInstallDirGet(void)
 {
-  return system_root_dir;
+  return Layout::get()->prefix;
 }
 
 const char *

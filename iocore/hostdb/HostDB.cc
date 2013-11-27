@@ -391,7 +391,7 @@ HostDBCache::start(int flags)
   REC_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
   if (storage_path[0] != '/') {
-    Layout::relative_to(storage_path, PATH_NAME_MAX, system_root_dir, storage_path);
+    Layout::relative_to(storage_path, PATH_NAME_MAX, Layout::get()->prefix, storage_path);
   }
 
   Debug("hostdb", "Storage path is %s", storage_path);
