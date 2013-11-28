@@ -1363,7 +1363,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   if (!num_task_threads)
     TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
-  char *user = (char *)ats_malloc(MAX_LOGIN);
+  xptr<char> user(MAX_LOGIN + 1);
 
   *user = '\0';
   admin_user_p = ((REC_ERR_OKAY == TS_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) &&
@@ -1380,7 +1380,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
     PreserveCapabilities();
     change_uid_gid(user);
     RestrictCapabilities();
-    ats_free(user);
   }
 # endif
 
@@ -1679,7 +1678,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   if (admin_user_p) {
     change_uid_gid(user);
     DebugCapabilities("server");
-    ats_free(user);
   }
 # endif
 
