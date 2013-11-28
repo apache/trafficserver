@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2408] Fix double free of proxy.config.admin.user_id.
+
   *) [TS-2396] UrlRewrite.cc does not free the queue correctly.
    Author: Yu Qing <zhuangyuan@taobao.com>
 
