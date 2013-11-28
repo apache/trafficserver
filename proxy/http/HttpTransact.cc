@@ -8685,7 +8685,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
 
     header->field_attach(field);
     header->set_content_length(s->range_output_cl);
-  } else {
+  } else if (s->cache_info.object_read) {
     char numbers[RANGE_NUMBERS_LENGTH];
     header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
     field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
