@@ -78,7 +78,6 @@ static char action_tags[1024] = "";
 static bool proxy_on = true;
 
 // TODO: Check if really need those
-char system_runtime_dir[PATH_NAME_MAX + 1];
 char system_config_directory[PATH_NAME_MAX + 1];
 
 char mgmt_path[PATH_NAME_MAX + 1];
@@ -267,6 +266,7 @@ setup_coredump()
 static void
 init_dirs()
 {
+  xptr<char> rundir(RecConfigReadRuntimeDir());
   char buf[PATH_NAME_MAX + 1];
 
   REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
@@ -279,10 +279,8 @@ init_dirs()
 
   ink_strlcpy(mgmt_path, system_config_directory, sizeof(mgmt_path));
 
-  REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
-  Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
-  if (access(system_runtime_dir, R_OK) == -1) {
-    mgmt_elog(0, "unable to access() local state dir '%s': %d, %s\n", system_runtime_dir, errno, strerror(errno));
+  if (access(rundir, R_OK) == -1) {
+    mgmt_elog(0, "unable to access() local state dir '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
     mgmt_elog(0, "please set 'proxy.config.local_state_dir'\n");
     _exit(1);
   }

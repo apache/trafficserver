@@ -45,6 +45,10 @@ typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const 
 void RecConfigFileInit(void);
 int RecConfigFileParse(const char * path, RecConfigEntryCallback handler, bool inc_version);
 
+// Return a copy of the system's local state directory, taking proxy.config.local_state_dir into account. The
+// caller MUST releease the result with ats_free().
+char * RecConfigReadRuntimeDir();
+
 // Test whether the named configuration value is overridden by an environment variable. Return either
 // the overridden value, or the original value. Caller MUST NOT free the result.
 const char * RecConfigOverrideFromEnvironment(const char * name, const char * value);

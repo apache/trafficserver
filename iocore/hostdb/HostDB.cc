@@ -380,6 +380,8 @@ HostDBCache::start(int flags)
   bool reconfigure = ((flags & PROCESSOR_RECONFIGURE) ? true : false);
   bool fix = ((flags & PROCESSOR_FIX) ? true : false);
 
+  storage_path[0] = '\0';
+
   // Read configuration
   // Command line overrides manager configuration.
   //
@@ -390,20 +392,22 @@ HostDBCache::start(int flags)
   REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
   REC_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
-  if (storage_path[0] != '/') {
-    Layout::relative_to(storage_path, PATH_NAME_MAX, Layout::get()->prefix, storage_path);
+  // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
+  // a relative path, make it relative to the prefix.
+  if (storage_path[0] == '\0') {
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    ink_strlcpy(storage_path, rundir, sizeof(storage_path));
+  } else if (storage_path[0] != '/') {
+    Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
   }
 
   Debug("hostdb", "Storage path is %s", storage_path);
 
-  // XXX: Should this be W_OK?
-  if (access(storage_path, R_OK) == -1) {
-    ink_strlcpy(storage_path, system_runtime_dir, sizeof(storage_path));
-    if (access(storage_path, R_OK) == -1) {
-      Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
-      Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");
-    }
+  if (access(storage_path, W_OK | R_OK) == -1) {
+    Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
+    Warning("Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir'");
   }
+
   hostDBStore = NEW(new Store);
   hostDBSpan = NEW(new Span);
   hostDBSpan->init(storage_path, storage_size);
@@ -411,12 +415,13 @@ HostDBCache::start(int flags)
 
   Debug("hostdb", "Opening %s, size=%d", hostdb_filename, hostdb_size);
   if (open(hostDBStore, "hostdb.config", hostdb_filename, hostdb_size, reconfigure, fix, false /* slient */ ) < 0) {
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    xptr<char> config(Layout::relative_to(rundir, "hostdb.config"));
+
     Note("reconfiguring host database");
 
-    char p[PATH_NAME_MAX + 1];
-    Layout::relative_to(p, PATH_NAME_MAX, system_runtime_dir, "hostdb.config");
-    if (unlink(p) < 0)
-      Debug("hostdb", "unable to unlink %s", p);
+    if (unlink(config) < 0)
+      Debug("hostdb", "unable to unlink %s", (const char *)config);
 
     delete hostDBStore;
     hostDBStore = NEW(new Store);

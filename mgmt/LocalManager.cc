@@ -204,6 +204,8 @@ LocalManager::LocalManager(char * /* mpath ATS_UNUSED */, bool proxy_on)
   : BaseManager(), run_proxy(proxy_on)
 {
   bool found;
+  xptr<char> rundir(RecConfigReadRuntimeDir());
+
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
 #endif
@@ -221,7 +223,8 @@ LocalManager::LocalManager(char * /* mpath ATS_UNUSED */, bool proxy_on)
     mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
     mgmt_sync_key = MGMT_SEMID_DEFAULT;
   }
-  ink_strlcpy(pserver_path, system_runtime_dir, sizeof(pserver_path));
+
+  ink_strlcpy(pserver_path, rundir, sizeof(pserver_path));
 
   virt_map = NULL;
 

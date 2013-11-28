@@ -53,7 +53,6 @@ int system_num_of_processors  = ink_number_of_processors();
 int system_num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int system_num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 
-char system_runtime_dir[PATH_NAME_MAX + 1];
 char system_config_directory[PATH_NAME_MAX + 1];
 
 //int system_remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
@@ -157,7 +156,6 @@ int main(int argc, char * argv[])
 
   // Get TS directories
   ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
-  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
 
   if (chdir(Layout::get()->prefix) < 0) {
     fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", Layout::get()->prefix, errno, strerror(errno));

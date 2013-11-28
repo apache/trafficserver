@@ -144,7 +144,6 @@ char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 static char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
-char system_runtime_dir[PATH_NAME_MAX + 1];  // Layout->runtimedir
 char system_config_directory[PATH_NAME_MAX + 1]; // Layout->sysconfdir
 
 static char error_tags[1024] = "";
@@ -247,24 +246,19 @@ init_system()
 static void
 check_lockfile()
 {
-  char *lockfile = NULL;
+  xptr<char> rundir(RecConfigReadRuntimeDir());
+  xptr<char> lockfile;
   pid_t holding_pid;
   int err;
 
-  if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
-    fprintf(stderr,"unable to access() dir'%s': %d, %s\n",
-            Layout::get()->runtimedir, errno, strerror(errno));
-    fprintf(stderr," please set correct path in env variable TS_ROOT \n");
-    _exit(1);
-  }
-  lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
+  lockfile = Layout::relative_to(rundir, SERVER_LOCK);
 
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Get(&holding_pid);
 
   if (err != 1) {
     char *reason = strerror(-err);
-    fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile);
+    fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", (const char *)lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
       fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
@@ -277,16 +271,16 @@ check_lockfile()
     }
     _exit(1);
   }
-  ats_free(lockfile);
 }
 
 static void
 init_dirs(void)
 {
+  xptr<char> rundir(RecConfigReadRuntimeDir());
+
   char buf[PATH_NAME_MAX + 1];
 
   ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
 
   /*
    * XXX: There is not much sense in the following code
@@ -305,15 +299,11 @@ init_dirs(void)
     }
   }
 
-  if (access(system_runtime_dir, R_OK | W_OK) == -1) {
-    REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
-    Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
-    if (access(system_runtime_dir, R_OK | W_OK) == -1) {
-      fprintf(stderr,"unable to access() local state dir '%s': %d, %s\n",
-              system_runtime_dir, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
-      _exit(1);
-    }
+  if (access(rundir, R_OK | W_OK) == -1) {
+    fprintf(stderr,"unable to access() local state dir '%s': %d, %s\n",
+            (const char *)rundir, errno, strerror(errno));
+    fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
+    _exit(1);
   }
 
 }
@@ -553,12 +543,13 @@ cmd_clear(char *cmd)
   //bool c_adb = !strcmp(cmd, "clear_authdb");
   bool c_cache = !strcmp(cmd, "clear_cache");
 
-  char p[PATH_NAME_MAX];
   if (c_all || c_hdb) {
-    Note("Clearing Configuration");
-    Layout::relative_to(p, sizeof(p), system_runtime_dir, "hostdb.config");
-    if (unlink(p) < 0)
-      Note("unable to unlink %s", p);
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    xptr<char> config(Layout::relative_to(rundir, "hostdb.config"));
+
+    Note("Clearing HostDB Configuration");
+    if (unlink(config) < 0)
+      Note("unable to unlink %s", (const char *)config);
   }
 
   if (c_all || c_cache) {
@@ -569,6 +560,7 @@ cmd_clear(char *cmd)
       return CMD_FAILED;
     }
   }
+
   if (c_hdb || c_all) {
     Note("Clearing Host Database");
     if (hostDBProcessor.cache()->start(PROCESSOR_RECONFIGURE) < 0) {
@@ -1288,8 +1280,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
     fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
     _exit(0);
   }
-  // Ensure only one copy of traffic server is running
-  check_lockfile();
 
   // Set stdout/stdin to be unbuffered
   setbuf(stdout, NULL);
@@ -1320,6 +1310,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
   // Local process manager
   initialize_process_manager();
+
+  // Ensure only one copy of traffic server is running
+  check_lockfile();
 
   // Set the core limit for the process
   init_core_size();

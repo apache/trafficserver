@@ -432,11 +432,12 @@ webIntr_main(void *)
   // set up socket paths;
   char api_sock_path[1024];
   char event_sock_path[1024];
+  xptr<char> rundir(RecConfigReadRuntimeDir());
 
   bzero(api_sock_path, 1024);
   bzero(event_sock_path, 1024);
-  snprintf(api_sock_path, sizeof(api_sock_path), "%s/mgmtapisocket", system_runtime_dir);
-  snprintf(event_sock_path, sizeof(event_sock_path), "%s/eventapisocket", system_runtime_dir);
+  snprintf(api_sock_path, sizeof(api_sock_path), "%s/mgmtapisocket", (const char *)rundir);
+  snprintf(event_sock_path, sizeof(event_sock_path), "%s/eventapisocket", (const char *)rundir);
 
   // INKqa12562: MgmtAPI sockets should be created with 775 permission
   mode_t oldmask = umask(S_IWOTH);
