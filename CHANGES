@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2351] Bandaid fix for Range request crash related to
+   Read-While-Writer and content length calculations.
 
   *) [TS-2408] Fix double free of proxy.config.admin.user_id.
 
