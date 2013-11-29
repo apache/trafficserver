@@ -72,4 +72,5 @@ directory in the Apache Traffic Server source tree. Exmperimental plugins can be
   metafilter.en
   mysql_remap.en
   stale_while_revalidate.en
+  ts_lua.en
 
