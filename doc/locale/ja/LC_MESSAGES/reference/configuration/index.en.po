@@ -13,4 +13,4 @@ msgstr ""
 
 #: ../../reference/configuration/index.en.rst:5
 msgid "Configuration File Reference"
-msgstr ""
+msgstr "設定ファイルリファレンス"
