@@ -35,6 +35,7 @@
 #include "VMap.h"
 #include "MgmtUtils.h"
 #include "P_RecLocal.h"
+#include "I_Layout.h"
 
 // for linux and freebsd
 #ifndef C_ISUID
@@ -303,19 +304,17 @@ VMap::lt_runGambit()
  * vaddr file.
  */
 void
-VMap::lt_readAListFile(char *data)
+VMap::lt_readAListFile(char * data)
 {
   int tmp_num_addrs = 0;
-  char buf[1024], fname[1024];
+  char buf[1024];
   char tmp_addr[1024], tmp_interface[1024];
   FILE *fin;
   char tmp_id[1024];
+  xptr<char> vaddr_path(Layout::get()->relative_to(Layout::get()->sysconfdir, data));
 
-  if (!data)
-    return;
-  snprintf(fname, sizeof(fname), "%s/%s", lmgmt->config_path, data);
-  if (!(fin = fopen(fname, "r"))) {
-    mgmt_log(stderr, "[VMap::lt_readAListFile] Unable to open file: %s, addr list unchanged\n", fname);
+  if (!(fin = fopen(vaddr_path, "r"))) {
+    mgmt_log(stderr, "[VMap::lt_readAListFile] Unable to open file: %s, addr list unchanged\n", (const char *)vaddr_path);
     return;
   }
 

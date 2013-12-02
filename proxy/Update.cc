@@ -32,7 +32,7 @@
 #include "URL.h"
 #include "HdrUtils.h"
 #include <records/I_RecHttp.h>
-//#include "MixtAPIInternal.h"
+#include "I_Layout.h"
 
 RecRawStatBlock *update_rsb;
 
@@ -875,17 +875,15 @@ UpdateConfigList *
 UpdateConfigManager::BuildUpdateList()
 {
   // Build pathname to "update.config" and open file
+  xptr<char> config_path;
 
-  char ConfigFilePath[PATH_NAME_MAX];
   if (_filename) {
-    ink_strlcpy(ConfigFilePath, system_config_directory, sizeof(ConfigFilePath));
-    ink_strlcat(ConfigFilePath, "/", sizeof(ConfigFilePath));
-    ink_strlcat(ConfigFilePath, _filename, sizeof(ConfigFilePath));
+    config_path = Layout::get()->relative_to(Layout::get()->sysconfdir, _filename);
   } else {
     return (UpdateConfigList *) NULL;
   }
 
-  int fd = open(ConfigFilePath, O_RDONLY);
+  int fd = open(config_path, O_RDONLY);
   if (fd < 0) {
     Warning("read update.config, open failed");
     SignalWarning(MGMT_SIGNAL_CONFIG_ERROR, "read update.config, open failed");

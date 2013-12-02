@@ -56,8 +56,6 @@ int remote_management_flag = 0;
 int auto_clear_hostdb_flag = 0;
 char proxy_name[MAXDNAME + 1] = "unknown";
 
-char system_config_directory[PATH_NAME_MAX + 1] = "";
-
 char error_tags[1024] = "";
 char action_tags[1024] = "";
 char command_string[512] = "";
@@ -115,8 +113,6 @@ initialize_process_manager()
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
 
   pmgmt->reconfigure();
-
-  REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
 
   //
   // Define version info records

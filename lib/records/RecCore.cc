@@ -1071,6 +1071,40 @@ RecConfigReadRuntimeDir()
 }
 
 //-------------------------------------------------------------------------
+// RecConfigReadSnapshotDir.
+//-------------------------------------------------------------------------
+char *
+RecConfigReadSnapshotDir()
+{
+  char buf[PATH_NAME_MAX + 1];
+
+  buf[0] = '\0';
+  RecGetRecordString("proxy.config.snapshot_dir", buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative_to(Layout::get()->sysconfdir, buf);
+  } else {
+    return Layout::get()->relative_to(Layout::get()->sysconfdir, "snapshots");
+  }
+}
+
+//-------------------------------------------------------------------------
+// RecConfigReadConfigPath
+//-------------------------------------------------------------------------
+char *
+RecConfigReadConfigPath(const char * file_variable)
+{
+  char buf[PATH_NAME_MAX + 1];
+
+  buf[0] = '\0';
+  RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative_to(Layout::get()->sysconfdir, buf);
+  }
+
+  return NULL;
+}
+
+//-------------------------------------------------------------------------
 // REC_SignalManager (TS)
 //-------------------------------------------------------------------------
 #if defined (REC_BUILD_MGMT)

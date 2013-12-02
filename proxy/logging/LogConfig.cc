@@ -1624,29 +1624,25 @@ static char xml_config_buffer[] = "<LogFilter> \
 void
 LogConfig::read_xml_log_config(int from_memory)
 {
-  char config_path[PATH_NAME_MAX];
+  xptr<char> config_path;
 
-  if (from_memory) {
-    snprintf(config_path, PATH_NAME_MAX, "%s", "from_memory");
-    Debug("log", "Reading from memory %s", config_path);
-  } else {
+  if (!from_memory) {
     if (xml_config_file == NULL) {
       Note("No log config file to read");
       return;
     }
-    snprintf(config_path, PATH_NAME_MAX, "%s/%s", system_config_directory, xml_config_file);
+
+    config_path = Layout::get()->relative_to(Layout::get()->sysconfdir, xml_config_file);
   }
 
-
-  Debug("log-config", "Reading log config file %s", config_path);
-  Debug("xml", "%s is an XML-based config file", config_path);
-
-  InkXmlConfigFile log_config(config_path);
+  InkXmlConfigFile log_config(config_path ? (const char *)config_path : "memory://builtin");
 
   if (!from_memory) {
+    Debug("log-config", "Reading log config file %s", (const char *)config_path);
+    Debug("xml", "%s is an XML-based config file", (const char *)config_path);
 
     if (log_config.parse() < 0) {
-      Note("Error parsing log config file %s; ensure that it is XML-based", config_path);
+      Note("Error parsing log config file %s; ensure that it is XML-based", (const char *)config_path);
       return;
     }
 
@@ -2231,18 +2227,16 @@ LogConfig::read_xml_log_config(int from_memory)
 char **
 LogConfig::read_log_hosts_file(size_t * num_hosts)
 {
-  char config_path[PATH_NAME_MAX];
+  xptr<char> config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, hosts_config_file));
   char line[LOG_MAX_FORMAT_LINE];
   char **hosts = NULL;
 
-  snprintf(config_path, PATH_NAME_MAX, "%s/%s", system_config_directory, hosts_config_file);
-
-  Debug("log-config", "Reading log hosts from %s", config_path);
+  Debug("log-config", "Reading log hosts from %s", (const char *)config_path);
 
   size_t nhosts = 0;
   int fd = open(config_path, O_RDONLY);
   if (fd < 0) {
-    Warning("Traffic Server can't open %s for reading log hosts " "for splitting: %s.", config_path, strerror(errno));
+    Warning("Traffic Server can't open %s for reading log hosts " "for splitting: %s.", (const char *)config_path, strerror(errno));
   } else {
     //
     // First, count the number of hosts in the file
@@ -2261,7 +2255,7 @@ LogConfig::read_log_hosts_file(size_t * num_hosts)
     //
     if (nhosts) {
       if (lseek(fd, 0, SEEK_SET) != 0) {
-        Warning("lseek failed on file %s: %s", config_path, strerror(errno));
+        Warning("lseek failed on file %s: %s", (const char *)config_path, strerror(errno));
         nhosts = 0;
       } else {
         hosts = NEW(new char *[nhosts]);

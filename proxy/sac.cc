@@ -46,21 +46,16 @@
 #include "DiagsConfig.h"
 #include "I_Machine.h"
 
-int auto_clear_cache_flag = 0;
-
 // sac-specific command-line flags
 //
-int version_flag = 0;
+static int version_flag = 0;
 
 // command-line argument descriptions
 //
-static char configDirectoryType[8] = "S1024";
 
 ArgumentDescription argument_descriptions[] = {
 
   {"version", 'V', "Print Version Id", "T", &version_flag, NULL, NULL},
-  {"config_dir", 'c', "Config Directory", configDirectoryType,
-   &system_config_directory, NULL, NULL},
 #ifdef DEBUG
   {"error_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags,
    NULL, NULL},
@@ -86,7 +81,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   Layout::create();
   // take care of command-line arguments
   //
-  snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);
   process_args(argument_descriptions, countof(argument_descriptions), argv);
 
   // check for the version number request

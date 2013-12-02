@@ -26,7 +26,6 @@
 #include "Prefetch.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
-#include "I_Layout.h"
 #include <records/I_RecHttp.h>
 #include <ts/IpMapConf.h>
 
@@ -1906,8 +1905,7 @@ config_read_proto(PrefetchBlastData &blast, const char *str)
 int
 PrefetchConfiguration::readConfiguration()
 {
-  char *conf_file_name;
-  char conf_path[PATH_NAME_MAX + 1];
+  xptr<char> conf_path;
   int fd = -1;
 
   local_http_server_port = stuffer_port = 0;
@@ -1944,24 +1942,21 @@ PrefetchConfiguration::readConfiguration()
   //pre_parse_hook = 0;
   //embedded_url_hook = 0;
 
-  conf_file_name = TS_ConfigReadString("proxy.config.prefetch.config_file");
-
-  if (conf_file_name == NULL) {
+  conf_path = RecConfigReadConfigPath("proxy.config.prefetch.config_file");
+  if (!conf_path) {
     Warning("PrefetchProcessor: No prefetch configuration file specified. Prefetch disabled\n");
     goto Lerror;
   }
-  Layout::relative_to(conf_path, sizeof(conf_path), system_config_directory, conf_file_name);
-  ats_free(conf_file_name);
 
   fd = open(conf_path, O_RDONLY);
   if (fd < 0) {
-    Error("PrefetchProcessor: Error, could not open '%s' disabling Prefetch\n", conf_path);
+    Error("PrefetchProcessor: Error, could not open '%s' disabling Prefetch\n", (const char *)conf_path);
     goto Lerror;
   }
 
   char *temp_str;
   if ((temp_str = Load_IpMap_From_File(&ip_map, fd, "prefetch_children")) != 0) {
-    Error("PrefetchProcessor: Error in reading ip_range from %s: %.256s\n", conf_path, temp_str);
+    Error("PrefetchProcessor: Error in reading ip_range from %s: %.256s\n", (const char *)conf_path, temp_str);
     ats_free(temp_str);
     goto Lerror;
   }

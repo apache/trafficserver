@@ -134,7 +134,6 @@ private:
     DLL<callbackListable> cblist;
   InkHashTable *bindings;
   //InkHashTable* g_snapshot_directory_ht;
-  char *snapshotDir;
   SnapResult copyFile(Rollback * rb, const char *snapPath);
   SnapResult readFile(const char *filePath, textBuffer * contents);
   void abortRestore(const char *abortTo);

@@ -32,10 +32,6 @@
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
 
-
-
-static const char snapDir[] = "snapshots";
-
 #define DIR_MODE S_IRWXU
 #define FILE_MODE S_IRWXU
 
@@ -56,51 +52,24 @@ const char *SnapshotStrings[] = { "Request Successful\n",
 
 FileManager::FileManager()
 {
-  char configTmp[PATH_NAME_MAX + 1];
-  int pathLen;
-
   bindings = ink_hash_table_create(InkHashTableKeyType_String);
-
   ink_assert(bindings != NULL);
 
   ink_mutex_init(&accessLock, "File Manager Mutex");
   ink_mutex_init(&cbListLock, "File Changed Callback Mutex");
 
-  if (varStrFromName("proxy.config.config_dir", configTmp, sizeof(configTmp)) == false) {
-    mgmt_fatal(stderr, 0,
-               "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
-  }
-  if (configTmp[0] != '/') {
-    // Make it TS_ROOT relative
-    Layout::get()->relative(configTmp, sizeof(configTmp), configTmp);
-  }
-  if (access(configTmp, R_OK) == -1) {
-    ink_strlcpy(configTmp, system_config_directory,sizeof(configTmp));
-    if (access(configTmp, R_OK) == -1) {
-        mgmt_elog(0, "[FileManager::FileManager] unable to access() directory '%s': %d, %s\n",
-                mgmt_path, errno, strerror(errno));
-        mgmt_elog(0, "[FileManager::FileManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
-        _exit(1);
-    }
-  }
-  // Set up the path to the snap shot dir
-  pathLen = strlen(configTmp) + strlen(snapDir) + 3;
-  const size_t snapshotDir_size = pathLen + 1;
-  snapshotDir = new char[snapshotDir_size];
-  ink_filepath_make(snapshotDir, snapshotDir_size, configTmp, snapDir);
+  xptr<char> snapshotDir(RecConfigReadSnapshotDir());
 
-  // Set up info for MultiFile
-  managedDir = snapshotDir;
-  dirDescript = "snapshot";
-
-  // Check to see if the directory already exists, if not create
-  //  it
+  // Check to see if the directory already exists, if not create it.
   if (access(snapshotDir, F_OK) == -1) {
     if (mkdir(snapshotDir, DIR_MODE) < 0) {
       // Failed to create the snapshot directory
-      mgmt_fatal(stderr, 0, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", snapshotDir, strerror(errno));
+      mgmt_fatal(stderr, 0, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", (const char *)snapshotDir, strerror(errno));
     }
   }
+
+  this->managedDir = snapshotDir.release();
+  this->dirDescript = "snapshot";
 }
 
 // FileManager::~FileManager
@@ -117,11 +86,12 @@ FileManager::~FileManager()
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  // Let other operations finish and do not start any
-  //   new ones
+  // Let other operations finish and do not start any new ones
   ink_mutex_acquire(&accessLock);
 
-  delete[]snapshotDir;
+  ats_free(this->managedDir);
+  this->managedDir = NULL;
+  this->dirDescript = NULL;
 
   for (cb = cblist.pop(); cb != NULL; cb = cblist.pop()) {
     delete cb;
@@ -688,45 +658,13 @@ FileManager::copyFile(Rollback * rb, const char *snapPath)
 SnapResult
 FileManager::WalkSnaps(ExpandingArray * snapList)
 {
-
   MFresult r;
-  // These aren't used.
-  //char altSnapshotDir[256];
-  //InkHashTableValue snapDirLookup;
-  //fileBinding* snapBind;
-  //InkHashTableEntry *entry;
-  //InkHashTableIteratorState iterator_state;
-  //char *filePath;
-  bool found;
-  char config_dir[256];
-  char *snapshot_dir;
+
+  // The original code reset this->managedDir from proxy.config.snapshot_dir at this point. There doesn't appear to be
+  // any need for that, since managedDir is always set in the constructor and should not be changed.
+  ink_release_assert(this->managedDir != NULL);
 
   ink_mutex_acquire(&accessLock);
-  snapshot_dir = (char *) REC_readString("proxy.config.snapshot_dir", &found);
-  ink_assert(found);
-  //config_dir = lmgmt->record_data->readString("proxy.config.config_dir", &found);
-  //ink_assert(found);
-
-  if (varStrFromName("proxy.config.config_dir", config_dir, 256) == false) {
-    mgmt_fatal(stderr, 0,
-               "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
-  }
-
-  if (snapshot_dir == NULL) {
-    const size_t snapshot_dir_size = strlen("snapshots");
-    snapshot_dir = new char[snapshot_dir_size];
-    ink_assert(snapshot_dir);
-    snprintf(snapshot_dir, snapshot_dir_size, "%s", "snapshots");
-    RecSetRecordString("proxy.config.snapshot_dir", snapshot_dir);
-  }
-  //if(strncmp(snapshot_dir, config_dir, strlen(config_dir)))
-  if (snapshot_dir[0] != '/')
-    managedDir = newPathString(config_dir, snapshot_dir);
-  else
-    managedDir = snapshot_dir;
-  //else
-  //managedDir = snapshot_dir;
-
 
   r = WalkFiles(snapList);
   //lmgmt->record_data ->setString("proxy.config.snapshot_dir", managedDir);

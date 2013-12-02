@@ -415,11 +415,11 @@ webIntr_main(void *)
 
     if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
       ats_free(autoconfContext.docRoot);
-      autoconfContext.docRoot = ats_strdup(system_config_directory);
+      autoconfContext.docRoot = ats_strdup(Layout::get()->sysconfdir);
       if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
         mgmt_elog(0, "[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
                 autoconfContext.docRoot, err, errno, strerror(errno));
-        mgmt_elog(0, "[WebIntrMain] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+        mgmt_elog(0, "[WebIntrMain] please set the 'TS_ROOT' environment variable\n");
         mgmt_fatal(stderr, 0, "[WebIntrMain] No Client AutoConf Root\n");
       }
     }

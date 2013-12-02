@@ -1711,7 +1711,7 @@ TSInstallDirGet(void)
 const char *
 TSConfigDirGet(void)
 {
-  return system_config_directory;
+  return Layout::get()->sysconfdir;
 }
 
 const char *
@@ -1719,6 +1719,7 @@ TSTrafficServerVersionGet(void)
 {
   return traffic_server_version;
 }
+
 int TSTrafficServerVersionGetMajor() { return ts_major_version; }
 int TSTrafficServerVersionGetMinor() { return ts_minor_version; }
 int TSTrafficServerVersionGetPatch() { return ts_patch_version; }

@@ -64,6 +64,8 @@
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
+static void extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *fds_throttle);
+
 LocalManager *lmgmt = NULL;
 FileManager *configFiles;
 
@@ -76,9 +78,6 @@ static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024] = "";
 static char action_tags[1024] = "";
 static bool proxy_on = true;
-
-// TODO: Check if really need those
-char system_config_directory[PATH_NAME_MAX + 1];
 
 char mgmt_path[PATH_NAME_MAX + 1];
 
@@ -267,17 +266,12 @@ static void
 init_dirs()
 {
   xptr<char> rundir(RecConfigReadRuntimeDir());
-  char buf[PATH_NAME_MAX + 1];
 
-  REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
-  Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
-  if (access(system_config_directory, R_OK) == -1) {
-    mgmt_elog(0, "unable to access() config dir '%s': %d, %s\n", system_config_directory, errno, strerror(errno));
-    mgmt_elog(0, "please set config path via 'proxy.config.config_dir' \n");
+  if (access(Layout::get()->sysconfdir, R_OK) == -1) {
+    mgmt_elog(0, "unable to access() config dir '%s': %d, %s\n", Layout::get()->sysconfdir, errno, strerror(errno));
+    mgmt_elog(0, "please set the 'TS_ROOT' environment variable\n");
     _exit(1);
   }
-
-  ink_strlcpy(mgmt_path, system_config_directory, sizeof(mgmt_path));
 
   if (access(rundir, R_OK) == -1) {
     mgmt_elog(0, "unable to access() local state dir '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
@@ -562,7 +556,7 @@ main(int argc, char **argv)
   Init_Errata_Logging();
 #endif
   ts_host_res_global_init();
-  lmgmt = new LocalManager(mgmt_path, proxy_on);
+  lmgmt = new LocalManager(proxy_on);
   RecLocalInitMessage();
   lmgmt->initAlarm();
 

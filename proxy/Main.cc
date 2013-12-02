@@ -144,8 +144,6 @@ char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 static char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
-char system_config_directory[PATH_NAME_MAX + 1]; // Layout->sysconfdir
-
 static char error_tags[1024] = "";
 static char action_tags[1024] = "";
 static int show_statistics = 0;
@@ -274,29 +272,15 @@ check_lockfile()
 }
 
 static void
-init_dirs(void)
+check_config_directories(void)
 {
   xptr<char> rundir(RecConfigReadRuntimeDir());
 
-  char buf[PATH_NAME_MAX + 1];
-
-  ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-
-  /*
-   * XXX: There is not much sense in the following code
-   * The purpose of proxy.config.foo_dir should
-   * be checked BEFORE checking default foo directory.
-   * Otherwise one cannot change the config dir to something else
-   */
-  if (access(system_config_directory, R_OK) == -1) {
-    REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
-    Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
-    if (access(system_config_directory, R_OK) == -1) {
-      fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
-              system_config_directory, errno, strerror(errno));
-      fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
-      _exit(1);
-    }
+  if (access(Layout::get()->sysconfdir, R_OK) == -1) {
+    fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
+            Layout::get()->sysconfdir, errno, strerror(errno));
+    fprintf(stderr, "please set the 'TS_ROOT' environment variable\n");
+    _exit(1);
   }
 
   if (access(rundir, R_OK | W_OK) == -1) {
@@ -327,15 +311,14 @@ initialize_process_manager()
     LibRecordsConfigInit();
     RecordsConfigOverrideFromEnvironment();
   }
-  //
+
   // Start up manager
-  //
   pmgmt = NEW(new ProcessManager(remote_management_flag));
 
   pmgmt->start();
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
   pmgmt->reconfigure();
-  init_dirs();// setup directories
+  check_config_directories();
 
   //
   // Define version info records
@@ -1531,7 +1514,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 
     // Init plugins as soon as logging is ready.
-    plugin_init(system_config_directory);        // plugin.config
+    plugin_init();        // plugin.config
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
     cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);

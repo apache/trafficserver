@@ -175,7 +175,4 @@ typedef int (*RecRawStatSyncCb) (const char *name, RecDataT data_type, RecData *
 #define REC_VAR_NAME_DELIMITOR '.'
 #define REC_VAR_NAME_WILDCARD  '*'
 
-// System Defaults
-extern char system_config_directory[PATH_NAME_MAX + 1];
-
 #endif

@@ -50,14 +50,13 @@
 class LocalManager: public BaseManager
 {
 public:
-  LocalManager(char *mpath, bool proxy_on);
+  LocalManager(bool proxy_on);
 
   ~LocalManager()
   {
     delete alarm_keeper;
     delete virt_map;
     delete ccom;
-    ats_free(config_path);
     ats_free(bin_path);
     ats_free(absolute_proxy_binary);
     ats_free(proxy_name);
@@ -125,7 +124,6 @@ public:
   int process_server_timeout_msecs;
 
   char pserver_path[PATH_NAME_MAX];
-  char *config_path;
   char *bin_path;
   char *absolute_proxy_binary;
   char *proxy_name;
