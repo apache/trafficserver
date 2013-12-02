@@ -70,7 +70,7 @@ It becomes significant if multiple original URLs are mapped to the same remapped
 
 This is also an issue if a remapping is changed because it is effectively a time axis version of the previous case. If an original URL is remapped to a different server address then the setting determines if existing cached objects will be served for new requests (enabled) or not (disabled). Similarly if the original URL mapped to a particular URL is changed then cached objects from the initial original URL will be served from the updated original URL if pristine headers is disabled.
 
-These collisions are not of themselves good or bad. An administrator needs to decide which is appropriate for his situation and set the value correspondingly.
+These collisions are not of themselves good or bad. An administrator needs to decide which is appropriate for their situation and set the value correspondingly.
 
 If a greater degree of control is desired a plugin must used to invoke the API call :c:func:`TSCacheUrlSet()` to provide a specific cache key.
 
