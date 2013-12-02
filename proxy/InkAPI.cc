@@ -493,7 +493,7 @@ _hdr_obj_to_mime_hdr_impl(HdrHeapObjImpl * obj)
     impl = (MIMEHdrImpl *) obj;
   else {
     ink_release_assert(!"mloc not a header type");
-    impl = NULL;                /* gcc does not know about 'ink_release_assert' - make him happy */
+    impl = NULL;                /* gcc does not know about 'ink_release_assert' - make it happy */
   }
   return impl;
 }

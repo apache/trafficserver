@@ -2199,7 +2199,7 @@ KeepAliveConn::handleEvent(int event, void *data)
 
     vio = childVC->do_io_write(this, INT64_MAX, reader);
 
-    //his read lets us disconnect when the other side closes
+    //this read lets us disconnect when the other side closes
     childVC->do_io_read(this, INT64_MAX, read_buf);
     break;
 
