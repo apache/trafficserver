@@ -118,7 +118,7 @@ digraph g{
   "tunnel response" -> TS_HTTP_TXN_CLOSE_HOOK;
   TS_HTTP_TXN_CLOSE_HOOK -> accept;
  
-  TS_HTTP_TXN_START_HOOK [shape=box];  
+  TS_HTTP_TXN_START_HOOK [shape=box];
   TS_HTTP_READ_REQUEST_HDR_HOOK [shape = box];
   TS_HTTP_OS_DNS_HOOK [shape = box];
   TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK[shape = box];
@@ -126,7 +126,7 @@ digraph g{
   TS_HTTP_READ_CACHE_HDR_HOOK [shape = box];
   TS_HTTP_SEND_REQUEST_HDR_HOOK [shape = box];
   "set up req transform" [tooltip = "req transform takes place here"];
-  TS_HTTP_READ_RESPONSE_HDR_HOOK [shape = box]; 
+  TS_HTTP_READ_RESPONSE_HDR_HOOK [shape = box];
   "set up transform" [tooltip = "response transform takes place here"];
   TS_HTTP_SEND_RESPONSE_HDR_HOOK [shape = box];
   TS_HTTP_TXN_CLOSE_HOOK [shape = box];
