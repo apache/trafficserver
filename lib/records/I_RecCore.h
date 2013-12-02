@@ -56,7 +56,7 @@ char * RecConfigReadSnapshotDir();
 // Return a copy of a configuration file that is relative to sysconfdir. The relative path to the configuration
 // file is specified in the configuration variable named by "file_variable". If the configuration variable has no
 // value, NULL is returned. The caller MUST release the result with ats_free().
-char * RecConfigReadConfigPath(const char * file_variable);
+char * RecConfigReadConfigPath(const char * file_variable, const char * default_value = NULL);
 
 // Test whether the named configuration value is overridden by an environment variable. Return either
 // the overridden value, or the original value. Caller MUST NOT free the result.

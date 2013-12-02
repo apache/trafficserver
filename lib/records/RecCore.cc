@@ -1091,7 +1091,7 @@ RecConfigReadSnapshotDir()
 // RecConfigReadConfigPath
 //-------------------------------------------------------------------------
 char *
-RecConfigReadConfigPath(const char * file_variable)
+RecConfigReadConfigPath(const char * file_variable, const char * default_value)
 {
   char buf[PATH_NAME_MAX + 1];
 
@@ -1099,6 +1099,10 @@ RecConfigReadConfigPath(const char * file_variable)
   RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
   if (strlen(buf) > 0) {
     return Layout::get()->relative_to(Layout::get()->sysconfdir, buf);
+  }
+
+  if (default_value) {
+    return Layout::get()->relative_to(Layout::get()->sysconfdir, default_value);
   }
 
   return NULL;

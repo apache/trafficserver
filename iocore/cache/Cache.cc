@@ -77,7 +77,6 @@ int cache_config_agg_write_backlog = AGG_SIZE * 2;
 int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
 int cache_config_read_while_writer = 0;
-char cache_system_config_directory[PATH_NAME_MAX + 1];
 int cache_config_mutex_retry_delay = 2;
 #ifdef HTTP_CACHE
 static int enable_cache_empty_http_doc = 0;
@@ -3358,26 +3357,6 @@ ink_cache_init(ModuleVersion v)
   REC_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
   Debug("cache_init", "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
 
-  // This is just here to make sure IOCORE "standalone" works, it's usually configured in RecordsConfig.cc
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", TS_BUILD_SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
-  REC_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
-  if (cache_system_config_directory[0] != '/') {
-    // Not an absolute path so use system one
-    Layout::get()->relative(cache_system_config_directory, sizeof(cache_system_config_directory), cache_system_config_directory);
-  }
-  Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
-  if (access(cache_system_config_directory, R_OK) == -1) {
-    ink_strlcpy(cache_system_config_directory, Layout::get()->sysconfdir,
-                sizeof(cache_system_config_directory));
-    Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
-    if (access(cache_system_config_directory, R_OK) == -1) {
-      fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
-              cache_system_config_directory, errno, strerror(errno));
-      fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
-      _exit(1);
-    }
-  }
-
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
@@ -3423,16 +3402,10 @@ ink_cache_init(ModuleVersion v)
     printf("%s  failed\n", err);
     exit(1);
   }
-  // XXX: The read for proxy.config.cache.storage_filename is unused!
-  //
+
   if (theCacheStore.n_disks == 0) {
-    char p[PATH_NAME_MAX + 1];
-    snprintf(p, sizeof(p), "%s/", cache_system_config_directory);
-    REC_ReadConfigString(p + strlen(p), "proxy.config.cache.storage_filename", PATH_NAME_MAX - strlen(p) - 1);
-    if (p[strlen(p) - 1] == '/' || p[strlen(p) - 1] == '\\') {
-      ink_strlcat(p, "storage.config", sizeof(p));
-    }
-    Warning("no cache disks specified in %s: cache disabled\n", p);
+    xptr<char> path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
+    Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
     //exit(1);
   }
 #if TS_USE_INTERIM_CACHE == 1

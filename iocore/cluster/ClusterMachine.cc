@@ -29,7 +29,7 @@
 #include "ink_config.h"
 #include <unistd.h>
 #include "P_Cluster.h"
-extern char cache_system_config_directory[PATH_NAME_MAX + 1];
+#include "I_Layout.h"
 extern int num_of_cluster_threads;
 
 MachineList *machines_config = NULL;
@@ -214,13 +214,9 @@ read_MachineList(char *filename, int afd)
   int n = -1, i = 0, ln = 0;
   MachineList *l = NULL;
   ink_assert(filename || (afd != -1));
-  char p[PATH_NAME_MAX];
-  if (filename) {
-    ink_strlcpy(p, cache_system_config_directory, sizeof(p));
-    ink_strlcat(p, "/", sizeof(p));
-    ink_strlcat(p, filename, sizeof(p));
-  }
-  int fd = ((afd != -1) ? afd : open(p, O_RDONLY));
+  xptr<char> path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
+
+  int fd = ((afd != -1) ? afd : open(path, O_RDONLY));
   if (fd >= 0) {
     while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
       ln++;
