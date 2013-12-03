@@ -53,6 +53,10 @@ char * RecConfigReadRuntimeDir();
 // MUST release the result with ats_free().
 char * RecConfigReadSnapshotDir();
 
+// Return a copy of the system's log directory, taking proxy.config.log.logfile_dir into account. The caller
+// MUST release the result with ats_free().
+char * RecConfigReadLogDir();
+
 // Return a copy of a configuration file that is relative to sysconfdir. The relative path to the configuration
 // file is specified in the configuration variable named by "file_variable". If the configuration variable has no
 // value, NULL is returned. The caller MUST release the result with ats_free().

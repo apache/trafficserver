@@ -240,16 +240,8 @@ LogConfig::read_configuration_variables()
     hostname = ptr;
   }
 
-  ptr = REC_ConfigReadString("proxy.config.log.logfile_dir");
-  if (ptr != NULL) {
-    ats_free(logfile_dir);
-    // Make it relative from Layout
-    logfile_dir = Layout::get()->relative(ptr);
-    ats_free(ptr);
-  } else {
-    ats_free(logfile_dir);
-    logfile_dir = ats_strdup(Layout::get()->logdir);
-  }
+  ats_free(logfile_dir);
+  logfile_dir = RecConfigReadLogDir();
 
   if (access(logfile_dir, R_OK | W_OK | X_OK) == -1) {
     // Try 'system_root_dir/var/log/trafficserver' directory

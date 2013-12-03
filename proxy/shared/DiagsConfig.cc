@@ -309,14 +309,7 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
   // Open the diagnostics log. If proxy.config.log.logfile_dir is set use that, otherwise fall
   // back to the configured log directory.
 
-  diags_logpath[0] = '\0';
-  REC_ReadConfigString(diags_logpath, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
-  if (strlen(diags_logpath) > 0) {
-    logpath = Layout::get()->relative(diags_logpath);
-  } else {
-    logpath = ats_strdup(Layout::get()->logdir);
-  }
-
+  logpath = RecConfigReadLogDir();
   if (access(logpath, W_OK | R_OK) == -1) {
     fprintf(stderr, "unable to access log directory '%s': %d, %s\n",
             (const char *)logpath, errno, strerror(errno));

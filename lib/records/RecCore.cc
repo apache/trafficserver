@@ -1071,6 +1071,23 @@ RecConfigReadRuntimeDir()
 }
 
 //-------------------------------------------------------------------------
+// RecConfigReadLogDir
+//-------------------------------------------------------------------------
+char *
+RecConfigReadLogDir()
+{
+  char buf[PATH_NAME_MAX + 1];
+
+  buf[0] = '\0';
+  RecGetRecordString("proxy.config.log.logfile_dir", buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative(buf);
+  } else {
+    return ats_strdup(Layout::get()->logdir);
+  }
+}
+
+//-------------------------------------------------------------------------
 // RecConfigReadSnapshotDir.
 //-------------------------------------------------------------------------
 char *
