@@ -1,23 +1,42 @@
 ts-lua Plugin
 *************
 
-Name
-======
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
 
-ts-lua - Embed the Power of Lua into TrafficServer.
+
+Embed the Power of Lua into TrafficServer.
 
 Status
 ======
+
 This module is being tested under our production environment.
 
 Version
-======
+=======
+
 ts-lua has not been released yet.
 
 Synopsis
-======
+========
 
 **test_hdr.lua**
+
+::
 
     function send_response()
         ts.client_response.header['Rhost'] = ts.ctx['rhost']
@@ -42,6 +61,8 @@ Synopsis
 
 
 **test_transform.lua**
+
+::
 
     function upper_transform(data, eos)
         if eos == 1 then
@@ -79,6 +100,8 @@ Synopsis
 
 **test_cache_lookup.lua**
 
+::
+
     function send_response()
         ts.client_response.header['Rhost'] = ts.ctx['rhost']
         ts.client_response.header['CStatus'] = ts.ctx['cstatus']
@@ -110,6 +133,8 @@ Synopsis
 
 **test_ret_403.lua**
 
+::
+
     function send_response()
         ts.client_response.header['Now'] = ts.now()
         return 0
@@ -134,6 +159,8 @@ Synopsis
 
 
 **sethost.lua**
+
+::
 
     HOSTNAME = ''
 
@@ -162,6 +189,8 @@ Synopsis
 
 **test_intercept.lua**
 
+::
+
     require 'os'
 
     function send_data()
@@ -188,6 +217,7 @@ Synopsis
 
 **test_server_intercept.lua**
 
+::
     require 'os'
 
     function send_data()
@@ -211,21 +241,24 @@ Synopsis
 
 
 Description
-======
-This module embeds Lua, via the standard Lua 5.1 interpreter, into Apache Traffic Server. This module acts as remap plugin of Traffic Server, so we should realize **'do_remap'** function in each lua script. We can write this in remap.config:
+===========
 
-map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/libtslua.so @pparam=/etc/trafficserver/script/test_hdr.lua
+This module embeds Lua, via the standard Lua 5.1 interpreter, into Apache Traffic Server. This module acts as remap plugin of Traffic Server, so we should realize **'do_remap'** function in each lua script. We can write this in remap.config:::
 
-Sometimes we want to receive parameters and process them in the script, we should realize **'\__init__'** function in the lua script(sethost.lua is a reference), and we can write this in remap.config:
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/libtslua.so @pparam=/etc/trafficserver/script/test_hdr.lua
 
-map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/libtslua.so @pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
+Sometimes we want to receive parameters and process them in the script, we should realize **'\__init__'** function in the lua script(sethost.lua is a reference), and we can write this in remap.config:::
+
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/libtslua.so @pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
 
 
 
 TS API for Lua
-======
+==============
+
 Introduction
-------
+------------
+
 The API is exposed to Lua in the form of one standard packages ts. This package is in the default global scope and is always available within lua script.
 
 
@@ -238,7 +271,7 @@ ts.now
 
 **description**: This function returns the time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
 
-Here is an example:
+Here is an example:::
 
     function send_response()
         ts.client_response.header['Now'] = ts.now()
@@ -247,27 +280,27 @@ Here is an example:
 
 
 ts.debug
-------
+--------
 **syntax**: *ts.debug(MESSAGE)*
 
 **context**: global
 
 **description**: Log the MESSAGE to traffic.out if debug is enabled.
 
-Here is an example:
+Here is an example:::
 
     function do_remap()
        ts.debug('I am in do_remap now.')
        return 0
     end
     
-The debug tag is ts_lua and we should write this in records.config:
+The debug tag is ts_lua and we should write this in records.config:::
     
     CONFIG proxy.config.diags.debug.tags STRING ts_lua
     
 
 ts.hook
-------
+-------
 **syntax**: *ts.hook(HOOK_POINT, FUNCTION)*
 
 **context**: do_remap or later
@@ -275,7 +308,7 @@ ts.hook
 **description**: Hooks are points in http transaction processing where we can step in and do some work.
 FUNCTION will be called when the http transaction steps in to HOOK_POINT.
 
-Here is an example:
+Here is an example:::
 
     function send_response()
         s.client_response.header['SHE'] = 'belief'
@@ -286,7 +319,7 @@ Here is an example:
     end
 
 Hook point constants
-------
+--------------------
 **context**: do_remap or later
 
     TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE
@@ -307,7 +340,7 @@ ts.ctx
 
 **description**: This table can be used to store per-request Lua context data and has a life time identical to the current request.
 
-Here is an example:
+Here is an example:::
 
     function send_response()
         ts.client_response.header['RR'] = ts.ctx['rhost']
@@ -323,14 +356,14 @@ Here is an example:
 
 
 ts.http.get_cache_lookup_status
-------
+-------------------------------
 **syntax**: *ts.http.get_cache_lookup_status()*
 
 **context**: function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point
 
 **description**: This function can be used to get cache lookup status.
 
-Here is an example:
+Here is an example:::
 
     function send_response()
         ts.client_response.header['CStatus'] = ts.ctx['cstatus']
@@ -353,7 +386,7 @@ Here is an example:
 
 
 Http cache lookup status constants
-------
+----------------------------------
 **context**: global
 
     TS_LUA_CACHE_LOOKUP_MISS (0)
@@ -363,14 +396,14 @@ Http cache lookup status constants
 
 
 ts.http.set_cache_url
-------
+---------------------
 **syntax**: *ts.http.set_cache_url(KEY_URL)*
 
 **context**: do_remap
 
 **description**: This function can be used to modify the cache key for the request.
 
-Here is an example:
+Here is an example:::
 
     function do_remap()
         ts.http.set_cache_url('http://127.0.0.1:8080/abc/')
@@ -379,14 +412,14 @@ Here is an example:
 
 
 ts.http.resp_cache_transformed
-------
+------------------------------
 **syntax**: *ts.http.resp_cache_transformed(BOOL)*
 
 **context**: do_remap or later
 
 **description**: This function can be used to tell trafficserver whether to cache the transformed data.
 
-Here is an example:
+Here is an example:::
 
     function upper_transform(data, eos)
         if eos == 1 then
@@ -407,14 +440,14 @@ This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM.
 
 
 ts.http.resp_cache_untransformed
-------
+--------------------------------
 **syntax**: *ts.http.resp_cache_untransformed(BOOL)*
 
 **context**: do_remap or later
 
 **description**: This function can be used to tell trafficserver whether to cache the untransformed data.
 
-Here is an example:
+Here is an example:::
 
     function upper_transform(data, eos)
         if eos == 1 then
@@ -435,14 +468,14 @@ This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM.
 
 
 ts.client_request.client_addr.get_addr
-------
+--------------------------------------
 **syntax**: *ts.client_request.client_addr.get_addr()*
 
 **context**: do_remap or later
 
 **description**: This function can be used to get socket address of the client.
 
-Here is an example:
+Here is an example:::
 
     function do_remap
         ip, port, family = ts.client_request.client_addr.get_addr()
@@ -453,7 +486,7 @@ The ts.client_request.client_addr.get_addr function returns three values, ip is 
 
 
 ts.client_request.get_method
-------
+----------------------------
 **syntax**: *ts.client_request.get_method()*
 
 **context**: do_remap or later
@@ -463,7 +496,7 @@ ts.client_request.get_method
 
 
 ts.client_request.set_method
-------
+----------------------------
 **syntax**: *ts.client_request.set_method(METHOD_NAME)*
 
 **context**: do_remap
@@ -472,7 +505,7 @@ ts.client_request.set_method
 
 
 ts.client_request.get_url
-------
+-------------------------
 **syntax**: *ts.client_request.get_url()*
 
 **context**: do_remap or later
@@ -481,7 +514,7 @@ ts.client_request.get_url
 
 
 ts.client_request.get_uri
-------
+-------------------------
 **syntax**: *ts.client_request.get_uri()*
 
 **context**: do_remap or later
@@ -490,7 +523,7 @@ ts.client_request.get_uri
 
 
 ts.client_request.set_uri
-------
+-------------------------
 **syntax**: *ts.client_request.set_uri(PATH)*
 
 **context**: do_remap
@@ -499,7 +532,7 @@ ts.client_request.set_uri
 
 
 ts.client_request.get_uri_args
-------
+------------------------------
 **syntax**: *ts.client_request.get_uri_args()*
 
 **context**: do_remap or later
@@ -508,7 +541,7 @@ ts.client_request.get_uri_args
 
 
 ts.client_request.set_uri_args
-------
+------------------------------
 **syntax**: *ts.client_request.set_uri_args(QUERY_STRING)*
 
 **context**: do_remap
@@ -517,7 +550,7 @@ ts.client_request.set_uri_args
 
 
 ts.client_request.header.HEADER
-------
+-------------------------------
 **syntax**: *ts.client_request.header.HEADER = VALUE*
 
 **syntax**: *ts.client_request.header[HEADER] = VALUE*
@@ -537,13 +570,15 @@ Here is an example:
 
 
 TODO
-=======
+====
+
 Short Term
-------
+----------
+* document configuration
 * non-blocking I/O operation
 * ts.fetch
 
 Long Term
-------
+---------
 * ts.regex
 
