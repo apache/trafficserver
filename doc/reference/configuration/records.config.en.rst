@@ -1949,6 +1949,14 @@ SSL Termination
 
    TBD
 
+.. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
+
+  This configuration specifies the maximum number of bytes to write
+  into a SSL record when replying over a SSL session. In some
+  circumstances this setting can improve response latency by reducing
+  buffering at the SSL layer. The default of ``0`` means to always
+  write all available data into a single SSL record.
+
 Client-Related Configuration
 ----------------------------
 

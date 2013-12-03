@@ -75,6 +75,8 @@ struct SSLConfigParams : public ConfigInfo
   int     client_verify_depth;
   long    ssl_ctx_options;
 
+  static int ssl_maxrecord;
+
   void initialize();
   void cleanup();
 };

@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+
+  *) [TS-2365] Configure the maximum TLS record size.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
   *) [TS-2351] Bandaid fix for Range request crash related to
    Read-While-Writer and content length calculations.
 
