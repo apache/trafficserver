@@ -521,7 +521,7 @@ Value Effect
 
 .. note::
 
-   The ``Via`` header string interpretation can be `decoded here. </tools/via>`_
+   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 0
    :reloadable:
@@ -539,7 +539,7 @@ Value Effect
 
 .. note::
 
-   The ``Via`` header string interpretation can be `decoded here. </tools/via>`_
+   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:

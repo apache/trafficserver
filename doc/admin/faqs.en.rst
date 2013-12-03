@@ -122,7 +122,7 @@ Please refer to the :ref:`forward-proxy` documentation.
 How do I interpret the Via: header code?
 ----------------------------------------
 
-Take a look at our `Via decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 Support for HTTP Expect: Header
 -------------------------------
