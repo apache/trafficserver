@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2413] Release memory for idle SSL connections.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
   *) [TS-2365] Configure the maximum TLS record size.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 

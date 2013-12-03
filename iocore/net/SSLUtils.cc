@@ -313,6 +313,9 @@ SSLInitServerContext(
     break;
   }
 
+#ifdef SSL_MODE_RELEASE_BUFFERS
+  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+#endif
   SSL_CTX_set_quiet_shutdown(ctx, 1);
 
   // XXX OpenSSL recommends that we should use SSL_CTX_use_certificate_chain_file() here. That API
