@@ -80,7 +80,10 @@ digraph g{
   accept -> TS_HTTP_TXN_START_HOOK;
   TS_HTTP_TXN_START_HOOK -> "read req hdrs";
   "read req hdrs" -> TS_HTTP_READ_REQUEST_HDR_HOOK;
-  TS_HTTP_READ_REQUEST_HDR_HOOK -> "cache lookup";
+  TS_HTTP_READ_REQUEST_HDR_HOOK -> TS_HTTP_PRE_REMAP_HOOK;
+  TS_HTTP_PRE_REMAP_HOOK -> "remap request";
+  "remap request" -> TS_HTTP_POST_REMAP_HOOK;
+  TS_HTTP_POST_REMAP_HOOK -> "cache lookup";
   "cache lookup" -> DNS [label = "miss"];
   DNS -> TS_HTTP_OS_DNS_HOOK;
   TS_HTTP_OS_DNS_HOOK -> TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK; 
@@ -120,6 +123,8 @@ digraph g{
  
   TS_HTTP_TXN_START_HOOK [shape=box];
   TS_HTTP_READ_REQUEST_HDR_HOOK [shape = box];
+  TS_HTTP_PRE_REMAP_HOOK [shape = box];
+  TS_HTTP_POST_REMAP_HOOK [shape = box];
   TS_HTTP_OS_DNS_HOOK [shape = box];
   TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK[shape = box];
   TS_HTTP_SELECT_ALT_HOOK [shape = box];
