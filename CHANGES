@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2415] Use standard continuations to release UrlRewrite objects.
+
   *) [TS-2413] Release memory for idle SSL connections.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 

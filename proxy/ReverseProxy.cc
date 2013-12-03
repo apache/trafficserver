@@ -146,26 +146,6 @@ struct UR_UpdateContinuation: public Continuation
   }
 };
 
-struct UR_FreerContinuation;
-typedef int (UR_FreerContinuation::*UR_FreerContHandler) (int, void *);
-
-/** Used to free url rewrite class. */
-struct UR_FreerContinuation: public Continuation
-{
-  UrlRewrite *p;
-  int freeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
-  {
-    Debug("url_rewrite", "Deleting old remap.config table");
-    delete p;
-    delete this;
-    return EVENT_DONE;
-  }
-  UR_FreerContinuation(UrlRewrite * ap):Continuation(new_ProxyMutex()), p(ap)
-  {
-    SET_HANDLER((UR_FreerContHandler) & UR_FreerContinuation::freeEvent);
-  }
-};
-
 /**
   Called when the remap.config file changes. Since it called infrequently,
   we do the load of new file as blocking I/O and lock aquire is also
@@ -180,7 +160,7 @@ reloadUrlRewrite()
   Debug("url_rewrite", "remap.config updated, reloading...");
   newTable = NEW(new UrlRewrite());
   if (newTable->is_valid()) {
-    eventProcessor.schedule_in(new UR_FreerContinuation(rewrite_table), URL_REWRITE_TIMEOUT, ET_TASK);
+    new_Deleter(rewrite_table, URL_REWRITE_TIMEOUT);
     Debug("url_rewrite", "remap.config done reloading!");
     ink_atomic_swap(&rewrite_table, newTable);
   } else {
