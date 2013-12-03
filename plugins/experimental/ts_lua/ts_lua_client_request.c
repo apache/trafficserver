@@ -92,7 +92,7 @@ ts_lua_inject_client_request_client_addr_api(lua_State *L)
 }
 
 static void
-ts_lua_inject_client_request_server_addr_api(lua_State *L)
+ts_lua_inject_client_request_server_addr_api(lua_State *L ATS_UNUSED)
 {
     return;
 }

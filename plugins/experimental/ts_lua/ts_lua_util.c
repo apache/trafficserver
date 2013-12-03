@@ -170,7 +170,7 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
 
 
 static
-void ts_lua_init_registry(lua_State *L)
+void ts_lua_init_registry(lua_State *L ATS_UNUSED)
 {
     return;
 }
