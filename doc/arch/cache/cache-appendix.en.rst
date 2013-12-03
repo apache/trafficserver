@@ -72,9 +72,11 @@ This is also an issue if a remapping is changed because it is effectively a time
 
 These collisions are not of themselves good or bad. An administrator needs to decide which is appropriate for their situation and set the value correspondingly.
 
-If a greater degree of control is desired a plugin must used to invoke the API call :c:func:`TSCacheUrlSet()` to provide a specific cache key.
+If a greater degree of control is desired a plugin must be used to invoke the API call :c:func:`TSCacheUrlSet()` to provide a specific cache key.  The :c:func:`TSCacheUrlSet()` API can be called as early as ``TS_HTTP_READ_REQUEST_HDR_HOOK``, but no later than ``TS_HTTP_POST_REMAP_HOOK``. It can be called only once per transaction; calling it multiple times has no additional effect.
 
 A plugin that changes the cache key *must* do so consistently for both cache hit and cache miss requests because two different requests that map to the same cache key will be considered equivalent by the cache. Use of the URL directly provides this and so must any substitute. This is entirely the responsibility of the plugin, there is no way for the |TS| core to detect such an occurrence.
+
+If :c:func:`TSHttpTxnCacheLookupUrlGet()` is called after new cache url set by :c:func:`TSCacheUrlSet()`, it should use a URL location created by :c:func:`TSUrlCreate()` as its 3rd input parameter instead of getting url_loc from client request.
 
 It is a requirement that the string be syntactically a URL but otherwise it is completely arbitrary and need not have any path. For instance if the company Network Geographics wanted to store certain content under its own cache key, using a document GUID as part of the key, it could use a cache key like ::
 
