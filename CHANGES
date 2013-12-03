@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+
+  *) [TS-2426] Add a new plugin, xdebug, for cache debugging using HTTP headers.
+
   *) [TS-2077] Remove pipeline configurations, they were no-op's anyways. We
    still support pipelining (we always do), it's just not treated specially
    (or optimized).

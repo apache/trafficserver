@@ -1935,6 +1935,7 @@ AC_CONFIG_FILES([
   plugins/experimental/tcp_info/Makefile
   plugins/experimental/healthchecks/Makefile
   plugins/experimental/remap_stats/Makefile
+  plugins/experimental/xdebug/Makefile
   plugins/gzip/Makefile
   plugins/libloader/Makefile
   plugins/header_filter/Makefile
