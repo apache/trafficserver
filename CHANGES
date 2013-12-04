@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2335] adding ts_lua plugin to experimental directory
+
   *) [TS-2347] buffer_upload uses unsafe function tempnam(). Replace it 
    with mkstemp()
 
