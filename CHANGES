@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2347] buffer_upload uses unsafe function tempnam(). Replace it 
+   with mkstemp()
+
   *) [TS-1815] Add thread number and port to accept thread name and
    add the file descriptor number to the ET_AIO thread names
 
