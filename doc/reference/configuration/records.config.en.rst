@@ -224,7 +224,7 @@ A value of ``0`` means no signal will be sent.
 
    The new default thread stack size, for all threads. The original default is set at 1 MB.
 
-.. ts:cv: CONFIG proxy.config.exec_thread.affinity INT 0
+.. ts:cv:: CONFIG proxy.config.exec_thread.affinity INT 0
 
    Bind threads to specific CPUs or CPU cores.
 
