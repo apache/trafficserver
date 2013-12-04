@@ -66,6 +66,7 @@ struct SSLConfigParams : public ConfigInfo
   int     verify_depth;
   int     ssl_session_cache; // SSL_SESSION_CACHE_MODE
   int     ssl_session_cache_size;
+  int     ssl_session_cache_timeout;
 
   char *  clientCertPath;
   char *  clientKeyPath;

@@ -64,6 +64,7 @@ SSLConfigParams::SSLConfigParams()
   ssl_ctx_options = 0;
   ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER;
   ssl_session_cache_size = 1024*20;
+  ssl_session_cache_timeout = 0;
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -184,6 +185,7 @@ SSLConfigParams::initialize()
   // SSL session cache configurations
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
   REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
+  REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
 
   // SSL record size
   REC_EstablishStaticConfigInt32(ssl_maxrecord, "proxy.config.ssl.max_record_size");

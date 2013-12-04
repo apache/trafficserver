@@ -1957,6 +1957,12 @@ SSL Termination
   buffering at the SSL layer. The default of ``0`` means to always
   write all available data into a single SSL record.
 
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
+
+  This configuration specifies the lifetime of SSL session cache
+  entries in seconds. If it is ``0``, then the SSL library will use
+  a default value, typically 300 seconds.
+
 Client-Related Configuration
 ----------------------------
 
