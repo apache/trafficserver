@@ -255,7 +255,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
       thr_info = new AIOThreadInfo(request, 1);
     else
       thr_info = new AIOThreadInfo(request, 0);
-    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_AIO %d-%d]", fildes, i);
+    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_AIO %d:%d]", i, fildes);
     ink_assert(eventProcessor.spawn_thread(thr_info, thr_name, stacksize));
   }
 
