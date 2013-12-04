@@ -8684,14 +8684,24 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
     field->value_append(header->m_heap, header->m_mime, range_type, sizeof(range_type) - 1);
 
     header->field_attach(field);
+    // TODO: There's a known bug here where the Content-Length is not correct for multi-part
+    // Range: requests.
     header->set_content_length(s->range_output_cl);
-  } else if (s->cache_info.object_read) {
-    char numbers[RANGE_NUMBERS_LENGTH];
-    header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    snprintf(numbers, sizeof(numbers), "bytes %" PRId64"-%" PRId64"/%" PRId64, s->ranges[0]._start, s->ranges[0]._end, s->cache_info.object_read->object_size_get());
-    field->value_set(header->m_heap, header->m_mime, numbers, strlen(numbers));
-    header->field_attach(field);
+  } else {
+    if (s->cache_info.object_read && s->cache_info.object_read->valid()) {
+      // TODO: It's unclear under which conditions we need to update the Content-Range: header,
+      // many times it's already set correctly before calling this. For now, always try do it
+      // when we have the information for it available.
+      // TODO: Also, it's unclear as to why object_read->valid() is not always true here.
+      char numbers[RANGE_NUMBERS_LENGTH];
+      header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+      field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+      snprintf(numbers, sizeof(numbers), "bytes %" PRId64"-%" PRId64"/%" PRId64, s->ranges[0]._start, s->ranges[0]._end,
+               s->cache_info.object_read->object_size_get());
+      field->value_set(header->m_heap, header->m_mime, numbers, strlen(numbers));
+      header->field_attach(field);
+    }
+    // Always update the Content-Length: header.
     header->set_content_length(s->range_output_cl);
   }
 }
