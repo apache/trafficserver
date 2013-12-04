@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-1815] Add thread number and port to accept thread name
+
   *) [TS-2415] Use standard continuations to release UrlRewrite objects.
 
   *) [TS-2413] Release memory for idle SSL connections.

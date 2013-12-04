@@ -92,6 +92,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   ProxyMutex *mutex = thread->mutex;
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip; // local binding address.
+  char thr_name[MAX_THREAD_NAME_LENGTH];
 
   // Potentially upgrade to SSL.
   upgradeEtype(et);
@@ -150,12 +151,14 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
         for (int i=1; i < accept_threads; ++i) {
           a = createNetAccept();
           *a = *na;
-          a->init_accept_loop();
+          snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i-1, ats_ip_port_host_order(&accept_ip));
+          a->init_accept_loop(thr_name);
           Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
         }
         // Start the "template" accept thread last.
         Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ats_ip_port_host_order(&accept_ip));
-        na->init_accept_loop();
+        snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", accept_threads-1, ats_ip_port_host_order(&accept_ip));
+        na->init_accept_loop(thr_name);
       }
     } else {
       na->init_accept_per_thread();

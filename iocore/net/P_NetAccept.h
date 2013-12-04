@@ -108,7 +108,7 @@ struct NetAccept:public Continuation
   virtual UnixNetVConnection *allocateGlobal();
   virtual EventType getEtype();
 
-  void init_accept_loop();
+  void init_accept_loop(const char *);
   virtual void init_accept(EThread * t = NULL);
   virtual void init_accept_per_thread();
   // 0 == success
