@@ -13,7 +13,7 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:20
 msgid "records.config"
-msgstr ""
+msgstr "records.config"
 
 #: ../../reference/configuration/records.config.en.rst:24
 msgid ""
@@ -25,24 +25,32 @@ msgid ""
 "apply the changes. When you apply changes to one node in a cluster, Traffic "
 "Server automatically applies the changes to all other nodes in the cluster."
 msgstr ""
+":file:`records.config` ファイルは Traffic Server で使用される設定変数の一覧"
+"です。 :file:`records.config` ファイル内の多くの変数は Traffic Line や"
+" Traffic Shell でオプションの調整を行うと自動的に設定されます。"
+":file:`records.config` ファイルに変更を加えた後は、"
+":option:`traffic_line -x` を実行して変更を適用します。クラスター内の一つの"
+"ノードに変更を適用すると Traffic Server は自動的にクラスター内の他のすべて"
+"のノードに変更を適用します。"
 
 #: ../../reference/configuration/records.config.en.rst:34
 msgid "Format"
-msgstr ""
+msgstr "フォーマット"
 
 #: ../../reference/configuration/records.config.en.rst:36
 msgid "Each variable has the following format::"
-msgstr ""
+msgstr "それぞれの変数は次のフォーマットとなっています"
 
 #: ../../reference/configuration/records.config.en.rst:40
 msgid "where"
-msgstr ""
+msgstr "この中の"
 
 #: ../../reference/configuration/records.config.en.rst:42
 msgid ""
 "``SCOPE`` is related to clustering and is either ``CONFIG`` (all members of "
 "the cluster) or ``LOCAL`` (only the local machine)"
 msgstr ""
+"``SCOPE`` はクラスタリングに関係しており、``CONFIG`` (クラスターの全メンバー) もしくは ``LOCAL`` (ローカルマシンのみ)  のどちらかです。"
 
 #: ../../reference/configuration/records.config.en.rst:45
 msgid ""
@@ -51,10 +59,13 @@ msgid ""
 "but should be avoided as it may be removed in a future release without "
 "warning."
 msgstr ""
+"``DATATYPE`` は ``INT`` (integer) 、``STRING`` (string) 、``FLOAT`` "
+"(floating point) のいずれかです。``Deprecated`` と記された変数はまだ機能"
+"しますが、将来のリリースで予告なく削除されるかもしれないので避けるべきです。"
 
 #: ../../reference/configuration/records.config.en.rst:51
 msgid "A variable marked as ``Reloadable`` can be updated via the command::"
-msgstr ""
+msgstr "``Reloadable`` と記された変数は次のコマンドで更新可能です。"
 
 #: ../../reference/configuration/records.config.en.rst:55
 msgid ""
@@ -63,32 +74,38 @@ msgid ""
 "standard prefixes, e.g. *32K*. The following prefixes are supported for all "
 "``INT`` type configurations"
 msgstr ""
+"``INT`` 型の設定はあらゆる整数で表現できます。例えば *32768* のように。"
+"これはまた標準的なプレフィックスを使用してより人間が読みやすい値でも表現できます。"
+"例えば *32K* のように。``INT`` 型の設定では次のプレフィックスがサポートされて"
+"います。"
 
 #: ../../reference/configuration/records.config.en.rst:60
 msgid "``K`` Kilobytes (1024 bytes)"
-msgstr ""
+msgstr "``K`` キロバイト (1024 バイト)"
 
 #: ../../reference/configuration/records.config.en.rst:61
 msgid "``M`` Megabytes (1024^2 or 1,048,576 bytes)"
-msgstr ""
+msgstr "``M`` メガバイト (1024^2 または 1,048,576 バイト)"
 
 #: ../../reference/configuration/records.config.en.rst:62
 msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes"
-msgstr ""
+msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
 
 #: ../../reference/configuration/records.config.en.rst:63
 msgid "``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)"
-msgstr ""
+msgstr "``T`` テラバイト (1024^4 または 1,099,511,627,776 バイト)"
 
 #: ../../reference/configuration/records.config.en.rst:67
 msgid ""
 "Traffic Server currently writes back configurations to disk periodically, "
 "and when doing so, will not preserve the prefixes."
 msgstr ""
+"Traffic Server は定期的に設定をディスクに書き戻し、その際にはプレフィックス"
+"は保持されません。"
 
 #: ../../reference/configuration/records.config.en.rst:71
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/configuration/records.config.en.rst:73
 msgid ""
@@ -96,10 +113,13 @@ msgid ""
 "``STRING`` datatype with the value ``my_server``. This means that the name "
 "of the Traffic Server proxy is ``my_server``. ::"
 msgstr ""
+"次の例で、`proxy.config.proxy_name`_ 変数は ``my_server`` という値を持つ"
+" ``STRING`` データ型の変数です。これは Traffic Server プロキシーの名前が "
+"``my_server`` であることを意味しています。::"
 
 #: ../../reference/configuration/records.config.en.rst:79
 msgid "If the server name should be ``that_server`` the line would be ::"
-msgstr ""
+msgstr "もしサーバー名が ``that_server`` であるべきなら行は次のようになります ::"
 
 #: ../../reference/configuration/records.config.en.rst:83
 msgid ""
@@ -107,22 +127,27 @@ msgid ""
 "yes/no flag. A value of ``0`` (zero) disables the option; a value of ``1`` "
 "enables the option. ::"
 msgstr ""
+"次の例で、``proxy.config.arm.enabled`` 変数は yes/no フラグです。値 ``0`` "
+"(ゼロ) はオプションを無効化し、値 ``1`` はオプションを有効化します。 ::"
 
 #: ../../reference/configuration/records.config.en.rst:89
 msgid ""
 "In the following example, the variable sets the cluster startup timeout to "
 "10 seconds. ::"
 msgstr ""
+"次の例で、変数はクラスターのスタートアップタイムアウトを 10 秒に設定します。 ::"
 
 #: ../../reference/configuration/records.config.en.rst:94
 msgid ""
 "The last examples configures a 64GB RAM cache, using a human readable "
 "prefix. ::"
 msgstr ""
+"最後の例は、人間が読みやすいプレフィックスを使用して RAM キャッシュを "
+"64GB に設定します。"
 
 #: ../../reference/configuration/records.config.en.rst:101
 msgid "Environment Overrides"
-msgstr ""
+msgstr "環境の再定義"
 
 #: ../../reference/configuration/records.config.en.rst:103
 msgid ""
@@ -133,6 +158,10 @@ msgid ""
 ":file:`records.config` variable name to upper case, and replacing any dot "
 "separators with an underscore."
 msgstr ""
+":file:`records.config` の各設定変数は対応する環境変数で再定義できます。"
+"これは静的な :file:`records.config` が必要であるが 1、2 個の設定だけ調整"
+"したいという状況で便利です。再定義変数は :file:`records.config` の変数名を"
+"大文字にし、ドットをアンダースコアに置換えたものになっています。"
 
 #: ../../reference/configuration/records.config.en.rst:110
 msgid ""
@@ -140,22 +169,27 @@ msgid ""
 "affected by future configuration changes made in :file:`records.config` or "
 "applied with :program:`traffic_line`."
 msgstr ""
+"環境からの変数の再定義は恒久的であり、:file:`records.config` の変更や "
+":program:`traffic_line` での適用による将来的な設定変更の影響を受けません。"
 
 #: ../../reference/configuration/records.config.en.rst:114
 msgid ""
 "For example, we could override the `proxy.config.product_company`_ variable "
 "like this::"
 msgstr ""
+"例えば、`proxy.config.product_company`_ 変数はこのように再定義できるでしょう"
 
 #: ../../reference/configuration/records.config.en.rst:123
 msgid "Configuration Variables"
-msgstr ""
+msgstr "設定変数"
 
 #: ../../reference/configuration/records.config.en.rst:125
 msgid ""
 "The following list describes the configuration variables available in the "
 ":file:`records.config` file."
 msgstr ""
+"次の一覧では :file:`records.config` ファイル内で利用可能な設定変数について"
+"説明します。"
 
 #: ../../reference/configuration/records.config.en.rst:129
 msgid "System Variables"
