@@ -100,7 +100,7 @@ ts_lua_inject_http_transform_api(lua_State *L)
 static void
 ts_lua_inject_cache_lookup_result_variables(lua_State *L)
 {
-    int     i;
+    unsigned int     i;
 
     for (i = 0; i < sizeof(ts_lua_cache_lookup_result_string)/sizeof(char*); i++) {
         lua_pushinteger(L, i);
