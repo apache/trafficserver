@@ -1,5 +1,5 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 4.1.1
+Changes with Apache Traffic Server 4.1.2
 
   *) [TS-2351] Bandaid fix for Range request crash related to
    Read-While-Writer and content length calculations.
