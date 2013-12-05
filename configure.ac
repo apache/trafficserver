@@ -1123,6 +1123,10 @@ fi
 TS_CHECK_CRYPTO_NEXTPROTONEG
 
 #
+# Check for EC key support.
+TS_CHECK_CRYPTO_EC_KEYS
+
+#
 # Check for ServerNameIndication TLS extension support.
 TS_CHECK_CRYPTO_SNI
 

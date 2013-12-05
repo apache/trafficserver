@@ -192,15 +192,19 @@ ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * lookup)
 static void
 ssl_enable_ecdh(SSL_CTX * ctx)
 {
+#if TS_USE_TLS_ECKEY
+
 #if defined(SSL_CTRL_SET_ECDH_AUTO)
   SSL_CTX_set_ecdh_auto(ctx, 1);
-#elif defined(NID_X9_62_prime256v1)
+#elif defined(HAVE_EC_KEY_NEW_BY_CURVE_NAME) && defined(NID_X9_62_prime256v1)
   EC_KEY * ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 
   if (ecdh) {
     SSL_CTX_set_tmp_ecdh(ctx, ecdh);
     EC_KEY_free(ecdh);
   }
+#endif
+
 #endif
 }
 

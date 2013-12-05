@@ -111,6 +111,19 @@ fi
 
 ])
 
+AC_DEFUN([TS_CHECK_CRYPTO_EC_KEYS], [
+  _eckeys_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$LIBSSL])
+  AC_CHECK_HEADERS(openssl/ec.h)
+  AC_CHECK_FUNCS(EC_KEY_new_by_curve_name, [enable_tls_eckey=yes], [enable_tls_eckey=no])
+  LIBS=$_eckeys_saved_LIBS
+
+  AC_MSG_CHECKING(whether EC keys are supported)
+  AC_MSG_RESULT([$enable_tls_eckey])
+  TS_ARG_ENABLE_VAR([use], [tls-eckey])
+  AC_SUBST(use_tls_eckey)
+])
+
 AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   enable_tls_npn=yes
   _npn_saved_LIBS=$LIBS
@@ -131,7 +144,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
   enable_tls_sni=yes
 
   TS_ADDTO(LIBS, [$LIBSSL])
-  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h openssl/ec.h)
+  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h)
   # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
   # macro, so AC_CHECK_FUNCS is not going to do the business.
   AC_MSG_CHECKING([for SSL_CTX_set_tlsext_servername_callback])
