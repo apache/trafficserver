@@ -27,12 +27,15 @@ To use this plugin, configure a remap.config rule like ::
 
     map http://a.com http://b.com @plugin=regex_remap.so @pparam=maps.reg
 
-The parameter with the file name is always required, and the regular
-expressions within are evaluated sequentially from the first to the
-last. When a regular expression is positively matched against a request
-URL, evaluation is stopped and the rewrite rule is applied. If none of
-the regular expressions are a match, the default destination URL is
-applied (``http://b.com`` in the example above).
+The file name parameter is always required. Unless an absolute path
+is specified, the file name is assumed to be a path relative to the
+Traffic Server configuration directory.
+
+The regular expressions listed in the configuration file are evaluated
+sequentially. When a regular expression is positively matched against
+a request URL, evaluation is stopped and the rewrite rule is applied.
+If none of the regular expressions are a match, the default destination
+URL is applied (``http://b.com`` in the example above).
 
 An optional argument (``@pparam``) with the string "``profile``\ " will
 enable profiling of this regex remap rule, e.g. ::
@@ -66,7 +69,6 @@ like ::
 
     GET/path?query=bar
 
-
 The methods are always all upper-case, and always followed by one single
 space. There is no space between the method and the rest of the URL (or
 URI path).
@@ -80,11 +82,6 @@ Finally, you can also include the matrix parameters in the string, using
 the option 'matrix-parameters', e.g. ::
 
     ... @pparam=maps.reg @pparam=matrix-parameters
-
-The config file (``maps.reg`` above) can be placed anywhere, but unless
-you specify an absolute path (as above), it will default to ::
-
-    /usr/local/etc/regex_remap
 
 A typical regex would look like ::
 
@@ -109,6 +106,12 @@ on the right hand side during evaluation ::
     $r     - The path parameters of the request (not implemented yet)
     $c     - The cookie string from the request
     $i     - The client IP for this request
+
+.. note::
+
+    The ``$0`` substitution expands to the characters that were
+    matched by the regular expression, not to the entire string that
+    the regular expression was matched against.
 
 You can also provide options, similar to how you configure your
 remap.config. The following options are available ::
