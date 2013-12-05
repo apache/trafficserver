@@ -182,15 +182,14 @@ ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * lookup)
     SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
   }
 #else
-  (void)ctx;
   (void)lookup;
 #endif /* TS_USE_TLS_SNI */
 
   return ctx;
 }
 
-static void
-ssl_enable_ecdh(SSL_CTX * ctx)
+static SSL_CTX *
+ssl_context_enable_ecdh(SSL_CTX * ctx)
 {
 #if TS_USE_TLS_ECKEY
 
@@ -204,8 +203,9 @@ ssl_enable_ecdh(SSL_CTX * ctx)
     EC_KEY_free(ecdh);
   }
 #endif
-
 #endif
+
+  return ctx;
 }
 
 void
@@ -430,9 +430,7 @@ SSLInitServerContext(
     }
   }
 
-  ssl_enable_ecdh(ctx);
-
-  return ctx;
+  return ssl_context_enable_ecdh(ctx);
 
 fail:
   SSL_CTX_free(ctx);
