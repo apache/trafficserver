@@ -131,7 +131,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
   enable_tls_sni=yes
 
   TS_ADDTO(LIBS, [$LIBSSL])
-  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h)
+  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h openssl/ec.h)
   # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
   # macro, so AC_CHECK_FUNCS is not going to do the business.
   AC_MSG_CHECKING([for SSL_CTX_set_tlsext_servername_callback])

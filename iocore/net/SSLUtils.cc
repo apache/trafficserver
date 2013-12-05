@@ -34,6 +34,10 @@
 #include <openssl/ts.h>
 #endif
 
+#if HAVE_OPENSSL_EC_H
+#include <openssl/ec.h>
+#endif
+
 // ssl_multicert.config field names:
 #define SSL_IP_TAG            "dest_ip"
 #define SSL_CERT_TAG          "ssl_cert_name"
