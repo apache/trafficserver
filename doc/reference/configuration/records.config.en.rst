@@ -930,7 +930,7 @@ Proxy User Variables
 .. ts:cv:: CONFIG proxy.config.http.anonymize_other_header_list STRING NULL
    :reloadable:
 
-   The headers Traffic Server should remove from outgoing requests.
+   Comma separated list of headers Traffic Server should remove from outgoing requests.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 0
    :reloadable:
