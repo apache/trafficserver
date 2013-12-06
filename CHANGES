@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2401] Use Layout instead of global install path directories.
+
   *) [TS-2420] Remove STAT_SYNC, CONF_SYNC, and REM_SYNC threads and schedule those
    continuations in ET_TASK
 
