@@ -23,6 +23,8 @@
 
 #include "libts.h"
 
+#include "I_Tasks.h"
+
 #include "P_EventSystem.h"
 #include "P_RecCore.h"
 #include "P_RecProcess.h"
@@ -39,6 +41,9 @@ static EventNotify g_force_req_notify;
 static int g_rec_raw_stat_sync_interval_ms = REC_RAW_STAT_SYNC_INTERVAL_MS;
 static int g_rec_config_update_interval_ms = REC_CONFIG_UPDATE_INTERVAL_MS;
 static int g_rec_remote_sync_interval_ms = REC_REMOTE_SYNC_INTERVAL_MS;
+static Event *raw_stat_sync_cont_event;
+static Event *config_update_cont_event;
+static Event *sync_cont_event;
 
 //-------------------------------------------------------------------------
 // i_am_the_record_owner, only used for librecprocess.a
@@ -85,14 +90,28 @@ void
 RecProcess_set_raw_stat_sync_interval_ms(int ms) {
   Debug("statsproc", "g_rec_raw_stat_sync_interval_ms -> %d", ms);
   g_rec_raw_stat_sync_interval_ms = ms;
+  if (raw_stat_sync_cont_event) {
+    Debug("statsproc", "Rescheduling raw-stat syncer");
+    raw_stat_sync_cont_event->schedule_every(HRTIME_MSECONDS(g_rec_raw_stat_sync_interval_ms));
+  }
 }
 void
 RecProcess_set_config_update_interval_ms(int ms) {
+  Debug("statsproc", "g_rec_config_update_interval_ms -> %d", ms);
   g_rec_config_update_interval_ms = ms;
+  if (config_update_cont_event) {
+    Debug("statsproc", "Rescheduling config syncer");
+    config_update_cont_event->schedule_every(HRTIME_MSECONDS(g_rec_config_update_interval_ms));
+  }
 }
 void
 RecProcess_set_remote_sync_interval_ms(int ms) {
+  Debug("statsproc", "g_rec_remote_sync_interval_ms -> %d", ms);
   g_rec_remote_sync_interval_ms = ms;
+  if (sync_cont_event) {
+    Debug("statsproc", "Rescheduling remote syncer");
+    sync_cont_event->schedule_every(HRTIME_MSECONDS(g_rec_remote_sync_interval_ms));
+  }
 }
 
 //-------------------------------------------------------------------------
@@ -317,12 +336,10 @@ struct raw_stat_sync_cont: public Continuation
 
   int exec_callbacks(int event, Event *e)
   {
-    while (true) {
-      RecExecRawStatSyncCbs();
-      Debug("statsproc", "raw_stat_sync_cont() processed");
-      usleep(g_rec_raw_stat_sync_interval_ms * 1000);
-    }
-    return EVENT_DONE;
+    RecExecRawStatSyncCbs();
+    Debug("statsproc", "raw_stat_sync_cont() processed");
+
+    return EVENT_CONT;
   }
 };
 
@@ -340,12 +357,10 @@ struct config_update_cont: public Continuation
 
   int exec_callbacks(int event, Event *e)
   {
-    while (true) {
-      RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
-      Debug("statsproc", "config_update_cont() processed");
-      usleep(g_rec_config_update_interval_ms * 1000);
-    }
-    return EVENT_DONE;
+    RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
+    Debug("statsproc", "config_update_cont() processed");
+
+    return EVENT_CONT;
   }
 };
 
@@ -374,20 +389,18 @@ struct sync_cont: public Continuation
 
   int sync(int event, Event *e)
   {
-    while (true) {
-      send_push_message();
-      RecSyncStatsFile();
-      if (RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
-        int nbytes;
-        RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
-        RecHandle h_file = RecFileOpenW(g_rec_config_fpath);
-        RecFileWrite(h_file, m_tb->bufPtr(), m_tb->spaceUsed(), &nbytes);
-        RecFileClose(h_file);
-      }
-      Debug("statsproc", "sync_cont() processed");
-      usleep(g_rec_remote_sync_interval_ms * 1000);
+    send_push_message();
+    RecSyncStatsFile();
+    if (RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
+      int nbytes;
+      RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
+      RecHandle h_file = RecFileOpenW(g_rec_config_fpath);
+      RecFileWrite(h_file, m_tb->bufPtr(), m_tb->spaceUsed(), &nbytes);
+      RecFileClose(h_file);
     }
-    return EVENT_DONE;
+    Debug("statsproc", "sync_cont() processed");
+
+    return EVENT_CONT;
   }
 };
 
@@ -468,24 +481,24 @@ RecProcessInitMessage(RecModeT mode_type)
 // RecProcessStart
 //-------------------------------------------------------------------------
 int
-RecProcessStart(size_t stacksize)
+RecProcessStart(void)
 {
   if (g_started) {
     return REC_ERR_OKAY;
   }
 
-  Debug("statsproc", "Starting sync processors:");
+  Debug("statsproc", "Starting sync continuations:");
   raw_stat_sync_cont *rssc = NEW(new raw_stat_sync_cont(new_ProxyMutex()));
   Debug("statsproc", "\traw-stat syncer");
-  eventProcessor.spawn_thread(rssc, "[STAT_SYNC]", stacksize);
+  raw_stat_sync_cont_event = eventProcessor.schedule_every(rssc, HRTIME_MSECONDS(g_rec_raw_stat_sync_interval_ms), ET_TASK);
 
   config_update_cont *cuc = NEW(new config_update_cont(new_ProxyMutex()));
   Debug("statsproc", "\tconfig syncer");
-  eventProcessor.spawn_thread(cuc, "[CONF_SYNC]", stacksize);
+  config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
 
   sync_cont *sc = NEW(new sync_cont(new_ProxyMutex()));
   Debug("statsproc", "\tremote syncer");
-  eventProcessor.spawn_thread(sc, "[REM_SYNC]", stacksize);
+  sync_cont_event = eventProcessor.schedule_every(sc, HRTIME_MSECONDS(g_rec_remote_sync_interval_ms), ET_TASK);
 
   g_started = true;
 

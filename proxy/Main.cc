@@ -1532,7 +1532,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     }
   } else {
     remapProcessor.start(num_remap_threads, stacksize);
-    RecProcessStart(stacksize);
+    RecProcessStart();
     initCacheControl();
     initCongestionControl();
     IpAllow::startup();
