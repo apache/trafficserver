@@ -166,9 +166,13 @@ System Variables
    The script executed before the :program:`traffic_manager` process spawns
    the :program:`traffic_server` process.
 
-.. ts:cv:: CONFIG proxy.config.config_dir STRING config
+.. ts:cv:: CONFIG proxy.config.config_dir STRING etc/trafficserver
 
    The directory that contains Traffic Server configuration files.
+   This is a read-only configuration option that contains the
+   ``SYSCONFDIR`` value specified at build time relative to the
+   installation prefic. THe ``$TS_ROOT`` environment variable can
+   be used alter the installation prefix at run time.
 
 .. ts:cv:: CONFIG proxy.config.alarm_email STRING
    :reloadable:
@@ -200,8 +204,10 @@ A value of ``0`` means no signal will be sent.
 
 .. ts:cv:: CONFIG proxy.config.snapshot_dir STRING snapshots
 
-   The directory in which Traffic Server stores configuration snapshots on the local system. Unless you specify an absolute path, this
-   directory is located in the Traffic Server ``config`` directory.
+   The directory in which Traffic Server stores configuration
+   snapshots on the local system. Unless you specify an absolute
+   path, this directory is located in the Traffic Server ``SYSCONFDIR``
+   directory.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig INT 1
 
@@ -1293,9 +1299,11 @@ Customizable User Response Pages
    Enables (``1``) or disables (``0``) logging for customizable response pages. When enabled, Traffic Server records a message in
    the error log each time a customized response page is used or modified.
 
-.. ts:cv:: CONFIG proxy.config.body_factory.template_sets_dir STRING config/body_factory
+.. ts:cv:: CONFIG proxy.config.body_factory.template_sets_dir STRING etc/trafficserver/body_factory
 
-   The customizable response page default directory.
+   The customizable response page default directory. If this is a
+   relative path, Traffic Server resolves it relative to the
+   ``PREFIX`` directory.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 
@@ -1556,10 +1564,12 @@ Logging Configuration
 
    The hostname of the machine running Traffic Server.
 
-.. ts:cv:: CONFIG proxy.config.log.logfile_dir STRING install_dir\ ``/logs``
+.. ts:cv:: CONFIG proxy.config.log.logfile_dir STRING var/log/trafficserver
    :reloadable:
 
-   The full path to the logging directory. This can be an absolute path or a path relative to the directory in which Traffic Server is installed.
+   The path to the logging directory. This can be an absolute path
+   or a path relative to the ``PREFIX`` directory in which Traffic
+   Server is installed.
 
    .. note:: The directory you specify must already exist.
 
