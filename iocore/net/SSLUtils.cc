@@ -29,6 +29,8 @@
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <openssl/asn1.h>
+#include <openssl/rand.h>
+#include <openssl/evp.h>
 
 #if HAVE_OPENSSL_TS_H
 #include <openssl/ts.h>
@@ -43,6 +45,16 @@
 #define SSL_CERT_TAG          "ssl_cert_name"
 #define SSL_PRIVATE_KEY_TAG   "ssl_key_name"
 #define SSL_CA_TAG            "ssl_ca_name"
+#define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
+#define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
+
+#ifndef evp_md_func
+#ifdef OPENSSL_NO_SHA256
+    #define evp_md_func EVP_sha1()
+#else
+    #define evp_md_func EVP_sha256()
+#endif
+#endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
 typedef const SSL_METHOD * ink_ssl_method_t;
@@ -50,8 +62,17 @@ typedef const SSL_METHOD * ink_ssl_method_t;
 typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
+struct ssl_ticket_key_t
+{
+    unsigned char key_name[16];
+    unsigned char hmac_secret[16];
+    unsigned char aes_key[16];
+};
+
 static ProxyMutex ** sslMutexArray;
 static bool open_ssl_initialized = false;
+static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
+static int ssl_session_ticket_index = 0;
 
 struct ats_file_bio
 {
@@ -208,6 +229,50 @@ ssl_context_enable_ecdh(SSL_CTX * ctx)
   return ctx;
 }
 
+static SSL_CTX *
+ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
+{
+  xptr<char>          ticket_key_data;
+  int                 ticket_key_len;
+  ssl_ticket_key_t *  ticket_key = NULL;
+
+  ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
+  if (!ticket_key_data) {
+      Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
+      goto fail;
+  }
+
+  if (ticket_key_len < 48) {
+      Error("SSL session ticket key from %s is too short (48 bytes are required)", (const char *)ticket_key_path);
+      goto fail;
+  }
+
+  ticket_key = NEW(new ssl_ticket_key_t());
+  memcpy(ticket_key->key_name, (const char *)ticket_key_data, 16);
+  memcpy(ticket_key->hmac_secret, (const char *)ticket_key_data + 16, 16);
+  memcpy(ticket_key->aes_key, (const char *)ticket_key_data + 32, 16);
+
+  // Setting the callback can only fail if OpenSSL does not recognize the
+  // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
+  // so that we don't leave a ticket_key pointer attached if it fails.
+  if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
+      Error("failed to set session ticket callback");
+      goto fail;
+  }
+
+  if (SSL_CTX_set_ex_data(ctx, ssl_session_ticket_index, ticket_key) == 0) {
+      Error ("failed to set session ticket data to ctx");
+      goto fail;
+  }
+
+  SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
+  return ctx;
+
+fail:
+  delete ticket_key;
+  return ctx;
+}
+
 void
 SSLInitializeLibrary()
 {
@@ -226,6 +291,12 @@ SSLInitializeLibrary()
     CRYPTO_set_locking_callback(SSL_locking_callback);
     CRYPTO_set_id_callback(SSL_pthreads_thread_id);
   }
+
+  int iRet = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+  if (iRet == -1) {
+    SSLError("failed to create session ticket index");
+  }
+  ssl_session_ticket_index = (iRet == -1 ? 0 : iRet);
 
   open_ssl_initialized = true;
 }
@@ -577,10 +648,13 @@ ssl_store_ssl_context(
     xptr<char>& addr,
     xptr<char>& cert,
     xptr<char>& ca,
-    xptr<char>& key)
+    xptr<char>& key,
+    const int session_ticket_enabled,
+    xptr<char>& ticket_key_filename)
 {
   SSL_CTX *   ctx;
   xptr<char>  certpath;
+  xptr<char>  session_key_path;
 
   ctx = ssl_context_enable_sni(SSLInitServerContext(params, cert, ca, key), lookup);
   if (!ctx) {
@@ -610,10 +684,23 @@ ssl_store_ssl_context(
     }
   }
 
+  // Session tickets are enabled by default. Disable if explicitly requested.
+  if (session_ticket_enabled == 0) {
+      SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
+      Debug("ssl", "ssl session ticket is disabled");
+  }
+
+  // Load the session ticket key if session tickets are not disabled and we have key name.
+  if (session_ticket_enabled != 0 && ticket_key_filename) {
+    xptr<char> ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+    ssl_context_enable_tickets(ctx, ticket_key_path);
+  }
+
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   ssl_index_certificate(lookup, ctx, certpath);
+
   return true;
 }
 
@@ -623,7 +710,9 @@ ssl_extract_certificate(
     xptr<char>& addr,   // IPv[64] address to match
     xptr<char>& cert,   // certificate
     xptr<char>& ca,     // CA public certificate
-    xptr<char>& key)    // Private key
+    xptr<char>& key,    // Private key
+    int&  session_ticket_enabled,  // session ticket enabled
+    xptr<char>& ticket_key_filename) // session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
 {
   for (int i = 0; i < MATCHER_MAX_TOKENS; ++i) {
     const char * label;
@@ -650,6 +739,14 @@ ssl_extract_certificate(
 
     if (strcasecmp(label, SSL_PRIVATE_KEY_TAG) == 0) {
       key = ats_strdup(value);
+    }
+
+    if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
+      session_ticket_enabled = atoi(value);
+    }
+
+    if (strcasecmp(label, SSL_SESSION_TICKET_KEY_FILE_TAG) == 0) {
+      ticket_key_filename = ats_strdup(value);
     }
   }
 
@@ -705,6 +802,8 @@ SSLParseCertificateConfiguration(
       xptr<char> cert;
       xptr<char> ca;
       xptr<char> key;
+      int session_ticket_enabled = -1;
+      xptr<char> ticket_key_filename;
       const char * errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
@@ -714,8 +813,8 @@ SSLParseCertificateConfiguration(
                      __func__, params->configFilePath, line_num, errPtr);
         REC_SignalError(errBuf, alarmAlready);
       } else {
-        if (ssl_extract_certificate(&line_info, addr, cert, ca, key)) {
-          if (!ssl_store_ssl_context(params, lookup, addr, cert, ca, key)) {
+        if (ssl_extract_certificate(&line_info, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename)) {
+          if (!ssl_store_ssl_context(params, lookup, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename)) {
             Error("failed to load SSL certificate specification from %s line %u",
                 params->configFilePath, line_num);
           }
@@ -740,4 +839,61 @@ SSLParseCertificateConfiguration(
   }
 
   return true;
+}
+
+/*
+ * RFC 5077. Create session ticket to resume SSL session without requiring session-specific state at the TLS server.
+ * Specifically, it distributes the encrypted session-state information to the client in the form of a ticket and
+ * a mechanism to present the ticket back to the server.
+ * */
+int ssl_callback_session_ticket(SSL *ssl,
+                               unsigned char *keyname,
+                               unsigned char *iv,
+                               EVP_CIPHER_CTX *cipher_ctx,
+                               HMAC_CTX *hctx,
+                               int enc)
+{
+    ssl_ticket_key_t* ssl_ticket_key = (ssl_ticket_key_t*) SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_session_ticket_index);
+    if (NULL == ssl_ticket_key) {
+        Error("ssl ticket key is null.");
+        return -1;
+    }
+
+    if (enc == 1) {
+        memcpy(keyname, ssl_ticket_key->key_name, 16);
+        RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
+        EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL,
+                           ssl_ticket_key->aes_key, iv);
+        HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
+        Note("create ticket for a new session");
+
+        return 0;
+    } else if (enc == 0) {
+        if (memcmp(keyname, ssl_ticket_key->key_name, 16)) {
+            Error("keyname is not consistent.");
+            return 0;
+        }
+
+        EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL,
+                           ssl_ticket_key->aes_key, iv);
+        HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
+
+        Note("verify the ticket for an existing session." );
+        return 1;
+    }
+
+    return -1;
+}
+
+void
+SSLReleaseContext(SSL_CTX * ctx)
+{
+   ssl_ticket_key_t * ssl_ticket_key = (ssl_ticket_key_t*)SSL_CTX_get_ex_data(ctx, ssl_session_ticket_index);
+
+   // Free the ticket if this is the last reference.
+   if (ctx->references == 1 && ssl_ticket_key) {
+       delete ssl_ticket_key;
+   }
+
+   SSL_CTX_free(ctx);
 }

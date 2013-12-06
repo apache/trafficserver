@@ -175,6 +175,15 @@ load_hostnames_csv(const char * fname, SSLCertLookup& lookup)
   return count;
 }
 
+// This stub version of SSLReleaseContext saves us from having to drag in a lot
+// of binary dependencies. We don't have session tickets in this test environment
+// so it's safe to do this; just a bit ugly.
+void
+SSLReleaseContext(SSL_CTX * ctx)
+{
+   SSL_CTX_free(ctx);
+}
+
 int main(int argc, const char ** argv)
 {
   res_track_memory = 1;

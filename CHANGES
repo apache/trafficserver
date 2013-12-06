@@ -2,6 +2,9 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-1146] Add RFC 5077 TLS session ticket support.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
   *) [TS-2401] Use Layout instead of global install path directories.
 
   *) [TS-2420] Remove STAT_SYNC, CONF_SYNC, and REM_SYNC threads and schedule those
