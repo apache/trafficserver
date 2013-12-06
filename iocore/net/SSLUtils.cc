@@ -30,7 +30,14 @@
 #include <openssl/x509.h>
 #include <openssl/asn1.h>
 #include <openssl/rand.h>
+
+#if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
+#endif
+
+#if HAVE_OPENSSL_HMAC_H
+#include <openssl/hmac.h>
+#endif
 
 #if HAVE_OPENSSL_TS_H
 #include <openssl/ts.h>
@@ -62,6 +69,7 @@ typedef const SSL_METHOD * ink_ssl_method_t;
 typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
+#if TS_USE_TLS_TICKETS
 struct ssl_ticket_key_t
 {
   unsigned char key_name[16];
@@ -69,10 +77,12 @@ struct ssl_ticket_key_t
   unsigned char aes_key[16];
 };
 
-static ProxyMutex ** sslMutexArray;
-static bool open_ssl_initialized = false;
 static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
 static int ssl_session_ticket_index = 0;
+#endif /* TS_USE_TLS_TICKETS */
+
+static ProxyMutex ** sslMutexArray;
+static bool open_ssl_initialized = false;
 
 struct ats_file_bio
 {
@@ -232,6 +242,7 @@ ssl_context_enable_ecdh(SSL_CTX * ctx)
 static SSL_CTX *
 ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 {
+#if TS_USE_TLS_TICKETS
   xptr<char>          ticket_key_data;
   int                 ticket_key_len;
   ssl_ticket_key_t *  ticket_key = NULL;
@@ -271,6 +282,11 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 fail:
   delete ticket_key;
   return ctx;
+
+#else /* TS_USE_TLS_TICKETS */
+  (void)ticket_key_path;
+  return ctx;
+#endif /* TS_USE_TLS_TICKETS */
 }
 
 void
@@ -684,11 +700,13 @@ ssl_store_ssl_context(
     }
   }
 
+#if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
   if (session_ticket_enabled == 0) {
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     Debug("ssl", "ssl session ticket is disabled");
   }
+#endif
 
   // Load the session ticket key if session tickets are not disabled and we have key name.
   if (session_ticket_enabled != 0 && ticket_key_filename) {
@@ -841,6 +859,7 @@ SSLParseCertificateConfiguration(
   return true;
 }
 
+#if TS_USE_TLS_TICKETS
 /*
  * RFC 5077. Create session ticket to resume SSL session without requiring session-specific state at the TLS server.
  * Specifically, it distributes the encrypted session-state information to the client in the form of a ticket and
@@ -885,6 +904,7 @@ ssl_callback_session_ticket(
 
   return -1;
 }
+#endif /* TS_USE_TLS_TICKETS */
 
 void
 SSLReleaseContext(SSL_CTX * ctx)
