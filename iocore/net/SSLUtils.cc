@@ -50,9 +50,9 @@
 
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
-    #define evp_md_func EVP_sha1()
+#define evp_md_func EVP_sha1()
 #else
-    #define evp_md_func EVP_sha256()
+#define evp_md_func EVP_sha256()
 #endif
 #endif
 
@@ -64,9 +64,9 @@ typedef SSL_METHOD * ink_ssl_method_t;
 
 struct ssl_ticket_key_t
 {
-    unsigned char key_name[16];
-    unsigned char hmac_secret[16];
-    unsigned char aes_key[16];
+  unsigned char key_name[16];
+  unsigned char hmac_secret[16];
+  unsigned char aes_key[16];
 };
 
 static ProxyMutex ** sslMutexArray;
@@ -76,24 +76,24 @@ static int ssl_session_ticket_index = 0;
 
 struct ats_file_bio
 {
-    ats_file_bio(const char * path, const char * mode)
-      : bio(BIO_new_file(path, mode)) {
-    }
+  ats_file_bio(const char * path, const char * mode)
+    : bio(BIO_new_file(path, mode)) {
+  }
 
-    ~ats_file_bio() {
-        (void)BIO_set_close(bio, BIO_CLOSE);
-        BIO_free(bio);
-    }
+  ~ats_file_bio() {
+    (void)BIO_set_close(bio, BIO_CLOSE);
+    BIO_free(bio);
+  }
 
-    operator bool() const {
-        return bio != NULL;
-    }
+  operator bool() const {
+    return bio != NULL;
+  }
 
-    BIO * bio;
+  BIO * bio;
 
 private:
-    ats_file_bio(const ats_file_bio&);
-    ats_file_bio& operator=(const ats_file_bio&);
+  ats_file_bio(const ats_file_bio&);
+  ats_file_bio& operator=(const ats_file_bio&);
 };
 
 static unsigned long
@@ -238,13 +238,13 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 
   ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
   if (!ticket_key_data) {
-      Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
-      goto fail;
+    Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
+    goto fail;
   }
 
   if (ticket_key_len < 48) {
-      Error("SSL session ticket key from %s is too short (48 bytes are required)", (const char *)ticket_key_path);
-      goto fail;
+    Error("SSL session ticket key from %s is too short (48 bytes are required)", (const char *)ticket_key_path);
+    goto fail;
   }
 
   ticket_key = NEW(new ssl_ticket_key_t());
@@ -256,13 +256,13 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
   // so that we don't leave a ticket_key pointer attached if it fails.
   if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
-      Error("failed to set session ticket callback");
-      goto fail;
+    Error("failed to set session ticket callback");
+    goto fail;
   }
 
   if (SSL_CTX_set_ex_data(ctx, ssl_session_ticket_index, ticket_key) == 0) {
-      Error ("failed to set session ticket data to ctx");
-      goto fail;
+    Error ("failed to set session ticket data to ctx");
+    goto fail;
   }
 
   SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
@@ -581,12 +581,12 @@ fail:
 static char *
 asn1_strdup(ASN1_STRING * s)
 {
-    // Make sure we have an 8-bit encoding.
-    ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING ||
-      ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
-      ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING);
+  // Make sure we have an 8-bit encoding.
+  ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING ||
+    ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
+    ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING);
 
-    return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
+  return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
 }
 
 // Given a certificate and it's corresponding SSL_CTX context, insert hash
@@ -686,8 +686,8 @@ ssl_store_ssl_context(
 
   // Session tickets are enabled by default. Disable if explicitly requested.
   if (session_ticket_enabled == 0) {
-      SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
-      Debug("ssl", "ssl session ticket is disabled");
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
+    Debug("ssl", "ssl session ticket is disabled");
   }
 
   // Load the session ticket key if session tickets are not disabled and we have key name.
@@ -846,54 +846,55 @@ SSLParseCertificateConfiguration(
  * Specifically, it distributes the encrypted session-state information to the client in the form of a ticket and
  * a mechanism to present the ticket back to the server.
  * */
-int ssl_callback_session_ticket(SSL *ssl,
-                               unsigned char *keyname,
-                               unsigned char *iv,
-                               EVP_CIPHER_CTX *cipher_ctx,
-                               HMAC_CTX *hctx,
-                               int enc)
+static int
+ssl_callback_session_ticket(
+    SSL * ssl,
+    unsigned char * keyname,
+    unsigned char * iv,
+    EVP_CIPHER_CTX * cipher_ctx,
+    HMAC_CTX * hctx,
+    int enc)
 {
-    ssl_ticket_key_t* ssl_ticket_key = (ssl_ticket_key_t*) SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_session_ticket_index);
-    if (NULL == ssl_ticket_key) {
-        Error("ssl ticket key is null.");
-        return -1;
-    }
+  ssl_ticket_key_t* ssl_ticket_key = (ssl_ticket_key_t*) SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_session_ticket_index);
 
-    if (enc == 1) {
-        memcpy(keyname, ssl_ticket_key->key_name, 16);
-        RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
-        EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL,
-                           ssl_ticket_key->aes_key, iv);
-        HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
-        Note("create ticket for a new session");
-
-        return 0;
-    } else if (enc == 0) {
-        if (memcmp(keyname, ssl_ticket_key->key_name, 16)) {
-            Error("keyname is not consistent.");
-            return 0;
-        }
-
-        EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL,
-                           ssl_ticket_key->aes_key, iv);
-        HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
-
-        Note("verify the ticket for an existing session." );
-        return 1;
-    }
-
+  if (NULL == ssl_ticket_key) {
+    Error("ssl ticket key is null.");
     return -1;
+  }
+
+  if (enc == 1) {
+    memcpy(keyname, ssl_ticket_key->key_name, 16);
+    RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
+    EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
+    HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
+    Note("create ticket for a new session");
+
+    return 0;
+  } else if (enc == 0) {
+    if (memcmp(keyname, ssl_ticket_key->key_name, 16)) {
+      Error("keyname is not consistent.");
+      return 0;
+    }
+
+    EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
+    HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
+
+    Note("verify the ticket for an existing session." );
+    return 1;
+  }
+
+  return -1;
 }
 
 void
 SSLReleaseContext(SSL_CTX * ctx)
 {
-   ssl_ticket_key_t * ssl_ticket_key = (ssl_ticket_key_t*)SSL_CTX_get_ex_data(ctx, ssl_session_ticket_index);
+  ssl_ticket_key_t * ssl_ticket_key = (ssl_ticket_key_t *)SSL_CTX_get_ex_data(ctx, ssl_session_ticket_index);
 
-   // Free the ticket if this is the last reference.
-   if (ctx->references == 1 && ssl_ticket_key) {
-       delete ssl_ticket_key;
-   }
+  // Free the ticket if this is the last reference.
+  if (ctx->references == 1 && ssl_ticket_key) {
+     delete ssl_ticket_key;
+  }
 
-   SSL_CTX_free(ctx);
+  SSL_CTX_free(ctx);
 }
