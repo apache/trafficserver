@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2386] clean up unused files and codes -- round 4.2
+
   *) [TS-548] remove Initialize.cc Initialize.h
 
   *) [TS-2082] remove STANDALONE_IOCORE FIXME_NONMODULAR and NON_MODULAR defines
