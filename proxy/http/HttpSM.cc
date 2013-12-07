@@ -2934,15 +2934,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     server_session->server_trans_stat--;
     HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
 
-    // If the client is still around, attach the server session
-    // to so the next ka request can use it.  We bind privately to the
-    // client to add some degree of affinity to the system.  However,
-    // we turn off private binding when outbound connections are being
-    // limit since it makes it too expensive to initiate a purge of idle
-    // server keep-alive sessions
-    if (ua_session && t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
-        t_state.http_config_param->server_max_connections <= 0 &&
-        t_state.txn_conf->origin_max_connections <= 0) {
+    // If the option to attach the server session to the client session is set
+    // and if the client is still around and the client is keep-alive, attach the
+    // server session to so the next ka request can use it.  Server sessions will
+    // be placed into the shared pool if the next incoming request is for a different
+    // origin server
+    if (t_state.http_config_param->attach_server_session_to_client == 1 &&
+        ua_session && t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
       ua_session->attach_server_session(server_session);
     } else {
       // Release the session back into the shared session pool

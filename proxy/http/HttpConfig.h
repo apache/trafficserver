@@ -640,6 +640,7 @@ public:
 
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
+  MgmtInt attach_server_session_to_client;
 
   MgmtByte parent_proxy_routing_enable;
   MgmtByte disable_ssl_parenting;
