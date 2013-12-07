@@ -1,6 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2419] Don't close client connection when responding with a 204 and there is no body
 
   *) [TS-1146] Add RFC 5077 TLS session ticket support.
    Author: Wei Sun <sunwei@yahoo-inc.com>
