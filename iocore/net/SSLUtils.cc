@@ -70,6 +70,9 @@ typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
 #if TS_USE_TLS_TICKETS
+static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
+#endif /* TS_USE_TLS_TICKETS */
+
 struct ssl_ticket_key_t
 {
   unsigned char key_name[16];
@@ -77,10 +80,7 @@ struct ssl_ticket_key_t
   unsigned char aes_key[16];
 };
 
-static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
 static int ssl_session_ticket_index = 0;
-#endif /* TS_USE_TLS_TICKETS */
-
 static ProxyMutex ** sslMutexArray;
 static bool open_ssl_initialized = false;
 
