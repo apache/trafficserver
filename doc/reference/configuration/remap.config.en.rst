@@ -284,7 +284,9 @@ Examples
 
 ::
 
-    map http://url/path http://url/path @plugin=/etc/traffic_server/config/plugins/plugin1.so @pparam=1 @pparam=2 @plugin=/etc/traffic_server/config/plugins/plugin2.so @pparam=3
+    map http://url/path http://url/path \
+        @plugin=/etc/traffic_server/config/plugins/plugin1.so @pparam=1 @pparam=2 \
+        @plugin=/etc/traffic_server/config/plugins/plugin2.so @pparam=3
 
 will pass "1" and "2" to plugin1.so and "3" to plugin2.so.
 
@@ -324,3 +326,52 @@ The filter `disable_delete_purge` will be applied to all of the
 mapping rules. (It is activated before any mappings and is never
 deactivated.) The filter `internal_only` will only be applied to the
 second mapping.
+
+Including Additional Remap Files
+================================
+
+The ``.include`` directive allows mapping rules to be spread across
+multiple files. The argument to the ``.include`` directive is a
+list of file names to be parsed for additional mapping rules. Unless
+the names are absolute paths, they are resolved relative to the
+Traffic Server configuration directory.
+
+The effect of the ``.include`` directive is as if the contents of
+the listed files is included in the parent and parsing restarted
+at the point of inclusion. This means that and filters named in the
+included files are global in scope, and that additional ``.include``
+directives are allowed.
+
+.. note::
+
+  Included remap files are not currently tracked by the configuration
+  subsystem. Changes to included remap files will not be noticed
+  by online configuration changes applied by :option:`traffic_line
+  -x` unless :file:`remap.config` has also changed.
+
+Examples
+--------
+
+In this example, a top-level :file:`remap.config` file simply
+references additional mapping rules files ::
+
+  .include filters.config
+  .include one.example.com.config two.example.com.config
+
+The file `filters.config` contains ::
+
+  .definefilter deny_purge @action=deny @method=purge
+  .definefilter allow_purge @action=allow @method=purge
+
+The file `one.example.com.config` contains::
+
+  .activatefilter deny_purge
+  map http://one.example.com http://origin-one.example.com
+  .deactivatefilter deny_purge
+
+The file `two.example.com.config` contains::
+
+  .activatefilter allow_purge
+  map http://two.example.com http://origin-two.example.com
+  .deactivatefilter dallowpurge
+
