@@ -241,13 +241,11 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
       }
       return -ECACHE_NO_DOC;
     }
-#ifdef FIXME_NONMODULAR
     if (cache_config_select_alternate) {
       alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, params);
       if (alternate_index < 0)
         return -ECACHE_ALT_MISS;
     } else
-#endif
       alternate_index = 0;
     CacheHTTPInfo *obj = vector.get(alternate_index);
     for (w = (CacheVC *) od->writers.head; w; w = (CacheVC *) w->opendir_link.next) {
@@ -969,11 +967,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       dir_overwrite(&first_key, vol, &dir, &od->first_dir);
       if (od->move_resident_alt)
         dir_insert(&od->single_doc_key, vol, &od->single_doc_dir);
-#ifdef FIXME_NONMODULAR
       int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, params);
-#else
-      int alt_ndx = 0;
-#endif
       vol->close_write(this);
       if (alt_ndx >= 0) {
         vector.clear();
@@ -1079,11 +1073,7 @@ CacheVC::openReadStartHead(int event, Event * e)
         goto Ldone;
       }
       if (cache_config_select_alternate) {
-#ifdef FIXME_NONMODULAR
         alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, params);
-#else
-        alternate_index = 0;
-#endif
         if (alternate_index < 0) {
           err = ECACHE_ALT_MISS;
           goto Ldone;
