@@ -6756,9 +6756,10 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
   } else if (HTTP_MAJOR(ver.m_version) == 0) {  /* No K-A for 0.9 apps */
     ka_action = KA_DISABLED;
   }
-  // some systems hang until the connection closes when receiving a 204
-  //   regardless of the K-A headers
-  else if (heads->status_get() == HTTP_STATUS_NO_CONTENT) {
+  else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
+      (s->current.server->transfer_encoding != NO_TRANSFER_ENCODING || s->hdr_info.request_content_length != 0)) {
+    // some systems hang until the connection closes when receiving a 204 regardless of the K-A headers
+    // close if there is any body response from the origin
     ka_action = KA_CLOSE;
   } else {
     // Determine if we are going to send either a server-generated or
