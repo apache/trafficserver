@@ -76,7 +76,7 @@ ink_mutex debug_sm_list_mutex;
 //  sparse initialization, not copying dead space for history.
 //
 //  Most of the content of in the prototype object consists of zeroes.
-//  To take advantage of that, a "scatter list" is contructed of
+//  To take advantage of that, a "scatter list" is constructed of
 //  the non-zero words, and those values are scattered onto the
 //  new object after first zeroing out the object (except for dead space).
 //
@@ -536,7 +536,7 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 int
 HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
 {
-  // The config parameters are guranteed not change
+  // The config parameters are guaranteed not change
   //   across the life of a transaction so it safe to
   //   check the config here and use it detrmine
   //   whether we need to strip ourselves off of the
@@ -564,8 +564,8 @@ int
 HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   // In the base HttpSM, we don't have anything to
-  //   do here.  subclasses can overide this function
-  //   to do their own asyncronous cleanup
+  //   do here.  subclasses can override this function
+  //   to do their own asynchronous cleanup
   // So We're now ready to finish off the state machine
   terminate_sm = true;
   kill_this_async_done = true;
@@ -626,7 +626,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   }
 
   // We first need to run the transaction start hook.  Since
-  //  this hook maybe asyncronous, we need to disable IO on
+  //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
   ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
@@ -977,7 +977,7 @@ HttpSM::setup_push_read_response_header()
       resp_hdr_state = state_read_push_response_header(VC_EVENT_READ_READY, ua_entry->read_vio);
     }
   }
-  // It is possible that the entire PUSHed responsed header was already
+  // It is possible that the entire PUSHed response header was already
   //  in the buffer.  In this case we don't want to fire off any more
   //  IO since we are going to switch buffers when we go to tunnel to
   //  the cache
@@ -1149,7 +1149,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 //
 //   We've done a successful transform open and issued a do_io_write
 //    to the transform.  We are now ready for the transform  to tell
-//    us it is now ready to be read from and it done modifing the
+//    us it is now ready to be read from and it done modifying the
 //    server request header
 //
 int
@@ -1189,7 +1189,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
 //
 //   We've done a successful transform open and issued a do_io_write
 //    to the transform.  We are now ready for the transform  to tell
-//    us it is now ready to be read from and it done modifing the
+//    us it is now ready to be read from and it done modifying the
 //    user agent response header
 //
 int
@@ -1220,7 +1220,7 @@ HttpSM::state_response_wait_for_transform_read(int event, void *data)
 
 // int HttpSM::state_common_wait_for_transform_read(...)
 //
-//   This function handles the overlapping cases bewteen request and response
+//   This function handles the overlapping cases between request and response
 //     transforms which prevents code duplication
 //
 int
@@ -1254,7 +1254,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo * t_info, HttpSMH
         ink_assert(t_info == &post_transform_info);
         return (this->*tunnel_handler) (event, data);
       } else {
-        // On the reponse side, we just forward as much
+        // On the response side, we just forward as much
         //   as we can of truncated documents so
         //   just don't cache the result
         ink_assert(t_info == &transform_info);
@@ -1293,7 +1293,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo * t_info, HttpSMH
 // int HttpSM::state_api_callback(int event, void *data)
 
 //   InkAPI.cc calls us directly here to avoid problems
-//    with setting and chanings the default_handler
+//    with setting and changing the default_handler
 //    function.  As such, this is an entry point
 //    and needs to handle the reentrancy counter and
 //    deallocation the state machine if necessary
@@ -1520,7 +1520,7 @@ HttpSM::state_api_callout(int event, void *data)
 // void HttpSM::handle_api_return()
 //
 //   Figures out what to do after calling api callouts
-//    have finised.  This messy and I would like
+//    have finished.  This messy and I would like
 //    to come up with a cleaner way to handle the api
 //    return.  The way we are doing things also makes a
 //    mess of set_next_state()
@@ -2322,7 +2322,7 @@ HttpSM::state_icp_lookup(int event, void *data)
 /*
 *  Disable ICP loop detection since the Cidera network
 *    insists on trying to preload the cache from a
-*    a sibiling cache.
+*    a sibling cache.
 *
 *  // inhibit bad ICP looping behavior
 *  if (t_state.icp_ip_result.sin_addr.s_addr ==
@@ -2458,7 +2458,7 @@ HttpSM::state_cache_open_read(int event, void *data)
       DebugSM("http", "[%" PRId64 "] cache_open_read - CACHE_EVENT_OPEN_READ", sm_id);
 
       /////////////////////////////////
-      // lookup/open is successfull. //
+      // lookup/open is successful. //
       /////////////////////////////////
       ink_assert(cache_sm.cache_read_vc != NULL);
       t_state.source = HttpTransact::SOURCE_CACHE;
@@ -2561,11 +2561,11 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer * p)
   ink_assert(p->vc_type == HT_HTTP_CLIENT);
   HttpTunnelConsumer *c;
 
-  // If there is a post tranform, remove it's entry from the State
+  // If there is a post transform, remove it's entry from the State
   //  Machine's VC table
   //
   // MUST NOT clear the vc pointer from post_transform_info
-  //    as this causes a double close of the tranform vc in transform_cleanup
+  //    as this causes a double close of the transform vc in transform_cleanup
   //
   if (post_transform_info.vc != NULL) {
     ink_assert(post_transform_info.entry->in_tunnel == true);
@@ -3009,8 +3009,8 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
       int64_t ua_body_done = c->bytes_written - client_response_hdr_bytes;
       float pDone = (float) ua_body_done / ua_cl;
 
-      // If we got a good content lenght.  Check to make sure that we haven't already
-      //  done more the content length since that would indicate the content-legth
+      // If we got a good content length.  Check to make sure that we haven't already
+      //  done more the content length since that would indicate the content-length
       //  is bogus.  If we've done more than the threshold, continue the background fill
       if (pDone <= 1.0 && pDone > t_state.txn_conf->background_fill_threshold) {
         return true;
@@ -3059,7 +3059,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
       server_session->get_netvc()->
         set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
     } else {
-      // No bakground fill
+      // No background fill
       p = c->producer;
       tunnel.chain_abort_all(c->producer);
       selfc = p->self_consumer;
@@ -3256,7 +3256,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer * c)
     //   abort the cache since it's finicky about a close
     //   in this case.  This case can only occur
     //   we got a truncated header from the origin server
-    //   but decided to accpet it anyways
+    //   but decided to accept it anyways
     if (c->write_vio == NULL) {
       *status_ptr = HttpTransact::CACHE_WRITE_ERROR;
       c->write_success = false;
@@ -3285,7 +3285,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 
   switch (event) {
   case VC_EVENT_EOS:
-    // My reading of spec says that user agents can not ternminate
+    // My reading of spec says that user agents can not terminate
     //  posts with a half close so this is an error
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -3378,7 +3378,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer * c)
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
-    //  Did not complete post tunnling
+    //  Did not complete post tunneling
     //
     //    In the http case, we don't want to close
     //    the connection because the
@@ -3386,7 +3386,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer * c)
     //    a response even though the tunnel failed.
 
     // Shutdown both sides of the connection.  This prevents us
-    //  from getting any futher events and signals to client
+    //  from getting any further events and signals to client
     //  that POST data will not be forwarded to the server.  Doing
     //  shutdown on the write side will likely generate a TCP
     //  reset to the client but if the proxy wasn't here this is
@@ -3621,7 +3621,7 @@ HttpSM::tunnel_handler_transform_write(int event, HttpTunnelConsumer * c)
     c->vc->do_io_close(EHTTP_ERROR);
     break;
   case VC_EVENT_EOS:
-    //   It possbile the transform quit
+    //   It possible the transform quit
     //   before the producer finished.  If this is true
     //   we need shut  down the producer if it doesn't
     //   have other consumers to serve or else it will
@@ -3904,7 +3904,7 @@ HttpSM::do_hostdb_lookup()
       }
     }
     return;
-  } else {                      /* we arent using SRV stuff... */
+  } else {                      /* we aren't using SRV stuff... */
     DebugSM("http_seq", "[HttpSM::do_hostdb_lookup] Doing DNS Lookup");
 
     // If there is not a current server, we must be looking up the origin
@@ -4029,15 +4029,15 @@ HttpSM::do_hostdb_update_if_necessary()
 }
 
 /*
- * range entry vaild [a,b] (a >= 0 and b >= 0 and a <= b)
+ * range entry valid [a,b] (a >= 0 and b >= 0 and a <= b)
  * HttpTransact::RANGE_NONE if the content length of cached copy is zero or
  * no range entry
- * HttpTransact::RANGE_NOT_SATISFIABLE iff all range entrys are valid but
+ * HttpTransact::RANGE_NOT_SATISFIABLE iff all range entries are valid but
  * none overlap the current extent of the cached copy
- * HttpTransact::RANGE_NOT_HANDLED if out-of-order Range entrys or
+ * HttpTransact::RANGE_NOT_HANDLED if out-of-order Range entries or
  * the cached copy`s content_length is INT64_MAX (e.g. read_from_writer and trunked)
- * HttpTransact::RANGE_REQUESTED if all sub range entrys are valid and
- * in order (remove the entrys that not overlap the extent of cache copy)
+ * HttpTransact::RANGE_REQUESTED if all sub range entries are valid and
+ * in order (remove the entries that not overlap the extent of cache copy)
  */
 void
 HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
@@ -4600,7 +4600,7 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
-  // We did not manage to get an exisiting session
+  // We did not manage to get an existing session
   //  and need to open a new connection
   Action *connect_action_handle;
 
@@ -5032,10 +5032,10 @@ HttpSM::handle_http_server_open()
 // void HttpSM::handle_server_setup_error(int event, void* data)
 //
 //   Handles setting t_state.current.state and calling
-//    Transact in bewteen opening an origin server connection
-//    and receving the reponse header (in the case of the
+//    Transact in between opening an origin server connection
+//    and receiving the response header (in the case of the
 //    POST, a post tunnel happens in between the sending
-//    request header and reading the resposne header
+//    request header and reading the response header
 //
 void
 HttpSM::handle_server_setup_error(int event, void *data)
@@ -5054,7 +5054,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     // it is possible only user agent post->post transform is set up
     // this happened for Linux iocore where NET_EVENT_OPEN was returned
     // for a non-existing listening port. the hack is to pass the error
-    // event for server connectionto post_transform_info
+    // event for server connection to post_transform_info
     if (c == NULL && post_transform_info.vc) {
       c = tunnel.get_consumer(post_transform_info.vc);
       // c->handler_state = HTTP_SM_TRANSFORM_FAIL;
@@ -5134,7 +5134,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     break;
   case HTTP_API_IN_CALLOUT:
   case HTTP_API_DEFERED_SERVER_ERROR:
-    // Callout in progress note that we are in defering
+    // Callout in progress note that we are in deferring
     //   the server error
     callout_state = HTTP_API_DEFERED_SERVER_ERROR;
     return;
@@ -5248,7 +5248,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
 
     t_state.hdr_info.request_body_start = true;
-    // Note: Many browers, Netscape and IE included send two extra
+    // Note: Many browsers, Netscape and IE included send two extra
     //  bytes (CRLF) at the end of the post.  We just ignore those
     //  bytes since the sending them is not spec
 
@@ -5469,7 +5469,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   server_session = s;
   server_session->transact_count++;
 
-  // Set the mutex so that we have soemthing to update
+  // Set the mutex so that we have something to update
   //   stats with
   server_session->mutex = this->mutex;
 
@@ -5482,7 +5482,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   server_entry->vc_type = HTTP_SERVER_VC;
   server_entry->vc_handler = &HttpSM::state_send_server_request_header;
 
-  // Initate a read on the session so that the SM and not
+  // Initiate a read on the session so that the SM and not
   //  session manager will get called back if the timeout occurs
   //  or the server closes on us.  The IO Core now requires us to
   //  do the read with a buffer and a size so preallocate the
@@ -6244,7 +6244,7 @@ HttpSM::setup_push_transfer_to_cache()
   if (ua_entry->eos == true) {
     // The ua has shutdown on us already so the only data
     //  we'll get is already in the buffer.  Make sure it
-    //  fullfills the stated lenght
+    //  fulfills the stated length
     int64_t avail = ua_buffer_reader->read_avail();
 
     if (avail < nbytes) {
@@ -6374,7 +6374,7 @@ HttpSM::plugin_agents_cleanup()
 //
 //  HttpSM::kill_this()
 //
-//  This function has two phases.  One before we call the asyncrhonous
+//  This function has two phases.  One before we call the asynchronous
 //    clean up routines (api and list removal) and one after.
 //    The state about which phase we are in is kept in
 //    HttpSM::kill_this_async_done
@@ -6435,7 +6435,7 @@ HttpSM::kill_this()
     do_api_callout();
   }
   // The reentrancy_count is still valid up to this point since
-  //   the api shutdown hook is asyncronous and double frees can
+  //   the api shutdown hook is asynchronous and double frees can
   //   happen if the reentrancy count is not still valid until
   //   after all asynch callouts have completed
   //
@@ -6488,7 +6488,7 @@ HttpSM::kill_this()
     ink_mutex_release(&debug_sm_list_mutex);
 #endif
 
-    DebugSM("http", "[%" PRId64 "] dellocating sm", sm_id);
+    DebugSM("http", "[%" PRId64 "] deallocating sm", sm_id);
 //    authAdapter.destroyState();
     destroy();
   }
