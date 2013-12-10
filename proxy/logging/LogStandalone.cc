@@ -42,6 +42,8 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
+#define LOG_FILENAME_SIZE 255
+
 class HttpBodyFactory;
 
 // globals the rest of the system depends on
@@ -196,11 +198,16 @@ check_lockfile()
 void
 init_log_standalone(const char *pgm_name, bool one_copy)
 {
+  char logfile[LOG_FILENAME_SIZE];
+
   // ensure that only one copy of the sac is running
   //
   if (one_copy) {
     check_lockfile();
   }
+
+  snprintf(logfile, sizeof(logfile), "%s.log", pgm_name);
+
   // set stdin/stdout to be unbuffered
   //
   setbuf(stdin, NULL);
@@ -210,7 +217,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   init_system();
   initialize_process_manager();
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags));
+  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags));
   diags = diagsConfig->diags;
   diags_init = 1;
 }
@@ -232,11 +239,14 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 void
 init_log_standalone_basic(const char *pgm_name)
 {
+  char logfile[LOG_FILENAME_SIZE];
+
+  snprintf(logfile, sizeof(logfile), "%s.log", pgm_name);
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
   init_system();
   const bool use_records = false;
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, use_records));
+  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags, use_records));
   diags = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //

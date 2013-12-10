@@ -46,6 +46,8 @@
 #include "DiagsConfig.h"
 #include "I_Machine.h"
 
+#define DIAGS_LOG_FILENAME "collector.log"
+
 // sac-specific command-line flags
 //
 static int version_flag = 0;
@@ -90,8 +92,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     _exit(0);
   }
 
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, false));
+  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false));
   diags = diagsConfig->diags;
+  diags->prefix_str = "Collector ";
 
   // initialize this application for standalone logging operation
   //

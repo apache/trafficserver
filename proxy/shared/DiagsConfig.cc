@@ -24,18 +24,6 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "DiagsConfig.h"
-#ifdef LOCAL_MANAGER
-
-#include "mgmt/Main.h"
-#define DIAGS_LOG_FILE "manager.log"
-
-#else
-#include "proxy/Main.h"
-#include "ProxyConfig.h"
-#define DIAGS_LOG_FILE "diags.log"
-
-#endif
-
 #include "P_RecCore.h"
 
 
@@ -285,7 +273,7 @@ DiagsConfig::RegisterDiagConfig()
 }
 
 
-DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
+DiagsConfig::DiagsConfig(const char * filename, const char * tags, const char * actions, bool use_records)
 {
   char diags_logpath[PATH_NAME_MAX + 1];
   xptr<char> logpath;
@@ -301,7 +289,7 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    diags = NEW(new Diags(bdt, bat, NULL));
+    diags = NEW(new Diags(tags, actions, NULL));
     config_diags_norecords();
     return;
   }
@@ -317,7 +305,7 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
     _exit(1);
   }
 
-  ink_filepath_make(diags_logpath, sizeof(diags_logpath), logpath, DIAGS_LOG_FILE);
+  ink_filepath_make(diags_logpath, sizeof(diags_logpath), logpath, filename);
 
   // open write append
   // diags_log_fp = fopen(diags_logpath,"w");
@@ -331,7 +319,7 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
     }
   }
 
-  diags = NEW(new Diags(bdt, bat, diags_log_fp));
+  diags = NEW(new Diags(tags, actions, diags_log_fp));
   if (diags_log_fp == NULL) {
 
     diags->print(NULL, DTA(DL_Warning),

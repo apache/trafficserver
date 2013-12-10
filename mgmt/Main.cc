@@ -59,6 +59,7 @@
 #include <grp.h>
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
+#define DIAGS_LOG_FILENAME "manager.log"
 
 #if defined(freebsd)
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
@@ -520,7 +521,7 @@ main(int argc, char **argv)
 
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
-  diagsConfig = NEW(new DiagsConfig(debug_tags, action_tags, false));
+  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, false));
   diags = diagsConfig->diags;
   diags->prefix_str = "Manager ";
 
@@ -570,7 +571,7 @@ main(int argc, char **argv)
   }
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
-  diagsConfig = NEW(new DiagsConfig(debug_tags, action_tags, true));
+  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, true));
   diags = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Manager ";

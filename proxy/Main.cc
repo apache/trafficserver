@@ -112,6 +112,7 @@ extern "C" int plock(int);
 #endif
 
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG    0
+#define DIAGS_LOG_FILENAME                "diags.log"
 
 static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
 
@@ -1285,7 +1286,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // re-start Diag completely) because at initialize, TM only has 1 thread.
   // In TS, some threads have already created, so if we delete Diag and
   // re-start it again, TS will crash.
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, false));
+  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false));
   diags = diagsConfig->diags;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
@@ -1347,7 +1348,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     RecDebugOff();
     delete(diagsConfig);
   }
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, true));
+  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, true));
   diags = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Server ";
