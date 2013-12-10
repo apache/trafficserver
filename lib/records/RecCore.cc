@@ -31,8 +31,6 @@
 
 static bool g_initialized = false;
 
-Diags *g_diags = NULL;
-
 RecRecord *g_records = NULL;
 InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
@@ -215,20 +213,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
   return REC_ERR_OKAY;
 }
-
-
-//-------------------------------------------------------------------------
-// RecSetDiags
-//-------------------------------------------------------------------------
-int
-RecSetDiags(Diags * _diags)
-{
-  // Warning! It's very dangerous to change diags on the fly!  This
-  // function only exists so that we can boot-strap TM on startup.
-  ink_atomic_swap(&g_diags, _diags);
-  return REC_ERR_OKAY;
-}
-
 
 //-------------------------------------------------------------------------
 // RecLinkCnfigXXX

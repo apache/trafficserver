@@ -61,8 +61,6 @@ static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";
 #define COP_WARNING  LOG_ERR
 #define COP_DEBUG    LOG_DEBUG
 
-Diags * g_diags; // link time dependency
-
 static const char *root_dir;
 static const char *runtime_dir;
 static const char *config_dir;
