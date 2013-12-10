@@ -31,3 +31,4 @@ Contents:
    :maxdepth: 2
 
    cache/cache.en
+   proposals/hostdb.en
