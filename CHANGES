@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2077] Remove pipeline configurations, they were no-op's anyways. We
+   still support pipelining (we always do), it's just not treated specially
+   (or optimized).
+
   *) [TS-2386] clean up unused files and codes -- round 4.2
 
   *) [TS-548] remove Initialize.cc Initialize.h
