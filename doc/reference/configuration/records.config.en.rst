@@ -1796,14 +1796,20 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 Diagnostic Logging Configuration
 ================================
 
-.. ts:cv:: CONFIG proxy.config.diags.output.status STRING
+.. ts:cv:: CONFIG proxy.config.diags.output.diag STRING E
+.. ts:cv:: CONFIG proxy.config.diags.output.debug STRING E
+.. ts:cv:: CONFIG proxy.config.diags.output.status STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.note STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.warning STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.error STRING SL
+.. ts:cv:: CONFIG proxy.config.diags.output.fatal STRING SL
+.. ts:cv:: CONFIG proxy.config.diags.output.alert STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.emergency STRING SL
 
-.. ts:cv:: CONFIG proxy.config.diags.output.warning STRING
-
-.. ts:cv:: CONFIG proxy.config.diags.output.emergency STRING
-
-   control where Traffic Server should log diagnostic output. Messages at diagnostic level can be directed to any combination of diagnostic
-   destinations. Valid diagnostic message destinations are:::
+   The diagnosic output configuration variables control where Traffic
+   Server should log diagnostic output. Messages at each diagnostic level
+   can be directed to any combination of diagnostic destinations.
+   Valid diagnostic message destinations are:
 
    * 'O' = Log to standard output
    * 'E' = Log to standard error
@@ -1812,9 +1818,36 @@ Diagnostic Logging Configuration
 
 .. topic:: Example
 
-   To log debug diagnostics to both syslog and diags.log:::
+   To log debug diagnostics to both syslog and `diags.log`::
 
-        proxy.config.diags.output.debug STRING SL
+        CONFIG proxy.config.diags.output.debug STRING SL
+
+.. ts:cv:: CONFIG proxy.config.diags.show_location INT 0
+
+   Annotates diagnostic messages with the source code location.
+
+.. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
+
+   Enables logging for diagnostic messages whose log level is `diag` or `debug`.
+
+.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING NULL
+
+   Each Traffic Server `diag` and `debug` level message is annotated
+   with a subsytem tag. This configuration contains a regular
+   expression that filters the messages based on the tag. Some
+   commonly used debug tags are::
+
+============  =====================================================
+Tag           Subsytem usage
+============  =====================================================
+ssl           TLS termination and certificate processing
+dns           DNS query resolution
+http_hdrs     Logs the headers for HTTP requests and responses
+============  =====================================================
+
+  Traffic Server plugins will typically log debug messages using
+  the :func:`TSDebug` API, passing the plugin name as the debug
+  tag.
 
 Reverse Proxy
 =============
