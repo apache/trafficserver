@@ -30,7 +30,7 @@ static TSCont XInjectHeadersCont = NULL;
 
 // Return the length of a string literal.
 template <int N> unsigned
-lengthof(const char (&str)[N]) {
+lengthof(const char (&)[N]) {
   return N - 1;
 }
 
@@ -96,7 +96,7 @@ done:
 }
 
 static int
-XInjectResponseHeaders(TSCont contp, TSEvent event, void * edata)
+XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void * edata)
 {
   TSHttpTxn   txn = (TSHttpTxn)edata;
   intptr_t    xheaders = 0;
@@ -126,7 +126,7 @@ done:
 // Scan the client request headers and determine which debug headers they
 // want in the response.
 static int
-XScanRequestHeaders(TSCont contp, TSEvent event, void * edata)
+XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
 {
   TSHttpTxn   txn = (TSHttpTxn)edata;
   intptr_t    xheaders = 0;
@@ -191,7 +191,7 @@ done:
 }
 
 void
-TSPluginInit(int argc, const char *argv[])
+TSPluginInit(int /* argc */, const char * /*argv */ [])
 {
   TSPluginRegistrationInfo info;
 
