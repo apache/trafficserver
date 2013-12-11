@@ -118,7 +118,7 @@ The following list shows the possible tags and their allowed values.
     origin server.
 
 *``dead_os_conn_timeout``* {#dead_os_conn_timeout}
-    Default: ``15`` secondsj
+    Default: ``15`` seconds.
     The connection timeout to the congested origin server.
 
 *``dead_os_conn_retries``* {#dead_os_conn_retries}
