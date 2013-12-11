@@ -188,20 +188,17 @@ public:
                                   int write_to_len, long timestamp, long timestamp_us,
                                   unsigned buffer_version, LogFieldList * alt_fieldlist = NULL,
                                   char *alt_printf_str = NULL);
-  static void destroy(LogBuffer *lb)
-  {
-    int result, old_ref, new_ref;
 
-    do {
-      old_ref = lb->m_references;
-      new_ref = old_ref - 1;
-      result = ink_atomic_cas(&lb->m_references, old_ref, new_ref);
-    } while(!result);
+  static void destroy(LogBuffer *lb) {
+    // ink_atomic_increment() returns the previous value, so when it was 1, we are
+    // the thread that decremented to zero and should delete ...
+    int refcnt = ink_atomic_increment(&lb->m_references, -1);
 
-    ink_release_assert(new_ref >= 0);
-
-    if (new_ref == 0)
+    if (refcnt == 1) {
       delete lb;
+    }
+
+    ink_release_assert(refcnt >= 0);
   }
 
 private:

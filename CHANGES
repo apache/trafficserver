@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.0
 
 
+  *) [TS-2251] Simplify LogBuffer reference counting.
+
   *) [TS-2190] Remove cache.log from the cachurl plugin.
 
   *) [TS-2426] Add a new plugin, xdebug, for cache debugging using HTTP headers.
