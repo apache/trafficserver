@@ -40,7 +40,7 @@ public:
   bool advertiseProtocols(const unsigned char ** out, unsigned * len) const;
 
   Continuation * findEndpoint(const char *) const;
-  Continuation * findEndpoint(const unsigned char *, unsigned, TSClientProtoStack *) const;
+  Continuation * findEndpoint(const unsigned char *, unsigned, TSClientProtoStack *, const char **) const;
 
   struct NextProtocolEndpoint
   {

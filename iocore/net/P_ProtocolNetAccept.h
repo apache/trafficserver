@@ -23,7 +23,7 @@
 
 /****************************************************************************
 
-  P_SSLNetAccept.h
+  P_ProtocolNetAccept.h
 
 
    NetAccept is a generalized facility which allows
@@ -36,12 +36,12 @@
 
 
  ****************************************************************************/
-#if !defined (_SSLNetAccept_h_)
-#define _SSLNetAccept_h_
+#if !defined (_ProtocolNetAccept_h_)
+#define _ProtocolNetAccept_h_
 
 #include "libts.h"
-#include "P_Connection.h"
 #include "P_NetAccept.h"
+#include "P_Connection.h"
 
 class Event;
 class UnixNetVConnection;
@@ -50,20 +50,13 @@ class UnixNetVConnection;
 // NetAccept
 // Handles accepting connections.
 //
-struct SSLNetAccept: public NetAccept
+struct ProtocolNetAccept: public NetAccept
 {
-  virtual UnixNetVConnection *allocateThread(EThread * t);
-  virtual void freeThread(UnixNetVConnection * vc, EThread * t);
-  virtual UnixNetVConnection *allocateGlobal();
-  virtual EventType getEtype();
-  virtual void init_accept_per_thread();
+  virtual UnixNetVConnection *createSuitableVC(EThread *t, Connection &con);
   virtual NetAccept *clone();
 
-  SSLNetAccept()
-    { };
-
-  virtual ~SSLNetAccept()
-    { };
+  ProtocolNetAccept() {}
+  virtual ~ProtocolNetAccept() {}
 
 };
 #endif

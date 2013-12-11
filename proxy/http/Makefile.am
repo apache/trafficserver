@@ -31,14 +31,15 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/proxy/http/remap \
-  -I$(top_srcdir)/proxy/logging
+  -I$(top_srcdir)/proxy/logging \
+  -I$(top_srcdir)/proxy/spdy
 
 noinst_HEADERS = HttpProxyServerMain.h
 noinst_LIBRARIES = libhttp.a
 
 libhttp_a_SOURCES = \
-  HttpAccept.cc \
-  HttpAccept.h \
+  HttpAcceptCont.cc \
+  HttpAcceptCont.h \
   HttpBodyFactory.cc \
   HttpBodyFactory.h \
   HttpCacheSM.cc \

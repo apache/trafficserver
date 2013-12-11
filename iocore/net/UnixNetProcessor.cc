@@ -46,6 +46,7 @@ NetProcessor::AcceptOptions::reset()
   packet_mark = 0;
   packet_tos = 0;
   f_inbound_transparent = false;
+  create_default_NetAccept = true;
   return *this;
 }
 
@@ -84,16 +85,22 @@ NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const& op
 Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const& opt)
 {
-  EventType et = opt.etype; // setEtype requires non-const ref.
-  NetAccept *na = createNetAccept();
+  EventType upgraded_etype = opt.etype; // setEtype requires non-const ref.
+  AcceptCont *acceptCont = static_cast<AcceptCont *>(cont);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip; // local binding address.
   char thr_name[MAX_THREAD_NAME_LENGTH];
 
+  NetAccept *na;
+  if (opt.create_default_NetAccept)
+    na = createNetAccept();
+  else
+    na = (NetAccept *)acceptCont->createNetAccept();
+
   // Potentially upgrade to SSL.
-  upgradeEtype(et);
+  upgradeEtype(upgraded_etype);
 
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0) {
@@ -137,7 +144,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->sockopt_flags = opt.sockopt_flags;
   na->packet_mark = opt.packet_mark;
   na->packet_tos = opt.packet_tos;
-  na->etype = opt.etype;
+  na->etype = upgraded_etype;
   na->backdoor = opt.backdoor;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
@@ -147,7 +154,10 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
         NetAccept *a;
 
         for (int i=1; i < accept_threads; ++i) {
-          a = createNetAccept();
+          if (opt.create_default_NetAccept)
+            a = createNetAccept();
+          else
+            a = (NetAccept *)acceptCont->createNetAccept();
           *a = *na;
           snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i-1, ats_ip_port_host_order(&accept_ip));
           a->init_accept_loop(thr_name);

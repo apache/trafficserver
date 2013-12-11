@@ -17,7 +17,7 @@
 #  limitations under the License.
 
 # Note that hdrs is targeted from ../Makefile.am
-SUBDIRS = congest http logging config
+SUBDIRS = congest http spdy logging config
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -52,11 +52,10 @@ noinst_HEADERS = \
   ConfigParse.h \
   Show.h
 
-
 if STATIC_LIBTS
-   which_libts = $(top_builddir)/lib/ts/.libs/libtsutil.a
+    which_libts = $(top_builddir)/lib/ts/.libs/libtsutil.a
 else
-   which_libts = $(top_builddir)/lib/ts/libtsutil.la
+    which_libts = $(top_builddir)/lib/ts/libtsutil.la
 endif
 
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
@@ -121,6 +120,7 @@ endif
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_server_LDADD = \
   http/libhttp.a \
+  spdy/libspdy.a \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
@@ -157,6 +157,7 @@ traffic_server_LDADD = \
   @LIBZ@ \
   @LIBLZMA@ \
   @LIBPROFILER@ \
+  @SPDYLAY_LIBS@ \
   -lm
 
 if BUILD_LUA_SUPPORT
@@ -223,6 +224,7 @@ traffic_sac_SOURCES = \
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_sac_LDADD = \
   http/libhttp.a \
+  spdy/libspdy.a \
   shared/libdiagsconfig.a \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
@@ -247,7 +249,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @hwloc_LIBS@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ -lm
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ @SPDYLAY_LIBS@ -lm
 
 if BUILD_TESTS
   traffic_sac_SOURCES += RegressionSM.cc

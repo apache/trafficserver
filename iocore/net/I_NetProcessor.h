@@ -100,6 +100,7 @@ public:
     AcceptOptions() { this->reset(); }
     /// Reset all values to defaults.
     self& reset();
+    bool create_default_NetAccept;
   };
 
   /**

@@ -91,6 +91,7 @@ extern int net_config_poll_timeout;
 
 #include "I_NetVConnection.h"
 #include "I_NetProcessor.h"
+#include "I_AcceptCont.h"
 
 void ink_net_init(ModuleVersion version);
 #endif

@@ -70,10 +70,9 @@ SSLNetAccept::init_accept_per_thread()
   NetAccept *a = this;
   n = eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
   for (i = 0; i < n; i++) {
-    if (i < n - 1) {
-      a = NEW(new SSLNetAccept);
-      *a = *this;
-    } else
+    if (i < n - 1)
+      a = clone();
+    else
       a = this;
     EThread *t = eventProcessor.eventthread[SSLNetProcessor::ET_SSL][i];
 
@@ -83,4 +82,13 @@ SSLNetAccept::init_accept_per_thread()
     a->mutex = get_NetHandler(t)->mutex;
     t->schedule_every(a, period, etype);
   }
+}
+
+NetAccept *
+SSLNetAccept::clone()
+{
+  NetAccept *na;
+  na = NEW(new SSLNetAccept);
+  *na = *this;
+  return na;
 }

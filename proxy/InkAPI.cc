@@ -51,7 +51,7 @@
 #include "PluginVC.h"
 #include "api/ts/experimental.h"
 #include "ICP.h"
-#include "HttpAccept.h"
+#include "HttpAcceptCont.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
 #include "HttpDebugNames.h"
@@ -6082,8 +6082,8 @@ TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
   info->m_qvalue = quality;
 }
 
-extern HttpAccept *plugin_http_accept;
-extern HttpAccept *plugin_http_transparent_accept;
+extern HttpAcceptCont *plugin_http_accept;
+extern HttpAcceptCont *plugin_http_transparent_accept;
 
 TSVConn
 TSHttpConnect(sockaddr const* addr)

@@ -578,7 +578,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         // If there's no NPN set, we should not have done this negotiation.
         ink_assert(this->npnSet != NULL);
 
-        this->npnEndpoint = this->npnSet->findEndpoint(proto, len, &this->proto_stack);
+        this->npnEndpoint = this->npnSet->findEndpoint(proto, len, &this->proto_stack,
+                                                       &this->selected_next_protocol);
         this->npnSet = NULL;
 
         ink_assert(this->npnEndpoint != NULL);

@@ -51,6 +51,10 @@ public:
 
   void handle_event_count(int event);
   int handle_event(int event, void *edata);
+  virtual void *createNetAccept()
+  {
+    return (NEW(new NetAccept));
+  }
 
 public:
   void *mdata;

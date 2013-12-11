@@ -52,6 +52,8 @@ libinknet_a_SOURCES = \
   I_UDPNet.h \
   I_UDPPacket.h \
   Inline.cc \
+  I_AcceptCont.h \
+  AcceptCont.cc \
   Net.cc \
   NetVConnection.cc \
   P_CompletionUtil.h \
@@ -61,6 +63,9 @@ libinknet_a_SOURCES = \
   P_Net.h \
   P_NetAccept.h \
   P_NetVConnection.h \
+  P_ProtocolNetAccept.h \
+  P_ProtocolAcceptCont.h \
+  P_Socks.h \
   P_SSLCertLookup.h \
   P_SSLConfig.h \
   P_SSLNetAccept.h \
@@ -81,6 +86,9 @@ libinknet_a_SOURCES = \
   P_UnixNetVConnection.h \
   P_UnixPollDescriptor.h \
   P_UnixUDPConnection.h \
+  ProtocolNetAccept.cc \
+  ProtocolAcceptCont.cc \
+  Socks.cc \
   SSLCertLookup.cc \
   SSLConfig.cc \
   SSLNetAccept.cc \

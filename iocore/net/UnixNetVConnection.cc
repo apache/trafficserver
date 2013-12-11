@@ -38,6 +38,84 @@ typedef struct iovec IOVec;
 #define NET_MAX_IOV UIO_MAXIOV
 #endif
 
+struct SpdyProbeCont:public Continuation
+{
+  MIOBuffer buf;
+  unsigned char data;
+  SpdyProbeCont(): data(0)
+  {
+    SET_HANDLER(&SpdyProbeCont::mainEvent);
+  }
+
+  int mainEvent(int event, void *e);
+};
+
+static ClassAllocator<SpdyProbeCont> spdyProberContAllocator("spdyProberContAllocator");
+
+SpdyProbeCont *
+new_SpdyProbeCont(UnixNetVConnection *vc)
+{
+  SpdyProbeCont *c = spdyProberContAllocator.alloc();
+  c->buf.clear();
+  c->buf.set(&c->data, sizeof c->data);
+  c->buf._writer->fill(-(sizeof c->data));
+  c->mutex = vc->mutex;
+  return c;
+}
+void
+free_SpdyProbeCont(SpdyProbeCont *c)
+{
+  c->mutex.clear();
+  c->buf.clear();
+  spdyProberContAllocator.free(c);
+}
+
+inline int
+SpdyProbeCont::mainEvent(int event, void *e) {
+  UnixNetVConnection *vc = (UnixNetVConnection *) ((VIO *) e)->vc_server;
+  vc->probe_state = SPDY_PROBE_STATE_END;
+
+  switch (event) {
+  case VC_EVENT_EOS:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    vc->do_io_close();
+    free_SpdyProbeCont(this);
+    return EVENT_DONE;
+  case VC_EVENT_READ_COMPLETE:
+    if ((data & 0x80) != 0) {
+      //
+      // SPDY Request
+      //
+      free_SpdyProbeCont(this);
+      vc->proto_stack = (1u << TS_PROTO_SPDY);
+      vc->action_.continuation->handleEvent(NET_EVENT_ACCEPT, vc);
+      return EVENT_DONE;
+    } else {
+      //
+      // HTTP Request
+      //
+      free_SpdyProbeCont(this);
+      vc->action_.continuation->handleEvent(NET_EVENT_ACCEPT, vc);
+      return EVENT_DONE;
+    }
+  default:
+    ink_release_assert(!"unexpected event");
+  }
+  return EVENT_CONT;
+}
+
+int SpdyProbeStart(UnixNetVConnection *vc)
+{
+  SpdyProbeCont *spdyProbeCont= new_SpdyProbeCont(vc);
+  //
+  // TODO: make it configurable
+  //
+  vc->set_inactivity_timeout(HRTIME_SECONDS(30));
+  vc->do_io_read(spdyProbeCont, 1, &spdyProbeCont->buf);
+  return EVENT_CONT;
+}
 // Global
 ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
 
@@ -259,8 +337,12 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         }
         b = b->next;
       }
+      ink_assert(vc->probe_state != SPDY_PROBE_STATE_BEGIN || niov == 1);
       if (niov == 1) {
-        r = socketManager.read(vc->con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
+        if (vc->probe_state == SPDY_PROBE_STATE_BEGIN) {
+          r = recv(vc->con.fd, tiovec[0].iov_base, tiovec[0].iov_len, MSG_PEEK);
+        } else
+          r = socketManager.read(vc->con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
       } else {
         r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
       }
@@ -801,7 +883,8 @@ UnixNetVConnection::UnixNetVConnection()
 #endif
     active_timeout(NULL), nh(NULL),
     id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0),
-    from_accept_thread(false)
+    from_accept_thread(false), probe_state(SPDY_PROBE_STATE_NONE),
+    selected_next_protocol(NULL)
 {
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);
@@ -988,7 +1071,13 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
     UnixNetVConnection::set_inactivity_timeout(inactivity_timeout_in);
   if (active_timeout_in)
     UnixNetVConnection::set_active_timeout(active_timeout_in);
-  action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  if (probe_state == SPDY_PROBE_STATE_NONE)
+    action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  else {
+    ink_assert(probe_state == SPDY_PROBE_STATE_BEGIN);
+    SpdyProbeStart(this);
+  }
+
   return EVENT_DONE;
 }
 

@@ -133,7 +133,8 @@ SSLNextProtocolSet::unregisterEndpoint(const char * proto, Continuation * ep)
 
 Continuation *
 SSLNextProtocolSet::findEndpoint(const unsigned char * proto, unsigned len,
-                                 TSClientProtoStack *proto_stack) const
+                                 TSClientProtoStack *proto_stack,
+                                 const char **selected_protocol) const
 {
   for (const NextProtocolEndpoint * ep = this->endpoints.head;
         ep != NULL; ep = this->endpoints.next(ep)) {
@@ -141,6 +142,8 @@ SSLNextProtocolSet::findEndpoint(const unsigned char * proto, unsigned len,
     if (sz == len && memcmp(ep->protocol, proto, len) == 0) {
       if (proto_stack)
         *proto_stack = ep->proto_stack;
+      if (selected_protocol)
+        *selected_protocol = ep->protocol;
       return ep->endpoint;
     }
   }

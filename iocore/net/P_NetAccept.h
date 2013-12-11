@@ -106,11 +106,13 @@ struct NetAccept:public Continuation
   virtual UnixNetVConnection *allocateThread(EThread *t);
   virtual void freeThread(UnixNetVConnection *vc, EThread *t);
   virtual UnixNetVConnection *allocateGlobal();
+  virtual UnixNetVConnection *createSuitableVC(EThread *t, Connection &con);
   virtual EventType getEtype();
 
   void init_accept_loop(const char *);
   virtual void init_accept(EThread * t = NULL);
   virtual void init_accept_per_thread();
+  virtual NetAccept *clone();
   // 0 == success
   int do_listen(bool non_blocking, bool transparent = false);
 

@@ -31,7 +31,7 @@
 #include "StatSystem.h"
 #include "P_Net.h"
 #include "I_OneWayTunnel.h"
-#include "HttpAccept.h"
+#include "HttpAcceptCont.h"
 
 enum
 {
@@ -145,14 +145,14 @@ SocksProxy::mainEvent(int event, void *data)
 
     switch (state) {
     case HTTP_REQ:{
-      HttpAccept::Options ha_opt;
+      HttpAcceptCont::Options ha_opt;
       //This is a WRITE_COMPLETE. vio->nbytes == vio->ndone is true
 
       SOCKSPROXY_INC_STAT(socksproxy_http_connections_stat);
       Debug("SocksProxy", "Handing over the HTTP request\n");
 
       ha_opt.transport_type = clientVC->attributes;
-      HttpAccept http_accept(ha_opt);
+      HttpAcceptCont http_accept(ha_opt);
       http_accept.mainEvent(NET_EVENT_ACCEPT, clientVC);
       state = ALL_DONE;
       break;
