@@ -355,7 +355,6 @@ static void initialization_error(char *msg) {
 
 TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf,
     int errbuf_size) {
-    TSReturnCode error;
     if (!api_info) {
         strncpy(errbuf, "[tsremap_init] Invalid TSRemapInterface argument",
                 errbuf_size - 1);
@@ -416,7 +415,6 @@ TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri ATS
 
 void TSPluginInit(int argc, const char *argv[]) {
     TSPluginRegistrationInfo info;
-    TSReturnCode error;
     TSCont contp;
     pr_list *prl;
 
