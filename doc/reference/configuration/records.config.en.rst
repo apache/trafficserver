@@ -1525,7 +1525,7 @@ Logging Configuration
 
    The maximum amount of time before data in the buffer is flushed to disk.
 
-.. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 2000
+.. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 2500
    :metric: megabytes
    :reloadable:
 
