@@ -127,11 +127,27 @@ The following list shows possible actions and their allowed values.
    -  ``cluster-cache-local`` configures the cluster cache to allow for
       this content to be stored locally on every cluster node.
 
+.. _cache-responses-to-cookies:
+``cache-responses-to-cookies``
+   Change the style of caching with regard to cookies. This effectively
+   overrides the configuration parameter
+   :ref:`proxy.config.http.cache.cache_responses_to_cookies`
+   and uses the same values with the same semantics. The override happens
+   only for requests that match.
+    
 
 .. _cache-config-format-pin-in-cache:
 
 ``pin-in-cache``
-   The amount of time you want to keep the object(s) in the cache. The
+   Preserves objects in cache, preventing them from being overwritten.
+   Does not affect objects that are determined not to be cacheable. This
+   setting can have performance issues, and  severely affect the cache. 
+   For instance, if the primary destination matches all objects, once the 
+   cache is full, no new objects could get written as nothing would be 
+   evicted.  Similarly, for each cache-miss, each object would incur extra 
+   checks to determine if the object it would replace could be overwritten. 
+
+   The value is the amount of time you want to keep the object(s) in the cache. The
    following time formats are allowed:
 
    -  ``d`` for days; for example: 2d
@@ -143,15 +159,16 @@ The following list shows possible actions and their allowed values.
 .. _cache-config-format-revalidate:
 
 ``revalidate``
-   The amount of time object(s) are to be considered fresh. Use the
-   same time formats as ``pin-in-cache``.
+   For objects that are in cache, overrides the the amount of time the object(s) 
+   are to be considered fresh. Use the same time formats as ``pin-in-cache``.
 
 .. _cache-config-format-ttl-in-cache:
 
 ``ttl-in-cache``
-   The amount of time object(s) are to be kept in the cache, regardless
-   of Cache-Control response headers. Use the same time formats as
-   pin-in-cache and revalidate .
+   Forces object(s) to become cached, as if they had a Cache-Control: max-age:<time>
+   header. Can be overruled by requests with cookies. The value is the amount of 
+   time object(s) are to be kept in the cache, regardless of Cache-Control response 
+   headers. Use the same time formats as pin-in-cache and revalidate.
 
 Examples
 ========
@@ -164,4 +181,12 @@ in the order listed. ::
    dest_domain=mydomain.com suffix=gif revalidate=6h
    dest_domain=mydomain.com suffix=jpeg revalidate=6h
    dest_domain=mydomain.com revalidate=1h
+
+Force a specific regex to be in cache between 7-11pm of the server's time for 26hours. ::
+
+   url_regex=example.com/articles/popular.* time=19:00-23:00 ttl-in-cache=1d2h
+
+Prevent objects from being evicted from cache: 
+
+   url_regex=example.com/game/.* pin-in-cache=1h
 
