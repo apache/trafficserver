@@ -193,55 +193,59 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:129
 msgid "System Variables"
-msgstr ""
+msgstr "システム変数"
 
 #: ../../reference/configuration/records.config.en.rst:133
 msgid "The name of the organization developing Traffic Server."
-msgstr ""
+msgstr "Traffic Server を開発している組織の名称。"
 
 #: ../../reference/configuration/records.config.en.rst:137
 msgid "The name of the vendor providing Traffic Server."
-msgstr ""
+msgstr "Traffic Server を提供しているベンダーの名称。"
 
 #: ../../reference/configuration/records.config.en.rst:141
 msgid "The name of the product."
-msgstr ""
+msgstr "プロダクトの名称。"
 
 #: ../../reference/configuration/records.config.en.rst:146
 msgid "The name of the Traffic Server node."
-msgstr ""
+msgstr "Traffic Server ノードの名称。"
 
 #: ../../reference/configuration/records.config.en.rst:150
 msgid "The location of the Traffic Server ``bin`` directory."
-msgstr ""
+msgstr "Traffic Server の ``bin`` ディレクトリの位置。"
 
 #: ../../reference/configuration/records.config.en.rst:154
 msgid ""
 "The name of the executable that runs the :program:`traffic_server` process."
 msgstr ""
+":program:`traffic_server` プロセスを実行する実行ファイルの名称。"
 
 #: ../../reference/configuration/records.config.en.rst:158
 msgid "The command-line options for starting Traffic Server."
-msgstr ""
+msgstr "Traffic Server をスタートする際のコマンドラインオプション。"
 
 #: ../../reference/configuration/records.config.en.rst:162
 msgid ""
 "The name of the executable that runs the :program:`traffic_manager` process."
 msgstr ""
+":program:`traffic_manager` プロセスを実行する実行ファイルの名称。"
 
 #: ../../reference/configuration/records.config.en.rst:166
 msgid ""
 "The script executed before the :program:`traffic_manager` process spawns the"
 " :program:`traffic_server` process."
 msgstr ""
+":program:`traffic_manager` プロセスが :program:`traffic_server` プロセスを"
+"立ち上げる前に実行するスクリプト。"
 
 #: ../../reference/configuration/records.config.en.rst:171
 msgid "The directory that contains Traffic Server configuration files."
-msgstr ""
+msgstr "Traffic Server の設定ファイルを含むディレクトリ。"
 
 #: ../../reference/configuration/records.config.en.rst:176
 msgid "The email address to which Traffic Server sends alarm messages."
-msgstr ""
+msgstr "Traffic Server がアラームメッセージを送信するメールアドレス。"
 
 #: ../../reference/configuration/records.config.en.rst:178
 msgid ""
@@ -249,21 +253,28 @@ msgid ""
 "address; otherwise, Traffic Server uses the Traffic Server user account name"
 " as the default value for this variable."
 msgstr ""
+"Traffic Server のカスタムインストレーションの中で指定できるメールアドレスです。"
+"指定されない場合、Traffic Server は Traffic Server の ユーザーアカウント名を"
+"この変数のデフォルト値として使用します。"
 
 #: ../../reference/configuration/records.config.en.rst:183
 msgid ""
 "The facility used to record system log files. Refer to :ref:`understanding-"
 "traffic-server-log-files`."
 msgstr ""
+"システムログファイルを記録する機能です。 "
+":ref:`understanding-traffic-server-log-files` を参照してください。"
 
 #: ../../reference/configuration/records.config.en.rst:187
 msgid ""
 "The signal sent to :program:`traffic_cop`'s managed processes to stop them."
 msgstr ""
+":program:`traffic_cop` の管理しているプロセスを停止するために送信される"
+"シグナルです。"
 
 #: ../../reference/configuration/records.config.en.rst:189
 msgid "A value of ``0`` means no signal will be sent."
-msgstr ""
+msgstr "値 ``0`` はシグナルが送信されないことを意味します。"
 
 #: ../../reference/configuration/records.config.en.rst:193
 msgid ""
@@ -272,6 +283,10 @@ msgid ""
 "prevent the system from hanging. This configuration variable applies if swap"
 " is enabled in Linux 2.2 only."
 msgstr ""
+"Traffic Server がシステムのハングを防ぐために :program:`traffic_server` と "
+":program:`traffic_manager` プロセスを停止させるまでに許されるスワップ領域の"
+"最小空き容量です。この設定変数は Linux 2.2 でスワップが有効化されている場合"
+"のみ適用されます。`"
 
 #: ../../reference/configuration/records.config.en.rst:198
 msgid ""
@@ -279,6 +294,9 @@ msgid ""
 "and error messages produced by the Traffic Server processes. If no path is "
 "specified, then Traffic Server creates the file in its logging directory."
 msgstr ""
+"Traffic Server プロセスによって生成される警告、ステータスメッセージ、"
+"エラーメッセージを含むファイルの名前と場所。パスが指定されていない場合、"
+"Traffic Server はロギングディレクトリにファイルを作成します。"
 
 #: ../../reference/configuration/records.config.en.rst:203
 msgid ""
@@ -286,12 +304,17 @@ msgid ""
 "local system. Unless you specify an absolute path, this directory is located"
 " in the Traffic Server ``config`` directory."
 msgstr ""
+"Traffic Server が設定のスナップショットを保存するローカルシステム上の"
+"ディレクトリ。絶対パスを指定しない限り、このディレクトリは Traffic Server の "
+"``config`` ディレクトリに置かれます。"
 
 #: ../../reference/configuration/records.config.en.rst:208
 msgid ""
 "When enabled (the default, ``1``), Traffic Server scales threads according "
 "to the available CPU cores. See the config option below."
 msgstr ""
+"有効化すると (デフォルトは ``1``) 、Traffic Server は CPU のコア数をもとに"
+"スレッドをスケールします。以下の設定オプションを見てください。"
 
 #: ../../reference/configuration/records.config.en.rst:212
 msgid ""
@@ -299,22 +322,28 @@ msgid ""
 "is usually the number of available CPU cores. By default this is scaling "
 "factor is ``1.5``."
 msgstr ""
+"Traffic Server がスレッド数をスケールする際の係数。乗数は通常利用可能な CPU "
+"のコア数です。デフォルトではスケーリング係数は ``1.5`` です。"
 
 #: ../../reference/configuration/records.config.en.rst:217
 msgid "*XXX* What does this do?"
-msgstr ""
+msgstr "*XXX* これ何するの? (訳注: 原文にそう書かれています。)"
 
 #: ../../reference/configuration/records.config.en.rst:221
 msgid ""
 "When enabled (``1``), runs a separate thread for accept processing. If "
 "disabled (``0``), then only 1 thread can be created."
 msgstr ""
+"有効化 (``1``) すると、accept 処理を別のスレッドで実行します。無効化 "
+"(``0``) すると、1 スレッドのみ作られます。"
 
 #: ../../reference/configuration/records.config.en.rst:225
 msgid ""
 "The new default thread stack size, for all threads. The original default is "
 "set at 1 MB."
 msgstr ""
+"全スレッドに適用される、スレッドスタックサイズの新しいデフォルト値です。元々の"
+"デフォルトは 1 MB に設定されています。"
 
 #: ../../reference/configuration/records.config.en.rst:232
 #: ../../reference/configuration/records.config.en.rst:299
@@ -323,7 +352,7 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:1383
 #: ../../reference/configuration/records.config.en.rst:1672
 msgid "Value"
-msgstr ""
+msgstr "値"
 
 #: ../../reference/configuration/records.config.en.rst:232
 #: ../../reference/configuration/records.config.en.rst:299
@@ -331,7 +360,7 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:532
 #: ../../reference/configuration/records.config.en.rst:1672
 msgid "Effect"
-msgstr ""
+msgstr "効果"
 
 #: ../../reference/configuration/records.config.en.rst:234
 #: ../../reference/configuration/records.config.en.rst:301
@@ -340,11 +369,11 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:1386
 #: ../../reference/configuration/records.config.en.rst:1675
 msgid "1"
-msgstr ""
+msgstr "1"
 
 #: ../../reference/configuration/records.config.en.rst:234
 msgid "assign threads to sockets"
-msgstr ""
+msgstr "スレッドをソケットに割り当てます"
 
 #: ../../reference/configuration/records.config.en.rst:235
 #: ../../reference/configuration/records.config.en.rst:302
@@ -353,11 +382,11 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:1387
 #: ../../reference/configuration/records.config.en.rst:1676
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../../reference/configuration/records.config.en.rst:235
 msgid "assign threads to real cores"
-msgstr ""
+msgstr "スレッドを実コアに割り当てます"
 
 #: ../../reference/configuration/records.config.en.rst:236
 #: ../../reference/configuration/records.config.en.rst:303
@@ -366,11 +395,11 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:1388
 #: ../../reference/configuration/records.config.en.rst:1677
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../../reference/configuration/records.config.en.rst:236
 msgid "assign threads to logical cores"
-msgstr ""
+msgstr "スレッドを論理コアに割り当てます"
 
 #: ../../reference/configuration/records.config.en.rst:237
 #: ../../reference/configuration/records.config.en.rst:516
@@ -378,17 +407,19 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:1385
 #: ../../reference/configuration/records.config.en.rst:1674
 msgid "0"
-msgstr ""
+msgstr "0"
 
 #: ../../reference/configuration/records.config.en.rst:237
 msgid "don't assign threads to any cores"
-msgstr ""
+msgstr "スレッドをコアに割り当てません"
 
 #: ../../reference/configuration/records.config.en.rst:242
 msgid ""
 "This option only has an affect when Traffic Server has been compiled with "
 "``--enable-hwloc``."
 msgstr ""
+"このオプションは Traffic Server が ``--enable-hwloc`` 付きでコンパイル"
+"されている場合のみ効果があります。"
 
 #: ../../reference/configuration/records.config.en.rst:245
 msgid "Network"
