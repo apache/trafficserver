@@ -53,11 +53,6 @@ int system_num_of_processors  = ink_number_of_processors();
 int system_num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int system_num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 
-char system_root_dir[PATH_NAME_MAX + 1];
-char system_runtime_dir[PATH_NAME_MAX + 1];
-char system_config_directory[PATH_NAME_MAX + 1];
-char system_log_dir[PATH_NAME_MAX + 1];
-
 //int system_remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
 //Diags *diags = NULL;
@@ -157,18 +152,12 @@ int main(int argc, char * argv[])
     _exit(0);
   }
 
-  // Get TS directories
-  ink_strlcpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
-  ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
-  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-
-  if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
-    fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
+  if (chdir(Layout::get()->prefix) < 0) {
+    fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", Layout::get()->prefix, errno, strerror(errno));
     fprintf(stderr," please set correct path in env variable TS_ROOT \n");
     _exit(1);
   } else {
-    printf("[tsapp] using root directory '%s'\n",system_root_dir);
+    printf("[tsapp] using root directory '%s'\n", Layou::get()->prefix);
   }
 
   // Diags
@@ -231,8 +220,6 @@ int main(int argc, char * argv[])
 
   // initialize logging (after event and net processor)
   //Log::init(system_remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
-
-  //plugin_init(system_config_directory); // plugin.config
 
   // Create accept continuation
   MyAccept *a = new MyAccept;

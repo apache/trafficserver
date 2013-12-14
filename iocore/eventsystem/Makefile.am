@@ -21,7 +21,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts
 
-DEFS += @IOCORE_MODULARIZED_DEFS@
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = libinkevent.a

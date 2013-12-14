@@ -29,6 +29,7 @@
 
 #include "EventNotify.h"
 #include "ink_hrtime.h"
+#include "ink_defs.h"
 
 #ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
@@ -76,7 +77,7 @@ EventNotify::signal(void)
   // to exceed the maximum, write() will fail with the errno EAGAIN,
   // which is acceptable as the receiver will be notified eventually.
   //
-  write(m_event_fd, &value, sizeof(uint64_t));
+  ATS_UNUSED_RETURN(write(m_event_fd, &value, sizeof(uint64_t)));
 #else
   ink_cond_signal(&m_cond);
 #endif

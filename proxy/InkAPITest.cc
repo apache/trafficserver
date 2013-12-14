@@ -5340,10 +5340,9 @@ REGRESSION_TEST(SDK_API_TSTextLog) (RegressionTest * test, int /* atype ATS_UNUS
 
   /* Generate a random log file name, so if we run the test several times, we won't use the
      same log file name. */
-  char *tmp = REC_ConfigReadString("proxy.config.log.logfile_dir");
+  xptr<char> tmp(RecConfigReadLogDir());
   snprintf(logname, sizeof(logname), "RegressionTestLog%d.log", (int) getpid());
-  snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", tmp, logname);
-  // ats_free(tmp);
+  snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", (const char *)tmp, logname);
 
   unlink(fullpath_logname);
   retVal = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &log);

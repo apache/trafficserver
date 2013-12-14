@@ -172,13 +172,13 @@ EventType NetAccept::getEtype()
 // This should be done for low latency, high connection rate sockets.
 //
 void
-NetAccept::init_accept_loop()
+NetAccept::init_accept_loop(const char *thr_name)
 {
   size_t stacksize;
 
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
-  eventProcessor.spawn_thread(this, "[ACCEPT]", stacksize);
+  eventProcessor.spawn_thread(this, thr_name, stacksize);
 }
 
 

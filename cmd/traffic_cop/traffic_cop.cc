@@ -61,8 +61,6 @@ static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";
 #define COP_WARNING  LOG_ERR
 #define COP_DEBUG    LOG_DEBUG
 
-Diags * g_diags; // link time dependency
-
 static const char *root_dir;
 static const char *runtime_dir;
 static const char *config_dir;
@@ -540,6 +538,20 @@ config_read_int(const char *name, int *val, bool miss_ok = false)
 ConfigIntFatalError:
   cop_log(COP_FATAL, "could not find integer variable %s in records.config\n", name);
   exit(1);
+}
+
+static const char *
+config_read_runtime_dir()
+{
+  char state_dir[PATH_NAME_MAX + 1];
+
+  state_dir[0] = '\0';
+  config_read_string("proxy.config.local_state_dir", state_dir, sizeof(state_dir), true);
+  if (strlen(state_dir) > 0) {
+    return Layout::get()->relative(state_dir);
+  } else {
+    return ats_strdup(Layout::get()->runtimedir);
+  }
 }
 
 static void
@@ -1700,7 +1712,7 @@ init_config_dir()
   cop_log_trace("Entering init_config_dir()\n");
 
   root_dir = Layout::get()->prefix;
-  runtime_dir = Layout::get()->runtimedir;
+  runtime_dir = config_read_runtime_dir();
   config_dir = Layout::get()->sysconfdir;
 
   if (chdir(root_dir) < 0) {

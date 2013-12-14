@@ -34,6 +34,10 @@ API Reference
   TSRemap.en
   TSTrafficServerVersionGet.en
   TSUrlCreate.en
+  TSUrlHostGet.en
+  TSUrlHostSet.en
+  TSUrlPercentEncode.en
+  TSUrlStringGet.en
   TSLifecycleHookAdd.en
   TSHttpOverridableConfig.en
   TSmalloc.en

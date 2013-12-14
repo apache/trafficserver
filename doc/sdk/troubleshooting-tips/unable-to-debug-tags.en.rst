@@ -43,8 +43,8 @@ Set the following variables in :file:`records.config` (in the Traffic Server
 ::
 
        :::text
-       proxy.config.diags.debug.enabled INT 1
-       proxy.config.diags.debug.tags STRING debug-tag-name
+       CONFIG proxy.config.diags.debug.enabled INT 1
+       CONFIG proxy.config.diags.debug.tags STRING debug-tag-name
 
 In this case, debug output goes to ``traffic.out``.
 

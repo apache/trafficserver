@@ -22,9 +22,6 @@ TS because there are a lot of stuff required for clustering in proxy/http.
 
 
 cache ifdefs
-FIXME_NONMODULAR -> this flaf needs to be turned on when compiling along 
-with the entire TS. Turning this flag on should automatically turn the 
-HTTP cache flag on.
 FIXME_HOSTDB -> Store ifdef to be turned off when HostDB stops using Store
 FIXME_MGMT   -> Interface for warnings on the manager
 FIXME_CLUSTER_ARGUMENTS -> runtime arguments for clustering etc. Needs

@@ -24,18 +24,16 @@ Balancer Plugin
 This is a plugin for Traffic Server, that allows you to configure
 mapping rules.
 
-To use this plugin, configure a remap.config rule like
+To use this plugin, configure a remap.config rule like this::
 
-::
    map http://foo.com http://bar.com @plugin=balancer.so @pparam=rotation:news
 
 The "To-Url" in the remap.config rule is generally not used, unless the
 lookup completely fails (i.e. this is a backup URL for extreme error
 cases).
 
-This is a list of all available options (set via @pparam):
+This is a list of all available options (set via @pparam)::
 
-::
     rotation      The name of the rotation (e.g. news) [to-host in remap]
     hash      What to hash on, url, path, cookie, ip, header (primary)
     hash2     Optional, secondary hash, to hash within a multi-host bucket
@@ -46,28 +44,24 @@ not specified, we will default to the same name as used in the To URL in
 the remap rule.
 
 The bucket width specifies how many hosts a particular hash bucket
-should contain, for example:
+should contain, for example::
 
-::
     @pparam=bucketw:2
 
 The hash parameter can be used zero or more times, without it, no
 hashing is done at all. If you have more than one hash keys, they are
-concatenated in the order specified. For example:
+concatenated in the order specified. For example::
 
-::
     @pparam=hash:ip @pparam=hash:cookie/B
 
-The "header" hash key takes a required extra value, for example:
+The "header" hash key takes a required extra value, for example::
 
-::
     @pparam=hash:header/Host
 
 For "cookie" hash keys, you can optionally specify an identifier for
 which cookie to use (without it, the entire cookie header is used). For
-example:
+example::
 
-::
     @pparam=hash:cookie/B
 
 The secondary hash ("hash2") is used to provide "stickiness" within a

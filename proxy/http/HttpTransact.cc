@@ -2545,7 +2545,7 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
       // we haven't done the ICP lookup yet. The following is to
       // fake an icp_info to cater for build_request's needs
       s->icp_info.http_version.set(1, 0);
-      if (!s->txn_conf->keep_alive_enabled_out || s->http_config_param->origin_server_pipeline == 0) {
+      if (!s->txn_conf->keep_alive_enabled_out) {
         s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
       } else {
         s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -3025,7 +3025,7 @@ HttpTransact::HandleICPLookup(State* s)
     //   values are not initialized.
     // Force them to be initialized
     s->icp_info.http_version.set(1, 0);
-    if (!s->txn_conf->keep_alive_enabled_out || s->http_config_param->origin_server_pipeline == 0) {
+    if (!s->txn_conf->keep_alive_enabled_out) {
       s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
     } else {
       s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -4063,26 +4063,26 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
     break;
 
   case HTTP_STATUS_HTTPVER_NOT_SUPPORTED:      // 505
+    {
+      bool keep_alive = (s->current.server->keep_alive == HTTP_KEEPALIVE);
 
-    bool keep_alive;
-    keep_alive = ((s->current.server->keep_alive == HTTP_KEEPALIVE) ||
-                  (s->current.server->keep_alive == HTTP_PIPELINE));
-
-    s->next_action = how_to_open_connection(s);
-
-    /* Downgrade the request level and retry */
-    if (!HttpTransactHeaders::downgrade_request(&keep_alive, &s->hdr_info.server_request)) {
-      build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported", "response#bad_version", "");
-      s->next_action = PROXY_SEND_ERROR_CACHE_NOOP;
-      s->already_downgraded = true;
-    } else {
-      if (!keep_alive) {
-        /* START Hack */
-        (s->hdr_info.server_request).field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-        /* END   Hack */
-      }
-      s->already_downgraded = true;
       s->next_action = how_to_open_connection(s);
+
+      /* Downgrade the request level and retry */
+      if (!HttpTransactHeaders::downgrade_request(&keep_alive, &s->hdr_info.server_request)) {
+        build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported",
+                             "response#bad_version", "");
+        s->next_action = PROXY_SEND_ERROR_CACHE_NOOP;
+        s->already_downgraded = true;
+      } else {
+        if (!keep_alive) {
+          /* START Hack */
+          (s->hdr_info.server_request).field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+          /* END   Hack */
+        }
+        s->already_downgraded = true;
+        s->next_action = how_to_open_connection(s);
+      }
     }
     return;
 
@@ -4391,8 +4391,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State* s)
   DebugTxn("http_trans", "[handle_no_cache_operation_on_forward_server_response] (hncoofsr)");
   DebugTxn("http_seq", "[handle_no_cache_operation_on_forward_server_response]");
 
-  bool keep_alive = true;
-  keep_alive = ((s->current.server->keep_alive == HTTP_KEEPALIVE) || (s->current.server->keep_alive == HTTP_PIPELINE));
+  bool keep_alive = s->current.server->keep_alive == HTTP_KEEPALIVE;
   const char *warn_text = NULL;
 
   switch (s->hdr_info.server_response.status_get()) {
@@ -4902,7 +4901,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
       (http11_if_hostdb == true &&
        host_db_info->app.http_data.http_version == HostDBApplicationInfo::HTTP_VERSION_11)) {
     server_info->http_version.set(1, 1);
-    server_info->keep_alive = HTTP_PIPELINE;
+    server_info->keep_alive = HTTP_KEEPALIVE;
   } else if (host_db_info->app.http_data.http_version == HostDBApplicationInfo::HTTP_VERSION_10) {
     server_info->http_version.set(1, 0);
     server_info->keep_alive = HTTP_KEEPALIVE;
@@ -4921,14 +4920,8 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   /////////////////////////////
   // origin server keep_alive //
   /////////////////////////////
-  if ((!s->txn_conf->keep_alive_enabled_out) || (s->http_config_param->origin_server_pipeline == 0)) {
+  if (!s->txn_conf->keep_alive_enabled_out) {
     server_info->keep_alive = HTTP_NO_KEEPALIVE;
-  }
-  ///////////////////////////////
-  // keep_alive w/o pipelining  //
-  ///////////////////////////////
-  if ((server_info->keep_alive == HTTP_PIPELINE) && (s->http_config_param->origin_server_pipeline <= 1)) {
-    server_info->keep_alive = HTTP_KEEPALIVE;
   }
 
   return;
@@ -6634,12 +6627,15 @@ void
 HttpTransact::handle_request_keep_alive_headers(State* s, HTTPVersion ver, HTTPHdr* heads)
 {
   enum KA_Action_t
-  { KA_UNKNOWN, KA_DISABLED, KA_CLOSE, KA_CONNECTION };
+  {
+    KA_UNKNOWN,
+    KA_DISABLED,
+    KA_CLOSE,
+    KA_CONNECTION
+  };
 
   KA_Action_t ka_action = KA_UNKNOWN;
-
-  bool upstream_ka = ((s->current.server->keep_alive == HTTP_KEEPALIVE) ||
-                      (s->current.server->keep_alive == HTTP_PIPELINE));
+  bool upstream_ka = (s->current.server->keep_alive == HTTP_KEEPALIVE);
 
   ink_assert(heads->type_get() == HTTP_TYPE_REQUEST);
 
@@ -6751,14 +6747,15 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
   }
 
   // Check pre-conditions for keep-alive
-  if (s->client_info.keep_alive != HTTP_KEEPALIVE && s->client_info.keep_alive != HTTP_PIPELINE) {
+  if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
     ka_action = KA_DISABLED;
   } else if (HTTP_MAJOR(ver.m_version) == 0) {  /* No K-A for 0.9 apps */
     ka_action = KA_DISABLED;
   }
-  // some systems hang until the connection closes when receiving a 204
-  //   regardless of the K-A headers
-  else if (heads->status_get() == HTTP_STATUS_NO_CONTENT) {
+  else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
+      (s->current.server->transfer_encoding != NO_TRANSFER_ENCODING || s->hdr_info.request_content_length != 0)) {
+    // some systems hang until the connection closes when receiving a 204 regardless of the K-A headers
+    // close if there is any body response from the origin
     ka_action = KA_CLOSE;
   } else {
     // Determine if we are going to send either a server-generated or
@@ -8684,14 +8681,24 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
     field->value_append(header->m_heap, header->m_mime, range_type, sizeof(range_type) - 1);
 
     header->field_attach(field);
+    // TODO: There's a known bug here where the Content-Length is not correct for multi-part
+    // Range: requests.
     header->set_content_length(s->range_output_cl);
   } else {
-    char numbers[RANGE_NUMBERS_LENGTH];
-    header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    snprintf(numbers, sizeof(numbers), "bytes %" PRId64"-%" PRId64"/%" PRId64, s->ranges[0]._start, s->ranges[0]._end, s->cache_info.object_read->object_size_get());
-    field->value_set(header->m_heap, header->m_mime, numbers, strlen(numbers));
-    header->field_attach(field);
+    if (s->cache_info.object_read && s->cache_info.object_read->valid()) {
+      // TODO: It's unclear under which conditions we need to update the Content-Range: header,
+      // many times it's already set correctly before calling this. For now, always try do it
+      // when we have the information for it available.
+      // TODO: Also, it's unclear as to why object_read->valid() is not always true here.
+      char numbers[RANGE_NUMBERS_LENGTH];
+      header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+      field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+      snprintf(numbers, sizeof(numbers), "bytes %" PRId64"-%" PRId64"/%" PRId64, s->ranges[0]._start, s->ranges[0]._end,
+               s->cache_info.object_read->object_size_get());
+      field->value_set(header->m_heap, header->m_mime, numbers, strlen(numbers));
+      header->field_attach(field);
+    }
+    // Always update the Content-Length: header.
     header->set_content_length(s->range_output_cl);
   }
 }

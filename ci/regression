@@ -87,6 +87,7 @@ configure() {
     $SRCROOT/configure \
       --prefix=$DSTROOT \
       --enable-debug \
+      --enable-werror \
       --enable-experimental-plugins \
       $(extras) \
       CC="$CC" \

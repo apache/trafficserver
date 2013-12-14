@@ -42,6 +42,8 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
+#define LOG_FILENAME_SIZE 255
+
 class HttpBodyFactory;
 
 // globals the rest of the system depends on
@@ -55,12 +57,6 @@ int http_accept_file_descriptor = 0;
 int remote_management_flag = 0;
 int auto_clear_hostdb_flag = 0;
 char proxy_name[MAXDNAME + 1] = "unknown";
-
-char system_root_dir[PATH_NAME_MAX + 1] = "";
-char system_config_directory[PATH_NAME_MAX + 1] = "";
-char system_runtime_dir[PATH_NAME_MAX + 1] = "";
-char system_log_dir[PATH_NAME_MAX + 1] = "";
-char management_directory[PATH_NAME_MAX + 1] = "";
 
 char error_tags[1024] = "";
 char action_tags[1024] = "";
@@ -100,16 +96,6 @@ initialize_process_manager()
     remote_management_flag = true;
   }
 
-  if (management_directory[0] == '\0') {
-    ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
-    if (access(management_directory, R_OK) == -1) {
-      fprintf(stderr,"unable to access() management path '%s': %d, %s\n",
-              management_directory, errno, strerror(errno));
-      fprintf(stderr,"please set management path via command line '-d <management directory>'\n");
-      _exit(1);
-    }
-  }
-
   // diags should have been initialized by caller, e.g.: sac.cc
   ink_assert(diags);
 
@@ -122,15 +108,13 @@ initialize_process_manager()
 
   //
   // Start up manager
-  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory));
+  pmgmt = NEW(new ProcessManager(remote_management_flag));
 
   pmgmt->start();
 
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
 
   pmgmt->reconfigure();
-
-  REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
 
   //
   // Define version info records
@@ -214,11 +198,16 @@ check_lockfile()
 void
 init_log_standalone(const char *pgm_name, bool one_copy)
 {
+  char logfile[LOG_FILENAME_SIZE];
+
   // ensure that only one copy of the sac is running
   //
   if (one_copy) {
     check_lockfile();
   }
+
+  snprintf(logfile, sizeof(logfile), "%s.log", pgm_name);
+
   // set stdin/stdout to be unbuffered
   //
   setbuf(stdin, NULL);
@@ -228,7 +217,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   init_system();
   initialize_process_manager();
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags));
+  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags));
   diags = diagsConfig->diags;
   diags_init = 1;
 }
@@ -250,11 +239,14 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 void
 init_log_standalone_basic(const char *pgm_name)
 {
+  char logfile[LOG_FILENAME_SIZE];
+
+  snprintf(logfile, sizeof(logfile), "%s.log", pgm_name);
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
   init_system();
   const bool use_records = false;
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, use_records));
+  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags, use_records));
   diags = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //

@@ -494,7 +494,7 @@ OperatorCounter::initialize(Parser& p) {
 }
 
 void
-OperatorCounter::exec(const Resources& res) const
+OperatorCounter::exec(const Resources& /* ATS_UNUSED res */) const
 {
   // Sanity
   if (_counter == TS_ERROR)

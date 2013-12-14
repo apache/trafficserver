@@ -483,7 +483,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.number_of_redirections
  proxy.config.http.origin_max_connections
  proxy.config.http.origin_min_keep_alive_connections
- proxy.config.http.origin_server_pipeline
  proxy.config.http.parent_proxies
  proxy.config.http.parent_proxy.connect_attempts_timeout
  proxy.config.http.parent_proxy.fail_threshold
@@ -521,7 +520,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.transaction_no_activity_timeout_out
  proxy.config.http_ui_enabled
  proxy.config.http.uncacheable_requests_bypass_parent
- proxy.config.http.user_agent_pipeline
  proxy.config.icp.default_reply_port
  proxy.config.icp.enabled
  proxy.config.icp.icp_configuration

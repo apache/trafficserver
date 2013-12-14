@@ -80,6 +80,15 @@ values for ``TSHttpHookID`` are:
     performing both authentication and blacklisting. Corresponds to the
     event ``TS_EVENT_HTTP_OS_DNS``.
 
+``TS_HTTP_POST_REMAP_HOOK``
+    Called immediately after remapping occurs, before cache lookup.
+    Corresponds to the event ``TS_EVENT_HTTP_POST_REMAP``.
+
+``TS_HTTP_PRE_REMAP_HOOK``
+    Called after the request header is read from the client, before any
+    remapping of the headers occurs. Corresponds to the event
+    ``TS_EVENT_HTTP_PRE_REMAP``.
+
 ``TS_HTTP_READ_CACHE_HDR_HOOK``
     Called immediately after the request and response header of a
     previously-cached object is read from cache. This hook is only
@@ -99,11 +108,6 @@ values for ``TSHttpHookID`` are:
 ``TS_HTTP_READ_REQUEST_HDR_HOOK``
     Called immediately after the request header is read from the client.
     Corresponds to the event ``TS_EVENT_HTTP_READ_REQUEST_HDR``.
-
-``TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK``
-    Called after the request header is read from the client, before any
-    remapping of the headers occurs. Corresponds to the event
-    ``TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP``.
 
 ``TS_HTTP_REQUEST_TRANSFORM_HOOK``
     See

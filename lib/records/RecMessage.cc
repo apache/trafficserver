@@ -39,6 +39,8 @@ static void *g_recv_cookie = NULL;
 //-------------------------------------------------------------------------
 #if defined (REC_BUILD_STAND_ALONE)
 
+extern RecModeT g_mode_type;
+
 static LLQ *g_send_llq = NULL;
 static LLQ *g_recv_llq = NULL;
 
@@ -71,7 +73,7 @@ send_thr(void *data)
 static void *
 recv_thr(void *data)
 {
-  int msg_size;
+  int msg_size = 0;
   RecMessageHdr msg_hdr;
   RecMessage *msg;
   RecHandle h_pipe = (RecHandle)(intptr_t)data;
@@ -145,7 +147,7 @@ RecMessageInit()
   g_send_llq = create_queue();
   g_recv_llq = create_queue();
 
-  switch (mode_type) {
+  switch (g_mode_type) {
   case RECM_CLIENT:
     h_pipe = RecPipeConnect(Layout::get()->runtimedir, REC_PIPE_NAME);
     if (h_pipe == REC_HANDLE_INVALID) {

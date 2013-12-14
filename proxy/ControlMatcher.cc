@@ -694,8 +694,6 @@ template<class Data, class Result>
 ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *name, const matcher_tags * tags,
                                              int flags_in)
 {
-  char *config_file = NULL;
-
   flags = flags_in;
   ink_assert(flags & (ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE));
 
@@ -703,16 +701,14 @@ ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *n
   ink_assert(config_tags != NULL);
 
   matcher_name = name;
-  config_file_var = ats_strdup(file_var);
   config_file_path[0] = '\0';
 
-  REC_ReadConfigStringAlloc(config_file, config_file_var);
-
   if (!(flags & DONT_BUILD_TABLE)) {
-    ink_release_assert(config_file != NULL);
-    ink_filepath_make(config_file_path, sizeof(config_file_path), system_config_directory, config_file);
+    xptr<char> config_path(RecConfigReadConfigPath(file_var));
+
+    ink_release_assert(config_path);
+    ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
   }
-  ats_free(config_file);
 
   reMatch = NULL;
   urlMatch = NULL;
@@ -729,7 +725,6 @@ ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *n
 
 template<class Data, class Result> ControlMatcher<Data, Result>::~ControlMatcher()
 {
-  ats_free(config_file_var);
 
   delete reMatch;
   delete urlMatch;

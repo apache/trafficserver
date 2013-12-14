@@ -166,9 +166,13 @@ System Variables
    The script executed before the :program:`traffic_manager` process spawns
    the :program:`traffic_server` process.
 
-.. ts:cv:: CONFIG proxy.config.config_dir STRING config
+.. ts:cv:: CONFIG proxy.config.config_dir STRING etc/trafficserver
 
    The directory that contains Traffic Server configuration files.
+   This is a read-only configuration option that contains the
+   ``SYSCONFDIR`` value specified at build time relative to the
+   installation prefic. THe ``$TS_ROOT`` environment variable can
+   be used alter the installation prefix at run time.
 
 .. ts:cv:: CONFIG proxy.config.alarm_email STRING
    :reloadable:
@@ -200,8 +204,10 @@ A value of ``0`` means no signal will be sent.
 
 .. ts:cv:: CONFIG proxy.config.snapshot_dir STRING snapshots
 
-   The directory in which Traffic Server stores configuration snapshots on the local system. Unless you specify an absolute path, this
-   directory is located in the Traffic Server ``config`` directory.
+   The directory in which Traffic Server stores configuration
+   snapshots on the local system. Unless you specify an absolute
+   path, this directory is located in the Traffic Server ``SYSCONFDIR``
+   directory.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig INT 1
 
@@ -224,7 +230,7 @@ A value of ``0`` means no signal will be sent.
 
    The new default thread stack size, for all threads. The original default is set at 1 MB.
 
-.. ts:cv: CONFIG proxy.config.exec_thread.affinity INT 0
+.. ts:cv:: CONFIG proxy.config.exec_thread.affinity INT 0
 
    Bind threads to specific CPUs or CPU cores.
 
@@ -521,7 +527,7 @@ Value Effect
 
 .. note::
 
-   The ``Via`` header string interpretation can be `decoded here. </tools/via>`_
+   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 0
    :reloadable:
@@ -539,7 +545,7 @@ Value Effect
 
 .. note::
 
-   The ``Via`` header string interpretation can be `decoded here. </tools/via>`_
+   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:
@@ -930,7 +936,7 @@ Proxy User Variables
 .. ts:cv:: CONFIG proxy.config.http.anonymize_other_header_list STRING NULL
    :reloadable:
 
-   The headers Traffic Server should remove from outgoing requests.
+   Comma separated list of headers Traffic Server should remove from outgoing requests.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 0
    :reloadable:
@@ -1281,11 +1287,10 @@ all the different user-agent versions of documents it encounters.
 Customizable User Response Pages
 ================================
 
-.. ts:cv:: CONFIG proxy.config.body_factory.enable_customizations INT 0
-   Specifies whether customizable response pages are enabled or
-   disabled and which response pages are used:
+.. ts:cv:: CONFIG proxy.config.body_factory.enable_customizations INT 1
+   Specifies whether customizable response pages are language specific
+   or not:
 
-   -  ``0`` = disable customizable user response pages
    -  ``1`` = enable customizable user response pages in the default directory only
    -  ``2`` = enable language-targeted user response pages
 
@@ -1294,9 +1299,11 @@ Customizable User Response Pages
    Enables (``1``) or disables (``0``) logging for customizable response pages. When enabled, Traffic Server records a message in
    the error log each time a customized response page is used or modified.
 
-.. ts:cv:: CONFIG proxy.config.body_factory.template_sets_dir STRING config/body_factory
+.. ts:cv:: CONFIG proxy.config.body_factory.template_sets_dir STRING etc/trafficserver/body_factory
 
-   The customizable response page default directory.
+   The customizable response page default directory. If this is a
+   relative path, Traffic Server resolves it relative to the
+   ``PREFIX`` directory.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 
@@ -1518,7 +1525,7 @@ Logging Configuration
 
    The maximum amount of time before data in the buffer is flushed to disk.
 
-.. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 2000
+.. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 2500
    :metric: megabytes
    :reloadable:
 
@@ -1557,10 +1564,12 @@ Logging Configuration
 
    The hostname of the machine running Traffic Server.
 
-.. ts:cv:: CONFIG proxy.config.log.logfile_dir STRING install_dir\ ``/logs``
+.. ts:cv:: CONFIG proxy.config.log.logfile_dir STRING var/log/trafficserver
    :reloadable:
 
-   The full path to the logging directory. This can be an absolute path or a path relative to the directory in which Traffic Server is installed.
+   The path to the logging directory. This can be an absolute path
+   or a path relative to the ``PREFIX`` directory in which Traffic
+   Server is installed.
 
    .. note:: The directory you specify must already exist.
 
@@ -1787,14 +1796,20 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 Diagnostic Logging Configuration
 ================================
 
-.. ts:cv:: CONFIG proxy.config.diags.output.status STRING
+.. ts:cv:: CONFIG proxy.config.diags.output.diag STRING E
+.. ts:cv:: CONFIG proxy.config.diags.output.debug STRING E
+.. ts:cv:: CONFIG proxy.config.diags.output.status STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.note STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.warning STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.error STRING SL
+.. ts:cv:: CONFIG proxy.config.diags.output.fatal STRING SL
+.. ts:cv:: CONFIG proxy.config.diags.output.alert STRING L
+.. ts:cv:: CONFIG proxy.config.diags.output.emergency STRING SL
 
-.. ts:cv:: CONFIG proxy.config.diags.output.warning STRING
-
-.. ts:cv:: CONFIG proxy.config.diags.output.emergency STRING
-
-   control where Traffic Server should log diagnostic output. Messages at diagnostic level can be directed to any combination of diagnostic
-   destinations. Valid diagnostic message destinations are:::
+   The diagnosic output configuration variables control where Traffic
+   Server should log diagnostic output. Messages at each diagnostic level
+   can be directed to any combination of diagnostic destinations.
+   Valid diagnostic message destinations are:
 
    * 'O' = Log to standard output
    * 'E' = Log to standard error
@@ -1803,9 +1818,36 @@ Diagnostic Logging Configuration
 
 .. topic:: Example
 
-   To log debug diagnostics to both syslog and diags.log:::
+   To log debug diagnostics to both syslog and `diags.log`::
 
-        proxy.config.diags.output.debug STRING SL
+        CONFIG proxy.config.diags.output.debug STRING SL
+
+.. ts:cv:: CONFIG proxy.config.diags.show_location INT 0
+
+   Annotates diagnostic messages with the source code location.
+
+.. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
+
+   Enables logging for diagnostic messages whose log level is `diag` or `debug`.
+
+.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING NULL
+
+   Each Traffic Server `diag` and `debug` level message is annotated
+   with a subsytem tag. This configuration contains a regular
+   expression that filters the messages based on the tag. Some
+   commonly used debug tags are::
+
+============  =====================================================
+Tag           Subsytem usage
+============  =====================================================
+ssl           TLS termination and certificate processing
+dns           DNS query resolution
+http_hdrs     Logs the headers for HTTP requests and responses
+============  =====================================================
+
+  Traffic Server plugins will typically log debug messages using
+  the :func:`TSDebug` API, passing the plugin name as the debug
+  tag.
 
 Reverse Proxy
 =============
@@ -1949,6 +1991,20 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.auth.enabled INT 0
 
    TBD
+
+.. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
+
+  This configuration specifies the maximum number of bytes to write
+  into a SSL record when replying over a SSL session. In some
+  circumstances this setting can improve response latency by reducing
+  buffering at the SSL layer. The default of ``0`` means to always
+  write all available data into a single SSL record.
+
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
+
+  This configuration specifies the lifetime of SSL session cache
+  entries in seconds. If it is ``0``, then the SSL library will use
+  a default value, typically 300 seconds.
 
 Client-Related Configuration
 ----------------------------

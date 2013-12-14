@@ -25,10 +25,8 @@
 #include "P_Cache.h"
 
 // Cache Inspector and State Pages
-#ifdef NON_MODULAR
 #include "P_CacheTest.h"
 #include "StatPages.h"
-#endif
 
 #include "I_Layout.h"
 
@@ -77,7 +75,6 @@ int cache_config_agg_write_backlog = AGG_SIZE * 2;
 int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
 int cache_config_read_while_writer = 0;
-char cache_system_config_directory[PATH_NAME_MAX + 1];
 int cache_config_mutex_retry_delay = 2;
 #ifdef HTTP_CACHE
 static int enable_cache_empty_http_doc = 0;
@@ -123,20 +120,6 @@ CacheKey zero_key(0, 0);
 #if TS_USE_INTERIM_CACHE == 1
 ClassAllocator<MigrateToInterimCache> migrateToInterimCacheAllocator("migrateToInterimCache");
 #endif
-void verify_cache_api() {
-  ink_assert((int)TS_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
-  ink_assert((int)TS_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
-  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE == (int)CACHE_EVENT_OPEN_WRITE);
-  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE_FAILED == (int)CACHE_EVENT_OPEN_WRITE_FAILED);
-  ink_assert((int)TS_EVENT_CACHE_REMOVE == (int)CACHE_EVENT_REMOVE);
-  ink_assert((int)TS_EVENT_CACHE_REMOVE_FAILED == (int)CACHE_EVENT_REMOVE_FAILED);
-  ink_assert((int)TS_EVENT_CACHE_SCAN == (int)CACHE_EVENT_SCAN);
-  ink_assert((int)TS_EVENT_CACHE_SCAN_FAILED == (int)CACHE_EVENT_SCAN_FAILED);
-  ink_assert((int)TS_EVENT_CACHE_SCAN_OBJECT == (int)CACHE_EVENT_SCAN_OBJECT);
-  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
-  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
-  ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
-}
 
 struct VolInitInfo
 {
@@ -309,12 +292,14 @@ CacheVC::CacheVC():alternate_index(CACHE_ALT_INDEX_DEFAULT)
   //coverity[uninit_member]
 }
 
+#ifdef HTTP_CACHE
 HTTPInfo::FragOffset*
 CacheVC::get_frag_table()
 {
   ink_assert(alternate.valid());
   return alternate.valid() ? alternate.get_frag_table() : 0;
 }
+#endif
 
 VIO *
 CacheVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *abuf)
@@ -593,9 +578,19 @@ static const int DEFAULT_CACHE_OPTIONS = (O_RDWR | _O_ATTRIB_OVERLAPPED);
 int
 CacheProcessor::start_internal(int flags)
 {
-#ifdef NON_MODULAR
-  verify_cache_api();
-#endif
+
+  ink_assert((int)TS_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE == (int)CACHE_EVENT_OPEN_WRITE);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE_FAILED == (int)CACHE_EVENT_OPEN_WRITE_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_REMOVE == (int)CACHE_EVENT_REMOVE);
+  ink_assert((int)TS_EVENT_CACHE_REMOVE_FAILED == (int)CACHE_EVENT_REMOVE_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN == (int)CACHE_EVENT_SCAN);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_FAILED == (int)CACHE_EVENT_SCAN_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OBJECT == (int)CACHE_EVENT_SCAN_OBJECT);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
 
 #if AIO_MODE == AIO_MODE_NATIVE
   int etype = ET_NET;
@@ -2220,12 +2215,10 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
 
 int
 Cache::open_done() {
-#ifdef NON_MODULAR
   Action *register_ShowCache(Continuation * c, HTTPHdr * h);
   Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
-#endif
   if (total_good_nvol == 0) {
     ready = CACHE_INIT_FAILED;
     cacheProcessor.cacheInitialized();
@@ -2647,7 +2640,6 @@ Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostn
     return ACTION_RESULT_DONE;
 }
 
-#ifdef NON_MODULAR
 Action *
 Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
 {
@@ -2658,7 +2650,6 @@ Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
   const char *hostname = url->host_get(&len);
   return lookup(cont, &md5, type, (char *) hostname, len);
 }
-#endif
 
 int
 CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
@@ -3359,26 +3350,6 @@ ink_cache_init(ModuleVersion v)
   REC_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
   Debug("cache_init", "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
 
-  // This is just here to make sure IOCORE "standalone" works, it's usually configured in RecordsConfig.cc
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", TS_BUILD_SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
-  REC_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
-  if (cache_system_config_directory[0] != '/') {
-    // Not an absolute path so use system one
-    Layout::get()->relative(cache_system_config_directory, sizeof(cache_system_config_directory), cache_system_config_directory);
-  }
-  Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
-  if (access(cache_system_config_directory, R_OK) == -1) {
-    ink_strlcpy(cache_system_config_directory, Layout::get()->sysconfdir,
-                sizeof(cache_system_config_directory));
-    Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
-    if (access(cache_system_config_directory, R_OK) == -1) {
-      fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
-              cache_system_config_directory, errno, strerror(errno));
-      fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
-      _exit(1);
-    }
-  }
-
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
@@ -3424,16 +3395,10 @@ ink_cache_init(ModuleVersion v)
     printf("%s  failed\n", err);
     exit(1);
   }
-  // XXX: The read for proxy.config.cache.storage_filename is unused!
-  //
+
   if (theCacheStore.n_disks == 0) {
-    char p[PATH_NAME_MAX + 1];
-    snprintf(p, sizeof(p), "%s/", cache_system_config_directory);
-    REC_ReadConfigString(p + strlen(p), "proxy.config.cache.storage_filename", PATH_NAME_MAX - strlen(p) - 1);
-    if (p[strlen(p) - 1] == '/' || p[strlen(p) - 1] == '\\') {
-      ink_strlcat(p, "storage.config", sizeof(p));
-    }
-    Warning("no cache disks specified in %s: cache disabled\n", p);
+    xptr<char> path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
+    Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
     //exit(1);
   }
 #if TS_USE_INTERIM_CACHE == 1
@@ -3445,7 +3410,6 @@ ink_cache_init(ModuleVersion v)
 #endif
 }
 
-#ifdef NON_MODULAR
 //----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
@@ -3511,4 +3475,3 @@ CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, C
   return caches[frag_type]->remove(cont, &md5, frag_type, true, false, const_cast<char*>(hostname), len);
 }
 
-#endif

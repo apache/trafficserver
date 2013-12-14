@@ -25,12 +25,7 @@
 
 #include "P_HostDB.h"
 #include "I_Layout.h"
-
-#ifndef NON_MODULAR
-//char system_config_directory[512] = "etc/trafficserver";
-#else
 #include "Show.h"
-#endif
 
 // dxu: turn off all Diags.h 's function.
 //#define Debug
@@ -69,9 +64,7 @@ ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
 HostDBCache hostDB;
 
-#ifdef NON_MODULAR
 static  Queue <HostDBContinuation > remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
-#endif
 
 char *
 HostDBInfo::srvname(HostDBRoundRobin *rr)
@@ -165,10 +158,8 @@ string_for(HostDBMark mark) {
 //
 // Function Prototypes
 //
-#ifdef NON_MODULAR
 static Action *
 register_ShowHostDB(Continuation * c, HTTPHdr * h);
-#endif
 
 void
 HostDBMD5::refresh() {
@@ -380,6 +371,8 @@ HostDBCache::start(int flags)
   bool reconfigure = ((flags & PROCESSOR_RECONFIGURE) ? true : false);
   bool fix = ((flags & PROCESSOR_FIX) ? true : false);
 
+  storage_path[0] = '\0';
+
   // Read configuration
   // Command line overrides manager configuration.
   //
@@ -390,20 +383,22 @@ HostDBCache::start(int flags)
   REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
   REC_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
-  if (storage_path[0] != '/') {
-    Layout::relative_to(storage_path, PATH_NAME_MAX, system_root_dir, storage_path);
+  // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
+  // a relative path, make it relative to the prefix.
+  if (storage_path[0] == '\0') {
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    ink_strlcpy(storage_path, rundir, sizeof(storage_path));
+  } else if (storage_path[0] != '/') {
+    Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
   }
 
   Debug("hostdb", "Storage path is %s", storage_path);
 
-  // XXX: Should this be W_OK?
-  if (access(storage_path, R_OK) == -1) {
-    ink_strlcpy(storage_path, system_runtime_dir, sizeof(storage_path));
-    if (access(storage_path, R_OK) == -1) {
-      Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
-      Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");
-    }
+  if (access(storage_path, W_OK | R_OK) == -1) {
+    Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
+    Warning("Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir'");
   }
+
   hostDBStore = NEW(new Store);
   hostDBSpan = NEW(new Span);
   hostDBSpan->init(storage_path, storage_size);
@@ -411,12 +406,13 @@ HostDBCache::start(int flags)
 
   Debug("hostdb", "Opening %s, size=%d", hostdb_filename, hostdb_size);
   if (open(hostDBStore, "hostdb.config", hostdb_filename, hostdb_size, reconfigure, fix, false /* slient */ ) < 0) {
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    xptr<char> config(Layout::relative_to(rundir, "hostdb.config"));
+
     Note("reconfiguring host database");
 
-    char p[PATH_NAME_MAX + 1];
-    Layout::relative_to(p, PATH_NAME_MAX, system_runtime_dir, "hostdb.config");
-    if (unlink(p) < 0)
-      Debug("hostdb", "unable to unlink %s", p);
+    if (unlink(config) < 0)
+      Debug("hostdb", "unable to unlink %s", (const char *)config);
 
     delete hostDBStore;
     hostDBStore = NEW(new Store);
@@ -451,16 +447,12 @@ HostDBProcessor::start(int, size_t)
   if (hostDB.start(0) < 0)
     return -1;
 
-#ifdef NON_MODULAR
   if (auto_clear_hostdb_flag)
     hostDB.clear();
-#endif
 
   HOSTDB_SET_DYN_COUNT(hostdb_total_entries_stat, hostDB.totalelements);
 
-#ifdef NON_MODULAR
   statPagesManager.register_http("hostdb", register_ShowHostDB);
-#endif
 
   //
   // Register configuration callback, and establish configuation links
@@ -668,9 +660,7 @@ probe(ProxyMutex *mutex, HostDBMD5 const& md5, bool ignore_timeout)
       // -or-
       // we are beyond our TTL but we choose to serve for another N seconds [hostdb_serve_stale_but_revalidate seconds]
       if ((!ignore_timeout && r->is_ip_stale()
-#ifdef NON_MODULAR
            && !cluster_machine_at_depth(master_hash(md5.hash))
-#endif
            && !r->reverse_dns) || (r->is_ip_timeout() && r->serve_stale_but_revalidate())) {
         Debug("hostdb", "stale %u %u %u, using it and refreshing it", r->ip_interval(),
               r->ip_timestamp, r->ip_timeout_interval);
@@ -1327,10 +1317,8 @@ HostDBContinuation::lookup_done(IpAddr const& ip, char const* aname, bool around
       }
     }
   }
-#ifdef NON_MODULAR
   if (from_cont)
     do_put_response(from, i, from_cont);
-#endif
   ink_assert(!i->round_robin || !i->reverse_dns);
   return i;
 }
@@ -1605,13 +1593,11 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     ink_assert(!r || !r->round_robin || !r->reverse_dns);
     ink_assert(failed || !r->round_robin || r->app.rr.offset);
 
-#ifdef NON_MODULAR
     // if we are not the owner, put on the owner
     //
     ClusterMachine *m = cluster_machine_at_depth(master_hash(md5.hash));
     if (m)
       do_put_response(m, r, NULL);
-#endif
 
     // try to callback the user
     //
@@ -1645,7 +1631,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
 }
 
 
-#ifdef NON_MODULAR
 //
 // HostDB Get Message
 // Used to lookup host information on a remote node in the cluster
@@ -1797,7 +1782,6 @@ HostDBContinuation::do_put_response(ClusterMachine * m, HostDBInfo * r, Continua
   clusterProcessor.invoke_remote(m->pop_ClusterHandler(), PUT_HOSTINFO_CLUSTER_FUNCTION, (char *) &msg, len);
 
 }
-#endif // NON_MODULAR
 
 
 //
@@ -1823,10 +1807,8 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event * e)
   if (!hostdb_enable || (!*md5.host_name && !md5.ip.isValid())) {
     if (action.continuation)
       action.continuation->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
-#ifdef NON_MODULAR
     if (from)
       do_put_response(from, 0, from_cont);
-#endif
     hostdb_cont_free(this);
     return EVENT_DONE;
   }
@@ -1840,7 +1822,6 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event * e)
     if (r)
       HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
 
-#ifdef NON_MODULAR
     if (action.continuation && r)
       reply_to_cont(action.continuation, r);
 
@@ -1848,7 +1829,6 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event * e)
     //
     if (from)
       do_put_response(from, r, from_cont);
-#endif
 
     // If it suceeds or it was a remote probe, we are done
     //
@@ -1856,12 +1836,10 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event * e)
       hostdb_cont_free(this);
       return EVENT_DONE;
     }
-#ifdef NON_MODULAR
     // If it failed, do a remote probe
     //
     if (do_get_response(e))
       return EVENT_CONT;
-#endif
   }
   // If there are no remote nodes to probe, do a DNS lookup
   //
@@ -1953,8 +1931,6 @@ HostDBContinuation::do_dns()
     SET_HANDLER((HostDBContHandler) & HostDBContinuation::dnsPendingEvent);
   }
 }
-
-#ifdef NON_MODULAR
 
 
 //
@@ -2146,7 +2122,6 @@ put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUS
   c->from = ch->machine;
   dnsProcessor.thread->schedule_imm(c);
 }
-#endif // NON_MODULAR
 
 
 //
@@ -2243,15 +2218,12 @@ HostDBInfo::heap_offset_ptr()
 }
 
 
-#ifdef NON_MODULAR
 ClusterMachine *
 HostDBContinuation::master_machine(ClusterConfiguration * cc)
 {
   return cc->machine_hash((int) (md5.hash[1] >> 32));
 }
-#endif // NON_MODULAR
 
-#ifdef NON_MODULAR
 struct ShowHostDB;
 typedef int (ShowHostDB::*ShowHostDBEventHandler) (int event, Event * data);
 struct ShowHostDB: public ShowCont
@@ -2396,7 +2368,6 @@ register_ShowHostDB(Continuation * c, HTTPHdr * h)
   this_ethread()->schedule_imm(s);
   return &s->action;
 }
-#endif // NON_MODULAR
 
 
 #define HOSTDB_TEST_MAX_OUTSTANDING 100

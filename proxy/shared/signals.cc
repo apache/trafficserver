@@ -31,7 +31,7 @@
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
 #include "StatSystem.h"
-#include "Main.h"
+#include "proxy/Main.h"
 
 // For backtraces on crash
 #include "ink_stack_trace.h"

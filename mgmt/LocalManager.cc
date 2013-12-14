@@ -200,10 +200,12 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(char * /* mpath ATS_UNUSED */, bool proxy_on)
+LocalManager::LocalManager(bool proxy_on)
   : BaseManager(), run_proxy(proxy_on)
 {
   bool found;
+  xptr<char> rundir(RecConfigReadRuntimeDir());
+
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
 #endif
@@ -221,7 +223,8 @@ LocalManager::LocalManager(char * /* mpath ATS_UNUSED */, bool proxy_on)
     mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
     mgmt_sync_key = MGMT_SEMID_DEFAULT;
   }
-  ink_strlcpy(pserver_path, system_runtime_dir, sizeof(pserver_path));
+
+  ink_strlcpy(pserver_path, rundir, sizeof(pserver_path));
 
   virt_map = NULL;
 
@@ -235,18 +238,10 @@ LocalManager::LocalManager(char * /* mpath ATS_UNUSED */, bool proxy_on)
   // Get the default IP binding values.
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", m_inbound_ip4, m_inbound_ip6);
 
-  config_path = REC_readString("proxy.config.config_dir", &found);
-  char *absolute_config_path = Layout::get()->relative(config_path);
-  ats_free(config_path);
-  if (access(absolute_config_path, R_OK) == -1) {
-    config_path = ats_strdup(system_config_directory);
-    if (access(config_path, R_OK) == -1) {
-        mgmt_elog(0, "[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n",
-                config_path, errno, strerror(errno));
-        mgmt_fatal(0, "[LocalManager::LocalManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
-    }
-  } else {
-    config_path = absolute_config_path;
+  if (access(Layout::get()->sysconfdir, R_OK) == -1) {
+    mgmt_elog(0, "[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n",
+	Layout::get()->sysconfdir, errno, strerror(errno));
+    mgmt_fatal(0, "[LocalManager::LocalManager] please set the 'TS_ROOT' environment variable\n");
   }
 
 #if TS_HAS_WCCP

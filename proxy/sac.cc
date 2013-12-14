@@ -46,22 +46,18 @@
 #include "DiagsConfig.h"
 #include "I_Machine.h"
 
-extern int CacheClusteringEnabled;
-int auto_clear_cache_flag = 0;
+#define DIAGS_LOG_FILENAME "collector.log"
 
 // sac-specific command-line flags
 //
-int version_flag = 0;
+static int version_flag = 0;
 
 // command-line argument descriptions
 //
-static char configDirectoryType[8] = "S1024";
 
 ArgumentDescription argument_descriptions[] = {
 
   {"version", 'V', "Print Version Id", "T", &version_flag, NULL, NULL},
-  {"config_dir", 'c', "Config Directory", configDirectoryType,
-   &system_config_directory, NULL, NULL},
 #ifdef DEBUG
   {"error_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags,
    NULL, NULL},
@@ -87,19 +83,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   Layout::create();
   // take care of command-line arguments
   //
-  snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);
   process_args(argument_descriptions, countof(argument_descriptions), argv);
-
-  // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
-  if (access(system_log_dir, R_OK) == -1) {
-    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
-    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    exit(1);
-  }
-
-  management_directory[0] = 0;
-  ink_strlcat(management_directory, system_config_directory, sizeof(management_directory));
 
   // check for the version number request
   //
@@ -108,8 +92,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     _exit(0);
   }
 
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags, false));
+  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false));
   diags = diagsConfig->diags;
+  diags->prefix_str = "Collector ";
 
   // initialize this application for standalone logging operation
   //

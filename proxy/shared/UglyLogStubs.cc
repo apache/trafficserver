@@ -196,6 +196,7 @@ UnixNetProcessor::freeThread(UnixNetVConnection * /* vc ATS_UNUSED */, EThread *
 // For Intel ICC
 int cache_config_mutex_retry_delay = 2;
 
+#include "I_SplitDNSProcessor.h"
 void
 SplitDNSConfig::reconfigure()
 {

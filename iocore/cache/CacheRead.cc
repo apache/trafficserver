@@ -241,13 +241,11 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
       }
       return -ECACHE_NO_DOC;
     }
-#ifdef FIXME_NONMODULAR
     if (cache_config_select_alternate) {
       alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, static_cast<HttpConfigParams*>(context));
       if (alternate_index < 0)
         return -ECACHE_ALT_MISS;
     } else
-#endif
       alternate_index = 0;
     CacheHTTPInfo *obj = vector.get(alternate_index);
     for (w = (CacheVC *) od->writers.head; w; w = (CacheVC *) w->opendir_link.next) {
@@ -632,6 +630,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       vio.ndone = doc_len;
       return calluser(VC_EVENT_EOS);
     }
+#ifdef HTTP_CACHE
     HTTPInfo::FragOffset* frags = alternate.get_frag_table();
     if (is_debug_tag_set("cache_seek")) {
       char b[33], c[33];
@@ -699,6 +698,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       key.toHexStr(target_key_str);
       Debug("cache_seek", "Read # %d @ %" PRId64"/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
     }
+#endif
   }
   if (ntodo <= 0)
     return EVENT_CONT;
@@ -967,11 +967,8 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       dir_overwrite(&first_key, vol, &dir, &od->first_dir);
       if (od->move_resident_alt)
         dir_insert(&od->single_doc_key, vol, &od->single_doc_dir);
-#ifdef FIXME_NONMODULAR
+
       int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, static_cast<HttpConfigParams*>(context));
-#else
-      int alt_ndx = 0;
-#endif
       vol->close_write(this);
       if (alt_ndx >= 0) {
         vector.clear();
@@ -1077,11 +1074,7 @@ CacheVC::openReadStartHead(int event, Event * e)
         goto Ldone;
       }
       if (cache_config_select_alternate) {
-#ifdef FIXME_NONMODULAR
         alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, static_cast<HttpConfigParams*>(context));
-#else
-        alternate_index = 0;
-#endif
         if (alternate_index < 0) {
           err = ECACHE_ALT_MISS;
           goto Ldone;
@@ -1123,7 +1116,13 @@ CacheVC::openReadStartHead(int event, Event * e)
       Debug("cache_read", "CacheReadStartHead - read %s target %s - %s %d of %" PRId64" bytes, %d fragments",
             doc->key.toHexStr(xt), key.toHexStr(yt),
             f.single_fragment ? "single" : "multi",
-            doc->len, doc->total_len, alternate.get_frag_offset_count());
+            doc->len, doc->total_len,
+#ifdef HTTP_CACHE
+            alternate.get_frag_offset_count()
+#else
+            0
+#endif
+            );
     }
     // the first fragment might have been gc'ed. Make sure the first
     // fragment is there before returning CACHE_EVENT_OPEN_READ

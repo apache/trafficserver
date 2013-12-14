@@ -38,6 +38,7 @@
 #include "ICPProcessor.h"
 #include "ICPlog.h"
 #include "BaseManager.h"
+#include "I_Layout.h"
 
 //--------------------------------------------------------------------------
 //  Each ICP peer is described in "icp.config" with the
@@ -542,14 +543,10 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   // Build pathname to "icp.config" and open file
   //
-  ink_assert(filename);
-  char ConfigFilePath[PATH_NAME_MAX];
-  if (filename) {
-    ink_strlcpy(ConfigFilePath, system_config_directory, sizeof(ConfigFilePath));
-    ink_strlcat(ConfigFilePath, "/", sizeof(ConfigFilePath));
-    ink_strlcat(ConfigFilePath, filename, sizeof(ConfigFilePath));
-  }
-  int fd = open(ConfigFilePath, O_RDONLY);
+  ink_release_assert(filename != NULL);
+
+  xptr<char> config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
+  int fd = open(config_path, O_RDONLY);
   if (fd < 0) {
     Warning("read icp.config, open failed");
     REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, open failed");

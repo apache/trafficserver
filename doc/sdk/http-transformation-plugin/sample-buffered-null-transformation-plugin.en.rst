@@ -193,17 +193,17 @@ transform:
 #. The ``handle_output`` function writes the buffer to the output
    vconnection:
 
-.. code-block:: c
+   .. code-block:: c
 
-   data->output_vio =
-      TSVConnWrite (output_conn, contp, data->output_reader,
-      TSIOBufferReaderAvail (data->output_reader) );
+      data->output_vio =
+         TSVConnWrite (output_conn, contp, data->output_reader,
+         TSIOBufferReaderAvail (data->output_reader) );
 
    The following diagram illustrates the write to the output
    vconnection:
 
    **Writing the Buffered Data to the Output Vconnection**
-   {#WritingBufferedtDataIntoVConnection)
+   {#WritingBufferedtDataIntoVConnection}
 
    .. figure:: /static/images/sdk/vconn_buf_output.jpg
       :alt: Writing the Buffered Data to the Output Vconnection

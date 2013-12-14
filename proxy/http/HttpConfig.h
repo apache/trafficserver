@@ -640,6 +640,7 @@ public:
 
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
+  MgmtInt attach_server_session_to_client;
 
   MgmtByte parent_proxy_routing_enable;
   MgmtByte disable_ssl_parenting;
@@ -667,8 +668,6 @@ public:
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
   MgmtByte session_auth_cache_keep_alive_enabled;
-  MgmtInt origin_server_pipeline;
-  MgmtInt user_agent_pipeline;
   MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
 
@@ -892,8 +891,6 @@ HttpConfigParams::HttpConfigParams()
     url_expansions(NULL),
     num_url_expansions(0),
     session_auth_cache_keep_alive_enabled(1),
-    origin_server_pipeline(1),
-    user_agent_pipeline(8),
     transaction_active_timeout_in(900),
     accept_no_activity_timeout(120),
     parent_connect_attempts(4),

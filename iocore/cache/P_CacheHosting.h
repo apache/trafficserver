@@ -105,8 +105,8 @@ public:
   //  object is
   CacheHostTable(Cache *c, CacheType typ);
    ~CacheHostTable();
-  int BuildTable();
-  int BuildTableFromString(char *str);
+  int BuildTable(const char * config_file_path);
+  int BuildTableFromString(const char * config_file_path, char *str);
   void Match(char *rdata, int rlen, CacheHostResult *result);
   void Print();
 
@@ -128,7 +128,6 @@ public:
 private:
   CacheHostMatcher *hostMatch;
   const matcher_tags *config_tags;
-  char config_file_path[PATH_NAME_MAX];
   const char *matcher_name;     // Used for Debug/Warning/Error messages
 };
 

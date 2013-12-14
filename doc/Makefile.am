@@ -78,8 +78,21 @@ dist_trafficshell_DATA = \
   man/show_version.1 \
   man/show_virtual-ip.1
 
-man1_MANS = \
-  man/traffic_shell.1
+if BUILD_MANPAGES
+
+man1_MANS = $(TS_MAN1_MANPAGES) man/traffic_shell.1
+man3_MANS = $(TS_MAN3_MANPAGES)
+man5_MANS = $(TS_MAN5_MANPAGES)
+man8_MANS = $(TS_MAN8_MANPAGES)
+
+$(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS): man
+
+# Hook the 'all' target so that the man pages get generated in the "all" target, prior
+# to "make install". If we leave it to "make install" time, then the man pages are likely
+# to me generated as root.
+all-am: $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
+
+endif
 
 EXTRA_DIST = \
   Doxyfile.in \
@@ -96,8 +109,6 @@ doxygen: Doxyfile
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
 PAPER         = letter
 BUILDDIR      = docbuild
 

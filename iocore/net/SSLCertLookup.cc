@@ -206,7 +206,7 @@ SSLContextStorage::SSLContextStorage()
 SSLContextStorage::~SSLContextStorage()
 {
   for (unsigned i = 0; i < this->references.count(); ++i) {
-    SSL_CTX_free(this->references[i]);
+    SSLReleaseContext(this->references[i]);
   }
 
   ink_hash_table_destroy(this->hostnames);

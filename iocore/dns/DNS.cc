@@ -373,7 +373,6 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
     dnsH = dnsProcessor.handler;
   }
 #else
-  INK_NOWARN(adnsH);
   dnsH = dnsProcessor.handler;
 #endif // SPLIT_DNS
 

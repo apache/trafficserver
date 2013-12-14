@@ -30,6 +30,7 @@
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
 #include "ink_cap.h"
+#include "I_Layout.h"
 
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2
@@ -45,14 +46,11 @@ const char *RollbackStrings[] = { "Rollback Ok",
 Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
   : root_access_needed(root_access_needed_)
 {
-  char configTmp[PATH_NAME_MAX + 1];
   version_t highestSeen;        // the highest backup version
   ExpandingArray existVer(25, true);    // Exsisting versions
   struct stat fileInfo;
   MgmtInt numBak;
   char *alarmMsg;
-  struct stat s;
-  int err;
 
   // To Test, Read/Write access to the file
   int testFD;                   // For open test
@@ -70,20 +68,13 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
   fileName = new char[fileNameLen + 1];
   ink_strlcpy(fileName, baseFileName, fileNameLen + 1);
 
-
-  // Get the configuration directory - SHOULD BE CENTRALIZED SOMEWHERE
   // TODO: Use the runtime directory for storing mutable data
   // XXX: Sysconfdir should be imutable!!!
-  //
-  if (varStrFromName("proxy.config.config_dir", configTmp, PATH_NAME_MAX) == false) {
-    mgmt_log(stderr, "[Rollback::Rollback] Unable to find configuration directory from proxy.config.config_dir\n");
-    ink_assert(0);
-  }
 
-  if ((err = stat(system_config_directory, &s)) < 0) {
-    mgmt_elog(0, "[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n",
-              system_config_directory, err, errno, strerror(errno));
-    mgmt_elog(0, "[Rollback::Rollback] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+  if (access(Layout::get()->sysconfdir, F_OK) < 0) {
+    mgmt_elog(0, "[Rollback::Rollback] unable to access() directory '%s': %d, %s\n",
+              Layout::get()->sysconfdir, errno, strerror(errno));
+    mgmt_elog(0, "[Rollback::Rollback] please set the 'TS_ROOT' environment variable\n");
     _exit(1);
   }
 
@@ -96,12 +87,6 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
   } else {
     numberBackups = DEFAULT_BACKUPS;
   }
-  // TODO: Use strdup/free instead C++ new
-  //
-  int configDirLen = strlen(system_config_directory) + 1;
-  configDir = new char[configDirLen];
-  ink_strlcpy(configDir, system_config_directory, configDirLen);
-
 
   ink_mutex_init(&fileAccessLock, "RollBack Mutex");
 
@@ -227,7 +212,6 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
 Rollback::~Rollback()
 {
   delete[]fileName;
-  delete[]configDir;
 }
 
 
@@ -240,11 +224,11 @@ Rollback::createPathStr(version_t version)
 {
 
   char *buffer;
-  int bufSize = strlen(configDir) + fileNameLen + MAX_VERSION_DIGITS + 1;
+  int bufSize = strlen(Layout::get()->sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
 
   buffer = new char[bufSize];
 
-  ink_filepath_make(buffer, bufSize, configDir, fileName);
+  Layout::get()->relative_to(buffer, bufSize, Layout::get()->sysconfdir, fileName);
 
   if (version != ACTIVE_VERSION) {
     size_t pos = strlen(buffer);
@@ -727,11 +711,11 @@ Rollback::findVersions_ml(ExpandingArray * listNames)
   struct dirent *dirEntrySpace;
   struct dirent *entryPtr;
 
-  dir = opendir(configDir);
+  dir = opendir(Layout::get()->sysconfdir);
 
   if (dir == NULL) {
     mgmt_log(stderr, "[Rollback::findVersions] Unable to open configuration directory: %s: %s\n",
-             configDir, strerror(errno));
+             Layout::get()->sysconfdir, strerror(errno));
     return INVALID_VERSION;
   }
   // The fun of Solaris - readdir_r requires a buffer passed into it

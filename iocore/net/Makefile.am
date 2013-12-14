@@ -16,12 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if STANDALONE_IOCORE
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts
-else
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
@@ -29,13 +23,11 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils
-endif
 
-
-DEFS += @IOCORE_MODULARIZED_DEFS@
 TESTS = $(check_PROGRAMS)
 
 check_PROGRAMS = test_certlookup

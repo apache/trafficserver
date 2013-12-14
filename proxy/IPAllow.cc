@@ -104,20 +104,15 @@ IpAllow::IpAllow(
   const char *config_var,
   const char *name,
   const char *action_val
-) : config_file_var(config_var),
-    module_name(name),
+) : module_name(name),
     action(action_val)
 {
+  xptr<char> config_path(RecConfigReadConfigPath(config_var));
 
-  char *config_file;
-
-  config_file_var = ats_strdup(config_var);
   config_file_path[0] = '\0';
+  ink_release_assert(config_path);
 
-  REC_ReadConfigStringAlloc(config_file, (char *) config_file_var);
-  ink_release_assert(config_file != NULL);
-  ink_filepath_make(config_file_path, sizeof(config_file_path), system_config_directory, config_file);
-  ats_free(config_file);
+  ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
 }
 
 IpAllow::~IpAllow()

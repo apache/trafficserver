@@ -49,7 +49,7 @@ class ProcessManager:public BaseManager
 {
 
 public:
-  ProcessManager(bool rlm, char *mpath);
+  ProcessManager(bool rlm);
   ~ProcessManager()
   {
     close_socket(local_manager_sockfd);

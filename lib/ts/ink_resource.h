@@ -81,7 +81,7 @@ public:
 
   /// Construct and initialized with memory for @a n instances of @a T.
   explicit xptr(size_t n)
-    : m_ptr(ats_malloc(sizeof(T) * n))
+    : m_ptr((T *)ats_malloc(sizeof(T) * n))
   { }
 
   /// Destructor - free memory held by this instance.

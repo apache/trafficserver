@@ -23,7 +23,6 @@
 
 #include "P_Cache.h"
 
-#ifdef NON_MODULAR
 #include "api/ts/ts.h"
 #include "Show.h"
 #include "I_Tasks.h"
@@ -640,4 +639,3 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
   }
 }
 
-#endif // NON_MODULAR

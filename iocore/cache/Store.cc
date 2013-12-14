@@ -296,17 +296,9 @@ Store::read_config(int fd)
   // Get pathname if not checking file
 
   if (fd < 0) {
-    char storage_path[PATH_NAME_MAX + 1];
-    char storage_file[PATH_NAME_MAX + 1];
-    // XXX: cache_system_config_directory is initialized
-    //      inside ink_cache_init() which is called AFTER
-    //      initialize_store().
-    //
-    // ink_strlcpy(p, cache_system_config_directory, sizeof(p));
-    REC_ReadConfigString(storage_file, "proxy.config.cache.storage_filename", PATH_NAME_MAX);
-    Layout::relative_to(storage_path, PATH_NAME_MAX, Layout::get()->sysconfdir, storage_file);
-    Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", storage_path);
+    xptr<char> storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
 
+    Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
     fd =::open(storage_path, O_RDONLY);
     if (fd < 0) {
       err = "error on open";

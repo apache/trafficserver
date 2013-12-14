@@ -57,7 +57,6 @@ static int elf2_flag = 0;
 static int auto_filenames = 0;
 static int overwrite_existing_file = 0;
 static char output_file[1024];
-extern int CacheClusteringEnabled;
 int auto_clear_cache_flag = 0;
 
 static const ArgumentDescription argument_descriptions[] = {

@@ -24,6 +24,21 @@
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
 
+static Diags *g_diags = NULL;
+
+//-------------------------------------------------------------------------
+// RecSetDiags
+//-------------------------------------------------------------------------
+int
+RecSetDiags(Diags * _diags)
+{
+  // Warning! It's very dangerous to change diags on the fly!  This
+  // function only exists so that we can boot-strap TM on startup.
+  ink_atomic_swap(&g_diags, _diags);
+  return REC_ERR_OKAY;
+}
+
+
 //-------------------------------------------------------------------------
 // RecLog
 //-------------------------------------------------------------------------

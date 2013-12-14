@@ -51,8 +51,8 @@ Experimental plugins
 ====================
 
 Plugins that are considered experimental are located in the
-```plugins/experimental`` <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_
-directory in the Apache Traffic Server source tree. Exmperimental plugins can be compiled by passing the
+`plugins/experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_
+directory of the Apache Traffic Server source tree. Exmperimental plugins can be compiled by passing the
 `--enable-experimental-plugins` option to `configure`::
 
     $ autoconf -i
@@ -72,4 +72,6 @@ directory in the Apache Traffic Server source tree. Exmperimental plugins can be
   metafilter.en
   mysql_remap.en
   stale_while_revalidate.en
+  ts_lua.en
+  xdebug.en
 

@@ -145,8 +145,6 @@ CONFIG proxy.config.http.send_http11_requests INT 1
    #  1 - Share, with a single global connection pool
    #  2 - Share, with a connection pool per worker thread
 CONFIG proxy.config.http.share_server_sessions INT 2
-CONFIG proxy.config.http.origin_server_pipeline INT 1
-CONFIG proxy.config.http.user_agent_pipeline INT 8
    ##########################
    # HTTP referer filtering #
    ##########################
@@ -290,7 +288,6 @@ CONFIG proxy.config.http.enable_http_stats INT 1
 # Customizable User Response Pages
 #
 ##############################################################################
-   # 0 - turn off customizable user response pages
    # 1 - enable customizable user response pages in only the "default" directory
    # 2 - enable language-targeted user response pages
 CONFIG proxy.config.body_factory.enable_customizations INT 1

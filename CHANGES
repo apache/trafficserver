@@ -4,9 +4,75 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-1919] Eliminate CacheLookupHttpConfig. This breaks cluster
    compatibility, so all cluster nodes should be upgraded simultaneously.
 
+
+  *) [TS-2251] Simplify LogBuffer reference counting.
+
+  *) [TS-2190] Remove cache.log from the cachurl plugin.
+
+  *) [TS-2426] Add a new plugin, xdebug, for cache debugging using HTTP headers.
+
+  *) [TS-2077] Remove pipeline configurations, they were no-op's anyways. We
+   still support pipelining (we always do), it's just not treated specially
+   (or optimized).
+
+  *) [TS-2386] clean up unused files and codes -- round 4.2
+
+  *) [TS-548] remove Initialize.cc Initialize.h
+
+  *) [TS-2082] remove STANDALONE_IOCORE FIXME_NONMODULAR and NON_MODULAR defines
+
+  *) [TS-312] Add option to always share keep-alive connections to the origin server
+
+  *) [TS-2419] Don't close client connection when responding with a 204 and there is no body
+
+  *) [TS-1146] Add RFC 5077 TLS session ticket support.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2401] Use Layout instead of global install path directories.
+
+  *) [TS-2420] Remove STAT_SYNC, CONF_SYNC, and REM_SYNC threads and schedule those
+   continuations in ET_TASK
+
+  *) [TS-2372] Enable TLS perfect forward security with ECDHE.
+
+  *) [TS-2416] Make TLS the session timeout threshold configurable.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2335] adding ts_lua plugin to experimental directory
+
+  *) [TS-2347] buffer_upload uses unsafe function tempnam(). Replace it
+   with mkstemp()
+
+  *) [TS-1815] Add thread number and port to accept thread name and
+   add the file descriptor number to the ET_AIO thread names
+
+  *) [TS-2415] Use standard continuations to release UrlRewrite objects.
+
+  *) [TS-2413] Release memory for idle SSL connections.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2365] Configure the maximum TLS record size.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2351] Bandaid fix for Range request crash related to
+   Read-While-Writer and content length calculations.
+
+  *) [TS-2408] Fix double free of proxy.config.admin.user_id.
+
+  *) [TS-2396] UrlRewrite.cc does not free the queue correctly.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2382] Partial fix for make install creating man files as root.
+
+  *) [TS-2381] Reorganize TSUrlCreate docs into separate files.
+
+  *) [TS-2377] Install man pages as part of the build.
+
   *) [TS-2379] Add a new field: '%<chp>', "client_host_port" to LogFormat.
 
   *) [TS-2374] Abort the producer if the none of it`s consumers is alive.
+
+  *) [TS-2330] Update proxy.config.body_factory.enable_customizations comments in records.config
 
   *) [TS-2327] TSRedirectUrlSet does not perform DNS lookup of redirected OS
 
@@ -26,7 +92,11 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2348] Rename tstop to traffic_top.
 
+<<<<<<< HEAD
 Changes with Apache Traffic Server 4.2.0
+=======
+  *) [TS-2384] Fix regression in key-lookup code between 4.0.x and 4.1.x
+>>>>>>> master
 
   *) [TS-2340] Fix TextLogObject log rolling.
    Author: bettydramit <b13621367396@gmail.com>

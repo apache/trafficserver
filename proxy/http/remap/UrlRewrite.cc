@@ -960,7 +960,8 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
 void
 UrlRewrite::_destroyList(RegexMappingList &mappings)
 {
-  forl_LL(RegexMapping, list_iter, mappings) {
+  RegexMapping *list_iter;
+  while ((list_iter=mappings.pop()) != NULL) {
     delete list_iter->url_map;
     if (list_iter->re) {
       pcre_free(list_iter->re);

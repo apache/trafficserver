@@ -348,10 +348,22 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     // check if to amount to write exceeds that in this buffer
     int64_t wavail = towrite - total_wrote;
 
-    if (l > wavail)
+    if (l > wavail) {
       l = wavail;
-    if (!l)
+    }
+
+    // TS-2365: If the SSL max record size is set and we have
+    // more data than that, break this into smaller write
+    // operations.
+    int64_t orig_l = l;
+    if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
+        l = SSLConfigParams::ssl_maxrecord;
+    }
+
+    if (!l) {
       break;
+    }
+
     wattempted = l;
     total_wrote += l;
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before do_SSL_write, l=%" PRId64", towrite=%" PRId64", b=%p",
@@ -360,12 +372,18 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     if (r == l) {
       wattempted = total_wrote;
     }
-    // on to the next block
-    offset = 0;
-    b = b->next;
+    if (l == orig_l) {
+        // on to the next block
+        offset = 0;
+        b = b->next;
+    } else {
+        offset += l;
+    }
+
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64" , total=%" PRId64"", r, total_wrote);
     NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_stat, 1);
   } while (r == l && total_wrote < towrite && b);
+
   if (r > 0) {
     if (total_wrote != wattempted) {
       Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, wrote some bytes, but not all requested.");
@@ -448,6 +466,7 @@ SSLNetVConnection::free(EThread * t) {
   sslHandShakeComplete = false;
   sslClientConnection = false;
   npnSet = NULL;
+  npnEndpoint= NULL;
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);  

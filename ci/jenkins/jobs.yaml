@@ -48,7 +48,7 @@
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export DEB_BUILD_HARDENING
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -71,7 +71,7 @@
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -92,7 +92,7 @@
             ( cd "${WORKSPACE}/src" && git clean -dfxq  && autoreconf -fi )
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-experimental-plugins $ENABLE_DEBUG
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins $ENABLE_DEBUG
             gmake -j2 V=1
             gmake check
             gmake install
@@ -119,7 +119,7 @@
             export CXXFLAGS=-m64
             export CPPFLAGS=-I/opt/omni/include
             export LDFLAGS="-L/opt/omni/lib/amd64 -R/opt/omni/lib/amd64"
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"  --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             gmake -j2 V=1
             gmake check
             gmake install
