@@ -13,7 +13,7 @@ msgstr ""
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:20
 msgid "ssl_multicert.config"
-msgstr ""
+msgstr "ssl_multicert.config"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:24
 msgid ""
@@ -23,6 +23,11 @@ msgid ""
 "then you can assign a different SSL certificate to be served when a client "
 "requests a particular IP address or host name."
 msgstr ""
+":file:`ssl_multicert.config` ファイルでは Traffic Server が SSL セッションの"
+"ターミネーションを行うために複数の SSL サーバー証明書を使用する設定を行え"
+"ます。一つ以上の IP アドレスを割り当てた Traffic Server システム をもっている"
+"場合、クライアントが特定の IP アドレスもしくはホスト名をリクエストした際に"
+"異なる SSL 証明書が利用されるように割り当てることができます。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:31
 msgid ""
@@ -33,16 +38,23 @@ msgid ""
 "certificate. Wildcard names are supported, but only of the form "
 "`*.domain.com`, ie. where `*` is the leftmost domain component."
 msgstr ""
+"設定時、証明書は証明書のサブジェクトとすべての DNS "
+"`サブジェクト別名 <http://en.wikipedia.org/wiki/SubjectAltName>`_ を展開する"
+"ためにパースされます。証明書は証明書内にあるどれかのホスト名を要求"
+"する接続で渡されます。ワイルドカードの名前は、`*.domain.com` という形式のみ、"
+"すなわち `*` がドメインの一番左にあるもののみサポートされています。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:39
 msgid ""
 "Changes to :file:`ssl_multicert.config` can be applied to a running Traffic "
 "Server using :option:`traffic_line -x`."
 msgstr ""
+":file:`ssl_multicert.config` への変更は :option:`traffic_line -x` の使用"
+"により実行中の Traffic Server に適用できます。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:43
 msgid "Format"
-msgstr ""
+msgstr "フォーマット"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:45
 msgid ""
@@ -50,10 +62,12 @@ msgid ""
 " fields that specify how Traffic Server should use a particular SSL "
 "certificate."
 msgstr ""
+":file:`ssl_multicert.config` の各行は Traffic Server が特定の SSL 証明書を"
+"どう使用すべきかを指定する `key=value` フィールドの連続で成っています。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:53
 msgid "ssl_cert_name=PATH"
-msgstr ""
+msgstr "ssl_cert_name=PATH"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:50
 msgid ""
@@ -62,10 +76,13 @@ msgid ""
 ":ts:cv:`proxy.config.ssl.server.cert.path` configuration variable. This is "
 "the only field that is required to be present."
 msgstr ""
+"TLS 証明書を含んでいるファイルの名前です。`PATH` は "
+":ts:cv:`proxy.config.ssl.server.cert.path` 設定変数で指定されたディレクトリ"
+"からの相対位置です。これは設定が必要とされている唯一のフィールドです。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:64
 msgid "dest_ip=ADDRESS"
-msgstr ""
+msgstr "dest_ip=ADDRESS"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:56
 msgid ""
@@ -78,10 +95,17 @@ msgid ""
 " on the specified port. IPv6 addresses must be enclosed by square brackets "
 "if they have a port, eg, [::1]:80."
 msgstr ""
+"証明書が提出されるべき IP アドレス (v4 か v6) です。これは現在では TLS "
+"SubjectNameIndication 拡張がサポートされていない場合のフォールバックとしてのみ"
+"使用されます。`ADDRESS` が `*` の場合、他にマッチするものがなければグローバル"
+"デフォルトフォールバックとして対応する証明書が使用されます。アドレスはポート"
+"指定子を含んでもよく、その場合対応する証明書は特定のポートで受け入れられた"
+"コネクションのみにマッチします。ポート指定がある場合、IPv6 アドレスは角括弧で"
+"囲われていなければなりません。例、[::1]:80 。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:70
 msgid "ssl_key_name=PATH"
-msgstr ""
+msgstr "ssl_key_name=PATH"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:67
 msgid ""
@@ -90,10 +114,14 @@ msgid ""
 "otherwise `PATH` is resolved relative to the "
 ":ts:cv:`proxy.config.ssl.server.private_key.path` configuration variable."
 msgstr ""
+"この証明書のための秘密鍵を含んでいるファイルの名前です。もし鍵が証明書に"
+"含まれている場合、このフィールドは省略可能です。そうでは無い場合、`PATH` は "
+":ts:cv:`proxy.config.ssl.server.private_key.path` 設定変数からの相対で解決"
+"されます。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:76
 msgid "ssl_ca_name=FILENAME"
-msgstr ""
+msgstr "ssl_ca_name=FILENAME"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:73
 msgid ""
@@ -102,10 +130,13 @@ msgid ""
 "chain. `PATH` is resolved relative to the "
 ":ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable."
 msgstr ""
+"システムの CA バンドルにない認証局によって発行された証明書では、証明書"
+"チェーンの検証のために追加の証明書が必要になることがあります。`PATH` は "
+":ts:cv:`proxy.config.ssl.CA.cert.path` 設定変数からの相対で解決されます。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:79
 msgid "Certificate Selection"
-msgstr ""
+msgstr "証明書の選択"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:81
 msgid ""
@@ -122,6 +153,17 @@ msgid ""
 "that, a wildcard certificate match is attempted. If no match can be made, "
 "the initial certificate selection remains in force."
 msgstr ""
+"Traffic Server は SSL 接続のセットアップの間に二回の証明書の選択を試みます。"
+"初回の選択は TCP の接続が受け入れられたときに行われます。この選択では"
+"クライアントが接続しようとしている IP アドレスとポートを検査し、``dest_ip`` "
+"の指定をもつものから最適な証明書を選びます。マッチする証明書が見つからない"
+"場合は、デフォルトの証明書が選ばれます。最後の選択は SSL ハンドシェイクの"
+"間に行われます。このとき、クライアントは具体的なホスト名を要求するために "
+"`Server Name Indication <http://en.wikipedia.org/wiki/Server_Name_Indication>`_ "
+"を使用することがあります。Traffic Server はサブジェクトまたはサブジェクト別名"
+"のマッチングにより証明書を選択するためにこのリクエストを使用するでしょう。"
+"それに失敗すると、ワイルドカードによる証明書のマッチが試されます。いずれにも"
+"マッチしない場合、初回の証明書の選択がそのまま有効となります。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:95
 msgid ""
@@ -130,10 +172,13 @@ msgid ""
 "a specification that does not contain a port number. A specific certificate "
 "subject will take precedence over a wildcard certificate."
 msgstr ""
+"すべてのケースで、Traffic Server は最も適切なものを選択します。ポート番号を"
+"を含むアドレス指定は、ポート番号を含まない指定に先立って行われます。具体的な"
+"証明サブジェクトはワイルドカードによる証明に先立って使用されます。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:103
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:105
 msgid ""
@@ -144,6 +189,12 @@ msgid ""
 "``default.pem`` certificate. Since the private key is included in the "
 "certificate files, no private key name is specified."
 msgstr ""
+"次の例は Traffice Server が SSL 証明書 ``server.pem`` を IP アドレス "
+"111.11.11.1 へのすべてのリクエストに使用し、SSL 証明書 ``server1.pem`` を "
+"IP アドレス 11.1.1.1 へのすべてのリクエストに使用するように設定しています。"
+"その他のすべての IP アドレスからの接続は証明書 ``default.pem`` によって"
+"ターミネートされます。秘密鍵は証明書に含まれているので、秘密鍵の名前は指定"
+"されていません。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:119
 msgid ""
@@ -152,3 +203,6 @@ msgid ""
 "port 8443 on IP address 111.11.11.1. The ``general.pem`` certificate is used"
 " for server name matches."
 msgstr ""
+"次の例は Traffic Server が SSL 証明書 ``server.pem`` と秘密鍵 ``serverKey.pem`` "
+"を IP アドレス 111.11.11.1 のポート 8443 へのすべてのリクエストに使用するよう"
+"設定しています。証明書 ``general.pem`` はサーバー名がマッチするもので使用されます。"
