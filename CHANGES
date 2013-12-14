@@ -5,6 +5,8 @@ Changes with Apache Traffic Server 5.0.0
    compatibility, so all cluster nodes should be upgraded simultaneously.
 
 
+Changes with Apache Traffic Server 4.2.0
+
   *) [TS-2251] Simplify LogBuffer reference counting.
 
   *) [TS-2190] Remove cache.log from the cachurl plugin.
@@ -92,11 +94,7 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2348] Rename tstop to traffic_top.
 
-<<<<<<< HEAD
-Changes with Apache Traffic Server 4.2.0
-=======
   *) [TS-2384] Fix regression in key-lookup code between 4.0.x and 4.1.x
->>>>>>> master
 
   *) [TS-2340] Fix TextLogObject log rolling.
    Author: bettydramit <b13621367396@gmail.com>
