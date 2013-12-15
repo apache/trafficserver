@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSPluginInit.en.rst:21
 msgid "TSPluginInit"
-msgstr ""
+msgstr "TSPluginInit"
 
 #: ../../reference/api/TSPluginInit.en.rst:24
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSPluginInit.en.rst:26
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSPluginInit.en.rst:32
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSPluginInit.en.rst:34
 msgid ""
@@ -41,25 +41,37 @@ msgid ""
 " make sure that the version of Traffic Server on which your plugin is "
 "running supports the plugin."
 msgstr ""
+":func:`TSPluginInit` はすべてのプラグインで定義されなければなりません。 "
+"Traffic Server はプラグインを読み込み argc と argv を plugin.config の値を"
+"もとに適切に設定する際にこの初期化ルーチンを呼びます。argc は引数配列 argv に"
+"ある引数の数です。引数配列の最初の引数はプラグイン名であり、プラグインが"
+"読み込まれるために必ず存在するのでこの数は少なくとも一つになります。argv は"
+"引数の配列です。配列内の引数の数は argc となり、argv[0] は常にプラグイン共有"
+"ライブラリの名前を含んでいます。:func:`TSPluginRegister` はプラグインにとって"
+"適切な SDK のバージョンを登録します。プラグインが動作する Traffic Server の"
+"バージョンがそのプラグインをサポートすることを確認するためにこの関数を使用して"
+"ください。"
 
 #: ../../reference/api/TSPluginInit.en.rst:48
 msgid "Return values"
-msgstr ""
+msgstr "戻り値"
 
 #: ../../reference/api/TSPluginInit.en.rst:50
 msgid ""
 ":func:`TSPluginRegister` returns :const:`TS_ERROR` if the plugin "
 "registration failed."
 msgstr ""
+":func:`TSPluginRegister` はプラグインの登録に失敗すると "
+":const:`TS_ERROR` を返します。"
 
 #: ../../reference/api/TSPluginInit.en.rst:53
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/api/TSPluginInit.en.rst:73
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSPluginInit.en.rst:75
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSInstallDirGet(3ts)`"
-msgstr ""
+msgstr ":manpage:`TSAPI(3ts)`, :manpage:`TSInstallDirGet(3ts)`"
