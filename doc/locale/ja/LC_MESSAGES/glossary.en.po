@@ -49,7 +49,7 @@ msgstr ""
 
 #: ../../glossary.en.rst:24
 msgid "continuation"
-msgstr ""
+msgstr "継続"
 
 #: ../../glossary.en.rst:26
 msgid ""
