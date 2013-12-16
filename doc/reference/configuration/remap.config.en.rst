@@ -63,6 +63,12 @@ Traffic Server recognizes three space-delimited fields: ``type``,
     -  ``map`` --translates an incoming request URL to the appropriate
        origin server URL.
 
+    -  ``map_with_recv_port`` --exactly like 'map' except that it uses the port at 
+       which the request was received to perform the mapping instead of the port present 
+       in the request. The regex qualifier can also be used for this type. When present, 
+       'map_with_recv_port' mappings are checked first. If there is a match, then it is 
+       chosen without evaluating the "regular" forward mapping rules.
+
     -  ``map_with_referer`` -- extended version of 'map', which can be used to activate 
        "deep linking protection", where target URLs are only accessible when the Referer 
        header is set to a URL that is allowed to link to the target.
@@ -109,10 +115,11 @@ Precedence
 Remap rules are not processed top-down, but based on an internal
 priority
 
-1. ``map`` and ``reverse_map``
-2. ``regex_map``
-3. ``redirect`` and ``redirect_temporary``
-4. ``regex_redirect`` and ``regex_redirect_temporary``
+1. ``map_with_recv_port``
+#. ``map`` and ``reverse_map``
+#. ``regex_map``
+#. ``redirect`` and ``redirect_temporary``
+#. ``regex_redirect`` and ``regex_redirect_temporary``
 
 
 Match-All
