@@ -720,6 +720,9 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+
+
+
 HTTP Connection Timeouts
 ========================
 
@@ -839,6 +842,10 @@ Origin Server Connect Attempts
    The number of seconds before Traffic Server marks an origin server as unavailable after a client abandons a request
    because the origin server was too slow in sending the response header.
 
+.. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
+
+   When enabled (1), Traffic Server bypasses the parent proxy for a request that is not cacheable.
+
 Congestion Control
 ==================
 
@@ -896,6 +903,11 @@ Negative Response Caching
    The cache lifetime for objects cached from this setting is controlled via
    :ts:cv:`proxy.config.http.negative_caching_lifetime`.
 
+.. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 1800
+
+   How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative 
+   responses that do have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
+   
 Proxy User Variables
 ====================
 
@@ -1182,6 +1194,13 @@ Cache Control
 
    Objects larger than the limit are not hit evacuated. A value of 0 disables the limit.
 
+.. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
+
+   The maximum number of alternates that are allowed for any given URL. 
+   Disable by setting to 0. Note that this setting will not strictly enforce
+   this if the variable ``proxy.config.cache.vary_on_user_agent`` is set 
+   to 1 (by default it is 0).
+   
 RAM Cache
 =========
 
@@ -2193,10 +2212,7 @@ Undocumented
 
 These are referenced but not documented. Please contribute a definition.
 
-.. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 0
 
 .. ts:cv:: CONFIG proxy.config.task_threads INT 0
-
-.. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
