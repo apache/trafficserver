@@ -70,7 +70,6 @@ extern int default_rcvbuf_size;
 //
 // Functions
 //
-void init_system();
 void shutdown_system();
 inline bool
 maintainance_mode()
