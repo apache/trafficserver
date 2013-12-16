@@ -1922,6 +1922,14 @@ SSL Termination
 
    Enables (``1``) or disables (``0``) TLSv1.
 
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
+
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, DISABLED by default.  [Requires OpenSSL v1.0.1 and higher]
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.certification_level INT 0
 
    Sets the client certification level:
