@@ -177,7 +177,8 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
   // read stats
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    g_stats_snap_fpath = Layout::relative_to(Layout::get()->runtimedir, REC_RAW_STATS_FILE);
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    g_stats_snap_fpath = Layout::relative_to(rundir, REC_RAW_STATS_FILE);
     RecReadStatsFile();
   }
   // read configs
