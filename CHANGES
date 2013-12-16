@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2355] ATS 4.0.x crashes when using OpenSSL 1.0.1e
+
   *) [TS-2432] Fix a race in aio_err_callblk.
 
   *) [TS-2251] Simplify LogBuffer reference counting.
