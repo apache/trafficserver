@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSDebug.en.rst:21
 msgid "TSDebug"
-msgstr ""
+msgstr "TSDebug"
 
 #: ../../reference/api/TSDebug.en.rst:24
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSDebug.en.rst:25
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSDebug.en.rst:39
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSDebug.en.rst:41
 msgid ""
@@ -33,6 +33,8 @@ msgid ""
 "the output to the C standard output, it writes output to the Traffic Server "
 "error log."
 msgstr ""
+":func:`TSError` は C 標準出力に書き込む代わりに Traffic Server のエラーログ"
+"に書き込むことを除けば :func:`printf` に似ています。"
 
 #: ../../reference/api/TSDebug.en.rst:45
 msgid ""
@@ -40,11 +42,15 @@ msgid ""
 "debug message if the given debug tag is enabled. It writes output to the "
 "Traffic Server debug log."
 msgstr ""
+":func:`TSDebug` は与えられたデバッグタグが有効化されている場合にのみログ"
+"メッセージを出力する点を除いて :func:`TSError` と同じです。"
 
 #: ../../reference/api/TSDebug.en.rst:49
 msgid ""
 ":func:`TSIsDebugTagSet` returns non-zero if the given debug tag is enabled."
 msgstr ""
+":func:`TSIsDebugTagSet` は与えられたデバッグタグが有効化されている場合に"
+"非ゼロを返します。"
 
 #: ../../reference/api/TSDebug.en.rst:52
 msgid ""
@@ -54,6 +60,11 @@ msgid ""
 "are. :macro:`TSReleaseAssert` prints an error message and aborts in both "
 "release and debug mode."
 msgstr ""
+"デバッグモードでは、:macro:`TSAssert` は Traffic Server にファイル名、行番号、"
+"式を出力させ、処理を中断します。リリースモードでは、式の出力は残りますが、"
+"エラーメッセージの出力と処理の中断は行われません。:macro:`TSReleaseAssert` "
+"はリリースモードとデバッグモードのどちらでもエラーメッセージの出力と処理の中断"
+"を行います。"
 
 #: ../../reference/api/TSDebug.en.rst:58
 msgid ""
@@ -63,21 +74,28 @@ msgid ""
 ":func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable debugging "
 "on specific session and transaction objects."
 msgstr ""
+":func:`TSDebugSpecific` はデバッグタグがオフにされていてもデバッグフラグが"
+"有効化されてさえいればデバッグ行を出力します。これは特定のセッションと"
+"トランザクションオブジェクトでデバッグを有効化するために "
+":func:`TSHttpTxnDebugSet` 、:func:`TSHttpSsnDebugSet` 、"
+":func:`TSHttpTxnDebugGet` 、:func:`TSHttpSsnDebugGet` と組み合わせて使用される"
+"ことがあります。"
 
 #: ../../reference/api/TSDebug.en.rst:65
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/api/TSDebug.en.rst:67
 msgid ""
 "This example uses :func:`TSDebugSpecific` to log a message when a specific "
 "debugging flag is enabled::"
-msgstr ""
+msgstr "この例は特定のデバッグフラグが有効になっている場合にメッセージをログに"
+"出力するために :func:`TSDebugSpecific` を使用しています。"
 
 #: ../../reference/api/TSDebug.en.rst:78
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSDebug.en.rst:79
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
-msgstr ""
+msgstr ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
