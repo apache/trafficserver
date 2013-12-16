@@ -1200,7 +1200,13 @@ Cache Control
    Disable by setting to 0. Note that this setting will not strictly enforce
    this if the variable ``proxy.config.cache.vary_on_user_agent`` is set 
    to 1 (by default it is 0).
-   
+
+.. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
+
+   Sets the target size of a contiguous fragment of a file in the disk cache. Accepts values that are powers of 2, e.g. 65536, 131072, 
+   262144, 524288, 1048576, 2097152, etc. When setting this, consider that larger numbers could waste memory on slow connections, 
+   but smaller numbers could increase (waste) seeks.
+
 RAM Cache
 =========
 
