@@ -1403,6 +1403,12 @@ hostname to ``host_x.y.com``.
    contention on the first worker thread (which otherwise takes on the burden of
    all DNS lookups).
 
+.. ts:cv:: CONFIG proxy.config.dns.validate_query_name INT 0
+
+   When enabled (1) provides additional resilience against DNS forgery (for instance 
+   in DNS Injection attacks), particularly in forward or transparent proxies, but 
+   requires that the resolver populates the queries section of the response properly.
+
 HostDB
 ======
 
