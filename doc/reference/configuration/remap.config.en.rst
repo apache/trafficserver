@@ -63,6 +63,10 @@ Traffic Server recognizes three space-delimited fields: ``type``,
     -  ``map`` --translates an incoming request URL to the appropriate
        origin server URL.
 
+    -  ``map_with_referer`` -- extended version of 'map', which can be used to activate 
+       "deep linking protection", where target URLs are only accessible when the Referer 
+       header is set to a URL that is allowed to link to the target.
+
     -  ``reverse_map`` --translates the URL in origin server redirect
        responses to point to the Traffic Server.
 
@@ -269,6 +273,75 @@ Examples
 
     regex_map http://x([0-9]+).z.com/ http://real-x$1.z.com/
     regex_redirect http://old.(.*).z.com http://new.$1.z.com
+
+.. _map_with_referer:
+
+map_with_referer
+================
+
+the format of is the following::
+
+    map_with_referer client-URL origin-server-URL redirect-URL regex1 [regex2 ...]
+
+'redirect-URL' is a redirection URL specified according to RFC 2616 and can
+contain special formatting instructions for run-time modifications of the
+resulting redirection URL.  All regexes Perl compatible  regular expressions,
+which describes the content of the "Referer" header which must be
+verified. In case an actual request does not have "Referer" header or it
+does not match with referer regular expression, the HTTP request will be
+redirected to 'redirect-URL'.
+
+At least one regular expressions must be specified in order to activate
+'deep linking protection'.  There are limitations for the number of referer
+regular expression strings - 2048.  In order to enable the 'deep linking
+protection' feature in Traffic Server, configure records.config with::
+
+    CONFIG proxy.config.http.referer_filter INT 1
+
+In order to enable run-time formatting for redirect URL, configure::
+
+    CONFIG proxy.config.http.referer_format_redirect INT 1
+
+When run-time formatting for redirect-URL was enabled the following format
+symbols can be used::
+
+    %r - to substitute original "Referer" header string
+    %f - to substitute client-URL from 'map_with_referer' record
+    %t - to substitute origin-server-URL from 'map_with_referer' record
+    %o - to substitute request URL to origin server, which was created a
+         the result of a mapping operation
+
+Note: There is a special referer type "~*" that can be used in order to
+specify that the Referer header is optional in the request.  If "~*" referer
+was used in map_with_referer mapping, only requests with Referer header will
+be verified for validity.  If the "~" symbol was specified before referer
+regular expression, it means that the request with a matching referer header
+will be redirected to redirectURL. It can be used to create a so-called
+negative referer list.  If "*" was used as a referer regular expression -
+all referers are allowed.  Various combinations of "*" and "~" in a referer
+list can be used to create different filtering rules.
+    
+map_with_referer Examples
+-------------------------
+
+::
+
+   map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/new_games .*\.bar\.com www.bar-friends.com
+
+Explanation: Referer header must be in the request, only ".*\.bar\.com" and "www.bar-friends.com" are allowed.
+
+::
+
+   map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/new_games * ~.*\.evil\.com
+
+Explanation: Referer header must be in the request but all referers are allowed except ".*\.evil\.com".
+
+::
+
+    map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/error ~* * ~.*\.evil\.com
+
+Explanation: Referer header is optional. However, if Referer header exists, only request from ".*\.evil\.com" will be redirected to redirect-URL.
+
 
 .. _remap-config-plugin-chaining:
 
