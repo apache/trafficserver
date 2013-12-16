@@ -120,8 +120,7 @@ plugin_load(int argc, char *argv[])
 
   handle = dll_open(path);
   if (!handle) {
-    Error("unable to load '%s': %s", path, dll_error(handle));
-    abort();
+    Fatal("unable to load '%s': %s", path, dll_error(handle));
   }
 
   // Allocate a new registration structure for the
@@ -132,9 +131,7 @@ plugin_load(int argc, char *argv[])
 
   init = (init_func_t) dll_findsym(handle, "TSPluginInit");
   if (!init) {
-    Error("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
-    dll_close(handle);
-    abort();
+    Fatal("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
   }
 
   // elevate the access to read files as root if compiled with capabilities, if not
