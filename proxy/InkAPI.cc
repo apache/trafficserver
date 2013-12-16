@@ -493,7 +493,7 @@ _hdr_obj_to_mime_hdr_impl(HdrHeapObjImpl * obj)
     impl = (MIMEHdrImpl *) obj;
   else {
     ink_release_assert(!"mloc not a header type");
-    impl = NULL;                /* gcc does not know about 'ink_release_assert' - make him happy */
+    impl = NULL;                /* gcc does not know about 'ink_release_assert' - make it happy */
   }
   return impl;
 }
@@ -1705,13 +1705,13 @@ TShrtime()
 const char *
 TSInstallDirGet(void)
 {
-  return system_root_dir;
+  return Layout::get()->prefix;
 }
 
 const char *
 TSConfigDirGet(void)
 {
-  return system_config_directory;
+  return Layout::get()->sysconfdir;
 }
 
 const char *
@@ -1719,6 +1719,7 @@ TSTrafficServerVersionGet(void)
 {
   return traffic_server_version;
 }
+
 int TSTrafficServerVersionGetMajor() { return ts_major_version; }
 int TSTrafficServerVersionGetMinor() { return ts_minor_version; }
 int TSTrafficServerVersionGetPatch() { return ts_patch_version; }

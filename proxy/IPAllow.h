@@ -98,7 +98,6 @@ private:
 
   int BuildTable();
 
-  const char *config_file_var;
   char config_file_path[PATH_NAME_MAX];
   const char *module_name;
   const char *action;

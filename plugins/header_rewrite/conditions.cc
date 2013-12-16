@@ -244,10 +244,6 @@ ConditionPath::eval(const Resources& res)
 {
   std::string s;
 
-  if (NULL == res._rri) {
-    TSDebug(PLUGIN_NAME, "PATH requires remap initialization! Evaluating to false!");
-    return false;
-  }
   append_value(s, res);
   TSDebug(PLUGIN_NAME, "Evaluating PATH");
 

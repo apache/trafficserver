@@ -52,8 +52,6 @@ Description
 
 .. option:: -M, --remote_management
 
-.. option:: -d DIR, --management_dir DIR
-
 .. option:: -C CMD, --command CMD
 
 .. option:: -k, --clear_hostdb

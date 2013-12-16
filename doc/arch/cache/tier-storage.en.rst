@@ -37,7 +37,7 @@ The most common case for tiers is an ordered list of tiers, where higher tiers a
 (or more limited in capacity). This is not required. It might be that different tiers are differentiated by other
 properties (such as expected persistence). The design here is intended to handle both cases.
 
-The design presumes that if a user has multiple tiers of storage and an ordering for those tiers, he will usually want
+The design presumes that if a user has multiple tiers of storage and an ordering for those tiers, they will usually want
 content stored at one tier level to also be stored at every other lower level as well, so that it does not have to be
 copied if evicted from a higher tier.
 

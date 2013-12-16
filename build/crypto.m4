@@ -111,6 +111,19 @@ fi
 
 ])
 
+AC_DEFUN([TS_CHECK_CRYPTO_EC_KEYS], [
+  _eckeys_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$LIBSSL])
+  AC_CHECK_HEADERS(openssl/ec.h)
+  AC_CHECK_FUNCS(EC_KEY_new_by_curve_name, [enable_tls_eckey=yes], [enable_tls_eckey=no])
+  LIBS=$_eckeys_saved_LIBS
+
+  AC_MSG_CHECKING(whether EC keys are supported)
+  AC_MSG_RESULT([$enable_tls_eckey])
+  TS_ARG_ENABLE_VAR([use], [tls-eckey])
+  AC_SUBST(use_tls_eckey)
+])
+
 AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   enable_tls_npn=yes
   _npn_saved_LIBS=$LIBS
@@ -124,6 +137,41 @@ AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   AC_MSG_RESULT([$enable_tls_npn])
   TS_ARG_ENABLE_VAR([use], [tls-npn])
   AC_SUBST(use_tls_npn)
+])
+
+AC_DEFUN([TS_CHECK_CRYPTO_TICKETS], [
+  _tickets_saved_LIBS=$LIBS
+  enable_tls_tickets=yes
+
+  TS_ADDTO(LIBS, [$LIBSSL])
+  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h openssl/hmac.h openssl/evp.h)
+  AC_MSG_CHECKING([for SSL_CTX_set_tlsext_ticket_key_cb])
+  AC_COMPILE_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#if HAVE_OPENSSL_SSL_H
+#include <openssl/ssl.h>
+#endif
+#if HAVE_OPENSSL_TLS1_H
+#include <openssl/tls1.h>
+#endif
+      ]],
+      [[SSL_CTX_set_tlsext_ticket_key_cb(NULL, NULL);]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_tls_tickets=no
+  ])
+
+  LIBS=$_tickets_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable TLS session ticket support)
+  AC_MSG_RESULT([$enable_tls_tickets])
+  TS_ARG_ENABLE_VAR([use], [tls-tickets])
+  AC_SUBST(use_tls_tickets)
 ])
 
 AC_DEFUN([TS_CHECK_CRYPTO_SNI], [

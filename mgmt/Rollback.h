@@ -207,7 +207,6 @@ private:
   int statFile(version_t version, struct stat *buf);
   char *createPathStr(version_t version);
   RollBackCodes internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChange = true, bool incVersion = true);
-  char *configDir;
   ink_mutex fileAccessLock;
   char *fileName;
   size_t fileNameLen;

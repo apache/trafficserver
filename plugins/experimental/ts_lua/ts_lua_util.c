@@ -18,6 +18,7 @@
 
 
 #include "ts_lua_util.h"
+#include "ts_lua_remap.h"
 #include "ts_lua_client_request.h"
 #include "ts_lua_server_request.h"
 #include "ts_lua_server_response.h"
@@ -170,7 +171,7 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
 
 
 static
-void ts_lua_init_registry(lua_State *L)
+void ts_lua_init_registry(lua_State *L ATS_UNUSED)
 {
     return;
 }
@@ -185,6 +186,8 @@ static void
 ts_lua_inject_ts_api(lua_State *L)
 {
     lua_newtable(L);
+
+    ts_lua_inject_remap_api(L);
 
     ts_lua_inject_client_request_api(L);
     ts_lua_inject_server_request_api(L);

@@ -37,7 +37,6 @@
 void MgmtShutdown(int status);
 void fileUpdated(char *fname, bool incVersion);
 void runAsUser(char *userName);
-void extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *fds_throttle);
 void printUsage(void);
 
 extern FileManager *configFiles;

@@ -32,8 +32,8 @@
  *
  *     The control matcher module provides the ability to lookup arbitrary
  *  information specific to a URL and IP address.  The outside
- *  world only sees the ControlMatcher class which parses the revelvant
- *  configuration file and builds the lookups table
+ *  world only sees the ControlMatcher class which parses the relevant
+ *  configuration file and builds the lookup table
  *
  *     Four types of matched are supported: hostname, domain name, ip address
  *  and URL regex.  For these four types, three lookup tables are used.  Regex and
@@ -277,7 +277,6 @@ public:
   int BuildTableFromString(char *str);
   void Match(RequestData * rdata, Result * result);
   void Print();
-  char *config_file_var;        // temporary: until config is integerated
 
   int getEntryCount() { return m_numEntries; }
   HostMatcher<Data, Result> *getHostMatcher() { return hostMatch; }

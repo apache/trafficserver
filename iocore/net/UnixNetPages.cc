@@ -22,9 +22,6 @@
  */
 
 #include "libts.h"
-
-#ifdef NON_MODULAR
-
 #include "P_Net.h"
 #include "Show.h"
 #include "I_Tasks.h"
@@ -250,4 +247,3 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
   return &s->action;
 }
 
-#endif

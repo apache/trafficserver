@@ -30,6 +30,7 @@
 #include "P_RecUtils.h"
 #include "P_RecMessage.h"
 #include "P_RecCore.h"
+#include "I_Layout.h"
 
 const char     *g_rec_config_fpath = NULL;
 LLQ            *g_rec_config_contents_llq = NULL;

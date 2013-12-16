@@ -57,8 +57,6 @@ typedef struct {
     //pr_list *next; /* Link to next set of patterns, if any */
 } pr_list;
 
-static TSTextLogObject log = NULL;
-
 static int regex_substitute(char **buf, char *str, regex_info *info) {
     int matchcount;
     int ovector[OVECOUNT]; /* Locations of matches in regex */
@@ -261,13 +259,7 @@ static pr_list* load_config_file(const char *config_file) {
         /* We have the pattern/replacement, now do precompilation.
          * buffer is the first part of the line. spend is the second part just
          * after the whitespace */
-        if (log) {
-            TSTextLogObjectWrite(log,
-                    "Adding pattern/replacement pair: '%s' -> '%s'",
-                    buffer, spend);
-        }
-        TSDebug(PLUGIN_NAME, "Adding pattern/replacement pair: '%s' -> '%s'\n",
-                buffer, spend);
+        TSDebug(PLUGIN_NAME, "Adding pattern/replacement pair: '%s' -> '%s'", buffer, spend);
         retval = regex_compile(&info, buffer, spend);
         if (!retval) {
             TSError("[%s] Error precompiling regex/replacement. Skipping.\n",
@@ -319,13 +311,7 @@ static int rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp) {
             i++;
         }
         if (newurl) {
-            if (log) {
-                TSTextLogObjectWrite(log,
-                        "Rewriting cache URL for %s to %s", url,
-                        newurl);
-            }
-            TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s\n",
-                    url, newurl);
+            TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s", url, newurl);
             if (TSCacheUrlSet(txnp, newurl, strlen(newurl))
                     != TS_SUCCESS) {
                 TSError("[%s] Unable to modify cache url from "
@@ -369,7 +355,6 @@ static void initialization_error(char *msg) {
 
 TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf,
     int errbuf_size) {
-    TSReturnCode error;
     if (!api_info) {
         strncpy(errbuf, "[tsremap_init] Invalid TSRemapInterface argument",
                 errbuf_size - 1);
@@ -389,16 +374,6 @@ TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf,
             api_info->tsremap_version >> 16,
             (api_info->tsremap_version & 0xffff));
         return TS_ERROR;
-    }
-
-    if (!log) {
-        error = TSTextLogObjectCreate("cacheurl", TS_LOG_MODE_ADD_TIMESTAMP,
-                &log);
-        if (!log || error == TS_ERROR) {
-            snprintf(errbuf, errbuf_size - 1,
-                "[%s] Error creating log file\n", PLUGIN_NAME);
-            return TS_ERROR;
-        }
     }
 
     TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
@@ -440,7 +415,6 @@ TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri ATS
 
 void TSPluginInit(int argc, const char *argv[]) {
     TSPluginRegistrationInfo info;
-    TSReturnCode error;
     TSCont contp;
     pr_list *prl;
 
@@ -451,14 +425,6 @@ void TSPluginInit(int argc, const char *argv[]) {
     if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
         initialization_error("Plugin registration failed.");
         return;
-    }
-
-    if (!log) {
-        error = TSTextLogObjectCreate("cacheurl", TS_LOG_MODE_ADD_TIMESTAMP,
-                &log);
-        if (!log || error == TS_ERROR) {
-            TSError("[%s] Error creating log file\n", PLUGIN_NAME);
-        }
     }
 
     prl = load_config_file(argc > 1 ? argv[1] : NULL);

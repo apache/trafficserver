@@ -24,9 +24,7 @@
 #include "P_Net.h"
 
 // For Stat Pages
-#ifdef NON_MODULAR
 #include "StatPages.h"
-#endif
 
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
@@ -92,6 +90,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   ProxyMutex *mutex = thread->mutex;
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip; // local binding address.
+  char thr_name[MAX_THREAD_NAME_LENGTH];
 
   // Potentially upgrade to SSL.
   upgradeEtype(et);
@@ -150,12 +149,14 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
         for (int i=1; i < accept_threads; ++i) {
           a = createNetAccept();
           *a = *na;
-          a->init_accept_loop();
+          snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i-1, ats_ip_port_host_order(&accept_ip));
+          a->init_accept_loop(thr_name);
           Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
         }
         // Start the "template" accept thread last.
         Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ats_ip_port_host_order(&accept_ip));
-        na->init_accept_loop();
+        snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", accept_threads-1, ats_ip_port_host_order(&accept_ip));
+        na->init_accept_loop(thr_name);
       }
     } else {
       na->init_accept_per_thread();
@@ -403,10 +404,8 @@ UnixNetProcessor::start(int, size_t)
   netthreads = eventProcessor.eventthread[etype];
   for (int i = 0; i < n_netthreads; ++i) {
     initialize_thread_for_net(netthreads[i]);
-#ifndef STANDALONE_IOCORE
     extern void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
     initialize_thread_for_http_sessions(netthreads[i], i);
-#endif
   }
 
   RecData d;
@@ -438,11 +437,9 @@ UnixNetProcessor::start(int, size_t)
 /*
  * Stat pages
  */
-#ifdef NON_MODULAR
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
   if (etype == ET_NET)
     statPagesManager.register_http("net", register_ShowNet);
-#endif
   return 1;
 }
 

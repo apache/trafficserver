@@ -161,7 +161,7 @@ ts_lua_client_response_header_set(lua_State *L)
 }
 
 static void
-ts_lua_inject_client_response_header_misc_api(lua_State *L)
+ts_lua_inject_client_response_header_misc_api(lua_State *L ATS_UNUSED)
 {
     return;
 }

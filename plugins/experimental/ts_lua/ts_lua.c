@@ -31,7 +31,7 @@ ts_lua_main_ctx         *ts_lua_main_ctx_array;
 
 
 TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char * errbuf ATS_UNUSED , int errbuf_size ATS_UNUSED )
 {
     int     ret;
 
@@ -53,7 +53,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf ATS_UNUSED , int errbuf_size ATS_UNUSED )
 {
     int     ret = 0;
 

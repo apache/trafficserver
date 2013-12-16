@@ -192,7 +192,7 @@ CacheHostMatcher::NewEntry(matcher_line * line_info)
 
 CacheHostTable::CacheHostTable(Cache * c, CacheType typ)
 {
-
+  xptr<char> config_path;
 
   config_tags = &CacheHosting_tags;
   ink_assert(config_tags != NULL);
@@ -200,16 +200,12 @@ CacheHostTable::CacheHostTable(Cache * c, CacheType typ)
   type = typ;
   cache = c;
   matcher_name = "[CacheHosting]";;
-  config_file_path[0] = '\0';
-  char *config_file = NULL;
-  REC_ReadConfigStringAlloc(config_file, "proxy.config.cache.hosting_filename");
-  ink_release_assert(config_file != NULL);
-  Layout::relative_to(config_file_path, sizeof(config_file_path),
-                      cache_system_config_directory, config_file);
-  ats_free(config_file);
   hostMatch = NULL;
 
-  m_numEntries = this->BuildTable();
+  config_path = RecConfigReadConfigPath("proxy.config.cache.hosting_filename");
+  ink_release_assert(config_path);
+
+  m_numEntries = this->BuildTable(config_path);
 }
 
 CacheHostTable::~CacheHostTable()
@@ -263,7 +259,7 @@ int fstat_wrapper(int fd, struct stat *s);
 //      from it
 //
 int
-CacheHostTable::BuildTableFromString(char *file_buf)
+CacheHostTable::BuildTableFromString(const char * config_file_path, char *file_buf)
 {
   // Table build locals
   Tokenizer bufTok("\n");
@@ -417,10 +413,8 @@ CacheHostTable::BuildTableFromString(char *file_buf)
 }
 
 int
-CacheHostTable::BuildTable()
+CacheHostTable::BuildTable(const char * config_file_path)
 {
-
-  // File I/O Locals
   char *file_buf;
   int ret;
 
@@ -432,7 +426,7 @@ CacheHostTable::BuildTable()
     return 0;
   }
 
-  ret = BuildTableFromString(file_buf);
+  ret = BuildTableFromString(config_file_path, file_buf);
   ats_free(file_buf);
   return ret;
 }
@@ -631,27 +625,19 @@ CacheHostRecord::Print()
 void
 ConfigVolumes::read_config_file()
 {
-
-// File I/O Locals
+  xptr<char> config_path;
   char *file_buf;
-  char config_file_path[PATH_NAME_MAX];
-  char *config_file = NULL;
-  config_file_path[0] = '\0';
 
-  REC_ReadConfigStringAlloc(config_file, "proxy.config.cache.volume_filename");
-  ink_release_assert(config_file != NULL);
-  Layout::relative_to(config_file_path, sizeof(config_file_path),
-                      cache_system_config_directory, config_file);
-  ats_free(config_file);
+  config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
+  ink_release_assert(config_path);
 
-  file_buf = readIntoBuffer(config_file_path, "[CacheVolition]", NULL);
-
+  file_buf = readIntoBuffer(config_path, "[CacheVolition]", NULL);
   if (file_buf == NULL) {
-    Warning("Cannot read the config file: %s", config_file_path);
+    Warning("Cannot read the config file: %s", (const char *)config_path);
     return;
   }
 
-  BuildListFromString(config_file_path, file_buf);
+  BuildListFromString(config_path, file_buf);
   ats_free(file_buf);
   return;
 }

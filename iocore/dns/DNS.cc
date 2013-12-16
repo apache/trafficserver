@@ -194,12 +194,10 @@ DNSProcessor::start(int, size_t stacksize) {
 
   dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
 
-#ifndef STANDALONE_IOCORE
   if (SplitDNSConfig::gsplit_dns_enabled) {
     //reconfigure after threads start
     SplitDNSConfig::reconfigure();
   }
-#endif
 
   // Setup the default DNSHandler, it's used both by normal DNS, and SplitDNS (for PTR lookups etc.)
   dns_init();

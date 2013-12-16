@@ -1145,6 +1145,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.server_tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections, "proxy.config.http.origin_max_connections");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
+  HttpEstablishStaticConfigLongLong(c.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
   HttpEstablishStaticConfigByte(c.parent_proxy_routing_enable, "proxy.config.http.parent_proxy_routing_enable");
 
@@ -1177,8 +1178,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.flow_control_enabled, "proxy.config.http.flow_control.enabled");
   HttpEstablishStaticConfigLongLong(c.oride.flow_high_water_mark, "proxy.config.http.flow_control.high_water");
   HttpEstablishStaticConfigLongLong(c.oride.flow_low_water_mark, "proxy.config.http.flow_control.low_water");
-  HttpEstablishStaticConfigLongLong(c.origin_server_pipeline, "proxy.config.http.origin_server_pipeline");
-  HttpEstablishStaticConfigLongLong(c.user_agent_pipeline, "proxy.config.http.user_agent_pipeline");
   HttpEstablishStaticConfigByte(c.oride.share_server_sessions, "proxy.config.http.share_server_sessions");
   HttpEstablishStaticConfigByte(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
 
@@ -1431,8 +1430,6 @@ HttpConfig::reconfigure()
     params->oride.flow_high_water_mark = params->oride.flow_low_water_mark = 0;
   }
 
-  params->origin_server_pipeline = m_master.origin_server_pipeline;
-  params->user_agent_pipeline = m_master.user_agent_pipeline;
   params->oride.share_server_sessions = m_master.oride.share_server_sessions;
   params->oride.keep_alive_post_out = INT_TO_BOOL(m_master.oride.keep_alive_post_out);
 

@@ -30,8 +30,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils
 
-DEFS += @IOCORE_MODULARIZED_DEFS@
-
 noinst_LIBRARIES = libinkcluster.a
 
 libinkcluster_a_SOURCES = \

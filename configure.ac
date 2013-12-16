@@ -228,30 +228,9 @@ AC_MSG_RESULT([$enable_micro])
 AS_IF([test "x$enable_micro" = "xyes"], [is_micro_build=1], [is_micro_build=0])
 AC_SUBST(is_micro_build)
 
-#
-# Standalone iocore
-#
-AC_MSG_CHECKING([whether to build a standalone iocore])
-AC_ARG_ENABLE([standalone-iocore],
-  [AS_HELP_STRING([--enable-standalone-iocore],[build just standalone iocore])],
-  [],
-  [enable_standalone_iocore=no]
-)
-AC_MSG_RESULT([$enable_standalone_iocore])
-TS_ARG_ENABLE_VAR([has],[standalone-iocore])
-AC_SUBST(has_standalone_iocore)
-AS_IF([test 0 -ne $has_standalone_iocore],
-  [AC_SUBST([IOCORE_MODULARIZED_DEFS],[""])
-   AC_SUBST([ink_with_modules_def],["-DREC_BUILD_STAND_ALONE"])
-   AC_SUBST([ink_with_modules_local],[""])
-   AC_SUBST([ink_with_modules_process],[""])
-  ],
-  [AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT"])
-   AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
-   AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
-  ]
-)
-AM_CONDITIONAL([STANDALONE_IOCORE], [test 0 -ne $has_standalone_iocore])
+AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT"])
+AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
+AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
 
 #
 # Force some static linkage (for testing / development only)
@@ -1123,8 +1102,16 @@ fi
 TS_CHECK_CRYPTO_NEXTPROTONEG
 
 #
+# Check for EC key support.
+TS_CHECK_CRYPTO_EC_KEYS
+
+#
 # Check for ServerNameIndication TLS extension support.
 TS_CHECK_CRYPTO_SNI
+
+#
+# Check for RFC5077 TLS session ticket support.
+TS_CHECK_CRYPTO_TICKETS
 
 #
 # Check for zlib presence and usability
@@ -1948,6 +1935,7 @@ AC_CONFIG_FILES([
   plugins/experimental/tcp_info/Makefile
   plugins/experimental/healthchecks/Makefile
   plugins/experimental/remap_stats/Makefile
+  plugins/experimental/xdebug/Makefile
   plugins/gzip/Makefile
   plugins/libloader/Makefile
   plugins/header_filter/Makefile

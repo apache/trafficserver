@@ -514,10 +514,8 @@ extern int cluster_port;
 int machine_config_change(const char *, RecDataT, RecData, void *);
 extern void do_machine_config_change(void *, const char *);
 
-#ifdef NON_MODULAR
 // Cluster API support functions
 extern void clusterAPI_init();
 extern void machine_online_APIcallout(int);
 extern void machine_offline_APIcallout(int);
-#endif
 #endif /* _ClusterInternal_h */

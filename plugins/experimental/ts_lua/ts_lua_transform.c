@@ -24,7 +24,7 @@ static int ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx *transfor
 
 
 int
-ts_lua_transform_entry(TSCont contp, TSEvent event, void *edata)
+ts_lua_transform_entry(TSCont contp, TSEvent event, void *edata ATS_UNUSED )
 {
     TSVIO       input_vio;
 

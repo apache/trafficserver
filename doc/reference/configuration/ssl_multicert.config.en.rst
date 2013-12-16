@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -46,8 +46,8 @@ Each :file:`ssl_multicert.config` line consists of a sequence of
 `key=value` fields that specify how Traffic Server should use a
 particular SSL certificate.
 
-ssl_cert_name=PATH
-  The name of the file containing the TLS certificate. `PATH` is
+ssl_cert_name=FILENAME
+  The name of the file containing the TLS certificate. `FILENAME` is
   located relative to the directory specified by the
   :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
   This is the only field that is required to be present.
@@ -55,25 +55,44 @@ ssl_cert_name=PATH
 dest_ip=ADDRESS
   The IP (v4 or v6) address that the certificate should be presented
   on. This is now only used as a fallback in the case that the TLS
-  SubjectNameIndication extension is not supported. If `ADDRESS`
-  is `*`, the corresponding certificate will be used as the global
+  SubjectNameIndication extension is not supported. If `ADDRESS` is
+  `*`, the corresponding certificate will be used as the global
   default fallback if no other match can be made.  The address may
   contain a port specifier, in which case the corresponding certificate
   will only match for connections accepted on the specified port.
   IPv6 addresses must be enclosed by square brackets if they have
   a port, eg, [::1]:80.
 
-ssl_key_name=PATH
+ssl_key_name=FILENAME
   The name of the file containing the private key for this certificate.
   If the key is contained in the certificate file, this field can
-  be omitted, otherwise `PATH` is resolved relative to the
+  be omitted, otherwise `FILENAME` is resolved relative to the
   :ts:cv:`proxy.config.ssl.server.private_key.path` configuration variable.
 
 ssl_ca_name=FILENAME
   If the certificate is issued by an authority that is not in the
   system CA bundle, additional certificates may be needed to validate
-  the certificate chain. `PATH` is resolved relative to the
+  the certificate chain. `FILENAME` is resolved relative to the
   :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
+
+ssl_ticket_enabled=1|0
+  Enable :rfc:`5077` stateless TLS session tickets. To support this,
+  OpenSSL should be upgraded to version 0.9.8f or higher. This
+  option must be set to `0` to disable session ticket support.
+
+ticket_key_name=FILENAME
+  The name of session ticket key file which contains a secret for
+  encrypting and decrypting TLS session tickets. If `FILENAME` is
+  not an absolute path, it is resolved relative to the
+  :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
+  This option has no effect if session tickets are disabled by the
+  ``ssl_ticket_enabled`` option.  The contents of the key file should
+  be 48 random bytes.
+
+  Session ticket support is enabled by default. If neither of the
+  ``ssl_ticket_enabled`` and ``ticket_key_name`` options are
+  specified, and internal session tiucket key is generated. This
+  key will be different each time Traffic Server is started.
 
 Certificate Selection
 =====================
@@ -97,7 +116,6 @@ match. An address specification that contains a port number will
 take precedence over a specification that does not contain a port
 number. A specific certificate subject will take precedence over a
 wildcard certificate.
-
 
 Examples
 ========
@@ -123,6 +141,21 @@ for all requests to port 8443 on IP address 111.11.11.1. The
 
 ::
 
-     dest_ip=111.11.11.1:8443 ssl_cert_name=server.pem ssl_key_name=serverKey.pem
-     ssl_cert_name=general.pem
+     dest_ip=111.11.11.1:8443 ssl_cert_name=server.pem ssl_key_name=serverKey.pem ssl_cert_name=general.pem
 
+The following example configures Traffic Server to use the SSL
+certificate ``server.pem`` for all requests to the IP address
+111.11.11.1. Session tickets are enabled with a persistent ticket
+key.
+
+::
+
+    dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=1 ticket_key_name=ticket.key
+
+The following example configures Traffic Server to use the SSL
+certificate ``server.pem`` and disable sessiont ticket for all
+requests to the IP address 111.11.11.1.
+
+::
+
+    dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=0

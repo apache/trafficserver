@@ -53,6 +53,9 @@ SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);
 // Initialize the SSL library.
 void SSLInitializeLibrary();
 
+// Release SSL_CTX and the associated data
+void SSLReleaseContext(SSL_CTX* ctx);
+
 // Log an SSL error.
 #define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.

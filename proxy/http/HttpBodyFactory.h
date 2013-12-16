@@ -227,7 +227,6 @@ private:
   /////////////////////////////////////
   int enable_customizations;    // 0:no custom,1:custom,2:language-targeted
   bool enable_logging;          // the user wants body factory logging
-  char *directory_of_template_sets;     // root directory for template sets
   int response_suppression_mode;        // when to suppress responses
 
   ////////////////////

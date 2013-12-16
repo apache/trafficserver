@@ -474,24 +474,14 @@ initialize_all_global_stats()
 {
   int istat, i;
   char snap_file[PATH_NAME_MAX + 1];
-  char local_state_dir[PATH_NAME_MAX + 1];
+  xptr<char> rundir(RecConfigReadRuntimeDir());
 
-  // Jira TS-21
-  REC_ReadConfigString(local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
-  if (local_state_dir[0] != '/') {
-    // Not an absolute path
-    Layout::get()->relative(local_state_dir, sizeof(local_state_dir), local_state_dir);
-  }
-  if (access(local_state_dir, R_OK | W_OK) == -1) {
-    ink_strlcpy(local_state_dir, system_runtime_dir, sizeof(local_state_dir));
-    if (access(local_state_dir, R_OK | W_OK) == -1) {
-      Warning("Unable to access() local state directory '%s': %d, %s", local_state_dir, errno, strerror(errno));
-      Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
-    }
+  if (access(rundir, R_OK | W_OK) == -1) {
+    Warning("Unable to access() local state directory '%s': %d, %s", (const char *)rundir, errno, strerror(errno));
+    Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
   }
   REC_ReadConfigString(snap_file, "proxy.config.stats.snap_file", PATH_NAME_MAX);
-  Layout::relative_to(snap_filename, sizeof(snap_filename),
-                      local_state_dir, snap_file);
+  Layout::relative_to(snap_filename, sizeof(snap_filename), (const char *)rundir, snap_file);
   Debug("stats", "stat snap filename %s", snap_filename);
 
   statPagesManager.register_http("stat", stat_callback);

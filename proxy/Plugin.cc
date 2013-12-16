@@ -221,36 +221,8 @@ not_found:
   return NULL;
 }
 
-
-int
-plugins_exist(const char *config_dir)
-{
-  char path[PATH_NAME_MAX + 1];
-  char line[1024], *p;
-  int fd;
-  int plugin_count = 0;
-
-  ink_filepath_make(path, sizeof(path), config_dir, "plugin.config");
-  fd = open(path, O_RDONLY);
-  if (fd < 0) {
-    Warning("unable to open plugin config file '%s': %d, %s", path, errno, strerror(errno));
-    return 0;
-  }
-  while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
-    p = line;
-    // strip leading white space and test for comment or blank line
-    while (*p && ParseRules::is_wslfcr(*p))
-      ++p;
-    if ((*p == '\0') || (*p == '#'))
-      continue;
-    plugin_count++;
-  }
-  close(fd);
-  return plugin_count;
-}
-
 void
-plugin_init(const char *config_dir)
+plugin_init(void)
 {
   char path[PATH_NAME_MAX + 1];
   char line[1024], *p;
@@ -267,7 +239,7 @@ plugin_init(const char *config_dir)
     INIT_ONCE = false;
   }
 
-  ink_filepath_make(path, sizeof(path), config_dir, "plugin.config");
+  Layout::get()->relative_to(path, sizeof(path), Layout::get()->sysconfdir, "plugin.config");
   fd = open(path, O_RDONLY);
   if (fd < 0) {
     Warning("unable to open plugin config file '%s': %d, %s", path, errno, strerror(errno));
