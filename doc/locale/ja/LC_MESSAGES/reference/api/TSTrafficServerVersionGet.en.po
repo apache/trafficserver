@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:21
 msgid "TSTrafficServerVersionGet"
-msgstr ""
+msgstr "TSTrafficServerVersionGet"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:24
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:26
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:34
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:36
 msgid ""
@@ -33,19 +33,21 @@ msgid ""
 "characters that indicates the Traffic Server release version. This string "
 "must not be modified."
 msgstr ""
+":func:`TSTrafficServerVersionGet` は Traffic Server のリリースバージョンを"
+"示す文字列へのポインターを返します。この文字列は変更してはいけません。"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:40
 msgid "The other APIs return an integer version number."
-msgstr ""
+msgstr "その他の API は整数のバージョン番号を返します。"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:43
 msgid "Example"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:96
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:98
 msgid ":manpage:`TSAPI(3ts)`"
-msgstr ""
+msgstr ":manpage:`TSAPI(3ts)`"
