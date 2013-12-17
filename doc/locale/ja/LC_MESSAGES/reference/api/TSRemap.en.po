@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSRemap.en.rst:21
 msgid "TSRemapInit"
-msgstr ""
+msgstr "TSRemapInit"
 
 #: ../../reference/api/TSRemap.en.rst:24
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSRemap.en.rst:26
 msgid "`#include <ts/ts.h>` `#include <ts/remap.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>` `#include <ts/remap.h>`"
 
 #: ../../reference/api/TSRemap.en.rst:37
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSRemap.en.rst:39
 msgid ""
@@ -39,6 +39,15 @@ msgid ""
 " for a single remap rule, resulting in a remap plugin chain where each "
 "pligin is given an opportunity to examine the HTTP transaction."
 msgstr ""
+"Traffic Server の remap インターフェースはプラグインが HTTP トランザクションを"
+"操作するための簡素な仕組みを提供します。remap プラグインは大域的では"
+"ありません。それは remap ルール毎に設定され、remap.config ファイル内の個々の"
+"ルールに基づいて URL がどのようにリダイレクトされるかをカスタマイズできる"
+"ようにしています。一つ以上の remap エントリーポイントを満たすことと、"
+"トランザクションがプラグインを通るように remap.config を設定することから "
+"remap プラグインを書くことは成り立っています。複数の remap プラグインが一つの "
+"remap ルールに指定されることもあり、HTTP トランザクションを検査する機会が"
+"各プラグインに与えられる remap プラグインチェーンとなります。"
 
 #: ../../reference/api/TSRemap.en.rst:49
 msgid ""
@@ -47,6 +56,10 @@ msgid ""
 ":func:`TSRemapDone` entry point is available, Traffic Server will call then "
 "when unloading the remap plugin."
 msgstr ""
+":func:`TSRemapInit` は必須のエントリーポイントです。この関数は Traffic Server"
+"がプラグインをロードする際に一度だけ呼ばれます。省略可能な "
+":func:`TSRemapDone` 関数がある場合、Traffic Server は remap プラグインを"
+"アンロードするときにそれを呼び出します。"
 
 #: ../../reference/api/TSRemap.en.rst:54
 msgid ""
@@ -55,6 +68,10 @@ msgid ""
 "a remap plugin instance is no longer required, Traffic Server will call "
 ":func:`TSRemapDeleteInstance`."
 msgstr ""
+"remap プラグインは異なる remap ルールのために呼び出されます。Traffic Server は"
+"プラグインが remap ルールに指定されるたびにエントリーポイントを呼び出します。"
+"remap プラグインインスタンスが必要なくなると、Traffic Server は "
+":func:`TSRemapDeleteInstance` を呼び出します。"
 
 #: ../../reference/api/TSRemap.en.rst:59
 msgid ""
@@ -62,10 +79,13 @@ msgid ""
 "mandatory entry point. In this function, the remap plugin may examine and "
 "modify the HTTP transaction."
 msgstr ""
+":func:`TSRemapDoRemap` は各 HTTP トランザクションで呼び出されます。これは必須"
+"のエントリーポイントです。この関数では remap プラグインが HTTP "
+"トランザクションを検査し変更するかもしれません。"
 
 #: ../../reference/api/TSRemap.en.rst:64
 msgid "Return values"
-msgstr ""
+msgstr "戻り値"
 
 #: ../../reference/api/TSRemap.en.rst:66
 msgid ""
@@ -73,6 +93,9 @@ msgid ""
 ":data:`TS_SUCCESS` on success, and :data:`TS_ERROR` otherwise. A return "
 "value of :data:`TS_ERROR` is unrecoverable."
 msgstr ""
+":func:`TSRemapInit` と :func:`TSRemapNewInstance` は成功時に "
+":data:`TS_SUCCESS` を、それ以外の時には :data:`TS_ERROR` を返すべきです。"
+"戻り値 :data:`TS_ERROR` は回復不可能です。"
 
 #: ../../reference/api/TSRemap.en.rst:70
 msgid ""
@@ -87,11 +110,21 @@ msgid ""
 "Returning :data:`TSREMAP_ERROR` causes Traffic Server to stop evaluating the"
 " remap chain and respond with an error."
 msgstr ""
+":func:`TSRemapDoRemap` は HTTP トランザクションが変更されたかどうか、そして "
+"Traffic Server が remap プラグインの評価を続けるべきかどうかを示すステータス"
+"コードを返します。トランザクションが変更されていた場合、プラグインは"
+":data:`TSREMAP_DID_REMAP` または :data:`TSREMAP_DID_REMAP_STOP` を返すべき"
+"です。それ以外の場合は :data:`TSREMAP_NO_REMAP` または "
+":data:`TSREMAP_NO_REMAP_STOP` を返すべきです。Traffic Server が"
+"トランザクションを remap チェーンの続きのプラグインに送信すべきではない場合"
+"は、:data:`TSREMAP_NO_REMAP_STOP` または :data:`TSREMAP_DID_REMAP_STOP` を"
+"返します。:data:`TSREMAP_ERROR` を返すと Traffic Server に remap チェーンの"
+"評価を止めさせ、エラーを返させます。"
 
 #: ../../reference/api/TSRemap.en.rst:83
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSRemap.en.rst:85
 msgid ":manpage:`TSAPI(3ts)`"
-msgstr ""
+msgstr ":manpage:`TSAPI(3ts)`"
