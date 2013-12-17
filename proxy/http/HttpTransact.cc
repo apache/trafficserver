@@ -617,7 +617,7 @@ HttpTransact::HandleBlindTunnel(State* s)
   s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
   s->hdr_info.client_request.url_get()->port_set(s->state_machine->ua_session->get_netvc()->get_local_port());
 
-  // Intialize the state vars necessary to sending error responses
+  // Initialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
 
   if (is_debug_tag_set("http_trans")) {
@@ -1165,7 +1165,7 @@ HttpTransact::HandleRequest(State* s)
 
   // Cache lookup or not will be decided later at DecideCacheLookup().
   // Before it's decided to do a cache lookup,
-  // assume no cache lookup and using proxy (not tunnelling)
+  // assume no cache lookup and using proxy (not tunneling)
   s->cache_info.action = CACHE_DO_NO_ACTION;
   s->current.mode = GENERIC_PROXY;
 
@@ -1415,12 +1415,12 @@ HttpTransact::PPDNSLookup(State* s)
           s->state_machine->sm_id, ats_ip_ntop(&s->parent_info.addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
-  // Since this function can be called serveral times while retrying
+  // Since this function can be called several times while retrying
   //  parents, check to see if we've already built our request
   if (!s->hdr_info.server_request.valid()) {
     build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
 
-    // Take care of defered (issue revalidate) work in building
+    // Take care of deferred (issue revalidate) work in building
     //   the request
     if (s->pending_work != NULL) {
       ink_assert(s->pending_work == issue_revalidate);
@@ -1459,7 +1459,7 @@ HttpTransact::ReDNSRoundRobin(State* s)
     //  failure mark
     s->current.server->clear_connect_fail();
 
-    // Our ReDNS of the server succeeeded so update the necessary
+    // Our ReDNS of the server succeeded so update the necessary
     //  information and try again
     ats_ip_copy(&s->server_info.addr, s->host_db_info.ip());
     ats_ip_copy(&s->request_data.dest_ip, &s->server_info.addr);
@@ -1660,8 +1660,8 @@ HttpTransact::OSDNSLookup(State* s)
     TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
   }
   // everything succeeded with the DNS lookup so do an API callout
-  //   that allows for filtering.  We'll do traffic_server interal
-  //   filtering after API filitering
+  //   that allows for filtering.  We'll do traffic_server internal
+  //   filtering after API filtering
 
 
   // After DNS_LOOKUP, goto the saved action/state ORIGIN_SERVER_(RAW_)OPEN.
@@ -2104,7 +2104,7 @@ HttpTransact::HandleCacheOpenRead(State* s)
     if (s->force_dns) {
       HandleCacheOpenReadMiss(s);
     } else {
-      //Cache Lookup Unsuccesfull ..calling dns lookup
+      //Cache Lookup Unsuccessful ..calling dns lookup
       TRANSACT_RETURN(DNS_LOOKUP, OSDNSLookup);
     }
   }
@@ -2120,7 +2120,7 @@ HttpTransact::HandleCacheOpenRead(State* s)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : issue_revalidate
-// Description:   Sets cache action and does various bookeeping
+// Description:   Sets cache action and does various bookkeeping
 //
 // Details    :
 //
@@ -2128,7 +2128,7 @@ HttpTransact::HandleCacheOpenRead(State* s)
 //   calling build_request, we need setup up the cache action,
 //   set the via code, and possibly conditionalize the request
 // The paths that we take to get this code are:
-//   Dircectly from HandleOpenReadHit if we are going to the origin server
+//   Directly from HandleOpenReadHit if we are going to the origin server
 //   After PPDNS if we are going to a parent proxy
 //
 //
@@ -2437,7 +2437,7 @@ HttpTransact::need_to_revalidate(State* s)
 // - result of how_to_open_connection()
 //
 //
-// For Range requests, we will decide to do simple tunnelling if one of the
+// For Range requests, we will decide to do simple tunneling if one of the
 // following conditions hold:
 // - document stale
 // - cached response doesn't have Accept-Ranges and Content-Length
@@ -3067,12 +3067,12 @@ HttpTransact::HandleICPLookup(State* s)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : OriginServerRawOpen
-// Description: called for ssl tunnelling
+// Description: called for ssl tunneling
 //
 // Details    :
 //
 // when the method is CONNECT, we open a raw connection to the origin
-// server. if the open succeeds, then do ssl tunnelling from the client
+// server. if the open succeeds, then do ssl tunneling from the client
 // to the host.
 //
 //
