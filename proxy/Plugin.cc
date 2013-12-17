@@ -89,12 +89,6 @@ dll_error(void * /* dlp ATS_UNUSED */)
 }
 
 static void
-dll_close(void *dlp)
-{
-  dlclose(dlp);
-}
-
-static void
 plugin_load(int argc, char *argv[])
 {
   char path[PATH_NAME_MAX + 1];
@@ -145,7 +139,6 @@ plugin_load(int argc, char *argv[])
 
   plugin_reg_list.push(plugin_reg_current);
   plugin_reg_current = NULL;
-  //dll_close(handle);
 }
 
 static char *

@@ -233,8 +233,8 @@ init_system()
 
   init_signals(stackDump == 1);
 
-  syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersion.AppStr);
-  syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersion.AppStr, appVersionInfo.FullVersionInfoStr);
+  syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
+  syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
 
   //
   // Delimit file Descriptors
