@@ -210,7 +210,7 @@ In order to accomplish this, we:
 
 .. This numbering is ridiculous. I need to re-read this doc with a fresh mind and re(number|order) it.
 
-2. Edit the following variables in the :ref:`records-config-ssl-termination` section of
+1. Edit the following variables in the :ref:`records-config-ssl-termination` section of
    :file:`records.config`:
 
    -  :ts:cv:`proxy.config.ssl.auth.enabled`
@@ -223,7 +223,7 @@ In order to accomplish this, we:
    -  :ts:cv:`proxy.config.ssl.client.CA.cert.filename`
    -  :ts:cv:`proxy.config.ssl.client.CA.cert.path`
 
-3. Run the command :option:`traffic_line -L` to restart Traffic Server on the
+2. Run the command :option:`traffic_line -L` to restart Traffic Server on the
    local node or :option:`traffic_line -M` to restart Traffic Server on all
    the nodes in a cluster.
 

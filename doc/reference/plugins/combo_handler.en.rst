@@ -37,9 +37,7 @@ combination with the ESI module, since they share common code.
 Configuration
 =============
 
-The arguments in the
-```plugin.config`` <../../configuration-files/plugin.config>`_ line in
-order represent
+The arguments in the :file:`plugin.config` line in order represent
 
 1. The path that should triggers combo handler (defaults to
    "admin/v1/combo")

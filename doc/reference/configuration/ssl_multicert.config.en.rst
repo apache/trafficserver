@@ -91,7 +91,7 @@ ticket_key_name=FILENAME
 
   Session ticket support is enabled by default. If neither of the
   ``ssl_ticket_enabled`` and ``ticket_key_name`` options are
-  specified, and internal session tiucket key is generated. This
+  specified, and internal session ticket key is generated. This
   key will be different each time Traffic Server is started.
 
 Certificate Selection

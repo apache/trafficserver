@@ -59,7 +59,7 @@ for all ``INT`` type configurations
 
    - ``K`` Kilobytes (1024 bytes)
    - ``M`` Megabytes (1024^2 or 1,048,576 bytes)
-   - ``G`` Gigabytes (1024^3 or 1,073,741,824 bytes
+   - ``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)
    - ``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)
 
 .. note::
@@ -1952,6 +1952,14 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
 
    Enables (``1``) or disables (``0``) TLSv1.
+
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
+
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, DISABLED by default.  [Requires OpenSSL v1.0.1 and higher]
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.certification_level INT 0
 

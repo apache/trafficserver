@@ -220,7 +220,7 @@ static const ArgumentDescription argument_descriptions[] = {
 //
 // Initialize operating system related information/services
 //
-void
+static void
 init_system()
 {
   RecInt stackDump;
@@ -233,8 +233,8 @@ init_system()
 
   init_signals(stackDump == 1);
 
-  syslog(LOG_NOTICE, "NOTE: --- Server Starting ---");
-  syslog(LOG_NOTICE, "NOTE: Server Version: %s", appVersionInfo.FullVersionInfoStr);
+  syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
+  syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
 
   //
   // Delimit file Descriptors

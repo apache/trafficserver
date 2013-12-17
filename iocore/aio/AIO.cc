@@ -516,6 +516,7 @@ aio_thread_main(void *arg)
         if (aio_err_callbck) {
           AIOCallback *callback_op = new AIOCallbackInternal();
           callback_op->aiocb.aio_fildes = op->aiocb.aio_fildes;
+          callback_op->mutex = aio_err_callbck->mutex;
           callback_op->action = aio_err_callbck;
           eventProcessor.schedule_imm(callback_op);
         }

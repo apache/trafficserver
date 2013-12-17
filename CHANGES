@@ -1,6 +1,15 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2434] Use the FATAL error level to handle plugin errors.
+
+  *) [TS-2203] Clarify syslog startup messages for standalone log programs.
+
+  *) [TS-2436] Add a simple integration test harness.
+
+  *) [TS-2355] ATS 4.0.x crashes when using OpenSSL 1.0.1e
+
+  *) [TS-2432] Fix a race in aio_err_callblk.
 
   *) [TS-2251] Simplify LogBuffer reference counting.
 
