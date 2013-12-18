@@ -139,7 +139,7 @@ size <dir-size>` which is at least as big as the actual data. Exact size data is
 The entries in a directory are grouped. The first level grouping is a *bucket*. This is a fixed number (currently 4 -
 defined as ``DIR_DEPTH``) of entries. The index generated from a cache ID is used as a bucket index (not an entry index).
 Buckets are grouped in to *segments*. All segments in a stripe have the same number of buckets. The number of segments
-in a stripe is chosen so that each segment has as many buckets as possible without exceeeding 65535 (2\ :sup:`16`\ -1)
+in a stripe is chosen so that each segment has as many buckets as possible without exceeding 65535 (2\ :sup:`16`\ -1)
 entries in a segment. Note that all segments in the same stripe will have the same number of buckets.
 
 .. figure:: images/dir-segment-bucket.png
