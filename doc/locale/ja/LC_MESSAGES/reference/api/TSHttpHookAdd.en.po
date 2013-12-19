@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:22
 msgid "TSHttpHookAdd"
-msgstr ""
+msgstr "TSHttpHookAdd"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:25
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:26
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:33
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:35
 msgid ""
@@ -35,6 +35,10 @@ msgid ""
 "plugin to be called back for every single transaction, or for specific "
 "transactions only."
 msgstr ""
+"フックは Apache Traffic Server の HTTP 処理の中でプラグインが入り込み何か"
+"できる場所です。コールバックのためのプラグインの関数を登録することはフックに"
+"関数を追加することと同じです。一つずつすべてのトランザクション、もしくは特定"
+"のトランザクションのみにコールバックされるプラグインを登録することができます。"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:41
 msgid ""
@@ -44,6 +48,12 @@ msgid ""
 ":func:`TSHttpHookAdd` is typically called from :func:`TSPluginInit` or "
 ":func:`TSRemapInit`."
 msgstr ""
+"HTTP :term:`transaction` フックは関数 :func:`TSHttpHookAdd` を使いグローバルに"
+"セットされます。これは :func:`TSHttpHookAdd` のパラメーターとして指定された"
+"継続は全トランザクションで呼ばれるということを意味します。"
+":func:`TSHttpHookAdd` は一般的に :func:`TSPluginInit` もしくは "
+":func:`TSRemapInit` から呼ばれます。"
+
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:47
 msgid ""
@@ -54,6 +64,12 @@ msgid ""
 "not possible to call :func:`TSHttpSsnHookAdd` from the plugin initialization"
 " routine; the plugin needs a handle to an HTTP session."
 msgstr ""
+":func:`TSHttpSsnHookAdd` は :arg:`contp` を :arg:`id` で指定された HTTP "
+":term:`session` フックのリストの最後に追加します。これは :arg:`contp` が"
+"フック ID で指定された場所において、セッション中のすべてのトランザクションで"
+"呼び出されることを意味します。:arg:`contp` がセッションに追加されるので、"
+"プラグインの初期化ルーチンから :func:`TSHttpSsnHookAdd` を呼び出すことはでき"
+"ません。プラグインは HTTP セッションを取り扱う必要があります。"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:55
 msgid ""
@@ -63,31 +79,40 @@ msgid ""
 "plugin initialization routine but only when the plugin has a handle to an "
 "HTTP transaction."
 msgstr ""
+":func:`TSHttpTxnHookAdd` は :arg:`contp` を :arg:`id` で指定された HTTP "
+"トランザクションフックのリストの最後に追加します。:arg:`contp` が"
+"トランザクションに追加されるので、プラグインの初期化ルーチンから "
+":func:`TSHttpTxnHookAdd` を呼び出すことはできず、プラグインが HTTP "
+"トランザクションを取り扱うときのみ呼び出せます。"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:63
 msgid "Return values"
-msgstr ""
+msgstr "戻り値"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:65
 msgid "None. Adding hooks is always successful."
-msgstr ""
+msgstr "無し。フックの追加は常に成功します。"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:68
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:70
 msgid ""
 "The following example demonstrates how to add global, session and "
 "transaction hooks::"
 msgstr ""
+"次の例はどのようにグローバル、セッション、トランザクションフックを追加するか"
+"を紹介しています。"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:110
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSHttpHookAdd.en.rst:111
 msgid ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, "
 ":manpage:`TSLifecycleHookAdd(3ts)`"
 msgstr ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, "
+":manpage:`TSLifecycleHookAdd(3ts)`"
