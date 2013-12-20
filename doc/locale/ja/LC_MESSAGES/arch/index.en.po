@@ -13,11 +13,11 @@ msgstr ""
 
 #: ../../arch/index.en.rst:2
 msgid "Architecture"
-msgstr ""
+msgstr "アーキテクチャ"
 
 #: ../../arch/index.en.rst:22
 msgid "Introduction"
-msgstr ""
+msgstr "導入"
 
 #: ../../arch/index.en.rst:24
 msgid ""
@@ -27,7 +27,12 @@ msgid ""
 "have a high level description of aspects of Traffic Server to better inform "
 "ongoing work."
 msgstr ""
+"Traffic Server のオリジナルのアーキテクチャに関するドキュメントは、オープン"
+"ソースプロジェクトへの移行時に失われました。このセクションのドキュメントは"
+"暫定的なものであり、既存のコードを元に書かれています。このドキュメントの目的は"
+"進行中の作業をより知らせるため、 Traffic Server の側面の高度な説明をすること"
+"です。"
 
 #: ../../arch/index.en.rst:28
 msgid "Contents:"
-msgstr ""
+msgstr "内容:"
