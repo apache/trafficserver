@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2448] Fix traffic_cop and traffic_manager to obey the proxy.config.local_state_dir setting.
+
   *) [TS-2445] Fix problem with 204 responses closing POST requests
 
   *) [TS-2434] Use the FATAL error level to handle plugin errors.
