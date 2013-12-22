@@ -54,7 +54,7 @@ Server configuration can be changed. If a plugin requires the current
 value, it must obtain that using the management API.
 
 Examples
-=======
+========
 
 ::
 

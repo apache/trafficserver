@@ -116,7 +116,7 @@ accessed by other continuations or processes. Here's how:
        mutexp = TSMutexCreate ();
 
 2. | When you create the continuation, specify this mutex as the
-   continuation's mutex.
+     continuation's mutex.
    | For example:
 
    ::
