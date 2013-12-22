@@ -87,7 +87,7 @@ private:
   LogSock *m_sock;
   int m_sock_fd;
   bool m_connected;
-  LogFile *m_orphan_file;
+  Ptr<LogFile> m_orphan_file;
   LogCollationClientSM *m_log_collation_client_sm;
 
 public:

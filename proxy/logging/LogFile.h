@@ -122,7 +122,7 @@ public:
   LogFile
   -------------------------------------------------------------------------*/
 
-class LogFile:public LogBufferSink
+class LogFile:public LogBufferSink, public RefCountObj
 {
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature,
