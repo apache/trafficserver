@@ -13,17 +13,19 @@ msgstr ""
 
 #: ../../admin/faqs.en.rst:4
 msgid "FAQ and Troubleshooting Tips"
-msgstr ""
+msgstr "FAQ と トラブルシューティングの秘訣"
 
 #: ../../admin/faqs.en.rst:27
 msgid "FAQs"
-msgstr ""
+msgstr "FAQ"
 
 #: ../../admin/faqs.en.rst:30
 msgid ""
 "How do you create a raw disk for the cache if all your disks have mounted "
 "file systems?"
 msgstr ""
+"全ディスクがファイルシステムにマウントされている場合、キャッシュ用の raw "
+"ディスクの作成はどうすればいいですか？"
 
 #: ../../admin/faqs.en.rst:32
 msgid ""
@@ -32,12 +34,18 @@ msgid ""
 ":manpage:`lofiadm(1m)` on Solaris and Illumos, and :manpage:`mdconfig(8)` on"
 " FreeBSD."
 msgstr ""
+"ファイルシステム上に大きなファイルを ( :manpage:`dd(1)` を使って ) 作成し、"
+"それをループバックデバイスとしてマウントしてください。これは Linux 上では "
+" :manpage:`losetup(8)` で、Solaris と Illumos 上では :manpage:`lofiadm(1m)` "
+"、FreeBSD 上では :manpage:`mdconfig(8)` を使って行えます。"
 
 #: ../../admin/faqs.en.rst:37
 msgid ""
 "How do disk I/O errors affect the cache and what does Traffic Server do when"
 " a cache disk fails?"
 msgstr ""
+"ディスク I/O エラーはキャッシュにどのように影響し、キャッシュディスクが"
+"動かなくなったとき Traffic Server は何を行いますか？"
 
 #: ../../admin/faqs.en.rst:39
 msgid ""
@@ -45,12 +53,17 @@ msgid ""
 "considers the drive inaccessible and removes the entire disk from the cache."
 " Normal cache operations continue for all other Traffic Server disk drives."
 msgstr ""
+"ディスクドライブが I/O 操作に連続して五回失敗すると、Traffic Server はドライブ"
+"がアクセス不能とみなしキャッシュからディスク全体を外します。通常のキャッシュ"
+"操作は Traffic Server の他のすべてのディスクドライブで継続します。"
 
 #: ../../admin/faqs.en.rst:45
 msgid ""
 "If a client disconnects during the time that Traffic Server is downloading a"
 " large object, is any of the object saved in the cache?"
 msgstr ""
+"Traffic Server が大きいオブジェクトをダウンロード中にクライアントが接続を"
+"閉じた場合、オブジェクトはキャッシュに保存されますか？"
 
 #: ../../admin/faqs.en.rst:47
 msgid ""
@@ -63,12 +76,21 @@ msgid ""
 "the object from cache. Traffic Server does not store partial documents in "
 "the cache."
 msgstr ""
+"HTTP の処理中にクライアントが接続を閉じたとき、Traffic Server は 10 秒まで"
+"オリジンサーバーからのオブジェクトのダウンロードを継続します。クライアントが"
+"接続を閉じた後、オリジンサーバーからの転送が 10 秒以内に正常に完了した場合、"
+"Traffic Server はオブジェクトをキャッシュに保存します。オリジンサーバーからの"
+"ダウンロードが 10 秒以内に正常に完了しない場合、Traffic Server は"
+"オリジンサーバーとの接続を閉じ、キャッシュからオブジェクトを削除します。"
+"Traffic Server は部分的なオブジェクトをキャッシュに保存しません。"
 
 #: ../../admin/faqs.en.rst:57
 msgid ""
 "Can Traffic Server cache Java applets, JavaScript programs, or other "
 "application files like VBScript?"
 msgstr ""
+"Traffic Server は Java アプレット、JavaScript のブログラムもしくは VBScript "
+"の様なその他のアプリケーションファイルをキャッシュできますか？"
 
 #: ../../admin/faqs.en.rst:59
 msgid ""
@@ -78,22 +100,31 @@ msgid ""
 "execute the applets, scripts, or programs, however - these objects run only "
 "when the client system (ie, the one that sent the request) loads them."
 msgstr ""
+"はい、Traffic Server は Java アプレット、JavaScript プログラム、VBScript、"
+"その他実行可能なオブジェクトを保存し、HTTP オブジェクトの新鮮さとキャッシュ"
+"ルールにもとづいて配信することができます。Traffic Server はアプレット、"
+"スクリプト、プログラムを実行せず、クライアントはこれらシステムに読み込んだとき"
+"にのみ実行されます。"
 
 #: ../../admin/faqs.en.rst:67
 msgid ""
 "In Squid- and Netscape-format log files, what do the cache result codes "
 "mean?"
 msgstr ""
+"Squid や Netscape フォーマットのログファイルで、キャッシュ結果コードは何を"
+"意味していますか？"
 
 #: ../../admin/faqs.en.rst:69
 msgid ""
 "This is described in detail in the :ref:`log-formats-squid-format` "
 "documentation."
 msgstr ""
+"これについては :ref:`log-formats-squid-format` に詳細に説明されています。"
 
 #: ../../admin/faqs.en.rst:72
 msgid "What is recorded by the ``cqtx`` field in a custom log file?"
 msgstr ""
+"カスタムログファイル内の ``cqtx`` フィールドには何が記録されていますか？"
 
 #: ../../admin/faqs.en.rst:74
 msgid ""
@@ -101,6 +132,9 @@ msgid ""
 "request in the log file (for example, ``GET http://www.company.com "
 "HTTP/1.0``)."
 msgstr ""
+"**フォワードプロキシーモード** では、cqtx フィールドはクライアントの完全な"
+"リクエストを記録しています (例えば、``GET http://www.company.com HTTP/1.0`` "
+"など) 。"
 
 #: ../../admin/faqs.en.rst:76
 msgid ""
@@ -108,12 +142,17 @@ msgid ""
 " of the origin server because Traffic Server first remaps the request as per"
 " map rules in the :file:`remap.config` file."
 msgstr ""
+"**リバースプロキシーモード** では、Traffic Server はまずリクエストを "
+":file:`remap.config` ファイル内のマップルールごとにリマップを行うので、cqtx "
+"フィールドはオリジンサーバーのホスト名もしくは IP アドレスを記録しています。"
 
 #: ../../admin/faqs.en.rst:81
 msgid ""
 "Does Traffic Server refresh entries in its host database after a certain "
 "period of time if they have not been used?"
 msgstr ""
+"Traffic Server はホストデータベース内のエントリーが一定期間使われなかった場合"
+"にそれらを更新しますか？"
 
 #: ../../admin/faqs.en.rst:83
 msgid ""
@@ -124,16 +163,24 @@ msgid ""
 "the ``ttl`` value set by the name server with the ``ttl`` value set by "
 "Traffic Server, and then use either the lower or the higher value."
 msgstr ""
+"デフォルトでは、Traffic Server のホストデータベースはネームサーバーにより"
+"セットされた time-to-live (``ttl``) を監視します。ネームサーバーによってセット"
+"された ``ttl`` を無視して指定した設定を使用するように Traffic Server を再設定"
+"することも可能です。もしくは、ネームサーバーによってセットされた ``ttl`` の値"
+"と Traffic Server の設定値を比較し、低いものか高いものかどちらかを使用するよう"
+"に Traffic Serverを設定することも可能です。"
 
 #: ../../admin/faqs.en.rst:91
 msgid "see :ts:cv:`proxy.config.hostdb.ttl_mode` for more info"
-msgstr ""
+msgstr "詳しくは :ts:cv:`proxy.config.hostdb.ttl_mode` を観てください。"
 
 #: ../../admin/faqs.en.rst:94
 msgid ""
 "Can you improve the look of your custom response pages by using images, "
 "animated .gifs, and Java applets?"
 msgstr ""
+"カスタムレスポンスメッセージの見た目を画像やアニメーション GIF や Java "
+"アプレットを使用して改善することはできますか？"
 
 #: ../../admin/faqs.en.rst:96
 msgid ""
@@ -144,12 +191,20 @@ msgid ""
 "body_factory template files in the same way you would for any image in an "
 "HTML document (i.e., with the full URL in the ``SRC`` attribute)."
 msgstr ""
+"いいえ、Traffic Server はクライアントに一つのテキストもしくは HTML "
+"ドキュメントしか返せません。次善策ではありますが、カスタマイズレスポンス"
+"ページで Web サーバー上にある画像、アニメーション GIF 、Java アプレット、"
+"その他テキストではないオブジェクトの参照を提供することは可能です。HTML "
+"ドキュメントに画像を追加するのと同じ方法で body_factory テンプレートファイルに"
+"リンクを追加してください (例、\\ ``SRC`` 属性に完全な URL を指定するなど) 。"
 
 #: ../../admin/faqs.en.rst:105
 msgid ""
 "Can Traffic Server run in forward proxy and reverse proxy modes at the same "
 "time?"
 msgstr ""
+"Traffic Server はフォワードプロキシーモードとリバースプロキシーモードを同時に"
+"実行できますか？"
 
 #: ../../admin/faqs.en.rst:107
 msgid ""
@@ -158,6 +213,10 @@ msgid ""
 "other requests that do not match a map rule are simply served in forward "
 "proxy mode."
 msgstr ""
+"はい。リバースプロキシーモードを有効にした場合、Traffic Server は入ってきた"
+"リクエストを :file:`remap.config` ファイル内のマップルールにもとづいて remap "
+"します。マップルールにマッチしないその他のすべてのリクエストはフォワード"
+"プロキシーモードで単純に処理されます。"
 
 #: ../../admin/faqs.en.rst:112
 msgid ""
@@ -166,34 +225,41 @@ msgid ""
 "configuration variable :ts:cv:`proxy.config.url_remap.remap_required` to "
 "``1`` in the :file:`records.config` file."
 msgstr ""
+"リバースプロキシーモードのみで実行したい場合 (Traffic Server はマップルールに"
+"マッチしなかったリクエストに応え\\ *ません*\\ ) は、:file:`records.config` "
+"ファイル内の設定変数 :ts:cv:`proxy.config.url_remap.remap_required` を ``1`` "
+"にセットしなければなりません。"
 
 #: ../../admin/faqs.en.rst:118
 msgid "How do I enable forward proxy mode"
-msgstr ""
+msgstr "どうやってフォワードプロキシーモードを有効するのですか？"
 
 #: ../../admin/faqs.en.rst:120
 msgid "Please refer to the :ref:`forward-proxy` documentation."
-msgstr ""
+msgstr ":ref:`forward-proxy` を参照してください。"
 
 #: ../../admin/faqs.en.rst:123
 msgid "How do I interpret the Via: header code?"
-msgstr ""
+msgstr "どうやって Via: ヘッダーコードを解釈するのですか？"
 
 #: ../../admin/faqs.en.rst:125
 msgid ""
 "Take a look at our `Via decoder Ring "
 "<http://trafficserver.apache.org/tools/via>`_."
 msgstr ""
+"`Via decoder Ring <http://trafficserver.apache.org/tools/via>`_ を見て"
+"ください。"
 
 #: ../../admin/faqs.en.rst:128
 msgid "Support for HTTP Expect: Header"
-msgstr ""
+msgstr "HTTP Expect: ヘッダーのサポート"
 
 #: ../../admin/faqs.en.rst:130
 msgid ""
 "Traffic Server currently does not handle request Expect: headers according "
 "to the HTTP/1.1 spec."
 msgstr ""
+"Traffic Server は現在 HTTP/1.1 仕様による Expect: ヘッダーを扱いません。"
 
 #: ../../admin/faqs.en.rst:133
 msgid ""
@@ -202,14 +268,19 @@ msgid ""
 "is not received. To avoid the timeout when using cURL as a client to Traffic"
 " Server, you can turn off the Expect: header as follows::"
 msgstr ""
+"cURL などのクライアントは大きい POST ボディを持つ POST リクエストで、1 秒の"
+"タイムアウトで 100 Continue レスポンスを受け取らない場合に自動的に Expect: "
+"ヘッダーを送信することに注意してください。cURL を Traffic Server の"
+"クライアントとして使用する際のタイムアウトを防ぐためには、次のように Expect: "
+"ヘッダーをオフにすることができます。"
 
 #: ../../admin/faqs.en.rst:141
 msgid "C (libcurl)::"
-msgstr ""
+msgstr "C (libcurl)::"
 
 #: ../../admin/faqs.en.rst:147
 msgid "php::"
-msgstr ""
+msgstr "php::"
 
 #: ../../admin/faqs.en.rst:152
 msgid "Troubleshooting Tips"
