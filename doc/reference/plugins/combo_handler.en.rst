@@ -69,6 +69,7 @@ file paths can be extracted and specified separately using a 'p' query
 parameter. Successive file path parameters are appended to this prefix
 to create complete file paths. The prefix will remain active until
 changed or cleared (set to an empty string). For example, the query ::
+
     "/file1&p=/path1/&file2&file3&p=&/file4&p=/dir:path2/&file5&file6"
 
 results in these file paths being "reconstructed"::

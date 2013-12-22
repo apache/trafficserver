@@ -128,6 +128,7 @@ The following list shows possible actions and their allowed values.
       this content to be stored locally on every cluster node.
 
 .. _cache-responses-to-cookies:
+
 ``cache-responses-to-cookies``
    Change the style of caching with regard to cookies. This effectively
    overrides the configuration parameter

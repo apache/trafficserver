@@ -218,6 +218,7 @@ Synopsis
 **test_server_intercept.lua**
 
 ::
+
     require 'os'
 
     function send_data()
@@ -561,7 +562,7 @@ ts.client_request.header.HEADER
 
 **description**: Set, add to, clear or get the current request's HEADER.
 
-Here is an example:
+Here is an example:::
 
     function do_remap()
         local req_host = ts.client_request.header.Host
