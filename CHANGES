@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2468] Bring back the load balancer plugin.
+
   *) [TS-2465] libxml2 detection generates an invalid linker path.
    Author: Radim Kolar <hsn@sendmail.cz>
 

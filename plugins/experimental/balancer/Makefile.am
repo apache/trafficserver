@@ -14,25 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
- authproxy \
- balancer \
- buffer_upload \
- channel_stats \
- custom_redirect \
- esi \
- geoip_acl \
- healthchecks \
- lua \
- hipes \
- metalink \
- remap_stats \
- rfc5861 \
- spdy \
- tcp_info \
- ts_lua \
- xdebug
+pkglib_LTLIBRARIES = balancer.la
+balancer_la_SOURCES = balancer.cc roundrobin.cc hash.cc balancer.h
+balancer_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-endif

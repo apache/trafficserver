@@ -1922,6 +1922,7 @@ AC_CONFIG_FILES([
   plugins/conf_remap/Makefile
   plugins/experimental/Makefile
   plugins/experimental/authproxy/Makefile
+  plugins/experimental/balancer/Makefile
   plugins/experimental/buffer_upload/Makefile
   plugins/experimental/channel_stats/Makefile
   plugins/experimental/custom_redirect/Makefile
