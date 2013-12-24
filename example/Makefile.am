@@ -37,10 +37,10 @@ noinst_LTLIBRARIES = \
   remap.la \
   replace-header.la \
   response-header-1.la \
+  secure-link.la \
   server-transform.la \
   thread-1.la \
-  version.la \
-  secure-link.la
+  version.la
 
 add_header_la_SOURCES = add-header/add-header.c
 append_transform_la_SOURCES = append-transform/append-transform.c
