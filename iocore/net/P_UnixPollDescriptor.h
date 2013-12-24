@@ -106,6 +106,10 @@ struct PollDescriptor
   Pollfd *alloc()
   {
 #if TS_USE_EPOLL
+    // XXX : We need restrict max size based on definition.
+    if (nfds >= POLL_DESCRIPTOR_SIZE) {
+      nfds = 0;
+    }
     return &pfd[nfds++];
 #else
     return 0;
