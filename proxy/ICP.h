@@ -613,6 +613,7 @@ public:
       delete _pconfig;
   }
   int GetProxyPort();
+  int GetICPPort();
   virtual sockaddr* GetIP();
   virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr const* to);
   virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *);

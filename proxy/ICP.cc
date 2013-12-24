@@ -2174,8 +2174,8 @@ ICPProcessor::SetupListenSockets()
   Peer *P;
   int status;
   int index;
+  ip_port_text_buffer ipb, ipb2;
   for (index = 0; index < (_nPeerList + 1); ++index) {
-    ip_port_text_buffer ipb, ipb2;
 
     if ((P = _PeerList[index])) {
 
@@ -2183,7 +2183,7 @@ ICPProcessor::SetupListenSockets()
           || (P->GetType() == PEER_SIBLING)) {
         ParentSiblingPeer *pPS = (ParentSiblingPeer *) P;
 
-	pPS->GetChan()->setRemote(pPS->GetIP());
+        pPS->GetChan()->setRemote(pPS->GetIP());
 
       } else if (P->GetType() == PEER_MULTICAST) {
         MultiCastPeer *pMC = (MultiCastPeer *) P;
@@ -2219,7 +2219,22 @@ ICPProcessor::SetupListenSockets()
   //
   ParentSiblingPeer *pPS = (ParentSiblingPeer *) ((Peer *) _LocalPeer);
 
-  pPS->GetChan()->setRemote(pPS->GetIP());
+  NetVCOptions options;
+  options.local_ip.assign(pPS->GetIP());
+  options.local_port = pPS->GetICPPort();
+  options.ip_proto = NetVCOptions::USE_UDP;
+  options.addr_binding = NetVCOptions::INTF_ADDR;
+  status = pPS->GetChan()->open(options);
+  if (status) {
+    // coverity[uninit_use_in_call] ?
+    Warning("ICP bind_connect failed, res=%d, ip=%s",
+      status,
+      ats_ip_nptop(pPS->GetIP(), ipb, sizeof(ipb))
+    );
+    REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect for localhost failed");
+    return 1;             // Failed
+  }
+
   return 0;                     // Success
 }
 
