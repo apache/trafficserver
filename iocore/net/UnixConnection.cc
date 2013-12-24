@@ -53,6 +53,7 @@ Connection::setup_mc_send(
   ink_assert(fd == NO_FD);
   int res = 0;
   int enable_reuseaddr = 1;
+  in_addr_t mc_if = ats_ip4_addr_cast(my_addr);
 
   if ((res = socketManager.mc_socket(my_addr->sa_family, SOCK_DGRAM, 0, non_blocking)) < 0)
     goto Lerror;
@@ -82,6 +83,9 @@ Connection::setup_mc_send(
   if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &mc_ttl, sizeof(mc_ttl)) < 0))
     goto Lerror;
 
+  // Set MultiCast Interface to specified value
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *) &mc_if, sizeof(mc_if)) < 0))
+    goto Lerror;
 
   // Disable MultiCast loopback if requested
   if (!mc_loopback) {
@@ -102,6 +106,7 @@ Lerror:
 int
 Connection::setup_mc_receive(
   sockaddr const* mc_addr,
+  sockaddr const* my_addr,
   bool non_blocking, Connection * sendChan, Continuation * c
 ) {
   ink_assert(fd == NO_FD);
@@ -109,6 +114,7 @@ Connection::setup_mc_receive(
   (void) c;
   int res = 0;
   int enable_reuseaddr = 1;
+  IpAddr inaddr_any(INADDR_ANY);
 
   if ((res = socketManager.socket(mc_addr->sa_family, SOCK_DGRAM, 0)) < 0)
     goto Lerror;
@@ -123,7 +129,7 @@ Connection::setup_mc_receive(
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
     goto Lerror;
 
-  ats_ip_copy(&addr, mc_addr);
+  addr.assign(inaddr_any, ats_ip_port_cast(mc_addr));
 
   if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0)
     goto Lerror;
@@ -136,7 +142,7 @@ Connection::setup_mc_receive(
     struct ip_mreq mc_request;
     // Add ourselves to the MultiCast group
     mc_request.imr_multiaddr.s_addr = ats_ip4_addr_cast(mc_addr);
-    mc_request.imr_interface.s_addr = INADDR_ANY;
+    mc_request.imr_interface.s_addr = ats_ip4_addr_cast(my_addr);
 
     if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *) &mc_request, sizeof(mc_request)) < 0))
       goto Lerror;

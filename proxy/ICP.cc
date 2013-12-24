@@ -2201,6 +2201,7 @@ ICPProcessor::SetupListenSockets()
         }
 
         status = pMC->GetRecvChan()->setup_mc_receive(pMC->GetIP(),
+                                                      _LocalPeer->GetIP(),
                                                       NON_BLOCKING, pMC->GetSendChan(), _mcastCB_handler);
         if (status) {
           // coverity[uninit_use_in_call]
