@@ -48,12 +48,12 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink) {
       // Still has outstanding references.
       write_list.push(b);
     } else if (_num_flush_buffers > FLUSH_ARRAY_SIZE) {
-      delete b;
       ink_atomic_increment(&_num_flush_buffers, -1);
       Warning("Dropping log buffer, can't keep up.");
       RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
                      log_stat_bytes_lost_before_preproc_stat,
                      b->header()->byte_count);
+      delete b;
     } else {
       new_q.push(b);
     }
