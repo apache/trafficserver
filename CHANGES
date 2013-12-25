@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2452] Can't access a deleted object.
+
   *) [TS-2363] Fix assertion of "Unknown file format type!".
 
   *) [TS-2448] Fix traffic_cop and traffic_manager to obey the proxy.config.local_state_dir setting.
