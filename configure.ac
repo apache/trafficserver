@@ -1928,6 +1928,7 @@ AC_CONFIG_FILES([
   plugins/experimental/esi/Makefile
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/lua/Makefile
+  plugins/experimental/hipes/Makefile
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/metalink/Makefile
   plugins/experimental/rfc5861/Makefile
