@@ -326,7 +326,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSDebug(PLUGIN_NAME, "Escaped service URL is %s(%d)", svc_url_esc, len);
 
     // Prepare the new query arguments, make sure it fits
-    if (( (slash - param) + 2 + h_conf->url_param.size() + len) > MAX_PATH_SIZE) {
+    if (( (slash - param) + 2 + (int) h_conf->url_param.size() + len) > MAX_PATH_SIZE) {
       TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
       return TSREMAP_NO_REMAP;
     }
