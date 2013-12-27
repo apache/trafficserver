@@ -600,7 +600,8 @@ asn1_strdup(ASN1_STRING * s)
   // Make sure we have an 8-bit encoding.
   ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING ||
     ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
-    ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING);
+    ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING ||
+    ASN1_STRING_type(s) == V_ASN1_T61STRING);
 
   return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
 }
