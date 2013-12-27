@@ -1951,21 +1951,23 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:1257
 msgid "Customizable User Response Pages"
-msgstr ""
+msgstr "カスタマイズ可能なユーザーレスポンスページ"
 
 #: ../../reference/configuration/records.config.en.rst:1263
 msgid "``0`` = disable customizable user response pages"
-msgstr ""
+msgstr "``0`` = カスタマイズ可能なユーザーレスポンスページを無効化します。"
 
 #: ../../reference/configuration/records.config.en.rst:1264
 msgid ""
 "``1`` = enable customizable user response pages in the default directory "
 "only"
 msgstr ""
+"``1`` = カスタマイズ可能なユーザーレスポンスページをデフォルトディレクトリで"
+"有効化します。"
 
 #: ../../reference/configuration/records.config.en.rst:1265
 msgid "``2`` = enable language-targeted user response pages"
-msgstr ""
+msgstr "``2`` = 言語別ユーザーレスポンスページを有効化します。"
 
 #: ../../reference/configuration/records.config.en.rst:1269
 msgid ""
@@ -1973,30 +1975,35 @@ msgid ""
 " When enabled, Traffic Server records a message in the error log each time a"
 " customized response page is used or modified."
 msgstr ""
+"カスタマイズ可能なレスポンスページのロギングを有効化 (``1``) もしくは無効化 "
+"(``0``) します。有効化すると、Traffic Server はカスタマイズ可能なレスポンス"
+"ページの使用もしくは変更のたびにメッセージをエラーログに記録します。"
 
 #: ../../reference/configuration/records.config.en.rst:1274
 msgid "The customizable response page default directory."
-msgstr ""
+msgstr "カスタマイズ可能なレスポンスページのデフォルトディレクトリ"
 
 #: ../../reference/configuration/records.config.en.rst:1278
 msgid "Specifies when Traffic Server suppresses generated response pages:"
 msgstr ""
+"Traffic Server が生成されたレスポンスページを使用するのを抑制させるときに指定"
+"します。"
 
 #: ../../reference/configuration/records.config.en.rst:1280
 msgid "``0`` = never suppress generated response pages"
-msgstr ""
+msgstr "``0`` = 生成されたレスポンスページの使用を抑制しません"
 
 #: ../../reference/configuration/records.config.en.rst:1281
 msgid "``1`` = always suppress generated response pages"
-msgstr ""
+msgstr "``1`` = 生成されたレスポンスページの使用を常に抑制します"
 
 #: ../../reference/configuration/records.config.en.rst:1282
 msgid "``2`` = suppress response pages only for intercepted traffic"
-msgstr ""
+msgstr "``2`` = 遮断された通信のレスポンスページのみを抑制します"
 
 #: ../../reference/configuration/records.config.en.rst:1286
 msgid "Enable the user interface page."
-msgstr ""
+msgstr "ユーザーインターフェースページを有効化します。"
 
 #: ../../reference/configuration/records.config.en.rst:1289
 msgid "DNS"
@@ -2702,24 +2709,26 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:1786
 msgid "Reverse Proxy"
-msgstr ""
+msgstr "リバースプロキシー"
 
 #: ../../reference/configuration/records.config.en.rst:1791
 msgid "Enables (``1``) or disables (``0``) HTTP reverse proxy."
-msgstr ""
+msgstr "HTTP リバースプロキシーを有効化 (``1``) もしくは無効化 (``0``) します。"
 
 #: ../../reference/configuration/records.config.en.rst:1796
 msgid ""
 "The URL to which to redirect requests with no host headers (reverse proxy)."
 msgstr ""
+"(リバースプロキシーで) host ヘッダーが無いリクエストのリダイレクト先となる "
+"URL です。"
 
 #: ../../reference/configuration/records.config.en.rst:1800
 msgid "URL Remap Rules"
-msgstr ""
+msgstr "URL リマップルール"
 
 #: ../../reference/configuration/records.config.en.rst:1804
 msgid "Sets the name of the :file:`remap.config` file."
-msgstr ""
+msgstr ":file:`remap.config` ファイルの名前を設定します。"
 
 #: ../../reference/configuration/records.config.en.rst:1809
 msgid ""
@@ -2728,6 +2737,10 @@ msgid ""
 "type of redirection to work, the variable "
 "`proxy.config.reverse_proxy.enabled`_ must be set to ``1``."
 msgstr ""
+"プロキシーサービスポート ( デフォルトでは 8080) での PAC ファイルへの"
+"リクエストの PAC ポートへのリダイレクトを有効化 (``1``) もしくは無効化 "
+"(``0``) します。このタイプのリダイレクトを動作させるためには、変数 "
+"`proxy.config.reverse_proxy.enabled`_ を ``1`` に設定しなければなりません。"
 
 #: ../../reference/configuration/records.config.en.rst:1815
 msgid ""
@@ -2742,6 +2755,17 @@ msgid ""
 " this variable to ``9000``. Browsers that request the PAC file from a proxy "
 "server on port 8080 will get the PAC file served by the Perl script."
 msgstr ""
+"PAC ポートを Traffic Server プロキシーサービスポートへの PAC リクエストが"
+"このポートにリダイレクトされるように PAC ポートを設定します。PAC ポートを"
+"自動設定ポート ( 自動設定ポートのデフォルト値は 8083 です ) にする ``-1`` が"
+"デフォルト値です。この変数は PAC ファイルを違うポートから取得するために "
+"`proxy.config.url_remap.default_to_server_pac`_ 変数と一緒に使用することが"
+"できます。PAC ファイルをこのポートで提供するプロセスを作成し実行しなければ"
+"なりません。例えば、ポート 9000 で listen する Perl スクリプトを作成して"
+"あらゆるリクエストへのレスポンスに PAC ファイルを書き込む場合、この変数を "
+"``9000`` に設定することができます。ポート 8080 のプロキシーサーバーに PAC "
+"ファイルをリクエストするブラウザーはその Perl スクリプトから提供される PAC "
+"ファイルを受け取るでしょう。"
 
 #: ../../reference/configuration/records.config.en.rst:1830
 msgid ""
@@ -2749,36 +2773,44 @@ msgid ""
 " from origin servers listed in the mapping rules of the :file:`remap.config`"
 " file. If a request does not match, then the browser will receive an error."
 msgstr ""
+"Traffic Server が :file:`remap.config` ファイルのマッピングルールに存在する"
+"オリジンサーバーからのみリクエストに応えるようにしたい場合にこの変数を ``1`` "
+"に設定してください。リクエストがマッチしなかった場合、ブラウザーはエラーを"
+"受け取ります。"
 
 #: ../../reference/configuration/records.config.en.rst:1838
 msgid ""
 "Set this variable to ``1`` if you want to retain the client host header in a"
 " request during remapping."
 msgstr ""
+"クライアントが送信したリクエスト内の host ヘッダーをリマッピングの中で保持"
+"したい場合にこの変数を ``1`` に設定してください。"
 
 #: ../../reference/configuration/records.config.en.rst:1844
 msgid "SSL Termination"
-msgstr ""
+msgstr "SSL ターミネーション"
 
 #: ../../reference/configuration/records.config.en.rst:1848
 msgid "Enables (``1``) or disables (``0``) SSLv2. Please don't enable it."
 msgstr ""
+"SSLv2 を有効化 (``1``) もしくは無効化 (``0``) します。"
+"これを有効化しないでください。"
 
 #: ../../reference/configuration/records.config.en.rst:1852
 msgid "Enables (``1``) or disables (``0``) SSLv3."
-msgstr ""
+msgstr "SSLv3 を有効化 (``1``) もしくは無効化 (``0``) します。"
 
 #: ../../reference/configuration/records.config.en.rst:1856
 msgid "Enables (``1``) or disables (``0``) TLSv1."
-msgstr ""
+msgstr "TLSv1 を有効化 (``1``) もしくは無効化 (``0``) します。"
 
 #: ../../reference/configuration/records.config.en.rst:1860
 msgid "Sets the client certification level:"
-msgstr ""
+msgstr "クライアント証明レベルを設定します。"
 
 #: ../../reference/configuration/records.config.en.rst:1865
 msgid "``0`` = no client certificates are required. Traffic Server does"
-msgstr ""
+msgstr "``0`` = クライアント証明書を必要としません。"
 
 #: ../../reference/configuration/records.config.en.rst:1863
 msgid ""
@@ -2786,10 +2818,13 @@ msgid ""
 "Server depends on Traffic Server configuration options (such as access "
 "control lists)."
 msgstr ""
+"Traffic Server は SSL ハンドシェイクの中でクライアント証明書の検証を行い"
+"ません。Traffic Server へのアクセスは Traffic Server の ( アクセスコントロール"
+"リストなどの ) 設定オプションに依存します。"
 
 #: ../../reference/configuration/records.config.en.rst:1871
 msgid "``1`` = client certificates are optional. If a client has a"
-msgstr ""
+msgstr "``1`` = クライアント証明書は任意です。"
 
 #: ../../reference/configuration/records.config.en.rst:1868
 msgid ""
@@ -2797,16 +2832,22 @@ msgid ""
 "a certificate, then the client is still allowed access to Traffic Server "
 "unless access is denied through other Traffic Server configuration options."
 msgstr ""
+"クライアントが証明書を持っている場合は証明書が検証されます。クライアントが"
+"証明書を持っていない場合でも、Traffic Server のその他の設定オプションで"
+"アクセスが拒否されない限りクライアントは Traffic Server へのアクセスを許可"
+"されます。"
 
 #: ../../reference/configuration/records.config.en.rst:1874
 msgid "``2`` = client certificates are required. The client must be"
-msgstr ""
+msgstr "``2`` = クライアント証明書が必要です。"
 
 #: ../../reference/configuration/records.config.en.rst:1874
 msgid ""
 "authenticated during the SSL handshake. Clients without a certificate are "
 "not allowed to access Traffic Server."
 msgstr ""
+"クライアントは SSL ハンドシェイクの中で認証されなければなりません。証明書を"
+"持たないクライアントは Traffic Server へのアクセスが許可されません。"
 
 #: ../../reference/configuration/records.config.en.rst:1879
 msgid ""
@@ -2816,6 +2857,10 @@ msgid ""
 "Server SSL configuration file and the corresponding certificates are located"
 " in `/etc/trafficserver/ssl`::"
 msgstr ""
+":file:`ssl_multicert.config` ファイルの Traffic Server 設定ディレクトリからの"
+"相対での位置です。次の例では、Traffic Server 設定ディレクトリが "
+"`/etc/trafficserver` で、Traffic Server SSL 設定ファイルと対応する証明書が "
+"`/etc/trafficserver/ssl` にあります。::"
 
 #: ../../reference/configuration/records.config.en.rst:1892
 msgid ""
@@ -2825,6 +2870,10 @@ msgid ""
 "chains listed in :file:`ssl_multicert.config` will be loaded relative to "
 "this path."
 msgstr ""
+"SSL 証明書と新しい SSL セッションの受け入れと検証に使用されるチェーンの場所"
+"です。相対パスの場合は Traffic Server のインストール PREFIX とつなげられます。"
+":file:`ssl_multicert.config` に書かれているすべての証明書と証明書チェーンは"
+"このパスからの相対パスで読み込まれます。"
 
 #: ../../reference/configuration/records.config.en.rst:1900
 msgid ""
@@ -2833,6 +2882,9 @@ msgid ""
 "keys listed in :file:`ssl_multicert.config` will be loaded relative to this "
 "path."
 msgstr ""
+"SSL 証明書秘密鍵の場所です。この変数は秘密鍵が SSL 証明書ファイル内に無い場合"
+"のみ変更してください。:file:`ssl_multicert.config` に書かれているすべての"
+"秘密鍵はこのパスからの相対パスで読み込まれます。"
 
 #: ../../reference/configuration/records.config.en.rst:1908
 msgid ""
@@ -2842,41 +2894,52 @@ msgid ""
 "absolute path, it is loaded relative to the path specified by "
 ":ts:cv:`proxy.config.ssl.server.cert.path`."
 msgstr ""
+"全サーバー証明書で使用されるべきグローバル証明書チェーンを含んでいるファイル"
+"の名前です。このファイルは :file:`ssl_multicert.config` に定義されている証明書"
+"がある場合にのみ使用されます。絶対パスが指定されない限り、"
+":ts:cv:`proxy.config.ssl.server.cert.path` で指定されたパスからの相対パスで"
+"読み込まれます。"
 
 #: ../../reference/configuration/records.config.en.rst:1916
 msgid ""
 "The location of the certificate authority file that client certificates will"
 " be verified against."
 msgstr ""
+"クライアント証明書が検証される証明書認証局ファイルの場所です。"
 
 #: ../../reference/configuration/records.config.en.rst:1921
 msgid ""
 "The filename of the certificate authority that client certificates will be "
 "verified against."
 msgstr ""
+"クライアント証明書が検証される証明書認証局のファイル名です。"
 
 #: ../../reference/configuration/records.config.en.rst:1926
 msgid "TBD"
-msgstr ""
+msgstr "TBD"
 
 #: ../../reference/configuration/records.config.en.rst:1929
 msgid "Client-Related Configuration"
-msgstr ""
+msgstr "クライアント関連の設定"
 
 #: ../../reference/configuration/records.config.en.rst:1933
 msgid ""
 "Configures Traffic Server to verify the origin server certificate with the "
 "Certificate Authority (CA)."
 msgstr ""
+"Traffic Server がオリジンサーバー証明書を証明書認証局 (CA) で検証するように"
+"設定します。"
 
 #: ../../reference/configuration/records.config.en.rst:1938
 msgid "The filename of SSL client certificate installed on Traffic Server."
 msgstr ""
+"Traffic Server にインストールされた SSL クライアント証明書のファイル名。"
 
 #: ../../reference/configuration/records.config.en.rst:1942
 msgid ""
 "The location of the SSL client certificate installed on Traffic Server."
 msgstr ""
+"Traffic Server にインストールされた SSL クライアント証明書の場所。"
 
 #: ../../reference/configuration/records.config.en.rst:1947
 msgid ""
@@ -2884,24 +2947,30 @@ msgid ""
 " the private key is not located in the Traffic Server SSL client certificate"
 " file."
 msgstr ""
+"Traffic Server 秘密鍵のファイル名。この変数は秘密鍵が Traffic Server SSL "
+"クライアント証明書ファイル内に無い場合のみ変更してください。"
 
 #: ../../reference/configuration/records.config.en.rst:1953
 msgid ""
 "The location of the Traffic Server private key. Change this variable only if"
 " the private key is not located in the SSL client certificate file."
 msgstr ""
+"Traffic Server 秘密鍵の場所です。この変数は秘密鍵が SSL 証明書内に無い場合"
+"のみ変更してください。"
 
 #: ../../reference/configuration/records.config.en.rst:1959
 msgid ""
 "The filename of the certificate authority against which the origin server "
 "will be verified."
 msgstr ""
+"検証されるオリジンサーバーに対する証明書認証局ファイルの名前です。"
 
 #: ../../reference/configuration/records.config.en.rst:1964
 msgid ""
 "Specifies the location of the certificate authority file against which the "
 "origin server will be verified."
 msgstr ""
+"検証されるオリジンサーバーに対する証明書認証局ファイルの場所を指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:1968
 msgid "ICP Configuration"
