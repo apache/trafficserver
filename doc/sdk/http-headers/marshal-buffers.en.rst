@@ -28,9 +28,9 @@ object (``TSMLoc``) and the marshal buffer containing the object
 Routines exist for manipulating the object based on these two pieces of
 information. For example, see one of the following:
 
--  `HTTP Headers <http-headers>`__
--  `URLs <urls>`__
--  `MIME Headers <mime-headers>`__
+-  :doc:`http-headers.en`
+-  :doc:`urls.en`
+-  :doc:`mime-headers.en`
 
 The **marshal buffer functions** enable you to create and destroy
 Traffic Server's marshal buffers, which are the data structures that

@@ -78,7 +78,7 @@ Although it looks like this will intercept all port 80 traffic it will
 only affect the two flows described above. ``-j redirect`` marks the
 packet as being diverted to the bridge and not forwarded, and the
 ``DROP`` target puts the packets in the normal ``iptables`` routing so
-that we can use standard device tests on them [1]_(#1). Although this
+that we can use standard device tests on them [1]_. Although this
 example handles only port 80, other ports are the same except for the
 port value. Note also the port here is the port from the point of view
 of the clients and origin servers, not the Traffic Server server port. ::
@@ -138,7 +138,7 @@ Additional troubleshooting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Check to make sure that ``iptables`` is not filtering (blocking)
-incoming HTTP connections.
+  incoming HTTP connections.
 
    It is frequently the case that the default tables prevent incoming HTTP. You can clear all filters with the
    commands::
@@ -154,7 +154,9 @@ incoming HTTP connections.
    Note that this problem will prevent the basic bridge (without ATS) from
    allowing HTTP traffic through.
 
-* Verify that IP packet forwarding is enabled. You can check this with::
+* Verify that IP packet forwarding is enabled.
+
+   You can check this with::
 
       cat /proc/sys/net/ipv4/ip_forward
 

@@ -77,6 +77,8 @@ functions are triggered by the same event, then Traffic Server invokes
 each plugin's function in the order each was defined in the
 ``plugin.config`` file.
 
+.. _specify-the-plugins-location:
+
 Specify the Plugin's Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

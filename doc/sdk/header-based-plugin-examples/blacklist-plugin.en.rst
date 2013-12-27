@@ -25,8 +25,7 @@ blacklisted site, then the plugin returns an ``Access forbidden``
 message to the client.
 
 The flow of HTTP processing with the blacklist plugin is illustrated in
-the figure titled `"Blacklist
-Plugin" <../../how-to-create-trafficserver-plugins#BlacklistPlugin>`__.
+the figure titled :ref:`BlackListPlugin`.
 This example also contains a simple configuration management interface.
 It can read a list of blacklisted sites from a file (``blacklist.txt``)
 that can be updated by a Traffic Server administrator. When the
@@ -49,7 +48,7 @@ Traffic Server has a multi-threaded design, race conditions can occur if
 several threads try to access the same continuation's data.
 
 Here is how the static parent continuation is created in
-:file:blacklist-1.c`:
+``blacklist-1.c``:
 
 .. code-block:: c
 
@@ -93,9 +92,9 @@ When you write handler functions, you have to anticipate any events that
 might be sent to the handler by hooks or by other functions. In the
 Blacklist plugin, ``TS_EVENT_OS_DNS`` is sent because of the global hook
 established in ``TSPluginInit``, ``TS_EVENT_HTTP_SEND_RESPONSE_HDR`` is
-sent because the plugin contains a transaction hook (see `Setting Up a
-Transaction Hook <setting-a-transaction-hook.html>`__). It is good
-practice to have a default case in your switch statements.
+sent because the plugin contains a transaction hook
+(see :doc:`blacklist-plugin/setting-up-a-transaction-hook.en`).
+It is good practice to have a default case in your switch statements.
 
 .. toctree::
    :maxdepth: 2

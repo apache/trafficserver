@@ -31,7 +31,7 @@ creating plugins. **Plugins** are programs that add services (such as
 filtering or content transformation) or entire features (such as new
 protocol support) to Traffic Server. If you are new to writing Traffic
 Server plugins, then read the first two chapters, :ref:`sdk-getting-started`
-and :ref:`how-to-create-to-create-trafficserver-plugins`, and use the
+and :ref:`how-to-create-trafficserver-plugins`, and use the
 remaining chapters as needed. :ref:`header-based-plugin-examples` provides details about
 plugins that work on HTTP headers, while :ref:`http-transformation-plugin` explains how to write a
 plugin that transforms or scans the body of an HTTP response. If you
