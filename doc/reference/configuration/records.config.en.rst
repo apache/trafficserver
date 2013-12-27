@@ -1313,6 +1313,7 @@ Customizable User Response Pages
 ================================
 
 .. ts:cv:: CONFIG proxy.config.body_factory.enable_customizations INT 1
+
    Specifies whether customizable response pages are language specific
    or not:
 

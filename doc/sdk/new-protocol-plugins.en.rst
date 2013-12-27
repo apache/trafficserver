@@ -29,6 +29,8 @@ plugins that support new protocols. It also provides a detailed review
 of code for a sample Protocol plugin that supports a very simple
 artificial HTTP-like protocol.
 
+.. _about-the-sample-protocol:
+
 About the Sample Protocol
 -------------------------
 
@@ -178,6 +180,8 @@ lookups or cache writes uses ``TSCacheRead``, ``TSCacheWrite``,
 Cache Processor and Traffic Server event system. Similarly, any plugin
 that does DNS lookups receives events from the Host Database Processor.
 
+.. _one-way-to-implement-a-transaction-state-machine:
+
 One Way to Implement a Transaction State Machine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -244,7 +248,7 @@ Plugin" <#ImplementTransStMachine>`__.
 **How Transaction State Machines are Implemented in the Protocol
 Plugin** {#ImplementTransStMachine}
 
-.. figure:: /images/sdk/txn_sm.jpg
+.. figure:: ../static/images/sdk/txn_sm.jpg
    :alt: How Transaction State Machines are Implemented in the Protocol Plugin
 
    How Transaction State Machines are Implemented in the Protocol Plugin

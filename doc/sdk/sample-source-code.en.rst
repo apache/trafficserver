@@ -22,7 +22,7 @@ This appendix provides several source code examples. In the online
 formats of this book, function calls are linked to their references in
 the previous chapters. The following sample plugins are provided:
 
--  `blacklist-1.c <App_SampleSourceCode.html#Sample_blacklist-1.c>`__
+-  `blacklist-1.c`_
 
 blacklist-1.c
 -------------
