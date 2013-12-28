@@ -213,7 +213,7 @@ A message similar to the following might display in web browsers: ::
 This is a Web browser issue and not a problem specific to (or caused by)
 Traffic Server. Because Web browsers maintain a separate local cache in
 memory and/or disk on the client system, messages about documents that
-have expired from cache refer to the browser's local cache and _not _
+have expired from cache refer to the browser's local cache and *not*
 to the Traffic Server cache. There is no Traffic Server message or
 condition that can cause such messages to appear in a web browser.
 

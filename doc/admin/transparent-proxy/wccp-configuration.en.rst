@@ -28,7 +28,7 @@ caches. It is available on most Cisco™ routers although it does not
 appear to be officially supported by Cisco. The primary benefits of WCCP
 are
 
--  If already have a router that supports WCCP inline you do not not
+-  If already have a router that supports WCCP inline you do not
    have to change your network topology.
 -  WCCP fails open so that if the Traffic Server machine fails, it is
    bypassed and users continue to have Internet access.

@@ -171,7 +171,7 @@ System Variables
    The directory that contains Traffic Server configuration files.
    This is a read-only configuration option that contains the
    ``SYSCONFDIR`` value specified at build time relative to the
-   installation prefic. THe ``$TS_ROOT`` environment variable can
+   installation prefix. The ``$TS_ROOT`` environment variable can
    be used alter the installation prefix at run time.
 
 .. ts:cv:: CONFIG proxy.config.alarm_email STRING
