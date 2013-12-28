@@ -1,19 +1,21 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
-  *) TS-2454: Fix undefined reference to `__sync_fetch_and_sub_8' on ARM 32bit system.
+  *) [TS-2454] Fix undefined reference to `__sync_fetch_and_sub_8' on ARM
+   32bit system.
 
   *) [TS-2450] Fix assertion failure for T61String type.
 
-  *) [TS-2117] make hipes plugin build
+  *) [TS-2117] make hipes plugin build.
 
   *) [TS-2452] Can't access a deleted object.
 
   *) [TS-2363] Fix assertion of "Unknown file format type!".
 
-  *) [TS-2448] Fix traffic_cop and traffic_manager to obey the proxy.config.local_state_dir setting.
+  *) [TS-2448] Fix traffic_cop and traffic_manager to obey the
+   proxy.config.local_state_dir setting.
 
-  *) [TS-2445] Fix problem with 204 responses closing POST requests
+  *) [TS-2445] Fix problem with 204 responses closing POST requests.
 
   *) [TS-2434] Use the FATAL error level to handle plugin errors.
 
@@ -21,7 +23,7 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2436] Add a simple integration test harness.
 
-  *) [TS-2355] ATS 4.0.x crashes when using OpenSSL 1.0.1e
+  *) [TS-2355] ATS 4.0.x crashes when using OpenSSL 1.0.1e.
 
   *) [TS-2432] Fix a race in aio_err_callblk.
 
@@ -29,42 +31,46 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2190] Remove cache.log from the cachurl plugin.
 
-  *) [TS-2426] Add a new plugin, xdebug, for cache debugging using HTTP headers.
+  *) [TS-2426] Add a new plugin, xdebug, for cache debugging using HTTP
+   headers.
 
   *) [TS-2077] Remove pipeline configurations, they were no-op's anyways. We
    still support pipelining (we always do), it's just not treated specially
    (or optimized).
 
-  *) [TS-2386] clean up unused files and codes -- round 4.2
+  *) [TS-2386] clean up unused files and codes -- round 4.2.
 
   *) [TS-548] remove Initialize.cc Initialize.h
 
-  *) [TS-2082] remove STANDALONE_IOCORE FIXME_NONMODULAR and NON_MODULAR defines
+  *) [TS-2082] remove STANDALONE_IOCORE FIXME_NONMODULAR and NON_MODULAR
+   defines.
 
-  *) [TS-312] Add option to always share keep-alive connections to the origin server
+  *) [TS-312] Add option to always share keep-alive connections to the origin
+   server.
 
-  *) [TS-2419] Don't close client connection when responding with a 204 and there is no body
+  *) [TS-2419] Don't close client connection when responding with a 204 and
+   there is no body.
 
   *) [TS-1146] Add RFC 5077 TLS session ticket support.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 
   *) [TS-2401] Use Layout instead of global install path directories.
 
-  *) [TS-2420] Remove STAT_SYNC, CONF_SYNC, and REM_SYNC threads and schedule those
-   continuations in ET_TASK
+  *) [TS-2420] Remove STAT_SYNC, CONF_SYNC, and REM_SYNC threads and schedule
+   those continuations in ET_TASK.
 
   *) [TS-2372] Enable TLS perfect forward security with ECDHE.
 
   *) [TS-2416] Make TLS the session timeout threshold configurable.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 
-  *) [TS-2335] adding ts_lua plugin to experimental directory
+  *) [TS-2335] adding ts_lua plugin to experimental directory.
 
   *) [TS-2347] buffer_upload uses unsafe function tempnam(). Replace it
-   with mkstemp()
+   with mkstemp().
 
   *) [TS-1815] Add thread number and port to accept thread name and
-   add the file descriptor number to the ET_AIO thread names
+   add the file descriptor number to the ET_AIO thread names.
 
   *) [TS-2415] Use standard continuations to release UrlRewrite objects.
 
@@ -92,11 +98,12 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2374] Abort the producer if the none of it`s consumers is alive.
 
-  *) [TS-2330] Update proxy.config.body_factory.enable_customizations comments in records.config
+  *) [TS-2330] Update proxy.config.body_factory.enable_customizations comments
+   in records.config.
 
-  *) [TS-2327] TSRedirectUrlSet does not perform DNS lookup of redirected OS
+  *) [TS-2327] TSRedirectUrlSet does not perform DNS lookup of redirected OS.
 
-  *) [TS-1468] Check vary and accept headers on non-200 responses in cache
+  *) [TS-1468] Check vary and accept headers on non-200 responses in cache.
 
   *) [TS-2352] refine THREAD_ALLOC feature.
 
@@ -104,15 +111,16 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2360] Fix usage of TSMimeHdrFieldValueStringGet() IDX in some plugins.
 
-  *) [TS-2361] Load regex_remap configuration relative to the configuration directory.
+  *) [TS-2361] Load regex_remap configuration relative to the configuration
+   directory.
 
   *) [TS-2359] Make install over existing installation can fail.
 
-  *) [TS-2350] Enhancements to traffic_top
+  *) [TS-2350] Enhancements to traffic_top.
 
   *) [TS-2348] Rename tstop to traffic_top.
 
-  *) [TS-2384] Fix regression in key-lookup code between 4.0.x and 4.1.x
+  *) [TS-2384] Fix regression in key-lookup code between 4.0.x and 4.1.x.
 
   *) [TS-2340] Fix TextLogObject log rolling.
    Author: bettydramit <b13621367396@gmail.com>
@@ -131,7 +139,7 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2339] Cleanup Makefile.am, fixing missing / wrong _SOURCES entries.
 
-  *) [TS-2341] Cast TSHttpStatus to int to suppress compiler warning in clang
+  *) [TS-2341] Cast TSHttpStatus to int to suppress compiler warning in clang.
 
   *) [TS-2303] Incorrect docs for negative_caching_enabled.
     Author: Thomas Jackson <jacksontj.89@gmail.com>
@@ -147,10 +155,11 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2108] Fix TSConfig to build with bison 3.0
 
-  *) [TS-2311] ESI: Support responses that are of other text content type as well as non-200 status response.
-   Author: Kit Chan
+  *) [TS-2311] ESI: Support responses that are of other text content type as
+   well as non-200 status response. Author: Kit Chan
 
-  *) [TS-2321] C++ API: Clean up header code to not use STL containers and use structures directly
+  *) [TS-2321] C++ API: Clean up header code to not use STL containers and use
+   structures directly.
 
   *) [TS-2323] Implement a .include directive for remap.config.
 
@@ -170,10 +179,10 @@ Changes with Apache Traffic Server 4.1.0
    Author: portl4t.cn@gmail.com
 
   *) [TS-2315] ESI Plugin: fetcher does not handle error gracefully.
-   Author: Kit Chan.
+   Author: Kit Chan
 
   *) [TS-2115] buffer_upload hard-codes "nobody" user/group.
-   Author: Kit Chan.
+   Author: Kit Chan
 
   *) [TS-2008] Cache control with multiple suffixes.
     Author: bettydramit <b13621367396@gmail.com>
@@ -229,7 +238,7 @@ Changes with Apache Traffic Server 4.1.0
    string length.
 
   *) [TS-2275] fix interim cache lossing data if the server process crash.
-   Author: Gang Li.
+   Author: Gang Li
 
   *) [TS-2291] Add remap_stats plugin to experimental.
 
@@ -246,13 +255,13 @@ Changes with Apache Traffic Server 4.1.0
   *) [TS-2197] Use HttpSM::main_handler to handle the client request stuff.
 
   *) [TS-2254] On ARM arch, ink_atomic_increment returns wrong value.
-   Author: Yu Qing.
+   Author: Yu Qing
 
   *) [TS-2269] regex_remap plugin does not deal with empty path's properly.
-   Author: Kit Chan.
+   Author: Kit Chan
 
   *) [TS-2270] ESI Plugin can have infinite loop while doing gunzip on
-   responses. Author: Kit Chan.
+   responses. Author: Kit Chan
 
   *) [TS-2268] Add support for opening protocol traffic sockets through the 
    traffic_manager. Added TSPluginDescriptorAccept into expiremental API.
@@ -294,8 +303,7 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2209] add support for lowercasing all substitutions in regex_remap.
 
-  *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in
-   EventNotify::signal().
+  *) [TS-2187] failed assert `nr == sizeof(uint64_t)` in EventNotify::signal().
 
   *) [TS-2206] The trafficserver RC script does not use absolute path to
    traffic_line binary.
@@ -317,7 +325,7 @@ Changes with Apache Traffic Server 4.1.0
    separate bug.
 
   *) [TS-2188] Fixes to make healthcheck plugin not segfault, and parse the
-   log files properly. Author: Scott Harris <scott@harrisnet.id.au>.
+   log files properly. Author: Scott Harris <scott@harrisnet.id.au>
 
   *) [TS-1086] Avoid edge case returning 304 to an unconditional request.
    Diagnosis and patch by Mohamad Khateeb.
@@ -349,7 +357,7 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2148] handle_cache_operation_on_forward_server_response ignores value
     of api_server_response_no_store.
-    Author: Corey Cossentino <corey@cossentino.com> 
+    Author: Corey Cossentino <corey@cossentino.com>
 
   *) [TS-2147] Set server_share_sessions to 1 for 'internal' transactions in
    rfc5861 plugin.
@@ -367,7 +375,7 @@ Changes with Apache Traffic Server 4.1.0
   *) [TS-2137] Use eventfd instread of pthread signal/wait in ATS.
 
   *) [TS-287] Fix transaction_active_timeout_in does not trigger on the first
-   request of a Keep-Alive connection. Author: Li Gang <quehan@taobao.com>.
+   request of a Keep-Alive connection. Author: Li Gang <quehan@taobao.com>
 
   *) [TS-2136] Fix the first proxy.config.http.accept_no_activity_timeout is
    invalid.
@@ -391,15 +399,15 @@ Changes with Apache Traffic Server 4.0.1
   *) [TS-2161] TSHttpTxnHookAdd memory Leak.
     Author: bettydramit <b13621367396@gmail.com>
 
-  *) [TS-2154] Lua plugin asserts traffic_server on startup
+  *) [TS-2154] Lua plugin asserts traffic_server on startup.
 
   *) [TS-2127] Move hostdb.config to var/trafficserver, together with with the
    host.db itself.
 
-  *) [TS-1823] remap.config line continuation support
+  *) [TS-1823] remap.config line continuation support.
     Author: Jim Riggs <jim@riggs.me>
 
-  *) [TS-1597] Document remap.config filters
+  *) [TS-1597] Document remap.config filters.
     Author: Jim Riggs <jim@riggs.me>
 
   *) [TS-2132, TS-2131] ${libexecdir} and $(localstatedir} chowned
@@ -410,7 +418,7 @@ Changes with Apache Traffic Server 4.0.1
 
   *) [TS-2129] Check for existence of ExtUtils::MakeMaker.
 
-  *) [TS-2128] Don't link libGeoIP.so.1 into binaries
+  *) [TS-2128] Don't link libGeoIP.so.1 into binaries.
 
   *) [TS-2112] Make libloader compile by default.
 
@@ -432,7 +440,7 @@ Changes with Apache Traffic Server 3.3.5
 
   *) [TS-2100] Initialize the SSL/NPN registration mutex.
 
-  * [TS-1987, TS-2097]: Remove duplicate and unused string functions
+  * [TS-1987, TS-2097]: Remove duplicate and unused string functions.
 
   *) [TS-2091] Return an error from RecGetRecordOrderAndId if the stat isn't
    registered.
@@ -443,7 +451,7 @@ Changes with Apache Traffic Server 3.3.5
 
   *) [TS-2092] Use of uninitialized member in HdrHeap.
 
-  *) [TS-2052] ET_SSL thread spinning
+  *) [TS-2052] ET_SSL thread spinning.
    Author: Can Selcik <cselcik at linkedin.com>
 
   *) [TS-2090 Make proxy.config.allocator.enable_reclaim default based on
@@ -458,7 +466,7 @@ Changes with Apache Traffic Server 3.3.5
    also modified the regression tests to be less easy to fool.
 
   *) [TS-1976] Prevent an invalid httpport argument being passed from
-   traffic_manager to traffic_server
+   traffic_manager to traffic_server.
    Author: Thach Tran <tranngocthachs@gmail.com>
 
   *) [TS-2076] Removed proxy.config.http.accept_encoding_filter_enabled, which
@@ -482,14 +490,15 @@ Changes with Apache Traffic Server 3.3.5
 
   *) [TS-2059] Remove dead code in EnvBlock.cc and processSpawn().
 
-  *) [TS-2057] Removed deprecated proxy port configuration values from records.config.
+  *) [TS-2057] Removed deprecated proxy port configuration values from
+   records.config.
 
   *) [TS-1280] Add url match token about cache control rule.
 
   *) [TS-2064] Fix the authproxy plugin to send an error body.
 
   *) [TS-2061] Avoid writing outside buffer boundaries in LogFile overfill
-   buffers (for ASCII logging). Author: quehan.
+   buffers (for ASCII logging). Author: quehan
 
   *) [TS-2041] Allow environment values to override records.config settings.
 
@@ -625,7 +634,8 @@ Changes with Apache Traffic Server 3.3.3 (never released)
 
   *) [TS-1937] Prevent assert on SSL forward proxy connect.
 
-  *) [TS-1907] Using the "ipv6" option for port configuration cancels the "ssl" option.
+  *) [TS-1907] Using the "ipv6" option for port configuration cancels the
+   "ssl" option.
 
   *) [TS-1927] Make ats_base64_decode able to handle the URL variant
 
