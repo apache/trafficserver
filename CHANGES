@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2248] Segmentation fault HttpTunnel and throttling.
+   Author: bettydramit <b13621367396@gmail.com>.
+
   *) [TS-2454] Fix undefined reference to `__sync_fetch_and_sub_8' on ARM
    32bit system.
 
