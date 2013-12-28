@@ -389,7 +389,8 @@ malloc_whole_chunk(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
 }
 
 static inline void *
-malloc_from_chunk(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
+malloc_from_chunk(InkFreeList * /* f ATS_UNUSED */,
+                  InkThreadCache *pCache, InkChunkInfo *pChunk)
 {
   void *item;
 
