@@ -1190,15 +1190,14 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer* c)
     // greater) to the target, we use strict comparison only for
     // checking low water, otherwise the flow control can stall out.
     uint64_t backlog = (flow_state.enabled_p && p->is_source())
-      ? p->backlog(flow_state.high_water)
-      : 0;
+      ? p->backlog(flow_state.high_water) : 0;
 
     if (backlog >= flow_state.high_water) {
       if (is_debug_tag_set("http_tunnel"))
         Debug("http_tunnel", "Throttle   %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
       p->throttle(); // p becomes srcp for future calls to this method
     } else {
-      if (srcp && c->is_sink()) {
+      if (srcp && srcp->alive && c->is_sink()) {
         // Check if backlog is below low water - note we need to check
         // against the source producer, not necessarily the producer
         // for this consumer. We don't have to recompute the backlog
