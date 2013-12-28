@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) TS-2454: Fix undefined reference to `__sync_fetch_and_sub_8' on ARM 32bit system.
+
   *) [TS-2450] Fix assertion failure for T61String type.
 
   *) [TS-2117] make hipes plugin build
