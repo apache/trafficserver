@@ -60,7 +60,7 @@ allocated using :func:`TSmalloc` and should be freed by a call to
 is a duplicate of the string pointed to by str and size bytes
 long. The new string will be NUL-terminated. This API is very
 useful for transforming non NUL-terminated string values returned
-by APIs such as :func:`TSMimeHdrFieldStringValueGet` into NLL-terminated
+by APIs such as :func:`TSMimeHdrFieldValueStringGet` into NUL-terminated
 string values. The memory for the new string is allocated using
 :func:`TSmalloc` and should be freed by a call to :func:`TSfree`.
 
