@@ -401,7 +401,7 @@ if test "x${enable_freelist}" = "xyes"; then
 		[AS_HELP_STRING([--enable-reclaimable-freelist],
 				[enable reclaimable freelist support (effective only when freelist is enabled)])],
 		[],
-		[enable_recalimable_freelist="yes"])
+		[enable_reclaimable_freelist="no"])
   AC_MSG_RESULT([$enable_reclaimable_freelist])
 else
   enable_reclaimable_freelist="no"

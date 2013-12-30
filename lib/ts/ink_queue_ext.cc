@@ -354,7 +354,7 @@ ink_chunk_delete(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
   /*
    * TODO: I had used ink_atomic_increment() here, but it would
    * lead to incorrect value in linux OS, I don't know why:
-   *  ink_atomic_decrement((int64_t *)&total_mem_in_byte, -f->chunk_byte_size);
+   *  ink_atomic_increment((int64_t *)&total_mem_in_byte, -f->chunk_byte_size);
    *
    * So I create a new wrap, ink_atomic_decrement(), in ink_atomic.h,
    * it works well. But we should create the same wrap for other OS.
