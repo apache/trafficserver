@@ -5516,10 +5516,14 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   HttpSM *sm = (HttpSM *) txnp;
   EThread *eth = this_ethread();
 
+  // TS-2271: If this function is being executed on a thread which was not
+  // created using the ATS EThread API, eth will be NULL, and the
+  // continuation needs to be called back on a REGULAR thread.
+  //
   // If this function is being executed on a thread created by the API
   // which is DEDICATED, the continuation needs to be called back on a
   // REGULAR thread.
-  if (eth->tt != REGULAR) {
+  if (eth == NULL || eth->tt != REGULAR) {
     eventProcessor.schedule_imm(NEW(new TSHttpSMCallback(sm, event)), ET_NET);
   } else {
     MUTEX_TRY_LOCK(trylock, sm->mutex, eth);
