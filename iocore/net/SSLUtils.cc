@@ -81,7 +81,7 @@ struct ssl_ticket_key_t
 };
 
 static int ssl_session_ticket_index = 0;
-static ProxyMutex ** sslMutexArray;
+static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
 struct ats_file_bio
@@ -106,11 +106,15 @@ private:
   ats_file_bio& operator=(const ats_file_bio&);
 };
 
+/* Using pthread thread ID and mutex functions directly, instead of
+ * ATS this_ethread / ProxyMutex, so that other linked libraries
+ * may use pthreads and openssl without confusing us here. (TS-2271).
+ */
+
 static unsigned long
 SSL_pthreads_thread_id()
 {
-  EThread *eth = this_ethread();
-  return (unsigned long) (eth->id);
+  return (unsigned long)pthread_self();
 }
 
 static void
@@ -119,9 +123,9 @@ SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int
   ink_assert(type < CRYPTO_num_locks());
 
   if (mode & CRYPTO_LOCK) {
-    MUTEX_TAKE_LOCK(sslMutexArray[type], this_ethread());
+    pthread_mutex_lock(&mutex_buf[type]);
   } else if (mode & CRYPTO_UNLOCK) {
-    MUTEX_UNTAKE_LOCK(sslMutexArray[type], this_ethread());
+    pthread_mutex_unlock(&mutex_buf[type]);
   } else {
     Debug("ssl", "invalid SSL locking mode 0x%x", mode);
     ink_assert(0);
@@ -298,10 +302,10 @@ SSLInitializeLibrary()
     SSL_load_error_strings();
     SSL_library_init();
 
-    sslMutexArray = (ProxyMutex **) OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ProxyMutex *));
+    mutex_buf = (pthread_mutex_t *) OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
-      sslMutexArray[i] = new_ProxyMutex();
+      pthread_mutex_init(&mutex_buf[i], NULL);
     }
 
     CRYPTO_set_locking_callback(SSL_locking_callback);
