@@ -381,6 +381,20 @@ fi
 TS_ARG_ENABLE_VAR([use], [reclaimable_freelist])
 AC_SUBST(use_reclaimable_freelist)
 
+#
+# Options for SPDY
+#
+AC_MSG_CHECKING([whether to enable spdy])
+AC_ARG_ENABLE([spdy],
+	[AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
+	[],
+	[enable_spdy="no"])
+AC_MSG_RESULT([$enable_spdy])
+TS_ARG_ENABLE_VAR([has], [spdy])
+AC_SUBST(has_spdy)
+AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
+
+#
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
@@ -1467,6 +1481,11 @@ AC_SUBST(LUA_LUAJIT_LDFLAGS)
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
+
+# Check for spdylay library
+if test "x${enable_spdy}" = "xyes"; then
+  PKG_CHECK_MODULES([SPDYLAY],[libspdylay])
+fi
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
