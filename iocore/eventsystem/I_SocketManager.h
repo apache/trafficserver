@@ -40,6 +40,7 @@
 #define DEFAULT_OPEN_MODE                         0644
 
 class Thread;
+extern int net_config_poll_timeout;
 
 #define SOCKET int
 
@@ -85,7 +86,7 @@ struct SocketManager
   int epoll_create(int size);
   int epoll_close(int eps);
   int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
-  int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
+  int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout = net_config_poll_timeout);
 #endif
 #if TS_USE_KQUEUE
   int kqueue();

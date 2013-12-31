@@ -62,14 +62,6 @@
 
 static int const NO_FD = -1;
 
-static unsigned int const DEFAULT_POLL_TIMEOUT =
-#if defined(solaris)
-                                                  30  /* mseconds */
-#else
-                                                  10  /* mseconds */
-#endif
-  ;
-
 extern int net_config_poll_timeout;
 
 #define NET_EVENT_OPEN                    (NET_EVENT_EVENTS_START)
