@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2459] Fix wrong name for a couple of librecord APIs.
+    Author: Yu Qing <happy_fish100@yahoo.com.cn>.
+
   *) [TS-2463] Crash regression around slow-log feature, when logging an
    event. This fixes commit c290ce0df2a.
 
