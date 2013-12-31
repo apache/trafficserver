@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2464] Remove useless and buggy connection header handling
+
   *) [TS-2457] Protocol.c: change usage of atoi to strtol.
    Author: Radim Kolar <hsn@sendmail.cz>
 

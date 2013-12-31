@@ -7541,7 +7541,6 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
 
   HttpTransactHeaders::copy_header_fields(base_request, outgoing_request, s->txn_conf->fwd_proxy_auth_to_parent);
   add_client_ip_to_outgoing_request(s, outgoing_request);
-  HttpTransactHeaders::process_connection_headers(base_request, outgoing_request);
   HttpTransactHeaders::remove_privacy_headers_from_request(s->http_config_param, s->txn_conf, outgoing_request);
   HttpTransactHeaders::add_global_user_agent_header_to_request(s->http_config_param, outgoing_request);
   handle_request_keep_alive_headers(s, outgoing_version, outgoing_request);
@@ -7664,7 +7663,6 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
   } else {
     if ((status_code == HTTP_STATUS_NONE) || (status_code == base_response->status_get())) {
       HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->txn_conf->fwd_proxy_auth_to_parent);
-      HttpTransactHeaders::process_connection_headers(base_response, outgoing_response);
 
       if (s->txn_conf->insert_age_in_response)
         HttpTransactHeaders::insert_time_and_age_headers_in_response(s->request_sent_time, s->response_received_time,
