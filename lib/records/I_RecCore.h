@@ -100,8 +100,8 @@ int RecRegisterConfigCounter(RecT rec_type, const char *name,
 //-------------------------------------------------------------------------
 
 int RecLinkConfigInt(const char *name, RecInt * rec_int);
-int RecLinkConfigInk32(const char *name, int32_t * p_int32);
-int RecLinkConfigInkU32(const char *name, uint32_t * p_uint32);
+int RecLinkConfigInt32(const char *name, int32_t * p_int32);
+int RecLinkConfigUInt32(const char *name, uint32_t * p_uint32);
 int RecLinkConfigFloat(const char *name, RecFloat * rec_float);
 int RecLinkConfigCounter(const char *name, RecCounter * rec_counter);
 int RecLinkConfigString(const char *name, RecString * rec_string);
@@ -199,12 +199,12 @@ void RecSignalManager(int, const char *);
 } while (0)
 
 #define REC_EstablishStaticConfigInt32(_var, _config_var_name) do { \
-  RecLinkConfigInk32(_config_var_name, &_var); \
+  RecLinkConfigInt32(_config_var_name, &_var); \
   _var = (int32_t)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
 
 #define REC_EstablishStaticConfigInt32U(_var, _config_var_name) do { \
-  RecLinkConfigInkU32(_config_var_name, &_var); \
+  RecLinkConfigUInt32(_config_var_name, &_var); \
   _var = (int32_t)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
 

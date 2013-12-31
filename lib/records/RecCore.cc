@@ -228,13 +228,13 @@ RecLinkConfigInt(const char *name, RecInt * rec_int)
 }
 
 int
-RecLinkConfigInk32(const char *name, int32_t * p_int32)
+RecLinkConfigInt32(const char *name, int32_t * p_int32)
 {
   return RecRegisterConfigUpdateCb(name, link_int32, (void *) p_int32);
 }
 
 int
-RecLinkConfigInkU32(const char *name, uint32_t * p_uint32)
+RecLinkConfigUInt32(const char *name, uint32_t * p_uint32)
 {
   return RecRegisterConfigUpdateCb(name, link_uint32, (void *) p_uint32);
 }
