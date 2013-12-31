@@ -1,8 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
-  *) [TS-32] Fix ICP.
-   Author: Gota Adachi <ada@iij.ad.jp>
+  *) [TS-2463] Crash regression around slow-log feature, when logging an
+   event. This fixes commit c290ce0df2a.
+
+  *) [TS-32] Fix ICP. Author: Gota Adachi <ada@iij.ad.jp>
 
   *) [TS-2248] Segmentation fault in HttpTunnel with flow control.
    Author: bettydramit <b13621367396@gmail.com>.
