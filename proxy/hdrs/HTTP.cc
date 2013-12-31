@@ -1576,7 +1576,8 @@ class UrlPrintHack {
 };
 
 char*
-HTTPHdr::url_string_get(Arena* arena, int* length) {
+HTTPHdr::url_string_get(Arena* arena, int* length)
+{
   char* zret = 0;
   UrlPrintHack hack(this);
 
@@ -1594,7 +1595,11 @@ HTTPHdr::url_string_get(Arena* arena, int* length) {
 }
 
 int
-HTTPHdr::url_print(char* buff, int length, int* offset, int* skip) {
+HTTPHdr::url_print(char* buff, int length, int* offset, int* skip)
+{
+  ink_release_assert(offset);
+  ink_release_assert(skip);
+
   int zret = 0;
   UrlPrintHack hack(this);
   if (hack.is_valid()) {

@@ -1,9 +1,13 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.1.3
 
+<<<<<<< HEAD
   *) [TS-2497] Failed post results in tunnel buffers being returned to
    freelist prematurely.
    Reporter: Thomas Jackson <thjackso@linkedin.com>
+
+  *) [TS-2463] Crash regression around slow-log feature, when logging an
+   event. This fixes commit c290ce0df2a.
 
 Changes with Apache Traffic Server 4.1.2
 
