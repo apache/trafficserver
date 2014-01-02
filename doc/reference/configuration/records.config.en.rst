@@ -2225,6 +2225,26 @@ Sockets
 
    Same as the command line option ``--accept_mss`` that sets the MSS for all incoming requests.
 
+.. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 0
+
+   Same as the command line option ``--poll_timeout``, or ``-t``, which
+   specifies the timeout used for the polling mechanism used. This timeout is
+   always in milliseconds (ms). On Linux, this is the timeout to
+   ``epoll_wait()``. The default value is ``10`` on all platforms except
+   Solaris, where it is ``30``.
+
+   Changing this configuration can reduce CPU usage on an idle system, since
+   periodic tasks gets processed at these intervals. On busy servers, this
+   overhead is diminished, since polled events triggers more
+   frequently. However, increasing the setting can also introduce additional
+   latency for certain operations, and timed events. It's recommended not to
+   touch this setting unless your CPU usage is unacceptable at idle
+   workload. Some alternatives to this could be::
+
+        Reduce the number of worker threads (net-threads)
+        Reduce the number of disk (AIO) threads
+
+
 Undocumented
 ============
 
