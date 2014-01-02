@@ -670,7 +670,7 @@ RecSyncConfigToTB(textBuffer * tb, bool *inc_version)
           sync_to_disk = true;
           if (r->sync_required & REC_INC_CONFIG_VERSION) {
             r->sync_required = r->sync_required & ~REC_INC_CONFIG_VERSION;
-            if (inc_version != NULL) {
+            if (r->rec_type != RECT_LOCAL && inc_version != NULL) {
               *inc_version = true;
             }
           }

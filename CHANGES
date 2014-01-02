@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2466] NOT increase the version of records.config when changing
+   the local parameter
+   Author: Yu Qing
+
   *) [TS-2469] remove libreadline which is gpl licensed.
    Author: Ben Aitchison <ben@meh.net.nz>
 
