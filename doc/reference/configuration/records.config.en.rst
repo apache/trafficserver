@@ -2225,7 +2225,7 @@ Sockets
 
    Same as the command line option ``--accept_mss`` that sets the MSS for all incoming requests.
 
-.. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 0
+.. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
 
    Same as the command line option ``--poll_timeout``, or ``-t``, which
    specifies the timeout used for the polling mechanism used. This timeout is

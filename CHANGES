@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-1365] Add a new configuration option, proxy.config.net.poll_timeout,
+   with the same behavior as the command line option --poll_timeout. Also
+   adjust AIO scheduling to correlate to this setting, to avoid additional
+   CPU load. Note that this configuration is generally not necessary to
+   configure, unless you are concerned with system idle CPU consumption.
+
   *) [TS-2468] Bring back the load balancer plugin.
 
   *) [TS-2465] libxml2 detection generates an invalid linker path.
