@@ -73,6 +73,8 @@ main(int argc, char *argv[])
     exit(0);
   }
 
+  Tcl_FindExecutable(argv[0]);
+
   // traffic_shell binary should use printf to display information onscreen
   CliDisplayPrintf = 1;
 

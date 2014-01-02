@@ -3,6 +3,9 @@ Changes with Apache Traffic Server 4.1.3
 
   *) [TS-2305] Fall back to ftruncate if posix_fallocate fails.
 
+  *) [TS-2467] traffic_shell doesn't work with tcl 8.6.
+   Author: Ben Aitchison <ben@meh.net.nz>
+
   *) [TS-2469] remove libreadline which is gpl licensed.
    Author: Ben Aitchison <ben@meh.net.nz>
 
