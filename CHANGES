@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2465] libxml2 detection generates an invalid linker path.
+   Author: Radim Kolar <hsn@sendmail.cz>
+
   *) [TS-2271] Threaded plugin support with 3rd party libraries.
    Author: Heikki Hannikainen <hessu@hes.iki.fi>
 
