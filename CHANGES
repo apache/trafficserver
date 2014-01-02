@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2271] Threaded plugin support with 3rd party libraries.
+   Author: Heikki Hannikainen <hessu@hes.iki.fi>
+
   *) [TS-2464] Remove useless and buggy connection header handling
 
   *) [TS-2457] Protocol.c: change usage of atoi to strtol.
