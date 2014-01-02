@@ -151,7 +151,7 @@ struct HashBalancer : public BalancerInstance
 
     MD5_Init(&ctx);
 
-    for (hash_part_type::const_iterator i = this->hash_parts.cbegin(); i != this->hash_parts.cend(); ++i) {
+    for (hash_part_type::const_iterator i = this->hash_parts.begin(); i != this->hash_parts.end(); ++i) {
       (*i)(txn, rri, &ctx);
     }
 

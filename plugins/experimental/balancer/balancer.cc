@@ -23,9 +23,10 @@
 
 #include "balancer.h"
 #include <ts/remap.h>
+#include <stdio.h>
 #include <getopt.h>
 #include <string.h>
-#include <functional>
+#include <iterator>
 
 // The policy type is the first comma-separated token.
 static BalancerInstance *
