@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2467] traffic_shell doesn't work with tcl 8.6.
+   Author: Ben Aitchison <ben@meh.net.nz>
+
   *) [TS-1365] Add a new configuration option, proxy.config.net.poll_timeout,
    with the same behavior as the command line option --poll_timeout. Also
    adjust AIO scheduling to correlate to this setting, to avoid additional
