@@ -2243,6 +2243,7 @@ Sockets
 
         Reduce the number of worker threads (net-threads)
         Reduce the number of disk (AIO) threads
+	Make sure accept threads are enabled
 
 
 Undocumented
