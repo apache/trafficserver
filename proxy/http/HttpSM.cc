@@ -3102,6 +3102,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   }
 
   client_response_body_bytes = c->bytes_written - client_response_hdr_bytes;
+
   if (client_response_body_bytes < 0)
     client_response_body_bytes = 0;
 

@@ -264,6 +264,40 @@ public:
    */
   void addPlugin(TransactionPlugin *);
 
+
+  /*
+   * Note: The following methods cannot be attached to a Response
+   * object because that would require the Response object to
+   * know that it's a server or client response because of the
+   * TS C api which is TSHttpTxnServerRespBodyBytesGet.
+   */
+
+  /**
+   * Get the number of bytes for the response body as returned by the server
+   *
+   * @return server response body size */
+  size_t getServerResponseBodySize();
+
+  /**
+   * Get the nubmber of bytes for the response headers as returned by the server
+   *
+   * @return server response header size */
+  size_t getServerResponseHeaderSize();
+
+  /**
+   * Get the number of bytes for the client response.
+   * This can differ from the server response size because of transformations.
+   *
+   * @return client response body size */
+  size_t getClientResponseBodySize();
+
+  /**
+   * Get the number of bytes for the response headers.
+   * This can differ from the server response because headers can be modified.
+   *
+   * @return client response header size */
+  size_t getClientResponseHeaderSize();
+
 private:
   TransactionState *state_; //!< The internal TransactionState object tied to the current Transaction
   friend class TransactionPlugin; //!< TransactionPlugin is a friend so it can call addPlugin()

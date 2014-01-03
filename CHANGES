@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2475] Adding new transaction methods in C++ API
+
   *) [TS-2474] Change proxy.config.net.poll_timeout to 10ms consistently.
 
   *) [TS-2473] Fix C++ API includes for FreeBSD.
