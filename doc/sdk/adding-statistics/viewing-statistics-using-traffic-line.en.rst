@@ -18,7 +18,7 @@ Viewing Statistics Using Traffic Line
   specific language governing permissions and limitations
   under the License.
 
-.. XXX: This documentation seeems to be dupplicated from the admin docs.
+.. XXX: This documentation seems to be duplicated from the admin docs.
 
 To view statistics for your plugin, follow the steps below:
 

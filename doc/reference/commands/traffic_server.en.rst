@@ -62,7 +62,7 @@ Description
 
 .. option:: --accept_mss MSS
 
-.. option:: -t SECS, --poll_timeout SECS
+.. option:: -t MSECS, --poll_timeout MSECS
 
 .. option:: -h, --help
 

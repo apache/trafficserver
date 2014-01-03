@@ -89,12 +89,6 @@ dll_error(void * /* dlp ATS_UNUSED */)
 }
 
 static void
-dll_close(void *dlp)
-{
-  dlclose(dlp);
-}
-
-static void
 plugin_load(int argc, char *argv[])
 {
   char path[PATH_NAME_MAX + 1];
@@ -120,8 +114,7 @@ plugin_load(int argc, char *argv[])
 
   handle = dll_open(path);
   if (!handle) {
-    Error("unable to load '%s': %s", path, dll_error(handle));
-    abort();
+    Fatal("unable to load '%s': %s", path, dll_error(handle));
   }
 
   // Allocate a new registration structure for the
@@ -132,9 +125,7 @@ plugin_load(int argc, char *argv[])
 
   init = (init_func_t) dll_findsym(handle, "TSPluginInit");
   if (!init) {
-    Error("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
-    dll_close(handle);
-    abort();
+    Fatal("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
   }
 
   // elevate the access to read files as root if compiled with capabilities, if not
@@ -148,7 +139,6 @@ plugin_load(int argc, char *argv[])
 
   plugin_reg_list.push(plugin_reg_current);
   plugin_reg_current = NULL;
-  //dll_close(handle);
 }
 
 static char *

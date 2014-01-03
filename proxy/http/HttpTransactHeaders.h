@@ -77,12 +77,6 @@ public:
 
   static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr * header, bool bRevPrxy);
 
-  static void process_connection_headers(HTTPHdr * base, HTTPHdr * outgoing);
-  static void process_connection_field_in_outgoing_header(HTTPHdr * base, HTTPHdr * header);
-  static void process_proxy_connection_field_in_outgoing_header(HTTPHdr * base, HTTPHdr * header);
-  static void _process_xxx_connection_field_in_outgoing_header(const char *wks_field_name, int wks_field_name_len,
-                                                               HTTPHdr * base, HTTPHdr * header);
-
   static void remove_conditional_headers(HTTPHdr * outgoing);
   static void remove_host_name_from_url(HTTPHdr * outgoing_request);
   static void add_global_user_agent_header_to_request(HttpConfigParams *http_config_param, HTTPHdr * header);

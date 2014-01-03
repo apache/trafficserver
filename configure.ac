@@ -401,7 +401,7 @@ if test "x${enable_freelist}" = "xyes"; then
 		[AS_HELP_STRING([--enable-reclaimable-freelist],
 				[enable reclaimable freelist support (effective only when freelist is enabled)])],
 		[],
-		[enable_recalimable_freelist="yes"])
+		[enable_reclaimable_freelist="no"])
   AC_MSG_RESULT([$enable_reclaimable_freelist])
 else
   enable_reclaimable_freelist="no"
@@ -1653,17 +1653,17 @@ AC_CHECK_MEMBER([struct sockaddr.sa_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>])
 
-if test "x${ac_cv_member_sockaddr_sa_len}" = xyes; then
+if test "x${ac_cv_member_struct_sockaddr_sa_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
 	    [Whether struct sockaddr_in has the sa_len member])
 fi
 
-if test "x${ac_cv_member_sockaddr_in_sin_len}" = xyes ; then
+if test "x${ac_cv_member_struct_sockaddr_in_sin_len}" = xyes ; then
 AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN_SIN_LEN, 1,
 	    [Whether struct sockaddr_in has the sin_len member])
 fi
 
-if test "x${ac_cv_member_sockaddr_in6_sin6_len}" = xyes; then
+if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN, 1,
 	    [Whether struct sockaddr_in6 has the sin6_len member])
 fi
@@ -1922,12 +1922,14 @@ AC_CONFIG_FILES([
   plugins/conf_remap/Makefile
   plugins/experimental/Makefile
   plugins/experimental/authproxy/Makefile
+  plugins/experimental/balancer/Makefile
   plugins/experimental/buffer_upload/Makefile
   plugins/experimental/channel_stats/Makefile
   plugins/experimental/custom_redirect/Makefile
   plugins/experimental/esi/Makefile
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/lua/Makefile
+  plugins/experimental/hipes/Makefile
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/metalink/Makefile
   plugins/experimental/rfc5861/Makefile

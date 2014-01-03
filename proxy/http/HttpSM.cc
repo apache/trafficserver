@@ -6532,7 +6532,7 @@ HttpSM::update_stats()
   ink_hrtime total_time = milestones.sm_finish - milestones.sm_start;
 
   // ua_close will not be assigned properly in some exceptional situation.
-  // TODO: Assign ua_close with situable value when HttpTunnel terminates abnormally.
+  // TODO: Assign ua_close with suitable value when HttpTunnel terminates abnormally.
   if (milestones.ua_close == 0 && milestones.ua_read_header_done > 0)
     milestones.ua_close = ink_get_hrtime();
 
@@ -6582,8 +6582,10 @@ HttpSM::update_stats()
       ink_hrtime_from_msec(t_state.http_config_param->slow_log_threshold) < total_time) {
     URL* url = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
+    int offset = 0;
+    int skip = 0;
 
-    t_state.hdr_info.client_request.url_print(url_string, sizeof url_string, 0, 0);
+    t_state.hdr_info.client_request.url_print(url_string, sizeof url_string, &offset, &skip);
 
     // unique id
     char unique_id_string[128] = "";

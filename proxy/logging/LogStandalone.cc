@@ -72,14 +72,16 @@ AppVersionInfo appVersionInfo;
   init_system
   -------------------------------------------------------------------------*/
 
-void
-init_system()
+static void
+init_system(bool notify_syslog)
 {
   fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
 
   init_signals();
-  syslog(LOG_NOTICE, "NOTE: --- SAC Starting ---");
-  syslog(LOG_NOTICE, "NOTE: SAC Version: %s", appVersionInfo.FullVersionInfoStr);
+  if (notify_syslog) {
+    syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
+    syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -215,7 +217,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
-  init_system();
+  init_system(true);
   initialize_process_manager();
   diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags));
   diags = diagsConfig->diags;
@@ -244,7 +246,7 @@ init_log_standalone_basic(const char *pgm_name)
   snprintf(logfile, sizeof(logfile), "%s.log", pgm_name);
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
-  init_system();
+  init_system(false);
   const bool use_records = false;
   diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags, use_records));
   diags = diagsConfig->diags;

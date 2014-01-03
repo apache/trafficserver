@@ -32,7 +32,7 @@
 #include "P_Net.h"
 
 RecRawStatBlock *net_rsb = NULL;
-int net_config_poll_timeout = DEFAULT_POLL_TIMEOUT;
+int net_config_poll_timeout = -1; // This will get set via either command line or records.config.
 
 static inline void
 configure_net(void)

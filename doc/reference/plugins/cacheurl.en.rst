@@ -45,8 +45,7 @@ regex patterns to match.
 
 The url_pattern is a regular expression (pcre). The replacement can contain $1, $2 and so on, which will be replaced with the appropriate matching group from the pattern.
 
-Add the plugin to your
-`plugins.config <../../configuration-files/plugins.config>`_ file::
+Add the plugin to your :file:`plugin.config` file::
 
     cacheurl.so
 

@@ -48,12 +48,12 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink) {
       // Still has outstanding references.
       write_list.push(b);
     } else if (_num_flush_buffers > FLUSH_ARRAY_SIZE) {
-      delete b;
       ink_atomic_increment(&_num_flush_buffers, -1);
       Warning("Dropping log buffer, can't keep up.");
       RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
                      log_stat_bytes_lost_before_preproc_stat,
                      b->header()->byte_count);
+      delete b;
     } else {
       new_q.push(b);
     }
@@ -184,7 +184,6 @@ LogObject::~LogObject()
       m_host_list.clear();
     }
   }
-  delete m_logFile;
   ats_free(m_basename);
   ats_free(m_filename);
   ats_free(m_alt_filename);
@@ -311,12 +310,9 @@ LogObject::add_loghost(LogHost * host, bool copy)
 
   // A LogObject either writes to a file, or sends to a collation host, but
   // not both. By default, it writes to a file. If a LogHost is specified,
-  // then delete the LogFile object
+  // then clear the intelligent Ptr containing LogFile.
   //
-  if (m_logFile) {
-    delete m_logFile;
-    m_logFile = NULL;
-  }
+  m_logFile.clear();
 }
 
 

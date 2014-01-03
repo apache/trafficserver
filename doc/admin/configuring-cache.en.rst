@@ -55,6 +55,10 @@ You can perform the following cache configuration tasks:
 -  Partition the cache by reserving cache disk space for specific
    protocols and origin servers/domains: refer to `Partitioning the Cache`_.
 -  Delete all data in the cache: refer to `Clearing the Cache`_.
+-  Override cache directives for a requested domain name, regex on a url,
+   hostname or ip, with extra filters for time, port, method of the request
+   (and more). ATS can be configured to never cache; always cache; 
+   ignore no-cache directives, etc. These are configured in :file:`cache.config`.
 
 The RAM Cache
 =============
@@ -67,8 +71,10 @@ You can configure the RAM cache size to suit your needs, as described in
 
 The RAM cache supports two cache eviction algorithms, a regular **LRU**
 (*Least Recently Used*) and the more advanced **CLFUS** (*Clocked Least
-Frequently Used by Size*). The default is to use **CLFUS**, and this is
-controlled via :ts:cv:`proxy.config.cache.ram_cache.algorithm`.
+Frequently Used by Size*, which balances recentness, frequency and size
+to maximize hit rate -- similar to a most frequently used algorithm). 
+The default is to use **CLFUS**, and this is controlled via 
+:ts:cv:`proxy.config.cache.ram_cache.algorithm`.
 
 Both the **LRU** and **CLFUS** RAM caches support a configuration to increase
 scan resistance. In a typical **LRU**, if you request all possible objects in

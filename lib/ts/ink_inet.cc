@@ -348,7 +348,7 @@ IpAddr::toString(char* dest, size_t len) const {
 
 bool
 IpAddr::isMulticast() const {
-  return (AF_INET == _family && 0xe == _addr._byte[0]) ||
+  return (AF_INET == _family && 0xe == (_addr._byte[0] >> 4)) ||
     (AF_INET6 == _family && IN6_IS_ADDR_MULTICAST(&_addr._ip6))
     ;
 }

@@ -20,8 +20,7 @@ Header Filter Plugin
 
 The ``header_filter`` is a simple plugin for filtering out headers from
 requests (or responses). Typical configuration is done either with a
-global configuration, in
-```plugin.config`` <../../configuration-files/plugin.config>`_::
+global configuration, in :file:`plugin.config`::
 
     header_filter.so /usr/local/etc/hdr_filters.conf
 

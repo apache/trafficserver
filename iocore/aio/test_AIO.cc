@@ -34,6 +34,14 @@ Diags *diags;
 int diags_init = 0;
 #define DIAGS_LOG_FILE "diags.log"
 
+// Necessary for AIO
+#if defined(solaris)
+int net_config_poll_timeout = 30;
+#else
+int net_config_poll_timeout = 10;
+#endif
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void reconfigure_diags()

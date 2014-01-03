@@ -71,13 +71,13 @@ struct InactivityCop : public Continuation {
 };
 #endif
 
-PollCont::PollCont(ProxyMutex *m, int pt):Continuation(m), net_handler(NULL), poll_timeout(pt) {
+PollCont::PollCont(ProxyMutex *m, int pt):Continuation(m), net_handler(NULL), nextPollDescriptor(NULL), poll_timeout(pt) {
   pollDescriptor = NEW(new PollDescriptor);
   pollDescriptor->init();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
-PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt):Continuation(m), net_handler(nh), poll_timeout(pt)
+PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt):Continuation(m), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
 {
   pollDescriptor = NEW(new PollDescriptor);
   pollDescriptor->init();
@@ -86,6 +86,9 @@ PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt):Continuation(m), net_h
 
 PollCont::~PollCont() {
   delete pollDescriptor;
+  if (nextPollDescriptor != NULL) {
+    delete nextPollDescriptor;
+  }
 }
 
 //

@@ -153,6 +153,7 @@ HttpBodyFactory *body_factory = NULL;
 
 static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
+static int poll_timeout = -1; // No value set.
 
 // 1: delay listen, wait for cache.
 // 0: Do not delay, start listen ASAP.
@@ -213,14 +214,14 @@ static const ArgumentDescription argument_descriptions[] = {
 #endif
 
   {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss, NULL, NULL},
-  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &net_config_poll_timeout, NULL, NULL},
+  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
 
 //
 // Initialize operating system related information/services
 //
-void
+static void
 init_system()
 {
   RecInt stackDump;
@@ -233,8 +234,8 @@ init_system()
 
   init_signals(stackDump == 1);
 
-  syslog(LOG_NOTICE, "NOTE: --- Server Starting ---");
-  syslog(LOG_NOTICE, "NOTE: Server Version: %s", appVersionInfo.FullVersionInfoStr);
+  syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
+  syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
 
   //
   // Delimit file Descriptors
@@ -1450,6 +1451,19 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
   size_t stacksize;
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+
+  // This has some special semantics, in that providing this configuration on
+  // command line has higher priority than what is set in records.config.
+  if (-1 != poll_timeout) {
+    net_config_poll_timeout = poll_timeout;
+  } else {
+    REC_ReadConfigInteger(net_config_poll_timeout, "proxy.config.net.poll_timeout");
+  }
+
+  // This shouldn't happen, but lets make sure we run somewhat reasonable.
+  if (net_config_poll_timeout < 0) {
+    net_config_poll_timeout = 30; // This is the solaris default value.
+  }
 
   ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));

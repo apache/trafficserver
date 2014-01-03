@@ -146,7 +146,8 @@ LocalManager::clearStats(const char *name)
   //   that operation works even when the proxy is off
   //
   if (this->proxy_running == 0) {
-    statsPath = Layout::relative_to(Layout::get()->runtimedir, REC_RAW_STATS_FILE);
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    statsPath = Layout::relative_to(rundir, REC_RAW_STATS_FILE);
     if (unlink(statsPath) < 0) {
       if (errno != ENOENT) {
         mgmt_log(stderr, "[LocalManager::clearStats] Unlink of %s failed : %s\n", REC_RAW_STATS_FILE, strerror(errno));

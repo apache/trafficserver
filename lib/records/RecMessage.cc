@@ -99,8 +99,9 @@ recv_thr(void *data)
 static void *
 accept_thr(void *data)
 {
+  xptr<char> rundir(RecConfigReadRuntimeDir());
   RecHandle h_pipe;
-  h_pipe = RecPipeCreate(Layout::get()->runtimedir, REC_PIPE_NAME);
+  h_pipe = RecPipeCreate(rundir, REC_PIPE_NAME);
   ink_thread_create(send_thr, (void *) h_pipe);
   ink_thread_create(recv_thr, (void *) h_pipe);
   return NULL;

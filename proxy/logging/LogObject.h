@@ -203,7 +203,7 @@ public:
 public:
   bool m_auto_created;
   LogFormat * m_format;
-  LogFile *m_logFile;
+  Ptr<LogFile> m_logFile;
   LogFilterList m_filter_list;
   LogHostList m_host_list;
 

@@ -24,12 +24,14 @@
 #include <stdlib.h>
 #include <string>
 
-#include <ts/remap.h>
 #include <ts/ts.h>
+#include <ts/remap.h>
 
 static const char* PLUGIN_NAME = "hipes";
 static const char* HIPES_SERVER_NAME = "hipes.example.com";
 
+static const int MAX_PATH_SIZE = 2048;
+static const int MAX_REDIRECT_URL = 2048;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Escape a URL string.
@@ -158,11 +160,11 @@ struct HIPESService
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin.
 //
-int
-TSRemapInit(TSREMAP_INTERFACE *api_info, char *errbuf, int errbuf_size)
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
-    strncpy(errbuf, "[tsremap_init] - Invalid TSREMAP_INTERFACE argument", errbuf_size - 1);
+    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
     return TS_ERROR;
   }
 
@@ -172,7 +174,7 @@ TSRemapInit(TSREMAP_INTERFACE *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  INKDebug("hipes", "plugin is successfully initialized");
+  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -180,16 +182,16 @@ TSRemapInit(TSREMAP_INTERFACE *api_info, char *errbuf, int errbuf_size)
 ///////////////////////////////////////////////////////////////////////////////
 // One instance per remap.config invocation.
 //
-int
-tsremap_new_instance(int argc, char *argv[], ihandle *ih, char *errbuf, int errbuf_size)
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void** ih, char* /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  HIPESService* ri = new HIPESService;
+  HIPESService* ri = new HIPESService();
 
-  *ih = static_cast<ihandle>(ri);
+  *ih = (void*)ri;
 
   if (ri == NULL) {
-    INKError("Unable to create remap instance");
-    return -5;
+    TSError("Unable to create remap instance");
+    return TS_ERROR;
   }
 
   for (int ix=2; ix < argc; ++ix) {
@@ -197,7 +199,7 @@ tsremap_new_instance(int argc, char *argv[], ihandle *ih, char *errbuf, int errb
     std::string::size_type sep = arg.find_first_of(":");
 
     if (sep == std::string::npos) {
-      INKError("Malformed options in url_remap: %s", argv[ix]);
+      TSError("Malformed options in url_remap: %s", argv[ix]);
     } else {
       std::string arg_val = arg.substr(sep + 1, std::string::npos);
 
@@ -238,16 +240,16 @@ tsremap_new_instance(int argc, char *argv[], ihandle *ih, char *errbuf, int errb
       } else if (arg.compare(0, 11, "dns_timeout") == 0) {
         ri->dns_timeout = atoi(arg_val.c_str());
       } else {
-        INKError("Unknown url_remap option: %s", argv[ix]);
+        TSError("Unknown url_remap option: %s", argv[ix]);
       }
     }
   }
 
-  return 0;
+  return TS_SUCCESS;
 }
 
 void
-tsremap_delete_instance(ihandle ih)
+TSRemapDeleteInstance(void* ih)
 {
   HIPESService* ri = static_cast<HIPESService*>(ih);
 
@@ -258,99 +260,118 @@ tsremap_delete_instance(ihandle ih)
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main "entry" point for the plugin, called for every request.
 //
-int
-tsremap_remap(ihandle ih, rhandle rh, REMAP_REQUEST_INFO *rri)
+TSRemapStatus
+TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   const char* slash;
   char* ptr;
-  HIPESService* h_conf = static_cast<HIPESService*>(ih);
+  HIPESService* h_conf = (HIPESService*)ih;
+
+  char new_query[MAX_PATH_SIZE];
+  int new_query_size;
+  char redirect_url[MAX_REDIRECT_URL];
+  int redirect_url_size;
 
   if (NULL == h_conf) {
-    INKDebug("hipes", "Falling back to default URL on URL remap without rules");
-    return 0;
+    TSDebug(PLUGIN_NAME, "Falling back to default URL on URL remap without rules");
+    return TSREMAP_NO_REMAP;
   }
+
+  int param_len = 0;
+  const char *param = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &param_len);
 
   // Make sure we have a matrix parameter, anything without is a bogus request.
-  if (rri->request_matrix_size <= 0) {
-    INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_BAD_REQUEST);
-    return 0;
+  if (param_len <= 0) {
+    TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+    return TSREMAP_NO_REMAP;
   }
 
-  // Don't think this can/should happen, but safety first ...
-  if (rri->request_matrix_size > TSREMAP_RRI_MAX_PATH_SIZE) {
-    INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_REQUEST_URI_TOO_LONG);
-    return 0;
+  if(param_len > MAX_PATH_SIZE) {
+    TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+    return TSREMAP_NO_REMAP;
   }
 
   // If there is a '/' in the matrix parameters, we know there are multiple service requests in
   // the incoming URL, so nibble off the first one, and pass the rest as a HIPES URL to the service.
-  if ((slash = static_cast<const char*>(memchr(rri->request_matrix, '/', rri->request_matrix_size)))) {
-    char svc_url[TSREMAP_RRI_MAX_PATH_SIZE + 1];
-    char svc_url_esc[TSREMAP_RRI_MAX_PATH_SIZE + 1];
+  if ((slash = static_cast<const char*>(memchr(param, '/', param_len)))) {
+    char svc_url[MAX_PATH_SIZE + 1];
+    char svc_url_esc[MAX_PATH_SIZE + 1];
     int len, query_len;
 
     // Create the escaped URL, which gets passed over to the service as a url= param.
-    len = 8 + h_conf->hipes_server.size() + (rri->request_matrix_size - (slash - rri->request_matrix) - 1);
-    if (len > TSREMAP_RRI_MAX_PATH_SIZE) {
-      INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_REQUEST_URI_TOO_LONG);
-      return 0;
-    }
-    snprintf(svc_url, TSREMAP_RRI_MAX_PATH_SIZE, "http://%s/%.*s", h_conf->hipes_server.c_str(), len, slash + 1);
-    INKDebug("hipes", "Service URL is %s", svc_url);
+    char port[6];
+    snprintf(port, 6, ":%d", h_conf->hipes_port);
 
-    len = escapify_url(svc_url, len, svc_url_esc, TSREMAP_RRI_MAX_PATH_SIZE);
-    if (len < 0) {
-      return 0;
+    if(h_conf->hipes_port != 80) {
+      len = 8 + h_conf->hipes_server.size() + strlen(port) + (param_len - (slash - param) - 1);
+    } else {
+      len = 8 + h_conf->hipes_server.size() + (param_len - (slash - param) - 1);
+    } 
+    if (len > MAX_PATH_SIZE) {
+      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      return TSREMAP_NO_REMAP;
+    }  
+    if(h_conf->hipes_port != 80) {
+      snprintf(svc_url, MAX_PATH_SIZE, "http://%s%s/%.*s", h_conf->hipes_server.c_str(), port, len, slash + 1);
+    } else {
+      snprintf(svc_url, MAX_PATH_SIZE, "http://%s/%.*s", h_conf->hipes_server.c_str(), len, slash + 1);
     }
-    INKDebug("hipes", "Escaped service URL is %s(%d)", svc_url_esc, len);
+    TSDebug(PLUGIN_NAME, "Service URL is %s", svc_url);
+
+    len = escapify_url(svc_url, len, svc_url_esc, MAX_PATH_SIZE);
+    if (len < 0) {
+      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST); 
+      return TSREMAP_NO_REMAP;
+    }
+    TSDebug(PLUGIN_NAME, "Escaped service URL is %s(%d)", svc_url_esc, len);
 
     // Prepare the new query arguments, make sure it fits
-    if (( (slash - rri->request_matrix) + 2 + h_conf->url_param.size() + len) > TSREMAP_RRI_MAX_PATH_SIZE) {
-      INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_REQUEST_URI_TOO_LONG);
-      return 0;
+    if (( (slash - param) + 2 + (int) h_conf->url_param.size() + len) > MAX_PATH_SIZE) {
+      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      return TSREMAP_NO_REMAP;
     }
 
-    query_len = (slash - rri->request_matrix);
-    memcpy(rri->new_query, rri->request_matrix, query_len);
-    ptr = rri->new_query;
-    while ((ptr = static_cast<char*>(memchr(ptr, ';', (rri->new_query + query_len) - ptr))))
+    query_len = (slash - param);
+    memcpy(new_query, param, query_len);
+    ptr = new_query;
+    while ((ptr = static_cast<char*>(memchr(ptr, ';', (new_query + query_len) - ptr))))
       *ptr = '&';
 
-    rri->new_query[query_len++] = '&';
-    memcpy(rri->new_query + query_len, h_conf->url_param.c_str(), h_conf->url_param.size());
+    new_query[query_len++] = '&';
+    memcpy(new_query + query_len, h_conf->url_param.c_str(), h_conf->url_param.size());
     query_len += h_conf->url_param.size();
-    rri->new_query[query_len++] = '=';
+    new_query[query_len++] = '=';
 
-    memcpy(rri->new_query + query_len, svc_url_esc, len);
-    rri->new_query_size = query_len + len;
-    INKDebug("hipes", "New query is %.*s(%d)", rri->new_query_size, rri->new_query, rri->new_query_size);
+    memcpy(new_query + query_len, svc_url_esc, len);
+    new_query_size = query_len + len;
+    TSDebug(PLUGIN_NAME, "New query is %.*s(%d)", new_query_size, new_query, new_query_size);
   } else {
     // This is the "final" step in this HIPES URL, so don't point back to HIPES (or we'll never leave)
-    rri->new_query_size = rri->request_matrix_size;
-    memcpy(rri->new_query, rri->request_matrix, rri->request_matrix_size);
-    ptr = rri->new_query;
-    while ((ptr = static_cast<char*>(memchr(ptr, ';', (rri->new_query + rri->new_query_size) - ptr))))
+    new_query_size = param_len;
+    memcpy(new_query, param, param_len);
+    ptr = new_query;
+    while ((ptr = static_cast<char*>(memchr(ptr, ';', (new_query + new_query_size) - ptr))))
       *ptr = '&';
 
-    INKDebug("hipes", "New query is %.*s(%d)", rri->new_query_size, rri->new_query, rri->new_query_size);
+    TSDebug(PLUGIN_NAME, "New query is %.*s(%d)", new_query_size, new_query, new_query_size);
   }
 
   // Test if we should redirect or not
   bool do_redirect = false;
   int redirect_flag = h_conf->default_redirect_flag;
-  char* pos = rri->new_query;
+  char* pos = new_query;
 
-  while (pos && (pos = (char*)memchr(pos, '_', rri->new_query_size - (pos - rri->new_query)))) {
+  while (pos && (pos = (char*)memchr(pos, '_', new_query_size - (pos - new_query)))) {
     if (pos) {
       ++pos;
-      if ((rri->new_query_size - (pos - rri->new_query)) < 10) { // redirect=n
+      if ((new_query_size - (pos - new_query)) < 10) { // redirect=n
         pos = NULL;
       } else {
         if ((*pos == 'r') && (!strncmp(pos, "redirect=", 9))) {
           redirect_flag = *(pos + 9) - '0';
           if ((redirect_flag < 0) || (redirect_flag > 2))
             redirect_flag = h_conf->default_redirect_flag;
-          INKDebug("hipes", "Found _redirect flag in URL: %d\n", redirect_flag);
+          TSDebug(PLUGIN_NAME, "Found _redirect flag in URL: %d\n", redirect_flag);
           pos = NULL;
         }
       }
@@ -359,50 +380,57 @@ tsremap_remap(ihandle ih, rhandle rh, REMAP_REQUEST_INFO *rri)
 
   if (redirect_flag > 0) {
     // Now check the incoming request header, and match up.
-    INKMBuffer bufp;
-    INKMLoc hdr_loc, field_loc;
+    TSMBuffer bufp;
+    TSMLoc hdr_loc, field_loc;
     bool has_error = false;
 
-    if (INKHttpTxnClientReqGet((INKHttpTxn)rh, &bufp, &hdr_loc)) {
-      field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, h_conf->x_hipes_header.c_str(), h_conf->x_hipes_header.size());
+    if (TSHttpTxnClientReqGet(rh, &bufp, &hdr_loc) == TS_SUCCESS) {
+      field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, h_conf->x_hipes_header.c_str(), h_conf->x_hipes_header.size());
       if (field_loc) {
         int hdr_flag;
 
-        if (INKMimeHdrFieldValueIntGet(bufp, hdr_loc, field_loc, 0, &hdr_flag) == INK_SUCCESS) {
-          // Alright, now match up this header flag with the request (or default) flag
-          INKDebug("hipes", "Extracted %s header with value %d", h_conf->x_hipes_header.c_str(), hdr_flag);
-          switch (redirect_flag) {
-          case 0:
-            if (hdr_flag == 2) {
-              INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_BAD_REQUEST);
-              has_error = true;
-            } // Everything else is a "no"
-            break;
-          case 1:
-            if (hdr_flag == 2) {
-              do_redirect = true;
-            } // Everything else is a "no"
-            break;
-          case 2:
-            if (hdr_flag == 2) {
-              do_redirect = true;
-            } else {
-              INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_BAD_REQUEST);
-              has_error = true;
-            }
-            break;
-          default:
-            INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_BAD_REQUEST);
+        hdr_flag = TSMimeHdrFieldValueIntGet(bufp, hdr_loc, field_loc, 0);
+        // Alright, now match up this header flag with the request (or default) flag
+        TSDebug(PLUGIN_NAME, "Extracted %s header with value %d", h_conf->x_hipes_header.c_str(), hdr_flag);
+        switch (redirect_flag) {
+        case 0:
+          if (hdr_flag == 2) {
+            TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
             has_error = true;
-            break;
+          } // Everything else is a "no"
+          break;
+        case 1:
+          if (hdr_flag == 2) {
+            do_redirect = true;
+          } // Everything else is a "no"
+          break;
+        case 2:
+          if (hdr_flag == 2) {
+            do_redirect = true;
+          } else {
+            TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+            has_error = true;
           }
+          break;
+        default:
+          TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+          has_error = true;
+          break;
         }
-        INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      } else {
+        if(redirect_flag == 2) {
+          TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+          has_error=true;
+        }
       }
-      INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    } else {
+      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+      has_error=true;
     }
     if (has_error)
-      return 1;
+      return TSREMAP_NO_REMAP;
   }
 
   // If we redirect, just generate a 302 URL, otherwise update the RRI struct properly.
@@ -411,19 +439,19 @@ tsremap_remap(ihandle ih, rhandle rh, REMAP_REQUEST_INFO *rri)
 
     if (h_conf->ssl) {
       // https://<host>:<port>/<path>?<query?\0
-      len = 5 + 3 + h_conf->svc_server.size() + 6 + 1 + h_conf->path.size() + 1 + rri->new_query_size + 1;
+      len = 5 + 3 + h_conf->svc_server.size() + 6 + 1 + h_conf->path.size() + 1 + new_query_size + 1;
     } else {
       // http://<host>:<port>/<path>?<query?\0
-      len = 4 + 3 + h_conf->svc_server.size() + 6 + 1 + h_conf->path.size() + 1 + rri->new_query_size + 1;
+      len = 4 + 3 + h_conf->svc_server.size() + 6 + 1 + h_conf->path.size() + 1 + new_query_size + 1;
     }
 
-    if (len > TSREMAP_RRI_MAX_REDIRECT_URL) {
-      INKError("Redirect in HIPES URL too long");
-      INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, (INKHttpStatus)414);
+    if (len > MAX_REDIRECT_URL) {
+      TSError("Redirect in HIPES URL too long");
+      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
     } else {
       int port = -1;
 
-      pos = rri->redirect_url;
+      pos = redirect_url;
 
       // HTTP vs HTTPS
       if (h_conf->ssl) {
@@ -454,64 +482,67 @@ tsremap_remap(ihandle ih, rhandle rh, REMAP_REQUEST_INFO *rri)
       }
 
       // Query
-      if (rri->new_query_size > 0) {
+      if (new_query_size > 0) {
         *(pos++) = '?';
-        memcpy(pos, rri->new_query, rri->new_query_size);
-        pos += rri->new_query_size;
+        memcpy(pos, new_query, new_query_size);
+        pos += new_query_size;
       }
 
       // NULL terminate the URL.
       *pos = '\0';
 
-      rri->redirect_url_size = pos - rri->redirect_url + 1;
-      INKDebug("hipes", "Redirecting to %.*s", rri->redirect_url_size, rri->redirect_url);
-      *(rri->new_query) = '\0';
-      rri->new_query_size = 0;
-      INKHttpTxnSetHttpRetStatus((INKHttpTxn)rh, INK_HTTP_STATUS_MOVED_TEMPORARILY);
+      redirect_url_size = pos - redirect_url + 1;
+      TSDebug(PLUGIN_NAME, "Redirecting to %.*s", redirect_url_size, redirect_url);
+      const char *start = redirect_url; 
+      const char *end = start + redirect_url_size;
+      rri->redirect = 1;
+      TSUrlParse(rri->requestBufp, rri->requestUrl, &start, end);  
+      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_MOVED_TEMPORARILY);
     }
   } else { // Not a redirect, so proceed normally
     // Set timeouts (if requested)
     if (h_conf->active_timeout > -1) {
-      INKDebug("hipes", "Setting active timeout to %d", h_conf->active_timeout);
-      INKHttpTxnActiveTimeoutSet((INKHttpTxn)rh, h_conf->active_timeout);
+      TSDebug(PLUGIN_NAME, "Setting active timeout to %d", h_conf->active_timeout);
+      TSHttpTxnActiveTimeoutSet(rh, h_conf->active_timeout);
     }
     if (h_conf->no_activity_timeout > -1) {
-      INKDebug("hipes", "Setting no activity timeout to %d", h_conf->no_activity_timeout);
-      INKHttpTxnNoActivityTimeoutSet((INKHttpTxn)rh, h_conf->no_activity_timeout);
+      TSDebug(PLUGIN_NAME, "Setting no activity timeout to %d", h_conf->no_activity_timeout);
+      TSHttpTxnNoActivityTimeoutSet(rh, h_conf->no_activity_timeout);
     }
     if (h_conf->connect_timeout > -1) {
-      INKDebug("hipes", "Setting connect timeout to %d", h_conf->connect_timeout);
-      INKHttpTxnConnectTimeoutSet((INKHttpTxn)rh, h_conf->connect_timeout);
+      TSDebug(PLUGIN_NAME, "Setting connect timeout to %d", h_conf->connect_timeout);
+      TSHttpTxnConnectTimeoutSet(rh, h_conf->connect_timeout);
     }
     if (h_conf->dns_timeout > -1) {
-      INKDebug("hipes", "Setting DNS timeout to %d", h_conf->dns_timeout);
-      INKHttpTxnDNSTimeoutSet((INKHttpTxn)rh, h_conf->dns_timeout);
+      TSDebug(PLUGIN_NAME, "Setting DNS timeout to %d", h_conf->dns_timeout);
+      TSHttpTxnDNSTimeoutSet(rh, h_conf->dns_timeout);
     }
 
     // Set server ...
-    rri->new_host_size = h_conf->svc_server.size();
-    memcpy(rri->new_host, h_conf->svc_server.c_str(), rri->new_host_size);
-    INKDebug("hipes", "New server is %.*s", rri->new_host_size, rri->new_host);
+    TSUrlHostSet(rri->requestBufp, rri->requestUrl, h_conf->svc_server.c_str(), h_conf->svc_server.size()); 
+    TSDebug(PLUGIN_NAME, "New server is %.*s", (int) h_conf->svc_server.size(), h_conf->svc_server.c_str());
 
     // ... and port
-    rri->new_port = h_conf->svc_port;
-    INKDebug("hipes", "New port is %d", rri->new_port);
+    TSUrlPortSet(rri->requestBufp, rri->requestUrl, h_conf->svc_port);
+    TSDebug(PLUGIN_NAME, "New port is %d", h_conf->svc_port);
 
     // Update the path
-    rri->new_path_size = h_conf->path.size();
-    memcpy(rri->new_path, h_conf->path.c_str(), rri->new_path_size);
-    INKDebug("hipes", "New path is %.*s", rri->new_path_size, rri->new_path);
+    TSUrlPathSet(rri->requestBufp, rri->requestUrl, h_conf->path.c_str(), h_conf->path.size());
+    TSDebug(PLUGIN_NAME, "New path is %.*s", (int) h_conf->path.size(), h_conf->path.c_str());
 
     // Enable SSL?
     if (h_conf->ssl)
-      rri->require_ssl = 1;
+      TSUrlSchemeSet(rri->requestBufp, rri->requestUrl, "https", 5);
 
     // Clear previous matrix params
-    rri->new_matrix_size = -1;
+    TSUrlHttpParamsSet(rri->requestBufp, rri->requestUrl, "", 0);
+
+    // set query
+    TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, new_query, new_query_size);
   }
 
   // Step 3: Profit
-  return 1;
+  return TSREMAP_DID_REMAP;
 }
 
 

@@ -242,7 +242,7 @@ public:
 
   /**
    * Remove all values from this HeaderField
-   * @return true if the clear succeeeds.
+   * @return true if the clear succeeds.
    */
   bool clear();
 

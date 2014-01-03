@@ -104,6 +104,7 @@ static void SigChldHandler(int sig);
 static void
 check_lockfile()
 {
+  xptr<char> rundir(RecConfigReadRuntimeDir());
   char lockfile[PATH_NAME_MAX];
   int err;
   pid_t holding_pid;
@@ -111,7 +112,7 @@ check_lockfile()
   //////////////////////////////////////
   // test for presence of server lock //
   //////////////////////////////////////
-  Layout::relative_to(lockfile, PATH_NAME_MAX, Layout::get()->runtimedir, SERVER_LOCK);
+  Layout::relative_to(lockfile, sizeof(lockfile), rundir, SERVER_LOCK);
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Open(&holding_pid);
   if (err == 1) {
@@ -137,7 +138,7 @@ check_lockfile()
   ///////////////////////////////////////////
   // try to get the exclusive manager lock //
   ///////////////////////////////////////////
-  Layout::relative_to(lockfile, PATH_NAME_MAX, Layout::get()->runtimedir, MANAGER_LOCK);
+  Layout::relative_to(lockfile, sizeof(lockfile), rundir, MANAGER_LOCK);
   Lockfile manager_lockfile(lockfile);
   err = manager_lockfile.Get(&holding_pid);
   if (err != 1) {

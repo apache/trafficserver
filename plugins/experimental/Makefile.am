@@ -18,6 +18,7 @@ if BUILD_EXPERIMENTAL_PLUGINS
 
 SUBDIRS = \
  authproxy \
+ balancer \
  buffer_upload \
  channel_stats \
  custom_redirect \
@@ -25,6 +26,7 @@ SUBDIRS = \
  geoip_acl \
  healthchecks \
  lua \
+ hipes \
  metalink \
  remap_stats \
  rfc5861 \

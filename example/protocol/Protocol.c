@@ -104,6 +104,8 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
+  char *end;
+  int tmp;
 
   info.plugin_name = "output-header";
   info.vendor_name = "MyCompany";
@@ -124,8 +126,9 @@ TSPluginInit(int argc, const char *argv[])
     printf("[protocol_plugin] Usage: protocol.so accept_port server_port\n");
     printf("[protocol_plugin] Wrong arguments. Using deafult ports.\n");
   } else {
-    if (!isnan(atoi(argv[1]))) {
-      accept_port = atoi(argv[1]);
+    tmp = strtol(argv[1], &end, 10);
+    if (*end == '\0') {
+      accept_port = tmp;
       TSDebug("protocol", "using accept_port %d", accept_port);
       printf("[protocol_plugin] using accept_port %d\n", accept_port);
     } else {
@@ -133,8 +136,9 @@ TSPluginInit(int argc, const char *argv[])
       printf("Using deafult port %d\n", accept_port);
     }
 
-    if (!isnan(atoi(argv[2]))) {
-      server_port = atoi(argv[2]);
+    tmp = strtol(argv[2], &end, 10);
+    if (*end == '\0') {
+      server_port = tmp;
       TSDebug("protocol", "using server_port %d", server_port);
       printf("[protocol_plugin] using server_port %d\n", server_port);
     } else {

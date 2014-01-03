@@ -131,6 +131,7 @@ struct Connection
                     unsigned char mc_ttl = 1, bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation * c = NULL);
 
   int setup_mc_receive(sockaddr const* from,
+                       sockaddr const* my_addr,
                        bool non_blocking = NON_BLOCKING, Connection * sendchan = NULL, Continuation * c = NULL);
 
   int close();                  // 0 on success, -errno on failure

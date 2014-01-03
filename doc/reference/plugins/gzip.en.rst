@@ -27,8 +27,7 @@ process.
 Installation
 ============
 
-Add the following line to
-```plugin.config`` <../../configuration-files/plugin.config>`_::
+Add the following line to :file:`plugin.config`::
 
     gzip.so
 

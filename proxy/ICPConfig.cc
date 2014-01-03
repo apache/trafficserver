@@ -857,6 +857,13 @@ ParentSiblingPeer::GetProxyPort()
   return _pconfig->GetProxyPort();
 }
 
+int
+ParentSiblingPeer::GetICPPort()
+{
+  return _pconfig->GetICPPort();
+}
+
+
 sockaddr*
 ParentSiblingPeer::GetIP()
 {

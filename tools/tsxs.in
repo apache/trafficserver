@@ -20,6 +20,8 @@ host="@HOST_GUESS@"
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 libdir="@libdir@"
+localstatedir="@localstatedir@"
+
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
 CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
@@ -81,6 +83,9 @@ query() {
     INCLUDEDIR) echo @includedir@ ;;
     LIBEXECDIR) echo @libexecdir@ ;;
     BINDIR) echo @bindir@ ;;
+    LOCALSTATEDIR) echo @localstatedir@ ;;
+    RUNTIMEDIR) echo @runtimedir@ ;;
+    LOGDIR) echo @logdir@ ;;
     *) bail "unrecognized query label: $1" ;;
   esac
 }

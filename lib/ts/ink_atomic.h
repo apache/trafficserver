@@ -50,6 +50,7 @@ typedef volatile int8_t vint8;
 typedef volatile int16_t vint16;
 typedef volatile int32_t vint32;
 typedef volatile int64_t vint64;
+typedef volatile uint64_t vuint64;
 typedef volatile long vlong;
 typedef volatile void *vvoidp;
 
@@ -57,6 +58,7 @@ typedef vint8 *pvint8;
 typedef vint16 *pvint16;
 typedef vint32 *pvint32;
 typedef vint64 *pvint64;
+typedef vuint64 *pvuint64;
 typedef vlong *pvlong;
 typedef vvoidp *pvvoidp;
 
@@ -194,9 +196,8 @@ ink_atomic_cas<int64_t>(pvint64 mem, int64_t old, int64_t new_value) {
   return 0;
 }
 
-template<>
-inline int64_t
-ink_atomic_increment<int64_t>(pvint64 mem, int64_t value) {
+template<typename Amount> static inline int64_t
+ink_atomic_increment(pvint64 mem, Amount value) {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
   curr = *mem;
@@ -205,10 +206,34 @@ ink_atomic_increment<int64_t>(pvint64 mem, int64_t value) {
   return curr;
 }
 
-template<>
-inline int64_t
-ink_atomic_increment<int64_t>(pvint64 mem, int value) {
-  return ink_atomic_increment(mem, static_cast<int64_t>(value));
+template<typename Amount> static inline int64_t
+ink_atomic_decrement(pvint64 mem, Amount value) {
+  int64_t curr;
+  ink_mutex_acquire(&__global_death);
+  curr = *mem;
+  *mem = curr - value;
+  ink_mutex_release(&__global_death);
+  return curr;
+}
+
+template<typename Amount> static inline uint64_t
+ink_atomic_increment(pvuint64 mem, Amount value) {
+  uint64_t curr;
+  ink_mutex_acquire(&__global_death);
+  curr = *mem;
+  *mem = curr + value;
+  ink_mutex_release(&__global_death);
+  return curr;
+}
+
+template<typename Amount> static inline uint64_t
+ink_atomic_decrement(pvuint64 mem, Amount value) {
+  uint64_t curr;
+  ink_mutex_acquire(&__global_death);
+  curr = *mem;
+  *mem = curr - value;
+  ink_mutex_release(&__global_death);
+  return curr;
 }
 
 #endif /* Special hacks for ARM 32-bit */

@@ -59,7 +59,7 @@ for all ``INT`` type configurations
 
    - ``K`` Kilobytes (1024 bytes)
    - ``M`` Megabytes (1024^2 or 1,048,576 bytes)
-   - ``G`` Gigabytes (1024^3 or 1,073,741,824 bytes
+   - ``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)
    - ``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)
 
 .. note::
@@ -720,6 +720,9 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+
+
+
 HTTP Connection Timeouts
 ========================
 
@@ -839,6 +842,10 @@ Origin Server Connect Attempts
    The number of seconds before Traffic Server marks an origin server as unavailable after a client abandons a request
    because the origin server was too slow in sending the response header.
 
+.. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
+
+   When enabled (1), Traffic Server bypasses the parent proxy for a request that is not cacheable.
+
 Congestion Control
 ==================
 
@@ -896,6 +903,11 @@ Negative Response Caching
    The cache lifetime for objects cached from this setting is controlled via
    :ts:cv:`proxy.config.http.negative_caching_lifetime`.
 
+.. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 1800
+
+   How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative 
+   responses that do have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
+   
 Proxy User Variables
 ====================
 
@@ -1182,6 +1194,19 @@ Cache Control
 
    Objects larger than the limit are not hit evacuated. A value of 0 disables the limit.
 
+.. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
+
+   The maximum number of alternates that are allowed for any given URL. 
+   Disable by setting to 0. Note that this setting will not strictly enforce
+   this if the variable ``proxy.config.cache.vary_on_user_agent`` is set 
+   to 1 (by default it is 0).
+
+.. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
+
+   Sets the target size of a contiguous fragment of a file in the disk cache. Accepts values that are powers of 2, e.g. 65536, 131072, 
+   262144, 524288, 1048576, 2097152, etc. When setting this, consider that larger numbers could waste memory on slow connections, 
+   but smaller numbers could increase (waste) seeks.
+
 RAM Cache
 =========
 
@@ -1377,6 +1402,12 @@ hostname to ``host_x.y.com``.
    typically forward proxies. But even on other systems, it can avoid some
    contention on the first worker thread (which otherwise takes on the burden of
    all DNS lookups).
+
+.. ts:cv:: CONFIG proxy.config.dns.validate_query_name INT 0
+
+   When enabled (1) provides additional resilience against DNS forgery (for instance 
+   in DNS Injection attacks), particularly in forward or transparent proxies, but 
+   requires that the resolver populates the queries section of the response properly.
 
 HostDB
 ======
@@ -1922,6 +1953,14 @@ SSL Termination
 
    Enables (``1``) or disables (``0``) TLSv1.
 
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
+
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, DISABLED by default.  [Requires OpenSSL v1.0.1 and higher]
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.certification_level INT 0
 
    Sets the client certification level:
@@ -2113,23 +2152,21 @@ Scheduled Update Configuration
    time. This option prevents the scheduled update process from
    overburdening the host.
 
-Remap Plugin Processor
-======================
-
-.. ts:cv:: CONFIG proxy.config.remap.use_remap_processor INT 0
-
-   Enables (``1``) or disables (``0``) the ability to run separate threads for remap plugin processing.
-
-.. ts:cv:: CONFIG proxy.config.remap.num_remap_threads INT 1
-
-   Specifies the number of threads that will be used for remap plugin rocessing.
-
 Plug-in Configuration
 =====================
 
 .. ts:cv:: CONFIG proxy.config.plugin.plugin_dir STRING config/plugins
 
    Specifies the location of Traffic Server plugins.
+
+.. ts:cv:: CONFIG proxy.config.remap.num_remap_threads INT 0
+
+   When this variable is set to ``0``, plugin remap callbacks are
+   executed in line on network threads. If remap processing takes
+   significant time, this can be cause additional request latency.
+   Setting this variable to causes remap processing to take place
+   on a dedicated thread pool, freeing the network threads to service
+   additional requests.
 
 Sockets
 =======
@@ -2188,15 +2225,33 @@ Sockets
 
    Same as the command line option ``--accept_mss`` that sets the MSS for all incoming requests.
 
+.. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
+
+   Same as the command line option ``--poll_timeout``, or ``-t``, which
+   specifies the timeout used for the polling mechanism used. This timeout is
+   always in milliseconds (ms). On Linux, this is the timeout to
+   ``epoll_wait()``. The default value is ``10`` on all platforms except
+   Solaris, where it is ``30``.
+
+   Changing this configuration can reduce CPU usage on an idle system, since
+   periodic tasks gets processed at these intervals. On busy servers, this
+   overhead is diminished, since polled events triggers more
+   frequently. However, increasing the setting can also introduce additional
+   latency for certain operations, and timed events. It's recommended not to
+   touch this setting unless your CPU usage is unacceptable at idle
+   workload. Some alternatives to this could be::
+
+        Reduce the number of worker threads (net-threads)
+        Reduce the number of disk (AIO) threads
+	Make sure accept threads are enabled
+
+
 Undocumented
 ============
 
 These are referenced but not documented. Please contribute a definition.
 
-.. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 0
 
 .. ts:cv:: CONFIG proxy.config.task_threads INT 0
-
-.. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1

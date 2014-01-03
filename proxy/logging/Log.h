@@ -316,7 +316,7 @@ class LogFlushData
 {
 public:
   LINK(LogFlushData, link);
-  LogFile *m_logfile;
+  Ptr<LogFile> m_logfile;
   LogBuffer *logbuffer;
   void *m_data;
   int m_len;

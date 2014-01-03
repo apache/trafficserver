@@ -516,6 +516,7 @@ aio_thread_main(void *arg)
         if (aio_err_callbck) {
           AIOCallback *callback_op = new AIOCallbackInternal();
           callback_op->aiocb.aio_fildes = op->aiocb.aio_fildes;
+          callback_op->mutex = aio_err_callbck->mutex;
           callback_op->action = aio_err_callbck;
           eventProcessor.schedule_imm(callback_op);
         }
@@ -537,9 +538,8 @@ aio_thread_main(void *arg)
         op->thread->schedule_imm_signal(op);
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (1);
-    timespec ten_msec_timespec = ink_based_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(10));
-    ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex,
-                       &ten_msec_timespec);
+    timespec timedwait_msec = ink_based_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(net_config_poll_timeout));
+    ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex, &timedwait_msec);
   }
   return 0;
 }

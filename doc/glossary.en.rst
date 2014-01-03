@@ -44,10 +44,33 @@ Glossary
 
    cache stripe
       A homogenous persistent store for the cache in a single :term:`cache span`. A stripe always resides
-      entirely on a single physical device and is treated as an undifferentiated span of bytes.
+      entirely on a single physical device and is treated as an undifferentiated span of bytes. This is the smallest
+      independent unit of storage.
 
    cache span
       The physical storage described by a single line in :file:`storage.config`.
+
+   cache key
+      A byte sequence that is a globally unique identifier for an :term:`object <cache object>` in the cache. By default
+      the URL for the object is used.
+
+   cache ID
+      A 128 bit value used as a fixed sized identifier for an object in the cache. This is computed from the
+      :term:`cache key` using the `MD5 hashing function <http://www.openssl.org/docs/crypto/md5.html>`_.
+
+   cache tag
+      The bottom few bits (12 currently) of the :term:`cache ID`. This is used in the :ref:`cache directory <cache-directory>`
+      for a preliminary identity check before going to disk.
+
+   cache object
+      The minimal self contained unit of data in the cache. Cache objects are the stored version of equivalent content
+      streams from an origin server. A single object can have multiple variants called :term:`alternates <alternate>`.
+
+   alternate
+      A variant of a :term:`cache object`. This was originally created to handle the `VARY mechanism
+      <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.44>`_ but has since been used for additional
+      purposes. All alternates of an object must be equivalent in some manner, that is they are alternate forms of the
+      same stream. The most common example is having normal and compressed versions of the stream.
 
    storage unit
       Obsolete term for :term:`cache span`.
@@ -59,3 +82,20 @@ Glossary
 
    write cursor
       The location in a :term:`cache stripe` where new data is written.
+
+   directory segment
+      A contiguous group of :term:`buckets <directory bucket>`. Each :term:`cache stripe` has a set of segments all of
+      which have the same number of buckets, although the number of buckets per segment can vary between cache stripes.
+      Segments are administrative in purpose to minimize the size of free list and hash bucket pointers.
+
+   directory bucket
+      A contiguous fixed sized group of :term:`directory entries <directory entry>`. This is used for hash bucket
+      maintenance optimization.
+
+   directory entry
+      An in memory entry that describes a :term:`cache fragment`.
+
+   cache fragment
+      The unit of storage in the cache. All reads from the cache always read exactly one fragment. Fragments may be
+      written in groups, but every write is always an integral number of fragments. Each fragment has a corresponding
+      :term:`directory entry` which describes its location in the cache storage.

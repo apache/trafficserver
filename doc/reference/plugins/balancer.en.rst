@@ -21,68 +21,55 @@ Balancer Plugin
   under the License.
 
 
-This is a plugin for Traffic Server, that allows you to configure
-mapping rules.
+The ``balancer`` balances requests across multiple origin servers.
+To use this plugin, configure it in a :file:`remap.config` rule, specifying
+a balancing policy and a set of origin servers. For example::
 
-To use this plugin, configure a remap.config rule like this::
+   map http://foo.com http://foo.com \
+      @plugin=balancer.so @pparam=--policy=hash,url @pparam=one.bar.com @pparam=two.bar.com
 
-   map http://foo.com http://bar.com @plugin=balancer.so @pparam=rotation:news
+The ``replacement`` URL in the mapping rule is not used. The argument
+to the ``--policy`` option is a comma-separated list of keywords.
+The first keyword is the name of a balancing policy. The subsequent
+keywords are used to refine the requested policy.
 
-The "To-Url" in the remap.config rule is generally not used, unless the
-lookup completely fails (i.e. this is a backup URL for extreme error
-cases).
+Hash Balancing Policy
+---------------------
 
-This is a list of all available options (set via @pparam)::
+The ``hash`` balancing policy performs a consistent hash across the
+set of origins. This minimizes the number of hash entries that must
+be moved when the set of origin servers changes. An optional list
+of hash fields follows the ``hash`` keyword. Each specified hash
+field is hashed to select an outbound origin server.
 
-    rotation      The name of the rotation (e.g. news) [to-host in remap]
-    hash      What to hash on, url, path, cookie, ip, header (primary)
-    hash2     Optional, secondary hash, to hash within a multi-host bucket
-    bucketw   Width of each hash bucket [1]
+The following fields can be supplied to the hash:
 
-The rotation parameter specifies which rotation to do the lookup on. If
-not specified, we will default to the same name as used in the To URL in
-the remap rule.
+key
+  The request cache key. Note that the cache key will only be
+  set if you have already chained a plugin that sets a custom
+  cache key.
 
-The bucket width specifies how many hosts a particular hash bucket
-should contain, for example::
+url
+  The request URL. This is the default hash field that is used if
+  no other fields are specified.
 
-    @pparam=bucketw:2
+srcaddr
+  The source IP address of the request.
 
-The hash parameter can be used zero or more times, without it, no
-hashing is done at all. If you have more than one hash keys, they are
-concatenated in the order specified. For example::
+Round Robin Balancing Policy
+----------------------------
 
-    @pparam=hash:ip @pparam=hash:cookie/B
+The ``roundrobin`` balancing policy simply allocates requests to
+origin servers in order. Over time, the number of requests received
+by each origin should be approximately the same.
 
-The "header" hash key takes a required extra value, for example::
+Health Checking
+---------------
 
-    @pparam=hash:header/Host
-
-For "cookie" hash keys, you can optionally specify an identifier for
-which cookie to use (without it, the entire cookie header is used). For
-example::
-
-    @pparam=hash:cookie/B
-
-The secondary hash ("hash2") is used to provide "stickiness" within a
-bucket that's larger than one host (i.e. bucketw > 1). This allows you
-to (for example) have a primary hash on the URL, where each URL is
-served by some number of servers. A secondary hash on B-cookie would
-then provide user stickiness, so that for a particular URL, a particular
-user will always hit the same server.
-
-If the hashes you've requested (either "hash" or "hash2") can not be
-generated, we default to using the URL instead for the primary hash. For
-the secondary hash, if set, we'll default to the src-IP. If these
-defaults are not desirable, make sure that you have at least one hash
-key that is guaranteed to exist (e.g. @pparam=hash:ip).
-
-If no "hash" parameters are specified, no hashing is done. This is the
-default behavior, obviously. In this cash, the "hash2" directive has no
-effect as well.
-
-Finally, a couple of "flag" options (parameters) are available, to
-control some of the lookup mechanisms:
-
--  @pparam=hostip will use the IP returned by the lookup
-
+The ``balancer`` plugin does not check the health of the origin
+servers, however the plugin is fully reloadable so health checking
+is usualy simple to implement. Most production environments already
+have mechanisms to check service health. It is recommended that you
+write a simple script to monitor this information and rewrite
+:file:`remap.config` when appropriate. Running :option:`traffic_line -x`
+will reload the ``balancer`` plugin with the new set of origin servers.

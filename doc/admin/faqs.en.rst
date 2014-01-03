@@ -29,7 +29,7 @@ FAQs
 How do you create a raw disk for the cache if all your disks have mounted file systems?
 ---------------------------------------------------------------------------------------
 
-Create a large file on filesystem (with :manpage`dd(1)`) and mount it as loopback device.
+Create a large file on filesystem (with :manpage:`dd(1)`) and mount it as loopback device.
 This is accomplished with :manpage:`losetup(8)` on Linux, :manpage:`lofiadm(1m)` on Solaris
 and Illumos, and :manpage:`mdconfig(8)` on FreeBSD.
 

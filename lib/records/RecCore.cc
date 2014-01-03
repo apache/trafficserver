@@ -177,7 +177,8 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
   // read stats
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    g_stats_snap_fpath = Layout::relative_to(Layout::get()->runtimedir, REC_RAW_STATS_FILE);
+    xptr<char> rundir(RecConfigReadRuntimeDir());
+    g_stats_snap_fpath = Layout::relative_to(rundir, REC_RAW_STATS_FILE);
     RecReadStatsFile();
   }
   // read configs
@@ -227,13 +228,13 @@ RecLinkConfigInt(const char *name, RecInt * rec_int)
 }
 
 int
-RecLinkConfigInk32(const char *name, int32_t * p_int32)
+RecLinkConfigInt32(const char *name, int32_t * p_int32)
 {
   return RecRegisterConfigUpdateCb(name, link_int32, (void *) p_int32);
 }
 
 int
-RecLinkConfigInkU32(const char *name, uint32_t * p_uint32)
+RecLinkConfigUInt32(const char *name, uint32_t * p_uint32)
 {
   return RecRegisterConfigUpdateCb(name, link_uint32, (void *) p_uint32);
 }

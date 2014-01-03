@@ -59,7 +59,7 @@ AC_DEFUN([TS_CHECK_XML_LIBXML2], [
       elif test "$withval" != "no"; then
         enable_libxml2=yes
         libxml2_include="$withval/include/libxml2"
-        libxml2_ldflags="$withval/lib"
+        libxml2_ldflags="-L$withval/lib"
       fi
     fi
   ])

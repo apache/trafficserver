@@ -335,7 +335,7 @@ LogHost::clear()
 
   ats_free(m_name);
   delete m_sock;
-  delete m_orphan_file;
+  m_orphan_file.clear();
 
   ink_zero(m_ip);
   m_port = 0;
@@ -344,7 +344,6 @@ LogHost::clear()
   m_sock = NULL;
   m_sock_fd = -1;
   m_connected = false;
-  m_orphan_file = NULL;
 }
 
 bool LogHost::authenticated()
