@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2473] Fix C++ API includes for FreeBSD.
+   Author: Radim Kolar <hsn@sendmail.cz>
+
   *) [TS-2467] traffic_shell doesn't work with tcl 8.6.
    Author: Ben Aitchison <ben@meh.net.nz>
 
