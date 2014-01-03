@@ -31,7 +31,6 @@
 
 #include "Update.h"
 #include "api/ts/experimental.h"
-#include "api/ts/InkAPIHughes.h"
 
 class BlasterUrlList;
 class PrefetchUrlBlaster;
@@ -51,8 +50,8 @@ struct PrefetchConfiguration
   int url_buffer_size;
   int url_buffer_timeout;
 
-  PrefetchBlastData default_url_blast;
-  PrefetchBlastData default_data_blast;
+  TSPrefetchBlastData default_url_blast;
+  TSPrefetchBlastData default_data_blast;
 
   int keepalive_timeout;
   int push_cached_objects;
@@ -189,8 +188,8 @@ public:
   bool no_dot_in_host;
 };
 
-extern PrefetchBlastData const UDP_BLAST_DATA;
-extern PrefetchBlastData const TCP_BLAST_DATA;
+extern TSPrefetchBlastData const UDP_BLAST_DATA;
+extern TSPrefetchBlastData const TCP_BLAST_DATA;
 
 //blaster
 class BlasterUrlList:public Continuation
@@ -199,7 +198,7 @@ class BlasterUrlList:public Continuation
   int timeout;                  //in milliseconds
   Action *action;
   int mtu;
-  PrefetchBlastData blast;
+  TSPrefetchBlastData blast;
 
   PrefetchUrlEntry *list_head;
   int cur_len;
@@ -209,7 +208,7 @@ public:
     : Continuation(), timeout(0), action(0), mtu(0), list_head(0), cur_len(0)
   {  }
 
-  void init(PrefetchBlastData const& bdata = UDP_BLAST_DATA, int tout = 0, int xmtu = INT_MAX) {
+  void init(TSPrefetchBlastData const& bdata = UDP_BLAST_DATA, int tout = 0, int xmtu = INT_MAX) {
     SET_HANDLER((int (BlasterUrlList::*)(int, void *))(&BlasterUrlList::handleEvent));
     mutex = new_ProxyMutex();
     blast = bdata;
@@ -243,12 +242,12 @@ public:
     ink_zero(blast);
   }
 
-  void init(PrefetchUrlEntry * list_head, PrefetchBlastData const& u_bd = UDP_BLAST_DATA);
+  void init(PrefetchUrlEntry * list_head, TSPrefetchBlastData const& u_bd = UDP_BLAST_DATA);
 
   void free();
 
   PrefetchUrlEntry *url_head;
-  PrefetchBlastData blast;
+  TSPrefetchBlastData blast;
 
   Action *action;
 
@@ -261,7 +260,7 @@ public:
 extern ClassAllocator<PrefetchUrlBlaster> prefetchUrlBlasterAllocator;
 
 void
-PrefetchUrlBlaster::init(PrefetchUrlEntry * list_head, PrefetchBlastData const& u_bd)
+PrefetchUrlBlaster::init(PrefetchUrlEntry * list_head, TSPrefetchBlastData const& u_bd)
 {
   /* More clean up necessary... we should not need this class
      XXXXXXXXX */
@@ -326,7 +325,7 @@ public:
 
   VConnection *serverVC;
 
-  PrefetchBlastData data_blast;
+  TSPrefetchBlastData data_blast;
 
   CacheLookupHttpConfig cache_lookup_config;
 

@@ -58,6 +58,7 @@ correctness of the parse/prefetch module. It has the following options:
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ts/ts.h>
@@ -75,30 +76,25 @@ static int embedded_object = 0;
 
 static TSMutex file_write_mutex;
 
-int pre_parse_hook(int hook, TSPrefetchInfo * info);
-int embedded_url_hook(int hook, TSPrefetchInfo * info);
-int embedded_object_hook(int hook, TSPrefetchInfo * info);
 
-
-int
-embedded_object_hook(int hook, TSPrefetchInfo * info)
+TSPrefetchReturnCode
+embedded_object_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
 {
-  int total_avail;
-
   TSIOBufferBlock block;
   const char *block_start;
-  int block_avail;
+  int64_t block_avail, total_avail;
 
   TSMutexLock(file_write_mutex);
 
   printf("(%s) >>> TS_PREFETCH_EMBEDDED_OBJECT_HOOK (%d)\n", TAG, hook);
 
-  printf("(%s) \tobject size for: %s is %d\n",
-         TAG, info->embedded_url, TSIOBufferReaderAvail(info->object_buf_reader));
+  printf("(%s) \tobject size for: %s is %lld\n",
+         TAG, info->embedded_url, (long long)TSIOBufferReaderAvail(info->object_buf_reader));
 
   /* Get the embedded objects here */
   total_avail = TSIOBufferReaderAvail(info->object_buf_reader);
 
+  printf("(%s) >>> TSIOBufferReaderAvail returns %lld\n", TAG, (long long)total_avail);
 
   block = TSIOBufferReaderStart(info->object_buf_reader);
   while (block) {
@@ -123,8 +119,8 @@ embedded_object_hook(int hook, TSPrefetchInfo * info)
   return 0;
 }
 
-int
-embedded_url_hook(int hook, TSPrefetchInfo * info)
+TSPrefetchReturnCode
+embedded_url_hook(TSPrefetchHookID hook, TSPrefetchInfo* info)
 {
 
   unsigned char *ip = (unsigned char *) &info->client_ip;
@@ -159,8 +155,8 @@ embedded_url_hook(int hook, TSPrefetchInfo * info)
 }
 
 
-int
-pre_parse_hook(int hook, TSPrefetchInfo * info)
+TSPrefetchReturnCode
+pre_parse_hook(TSPrefetchHookID hook, TSPrefetchInfo* info)
 {
   unsigned char *ip = (unsigned char *) &info->client_ip;
 
@@ -187,7 +183,6 @@ TSPluginInit(int argc, const char *argv[])
 {
   int c, arg;
   extern char *optarg;
-  extern int optind, opterr, optopt;
   TSPluginRegistrationInfo plugin_info;
   char file_name[512] = { 0 };
   plugin_info.plugin_name = "test-prefetch";
@@ -237,7 +232,7 @@ TSPluginInit(int argc, const char *argv[])
   if (embedded_object) {
     filep1 = TSfopen(file_name, "w");
     if (!filep1) {
-      TSError("Cannot open file %d for writing\n", file_name);
+      TSError("Cannot open file %s for writing\n", file_name);
       return;
     }
     TSfwrite(filep1, "", 1);

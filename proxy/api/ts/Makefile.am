@@ -24,5 +24,4 @@ include_HEADERS = \
   experimental.h
 
 noinst_HEADERS = \
-  InkAPIHughes.h \
   InkAPIPrivateIOCore.h
