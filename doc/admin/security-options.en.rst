@@ -118,7 +118,7 @@ client/Traffic Server connections, you must do the following:
 
    -  Set the port number used for SSL communication using :ts:cv:`proxy.config.http.server_ports`.
    -  Edit :file:`ssl_multicert.config` to specify the filename and location of the
-      SSL certificates and provate keys.
+      SSL certificates and private keys.
    -  (Optional) Configure the use of client certificates: Client
       certificates are located on the client. If you configure Traffic
       Server to require client certificates, then Traffic Server
