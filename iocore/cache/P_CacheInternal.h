@@ -424,7 +424,7 @@ struct CacheVC: public CacheVConnection
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
 #ifdef HTTP_CACHE
-  void *context;
+  CacheLookupHttpConfig *params;
 #endif
   int header_len;       // for communicating with agg_copy
   int frag_len;         // for communicating with agg_copy
@@ -1035,9 +1035,9 @@ struct Cache
   Action *lookup(Continuation *cont, URL *url, CacheFragType type);
   inkcoreapi Action *open_read(Continuation *cont, CacheKey *key,
                                CacheHTTPHdr *request,
-                               void *context, CacheFragType type, char *hostname, int host_len);
+                               CacheLookupHttpConfig *params, CacheFragType type, char *hostname, int host_len);
   Action *open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
-                    void *context, CacheFragType type);
+                    CacheLookupHttpConfig *params, CacheFragType type);
   Action *open_write(Continuation *cont, CacheKey *key,
                      CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t) 0,
                      CacheKey *key1 = NULL,
@@ -1069,13 +1069,14 @@ inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 
 #ifdef HTTP_CACHE
 TS_INLINE Action *
-Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, void *context, CacheFragType type)
+Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
+                 CacheLookupHttpConfig *params, CacheFragType type)
 {
   INK_MD5 md5;
   int len;
   url->MD5_get(&md5);
   const char *hostname = url->host_get(&len);
-  return open_read(cont, &md5, request, context, type, (char *) hostname, len);
+  return open_read(cont, &md5, request, params, type, (char *) hostname, len);
 }
 
 TS_INLINE void
@@ -1178,8 +1179,9 @@ CacheProcessor::open_read(Continuation *cont, CacheKey *key, bool cluster_cache_
 {
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    return open_read_internal(CACHE_OPEN_READ, cont, (MIOBuffer *) 0, (CacheURL *) 0, (CacheHTTPHdr *) 0,
-                              (void *) 0, key, 0, frag_type, hostname, host_len);
+    return open_read_internal(CACHE_OPEN_READ, cont, (MIOBuffer *) 0,
+                              (CacheURL *) 0, (CacheHTTPHdr *) 0,
+                              (CacheLookupHttpConfig *) 0, key, 0, frag_type, hostname, host_len);
   }
 #endif
   return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
@@ -1191,8 +1193,9 @@ CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf ATS_UNUSED, 
 {
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0) {
-    return open_read_internal(CACHE_OPEN_READ_BUFFER, cont, buf, (CacheURL *) 0, (CacheHTTPHdr *) 0,
-                              (void*) 0, key, 0, frag_type, hostname, host_len);
+    return open_read_internal(CACHE_OPEN_READ_BUFFER, cont, buf,
+                              (CacheURL *) 0, (CacheHTTPHdr *) 0,
+                              (CacheLookupHttpConfig *) 0, key, 0, frag_type, hostname, host_len);
   }
 #endif
   return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
@@ -1273,17 +1276,17 @@ CacheProcessor::lookup(Continuation *cont, URL *url, bool cluster_cache_local, b
 }
 
 TS_INLINE Action *
-CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf, URL *url, CacheHTTPHdr *request,
-                                 void *context, CacheFragType type)
+CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf,
+                                 URL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type)
 {
   (void) buf;
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0) {
-    return open_read_internal(CACHE_OPEN_READ_BUFFER_LONG, cont, buf, url, request, context, (CacheKey *) 0,
-                              0, type, (char *) 0, 0);
+    return open_read_internal(CACHE_OPEN_READ_BUFFER_LONG, cont, buf, url,
+                              request, params, (CacheKey *) 0, 0, type, (char *) 0, 0);
   }
 #endif
-  return caches[type]->open_read(cont, url, request, context, type);
+  return caches[type]->open_read(cont, url, request, params, type);
 }
 
 TS_INLINE Action *
@@ -1305,9 +1308,13 @@ CacheProcessor::open_write_buffer(Continuation * cont, MIOBuffer * buf, URL * ur
 
 #ifdef CLUSTER_CACHE
 TS_INLINE Action *
-CacheProcessor::open_read_internal(int opcode, Continuation *cont, MIOBuffer *buf, CacheURL *url, CacheHTTPHdr *request,
-                                   void *context, CacheKey *key, time_t pin_in_cache, CacheFragType frag_type, char *hostname,
-                                   int host_len)
+CacheProcessor::open_read_internal(int opcode,
+                                   Continuation *cont, MIOBuffer *buf,
+                                   CacheURL *url,
+                                   CacheHTTPHdr *request,
+                                   CacheLookupHttpConfig *params,
+                                   CacheKey *key,
+                                   time_t pin_in_cache, CacheFragType frag_type, char *hostname, int host_len)
 {
   INK_MD5 url_md5;
   if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
@@ -1318,11 +1325,12 @@ CacheProcessor::open_read_internal(int opcode, Continuation *cont, MIOBuffer *bu
   ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
 
   if (m) {
-    return Cluster_read(m, opcode, cont, buf, url, request, key, pin_in_cache, frag_type, hostname, host_len);
+    return Cluster_read(m, opcode, cont, buf, url,
+                        request, params, key, pin_in_cache, frag_type, hostname, host_len);
   } else {
     if ((opcode == CACHE_OPEN_READ_LONG)
         || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
-      return caches[frag_type]->open_read(cont, &url_md5, request, context, frag_type, hostname, host_len);
+      return caches[frag_type]->open_read(cont, &url_md5, request, params, frag_type, hostname, host_len);
     } else {
       return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
     }

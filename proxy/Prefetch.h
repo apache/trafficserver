@@ -328,7 +328,7 @@ public:
 
   PrefetchBlastData data_blast;
 
-  HttpConfigParams *http_config_params;
+  CacheLookupHttpConfig cache_lookup_config;
 
   //udp related:
   uint32_t n_pkts_sent;

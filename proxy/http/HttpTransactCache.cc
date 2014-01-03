@@ -32,6 +32,10 @@
 #include "Error.h"
 #include "InkErrno.h"
 
+ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator("CacheLookupHttpConfigAllocator");
+
+CacheLookupHttpConfig global_cache_lookup_config;
+
 /**
   Find the pointer and length of an etag, after stripping off any leading
   "W/" prefix, and surrounding double quotes.
@@ -161,21 +165,20 @@ is_empty(char *s)
 
 */
 int
-HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector, HTTPHdr * client_request,
-                                        HttpConfigParams * http_config_params)
+HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
+                                        HTTPHdr * client_request, CacheLookupHttpConfig * http_config_params)
 {
   time_t current_age, best_age = NUM_SECONDS_IN_ONE_YEAR;
   time_t t_now = 0;
   int best_index = -1;
   float best_Q = -1.0;
   float unacceptable_Q = 0.0;
-  int alt_count = cache_vector->count();
 
-  // TODO: for ICP we also want to exit here with a return 0, it's what the
-  //  old code implied.
+  int alt_count = cache_vector->count();
   if (alt_count == 0) {
     return -1;
   }
+
 
   Debug("http_match", "[SelectFromAlternates] # alternates = %d", alt_count);
   Debug("http_seq", "[SelectFromAlternates] %d alternates for this cached doc", alt_count);
@@ -184,6 +187,9 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector, HTTP
       fprintf(stderr, "[alts] There are %d alternates for this request header.\n", alt_count);
     RELEASE_PRINT_LOCK()
   }
+  // used by ICP to bypass this function
+  if (http_config_params == &global_cache_lookup_config)
+    return 0;
 
   if (!client_request->valid()) {
     return 0;
@@ -290,7 +296,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector, HTTP
 
 */
 float
-HttpTransactCache::calculate_quality_of_match(HttpConfigParams * http_config_param,
+HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_config_param,
                                               HTTPHdr * client_request,
                                               HTTPHdr * obj_client_request,
                                               HTTPHdr * obj_origin_server_response)
@@ -1153,7 +1159,7 @@ language_wildcard:
 
 */
 Variability_t
-HttpTransactCache::CalcVariability(HttpConfigParams * http_config_params, HTTPHdr * client_request,
+HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params, HTTPHdr * client_request,
                                    HTTPHdr * obj_client_request, HTTPHdr * obj_origin_server_response)
 {
   ink_assert(http_config_params != NULL);
@@ -1235,7 +1241,7 @@ HttpTransactCache::CalcVariability(HttpConfigParams * http_config_params, HTTPHd
       // we should ignore Vary: User-Agent even if 'proxy.config.cache.vary_on_user_agent'  //
       // is 1. Actually the 'proxy.config.cache.vary_on_user_agent' is useless in such case //
       ///////////////////////////////////////////////////////////////////////////////////////
-      if (http_config_params->global_user_agent_header &&
+      if (http_config_params->cache_global_user_agent_header &&
           !strcasecmp((char *) field->str, "User-Agent"))
         continue;
 
@@ -1476,4 +1482,89 @@ L1:
   }
 
   return response->status_get();
+}
+
+
+/*---------------------------------------------------
+ *        class CacheLookupHttpConfig
+ *---------------------------------------------------*/
+int
+CacheLookupHttpConfig::marshal_length()
+{
+  int len = (int) sizeof(int32_t);
+  len += (cache_vary_default_text ? strlen(cache_vary_default_text) + 1 : 1);
+  len += (cache_vary_default_images ? strlen(cache_vary_default_images) + 1 : 1);
+  len += (cache_vary_default_other ? strlen(cache_vary_default_other) + 1 : 1);
+  return len;
+}
+
+int
+CacheLookupHttpConfig::marshal(char *buf, int length)
+{
+  int32_t i32_tmp;
+  char *p = buf;
+  int len;
+
+  if ((length -= sizeof(int32_t)) < 0)
+    return -1;
+
+  i32_tmp = (int32_t) cache_enable_default_vary_headers;
+  memcpy(p, &i32_tmp, sizeof(int32_t));
+  p += sizeof(int32_t);
+
+  len = (cache_vary_default_text ? strlen(cache_vary_default_text) + 1 : 1);
+  if ((length -= len) < 0)
+    return -1;
+  ink_strlcpy(p, (cache_vary_default_text ? cache_vary_default_text : ""), length);
+  p += len;
+
+  len = (cache_vary_default_images ? strlen(cache_vary_default_images) + 1 : 1);
+  if ((length -= len) < 0)
+    return -1;
+  ink_strlcpy(p, (cache_vary_default_images ? cache_vary_default_images : ""), length);
+  p += len;
+
+  len = (cache_vary_default_other ? strlen(cache_vary_default_other) + 1 : 1);
+  if ((length -= len) < 0)
+    return -1;
+  ink_strlcpy(p, (cache_vary_default_other ? cache_vary_default_other : ""), length);
+  p += len;
+
+  return (p - buf);
+}
+
+int
+CacheLookupHttpConfig::unmarshal(Arena * arena, const char *buf, int buflen)
+{
+  const char *p = buf;
+  int length = buflen;
+  int len;
+  int32_t i32_tmp;
+
+  if ((length -= sizeof(int32_t)) < 0)
+    return -1;
+
+  memcpy(&i32_tmp, p, sizeof(int32_t));
+  cache_enable_default_vary_headers = (bool) i32_tmp;
+  p += sizeof(int32_t);
+
+  len = strlen(p) + 1;
+  if ((length -= len) < 0)
+    return -1;
+  cache_vary_default_text = arena->str_store(((len == 2) ? "" : p), len - 1);
+  p += len;
+
+  len = strlen(p) + 1;
+  if ((length -= len) < 0)
+    return -1;
+  cache_vary_default_images = arena->str_store(((len == 2) ? "" : p), len - 1);
+  p += len;
+
+  len = strlen(p) + 1;
+  if ((length -= len) < 0)
+    return -1;
+  cache_vary_default_other = arena->str_store(((len == 2) ? "" : p), len - 1);
+  p += len;
+
+  return (p - buf);
 }

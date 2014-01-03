@@ -43,6 +43,7 @@
 #include "BaseManager.h"
 #include "HdrUtils.h"
 
+extern CacheLookupHttpConfig global_cache_lookup_config;
 HTTPHdr gclient_request;
 
 //****************************************************************************
@@ -480,7 +481,7 @@ ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_U
       //       cache clustering is not used with stale lookup.
       //////////////////////////////////////////////////////////////
       a = cacheProcessor.open_read(this, &_state->_cachelookupURL, false,
-                                   &gclient_request, NULL, (time_t) 0);
+                                   &gclient_request, &global_cache_lookup_config, (time_t) 0);
     } else {
       a = cacheProcessor.lookup(this, &_state->_cachelookupURL, false, _state->_cache_lookup_local);
     }

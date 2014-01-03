@@ -636,6 +636,7 @@ public:
     HTTPInfo *second_object_read;
     HTTPInfo object_store;
     HTTPInfo transform_store;
+    CacheLookupHttpConfig config;
     CacheDirectives directives;
     int open_read_retries;
     int open_write_retries;
@@ -655,6 +656,7 @@ public:
         second_object_read(NULL),
         object_store(),
         transform_store(),
+        config(),
         directives(),
         open_read_retries(0),
         open_write_retries(0),

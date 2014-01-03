@@ -90,7 +90,7 @@ Lcallreturn:
 #ifdef HTTP_CACHE
 Action *
 Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
-                 void * context, CacheFragType type, char *hostname, int host_len)
+                 CacheLookupHttpConfig * params, CacheFragType type, char *hostname, int host_len)
 {
 
   if (!CacheProcessor::IsCacheReady(type)) {
@@ -116,7 +116,7 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
       CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
       c->request.copy_shallow(request);
       c->frag_type = CACHE_FRAG_TYPE_HTTP;
-      c->context = context;
+      c->params = params;
       c->od = od;
     }
     if (!lock) {
@@ -242,7 +242,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
       return -ECACHE_NO_DOC;
     }
     if (cache_config_select_alternate) {
-      alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, static_cast<HttpConfigParams*>(context));
+      alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, params);
       if (alternate_index < 0)
         return -ECACHE_ALT_MISS;
     } else
@@ -967,8 +967,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
       dir_overwrite(&first_key, vol, &dir, &od->first_dir);
       if (od->move_resident_alt)
         dir_insert(&od->single_doc_key, vol, &od->single_doc_dir);
-
-      int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, static_cast<HttpConfigParams*>(context));
+      int alt_ndx = HttpTransactCache::SelectFromAlternates(write_vector, &request, params);
       vol->close_write(this);
       if (alt_ndx >= 0) {
         vector.clear();
@@ -1074,7 +1073,7 @@ CacheVC::openReadStartHead(int event, Event * e)
         goto Ldone;
       }
       if (cache_config_select_alternate) {
-        alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, static_cast<HttpConfigParams*>(context));
+        alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, params);
         if (alternate_index < 0) {
           err = ECACHE_ALT_MISS;
           goto Ldone;

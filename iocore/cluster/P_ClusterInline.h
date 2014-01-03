@@ -59,10 +59,13 @@ Cluster_lookup(Continuation * cont, CacheKey * key, CacheFragType frag_type, cha
 }
 
 inline Action *
-Cluster_read(ClusterMachine * owner_machine, int opcode, Continuation * cont, MIOBuffer * buf, CacheURL * url,
-             CacheHTTPHdr * request, CacheKey * key, time_t pin_in_cache, CacheFragType frag_type, char *hostname,
-             int host_len)
+Cluster_read(ClusterMachine * owner_machine, int opcode,
+             Continuation * cont, MIOBuffer * buf,
+             CacheURL * url, CacheHTTPHdr * request,
+             CacheLookupHttpConfig * params, CacheKey * key,
+             time_t pin_in_cache, CacheFragType frag_type, char *hostname, int host_len)
 {
+  (void) params;
   if (clusterProcessor.disable_remote_cluster_ops(owner_machine)) {
     Action a;
     a = cont;
@@ -90,6 +93,7 @@ Cluster_read(ClusterMachine * owner_machine, int opcode, Continuation * cont, MI
       url_hostname = url->host_get(&url_hlen);
 
       len += request->m_heap->marshal_length();
+      len += params->marshal_length();
       len += url_hlen;
 
       if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE)       // Bound marshalled data
@@ -106,7 +110,10 @@ Cluster_read(ClusterMachine * owner_machine, int opcode, Continuation * cont, MI
       }
       data += res;
       cur_len -= res;
-
+      if ((res = params->marshal(data, cur_len)) < 0)
+        goto err_exit;
+      data += res;
+      cur_len -= res;
       memcpy(data, url_hostname, url_hlen);
 
       CacheOpArgs_General readArgs;

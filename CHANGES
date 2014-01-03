@@ -1,8 +1,5 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 5.0.0
-
-  *) [TS-1919] Eliminate CacheLookupHttpConfig. This breaks cluster
-   compatibility, so all cluster nodes should be upgraded simultaneously.
+Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2467] traffic_shell doesn't work with tcl 8.6.
    Author: Ben Aitchison <ben@meh.net.nz>
@@ -62,8 +59,6 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-2355] ATS 4.0.x crashes when using OpenSSL 1.0.1e.
 
   *) [TS-2432] Fix a race in aio_err_callblk.
-
-Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2251] Simplify LogBuffer reference counting.
 

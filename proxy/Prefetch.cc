@@ -1131,11 +1131,6 @@ PrefetchBlaster::free()
     delete request;
   }
 
-  if (http_config_params) {
-    HttpConfig::release(http_config_params);
-    http_config_params = 0;
-  }
-
   mutex.clear();
   prefetchBlasterAllocator.free(this);
 }
@@ -1489,7 +1484,7 @@ PrefetchBlaster::handleEvent(int event, void *data)
 
       //if (cache_lookup_necessary) do:
       initCacheLookupConfig();
-      cacheProcessor.open_read(this, request->url_get(), false, request, http_config_params, 0);
+      cacheProcessor.open_read(this, request->url_get(), false, request, &cache_lookup_config, 0);
 
       break;
     }
@@ -1867,7 +1862,17 @@ PrefetchBlaster::invokeBlaster()
 void
 PrefetchBlaster::initCacheLookupConfig()
 {
-  this->http_config_params = HttpConfig::acquire();
+  //The look up parameters are intialized in the same as it is done
+  //in HttpSM::init(). Any changes there should come in here.
+  HttpConfigParams *http_config_params = HttpConfig::acquire();
+  cache_lookup_config.cache_global_user_agent_header = http_config_params->global_user_agent_header ? true : false;
+  cache_lookup_config.cache_enable_default_vary_headers =
+    http_config_params->cache_enable_default_vary_headers ? true : false;
+  cache_lookup_config.cache_vary_default_text = http_config_params->cache_vary_default_text;
+  cache_lookup_config.cache_vary_default_images = http_config_params->cache_vary_default_images;
+  cache_lookup_config.cache_vary_default_other = http_config_params->cache_vary_default_other;
+
+  HttpConfig::release(http_config_params);
 }
 
 static int

@@ -1212,6 +1212,14 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
       moi_len -= res;
       p += res;
       ink_assert(moi_len > 0);
+      // Unmarshal CacheLookupHttpConfig
+      c->ic_params = new(CacheLookupHttpConfigAllocator.alloc())
+        CacheLookupHttpConfig();
+      res = c->ic_params->unmarshal(&c->ic_arena, (const char *) p, moi_len);
+      ink_assert(res > 0);
+
+      moi_len -= res;
+      p += res;
 
       CacheKey key(msg->url_md5);
 
@@ -1231,10 +1239,9 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
         memcpy(c->ic_hostname->data(), hostname, host_len);
       }
 
-      c->http_config_params = HttpConfig::acquire();
       Cache *call_cache = caches[c->frag_type];
       Action *a = call_cache->open_read(c, &key, &c->ic_request,
-                                        c->http_config_params,
+                                        c->ic_params,
                                         c->frag_type, hostname, host_len);
       // Get rid of purify warnings since 'c' can be freed by open_read.
       if (a != ACTION_RESULT_DONE) {
@@ -1873,21 +1880,22 @@ struct retryDisposeOfDataBuffer:public Continuation
 {
   CacheContinuation *c;
 
-  int handleRetryEvent(int event, Event * e) {
+  int handleRetryEvent(int event, Event * e)
+  {
     if (CacheContinuation::handleDisposeEvent(event, c) == EVENT_DONE) {
       delete this;
-      return EVENT_DONE;
-    } else {
+        return EVENT_DONE;
+    } else
+    {
       e->schedule_in(HRTIME_MSECONDS(10));
       return EVENT_CONT;
     }
   }
-
   retryDisposeOfDataBuffer(CacheContinuation * cont)
-    :  Continuation(new_ProxyMutex()), c(cont) {
-    SET_HANDLER((rtryDisOfDBufHandler) &retryDisposeOfDataBuffer::handleRetryEvent);
+:  Continuation(new_ProxyMutex()), c(cont) {
+    SET_HANDLER((rtryDisOfDBufHandler)
+                & retryDisposeOfDataBuffer::handleRetryEvent);
   }
-
 };
 
 //////////////////////////////////////////////////////////////////
