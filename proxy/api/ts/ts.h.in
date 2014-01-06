@@ -1048,6 +1048,7 @@ extern "C"
   extern tsapi const char* TS_HTTP_METHOD_PURGE;
   extern tsapi const char* TS_HTTP_METHOD_PUT;
   extern tsapi const char* TS_HTTP_METHOD_TRACE;
+  extern tsapi const char* TS_HTTP_METHOD_PUSH;
 
   /* --------------------------------------------------------------------------
      HTTP methods string lengths */
@@ -1061,6 +1062,7 @@ extern "C"
   extern tsapi int TS_HTTP_LEN_PURGE;
   extern tsapi int TS_HTTP_LEN_PUT;
   extern tsapi int TS_HTTP_LEN_TRACE;
+  extern tsapi int TS_HTTP_LEN_PUSH;
 
   /* --------------------------------------------------------------------------
      TLS Next Protocol well-known protocol names. */

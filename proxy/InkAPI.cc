@@ -342,6 +342,7 @@ tsapi const char *TS_HTTP_METHOD_POST;
 tsapi const char *TS_HTTP_METHOD_PURGE;
 tsapi const char *TS_HTTP_METHOD_PUT;
 tsapi const char *TS_HTTP_METHOD_TRACE;
+tsapi const char *TS_HTTP_METHOD_PUSH;
 
 /* HTTP methods string lengths */
 tsapi int TS_HTTP_LEN_CONNECT;
@@ -354,6 +355,7 @@ tsapi int TS_HTTP_LEN_POST;
 tsapi int TS_HTTP_LEN_PURGE;
 tsapi int TS_HTTP_LEN_PUT;
 tsapi int TS_HTTP_LEN_TRACE;
+tsapi int TS_HTTP_LEN_PUSH;
 
 /* TLS Next Protocol well-known protocol names. */
 
@@ -1521,6 +1523,7 @@ api_init()
     TS_HTTP_METHOD_PURGE = HTTP_METHOD_PURGE;
     TS_HTTP_METHOD_PUT = HTTP_METHOD_PUT;
     TS_HTTP_METHOD_TRACE = HTTP_METHOD_TRACE;
+    TS_HTTP_METHOD_PUSH = HTTP_METHOD_PUSH;
 
     TS_HTTP_LEN_CONNECT = HTTP_LEN_CONNECT;
     TS_HTTP_LEN_DELETE = HTTP_LEN_DELETE;
@@ -1532,6 +1535,7 @@ api_init()
     TS_HTTP_LEN_PURGE = HTTP_LEN_PURGE;
     TS_HTTP_LEN_PUT = HTTP_LEN_PUT;
     TS_HTTP_LEN_TRACE = HTTP_LEN_TRACE;
+    TS_HTTP_LEN_PUSH = HTTP_LEN_PUSH;
 
     /* HTTP miscellaneous values */
     TS_HTTP_VALUE_BYTES = HTTP_VALUE_BYTES;
