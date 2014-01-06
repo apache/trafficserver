@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2235] url_print should NOT output "?" for empty query string,
+   fix two remains.
+   Author: Yu Qing
+
   *) [TS-2475] Adding new transaction methods in C++ API
 
   *) [TS-2474] Change proxy.config.net.poll_timeout to 10ms consistently.
