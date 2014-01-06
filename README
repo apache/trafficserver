@@ -8,13 +8,17 @@ plugins to build large scale web applications.
 
   traffic/ ............... top src dir
   |-- ci/ ................ quality assurance and other CI tools and configs
+  |-- cmd/ ............... various command applications
+      |-- traffic_cop/ ... traffic_cop application
+      |-- traffic_line/ .. Command line utilities and API
+      |-- traffic_shell/ . traffic_shell application
+      |-- traffic_top/ ... traffic_top application
   |-- contrib ............ various contributed auxiliary pieces
-  |-- cop/ ............... traffic_cop application
   |-- doc/ ...............
       |-- admin/ ......... Admin guide documentations
       |-- dot/ ........... Graphviz source files for docs pictures
       |-- man/ ........... Unix style man-pages
-      |-- plugins ........ Documentation for our core plugins
+      |-- plugins/ ....... Documentation for our core plugins
       |-- sdk/ ........... Plugin developer guide
   |-- example/ ........... example plugins
   |-- install/ ........... installation programs and scripts
@@ -34,7 +38,6 @@ plugins to build large scale web applications.
       |-- wccp/ .......... WCCP implementation
   |-- m4/ ................ custom macros for configure.ac
   |-- mgmt/ .............. Management server and tools (including traffic_manager)
-      |-- cli ............ Command line utilities and API
   |-- plugins/ ........... Core plugins (stable and experiemental)
   |-- proxy/ ............. HTTP proxy logic
       |-- api/ ........... Plugin API includes
@@ -42,7 +45,7 @@ plugins to build large scale web applications.
       |-- congest/ ....... Congestion control
       |-- hdrs/ .......... Headers parsing and management
       |-- http/ .......... The actual HTTP protocol implementation
-      |-0 logging/ ....... Flexible logging
+      |-- logging/ ....... Flexible logging
   |-- README ............. intro, links, build info
   |-- README-EC2 ......... info on EC2 support
   |-- REVIEWERS .......... (incomplete) list of areas with committer interest
