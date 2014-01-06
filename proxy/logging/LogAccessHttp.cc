@@ -139,6 +139,15 @@ LogAccessHttp::init()
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_client_protocol_stack(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->proto_stack);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
 LogAccessHttp::marshal_client_host_ip(char *buf)
 {
   return marshal_ip(buf, &m_http_sm->t_state.client_info.addr.sa);

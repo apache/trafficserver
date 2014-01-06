@@ -58,6 +58,7 @@ public:
   virtual int marshal_client_host_ip(char *);   // STR
   virtual int marshal_client_host_port(char *); // INT
   virtual int marshal_client_auth_user_name(char *);    // STR
+  virtual int marshal_client_protocol_stack(char *);    // INT
   virtual int marshal_client_req_text(char *);  // STR
   virtual int marshal_client_req_http_method(char *);   // INT
   virtual int marshal_client_req_url(char *);   // STR

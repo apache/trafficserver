@@ -75,6 +75,12 @@ LogAccess::init()
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_protocol_stack(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+int
 LogAccess::marshal_client_host_ip(char *buf)
 {
   DEFAULT_IP_FIELD;
@@ -1303,6 +1309,41 @@ LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFi
   ink_assert(dest != NULL);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "UNKNOWN_CACHE_WRITE_CODE"));
+}
+
+int
+LogAccess::unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+{
+  ink_assert(buf != NULL);
+  ink_assert(*buf != NULL);
+  ink_assert(dest != NULL);
+
+  char *p;
+  size_t nr_chars = 0;
+  int i, ret, nr_bits, left_len;
+  TSClientProtoStack proto_stack = (TSClientProtoStack)unmarshal_int(buf);
+
+  p = dest;
+  left_len = len;
+  nr_bits = 8 * sizeof(TSClientProtoStack);
+
+  for (i = 0; i < nr_bits && left_len; i++) {
+    if ((proto_stack >> i) & 0x1) {
+      if (p != dest) {
+        *p++ = '+';
+        left_len--;
+      }
+      ret = map->asString(i, p, left_len, &nr_chars);
+      if (ret == LogFieldAliasMap::ALL_OK) {
+        p += nr_chars;
+        left_len -= nr_chars;
+      } else if (ret == LogFieldAliasMap::BUFFER_TOO_SMALL) {
+        break;
+      }
+    }
+  }
+
+  return (len - left_len);
 }
 
 int
