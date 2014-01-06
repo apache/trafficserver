@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSInstallDirGet.en.rst:22
 msgid "TSInstallDirGet"
-msgstr ""
+msgstr "TSInstallDirGet"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:25
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:27
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:34
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:36
 msgid ""
@@ -34,31 +34,37 @@ msgid ""
 "complete, absolute path to the configuration directory and the plugin "
 "installation directory respectively."
 msgstr ""
+":func:`TSInstallDirGet` は インストール済みの Traffic Server の"
+"ルートディレクトリのパスを返します。:func:`TSConfigDirGet` と "
+":func:`TSPluginDirGet` はそれぞれ設定ディレクトリとインストール済みの"
+"プラグインディレクトリへの完全な絶対パスを返します。"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:42
 msgid "Return values"
-msgstr ""
+msgstr "戻り値"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:44
 msgid ""
 "These functions all return a NUL-terminated string that must not be modified"
 " or freed."
 msgstr ""
+"これらの関数はすべて変更や解放をしてはならない NULL 終端文字列を返します。
 
 #: ../../reference/api/TSInstallDirGet.en.rst:47
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:49
 msgid ""
 "To load a file that is located in the Traffic Server configuration "
 "directory::"
 msgstr ""
+"Traffic Server 設定ディレクトリにあるファイルを読み込むためには::
 
 #: ../../reference/api/TSInstallDirGet.en.rst:58
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:59
 msgid ":manpage:`TSAPI(3ts)`"
-msgstr ""
+msgstr ":manpage:`TSAPI(3ts)`"
