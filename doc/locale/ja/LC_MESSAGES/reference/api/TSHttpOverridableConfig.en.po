@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:24
 msgid "TSHttpOverridableConfig"
-msgstr ""
+msgstr "TSHttpOverridableConfig"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:27
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:28
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:41
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:43
 msgid ""
@@ -36,6 +36,12 @@ msgid ""
 "critical effect is the value must be changed before it is used by the "
 "transaction - after that, changes will not have any effect."
 msgstr ""
+":file:`records.config` に設定されるいくつかの値は特定のトランザクションに"
+"において変更することが可能です。これらの関数はトランザクション用に格納された"
+"設定値を変更すること、つまりトランザクションが実際に処理する際の値を変更する"
+"のとまったく同じではないことに注意することが大切です。その重要な影響は値が"
+"トランザクションで使用される前に変更されていなければならないことです。"
+"使用された後だった場合、変更は何の効果も持ちません。"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:48
 msgid ""
@@ -43,6 +49,8 @@ msgid ""
 "indicated by the :arg:`value` argument. For strings :arg:`length*` will "
 "receive the length of the string."
 msgstr ""
+"すべての ``...Get`` 関数は :arg:`value` 引数で示された記憶領域に内部値を格納"
+"します。文字列では :arg:`length*` は文字列の長さを受け取ります。"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:50
 msgid ""
@@ -51,21 +59,26 @@ msgid ""
 ":func:`TSHttpTxnConfigFind` which, if the string matches an overridable "
 "value, return the key and data type."
 msgstr ""
+"値は列挙型 :type:`TSOverridableConfigKey` で特定されます。文字列値は最初に "
+":func:`TSHttpTxnConfigFind` に渡すことで間接的に使用でき、この関数は文字列が"
+"上書き可能な値に一致した場合にキーとデータ型を返します。"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:55
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:57
 msgid ""
 "Enable :ref:`transaction buffer control <transaction-buffering-control>` "
 "with a high water mark of 262144 and a low water mark of 65536. ::"
 msgstr ""
+":ref:`transaction-buffering-control` を high water マーク 262144 と "
+"low water マーク 65536 で有効化します。\\ ::"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:69
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:70
 msgid ":manpage:`TSAPI(3ts)`"
-msgstr ""
+msgstr ":manpage:`TSAPI(3ts)`"
