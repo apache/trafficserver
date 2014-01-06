@@ -13,19 +13,19 @@ msgstr ""
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:24
 msgid "TSLifecycleHookAdd"
-msgstr ""
+msgstr "TSLifecycleHookAdd"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:27
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:28
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:33
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:35
 msgid ""
@@ -38,10 +38,18 @@ msgid ""
 "have a well defined ordering and use of them should not assume that one of "
 "the hooks is always called before another unless specifically mentioned."
 msgstr ""
+":func:`TSLifecycleHookAdd` は :arg:`contp` を :arg:`id` で指定される"
+"ライフサイクルフックのリストに追加します。ライフサイクルフックは特定の"
+"トランザクションやセッションではなく Traffic Server プロセスのもとに成り立ち"
+"ます。これらは一般的に Traffic Server プロセスの実行中に一度だけ呼び出される"
+"ので、( それ自体もライフサイクルフックとみなされる ) :func:`TSPluginInit` の"
+"中で追加されるべきです。他のフックと違い、ライフサイクルフックは明確な順序を"
+"持たず、使用にあたっては特に言及されていない限りフックのうちの一つが常に他の"
+"どれかより前に呼び出されると仮定すべきではありません。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:45
 msgid "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`"
-msgstr ""
+msgstr "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:40
 msgid ""
@@ -52,16 +60,24 @@ msgid ""
 "Other API functions that depend on server ports should be called from this "
 "hook and not :func:`TSPluginInit`."
 msgstr ""
+":ts:cv:`プロキシーサーバーポート <proxy.config.http.server_ports>` データ構造"
+"が初期化された後、接続がそれらのポート上で accept される前に呼ばれます。"
+"ポートに対応するソケットは :program:`traffic_server` プロセスがどのように起動"
+"されたかによって open されることもされないこともあります。サーバーポートに依存"
+"するその他の API 関数は :func:`TSPluginInit` ではなくこのフックから呼ばれる"
+"べきです。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:45
 msgid ""
 "Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and `NULL` "
 "data."
 msgstr ""
+"`TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` イベントと `NULL` データとともに"
+"呼び出されます。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:53
 msgid "`TS_LIFECYCLE_PORTS_READY_HOOK`"
-msgstr ""
+msgstr "`TS_LIFECYCLE_PORTS_READY_HOOK`"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:48
 msgid ""
@@ -71,38 +87,49 @@ msgid ""
 "started after this hook is called will be accepted by Traffic Server, making"
 " this a convenient place to signal external processes of that."
 msgstr ""
+"プロキシーサーバーポート上での接続の有効化の後に呼ばれます。Traffic Server "
+"はスレッドで動作するので、接続を受け付ける前に呼ばれることも、そうでないことも"
+"あります。フックコードはこのフックが呼ばれた後に開始された Traffic Server に"
+"対する接続が Traffic Server によって accept されると仮定し、そのことを外部"
+"プロセスに通知する便利な場所とできます。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:53
 msgid ""
 "Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_READY` and `NULL` data."
 msgstr ""
+"`TS_EVENT_LIFECYCLE_PORTS_READY` イベントと `NULL` データとともに"
+"呼び出されます。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:58
 msgid "`TS_LIFECYCLE_CACHE_READY_HOOK`"
-msgstr ""
+msgstr "`TS_LIFECYCLE_CACHE_READY_HOOK`"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:56
 msgid "Called after Traffic Server cache initialization has finished."
-msgstr ""
+msgstr "Traffic Server のキャッシュの初期化が完了した後に呼ばれます。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:58
 msgid ""
 "Invoked with the event `TS_EVENT_LIFECYCLE_CACHE_READY` and `NULL` data."
 msgstr ""
+"`TS_EVENT_LIFECYCLE_CACHE_READY` イベントと `NULL` データとともに"
+"呼び出されます。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:61
 msgid "Ordering"
-msgstr ""
+msgstr "順番"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:63
 msgid ""
 "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` will always be called before "
 "`TS_LIFECYCLE_PORTS_READY_HOOK`."
 msgstr ""
+"`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` は常に `TS_LIFECYCLE_PORTS_READY_HOOK` "
+"の前に呼び出されます。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:66
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:68
 msgid ""
@@ -111,10 +138,13 @@ msgid ""
 "initialized and therefore does not work if called from :func:`TSPluginInit` "
 "directly. ::"
 msgstr ""
+"次の例は :func:`TSNetAcceptNamedProtocol` を正しく使用する方法、つまり"
+"プロキシーポートが初期化され :func:`TSPluginInit` から直接呼び出された場合に"
+"動作しないようにする方法を説明しています。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:100
 msgid "History"
-msgstr ""
+msgstr "歴史"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:102
 msgid ""
@@ -128,11 +158,19 @@ msgid ""
 "provide hooks for API calls that needed to be invoked later which served "
 "essentially as additional pluging initialization points."
 msgstr ""
+"ライフサイクルフックはプロセスの初期化順の課題を解決するために登場しました "
+"(`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_) 。異なる API の"
+"呼び出しは Traffic Server の異なるモジュールが初期化されることを要求して"
+"いましたが、初期化の終盤のものは動作せず、事実上 :func:`TSPluginInit` から"
+"のみ呼び出すことが可能だったので問題となっていました。"
+"その解決方法は :func:`TSPluginInit` をプロセスの初期化の可能な限り早い位置に"
+"移し、本来は追加のプラグイン初期化ポイントとして提供され後で呼び出される必要の"
+"あった API 呼び出しのためにフックを提供することでした。"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:108
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/api/TSLifecycleHookAdd.en.rst:109
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`"
-msgstr ""
+msgstr ":manpage:`TSAPI(3ts)` 、\\ :manpage:`TSContCreate(3ts)`"
