@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2479] Don't output orphan log after failover sucessfully.
+
   *) [TS-2370] SSL proxy.config.ssl.server.honor_cipher_order is backwards.
   Changed the default setting and changed the meaning of it in the code.
 
