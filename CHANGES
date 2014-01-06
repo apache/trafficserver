@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2469] remove libreadline which is gpl licensed.
+   Author: Ben Aitchison <ben@meh.net.nz>
+
   *) [TS-2235] url_print should NOT output "?" for empty query string,
    fix two remains.
    Author: Yu Qing
