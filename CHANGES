@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2471] Writing records.config can fail when the disk is full.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
   *) [TS-2479] Don't output orphan log after failover sucessfully.
 
   *) [TS-2370] SSL proxy.config.ssl.server.honor_cipher_order is backwards.

@@ -72,11 +72,7 @@ sync_thr(void *data)
     send_push_message();
     RecSyncStatsFile();
     if (RecSyncConfigToTB(&tb) == REC_ERR_OKAY) {
-      int nbytes;
-      RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
-      RecHandle h_file = RecFileOpenW(g_rec_config_fpath);
-      RecFileWrite(h_file, tb.bufPtr(), tb.spaceUsed(), &nbytes);
-      RecFileClose(h_file);
+      RecWriteConfigFile(&tb);
     }
     usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
   }
@@ -124,11 +120,7 @@ sync_thr(void *data)
         rb = NULL;
       }
       if (!written) {
-        int nbytes;
-        RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
-        RecHandle h_file = RecFileOpenW(g_rec_config_fpath);
-        RecFileWrite(h_file, tb->bufPtr(), tb->spaceUsed(), &nbytes);
-        RecFileClose(h_file);
+        RecWriteConfigFile(tb);
         if (rb != NULL) {
           rb->setLastModifiedTime();
         }

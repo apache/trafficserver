@@ -925,3 +925,82 @@ RecSetSyncRequired(char *name, bool lock)
 
   return err;
 }
+
+int RecWriteConfigFile(textBuffer *tb)
+{
+#define TMP_FILENAME_EXT_STR ".tmp"
+#define TMP_FILENAME_EXT_LEN (sizeof(TMP_FILENAME_EXT_STR) - 1)
+
+  int nbytes;
+  int filename_len;
+  int tmp_filename_len;
+  int result;
+  char buff[1024];
+  char *tmp_filename;
+
+  filename_len = strlen(g_rec_config_fpath);
+  tmp_filename_len = filename_len + TMP_FILENAME_EXT_LEN;
+  if (tmp_filename_len < (int)sizeof(buff)) {
+    tmp_filename = buff;
+  } else {
+    tmp_filename = (char *)ats_malloc(tmp_filename_len + 1);
+  }
+  sprintf(tmp_filename, "%s%s", g_rec_config_fpath, TMP_FILENAME_EXT_STR);
+
+  RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
+
+  RecHandle h_file = RecFileOpenW(tmp_filename);
+  do {
+    if (h_file == REC_HANDLE_INVALID) {
+      RecLog(DL_Warning, "open file: %s to write fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    if (RecFileWrite(h_file, tb->bufPtr(), tb->spaceUsed(), &nbytes) != REC_ERR_OKAY) {
+      RecLog(DL_Warning, "write to file: %s fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    if (nbytes != tb->spaceUsed()) {
+      RecLog(DL_Warning, "write to file: %s fail, disk maybe full", tmp_filename);
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    if (RecFileSync(h_file) != REC_ERR_OKAY) {
+      RecLog(DL_Warning, "fsync file: %s fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+    if (RecFileClose(h_file) != REC_ERR_OKAY) {
+      RecLog(DL_Warning, "close file: %s fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+    h_file = REC_HANDLE_INVALID;
+
+    if (rename(tmp_filename, g_rec_config_fpath) != 0) {
+      RecLog(DL_Warning, "rename file %s to %s fail, errno: %d, error info: %s",
+          tmp_filename, g_rec_config_fpath, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    result = REC_ERR_OKAY;
+  } while (0);
+
+  if (h_file != REC_HANDLE_INVALID) {
+    RecFileClose(h_file);
+  }
+  if (tmp_filename != buff) {
+    ats_free(tmp_filename);
+  }
+  return result;
+}
+

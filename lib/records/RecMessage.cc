@@ -552,6 +552,7 @@ RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
   msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
   if ((h_file = RecFileOpenW(fpath)) != REC_HANDLE_INVALID) {
     if (RecFileWrite(h_file, (char *) msg, msg_size, &bytes_written) == REC_ERR_FAIL) {
+      RecFileClose(h_file);
       return REC_ERR_FAIL;
     }
     RecFileClose(h_file);
