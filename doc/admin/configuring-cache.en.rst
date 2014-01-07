@@ -330,7 +330,7 @@ Traffic Server provides a Cache Inspector utility that enables you to
 view, delete, and invalidate URLs in the cache (HTTP only). The Cache
 Inspector utility is a powerful tool that's capable of deleting *all*
 the objects in your cache; therefore, make sure that only authorized
-administrators are allowed to access this utility, see :ref:`controlling-client-access-to-cache` and the ``@scr_ip`` option in :file:`remap.config`.
+administrators are allowed to access this utility, see :ref:`controlling-client-access-to-cache` and the ``@src_ip`` option in :file:`remap.config`.
 
 Accessing the Cache Inspector Utility
 -------------------------------------
