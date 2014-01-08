@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2486] Eliminate SIMPLE_MEMCPY_INIT define.
+
   *) [TS-2483] Add a new metric, proxy.node.restarts.proxy.cache_ready_time,
    tracking absolute time when the cache started (finished
    initialization). Until cache is available, or no cache configured, this
