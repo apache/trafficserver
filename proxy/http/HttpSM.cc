@@ -144,24 +144,19 @@ HttpSM::_instantiate_func(HttpSM * prototype, HttpSM * new_instance)
   int pre_history_len = (char *) (&(prototype->history)) - (char *) prototype;
   int post_history_len = total_len - history_len - pre_history_len;
   int post_offset = pre_history_len + history_len;
-
-#ifndef SIMPLE_MEMCPY_INIT
   int j;
 
   memset(((char *) new_instance), 0, pre_history_len);
   memset(((char *) new_instance) + post_offset, 0, post_history_len);
+
   uint32_t *pd = (uint32_t *) new_instance;
+
   for (j = 0; j < scat_count; j++) {
     pd[to[j]] = val[j];
   }
 
   ink_assert((memcmp((char *) new_instance, (char *) prototype, pre_history_len) == 0) &&
-                   (memcmp(((char *) new_instance) + post_offset, ((char *) prototype) + post_offset, post_history_len) == 0));
-#else
-  // memcpy(new_instance, prototype, total_len);
-  memcpy(new_instance, prototype, pre_history_len);
-  memcpy(((char *) new_instance) + post_offset, ((char *) prototype) + post_offset, post_history_len);
-#endif
+             (memcmp(((char *) new_instance) + post_offset, ((char *) prototype) + post_offset, post_history_len) == 0));
 }
 
 SparseClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator", 128, 16, HttpSM::_instantiate_func);
