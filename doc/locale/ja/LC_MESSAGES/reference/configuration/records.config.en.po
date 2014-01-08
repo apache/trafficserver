@@ -1240,31 +1240,39 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:699
 msgid "HTTP Connection Timeouts"
-msgstr ""
+msgstr "HTTP 接続タイムアウト"
 
 #: ../../reference/configuration/records.config.en.rst:704
 msgid ""
 "Specifies how long Traffic Server keeps connections to clients open for a "
 "subsequent request after a transaction ends."
 msgstr ""
+"一つのトランザクションが終了した後に続けて発生するリクエストのために "
+"Traffic Server がクライアントとの接続をどれだけ長く維持するかを指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:709
 msgid ""
 "Specifies how long Traffic Server keeps connections to origin servers open "
 "for a subsequent transfer of data after a transaction ends."
 msgstr ""
+"一つのトランザクションが終了した後に続けて発生するデータ転送のために "
+"Traffic Server がオリジンサーバーとの接続をどれだけ長く維持するかを指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:714
 msgid ""
 "Specifies how long Traffic Server keeps connections to clients open if a "
 "transaction stalls."
 msgstr ""
+"トランザクションがストールした場合に Traffic Server がクライアントとの接続を"
+"どれだけ長く維持するかを指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:719
 msgid ""
 "Specifies how long Traffic Server keeps connections to origin servers open "
 "if the transaction stalls."
 msgstr ""
+"トランザクションがストールした場合に Traffic Server がオリジンサーバーとの"
+"接続をどれだけ長く維持するかを指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:724
 msgid ""
@@ -1272,11 +1280,13 @@ msgid ""
 "If the transfer to the client is not complete before this timeout expires, "
 "then Traffic Server closes the connection."
 msgstr ""
+"Traffic Server がクライアントと接続していられる最大時間です。クライアントへの"
+"転送がこのタイムアウトまでに完了しない場合、Traffic Server は接続を閉じます。"
 
 #: ../../reference/configuration/records.config.en.rst:727
 #: ../../reference/configuration/records.config.en.rst:735
 msgid "The default value of ``0`` specifies that there is no timeout."
-msgstr ""
+msgstr "デフォルト値 ``0`` はタイムアウト無しを指定しています。"
 
 #: ../../reference/configuration/records.config.en.rst:732
 msgid ""
@@ -1285,18 +1295,24 @@ msgid ""
 "the transfer to the origin server before this timeout expires, then Traffic "
 "Server terminates the connection request."
 msgstr ""
+"Traffic Server がオリジンサーバーへの接続要求を完了するまでに待機できる最大"
+"時間です。Traffic Server がオリジンサーバーへの転送をタイムアウトまでに完了"
+"しない場合、Traffic Server は接続要求を終了します。"
 
 #: ../../reference/configuration/records.config.en.rst:740
 msgid ""
 "The timeout interval in seconds before Traffic Server closes a connection "
 "that has no activity."
 msgstr ""
+"Traffic Server が活動のない接続をクローズするまでの秒数です。"
 
 #: ../../reference/configuration/records.config.en.rst:745
 msgid ""
 "Specifies how long Traffic Server continues a background fill before giving "
 "up and dropping the origin server connection."
 msgstr ""
+"オリジンサーバーとの接続を放棄する前に Traffic Server が background fill を"
+"継続する時間を指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:750
 msgid ""
@@ -1304,34 +1320,43 @@ msgid ""
 "aborts at which the proxy continues fetching the document from the origin "
 "server to get it into the cache (a **background fill**)."
 msgstr ""
+"ドキュメントを取得してキャッシュに入れるためにプロキシーがオリジンサーバーから"
+"その取得を継続するクライアントが中断した時点ですでに転送済みのドキュメントの"
+"総サイズに対する割合 (**background fill**) 。"
 
 #: ../../reference/configuration/records.config.en.rst:754
 msgid "Origin Server Connect Attempts"
-msgstr ""
+msgstr "オリジンサーバーへの接続の試行"
 
 #: ../../reference/configuration/records.config.en.rst:759
 msgid ""
 "The maximum number of connection retries Traffic Server can make when the "
 "origin server is not responding."
 msgstr ""
+"オリジンサーバーが応答しない場合に Traffic Server が再接続を行える最大回数。"
 
 #: ../../reference/configuration/records.config.en.rst:764
 msgid ""
 "The maximum number of connection retries Traffic Server can make when the "
 "origin server is unavailable."
 msgstr ""
+"オリジンサーバーが利用不能な場合に Traffic Server が再接続を行える最大回数。"
 
 #: ../../reference/configuration/records.config.en.rst:769
 msgid ""
 "Limits the number of socket connections across all origin servers to the "
 "value specified. To disable, set to zero (``0``)."
 msgstr ""
+"全オリジンサーバーにおけるソケットの接続数を指定した値に制限します。"
+"無効化するには、ゼロ (``0``) を設定してください。"
 
 #: ../../reference/configuration/records.config.en.rst:774
 msgid ""
 "Limits the number of socket connections per origin server to the value "
 "specified. To enable, set to one (``1``)."
 msgstr ""
+"オリジンサーバー毎のソケットの接続数を指定した値に制限します。"
+"有効化するには、イチ (``1``) を設定してください。"
 
 #: ../../reference/configuration/records.config.en.rst:779
 msgid ""
@@ -1341,28 +1366,39 @@ msgid ""
 "time needed to set up a new connection from the next request at the expense "
 "of added (inactive) connections. To enable, set to one (``1``)."
 msgstr ""
+"接続済みのオリジンサーバーへの接続として、接続が長い期間使われていない場合でも"
+"少なくとも 'n' 個の接続を維持します。オリジンが keep-alive に対応している"
+"場合に便利であり、(不活発な) 接続の追加により次のリクエストから新しい接続の"
+"準備に必要となる時間を不要とします。有効化するには、イチ (``1``) を設定して"
+"ください。"
 
 #: ../../reference/configuration/records.config.en.rst:787
 msgid ""
 "The maximum number of failed connection attempts allowed before a round-"
 "robin entry is marked as 'down' if a server has round-robin DNS entries."
 msgstr ""
+"サーバーがラウンドロビンの DNS エントリーを持っている場合に、一つのラウンド"
+"ロビンエントリーが '落ちてる' とマークされるまでに許される接続失敗の最大数。"
 
 #: ../../reference/configuration/records.config.en.rst:793
 msgid "The timeout value (in seconds) for an origin server connection."
-msgstr ""
+msgstr "オリジンサーバーへの接続のタイムアウト値 ( 秒 ) 。"
 
 #: ../../reference/configuration/records.config.en.rst:798
 msgid ""
 "The timeout value (in seconds) for an origin server connection when the "
 "client request is a ``POST`` or ``PUT`` request."
 msgstr ""
+"クライアントのリクエストが ``POST`` か ``PUT`` リクエストのときのオリジン"
+"サーバーへの接続のタイムアウト値 ( 秒 ) 。"
 
 #: ../../reference/configuration/records.config.en.rst:804
 msgid ""
 "Specifies how long (in seconds) Traffic Server remembers that an origin "
 "server was unreachable."
 msgstr ""
+"オリジンサーバーが到達不可能であったと Traffic Server が覚えている長さ ( 秒 ) "
+"を指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:809
 msgid ""
@@ -1370,10 +1406,13 @@ msgid ""
 "unavailable after a client abandons a request because the origin server was "
 "too slow in sending the response header."
 msgstr ""
+"オリジンサーバーがレスポンスヘッダーを返すのが遅すぎるためにクライアントが"
+"リクエストを断念した後で、Traffic Server がオリジンサーバーを到達不能とマーク"
+"するまでの秒数。"
 
 #: ../../reference/configuration/records.config.en.rst:813
 msgid "Congestion Control"
-msgstr ""
+msgstr "輻輳制御"
 
 #: ../../reference/configuration/records.config.en.rst:817
 msgid ""
@@ -1383,12 +1422,19 @@ msgid ""
 "retry the congested origin server later. Refer to :ref:`using-congestion-"
 "control`."
 msgstr ""
+"輻輳制御オプションを有効化 (``1``) もしくは無効化 (``0``) し、"
+"オリジンサーバーが輻輳した際に Traffic Server が HTTP リクエストを転送するの"
+"を止めます。Traffic Server は後で輻輳しているオリジンサーバーに再試行する"
+"ためにクライアントにメッセージを送信します。"
+":ref:`using-congestion-control` を参照してください。"
 
 #: ../../reference/configuration/records.config.en.rst:823
 msgid ""
 "Transaction buffering / flow control is enabled if this is set to a non-zero"
 " value. Otherwise no flow control is done."
 msgstr ""
+"非ゼロ値を設定するとトランザクションのバッファリング / フロー制御が有効化"
+"されます。そうでない場合はフロー制御は行われません。"
 
 #: ../../reference/configuration/records.config.en.rst:828
 msgid ""
@@ -1396,6 +1442,8 @@ msgid ""
 "halted when the total buffer space in use by the transaction exceeds this "
 "value."
 msgstr ""
+"トランザクションのバッファー制御用の high water マークです。使用中の"
+"総バッファー領域がこの値に達すると外部ソース I/O が停止されます。"
 
 #: ../../reference/configuration/records.config.en.rst:834
 msgid ""
@@ -1403,6 +1451,8 @@ msgid ""
 "resumed when the total buffer space in use by the transaction is no more "
 "than this value."
 msgstr ""
+"トランザクションのバッファー制御用の low water マークです。使用中の"
+"総バッファー領域がこの値より少なくなると外部ソース I/O が再開されます。"
 
 #: ../../reference/configuration/records.config.en.rst:838
 msgid "Negative Response Caching"
