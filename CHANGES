@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2476] Fix size_t format string.
+   Author: Radim Kolar <hsn@sendmail.cz>
+
   *) [TS-2471] Writing records.config can fail when the disk is full.
    Author: Yu Qing <zhuangyuan@taobao.com>
 

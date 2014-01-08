@@ -189,7 +189,7 @@ const int DEFAULT_BUFFER_SIZE_FOR_VARARGS = 8*1024;
        LOG_DEBUG("logging a " level " to '%s' with length %d", state_->filename_.c_str(), n); \
        TSTextLogObjectWrite(state_->text_log_obj_, const_cast<char*>("[" level "] %s"), buffer); \
      } else { \
-       LOG_ERROR("Unable to log " level " message to '%s' due to size exceeding %lud bytes.", state_->filename_.c_str(), sizeof(buffer)); \
+       LOG_ERROR("Unable to log " level " message to '%s' due to size exceeding %zu bytes", state_->filename_.c_str(), sizeof(buffer)); \
      } \
      return; \
     }
