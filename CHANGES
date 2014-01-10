@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2508] Add a *highly* experimental escalation plugin.
+
   *) [TS-2507] Fix the state transition logging in HttpSM::handle_server_setup_error.
 
   *) [TS-1648] Segmentation fault in dir_clear_range()

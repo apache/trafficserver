@@ -1940,6 +1940,7 @@ AC_CONFIG_FILES([
   plugins/experimental/buffer_upload/Makefile
   plugins/experimental/channel_stats/Makefile
   plugins/experimental/custom_redirect/Makefile
+  plugins/experimental/escalate/Makefile
   plugins/experimental/esi/Makefile
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/lua/Makefile
