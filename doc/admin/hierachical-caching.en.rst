@@ -49,7 +49,7 @@ Server will support parent caching for HTTP and HTTPS requests.
 
 **Note:** If you do not want all requests to go to the parent cache,
 then simply configure Traffic Server to route certain requests (such as
-requests containing specific URLs) directly to the origin server. SImply
+requests containing specific URLs) directly to the origin server. Simply
 set parent proxy rules in :file:`parent.config`
 
 The figure below illustrates a simple cache hierarchy with a Traffic

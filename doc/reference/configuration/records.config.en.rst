@@ -668,7 +668,7 @@ specific domains.
   .. note::
         Enabling keep-alive does not automatically enable purging of keep-alive
         requests when nearing the connection limit, that is controlled by
-        ```proxy.config.http.server_max_connections``.
+        :ts:cv:`proxy.config.http.server_max_connections`.
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 0
 
