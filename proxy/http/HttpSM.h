@@ -97,23 +97,20 @@ extern ink_mutex debug_sm_list_mutex;
 struct HttpVCTableEntry
 {
   VConnection *vc;
-  bool eos;
   MIOBuffer *read_buffer;
   MIOBuffer *write_buffer;
   VIO *read_vio;
   VIO *write_vio;
   HttpSMHandler vc_handler;
   HttpVC_t vc_type;
+  bool eos;
   bool in_tunnel;
 };
 
-const int vc_table_max_entries = 4;
-
 struct HttpVCTable
 {
-
+  static const int vc_table_max_entries = 4;
   HttpVCTable();
-  HttpVCTableEntry vc_table[vc_table_max_entries];
 
   HttpVCTableEntry *new_entry();
   HttpVCTableEntry *find_entry(VConnection *);
@@ -121,11 +118,14 @@ struct HttpVCTable
   void remove_entry(HttpVCTableEntry *);
   void cleanup_entry(HttpVCTableEntry *);
   void cleanup_all();
-  bool is_table_clear();
+  bool is_table_clear() const;
+
+private:
+  HttpVCTableEntry vc_table[vc_table_max_entries];
 };
 
 inline bool
-HttpVCTable::is_table_clear()
+HttpVCTable::is_table_clear() const
 {
   for (int i = 0; i < vc_table_max_entries; i++) {
     if (vc_table[i].vc != NULL) {
