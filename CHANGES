@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2336] First attempt at moving the Prefetch APIs into some usable
+   state. There's still work to be done here, but separate bugs for that.
+
   *) [TS-2487] Export PUSH HTTP method constants to the TS API.
 
   *) [TS-2486] Eliminate SIMPLE_MEMCPY_INIT define.
