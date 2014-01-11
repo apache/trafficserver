@@ -1,10 +1,10 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2014-01-11 23:16+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -13,7 +13,7 @@ msgstr ""
 
 #: ../../reference/plugins/conf_remap.en.rst:19
 msgid "conf_remap Plugin"
-msgstr ""
+msgstr "conf_remap プラグイン"
 
 #: ../../reference/plugins/conf_remap.en.rst:21
 msgid ""
@@ -21,16 +21,20 @@ msgid ""
 "dependent on actual remapping rules. The plugin is built and installed as "
 "part of the normal Apache Traffic Server installation process."
 msgstr ""
+"`conf_remap` プラグインは実際の remap ルールに応じて設定ディレクティブを上書"
+"きすることを可能にします。このプラグインは通常の Apache Traffic Server のイン"
+"ストールプロセスの一部としてビルドされ、インストールされています。"
 
 #: ../../reference/plugins/conf_remap.en.rst:26
 msgid ""
-"If you want to achieve this behaviour now, configure a remap rule like "
-"this::"
+"If you want to achieve this behaviour now, configure a remap rule like this::"
 msgstr ""
+"この振る舞いをいま得たいのであれば、remap ルールをこのように設定してくださ"
+"い。"
 
 #: ../../reference/plugins/conf_remap.en.rst:31
 msgid "where `cdn.conf` would look like :file:`records.config`. For example::"
-msgstr ""
+msgstr "この `cdn.conf` は :file:`records.config` のように見えます。例えば"
 
 #: ../../reference/plugins/conf_remap.en.rst:35
 msgid ""
@@ -38,311 +42,314 @@ msgid ""
 "mapping rule. For now, those options may be overridden through the "
 "`conf_remap` plugin:"
 msgstr ""
+"これを行うことにより、グローバルなデフォルト設定をマッピングルール毎に上書き"
+"することができます。いまは下記のオプションが `conf_remap` プラグインを通じて"
+"上書きされます。"
 
 #: ../../reference/plugins/conf_remap.en.rst:41
 msgid "proxy.config.url_remap.pristine_host_hdr"
-msgstr ""
+msgstr "proxy.config.url_remap.pristine_host_hdr"
 
 #: ../../reference/plugins/conf_remap.en.rst:42
 msgid "proxy.config.http.chunking_enabled"
-msgstr ""
+msgstr "proxy.config.http.chunking_enabled"
 
 #: ../../reference/plugins/conf_remap.en.rst:43
 msgid "proxy.config.http.negative_caching_enabled"
-msgstr ""
+msgstr "proxy.config.http.negative_caching_enabled"
 
 #: ../../reference/plugins/conf_remap.en.rst:44
 msgid "proxy.config.http.negative_caching_lifetime"
-msgstr ""
+msgstr "proxy.config.http.negative_caching_lifetime"
 
 #: ../../reference/plugins/conf_remap.en.rst:45
 msgid "proxy.config.http.cache.when_to_revalidate"
-msgstr ""
+msgstr "proxy.config.http.cache.when_to_revalidate"
 
 #: ../../reference/plugins/conf_remap.en.rst:46
 msgid "proxy.config.http.keep_alive_enabled_in"
-msgstr ""
+msgstr "proxy.config.http.keep_alive_enabled_in"
 
 #: ../../reference/plugins/conf_remap.en.rst:47
 msgid "proxy.config.http.keep_alive_enabled_out"
-msgstr ""
+msgstr "proxy.config.http.keep_alive_enabled_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:48
 msgid "proxy.config.http.keep_alive_post_out"
-msgstr ""
+msgstr "proxy.config.http.keep_alive_post_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:49
 msgid "proxy.config.http.share_server_sessions"
-msgstr ""
+msgstr "proxy.config.http.share_server_sessions"
 
 #: ../../reference/plugins/conf_remap.en.rst:50
 msgid "proxy.config.net.sock_recv_buffer_size_out"
-msgstr ""
+msgstr "proxy.config.net.sock_recv_buffer_size_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:51
 msgid "proxy.config.net.sock_send_buffer_size_out"
-msgstr ""
+msgstr "proxy.config.net.sock_send_buffer_size_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:52
 msgid "proxy.config.net.sock_option_flag_out"
-msgstr ""
+msgstr "proxy.config.net.sock_option_flag_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:53
 msgid "proxy.config.http.forward.proxy_auth_to_parent"
-msgstr ""
+msgstr "proxy.config.http.forward.proxy_auth_to_parent"
 
 #: ../../reference/plugins/conf_remap.en.rst:54
 msgid "proxy.config.http.anonymize_remove_from"
-msgstr ""
+msgstr "proxy.config.http.anonymize_remove_from"
 
 #: ../../reference/plugins/conf_remap.en.rst:55
 msgid "proxy.config.http.anonymize_remove_referer"
-msgstr ""
+msgstr "proxy.config.http.anonymize_remove_referer"
 
 #: ../../reference/plugins/conf_remap.en.rst:56
 msgid "proxy.config.http.anonymize_remove_user_agent"
-msgstr ""
+msgstr "proxy.config.http.anonymize_remove_user_agent"
 
 #: ../../reference/plugins/conf_remap.en.rst:57
 msgid "proxy.config.http.anonymize_remove_cookie"
-msgstr ""
+msgstr "proxy.config.http.anonymize_remove_cookie"
 
 #: ../../reference/plugins/conf_remap.en.rst:58
 msgid "proxy.config.http.anonymize_remove_client_ip"
-msgstr ""
+msgstr "proxy.config.http.anonymize_remove_client_ip"
 
 #: ../../reference/plugins/conf_remap.en.rst:59
 msgid "proxy.config.http.anonymize_insert_client_ip"
-msgstr ""
+msgstr "proxy.config.http.anonymize_insert_client_ip"
 
 #: ../../reference/plugins/conf_remap.en.rst:60
 msgid "proxy.config.http.response_server_enabled"
-msgstr ""
+msgstr "proxy.config.http.response_server_enabled"
 
 #: ../../reference/plugins/conf_remap.en.rst:61
 msgid "proxy.config.http.insert_squid_x_forwarded_for"
-msgstr ""
+msgstr "proxy.config.http.insert_squid_x_forwarded_for"
 
 #: ../../reference/plugins/conf_remap.en.rst:62
 msgid "proxy.config.http.server_tcp_init_cwnd"
-msgstr ""
+msgstr "proxy.config.http.server_tcp_init_cwnd"
 
 #: ../../reference/plugins/conf_remap.en.rst:63
 msgid "proxy.config.http.send_http11_requests"
-msgstr ""
+msgstr "proxy.config.http.send_http11_requests"
 
 #: ../../reference/plugins/conf_remap.en.rst:64
 msgid "proxy.config.http.cache.http"
-msgstr ""
+msgstr "proxy.config.http.cache.http"
 
 #: ../../reference/plugins/conf_remap.en.rst:65
 msgid "proxy.config.http.cache.cluster_cache_local"
-msgstr ""
+msgstr "proxy.config.http.cache.cluster_cache_local"
 
 #: ../../reference/plugins/conf_remap.en.rst:66
 msgid "proxy.config.http.cache.ignore_client_no_cache"
-msgstr ""
+msgstr "proxy.config.http.cache.ignore_client_no_cache"
 
 #: ../../reference/plugins/conf_remap.en.rst:67
 msgid "proxy.config.http.cache.ignore_client_cc_max_age"
-msgstr ""
+msgstr "proxy.config.http.cache.ignore_client_cc_max_age"
 
 #: ../../reference/plugins/conf_remap.en.rst:68
 msgid "proxy.config.http.cache.ims_on_client_no_cache"
-msgstr ""
+msgstr "proxy.config.http.cache.ims_on_client_no_cache"
 
 #: ../../reference/plugins/conf_remap.en.rst:69
 msgid "proxy.config.http.cache.ignore_server_no_cache"
-msgstr ""
+msgstr "proxy.config.http.cache.ignore_server_no_cache"
 
 #: ../../reference/plugins/conf_remap.en.rst:70
 msgid "proxy.config.http.cache.cache_responses_to_cookies"
-msgstr ""
+msgstr "proxy.config.http.cache.cache_responses_to_cookies"
 
 #: ../../reference/plugins/conf_remap.en.rst:71
 msgid "proxy.config.http.cache.ignore_authentication"
-msgstr ""
+msgstr "proxy.config.http.cache.ignore_authentication"
 
 #: ../../reference/plugins/conf_remap.en.rst:72
 msgid "proxy.config.http.cache.cache_urls_that_look_dynamic"
-msgstr ""
+msgstr "proxy.config.http.cache.cache_urls_that_look_dynamic"
 
 #: ../../reference/plugins/conf_remap.en.rst:73
 msgid "proxy.config.http.cache.required_headers"
-msgstr ""
+msgstr "proxy.config.http.cache.required_headers"
 
 #: ../../reference/plugins/conf_remap.en.rst:74
 msgid "proxy.config.http.insert_request_via_str"
-msgstr ""
+msgstr "proxy.config.http.insert_request_via_str"
 
 #: ../../reference/plugins/conf_remap.en.rst:75
 msgid "proxy.config.http.insert_response_via_str"
-msgstr ""
+msgstr "proxy.config.http.insert_response_via_str"
 
 #: ../../reference/plugins/conf_remap.en.rst:76
 msgid "proxy.config.http.cache.heuristic_min_lifetime"
-msgstr ""
+msgstr "proxy.config.http.cache.heuristic_min_lifetime"
 
 #: ../../reference/plugins/conf_remap.en.rst:77
 msgid "proxy.config.http.cache.heuristic_max_lifetime"
-msgstr ""
+msgstr "proxy.config.http.cache.heuristic_max_lifetime"
 
 #: ../../reference/plugins/conf_remap.en.rst:78
 msgid "proxy.config.http.cache.guaranteed_min_lifetime"
-msgstr ""
+msgstr "proxy.config.http.cache.guaranteed_min_lifetime"
 
 #: ../../reference/plugins/conf_remap.en.rst:79
 msgid "proxy.config.http.cache.guaranteed_max_lifetime"
-msgstr ""
+msgstr "proxy.config.http.cache.guaranteed_max_lifetime"
 
 #: ../../reference/plugins/conf_remap.en.rst:80
 msgid "proxy.config.http.cache.max_stale_age"
-msgstr ""
+msgstr "proxy.config.http.cache.max_stale_age"
 
 #: ../../reference/plugins/conf_remap.en.rst:81
 msgid "proxy.config.http.keep_alive_no_activity_timeout_in"
-msgstr ""
+msgstr "proxy.config.http.keep_alive_no_activity_timeout_in"
 
 #: ../../reference/plugins/conf_remap.en.rst:82
 msgid "proxy.config.http.keep_alive_no_activity_timeout_out"
-msgstr ""
+msgstr "proxy.config.http.keep_alive_no_activity_timeout_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:83
 msgid "proxy.config.http.transaction_no_activity_timeout_in"
-msgstr ""
+msgstr "proxy.config.http.transaction_no_activity_timeout_in"
 
 #: ../../reference/plugins/conf_remap.en.rst:84
 msgid "proxy.config.http.transaction_no_activity_timeout_out"
-msgstr ""
+msgstr "proxy.config.http.transaction_no_activity_timeout_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:85
 msgid "proxy.config.http.transaction_active_timeout_out"
-msgstr ""
+msgstr "proxy.config.http.transaction_active_timeout_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:86
 msgid "proxy.config.http.origin_max_connections"
-msgstr ""
+msgstr "proxy.config.http.origin_max_connections"
 
 #: ../../reference/plugins/conf_remap.en.rst:87
 msgid "proxy.config.http.connect_attempts_max_retries"
-msgstr ""
+msgstr "proxy.config.http.connect_attempts_max_retries"
 
 #: ../../reference/plugins/conf_remap.en.rst:88
 msgid "proxy.config.http.connect_attempts_max_retries_dead_server"
-msgstr ""
+msgstr "proxy.config.http.connect_attempts_max_retries_dead_server"
 
 #: ../../reference/plugins/conf_remap.en.rst:89
 msgid "proxy.config.http.connect_attempts_rr_retries"
-msgstr ""
+msgstr "proxy.config.http.connect_attempts_rr_retries"
 
 #: ../../reference/plugins/conf_remap.en.rst:90
 msgid "proxy.config.http.connect_attempts_timeout"
-msgstr ""
+msgstr "proxy.config.http.connect_attempts_timeout"
 
 #: ../../reference/plugins/conf_remap.en.rst:91
 msgid "proxy.config.http.post_connect_attempts_timeout"
-msgstr ""
+msgstr "proxy.config.http.post_connect_attempts_timeout"
 
 #: ../../reference/plugins/conf_remap.en.rst:92
 msgid "proxy.config.http.down_server.cache_time"
-msgstr ""
+msgstr "proxy.config.http.down_server.cache_time"
 
 #: ../../reference/plugins/conf_remap.en.rst:93
 msgid "proxy.config.http.down_server.abort_threshold"
-msgstr ""
+msgstr "proxy.config.http.down_server.abort_threshold"
 
 #: ../../reference/plugins/conf_remap.en.rst:94
 msgid "proxy.config.http.cache.fuzz.time"
-msgstr ""
+msgstr "proxy.config.http.cache.fuzz.time"
 
 #: ../../reference/plugins/conf_remap.en.rst:95
 msgid "proxy.config.http.cache.fuzz.min_time"
-msgstr ""
+msgstr "proxy.config.http.cache.fuzz.min_time"
 
 #: ../../reference/plugins/conf_remap.en.rst:96
 msgid "proxy.config.http.doc_in_cache_skip_dns"
-msgstr ""
+msgstr "proxy.config.http.doc_in_cache_skip_dns"
 
 #: ../../reference/plugins/conf_remap.en.rst:97
 msgid "proxy.config.http.background_fill_active_timeout"
-msgstr ""
+msgstr "proxy.config.http.background_fill_active_timeout"
 
 #: ../../reference/plugins/conf_remap.en.rst:98
 msgid "proxy.config.http.response_server_str"
-msgstr ""
+msgstr "proxy.config.http.response_server_str"
 
 #: ../../reference/plugins/conf_remap.en.rst:99
 msgid "proxy.config.http.cache.heuristic_lm_factor"
-msgstr ""
+msgstr "proxy.config.http.cache.heuristic_lm_factor"
 
 #: ../../reference/plugins/conf_remap.en.rst:100
 msgid "proxy.config.http.cache.fuzz.probability"
-msgstr ""
+msgstr "proxy.config.http.cache.fuzz.probability"
 
 #: ../../reference/plugins/conf_remap.en.rst:101
 msgid "proxy.config.http.background_fill_completed_threshold"
-msgstr ""
+msgstr "proxy.config.http.background_fill_completed_threshold"
 
 #: ../../reference/plugins/conf_remap.en.rst:102
 msgid "proxy.config.net.sock_packet_mark_out"
-msgstr ""
+msgstr "proxy.config.net.sock_packet_mark_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:103
 msgid "proxy.config.net.sock_packet_tos_out"
-msgstr ""
+msgstr "proxy.config.net.sock_packet_tos_out"
 
 #: ../../reference/plugins/conf_remap.en.rst:104
 msgid "proxy.config.http.insert_age_in_response"
-msgstr ""
+msgstr "proxy.config.http.insert_age_in_response"
 
 #: ../../reference/plugins/conf_remap.en.rst:105
 msgid "proxy.config.http.chunking.size"
-msgstr ""
+msgstr "proxy.config.http.chunking.size"
 
 #: ../../reference/plugins/conf_remap.en.rst:106
 msgid "proxy.config.http.flow_control.enabled"
-msgstr ""
+msgstr "proxy.config.http.flow_control.enabled"
 
 #: ../../reference/plugins/conf_remap.en.rst:107
 msgid "proxy.config.http.flow_control.low_water"
-msgstr ""
+msgstr "proxy.config.http.flow_control.low_water"
 
 #: ../../reference/plugins/conf_remap.en.rst:108
 msgid "proxy.config.http.flow_control.high_water"
-msgstr ""
+msgstr "proxy.config.http.flow_control.high_water"
 
 #: ../../reference/plugins/conf_remap.en.rst:109
 msgid "proxy.config.http.cache.range.lookup"
-msgstr ""
+msgstr "proxy.config.http.cache.range.lookup"
 
 #: ../../reference/plugins/conf_remap.en.rst:110
 msgid "proxy.config.http.normalize_ae_gzip"
-msgstr ""
+msgstr "proxy.config.http.normalize_ae_gzip"
 
 #: ../../reference/plugins/conf_remap.en.rst:111
 msgid "proxy.config.http.default_buffer_size"
-msgstr ""
+msgstr "proxy.config.http.default_buffer_size"
 
 #: ../../reference/plugins/conf_remap.en.rst:112
 msgid "proxy.config.http.default_buffer_water_mark"
-msgstr ""
+msgstr "proxy.config.http.default_buffer_water_mark"
 
 #: ../../reference/plugins/conf_remap.en.rst:113
 msgid "proxy.config.http.request_header_max_size"
-msgstr ""
+msgstr "proxy.config.http.request_header_max_size"
 
 #: ../../reference/plugins/conf_remap.en.rst:114
 msgid "proxy.config.http.response_header_max_size"
-msgstr ""
+msgstr "proxy.config.http.response_header_max_size"
 
 #: ../../reference/plugins/conf_remap.en.rst:115
 msgid "proxy.config.http.negative_revalidating_enabled"
-msgstr ""
+msgstr "proxy.config.http.negative_revalidating_enabled"
 
 #: ../../reference/plugins/conf_remap.en.rst:116
 msgid "proxy.config.http.negative_revalidating_lifetime"
-msgstr ""
+msgstr "proxy.config.http.negative_revalidating_lifetime"
 
 #: ../../reference/plugins/conf_remap.en.rst:117
 msgid "proxy.config.http.accept_encoding_filter_enable"
-msgstr ""
+msgstr "proxy.config.http.accept_encoding_filter_enable"
