@@ -192,8 +192,8 @@ extern "C"
   tsapi TS_DEPRECATED TSReturnCode TSHttpTxnCacheLookupSkip(TSHttpTxn txnp);
 
   /* TS-1996: These API swill be removed after v3.4.0 is cut. Do not use them! */
-  tsapi TS_DEPRECATED TSReturnCode TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
-  tsapi TS_DEPRECATED TSReturnCode TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp);
+  tsapi TSReturnCode TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
+  tsapi TSReturnCode TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp);
 
   /****************************************************************************
    *  ??
