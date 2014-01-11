@@ -16,6 +16,10 @@
 
 include $(top_srcdir)/build/plugins.mk
 
+# Don't warn on usage of the deprecated TSHttpTxnNewCacheLookupDo() API.
+AM_CXXFLAGS = \
+  -Wno-deprecated
+
 pkglib_LTLIBRARIES = rfc5861.la
 rfc5861_la_SOURCES = rfc5861.c
 rfc5861_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
