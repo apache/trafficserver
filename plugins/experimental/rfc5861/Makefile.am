@@ -20,9 +20,6 @@ include $(top_srcdir)/build/plugins.mk
 AM_CXXFLAGS = \
   -Wno-deprecated
 
-AM_CFLAGS = \
-  -Wno-deprecated
-
 pkglib_LTLIBRARIES = rfc5861.la
 rfc5861_la_SOURCES = rfc5861.c
 rfc5861_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
