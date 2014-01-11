@@ -13,7 +13,7 @@ msgstr ""
 
 #: ../../reference/plugins/mysql_remap.en.rst:2
 msgid "MySQL Remap Plugin"
-msgstr ""
+msgstr "MySQL リマッププラグイン"
 
 #: ../../reference/plugins/mysql_remap.en.rst:22
 msgid ""
@@ -21,24 +21,30 @@ msgid ""
 "essentially rewrites the incoming request's Host header / origin server "
 "connection to one retrieved from a database."
 msgstr ""
+"これはデータベースをもとに動的な\"リマップ\"を行うための基本的なプラグイン"
+"です。本質的には届いたリクエストの Host ヘッダーを書き換えます / "
+"オリジンサーバーの接続をデータベースから取得したものに。"
 
 #: ../../reference/plugins/mysql_remap.en.rst:26
 msgid "The generic proxying setup is the following::"
-msgstr ""
+msgstr "一般的なプロキシーのセットアップは次のとおりです ::"
 
 #: ../../reference/plugins/mysql_remap.en.rst:30
 msgid "Without the plugin a request like::"
-msgstr ""
+msgstr "このプラグインを使わない場合のリクエストはこの様になります ::"
 
 #: ../../reference/plugins/mysql_remap.en.rst:35
 msgid "Ends up requesting ``http://original.host.com/path/to/something``"
 msgstr ""
+"最終的には ``http://original.host.com/path/to/something`` にリクエストします。"
 
 #: ../../reference/plugins/mysql_remap.en.rst:37
 msgid ""
 "With this plugin enabled, you can easily change that to anywhere you "
 "desire. Imagine the many possibilities...."
 msgstr ""
+"このプラグインを有効化すると、どこでも望んだ場所に簡単に変更できます。"
+"多くの可能性を想像してください...."
 
 #: ../../reference/plugins/mysql_remap.en.rst:40
 msgid ""
@@ -47,46 +53,55 @@ msgid ""
 "Traffic Server local. Real performance is likely to be substantially "
 "higher, up to the MySQL's max queries / second."
 msgstr ""
+"私たちは ab でこのプラグインのベンチマークを行い、汎用のハードウェアに MySQL "
+"と Traffic Server をどちらもローカルにセットアップした環境で 約 9200 "
+"リクエスト / 秒 (1.7k オブジェクト ) となりました。実際のパフォーマンスは"
+"十分に高く、MySQL の最大クエリー / 秒次第です。"
 
 #: ../../reference/plugins/mysql_remap.en.rst:46
 msgid "Installation"
-msgstr ""
+msgstr "インストール"
 
 #: ../../reference/plugins/mysql_remap.en.rst:48
 msgid "This plugin is only built if the configure option ::"
-msgstr ""
+msgstr "このプラグインはビルド時の設定オプションに ::"
 
 #: ../../reference/plugins/mysql_remap.en.rst:52
 msgid "is given at build time."
-msgstr ""
+msgstr "が与えられている場合にのみビルドされます。"
 
 #: ../../reference/plugins/mysql_remap.en.rst:55
 msgid "Configuration"
-msgstr ""
+msgstr "設定"
 
 #: ../../reference/plugins/mysql_remap.en.rst:57
 msgid "Import the default schema to a database you create::"
-msgstr ""
+msgstr "作成したデータベースへのデフォルトスキーマを取り込みます ::"
 
 #: ../../reference/plugins/mysql_remap.en.rst:62
 msgid ""
 "insert some interesting values in mysql_remap.hostname & mysql_remap.map"
 msgstr ""
+"mysql_remap.hostname と mysql_remap.map に興味深い値を入れます"
 
 #: ../../reference/plugins/mysql_remap.en.rst:65
 msgid ""
 "Traffic Server plugin configuration is done inside a global configuration "
 "file: ``/etc/trafficserver/plugin.config``::"
 msgstr ""
+"Traffic Server プラグイン設定はグローバル設定ファイル "
+":file: ``/etc/trafficserver/plugin.config`` で完了します ::"
 
 #: ../../reference/plugins/mysql_remap.en.rst:70
 msgid "The INI file should contain the following values::"
-msgstr ""
+msgstr "INI ファイルは次の値を含むべきです ::"
 
 #: ../../reference/plugins/mysql_remap.en.rst:79
-msgid "To debug errors, start trafficserver manually using::"
+msgid "To debug errors, start trafficserver manually using ::"
 msgstr ""
+"エラーをデバッグするために、Traffic Server を手動で次のように開始して"
+"ください::"
 
 #: ../../reference/plugins/mysql_remap.en.rst:83
 msgid "And resolve any errors or warnings displayed."
-msgstr ""
+msgstr "そして表示されたエラーや警告を解決してください。"
