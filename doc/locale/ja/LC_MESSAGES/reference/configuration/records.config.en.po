@@ -1,10 +1,10 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2014-01-12 21:37+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -1456,7 +1456,7 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:838
 msgid "Negative Response Caching"
-msgstr ""
+msgstr "ネガティブレスポンスキャッシュ"
 
 #: ../../reference/configuration/records.config.en.rst:843
 msgid ""
@@ -1465,6 +1465,10 @@ msgid ""
 "client requests the same page, Traffic Server serves the negative response "
 "directly from cache."
 msgstr ""
+"有効化 (``1``) された場合、Traffic Server はリクエストされたページが存在しない"
+"場合にネガティブレスポンス ( ``404 Not Found`` のような ) をキャッシュします。"
+"次回クライアントが同じページをリクエストした際、Traffic Server はネガティブ"
+"レスポンスをキャッシュから直接返します。"
 
 #: ../../reference/configuration/records.config.en.rst:849
 msgid ""
@@ -1473,12 +1477,18 @@ msgid ""
 "the :ts:cv:`proxy.config.http.negative_caching_enabled` variable. The "
 "following negative responses are cached by Traffic Server:::"
 msgstr ""
+"次の HTTP レスポンスコードは :ts:cv:`proxy.config.http.negative_caching_enabled` "
+"変数に指定された値を無視して、キャッシュを禁止しているサーバーからの "
+"``Cache-Control`` ディレクティブは無視されます。次のネガティブレスポンスは "
+"Traffic Server にキャッシュされます。"
 
 #: ../../reference/configuration/records.config.en.rst:865
 msgid ""
 "The cache lifetime for objects cached from this setting is controlled via "
 ":ts:cv:`proxy.config.http.negative_caching_lifetime`."
 msgstr ""
+"この設定によりキャッシュされたオブジェクトのキャッシュライフタイムは "
+":ts:cv:`proxy.config.http.negative_caching_lifetime` により制御されます。"
 
 #: ../../reference/configuration/records.config.en.rst:869
 msgid "Proxy User Variables"
