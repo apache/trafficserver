@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2489] Fix esi plugin problem with contents in comments output 
+   twice when the node list is cached.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
   *) [TS-2336] First attempt at moving the Prefetch APIs into some usable
    state. There's still work to be done here, but separate bugs for that.
 

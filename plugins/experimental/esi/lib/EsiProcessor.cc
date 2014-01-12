@@ -47,7 +47,10 @@ EsiProcessor::EsiProcessor(const char *debug_tag, const char *parser_debug_tag,
     _n_processed_nodes(0),
     _n_processed_try_nodes(0),
     _overall_len(0),
-    _fetcher(fetcher), _esi_vars(variables),
+    _fetcher(fetcher),
+    _reqAdded(false),
+    _usePackedNodeList(false),
+    _esi_vars(variables),
     _expression(expression_debug_tag, debug_func, error_func, _esi_vars), _n_try_blocks_processed(0),
     _handler_manager(handler_mgr) {
 }
@@ -59,6 +62,7 @@ EsiProcessor::start() {
     stop();
   }
   _curr_state = PARSING;
+  _usePackedNodeList = false;
   return true;
 }
 
@@ -123,6 +127,7 @@ EsiProcessor::usePackedNodeList(const char *data, int data_len) {
     error();
     return UNPACK_FAILURE;
   }
+  _usePackedNodeList = true;
   return _handleParseComplete() ? PROCESS_SUCCESS : PROCESS_FAILURE;
 }
 
@@ -715,7 +720,7 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes) {
         _debugLog(_debug_tag, "[%s] handled try node successfully", __FUNCTION__);
         break;
       case DocNode::TYPE_HTML_COMMENT:
-        if (!_handleHtmlComment(list_iter)) {
+        if (!_usePackedNodeList && !_handleHtmlComment(list_iter)) {
           _errorLog("[%s] Failed to preprocess try node", __FUNCTION__);
           return false;
         }

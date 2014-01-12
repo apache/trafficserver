@@ -123,6 +123,7 @@ private:
   EsiLib::StringHash _include_urls;
 
   bool _reqAdded;
+  bool _usePackedNodeList;
   
   bool _processEsiNode(const EsiLib::DocNodeList::iterator &iter);
   bool _handleParseComplete();
