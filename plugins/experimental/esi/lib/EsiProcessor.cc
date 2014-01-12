@@ -720,6 +720,16 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes) {
         _debugLog(_debug_tag, "[%s] handled try node successfully", __FUNCTION__);
         break;
       case DocNode::TYPE_HTML_COMMENT:
+        /**
+         * the html comment <!--esi innertext--> is a container.
+         * the esi processor will remove the starting tag "<!--esi" and the
+         * closure tag "-->", then keep the innertext (the content within it).
+         *
+         * we should call _handleHtmlComment when the node list is parsed
+         * from the content,
+         * but we should NOT call _handleHtmlComment again when the node list
+         * is unpacked from the cache because the node list has been parsed.
+         */
         if (!_usePackedNodeList && !_handleHtmlComment(list_iter)) {
           _errorLog("[%s] Failed to preprocess try node", __FUNCTION__);
           return false;
