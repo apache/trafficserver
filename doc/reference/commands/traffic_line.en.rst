@@ -129,7 +129,6 @@ The :option:`traffic_line -r` option accepts the following variable names::
     proxy.node.restarts.proxy.start_time
     proxy.node.restarts.proxy.stop_time
     proxy.node.restarts.proxy.restart_count
-    proxy.node.restarts.proxy.cache_ready_time
     proxy.node.version.manager.short
     proxy.node.version.manager.long
     proxy.node.version.manager.build_number
