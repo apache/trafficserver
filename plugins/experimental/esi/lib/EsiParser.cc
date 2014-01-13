@@ -40,22 +40,22 @@ const string EsiParser::HANDLER_ATTR_STR("handler");
 const unsigned int EsiParser::MAX_DOC_SIZE = 1024 * 1024;
 
 const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
-  EsiNodeInfo(DocNode::TYPE_INCLUDE, "include ", 8, "/>", 2),
+  EsiNodeInfo(DocNode::TYPE_INCLUDE, "include", 7, "/>", 2),
   EsiNodeInfo(DocNode::TYPE_REMOVE, "remove>", 7, "</esi:remove>", 13),
-  EsiNodeInfo(DocNode::TYPE_COMMENT, "comment ", 7, "/>", 2),
+  EsiNodeInfo(DocNode::TYPE_COMMENT, "comment", 7, "/>", 2),
   EsiNodeInfo(DocNode::TYPE_VARS, "vars>", 5, "</esi:vars>", 11),
   EsiNodeInfo(DocNode::TYPE_CHOOSE, "choose>", 7, "</esi:choose>", 13),
-  EsiNodeInfo(DocNode::TYPE_WHEN, "when ", 5, "</esi:when>", 11),
+  EsiNodeInfo(DocNode::TYPE_WHEN, "when", 4, "</esi:when>", 11),
   EsiNodeInfo(DocNode::TYPE_OTHERWISE, "otherwise>", 10, "</esi:otherwise>", 16),
   EsiNodeInfo(DocNode::TYPE_TRY, "try>", 4, "</esi:try>", 10),
-  EsiNodeInfo(DocNode::TYPE_ATTEMPT, "attempt> ", 8, "</esi:attempt>", 14),
-  EsiNodeInfo(DocNode::TYPE_EXCEPT, "except> ", 7, "</esi:except>", 13),
-  EsiNodeInfo(DocNode::TYPE_SPECIAL_INCLUDE, "special-include ", 15, "/>", 2),
+  EsiNodeInfo(DocNode::TYPE_ATTEMPT, "attempt>", 8, "</esi:attempt>", 14),
+  EsiNodeInfo(DocNode::TYPE_EXCEPT, "except>", 7, "</esi:except>", 13),
+  EsiNodeInfo(DocNode::TYPE_SPECIAL_INCLUDE, "special-include", 15, "/>", 2),
   EsiNodeInfo(DocNode::TYPE_UNKNOWN, "", 0, "", 0)  // serves as end marker
 };
 
 const EsiParser::EsiNodeInfo EsiParser::HTML_COMMENT_NODE_INFO(DocNode::TYPE_HTML_COMMENT,
-                                                               "<!--esi ", 8, "-->", 3);
+                                                               "<!--esi", 7, "-->", 3);
 
 EsiParser::EsiParser(const char *debug_tag, 
                      ComponentBase::Debug debug_func, 
@@ -214,11 +214,16 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos,
       }
     }
     // doing the exact same thing for the other target string
-    if (data[i_data] == HTML_COMMENT_NODE_INFO.tag_suffix[i_html_comment]) {
-      if (++i_html_comment == HTML_COMMENT_NODE_INFO.tag_suffix_len) {
-        is_html_comment_node = true;
-        opening_tag_pos = i_data - i_html_comment + 1;
-        return COMPLETE_MATCH;
+    if (i_html_comment < HTML_COMMENT_NODE_INFO.tag_suffix_len &&
+        data[i_data] == HTML_COMMENT_NODE_INFO.tag_suffix[i_html_comment]) {
+      if (++i_html_comment == HTML_COMMENT_NODE_INFO.tag_suffix_len &&
+          i_data + 1 < data.size()) {
+        char ch = data[i_data + 1];  //<!--esi must follow by a space char
+        if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+          is_html_comment_node = true;
+          opening_tag_pos = i_data - i_html_comment + 1;
+          return COMPLETE_MATCH;
+        }
       }
     } else {
       if (i_html_comment) {
@@ -312,9 +317,25 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
       for (node_info = ESI_NODES; node_info->type != DocNode::TYPE_UNKNOWN; ++node_info) {
         search_result = _compareData(data, curr_pos, node_info->tag_suffix, node_info->tag_suffix_len);
         if (search_result == COMPLETE_MATCH) {
-          _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d", 
+          if (node_info->tag_suffix[node_info->tag_suffix_len - 1] == '>') {
+            _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d",
+                __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
+            break;
+          } else {
+            if (curr_pos + node_info->tag_suffix_len < data_size) {
+              char ch = data_start_ptr[curr_pos + node_info->tag_suffix_len];
+              if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+                _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d",
                     __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
-          break;
+                ++curr_pos; //skip the space char
+                break;
+              } else if(ch == '/') {
+                _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d",
+                    __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
+                break;
+              }
+            }
+          }
         } else if (search_result == PARTIAL_MATCH) {
           goto lPartialMatch;
         }
