@@ -398,10 +398,6 @@ CB_After_Cache_Init()
     Debug("http_listen", "Delayed listen enable, cache initialization finished");
     start_HttpProxyServer();
   }
-
-  time_t cache_ready_at = time(NULL);
-  RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at);
-
   // Alert the plugins the cache is initialized.
   hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
   while (hook) {
