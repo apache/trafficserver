@@ -419,7 +419,7 @@ msgid ""
 "``www.company1.com`` to ``www.company2.com``: ::"
 msgstr ""
 "次のルールは ``www.company.com`` へのすべての HTTP リクエストを"
-"\ *一時的に* ``www.company2.com`` へリダイレクトします ::"
+" *一時的に* ``www.company2.com`` へリダイレクトします ::"
 
 #: ../../reference/configuration/remap.config.en.rst:249
 msgid "Regular Expression (regex) Remap Support"

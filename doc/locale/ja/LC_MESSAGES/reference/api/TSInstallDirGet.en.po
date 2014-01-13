@@ -48,7 +48,7 @@ msgid ""
 "These functions all return a NUL-terminated string that must not be modified"
 " or freed."
 msgstr ""
-"これらの関数はすべて変更や解放をしてはならない NULL 終端文字列を返します。
+"これらの関数はすべて変更や解放をしてはならない NULL 終端文字列を返します。"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:47
 msgid "Examples"
@@ -59,7 +59,7 @@ msgid ""
 "To load a file that is located in the Traffic Server configuration "
 "directory::"
 msgstr ""
-"Traffic Server 設定ディレクトリにあるファイルを読み込むためには::
+"Traffic Server 設定ディレクトリにあるファイルを読み込むためには::"
 
 #: ../../reference/api/TSInstallDirGet.en.rst:58
 msgid "See also"
