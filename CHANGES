@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2412] fix the bug of restarting ATS causes complete cache data
+  loss when use linux-native-aio.
+
   *) [TS-2488] enhance esi plugin to allow any of the space characters to
    follow esi starting tags.
    Author: Yu Qing <zhuangyuan@taobao.com>

@@ -635,8 +635,7 @@ ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 
   if (sz > 1) {
     ink_assert(op->action.continuation);
-    AIOVec *vec = new AIOVec(sz, op->action.continuation);
-    vec->action = op->action.continuation;
+    AIOVec *vec = new AIOVec(sz, op);
     while (--sz >= 0) {
       op->action = vec;
       op = op->then;
@@ -662,8 +661,7 @@ ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 
   if (sz > 1) {
     ink_assert(op->action.continuation);
-    AIOVec *vec = new AIOVec(sz, op->action.continuation);
-    vec->action = op->action.continuation;
+    AIOVec *vec = new AIOVec(sz, op);
     while (--sz >= 0) {
       op->action = vec;
       op = op->then;
