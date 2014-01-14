@@ -45,10 +45,10 @@ volatile int num_filedes = 1;
 // Don't need to acquire this for searching the array
 static ink_mutex insert_mutex;
 
-RecInt cache_config_threads_per_disk = 12;
-RecInt api_config_threads_per_disk = 12;
 int thread_is_created = 0;
 #endif // AIO_MODE == AIO_MODE_NATIVE
+RecInt cache_config_threads_per_disk = 12;
+RecInt api_config_threads_per_disk = 12;
 
 RecRawStatBlock *aio_rsb = NULL;
 Continuation *aio_err_callbck = 0;
@@ -162,9 +162,8 @@ ink_aio_init(ModuleVersion v)
 #if AIO_MODE != AIO_MODE_NATIVE
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex, NULL);
-
-  REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #endif
+  REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 }
 
 int

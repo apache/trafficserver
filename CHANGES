@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-1821] make the AIO test pass when build with native aio.
+
   *) [TS-2412] fix the bug of restarting ATS causes complete cache data
   loss when use linux-native-aio.
 
