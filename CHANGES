@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2491] stop other esi plugin unit test programs after error.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+ 
   *) [TS-1821] make the AIO test pass when build with native aio.
 
   *) [TS-2412] fix the bug of restarting ATS causes complete cache data
