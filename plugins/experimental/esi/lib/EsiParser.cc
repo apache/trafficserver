@@ -310,6 +310,7 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
       _debugLog(_debug_tag, "[%s] Found html comment tag at position %d", __FUNCTION__, curr_pos);
       data_ptr = data_start_ptr + curr_pos;
       node_info = &HTML_COMMENT_NODE_INFO;
+      ++curr_pos;
     } else {
       curr_pos += ESI_TAG_PREFIX_LEN;
       data_ptr = data_start_ptr + curr_pos;
@@ -329,11 +330,13 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
                     __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
                 ++curr_pos; //skip the space char
                 break;
-              } else if(ch == '/') {
+              } else if(ch == '/' || ch == '>') {
                 _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d",
                     __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
                 break;
               }
+            } else {
+              goto lPartialMatch;
             }
           }
         } else if (search_result == PARTIAL_MATCH) {

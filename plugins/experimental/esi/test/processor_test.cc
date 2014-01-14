@@ -705,7 +705,6 @@ int main()
 
   {
     cout << endl << "===================== Test 32) html comment node" << endl;
-    /*
     TestHttpDataFetcher data_fetcher;
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
@@ -722,7 +721,6 @@ int main()
     assert(strncmp(output_data,
                    ">>>>> Content for URL [helloworld] <<<<<fooblahbar",
                    output_data_len) == 0);
-    */
   }
 
   {
