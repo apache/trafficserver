@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -21,28 +21,28 @@ msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:23
 msgid ""
-"The ``TS`` prefix is used for all function and variable names defined in the"
-" Traffic Server API. **Examples**: ``TS_EVENT_NONE``,\\ ``TSMutex``, and "
+"The ``TS`` prefix is used for all function and variable names defined in "
+"the Traffic Server API. **Examples**: ``TS_EVENT_NONE``,\\ ``TSMutex``, and "
 "``TSContCreate``"
 msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:27
 msgid ""
-"Enumerated values are always written in all uppercase letters. **Examples**:"
-" *``TS_EVENT_NONE``* and *``TS_VC_CLOSE_ABORT``*"
+"Enumerated values are always written in all uppercase letters. "
+"**Examples**: *``TS_EVENT_NONE``* and *``TS_VC_CLOSE_ABORT``*"
 msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:30
 msgid ""
-"Constant values are all uppercase; enumerated values can be seen as a subset"
-" of constants. **Examples**: ``TS_URL_SCHEME_FILE`` and "
+"Constant values are all uppercase; enumerated values can be seen as a "
+"subset of constants. **Examples**: ``TS_URL_SCHEME_FILE`` and "
 "``TS_MIME_FIELD_ACCEPT``"
 msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:34
 msgid ""
-"The names of defined types are mixed-case. **Examples**: *``TSHttpSsn``* and"
-" *``TSHttpTxn``*"
+"The names of defined types are mixed-case. **Examples**: *``TSHttpSsn``* "
+"and *``TSHttpTxn``*"
 msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:37
@@ -53,16 +53,16 @@ msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:40
 msgid ""
-"Function names use the following subject-verb naming style: "
-"``TS-<subject>-<verb>``, where ``<subject>`` goes from general to specific. "
-"This makes it easier to determine what a function does by reading its name. "
-"**For** **example**: the function to retrieve the password field (the "
-"specific subject) from a URL (the general subject) is ``TSUrlPasswordGet``."
+"Function names use the following subject-verb naming style: ``TS-<subject>-"
+"<verb>``, where ``<subject>`` goes from general to specific. This makes it "
+"easier to determine what a function does by reading its name. **For** "
+"**example**: the function to retrieve the password field (the specific "
+"subject) from a URL (the general subject) is ``TSUrlPasswordGet``."
 msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:47
 msgid ""
 "Common verbs like ``Create``, ``Destroy``, ``Get``, ``Set``, ``Copy``, "
-"``Find``, ``Retrieve``, ``Insert``, ``Remove``, and ``Delete`` are used only"
-" when appropriate."
+"``Find``, ``Retrieve``, ``Insert``, ``Remove``, and ``Delete`` are used "
+"only when appropriate."
 msgstr ""

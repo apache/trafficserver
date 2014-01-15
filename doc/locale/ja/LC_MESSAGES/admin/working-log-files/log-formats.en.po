@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -136,8 +136,8 @@ msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:84
 msgid ""
-"``psct`` The proxy response content type; the object content type taken from"
-" the Traffic Server response header."
+"``psct`` The proxy response content type; the object content type taken "
+"from the Traffic Server response header."
 msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:88
@@ -283,8 +283,8 @@ msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:195
 msgid ""
-"``phr`` The proxy hierarchy route; the route Traffic Server used to retrieve"
-" the object."
+"``phr`` The proxy hierarchy route; the route Traffic Server used to "
+"retrieve the object."
 msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:203
@@ -303,9 +303,9 @@ msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:206
 msgid ""
-"``pfsc`` The proxy finish status code: ``FIN`` if the Traffic Server request"
-" to the origin server completed successfully or ``INTR`` if the request was "
-"interrupted."
+"``pfsc`` The proxy finish status code: ``FIN`` if the Traffic Server "
+"request to the origin server completed successfully or ``INTR`` if the "
+"request was interrupted."
 msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:215
@@ -314,9 +314,9 @@ msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:212
 msgid ""
-"``crc`` The cache result code; how the Traffic Server cache responded to the"
-" request: HIT, MISS, and so on. Cache result codes are described :ref:`here "
-"<squid-netscape-result-codes>`."
+"``crc`` The cache result code; how the Traffic Server cache responded to "
+"the request: HIT, MISS, and so on. Cache result codes are described :ref:"
+"`here <squid-netscape-result-codes>`."
 msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:220
@@ -487,8 +487,8 @@ msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:351
 msgid ""
-"The Domain Name Server (DNS) could not resolve the origin server name, or no"
-" DNS could be reached."
+"The Domain Name Server (DNS) could not resolve the origin server name, or "
+"no DNS could be reached."
 msgstr ""
 
 #: ../../admin/working-log-files/log-formats.en.rst:356

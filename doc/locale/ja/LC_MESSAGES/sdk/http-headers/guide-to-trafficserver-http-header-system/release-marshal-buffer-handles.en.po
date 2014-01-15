@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -57,8 +57,8 @@ msgstr ""
 
 #: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/release-marshal-buffer-handles.en.rst:62
 msgid ""
-"You need to use ``TS_NULL_MLOC`` to release any ``TSMLoc`` handles retrieved"
-" by the ``TSHttpTxn*Get`` functions."
+"You need to use ``TS_NULL_MLOC`` to release any ``TSMLoc`` handles "
+"retrieved by the ``TSHttpTxn*Get`` functions."
 msgstr ""
 
 #: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/release-marshal-buffer-handles.en.rst:65

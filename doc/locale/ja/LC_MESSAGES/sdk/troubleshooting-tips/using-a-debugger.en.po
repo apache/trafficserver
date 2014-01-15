@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,10 +17,10 @@ msgstr ""
 
 #: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:21
 msgid ""
-"A debugger can set breakpoints in a plugin. Use a Traffic Server debug build"
-" and compile the plugin with the ``-g`` option. A debugger can also be used "
-"to analyze a core dump. To generate core, set the size limit of the core "
-"files in the :file:`records.config` file to -1 as follows:"
+"A debugger can set breakpoints in a plugin. Use a Traffic Server debug "
+"build and compile the plugin with the ``-g`` option. A debugger can also be "
+"used to analyze a core dump. To generate core, set the size limit of the "
+"core files in the :file:`records.config` file to -1 as follows:"
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:31

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -44,8 +44,8 @@ msgstr ""
 
 #: ../../sdk/continuations.en.rst:43
 msgid ""
-"A continuation must be created with a mutex if your continuation does one of"
-" the following:"
+"A continuation must be created with a mutex if your continuation does one "
+"of the following:"
 msgstr ""
 
 #: ../../sdk/continuations.en.rst:46
@@ -76,8 +76,8 @@ msgid ""
 "is any global or continuation data associated to the continuation by "
 "``TSContDataSet``. This does not include the local data created by the "
 "continuation handler function. A typical example of continuations created "
-"with associated data structures and mutexes is the transaction state machine"
-" created in the sample Protocol plugin (see `One Way to Implement a "
+"with associated data structures and mutexes is the transaction state "
+"machine created in the sample Protocol plugin (see `One Way to Implement a "
 "Transaction State Machine <../new-protocol-"
 "plugins#OneWayImplementaTransactionStateMachine>`__)."
 msgstr ""
@@ -136,8 +136,8 @@ msgstr ""
 #: ../../sdk/continuations.en.rst:114
 msgid ""
 "**Note:** Most HTTP transaction plugin continuations do not need non-null "
-"mutexes because they're called within the processing of an HTTP transaction,"
-" and therefore have the transaction's mutex."
+"mutexes because they're called within the processing of an HTTP "
+"transaction, and therefore have the transaction's mutex."
 msgstr ""
 
 #: ../../sdk/continuations.en.rst:118

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -23,22 +23,22 @@ msgid ""
 "(``TSIOBufferBlock``) and buffer data (``TSIOBufferData``) data structures "
 "are reference-counted, so they can reside in multiple buffers at the same "
 "time. This makes it extremely efficient to copy data from one IO buffer to "
-"another via ``TSIOBufferCopy``, since Traffic Server must only copy pointers"
-" and adjust reference counts appropriately (and doesn't actually copy any "
-"data)."
+"another via ``TSIOBufferCopy``, since Traffic Server must only copy "
+"pointers and adjust reference counts appropriately (and doesn't actually "
+"copy any data)."
 msgstr ""
 
 #: ../../sdk/io-guide/io-buffers.en.rst:31
 msgid ""
-"The IO buffer abstraction provides for a single writer and multiple readers."
-" In order for the readers to have no knowledge of each other, they "
-"manipulate IO buffers through the ``TSIOBufferReader`` data structure. Since"
-" only a single writer is allowed, there is no corresponding "
+"The IO buffer abstraction provides for a single writer and multiple "
+"readers. In order for the readers to have no knowledge of each other, they "
+"manipulate IO buffers through the ``TSIOBufferReader`` data structure. "
+"Since only a single writer is allowed, there is no corresponding "
 "``TSIOBufferWriter`` data structure. The writer simply modifies the IO "
 "buffer directly. To see an example that illustrates how to use IOBuffers, "
-"refer to the sample code in the description of ```TSIOBufferBlockReadStart``"
-" "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a367203e6e2cf4349e019952782deb96c>`__."
+"refer to the sample code in the description of "
+"```TSIOBufferBlockReadStart`` <http://people.apache.org/~amc/ats/doc/html/"
+"ts_8h.html#a367203e6e2cf4349e019952782deb96c>`__."
 msgstr ""
 
 #: ../../sdk/io-guide/io-buffers.en.rst:40

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -33,9 +33,9 @@ msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-sessions.en.rst:33
 msgid ""
-"``TS_HTTP_SSN_START_HOOK`` Called when an HTTP session is started (a session"
-" starts when a client connects to Traffic Server). This hook must be added "
-"as a global hook."
+"``TS_HTTP_SSN_START_HOOK`` Called when an HTTP session is started (a "
+"session starts when a client connects to Traffic Server). This hook must be "
+"added as a global hook."
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-sessions.en.rst:37
@@ -64,12 +64,12 @@ msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-sessions.en.rst:50
 msgid ""
-"```TSHttpSsnHookAdd`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a268d493d94fa5461c8200883a9b8d20b>`__"
+"```TSHttpSsnHookAdd`` <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a268d493d94fa5461c8200883a9b8d20b>`__"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-sessions.en.rst:51
 msgid ""
-"```TSHttpSsnReenable`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a3bbe42bf4757625bdb8bb65e7ac6f52d>`__"
+"```TSHttpSsnReenable`` <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a3bbe42bf4757625bdb8bb65e7ac6f52d>`__"
 msgstr ""

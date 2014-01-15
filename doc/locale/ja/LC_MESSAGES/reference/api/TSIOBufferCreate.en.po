@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -33,20 +33,20 @@ msgid ""
 "abstraction. An IO buffer is composed of a list of buffer blocks which are "
 "reference counted so that they can reside in multiple buffers at the same "
 "time. This makes it extremely efficient to copy data from one IO buffer to "
-"another using :func:`TSIOBufferCopy` since Traffic Server only needs to copy"
-" pointers and adjust reference counts appropriately and not actually copy "
-"any data; however applications should still strive to ensure data blocks are"
-" a reasonable size."
+"another using :func:`TSIOBufferCopy` since Traffic Server only needs to "
+"copy pointers and adjust reference counts appropriately and not actually "
+"copy any data; however applications should still strive to ensure data "
+"blocks are a reasonable size."
 msgstr ""
 
 #: ../../reference/api/TSIOBufferCreate.en.rst:48
 msgid ""
-"The IO buffer abstraction provides for a single writer and multiple readers."
-" In order for the readers to have no knowledge of each other, they "
+"The IO buffer abstraction provides for a single writer and multiple "
+"readers. In order for the readers to have no knowledge of each other, they "
 "manipulate IO buffers through the :type:`TSIOBufferReader` data structure. "
-"Since only a single writer is allowed, there is no corresponding "
-":type:`TSIOBufferWriter` data structure. The writer simply modifies the IO "
-"buffer directly."
+"Since only a single writer is allowed, there is no corresponding :type:"
+"`TSIOBufferWriter` data structure. The writer simply modifies the IO buffer "
+"directly."
 msgstr ""
 
 #: ../../reference/api/TSIOBufferCreate.en.rst:55
@@ -70,16 +70,16 @@ msgstr ""
 #: ../../reference/api/TSIOBufferCreate.en.rst:64
 msgid ""
 ":func:`TSIOBufferWrite` appends length bytes from the buffer buf to the IO "
-"buffer bufp and returns the number of bytes successfully written into the IO"
-" buffer."
+"buffer bufp and returns the number of bytes successfully written into the "
+"IO buffer."
 msgstr ""
 
 #: ../../reference/api/TSIOBufferCreate.en.rst:68
 msgid ""
 ":func:`TSIOBufferProduce` makes nbytes of data available for reading in the "
-"IO buffer bufp. A common pattern for writing to an IO buffer is to copy data"
-" into a buffer block and then call INKIOBufferProduce to make the new data "
-"visible to any readers."
+"IO buffer bufp. A common pattern for writing to an IO buffer is to copy "
+"data into a buffer block and then call INKIOBufferProduce to make the new "
+"data visible to any readers."
 msgstr ""
 
 #: ../../reference/api/TSIOBufferCreate.en.rst:73
@@ -89,9 +89,8 @@ msgid ""
 "initiated a read operation on this buffer. As a writer feeds data into the "
 "TSIOBuffer, no readers are called back until the amount of data reaches the "
 "watermark. Setting a watermark can improve performance because it avoids "
-"frequent callbacks to read small amounts of data. "
-":func:`TSIOBufferWaterMarkGet` gets the current watermark for the IO buffer "
-"bufp."
+"frequent callbacks to read small amounts of data. :func:"
+"`TSIOBufferWaterMarkGet` gets the current watermark for the IO buffer bufp."
 msgstr ""
 
 #: ../../reference/api/TSIOBufferCreate.en.rst:82

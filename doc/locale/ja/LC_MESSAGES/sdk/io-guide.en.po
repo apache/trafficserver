@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -29,12 +29,12 @@ msgstr ""
 
 #: ../../sdk/io-guide.en.rst:39
 msgid ""
-"To use a vconnection, a user must first get a handle to one. This is usually"
-" accomplished by having it handed to the user; the user may also simply "
-"issue a call that creates a vconnection (such as ``TSNetConnect)``. In the "
-"case of transform plugins, the plugin creates a transformation vconnection "
-"viav ``TSTransformCreate`` and then accesses the output vconnection using "
-"``TSTransformOutputVConnGet``."
+"To use a vconnection, a user must first get a handle to one. This is "
+"usually accomplished by having it handed to the user; the user may also "
+"simply issue a call that creates a vconnection (such as ``TSNetConnect)``. "
+"In the case of transform plugins, the plugin creates a transformation "
+"vconnection viav ``TSTransformCreate`` and then accesses the output "
+"vconnection using ``TSTransformOutputVConnGet``."
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:46
@@ -50,9 +50,9 @@ msgstr ""
 msgid ""
 "To issue a read or write operation, a user calls ``TSVConnRead`` or "
 "``TSVConnWrite``. These two operations both return ``VIO (TSVIO)``. The VIO "
-"describes the operation being performed and how much progress has been made."
-" Transform plugins initiate output to the downstream vconnection by calling "
-"``TSVConnWrite``."
+"describes the operation being performed and how much progress has been "
+"made. Transform plugins initiate output to the downstream vconnection by "
+"calling ``TSVConnWrite``."
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:58
@@ -77,9 +77,9 @@ msgid ""
 "common sense: if two write operations were performed on a single "
 "vconnection, then the user would not be able to specify which should occur "
 "first and the output would occur in an intermingled fashion. Note that both "
-"a read operation and a write operation can happen on a single vconnection at"
-" the same time; the restriction is for more than one operation of the same "
-"type."
+"a read operation and a write operation can happen on a single vconnection "
+"at the same time; the restriction is for more than one operation of the "
+"same type."
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:79
@@ -105,8 +105,8 @@ msgstr ""
 
 #: ../../sdk/io-guide.en.rst:100
 msgid ""
-"The ``connp`` is the vconnection the user is writing to and ``contp`` is the"
-" \"user\" - i.e., the continuation that ``connp`` calls back when it has "
+"The ``connp`` is the vconnection the user is writing to and ``contp`` is "
+"the \"user\" - i.e., the continuation that ``connp`` calls back when it has "
 "emptied its buffer and is ready for more data."
 msgstr ""
 
@@ -125,8 +125,8 @@ msgstr ""
 msgid ""
 "When a vconnection calls back its user to indicate that it wants more data "
 "(or when some other condition has occurred), it issues a call to "
-"``TSContCall``. It passes the ``TSVIO`` describing the operation as the data"
-" parameter, and one of the values below as the event parameter."
+"``TSContCall``. It passes the ``TSVIO`` describing the operation as the "
+"data parameter, and one of the values below as the event parameter."
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:123
@@ -148,8 +148,8 @@ msgstr ""
 msgid ""
 "The vconnection has placed data in the buffer passed to an ``TSVConnRead`` "
 "operation and it would like to do more IO, but the buffer is now full. When "
-"the user consumes the data from the buffer, this should re-enable the VIO so"
-" it indicates to the vconnection that the buffer has been modified."
+"the user consumes the data from the buffer, this should re-enable the VIO "
+"so it indicates to the vconnection that the buffer has been modified."
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:137
@@ -193,10 +193,10 @@ msgstr ""
 msgid ""
 "An attempt was made to read past the end of the stream of bytes during the "
 "handling of an ``TSVConnRead`` operation. This event occurs when the number "
-"of bytes available for reading from a vconnection is less than the number of"
-" bytes the user specifies should be read from the vconnection in a call to "
-"``TSVConnRead``. A common case where this occurs is when the user specifies "
-"that ``INT64_MAX`` bytes are to be read from a network connection."
+"of bytes available for reading from a vconnection is less than the number "
+"of bytes the user specifies should be read from the vconnection in a call "
+"to ``TSVConnRead``. A common case where this occurs is when the user "
+"specifies that ``INT64_MAX`` bytes are to be read from a network connection."
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:158
@@ -209,21 +209,21 @@ msgstr ""
 #: ../../sdk/io-guide.en.rst:163
 msgid ""
 "After using a vconnection, the user must call ``TSVConnClose`` or "
-"``TSVConnAbort``. While both calls indicate that the vconnection can destroy"
-" itself, ``TSVConnAbort`` should be used when the connection is being closed"
-" abnormally. After a call to ``TSVConnClose`` or ``TSVConnAbort``, the user "
-"will not be called back by the vconnection again."
+"``TSVConnAbort``. While both calls indicate that the vconnection can "
+"destroy itself, ``TSVConnAbort`` should be used when the connection is "
+"being closed abnormally. After a call to ``TSVConnClose`` or "
+"``TSVConnAbort``, the user will not be called back by the vconnection again."
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:170
 msgid ""
 "Sometimes it's desirable to simply close down the write portion of a "
-"connection while keeping the read portion open. This can be accomplished via"
-" the ``TSVConnShutdown`` function, which shuts down either the read or write"
-" portion of a vconnection. *Shutdown* means that the vconnection will no "
-"longer call back the user with events for the portion of the connection that"
-" was shut down. For example: if the user shuts down the write portion of a "
-"connection, then the ``TS_EVENT_VCONN_WRITE_READY`` or "
+"connection while keeping the read portion open. This can be accomplished "
+"via the ``TSVConnShutdown`` function, which shuts down either the read or "
+"write portion of a vconnection. *Shutdown* means that the vconnection will "
+"no longer call back the user with events for the portion of the connection "
+"that was shut down. For example: if the user shuts down the write portion "
+"of a connection, then the ``TS_EVENT_VCONN_WRITE_READY`` or "
 "``TS_EVENT_VCONN_WRITE_COMPLETE`` events will not be produced. In the null "
 "transform plugin, the write operation is shut down with a call to "
 "``TSVConnShutdown``. To learn how vconnections are used in transformation "
@@ -237,48 +237,48 @@ msgstr ""
 
 #: ../../sdk/io-guide.en.rst:185
 msgid ""
-"```TSVConnAbort`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a08444a9b2fee637672e177ede78b6218>`__"
+"```TSVConnAbort`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
+"html#a08444a9b2fee637672e177ede78b6218>`__"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:186
 msgid ""
-"```TSVConnClose`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a69344c2c6e57ece0990a5cee73b75215>`__"
+"```TSVConnClose`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a69344c2c6e57ece0990a5cee73b75215>`__"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:187
 msgid ""
-"```TSVConnClosedGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a441d74cd77bf5d5564048682ca83b6ec>`__"
+"```TSVConnClosedGet`` <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a441d74cd77bf5d5564048682ca83b6ec>`__"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:188
 msgid ""
-"```TSVConnRead`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a29674799a8deffdde3d6ae3231aba1dc>`__"
+"```TSVConnRead`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
+"html#a29674799a8deffdde3d6ae3231aba1dc>`__"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:189
 msgid ""
-"```TSVConnReadVIOGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#aa6f8788f062737f211c788ad5fcd2813>`__"
+"```TSVConnReadVIOGet`` <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#aa6f8788f062737f211c788ad5fcd2813>`__"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:190
 msgid ""
-"```TSVConnShutdown`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a5935b6c762b65fe87057adf94b1b00b4>`__"
+"```TSVConnShutdown`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
+"html#a5935b6c762b65fe87057adf94b1b00b4>`__"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:191
 msgid ""
-"```TSVConnWrite`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#acea65496d1fcaf01924b0210f3129e6b>`__"
+"```TSVConnWrite`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
+"html#acea65496d1fcaf01924b0210f3129e6b>`__"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:192
 msgid ""
-"```TSVConnWriteVIOGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ae9a38dbd4866c59131a1f3b806a18aab>`__"
+"```TSVConnWriteVIOGet`` <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#ae9a38dbd4866c59131a1f3b806a18aab>`__"
 msgstr ""

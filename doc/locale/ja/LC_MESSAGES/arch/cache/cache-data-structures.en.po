@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,9 +17,8 @@ msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:25
 msgid ""
-"An open directory entry. It contains all the information of a "
-":cpp:class:`Dir` plus additional information from the first "
-":cpp:class:`Doc`."
+"An open directory entry. It contains all the information of a :cpp:class:"
+"`Dir` plus additional information from the first :cpp:class:`Doc`."
 msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:29
@@ -40,8 +39,8 @@ msgid ""
 "connected to one or more *consumers*. The tunnel handles events and buffers "
 "so that data moves from producers to consumers. The data, as much as "
 "possible, is kept in reference counted buffers so that copies are done only "
-"when the data is modified or for sources (which acquire data from outside "
-"|TS|) and sinks (which move data to outside |TS|)."
+"when the data is modified or for sources (which acquire data from outside |"
+"TS|) and sinks (which move data to outside |TS|)."
 msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:45
@@ -73,8 +72,8 @@ msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:65
 msgid ""
-"This is the metadata for a single alternate for a cached object. In contains"
-" among other data"
+"This is the metadata for a single alternate for a cached object. In "
+"contains among other data"
 msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:67
@@ -104,8 +103,8 @@ msgstr ""
 #: ../../arch/cache/cache-data-structures.en.rst:82
 msgid ""
 "The number of segments in the volume. This will be roughly the total number "
-"of entries divided by the number of entries in a segment. It will be rounded"
-" up to cover all entries."
+"of entries divided by the number of entries in a segment. It will be "
+"rounded up to cover all entries."
 msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:86
@@ -159,8 +158,8 @@ msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:122
 msgid ""
-"First index key in the document (the index key used to locate this object in"
-" the volume index)."
+"First index key in the document (the index key used to locate this object "
+"in the volume index)."
 msgstr ""
 
 #: ../../arch/cache/cache-data-structures.en.rst:126

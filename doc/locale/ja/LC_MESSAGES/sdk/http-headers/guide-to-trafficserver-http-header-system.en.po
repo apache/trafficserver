@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -27,9 +27,9 @@ msgid ""
 "retrieving or manipulating these strings. You **cannot** pass in ``NULL`` "
 "for string-length return values; string values returned from marshall "
 "buffers are not null-terminated. If you need a null-terminated value, then "
-"use ``TSstrndup`` to automatically null-terminate a string. The strings that"
-" come back and are not null-terminated **cannot** be passed into the common "
-"``str*()`` routines"
+"use ``TSstrndup`` to automatically null-terminate a string. The strings "
+"that come back and are not null-terminated **cannot** be passed into the "
+"common ``str*()`` routines"
 msgstr ""
 
 #: ../../sdk/http-headers/guide-to-trafficserver-http-header-system.en.rst:35

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -26,13 +26,13 @@ msgstr ""
 #: ../../sdk/continuations/writing-handler-functions.en.rst:27
 msgid ""
 "The continuation's handler function is a function of type ``TSEventFunc``. "
-"Its arguments are a continuation, an event, and a pointer to some data (this"
-" data is passed to the continuation by the caller - do not confuse this data"
-" with the continuation's own data, associated by ``TSContDataSet``). When "
-"the continuation is called back, the continuation and an event are passed to"
-" the handler function. The continuation is a handle to the same continuation"
-" that is invoked. The handler function typically has a switch statement to "
-"handle the events it receives:"
+"Its arguments are a continuation, an event, and a pointer to some data "
+"(this data is passed to the continuation by the caller - do not confuse "
+"this data with the continuation's own data, associated by "
+"``TSContDataSet``). When the continuation is called back, the continuation "
+"and an event are passed to the handler function. The continuation is a "
+"handle to the same continuation that is invoked. The handler function "
+"typically has a switch statement to handle the events it receives:"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:59

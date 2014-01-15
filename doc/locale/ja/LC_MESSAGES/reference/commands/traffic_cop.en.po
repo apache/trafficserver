@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -30,11 +30,11 @@ msgstr ""
 
 #: ../../reference/commands/traffic_cop.en.rst:33
 msgid ""
-"On Linux, :program:`traffic_cop` will also monitor available memory and swap"
-" space, restarting the watched processes if the available memory falls below"
-" a minimum threshold. The memory thresholds can be configured with the "
-":ts:cv:`proxy.config.cop.linux_min_swapfree_kb` and "
-":ts:cv:`proxy.config.cop.linux_min_memfree_kb` variables."
+"On Linux, :program:`traffic_cop` will also monitor available memory and "
+"swap space, restarting the watched processes if the available memory falls "
+"below a minimum threshold. The memory thresholds can be configured with "
+"the :ts:cv:`proxy.config.cop.linux_min_swapfree_kb` and :ts:cv:`proxy."
+"config.cop.linux_min_memfree_kb` variables."
 msgstr ""
 
 #: ../../reference/commands/traffic_cop.en.rst:39
@@ -64,6 +64,6 @@ msgstr ""
 
 #: ../../reference/commands/traffic_cop.en.rst:58
 msgid ""
-":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, "
-":manpage:`traffic_server(8)`"
+":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
+"`traffic_server(8)`"
 msgstr ""

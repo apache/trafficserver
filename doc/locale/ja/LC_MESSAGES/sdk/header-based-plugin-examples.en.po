@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -51,9 +51,9 @@ msgstr ""
 #: ../../sdk/header-based-plugin-examples.en.rst:47
 msgid ""
 "Header-based plugins take actions based on the contents of HTTP request or "
-"response headers. Examples include filtering (on the basis of requested URL,"
-" source IP address, or other request header), user authentication, or user "
-"redirection. Header-based plugins have the following common elements:"
+"response headers. Examples include filtering (on the basis of requested "
+"URL, source IP address, or other request header), user authentication, or "
+"user redirection. Header-based plugins have the following common elements:"
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples.en.rst:53
@@ -88,6 +88,6 @@ msgstr ""
 
 #: ../../sdk/header-based-plugin-examples.en.rst:68
 msgid ""
-"This chapter demonstrates how these components are implemented in SDK sample"
-" code."
+"This chapter demonstrates how these components are implemented in SDK "
+"sample code."
 msgstr ""

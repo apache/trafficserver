@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -33,13 +33,13 @@ msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:45
 msgid ""
-"There must be a gateway device through which passes all network traffic from"
-" the client to the Internet (or external cloud). The gateway is responsible "
-"for effectively splicing ATS in to selected streams of that traffic. Each "
-"traffic stream is split in to two, with ATS terminating both sides. That is,"
-" stream green-1, red-2, is split in to the green connection and the red "
-"connection. Note that ATS may or may not be on the gateway system, the "
-"redirected traffic can flow over other network infrastructure."
+"There must be a gateway device through which passes all network traffic "
+"from the client to the Internet (or external cloud). The gateway is "
+"responsible for effectively splicing ATS in to selected streams of that "
+"traffic. Each traffic stream is split in to two, with ATS terminating both "
+"sides. That is, stream green-1, red-2, is split in to the green connection "
+"and the red connection. Note that ATS may or may not be on the gateway "
+"system, the redirected traffic can flow over other network infrastructure."
 msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:54
@@ -53,10 +53,10 @@ msgstr ""
 #: ../../admin/transparent-proxy.en.rst:59
 msgid ""
 "Inbound transparency is a proxy that is transparent to connections that are "
-"inbound to the proxy, i.e. a connection initiated by a client which connects"
-" to the proxy (green-1). Similarly, outbound transparency is a proxy that is"
-" transparent to connections that are outbound from the proxy, i.e. a "
-"connection initiated by the proxy to an origin server (red-2)."
+"inbound to the proxy, i.e. a connection initiated by a client which "
+"connects to the proxy (green-1). Similarly, outbound transparency is a "
+"proxy that is transparent to connections that are outbound from the proxy, "
+"i.e. a connection initiated by the proxy to an origin server (red-2)."
 msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:66
@@ -70,9 +70,9 @@ msgstr ""
 #: ../../admin/transparent-proxy.en.rst:71
 msgid ""
 "It is critical to note that any transparency requires specialized routing "
-"and cannot be done solely by configuring ATS. ATS transparency also requires"
-" support from the Linux kernel and therefore currently only works on "
-"sufficiently recent Linux kernels that support the following features --"
+"and cannot be done solely by configuring ATS. ATS transparency also "
+"requires support from the Linux kernel and therefore currently only works "
+"on sufficiently recent Linux kernels that support the following features --"
 msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:77
@@ -100,8 +100,8 @@ msgstr ""
 msgid ""
 "Transparency is configured per server port not globally. This is done via "
 "the configuration values :ts:cv:`proxy.config.http.server_ports`. In "
-"addition, :ts:cv:`proxy.config.reverse_proxy.enabled` must be enabled if the"
-" client side is transparent. That should be fixed in a future patch."
+"addition, :ts:cv:`proxy.config.reverse_proxy.enabled` must be enabled if "
+"the client side is transparent. That should be fixed in a future patch."
 msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:91
@@ -139,9 +139,9 @@ msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:105
 msgid ""
-"In the outbound transparent case clients must connect directly to ATS either"
-" through an explicit proxy mechanism or by advertising the IP address of the"
-" ATS server via DNS as the origin server address."
+"In the outbound transparent case clients must connect directly to ATS "
+"either through an explicit proxy mechanism or by advertising the IP address "
+"of the ATS server via DNS as the origin server address."
 msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:109

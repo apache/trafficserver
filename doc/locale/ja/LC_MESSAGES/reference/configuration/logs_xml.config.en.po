@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -45,14 +45,14 @@ msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:38
 msgid ""
-"``LogObject`` specifies an object that contains a particular format, a local"
-" filename, filters, and collation servers."
+"``LogObject`` specifies an object that contains a particular format, a "
+"local filename, filters, and collation servers."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:41
 msgid ""
-"The :file:`logs_xml.config` file ignores extra white space, blank lines, and"
-" all comments."
+"The :file:`logs_xml.config` file ignores extra white space, blank lines, "
+"and all comments."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:47
@@ -82,8 +82,8 @@ msgstr ""
 msgid ""
 "Required A valid format specification is a printf-style string describing "
 "each log entry when formatted for ASCII output. Use ``%<`` ``field`` ``>`` "
-"as a placeholder for valid field names. For more information, refer to :ref"
-":`custom-logging-fields`."
+"as a placeholder for valid field names. For more information, refer to :ref:"
+"`custom-logging-fields`."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:68
@@ -98,8 +98,8 @@ msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:76
 msgid ""
-"Aggregates, such as ``COUNT``, ``SUM``, ``AVG``, ``FIRST``, ``LAST``. Fields"
-" of this type have the syntax: ``%<operator (`` ``field`` ``)>``"
+"Aggregates, such as ``COUNT``, ``SUM``, ``AVG``, ``FIRST``, ``LAST``. "
+"Fields of this type have the syntax: ``%<operator (`` ``field`` ``)>``"
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:82
@@ -221,8 +221,8 @@ msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:140
 msgid ""
-"Required: ``ACCEPT`` or ``REJECT`` . This instructs Traffic Server to either"
-" accept or reject records that satisfy the filter condition."
+"Required: ``ACCEPT`` or ``REJECT`` . This instructs Traffic Server to "
+"either accept or reject records that satisfy the filter condition."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:147
@@ -258,8 +258,8 @@ msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:165
 msgid ""
-"If the name does not contain an extension (for example, ``squid``), then the"
-" extension ``.log`` is automatically appended to it for ASCII logs and "
+"If the name does not contain an extension (for example, ``squid``), then "
+"the extension ``.log`` is automatically appended to it for ASCII logs and "
 "``.blog`` for binary logs (refer to :ref:`Mode = \"valid_logging_mode\" "
 "<LogObject-Mode>`_)."
 msgstr ""
@@ -290,9 +290,9 @@ msgstr ""
 msgid ""
 "Use ``binary`` to create event log files in binary format. Binary log files "
 "generate lower system overhead and occupy less space on the disk (depending "
-"on the information being logged). You must use the :program:`traffic_logcat`"
-" utility to translate binary log files to ASCII format before you can read "
-"them."
+"on the information being logged). You must use the :program:"
+"`traffic_logcat` utility to translate binary log files to ASCII format "
+"before you can read them."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:187
@@ -373,10 +373,9 @@ msgstr ""
 #: ../../reference/configuration/logs_xml.config.en.rst:234
 msgid ""
 "Optional Enables or disables log file rolling for the ``LogObject``. This "
-"setting overrides the value for the "
-":ts:cv:`proxy.config.log.rolling_enabled` variable in the "
-":file:`records.config` file. Set *truth value* to one of the following "
-"values:"
+"setting overrides the value for the :ts:cv:`proxy.config.log."
+"rolling_enabled` variable in the :file:`records.config` file. Set *truth "
+"value* to one of the following values:"
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:241
@@ -392,8 +391,8 @@ msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:245
 msgid ""
-"``2`` to roll log files when they reach a certain size (you specify the size"
-" with the ``RollingSizeMb`` field)."
+"``2`` to roll log files when they reach a certain size (you specify the "
+"size with the ``RollingSizeMb`` field)."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:247
@@ -415,15 +414,15 @@ msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:256
 msgid ""
-"Optional The seconds between log file rolling for the ``LogObject``; enables"
-" you to specify different rolling intervals for different ``LogObjects``."
+"Optional The seconds between log file rolling for the ``LogObject``; "
+"enables you to specify different rolling intervals for different "
+"``LogObjects``."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:261
 msgid ""
-"This setting overrides the value for "
-":ts:cv:`proxy.config.log.rolling_interval_sec` in the :file:`records.config`"
-" file."
+"This setting overrides the value for :ts:cv:`proxy.config.log."
+"rolling_interval_sec` in the :file:`records.config` file."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:273
@@ -436,8 +435,8 @@ msgid ""
 "align. Rolling might start before then, but a rolled file will be produced "
 "only at that time. The impact of this setting is only noticeable if the "
 "rolling interval is larger than one hour. This setting overrides the "
-"configuration setting for :ts:cv:`proxy.config.log.rolling_offset_hr` in the"
-" :file:`records.config` file."
+"configuration setting for :ts:cv:`proxy.config.log.rolling_offset_hr` in "
+"the :file:`records.config` file."
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:277
@@ -472,16 +471,16 @@ msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:310
 msgid ""
-"When specifying the field in the filter condition, you can omit the ``%<>``."
-" This means that the filter below is equivalent to the example directly "
-"above: ::"
+"When specifying the field in the filter condition, you can omit the ``"
+"%<>``. This means that the filter below is equivalent to the example "
+"directly above: ::"
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:320
 msgid ""
 "The following is an example of a ``LogObject`` specification that creates a "
-"local log file for the minimal format defined earlier. The log filename will"
-" be ``minimal.log`` because this is an ASCII log file (the default).::"
+"local log file for the minimal format defined earlier. The log filename "
+"will be ``minimal.log`` because this is an ASCII log file (the default).::"
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:330
@@ -489,8 +488,8 @@ msgid ""
 "The following is an example of a ``LogObject`` specification that includes "
 "only HTTP requests served by hosts in the domain ``company.com`` or by the "
 "specific server ``server.somewhere.com``. Log entries are sent to port 4000 "
-"of the collation host ``logs.company.com`` and to port 5000 of the collation"
-" host ``209.131.52.129.`` ::"
+"of the collation host ``logs.company.com`` and to port 5000 of the "
+"collation host ``209.131.52.129.`` ::"
 msgstr ""
 
 #: ../../reference/configuration/logs_xml.config.en.rst:347
@@ -501,7 +500,7 @@ msgstr ""
 msgid ""
 "Traffic Server supports WELF (WebTrends Enhanced Log Format) so you can "
 "analyze Traffic Server log files with WebTrends reporting tools. A "
-"predefined ``<LogFormat>`` that is compatible with WELF is provided in the "
-":file:`logs_xml.config` file (shown below). To create a WELF format log "
+"predefined ``<LogFormat>`` that is compatible with WELF is provided in the :"
+"file:`logs_xml.config` file (shown below). To create a WELF format log "
 "file, create a ``<LogObject>`` that uses this predefined format. ::"
 msgstr ""

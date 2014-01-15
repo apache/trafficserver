@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -29,11 +29,12 @@ msgid ""
 "``TSMimeField*`` functions in older versions of the SDK have been "
 "deprecated, as they do not require the parent header as inputs. The current "
 "version of Traffic Server uses new functions, the **``TSMimeHdrField``** "
-"series, which require you to specify the location of the parent header along"
-" with the location of the MIME field. For every deprecated *``TSMimeField``*"
-" function, there is a new, preferred ``TSMimeHdrField*`` function. "
-"Therefore, you should use the **``TSMimeHdrField``** functions instead of "
-"the deprecated *``TSMimeField``* series. Examples are provided below."
+"series, which require you to specify the location of the parent header "
+"along with the location of the MIME field. For every deprecated "
+"*``TSMimeField``* function, there is a new, preferred ``TSMimeHdrField*`` "
+"function. Therefore, you should use the **``TSMimeHdrField``** functions "
+"instead of the deprecated *``TSMimeField``* series. Examples are provided "
+"below."
 msgstr ""
 
 #: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:37

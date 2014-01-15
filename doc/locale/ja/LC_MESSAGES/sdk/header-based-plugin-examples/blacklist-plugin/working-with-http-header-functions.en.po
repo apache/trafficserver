@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -18,15 +18,15 @@ msgstr ""
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin/working-with-http-header-functions.en.rst:21
 msgid ""
 "The Blacklist plugin examines the host header in every client transaction. "
-"This is done in the ``handle_dns`` routine, using ``TSHttpTxnClientReqGet``,"
-" ``TSHttpHdrUrlGet``, and ``TSUrlHostGet``."
+"This is done in the ``handle_dns`` routine, using "
+"``TSHttpTxnClientReqGet``, ``TSHttpHdrUrlGet``, and ``TSUrlHostGet``."
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin/working-with-http-header-functions.en.rst:56
 msgid ""
 "To access the host header, the plugin must first get the client request, "
-"retrieve the URL portion, and then obtain the host header. See `HTTP Headers"
-" <../../http-headers>`__ for more information about these calls. See "
+"retrieve the URL portion, and then obtain the host header. See `HTTP "
+"Headers <../../http-headers>`__ for more information about these calls. See "
 "`Release Marshal Buffer Handles <../../http-headers/guide-to-trafficserver-"
 "http-header-system/release-marshal-buffer-handles>`__ for guidelines on "
 "using ``TSHandleMLocRelease``."

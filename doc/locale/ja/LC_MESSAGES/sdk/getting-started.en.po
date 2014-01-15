@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -31,8 +31,8 @@ msgstr ""
 
 #: ../../sdk/getting-started.en.rst:38
 msgid ""
-"`A Simple Plugin <a-simple-plugin>`__ -- walks through compiling and loading"
-" an example ``hello world`` plugin."
+"`A Simple Plugin <a-simple-plugin>`__ -- walks through compiling and "
+"loading an example ``hello world`` plugin."
 msgstr ""
 
 #: ../../sdk/getting-started.en.rst:41
@@ -75,8 +75,8 @@ msgid ""
 "You compile your plugin source code to create a shared library that Traffic "
 "Server loads when it is started. Your plugin contains callback functions "
 "that are registered for specific Traffic Server events. When Traffic Server "
-"needs to process an event, it invokes any and all call-back functions you've"
-" registered for that event type."
+"needs to process an event, it invokes any and all call-back functions "
+"you've registered for that event type."
 msgstr ""
 
 #: ../../sdk/getting-started.en.rst:78
@@ -149,8 +149,8 @@ msgstr ""
 
 #: ../../sdk/getting-started.en.rst:119
 msgid ""
-"**A plugin that gathers client information** from request headers and enters"
-" this information in a database."
+"**A plugin that gathers client information** from request headers and "
+"enters this information in a database."
 msgstr ""
 
 #: ../../sdk/getting-started.en.rst:122
@@ -181,8 +181,8 @@ msgstr ""
 #: ../../sdk/getting-started.en.rst:139
 msgid ""
 "``append-transform.c`` adds text from a specified file to HTTP/text "
-"responses. This plugin is explained in `The Append-Transform Plugin "
-"<../http-transformation-plugin/append-transform-plugin>`__"
+"responses. This plugin is explained in `The Append-Transform Plugin <../"
+"http-transformation-plugin/append-transform-plugin>`__"
 msgstr ""
 
 #: ../../sdk/getting-started.en.rst:143
@@ -212,13 +212,13 @@ msgstr ""
 
 #: ../../sdk/getting-started.en.rst:161
 msgid ""
-"When Traffic Server is first started, it consults the ``plugin.config`` file"
-" to determine the names of all shared plugin libraries that need to be "
+"When Traffic Server is first started, it consults the ``plugin.config`` "
+"file to determine the names of all shared plugin libraries that need to be "
 "loaded. The ``plugin.config`` file also defines arguments that are to be "
-"passed to each plugin's initialization function, ``TSPluginInit``. The "
-":file:`records.config` file defines the path to each plugin shared library, "
-"as described in `Specify the Plugin's Location "
-"<SpecifyingPluginLocation.html>`__."
+"passed to each plugin's initialization function, ``TSPluginInit``. The :"
+"file:`records.config` file defines the path to each plugin shared library, "
+"as described in `Specify the Plugin's Location <SpecifyingPluginLocation."
+"html>`__."
 msgstr ""
 
 #: ../../sdk/getting-started.en.rst:169
@@ -249,16 +249,16 @@ msgid ""
 "The first plugin configuration is for a plugin named ``my-plugin.so``. It "
 "contains three arguments that are to be passed to that plugin's "
 "initialization routine. The second configuration is for a plugin named "
-"``some-plugin.so``; it contains three arguments. The last argument, "
-"*``$proxy.config.http.cache.on``*, is actually a configuration variable. "
+"``some-plugin.so``; it contains three arguments. The last argument, *``"
+"$proxy.config.http.cache.on``*, is actually a configuration variable. "
 "Traffic Server will look up the specified configuration variable and "
 "substitute its value."
 msgstr ""
 
 #: ../../sdk/getting-started.en.rst:196
 msgid ""
-"Plugins with global variables should not appear more than once in "
-"``plugin.config``. For example, if you enter:"
+"Plugins with global variables should not appear more than once in ``plugin."
+"config``. For example, if you enter:"
 msgstr ""
 
 #: ../../sdk/getting-started.en.rst:204
@@ -320,6 +320,6 @@ msgstr ""
 
 #: ../../sdk/getting-started.en.rst:246
 msgid ""
-"See `TSPluginInit <InitializationFunctions.html#TSPluginInit>`__ for details"
-" about ``TSPluginInit``."
+"See `TSPluginInit <InitializationFunctions.html#TSPluginInit>`__ for "
+"details about ``TSPluginInit``."
 msgstr ""

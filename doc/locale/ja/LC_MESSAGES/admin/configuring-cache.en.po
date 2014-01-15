@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,8 +17,8 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:23
 msgid ""
-"The Traffic Server cache consists of a high-speed object database called the"
-" **object store** that indexes objects according to URLs and their "
+"The Traffic Server cache consists of a high-speed object database called "
+"the **object store** that indexes objects according to URLs and their "
 "associated headers."
 msgstr ""
 
@@ -28,16 +28,16 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:33
 msgid ""
-"The Traffic Server cache consists of a high-speed object database called the"
-" **object store**. The object store indexes objects according to URLs and "
-"associated headers. This enables Traffic Server to store, retrieve, and "
+"The Traffic Server cache consists of a high-speed object database called "
+"the **object store**. The object store indexes objects according to URLs "
+"and associated headers. This enables Traffic Server to store, retrieve, and "
 "serve not only web pages, but also parts of web pages - which provides "
-"optimum bandwidth savings. Using sophisticated object management, the object"
-" store can cache alternate versions of the same object (versions may differ "
-"because of dissimilar language or encoding types). It can also efficiently "
-"store very small and very large documents, thereby minimizing wasted space. "
-"When the cache is full, Traffic Server removes stale data to ensure the most"
-" requested objects are kept readily available and fresh."
+"optimum bandwidth savings. Using sophisticated object management, the "
+"object store can cache alternate versions of the same object (versions may "
+"differ because of dissimilar language or encoding types). It can also "
+"efficiently store very small and very large documents, thereby minimizing "
+"wasted space. When the cache is full, Traffic Server removes stale data to "
+"ensure the most requested objects are kept readily available and fresh."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:45
@@ -61,8 +61,8 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:55
 msgid ""
-"Partition the cache by reserving cache disk space for specific protocols and"
-" origin servers/domains: refer to `Partitioning the Cache`_."
+"Partition the cache by reserving cache disk space for specific protocols "
+"and origin servers/domains: refer to `Partitioning the Cache`_."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:57
@@ -78,8 +78,8 @@ msgid ""
 "Traffic Server maintains a small RAM cache of extremely popular objects. "
 "This RAM cache serves the most popular objects as quickly as possible and "
 "reduces load on disks, especially during temporary traffic peaks. You can "
-"configure the RAM cache size to suit your needs, as described in :ref"
-":`changing-the-size-of-the-ram-cache` below."
+"configure the RAM cache size to suit your needs, as described in :ref:"
+"`changing-the-size-of-the-ram-cache` below."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:68
@@ -106,10 +106,9 @@ msgid ""
 "images). This should not be confused with *Content-Encoding: gzip*, this "
 "feature is only thereto save space internally in the RAM cache itself. As "
 "such, it is completely transparent to the User-Agent. The RAM cache "
-"compression is enabled with the option "
-":ts:cv:`proxy.config.cache.ram_cache.compress`. The default is 0, which "
-"means no compression. Other possible values are 1 for **fastlz**, 2 for "
-"**libz** and 3 for **liblzma**."
+"compression is enabled with the option :ts:cv:`proxy.config.cache.ram_cache."
+"compress`. The default is 0, which means no compression. Other possible "
+"values are 1 for **fastlz**, 2 for **libz** and 3 for **liblzma**."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:93
@@ -122,15 +121,15 @@ msgid ""
 "small objects. The default RAM cache size is automatically calculated based "
 "on the number and size of the cache partitions you have configured. If "
 "you've partitioned your cache according to protocol and/or hosts, then the "
-"size of the RAM cache for each partition is proportional to the size of that"
-" partition."
+"size of the RAM cache for each partition is proportional to the size of "
+"that partition."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:102
 msgid ""
 "You can increase the RAM cache size for better cache hit performance. "
-"However, if you increase the size of the RAM cache and observe a decrease in"
-" performance (such as increased latencies), then it's possible that the "
+"However, if you increase the size of the RAM cache and observe a decrease "
+"in performance (such as increased latencies), then it's possible that the "
 "operating system requires more memory for network resources. In such "
 "instances, you should return the RAM cache size to its previous value."
 msgstr ""
@@ -155,8 +154,8 @@ msgstr ""
 #: ../../admin/configuring-cache.en.rst:116
 msgid ""
 "Restart Traffic Server. If you increase the RAM cache to a size of 1GB or "
-"more, then restart with the :program:`trafficserver` command (refer to :ref"
-":`start-traffic-server`)."
+"more, then restart with the :program:`trafficserver` command (refer to :ref:"
+"`start-traffic-server`)."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:123
@@ -167,8 +166,8 @@ msgstr ""
 msgid ""
 "You can increase or reduce the total amount of disk space allocated to the "
 "cache without clearing the content. To check the size of the cache (in "
-"bytes), enter the command :option:`traffic_line -r` "
-"``proxy.process.cache.bytes_total``."
+"bytes), enter the command :option:`traffic_line -r` ``proxy.process.cache."
+"bytes_total``."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:130
@@ -234,8 +233,8 @@ msgid ""
 "You can manage your cache space more efficiently and restrict disk usage by "
 "creating cache volumes with different sizes for specific protocols. You can "
 "further configure these volumes to store data from specific origin servers "
-"and/or domains. The volume configuration must be the same on all nodes in a "
-":ref:`cluster <traffic-server-cluster>`."
+"and/or domains. The volume configuration must be the same on all nodes in "
+"a :ref:`cluster <traffic-server-cluster>`."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:169
@@ -279,15 +278,15 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:193
 msgid ""
-"When you increase the size of a volume, the contents of the volume are *not*"
-" deleted. However, when you reduce the size of a volume, the contents of the"
-" volume *are* deleted."
+"When you increase the size of a volume, the contents of the volume are "
+"*not* deleted. However, when you reduce the size of a volume, the contents "
+"of the volume *are* deleted."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:196
 msgid ""
-"When you change the volume number, the volume is deleted and then recreated,"
-" even if the size and protocol type remain the same."
+"When you change the volume number, the volume is deleted and then "
+"recreated, even if the size and protocol type remain the same."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:198
@@ -309,18 +308,18 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:207
 msgid ""
-"After you have partitioned the cache according to size and protocol, you can"
-" assign the volumes you created to specific origin servers and/or domains. "
-"You can assign a volumes to a single origin server or to multiple origin "
-"servers. However, if a volumes is assigned to multiple origin servers, then "
-"there is no guarantee on the space available in the volumes for each origin "
-"server. Content is stored in the volumes according to popularity. In "
-"addition to assigning volumes to specific origin servers and domains, you "
-"must assign a generic volume to store content from all origin servers and "
-"domains that are not listed. This generic volume is also used if the "
-"partitions for a particular origin server or domain become corrupt. If you "
-"do not assign a generic volume, then Traffic Server will run in proxy-only "
-"mode."
+"After you have partitioned the cache according to size and protocol, you "
+"can assign the volumes you created to specific origin servers and/or "
+"domains. You can assign a volumes to a single origin server or to multiple "
+"origin servers. However, if a volumes is assigned to multiple origin "
+"servers, then there is no guarantee on the space available in the volumes "
+"for each origin server. Content is stored in the volumes according to "
+"popularity. In addition to assigning volumes to specific origin servers and "
+"domains, you must assign a generic volume to store content from all origin "
+"servers and domains that are not listed. This generic volume is also used "
+"if the partitions for a particular origin server or domain become corrupt. "
+"If you do not assign a generic volume, then Traffic Server will run in "
+"proxy-only mode."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:222
@@ -343,10 +342,10 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:232
 msgid ""
-"Create a separate volume based on protocol for each host and domain, as well"
-" as an additional generic partition to use for content that does not belong "
-"to these origin servers or domains. The volumes do not need to be the same "
-"size."
+"Create a separate volume based on protocol for each host and domain, as "
+"well as an additional generic partition to use for content that does not "
+"belong to these origin servers or domains. The volumes do not need to be "
+"the same size."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:236
@@ -360,8 +359,8 @@ msgid ""
 "Assign a generic volume to use for content that does not belong to any of "
 "the origin servers or domains listed in the file. If all volumes for a "
 "particular origin server become corrupt, then Traffic Server will also use "
-"the generic volume to store content for that origin server as per "
-":file:`hosting.config`."
+"the generic volume to store content for that origin server as per :file:"
+"`hosting.config`."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:243
@@ -385,8 +384,8 @@ msgstr ""
 #: ../../admin/configuring-cache.en.rst:253
 msgid ""
 "Set :ts:cv:`proxy.config.cache.max_doc_size` to specify the maximum size "
-"allowed for objects in the cache in bytes. ``0`` (zero) if you do not want a"
-" size limit."
+"allowed for objects in the cache in bytes. ``0`` (zero) if you do not want "
+"a size limit."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:262
@@ -441,24 +440,24 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:291
 msgid ""
-"In the following example, Traffic Server is running on the domain "
-"``example.com`` and you want to remove the image ``remove_me.jpg`` from "
-"cache. Because by default we do not permit ``PURGE`` requests from any other"
-" IP, we connect to the daemon via localhost: ::"
+"In the following example, Traffic Server is running on the domain ``example."
+"com`` and you want to remove the image ``remove_me.jpg`` from cache. "
+"Because by default we do not permit ``PURGE`` requests from any other IP, "
+"we connect to the daemon via localhost: ::"
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:310
 msgid ""
 "The next time Traffic Server receives a request for the removed object, it "
-"will contact the origin server to retrieve it (i.e., it has been purged from"
-" the Traffic Server cache)."
+"will contact the origin server to retrieve it (i.e., it has been purged "
+"from the Traffic Server cache)."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:314
 msgid ""
 "Note: The procedure above only removes an object from a *specific* Traffic "
-"Server cache. Users may still see the old (removed) content if it was cached"
-" by intermediary caches or by the end-users' web browser."
+"Server cache. Users may still see the old (removed) content if it was "
+"cached by intermediary caches or by the end-users' web browser."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:321
@@ -490,9 +489,9 @@ msgstr ""
 #: ../../admin/configuring-cache.en.rst:335
 msgid ""
 "To access the cache inspector in reverse proxy mode, you must add a remap "
-"rule to :file:`remap.config` to expose the URL. This should be restricted to"
-" a limited set of hosts using the ``@src_ip`` option. To restrict access to "
-"the network 172.28.56.0/24, use ::"
+"rule to :file:`remap.config` to expose the URL. This should be restricted "
+"to a limited set of hosts using the ``@src_ip`` option. To restrict access "
+"to the network 172.28.56.0/24, use ::"
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:342
@@ -503,8 +502,8 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:344
 msgid ""
-"Open your web browser and configure it to use your Traffic Server as a proxy"
-" server. Type the following URL::"
+"Open your web browser and configure it to use your Traffic Server as a "
+"proxy server. Type the following URL::"
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:349
@@ -525,9 +524,9 @@ msgstr ""
 msgid ""
 "Click **Lookup url** to search for a particular URL in the cache. When "
 "Traffic Server finds the URL in the cache, it displays details about the "
-"object that corresponds to the URL (such as the header length and the number"
-" of alternates). From the display page, you can delete the URL from the "
-"cache."
+"object that corresponds to the URL (such as the header length and the "
+"number of alternates). From the display page, you can delete the URL from "
+"the cache."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:362
@@ -540,9 +539,9 @@ msgstr ""
 msgid ""
 "Click **Regex lookup** to search for URLs that match one or more regular "
 "expressions. From the display page, you can delete the URLs listed. For "
-"example, enter the following to search for all URLs that end in html and are"
-" prefixed with ``http://www.dianes.com``: "
-"``http://www.dianes.com/.*\\.html$``"
+"example, enter the following to search for all URLs that end in html and "
+"are prefixed with ``http://www.dianes.com``: ``http://www.dianes.com/.*\\."
+"html$``"
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:369
@@ -554,11 +553,11 @@ msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:372
 msgid ""
-"Click **Regex invalidate** to invalidate URLs that match a specified regular"
-" expression. When you invalidate a URL, Traffic Server marks the object that"
-" corresponds to the URL as stale in the cache. Traffic Server then contacts "
-"the origin server to check if the object is still fresh (revalidates) before"
-" serving it from the cache."
+"Click **Regex invalidate** to invalidate URLs that match a specified "
+"regular expression. When you invalidate a URL, Traffic Server marks the "
+"object that corresponds to the URL as stale in the cache. Traffic Server "
+"then contacts the origin server to check if the object is still fresh "
+"(revalidates) before serving it from the cache."
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:380

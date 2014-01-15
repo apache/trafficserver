@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,11 +17,11 @@ msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:24
 msgid ""
-"The :file:`cache.config` file defines how Traffic Server caches web objects."
-" You can add caching rules to specify the following: - Not to cache objects "
-"from specific IP addresses - How long to pin particular objects in the cache"
-" - How long to consider cached objects as fresh - Whether to ignore no-cache"
-" directives from the server"
+"The :file:`cache.config` file defines how Traffic Server caches web "
+"objects. You can add caching rules to specify the following: - Not to cache "
+"objects from specific IP addresses - How long to pin particular objects in "
+"the cache - How long to consider cached objects as fresh - Whether to "
+"ignore no-cache directives from the server"
 msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:32
@@ -44,9 +44,9 @@ msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:46
 msgid ""
-"You can use more than one secondary specifier in a rule. However, you cannot"
-" repeat a secondary specifier. The following list shows the possible primary"
-" destinations with allowed values."
+"You can use more than one secondary specifier in a rule. However, you "
+"cannot repeat a secondary specifier. The following list shows the possible "
+"primary destinations with allowed values."
 msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:54
@@ -65,8 +65,8 @@ msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:59
 msgid ""
-"A requested hostname. Traffic Server matches the hostname of the destination"
-" from the URL in the request."
+"A requested hostname. Traffic Server matches the hostname of the "
+"destination from the URL in the request."
 msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:66
@@ -168,8 +168,8 @@ msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:121
 msgid ""
-"``ignore-no-cache`` configures Traffic Server to ignore all ``Cache-Control:"
-" no-cache`` headers."
+"``ignore-no-cache`` configures Traffic Server to ignore all ``Cache-"
+"Control: no-cache`` headers."
 msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:123
@@ -248,7 +248,7 @@ msgstr ""
 #: ../../reference/configuration/cache.config.en.rst:159
 msgid ""
 "The following example configures Traffic Server to revalidate ``gif`` and "
-"``jpeg`` objects in the domain ``mydomain.com`` every 6 hours, and all other"
-" objects in ``mydomain.com`` every hour. The rules are applied in the order "
-"listed. ::"
+"``jpeg`` objects in the domain ``mydomain.com`` every 6 hours, and all "
+"other objects in ``mydomain.com`` every hour. The rules are applied in the "
+"order listed. ::"
 msgstr ""

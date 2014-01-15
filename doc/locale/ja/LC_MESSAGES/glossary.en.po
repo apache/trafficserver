@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -42,9 +42,9 @@ msgstr ""
 #: ../../glossary.en.rst:41
 msgid ""
 "A user defined unit of persistent storage for the cache. Cache volumes are "
-"defined in :file:`volume.config`. A cache volume is by default spread across"
-" :term:`cache span`\\ s to increase robustness. Each section of a cache "
-"volume on a specific cache span is a :term:`cache stripe`."
+"defined in :file:`volume.config`. A cache volume is by default spread "
+"across :term:`cache span`\\ s to increase robustness. Each section of a "
+"cache volume on a specific cache span is a :term:`cache stripe`."
 msgstr ""
 
 #: ../../glossary.en.rst:24
@@ -58,8 +58,9 @@ msgid ""
 "computations are critical to efficient processing of traffic because by "
 "avoiding any blocking operations that wait on external events. In any such "
 "case a continuation is used so that other processing can continue until the "
-"external event occurs. At that point the continuation is invoked to continue"
-" the suspended processing. This can be considered similar to co-routines."
+"external event occurs. At that point the continuation is invoked to "
+"continue the suspended processing. This can be considered similar to co-"
+"routines."
 msgstr ""
 
 #: ../../glossary.en.rst:54
@@ -69,10 +70,9 @@ msgstr ""
 #: ../../glossary.en.rst:56
 msgid ""
 "Verifying that a currently cached object is still valid. This is usually "
-"done using an `If-Modified-Since "
-"<http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.25>`_ request "
-"which allows the origin server to validate the content without resending the"
-" content."
+"done using an `If-Modified-Since <http://www.w3.org/Protocols/rfc2616/"
+"rfc2616-sec14.html#sec14.25>`_ request which allows the origin server to "
+"validate the content without resending the content."
 msgstr ""
 
 #: ../../glossary.en.rst:31
@@ -101,8 +101,8 @@ msgstr ""
 #: ../../glossary.en.rst:37
 msgid ""
 "A client request and response, either from the origin server or from the "
-"cache. A transaction begins when Traffic Server receives a request, and ends"
-" when Traffic Server sends the response."
+"cache. A transaction begins when Traffic Server receives a request, and "
+"ends when Traffic Server sends the response."
 msgstr ""
 
 #: ../../glossary.en.rst:59
