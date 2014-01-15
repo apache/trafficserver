@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-noinst_LTLIBRARIES = \
+plugins = \
   add-header.la \
   append-transform.la \
   basic-auth.la \
@@ -40,6 +40,12 @@ noinst_LTLIBRARIES = \
   server-transform.la \
   thread-1.la \
   version.la
+
+if BUILD_EXAMPLE_PLUGINS
+pkglib_LTLIBRARIES = $(plugins)
+else
+noinst_LTLIBRARIES = $(plugins)
+endif
 
 add_header_la_SOURCES = add-header/add-header.c
 append_transform_la_SOURCES = append-transform/append-transform.c

@@ -459,6 +459,20 @@ AC_ARG_ENABLE([experimental-plugins],
 AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
+#
+# Example plugins. The example plugins are always built, but not always installed. Installing
+# them is useful for QA, but not useful for most users, so we default this to disabled.
+#
+
+AC_MSG_CHECKING([whether to install example plugins])
+AC_ARG_ENABLE([example-plugins],
+  [AS_HELP_STRING([--enable-example-plugins],[install example plugins])],
+  [],
+  [enable_example_plugins=no]
+)
+AC_MSG_RESULT([$enable_example_plugins])
+AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [ test "x${enable_example_plugins}" = "xyes" ])
+
 
 #
 # build c++ api

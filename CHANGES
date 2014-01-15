@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2498] Add a build option to install the example plugins.
+
   *) [TS-2484] Add API support for the two missing overridable APIs:
          proxy.config.http.cache.max_open_read_retries
          proxy.config.http.cache.open_read_retry_time
