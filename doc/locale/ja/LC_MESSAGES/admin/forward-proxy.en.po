@@ -77,14 +77,6 @@ msgstr ""
 msgid "Configuration"
 msgstr "設定"
 
-#: ../../admin/forward-proxy.en.rst:54
-msgid ""
-"In order to configure Apache Traffic Server as forward proxy you will have "
-"to edit `:file:`records.config` and set"
-msgstr ""
-"Apache Traffic Server をフォワードプロキシーとして設定するためには `:file:"
-"`records.config` を編集し次の設定を行う必要があります。"
-
 #: ../../admin/forward-proxy.en.rst:57
 msgid ":ts:cv:`proxy.config.url_remap.remap_required` to  ``0``"
 msgstr ":ts:cv:`proxy.config.url_remap.remap_required` を ``0`` にする"
@@ -137,3 +129,16 @@ msgstr ""
 "NAT からのみアクセス可能、もしくはファイアーウォールのルールによりアクセスさ"
 "せたいクライアントだけにアクセスを許すよう保護されることを確かにしておく必要"
 "があります。"
+
+#: ../../admin/forward-proxy.en.rst:54
+msgid ""
+"In order to configure Apache Traffic Server as forward proxy you will have "
+"to edit :file:`records.config` and set"
+msgstr ""
+
+#~ msgid ""
+#~ "In order to configure Apache Traffic Server as forward proxy you will "
+#~ "have to edit `:file:`records.config` and set"
+#~ msgstr ""
+#~ "Apache Traffic Server をフォワードプロキシーとして設定するためには `:"
+#~ "file:`records.config` を編集し次の設定を行う必要があります。"

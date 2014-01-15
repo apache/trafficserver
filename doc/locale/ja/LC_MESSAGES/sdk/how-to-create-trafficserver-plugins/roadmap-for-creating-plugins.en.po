@@ -89,22 +89,7 @@ msgid ""
 "discussed in the next three chapters."
 msgstr ""
 
-#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:63
-msgid ""
-"Determine where your plugin needs to hook on to Traffic Server's HTTP "
-"processing (view the `HTTP Transaction State Diagram <../http-hoooks-and-"
-"transactions#HTTPTransactionStateDiagram>`__"
-msgstr ""
-
-#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:67
-msgid ""
-"Read `Header-Based Plugin Examples <../header-based-plugin-examples>`_ to "
-"learn the basics of writing plugins: creating continuations and setting up "
-"hooks. If you want to write a plugin that transforms data, then read `HTTP "
-"Transformation Plugins <HTTPTransformationPlugins.html>`_."
-msgstr ""
-
-#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:73
+#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:71
 msgid ""
 "Figure out what parts of the Traffic Server API you need to use and then "
 "read about the details of those APIs in this manual's reference chapters."
@@ -112,21 +97,34 @@ msgstr ""
 
 #: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:77
 msgid ""
-"Compile and load your plugin (see `Getting Started <../getting-started>`_"
-msgstr ""
-
-#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:80
-msgid ""
 "Depending on your plugin's functionality, you might start testing it by "
 "issuing requests by hand and checking for the desired behavior in Traffic "
 "Server log files. See the ***Traffic Server Administrator's Guide*** for "
 "information about Traffic Server logs."
 msgstr ""
 
-#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:85
+#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:82
 msgid ""
 "You can test the performance of Traffic Server running with your plugin "
 "using SDKTest. You can also customize SDKTest to perform functional testing "
 "on your plugin; for more information see the ***Traffic Server SDKTest "
 "User's Guide***."
+msgstr ""
+
+#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:63
+msgid ""
+"Determine where your plugin needs to hook on to Traffic Server's HTTP "
+"processing (view the :ref:`http-txn-state-diagram`"
+msgstr ""
+
+#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:66
+msgid ""
+"Read :doc:`../header-based-plugin-examples.en` to learn the basics of "
+"writing plugins: creating continuations and setting up hooks. If you want "
+"to write a plugin that transforms data, then read :doc:`../http-"
+"transformation-plugin.en`"
+msgstr ""
+
+#: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:75
+msgid "Compile and load your plugin (see :doc:`../getting-started.en`"
 msgstr ""

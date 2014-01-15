@@ -144,10 +144,6 @@ msgid ""
 "accessed by other continuations or processes. Here's how:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:119
-msgid "continuation's mutex. | For example:"
-msgstr ""
-
 #: ../../sdk/mutex-guide.en.rst:128
 msgid ""
 "If any other functions want to access ``contp``'s data, then it is up to "

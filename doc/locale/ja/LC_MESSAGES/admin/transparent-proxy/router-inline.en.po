@@ -90,31 +90,30 @@ msgstr ""
 msgid "``proxy.config.http.server_port``"
 msgstr ""
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:77
-msgid "``STRING`` Default: *value from* ```--on-port`` <#on_port>`_"
-msgstr ""
-
-#: ../../admin/transparent-proxy/router-inline.en.rst:80
-msgid ""
-"proxy.config.http.server_port_attr {#proxy.config.http.server_port_attr}"
-msgstr ""
-
-#: ../../admin/transparent-proxy/router-inline.en.rst:82
+#: ../../admin/transparent-proxy/router-inline.en.rst:81
 msgid "``STRING`` Default: ``=``"
 msgstr ""
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:87
+#: ../../admin/transparent-proxy/router-inline.en.rst:86
 msgid "``proxy.config.reverse_proxy.enabled``"
 msgstr ""
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:86
+#: ../../admin/transparent-proxy/router-inline.en.rst:85
 msgid "``INT`` Default: ``1``"
 msgstr ""
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:91
+#: ../../admin/transparent-proxy/router-inline.en.rst:90
 msgid "``proxy.config.url_remap.remap_required``"
 msgstr ""
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:90
+#: ../../admin/transparent-proxy/router-inline.en.rst:89
 msgid "``INT`` Default: ``0``"
+msgstr ""
+
+#: ../../admin/transparent-proxy/router-inline.en.rst:77
+msgid "``STRING`` Default: *value from* ``--on-port``"
+msgstr ""
+
+#: ../../admin/transparent-proxy/router-inline.en.rst:82
+msgid "``proxy.config.http.server_port_attr``"
 msgstr ""

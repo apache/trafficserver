@@ -36,15 +36,6 @@ msgid ""
 "and users continue to have Internet access."
 msgstr ""
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:36
-msgid ""
-"Use of WCCP only makes sense for client side transparency [1]_(#1) because "
-"if the clients are explicitly proxied by Traffic Server there's no benefit "
-"to WCCP fail open, as the clients will continue to directly access the "
-"unresponsive Traffic Server host. It would be better to adjust the routing "
-"tables on the router for explicit proxying."
-msgstr ""
-
 #: ../../admin/transparent-proxy/wccp-configuration.en.rst:42
 msgid ""
 "Because the router serves as the inline network element, Traffic Server "
@@ -124,14 +115,6 @@ msgid ""
 "server traffic share an interface."
 msgstr ""
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:86
-msgid ""
-"In general the dedicated topology is preferred. However, if the router has "
-"only two interfaces one of the shared topologies will be required [2]_(#2). "
-"Click the links above for more detailed configuration information on a "
-"specific topology."
-msgstr ""
-
 #: ../../admin/transparent-proxy/wccp-configuration.en.rst:92
 msgid "Shared interface issues"
 msgstr ""
@@ -143,18 +126,6 @@ msgid ""
 "has only two interfaces, and because of these additional issues it is "
 "normally only used in such cases, although nothing prevents it use even if "
 "the router has three or more interfaces."
-msgstr ""
-
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:100
-msgid ""
-"The basic concept for a shared interface is to use a tunnel to simulate the "
-"dedicated interface case. This enables the packets to be distinguished at "
-"layer 3. For this reason, layer 2 redirection cannot be used because the "
-"WCCP configuration cannot distinguish between packets returning from the "
-"origin server and packets returning from Traffic Server as they are "
-"distinguished only by layer 2 addressing [3]_(#3). Fortunately the GRE "
-"tunnel used for packet forwarding and return can be used as the simulated "
-"interface for Traffic Server."
 msgstr ""
 
 #: ../../admin/transparent-proxy/wccp-configuration.en.rst:110
@@ -205,4 +176,33 @@ msgstr ""
 #: ../../admin/transparent-proxy/wccp-configuration.en.rst:150
 msgid ""
 "This is not fundamentally impossible, as the packets are distinct in layer"
+msgstr ""
+
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:36
+msgid ""
+"Use of WCCP only makes sense for client side transparency [1]_ because if "
+"the clients are explicitly proxied by Traffic Server there's no benefit to "
+"WCCP fail open, as the clients will continue to directly access the "
+"unresponsive Traffic Server host. It would be better to adjust the routing "
+"tables on the router for explicit proxying."
+msgstr ""
+
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:86
+msgid ""
+"In general the dedicated topology is preferred. However, if the router has "
+"only two interfaces one of the shared topologies will be required [2]_ "
+"Click the links above for more detailed configuration information on a "
+"specific topology."
+msgstr ""
+
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:100
+msgid ""
+"The basic concept for a shared interface is to use a tunnel to simulate the "
+"dedicated interface case. This enables the packets to be distinguished at "
+"layer 3. For this reason, layer 2 redirection cannot be used because the "
+"WCCP configuration cannot distinguish between packets returning from the "
+"origin server and packets returning from Traffic Server as they are "
+"distinguished only by layer 2 addressing [3]_. Fortunately the GRE tunnel "
+"used for packet forwarding and return can be used as the simulated "
+"interface for Traffic Server."
 msgstr ""
