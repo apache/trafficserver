@@ -175,3 +175,17 @@ msgstr ""
 msgid ""
 "The ``handle_output`` function writes the buffer to the output vconnection:"
 msgstr ""
+
+#: ../../sdk/http-transformation-plugin/sample-buffered-null-transformation-plugin.en.rst:202
+msgid "The following diagram illustrates the write to the output vconnection:"
+msgstr ""
+
+#: ../../sdk/http-transformation-plugin/sample-buffered-null-transformation-plugin.en.rst:205
+msgid ""
+"**Writing the Buffered Data to the Output Vconnection** "
+"{#WritingBufferedtDataIntoVConnection}"
+msgstr ""
+
+#: ../../sdk/http-transformation-plugin/sample-buffered-null-transformation-plugin.en.rst:211
+msgid "Writing the Buffered Data to the Output Vconnection"
+msgstr ""

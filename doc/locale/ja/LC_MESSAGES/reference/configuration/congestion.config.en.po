@@ -238,14 +238,6 @@ msgstr ""
 msgid "*``dead_os_conn_timeout``* {#dead_os_conn_timeout}"
 msgstr "*``dead_os_conn_timeout``* {#dead_os_conn_timeout}"
 
-#: ../../reference/configuration/congestion.config.en.rst:121
-msgid ""
-"Default: ``15`` secondsj The connection timeout to the congested origin "
-"server."
-msgstr ""
-"デフォルト: ``15`` 秒。輻輳しているオリジンサーバーに対する接続タイムアウ"
-"ト。"
-
 #: ../../reference/configuration/congestion.config.en.rst:127
 msgid "*``dead_os_conn_retries``* {#dead_os_conn_retries}"
 msgstr "*``dead_os_conn_retries``* {#dead_os_conn_retries}"
@@ -364,3 +356,16 @@ msgid ""
 msgstr ""
 ":file:`congestion.config` ファイルのルールは :file:`records.config` ファイル"
 "の次の設定を上書きします。"
+
+#: ../../reference/configuration/congestion.config.en.rst:121
+msgid ""
+"Default: ``15`` seconds. The connection timeout to the congested origin "
+"server."
+msgstr ""
+
+#~ msgid ""
+#~ "Default: ``15`` secondsj The connection timeout to the congested origin "
+#~ "server."
+#~ msgstr ""
+#~ "デフォルト: ``15`` 秒。輻輳しているオリジンサーバーに対する接続タイムアウ"
+#~ "ト。"

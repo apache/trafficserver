@@ -22,10 +22,6 @@ msgid ""
 "chapters. The following sample plugins are provided:"
 msgstr ""
 
-#: ../../sdk/sample-source-code.en.rst:25
-msgid "`blacklist-1.c <App_SampleSourceCode.html#Sample_blacklist-1.c>`__"
-msgstr ""
-
 #: ../../sdk/sample-source-code.en.rst:28
 msgid "blacklist-1.c"
 msgstr ""
@@ -57,4 +53,8 @@ msgstr ""
 
 #: ../../sdk/sample-source-code.en.rst:44
 msgid "How to use the plugin configuration management interface"
+msgstr ""
+
+#: ../../sdk/sample-source-code.en.rst:25
+msgid "`blacklist-1.c`_"
 msgstr ""

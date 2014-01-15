@@ -31,18 +31,6 @@ msgid ""
 "information. For example, see one of the following:"
 msgstr ""
 
-#: ../../sdk/http-headers/marshal-buffers.en.rst:31
-msgid "`HTTP Headers <http-headers>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/marshal-buffers.en.rst:32
-msgid "`URLs <urls>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/marshal-buffers.en.rst:33
-msgid "`MIME Headers <mime-headers>`__"
-msgstr ""
-
 #: ../../sdk/http-headers/marshal-buffers.en.rst:35
 msgid ""
 "The **marshal buffer functions** enable you to create and destroy Traffic "
@@ -97,4 +85,16 @@ msgstr ""
 msgid ""
 "`TSHttpTxnTransformRespGet <http://people.apache.org/~amc/ats/doc/html/"
 "InkAPI_8cc.html#a20367f5469e8b7e73621c1316091d578>`_"
+msgstr ""
+
+#: ../../sdk/http-headers/marshal-buffers.en.rst:31
+msgid ":doc:`http-headers.en`"
+msgstr ""
+
+#: ../../sdk/http-headers/marshal-buffers.en.rst:32
+msgid ":doc:`urls.en`"
+msgstr ""
+
+#: ../../sdk/http-headers/marshal-buffers.en.rst:33
+msgid ":doc:`mime-headers.en`"
 msgstr ""

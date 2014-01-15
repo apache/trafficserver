@@ -15,23 +15,23 @@ msgstr ""
 msgid "Transparent Proxying"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:33
+#: ../../admin/transparent-proxy.en.rst:32
 msgid ""
 "Transparent Proxying is the ability of a proxy (such as ATS) to intercept "
 "connections between clients and servers without being visible."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:36
+#: ../../admin/transparent-proxy.en.rst:35
 msgid ""
 "The general network structure that will be used in this documentation looks "
 "like this --"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:43
+#: ../../admin/transparent-proxy.en.rst:42
 msgid "ATS basic traffic flow of Transparent Proxy"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:45
+#: ../../admin/transparent-proxy.en.rst:44
 msgid ""
 "There must be a gateway device through which passes all network traffic "
 "from the client to the Internet (or external cloud). The gateway is "
@@ -42,7 +42,7 @@ msgid ""
 "system, the redirected traffic can flow over other network infrastructure."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:54
+#: ../../admin/transparent-proxy.en.rst:53
 msgid ""
 "Because ATS uses two connections transparency can be set independently on "
 "the client and origin server (Internet / external cloud) side. We will "
@@ -50,7 +50,7 @@ msgid ""
 "*inbound transparency* and *outbound transparency*."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:59
+#: ../../admin/transparent-proxy.en.rst:58
 msgid ""
 "Inbound transparency is a proxy that is transparent to connections that are "
 "inbound to the proxy, i.e. a connection initiated by a client which "
@@ -59,7 +59,7 @@ msgid ""
 "i.e. a connection initiated by the proxy to an origin server (red-2)."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:66
+#: ../../admin/transparent-proxy.en.rst:65
 msgid ""
 "In most treatments these two types of transparency are treated as unitarily "
 "but that is not required. This implementation supports transparency "
@@ -67,7 +67,7 @@ msgid ""
 "transparency-use-cases>`_."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:71
+#: ../../admin/transparent-proxy.en.rst:70
 msgid ""
 "It is critical to note that any transparency requires specialized routing "
 "and cannot be done solely by configuring ATS. ATS transparency also "
@@ -75,28 +75,28 @@ msgid ""
 "on sufficiently recent Linux kernels that support the following features --"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:77
+#: ../../admin/transparent-proxy.en.rst:76
 msgid "TPROXY"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:78
+#: ../../admin/transparent-proxy.en.rst:77
 msgid "POSIX capabilities"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:80
+#: ../../admin/transparent-proxy.en.rst:79
 msgid ""
 "In addition the specialized routing will require using ``iptables`` and in "
 "some cases ``ebtables``."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:83
+#: ../../admin/transparent-proxy.en.rst:82
 msgid ""
 "Standard build procedures should work for transparency support but if not "
 "consult these :ref:`more detailed instructions <building-ats-for-"
 "transparency>`"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:86
+#: ../../admin/transparent-proxy.en.rst:85
 msgid ""
 "Transparency is configured per server port not globally. This is done via "
 "the configuration values :ts:cv:`proxy.config.http.server_ports`. In "
@@ -104,58 +104,58 @@ msgid ""
 "the client side is transparent. That should be fixed in a future patch."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:91
+#: ../../admin/transparent-proxy.en.rst:90
 msgid ""
 "In the first case use the attribute character (replacing the default 'X')"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:94
+#: ../../admin/transparent-proxy.en.rst:93
 msgid "**Attribute** **Transparency Style** **Reverse Proxy**"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:97
+#: ../../admin/transparent-proxy.en.rst:96
 msgid "``=``"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:97
+#: ../../admin/transparent-proxy.en.rst:96
 msgid "Full transparency: either"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:100
+#: ../../admin/transparent-proxy.en.rst:99
 msgid "``>``"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:100
+#: ../../admin/transparent-proxy.en.rst:99
 msgid "Inbound (client) transparency: enabled"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:103
+#: ../../admin/transparent-proxy.en.rst:102
 msgid "``<``"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:103
+#: ../../admin/transparent-proxy.en.rst:102
 msgid "Outbound (origin server) transparency: either"
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:105
+#: ../../admin/transparent-proxy.en.rst:104
 msgid ""
 "In the outbound transparent case clients must connect directly to ATS "
 "either through an explicit proxy mechanism or by advertising the IP address "
 "of the ATS server via DNS as the origin server address."
 msgstr ""
 
-#: ../../admin/transparent-proxy.en.rst:109
+#: ../../admin/transparent-proxy.en.rst:108
 msgid "Some tested scenarios --"
 msgstr ""
 
+#: ../../admin/transparent-proxy.en.rst:110
+msgid ":doc:`transparent-proxy/bridge.en`"
+msgstr ""
+
 #: ../../admin/transparent-proxy.en.rst:111
-msgid "`Transparent bridging <bridge>`_"
+msgid ":doc:`transparent-proxy/router-inline.en`"
 msgstr ""
 
 #: ../../admin/transparent-proxy.en.rst:112
-msgid "`Inline router <router-inline>`_"
-msgstr ""
-
-#: ../../admin/transparent-proxy.en.rst:113
-msgid "`WCCP Configuration <wccp-configuration>`_"
+msgid ":doc:`transparent-proxy/wccp-configuration.en`"
 msgstr ""

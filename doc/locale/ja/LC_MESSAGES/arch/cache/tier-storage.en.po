@@ -45,14 +45,6 @@ msgid ""
 "intended to handle both cases."
 msgstr ""
 
-#: ../../arch/cache/tier-storage.en.rst:40
-msgid ""
-"The design presumes that if a user has multiple tiers of storage and an "
-"ordering for those tiers, he will usually want content stored at one tier "
-"level to also be stored at every other lower level as well, so that it does "
-"not have to be copied if evicted from a higher tier."
-msgstr ""
-
 #: ../../arch/cache/tier-storage.en.rst:46
 msgid "Configuration"
 msgstr ""
@@ -206,4 +198,12 @@ msgid ""
 "the other tier (that of the unmarked storage units) the oracle would return "
 "`RW` for the tier in all cases as that tier would not be queried for the "
 "target domains."
+msgstr ""
+
+#: ../../arch/cache/tier-storage.en.rst:40
+msgid ""
+"The design presumes that if a user has multiple tiers of storage and an "
+"ordering for those tiers, they will usually want content stored at one tier "
+"level to also be stored at every other lower level as well, so that it does "
+"not have to be copied if evicted from a higher tier."
 msgstr ""
