@@ -1,4 +1,10 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 4.1.3
+
+  *) [TS-2497] Failed post results in tunnel buffers being returned to
+   freelist prematurely.
+   Reporter: Thomas Jackson <thjackso@linkedin.com>
+
 Changes with Apache Traffic Server 4.1.2
 
   *) [TS-2351] Bandaid fix for Range request crash related to
