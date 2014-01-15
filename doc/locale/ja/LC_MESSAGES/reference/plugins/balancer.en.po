@@ -17,125 +17,86 @@ msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:24
 msgid ""
-"This is a plugin for Traffic Server, that allows you to configure mapping "
-"rules."
+"The ``balancer`` balances requests across multiple origin servers. To use "
+"this plugin, configure it in a :file:`remap.config` rule, specifying a "
+"balancing policy and a set of origin servers. For example::"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:27
-msgid "To use this plugin, configure a remap.config rule like"
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:30
-#: ../../reference/plugins/balancer.en.rst:42
-#: ../../reference/plugins/balancer.en.rst:52
-#: ../../reference/plugins/balancer.en.rst:59
-#: ../../reference/plugins/balancer.en.rst:64
-#: ../../reference/plugins/balancer.en.rst:71
-msgid "::"
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:30
+#: ../../reference/plugins/balancer.en.rst:31
 msgid ""
-"map http://foo.com http://bar.com @plugin=balancer.so @pparam=rotation:news"
+"The ``replacement`` URL in the mapping rule is not used. The argument to "
+"the ``--policy`` option is a comma-separated list of keywords. The first "
+"keyword is the name of a balancing policy. The subsequent keywords are used "
+"to refine the requested policy."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:32
-msgid ""
-"The \"To-Url\" in the remap.config rule is generally not used, unless the "
-"lookup completely fails (i.e. this is a backup URL for extreme error cases)."
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:36
-msgid "This is a list of all available options (set via @pparam):"
+#: ../../reference/plugins/balancer.en.rst:37
+msgid "Hash Balancing Policy"
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:39
 msgid ""
-"rotation      The name of the rotation (e.g. news) [to-host in remap] "
-"hash      What to hash on, url, path, cookie, ip, header (primary) "
-"hash2     Optional, secondary hash, to hash within a multi-host bucket "
-"bucketw   Width of each hash bucket [1]"
+"The ``hash`` balancing policy performs a consistent hash across the set of "
+"origins. This minimizes the number of hash entries that must be moved when "
+"the set of origin servers changes. An optional list of hash fields follows "
+"the ``hash`` keyword. Each specified hash field is hashed to select an "
+"outbound origin server."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:44
-msgid ""
-"The rotation parameter specifies which rotation to do the lookup on. If not "
-"specified, we will default to the same name as used in the To URL in the "
-"remap rule."
+#: ../../reference/plugins/balancer.en.rst:45
+msgid "The following fields can be supplied to the hash:"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:50
+msgid "key"
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:48
 msgid ""
-"The bucket width specifies how many hosts a particular hash bucket should "
-"contain, for example:"
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:52
-msgid "@pparam=bucketw:2"
+"The request cache key. Note that the cache key will only be set if you have "
+"already chained a plugin that sets a custom cache key."
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:54
+msgid "url"
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:53
 msgid ""
-"The hash parameter can be used zero or more times, without it, no hashing "
-"is done at all. If you have more than one hash keys, they are concatenated "
-"in the order specified. For example:"
+"The request URL. This is the default hash field that is used if no other "
+"fields are specified."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:59
-msgid "@pparam=hash:ip @pparam=hash:cookie/B"
+#: ../../reference/plugins/balancer.en.rst:57
+msgid "srcaddr"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:61
-msgid "The \"header\" hash key takes a required extra value, for example:"
+#: ../../reference/plugins/balancer.en.rst:57
+msgid "The source IP address of the request."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:64
-msgid "@pparam=hash:header/Host"
+#: ../../reference/plugins/balancer.en.rst:60
+msgid "Round Robin Balancing Policy"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:66
+#: ../../reference/plugins/balancer.en.rst:62
 msgid ""
-"For \"cookie\" hash keys, you can optionally specify an identifier for "
-"which cookie to use (without it, the entire cookie header is used). For "
-"example:"
+"The ``roundrobin`` balancing policy simply allocates requests to origin "
+"servers in order. Over time, the number of requests received by each origin "
+"should be approximately the same."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:71
-msgid "@pparam=hash:cookie/B"
+#: ../../reference/plugins/balancer.en.rst:67
+msgid "Health Checking"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:73
+#: ../../reference/plugins/balancer.en.rst:69
 msgid ""
-"The secondary hash (\"hash2\") is used to provide \"stickiness\" within a "
-"bucket that's larger than one host (i.e. bucketw > 1). This allows you to "
-"(for example) have a primary hash on the URL, where each URL is served by "
-"some number of servers. A secondary hash on B-cookie would then provide "
-"user stickiness, so that for a particular URL, a particular user will "
-"always hit the same server."
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:80
-msgid ""
-"If the hashes you've requested (either \"hash\" or \"hash2\") can not be "
-"generated, we default to using the URL instead for the primary hash. For "
-"the secondary hash, if set, we'll default to the src-IP. If these defaults "
-"are not desirable, make sure that you have at least one hash key that is "
-"guaranteed to exist (e.g. @pparam=hash:ip)."
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:86
-msgid ""
-"If no \"hash\" parameters are specified, no hashing is done. This is the "
-"default behavior, obviously. In this cash, the \"hash2\" directive has no "
-"effect as well."
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:90
-msgid ""
-"Finally, a couple of \"flag\" options (parameters) are available, to "
-"control some of the lookup mechanisms:"
-msgstr ""
-
-#: ../../reference/plugins/balancer.en.rst:93
-msgid "@pparam=hostip will use the IP returned by the lookup"
+"The ``balancer`` plugin does not check the health of the origin servers, "
+"however the plugin is fully reloadable so health checking is usualy simple "
+"to implement. Most production environments already have mechanisms to check "
+"service health. It is recommended that you write a simple script to monitor "
+"this information and rewrite :file:`remap.config` when appropriate. "
+"Running :option:`traffic_line -x` will reload the ``balancer`` plugin with "
+"the new set of origin servers."
 msgstr ""

@@ -93,11 +93,11 @@ msgid ""
 "file."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:81
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:83
 msgid "Specify the Plugin's Location"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:83
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:85
 msgid ""
 "All plugins must be located in the directory specified by the configuration "
 "variable ``proxy.config.plugin.plugin_dir``, which is located in the :file:"
@@ -105,7 +105,7 @@ msgid ""
 "relative path."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:88
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:90
 msgid ""
 "If a relative path is used, then the starting directory will be the Traffic "
 "Server installation directory as specified in ``/etc/traffic_server``. The "
@@ -115,17 +115,17 @@ msgid ""
 "the directory you've configured."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:96
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:98
 msgid "Restart Traffic Server"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:98
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:100
 msgid ""
 "The last step is to start/restart Traffic Server. Shown below is the output "
 "displayed after you've created and loaded your ``hello-world`` plugin."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:114
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:116
 msgid ""
 "**Note:** in the example above, Traffic Server notes are directed to the "
 "console by specifying ``E`` for ``proxy.config.diags.output.note`` in :file:"

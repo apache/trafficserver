@@ -38,11 +38,7 @@ msgid ""
 "following terminology:"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions.en.rst:45
-msgid "***HTTP Transaction***"
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions.en.rst:47
+#: ../../sdk/http-hooks-and-transactions.en.rst:48
 msgid ""
 "A **transaction** consists of a single HTTP request from a client and the "
 "response Traffic Server sends to that client. Thus, a transaction begins "
@@ -50,34 +46,7 @@ msgid ""
 "the response."
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions.en.rst:52
-msgid ""
-"Traffic Server uses **HTTP state machines** to process transactions. The "
-"state machines follow a complex set of states involved in sophisticated "
-"caching and document retrieval (taking into account, for example, alternate "
-"selection, freshness criteria, and hierarchical caching). The Traffic "
-"Server API provides hooks to a subset of these states, as illustrated in "
-"the `HTTP Transaction State Diagram <#HHTTPTxStateDiag>`__ below."
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions.en.rst:60
-msgid "***Transform hooks***"
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions.en.rst:62
-msgid ""
-"The two **transform hooks**, ``TS_HTTP_REQUEST_TRANSFORM_HOOK`` and "
-"``TS_HTTP_RESPONSE_TRANSFORM_HOOK``, are called in the course of an HTTP "
-"transform. To see where in the HTTP transaction they are called, look for "
-"the \"set up transform\" ovals in the `HTTP Transaction State Diagram "
-"<#HHTTPTxStateDiag>`__ below."
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions.en.rst:68
-msgid "***HTTP session***"
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions.en.rst:70
+#: ../../sdk/http-hooks-and-transactions.en.rst:71
 msgid ""
 "A **session** consists of a single client connection to Traffic Server; it "
 "may consist of a single transaction or several transactions in succession. "
@@ -85,11 +54,36 @@ msgid ""
 "connection closes."
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions.en.rst:75
-msgid ""
-"**HTTP Transaction State Diagram (*not yet updated*)** {#HHTTPTxStateDiag}"
+#: ../../sdk/http-hooks-and-transactions.en.rst:79
+msgid "HTTP Transaction State Diagram"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions.en.rst:81
-msgid "HTTP Transaction State Diagram"
+#: ../../sdk/http-hooks-and-transactions.en.rst:46
+msgid "HTTP Transaction"
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions.en.rst:53
+msgid ""
+"Traffic Server uses **HTTP state machines** to process transactions. The "
+"state machines follow a complex set of states involved in sophisticated "
+"caching and document retrieval (taking into account, for example, alternate "
+"selection, freshness criteria, and hierarchical caching). The Traffic "
+"Server API provides hooks to a subset of these states, as illustrated in "
+"the :ref:`http-txn-state-diagram` below."
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions.en.rst:61
+msgid "Transform hooks"
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions.en.rst:63
+msgid ""
+"The two **transform hooks**, ``TS_HTTP_REQUEST_TRANSFORM_HOOK`` and "
+"``TS_HTTP_RESPONSE_TRANSFORM_HOOK``, are called in the course of an HTTP "
+"transform. To see where in the HTTP transaction they are called, look for "
+"the \"set up transform\" ovals in the :ref:`http-txn-state-diagram` below."
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions.en.rst:69
+msgid "HTTP session"
 msgstr ""

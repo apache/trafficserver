@@ -245,14 +245,6 @@ msgstr ""
 ":ts:cv:`proxy.config.http.server_ports` で SSL 通信に使用されるポート番号を"
 "設定する"
 
-#: ../../admin/security-options.en.rst:120
-msgid ""
-"Edit :file:`ssl_multicert.config` to specify the filename and location of "
-"the SSL certificates and provate keys."
-msgstr ""
-"SSL 証明書と秘密鍵のファイル名と場所を指定するために :file:`ssl_multicert."
-"config` を編集する"
-
 #: ../../admin/security-options.en.rst:122
 msgid ""
 "(Optional) Configure the use of client certificates: Client certificates "
@@ -480,3 +472,16 @@ msgstr ":ts:cv:`proxy.config.ssl.client.CA.cert.filename`"
 #: ../../admin/security-options.en.rst:224
 msgid ":ts:cv:`proxy.config.ssl.client.CA.cert.path`"
 msgstr ":ts:cv:`proxy.config.ssl.client.CA.cert.path`"
+
+#: ../../admin/security-options.en.rst:120
+msgid ""
+"Edit :file:`ssl_multicert.config` to specify the filename and location of "
+"the SSL certificates and private keys."
+msgstr ""
+
+#~ msgid ""
+#~ "Edit :file:`ssl_multicert.config` to specify the filename and location "
+#~ "of the SSL certificates and provate keys."
+#~ msgstr ""
+#~ "SSL 証明書と秘密鍵のファイル名と場所を指定するために :file:"
+#~ "`ssl_multicert.config` を編集する"

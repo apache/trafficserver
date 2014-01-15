@@ -26,18 +26,6 @@ msgstr ""
 msgid "This chapter covers the following topics:"
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:34
-msgid "`Mutexes and Data <MutexesData>`__"
-msgstr ""
-
-#: ../../sdk/continuations.en.rst:36
-msgid "`How to Activate Continuations <ActivateContinuations.html>`__"
-msgstr ""
-
-#: ../../sdk/continuations.en.rst:38
-msgid "`Writing Handler Functions <WritingHandlerFunctions.html>`__"
-msgstr ""
-
 #: ../../sdk/continuations.en.rst:41
 msgid "Mutexes and Data"
 msgstr ""
@@ -66,23 +54,7 @@ msgid ""
 "APIs"
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:55
-msgid ""
-"Before being activated, a caller must grab the continuation's mutex. This "
-"requirement makes it possible for a continuation's handler function to "
-"safely access its data and to prevent multiple callers from running it at "
-"the same time (see the `sample Protocol plugin <../new-protocol-"
-"plugins#AboutSampleProtocol>`__ for usage). The data protected by the mutex "
-"is any global or continuation data associated to the continuation by "
-"``TSContDataSet``. This does not include the local data created by the "
-"continuation handler function. A typical example of continuations created "
-"with associated data structures and mutexes is the transaction state "
-"machine created in the sample Protocol plugin (see `One Way to Implement a "
-"Transaction State Machine <../new-protocol-"
-"plugins#OneWayImplementaTransactionStateMachine>`__)."
-msgstr ""
-
-#: ../../sdk/continuations.en.rst:68
+#: ../../sdk/continuations.en.rst:66
 msgid ""
 "A reentrant call occurs when the continuation passed as an argument to the "
 "API can be called in the same stack trace as the function calling the API. "
@@ -91,23 +63,23 @@ msgid ""
 "returns."
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:74
+#: ../../sdk/continuations.en.rst:72
 msgid "Caveats that could cause issues include the following:"
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:76
+#: ../../sdk/continuations.en.rst:74
 msgid "a continuation has data associated with it (``TSContDataGet``)."
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:78
+#: ../../sdk/continuations.en.rst:76
 msgid "\\*"
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:79
+#: ../../sdk/continuations.en.rst:77
 msgid "the reentrant call passes itself as a continuation to the reentrant"
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:80
+#: ../../sdk/continuations.en.rst:78
 msgid ""
 "API. In this case, the continuation should not try to access its data after "
 "calling the reentrant API. The reason for this is that data may be modified "
@@ -116,11 +88,11 @@ msgid ""
 "call to avoid accessing something that has been deallocated."
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:87
+#: ../../sdk/continuations.en.rst:85
 msgid "Below is an example, followed by an explanation."
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:104
+#: ../../sdk/continuations.en.rst:102
 msgid ""
 "The above example first assumes that the continuation is called back with "
 "``event1``; it then does the first reentrant call that schedules the "
@@ -133,14 +105,14 @@ msgid ""
 "reentrant call - just exit the handler."
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:114
+#: ../../sdk/continuations.en.rst:112
 msgid ""
 "**Note:** Most HTTP transaction plugin continuations do not need non-null "
 "mutexes because they're called within the processing of an HTTP "
 "transaction, and therefore have the transaction's mutex."
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:118
+#: ../../sdk/continuations.en.rst:116
 msgid ""
 "It is also possible to specify a continuation's mutex as ``NULL``. This "
 "should be done only when registering a continuation to a global hook, by a "
@@ -152,7 +124,7 @@ msgid ""
 "associated with it (i.e., ``TSContDataGet/Set`` cannot be used)."
 msgstr ""
 
-#: ../../sdk/continuations.en.rst:128
+#: ../../sdk/continuations.en.rst:126
 msgid ""
 "When using a ``NULL`` mutex it is dangerous to access the continuation's "
 "data, but usually continuations with ``NULL`` mutexes have no data "
@@ -160,4 +132,30 @@ msgid ""
 "gets called back every time an HTTP request is read, and then determines "
 "from the request alone if the request should go through or be rejected. An "
 "HTTP transaction gives its continuation data to the ``contp``."
+msgstr ""
+
+#: ../../sdk/continuations.en.rst:34
+msgid "`Mutexes and Data`_"
+msgstr ""
+
+#: ../../sdk/continuations.en.rst:36
+msgid ":doc:`continuations/how-to-activate-continuations.en`"
+msgstr ""
+
+#: ../../sdk/continuations.en.rst:38
+msgid ":doc:`continuations/writing-handler-functions.en`"
+msgstr ""
+
+#: ../../sdk/continuations.en.rst:55
+msgid ""
+"Before being activated, a caller must grab the continuation's mutex. This "
+"requirement makes it possible for a continuation's handler function to "
+"safely access its data and to prevent multiple callers from running it at "
+"the same time (see the :ref:`about-the-sample-protocol` for usage). The "
+"data protected by the mutex is any global or continuation data associated "
+"to the continuation by ``TSContDataSet``. This does not include the local "
+"data created by the continuation handler function. A typical example of "
+"continuations created with associated data structures and mutexes is the "
+"transaction state machine created in the sample Protocol plugin (see :ref:"
+"`one-way-to-implement-a-transaction-state-machine`)."
 msgstr ""

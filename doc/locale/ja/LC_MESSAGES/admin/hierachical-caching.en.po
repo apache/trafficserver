@@ -48,14 +48,6 @@ msgid ""
 "for HTTP and HTTPS requests."
 msgstr ""
 
-#: ../../admin/hierachical-caching.en.rst:50
-msgid ""
-"**Note:** If you do not want all requests to go to the parent cache, then "
-"simply configure Traffic Server to route certain requests (such as requests "
-"containing specific URLs) directly to the origin server. SImply set parent "
-"proxy rules in :file:`parent.config`"
-msgstr ""
-
 #: ../../admin/hierachical-caching.en.rst:55
 msgid ""
 "The figure below illustrates a simple cache hierarchy with a Traffic Server "
@@ -166,4 +158,12 @@ msgstr ""
 msgid ""
 "Run the command :option:`traffic_line -x` to apply the configuration "
 "changes."
+msgstr ""
+
+#: ../../admin/hierachical-caching.en.rst:50
+msgid ""
+"**Note:** If you do not want all requests to go to the parent cache, then "
+"simply configure Traffic Server to route certain requests (such as requests "
+"containing specific URLs) directly to the origin server. Simply set parent "
+"proxy rules in :file:`parent.config`"
 msgstr ""

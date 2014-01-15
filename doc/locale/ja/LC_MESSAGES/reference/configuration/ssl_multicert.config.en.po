@@ -65,21 +65,6 @@ msgstr ""
 ":file:`ssl_multicert.config` の各行は Traffic Server が特定の SSL 証明書をど"
 "う使用すべきかを指定する `key=value` フィールドの連続で成っています。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:53
-msgid "ssl_cert_name=PATH"
-msgstr "ssl_cert_name=PATH"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:50
-msgid ""
-"The name of the file containing the TLS certificate. `PATH` is located "
-"relative to the directory specified by the :ts:cv:`proxy.config.ssl.server."
-"cert.path` configuration variable. This is the only field that is required "
-"to be present."
-msgstr ""
-"TLS 証明書を含んでいるファイルの名前です。`PATH` は :ts:cv:`proxy.config."
-"ssl.server.cert.path` 設定変数で指定されたディレクトリからの相対位置です。こ"
-"れは設定が必要とされている唯一のフィールドです。"
-
 #: ../../reference/configuration/ssl_multicert.config.en.rst:64
 msgid "dest_ip=ADDRESS"
 msgstr "dest_ip=ADDRESS"
@@ -103,42 +88,15 @@ msgstr ""
 "れたコネクションのみにマッチします。ポート指定がある場合、IPv6 アドレスは角"
 "括弧で囲われていなければなりません。例、[::1]:80 。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:70
-msgid "ssl_key_name=PATH"
-msgstr "ssl_key_name=PATH"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:67
-msgid ""
-"The name of the file containing the private key for this certificate. If "
-"the key is contained in the certificate file, this field can be omitted, "
-"otherwise `PATH` is resolved relative to the :ts:cv:`proxy.config.ssl."
-"server.private_key.path` configuration variable."
-msgstr ""
-"この証明書のための秘密鍵を含んでいるファイルの名前です。もし鍵が証明書に含ま"
-"れている場合、このフィールドは省略可能です。そうでは無い場合、`PATH` は :ts:"
-"cv:`proxy.config.ssl.server.private_key.path` 設定変数からの相対で解決されま"
-"す。"
-
 #: ../../reference/configuration/ssl_multicert.config.en.rst:76
 msgid "ssl_ca_name=FILENAME"
 msgstr "ssl_ca_name=FILENAME"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:73
-msgid ""
-"If the certificate is issued by an authority that is not in the system CA "
-"bundle, additional certificates may be needed to validate the certificate "
-"chain. `PATH` is resolved relative to the :ts:cv:`proxy.config.ssl.CA.cert."
-"path` configuration variable."
-msgstr ""
-"システムの CA バンドルにない認証局によって発行された証明書では、証明書チェー"
-"ンの検証のために追加の証明書が必要になることがあります。`PATH` は :ts:cv:"
-"`proxy.config.ssl.CA.cert.path` 設定変数からの相対で解決されます。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:79
+#: ../../reference/configuration/ssl_multicert.config.en.rst:98
 msgid "Certificate Selection"
 msgstr "証明書の選択"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:81
+#: ../../reference/configuration/ssl_multicert.config.en.rst:100
 msgid ""
 "Traffic Server attempts two certificate selections during SSL connection "
 "setup. An initial selection is made when a TCP connection is accepted. This "
@@ -165,7 +123,7 @@ msgstr ""
 "敗すると、ワイルドカードによる証明書のマッチが試されます。いずれにもマッチし"
 "ない場合、初回の証明書の選択がそのまま有効となります。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:95
+#: ../../reference/configuration/ssl_multicert.config.en.rst:114
 msgid ""
 "In all cases, Traffic Server attempts to select the most specific match. An "
 "address specification that contains a port number will take precedence over "
@@ -176,11 +134,11 @@ msgstr ""
 "を含むアドレス指定は、ポート番号を含まない指定に先立って行われます。具体的な"
 "証明サブジェクトはワイルドカードによる証明に先立って使用されます。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:103
+#: ../../reference/configuration/ssl_multicert.config.en.rst:121
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:105
+#: ../../reference/configuration/ssl_multicert.config.en.rst:123
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1 and the SSL "
@@ -196,7 +154,7 @@ msgstr ""
 "ミネートされます。秘密鍵は証明書に含まれているので、秘密鍵の名前は指定されて"
 "いません。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:119
+#: ../../reference/configuration/ssl_multicert.config.en.rst:137
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and the private key ``serverKey.pem`` for all requests to "
@@ -207,3 +165,119 @@ msgstr ""
 "pem`` を IP アドレス 111.11.11.1 のポート 8443 へのすべてのリクエストに使用"
 "するよう設定しています。証明書 ``general.pem`` はサーバー名がマッチするもの"
 "で使用されます。"
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:53
+msgid "ssl_cert_name=FILENAME"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:50
+msgid ""
+"The name of the file containing the TLS certificate. `FILENAME` is located "
+"relative to the directory specified by the :ts:cv:`proxy.config.ssl.server."
+"cert.path` configuration variable. This is the only field that is required "
+"to be present."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:70
+msgid "ssl_key_name=FILENAME"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:67
+msgid ""
+"The name of the file containing the private key for this certificate. If "
+"the key is contained in the certificate file, this field can be omitted, "
+"otherwise `FILENAME` is resolved relative to the :ts:cv:`proxy.config.ssl."
+"server.private_key.path` configuration variable."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:73
+msgid ""
+"If the certificate is issued by an authority that is not in the system CA "
+"bundle, additional certificates may be needed to validate the certificate "
+"chain. `FILENAME` is resolved relative to the :ts:cv:`proxy.config.ssl.CA."
+"cert.path` configuration variable."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:81
+msgid "ssl_ticket_enabled=1|0"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:79
+msgid ""
+"Enable :rfc:`5077` stateless TLS session tickets. To support this, OpenSSL "
+"should be upgraded to version 0.9.8f or higher. This option must be set to "
+"`0` to disable session ticket support."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:95
+msgid "ticket_key_name=FILENAME"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:84
+msgid ""
+"The name of session ticket key file which contains a secret for encrypting "
+"and decrypting TLS session tickets. If `FILENAME` is not an absolute path, "
+"it is resolved relative to the :ts:cv:`proxy.config.ssl.server.cert.path` "
+"configuration variable. This option has no effect if session tickets are "
+"disabled by the ``ssl_ticket_enabled`` option.  The contents of the key "
+"file should be 48 random bytes."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:92
+msgid ""
+"Session ticket support is enabled by default. If neither of the "
+"``ssl_ticket_enabled`` and ``ticket_key_name`` options are specified, and "
+"internal session ticket key is generated. This key will be different each "
+"time Traffic Server is started."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:146
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` for all requests to the IP address 111.11.11.1. Session "
+"tickets are enabled with a persistent ticket key."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:155
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` and disable sessiont ticket for all requests to the IP "
+"address 111.11.11.1."
+msgstr ""
+
+#~ msgid "ssl_cert_name=PATH"
+#~ msgstr "ssl_cert_name=PATH"
+
+#~ msgid ""
+#~ "The name of the file containing the TLS certificate. `PATH` is located "
+#~ "relative to the directory specified by the :ts:cv:`proxy.config.ssl."
+#~ "server.cert.path` configuration variable. This is the only field that is "
+#~ "required to be present."
+#~ msgstr ""
+#~ "TLS 証明書を含んでいるファイルの名前です。`PATH` は :ts:cv:`proxy.config."
+#~ "ssl.server.cert.path` 設定変数で指定されたディレクトリからの相対位置で"
+#~ "す。これは設定が必要とされている唯一のフィールドです。"
+
+#~ msgid "ssl_key_name=PATH"
+#~ msgstr "ssl_key_name=PATH"
+
+#~ msgid ""
+#~ "The name of the file containing the private key for this certificate. If "
+#~ "the key is contained in the certificate file, this field can be omitted, "
+#~ "otherwise `PATH` is resolved relative to the :ts:cv:`proxy.config.ssl."
+#~ "server.private_key.path` configuration variable."
+#~ msgstr ""
+#~ "この証明書のための秘密鍵を含んでいるファイルの名前です。もし鍵が証明書に"
+#~ "含まれている場合、このフィールドは省略可能です。そうでは無い場合、`PATH` "
+#~ "は :ts:cv:`proxy.config.ssl.server.private_key.path` 設定変数からの相対で"
+#~ "解決されます。"
+
+#~ msgid ""
+#~ "If the certificate is issued by an authority that is not in the system "
+#~ "CA bundle, additional certificates may be needed to validate the "
+#~ "certificate chain. `PATH` is resolved relative to the :ts:cv:`proxy."
+#~ "config.ssl.CA.cert.path` configuration variable."
+#~ msgstr ""
+#~ "システムの CA バンドルにない認証局によって発行された証明書では、証明書"
+#~ "チェーンの検証のために追加の証明書が必要になることがあります。`PATH` は :"
+#~ "ts:cv:`proxy.config.ssl.CA.cert.path` 設定変数からの相対で解決されます。"

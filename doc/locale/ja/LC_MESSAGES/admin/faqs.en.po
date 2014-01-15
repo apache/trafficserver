@@ -27,18 +27,6 @@ msgstr ""
 "全ディスクがファイルシステムにマウントされている場合、キャッシュ用の raw "
 "ディスクの作成はどうすればいいですか？"
 
-#: ../../admin/faqs.en.rst:32
-msgid ""
-"Create a large file on filesystem (with :manpage`dd(1)`) and mount it as "
-"loopback device. This is accomplished with :manpage:`losetup(8)` on Linux, :"
-"manpage:`lofiadm(1m)` on Solaris and Illumos, and :manpage:`mdconfig(8)` on "
-"FreeBSD."
-msgstr ""
-"ファイルシステム上に大きなファイルを ( :manpage:`dd(1)` を使って ) 作成し、"
-"それをループバックデバイスとしてマウントしてください。これは Linux 上では  :"
-"manpage:`losetup(8)` で、Solaris と Illumos 上では :manpage:`lofiadm(1m)` 、"
-"FreeBSD 上では :manpage:`mdconfig(8)` を使って行えます。"
-
 #: ../../admin/faqs.en.rst:37
 msgid ""
 "How do disk I/O errors affect the cache and what does Traffic Server do "
@@ -242,14 +230,6 @@ msgstr ":ref:`forward-proxy` を参照してください。"
 #: ../../admin/faqs.en.rst:123
 msgid "How do I interpret the Via: header code?"
 msgstr "どうやって Via: ヘッダーコードを解釈するのですか？"
-
-#: ../../admin/faqs.en.rst:125
-msgid ""
-"Take a look at our `Via decoder Ring <http://trafficserver.apache.org/tools/"
-"via>`_."
-msgstr ""
-"`Via decoder Ring <http://trafficserver.apache.org/tools/via>`_ を見てくださ"
-"い。"
 
 #: ../../admin/faqs.en.rst:128
 msgid "Support for HTTP Expect: Header"
@@ -615,3 +595,35 @@ msgid ""
 "variable proxy.config.http.connect_attempts_timeout in the records.config "
 "file to 60 seconds or more."
 msgstr ""
+
+#: ../../admin/faqs.en.rst:32
+msgid ""
+"Create a large file on filesystem (with :manpage:`dd(1)`) and mount it as "
+"loopback device. This is accomplished with :manpage:`losetup(8)` on Linux, :"
+"manpage:`lofiadm(1m)` on Solaris and Illumos, and :manpage:`mdconfig(8)` on "
+"FreeBSD."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:125
+msgid ""
+"The ``Via`` header string can be decoded with the `Via Decoder Ring <http://"
+"trafficserver.apache.org/tools/via>`_."
+msgstr ""
+
+#~ msgid ""
+#~ "Create a large file on filesystem (with :manpage`dd(1)`) and mount it as "
+#~ "loopback device. This is accomplished with :manpage:`losetup(8)` on "
+#~ "Linux, :manpage:`lofiadm(1m)` on Solaris and Illumos, and :manpage:"
+#~ "`mdconfig(8)` on FreeBSD."
+#~ msgstr ""
+#~ "ファイルシステム上に大きなファイルを ( :manpage:`dd(1)` を使って ) 作成"
+#~ "し、それをループバックデバイスとしてマウントしてください。これは Linux 上"
+#~ "では  :manpage:`losetup(8)` で、Solaris と Illumos 上では :manpage:"
+#~ "`lofiadm(1m)` 、FreeBSD 上では :manpage:`mdconfig(8)` を使って行えます。"
+
+#~ msgid ""
+#~ "Take a look at our `Via decoder Ring <http://trafficserver.apache.org/"
+#~ "tools/via>`_."
+#~ msgstr ""
+#~ "`Via decoder Ring <http://trafficserver.apache.org/tools/via>`_ を見てく"
+#~ "ださい。"

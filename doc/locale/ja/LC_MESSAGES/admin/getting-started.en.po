@@ -154,10 +154,6 @@ msgstr "lua"
 msgid "curses"
 msgstr "curses"
 
-#: ../../admin/getting-started.en.rst:79
-msgid "curl (both for tstop)"
-msgstr "curl (both for tstop)"
-
 #: ../../admin/getting-started.en.rst:81
 msgid "if you're building from a git clone, you'll also need"
 msgstr "git クローンからビルドする場合は、次のものも必要です。"
@@ -331,3 +327,10 @@ msgstr ""
 "program:`traffic_manager`, :program:`traffic_server`, :program:"
 "`traffic_cop` ) を停止します。予想できない結果を招くので、手動で各プロセスを"
 "止めないでください。"
+
+#: ../../admin/getting-started.en.rst:79
+msgid "curl (both for :program:`traffic_top`)"
+msgstr ""
+
+#~ msgid "curl (both for tstop)"
+#~ msgstr "curl (both for tstop)"

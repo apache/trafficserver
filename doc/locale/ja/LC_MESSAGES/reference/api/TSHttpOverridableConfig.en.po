@@ -63,11 +63,11 @@ msgstr ""
 "func:`TSHttpTxnConfigFind` に渡すことで間接的に使用でき、この関数は文字列が"
 "上書き可能な値に一致した場合にキーとデータ型を返します。"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:55
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:139
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:57
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:141
 msgid ""
 "Enable :ref:`transaction buffer control <transaction-buffering-control>` "
 "with a high water mark of 262144 and a low water mark of 65536. ::"
@@ -75,10 +75,19 @@ msgstr ""
 ":ref:`transaction-buffering-control` を high water マーク 262144 と low "
 "water マーク 65536 で有効化します。\\ ::"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:69
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:153
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:70
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:154
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:55
+msgid "Configurations"
+msgstr ""
+
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:57
+msgid ""
+"The following configurations (from ``records.config``) are overridable: ::"
+msgstr ""

@@ -344,33 +344,21 @@ msgid ""
 "only entries from the named servers will be included in the file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:225
-msgid "``<CollationHosts = \"list_of_valid_hostnames\"/>``"
-msgstr ""
-
-#: ../../reference/configuration/logs_xml.config.en.rst:221
-msgid ""
-"Optional A comma-separated list of collation servers to which all log "
-"entries (for this object) are forwarded. Collation servers can be specified "
-"by name or IP address. Specify the collation port with a colon after the "
-"name; for example, ``host:port`` ."
-msgstr ""
-
-#: ../../reference/configuration/logs_xml.config.en.rst:231
+#: ../../reference/configuration/logs_xml.config.en.rst:237
 msgid "``<Header = \"header\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:228
+#: ../../reference/configuration/logs_xml.config.en.rst:234
 msgid ""
 "Optional The header text you want the log files to contain. The header text "
 "appears at the beginning of the log file, just before the first record."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:251
+#: ../../reference/configuration/logs_xml.config.en.rst:257
 msgid "``<RollingEnabled = \"truth value\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:234
+#: ../../reference/configuration/logs_xml.config.en.rst:240
 msgid ""
 "Optional Enables or disables log file rolling for the ``LogObject``. This "
 "setting overrides the value for the :ts:cv:`proxy.config.log."
@@ -378,58 +366,58 @@ msgid ""
 "value* to one of the following values:"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:241
+#: ../../reference/configuration/logs_xml.config.en.rst:247
 msgid "``0`` to disable rolling for this particular ``LogObject``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:242
+#: ../../reference/configuration/logs_xml.config.en.rst:248
 msgid ""
 "``1`` to roll log files at specific intervals during the day (you specify "
 "time intervals with the ``RollingIntervalSec`` and ``RollingOffsetHr`` "
 "fields)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:245
+#: ../../reference/configuration/logs_xml.config.en.rst:251
 msgid ""
 "``2`` to roll log files when they reach a certain size (you specify the "
 "size with the ``RollingSizeMb`` field)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:247
+#: ../../reference/configuration/logs_xml.config.en.rst:253
 msgid ""
 "``3`` to roll log files at specific intervals during the day or when they "
 "reach a certain size (whichever occurs first)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:249
+#: ../../reference/configuration/logs_xml.config.en.rst:255
 msgid ""
 "``4`` to roll log files at specific intervals during the day when log files "
 "reach a specific size (at a specified time if the file is of the specified "
 "size)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:263
+#: ../../reference/configuration/logs_xml.config.en.rst:269
 msgid "``<RollingIntervalSec = \"seconds\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:256
+#: ../../reference/configuration/logs_xml.config.en.rst:262
 msgid ""
 "Optional The seconds between log file rolling for the ``LogObject``; "
 "enables you to specify different rolling intervals for different "
 "``LogObjects``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:261
+#: ../../reference/configuration/logs_xml.config.en.rst:267
 msgid ""
 "This setting overrides the value for :ts:cv:`proxy.config.log."
 "rolling_interval_sec` in the :file:`records.config` file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:273
+#: ../../reference/configuration/logs_xml.config.en.rst:279
 msgid "``<RollingOffsetHr = \"hour\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:266
+#: ../../reference/configuration/logs_xml.config.en.rst:272
 msgid ""
 "Optional Specifies an hour (from 0 to 23) at which rolling is guaranteed to "
 "align. Rolling might start before then, but a rolled file will be produced "
@@ -439,51 +427,51 @@ msgid ""
 "the :file:`records.config` file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:277
+#: ../../reference/configuration/logs_xml.config.en.rst:283
 msgid "``<RollingSizeMb = \"size_in_MB\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:276
+#: ../../reference/configuration/logs_xml.config.en.rst:282
 msgid "Optional The size at which log files are rolled."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:280
+#: ../../reference/configuration/logs_xml.config.en.rst:286
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:282
+#: ../../reference/configuration/logs_xml.config.en.rst:288
 msgid ""
 "The following is an example of a ``LogFormat`` specification that collects "
 "information using three common fields: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:290
+#: ../../reference/configuration/logs_xml.config.en.rst:296
 msgid ""
 "The following is an example of a ``LogFormat`` specification that uses "
 "aggregate operators: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:299
+#: ../../reference/configuration/logs_xml.config.en.rst:305
 msgid ""
 "The following is an example of a ``LogFilter`` that will cause only "
 "``REFRESH_HIT`` entries to be logged: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:310
+#: ../../reference/configuration/logs_xml.config.en.rst:316
 msgid ""
 "When specifying the field in the filter condition, you can omit the ``"
 "%<>``. This means that the filter below is equivalent to the example "
 "directly above: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:320
+#: ../../reference/configuration/logs_xml.config.en.rst:326
 msgid ""
 "The following is an example of a ``LogObject`` specification that creates a "
 "local log file for the minimal format defined earlier. The log filename "
 "will be ``minimal.log`` because this is an ASCII log file (the default).::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:330
+#: ../../reference/configuration/logs_xml.config.en.rst:336
 msgid ""
 "The following is an example of a ``LogObject`` specification that includes "
 "only HTTP requests served by hosts in the domain ``company.com`` or by the "
@@ -492,15 +480,33 @@ msgid ""
 "collation host ``209.131.52.129.`` ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:347
+#: ../../reference/configuration/logs_xml.config.en.rst:353
 msgid "WELF"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:349
+#: ../../reference/configuration/logs_xml.config.en.rst:355
 msgid ""
 "Traffic Server supports WELF (WebTrends Enhanced Log Format) so you can "
 "analyze Traffic Server log files with WebTrends reporting tools. A "
 "predefined ``<LogFormat>`` that is compatible with WELF is provided in the :"
 "file:`logs_xml.config` file (shown below). To create a WELF format log "
 "file, create a ``<LogObject>`` that uses this predefined format. ::"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:231
+msgid ""
+"``<CollationHosts = \"list_of_valid_hostnames:port|failover hosts\"/>``"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:221
+msgid ""
+"Optional A comma-separated list of collation servers (with pipe delimited "
+"failover servers) to which all log entries (for this object) are forwarded. "
+"Collation servers can be specified by name or IP address. Specify the "
+"collation port with a colon after the name. For example, in ``host1:5000|"
+"failhostA:5000|failhostB:6000, host2:6000`` logs would be sent to host1 and "
+"host2, with failhostA and failhostB acting as failover hosts for host1. "
+"When host1 disconnects, logs would be sent to failhostA. If failhostA "
+"disconnects, log entries would be sent to failhostB until host1 or "
+"failhostA comes back. Logs would also be sent to host2."
 msgstr ""

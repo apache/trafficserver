@@ -119,10 +119,6 @@ msgstr "``K`` キロバイト (1024 バイト)"
 msgid "``M`` Megabytes (1024^2 or 1,048,576 bytes)"
 msgstr "``M`` メガバイト (1024^2 または 1,048,576 バイト)"
 
-#: ../../reference/configuration/storage.config.en.rst:66
-msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes"
-msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
-
 #: ../../reference/configuration/storage.config.en.rst:67
 msgid "``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)"
 msgstr "``T`` テラバイト (1024^4 または 1,099,511,627,776 バイト)"
@@ -201,11 +197,11 @@ msgstr ""
 "できます。以下のルールはUbuntuをターゲットにされており、 ``/etc/udev/rules."
 "d/51-cache-disk.rules`` に保存されます::"
 
-#: ../../reference/configuration/storage.config.en.rst:123
+#: ../../reference/configuration/storage.config.en.rst:128
 msgid "FreeBSD Example"
 msgstr "FreeBSD の例"
 
-#: ../../reference/configuration/storage.config.en.rst:125
+#: ../../reference/configuration/storage.config.en.rst:130
 msgid ""
 "Starting with 5.1 FreeBSD dropped support for explicit raw devices. All "
 "devices on FreeBSD can be accessed raw now."
@@ -213,7 +209,7 @@ msgstr ""
 "5.1 FreeBSD から、明示的なローデバイスのサポートは終了しました。FreeBSDにお"
 "いて全デバイスは、現在、生でアクセス可能です。"
 
-#: ../../reference/configuration/storage.config.en.rst:128
+#: ../../reference/configuration/storage.config.en.rst:133
 msgid ""
 "The following example will use an entire raw disk in the FreeBSD operating "
 "system::"
@@ -221,7 +217,7 @@ msgstr ""
 "以下の例では、FreeBSD オペレーティングシステムでローディスク全体を使用しま"
 "す。::"
 
-#: ../../reference/configuration/storage.config.en.rst:134
+#: ../../reference/configuration/storage.config.en.rst:139
 msgid ""
 "In order to make sure :program:`traffic_server` will have access to this "
 "disk you can use :manpage:`devfs(8)` to persistently set the right "
@@ -230,3 +226,16 @@ msgstr ""
 ":program:`traffic_server` がこのディスクへアクセス可能なことを確実にするため"
 "に、:manpage:`devfs(8)` を使って永続的に適切なパーミッションを設定することが"
 "できます。以下のルールは、 :manpage:`devfs.conf(5)` に保存されます。 ::"
+
+#: ../../reference/configuration/storage.config.en.rst:66
+msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)"
+msgstr ""
+
+#: ../../reference/configuration/storage.config.en.rst:122
+msgid ""
+"In order to apply these settings, trigger a reload with :manpage:"
+"`udevadm(8)`:::"
+msgstr ""
+
+#~ msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes"
+#~ msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"

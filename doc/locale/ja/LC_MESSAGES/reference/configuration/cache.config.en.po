@@ -153,7 +153,7 @@ msgstr ""
 msgid "The following list shows possible actions and their allowed values."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:129
+#: ../../reference/configuration/cache.config.en.rst:128
 msgid "``action``"
 msgstr ""
 
@@ -190,65 +190,105 @@ msgid ""
 "content to be stored locally on every cluster node."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:141
+#: ../../reference/configuration/cache.config.en.rst:158
 msgid "``pin-in-cache``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:134
-msgid ""
-"The amount of time you want to keep the object(s) in the cache. The "
-"following time formats are allowed:"
-msgstr ""
-
-#: ../../reference/configuration/cache.config.en.rst:137
+#: ../../reference/configuration/cache.config.en.rst:154
 msgid "``d`` for days; for example: 2d"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:138
+#: ../../reference/configuration/cache.config.en.rst:155
 msgid "``h`` for hours; for example: 10h"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:139
+#: ../../reference/configuration/cache.config.en.rst:156
 msgid "``m`` for minutes; for example: 5m"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:140
+#: ../../reference/configuration/cache.config.en.rst:157
 msgid "``s`` for seconds; for example: 20s"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:141
+#: ../../reference/configuration/cache.config.en.rst:158
 msgid "mixed units; for example: 1h15m20s"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:147
+#: ../../reference/configuration/cache.config.en.rst:164
 msgid "``revalidate``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:146
-msgid ""
-"The amount of time object(s) are to be considered fresh. Use the same time "
-"formats as ``pin-in-cache``."
-msgstr ""
-
-#: ../../reference/configuration/cache.config.en.rst:154
+#: ../../reference/configuration/cache.config.en.rst:172
 msgid "``ttl-in-cache``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:152
-msgid ""
-"The amount of time object(s) are to be kept in the cache, regardless of "
-"Cache-Control response headers. Use the same time formats as pin-in-cache "
-"and revalidate ."
-msgstr ""
-
-#: ../../reference/configuration/cache.config.en.rst:157
+#: ../../reference/configuration/cache.config.en.rst:175
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:159
+#: ../../reference/configuration/cache.config.en.rst:177
 msgid ""
 "The following example configures Traffic Server to revalidate ``gif`` and "
 "``jpeg`` objects in the domain ``mydomain.com`` every 6 hours, and all "
 "other objects in ``mydomain.com`` every hour. The rules are applied in the "
 "order listed. ::"
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:138
+msgid "``cache-responses-to-cookies``"
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:133
+msgid ""
+"Change the style of caching with regard to cookies. This effectively "
+"overrides the configuration parameter :ref:`proxy.config.http.cache."
+"cache_responses_to_cookies` and uses the same values with the same "
+"semantics. The override happens only for requests that match."
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:143
+msgid ""
+"Preserves objects in cache, preventing them from being overwritten. Does "
+"not affect objects that are determined not to be cacheable. This setting "
+"can have performance issues, and  severely affect the cache. For instance, "
+"if the primary destination matches all objects, once the cache is full, no "
+"new objects could get written as nothing would be evicted.  Similarly, for "
+"each cache-miss, each object would incur extra checks to determine if the "
+"object it would replace could be overwritten."
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:151
+msgid ""
+"The value is the amount of time you want to keep the object(s) in the "
+"cache. The following time formats are allowed:"
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:163
+msgid ""
+"For objects that are in cache, overrides the the amount of time the "
+"object(s) are to be considered fresh. Use the same time formats as ``pin-in-"
+"cache``."
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:169
+msgid ""
+"Forces object(s) to become cached, as if they had a Cache-Control: max-age:"
+"<time> header. Can be overruled by requests with cookies. The value is the "
+"amount of time object(s) are to be kept in the cache, regardless of Cache-"
+"Control response headers. Use the same time formats as pin-in-cache and "
+"revalidate."
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:186
+msgid ""
+"Force a specific regex to be in cache between 7-11pm of the server's time "
+"for 26hours. ::"
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:190
+msgid "Prevent objects from being evicted from cache:"
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:192
+msgid "url_regex=example.com/game/.* pin-in-cache=1h"
 msgstr ""
