@@ -4957,7 +4957,6 @@ HttpSM::handle_post_failure()
   }
   ua_entry->in_tunnel = false;
   server_entry->in_tunnel = false;
-  tunnel.deallocate_buffers();
 
   // disable redirection in case we got a partial response and then EOS, because the buffer might not
   // have the full post and it's deallocating the post buffers here

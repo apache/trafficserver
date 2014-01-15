@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2497] Failed post results in tunnel buffers being returned to
+   freelist prematurely.
+   Reporter: Thomas Jackson <thjackso@linkedin.com>
+
   *) [TS-1668] Added HSTS configuration options to ATS
 
   *) [TS-2495] Reduce the size of HttpVCTableEntry.
