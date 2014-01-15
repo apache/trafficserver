@@ -2046,6 +2046,21 @@ SSL Termination
   entries in seconds. If it is ``0``, then the SSL library will use
   a default value, typically 300 seconds.
 
+.. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
+
+  This configuration specifies the max-age value that will be used
+  when adding the Strict-Transport-Security header.  The value is in seconds.
+  A value of 0 will set the max-age value to 0 and should remove the
+  hsts entry from the cleint.  A value of -1 will disable this feature and
+  not set the header.  This option is only used for HTTPS request and the
+  header will not be set on HTTP requests.
+
+.. ts:cv:: CONFIG proxy.config.ssl.hsts_include_subdomains INT 0
+
+  Enables (``1``) or disables (``0``) to add the includeSubdomain value
+  to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
+  will need to be set to a non -1 value for this value to be added.
+
 Client-Related Configuration
 ----------------------------
 
