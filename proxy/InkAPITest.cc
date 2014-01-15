@@ -7414,7 +7414,9 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.negative_revalidating_lifetime",
   "proxy.config.http.accept_encoding_filter_enabled",
   "proxy.config.ssl.hsts_max_age",
-  "proxy.config.ssl.hsts_include_subdomains"
+  "proxy.config.ssl.hsts_include_subdomains",
+  "proxy.config.http.cache.open_read_retry_time",
+  "proxy.config.http.cache.max_open_read_retries"
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atype ATS_UNUSED */, int *pstatus)
