@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,9 +17,9 @@ msgstr ""
 
 #: ../../sdk/troubleshooting-tips/debugging-memory-leaks.en.rst:21
 msgid ""
-"Memory leaks in a plugin can be detected using e.g. an MRTG graph related to"
-" memory - you can use memory dump information. Enable ``mem dump`` in "
-":file:`records.config` as follows:"
+"Memory leaks in a plugin can be detected using e.g. an MRTG graph related "
+"to memory - you can use memory dump information. Enable ``mem dump`` in :"
+"file:`records.config` as follows:"
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips/debugging-memory-leaks.en.rst:30

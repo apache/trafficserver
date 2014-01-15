@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -20,10 +20,10 @@ msgid ""
 "In the example below, suppose there is a cache hit and the cache returns a "
 "vconnection that enables you to read the document from cache. To do this, "
 "you need to prepare a buffer (``cache_bufp``) to hold the document; "
-"meanwhile, use ``TSVConnCachedObjectSizeGet`` to find out the actual size of"
-" the document (``content_length``). Then, issue ``TSVConnRead`` to read the "
-"document with the total data length required as ``content_length``. Assume "
-"the following data:"
+"meanwhile, use ``TSVConnCachedObjectSizeGet`` to find out the actual size "
+"of the document (``content_length``). Then, issue ``TSVConnRead`` to read "
+"the document with the total data length required as ``content_length``. "
+"Assume the following data:"
 msgstr ""
 
 #: ../../sdk/io-guide/guide-to-cache-api/example.en.rst:38

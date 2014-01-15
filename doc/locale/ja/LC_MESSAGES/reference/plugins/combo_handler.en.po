@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -43,8 +43,8 @@ msgstr ""
 
 #: ../../reference/plugins/combo_handler.en.rst:40
 msgid ""
-"The arguments in the ```plugin.config`` <../../configuration-"
-"files/plugin.config>`_ line in order represent"
+"The arguments in the ```plugin.config`` <../../configuration-files/plugin."
+"config>`_ line in order represent"
 msgstr ""
 
 #: ../../reference/plugins/combo_handler.en.rst:44
@@ -65,8 +65,8 @@ msgstr ""
 
 #: ../../reference/plugins/combo_handler.en.rst:53
 msgid ""
-"Also, just like the original combohandler, this plugin generates URLs of the"
-" form ``http://localhost/<dir>/<file-path>``. ``<dir>`` here defaults to "
+"Also, just like the original combohandler, this plugin generates URLs of "
+"the form ``http://localhost/<dir>/<file-path>``. ``<dir>`` here defaults to "
 "``l`` unless specified by the file path in the query parameter using a "
 "colon. For example::"
 msgstr ""
@@ -83,8 +83,8 @@ msgstr ""
 
 #: ../../reference/plugins/combo_handler.en.rst:69
 msgid ""
-"The plugin also supports a prefix parameter. Common parts of successive file"
-" paths can be extracted and specified separately using a 'p' query "
+"The plugin also supports a prefix parameter. Common parts of successive "
+"file paths can be extracted and specified separately using a 'p' query "
 "parameter. Successive file path parameters are appended to this prefix to "
 "create complete file paths. The prefix will remain active until changed or "
 "cleared (set to an empty string). For example, the query ::"

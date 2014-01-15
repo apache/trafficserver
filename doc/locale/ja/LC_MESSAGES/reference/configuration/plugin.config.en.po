@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -27,10 +27,10 @@ msgstr ""
 
 #: ../../reference/configuration/plugin.config.en.rst:41
 msgid ""
-"Each configuration line consists of a path to an ``.so`` file. This path can"
-" either be absolute, or relative to the plugin-directory (usually "
-"``/usr/local/libexec/trafficserver``). Such a line tells Traffic Server to "
-"load said plugin."
+"Each configuration line consists of a path to an ``.so`` file. This path "
+"can either be absolute, or relative to the plugin-directory (usually ``/usr/"
+"local/libexec/trafficserver``). Such a line tells Traffic Server to load "
+"said plugin."
 msgstr ""
 
 #: ../../reference/configuration/plugin.config.en.rst:46

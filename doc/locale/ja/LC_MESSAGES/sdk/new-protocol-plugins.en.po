@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -19,8 +19,8 @@ msgstr ""
 msgid ""
 "The new protocol APIs enable you to extend Traffic Server to be a web proxy "
 "for any protocol. This chapter describes new protocol APIs and the plugins "
-"that support new protocols. It also provides a detailed review of code for a"
-" sample Protocol plugin that supports a very simple artificial HTTP-like "
+"that support new protocols. It also provides a detailed review of code for "
+"a sample Protocol plugin that supports a very simple artificial HTTP-like "
 "protocol."
 msgstr ""
 
@@ -31,8 +31,8 @@ msgstr ""
 #: ../../sdk/new-protocol-plugins.en.rst:35
 msgid ""
 "The sample protocol enables a client to ask a server for a file. Clients "
-"send requests to a specific Traffic Server port (specified in "
-":file:`plugin.config`); each request has the following structure::"
+"send requests to a specific Traffic Server port (specified in :file:`plugin."
+"config`); each request has the following structure::"
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:41
@@ -40,8 +40,8 @@ msgid ""
 "Using the Protocol plugin, Traffic Server can accept these requests, parse "
 "them, and act as a proxy cache (i.e., request the file from the origin "
 "server on the client's behalf and store copies of response messages in "
-"cache). The Protocol plugin is a state machine that flows through the states"
-" illustrated in the `Sample Protocol State Diagram "
+"cache). The Protocol plugin is a state machine that flows through the "
+"states illustrated in the `Sample Protocol State Diagram "
 "<#SampleProtocolStDiag>`_. This figure illustrates the steps that Traffic "
 "Server and the Protocol plugin go through in order to support the sample "
 "protocol."
@@ -53,8 +53,8 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:52
 msgid ""
-"Listen for and accept client connections (on the accept port specified in "
-":file:`plugin.config`)"
+"Listen for and accept client connections (on the accept port specified in :"
+"file:`plugin.config`)"
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:55
@@ -104,10 +104,10 @@ msgstr ""
 #: ../../sdk/new-protocol-plugins.en.rst:81
 msgid ""
 "To see how the Protocol plugin works, you need to understand some broader "
-"concepts. This section assumes you're familiar with the concepts of "
-":term:`continuation`, Traffic Server's **asynchronous event model**, and "
-"basic Traffic Server **plugin structure**. If you are not familiar with "
-"these concepts, then reference `Getting Started <../getting-"
+"concepts. This section assumes you're familiar with the concepts of :term:"
+"`continuation`, Traffic Server's **asynchronous event model**, and basic "
+"Traffic Server **plugin structure**. If you are not familiar with these "
+"concepts, then reference `Getting Started <../getting-"
 "started#GettingStarted>`_ and `How to Create Traffic Server Plugins <../how-"
 "to-create-trafficserver-plugins>`_"
 msgstr ""
@@ -127,9 +127,9 @@ msgid ""
 "transaction (where a :term:`transaction` consists of a client request and "
 "Traffic Server's response). Each transaction state machine lives until the "
 "transaction completes; then it is destroyed. If the client's request for "
-"content is a cache miss, then a transaction state machine might need to open"
-" a connection to the origin server. This is illustrated in the `Protocol "
-"Plugin Overview <#ProtocolPluginOverview>`__ diagram below."
+"content is a cache miss, then a transaction state machine might need to "
+"open a connection to the origin server. This is illustrated in the "
+"`Protocol Plugin Overview <#ProtocolPluginOverview>`__ diagram below."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:106
@@ -175,8 +175,8 @@ msgstr ""
 msgid ""
 "Implementing the rest of the Protocol plugin requires that you understand "
 "the flow of events during the course of a transaction. Unlike HTTP "
-"transaction plugins, this plugin must read data from network connections and"
-" then read/write data to the Traffic Server cache. This means that its "
+"transaction plugins, this plugin must read data from network connections "
+"and then read/write data to the Traffic Server cache. This means that its "
 "continuations do not receive HTTP state machine events; they receive events "
 "from Traffic Server's processor subsystems. For example: the accept state "
 "machine is activated by an ``TS_EVENT_NET_ACCEPT`` event from Traffic "
@@ -226,12 +226,12 @@ msgid ""
 "Notice that this flow of events is independent of the Protocol plugin's "
 "design (i.e., whether you build **accept** or **transaction** state "
 "machines). Any plugin that supports network connections uses the net "
-"vconnection interfaces (``TSNetAccept``, ``TSNetConnect``) and thus receives"
-" events from the Net Processor. Any plugin that performs cache lookups or "
-"cache writes uses ``TSCacheRead``, ``TSCacheWrite``, ``TSVConnRead``, and "
-"``TSVConnWrite`` and thus receives events from the Cache Processor and "
-"Traffic Server event system. Similarly, any plugin that does DNS lookups "
-"receives events from the Host Database Processor."
+"vconnection interfaces (``TSNetAccept``, ``TSNetConnect``) and thus "
+"receives events from the Net Processor. Any plugin that performs cache "
+"lookups or cache writes uses ``TSCacheRead``, ``TSCacheWrite``, "
+"``TSVConnRead``, and ``TSVConnWrite`` and thus receives events from the "
+"Cache Processor and Traffic Server event system. Similarly, any plugin that "
+"does DNS lookups receives events from the Host Database Processor."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:182
@@ -240,8 +240,8 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:184
 msgid ""
-"**Transaction state machines** (**TSMs**) in the Protocol plugin must do the"
-" following:"
+"**Transaction state machines** (**TSMs**) in the Protocol plugin must do "
+"the following:"
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:187
@@ -266,8 +266,8 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:197
 msgid ""
-"Create a data structure for transactions that contains all of the state data"
-" you need to keep track of. In the Protocol plugin this is a struct, "
+"Create a data structure for transactions that contains all of the state "
+"data you need to keep track of. In the Protocol plugin this is a struct, "
 "``Txn_SM``."
 msgstr ""
 
@@ -289,8 +289,8 @@ msgstr ""
 msgid ""
 "Write the handler for the TSM. Its job is to receive events, examine the "
 "current state, and execute the appropriate state handler function. In the "
-"Protocol plugin, the handler is ``main_handler``. ``main_handler`` calls the"
-" state handler functions to handle each state."
+"Protocol plugin, the handler is ``main_handler``. ``main_handler`` calls "
+"the state handler functions to handle each state."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:215
@@ -308,8 +308,8 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:222
 msgid ""
-"**``main_handler``** examines the state of the transaction-in particular, it"
-" examines the current handler."
+"**``main_handler``** examines the state of the transaction-in particular, "
+"it examines the current handler."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:225
@@ -333,9 +333,10 @@ msgstr ""
 #: ../../sdk/new-protocol-plugins.en.rst:238
 msgid ""
 "**``state2_handler``** arranges the next callback of the TSM. Typically, it "
-"gives Traffic Server additional work to do (such as writing a file to cache)"
-" so that it can progress to the next state. The TSM (**``main_handler``**) "
-"then waits for the next event to arrive from Traffic Server."
+"gives Traffic Server additional work to do (such as writing a file to "
+"cache) so that it can progress to the next state. The TSM "
+"(**``main_handler``**) then waits for the next event to arrive from Traffic "
+"Server."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:244
@@ -390,14 +391,14 @@ msgstr ""
 #: ../../sdk/new-protocol-plugins.en.rst:274
 msgid ""
 "The **``init``** function creates the accept state machine using "
-"**``AcceptCreate``**. The code for **``AcceptCreate``** is in the "
-"``Accept.c`` file."
+"**``AcceptCreate``**. The code for **``AcceptCreate``** is in the ``Accept."
+"c`` file."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:278
 msgid ""
-"The accept state machine, like the transaction state machine, keeps track of"
-" its state with a data structure. This data structure, **``Accept``**, is "
+"The accept state machine, like the transaction state machine, keeps track "
+"of its state with a data structure. This data structure, **``Accept``**, is "
 "defined in the ``Accept.h`` file. State data in **``AcceptCreate``** is "
 "associated with the new accept state machine via **``TSContDataSet``**."
 msgstr ""
@@ -413,17 +414,17 @@ msgid ""
 "The handler for the accept state machine is **``accept_event``** in the "
 "``Accept.c`` file. When Traffic Server's Net Processor sends "
 "**``TS_EVENT_NET_ACCEPT``** to the accept state machine, "
-"**``accept_event``** creates a transaction state machine (**``txn_sm``**) by"
-" calling **``TxnSMCreate``**. Notice that **``accept_event``** creates a "
+"**``accept_event``** creates a transaction state machine (**``txn_sm``**) "
+"by calling **``TxnSMCreate``**. Notice that **``accept_event``** creates a "
 "mutex for the transaction state machine, since each transaction state "
 "machine has its own mutex."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:296
 msgid ""
-"The **``TxnSMCreate``** function is in the ``TxnSM.c`` file. The first thing"
-" it does is initialize the transaction's data, which is of type ``TxnSM`` "
-"(as defined in ``TxnSM.h``). Notice that the current handler "
+"The **``TxnSMCreate``** function is in the ``TxnSM.c`` file. The first "
+"thing it does is initialize the transaction's data, which is of type "
+"``TxnSM`` (as defined in ``TxnSM.h``). Notice that the current handler "
 "(**``q_current_handler``**) is set to **``state_start``**."
 msgstr ""
 
@@ -436,9 +437,9 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:306
 msgid ""
-"When **``accept_event``** receives **``TS_EVENT_NET_ACCEPT``**, it calls the"
-" transaction state machine ( **``TSContCall (txn_sm, 0, NULL);``** ). The "
-"event passed to **``main_handler``** is ``0`` (**``TS_EVENT_NONE``**)."
+"When **``accept_event``** receives **``TS_EVENT_NET_ACCEPT``**, it calls "
+"the transaction state machine ( **``TSContCall (txn_sm, 0, NULL);``** ). "
+"The event passed to **``main_handler``** is ``0`` (**``TS_EVENT_NONE``**)."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:311
@@ -456,9 +457,9 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:319
 msgid ""
-"The **``state_start``** handler function (in the ``TxnSM.c`` file) is handed"
-" an event (at this stage, the event is **``TS_EVENT_NET_ACCEPT``**) and a "
-"client vconnection. **``state_start``** checks to see if this client "
+"The **``state_start``** handler function (in the ``TxnSM.c`` file) is "
+"handed an event (at this stage, the event is **``TS_EVENT_NET_ACCEPT``**) "
+"and a client vconnection. **``state_start``** checks to see if this client "
 "vconnection is closed; if it is not, then **``state_start``** attempts to "
 "read data from the client vconnection into an **``TSIOBuffer``** "
 "(**``state_start``** is handling the event it receives)."
@@ -473,9 +474,9 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:331
 msgid ""
-"**``state_start``** initiates a read of the client vconnection (arranges for"
-" Traffic Server to send **``TS_EVENT_VCONN_READ_READY``** events to the TSM)"
-" by calling **``TSVConnRead``**."
+"**``state_start``** initiates a read of the client vconnection (arranges "
+"for Traffic Server to send **``TS_EVENT_VCONN_READ_READY``** events to the "
+"TSM) by calling **``TSVConnRead``**."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:336
@@ -504,8 +505,8 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:350
 msgid ""
-"**``state_read_request_from_client``** updates the current state to the next"
-" state, **``state_handle_cache_lookup``** ."
+"**``state_read_request_from_client``** updates the current state to the "
+"next state, **``state_handle_cache_lookup``** ."
 msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:353
@@ -517,7 +518,8 @@ msgstr ""
 
 #: ../../sdk/new-protocol-plugins.en.rst:357
 msgid ""
-"When the **``TSCacheRead``** sends the TSM either **``TS_EVENT_OPEN_READ``**"
-" (a cache hit) or **``TS_EVENT_OPEN_READ_FAILED``** (a cache miss), "
-"**``main_handler``** calls **``state_handle_cache_lookup``**."
+"When the **``TSCacheRead``** sends the TSM either "
+"**``TS_EVENT_OPEN_READ``** (a cache hit) or "
+"**``TS_EVENT_OPEN_READ_FAILED``** (a cache miss), **``main_handler``** "
+"calls **``state_handle_cache_lookup``**."
 msgstr ""

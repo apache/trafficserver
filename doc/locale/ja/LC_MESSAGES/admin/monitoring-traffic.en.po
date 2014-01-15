@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -41,15 +41,15 @@ msgstr ""
 #: ../../admin/monitoring-traffic.en.rst:38
 msgid ""
 "The Traffic Line command-line interface provides an alternative method of "
-"viewing Traffic Server performance and network traffic information; refer to"
-" `Viewing Statistics from Traffic Line`_."
+"viewing Traffic Server performance and network traffic information; refer "
+"to `Viewing Statistics from Traffic Line`_."
 msgstr ""
 
 #: ../../admin/monitoring-traffic.en.rst:41
 msgid ""
 "The Traffic Shell command-line tool provides yet another alternative method "
-"of viewing Traffic Server performance and network traffic information; refer"
-" to `Starting Traffic Shell <../getting-started#StartTrafficShell>`_."
+"of viewing Traffic Server performance and network traffic information; "
+"refer to `Starting Traffic Shell <../getting-started#StartTrafficShell>`_."
 msgstr ""
 
 #: ../../admin/monitoring-traffic.en.rst:48
@@ -98,8 +98,8 @@ msgid ""
 "Alarm messages are built into Traffic Server - you cannot change them. "
 "However, you can write a script file to execute certain actions when an "
 "alarm is signaled. Traffic Server provides a sample script file named "
-"``example_alarm_bin.sh`` in the ``bin`` directory; simply modify the file to"
-" suit your needs."
+"``example_alarm_bin.sh`` in the ``bin`` directory; simply modify the file "
+"to suit your needs."
 msgstr ""
 
 #: ../../admin/monitoring-traffic.en.rst:75
@@ -108,8 +108,8 @@ msgstr ""
 
 #: ../../admin/monitoring-traffic.en.rst:77
 msgid ""
-"You can use the Traffic Line command-line interface to view statistics about"
-" Traffic Server performance and web traffic. In addition to viewing "
+"You can use the Traffic Line command-line interface to view statistics "
+"about Traffic Server performance and web traffic. In addition to viewing "
 "statistics, you can also configure, stop, and restart the Traffic Server "
 "system. For additional information, refer to :ref:`configure-using-traffic-"
 "line` and :ref:`traffic-line-commands`. You can view specific information "
@@ -137,6 +137,6 @@ msgstr ""
 #: ../../admin/monitoring-traffic.en.rst:99
 msgid ""
 "If the Traffic Server ``bin`` directory is not in your path, then prepend "
-"the Traffic Line command with ``./`` (for example: :option:`traffic_line -r`"
-" ``variable``)."
+"the Traffic Line command with ``./`` (for example: :option:`traffic_line -"
+"r` ``variable``)."
 msgstr ""

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -18,16 +18,17 @@ msgstr ""
 #: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/duplicate-mime-fields-are-not-coalesced.en.rst:22
 msgid ""
 "MIME headers can contain more than one MIME field with the same name. "
-"Earlier versions of Traffic Server joined multiple fields with the same name"
-" into one field with composite values. This behavior came at a performance "
-"cost and caused interoperability problems with older clients and servers. "
-"Therefore, this version of Traffic Server does not coalesce duplicate "
-"fields."
+"Earlier versions of Traffic Server joined multiple fields with the same "
+"name into one field with composite values. This behavior came at a "
+"performance cost and caused interoperability problems with older clients "
+"and servers. Therefore, this version of Traffic Server does not coalesce "
+"duplicate fields."
 msgstr ""
 
 #: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/duplicate-mime-fields-are-not-coalesced.en.rst:29
 msgid ""
 "Properly-behaving plugins should check for the presence of duplicate fields "
 "and then iterate over the duplicate fields via :ref:``TSMimeHdrFieldNextDup "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af2d776615afe959ed7c3639830a7061f>``."
+"<http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#af2d776615afe959ed7c3639830a7061f>``."
 msgstr ""

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -30,8 +30,8 @@ msgstr ""
 
 #: ../../reference/commands/traffic_logcat.en.rst:33
 msgid ""
-"To analyse a binary log file using standard tools, you must first convert it"
-" to ASCII. :program:`traffic_logcat` does exactly that."
+"To analyse a binary log file using standard tools, you must first convert "
+"it to ASCII. :program:`traffic_logcat` does exactly that."
 msgstr ""
 
 #: ../../reference/commands/traffic_logcat.en.rst:37
@@ -85,21 +85,21 @@ msgstr ""
 
 #: ../../reference/commands/traffic_logcat.en.rst:88
 msgid ""
-"Use only one of the following options at any given time: ``-S``, ``-C``, "
-"``-E``, or ``-2``."
+"Use only one of the following options at any given time: ``-S``, ``-C``, ``-"
+"E``, or ``-2``."
 msgstr ""
 
 #: ../../reference/commands/traffic_logcat.en.rst:90
 msgid ""
 "If no input files are specified, then :program:`traffic_logcat` reads from "
-"the standard input (``stdin``). If you do not specify an output file, then "
-":program:`traffic_logcat` writes to the standard output (``stdout``)."
+"the standard input (``stdin``). If you do not specify an output file, then :"
+"program:`traffic_logcat` writes to the standard output (``stdout``)."
 msgstr ""
 
 #: ../../reference/commands/traffic_logcat.en.rst:94
 msgid ""
-"For example, to convert a binary log file to an ASCII file, you can use the "
-":program:`traffic_logcat` command with either of the following options "
+"For example, to convert a binary log file to an ASCII file, you can use "
+"the :program:`traffic_logcat` command with either of the following options "
 "below::"
 msgstr ""
 

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -33,8 +33,8 @@ msgid ""
 "characters that indicates the Traffic Server release version. This string "
 "must not be modified."
 msgstr ""
-":func:`TSTrafficServerVersionGet` は Traffic Server のリリースバージョンを"
-"示す文字列へのポインターを返します。この文字列は変更してはいけません。"
+":func:`TSTrafficServerVersionGet` は Traffic Server のリリースバージョンを示"
+"す文字列へのポインターを返します。この文字列は変更してはいけません。"
 
 #: ../../reference/api/TSTrafficServerVersionGet.en.rst:40
 msgid "The other APIs return an integer version number."

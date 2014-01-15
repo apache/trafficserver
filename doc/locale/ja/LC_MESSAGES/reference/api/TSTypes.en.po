@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -38,8 +38,8 @@ msgid ""
 "used more widely. Those are described on this page."
 msgstr ""
 "Apache Traffic Server API は多数の型を提供します。それらの多くは特定の API "
-"関数や関数グループに固有のものですが、それ以外はより広範囲で使用されます。"
-"それらはこのページで解説されます。"
+"関数や関数グループに固有のものですが、それ以外はより広範囲で使用されます。そ"
+"れらはこのページで解説されます。"
 
 #: ../../reference/api/TSTypes.en.rst:36
 msgid "An opaque type that represents a Traffic Server :term:`continuation`."
@@ -66,15 +66,13 @@ msgstr "ナノ秒で計られた 64 ビットの時間値。"
 #: ../../reference/api/TSTypes.en.rst:54
 msgid ""
 "An opaque type that represents a Traffic Server HTTP :term:`transaction`."
-msgstr ""
-"Traffic Server HTTP :term:`transaction` を表現する不明瞭な型。"
+msgstr "Traffic Server HTTP :term:`transaction` を表現する不明瞭な型。"
 
 #: ../../reference/api/TSTypes.en.rst:58
 msgid ""
 "An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-"
 "add>`."
-msgstr ""
-":ref:`life cycle hook <ts-lifecycle-hook-add>` を識別する列挙型。"
+msgstr ":ref:`life cycle hook <ts-lifecycle-hook-add>` を識別する列挙型。"
 
 #: ../../reference/api/TSTypes.en.rst:62
 msgid ""
@@ -82,28 +80,27 @@ msgid ""
 "means the call was successful. Any other value indicates a failure and is "
 "specific to the API call."
 msgstr ""
-"API 呼び出しの結果。:const:`TS_SUCCESS` は呼び出しの成功を意味します。その他の"
-"値は失敗を意味し、API 呼び出しに固有のものです。"
+"API 呼び出しの結果。:const:`TS_SUCCESS` は呼び出しの成功を意味します。その他"
+"の値は失敗を意味し、API 呼び出しに固有のものです。"
 
 #: ../../reference/api/TSTypes.en.rst:67
 msgid ""
 "An enumeration that specifies the type of a value in an internal data "
 "structure that is accessible via the API."
-msgstr ""
-"API からアクセス可能な内部データ構造の値の型を表現する列挙型。"
+msgstr "API からアクセス可能な内部データ構造の値の型を表現する列挙型。"
 
 #: ../../reference/api/TSTypes.en.rst:71
 msgid ""
-"The type used internally for an integer. This corresponds to the value "
-":const:`TS_RECORDDATATYPE_INT` for :type:`TSRecordDataType`."
+"The type used internally for an integer. This corresponds to the value :"
+"const:`TS_RECORDDATATYPE_INT` for :type:`TSRecordDataType`."
 msgstr ""
-"内部で整数として使われる型。これは :type:`TSRecordDataType` の "
-":const:`TS_RECORDDATATYPE_INT` に相当します。"
+"内部で整数として使われる型。これは :type:`TSRecordDataType` の :const:"
+"`TS_RECORDDATATYPE_INT` に相当します。"
 
 #: ../../reference/api/TSTypes.en.rst:76
 msgid ""
-"The type used internally for a floating point value. This corresponds to the"
-" value :const:`TS_RECORDDATATYPE_FLOAT` for :type:`TSRecordDataType`."
+"The type used internally for a floating point value. This corresponds to "
+"the value :const:`TS_RECORDDATATYPE_FLOAT` for :type:`TSRecordDataType`."
 msgstr ""
-"内部で浮動小数点の値として使われる型。これは :type:`TSRecordDataType` の "
-":const:`TS_RECORDDATATYPE_FLOAT` に相当します。"
+"内部で浮動小数点の値として使われる型。これは :type:`TSRecordDataType` の :"
+"const:`TS_RECORDDATATYPE_FLOAT` に相当します。"

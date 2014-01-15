@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -20,8 +20,8 @@ msgid ""
 "This section provides a step-by-step description of what the null transform "
 "plugin does, along with sections of code that apply. For context, you can "
 "find each code snippet in the complete source code. Some of the error "
-"checking details are left out - to give the description a step-by-step flow,"
-" only the highlights of the transform are included."
+"checking details are left out - to give the description a step-by-step "
+"flow, only the highlights of the transform are included."
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:28
@@ -44,13 +44,13 @@ msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:56
 msgid ""
-"The default behavior for transformations is to cache the transformed content"
-" (you can also tell Traffic Server to cache untransformed content, if you "
-"want). Therefore, only responses received directly from an origin server "
-"need to be transformed. Objects served from cache are already transformed. "
-"To determine whether the response is from the origin server, the routine "
-"``transformable`` checks the response header for the \"200 OK\" server "
-"response."
+"The default behavior for transformations is to cache the transformed "
+"content (you can also tell Traffic Server to cache untransformed content, "
+"if you want). Therefore, only responses received directly from an origin "
+"server need to be transformed. Objects served from cache are already "
+"transformed. To determine whether the response is from the origin server, "
+"the routine ``transformable`` checks the response header for the \"200 OK\" "
+"server response."
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:82
@@ -85,8 +85,8 @@ msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:119
 msgid ""
-"Initiate a write to the output vconnection of the specified number of bytes."
-" When the write is initiated, the transformation expects to receive "
+"Initiate a write to the output vconnection of the specified number of "
+"bytes. When the write is initiated, the transformation expects to receive "
 "``WRITE_READY``, ``WRITE_COMPLETE``, or ``ERROR`` events from the output "
 "vconnection. See the ``handle_transform`` function for the following code "
 "fragment:"
@@ -107,8 +107,8 @@ msgstr ""
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:147
 msgid ""
 "Modify the input VIO to tell it how much data has been read (increase the "
-"value of ``ndone``). See the ``handle_transform`` function for the following"
-" code fragment:"
+"value of ``ndone``). See the ``handle_transform`` function for the "
+"following code fragment:"
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:156
@@ -121,10 +121,10 @@ msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:173
 msgid ""
-"The process of passing data through the transformation is illustrated in the"
-" following diagram. The downstream vconnections send ``WRITE_READY`` events "
-"when they need more data; when data is available, the upstream vconnections "
-"reenable the downstream vconnections. In this instance, the "
+"The process of passing data through the transformation is illustrated in "
+"the following diagram. The downstream vconnections send ``WRITE_READY`` "
+"events when they need more data; when data is available, the upstream "
+"vconnections reenable the downstream vconnections. In this instance, the "
 "``TSVIOReenable`` function sends ``TS_EVENT_IMMEDIATE``."
 msgstr ""
 
@@ -142,24 +142,24 @@ msgstr ""
 msgid ""
 "If the ``handle_transform`` function finds there is no more data to read, "
 "then it sets ``nbytes`` to ``ndone`` on the output (downstream) VIO and "
-"wakes up the output vconnection with a reenable. It then triggers the end of"
-" the write operation from the upstream vconnection by sending the upstream "
-"vconnection a ``WRITE_COMPLETE`` event."
+"wakes up the output vconnection with a reenable. It then triggers the end "
+"of the write operation from the upstream vconnection by sending the "
+"upstream vconnection a ``WRITE_COMPLETE`` event."
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:203
 msgid ""
-"When the upstream vconnection receives the ``WRITE_COMPLETE`` event, it will"
-" probably shut down the write operation."
+"When the upstream vconnection receives the ``WRITE_COMPLETE`` event, it "
+"will probably shut down the write operation."
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:206
 msgid ""
 "Similarly, when the downstream vconnection has consumed all of the data, it "
 "sends the transformation a ``WRITE_COMPLETE`` event. The transformation "
-"handles this event with a shut down (the transformation shuts down the write"
-" operation to the downstream vconnection). See the ``null_plugin`` function "
-"for the following code fragment:"
+"handles this event with a shut down (the transformation shuts down the "
+"write operation to the downstream vconnection). See the ``null_plugin`` "
+"function for the following code fragment:"
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en.rst:220

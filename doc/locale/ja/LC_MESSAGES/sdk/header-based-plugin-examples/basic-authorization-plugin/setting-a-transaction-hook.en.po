@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -37,17 +37,18 @@ msgid ""
 "``SEND_RESPONSE_HDR_HOOK`` to the transaction being processed. This means "
 "that Traffic Server will call the plugin back when sending the client "
 "response. ``handle_dns`` reenables the transaction with "
-"``TS_EVENT_HTTP_ERROR``, which means that the plugin wants Traffic Server to"
-" terminate the transaction."
+"``TS_EVENT_HTTP_ERROR``, which means that the plugin wants Traffic Server "
+"to terminate the transaction."
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:45
 msgid ""
-"When Traffic Server terminates the transaction, it sends the client an error"
-" message. Because of the ``SEND_RESPONSE_HDR_HOOK``, Traffic Server calls "
-"the plugin back. The ``auth-plugin`` routine calls ``handle_response`` to "
-"send the client a ``407`` status code. When the client resends the request "
-"with the ``Proxy-Authorization`` field, a new transaction begins."
+"When Traffic Server terminates the transaction, it sends the client an "
+"error message. Because of the ``SEND_RESPONSE_HDR_HOOK``, Traffic Server "
+"calls the plugin back. The ``auth-plugin`` routine calls "
+"``handle_response`` to send the client a ``407`` status code. When the "
+"client resends the request with the ``Proxy-Authorization`` field, a new "
+"transaction begins."
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:52

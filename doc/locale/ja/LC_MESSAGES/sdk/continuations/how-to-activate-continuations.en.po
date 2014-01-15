@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -35,7 +35,7 @@ msgstr ""
 #: ../../sdk/continuations/how-to-activate-continuations.en.rst:30
 msgid ""
 "A Traffic Server IO processor (such as a cache processor or net processor) "
-"is letting a continuation know there is data (cache or network) available to"
-" read or write. These callbacks are a result of using functions such "
+"is letting a continuation know there is data (cache or network) available "
+"to read or write. These callbacks are a result of using functions such "
 "``TSVConnRead``/``Write`` or ``TSCacheRead``/``Write``"
 msgstr ""

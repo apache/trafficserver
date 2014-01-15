@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -33,16 +33,16 @@ msgstr ""
 #: ../../reference/configuration/parent.config.en.rst:31
 msgid ""
 "Traffic Server uses the :file:`parent.config` file only when the parent "
-"caching option is enabled (refer to :ref:`configuring-traffic-server-to-"
-"use-a-parent-cache`)."
+"caching option is enabled (refer to :ref:`configuring-traffic-server-to-use-"
+"a-parent-cache`)."
 msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:34
 msgid ""
-"After you modify the :file:`parent.config` file, run the "
-":option:`traffic_line -x` command to apply your changes. When you apply the "
-"changes to one node in a cluster, Traffic Server automatically applies the "
-"changes to all other nodes in the cluster."
+"After you modify the :file:`parent.config` file, run the :option:"
+"`traffic_line -x` command to apply your changes. When you apply the changes "
+"to one node in a cluster, Traffic Server automatically applies the changes "
+"to all other nodes in the cluster."
 msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:40
@@ -57,8 +57,8 @@ msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:47
 msgid ""
-"The following list shows the possible primary destinations and their allowed"
-" values."
+"The following list shows the possible primary destinations and their "
+"allowed values."
 msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:53
@@ -96,9 +96,9 @@ msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:70
 msgid ""
-"The secondary specifiers are optional in the :file:`parent.config` file. The"
-" following list shows the possible secondary specifiers and their allowed "
-"values."
+"The secondary specifiers are optional in the :file:`parent.config` file. "
+"The following list shows the possible secondary specifiers and their "
+"allowed values."
 msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:77
@@ -187,9 +187,9 @@ msgstr ""
 #: ../../reference/configuration/parent.config.en.rst:120
 msgid ""
 "An ordered list of parent servers. If the request cannot be handled by the "
-"last parent server in the list, then it will be routed to the origin server."
-" You can specify either a hostname or an IP address, but; you must specify "
-"the port number."
+"last parent server in the list, then it will be routed to the origin "
+"server. You can specify either a hostname or an IP address, but; you must "
+"specify the port number."
 msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:135
@@ -238,10 +238,10 @@ msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:149
 msgid ""
-"The following rule configures a parent cache hierarchy consisting of Traffic"
-" Server (which is the child) and two parents, ``p1.x.com`` and ``p2.x.com``."
-" Traffic Server forwards the requests it cannot serve to the parent servers "
-"``p1.x.com`` and ``p2.x.com`` in a round-robin fashion::"
+"The following rule configures a parent cache hierarchy consisting of "
+"Traffic Server (which is the child) and two parents, ``p1.x.com`` and ``p2."
+"x.com``. Traffic Server forwards the requests it cannot serve to the parent "
+"servers ``p1.x.com`` and ``p2.x.com`` in a round-robin fashion::"
 msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:158

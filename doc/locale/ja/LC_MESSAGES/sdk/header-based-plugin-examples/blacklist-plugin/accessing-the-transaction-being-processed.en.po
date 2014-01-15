@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -40,9 +40,9 @@ msgstr ""
 msgid ""
 "The key here is that if the event is an HTTP transaction event, then the "
 "data passed to the continuation's handler is of type ``TSHttpTxn`` (a data "
-"type that represents HTTP transactions). Your plugin can then do things with"
-" the transaction. Here's how it looks in the code for the Blacklist plugin's"
-" handler:"
+"type that represents HTTP transactions). Your plugin can then do things "
+"with the transaction. Here's how it looks in the code for the Blacklist "
+"plugin's handler:"
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin/accessing-the-transaction-being-processed.en.rst:58

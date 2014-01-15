@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -25,8 +25,8 @@ msgstr ""
 #: ../../reference/configuration/update.config.en.rst:28
 msgid ""
 "A scheduled update performs a local HTTP ``GET`` on the objects at the "
-"specific time or interval. You can control the following parameters for each"
-" specified object:"
+"specific time or interval. You can control the following parameters for "
+"each specified object:"
 msgstr ""
 
 #: ../../reference/configuration/update.config.en.rst:32
@@ -47,10 +47,10 @@ msgstr ""
 
 #: ../../reference/configuration/update.config.en.rst:37
 msgid ""
-"After you modify the :file:`update.config` file, run the "
-":option:`traffic_line -x` command to apply changes. When you apply changes "
-"to one node in a cluster, Traffic Server automatically applies the changes "
-"to all other nodes in the cluster."
+"After you modify the :file:`update.config` file, run the :option:"
+"`traffic_line -x` command to apply changes. When you apply changes to one "
+"node in a cluster, Traffic Server automatically applies the changes to all "
+"other nodes in the cluster."
 msgstr ""
 
 #: ../../reference/configuration/update.config.en.rst:44
@@ -127,8 +127,8 @@ msgstr ""
 msgid ""
 "Scheduled update is designed to operate on URL sets consisting of hundreds "
 "of input URLs (expanded to thousands when recursive URLs are included); it "
-"is *not* intended to operate on extremely large URL sets, such as those used"
-" by Internet crawlers."
+"is *not* intended to operate on extremely large URL sets, such as those "
+"used by Internet crawlers."
 msgstr ""
 
 #: ../../reference/configuration/update.config.en.rst:71
@@ -158,9 +158,9 @@ msgstr ""
 
 #: ../../reference/configuration/update.config.en.rst:87
 msgid ""
-"Optional. A list of headers, separated by semicolons, passed in each ``GET``"
-" request. You can define any request header that conforms to the HTTP "
-"specification; the default is no request header."
+"Optional. A list of headers, separated by semicolons, passed in each "
+"``GET`` request. You can define any request header that conforms to the "
+"HTTP specification; the default is no request header."
 msgstr ""
 
 #: ../../reference/configuration/update.config.en.rst:95

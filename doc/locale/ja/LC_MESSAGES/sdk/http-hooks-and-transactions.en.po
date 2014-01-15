@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -18,9 +18,10 @@ msgstr ""
 #: ../../sdk/http-hooks-and-transactions.en.rst:21
 msgid ""
 "Hooks are points in Traffic Server transaction processing where plugins can "
-"step in and do some work. Registering a plugin function for callback amounts"
-" to \"adding\" the function to a hook. You can register your plugin to be "
-"called back for every single transaction or only for specific transactions."
+"step in and do some work. Registering a plugin function for callback "
+"amounts to \"adding\" the function to a hook. You can register your plugin "
+"to be called back for every single transaction or only for specific "
+"transactions."
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:27
@@ -54,9 +55,9 @@ msgid ""
 "Traffic Server uses **HTTP state machines** to process transactions. The "
 "state machines follow a complex set of states involved in sophisticated "
 "caching and document retrieval (taking into account, for example, alternate "
-"selection, freshness criteria, and hierarchical caching). The Traffic Server"
-" API provides hooks to a subset of these states, as illustrated in the `HTTP"
-" Transaction State Diagram <#HHTTPTxStateDiag>`__ below."
+"selection, freshness criteria, and hierarchical caching). The Traffic "
+"Server API provides hooks to a subset of these states, as illustrated in "
+"the `HTTP Transaction State Diagram <#HHTTPTxStateDiag>`__ below."
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:60

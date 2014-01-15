@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -18,19 +18,19 @@ msgstr ""
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:21
 msgid ""
 "Traffic Server provides five routines for allocating and freeing memory. "
-"These routines correspond to similar routines in the C library. For example,"
-" ``TSrealloc`` behaves like the C library routine ``realloc``."
+"These routines correspond to similar routines in the C library. For "
+"example, ``TSrealloc`` behaves like the C library routine ``realloc``."
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:25
 msgid ""
 "There are two main reasons for using the routines provided by Traffic "
-"Server. The first is portability: the Traffic Server API routines behave the"
-" same on all of Traffic Server's supported platforms. For example, "
+"Server. The first is portability: the Traffic Server API routines behave "
+"the same on all of Traffic Server's supported platforms. For example, "
 "``realloc`` does not accept an argument of ``NULL`` on some platforms. The "
 "second reason is that the Traffic Server routines actually track the memory "
-"allocations by file and line number. This tracking is very efficient, always"
-" turned on, and quite useful when tracking down memory leaks."
+"allocations by file and line number. This tracking is very efficient, "
+"always turned on, and quite useful when tracking down memory leaks."
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:34
@@ -39,30 +39,30 @@ msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:36
 msgid ""
-"```TSfree`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#afe7f18beddf31a80436a03a5ab7e759f>`__"
+"```TSfree`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#afe7f18beddf31a80436a03a5ab7e759f>`__"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:38
 msgid ""
-"```TSmalloc`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af030092823148cbbc5525c4fcde9bb37>`__"
+"```TSmalloc`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#af030092823148cbbc5525c4fcde9bb37>`__"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:40
 msgid ""
-"```TSrealloc`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a3abaf3d50d82377dccd1c16bc7b631ab>`__"
+"```TSrealloc`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a3abaf3d50d82377dccd1c16bc7b631ab>`__"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:42
 msgid ""
-"```TSstrdup`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a92c01584655c52e46a58986435e17c86>`__"
+"```TSstrdup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a92c01584655c52e46a58986435e17c86>`__"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:44
 msgid ""
-"```TSstrndup`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a11072c11fa6d8470ace2963615229146>`__"
+"```TSstrndup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a11072c11fa6d8470ace2963615229146>`__"
 msgstr ""

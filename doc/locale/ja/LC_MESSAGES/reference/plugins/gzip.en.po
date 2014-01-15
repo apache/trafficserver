@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -29,8 +29,8 @@ msgstr ""
 
 #: ../../reference/plugins/gzip.en.rst:30
 msgid ""
-"Add the following line to ```plugin.config`` <../../configuration-"
-"files/plugin.config>`_::"
+"Add the following line to ```plugin.config`` <../../configuration-files/"
+"plugin.config>`_::"
 msgstr ""
 
 #: ../../reference/plugins/gzip.en.rst:35
@@ -65,8 +65,8 @@ msgstr ""
 
 #: ../../reference/plugins/gzip.en.rst:50
 msgid ""
-"After modifying plugin.cofnig, restart traffic server (sudo traffic_line -L)"
-" the configuration is re-read when a management update is given (sudo "
+"After modifying plugin.cofnig, restart traffic server (sudo traffic_line -"
+"L) the configuration is re-read when a management update is given (sudo "
 "traffic_line -x)"
 msgstr ""
 
@@ -96,8 +96,8 @@ msgstr ""
 
 #: ../../reference/plugins/gzip.en.rst:66
 msgid ""
-"For when the proxy parses responses, and the resulting "
-"compression/decompression is wasteful."
+"For when the proxy parses responses, and the resulting compression/"
+"decompression is wasteful."
 msgstr ""
 
 #: ../../reference/plugins/gzip.en.rst:69

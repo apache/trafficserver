@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -36,16 +36,16 @@ msgstr ""
 
 #: ../../reference/plugins/mysql_remap.en.rst:37
 msgid ""
-"With this plugin enabled, you can easily change that to anywhere you desire."
-" Imagine the many possibilities...."
+"With this plugin enabled, you can easily change that to anywhere you "
+"desire. Imagine the many possibilities...."
 msgstr ""
 
 #: ../../reference/plugins/mysql_remap.en.rst:40
 msgid ""
 "We have benchmarked the plugin with ab at about 9200 requests/sec (1.7k "
 "object) on a commodity hardware with a local setup of both, MySQL and "
-"Traffic Server local. Real performance is likely to be substantially higher,"
-" up to the MySQL's max queries / second."
+"Traffic Server local. Real performance is likely to be substantially "
+"higher, up to the MySQL's max queries / second."
 msgstr ""
 
 #: ../../reference/plugins/mysql_remap.en.rst:46

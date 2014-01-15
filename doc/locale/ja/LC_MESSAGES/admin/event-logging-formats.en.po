@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -19,9 +19,9 @@ msgstr ""
 msgid ""
 "This document provides a reference for all the different logging formats "
 "Traffic Server supports. Rather than just reading about those formats, you "
-"may also want to try our `online event log builder "
-"<http://trafficserver.apache.org/logbuilder/>`_ for an interactive way of "
-"building and understanding log formats."
+"may also want to try our `online event log builder <http://trafficserver."
+"apache.org/logbuilder/>`_ for an interactive way of building and "
+"understanding log formats."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:36
@@ -39,8 +39,8 @@ msgstr ""
 #: ../../admin/event-logging-formats.en.rst:41
 msgid ""
 "Logs the information in the requested field of the client request HTTP "
-"header. For example, ``%<{Accept-Language}cqh>`` logs the ``Accept-"
-"Language:`` field in client request headers."
+"header. For example, ``%<{Accept-Language}cqh>`` logs the ``Accept-Language:"
+"`` field in client request headers."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:48
@@ -61,8 +61,8 @@ msgstr ""
 #: ../../admin/event-logging-formats.en.rst:51
 msgid ""
 "Logs the information in the requested field of the proxy response HTTP "
-"header. For example, ``%<{Retry-After}psh>`` logs the ``Retry-After:`` field"
-" in proxy response headers."
+"header. For example, ``%<{Retry-After}psh>`` logs the ``Retry-After:`` "
+"field in proxy response headers."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:58
@@ -130,8 +130,8 @@ msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:76
 msgid ""
-"The client request transfer length; the body length in the client request to"
-" Traffic Server (in bytes)."
+"The client request transfer length; the body length in the client request "
+"to Traffic Server (in bytes)."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:81
@@ -142,8 +142,8 @@ msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:80
 msgid ""
-"The client request header length; the header length in the client request to"
-" Traffic Server."
+"The client request header length; the header length in the client request "
+"to Traffic Server."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:85
@@ -201,9 +201,9 @@ msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:103
 msgid ""
-"The client-request timestamp in Squid format; the time of the client request"
-" since January 1, 1970 UTC. Time is expressed in seconds, with millisecond "
-"resolution."
+"The client-request timestamp in Squid format; the time of the client "
+"request since January 1, 1970 UTC. Time is expressed in seconds, with "
+"millisecond resolution."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:111
@@ -268,9 +268,8 @@ msgstr ""
 #: ../../admin/event-logging-formats.en.rst:141
 msgid ""
 "The client request URL path; specifies the argument portion of the URL "
-"(everything after the host). For example, if the URL is "
-"``http://www.company.com/images/x.gif``, then this field displays "
-"``/images/x.gif``"
+"(everything after the host). For example, if the URL is ``http://www."
+"company.com/images/x.gif``, then this field displays ``/images/x.gif``"
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:146
@@ -311,8 +310,8 @@ msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:166
 msgid ""
-"The client request unmapped URL host. This field records a URL's host before"
-" it is remapped (reverse proxy mode)."
+"The client request unmapped URL host. This field records a URL's host "
+"before it is remapped (reverse proxy mode)."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:170
@@ -324,7 +323,6 @@ msgid "The Retry-After time in seconds, if specified by the origin server."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:174
-#: ../../admin/event-logging-formats.en.rst:404
 #: ../../admin/event-logging-formats.en.rst:404
 msgid "``crc``"
 msgstr ""
@@ -350,8 +348,8 @@ msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:181
 msgid ""
-"The cached header length in the origin server response to Traffic Server (in"
-" bytes)."
+"The cached header length in the origin server response to Traffic Server "
+"(in bytes)."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:185
@@ -543,9 +541,9 @@ msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:251
 msgid ""
-"The IP address resolved from the DNS name lookup of the host in the request."
-" For hosts with multiple IP addresses, this field records the IP address "
-"resolved from that particular DNS lookup."
+"The IP address resolved from the DNS name lookup of the host in the "
+"request. For hosts with multiple IP addresses, this field records the IP "
+"address resolved from that particular DNS lookup."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:255
@@ -632,11 +630,11 @@ msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:287
 msgid ""
-"The time Traffic Server spends processing the client request as a fractional"
-" number of seconds. Time is specified in millisecond resolution; however, "
-"instead of formatting the output as an integer (as with ``ttms``), the "
-"display is formatted as a floating-point number representing a fractional "
-"number of seconds."
+"The time Traffic Server spends processing the client request as a "
+"fractional number of seconds. Time is specified in millisecond resolution; "
+"however, instead of formatting the output as an integer (as with ``ttms``), "
+"the display is formatted as a floating-point number representing a "
+"fractional number of seconds."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:293
@@ -654,9 +652,9 @@ msgstr ""
 #: ../../admin/event-logging-formats.en.rst:298
 msgid ""
 "The time Traffic Server spends processing the client request; the number of "
-"seconds between the time at which the client establishes the connection with"
-" Traffic Server and the time at which Traffic Server sends the last byte of "
-"the response back to the client."
+"seconds between the time at which the client establishes the connection "
+"with Traffic Server and the time at which Traffic Server sends the last "
+"byte of the response back to the client."
 msgstr ""
 
 #: ../../admin/event-logging-formats.en.rst:307

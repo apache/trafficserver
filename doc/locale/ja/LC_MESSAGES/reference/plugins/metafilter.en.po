@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,10 +17,9 @@ msgstr ""
 
 #: ../../reference/plugins/metafilter.en.rst:21
 msgid ""
-"The `metalink` plugin implements the `Metalink "
-"<http://en.wikipedia.org/wiki/Metalink>`_ protocol in order to try not to "
-"download the same file twice. This improves cache efficiency and speeds up "
-"user downloads."
+"The `metalink` plugin implements the `Metalink <http://en.wikipedia.org/"
+"wiki/Metalink>`_ protocol in order to try not to download the same file "
+"twice. This improves cache efficiency and speeds up user downloads."
 msgstr ""
 
 #: ../../reference/plugins/metafilter.en.rst:26
@@ -78,8 +77,8 @@ msgstr ""
 
 #: ../../reference/plugins/metafilter.en.rst:62
 msgid ""
-"`metalink` is a global plugin. It is enabled by adding it to your "
-":file:`plugin.config` file. There are no options."
+"`metalink` is a global plugin. It is enabled by adding it to your :file:"
+"`plugin.config` file. There are no options."
 msgstr ""
 
 #: ../../reference/plugins/metafilter.en.rst:66
@@ -88,8 +87,8 @@ msgstr ""
 
 #: ../../reference/plugins/metafilter.en.rst:68
 msgid ""
-"The `metalink` plugin implements the ``TS_HTTP_SEND_RESPONSE_HDR_HOOK`` hook"
-" to check and potentially rewrite the ``Location: ...`` and ``Digest: "
+"The `metalink` plugin implements the ``TS_HTTP_SEND_RESPONSE_HDR_HOOK`` "
+"hook to check and potentially rewrite the ``Location: ...`` and ``Digest: "
 "SHA-256=...`` headers after responses are cached. It doesn't do it before "
 "they're cached because the contents of the cache can change after responses "
 "are cached.  It uses :c:func:`TSCacheRead` to check if the URL in the "
@@ -120,21 +119,21 @@ msgid ""
 "An early version of the plugin scanned ``Link: <...>; rel=duplicate`` "
 "headers. If the URL in the ``Location: ...`` header was not already cached, "
 "it scanned ``Link: <...>; rel=duplicate`` headers for a URL that was. The "
-"``Digest: SHA-256=...`` header is superior because it will find content that"
-" already exists in the cache in every case that a ``Link: <...>; "
+"``Digest: SHA-256=...`` header is superior because it will find content "
+"that already exists in the cache in every case that a ``Link: <...>; "
 "rel=duplicate`` header would, plus in cases where the URL is not listed "
 "among the ``Link: <...>; rel=duplicate`` headers, maybe because the content "
 "was downloaded from a URL not participating in the content distribution "
-"network, or maybe because there are too many mirrors to list in ``Link: "
-"<...>; rel=duplicate`` headers."
+"network, or maybe because there are too many mirrors to list in ``Link: <..."
+">; rel=duplicate`` headers."
 msgstr ""
 
 #: ../../reference/plugins/metafilter.en.rst:101
 msgid ""
-"The ``Digest: SHA-256=...`` header is also more efficient than ``Link: "
-"<...>; rel=duplicate`` headers because it involves a constant number of "
-"cache lookups. :rfc:`6249` requires a ``Digest: SHA-256=...`` header or "
-"``Link: <...>; rel=duplicate`` headers MUST be ignored:"
+"The ``Digest: SHA-256=...`` header is also more efficient than ``Link: <..."
+">; rel=duplicate`` headers because it involves a constant number of cache "
+"lookups. :rfc:`6249` requires a ``Digest: SHA-256=...`` header or ``Link: "
+"<...>; rel=duplicate`` headers MUST be ignored:"
 msgstr ""
 
 #: ../../reference/plugins/metafilter.en.rst:106

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -27,12 +27,12 @@ msgstr ""
 
 #: ../../sdk/actions-guide/hosts-lookup-api.en.rst:26
 msgid ""
-"```TSHostLookup`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ab5bf6eea0ed883e5dc69253965935d12>`__"
+"```TSHostLookup`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
+"html#ab5bf6eea0ed883e5dc69253965935d12>`__"
 msgstr ""
 
 #: ../../sdk/actions-guide/hosts-lookup-api.en.rst:27
 msgid ""
-"```TSHostLookupResultAddrGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aecac0767192746af1867f528e01d167b>`__"
+"```TSHostLookupResultAddrGet`` <http://people.apache.org/~amc/ats/doc/html/"
+"ts_8h.html#aecac0767192746af1867f528e01d167b>`__"
 msgstr ""

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -69,8 +69,8 @@ msgstr ""
 
 #: ../../reference/commands/traffic_line.en.rst:71
 msgid ""
-"Restart the :program:`traffic_manager` process and the "
-":program:`traffic_server` process on all the nodes in a cluster."
+"Restart the :program:`traffic_manager` process and the :program:"
+"`traffic_server` process on all the nodes in a cluster."
 msgstr ""
 
 #: ../../reference/commands/traffic_line.en.rst:76
@@ -81,8 +81,8 @@ msgstr ""
 #: ../../reference/commands/traffic_line.en.rst:81
 msgid ""
 "Set the configuration variable named `VAR`. The value of the configuration "
-"variable is given by the :option:`traffic_line -v` option. Refer to the "
-":file:`records.config` documentation for a list of the configuration "
+"variable is given by the :option:`traffic_line -v` option. Refer to the :"
+"file:`records.config` documentation for a list of the configuration "
 "variables you can specify."
 msgstr ""
 

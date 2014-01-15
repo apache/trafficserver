@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -20,8 +20,8 @@ msgid ""
 "The sample blacklisting plugin included in the Traffic Server SDK is "
 "``blacklist-1.c``. This plugin checks every incoming HTTP client request "
 "against a list of blacklisted web sites. If the client requests a "
-"blacklisted site, then the plugin returns an ``Access forbidden`` message to"
-" the client."
+"blacklisted site, then the plugin returns an ``Access forbidden`` message "
+"to the client."
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin.en.rst:27
@@ -42,11 +42,11 @@ msgstr ""
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin.en.rst:39
 msgid ""
 "You create the static parent continuation in the mandatory ``TSPluginInit`` "
-"function. This parent continuation effectively **is** the plugin: the plugin"
-" executes only when this continuation receives an event from Traffic Server."
-" Traffic Server passes the event as an argument to the continuation's "
-"handler function. When you create continuations, you must create and specify"
-" their handler functions."
+"function. This parent continuation effectively **is** the plugin: the "
+"plugin executes only when this continuation receives an event from Traffic "
+"Server. Traffic Server passes the event as an argument to the "
+"continuation's handler function. When you create continuations, you must "
+"create and specify their handler functions."
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin.en.rst:46
@@ -59,8 +59,8 @@ msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin.en.rst:51
 msgid ""
-"Here is how the static parent continuation is created in "
-":file:blacklist-1.c`:"
+"Here is how the static parent continuation is created in :file:blacklist-1."
+"c`:"
 msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin.en.rst:66
@@ -77,8 +77,8 @@ msgid ""
 "When you write handler functions, you have to anticipate any events that "
 "might be sent to the handler by hooks or by other functions. In the "
 "Blacklist plugin, ``TS_EVENT_OS_DNS`` is sent because of the global hook "
-"established in ``TSPluginInit``, ``TS_EVENT_HTTP_SEND_RESPONSE_HDR`` is sent"
-" because the plugin contains a transaction hook (see `Setting Up a "
+"established in ``TSPluginInit``, ``TS_EVENT_HTTP_SEND_RESPONSE_HDR`` is "
+"sent because the plugin contains a transaction hook (see `Setting Up a "
 "Transaction Hook <setting-a-transaction-hook.html>`__). It is good practice "
 "to have a default case in your switch statements."
 msgstr ""

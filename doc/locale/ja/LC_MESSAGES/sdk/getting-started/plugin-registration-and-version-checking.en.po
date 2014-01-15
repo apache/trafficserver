@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,8 +17,8 @@ msgstr ""
 
 #: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:21
 msgid ""
-"Make sure that the functions in your plugin are supported in your version of"
-" Traffic Server."
+"Make sure that the functions in your plugin are supported in your version "
+"of Traffic Server."
 msgstr ""
 
 #: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:24
@@ -27,14 +27,14 @@ msgstr ""
 
 #: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:26
 msgid ""
-"```TSPluginRegister`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a6d7f514e70abaf097c4a3f1ba01f6df8>`__"
+"```TSPluginRegister`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a6d7f514e70abaf097c4a3f1ba01f6df8>`__"
 msgstr ""
 
 #: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:27
 msgid ""
-"```TSTrafficServerVersionGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a3ef91e01612ffdce6dd040f836db08e8>`__"
+"```TSTrafficServerVersionGet`` <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a3ef91e01612ffdce6dd040f836db08e8>`__"
 msgstr ""
 
 #: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:29

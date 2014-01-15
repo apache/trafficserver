@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,13 +17,13 @@ msgstr ""
 
 #: ../../sdk/adding-statistics.en.rst:21
 msgid ""
-"This chapter describes how to add statistics to your plugins. Statistics can"
-" be coupled or uncoupled; **coupled** statistics are quantities that are "
+"This chapter describes how to add statistics to your plugins. Statistics "
+"can be coupled or uncoupled; **coupled** statistics are quantities that are "
 "related and must therefore be updated together. The Traffic Server API "
 "statistics functions add your plugin's statistics to the Traffic Server "
 "statistics system. You can view your plugin statistics as you would any "
-"other Traffic Server statistic, using Traffic Line (Traffic Server's command"
-" line interface). This chapter contains the following topics:"
+"other Traffic Server statistic, using Traffic Line (Traffic Server's "
+"command line interface). This chapter contains the following topics:"
 msgstr ""
 
 #: ../../sdk/adding-statistics.en.rst:38
