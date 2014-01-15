@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2484] Add API support for the two missing overridable APIs:
+         proxy.config.http.cache.max_open_read_retries
+         proxy.config.http.cache.open_read_retry_time
+
   *) [TS-2497] Failed post results in tunnel buffers being returned to
    freelist prematurely.
    Reporter: Thomas Jackson <thjackso@linkedin.com>
