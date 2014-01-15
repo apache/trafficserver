@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -23,8 +23,8 @@ msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:25
 msgid ""
-"``tag`` is the Traffic Server parameter that enables Traffic Server to print"
-" out *``format_str``*"
+"``tag`` is the Traffic Server parameter that enables Traffic Server to "
+"print out *``format_str``*"
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:28
@@ -40,8 +40,8 @@ msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:40
 msgid ""
-"Set the following variables in :file:`records.config` (in the Traffic Server"
-" ``config`` directory):"
+"Set the following variables in :file:`records.config` (in the Traffic "
+"Server ``config`` directory):"
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:49
@@ -65,8 +65,8 @@ msgstr ""
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:69
 msgid ""
 "Embedded in the base Traffic Server code are many debug tags for internal "
-"debugging purposes. These can also be used to follow Traffic Server behavior"
-" for testing and analysis."
+"debugging purposes. These can also be used to follow Traffic Server "
+"behavior for testing and analysis."
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:73
@@ -76,9 +76,9 @@ msgid ""
 "message is matched. This means the value \"http\" matches debug emssages "
 "with the tag \"http\" but also \"http\\_seq\" and \"http\\_trans\". If you "
 "want multiple tags then use a pipe symbol to separate the tags. For example "
-"\"http\\_tproxy\\|dns\\|hostdb\" will match any of the message tags "
-"\"http\\_tproxy\", \"dns\", \"hostdb\", or \"dns\\_srv\" (but not "
-"\"http\\_trans\" nor \"splitdns\")."
+"\"http\\_tproxy\\|dns\\|hostdb\" will match any of the message tags \"http"
+"\\_tproxy\", \"dns\", \"hostdb\", or \"dns\\_srv\" (but not \"http\\_trans"
+"\" nor \"splitdns\")."
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:82
@@ -123,8 +123,8 @@ msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:102
 msgid ""
-"``cache`` - Cache operations (many subtags, examine the output to narrow the"
-" tag set)"
+"``cache`` - Cache operations (many subtags, examine the output to narrow "
+"the tag set)"
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:105

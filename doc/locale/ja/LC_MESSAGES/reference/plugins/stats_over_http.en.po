@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -19,8 +19,8 @@ msgstr ""
 msgid ""
 "This plugin implements an HTTP interface to all Traffic Server statistics. "
 "The metrics returned are in a JSON format, for easy processing. This plugin "
-"is now part of the standard ATS build process, and should be available after"
-" install."
+"is now part of the standard ATS build process, and should be available "
+"after install."
 msgstr ""
 
 #: ../../reference/plugins/stats_over_http.en.rst:26

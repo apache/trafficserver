@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -61,11 +61,11 @@ msgstr ""
 
 #: ../../sdk/http-headers.en.rst:51
 msgid ""
-"A **MIME header** is comprised of zero or more MIME fields. A **MIME field**"
-" is composed of a field name, a colon, and (zero or more) field values. The "
-"values in a field are separated by commas. An HTTP header containing a "
-"request line is usually referred to as a **request**. The following example "
-"shows a typical request header."
+"A **MIME header** is comprised of zero or more MIME fields. A **MIME "
+"field** is composed of a field name, a colon, and (zero or more) field "
+"values. The values in a field are separated by commas. An HTTP header "
+"containing a request line is usually referred to as a **request**. The "
+"following example shows a typical request header."
 msgstr ""
 
 #: ../../sdk/http-headers.en.rst:69
@@ -104,8 +104,9 @@ msgid ""
 "The marshal buffer or ``TSMBuffer`` is a heap data structure that stores "
 "parsed URLs, MIME headers, and HTTP headers. You can allocate new objects "
 "out of marshal buffers and change the values within the marshal buffer. "
-"Whenever you manipulate an object, you must require the handle to the object"
-" (``TSMLoc``) and the marshal buffer containing the object (``TSMBuffer``)."
+"Whenever you manipulate an object, you must require the handle to the "
+"object (``TSMLoc``) and the marshal buffer containing the object "
+"(``TSMBuffer``)."
 msgstr ""
 
 #: ../../sdk/http-headers.en.rst:111

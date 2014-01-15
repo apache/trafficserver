@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -214,15 +214,15 @@ msgstr ""
 #: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:70
 msgid ""
 ":const:`TS_MILESTONE_UA_CLOSE` and :const:`TS_MILESTONE_SERVER_CLOSE` are "
-"updated continuously during the life of the transaction, every time there is"
-" I/O activity. The updating stops when the corresponding connection is "
+"updated continuously during the life of the transaction, every time there "
+"is I/O activity. The updating stops when the corresponding connection is "
 "closed, leaving the last I/O time as the final value."
 msgstr ""
 
 #: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:74
 msgid ""
-"The cache ``OPEN`` milestones time only the initial setup, the \"open\", not"
-" the full read or write."
+"The cache ``OPEN`` milestones time only the initial setup, the \"open\", "
+"not the full read or write."
 msgstr ""
 
 #: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:77
@@ -231,8 +231,8 @@ msgstr ""
 
 #: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:79
 msgid ""
-":const:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise "
-":const:`TS_ERROR`."
+":const:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise :"
+"const:`TS_ERROR`."
 msgstr ""
 
 #: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:82

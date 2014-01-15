@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -38,8 +38,8 @@ msgstr ""
 #: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:33
 msgid ""
 "Get information about and modify HTTP transactions (for example: get the "
-"client IP associated to the transaction; get the server IP; get parent proxy"
-" information)"
+"client IP associated to the transaction; get the server IP; get parent "
+"proxy information)"
 msgstr ""
 
 #: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:37
@@ -82,11 +82,11 @@ msgstr ""
 
 #: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:57
 msgid ""
-"Decide what you want your plugin to do, based on the capabilities of the API"
-" and Traffic Server. Two main kinds of example plugins provided with this "
-"SDK are HTTP-based (includes header-based and response transform plugins), "
-"and non-HTTP-based (a protocol plugin). These examples are discussed in the "
-"next three chapters."
+"Decide what you want your plugin to do, based on the capabilities of the "
+"API and Traffic Server. Two main kinds of example plugins provided with "
+"this SDK are HTTP-based (includes header-based and response transform "
+"plugins), and non-HTTP-based (a protocol plugin). These examples are "
+"discussed in the next three chapters."
 msgstr ""
 
 #: ../../sdk/how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en.rst:63

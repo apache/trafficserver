@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -44,11 +44,10 @@ msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:42
 msgid ""
-"Profiling is very low overhead, and the information is dumped to "
-"``traffic.out``, located in the log directory. This information is useful to"
-" optimize the order of your regular expression, such that the most common "
-"matches appears early in the file. In order to force a profile dump, you can"
-" do ::"
+"Profiling is very low overhead, and the information is dumped to ``traffic."
+"out``, located in the log directory. This information is useful to optimize "
+"the order of your regular expression, such that the most common matches "
+"appears early in the file. In order to force a profile dump, you can do ::"
 msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:51
@@ -60,8 +59,8 @@ msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:59
 msgid ""
-"If you wish to match on the HTTP method used (e.g. \"``GET``\\ \"), you must"
-" use the option ``@pparam=method``. e.g. ::"
+"If you wish to match on the HTTP method used (e.g. \"``GET``\\ \"), you "
+"must use the option ``@pparam=method``. e.g. ::"
 msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:64
@@ -78,14 +77,14 @@ msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:74
 msgid ""
-"By default, the query string is part of the string that is matched again, to"
-" turn this off use the option 'no-query-string', e.g. ::"
+"By default, the query string is part of the string that is matched again, "
+"to turn this off use the option 'no-query-string', e.g. ::"
 msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:79
 msgid ""
-"Finally, you can also include the matrix parameters in the string, using the"
-" option 'matrix-parameters', e.g. ::"
+"Finally, you can also include the matrix parameters in the string, using "
+"the option 'matrix-parameters', e.g. ::"
 msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:84
@@ -112,8 +111,8 @@ msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:113
 msgid ""
-"You can also provide options, similar to how you configure your "
-"remap.config. The following options are available ::"
+"You can also provide options, similar to how you configure your remap."
+"config. The following options are available ::"
 msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:122

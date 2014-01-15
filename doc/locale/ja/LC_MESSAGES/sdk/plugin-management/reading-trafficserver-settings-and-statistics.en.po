@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -20,8 +20,8 @@ msgid ""
 "Your plugin might need to know information about Traffic Server's current "
 "configuration and performance. The functions described in this section read "
 "this information from the Traffic Server :file:`records.config` file. "
-"Configuration settings are stored in ``CONFIG`` variables and statistics are"
-" stored in ``PROCESS`` variables."
+"Configuration settings are stored in ``CONFIG`` variables and statistics "
+"are stored in ``PROCESS`` variables."
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:29
@@ -45,8 +45,9 @@ msgstr ""
 msgid ""
 "Depending on the result type, you'll use ``TSMgmtIntGet``, "
 "``TSMgmtCounterGet``, ``TSMgmtFloatGet``, or ``TSMgmtStringGet`` to obtain "
-"the variable value (see the example for ```TSMgmtIntGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a097aaecda41d04b522796ae25eea9a3d>`__."
+"the variable value (see the example for ```TSMgmtIntGet`` <http://people."
+"apache.org/~amc/ats/doc/html/ts_8h."
+"html#a097aaecda41d04b522796ae25eea9a3d>`__."
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:45
@@ -55,24 +56,24 @@ msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:47
 msgid ""
-"```TSMgmtCounterGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a583e21e614b70256f68658fc6c455ea6>`__"
+"```TSMgmtCounterGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a583e21e614b70256f68658fc6c455ea6>`__"
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:49
 msgid ""
-"```TSMgmtFloatGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a2ace94b52c71656304b53824d3fa7080>`__"
+"```TSMgmtFloatGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a2ace94b52c71656304b53824d3fa7080>`__"
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:51
 msgid ""
-"```TSMgmtIntGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a097aaecda41d04b522796ae25eea9a3d>`__"
+"```TSMgmtIntGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a097aaecda41d04b522796ae25eea9a3d>`__"
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:53
 msgid ""
-"```TSMgmtStringGet`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a14167888ed89d5b30df5bdcdcfdf1c30>`__"
+"```TSMgmtStringGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
+"html#a14167888ed89d5b30df5bdcdcfdf1c30>`__"
 msgstr ""

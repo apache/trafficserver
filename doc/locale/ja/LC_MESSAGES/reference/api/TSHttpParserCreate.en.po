@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -37,40 +37,40 @@ msgstr ""
 
 #: ../../reference/api/TSHttpParserCreate.en.rst:44
 msgid ""
-":func:`TSHttpHdrParseReq` parses an HTTP request header. The HTTP header "
-":data:`offset` must already be created, and must reside inside the marshal "
+":func:`TSHttpHdrParseReq` parses an HTTP request header. The HTTP header :"
+"data:`offset` must already be created, and must reside inside the marshal "
 "buffer :data:`bufp`. The :data:`start` argument points to the current "
 "position of the string buffer being parsed and the :data:`end` argument "
-"points to one byte after the end of the buffer to be parsed. On return, "
-":data:`start` is modified to point past the last character parsed."
+"points to one byte after the end of the buffer to be parsed. On return, :"
+"data:`start` is modified to point past the last character parsed."
 msgstr ""
 
 #: ../../reference/api/TSHttpParserCreate.en.rst:52
 msgid ""
-"It is possible to parse an HTTP request header a single byte at a time using"
-" repeated calls to :func:`TSHttpHdrParseReq`. As long as an error does not "
-"occur, the :func:`TSHttpHdrParseReq` function will consume that single byte "
-"and ask for more. :func:`TSHttpHdrParseReq` should be called after "
-":data:`TS_HTTP_READ_REQUEST_HDR_HOOK`."
+"It is possible to parse an HTTP request header a single byte at a time "
+"using repeated calls to :func:`TSHttpHdrParseReq`. As long as an error does "
+"not occur, the :func:`TSHttpHdrParseReq` function will consume that single "
+"byte and ask for more. :func:`TSHttpHdrParseReq` should be called after :"
+"data:`TS_HTTP_READ_REQUEST_HDR_HOOK`."
 msgstr ""
 
 #: ../../reference/api/TSHttpParserCreate.en.rst:58
 msgid ""
-":func:`TSHttpHdrParseResp` operates in the same manner as "
-":func:`TSHttpHdrParseReq` except it parses an HTTP response header. It "
-"should be called after :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
+":func:`TSHttpHdrParseResp` operates in the same manner as :func:"
+"`TSHttpHdrParseReq` except it parses an HTTP response header. It should be "
+"called after :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
 msgstr ""
 
 #: ../../reference/api/TSHttpParserCreate.en.rst:62
 msgid ""
-":func:`TSHttpParserClear` clears the specified HTTP parser so it may be used"
-" again."
+":func:`TSHttpParserClear` clears the specified HTTP parser so it may be "
+"used again."
 msgstr ""
 
 #: ../../reference/api/TSHttpParserCreate.en.rst:65
 msgid ""
-":func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed to by "
-":data:`parser`. The :data:`parser` pointer must not be NULL."
+":func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed to by :"
+"data:`parser`. The :data:`parser` pointer must not be NULL."
 msgstr ""
 
 #: ../../reference/api/TSHttpParserCreate.en.rst:69
@@ -79,11 +79,11 @@ msgstr ""
 
 #: ../../reference/api/TSHttpParserCreate.en.rst:71
 msgid ""
-":func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return a "
-":type:`TSParseResult` value. :data:`TS_PARSE_ERROR` is returned on error, "
-":data:`TS_PARSE_CONT` is returned if parsing of the header stopped because "
-"the end of the buffer was reached, and :data:`TS_PARSE_DONE` or "
-":data:`TS_PARSE_OK` when a \\\\r\\\\n\\\\r\\\\n pattern is encountered, "
+":func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return a :"
+"type:`TSParseResult` value. :data:`TS_PARSE_ERROR` is returned on error, :"
+"data:`TS_PARSE_CONT` is returned if parsing of the header stopped because "
+"the end of the buffer was reached, and :data:`TS_PARSE_DONE` or :data:"
+"`TS_PARSE_OK` when a \\\\r\\\\n\\\\r\\\\n pattern is encountered, "
 "indicating the end of the header."
 msgstr ""
 

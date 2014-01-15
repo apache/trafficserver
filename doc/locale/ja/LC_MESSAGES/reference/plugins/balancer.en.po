@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -51,10 +51,10 @@ msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:39
 msgid ""
-"rotation      The name of the rotation (e.g. news) [to-host in remap] hash"
-"      What to hash on, url, path, cookie, ip, header (primary) hash2     "
-"Optional, secondary hash, to hash within a multi-host bucket bucketw   Width"
-" of each hash bucket [1]"
+"rotation      The name of the rotation (e.g. news) [to-host in remap] "
+"hash      What to hash on, url, path, cookie, ip, header (primary) "
+"hash2     Optional, secondary hash, to hash within a multi-host bucket "
+"bucketw   Width of each hash bucket [1]"
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:44
@@ -76,9 +76,9 @@ msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:54
 msgid ""
-"The hash parameter can be used zero or more times, without it, no hashing is"
-" done at all. If you have more than one hash keys, they are concatenated in "
-"the order specified. For example:"
+"The hash parameter can be used zero or more times, without it, no hashing "
+"is done at all. If you have more than one hash keys, they are concatenated "
+"in the order specified. For example:"
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:59
@@ -95,8 +95,9 @@ msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:66
 msgid ""
-"For \"cookie\" hash keys, you can optionally specify an identifier for which"
-" cookie to use (without it, the entire cookie header is used). For example:"
+"For \"cookie\" hash keys, you can optionally specify an identifier for "
+"which cookie to use (without it, the entire cookie header is used). For "
+"example:"
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:71
@@ -108,17 +109,17 @@ msgid ""
 "The secondary hash (\"hash2\") is used to provide \"stickiness\" within a "
 "bucket that's larger than one host (i.e. bucketw > 1). This allows you to "
 "(for example) have a primary hash on the URL, where each URL is served by "
-"some number of servers. A secondary hash on B-cookie would then provide user"
-" stickiness, so that for a particular URL, a particular user will always hit"
-" the same server."
+"some number of servers. A secondary hash on B-cookie would then provide "
+"user stickiness, so that for a particular URL, a particular user will "
+"always hit the same server."
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:80
 msgid ""
 "If the hashes you've requested (either \"hash\" or \"hash2\") can not be "
-"generated, we default to using the URL instead for the primary hash. For the"
-" secondary hash, if set, we'll default to the src-IP. If these defaults are "
-"not desirable, make sure that you have at least one hash key that is "
+"generated, we default to using the URL instead for the primary hash. For "
+"the secondary hash, if set, we'll default to the src-IP. If these defaults "
+"are not desirable, make sure that you have at least one hash key that is "
 "guaranteed to exist (e.g. @pparam=hash:ip)."
 msgstr ""
 
@@ -131,8 +132,8 @@ msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:90
 msgid ""
-"Finally, a couple of \"flag\" options (parameters) are available, to control"
-" some of the lookup mechanisms:"
+"Finally, a couple of \"flag\" options (parameters) are available, to "
+"control some of the lookup mechanisms:"
 msgstr ""
 
 #: ../../reference/plugins/balancer.en.rst:93

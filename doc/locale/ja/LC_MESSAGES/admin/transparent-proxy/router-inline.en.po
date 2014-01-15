@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -18,8 +18,8 @@ msgstr ""
 #: ../../admin/transparent-proxy/router-inline.en.rst:21
 msgid ""
 "The routed set up presumes the set of clients are on distinct networks "
-"behind a single physical interface. For the purposes of this example will we"
-" presume"
+"behind a single physical interface. For the purposes of this example will "
+"we presume"
 msgstr ""
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:25
@@ -56,14 +56,15 @@ msgid ""
 "packets we use ``TPROXY`` to make it possible to accept packets sent to "
 "foreign IP addresses. For returning outbound packets there will be a socket "
 "open bound to the foreign address, we need only force it to be delivered "
-"locally. The value for ``--on-ip`` is 0 because the target port is listening"
-" and not bound to a specific address. The value for ``--on-port`` must match"
-" the Traffic Server server port. Otherwise its value is arbitrary. "
-"``--dport`` and ``--sport`` specify the port from the point of view of the "
-"clients and origin servers. The middle two lines exempt local web traffic "
-"from being marked for Traffic Server -- these rules can be tightened or "
-"loosened as needed. They server by matching traffic and exiting the "
-"``iptables`` processing via ``ACCEPT`` before the last line is checked."
+"locally. The value for ``--on-ip`` is 0 because the target port is "
+"listening and not bound to a specific address. The value for ``--on-port`` "
+"must match the Traffic Server server port. Otherwise its value is "
+"arbitrary. ``--dport`` and ``--sport`` specify the port from the point of "
+"view of the clients and origin servers. The middle two lines exempt local "
+"web traffic from being marked for Traffic Server -- these rules can be "
+"tightened or loosened as needed. They server by matching traffic and "
+"exiting the ``iptables`` processing via ``ACCEPT`` before the last line is "
+"checked."
 msgstr ""
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:61
@@ -74,14 +75,15 @@ msgstr ""
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:69
 msgid ""
-"The marking used is arbitrary but it must be consistent between ``iptables``"
-" and the routing rule. The table number must be in the range 1..253."
+"The marking used is arbitrary but it must be consistent between "
+"``iptables`` and the routing rule. The table number must be in the range "
+"1..253."
 msgstr ""
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:73
 msgid ""
-"To configure Traffic Server set the following values in "
-":file:`records.config`"
+"To configure Traffic Server set the following values in :file:`records."
+"config`"
 msgstr ""
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:78

@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,9 +17,9 @@ msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:21
 msgid ""
-"The append-transform plugin appends text to the body of an HTTP response. It"
-" obtains this text from a file; the name of the file containing the append "
-"text is a parameter you specify in ``plugin.config``, as follows:"
+"The append-transform plugin appends text to the body of an HTTP response. "
+"It obtains this text from a file; the name of the file containing the "
+"append text is a parameter you specify in ``plugin.config``, as follows:"
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:30
@@ -60,9 +60,9 @@ msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:60
 msgid ""
-"Destroys objects of type ``MyData``. To deallocate the transform's data, the"
-" ``append_transform`` routine (see below) calls ``my_data_destroy`` when the"
-" transformation is complete."
+"Destroys objects of type ``MyData``. To deallocate the transform's data, "
+"the ``append_transform`` routine (see below) calls ``my_data_destroy`` when "
+"the transformation is complete."
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:64
@@ -88,8 +88,8 @@ msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:76
 msgid ""
-"If the transformation vconnection has been closed, then ``append_transform``"
-" calls ``my_data_destroy`` to destroy the vonnection."
+"If the transformation vconnection has been closed, then "
+"``append_transform`` calls ``my_data_destroy`` to destroy the vonnection."
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:80
@@ -117,10 +117,10 @@ msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:93
 msgid ""
-"The plugin transforms only documents that have a content type of "
-"``text/html``. This function examines the ``Content-Type`` MIME header field"
-" in the response header. If the value of the MIME field is ``text/html``, "
-"then the function returns 1; otherwise, it returns zero."
+"The plugin transforms only documents that have a content type of ``text/"
+"html``. This function examines the ``Content-Type`` MIME header field in "
+"the response header. If the value of the MIME field is ``text/html``, then "
+"the function returns 1; otherwise, it returns zero."
 msgstr ""
 
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:99
@@ -203,6 +203,6 @@ msgstr ""
 #: ../../sdk/http-transformation-plugin/append-transform-plugin.en.rst:140
 msgid ""
 "Adds the plugin's continuation to ``TS_HTTP_READ_RESPONSE_HDR_HOOK``. In "
-"other words, it sets up a callback of the plugin's continuation when Traffic"
-" Server reads HTTP response headers."
+"other words, it sets up a callback of the plugin's continuation when "
+"Traffic Server reads HTTP response headers."
 msgstr ""

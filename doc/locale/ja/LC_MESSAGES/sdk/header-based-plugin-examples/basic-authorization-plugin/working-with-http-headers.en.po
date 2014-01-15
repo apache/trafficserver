@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -27,7 +27,7 @@ msgstr ""
 
 #: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/working-with-http-headers.en.rst:46
 msgid ""
-"If the ``Proxy-Authorization`` field is present, then the plugin checks that"
-" the authentication type is \"Basic\", and the user name and password are "
-"present and valid:"
+"If the ``Proxy-Authorization`` field is present, then the plugin checks "
+"that the authentication type is \"Basic\", and the user name and password "
+"are present and valid:"
 msgstr ""

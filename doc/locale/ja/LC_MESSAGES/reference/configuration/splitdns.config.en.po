@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -18,8 +18,8 @@ msgstr ""
 #: ../../reference/configuration/splitdns.config.en.rst:24
 msgid ""
 "The :file:`splitdns.config` file enables you to specify the DNS server that "
-"Traffic Server should use for resolving hosts under specific conditions. For"
-" more information, refer to :ref:`configuring-dns-server-selection-split-"
+"Traffic Server should use for resolving hosts under specific conditions. "
+"For more information, refer to :ref:`configuring-dns-server-selection-split-"
 "dns`."
 msgstr ""
 
@@ -43,8 +43,8 @@ msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:36
 msgid ""
-"You can also include the following optional information with each DNS server"
-" specification:"
+"You can also include the following optional information with each DNS "
+"server specification:"
 msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:39
@@ -59,10 +59,10 @@ msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:43
 msgid ""
-"After you modify the :file:`splitdns.config` file, run the "
-":option:`traffic_line -x` command to apply the changes. When you apply "
-"changes to a node in a cluster, Traffic Server automatically applies the "
-"changes to all other nodes in the cluster."
+"After you modify the :file:`splitdns.config` file, run the :option:"
+"`traffic_line -x` command to apply the changes. When you apply changes to a "
+"node in a cluster, Traffic Server automatically applies the changes to all "
+"other nodes in the cluster."
 msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:50
@@ -97,8 +97,8 @@ msgstr ""
 #: ../../reference/configuration/splitdns.config.en.rst:69
 msgid ""
 "A valid hostname. This specifies that DNS server selection will be based on "
-"the destination host. You can prefix the host with an exclamation mark "
-"(``!``) to indicate the ``NOT`` logical operator."
+"the destination host. You can prefix the host with an exclamation mark (``!"
+"``) to indicate the ``NOT`` logical operator."
 msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:77
@@ -125,7 +125,8 @@ msgid ""
 msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:88
-msgid "You must specify the domains with IP addresses in CIDR (\"dot\") notation."
+msgid ""
+"You must specify the domains with IP addresses in CIDR (\"dot\") notation."
 msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:97
@@ -136,8 +137,8 @@ msgstr ""
 msgid ""
 "A valid domain name. This optional directive specifies the default domain "
 "name to use for resolving hosts. Only one entry is allowed. If you do not "
-"provide the default domain, the system determines its value from "
-"``/etc/resolv.conf``"
+"provide the default domain, the system determines its value from ``/etc/"
+"resolv.conf``"
 msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:104
@@ -166,15 +167,15 @@ msgstr ""
 #: ../../reference/configuration/splitdns.config.en.rst:118
 msgid ""
 "This request matches the first line and therefore selects DNS server "
-"``255.255.255.255`` on port ``212``. All resolver requests use "
-"``company.com`` as the default domain, and ``company.com`` and "
-"``company1.com`` as the set of domains to search first. ::"
+"``255.255.255.255`` on port ``212``. All resolver requests use ``company."
+"com`` as the default domain, and ``company.com`` and ``company1.com`` as "
+"the set of domains to search first. ::"
 msgstr ""
 
 #: ../../reference/configuration/splitdns.config.en.rst:125
 msgid ""
 "This request matches the second line. Therefore, Traffic Server selects DNS "
-"server ``255.255.255.253``. Because no ``def_domain`` or ``search_list`` was"
-" supplied, Traffic Server retrieves this information from "
-":manpage:`resolv.conf(5)`"
+"server ``255.255.255.253``. Because no ``def_domain`` or ``search_list`` "
+"was supplied, Traffic Server retrieves this information from :manpage:"
+"`resolv.conf(5)`"
 msgstr ""

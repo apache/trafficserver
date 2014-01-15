@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -17,9 +17,9 @@ msgstr ""
 
 #: ../../reference/plugins/cacheurl.en.rst:23
 msgid ""
-"This plugin allows you to change the key that is used for caching a request."
-" It is designed so that multiple requests that have different URLs but the "
-"same content (for example, site mirrors) need be cached only once."
+"This plugin allows you to change the key that is used for caching a "
+"request. It is designed so that multiple requests that have different URLs "
+"but the same content (for example, site mirrors) need be cached only once."
 msgstr ""
 
 #: ../../reference/plugins/cacheurl.en.rst:29
@@ -47,14 +47,14 @@ msgstr ""
 
 #: ../../reference/plugins/cacheurl.en.rst:44
 msgid ""
-"Add the plugin to your ```plugins.config`` <../../configuration-"
-"files/plugins.config>`_ file::"
+"Add the plugin to your ```plugins.config`` <../../configuration-files/"
+"plugins.config>`_ file::"
 msgstr ""
 
 #: ../../reference/plugins/cacheurl.en.rst:49
 msgid ""
-"Start traffic server. Any rewritten URLs will be written to ``cacheurl.log``"
-" in the log directory by default."
+"Start traffic server. Any rewritten URLs will be written to ``cacheurl."
+"log`` in the log directory by default."
 msgstr ""
 
 #: ../../reference/plugins/cacheurl.en.rst:53
@@ -69,12 +69,12 @@ msgstr ""
 
 #: ../../reference/plugins/cacheurl.en.rst:57
 msgid ""
-"```http://people.apache.org/~zym/trafficserver/cacheurl.html`` "
-"<http://people.apache.org/~zym/trafficserver/cacheurl.html>`_"
+"```http://people.apache.org/~zym/trafficserver/cacheurl.html`` <http://"
+"people.apache.org/~zym/trafficserver/cacheurl.html>`_"
 msgstr ""
 
 #: ../../reference/plugins/cacheurl.en.rst:59
 msgid ""
-"```https://blog.zymlinux.net/index.php/archives/195`` "
-"<https://blog.zymlinux.net/index.php/archives/195>`_"
+"```https://blog.zymlinux.net/index.php/archives/195`` <https://blog."
+"zymlinux.net/index.php/archives/195>`_"
 msgstr ""

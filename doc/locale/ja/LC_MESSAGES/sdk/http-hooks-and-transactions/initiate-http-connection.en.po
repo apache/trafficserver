@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -23,6 +23,6 @@ msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/initiate-http-connection.en.rst:24
 msgid ""
-"```TSHttpConnect`` "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a2b45aa63ac1353b4c52123110197b61e>`__"
+"```TSHttpConnect`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a2b45aa63ac1353b4c52123110197b61e>`__"
 msgstr ""

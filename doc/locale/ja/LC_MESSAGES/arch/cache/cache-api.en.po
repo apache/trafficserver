@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -43,6 +43,6 @@ msgstr ""
 
 #: ../../arch/cache/cache-api.en.rst:42
 msgid ""
-"A preprocessor macro which computes the block size multiplier for a struct "
-":cpp:class:`Dir` where *big* is the *big* field value."
+"A preprocessor macro which computes the block size multiplier for a struct :"
+"cpp:class:`Dir` where *big* is the *big* field value."
 msgstr ""

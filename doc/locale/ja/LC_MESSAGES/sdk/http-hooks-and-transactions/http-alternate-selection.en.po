@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -23,9 +23,9 @@ msgid ""
 "of choosing between several alternate versions of a document for a specific "
 "URL. Alternates arise because the HTTP 1.1 specification allows different "
 "documents to be sent back for the same URL (depending on the clients "
-"request). For example, a server might send back a GIF image to a client that"
-" only accepts GIF images, and might send back a JPEG image to a client that "
-"only accepts JPEG images."
+"request). For example, a server might send back a GIF image to a client "
+"that only accepts GIF images, and might send back a JPEG image to a client "
+"that only accepts JPEG images."
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:31
@@ -33,9 +33,9 @@ msgid ""
 "The alternate selection mechanism is invoked when Traffic Server looks up a "
 "URL in its cache. For each URL, Traffic Server stores a vector of "
 "alternates. For each alternate in this vector, Traffic Server computes a "
-"quality value between 0 and 1 that represents how \"good\" the alternate is."
-" A quality value of 0 means that the alternate is unacceptable; a value of 1"
-" means that the alternate is a perfect match."
+"quality value between 0 and 1 that represents how \"good\" the alternate "
+"is. A quality value of 0 means that the alternate is unacceptable; a value "
+"of 1 means that the alternate is a perfect match."
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:38
@@ -68,14 +68,14 @@ msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:157
 msgid ""
-"Traffic Server augments the alternate selection through these callouts using"
-" the following algorithm:"
+"Traffic Server augments the alternate selection through these callouts "
+"using the following algorithm:"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:160
 msgid ""
-"Traffic Server computes its own quality value for the alternate, taking into"
-" account the quality of the accept match, the encoding match, and the "
+"Traffic Server computes its own quality value for the alternate, taking "
+"into account the quality of the accept match, the encoding match, and the "
 "language match."
 msgstr ""
 
@@ -102,9 +102,9 @@ msgstr ""
 msgid ""
 "A common usage for the alternate selection mechanism is when a plugin "
 "transforms a document for some clients and not for others, but wants to "
-"store both the transformed and unchanged document. The client's request will"
-" specify whether it accepted the transformed document. The plugin will then "
-"determine if the alternate matches this specification and then set the "
+"store both the transformed and unchanged document. The client's request "
+"will specify whether it accepted the transformed document. The plugin will "
+"then determine if the alternate matches this specification and then set the "
 "appropriate quality level for the alternate."
 msgstr ""
 
@@ -114,24 +114,24 @@ msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:183
 msgid ""
-"`TSHttpAltInfoCachedReqGet "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af4f3a56716e3e97afd582c7fdb14bcb7>`_"
+"`TSHttpAltInfoCachedReqGet <http://people.apache.org/~amc/ats/doc/html/"
+"ts_8h.html#af4f3a56716e3e97afd582c7fdb14bcb7>`_"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:185
 msgid ""
-"`TSHttpAltInfoCachedRespGet "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aff5861ae4a4a7a6ce7b2d669c113b3bb>`_"
+"`TSHttpAltInfoCachedRespGet <http://people.apache.org/~amc/ats/doc/html/"
+"ts_8h.html#aff5861ae4a4a7a6ce7b2d669c113b3bb>`_"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:187
 msgid ""
-"`TSHttpAltInfoClientReqGet "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a74d494c6442b6012d8385e92f0e14dee>`_"
+"`TSHttpAltInfoClientReqGet <http://people.apache.org/~amc/ats/doc/html/"
+"ts_8h.html#a74d494c6442b6012d8385e92f0e14dee>`_"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-alternate-selection.en.rst:189
 msgid ""
-"`TSHttpAltInfoQualitySet "
-"<http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a978b7160a048491d5698e0f4c0c79aad>`_"
+"`TSHttpAltInfoQualitySet <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a978b7160a048491d5698e0f4c0c79aad>`_"
 msgstr ""

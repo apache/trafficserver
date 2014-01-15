@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -45,9 +45,9 @@ msgid ""
 "`Header-Based Plugin Examples <../header-based-plugin-examples>`_ provides "
 "details about plugins that work on HTTP headers, while `HTTP Transformation "
 "Plugins <../http-transformation-plugin>`_ explains how to write a plugin "
-"that transforms or scans the body of an HTTP response. `New Protocol Plugins"
-" <../new-protocol-plugins>`_ provides essential information if you want to "
-"support your own protocol on Traffic Server."
+"that transforms or scans the body of an HTTP response. `New Protocol "
+"Plugins <../new-protocol-plugins>`_ provides essential information if you "
+"want to support your own protocol on Traffic Server."
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:43
@@ -60,15 +60,14 @@ msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:46
 msgid ""
-"`Function Index "
-"<http://ci.apache.org/projects/trafficserver/trunk/doxygen/>`_: Doxygen "
-"reference"
+"`Function Index <http://ci.apache.org/projects/trafficserver/trunk/doxygen/"
+">`_: Doxygen reference"
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:49
 msgid ""
-"`Type Index "
-"<http://ci.apache.org/projects/trafficserver/trunk/doxygen/classes.html>`_"
+"`Type Index <http://ci.apache.org/projects/trafficserver/trunk/doxygen/"
+"classes.html>`_"
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:51
@@ -77,8 +76,8 @@ msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:52
 msgid ""
-"`Deprecated Functions "
-"<http://ci.apache.org/projects/trafficserver/trunk/doxygen/deprecated.html>`_"
+"`Deprecated Functions <http://ci.apache.org/projects/trafficserver/trunk/"
+"doxygen/deprecated.html>`_"
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:55
@@ -95,8 +94,8 @@ msgstr ""
 #: ../../sdk/preface/how-to-use-this-book.en.rst:61
 msgid ""
 "`How to Create Traffic Server Plugins <../how-to-create-trafficserver-"
-"plugins>`_ Basic structures that all plugins use: events, continuations, and"
-" how to hook on to Traffic Server processes. Detailed explication of a "
+"plugins>`_ Basic structures that all plugins use: events, continuations, "
+"and how to hook on to Traffic Server processes. Detailed explication of a "
 "sample blacklisting plugin."
 msgstr ""
 
@@ -130,8 +129,8 @@ msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:85
 msgid ""
-"The remaining sections comprise the API function reference and are organized"
-" by function type:"
+"The remaining sections comprise the API function reference and are "
+"organized by function type:"
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:88
@@ -151,10 +150,10 @@ msgstr ""
 #: ../../sdk/preface/how-to-use-this-book.en.rst:98
 msgid ""
 "`HTTP Headers <../http-headers>`_ Contains instructions for implementing "
-"performance enhancements for all plugins that manipulate HTTP headers. These"
-" functions examine and modify HTTP headers, MIME headers, URLs, and the "
-"marshal buffers that contain header information. If you are working with "
-"headers, then be sure to read this chapter."
+"performance enhancements for all plugins that manipulate HTTP headers. "
+"These functions examine and modify HTTP headers, MIME headers, URLs, and "
+"the marshal buffers that contain header information. If you are working "
+"with headers, then be sure to read this chapter."
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:105
@@ -163,8 +162,8 @@ msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:107
 msgid ""
-"`Continuations <../continuations>`_ Continuations provide the basic callback"
-" mechanism and data abstractions used in Traffic Server."
+"`Continuations <../continuations>`_ Continuations provide the basic "
+"callback mechanism and data abstractions used in Traffic Server."
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:111
@@ -187,8 +186,8 @@ msgstr ""
 #: ../../sdk/preface/how-to-use-this-book.en.rst:121
 msgid ""
 "`Plugin Management <../plugin-management>`_ These functions enable you to "
-"set up a configuration interface for plugins, access installed plugin files,"
-" and set up plugin licensing."
+"set up a configuration interface for plugins, access installed plugin "
+"files, and set up plugin licensing."
 msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:125
@@ -199,7 +198,6 @@ msgstr ""
 
 #: ../../sdk/preface/how-to-use-this-book.en.rst:128
 msgid ""
-"`Function Index "
-"<http://ci.apache.org/projects/trafficserver/trunk/doxygen/>`_ Doxygen "
-"generated Traffic Server API Documentation"
+"`Function Index <http://ci.apache.org/projects/trafficserver/trunk/doxygen/"
+">`_ Doxygen generated Traffic Server API Documentation"
 msgstr ""

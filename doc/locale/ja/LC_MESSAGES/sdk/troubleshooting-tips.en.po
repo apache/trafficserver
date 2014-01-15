@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -25,9 +25,9 @@ msgstr ""
 
 #: ../../sdk/troubleshooting-tips.en.rst:35
 msgid ""
-"The process for compiling a shared library varies with the platform used, so"
-" the Traffic Server API includes the :program:`tsxs` script you can use to "
-"create shared libraries on all supported Traffic Server platforms."
+"The process for compiling a shared library varies with the platform used, "
+"so the Traffic Server API includes the :program:`tsxs` script you can use "
+"to create shared libraries on all supported Traffic Server platforms."
 msgstr ""
 
 #: ../../sdk/troubleshooting-tips.en.rst:40

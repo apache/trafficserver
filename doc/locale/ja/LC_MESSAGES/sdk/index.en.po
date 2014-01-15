@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -25,8 +25,8 @@ msgstr ""
 
 #: ../../sdk/index.en.rst:27
 msgid ""
-"The *Traffic Server Software Developers Kit* shows you how to create plugins"
-" using the Traffic Server SDK."
+"The *Traffic Server Software Developers Kit* shows you how to create "
+"plugins using the Traffic Server SDK."
 msgstr ""
 
 #: ../../sdk/index.en.rst:31
@@ -45,9 +45,9 @@ msgstr ""
 #: ../../sdk/index.en.rst:41
 msgid ""
 "If you find any such issues, you may want to submit a `bug or a patch "
-"<https://issues.apache.org/jira/secure/CreateIssue!default.jspa?pid=12310963>`__."
-" Or find out how to `find bugs <>`__, `create useful bug reports <>`__ or "
-"`patches <>`__."
+"<https://issues.apache.org/jira/secure/CreateIssue!default.jspa?"
+"pid=12310963>`__. Or find out how to `find bugs <>`__, `create useful bug "
+"reports <>`__ or `patches <>`__."
 msgstr ""
 
 #: ../../sdk/index.en.rst:46

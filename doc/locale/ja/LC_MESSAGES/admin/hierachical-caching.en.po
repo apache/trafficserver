@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -21,12 +21,12 @@ msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:30
 msgid ""
-"A cache hierarchy consists of cache levels that communicate with each other."
-" Traffic Server supports several types of cache hierarchies. All cache "
-"hierarchies recognize the concept of **parent** and **child**. A parent "
-"cache is a cache higher up in the hierarchy, to which Traffic Server can "
-"forward requests. A child cache is a cache for which Traffic Server is a "
-"parent."
+"A cache hierarchy consists of cache levels that communicate with each "
+"other. Traffic Server supports several types of cache hierarchies. All "
+"cache hierarchies recognize the concept of **parent** and **child**. A "
+"parent cache is a cache higher up in the hierarchy, to which Traffic Server "
+"can forward requests. A child cache is a cache for which Traffic Server is "
+"a parent."
 msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:37
@@ -43,9 +43,9 @@ msgid ""
 "it searches a parent cache (which itself can search other caches) before "
 "finally retrieving the object from the origin server. You can configure a "
 "Traffic Server node to use one or more parent caches so that if one parent "
-"is unavailable, then another parent is availale to service requests. This is"
-" called `Parent Failover`_. Traffic Server will support parent caching for "
-"HTTP and HTTPS requests."
+"is unavailable, then another parent is availale to service requests. This "
+"is called `Parent Failover`_. Traffic Server will support parent caching "
+"for HTTP and HTTPS requests."
 msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:50
@@ -100,8 +100,8 @@ msgid ""
 "requests to another parent cache. If you specify more than two parent "
 "caches, then the order in which the parent caches are queried depends upon "
 "the parent proxy rules configured in the file:`parent.config` configuration "
-"file. By default, the parent caches are queried in the order they are listed"
-" in the configuration file."
+"file. By default, the parent caches are queried in the order they are "
+"listed in the configuration file."
 msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:96
@@ -120,10 +120,10 @@ msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:102
 msgid ""
-"Identify the parent cache you want to use to service missed requests. To use"
-" **parent failover**, you must identify more than one parent cache so that "
-"when a parent cache is unavailable, requests are sent to another parent "
-"cache."
+"Identify the parent cache you want to use to service missed requests. To "
+"use **parent failover**, you must identify more than one parent cache so "
+"that when a parent cache is unavailable, requests are sent to another "
+"parent cache."
 msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:107
@@ -135,15 +135,15 @@ msgstr ""
 #: ../../admin/hierachical-caching.en.rst:109
 msgid ""
 "Configure Traffic Server to use a parent cache by editing the following "
-"variable :ts:cv:`proxy.config.http.parent_proxy_routing_enable` in "
-":file:`records.config` file."
+"variable :ts:cv:`proxy.config.http.parent_proxy_routing_enable` in :file:"
+"`records.config` file."
 msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:112
 msgid ""
-"Edit the :file:`parent.config` file located in the Traffic Server ``config``"
-" directory to set parent proxy rules to specify the parent cache to which "
-"you want missed requests to be forwarded;"
+"Edit the :file:`parent.config` file located in the Traffic Server "
+"``config`` directory to set parent proxy rules to specify the parent cache "
+"to which you want missed requests to be forwarded;"
 msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:116

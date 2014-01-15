@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
@@ -29,12 +29,12 @@ msgstr ""
 
 #: ../../reference/api/TSMBufferCreate.en.rst:35
 msgid ""
-"The marshal buffer or :type:`TSMBuffer` is a heap data structure that stores"
-" parsed URLs, MIME headers and HTTP headers. You can allocate new objects "
-"out of marshal buffers, and change the values within the marshal buffer. "
-"Whenever you manipulate an object, you require the handle to the object "
-"(:type:`TSMLoc`) and the marshal buffer containing the object "
-"(:type:`TSMBuffer`)."
+"The marshal buffer or :type:`TSMBuffer` is a heap data structure that "
+"stores parsed URLs, MIME headers and HTTP headers. You can allocate new "
+"objects out of marshal buffers, and change the values within the marshal "
+"buffer. Whenever you manipulate an object, you require the handle to the "
+"object (:type:`TSMLoc`) and the marshal buffer containing the object (:type:"
+"`TSMBuffer`)."
 msgstr ""
 
 #: ../../reference/api/TSMBufferCreate.en.rst:41
@@ -56,8 +56,8 @@ msgstr ""
 msgid ""
 ":func:`TSHandleMLocRelease` Releases the :type:`TSMLoc` mloc created from "
 "the :type:`TSMLoc` parent. If a :type:`TSMLoc` is obtained from a "
-"transaction, it does not have a parent :type:`TSMLoc`. Use the the constant "
-":data:`TS_NULL_MLOC` as its parent."
+"transaction, it does not have a parent :type:`TSMLoc`. Use the the "
+"constant :data:`TS_NULL_MLOC` as its parent."
 msgstr ""
 
 #: ../../reference/api/TSMBufferCreate.en.rst:56
@@ -66,9 +66,9 @@ msgstr ""
 
 #: ../../reference/api/TSMBufferCreate.en.rst:58
 msgid ""
-":func:`TSMBufferDestroy` and :func:`TSHandleMLocRelease` return "
-":data:`TS_SUCCESS` on success, or :data:`TS_ERROR` on failure. "
-":func:`TSMBufferCreate` returns the new :type:`TSMBuffer`."
+":func:`TSMBufferDestroy` and :func:`TSHandleMLocRelease` return :data:"
+"`TS_SUCCESS` on success, or :data:`TS_ERROR` on failure. :func:"
+"`TSMBufferCreate` returns the new :type:`TSMBuffer`."
 msgstr ""
 
 #: ../../reference/api/TSMBufferCreate.en.rst:63
