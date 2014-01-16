@@ -13,7 +13,7 @@ msgstr ""
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:2
 msgid "Inline on a Linux router"
-msgstr ""
+msgstr "Linux ルーター上でのインライン"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:21
 msgid ""
@@ -21,27 +21,34 @@ msgid ""
 "behind a single physical interface. For the purposes of this example will "
 "we presume"
 msgstr ""
+"経路セットアップはクライアントは一つの物理インターフェースの後ろにある別々の"
+"ネットワーク上に存在すると仮定します。この例の目的を次のように仮定します。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:25
 msgid "The clients are on network 172.28.56.0/24"
-msgstr ""
+msgstr "クライアントは 172.28.56.0/24 のネットワーク上にあります"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:26
 msgid "The router connects the networks 172.28.56.0/24 and 192.168.1.0/24"
 msgstr ""
+"ルーターは 172.28.56.0/24 と 192.168.1.0/24 のネットワークを接続しています。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:27
 msgid "Interface ``eth0`` is on the network 192.168.1.0/24"
 msgstr ""
+"インターフェース ``eth0`` は 192.168.1.0/24 のネットワーク上にあります。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:28
 msgid "Interface ``eth1`` is on the network 172.28.56.0/24"
 msgstr ""
+"インターフェース ``eth1`` は 172.28.56.0/24 のネットワーク上にあります。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:29
 msgid ""
 "The router is already configured to route traffic correctly for the clients."
 msgstr ""
+"このルーターはクライアントのためにトラフィックを正しく転送するようにすでに"
+"設定済みです。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:32
 msgid ""
@@ -49,6 +56,8 @@ msgid ""
 "router. The first step is to use ``iptables`` to handle IP packets "
 "appropriately."
 msgstr ""
+"この例ではルーターを通るポート 80 (HTTP) のトラフィックを横取りします。"
+"最初のステップは IP パケットを適切に扱うために  ``iptables`` を使うことです。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:47
 msgid ""
@@ -66,12 +75,26 @@ msgid ""
 "exiting the ``iptables`` processing via ``ACCEPT`` before the last line is "
 "checked."
 msgstr ""
+"これらについてポリシールーティングができるようにパケットに印を付けます。"
+"内向きのパケットでは外部の IP アドレスに送信されるパケットを受け付けるために "
+"``TPROXY`` を使用します。外向きのパケットを返すために外部アドレスに bind "
+"されたソケットがあり、内部的に配送されることのみを強制します。``--on-ip`` の"
+"値は目的のポートは特定のアドレスに bind されておらず listen 状態なので 0 "
+"です。``--on-port`` の値は Traffic Server のサーバーポートと一致しなければ"
+"成りませんが、その他の点では任意の値を使用できます。 ``--dport`` と "
+"``--sport`` はクライアントとオリジンサーバーの視点でのポートを指定します。"
+"真ん中の二行は印の付けられた Traffic Server へのローカル"
+"なウェブトラフィックを通します。これらのルールは必要に応じて厳しくすることも"
+"緩めることも可能です。トラフィックのマッチングと最後の行が確認される前の "
+"``iptables`` での ``ACCEPT`` による処理により提供されます。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:61
 msgid ""
 "Once the flows are marked we can force them to be delivered locally via the "
 "loopback interface via a policy routing table."
 msgstr ""
+"一度フローに印が付けられると、それらがポリシールーティングテーブルにより"
+"ループバックインターフェースで内部的に配送されることを強制できます。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:69
 msgid ""
@@ -79,41 +102,46 @@ msgid ""
 "``iptables`` and the routing rule. The table number must be in the range "
 "1..253."
 msgstr ""
+"使用済みという印付けは独断的に行われますが、``iptables`` と"
+"ルーティングルールとの間で一貫していなければなりません。テーブル番号は 1 "
+"から 253 の間でなければなりません。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:73
 msgid ""
 "To configure Traffic Server set the following values in :file:`records."
 "config`"
 msgstr ""
+"Traffic Server を設定するために次の値を :file:`records.config` に設定"
+"してください。"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:78
 msgid "``proxy.config.http.server_port``"
-msgstr ""
+msgstr "``proxy.config.http.server_port``"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:81
 msgid "``STRING`` Default: ``=``"
-msgstr ""
+msgstr "``STRING`` デフォルト: ``=``"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:86
 msgid "``proxy.config.reverse_proxy.enabled``"
-msgstr ""
+msgstr "``proxy.config.reverse_proxy.enabled``"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:85
 msgid "``INT`` Default: ``1``"
-msgstr ""
+msgstr "``INT`` デフォルト: ``1``"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:90
 msgid "``proxy.config.url_remap.remap_required``"
-msgstr ""
+msgstr "``proxy.config.url_remap.remap_required``"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:89
 msgid "``INT`` Default: ``0``"
-msgstr ""
+msgstr "``INT`` デフォルト: ``0``"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:77
 msgid "``STRING`` Default: *value from* ``--on-port``"
-msgstr ""
+msgstr "``STRING`` デフォルト: ``--on-port`` *の値*"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:82
 msgid "``proxy.config.http.server_port_attr``"
-msgstr ""
+msgstr "``proxy.config.http.server_port_attr``"
