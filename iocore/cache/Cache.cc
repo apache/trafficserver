@@ -1983,8 +1983,8 @@ Lfinish:
 
 // explicit pair for random table in build_vol_hash_table
 struct rtable_pair {
-  unsigned int rval;
-  unsigned int vol;
+  unsigned int rval; ///< relative value, used to sort.
+  unsigned int idx; ///< volume mapping table index.
 };
 
 // comparison operator for random table in build_vol_hash_table
@@ -2068,7 +2068,7 @@ build_vol_hash_table(CacheHostRecord *cp)
   for (int i = 0; i < num_vols; i++)
     for (int j = 0; j < (int)rtable_entries[i]; j++) {
       rtable[rindex].rval = next_rand(&rnd[i]);
-      rtable[rindex].vol = i;
+      rtable[rindex].idx = i;
       rindex++;
     }
   ink_assert(rindex == (int)rtable_size);
@@ -2081,11 +2081,11 @@ build_vol_hash_table(CacheHostRecord *cp)
   for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
     pos = width / 2 + j * width;  // position to select closest to
     while (pos > rtable[i].rval && i < (int)rtable_size - 1) i++;
-    ttable[j] = rtable[i].vol;
-    gotvol[ttable[j]]++;
+    ttable[j] = mapping[rtable[i].idx];
+    gotvol[rtable[i].idx]++;
   }
   for (int i = 0; i < num_vols; i++) {
-    Debug("cache_init", "build_vol_hash_table %d request %d got %d", i, forvol[i], gotvol[i]);
+    Debug("cache_init", "build_vol_hash_table index %d mapped to %d requested %d got %d", i, mapping[i], forvol[i], gotvol[i]);
   }
   // install new table
   if (cp->vol_hash_table)
@@ -2146,13 +2146,13 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
 
       if (!DISK_BAD(d)) {
         char message[128];
-        snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
+        snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
         REC_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
 
         char message[128];
-        snprintf(message, sizeof(message), "too many errors accessing disk %s: declaring disk bad", d->path);
+        snprintf(message, sizeof(message), "too many errors accessing disk %s [%d/%d]: declaring disk bad", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
         REC_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
         /* subtract the disk space that was being used from  the cache size stat */

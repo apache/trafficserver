@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2500] Fix handling of cache stripe assignment when a disk is
+   taken offline.
+
   *) [TS-2499] Fix the header_rewrite plugin expansions of the new %<>
    strings. Author: Alexey Ivanov <aivanov@linkedin.com>.
 
