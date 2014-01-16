@@ -13,11 +13,11 @@ msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:19
 msgid "Cache Architecture"
-msgstr ""
+msgstr "キャッシュアーキテクチャ"
 
 #: ../../arch/cache/cache-arch.en.rst:24
 msgid "Introduction"
-msgstr ""
+msgstr "導入"
 
 #: ../../arch/cache/cache-arch.en.rst:31
 msgid ""
@@ -30,6 +30,13 @@ msgid ""
 "`http-proxy-caching` and :ref:`configuring-the-cache` along with the "
 "associated configuration files and values."
 msgstr ""
+"このドキュメントの目的は、 |TS| キャッシュの基本構造と実装の詳細について記述"
+"することです。キャッシュの設定については、内部の仕組みを理解するのに必要な範囲"
+"でのみ記述します。このドキュメントは、主に |TS| のコードや |TS| のプラグインに"
+"関わる |TS| デベロッパーにとって有用となるでしょう。読者は、 "
+":ref:`admin-guide` と、特に :ref:`http-proxy-caching` と "
+":ref:`configuring-the-cache` 、加えて設定ファイルや設定値に詳しいことを前提と"
+"します。"
 
 #: ../../arch/cache/cache-arch.en.rst:37
 msgid ""
@@ -37,26 +44,30 @@ msgid ""
 "this document will frequently use terms in different ways than they are "
 "used in the code in an attempt to create some consistency."
 msgstr ""
+"不幸なことに、内部用語は一貫していません。そのためこのドキュメントにおいては一"
+"貫性を得るためにコード内で使われるものとは違った方法で頻繁に用語を使用します。"
 
 #: ../../arch/cache/cache-arch.en.rst:41
 msgid "Cache Layout"
-msgstr ""
+msgstr "キャッシュレイアウト"
 
 #: ../../arch/cache/cache-arch.en.rst:48
 msgid "Cache storage"
-msgstr ""
+msgstr "キャッシュストレージ"
 
 #: ../../arch/cache/cache-arch.en.rst:56
 msgid "Two cache spans"
-msgstr ""
+msgstr "二つのキャッシュスパン"
 
 #: ../../arch/cache/cache-arch.en.rst:66
 msgid "If the cache volumes for the example cache spans were defined as"
 msgstr ""
+"もし、例としてキャッシュスパンのキャッシュボリュームが以下のように定義されて"
+"いたら"
 
 #: ../../arch/cache/cache-arch.en.rst:71
 msgid "then the actual layout would look like"
-msgstr ""
+msgstr "実際のレイアウトはこのようになるでしょう。"
 
 #: ../../arch/cache/cache-arch.en.rst:83
 msgid ""
@@ -67,10 +78,15 @@ msgid ""
 "those files can (and almost always will) invalidate the existing cache in "
 "its entirety."
 msgstr ""
+"キャッシュスパン、キャッシュボリューム、そしてそれらを構成するキャッシュ"
+"ストライプのレイアウトと構造は、全て :file:`storage.config` と"
+":file:`cache.config` から取得され、 :process:`traffic_server` が開始された時に"
+"はじめから再計算されます。従って、これらのファイルへの任意の変更は(ほとんど"
+"常に)それら全ての既存のキャッシュを無効化します。"
 
 #: ../../arch/cache/cache-arch.en.rst:89
 msgid "Stripe Structure"
-msgstr ""
+msgstr "ストライプ構造"
 
 #: ../../arch/cache/cache-arch.en.rst:91
 msgid ""
@@ -82,6 +98,12 @@ msgid ""
 "thinks of as a volume (what this document calls a \"cache volume\") is "
 "represented by :cpp:class:`CacheVol`."
 msgstr ""
+"|TS| は、キャッシュストライプと結び付けられたストレージを区別されないバイト列"
+"のスパンとして扱います。内部的に各ストライプはほぼ完全に独立して扱われます。"
+"この節で記述されるデータ構造は、各ストライプに複製されます。内部的に "
+"\"ボリューム\" という単語はこれらのストライプに使用され、主に"
+":cpp:class:`Vol` で実装されています。ユーザが思うボリューム(このドキュメント"
+"では \"キャッシュボリューム\")は、 :cpp:class:`CacheVol` で表現されます。"
 
 #: ../../arch/cache/cache-arch.en.rst:98
 msgid ""
@@ -90,10 +112,14 @@ msgid ""
 "assignment is changed are effectively lost as their directory data will not "
 "be found in the new stripe."
 msgstr ""
+"ディレクトリはストライプに配置されるため、ストライプ割当はオブジェクトを"
+"扱うような動作をする前に行われなければなりません。ストライプ割当が変更された"
+"キャッシュオブジェクトは、新しいストライプ上で発見されないであろうディレクトリ"
+"データとして事実上消失します。"
 
 #: ../../arch/cache/cache-arch.en.rst:106
 msgid "Cache Directory"
-msgstr ""
+msgstr "キャッシュディレクトリ"
 
 #: ../../arch/cache/cache-arch.en.rst:122
 msgid ""
@@ -103,6 +129,10 @@ msgid ""
 "this means that most cache misses do not require disk I/O which has a large "
 "performance benefit."
 msgstr ""
+"ディレクトリはメモリに常住する構成で使用されるので、ディレクトリエントリは可能"
+"な限り小さくなっています。（現在は 10 バイト）このことは、そこに保存できる"
+"データに幾つかの制約を強要します。一方でほとんどのキャッシュミスはディスク "
+"I/O を要求せず、大きな性能面の恩恵を得ることになります。"
 
 #: ../../arch/cache/cache-arch.en.rst:126
 msgid ""
@@ -115,10 +145,18 @@ msgid ""
 "in the cache. If there is enough memory to run |TS| with an empty cache "
 "there is enough to run it with a full cache."
 msgstr ""
+"加えて、ディレクトリは常に最大のサイズになります。ストライプが一旦初期化"
+"されると、ディレクトリサイズは固定されて二度と変更されません。このサイズは、"
+"ストライプのサイズに（大雑把に、線形に）関係します。この理由は |TS| のメモリ"
+"使用量は、ディスクキャッシュのサイズに強く依存することにあります。ディレクトリ"
+"サイズは変わらずメモリ要件もまた変わらないため、 |TS| がキャッシュに保存された"
+"コンテンツより多いメモリを消費することはありません。キャッシュが空の状態で "
+"|TS| を動作させるのに十分なメモリがあるなら、キャッシュが満ちた状態で動作する"
+"のに十分です。"
 
 #: ../../arch/cache/cache-arch.en.rst:193
 msgid "Storage Layout"
-msgstr ""
+msgstr "ストレージレイアウト"
 
 #: ../../arch/cache/cache-arch.en.rst:195
 msgid ""
@@ -132,14 +170,23 @@ msgid ""
 "of the header without the segment free lists. This makes the size of the "
 "header dependent on the directory but not that of the footer."
 msgstr ""
+"ストレージレイアウトは、ストライプメタデータの後ろにキャッシュされたコンテンツ"
+"が続きます。メタデータは三つの要素、ストライプヘッダ、ディレクトリ、"
+"ストライプフッタで構成されます。メタデータは二度保存されます。ヘッダとフッタは "
+":cpp:class:`VolHeaderFooter` のインスタンスです。これは可変長配列を末尾に持つ"
+"ことができるスタブ構造体です。この配列はディレクトリのルートのセグメントフリー"
+"リストとして使用されます。各要素はセグメントのフリーリストの、最初の要素の"
+"セグメントインデックスを持ちます。フッタは、セグメントフリーリストを伴わない"
+"ヘッダのコピーです。ヘッダのサイズはディレクトリに依存しますが、フッタは依存"
+"しません。"
 
 #: ../../arch/cache/cache-arch.en.rst:205
 msgid "Each stripe has several values that describe its basic layout."
-msgstr ""
+msgstr "各ストライプは、基本的なレイアウトを表現する幾つかの値を持ちます。"
 
 #: ../../arch/cache/cache-arch.en.rst:209
 msgid "skip"
-msgstr ""
+msgstr "skip"
 
 #: ../../arch/cache/cache-arch.en.rst:208
 msgid ""
@@ -148,32 +195,38 @@ msgid ""
 "system, or an offset representing use of space in the cache span by other "
 "stripes."
 msgstr ""
+"ストライプデータの開始地点です。これはホストオペレーティングシステムによる"
+"問題を回避するために物理デバイスの始点に予約されたスペース、もしくは他の"
+"ストライプにキャッシュスパンのスペースが使用されていることを表すオフセットの"
+"どちらかを表します。"
 
 #: ../../arch/cache/cache-arch.en.rst:212
 msgid "start"
-msgstr ""
+msgstr "start"
 
 #: ../../arch/cache/cache-arch.en.rst:212
 msgid "The offset for the start of the content, after the stripe metadata."
-msgstr ""
+msgstr "ストライプメタデータの後からの、コンテンツの開始地点を示すオフセット"
 
 #: ../../arch/cache/cache-arch.en.rst:215
 msgid "length"
-msgstr ""
+msgstr "length"
 
 #: ../../arch/cache/cache-arch.en.rst:215
 msgid "Total number of bytes in the stripe. :cpp:member:`Vol::len`."
-msgstr ""
+msgstr "ストライプのバイトの合計値。 :cpp:member:`Vol::len` "
 
 #: ../../arch/cache/cache-arch.en.rst:218
 msgid "data length"
-msgstr ""
+msgstr "data length"
 
 #: ../../arch/cache/cache-arch.en.rst:218
 msgid ""
 "Total number of blocks in the stripe available for content storage. :cpp:"
 "member:`Vol::data_blocks`."
 msgstr ""
+"コンテンツストレージとして使用可能なストライプのブロックの合計値。"
+":cpp:member:`Vol::data_blocks` "
 
 #: ../../arch/cache/cache-arch.en.rst:220
 msgid ""
@@ -181,6 +234,9 @@ msgid ""
 "there are at least three different metrics (bytes, cache blocks, store "
 "blocks) used in various places."
 msgstr ""
+"キャッシュコードの size や length を扱う場合、特に注意しなければなりません。"
+"これらは様々な箇所で、少なくとも三つの違うメトリクス(バイト、キャッシュ"
+"ブロック、ストアブロック)が使われているからです。"
 
 #: ../../arch/cache/cache-arch.en.rst:222
 msgid ""
@@ -194,6 +250,13 @@ msgid ""
 "expense of reducing the number of distinct objects that can be stored in "
 "the cache [#]_."
 msgstr ""
+"ディレクトリの合計サイズ（エントリ数）は、ストライプのサイズを取得して平均"
+"オブジェクトサイズで割ることで計算されます。もしキャッシュサイズが |TS| の"
+"メモリ要件により増加する場合、ディレクトリは常に効率的なメモリ量を消費します。"
+"平均オブジェクトサイズはデフォルトでは 8000 バイトですが、 "
+":ts:cv:`proxy.config.cache.min_average_object_size` で設定できます。平均オブ"
+"ジェクトサイズを増加させることにより、キャッシュに保存するオブジェクト数を減ら"
+"すことと引き換えに、ディレクトリのメモリ使用量を減らすことができます。 [#]_"
 
 #: ../../arch/cache/cache-arch.en.rst:232
 msgid ""
@@ -206,14 +269,22 @@ msgid ""
 "is not updated. Instead it will be noted if the object is accessed in the "
 "future and the disk read of the fragment fails."
 msgstr ""
+"コンテンツエリアは実際のオブジェクトを保存し、最もキャッシュされてから時間が"
+"経過したオブジェクトを新たなドキュメントで上書きする循環バッファとして使用され"
+"ます。ストライプの新たなキャッシュデータの位置は、 *書込みカーソル* と呼ばれ"
+"ます。これはデータが書込みカーソルによって上書きされる場合、たとえ失効して"
+"いなくても、オブジェクトは事実上キャッシュから立ち退かせられることを意味"
+"します。もしオブジェクトが上書きされる場合、検出されずディレクトリは更新されま"
+"せん。代わりに、もしオブジェクトが将来アクセスされてフラグメントのディスク"
+"読込みが失敗する場合、警告されます。"
 
 #: ../../arch/cache/cache-arch.en.rst:241
 msgid "The write cursor and documents in the cache."
-msgstr ""
+msgstr "書込みカーソルとキャッシュ内のドキュメント"
 
 #: ../../arch/cache/cache-arch.en.rst:243
 msgid "Cache data on disk is never updated."
-msgstr ""
+msgstr "ディスク上のキャッシュデータは永遠に更新されません。"
 
 #: ../../arch/cache/cache-arch.en.rst:245
 msgid ""
@@ -227,6 +298,15 @@ msgid ""
 "object needs to removed from cache, only the directory needs to be changed. "
 "No other work (and *particularly* no disk I/O) needs to be done."
 msgstr ""
+"これは、心に留めておくべき重要な事です。更新されるように見えるもの（新鮮では"
+"なくなったコンテンツをリフレッシュし、 304 を返すような）は、実際には書込み"
+"カーソルで書き込まれているデータの新しいコピーです。オリジナルは書込みカーソル"
+"がディスクのその位置に到着する時に消去される、\"死んだ\" スペースとして残され"
+"ます。一旦ストライプディレクトリが（メモリ内で！）更新されると、キャッシュ上の"
+"オリジナルのフラグメントは事実上破棄されます。これは他のケースでも同様に用いら"
+"れる、一般的なスペース管理技術です。もしオブジェクトをキャッシュから削除する"
+"必要がある場合、ディレクトリの変更のみ必要があります。他の動作（ *特に* "
+"ディスク I/O も）を行う必要はありません。"
 
 #: ../../arch/cache/cache-arch.en.rst:253
 msgid "Object Structure"
