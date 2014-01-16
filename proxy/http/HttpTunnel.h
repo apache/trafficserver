@@ -297,9 +297,9 @@ public:
   void init(HttpSM * sm_arg, ProxyMutex * amutex);
   void reset();
   void kill_tunnel();
-  bool is_tunnel_active() { return active; }
-  bool is_tunnel_alive();
-  bool has_cache_writer();
+  bool is_tunnel_active() const { return active; }
+  bool is_tunnel_alive() const;
+  bool has_cache_writer() const;
 
   // YTS Team, yamsat Plugin
   void copy_partial_post_data();
@@ -419,7 +419,7 @@ HttpTunnel::chain_finish_all(HttpTunnelProducer * p)
 }
 
 inline bool
-HttpTunnel::is_tunnel_alive()
+HttpTunnel::is_tunnel_alive() const
 {
   bool tunnel_alive = false;
 
@@ -498,7 +498,7 @@ HttpTunnel::append_message_to_producer_buffer(HttpTunnelProducer * p, const char
 }
 
 inline bool
-HttpTunnel::has_cache_writer()
+HttpTunnel::has_cache_writer() const
 {
   for (int i = 0; i < MAX_CONSUMERS; i++) {
     if (consumers[i].vc_type == HT_CACHE_WRITE && consumers[i].vc != NULL) {
