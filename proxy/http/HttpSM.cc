@@ -5038,6 +5038,8 @@ HttpSM::handle_server_setup_error(int event, void *data)
   VIO *vio = (VIO *) data;
   ink_assert(vio != NULL);
 
+  STATE_ENTER(&HttpSM::handle_server_setup_error, event);
+
   // If there is POST or PUT tunnel wait for the tunnel
   //  to figure out that things have gone to hell
 
@@ -5117,8 +5119,6 @@ HttpSM::handle_server_setup_error(int event, void *data)
   vc_table.cleanup_entry(server_entry);
   server_entry = NULL;
   server_session = NULL;
-
-  STATE_ENTER(&HttpSM::handle_server_setup_error, callout_state);
 
   // if we are waiting on a plugin callout for
   //   HTTP_API_SEND_REQUEST_HDR defer calling transact until
