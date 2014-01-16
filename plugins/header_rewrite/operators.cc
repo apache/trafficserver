@@ -383,6 +383,7 @@ void
 OperatorAddHeader::exec(const Resources& res) const
 {
   std::string value;
+
   _value.append_value(value, res);
 
   VariableExpander ve(value);
