@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-1648] Segmentation fault in dir_clear_range()
+
   *) [TS-2500] Fix handling of cache stripe assignment when a disk is
    taken offline.
 
