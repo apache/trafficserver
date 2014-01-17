@@ -203,15 +203,15 @@ public:
 
   void set_transparent(bool passive_side, bool active_side);
 
-private:
-
-  void destroy();
-
   // The active vc is handed to the initiator of
   //   connection.  The passive vc is handled to
   //   receiver of the connection
   PluginVC active_vc;
   PluginVC passive_vc;
+private:
+
+  void destroy();
+
   Continuation *connect_to;
   bool connected;
 

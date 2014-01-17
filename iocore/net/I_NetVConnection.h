@@ -31,6 +31,7 @@
 #include "List.h"
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
+#include "ts.h"
 
 #define CONNECT_SUCCESS   1
 #define CONNECT_FAILURE   0
@@ -412,6 +413,9 @@ public:
 
   /** Returns local port. */
   uint16_t get_local_port();
+
+  /** Client protocol stack of this VC */
+  TSClientProtoStack proto_stack;
 
   /** Returns remote sockaddr storage. */
   sockaddr const* get_remote_addr();

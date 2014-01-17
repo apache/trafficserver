@@ -88,6 +88,34 @@ extern "C"
 #endif
 
   /**
+      TSClientProtoStack represents what protocols are used by
+      the client. It may be composed by several TSProtoType.
+
+      The value of TSProtoType indicates bit-offset that can
+      be mapped to TSClientProtoStack by bit shifting.
+
+      For example, TLS+SPDY can be mapped to protocol stack:
+        proto_stack = (1u << TS_PROTO_TLS) | (1u << TS_PROTO_SPDY)
+
+      For the sake of brevity, TS_PROTO_TCP is usually omitted in
+      protocol stack.
+   */
+  typedef enum {
+    /* Transport protocols (0~11) */
+    TS_PROTO_UDP = 0,
+    TS_PROTO_TCP = 1,
+    TS_PROTO_TLS = 2,   /* TLS/SSL */
+
+    /* Application protocols (12~31) */
+    TS_PROTO_HTTP = 12,
+    TS_PROTO_SPDY = 13,
+    TS_PROTO_RTMP = 14,
+    TS_PROTO_WBSK = 15, /* WebSocket */
+  } TSProtoType;
+
+  typedef uint32_t TSClientProtoStack;
+
+  /**
       The following struct is used by TSPluginRegister(). It stores
       registration information about the plugin.
 
@@ -2676,6 +2704,9 @@ extern "C"
 
    */
   tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
+
+  tsapi TSVConn TSHttpConnectWithProtoStack(struct sockaddr const* addr,
+                                            TSClientProtoStack proto_stack);
 
     /* --------------------------------------------------------------------------
      Initiate Transparent Http Connection */

@@ -70,7 +70,7 @@ void
 FetchSM::httpConnect()
 {
   Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
-  http_vc = TSHttpConnect(&_addr.sa);
+  http_vc = TSHttpConnectWithProtoStack(&_addr.sa, proto_stack);
 
   PluginVC *vc = (PluginVC *) http_vc;
 
@@ -619,6 +619,18 @@ void*
 FetchSM::ext_get_user_data()
 {
   return user_data;
+}
+
+void
+FetchSM::ext_set_proto_stack(TSClientProtoStack proto_stack)
+{
+  this->proto_stack = proto_stack;
+}
+
+TSClientProtoStack
+FetchSM::ext_get_proto_stack()
+{
+  return proto_stack;
 }
 
 TSMBuffer

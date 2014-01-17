@@ -154,6 +154,7 @@ HttpClientSession::new_transaction()
   transact_count++;
   DebugSsn("http_cs", "[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", con_id, transact_count, current_reader->sm_id);
 
+  current_reader->proto_stack = client_vc->proto_stack;
   current_reader->attach_client_session(this, sm_reader);
 }
 

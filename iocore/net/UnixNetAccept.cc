@@ -323,6 +323,7 @@ NetAccept::do_blocking_accept(EThread * t)
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
+    vc->proto_stack = (1u << TS_PROTO_HTTP);
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
     //eventProcessor.schedule_imm(vc, getEtype());
     eventProcessor.schedule_imm_signal(vc, getEtype());
@@ -477,6 +478,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->thread = e->ethread;
 
     vc->nh = get_NetHandler(e->ethread);
+    vc->proto_stack = (1u << TS_PROTO_HTTP);
 
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::mainEvent);
 

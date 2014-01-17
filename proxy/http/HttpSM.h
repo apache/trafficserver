@@ -265,6 +265,7 @@ public:
   bool is_private();
   bool decide_cached_url(URL * s_url);
 
+  TSClientProtoStack proto_stack;
   int64_t sm_id;
   unsigned int magic;
 

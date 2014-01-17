@@ -6090,6 +6090,13 @@ extern HttpAccept *plugin_http_transparent_accept;
 TSVConn
 TSHttpConnect(sockaddr const* addr)
 {
+  return TSHttpConnectWithProtoStack(addr, (1u << TS_PROTO_HTTP));
+}
+
+TSVConn
+TSHttpConnectWithProtoStack(sockaddr const* addr,
+                            TSClientProtoStack proto_stack)
+{
   sdk_assert(addr);
 
   sdk_assert(ats_is_ip(addr));
@@ -6100,6 +6107,9 @@ TSHttpConnect(sockaddr const* addr)
 
     new_pvc->set_active_addr(addr);
     new_pvc->set_accept_cont(plugin_http_accept);
+
+    new_pvc->active_vc.proto_stack = proto_stack;
+    new_pvc->passive_vc.proto_stack = proto_stack;
 
     PluginVC *return_vc = new_pvc->connect();
 
