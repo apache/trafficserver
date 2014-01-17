@@ -51,12 +51,12 @@ HeaderFieldName::operator const char*() {
   return name_.c_str();
 }
 
-HeaderFieldName::size_type HeaderFieldName::length() {
-  return name_.length();
-}
-
 std::string HeaderFieldName::str() {
   return name_;
+}
+
+HeaderFieldName::size_type HeaderFieldName::length() {
+  return name_.length();
 }
 
 const char *HeaderFieldName::c_str() {
