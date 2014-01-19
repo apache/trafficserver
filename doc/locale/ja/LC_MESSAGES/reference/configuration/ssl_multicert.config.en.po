@@ -168,7 +168,7 @@ msgstr ""
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:53
 msgid "ssl_cert_name=FILENAME"
-msgstr ""
+msgstr "ssl_cert_name=FILENAME"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:50
 msgid ""
@@ -177,10 +177,15 @@ msgid ""
 "cert.path` configuration variable. This is the only field that is required "
 "to be present."
 msgstr ""
+"TLS 証明書を含んでいるファイルの名前です。`FILENAME` は :ts:cv:`proxy.config."
+"ssl.server.cert.path` 設定変数で指定されたディレクトリからの相対位置で"
+"す。これは設定が必要とされている唯一のフィールドです。"
+
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:70
 msgid "ssl_key_name=FILENAME"
-msgstr ""
+msgstr "ssl_key_name=FILENAME"
+
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:67
 msgid ""
@@ -189,6 +194,11 @@ msgid ""
 "otherwise `FILENAME` is resolved relative to the :ts:cv:`proxy.config.ssl."
 "server.private_key.path` configuration variable."
 msgstr ""
+"この証明書のための秘密鍵を含んでいるファイルの名前です。もし鍵が証明書に"
+"含まれている場合、このフィールドは省略可能です。そうでは無い場合、`FILENAME` "
+"は :ts:cv:`proxy.config.ssl.server.private_key.path` 設定変数からの相対で"
+"解決されます。"
+
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:73
 msgid ""
@@ -197,10 +207,13 @@ msgid ""
 "chain. `FILENAME` is resolved relative to the :ts:cv:`proxy.config.ssl.CA."
 "cert.path` configuration variable."
 msgstr ""
+"システムの CA バンドルにない認証局によって発行された証明書では、証明書"
+"チェーンの検証のために追加の証明書が必要になることがあります。`FILENAME` は :"
+"ts:cv:`proxy.config.ssl.CA.cert.path` 設定変数からの相対で解決されます。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:81
 msgid "ssl_ticket_enabled=1|0"
-msgstr ""
+msgstr "ssl_ticket_enabled=1|0"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:79
 msgid ""
@@ -208,10 +221,14 @@ msgid ""
 "should be upgraded to version 0.9.8f or higher. This option must be set to "
 "`0` to disable session ticket support."
 msgstr ""
+":rfc:`5077` ステートレス TLS セッションチケットを有効化します。これに対応"
+"するには OpenSSL がバージョン 0.9.8f 以上にアップグレードされている必要が"
+"あります。このオプションはセッションチケットのサポートを無効化するために "
+"`0` に設定されなければなりません。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:95
 msgid "ticket_key_name=FILENAME"
-msgstr ""
+msgstr "ticket_key_name=FILENAME"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:84
 msgid ""
@@ -222,6 +239,12 @@ msgid ""
 "disabled by the ``ssl_ticket_enabled`` option.  The contents of the key "
 "file should be 48 random bytes."
 msgstr ""
+"TSL セッションの暗号化と復号化のための秘密情報を含むセッションチケットキー"
+"ファイルの名前です。もし `FILENAME` が絶対パスではない場合、"
+":ts:cv:`proxy.config.ssl.server.cert.path` 設定変数からの相対で解決されます。"
+"このオプションは ``ssl_ticket_enabled`` オプションでセッションチケットが"
+"無効化されている場合には効果をもちません。キーファイルの内容はランダムな "
+"48 バイトのはずです。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:92
 msgid ""
@@ -230,6 +253,10 @@ msgid ""
 "internal session ticket key is generated. This key will be different each "
 "time Traffic Server is started."
 msgstr ""
+"セッションチケットサポートはデフォルトで有効化されています。もし "
+"``ssl_ticket_enabled`` と ``ticket_key_name`` オプションのどちらかが指定"
+"されていない場合、内部セッションチケットキーが生成されます。キーは "
+"Traffic Server が起動されるたびに毎回異なります。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:146
 msgid ""
@@ -237,6 +264,9 @@ msgid ""
 "``server.pem`` for all requests to the IP address 111.11.11.1. Session "
 "tickets are enabled with a persistent ticket key."
 msgstr ""
+"次の例は Traffice Server が SSL 証明書 ``server.pem`` を IP アドレス "
+"111.11.11.1 へのすべてのリクエストに使用するように設定しています。"
+"セッションチケットは恒久的なチケットキーで有効化されています。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:155
 msgid ""
@@ -244,40 +274,6 @@ msgid ""
 "``server.pem`` and disable sessiont ticket for all requests to the IP "
 "address 111.11.11.1."
 msgstr ""
-
-#~ msgid "ssl_cert_name=PATH"
-#~ msgstr "ssl_cert_name=PATH"
-
-#~ msgid ""
-#~ "The name of the file containing the TLS certificate. `PATH` is located "
-#~ "relative to the directory specified by the :ts:cv:`proxy.config.ssl."
-#~ "server.cert.path` configuration variable. This is the only field that is "
-#~ "required to be present."
-#~ msgstr ""
-#~ "TLS 証明書を含んでいるファイルの名前です。`PATH` は :ts:cv:`proxy.config."
-#~ "ssl.server.cert.path` 設定変数で指定されたディレクトリからの相対位置で"
-#~ "す。これは設定が必要とされている唯一のフィールドです。"
-
-#~ msgid "ssl_key_name=PATH"
-#~ msgstr "ssl_key_name=PATH"
-
-#~ msgid ""
-#~ "The name of the file containing the private key for this certificate. If "
-#~ "the key is contained in the certificate file, this field can be omitted, "
-#~ "otherwise `PATH` is resolved relative to the :ts:cv:`proxy.config.ssl."
-#~ "server.private_key.path` configuration variable."
-#~ msgstr ""
-#~ "この証明書のための秘密鍵を含んでいるファイルの名前です。もし鍵が証明書に"
-#~ "含まれている場合、このフィールドは省略可能です。そうでは無い場合、`PATH` "
-#~ "は :ts:cv:`proxy.config.ssl.server.private_key.path` 設定変数からの相対で"
-#~ "解決されます。"
-
-#~ msgid ""
-#~ "If the certificate is issued by an authority that is not in the system "
-#~ "CA bundle, additional certificates may be needed to validate the "
-#~ "certificate chain. `PATH` is resolved relative to the :ts:cv:`proxy."
-#~ "config.ssl.CA.cert.path` configuration variable."
-#~ msgstr ""
-#~ "システムの CA バンドルにない認証局によって発行された証明書では、証明書"
-#~ "チェーンの検証のために追加の証明書が必要になることがあります。`PATH` は :"
-#~ "ts:cv:`proxy.config.ssl.CA.cert.path` 設定変数からの相対で解決されます。"
+"次の例は Traffice Server が IP アドレス 111.11.11.1 へのすべてのリクエストで "
+"SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化するように設定"
+"しています。"
