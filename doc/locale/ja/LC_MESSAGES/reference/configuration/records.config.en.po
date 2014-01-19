@@ -3104,7 +3104,7 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:62
 msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)"
-msgstr ""
+msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
 
 #: ../../reference/configuration/records.config.en.rst:171
 msgid ""
@@ -3114,6 +3114,10 @@ msgid ""
 "$TS_ROOT`` environment variable can be used alter the installation prefix "
 "at run time."
 msgstr ""
+"Traffic Server の設定ファイルを含むディレクトリ。これはビルド時に指定された "
+"``SYSCONFDIR`` のインストールした場所のプレフィックスからの相対の値を含んだ"
+"読み取り専用の設定オプションです。``$TS_ROOT`` 環境変数はインストールした"
+"場所のプレフィックスを実行時に切り替えるために使うことができます。"
 
 #: ../../reference/configuration/records.config.en.rst:207
 msgid ""
@@ -3121,10 +3125,13 @@ msgid ""
 "local system. Unless you specify an absolute path, this directory is "
 "located in the Traffic Server ``SYSCONFDIR`` directory."
 msgstr ""
+"Traffic Server が設定のスナップショットを保存するローカルシステム上のディ"
+"レクトリ。絶対パスを指定しない限り、このディレクトリは Traffic Server の "
+"``SYSCONFDIR`` ディレクトリに置かれます。"
 
 #: ../../reference/configuration/records.config.en.rst:235
 msgid "Bind threads to specific CPUs or CPU cores."
-msgstr ""
+msgstr "スレッドを特定の CPU または CPU コアに割り当てます。"
 
 #: ../../reference/configuration/records.config.en.rst:530
 #: ../../reference/configuration/records.config.en.rst:548
@@ -3132,14 +3139,19 @@ msgid ""
 "The ``Via`` header string can be decoded with the `Via Decoder Ring <http://"
 "trafficserver.apache.org/tools/via>`_."
 msgstr ""
+"``Via`` ヘッダーは "
+"`Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_ でデコード"
+"できます。"
 
 #: ../../reference/configuration/records.config.en.rst:662
 msgid "Enables (``1``) or disables (``0``) incoming keep-alive connections."
 msgstr ""
+"入ってくる接続の keep-alive を有効化 (``1``) または無効化 (``0``) します。"
 
 #: ../../reference/configuration/records.config.en.rst:666
 msgid "Enables (``1``) or disables (``0``) outgoing keep-alive connections."
 msgstr ""
+"出て行く接続の keep-alive を有効化 (``1``) または無効化 (``0``) します。"
 
 #: ../../reference/configuration/records.config.en.rst:669
 msgid ""
@@ -3161,12 +3173,18 @@ msgid ""
 "way up to ``proxy.config.net.connections_throttle`` connections, which in "
 "turn can starve incoming requests from available connections."
 msgstr ""
+"この値はアクティブなオリジンセッションをいつ取り除くかを決定するために使用"
+"されます。この値を設定しないとオリジンへの接続は "
+"``proxy.config.net.connections_throttle`` の接続数まで消費され、有効な接続"
+"から入ってくるリクエストを次々とタイムアウトさせます。"
 
 #: ../../reference/configuration/records.config.en.rst:847
 msgid ""
 "When enabled (1), Traffic Server bypasses the parent proxy for a request "
 "that is not cacheable."
 msgstr ""
+"有効化 (1) すると、Traffic Server はキャッシュできないリクエストで"
+"親プロキシーをバイパスします。"
 
 #: ../../reference/configuration/records.config.en.rst:880
 msgid ""
@@ -3176,6 +3194,12 @@ msgid ""
 "directly from cache. When disabled (``0``) Traffic Server will only cache "
 "the response if the response has ``Cache-Control`` headers."
 msgstr ""
+"有効化 (``1``) された場合、Traffic Server はリクエストされたページが存在"
+"しない場合にネガティブレスポンス ( ``404 Not Found`` のような ) をキャッ"
+"シュします。次回クライアントが同じページをリクエストした際、Traffic "
+"Server はネガティブレスポンスをキャッシュから直接返します。無効化 (``0``) "
+"された場合、Traffic Server はレスポンスが ``Cache-Control`` ヘッダーをもって"
+"場合にのみキャッシュを行います。"
 
 #: ../../reference/configuration/records.config.en.rst:886
 msgid ""
@@ -3183,10 +3207,14 @@ msgid ""
 "for the following HTTP response codes, regardless of the value specified "
 "for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable."
 msgstr ""
+"次の HTTP レスポンスコードは :ts:cv:`proxy.config.http."
+"negative_caching_enabled` 変数に指定された値を無視して、キャッシュを禁止"
+"しているサーバーからの ``Cache-Control`` ディレクティブは無視されます。"
 
 #: ../../reference/configuration/records.config.en.rst:889
 msgid "The following negative responses are cached by Traffic Server:::"
 msgstr ""
+"次のネガティブレスポンスは Traffic Server にキャッシュされます。"
 
 #: ../../reference/configuration/records.config.en.rst:908
 msgid ""
@@ -3194,6 +3222,10 @@ msgid ""
 "cache. This value only affects negative responses that do have explicit "
 "``Expires:`` or ``Cache-Control:`` lifetimes set by the server."
 msgstr ""
+"Traffic Server がネガティブレスポンスをキャッシュ内で有効とする時間 (秒) "
+"です。この値はサーバーによって設定された明示的な ``Expires:`` もしくは "
+"``Cache-Control:`` の生存時間を持っているネガティブレスポンスのみに影響"
+"します。"
 
 #: ../../reference/configuration/records.config.en.rst:951
 msgid ""
@@ -3222,12 +3254,15 @@ msgstr ""
 msgid ""
 "Specifies whether customizable response pages are language specific or not:"
 msgstr ""
+"カスタマイズ可能なレスポンスページが言語別どうかを指定します。"
 
 #: ../../reference/configuration/records.config.en.rst:1330
 msgid ""
 "The customizable response page default directory. If this is a relative "
 "path, Traffic Server resolves it relative to the ``PREFIX`` directory."
 msgstr ""
+"カスタマイズ可能なレスポンスページのデフォルトディレクトリ。相対パスの場合、"
+"Traffic Server は ``PREFIX`` ディレクトリからの相対で解決します。"
 
 #: ../../reference/configuration/records.config.en.rst:1409
 msgid ""
@@ -3327,12 +3362,16 @@ msgid ""
 "Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by "
 "default.  [Requires OpenSSL v1.0.1 and higher]"
 msgstr ""
+"TLS v1.1 を有効化 (``1``) もしくは無効化 (``0``) します。指定しない場合、"
+"デフォルトで有効です。[OpenSSL v1.0.1 以上が必要 ]"
 
 #: ../../reference/configuration/records.config.en.rst:1963
 msgid ""
 "Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, DISABLED "
 "by default.  [Requires OpenSSL v1.0.1 and higher]"
 msgstr ""
+"TLS v1.2 を有効化 (``1``) もしくは無効化 (``0``) します。指定しない場合、"
+"デフォルトで無効です。[OpenSSL v1.0.1 以上が必要 ]"
 
 #: ../../reference/configuration/records.config.en.rst:2037
 msgid ""
@@ -3342,6 +3381,10 @@ msgid ""
 "layer. The default of ``0`` means to always write all available data into a "
 "single SSL record."
 msgstr ""
+"この設定は SSL セッションで応答する際に SSL レコードに書き込む最大バイト数を"
+"指定します。いくつかの状況でこの設定は SSL レイヤーでのバッファリングを低減"
+"することでレスポンスの遅延を改善します。デフォルトの ``0`` は常に有効なすべて"
+"のデータを一つの SSL レコードに書き込みます。"
 
 #: ../../reference/configuration/records.config.en.rst:2045
 msgid ""
@@ -3349,6 +3392,9 @@ msgid ""
 "seconds. If it is ``0``, then the SSL library will use a default value, "
 "typically 300 seconds."
 msgstr ""
+"この設定は SSL セッションのキャッシュエントリーの生存時間を秒単位で指定"
+"します。``0`` の場合、SSL ライブラリはデフォルト値を使用し、これは一般的に "
+"300 秒です。"
 
 #: ../../reference/configuration/records.config.en.rst:2165
 msgid ""
@@ -3382,46 +3428,3 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:2249
 msgid "The relevant configurations for this are::"
 msgstr ""
-
-#~ msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes"
-#~ msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
-
-#~ msgid "The directory that contains Traffic Server configuration files."
-#~ msgstr "Traffic Server の設定ファイルを含むディレクトリ。"
-
-#~ msgid ""
-#~ "The directory in which Traffic Server stores configuration snapshots on "
-#~ "the local system. Unless you specify an absolute path, this directory is "
-#~ "located in the Traffic Server ``config`` directory."
-#~ msgstr ""
-#~ "Traffic Server が設定のスナップショットを保存するローカルシステム上のディ"
-#~ "レクトリ。絶対パスを指定しない限り、このディレクトリは Traffic Server の "
-#~ "``config`` ディレクトリに置かれます。"
-
-#~ msgid ""
-#~ "When enabled (``1``), Traffic Server caches negative responses (such as "
-#~ "``404 Not Found``) when a requested page does not exist. The next time a "
-#~ "client requests the same page, Traffic Server serves the negative "
-#~ "response directly from cache."
-#~ msgstr ""
-#~ "有効化 (``1``) された場合、Traffic Server はリクエストされたページが存在"
-#~ "しない場合にネガティブレスポンス ( ``404 Not Found`` のような ) をキャッ"
-#~ "シュします。次回クライアントが同じページをリクエストした際、Traffic "
-#~ "Server はネガティブレスポンスをキャッシュから直接返します。"
-
-#~ msgid ""
-#~ "``Cache-Control`` directives from the server forbidding ache are ignored "
-#~ "for the following HTTP response codes, regardless of the value specified "
-#~ "for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable. "
-#~ "The following negative responses are cached by Traffic Server:::"
-#~ msgstr ""
-#~ "次の HTTP レスポンスコードは :ts:cv:`proxy.config.http."
-#~ "negative_caching_enabled` 変数に指定された値を無視して、キャッシュを禁止"
-#~ "しているサーバーからの ``Cache-Control`` ディレクティブは無視されます。次"
-#~ "のネガティブレスポンスは Traffic Server にキャッシュされます。"
-
-#~ msgid "``0`` = disable customizable user response pages"
-#~ msgstr "``0`` = カスタマイズ可能なユーザーレスポンスページを無効化します。"
-
-#~ msgid "The customizable response page default directory."
-#~ msgstr "カスタマイズ可能なレスポンスページのデフォルトディレクトリ"
