@@ -229,13 +229,12 @@ msgstr ""
 
 #: ../../reference/configuration/storage.config.en.rst:66
 msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)"
-msgstr ""
+msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
 
 #: ../../reference/configuration/storage.config.en.rst:122
 msgid ""
 "In order to apply these settings, trigger a reload with :manpage:"
 "`udevadm(8)`:::"
 msgstr ""
-
-#~ msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes"
-#~ msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
+"これらの設定を適用するには、:manpage:`udevadm(8)` で再読み込みを"
+"行ってください::"
