@@ -33,4 +33,4 @@ traffic_line_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmtshare.la \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBTCL@ @LIBSSL@
+  @LIBRESOLV@ @LIBTCL@ @OPENSSL_LIBS@

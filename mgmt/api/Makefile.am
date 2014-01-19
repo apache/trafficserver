@@ -88,4 +88,4 @@ traffic_api_cli_remote_LDADD = \
   libtsmgmtshare.la \
   libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @LIBSSL@
+  @LIBTCL@ @OPENSSL_LIBS@

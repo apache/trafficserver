@@ -29,7 +29,7 @@ libtsutil_la_LIBADD = \
   @hwloc_LIBS@ \
   @LIBOBJS@ \
   @LIBPCRE@ \
-  @LIBSSL@ \
+  @OPENSSL_LIBS@ \
   @LIBTCL@ \
   @LIBRESOLV@ \
   @LIBCAP@ \

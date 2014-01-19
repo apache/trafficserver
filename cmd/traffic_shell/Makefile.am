@@ -72,6 +72,6 @@ traffic_shell_LDADD = \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(LIBTCL) $(LIBREADLINE) \
-  @LIBRESOLV@ @LIBEXPAT@ @LIBSSL@ \
+  @LIBRESOLV@ @LIBEXPAT@ @OPENSSL_LIBS@ \
   @LIBPCRE@ @LIBREADLINE@ \
   -lm

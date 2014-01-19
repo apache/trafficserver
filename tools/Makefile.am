@@ -31,7 +31,7 @@ jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la
 if BUILD_HTTP_LOAD
 noinst_PROGRAMS += http_load/http_load
 
-http_load_http_load_LDADD = @LIBSSL@
+http_load_http_load_LDADD = @OPENSSL_LIBS@
 http_load_http_load_SOURCES =  \
   http_load/http_load.c \
   http_load/timers.c \
