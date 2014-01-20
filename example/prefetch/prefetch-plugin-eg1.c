@@ -32,31 +32,8 @@
 #include <ts/ts.h>
 #include <ts/experimental.h>
 
-/* We will register the following two hooks */
-
-int my_preparse_hook(int hook, TSPrefetchInfo * info);
-int my_embedded_url_hook(int hook, TSPrefetchInfo * info);
-
-void
-TSPluginInit(int argc, const char *argv[])
-{
-  TSPluginRegistrationInfo info;
-
-  info.plugin_name = "prefetch_plugin_eg1";
-  info.vendor_name = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
-
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
-  }
-
-  /* register our hooks */
-  TSPrefetchHookSet(TS_PREFETCH_PRE_PARSE_HOOK, &my_preparse_hook);
-  TSPrefetchHookSet(TS_PREFETCH_EMBEDDED_URL_HOOK, &my_embedded_url_hook);
-}
-
-int
-my_preparse_hook(int hook, TSPrefetchInfo * info)
+TSPrefetchReturnCode
+my_preparse_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
 {
   unsigned char *ip = (unsigned char *) &info->client_ip;
 
@@ -67,8 +44,8 @@ my_preparse_hook(int hook, TSPrefetchInfo * info)
   return TS_PREFETCH_CONTINUE;
 }
 
-int
-my_embedded_url_hook(int hook, TSPrefetchInfo * info)
+TSPrefetchReturnCode
+my_embedded_url_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
 {
 
   unsigned char *ip = (unsigned char *) &info->client_ip;
@@ -87,4 +64,23 @@ my_embedded_url_hook(int hook, TSPrefetchInfo * info)
      this url */
 
   return TS_PREFETCH_CONTINUE;
+}
+
+
+void
+TSPluginInit(int argc, const char *argv[])
+{
+  TSPluginRegistrationInfo info;
+
+  info.plugin_name = "prefetch_plugin_eg1";
+  info.vendor_name = "MyCompany";
+  info.support_email = "ts-api-support@MyCompany.com";
+
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+    TSError("Plugin registration failed.\n");
+  }
+
+  /* register our hooks */
+  TSPrefetchHookSet(TS_PREFETCH_PRE_PARSE_HOOK, &my_preparse_hook);
+  TSPrefetchHookSet(TS_PREFETCH_EMBEDDED_URL_HOOK, &my_embedded_url_hook);
 }

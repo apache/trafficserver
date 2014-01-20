@@ -254,7 +254,6 @@ int
 LogHost::preproc_and_try_delete (LogBuffer *lb)
 {
   int ret = -1;
-  int bytes;
 
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
@@ -277,16 +276,9 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
     ink_assert(m_log_collation_client_sm != NULL);
   }
 
-  // send log_buffer; orphan if necessary
-  bytes = m_log_collation_client_sm->send(lb);
-  if (bytes <= 0) {
-    orphan_write_and_try_delete(lb);
-#if defined(LOG_BUFFER_TRACKING)
-    Debug("log-buftrak", "[%d]LogHost::preproc_and_try_delete - orphan write complete",
-        lb->header()->id);
-#endif // defined(LOG_BUFFER_TRACKING)
-    return -1;
-  }
+  // send log_buffer;
+  if (m_log_collation_client_sm->send(lb) <= 0)
+    goto done;
 
   return 0;
 
@@ -417,6 +409,8 @@ LogHostList::preproc_and_try_delete(LogBuffer * lb)
 {
   int ret;
   unsigned nr_host, nr;
+  bool need_orphan = true;
+  LogHost *available_host = NULL;
 
   ink_release_assert(lb->m_references == 0);
 
@@ -425,19 +419,23 @@ LogHostList::preproc_and_try_delete(LogBuffer * lb)
 
   for (LogHost * host = first(); host && nr; host = next(host)) {
     LogHost *lh = host;
+    available_host = lh;
 
     do {
       ink_atomic_increment(&lb->m_references, 1);
       ret = lh->preproc_and_try_delete(lb);
+      need_orphan = need_orphan && (ret < 0);
     } while (ret < 0 && (lh = lh->failover_link.next));
 
-    LogBuffer::destroy(lb);
     nr--;
   }
 
-  if (nr_host == 0)
-    delete lb;
+  if (need_orphan && available_host) {
+    ink_atomic_increment(&lb->m_references, 1);
+    available_host->orphan_write_and_try_delete(lb);
+  }
 
+  LogBuffer::destroy(lb);
   return 0;
 }
 

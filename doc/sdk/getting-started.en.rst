@@ -31,22 +31,19 @@ The Traffic Server API enables you to create plugins, using the C
 programming language, that customize the behavior of your Traffic Server
 installation. This chapter contains the following sections:
 
--  `Understanding Traffic Server Plugins <#UnderstandingTSPlugins>`__ --
-   a brief introduction to plugins. For more details, see `How to Create
-   Traffic Server Plugins <../how-to-create-trafficserver-plugins>`__
+-  `Understanding Traffic Server Plugins`_ -- a brief introduction to plugins.
+   For more details, see :doc:`how-to-create-trafficserver-plugins.en`
 
--  `A Simple Plugin <a-simple-plugin>`__ -- walks through compiling and
+-  :doc:`getting-started/a-simple-plugin.en` -- walks through compiling and
    loading an example ``hello world`` plugin.
 
--  `Plugin Registration and Version
-   Checking <plugin-registration-and-version-checking>`__ -- shows you
-   how to register your plugin and make sure it's compatible with the
+-  :doc:`getting-started/plugin-registration-and-version-checking.en` -- shows
+   you how to register your plugin and make sure it's compatible with the
    version of Traffic Server you're using.
 
--  `Naming Conventions <NamingConventions.html>`__ -- outlines Traffic
+-  :doc:`getting-started/naming-conventions.en` -- outlines Traffic
    Server API naming conventions. For guidelines on creating plugin
-   source code, see `How to Create Traffic Server
-   Plugins <../how-to-create-trafficserver-plugins>`__
+   source code, see :doc:`how-to-create-trafficserver-plugins.en`
 
 Understanding Traffic Server Plugins
 ------------------------------------
@@ -80,7 +77,9 @@ call-back functions you've registered for that event type.
    out-of-range pointer, can cause Traffic Server processes to crash and
    may ultimately result in unpredictable behavior.
 
-**Plugin Process** {#PluginProcess}
+**Plugin Process**
+
+.. _PluginProcess:
 
 .. figure:: /static/images/sdk/plugin_process.jpg
    :align: center
@@ -123,10 +122,11 @@ Some examples of plugins include:
    designated port and then uses Traffic Server's proxy server & cache
    to serve client requests.
 
-The figure below, `Possible Traffic Server
-Plugins <#possibleTSplugins>`__, illustrates several types of plugins.
+The figure below, :ref:`possibleTSplugins`, illustrates several types of plugins.
 
-**Possible Traffic Server Plugins** {#possibleTSplugins}
+**Possible Traffic Server Plugins**
+
+.. _possibleTSplugins:
 
 .. figure:: /static/images/sdk/Uses.jpg
    :align: center
@@ -137,8 +137,8 @@ Plugins <#possibleTSplugins>`__, illustrates several types of plugins.
 You can find basic examples for many plugins in the SDK sample code:
 
 -  ``append-transform.c`` adds text from a specified file to HTTP/text
-   responses. This plugin is explained in `The Append-Transform
-   Plugin <../http-transformation-plugin/append-transform-plugin>`__
+   responses. This plugin is explained in
+   :doc:`http-transformation-plugin/append-transform-plugin.en`
 
 -  The compression plugin in the figure communicates with the server
    that actually does the compression. The ``server-transform.c`` plugin
@@ -152,8 +152,7 @@ You can find basic examples for many plugins in the SDK sample code:
 
 -  ``blacklist-1.c`` reads blacklisted servers from a configuration file
    and denies client access to these servers. This plugin is explained
-   in `The Blacklist
-   Plugin <../header-based-plugin-examples/blacklist-plugin>`__.
+   in :doc:`header-based-plugin-examples/blacklist-plugin.en`.
 
 Plugin Loading
 ~~~~~~~~~~~~~~
@@ -163,8 +162,7 @@ file to determine the names of all shared plugin libraries that need to
 be loaded. The ``plugin.config`` file also defines arguments that are to
 be passed to each plugin's initialization function, ``TSPluginInit``.
 The :file:`records.config` file defines the path to each plugin shared
-library, as described in `Specify the Plugin's
-Location <SpecifyingPluginLocation.html>`__.
+library, as described in :ref:`specify-the-plugins-location`.
 
 .. note:: The path for each of these files is *<root_dir>*\ ``/config/``, where *<root_dir>* is where you installed Traffic Server.
 
@@ -243,5 +241,4 @@ The ``TSPluginInit`` function has two arguments:
 -  The ``argv`` argument is an array of pointers to the actual arguments
    defined in the ``plugin.config`` file for that plugin
 
-See `TSPluginInit <InitializationFunctions.html#TSPluginInit>`__ for
-details about ``TSPluginInit``.
+See :c:func:`TSPluginInit` for details about ``TSPluginInit``.

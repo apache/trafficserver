@@ -27,6 +27,7 @@
 #define ATSCPPAPI_UTILS_H_
 
 #include <string>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdint.h>
 

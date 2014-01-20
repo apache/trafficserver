@@ -19,6 +19,7 @@ if BUILD_EXPERIMENTAL_PLUGINS
 SUBDIRS = \
  authproxy \
  balancer \
+ escalate \
  buffer_upload \
  channel_stats \
  custom_redirect \

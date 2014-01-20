@@ -392,11 +392,7 @@ struct sync_cont: public Continuation
     send_push_message();
     RecSyncStatsFile();
     if (RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
-      int nbytes;
-      RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
-      RecHandle h_file = RecFileOpenW(g_rec_config_fpath);
-      RecFileWrite(h_file, m_tb->bufPtr(), m_tb->spaceUsed(), &nbytes);
-      RecFileClose(h_file);
+        RecWriteConfigFile(m_tb);
     }
     Debug("statsproc", "sync_cont() processed");
 

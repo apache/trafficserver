@@ -85,7 +85,7 @@ AIOVec::mainEvent(int /* event */, Event *) {
   else if (completed == size) {
     MUTEX_LOCK(lock, action.mutex, this_ethread());
     if (!action.cancelled)
-      action.continuation->handleEvent(AIO_EVENT_DONE, this);
+      action.continuation->handleEvent(AIO_EVENT_DONE, first);
     delete this;
     return EVENT_DONE;
   }

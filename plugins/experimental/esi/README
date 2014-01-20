@@ -14,6 +14,7 @@ Supportted ESI tags:
     esi:try
     esi:attempt
     esi:except
+    <!--esi ... -->
 
 extended ESI tags:
     esi:special-include
@@ -37,8 +38,6 @@ Compile and Installation
 1) Just run "make" in the directory of trafficserver/plugins/experimental/esi/
 
 2) Copy trafficserver/plugins/experimental/esi/.libs/esi.* to /usr/local/libexec/trafficserver/
-
-3) Copy trafficserver/plugins/experimental/esi/.libs/libesi.* to /usr/local/lib/
 
 Enabling ESI
 ------------
@@ -99,6 +98,4 @@ Differences from Spec - http://www.w3.org/TR/esi-lang
 
 4) HTTP_USER_AGENT variable is not supported
 
-5) <!--esi .. --> is not supported
-
-6) HTTP_COOKIE supports fetching for sub-key
+5) HTTP_COOKIE supports fetching for sub-key

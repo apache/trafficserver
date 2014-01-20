@@ -681,6 +681,10 @@ extern "C"
     TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED,
     TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME,
     TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED,
+    TS_CONFIG_SSL_HSTS_MAX_AGE,
+    TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS,
+    TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME,
+    TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES,
     TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
@@ -904,6 +908,7 @@ extern "C"
   extern tsapi const char* TS_MIME_FIELD_SENDER;
   extern tsapi const char* TS_MIME_FIELD_SERVER;
   extern tsapi const char* TS_MIME_FIELD_SET_COOKIE;
+  extern tsapi const char* TS_MIME_FIELD_STRICT_TRANSPORT_SECURITY;
   extern tsapi const char* TS_MIME_FIELD_SUBJECT;
   extern tsapi const char* TS_MIME_FIELD_SUMMARY;
   extern tsapi const char* TS_MIME_FIELD_TE;
@@ -978,6 +983,7 @@ extern "C"
   extern tsapi int TS_MIME_LEN_SENDER;
   extern tsapi int TS_MIME_LEN_SERVER;
   extern tsapi int TS_MIME_LEN_SET_COOKIE;
+  extern tsapi int TS_MIME_LEN_STRICT_TRANSPORT_SECURITY;
   extern tsapi int TS_MIME_LEN_SUBJECT;
   extern tsapi int TS_MIME_LEN_SUMMARY;
   extern tsapi int TS_MIME_LEN_TE;
@@ -1049,6 +1055,7 @@ extern "C"
   extern tsapi const char* TS_HTTP_METHOD_PURGE;
   extern tsapi const char* TS_HTTP_METHOD_PUT;
   extern tsapi const char* TS_HTTP_METHOD_TRACE;
+  extern tsapi const char* TS_HTTP_METHOD_PUSH;
 
   /* --------------------------------------------------------------------------
      HTTP methods string lengths */
@@ -1062,6 +1069,7 @@ extern "C"
   extern tsapi int TS_HTTP_LEN_PURGE;
   extern tsapi int TS_HTTP_LEN_PUT;
   extern tsapi int TS_HTTP_LEN_TRACE;
+  extern tsapi int TS_HTTP_LEN_PUSH;
 
   /* --------------------------------------------------------------------------
      TLS Next Protocol well-known protocol names. */

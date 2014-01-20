@@ -107,6 +107,7 @@ static const char *_hdrtoken_strs[] = {
   "Sender",                     // NNTP
   "Server",
   "Set-Cookie",
+  "Strict-Transport-Security",
   "Subject",                    // NNTP
   "Summary",                    // NNTP
   "Transfer-Encoding",
@@ -293,6 +294,7 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Sender", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Server", MIME_SLOTID_NONE, MIME_PRESENCE_SERVER, HTIF_NONE},
   {"Set-Cookie", MIME_SLOTID_SET_COOKIE, MIME_PRESENCE_SET_COOKIE, (HTIF_MULTVALS)},
+  {"Strict-Transport-Security", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_MULTVALS)},
   {"Subject", MIME_SLOTID_NONE, MIME_PRESENCE_SUBJECT, HTIF_NONE},
   {"Summary", MIME_SLOTID_NONE, MIME_PRESENCE_SUMMARY, HTIF_NONE},
   {"TE", MIME_SLOTID_TE, MIME_PRESENCE_TE, (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)},
@@ -433,6 +435,7 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "Sender",                     // NNTP
   "Server",
   "Set-Cookie",
+  "Strict-Transport-Security",
   "Subject",                    // NNTP
   "Summary",                    // NNTP
   "Transfer-Encoding",

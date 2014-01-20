@@ -27,7 +27,6 @@ Transparent Proxying
    transparent-proxy/build.en
    transparent-proxy/bridge.en
    transparent-proxy/router-inline.en
-   transparent-proxy/router-inline.en
    transparent-proxy/wccp-configuration.en
 
 Transparent Proxying is the ability of a proxy (such as ATS) to
@@ -108,7 +107,7 @@ address of the ATS server via DNS as the origin server address.
 
 Some tested scenarios --
 
--  `Transparent bridging <bridge>`_
--  `Inline router <router-inline>`_
--  `WCCP Configuration <wccp-configuration>`_
+-  :doc:`transparent-proxy/bridge.en`
+-  :doc:`transparent-proxy/router-inline.en`
+-  :doc:`transparent-proxy/wccp-configuration.en`
 

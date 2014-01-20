@@ -23,8 +23,8 @@ version of Traffic Server.
 
 Use the following interfaces:
 
--  ```TSPluginRegister`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a6d7f514e70abaf097c4a3f1ba01f6df8>`__
--  ```TSTrafficServerVersionGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a3ef91e01612ffdce6dd040f836db08e8>`__
+-  `TSPluginRegister <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a6d7f514e70abaf097c4a3f1ba01f6df8>`_
+-  `TSTrafficServerVersionGet <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a3ef91e01612ffdce6dd040f836db08e8>`_
 
 The following version of ``hello-world`` registers the plugin and
 ensures it's running with a compatible version of Traffic Server.

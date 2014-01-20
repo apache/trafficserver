@@ -77,6 +77,9 @@ the methods defined in the HTTP 1.1 specification
 ``TS_HTTP_METHOD_TRACE``
    "TRACE"
 
+``TS_HTTP_METHOD_PUSH``
+   "PUSH"
+
 Traffic Server also defines several common values that appear in HTTP
 headers.
 

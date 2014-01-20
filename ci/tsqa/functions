@@ -16,10 +16,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-NCPU=${NCPU:-$(( $(getconf _NPROCESSORS_ONLN) * 2 ))}
-PORT=${PORT:-9090}
-VALGRIND=${VALGRIND:-N}
-TMPDIR=${TMPDIR:-/tmp}
+NCPU=${NCPU:-$(( $(getconf _NPROCESSORS_ONLN) * 2 ))} # Numer of CPUs to build with
+PORT=${PORT:-9090}                                    # Initial listen port for Traffic Server
+VALGRIND=${VALGRIND:-N}                               # Whether to run under valgrind
+TMPDIR=${TMPDIR:-/tmp}                                # Scratch directory for test instance construction
 
 TSQA_FAIL=0                                         # Test failure count
 TSQA_TESNAME=${TSQA_TESTNAME:-tsqa}                 # Name of current test
@@ -29,6 +29,14 @@ TSQA_TSXS=${TSQA_TSXS:-tsxs}
 # Print a log message/
 msg() {
   echo "MSG:" "$@"
+}
+
+msgwait() {
+  local secs="$1"
+  shift
+
+  echo "MSG: waiting ${secs}s" "$@"
+  sleep $secs
 }
 
 # Print a failure message and increment the failure count.
@@ -49,6 +57,12 @@ quiet() {
   "$@" 2>/dev/null
 }
 
+# Run a command with all output redirected to the pest log file.
+logexec() {
+  echo "$@" >> "$TSQA_ROOT/$TSQA_TESTNAME.log" 2>&1
+  "$@" >> "$TSQA_ROOT/$TSQA_TESTNAME.log" 2>&1
+}
+
 tsxs() {
   $TSQA_TSXS "$@"
 }
@@ -63,13 +77,17 @@ tsexec() {
     *) run=env ;;
   esac
 
+  # XXX enabling MallocStackLogging on all processes is annoying
+  # because it logs 3 lines to stderr every time. We generally only
+  # want leaks detection on traffic_server, so this is a bit of a
+  # waste ...
+
   # MALLOC_CHECK_=2 => enable glibc malloc checking, abort on error
   # MallocStackLogging=1 => record OS X malloc stacks for leak checking
   $run \
-  MallocStackLogging=1 \
   MALLOC_CHECK_=2 \
+  MallocErrorAbort=1 \
   TS_ROOT=$TSQA_ROOT \
-  PROXY_CONFIG_HTTP_SERVER_PORTS=$PORT \
     $(bindir)/$cmd "$@"
 }
 
@@ -161,11 +179,14 @@ shutdown() {
     return
   fi
 
-  # If we are on Darwin, we can check the traffic_server for leaks before shutting down
-  if [ -x /usr/bin/leaks ]; then
-    msg checking for leaks ...
-    /usr/bin/leaks $(pidof server)
-  fi
+# XXX If we are on Darwin, we can check the traffic_server for leaks before shutting down, but
+# we really only want to do this for traffic_server ... or we should sink the output to the test
+# log and fail on the exit status.
+
+#  if [ -x /usr/bin/leaks ]; then
+#    msg checking for leaks ...
+#    /usr/bin/leaks $(pidof server)
+#  fi
 
   msg shutting down ...
   while quiet kill -0 $pid ; do
@@ -177,6 +198,24 @@ shutdown() {
   done
 
   exit $TSQA_FAIL
+}
+
+restart() {
+  local pid=$(pidof cop)
+  if [[ -z "$pid" ]] ; then
+    return
+  fi
+
+  msg shutting down ...
+  while quiet kill -0 $pid ; do
+    quiet kill -TERM $pid
+    pid=$(pidof cop)
+    if [[ -z "$pid" ]] ; then
+      return
+    fi
+  done
+
+  startup
 }
 
 # Test for Traffic Server crash logs.
@@ -216,6 +255,8 @@ bootstrap() {
     -e/proxy.config.bin_path/d \
     -e/proxy.config.admin.user_id/d \
     -e/proxy.config.diags/d \
+    -e/proxy.config.http.server_ports/d \
+    -e/proxy.config.config_update_interval_ms/d \
     $TSQA_ROOT/$sysconfdir/records.config
 
   cat >> $TSQA_ROOT/$sysconfdir/records.config <<EOF
@@ -224,7 +265,12 @@ CONFIG proxy.config.plugin.plugin_dir STRING $(tsxs -q LIBEXECDIR)
 CONFIG proxy.config.body_factory.template_sets_dir STRING $(tsxs -q SYSCONFDIR)/body_factory
 
 CONFIG proxy.config.admin.user_id STRING $(whoami)
+CONFIG proxy.config.http.server_ports STRING $PORT
 
+# Flush config updates every 0.5s so that we don't have to sleep so long making config changes.
+CONFIG proxy.config.config_update_interval_ms INT 500
+
+# Send all diagnostics to both traffic.out and diags.log.
 CONFIG proxy.config.diags.output.diag STRING OL
 CONFIG proxy.config.diags.output.debug STRING OL
 CONFIG proxy.config.diags.output.status STRING OL
@@ -239,6 +285,8 @@ CONFIG proxy.config.diags.debug.enabled INT 1
 CONFIG proxy.config.diags.debug.tags STRING NULL
 CONFIG proxy.config.diags.show_location INT 1
 EOF
+
+  msg bootstrapped Traffic Server into $TSQA_ROOT
 }
 
 # vim: set sw=2 ts=2 et :

@@ -96,4 +96,4 @@ vars_test_LDADD = libtest.la -lz
 TESTS = $(check_PROGRAMS)
 
 test:: $(TESTS)
-	for f in $(TESTS) ; do ./$$f ; done
+	for f in $(TESTS) ; do ./$$f; if [ $$? -ne 0 ]; then break; fi done

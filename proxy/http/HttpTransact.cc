@@ -5731,7 +5731,7 @@ HttpTransact::is_stale_cache_response_returnable(State* s)
     return false;
   }
   // See how old the document really is.  We don't want create a
-  //   stale content museum of doucments that are no longer available
+  //   stale content museum of documents that are no longer available
   time_t current_age = HttpTransactHeaders::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
                                                                    s->cache_info.object_read->response_received_time_get(),
                                                                    cached_response,
@@ -7744,6 +7744,12 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
 
   if (s->next_hop_scheme < 0)
     s->next_hop_scheme = URL_WKSIDX_HTTP;
+
+  // Add HSTS header (Strict-Transport-Security) if max-age is set and the request was https
+  if (s->orig_scheme == URL_WKSIDX_HTTPS && s->txn_conf->proxy_response_hsts_max_age >= 0) {
+    Debug("http_hdrs", "hsts max-age=%" PRId64, s->txn_conf->proxy_response_hsts_max_age);
+    HttpTransactHeaders::insert_hsts_header_in_response(s, outgoing_response);
+  }
 
   if (s->txn_conf->insert_response_via_string)
     HttpTransactHeaders::insert_via_header_in_response(s, outgoing_response);

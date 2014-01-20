@@ -31,11 +31,11 @@ mutex.
 
 This chapter covers the following topics:
 
--  `Mutexes and Data <MutexesData>`__
+-  `Mutexes and Data`_
 
--  `How to Activate Continuations <ActivateContinuations.html>`__
+-  :doc:`continuations/how-to-activate-continuations.en`
 
--  `Writing Handler Functions <WritingHandlerFunctions.html>`__
+-  :doc:`continuations/writing-handler-functions.en`
 
 Mutexes and Data
 ----------------
@@ -55,15 +55,13 @@ one of the following:
 Before being activated, a caller must grab the continuation's mutex.
 This requirement makes it possible for a continuation's handler function
 to safely access its data and to prevent multiple callers from running
-it at the same time (see the `sample Protocol
-plugin <../new-protocol-plugins#AboutSampleProtocol>`__ for usage). The
+it at the same time (see the :ref:`about-the-sample-protocol` for usage). The
 data protected by the mutex is any global or continuation data
 associated to the continuation by ``TSContDataSet``. This does not
 include the local data created by the continuation handler function. A
 typical example of continuations created with associated data structures
 and mutexes is the transaction state machine created in the sample
-Protocol plugin (see `One Way to Implement a Transaction State
-Machine <../new-protocol-plugins#OneWayImplementaTransactionStateMachine>`__).
+Protocol plugin (see :ref:`one-way-to-implement-a-transaction-state-machine`).
 
 A reentrant call occurs when the continuation passed as an argument to
 the API can be called in the same stack trace as the function calling

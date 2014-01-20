@@ -87,6 +87,7 @@ int RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData * data, b
 int RecReadStatsFile();
 int RecSyncStatsFile();
 int RecReadConfigFile(bool inc_version);
+int RecWriteConfigFile(textBuffer *tb);
 int RecSyncConfigToTB(textBuffer * tb, bool *inc_version = NULL);
 
 //-------------------------------------------------------------------------

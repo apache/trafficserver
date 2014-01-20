@@ -1462,7 +1462,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
   // This shouldn't happen, but lets make sure we run somewhat reasonable.
   if (net_config_poll_timeout < 0) {
-    net_config_poll_timeout = 30; // This is the solaris default value.
+    net_config_poll_timeout = 10; // Default value for all platform.
   }
 
   ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));

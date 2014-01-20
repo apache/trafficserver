@@ -156,7 +156,7 @@ SSLConfigParams::initialize()
     ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
   REC_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
-  if (!options)
+  if (options)
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
 #endif
 

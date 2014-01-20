@@ -668,7 +668,7 @@ specific domains.
   .. note::
         Enabling keep-alive does not automatically enable purging of keep-alive
         requests when nearing the connection limit, that is controlled by
-        ```proxy.config.http.server_max_connections``.
+        :ts:cv:`proxy.config.http.server_max_connections`.
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 0
 
@@ -1313,6 +1313,7 @@ Customizable User Response Pages
 ================================
 
 .. ts:cv:: CONFIG proxy.config.body_factory.enable_customizations INT 1
+
    Specifies whether customizable response pages are language specific
    or not:
 
@@ -2045,6 +2046,21 @@ SSL Termination
   entries in seconds. If it is ``0``, then the SSL library will use
   a default value, typically 300 seconds.
 
+.. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
+
+  This configuration specifies the max-age value that will be used
+  when adding the Strict-Transport-Security header.  The value is in seconds.
+  A value of 0 will set the max-age value to 0 and should remove the
+  hsts entry from the client.  A value of -1 will disable this feature and
+  not set the header.  This option is only used for HTTPS requests and the
+  header will not be set on HTTP requests.
+
+.. ts:cv:: CONFIG proxy.config.ssl.hsts_include_subdomains INT 0
+
+  Enables (``1``) or disables (``0``) adding the includeSubdomain value
+  to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
+  needs to be set to a non -1 value for this configuration to take effect.
+
 Client-Related Configuration
 ----------------------------
 
@@ -2229,21 +2245,28 @@ Sockets
 
    Same as the command line option ``--poll_timeout``, or ``-t``, which
    specifies the timeout used for the polling mechanism used. This timeout is
-   always in milliseconds (ms). On Linux, this is the timeout to
-   ``epoll_wait()``. The default value is ``10`` on all platforms except
-   Solaris, where it is ``30``.
+   always in milliseconds (ms). This is the timeout to ``epoll_wait()`` on
+   Linux platforms, and to ``kevent()`` on BSD type OSs. The default value is
+   ``10`` on all platforms.
 
    Changing this configuration can reduce CPU usage on an idle system, since
    periodic tasks gets processed at these intervals. On busy servers, this
-   overhead is diminished, since polled events triggers more
-   frequently. However, increasing the setting can also introduce additional
-   latency for certain operations, and timed events. It's recommended not to
-   touch this setting unless your CPU usage is unacceptable at idle
-   workload. Some alternatives to this could be::
+   overhead is diminished, since polled events triggers morefrequently.
+   However, increasing the setting can also introduce additional latency for
+   certain operations, and timed events. It's recommended not to touch this
+   setting unless your CPU usage is unacceptable at idle workload. Some
+   alternatives to this could be::
 
         Reduce the number of worker threads (net-threads)
         Reduce the number of disk (AIO) threads
 	Make sure accept threads are enabled
+
+   The relevant configurations for this are::
+
+       CONFIG proxy.config.exec_thread.autoconfig INT 0
+       CONFIG proxy.config.exec_thread.limit INT 2
+       CONFIG proxy.config.accept_threads INT 1
+       CONFIG proxy.config.cache.threads_per_disk INT 8
 
 
 Undocumented

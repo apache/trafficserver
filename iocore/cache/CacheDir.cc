@@ -466,7 +466,7 @@ dir_clean_range_interimvol(off_t start, off_t end, InterimCacheVol *svol)
 void
 dir_clear_range(off_t start, off_t end, Vol *vol)
 {
-  for (int i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
+  for (off_t i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
     Dir *e = dir_index(vol, i);
     if (!dir_token(e) && dir_offset(e) >= (int64_t)start && dir_offset(e) < (int64_t)end) {
       CACHE_DEC_DIR_USED(vol->mutex);

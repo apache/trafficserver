@@ -217,6 +217,28 @@ bool Transaction::setIncomingPort(uint16_t port) {
   return true; // In reality TSHttpTxnClientIncomingPortSet should return SUCCESS or ERROR.
 }
 
+/*
+ * Note: The following methods cannot be attached to a Response
+ * object because that would require the Response object to
+ * know that it's a server or client response because of the
+ * TS C api which is TSHttpTxnServerRespBodyBytesGet.
+ */
+size_t Transaction::getServerResponseBodySize() {
+  return static_cast<size_t>(TSHttpTxnServerRespBodyBytesGet(state_->txn_));
+}
+
+size_t Transaction::getServerResponseHeaderSize() {
+  return static_cast<size_t>(TSHttpTxnServerRespHdrBytesGet(state_->txn_));
+}
+
+size_t Transaction::getClientResponseBodySize() {
+  return static_cast<size_t>(TSHttpTxnClientRespBodyBytesGet(state_->txn_));
+}
+
+size_t Transaction::getClientResponseHeaderSize() {
+  return static_cast<size_t>(TSHttpTxnClientRespHdrBytesGet(state_->txn_));
+}
+
 void Transaction::setTimeout(Transaction::TimeoutType type, int time_ms) {
   switch (type) {
     case TIMEOUT_DNS:

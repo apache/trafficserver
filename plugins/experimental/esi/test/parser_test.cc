@@ -1071,8 +1071,8 @@ int main()
     assert(node_list.size() == 1);
     DocNode &node = node_list.back();
     assert(node.type == DocNode::TYPE_SPECIAL_INCLUDE);
-    assert(node.data_len == static_cast<int>(strlen(" handler=ads pos=SKY ")));
-    assert(strncmp(node.data, " handler=ads pos=SKY ", node.data_len) == 0);
+    assert(node.data_len == static_cast<int>(strlen("handler=ads pos=SKY ")));
+    assert(strncmp(node.data, "handler=ads pos=SKY ", node.data_len) == 0);
     assert(node.attr_list.size() == 1);
     check_node_attr(node.attr_list.front(), "handler", "ads");
   }

@@ -5,6 +5,88 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-799] Have AdminClient.pm created from .in file.
+
+  *) [TS-2509] Add the const qualifier to pure HttpTunnel member functions.
+
+  *) [TS-2508] Add a *highly* experimental escalation plugin.
+
+  *) [TS-2507] Fix the state transition logging in HttpSM::handle_server_setup_error.
+
+  *) [TS-1648] Segmentation fault in dir_clear_range()
+
+  *) [TS-2500] Fix handling of cache stripe assignment when a disk is
+   taken offline.
+
+  *) [TS-2499] Fix the header_rewrite plugin expansions of the new %<>
+   strings. Author: Alexey Ivanov <aivanov@linkedin.com>.
+
+  *) [TS-2498] Add a build option to install the example plugins.
+
+  *) [TS-2484] Add API support for the two missing overridable APIs:
+         proxy.config.http.cache.max_open_read_retries
+         proxy.config.http.cache.open_read_retry_time
+
+  *) [TS-2497] Failed post results in tunnel buffers being returned to
+   freelist prematurely.
+   Reporter: Thomas Jackson <thjackso@linkedin.com>
+
+  *) [TS-1668] Added HSTS configuration options to ATS
+
+  *) [TS-2495] Reduce the size of HttpVCTableEntry.
+
+  *) [TS-2491] stop other esi plugin unit test programs after error.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+ 
+  *) [TS-1821] make the AIO test pass when build with native aio.
+
+  *) [TS-2412] fix the bug of restarting ATS causes complete cache data
+  loss when use linux-native-aio.
+
+  *) [TS-2488] enhance esi plugin to allow any of the space characters to
+   follow esi starting tags.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2489] Fix esi plugin problem with contents in comments output 
+   twice when the node list is cached.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2336] First attempt at moving the Prefetch APIs into some usable
+   state. There's still work to be done here, but separate bugs for that.
+
+  *) [TS-2487] Export PUSH HTTP method constants to the TS API.
+
+  *) [TS-2486] Eliminate SIMPLE_MEMCPY_INIT define.
+
+  *) [TS-2476] Fix size_t format string.
+   Author: Radim Kolar <hsn@sendmail.cz>
+
+  *) [TS-2471] Writing records.config can fail when the disk is full.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2479] Don't output orphan log after failover sucessfully.
+
+  *) [TS-2370] SSL proxy.config.ssl.server.honor_cipher_order is backwards.
+  Changed the default setting and changed the meaning of it in the code.
+
+  *) [TS-2466] NOT increase the version of records.config when changing
+   the local parameter
+   Author: Yu Qing
+
+  *) [TS-2469] remove libreadline which is gpl licensed.
+   Author: Ben Aitchison <ben@meh.net.nz>
+
+  *) [TS-2235] url_print should NOT output "?" for empty query string,
+   fix two remains.
+   Author: Yu Qing
+
+  *) [TS-2475] Adding new transaction methods in C++ API
+
+  *) [TS-2474] Change proxy.config.net.poll_timeout to 10ms consistently.
+
+  *) [TS-2473] Fix C++ API includes for FreeBSD.
+   Author: Radim Kolar <hsn@sendmail.cz>
+
   *) [TS-2467] traffic_shell doesn't work with tcl 8.6.
    Author: Ben Aitchison <ben@meh.net.nz>
 

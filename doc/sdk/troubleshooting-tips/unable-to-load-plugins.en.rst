@@ -32,5 +32,5 @@ To load plugins, follow the steps below.
 
 5. Restart Traffic Server.
 
-For detailed information about each step above, refer to `A Simple
-Plugin <../getting-started/a-simple-plugin>`__.
+For detailed information about each step above, refer to
+:doc:`../getting-started/a-simple-plugin.en`.

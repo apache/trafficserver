@@ -71,21 +71,6 @@ typedef struct io_event ink_io_event_t;
 #define aio_offset  u.c.offset
 #define aio_buf     u.c.buf
 
-struct AIOVec: public Continuation
-{
-  Action action;
-  int size;
-  int completed;
-
-  AIOVec(int sz, Continuation *c): Continuation(new_ProxyMutex()), size(sz), completed(0)
-  {
-    action = c;
-    SET_HANDLER(&AIOVec::mainEvent);
-  }
-
-  int mainEvent(int event, Event *e);
-};
-
 #else
 
 typedef struct ink_aiocb
@@ -129,6 +114,23 @@ struct AIOCallback: public Continuation
 };
 
 #if AIO_MODE == AIO_MODE_NATIVE
+
+struct AIOVec: public Continuation
+{
+  Action action;
+  int size;
+  int completed;
+  AIOCallback *first;
+
+  AIOVec(int sz, AIOCallback *c): Continuation(new_ProxyMutex()), size(sz), completed(0), first(c)
+  {
+    action = c->action;
+    SET_HANDLER(&AIOVec::mainEvent);
+  }
+
+  int mainEvent(int event, Event *e);
+};
+
 struct DiskHandler: public Continuation
 {
   Event *trigger_event;

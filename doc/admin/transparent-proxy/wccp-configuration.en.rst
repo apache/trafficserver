@@ -33,7 +33,7 @@ are
 -  WCCP fails open so that if the Traffic Server machine fails, it is
    bypassed and users continue to have Internet access.
 
-Use of WCCP only makes sense for client side transparency [1]_(#1)
+Use of WCCP only makes sense for client side transparency [1]_
 because if the clients are explicitly proxied by Traffic Server there's
 no benefit to WCCP fail open, as the clients will continue to directly
 access the unresponsive Traffic Server host. It would be better to
@@ -85,7 +85,7 @@ are to be used.
 
 In general the dedicated topology is preferred. However, if the router
 has only two interfaces one of the shared topologies will be
-required [2]_(#2). Click the links above for more detailed configuration
+required [2]_ Click the links above for more detailed configuration
 information on a specific topology.
 
 Shared interface issues
@@ -102,7 +102,7 @@ the dedicated interface case. This enables the packets to be
 distinguished at layer 3. For this reason, layer 2 redirection cannot be
 used because the WCCP configuration cannot distinguish between packets
 returning from the origin server and packets returning from Traffic
-Server as they are distinguished only by layer 2 addressing [3]_(#3).
+Server as they are distinguished only by layer 2 addressing [3]_.
 Fortunately the GRE tunnel used for packet forwarding and return can be
 used as the simulated interface for Traffic Server.
 

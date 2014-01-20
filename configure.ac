@@ -459,6 +459,20 @@ AC_ARG_ENABLE([experimental-plugins],
 AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
+#
+# Example plugins. The example plugins are always built, but not always installed. Installing
+# them is useful for QA, but not useful for most users, so we default this to disabled.
+#
+
+AC_MSG_CHECKING([whether to install example plugins])
+AC_ARG_ENABLE([example-plugins],
+  [AS_HELP_STRING([--enable-example-plugins],[install example plugins])],
+  [],
+  [enable_example_plugins=no]
+)
+AC_MSG_RESULT([$enable_example_plugins])
+AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [ test "x${enable_example_plugins}" = "xyes" ])
+
 
 #
 # build c++ api
@@ -1909,6 +1923,7 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/async_timer/Makefile
   lib/wccp/Makefile
   lib/perl/Makefile
+  lib/perl/lib/Apache/TS/AdminClient.pm
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
@@ -1926,6 +1941,7 @@ AC_CONFIG_FILES([
   plugins/experimental/buffer_upload/Makefile
   plugins/experimental/channel_stats/Makefile
   plugins/experimental/custom_redirect/Makefile
+  plugins/experimental/escalate/Makefile
   plugins/experimental/esi/Makefile
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/lua/Makefile

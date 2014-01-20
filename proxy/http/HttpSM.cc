@@ -144,24 +144,19 @@ HttpSM::_instantiate_func(HttpSM * prototype, HttpSM * new_instance)
   int pre_history_len = (char *) (&(prototype->history)) - (char *) prototype;
   int post_history_len = total_len - history_len - pre_history_len;
   int post_offset = pre_history_len + history_len;
-
-#ifndef SIMPLE_MEMCPY_INIT
   int j;
 
   memset(((char *) new_instance), 0, pre_history_len);
   memset(((char *) new_instance) + post_offset, 0, post_history_len);
+
   uint32_t *pd = (uint32_t *) new_instance;
+
   for (j = 0; j < scat_count; j++) {
     pd[to[j]] = val[j];
   }
 
   ink_assert((memcmp((char *) new_instance, (char *) prototype, pre_history_len) == 0) &&
-                   (memcmp(((char *) new_instance) + post_offset, ((char *) prototype) + post_offset, post_history_len) == 0));
-#else
-  // memcpy(new_instance, prototype, total_len);
-  memcpy(new_instance, prototype, pre_history_len);
-  memcpy(((char *) new_instance) + post_offset, ((char *) prototype) + post_offset, post_history_len);
-#endif
+             (memcmp(((char *) new_instance) + post_offset, ((char *) prototype) + post_offset, post_history_len) == 0));
 }
 
 SparseClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator", 128, 16, HttpSM::_instantiate_func);
@@ -3102,6 +3097,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   }
 
   client_response_body_bytes = c->bytes_written - client_response_hdr_bytes;
+
   if (client_response_body_bytes < 0)
     client_response_body_bytes = 0;
 
@@ -4961,7 +4957,6 @@ HttpSM::handle_post_failure()
   }
   ua_entry->in_tunnel = false;
   server_entry->in_tunnel = false;
-  tunnel.deallocate_buffers();
 
   // disable redirection in case we got a partial response and then EOS, because the buffer might not
   // have the full post and it's deallocating the post buffers here
@@ -5043,6 +5038,8 @@ HttpSM::handle_server_setup_error(int event, void *data)
   VIO *vio = (VIO *) data;
   ink_assert(vio != NULL);
 
+  STATE_ENTER(&HttpSM::handle_server_setup_error, event);
+
   // If there is POST or PUT tunnel wait for the tunnel
   //  to figure out that things have gone to hell
 
@@ -5122,8 +5119,6 @@ HttpSM::handle_server_setup_error(int event, void *data)
   vc_table.cleanup_entry(server_entry);
   server_entry = NULL;
   server_session = NULL;
-
-  STATE_ENTER(&HttpSM::handle_server_setup_error, callout_state);
 
   // if we are waiting on a plugin callout for
   //   HTTP_API_SEND_REQUEST_HDR defer calling transact until

@@ -32,5 +32,6 @@ const std::string atscppapi::HTTP_METHOD_STRINGS[] = { std::string("UNKNOWN"),
                                                        std::string("OPTIONS"),
                                                        std::string("PURGE"),
                                                        std::string("PUT"),
-                                                       std::string("TRACE") };
+                                                       std::string("TRACE"),
+                                                       std::string("PUSH") };
 

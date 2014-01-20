@@ -1,5 +1,3 @@
-# api/ts Makefile.am
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,12 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-includedir=$(prefix)/include/ts
+include $(top_srcdir)/build/plugins.mk
 
-include_HEADERS = \
-  ts.h \
-  remap.h \
-  experimental.h
+pkglib_LTLIBRARIES = escalate.la
+escalate_la_SOURCES = escalate.cc
+escalate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-noinst_HEADERS = \
-  InkAPIPrivateIOCore.h

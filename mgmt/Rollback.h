@@ -203,7 +203,7 @@ public:
 private:
   Rollback(const Rollback &);
   int openFile(version_t version, int oflags, int *errnoPtr = NULL);
-  int closeFile(int fd);
+  int closeFile(int fd, bool callSync);
   int statFile(version_t version, struct stat *buf);
   char *createPathStr(version_t version);
   RollBackCodes internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChange = true, bool incVersion = true);

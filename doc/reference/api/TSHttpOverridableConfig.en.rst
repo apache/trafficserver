@@ -51,6 +51,90 @@ The values are identified by the enumeration :type:`TSOverridableConfigKey`. Str
 first passing them to :func:`TSHttpTxnConfigFind` which, if the string matches an overridable value, return the key and data
 type.
 
+Configurations
+==============
+
+The following configurations (from ``records.config``) are overridable: ::
+
+    proxy.config.url_remap.pristine_host_hdr
+    proxy.config.http.chunking_enabled
+    proxy.config.http.negative_caching_enabled
+    proxy.config.http.negative_caching_lifetime
+    proxy.config.http.cache.when_to_revalidate
+    proxy.config.http.keep_alive_enabled_in
+    proxy.config.http.keep_alive_enabled_out
+    proxy.config.http.keep_alive_post_out
+    proxy.config.http.share_server_sessions
+    proxy.config.net.sock_recv_buffer_size_out
+    proxy.config.net.sock_send_buffer_size_out
+    proxy.config.net.sock_option_flag_out
+    proxy.config.http.forward.proxy_auth_to_parent
+    proxy.config.http.anonymize_remove_from
+    proxy.config.http.anonymize_remove_referer
+    proxy.config.http.anonymize_remove_user_agent
+    proxy.config.http.anonymize_remove_cookie
+    proxy.config.http.anonymize_remove_client_ip
+    proxy.config.http.anonymize_insert_client_ip
+    proxy.config.http.response_server_enabled
+    proxy.config.http.insert_squid_x_forwarded_for
+    proxy.config.http.server_tcp_init_cwnd
+    proxy.config.http.send_http11_requests
+    proxy.config.http.cache.http
+    proxy.config.http.cache.cluster_cache_local
+    proxy.config.http.cache.ignore_client_no_cache
+    proxy.config.http.cache.ignore_client_cc_max_age
+    proxy.config.http.cache.ims_on_client_no_cache
+    proxy.config.http.cache.ignore_server_no_cache
+    proxy.config.http.cache.cache_responses_to_cookies
+    proxy.config.http.cache.ignore_authentication
+    proxy.config.http.cache.cache_urls_that_look_dynamic
+    proxy.config.http.cache.required_headers
+    proxy.config.http.insert_request_via_str
+    proxy.config.http.insert_response_via_str
+    proxy.config.http.cache.heuristic_min_lifetime
+    proxy.config.http.cache.heuristic_max_lifetime
+    proxy.config.http.cache.guaranteed_min_lifetime
+    proxy.config.http.cache.guaranteed_max_lifetime
+    proxy.config.http.cache.max_stale_age
+    proxy.config.http.keep_alive_no_activity_timeout_in
+    proxy.config.http.keep_alive_no_activity_timeout_out
+    proxy.config.http.transaction_no_activity_timeout_in
+    proxy.config.http.transaction_no_activity_timeout_out
+    proxy.config.http.transaction_active_timeout_out
+    proxy.config.http.origin_max_connections
+    proxy.config.http.connect_attempts_max_retries
+    proxy.config.http.connect_attempts_max_retries_dead_server
+    proxy.config.http.connect_attempts_rr_retries
+    proxy.config.http.connect_attempts_timeout
+    proxy.config.http.post_connect_attempts_timeout
+    proxy.config.http.down_server.cache_time
+    proxy.config.http.down_server.abort_threshold
+    proxy.config.http.cache.fuzz.time
+    proxy.config.http.cache.fuzz.min_time
+    proxy.config.http.doc_in_cache_skip_dns
+    proxy.config.http.background_fill_active_timeout
+    proxy.config.http.response_server_str
+    proxy.config.http.cache.heuristic_lm_factor
+    proxy.config.http.cache.fuzz.probability
+    proxy.config.http.background_fill_completed_threshold
+    proxy.config.net.sock_packet_mark_out
+    proxy.config.net.sock_packet_tos_out
+    proxy.config.http.insert_age_in_response
+    proxy.config.http.chunking.size
+    proxy.config.http.flow_control.enabled
+    proxy.config.http.flow_control.low_water
+    proxy.config.http.flow_control.high_water
+    proxy.config.http.cache.range.lookup
+    proxy.config.http.normalize_ae_gzip
+    proxy.config.http.default_buffer_size
+    proxy.config.http.default_buffer_water_mark
+    proxy.config.http.request_header_max_size
+    proxy.config.http.response_header_max_size
+    proxy.config.http.negative_revalidating_enabled
+    proxy.config.http.negative_revalidating_lifetime
+    proxy.config.http.accept_encoding_filter_enabled
+
+
 Examples
 ========
 

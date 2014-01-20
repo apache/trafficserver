@@ -104,8 +104,11 @@ sub new {
     return $self;
 }
 
+# Keeping this primarily for backwards compatibility, the new autoconf generated path is usually
+# what you want.
 sub _find_socket {
     my @sockets_def = (
+        '@prefix@/@rel_runtimedir@/mgmtapisocket',
         '/usr/local/var/trafficserver/mgmtapisocket',
         '/var/trafficserver/mgmtapisocket'
     );

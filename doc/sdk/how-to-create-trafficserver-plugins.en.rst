@@ -1,4 +1,4 @@
-.. _how-to-create-traffic-server-plugins:
+.. _how-to-create-trafficserver-plugins:
 
 How to Create Traffic Server Plugins
 ************************************
@@ -39,7 +39,7 @@ Reading this chapter will help you to understand:
 -  How plugins can hook onto and modify/extend Traffic Server's HTTP
    processing.
 
--  A `roadmap for writing plugins <roadmap-for-creating-plugins>`__,
+-  A :doc:`roadmap for writing plugins <how-to-create-trafficserver-plugins/roadmap-for-creating-plugins.en>`,
    with an overview of the functionality provided by the Traffic Server
    API.
 
@@ -74,7 +74,7 @@ implemented as continuations.
 Continuation objects are used throughout Traffic Server. Some might live
 for the duration of the Traffic Server process, while others are created
 (perhaps by other continuations) for specific needs and then destroyed.
-`Traffic Server Internals <#TSInternals>`__ (below) shows how the major
+:ref:`TSInternals` (below) shows how the major
 components of Traffic Server interact. Traffic Server has several
 **processors**, such as *cache processor* and *net processor*, that
 consolidate cache or network I/O tasks. Processors talk to the event
@@ -83,7 +83,9 @@ continuation by sending it an event. When a continuation receives an
 event, it wakes up, does some work, and either destroys itself or goes
 back to sleep & waits for the next event.
 
-**Traffic Server Internals** {#TSInternals}
+**Traffic Server Internals**
+
+.. _TSInternals:
 
 .. figure:: /static/images/sdk/event_sys80.jpg
    :alt: Traffic Server Internals
@@ -95,7 +97,9 @@ code plugins (except ``hello-world``) are continuations that are created
 when Traffic Server starts up; they then wait for events that trigger
 them into activity.
 
-**Traffic Server with Plugins** {#TSwithPlugins}
+**Traffic Server with Plugins**
+
+.. _TSwithPlugins:
 
 .. figure:: /static/images/sdk/evt_plugin120.jpg
    :alt: Traffic Server with Plugins
@@ -135,15 +139,13 @@ is handled by an HTTP state machine. These machines follow a complex
 state diagram that includes all of the states required to support
 Traffic Server's features. The Traffic Server API provides hooks to a
 subset of these states, chosen for their relevance to plugins. You can
-view the API hooks and corresponding HTTP states in the `HTTP
-Transaction State
-Diagram <../http-hoooks-and-transactions#HHTTPTransactionStateDiagram>`__.
+view the API hooks and corresponding HTTP states in the
+:ref:`http-txn-state-diagram`.
 
 The example in this section (below) explains how a plugin typically
 intervenes and extends Traffic Server's processing of an HTTP
 transaction. Complete details about hooking on to Traffic Server
-processes are provided in `HTTP Hooks and
-Transactions <HTTPHooksAndTransactions.html>`__.
+processes are provided in :doc:`http-hooks-and-transactions.en`.
 
 HTTP Transaction
 ^^^^^^^^^^^^^^^^
@@ -156,7 +158,9 @@ origin server. The following diagram shows some states in a typical
 transaction - specifically, the scenario wherein content is served from
 cache.
 
-**Simplified HTTP Transaction** {#SimplifiedHTTPTransaction}
+**Simplified HTTP Transaction**
+
+.. _SimplifiedHTTPTransaction:
 
 .. figure:: /static/images/sdk/transact75.jpg
    :alt: Simplified HTTP Transaction
@@ -173,14 +177,16 @@ the cache (a "hit"), then Traffic Server checks it for freshness.
 If the content is fresh, then Traffic Server sends a reply header to the
 client. If the content is stale, then Traffic Server opens a connection
 to the origin server and requests the content. The figure above,
-`Simplified HTTP Transaction <#SimplifiedHTTPTransaction>`__, does *not*
+:ref:`SimplifiedHTTPTransaction`, does *not*
 show behavior in the event of an error. If there is an error at a any
 stage, then the HTTP state machine jumps to the "send reply header"
 state and sends a reply. If the reply is an error, then the transaction
 closes. If the reply is not an error, then Traffic Server first sends
 the response content before it closes the transaction.
 
-**API Hooks Corresponding to States** {#APIHooksCorrespondingtoStates}
+**API Hooks Corresponding to States**
+
+.. _APIHooksCorrespondingtoStates:
 
 .. figure:: /static/images/sdk/transact_hook75.jpg
    :alt: API Hooks Corresponding to States Listed in
@@ -192,10 +198,12 @@ reflects the Traffic Server state that was *just completed*. For
 example, the "OS DNS lookup" hook wakes up a plugin right *after* the
 origin server DNS lookup. For a plugin that requires the IP address of
 the requested origin server, this hook is the right one to use. The
-Blacklist plugin works in this manner, as shown in the `Blacklist
-Plugin <#BlacklistPlugin>`__ diagram below.
+Blacklist plugin works in this manner, as shown in the :ref:`BlackListPlugin`
+diagram below.
 
-**Blacklist Plugin** {#BlacklistPlugin}
+**Blacklist Plugin**
+
+.. _BlackListPlugin:
 
 .. figure:: /static/images/sdk/blacklist75.jpg
    :alt: Blacklist Plugin
@@ -220,9 +228,8 @@ to the "send reply header" state is a **tr**\ ***ansaction hook***,
 meaning that this hook is only invoked for *specified transactions* (in
 the Blacklist example, it's only used for requests to blacklisted
 servers). Several examples of setting up hooks are provided in the code
-example chapters: `Header-Based Plugin
-Examples <../header-based-plugin-examples>`__ and `HTTP Transformation
-Plugins <../http-transformation-plugin>`__
+example chapters: :doc:`header-based-plugin-examples.en` and
+:doc:`http-transformation-plugin.en`
 
 **Header manipulation plugins**, such as filtering, basic authorization,
 or redirects, usually have a global hook to the DNS lookup or the read

@@ -78,8 +78,8 @@ KeepAliveConnTable *g_conn_table;
 static int prefetch_udp_fd = 0;
 static int32_t udp_seq_no;
 
-PrefetchBlastData const UDP_BLAST_DATA = { UDP_BLAST };
-PrefetchBlastData const TCP_BLAST_DATA = { TCP_BLAST };
+TSPrefetchBlastData const UDP_BLAST_DATA = { TS_PREFETCH_UDP_BLAST };
+TSPrefetchBlastData const TCP_BLAST_DATA = { TS_PREFETCH_TCP_BLAST };
 
 #define PrefetchEstablishStaticConfigStringAlloc(_ix,_n) \
   REC_EstablishStaticConfigStringAlloc(_ix,_n); \
@@ -725,7 +725,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
     info.response_buf = reinterpret_cast<TSMBuffer>(resp);
     info.response_loc = reinterpret_cast<TSMLoc>(resp->m_http);
 
-    info.client_ip = client_ip;
+    ats_ip_copy(ats_ip_sa_cast(&info.client_ip), &client_ip);
     info.embedded_url = 0;
     info.present_in_cache = from_cache;
     ink_zero(info.url_blast);
@@ -966,13 +966,13 @@ PrefetchUrlBlaster::udpUrlBlaster(int event, void *data)
       MIOBuffer *buf = new_MIOBuffer();
       IOBufferReader *reader = buf->alloc_reader();
 
-      int udp_hdr_len = (TCP_BLAST == blast.type) ? 0 : PRELOAD_UDP_HEADER_LEN;
+      int udp_hdr_len = (TS_PREFETCH_TCP_BLAST == blast.type) ? 0 : PRELOAD_UDP_HEADER_LEN;
 
       buf->fill(udp_hdr_len + PRELOAD_HEADER_LEN);
 
       writeBuffer(buf);
 
-      if (TCP_BLAST == blast.type) {
+      if (TS_PREFETCH_TCP_BLAST == blast.type) {
         setup_object_header(reader->start(), reader->read_avail(), true);
         g_conn_table->append(url_head->child_ip, buf, reader);
         free();
@@ -1726,7 +1726,7 @@ PrefetchBlaster::blastObject(int event, void *data)
       break;
     }
 
-    if (data_blast.type == TCP_BLAST) {
+    if (data_blast.type == TS_PREFETCH_TCP_BLAST) {
       g_conn_table->append(url_ent->child_ip, buf, reader);
       buf = 0;
       free();
@@ -1795,7 +1795,7 @@ PrefetchBlaster::invokeBlaster()
   int ret = (cache_http_info && !prefetch_config->push_cached_objects)
     ? TS_PREFETCH_DISCONTINUE : TS_PREFETCH_CONTINUE;
 
-  PrefetchBlastData url_blast = prefetch_config->default_url_blast;
+  TSPrefetchBlastData url_blast = prefetch_config->default_url_blast;
   data_blast = prefetch_config->default_data_blast;
 
   if (prefetch_config->embedded_url_hook) {
@@ -1811,7 +1811,7 @@ PrefetchBlaster::invokeBlaster()
     info.object_buf_reader = 0;
     info.object_buf_status = TS_PREFETCH_OBJ_BUF_NOT_NEEDED;
 
-    info.client_ip = url_ent->child_ip;
+    ats_ip_copy(ats_ip_sa_cast(&info.client_ip), &url_ent->child_ip);
     info.embedded_url = url_ent->url;
     info.present_in_cache = (cache_http_info != NULL);
     info.url_blast = url_blast;
@@ -1828,13 +1828,13 @@ PrefetchBlaster::invokeBlaster()
 
   if (ret == TS_PREFETCH_CONTINUE) {
 
-    if (MULTICAST_BLAST == url_blast.type)
-      ats_ip_copy(&url_ent->url_multicast_ip.sa, &url_blast.ip.sa);
-    if (MULTICAST_BLAST == data_blast.type)
-      ats_ip_copy(&url_ent->data_multicast_ip.sa, &data_blast.ip.sa);
+    if (TS_PREFETCH_MULTICAST_BLAST == url_blast.type)
+      ats_ip_copy(&url_ent->url_multicast_ip, ats_ip_sa_cast(&url_blast.ip));
+    if (TS_PREFETCH_MULTICAST_BLAST == data_blast.type)
+      ats_ip_copy(&url_ent->data_multicast_ip, ats_ip_sa_cast(&data_blast.ip));
 
     if (url_ent->object_buf_status != TS_PREFETCH_OBJ_BUF_NEEDED) {
-      if (url_blast.type == TCP_BLAST)
+      if (url_blast.type == TS_PREFETCH_TCP_BLAST)
         url_list = transform->tcp_url_list;
       else
         url_list = transform->udp_url_list;
@@ -1876,22 +1876,22 @@ PrefetchBlaster::initCacheLookupConfig()
 }
 
 static int
-config_read_proto(PrefetchBlastData &blast, const char *str)
+config_read_proto(TSPrefetchBlastData &blast, const char *str)
 {
   if (strncasecmp(str, "udp", 3) == 0)
-    blast.type = UDP_BLAST;
+    blast.type = TS_PREFETCH_UDP_BLAST;
   else if (strncasecmp(str, "tcp", 3) == 0)
-    blast.type = TCP_BLAST;
+    blast.type = TS_PREFETCH_TCP_BLAST;
   else {                        // this is a multicast address:
     if (strncasecmp("multicast:", str, 10) == 0) {
-      if (0 != ats_ip_pton(str, &blast.ip.sa)) {
+      if (0 != ats_ip_pton(str, ats_ip_sa_cast(&blast.ip))) {
         Error("PrefetchProcessor: Address specified for multicast does not seem to "
               "be of the form multicast:ip_addr (eg: multicast:224.0.0.1)");
         return 1;
       } else {
         ip_text_buffer ipb;
-        blast.type = MULTICAST_BLAST;
-        Debug("Prefetch", "Setting multicast address: %s\n", ats_ip_ntop(&blast.ip.sa, ipb, sizeof(ipb)));
+        blast.type = TS_PREFETCH_MULTICAST_BLAST;
+        Debug("Prefetch", "Setting multicast address: %s\n", ats_ip_ntop(ats_ip_sa_cast(&blast.ip), ipb, sizeof(ipb)));
       }
     } else {
       Error("PrefetchProcessor: The protocol for Prefetch should of the form: " "tcp or udp or multicast:ip_address");
@@ -2252,13 +2252,6 @@ KeepAliveLockHandler::handleEvent(int event, void * /* data ATS_UNUSED */)
 }
 
 /* API */
-int
-TSPrefetchStart()
-{
-  printf("TSPrefetchStart() is called\n");
-  return 0;
-}
-
 int
 TSPrefetchHookSet(int hook_no, TSPrefetchHook hook)
 {

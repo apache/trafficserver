@@ -424,16 +424,16 @@ if it is indeed cacheable.
 
 To set cache pinning rules
 
-3. Make sure the following variable in :file:`records.config` is set
+1. Make sure the following variable in :file:`records.config` is set
 
    -  :ts:cv:`proxy.config.cache.permit.pinning`
 
-4. Add a rule in :file:`cache.config` for each
+2. Add a rule in :file:`cache.config` for each
    URL you want Traffic Server to pin in the cache. For example::
 
       url_regex=^https?://(www.)?apache.org/dev/ pin-in-cache=12h
 
-5. Run the command :option:`traffic_line -x` to apply the configuration
+3. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 To Cache or Not to Cache?
@@ -487,11 +487,11 @@ from its cache.
 
 To configure Traffic Server to ignore client ``no-cache`` headers
 
-3. Edit the following variable in :file:`records.config`
+1. Edit the following variable in :file:`records.config`
 
    -  :ts:cv:`proxy.config.http.cache.ignore_client_no_cache`
 
-4. Run the command :option:`traffic_line -x` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Origin Server Directives
@@ -585,9 +585,9 @@ server and never cached, as detailed below.
 
 To disable HTTP object caching manually
 
-3. Set the variable :ts:cv:`proxy.config.http.enabled` to ``0``.
+1. Set the variable :ts:cv:`proxy.config.http.enabled` to ``0``.
 
-4. Run the command :option:`traffic_line -x` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Caching Dynamic Content
@@ -603,11 +603,11 @@ appropriate ``Cache-Control`` headers.
 To configure Traffic Server's cache behaviour in regard to dynamic
 content
 
-3. Edit the following variable in :file:`records.config`
+1. Edit the following variable in :file:`records.config`
 
    -  :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`
 
-4. Run the command :option:`traffic_line -x` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Caching Cookied Objects
@@ -630,9 +630,9 @@ You can reconfigure Traffic Server to:
 
 To configure how Traffic Server caches cookied content
 
-3. Edit the variable :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
+1. Edit the variable :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
 
-4. Run the command :option:`traffic_line -x` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 Forcing Object Caching
@@ -672,14 +672,14 @@ Configuring How Traffic Server Caches Alternates
 To configure how Traffic Server caches alternates, follow the steps
 below
 
-3. Edit the following variables
+1. Edit the following variables
 
    -  :ts:cv:`proxy.config.http.cache.enable_default_vary_headers`
    -  :ts:cv:`proxy.config.http.cache.vary_default_text`
    -  :ts:cv:`proxy.config.http.cache.vary_default_images`
    -  :ts:cv:`proxy.config.http.cache.vary_default_other`
 
-4. Run the command :option:`traffic_line -x` to apply the configuration
+2. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
 .. note::

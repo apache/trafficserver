@@ -1164,6 +1164,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.insert_request_via_string, "proxy.config.http.insert_request_via_str");
   HttpEstablishStaticConfigByte(c.oride.insert_response_via_string, "proxy.config.http.insert_response_via_str");
+  HttpEstablishStaticConfigLongLong(c.oride.proxy_response_hsts_max_age, "proxy.config.ssl.hsts_max_age");
+  HttpEstablishStaticConfigByte(c.oride.proxy_response_hsts_include_subdomains, "proxy.config.ssl.hsts_include_subdomains");
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_request_via_string, "proxy.config.http.request_via_str");
   c.proxy_request_via_string_len = -1;
@@ -1406,6 +1408,8 @@ HttpConfig::reconfigure()
   params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
   params->proxy_response_via_string = ats_strdup(m_master.proxy_response_via_string);
   params->proxy_response_via_string_len = (params->proxy_response_via_string) ? strlen(params->proxy_response_via_string) : 0;
+  params->oride.proxy_response_hsts_max_age = m_master.oride.proxy_response_hsts_max_age;
+  params->oride.proxy_response_hsts_include_subdomains = m_master.oride.proxy_response_hsts_include_subdomains;
 
   params->url_expansions_string = ats_strdup(m_master.url_expansions_string);
   params->url_expansions = parse_url_expansions(params->url_expansions_string, &params->num_url_expansions);

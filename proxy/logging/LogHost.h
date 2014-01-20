@@ -56,6 +56,12 @@ public:
   //
   int preproc_and_try_delete(LogBuffer * lb);
 
+  //
+  // write the given buffer data to orhpan file and
+  // try to delete it when its reference become zero.
+  //
+  void orphan_write_and_try_delete(LogBuffer * lb);
+
   char const* name() const { return m_name ? m_name : "UNKNOWN"; }
   IpAddr const& ip_addr() const { return m_ip; }
   in_port_t port() const { return m_port; }
@@ -70,11 +76,6 @@ public:
 private:
   void clear();
   bool authenticated();
-  //
-  // write the given buffer data to orhpan file and
-  // try to delete it when its reference become zero.
-  //
-  void orphan_write_and_try_delete(LogBuffer * lb);
   void create_orphan_LogFile_object();
 
 private:

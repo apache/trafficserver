@@ -776,19 +776,24 @@ url_length_get(URLImpl * url)
       length += url->m_len_port + 1;    // +1 for ":"
   }
 
-  if (url->m_ptr_path)
+  if (url->m_ptr_path) {
     length += url->m_len_path + 1;      // +1 for /
-  else
+  }
+  else {
     length += 1;                // +1 for /
+  }
 
-  if (url->m_ptr_params)
+  if (url->m_ptr_params && url->m_len_params > 0) {
     length += url->m_len_params + 1;  // +1 for ";"
+  }
 
-  if (url->m_ptr_query)
+  if (url->m_ptr_query && url->m_len_query > 0) {
     length += url->m_len_query + 1;   // +1 for "?"
+  }
 
-  if (url->m_ptr_fragment)
-    length += url->m_len_fragment + 1;        // +1 for "/"
+  if (url->m_ptr_fragment && url->m_len_fragment > 0) {
+    length += url->m_len_fragment + 1;        // +1 for "#"
+  }
 
   return length;
 }
@@ -851,19 +856,19 @@ url_to_string(URLImpl * url, Arena * arena, int *length)
   memcpy(&str[idx], url->m_ptr_path, url->m_len_path);
   idx += url->m_len_path;
 
-  if (url->m_ptr_params) {
+  if (url->m_ptr_params && url->m_len_params > 0) {
     str[idx++] = ';';
     memcpy(&str[idx], url->m_ptr_params, url->m_len_params);
     idx += url->m_len_params;
   }
 
-  if (url->m_ptr_query) {
+  if (url->m_ptr_query && url->m_len_query > 0) {
     str[idx++] = '?';
     memcpy(&str[idx], url->m_ptr_query, url->m_len_query);
     idx += url->m_len_query;
   }
 
-  if (url->m_ptr_fragment) {
+  if (url->m_ptr_fragment && url->m_len_fragment > 0) {
     str[idx++] = '#';
     memcpy(&str[idx], url->m_ptr_fragment, url->m_len_fragment);
     idx += url->m_len_fragment;

@@ -61,21 +61,18 @@ Below are some guidelines for creating a plugin:
    These examples are discussed in the next three chapters.
 
 2. Determine where your plugin needs to hook on to Traffic Server's HTTP
-   processing (view the `HTTP Transaction State
-   Diagram <../http-hoooks-and-transactions#HTTPTransactionStateDiagram>`__
+   processing (view the :ref:`http-txn-state-diagram`
 
-3. Read `Header-Based Plugin
-   Examples <../header-based-plugin-examples>`_ to learn the basics of
+3. Read :doc:`../header-based-plugin-examples.en` to learn the basics of
    writing plugins: creating continuations and setting up hooks. If you
-   want to write a plugin that transforms data, then read `HTTP
-   Transformation Plugins <HTTPTransformationPlugins.html>`_.
+   want to write a plugin that transforms data, then read
+   :doc:`../http-transformation-plugin.en`
 
 4. Figure out what parts of the Traffic Server API you need to use and
    then read about the details of those APIs in this manual's reference
    chapters.
 
-5. Compile and load your plugin (see `Getting
-   Started <../getting-started>`_
+5. Compile and load your plugin (see :doc:`../getting-started.en`
 
 6. Depending on your plugin's functionality, you might start testing it
    by issuing requests by hand and checking for the desired behavior in
