@@ -262,19 +262,6 @@ Restart(bool cluster)
 }
 
 /*-------------------------------------------------------------------------
- * HardRestart
- *-------------------------------------------------------------------------
- * Cannot be executed locally since it requires a restart of Traffic Cop.
- * So just return TS_ERR_FAIL. Should only be called by remote API clients.
- */
-TSError
-HardRestart()
-{
-  return TS_ERR_FAIL;
-}
-
-
-/*-------------------------------------------------------------------------
  * Bouncer
  *-------------------------------------------------------------------------
  * Bounces traffic_server process(es).
@@ -418,9 +405,6 @@ determine_action_need(const char *rec_name)
 
   case RECU_RESTART_TM:          // requires TM/TS restart
     return TS_ACTION_RESTART;
-
-  case RECU_RESTART_TC:          // requires TC/TM/TS restart
-    return TS_ACTION_SHUTDOWN;
 
   default:                     // shouldn't get here actually
     return TS_ACTION_UNDEFINED;

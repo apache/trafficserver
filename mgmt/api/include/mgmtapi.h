@@ -1007,13 +1007,6 @@ extern "C"
  */
   tsapi TSError TSRestart(bool cluster);
 
-/* TSHardRestart: stops and then starts Traffic Server
- * Input:  <none>
- * Output: TSError
- * Note: only for remote API clients
- */
-  tsapi TSError TSHardRestart();
-
 /* TSActionDo: based on TSActionNeedT, will take appropriate action
  * Input: action - action that needs to be taken
  * Output: TSError

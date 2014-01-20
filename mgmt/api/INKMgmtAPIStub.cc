@@ -541,12 +541,6 @@ INKRestart(bool cluster)
 }
 
 inkapi INKError
-INKHardRestart()
-{
-  return INK_ERR_OKAY;
-}
-
-inkapi INKError
 INKActionDo(INKActionNeedT action)
 {
   return INK_ERR_OKAY;

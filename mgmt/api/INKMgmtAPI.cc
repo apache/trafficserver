@@ -1776,19 +1776,6 @@ TSRestart(bool cluster)
   return Restart(cluster);
 }
 
-/* TSHardRestart: a traffic_cop restart (restarts TM and TS),
- * essentially does a "start_traffic_server"/"stop_traffic_server" sequence
- * Input:  <none>
- * Output: TSError
- * Note: only for remote API clients
- */
-/* CAN ONLY BE IMPLEMENTED ON THE REMOTE SIDE !!! */
-tsapi TSError
-TSHardRestart()
-{
-  return HardRestart();         // should return TS_ERR_FAIL
-}
-
 /* TSActionDo: based on TSActionNeedT, will take appropriate action
  * Input: action - action that needs to be taken
  * Output: TSError
@@ -1799,9 +1786,6 @@ TSActionDo(TSActionNeedT action)
   TSError ret;
 
   switch (action) {
-  case TS_ACTION_SHUTDOWN:
-    ret = HardRestart();
-    break;
   case TS_ACTION_RESTART:
     ret = Restart(true);        // cluster wide by default?
     break;
@@ -1811,6 +1795,7 @@ TSActionDo(TSActionNeedT action)
   case TS_ACTION_DYNAMIC:
     /* do nothing - change takes effect immediately */
     return TS_ERR_OKAY;
+  case TS_ACTION_SHUTDOWN:
   default:
     return TS_ERR_FAIL;
   }

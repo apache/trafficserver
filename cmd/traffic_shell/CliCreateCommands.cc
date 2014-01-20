@@ -133,9 +133,6 @@ CliCreateCommands()
 
   createCommand("config:stop", Cmd_ConfigStop, NULL, CLI_COMMAND_EXTERNAL, "config:stop", "Stop proxy software");
 
-  createCommand("config:hard-restart", Cmd_ConfigHardRestart, NULL, CLI_COMMAND_EXTERNAL,
-                "config:hard-restart", "Perform Hard Restart of all software components");
-
   createCommand("config:restart", Cmd_ConfigRestart, CmdArgs_ConfigRestart, CLI_COMMAND_EXTERNAL,
                 "config:restart [cluster]", "Perform Restart of proxy software");
 

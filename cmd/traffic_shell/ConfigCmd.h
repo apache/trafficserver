@@ -354,8 +354,6 @@ int Cmd_ConfigStart(ClientData clientData, Tcl_Interp * interp, int argc, const 
 //
 int Cmd_ConfigStop(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 
-int Cmd_ConfigHardRestart(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-
 int Cmd_ConfigRestart(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_ConfigRestart();
 

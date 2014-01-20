@@ -459,45 +459,6 @@ Cmd_ConfigStop(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ConfigHardRestart
-//
-// This is the callback function for the "config:hard-restart" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigHardRestart(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-  if (cliCheckIfEnabled("config:hard-restart") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  Cli_Debug("Cmd_ConfigHardRestart argc %d\n", argc);
-
-  if (argc == 1) {
-    return (TSHardRestart());
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ConfigRestart
 //
 // This is the callback function for the "config:restart" command.

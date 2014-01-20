@@ -39,7 +39,6 @@
  *                 eg. start, start:hostdb, start:all
  * stop:    turns Proxy off
  * restart: restarts Traffic Manager (Traffic Cop must be running)
- * kill_TC: restarts Traffic Cop (and TM and TS too)
  *
  * File operations:
  * ---------------
@@ -936,20 +935,6 @@ reconfigure()
 
   print_err("reconfigure", ret);
 }
-
-// currently does nothing
-void
-hard_restart()
-{
-  TSError ret;
-
-  printf("[hard_restart]Restart Traffic Cop\n");
-  if ((ret = TSHardRestart()) != TS_ERR_OKAY)
-    printf("[TSHardRestart] FAILED\n");
-
-  print_err("hard_restart", ret);
-}
-
 
 /* ------------------------------------------------------------------------
  * test_action_need
@@ -2369,8 +2354,6 @@ runInteractive()
       restart();
     } else if (strstr(buf, "reconfig")) {
       reconfigure();
-    } else if (strstr(buf, "kill_TC")) {
-      hard_restart();
     } else if (strstr(buf, "records")) {
       test_records();
     } else if (strstr(buf, "err_recs")) {

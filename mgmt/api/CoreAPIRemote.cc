@@ -60,7 +60,6 @@ TSError send_and_parse_basic(OpType op);
 TSError send_and_parse_list(OpType op, LLQ * list);
 TSError send_and_parse_name(OpType op, char *name);
 TSError mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * action_need);
-bool start_binary(const char *abs_bin_path);
 
 // global variables
 // need to store the thread id associated with socket_test_thread
@@ -192,39 +191,6 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * actio
   return err;
 }
 
-
-/*-------------------------------------------------------------------------
- * start_binary
- *-------------------------------------------------------------------------
- * helper function which calls the executable specified by abs_bin_path;
- * used by HardRestart to call the stop/start_traffic_server scripts
- * Output: returns false if fail, true if successful
- */
-bool
-start_binary(const char *abs_bin_path)
-{
-  TSDiags(TS_DIAG_NOTE, "[start_binary] abs_bin_path = %s", abs_bin_path);
-  // before doing anything, check for existence of binary and its execute
-  // permissions
-  if (access(abs_bin_path, F_OK) < 0) {
-    // ERROR: can't find binary
-    TSDiags(TS_DIAG_ERROR, "Cannot find executable %s", abs_bin_path);
-    return false;
-  }
-  // binary exists, check permissions
-  else if (access(abs_bin_path, R_OK | X_OK) < 0) {
-    // ERROR: doesn't have proper permissions
-    TSDiags(TS_DIAG_ERROR, "Cannot execute %s", abs_bin_path);
-    return false;
-  }
-
-  if (system(abs_bin_path) == -1) {
-    TSDiags(TS_DIAG_ERROR, "Cannot system(%s)", abs_bin_path);
-    return false;
-  }
-
-  return true;
-}
 
 
 /***************************************************************************
@@ -414,37 +380,6 @@ Restart(bool cluster)
   return ret;
 }
 
-
-/*-------------------------------------------------------------------------
- * HardRestart
- *-------------------------------------------------------------------------
- * Restarts Traffic Cop by using the stop_traffic_server, start_traffic_server script
- */
-TSError
-HardRestart()
-{
-  char start_path[1024];
-  char stop_path[1024];
-
-  if (!Layout::get() || !Layout::get()->bindir)
-    return TS_ERR_FAIL;
-  // determine the path of where start and stop TS scripts stored
-  TSDiags(TS_DIAG_NOTE, "Root Directory: %s", Layout::get()->bindir);
-
-  Layout::relative_to(start_path, sizeof(start_path), Layout::get()->bindir, "start_traffic_server");
-  Layout::relative_to(stop_path, sizeof(stop_path), Layout::get()->bindir, "stop_traffic_server");
-
-  TSDiags(TS_DIAG_NOTE, "[HardRestart] start_path = %s", start_path);
-  TSDiags(TS_DIAG_NOTE, "[HardRestart] stop_path = %s", stop_path);
-
-  if (!start_binary(stop_path)) // call stop_traffic_server script
-    return TS_ERR_FAIL;
-
-  if (!start_binary(start_path))        // call start_traffic_server script
-    return TS_ERR_FAIL;
-
-  return TS_ERR_OKAY;
-}
 
 /*-------------------------------------------------------------------------
  * Bounce

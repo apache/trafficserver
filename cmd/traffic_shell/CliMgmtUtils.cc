@@ -273,8 +273,7 @@ Cli_ConfigEnactChanges(TSActionNeedT action_need)
   case TS_ACTION_SHUTDOWN:
     Cli_Debug("Cli_ConfigEnactChanges: TS_ACTION_SHUTDOWN\n");
     Cli_Printf("\nHard Restart required.\n"
-               "  Change will take effect after next Hard Restart.\n"
-               "  Use the \"config:hard-restart\" command to restart now.\n\n");
+               "  Change will take effect after next Hard Restart.\n");
     break;
 
   case TS_ACTION_RESTART:
