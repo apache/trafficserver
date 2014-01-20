@@ -75,6 +75,16 @@ ssl_ca_name=FILENAME
   the certificate chain. `FILENAME` is resolved relative to the
   :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
 
+ssl_key_pass_dialog=[builtin|exec:/path/to/program]
+  Method used to provide a pass phrase for encrypted private keys.
+  Two options are supported: builtin and exec
+    ``builtin`` - Requests passphrase via stdin/stdout. Useful for
+      debugging.
+    ``exec:`` - Executes a program and accepts the output from stdout for
+      the pass phrase.  The intent is that this program runs a security
+      check to ensure that the system is not compromised by an attacker
+      before providing the pass phrase.
+
 ssl_ticket_enabled=1|0
   Enable :rfc:`5077` stateless TLS session tickets. To support this,
   OpenSSL should be upgraded to version 0.9.8f or higher. This
@@ -153,9 +163,18 @@ key.
     dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=1 ticket_key_name=ticket.key
 
 The following example configures Traffic Server to use the SSL
-certificate ``server.pem`` and disable sessiont ticket for all
+certificate ``server.pem`` and disable session ticket for all
 requests to the IP address 111.11.11.1.
 
 ::
 
     dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=0
+
+The following example configures Traffic Server to use the SSL
+certificate ``server.pem`` which includes an encrypted private key.
+The external program /usr/bin/mypass will be called on startup with one
+parameter (foo), the program will return the pass phrase to decrypt the key.
+
+::
+
+    ssl_cert_name=server.pem ssl_key_pass_dialog="exec:/usr/bin/mypass foo"
