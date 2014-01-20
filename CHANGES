@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-645] Remove broken hard restart from traffic_shell.
+
   *) [TS-2562] Improve init script support for Debian/Ubuntu.
    Author: Tomasz Kuzemko <tomasz@kuzemko.net>
 

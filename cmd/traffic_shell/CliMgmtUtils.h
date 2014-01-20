@@ -147,6 +147,4 @@ int cliCheckIfEnabled(const char *command);
 
 int GetTSDirectory(char *ts_path, size_t ts_path_len);
 
-int StopTrafficServer();
-int StartTrafficServer();
 int Cli_CheckPluginStatus(TSString plugin);

@@ -889,24 +889,6 @@ name			Proxy Name
   config1
   ts#
 
-start			Start Proxy Software
-  syntax: config:start
-  args:   none
-  behavior:  Run start_traffic_server.
-
-  ts# config:start
-  +OK
-  ts#
-
-stop			Stop Proxy Software
-  syntax: config:stop
-  args:   none
-  behavior:  Run stop_traffic_server.
-
-  ts# config:stop
-  +OK
-  ts#
-
 write			Write Upgrade File (IFC file)
   syntax: config:write ifc-head ts-version <ts_version> build-date <date> platform <platform> nodes <no_of_nodes> 
 	  config:write feature <feature-string>
