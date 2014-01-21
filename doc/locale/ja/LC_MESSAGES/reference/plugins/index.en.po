@@ -13,11 +13,11 @@ msgstr ""
 
 #: ../../reference/plugins/index.en.rst:2
 msgid "Plugin Reference"
-msgstr "Plugin Reference"
+msgstr "プラグインリファレンス"
 
 #: ../../reference/plugins/index.en.rst:22
 msgid "Overview"
-msgstr "Overview"
+msgstr "概要"
 
 #: ../../reference/plugins/index.en.rst:24
 msgid ""
@@ -42,7 +42,7 @@ msgstr ""
 
 #: ../../reference/plugins/index.en.rst:35
 msgid "Stable plugins"
-msgstr "Stable plugins"
+msgstr "安定したプラグイン"
 
 #: ../../reference/plugins/index.en.rst:37
 msgid ""
@@ -54,7 +54,7 @@ msgstr ""
 
 #: ../../reference/plugins/index.en.rst:51
 msgid "Experimental plugins"
-msgstr "Experimental plugins"
+msgstr "実験的なプラグイン"
 
 #: ../../reference/plugins/index.en.rst:53
 msgid ""
@@ -64,16 +64,8 @@ msgid ""
 "Server source tree. Exmperimental plugins can be compiled by passing the `--"
 "enable-experimental-plugins` option to `configure`::"
 msgstr ""
-
-#~ msgid ""
-#~ "Plugins that are considered experimental are located in the ```plugins/"
-#~ "experimental`` <https://git-wip-us.apache.org/repos/asf?p=trafficserver."
-#~ "git;a=tree;f=plugins/experimental;hb=HEAD>`_ directory in the Apache "
-#~ "Traffic Server source tree. Exmperimental plugins can be compiled by "
-#~ "passing the `--enable-experimental-plugins` option to `configure`::"
-#~ msgstr ""
-#~ "実験的なプラグインです。 Apache Traffic Server ソースツリーの ```plugins/"
-#~ "experimental`` <https://git-wip-us.apache.org/repos/asf?p=trafficserver."
-#~ "git;a=tree;f=plugins/experimental;hb=HEAD>`_ ディレクトリにあります。実験"
-#~ "的プラグインは `configure` を実行する際に `--enable-experimental-"
-#~ "plugins` オプションをつけることでコンパイルされます。"
+"実験的なプラグインです。 Apache Traffic Server ソースツリーの `plugins/"
+"experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver."
+"git;a=tree;f=plugins/experimental;hb=HEAD>`_ ディレクトリにあります。実験"
+"的プラグインは `configure` を実行する際に `--enable-experimental-"
+"plugins` オプションをつけることでコンパイルされます。"
