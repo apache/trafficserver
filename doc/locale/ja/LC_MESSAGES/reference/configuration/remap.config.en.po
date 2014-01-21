@@ -531,6 +531,11 @@ msgid ""
 "a match, then it is chosen without evaluating the \"regular\" forward "
 "mapping rules."
 msgstr ""
+"``map_with_recv_port`` -- リクエストにあるポートの代わりにリクエストを"
+"受け取ったポートをマッピングを行うために使うことを除いて 'map' とまったく"
+"同じです。 regex 修飾子もこのタイプで使用可能です。もし存在するならば、"
+"'map_with_recv_port' によるマッピングは最初に確認されます。マッチするものが"
+"ある場合、\"通常\" の順マッピングルールを評価することなくそれが選ばれます。"
 
 #: ../../reference/configuration/remap.config.en.rst:72
 msgid ""
@@ -539,18 +544,21 @@ msgid ""
 "when the Referer header is set to a URL that is allowed to link to the "
 "target."
 msgstr ""
+"``map_with_referer`` -- 'map' の拡張バージョンで、Referer ヘッダーが"
+"ターゲットへのリンクを許された URL にセットされている場合にのみターゲット "
+"URL にアクセス可能な \"直リンク禁止機能\" を動作させるために使用されます。"
 
 #: ../../reference/configuration/remap.config.en.rst:118
 msgid "``map_with_recv_port``"
-msgstr ""
+msgstr "``map_with_recv_port``"
 
 #: ../../reference/configuration/remap.config.en.rst:287
 msgid "map_with_referer"
-msgstr ""
+msgstr "map_with_referer"
 
 #: ../../reference/configuration/remap.config.en.rst:289
 msgid "the format of is the following::"
-msgstr ""
+msgstr "フォーマットは次のとおりです。"
 
 #: ../../reference/configuration/remap.config.en.rst:293
 msgid ""
@@ -562,6 +570,12 @@ msgid ""
 "header or it does not match with referer regular expression, the HTTP "
 "request will be redirected to 'redirect-URL'."
 msgstr ""
+"'redirect-URL' は RFC 2616 に従って指定されたリダイレクト先 URL であり、"
+"実行時のリダイレクト先 URL の修正のために特別なフォーマットの命令を含むことが"
+"できます。すべての regex は検証されなければならない \"Referer\" ヘッダーの"
+"内容を記述する Perl 互換の正規表現です。実際のリクエストが \"Referer\" "
+"ヘッダーを持っていないかリファラーの正規表現にマッチしない場合、HTTP "
+"リクエストは 'redirect-URL' にリダイレクトされます。"
 
 #: ../../reference/configuration/remap.config.en.rst:301
 msgid ""
@@ -570,16 +584,23 @@ msgid ""
 "regular expression strings - 2048.  In order to enable the 'deep linking "
 "protection' feature in Traffic Server, configure records.config with::"
 msgstr ""
+"'直リンク禁止機能' を動作させるためには少なくとも一つの正規表現が指定されて"
+"いなければ成りません。リファラー正規表現の数には制限があり 2048 です。"
+"Traffic Server で '直リンク禁止機能' を有効化するためには records.config の"
+"次の変数を設定してください。"
 
 #: ../../reference/configuration/remap.config.en.rst:308
 msgid "In order to enable run-time formatting for redirect URL, configure::"
 msgstr ""
+"実行時のリダイレクト先 URL の整形を有効化するには次の設定を行ってください。"
 
 #: ../../reference/configuration/remap.config.en.rst:312
 msgid ""
 "When run-time formatting for redirect-URL was enabled the following format "
 "symbols can be used::"
 msgstr ""
+"実行時の redirect-URL の整形が有効化された場合は次の整形シンボルが使用"
+"できます。"
 
 #: ../../reference/configuration/remap.config.en.rst:321
 msgid ""
@@ -594,32 +615,49 @@ msgid ""
 "combinations of \"*\" and \"~\" in a referer list can be used to create "
 "different filtering rules."
 msgstr ""
+"注意: リクエストの Referer ヘッダーが任意であると指定するために使用可能な "
+"\"~*\" という特別なリファラータイプがあります。もし \"~*\" という"
+"リファラーが map_with_referer マッピングで使用された場合、Referer ヘッダーを"
+"持つリクエストのみが妥当性を検証されます。もし \"~\" シンボルがリファラー"
+"正規表現より前に指定された場合は、マッチするリファラーを持つリクエストは "
+"redirectURL にリダイレクトされることを意味します。これはいわゆるネガティブ"
+"リファラー一覧を作るために使用できます。もし \"*\" がリファラー正規表現として"
+"使用された場合、すべてのリファラーが許可されます。リファラー一覧内の様々な "
+"\"*\" と \"~\" の組み合わせは異なったフィルタリングルールを作るために使用"
+"されます。"
 
 #: ../../reference/configuration/remap.config.en.rst:332
 msgid "map_with_referer Examples"
-msgstr ""
+msgstr "map_with_referer の例"
 
 #: ../../reference/configuration/remap.config.en.rst:338
 msgid ""
 "Explanation: Referer header must be in the request, only \".*\\.bar\\.com\" "
 "and \"www.bar-friends.com\" are allowed."
 msgstr ""
+"説明: Referer ヘッダーがリクエストに含まれていなければならず、"
+"\".*\\.bar\\.com\" と \"www.bar-friends.com\" のみが許可されます。"
 
 #: ../../reference/configuration/remap.config.en.rst:344
 msgid ""
 "Explanation: Referer header must be in the request but all referers are "
 "allowed except \".*\\.evil\\.com\"."
 msgstr ""
+"説明: Referer ヘッダーがリクエストに含まれていなければなりませんが、"
+"\".*\\.evil\\.com\" を除くすべてのリファラーが許可されます。"
 
 #: ../../reference/configuration/remap.config.en.rst:350
 msgid ""
 "Explanation: Referer header is optional. However, if Referer header exists, "
 "only request from \".*\\.evil\\.com\" will be redirected to redirect-URL."
 msgstr ""
+"説明: Referer ヘッダーの存在は任意です。しかし Referer ヘッダーが存在する"
+"場合、\".*\\.evil\\.com\" からのリクエストだけは redirect-URL にリダイレクト"
+"されます。"
 
 #: ../../reference/configuration/remap.config.en.rst:411
 msgid "Including Additional Remap Files"
-msgstr ""
+msgstr "追加のリマップファイルの取り込み"
 
 #: ../../reference/configuration/remap.config.en.rst:413
 msgid ""
@@ -629,6 +667,10 @@ msgid ""
 "absolute paths, they are resolved relative to the Traffic Server "
 "configuration directory."
 msgstr ""
+"``.include`` ディレクティブはマッピングルールを複数のファイルに分散できる"
+"ようにします。``.include`` ディレクティブの引数は追加のマッピングルールの"
+"ためにパースされるファイル名のリストです。ファイル名が絶対パスでない場合は "
+"Traffic Server の設定ディレクトリからの相対で解決されます。"
 
 #: ../../reference/configuration/remap.config.en.rst:419
 msgid ""
@@ -637,6 +679,10 @@ msgid ""
 "of inclusion. This means that and filters named in the included files are "
 "global in scope, and that additional ``.include`` directives are allowed."
 msgstr ""
+"``.include`` ディレクティブの効果はリストのファイルが親に含まれていて"
+"取り込んだ場所からパースが再開されるようなものです。これは取り込まれた"
+"ファイル内で名前の付けられたフィルターはスコープ内でグローバルであり、"
+"さらなる ``.include`` ディレクティブも許されることを意味します。"
 
 #: ../../reference/configuration/remap.config.en.rst:427
 msgid ""
@@ -645,21 +691,27 @@ msgid ""
 "configuration changes applied by :option:`traffic_line -x` unless :file:"
 "`remap.config` has also changed."
 msgstr ""
+"取り込まれたリマップファイルは現在は設定サブシステムによって監視されて"
+"いません。取り込まれたリマップファイルの変更は :file:`remap.config` も変更"
+"されない限りは :option:`traffic_line -x` で適用されるオンラインでの設定の"
+"変更によって通知されません。"
 
 #: ../../reference/configuration/remap.config.en.rst:435
 msgid ""
 "In this example, a top-level :file:`remap.config` file simply references "
 "additional mapping rules files ::"
 msgstr ""
+"この例では、トップレベルの :file:`remap.config` ファイルが単純に追加の"
+"マッピングルールファイルを参照しています。"
 
 #: ../../reference/configuration/remap.config.en.rst:441
 msgid "The file `filters.config` contains ::"
-msgstr ""
+msgstr "`filters.config` は次のルールを含んでいます。"
 
 #: ../../reference/configuration/remap.config.en.rst:446
 msgid "The file `one.example.com.config` contains::"
-msgstr ""
+msgstr "`one.example.com.config` は次のルールを含んでいます。"
 
 #: ../../reference/configuration/remap.config.en.rst:452
 msgid "The file `two.example.com.config` contains::"
-msgstr ""
+msgstr "`two.example.com.config` は次のルールを含んでいます。"
