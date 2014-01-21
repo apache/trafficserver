@@ -114,10 +114,10 @@ ink_popen(const char *progname, const char *mode)
   int status;
 
   char **env = NULL;
-#if defined(linux)
-  env = environ;
-#elif defined(darwin)
+#if defined(darwin)
   env = *_NSGetEnviron();
+#else
+  env = environ;
 #endif
 
   // spawn the new process
