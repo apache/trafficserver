@@ -1819,6 +1819,12 @@ TSBounce(bool cluster)
   return Bounce(cluster);
 }
 
+tsapi TSError
+TSStorageDeviceCmdOffline(char const* dev)
+{
+  return StorageDeviceCmdOffline(dev);
+}
+
 
 /*--- diags output operations ---------------------------------------------*/
 tsapi void

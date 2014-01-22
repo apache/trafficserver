@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -112,6 +112,13 @@ Options
 .. option:: -z, --zero_node
 
     Reset performance statistics to zero on the local node.
+
+.. option:: --offline PATH
+
+   Mark a cache storage device as offline. The storage is identified by a *path* which must match exactly a path
+   specified in :file:`storage.config`. This removes the storage from the cache and redirects requests that would have
+   used this storage to other storage. This has exactly the same effect as a disk failure for that storage. This does
+   not persist across restarts of the :program:`traffic_server` process.
 
 .. traffic-line-performance-statistics
 
@@ -774,7 +781,7 @@ The :option:`traffic_line -r` option accepts the following variable names::
 Examples
 ========
 
-Configure Traffic Server to log in Squid format:: 
+Configure Traffic Server to log in Squid format::
 
     $ traffic_line -s proxy.config.log.squid_log_enabled -v 1
     $ traffic_line -s proxy.config.log.squid_log_is_ascii -v 1

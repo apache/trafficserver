@@ -46,6 +46,7 @@ static int ClearCluster;
 static int ClearNode;
 static char ZeroCluster[1024];
 static char ZeroNode[1024];
+static char StorageCmdOffline[1024];
 static int VersionFlag;
 
 static TSError
@@ -84,6 +85,8 @@ handleArgInvocation()
     fprintf(stderr, "Query Deadhosts is not implemented, it requires support for congestion control.\n");
     fprintf(stderr, "For more details, examine the old code in cli/CLI.cc: QueryDeadhosts()\n");
     return TS_ERR_FAIL;
+  } else if (*StorageCmdOffline) {
+    return TSStorageDeviceCmdOffline(StorageCmdOffline);
   } else if (*ReadVar != '\0') {        // Handle a value read
     if (*SetVar != '\0' || *VarValue != '\0') {
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
@@ -162,6 +165,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   ZeroCluster[0] = '\0';
   ZeroNode[0] = '\0';
   VersionFlag = 0;
+  *StorageCmdOffline = 0;
 
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME,"traffic_line", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -185,6 +189,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     {"clear_node", 'c', "Clear Statistics (local node)", "F", &ClearNode, NULL, NULL},
     {"zero_cluster", 'Z', "Zero Specific Statistic (cluster wide)", "S1024", &ZeroCluster, NULL, NULL},
     {"zero_node", 'z', "Zero Specific Statistic (local node)", "S1024", &ZeroNode, NULL, NULL},
+    {"offline", '-', "Mark cache storage offline", "S1024", &StorageCmdOffline, NULL, NULL},
     {"version", 'V', "Print Version Id", "T", &VersionFlag, NULL, NULL},
   };
 

@@ -117,6 +117,7 @@ extern "C" int plock(int);
 static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
 
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
+static void*  mgmt_storage_device_cmd_callback(void* x, char* data, int len);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
 
@@ -1624,6 +1625,11 @@ main(int /* argc ATS_UNUSED */, char **argv)
     pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
     pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, NULL);
 
+    // Callback for various storage commands. These all go to the same function so we
+    // pass the event code along so it can do the right thing. We cast that to <int> first
+    // just to be safe because the value is a #define, not a typed value.
+    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, mgmt_storage_device_cmd_callback, reinterpret_cast<void*>(static_cast<int>(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE)));
+
     // The main thread also becomes a net thread.
     ink_set_thread_name("[ET_NET 0]");
 
@@ -1668,5 +1674,24 @@ static void *
 mgmt_restart_shutdown_callback(void *, char *, int /* data_len ATS_UNUSED */)
 {
   sync_cache_dir_on_shutdown();
+  return NULL;
+}
+
+static void*
+mgmt_storage_device_cmd_callback(void* data, char* arg, int len)
+{
+  // data is the device name to control
+  CacheDisk* d = cacheProcessor.find_by_path(arg, len);
+  // Actual command is in @a data.
+  intptr_t cmd = reinterpret_cast<intptr_t>(data);
+
+  if (d) {
+    switch (cmd) {
+    case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
+      Debug("server", "Marking %.*s offline", len, arg);
+      cacheProcessor.mark_storage_offline(d);
+      break;
+    }
+  }
   return NULL;
 }

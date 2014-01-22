@@ -909,7 +909,7 @@ LocalManager::processEventQueue()
         ink_assert(enqueue(mgmt_event_queue, mh));
         return;
       }
-      Debug("lm", "[TrafficManager] ==> Sending signal event '%d'\n", mh->msg_id);
+      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' payload=%d\n", mh->msg_id, mh->data_len);
       lmgmt->sendMgmtMsgToProcesses(mh);
     }
     ats_free(mh);

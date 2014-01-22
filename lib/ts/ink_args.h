@@ -40,7 +40,7 @@ typedef void ArgumentFunction(const ArgumentDescription * argument_descriptions,
 struct ArgumentDescription
 {
   const char *name;
-  char key;
+  char key; // set to '-' if no single character key.
   /*
      "I" = integer
      "L" = int64_t

@@ -55,6 +55,7 @@ TSError Reconfigure();         // TS reread config files
 TSError Restart(bool cluster); //restart TM
 TSError HardRestart();         //restart traffic_cop
 TSError Bounce(bool cluster);  //restart traffic_server
+TSError StorageDeviceCmdOffline(char const* dev); // Storage device operation.
 
 /***************************************************************************
  * Record Operations

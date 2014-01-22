@@ -317,6 +317,17 @@ ts_ctrl_main(void *arg)
               }
               break;
 
+            case STORAGE_DEVICE_CMD_OFFLINE:
+              ret = handle_storage_device_cmd_offline(client_entry->sock_info, req);
+              ats_free(req);     // free the request allocated by preprocess_msg
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
+                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_storage_device_cmd_offline\n");
+                remove_client(client_entry, accepted_con);
+                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
+                continue;
+              }
+              break;
+
             case EVENT_RESOLVE:
               ret = handle_event_resolve(client_entry->sock_info, req);
               ats_free(req);     // free the request allocated by preprocess_msg
@@ -727,6 +738,29 @@ handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
   else
     ret = Restart(0 != cluster);
 
+  ret = send_reply(sock_info, ret);
+  return ret;
+}
+
+/**************************************************************************
+ * handle_storage_device_cmd_offline
+ *
+ * purpose: handle storage offline command.
+ * input: struct SocketInfo sock_info - the socket to use to talk to client
+ * output: TS_ERR_xx
+ * note: None
+ *************************************************************************/
+TSError
+handle_storage_device_cmd_offline(struct SocketInfo sock_info, char *req)
+{
+  TSError ret = TS_ERR_OKAY;
+
+  if (!req) {
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
+    return ret;                 // shouldn't get here
+  }
+  // forward to server
+  lmgmt->signalEvent(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, req);
   ret = send_reply(sock_info, ret);
   return ret;
 }
