@@ -124,8 +124,6 @@ LocalManager::rollLogFiles()
 void
 LocalManager::clearStats(const char *name)
 {
-  char *statsPath;
-
   // Clear our records and then send the signal.  There is a race condition
   //  here where our stats could get re-updated from the proxy
   //  before the proxy clears them, but this should be rare.
@@ -146,14 +144,12 @@ LocalManager::clearStats(const char *name)
   //   that operation works even when the proxy is off
   //
   if (this->proxy_running == 0) {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
-    statsPath = Layout::relative_to(rundir, REC_RAW_STATS_FILE);
+    xptr<char> statsPath(RecConfigReadPersistentStatsPath());
     if (unlink(statsPath) < 0) {
       if (errno != ENOENT) {
-        mgmt_log(stderr, "[LocalManager::clearStats] Unlink of %s failed : %s\n", REC_RAW_STATS_FILE, strerror(errno));
+        mgmt_log(stderr, "[LocalManager::clearStats] Unlink of %s failed : %s\n", (const char *)statsPath, strerror(errno));
       }
     }
-    ats_free(statsPath);
   }
 }
 

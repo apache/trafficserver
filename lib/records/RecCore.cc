@@ -36,7 +36,6 @@ InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
 
-const char *g_stats_snap_fpath = NULL;
 int g_num_update[RECT_MAX];
 
 RecTree *g_records_tree = NULL;
@@ -177,8 +176,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
   // read stats
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
-    g_stats_snap_fpath = Layout::relative_to(rundir, REC_RAW_STATS_FILE);
     RecReadStatsFile();
   }
   // read configs
@@ -1108,6 +1105,16 @@ RecConfigReadConfigPath(const char * file_variable, const char * default_value)
   }
 
   return NULL;
+}
+
+//-------------------------------------------------------------------------
+// RecConfigReadPersistentStatsPath
+//-------------------------------------------------------------------------
+char *
+RecConfigReadPersistentStatsPath()
+{
+  xptr<char> rundir(RecConfigReadRuntimeDir());
+  return Layout::relative_to(rundir, REC_RAW_STATS_FILE);
 }
 
 //-------------------------------------------------------------------------

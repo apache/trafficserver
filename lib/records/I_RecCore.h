@@ -62,6 +62,10 @@ char * RecConfigReadLogDir();
 // value, NULL is returned. The caller MUST release the result with ats_free().
 char * RecConfigReadConfigPath(const char * file_variable, const char * default_value = NULL);
 
+// Return a copy of the persistent stats file. This is $RUNTIMEDIR/records.snap.
+// The caller MUST release the result with ats_free().
+char * RecConfigReadPersistentStatsPath();
+
 // Test whether the named configuration value is overridden by an environment variable. Return either
 // the overridden value, or the original value. Caller MUST NOT free the result.
 const char * RecConfigOverrideFromEnvironment(const char * name, const char * value);

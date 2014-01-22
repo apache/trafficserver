@@ -531,11 +531,12 @@ RecReadStatsFile()
   RecRecord *r;
   RecMessage *m;
   RecMessageItr itr;
+  xptr<char> snap_fpath(RecConfigReadPersistentStatsPath());
 
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
 
-  if ((m = RecMessageReadFromDisk(g_stats_snap_fpath)) != NULL) {
+  if ((m = RecMessageReadFromDisk(snap_fpath)) != NULL) {
     if (RecMessageUnmarshalFirst(m, &itr, &r) != REC_ERR_FAIL) {
       do {
         if ((r->name == NULL) || (!strlen(r->name)))
@@ -562,6 +563,7 @@ RecSyncStatsFile()
   RecMessage *m;
   int i, num_records;
   bool sync_to_disk;
+  xptr<char> snap_fpath(RecConfigReadPersistentStatsPath());
 
   /*
    * g_mode_type should be initialized by
@@ -585,8 +587,8 @@ RecSyncStatsFile()
       rec_mutex_release(&(r->lock));
     }
     if (sync_to_disk) {
-      RecDebug(DL_Note, "Writing '%s' [%d bytes]", g_stats_snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
-      RecMessageWriteToDisk(m, g_stats_snap_fpath);
+      RecDebug(DL_Note, "Writing '%s' [%d bytes]", (const char *)snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
+      RecMessageWriteToDisk(m, snap_fpath);
     }
     RecMessageFree(m);
   }
