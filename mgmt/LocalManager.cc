@@ -617,35 +617,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   case MGMT_SIGNAL_CONFIG_FILE_READ:
     mgmt_log(stderr, "[LocalManager::handleMgmtMsgFromProcesses] File done '%d'\n", data_raw);
     break;
-  case MGMT_SIGNAL_PLUGIN_ADD_REC:
-    {
-      char var_name[256];
-      char var_value[256];
-      RecDataT data_type;
-      // data_type is an enum type, so cast to an int* to avoid warnings. /leif
-      // coverity[secure_coding]
-      if (sscanf(data_raw, "%255s %d %255s", var_name, (int *) &data_type, var_value) != 3) {
-        Debug("lm", "Warning: Bad data_type: %s", (char *) data_raw);
-        data_type = RECD_MAX;
-      }
-      switch (data_type) {
-      case RECD_COUNTER:
-        RecRegisterStatCounter(RECT_PLUGIN, var_name, ink_atoi64(var_value), RECP_NULL);
-        break;
-      case RECD_INT:
-        RecRegisterStatInt(RECT_PLUGIN, var_name, ink_atoi64(var_value), RECP_NULL);
-        break;
-      case RECD_FLOAT:
-        RecRegisterStatFloat(RECT_PLUGIN, var_name, atof(var_value), RECP_NULL);
-        break;
-      case RECD_STRING:
-        RecRegisterStatString(RECT_PLUGIN, var_name, var_value, RECP_NULL);
-        break;
-      default:
-        break;
-      }
-      break;
-    }
   case MGMT_SIGNAL_PLUGIN_SET_CONFIG:
     {
       char var_name[256];

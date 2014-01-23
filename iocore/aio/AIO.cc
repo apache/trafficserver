@@ -150,15 +150,15 @@ ink_aio_init(ModuleVersion v)
 
   aio_rsb = RecAllocateRawStatBlock((int) AIO_STAT_COUNT);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.read_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_READ_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.write_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_WRITE_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_WRITE_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS,
                      "proxy.process.cache.KB_read_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS,
                      "proxy.process.cache.KB_write_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
 #if AIO_MODE != AIO_MODE_NATIVE
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex, NULL);

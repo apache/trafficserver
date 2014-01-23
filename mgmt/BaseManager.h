@@ -92,7 +92,7 @@
 #define MGMT_SIGNAL_LOGGING_WARNING       10
 // Currently unused: 11
 // Currently unused: 12
-#define MGMT_SIGNAL_PLUGIN_ADD_REC        13
+// Currently unused: 13
 #define MGMT_SIGNAL_PLUGIN_SET_CONFIG     14
 #define MGMT_SIGNAL_LOG_FILES_ROLLED      15
 #define MGMT_SIGNAL_LIBRECORDS            16

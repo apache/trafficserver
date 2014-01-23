@@ -510,25 +510,25 @@ Test03()
   g_rsb = RecAllocateRawStatBlock((int) MY_STAT_COUNT);
 
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_a",
-                     RECD_FLOAT, RECP_NULL, (int) MY_STAT_A, RecRawStatSyncAvg);
+                     RECD_FLOAT, RECP_NON_PERSISTENT, (int) MY_STAT_A, RecRawStatSyncAvg);
 
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_b",
                      RECD_INT, RECP_PERSISTENT, (int) MY_STAT_B, RecRawStatSyncSum);
 
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_c",
-                     RECD_INT, RECP_NULL, (int) MY_STAT_C, RecRawStatSyncCount);
+                     RECD_INT, RECP_NON_PERSISTENT, (int) MY_STAT_C, RecRawStatSyncCount);
 
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_d",
-                     RECD_FLOAT, RECP_NULL, (int) MY_STAT_D, raw_stat_sync_ticks_per_sec);
+                     RECD_FLOAT, RECP_NON_PERSISTENT, (int) MY_STAT_D, raw_stat_sync_ticks_per_sec);
 
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_e",
-                     RECD_FLOAT, RECP_NULL, (int) MY_STAT_E, RecRawStatSyncHrTimeAvg);
+                     RECD_FLOAT, RECP_NON_PERSISTENT, (int) MY_STAT_E, RecRawStatSyncHrTimeAvg);
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_f",
-                     RECD_INT, RECP_NULL, (int) MY_STAT_F, RecRawStatSyncCount);
+                     RECD_INT, RECP_NON_PERSISTENT, (int) MY_STAT_F, RecRawStatSyncCount);
   // If forget to Register this RawStat, we will have SEGV when checking 
   // g_rsb->global[MY_STAT_G]
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_g",
-                     RECD_INT, RECP_NULL, (int) MY_STAT_G, RecRawStatSyncSum);
+                     RECD_INT, RECP_NON_PERSISTENT, (int) MY_STAT_G, RecRawStatSyncSum);
 
   // Schedule a bunch of continuations that will use the stats registered above
   RawStatCont *sc = new RawStatCont(new_ProxyMutex());

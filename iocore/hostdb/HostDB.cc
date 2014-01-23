@@ -2459,29 +2459,29 @@ ink_hostdb_init(ModuleVersion v)
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.total_entries",
-                     RECD_INT, RECP_NULL, (int) hostdb_total_entries_stat, RecRawStatSyncCount);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_total_entries_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.total_lookups",
-                     RECD_INT, RECP_NULL, (int) hostdb_total_lookups_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_total_lookups_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.total_hits",
                      RECD_INT, RECP_NON_PERSISTENT, (int) hostdb_total_hits_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
-                     "proxy.process.hostdb.ttl", RECD_FLOAT, RECP_NULL, (int) hostdb_ttl_stat, RecRawStatSyncAvg);
+                     "proxy.process.hostdb.ttl", RECD_FLOAT, RECP_PERSISTENT, (int) hostdb_ttl_stat, RecRawStatSyncAvg);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.ttl_expires",
-                     RECD_INT, RECP_NULL, (int) hostdb_ttl_expires_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_ttl_expires_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.re_dns_on_reload",
-                     RECD_INT, RECP_NULL, (int) hostdb_re_dns_on_reload_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_re_dns_on_reload_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
-                     "proxy.process.hostdb.bytes", RECD_INT, RECP_NULL, (int) hostdb_bytes_stat, RecRawStatSyncCount);
+                     "proxy.process.hostdb.bytes", RECD_INT, RECP_PERSISTENT, (int) hostdb_bytes_stat, RecRawStatSyncCount);
 
   ts_host_res_global_init();
 }

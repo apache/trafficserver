@@ -121,20 +121,17 @@ initialize_process_manager()
   //
   // Define version info records
   //
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NULL);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NON_PERSISTENT);
 //    RecRegisterStatString(RECT_PROCESS,
 //                         "proxy.process.version.server.build_compile_flags",
 //                         appVersionInfo.BldCompileFlagsStr,
-//                         RECP_NULL);
+//                         RECP_NON_PERSISTENT);
 }
 
 /*-------------------------------------------------------------------------

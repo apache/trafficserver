@@ -1629,11 +1629,11 @@ ink_dns_init(ModuleVersion v)
   //
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.total_dns_lookups",
-                     RECD_INT, RECP_NULL, (int) dns_total_lookups_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_total_lookups_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.lookup_avg_time",
-                     RECD_INT, RECP_NULL, (int) dns_response_time_stat, RecRawStatSyncHrTimeAvg);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_response_time_stat, RecRawStatSyncHrTimeAvg);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.success_avg_time",
@@ -1641,22 +1641,22 @@ ink_dns_init(ModuleVersion v)
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.lookup_successes",
-                     RECD_INT, RECP_NULL, (int) dns_lookup_success_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_lookup_success_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.fail_avg_time",
-                     RECD_INT, RECP_NULL, (int) dns_fail_time_stat, RecRawStatSyncHrTimeAvg);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_fail_time_stat, RecRawStatSyncHrTimeAvg);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.lookup_failures",
-                     RECD_INT, RECP_NULL, (int) dns_lookup_fail_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_lookup_fail_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.retries", RECD_INT, RECP_NULL, (int) dns_retries_stat, RecRawStatSyncSum);
+                     "proxy.process.dns.retries", RECD_INT, RECP_PERSISTENT, (int) dns_retries_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.max_retries_exceeded",
-                     RECD_INT, RECP_NULL, (int) dns_max_retries_exceeded_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_max_retries_exceeded_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.in_flight",
