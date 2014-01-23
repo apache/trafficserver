@@ -57,8 +57,6 @@
 
 #include "ink_apidefs.h"
 
-#define FLUSH_THREAD_SLEEP_TIMEOUT (1)
-#define FLUSH_THREAD_MIN_FLUSH_COUNTER (FLUSH_ARRAY_SIZE/4)
 #define PERIODIC_TASKS_INTERVAL 5 // TODO: Maybe this should be done as a config option
 
 // Log global objects
@@ -945,10 +943,8 @@ Log::init(int flags)
     //
     create_threads();
 
-#ifndef INK_SINGLE_THREADED
     eventProcessor.schedule_every(NEW (new PeriodicWakeup(collation_preproc_threads, 1)),
                                   HRTIME_SECOND, ET_CALL);
-#endif
     init_status |= PERIODIC_WAKEUP_SCHEDULED;
 
     // Clear any stat values that need to be reset on startup
