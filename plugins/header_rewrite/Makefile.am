@@ -33,7 +33,8 @@ header_rewrite_la_SOURCES = \
   regex_helper.cc \
   resources.cc \
   ruleset.cc \
-  statement.cc
+  statement.cc \
+  expander.cc
 header_rewrite_la_LDFLAGS = $(BOOST_LDFLAGS) $(TS_PLUGIN_LDFLAGS)
 
 endif

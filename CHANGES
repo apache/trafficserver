@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2501] Refactor and improve performance for the case without
+   expansions. Review: Alexey Ivanov <aivanov@linkedin.com>.
+
   *) [TS-2533 ] Add three commands previously provided by traffic_shell.
 
   *) [TS-2304] Make the healthcheck plugin watch for file permission changes.

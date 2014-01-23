@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "operators.h"
+#include "expander.h"
 
 // OperatorConfig
 void
@@ -386,8 +387,11 @@ OperatorAddHeader::exec(const Resources& res) const
 
   _value.append_value(value, res);
 
-  VariableExpander ve(value);
-  value = ve.expand(res);
+  if (_value.need_expansion()) {
+    VariableExpander ve(value);
+
+    value = ve.expand(res);
+  }
 
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {

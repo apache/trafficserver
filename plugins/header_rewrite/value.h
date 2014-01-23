@@ -42,10 +42,10 @@ class Value : Statement
 {
 public:
   Value()
-    : _value(""), _int_value(0), _float_value(0.0), _cond_val(NULL)
+    : _need_expander(false), _value(""), _int_value(0), _float_value(0.0), _cond_val(NULL)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value");
-  };
+  }
 
   void
   set_value(const std::string& val)
@@ -58,6 +58,10 @@ public:
       if (_cond_val) {
         _cond_val->initialize(parser);
       }
+    } else if (_value.find("%<") != std::string::npos) { // It has a Variable to expand
+      _need_expander = true; // And this is clearly not an integer or float ...
+      // TODO: This is still not optimal, we should pre-parse the _value string here,
+      // and perhaps populate a per-Value VariableExpander that holds state.
     } else {
       _int_value = strtol(_value.c_str(), NULL, 10);
       _float_value = strtod(_value.c_str(), NULL);
@@ -65,7 +69,8 @@ public:
   }
 
   void
-  append_value(std::string& s, const Resources& res) const {
+  append_value(std::string& s, const Resources& res) const
+  {
     if (_cond_val) {
       _cond_val->append_value(s, res);
     } else {
@@ -79,10 +84,12 @@ public:
   double get_float_value() const { return _float_value; }
 
   bool empty() const { return _value.empty(); }
+  bool need_expansion() const { return _need_expander; }
 
 private:
   DISALLOW_COPY_AND_ASSIGN(Value);
 
+  bool _need_expander;
   std::string _value;
   int _int_value;
   double _float_value;
