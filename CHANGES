@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2425] Update to TS-2261 for loading plugins as root
+
   *) [TS-2505] Add traffic_line --offline option.
 
   *) [TS-2305] Fall back to ftruncate if posix_fallocate fails.

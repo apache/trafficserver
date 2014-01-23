@@ -111,29 +111,29 @@ plugin_load(int argc, char *argv[])
     }
     plugin_reg_temp = (plugin_reg_temp->link).next;
   }
-
-  handle = dll_open(path);
-  if (!handle) {
-    Fatal("unable to load '%s': %s", path, dll_error(handle));
-  }
-
-  // Allocate a new registration structure for the
-  //    plugin we're starting up
-  ink_assert(plugin_reg_current == NULL);
-  plugin_reg_current = new PluginRegInfo;
-  plugin_reg_current->plugin_path = ats_strdup(path);
-
-  init = (init_func_t) dll_findsym(handle, "TSPluginInit");
-  if (!init) {
-    Fatal("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
-  }
-
   // elevate the access to read files as root if compiled with capabilities, if not
   // change the effective user to root
   {
     uint32_t elevate_access = 0;
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access != 0);
+
+    handle = dll_open(path);
+    if (!handle) {
+      Fatal("unable to load '%s': %s", path, dll_error(handle));
+    }
+
+    // Allocate a new registration structure for the
+    //    plugin we're starting up
+    ink_assert(plugin_reg_current == NULL);
+    plugin_reg_current = new PluginRegInfo;
+    plugin_reg_current->plugin_path = ats_strdup(path);
+
+    init = (init_func_t) dll_findsym(handle, "TSPluginInit");
+    if (!init) {
+      Fatal("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
+    }
+
     init(argc, argv);
   } // done elevating access
 
