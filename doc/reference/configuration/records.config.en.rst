@@ -250,7 +250,7 @@ Value Effect
 Network
 =======
 
-.. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 ::
+.. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
    Controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
 
@@ -270,9 +270,9 @@ Unless explicitly specified in `proxy.config.http.server_ports`_ the server port
 
    Set the global default for IPv4 to ``191.68.101.18`` and the global default for IPv6 to ``fc07:192:168:101::17``.::
 
-      LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18 fc07:192:168:101::17
+      LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.18 [fc07:192:168:101::17]
 
-.. ts:cv:: LOCAL proxy.local.outgoing_ip_to_bind STRING 0.0.0.0 ::
+.. ts:cv:: LOCAL proxy.local.outgoing_ip_to_bind STRING 0.0.0.0 [::]
 
    This controls the global default for the local IP address for outbound connections to origin servers. The value is a list of space separated IP addresses, one per supported IP address family (currently IPv4 and IPv6).
 
@@ -284,7 +284,7 @@ Unless explicitly specified in `proxy.config.http.server_ports`_ the server port
 
 .. topic:: Example
 
-   Set the default local outbound IP address for IPv4 connectionsn to ``192.168.101.18``.::
+   Set the default local outbound IP address for IPv4 connections to ``192.168.101.18``.::
 
       LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.18
 
@@ -292,7 +292,7 @@ Unless explicitly specified in `proxy.config.http.server_ports`_ the server port
 
    Set the default local outbound IP address to ``192.168.101.17`` for IPv4 and ``fc07:192:168:101::17`` for IPv6.::
 
-      LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.17 fc07:192:168:101::17
+      LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.17 [fc07:192:168:101::17]
 
 Cluster
 =======
@@ -433,14 +433,14 @@ ipv6
    Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 address.
 
 tr-in
-   Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides :ts:cv:`proxy.local.incoming_ip_to_bind`.
+   Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides :ts:cv:`proxy.local.incoming_ip_to_bind` for this port.
 
    Not compatible with: ``ip-in``, ``ssl``, ``blind``
 
 tr-out
-   Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides :ts:cv:`proxy.local.outgoing_ip_to_bind`.
+   Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides :ts:cv:`proxy.local.outgoing_ip_to_bind` for this port.
 
-   Not compatible with: ``ip-out``, ``ssl``, ``ip-resolve``
+   Not compatible with: ``ip-out``, ``ip-resolve``
 
 tr-full
    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
@@ -451,7 +451,7 @@ tr-pass
    Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables :ts:cv:`proxy.config.http.use_client_target_addr` for the transaction as there is no other place to obtain the origin server address.
 
 ip-in
-   Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this options is omitted :ts:cv:`proxy.local.incoming_ip_to_bind` is used.
+   Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this option is omitted :ts:cv:`proxy.local.incoming_ip_to_bind` is used.
 
    Not compatible with: ``tr-in``.
 
@@ -470,7 +470,7 @@ ip-resolve
 ssl
    Require SSL termination for inbound connections. SSL :ref:`must be configured <configuring-ssl-termination>` for this option to provide a functional server port.
 
-   Not compatible with: ``tr-in``, ``tr-out``, ``blind``.
+   Not compatible with: ``tr-in``, ``blind``.
 
 blind
    Accept only ``CONNECT`` transactions on this port.
@@ -905,9 +905,9 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 1800
 
-   How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative 
+   How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative
    responses that do have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
-   
+
 Proxy User Variables
 ====================
 
