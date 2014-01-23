@@ -2050,8 +2050,8 @@ SSL Termination
 
   This configuration specifies the max-age value that will be used
   when adding the Strict-Transport-Security header.  The value is in seconds.
-  A value of 0 will set the max-age value to 0 and should remove the
-  hsts entry from the client.  A value of -1 will disable this feature and
+  A value of ``0`` will set the max-age value to ``0`` and should remove the
+  HSTS entry from the client.  A value of ``-1`` will disable this feature and
   not set the header.  This option is only used for HTTPS requests and the
   header will not be set on HTTP requests.
 
@@ -2059,7 +2059,7 @@ SSL Termination
 
   Enables (``1``) or disables (``0``) adding the includeSubdomain value
   to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
-  needs to be set to a non -1 value for this configuration to take effect.
+  needs to be set to a non ``-1`` value for this configuration to take effect.
 
 Client-Related Configuration
 ----------------------------
