@@ -46,8 +46,10 @@ void RecProcess_set_remote_sync_interval_ms(int ms);
 // RawStat Registration
 //-------------------------------------------------------------------------
 RecRawStatBlock *RecAllocateRawStatBlock(int num_stats);
-int RecRegisterRawStat(RecRawStatBlock * rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb);
 
+int _RecRegisterRawStat(RecRawStatBlock * rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb);
+#define RecRegisterRawStat(rsb, rec_type, name, data_type, persist_type, id, sync_cb) \
+  _RecRegisterRawStat((rsb), (rec_type), (name), (data_type), REC_PERSISTENCE_TYPE(persist_type), (id), (sync_cb))
 
 // RecRawStatRange* RecAllocateRawStatRange (int num_buckets);
 

@@ -291,25 +291,25 @@ recv_message_cb(RecMessage * msg, RecMessageT msg_type, void */* cookie */)
   }
 
 int
-RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
+_RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_int, RECD_INT);
 }
 
 int
-RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
+_RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_float, RECD_FLOAT);
 }
 
 int
-RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
+_RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_string, RECD_STRING);
 }
 
 int
-RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
+_RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
 }

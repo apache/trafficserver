@@ -532,7 +532,7 @@ RecAllocateRawStatBlock(int num_stats)
 // RecRegisterRawStat
 //-------------------------------------------------------------------------
 int
-RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
+_RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
                    RecRawStatSyncCb sync_cb)
 {
   Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d\n", name, rsb, id);
