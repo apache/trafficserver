@@ -739,40 +739,6 @@ LogAccessHttp::marshal_server_host_name(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccessHttp::marshal_client_accelerator_id(char *buf)
-{
-  char *str = NULL;
-  int padded_len = INK_MIN_ALIGN;
-  int actual_len = 0;
-
-  if (Log::config->xuid_logging_enabled) {
-    if (m_client_request) {
-      MIMEField *field = m_client_request->field_find(MIME_FIELD_X_ID, MIME_LEN_X_ID);
-
-      if (field) {
-        str = (char *) field->value_get(&actual_len);
-        /* Ugly subtlety here. marshal_mem, despite the name, adds a
-           terminating nul. It does this at the index actual_len and
-           so requires paddedlen > actual_len (why it can't do the
-           padding calculation escapes me - are there instances where
-           that's different?
-        */
-        padded_len = round_strlen(actual_len+1);
-      }
-    }
-  }
-
-  if (buf) {
-    marshal_mem(buf, str, actual_len, padded_len);
-  }
-  return padded_len;
-}
-
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
 LogAccessHttp::marshal_server_resp_status_code(char *buf)
 {
   if (buf) {
