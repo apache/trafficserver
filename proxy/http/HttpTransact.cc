@@ -6754,7 +6754,7 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
   }
   else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
       (s->source == SOURCE_HTTP_ORIGIN_SERVER && s->current.server->transfer_encoding != NO_TRANSFER_ENCODING
-       || heads->get_content_length() != 0)) {
+       || (heads->get_content_length() != 0))) {
     // some systems hang until the connection closes when receiving a 204 regardless of the K-A headers
     // close if there is any body response from the origin
     ka_action = KA_CLOSE;
