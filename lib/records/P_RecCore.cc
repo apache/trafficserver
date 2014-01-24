@@ -531,6 +531,7 @@ RecReadStatsFile()
   RecRecord *r;
   RecMessage *m;
   RecMessageItr itr;
+  RecPersistT persist_type = RECP_NULL;
   xptr<char> snap_fpath(RecConfigReadPersistentStatsPath());
 
   // lock our hash table
@@ -539,8 +540,33 @@ RecReadStatsFile()
   if ((m = RecMessageReadFromDisk(snap_fpath)) != NULL) {
     if (RecMessageUnmarshalFirst(m, &itr, &r) != REC_ERR_FAIL) {
       do {
-        if ((r->name == NULL) || (!strlen(r->name)))
+        if ((r->name == NULL) || (!strlen(r->name))) {
           continue;
+        }
+
+        // If we don't have a persistence type for this record, it means that it is not a stat, or it is
+        // not registered yet. Either way, it's ok to just set the persisted value and keep going.
+        if (RecGetRecordPersistenceType(r->name, &persist_type, false /* lock */) != REC_ERR_OKAY) {
+          RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
+          continue;
+        }
+
+        if (!REC_TYPE_IS_STAT(r->rec_type)) {
+          // This should not happen, but be defensive against records changing their type ..
+          RecLog(DL_Warning, "skipping restore of non-stat record '%s'", r->name);
+          continue;
+        }
+
+        // Check whether the persistence type was changed by a new software version. If the record is
+        // already registered with an updated persistence type, then we don't want to set it. We should
+        // keep the registered value.
+        if (persist_type == RECP_NON_PERSISTENT) {
+          RecDebug(DL_Debug, "preserving current value of formerly persistent stat '%s'", r->name);
+          continue;
+        }
+
+        RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
         RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
       } while (RecMessageUnmarshalNext(m, &itr, &r) != REC_ERR_FAIL);
     }
@@ -579,7 +605,7 @@ RecSyncStatsFile()
       r = &(g_records[i]);
       rec_mutex_acquire(&(r->lock));
       if (REC_TYPE_IS_STAT(r->rec_type)) {
-        if (r->stat_meta.persist_type != RECP_NON_PERSISTENT) {
+        if (r->stat_meta.persist_type == RECP_PERSISTENT) {
           m = RecMessageMarshal_Realloc(m, r);
           sync_to_disk = true;
         }
