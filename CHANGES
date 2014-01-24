@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2481] Incorrect origin server port used sometimes (with keep-alive).
+   Author: Dimitry Andric <dimitry@andric.com>
+
   *) [TS-2526] Remove the g_stats_snap_fpath global variable.
 
   *) [TS-2525] Remove restrictions on outbound transparency with SSL.
