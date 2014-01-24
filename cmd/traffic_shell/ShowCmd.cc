@@ -2030,7 +2030,7 @@ ShowHttpTransStats()
   Cli_Printf("Questionable Client Aborts -- %f %%  %d\n", 100 * frac_avg_10s_errors_possible_aborts,
              msec_avg_10s_errors_possible_aborts);
   Cli_Printf("Partial Request Hangups ----- %f %%  %d\n", 100 * frac_avg_10s_errors_early_hangups,
-             msec_avg_10s_errors_possible_aborts);
+             msec_avg_10s_errors_early_hangups);
   Cli_Printf("Pre-Request Hangups --------- %f %%  %d\n", 100 * frac_avg_10s_errors_empty_hangups,
              msec_avg_10s_errors_empty_hangups);
   Cli_Printf("Pre-Connect Hangups --------- %f %%  %d\n", 100 * frac_avg_10s_errors_pre_accept_hangups,
