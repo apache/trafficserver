@@ -22,15 +22,19 @@ dnl
 dnl TS_CHECK_CRYPTO: look for crypto libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO], [
-  enable_crypto=no
   AC_SEARCH_LIBS([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
 
   AX_CHECK_OPENSSL([
-    TS_ADDTO(CPPFLAGS, [$OPENSSL_INCLUDES])
-    TS_ADDTO(LDFLAGS, [$OPENSSL_LDFLAGS])
+    enable_crypto=yes
   ], [
-   AC_ERROR(failed to find OpenSSL)
+    AC_ERROR(failed to find OpenSSL)
+    enable_crypto=no
   ])
+
+  if test "x${enable_crypto}" = "xyes"; then
+    TS_ADDTO(LDFLAGS, [$OPENSSL_LDFLAGS])
+    TS_ADDTO(CPPFLAGS, [$OPENSSL_INCLUDES])
+  fi
 
   dnl add checks for other varieties of ssl here
 ])
