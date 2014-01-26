@@ -90,5 +90,4 @@ msgstr "設定"
 #: ../../reference/api/TSHttpOverridableConfig.en.rst:57
 msgid ""
 "The following configurations (from ``records.config``) are overridable: ::"
-msgstr ""
-"次の (``records.config`` の ) 設定は上書き可能です。
+msgstr "次の (``records.config`` の ) 設定は上書き可能です。"
