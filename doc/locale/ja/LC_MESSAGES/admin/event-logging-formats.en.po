@@ -25,9 +25,9 @@ msgid ""
 msgstr ""
 "このドキュメントは Traffic Server がサポートしている全ての異なるロギング"
 "フォーマットについてのリファレンスを提供します。これらのフォーマットについて"
-"単に読むよりも、ログフォーマットのビルドと理解をインタラクティブに行うために "
-"`online event log builder <http://trafficserver.apache.org/logbuilder/>`_ を"
-"試す方がいいでしょう。"
+"単に読むよりも、ログフォーマットのビルドと理解をインタラクティブに行うため"
+"に `online event log builder <http://trafficserver.apache.org/logbuilder/"
+">`_ を試す方がいいでしょう。"
 
 #: ../../admin/event-logging-formats.en.rst:36
 msgid "Custom Logging Fields"
@@ -90,8 +90,8 @@ msgid ""
 "response headers."
 msgstr ""
 "サーバーのレスポンスの HTTP ヘッダーの指定されたフィールドの情報を記録しま"
-"す。例えば ``%<{Age}ssh>`` はサーバーレスポンスヘッダーの ``Age:`` フィールド"
-"を記録します。"
+"す。例えば ``%<{Age}ssh>`` はサーバーレスポンスヘッダーの ``Age:`` フィール"
+"ドを記録します。"
 
 #: ../../admin/event-logging-formats.en.rst:62
 #: ../../admin/event-logging-formats.en.rst:332
@@ -121,8 +121,8 @@ msgid ""
 "(``INTR``)."
 msgstr ""
 "クライアントの終了ステータスコード、 Traffic Server へのクライアントリクエス"
-"トが正しく完了した (``FIN``) もしくは中断された (``INTR``) のどちらかが記述さ"
-"れます。"
+"トが正しく完了した (``FIN``) もしくは中断された (``INTR``) のどちらかが記述"
+"されます。"
 
 #: ../../admin/event-logging-formats.en.rst:70
 #: ../../admin/event-logging-formats.en.rst:327
@@ -155,8 +155,8 @@ msgid ""
 "The client request transfer length; the body length in the client request "
 "to Traffic Server (in bytes)."
 msgstr ""
-"クライアントリクエストの転送長、Traffic Server へのクライアントリクエストのボ"
-"ディの長さです。( byte 単位 )"
+"クライアントリクエストの転送長、Traffic Server へのクライアントリクエストの"
+"ボディの長さです。( byte 単位 )"
 
 #: ../../admin/event-logging-formats.en.rst:84
 #: ../../admin/event-logging-formats.en.rst:373
@@ -169,8 +169,8 @@ msgid ""
 "The client request header length; the header length in the client request "
 "to Traffic Server."
 msgstr ""
-"クライアントリクエストヘッダーの長さ。Traffic Server へのクライアントリクエス"
-"トのヘッダーの長さです。"
+"クライアントリクエストヘッダーの長さ。Traffic Server へのクライアントリクエ"
+"ストのヘッダーの長さです。"
 
 #: ../../admin/event-logging-formats.en.rst:88
 #: ../../admin/event-logging-formats.en.rst:330
@@ -216,8 +216,8 @@ msgid ""
 "The client request timestamp; date and time of the client's request (in the "
 "Netscape timestamp format)."
 msgstr ""
-"クライアントリクエストのタイムスタンプ。クライアントのリクエストの( Netscape "
-"タイムスタンプフォーマットでの) 日付と時間。"
+"クライアントリクエストのタイムスタンプ。クライアントのリクエストの"
+"( Netscape タイムスタンプフォーマットでの) 日付と時間。"
 
 #: ../../admin/event-logging-formats.en.rst:103
 msgid "``cqtq``"
@@ -300,8 +300,8 @@ msgid ""
 "followed by the ASCII code number in hex."
 msgstr ""
 "クライアントリクエストの正規化 URL。 ``cqu`` との違いは空白 ( 他のログ分析"
-"ツールでパースされないかもしれない文字 ) がエスケープシーケンスに置換されてい"
-"ることです。"
+"ツールでパースされないかもしれない文字 ) がエスケープシーケンスに置換されて"
+"いることです。"
 
 #: ../../admin/event-logging-formats.en.rst:141
 msgid "See `cquuc`_."
@@ -342,8 +342,8 @@ msgid ""
 "The client request unmapped URL canonical. This field records a URL before "
 "it is remapped (reverse proxy mode)."
 msgstr ""
-"クライアントリクエストのマップされていない正規化 URL。このフィールドは リマッ"
-"プされる前の URL を記録します。( リバースプロキシーモード )"
+"クライアントリクエストのマップされていない正規化 URL。このフィールドは リ"
+"マップされる前の URL を記録します。( リバースプロキシーモード )"
 
 #: ../../admin/event-logging-formats.en.rst:164
 msgid "``cquup``"
@@ -354,8 +354,8 @@ msgid ""
 "The client request unmapped URL path. This field records a URL path before "
 "it is remapped (reverse proxy mode)."
 msgstr ""
-"クライアントリクエストのマップされていない URL パス。このフィールドはリマップ"
-"される前の URL パスを記録します。( リバースプロキシーモード )"
+"クライアントリクエストのマップされていない URL パス。このフィールドはリマッ"
+"プされる前の URL パスを記録します。( リバースプロキシーモード )"
 
 #: ../../admin/event-logging-formats.en.rst:170
 msgid "``cquuh``"
@@ -366,8 +366,8 @@ msgid ""
 "The client request unmapped URL host. This field records a URL's host "
 "before it is remapped (reverse proxy mode)."
 msgstr ""
-"クライアントリクエストのマップされていない URL ホスト。このフィールドはリマッ"
-"プされる前の URL のホストを記録します。( リバースプロキシーモード )"
+"クライアントリクエストのマップされていない URL ホスト。このフィールドはリ"
+"マップされる前の URL のホストを記録します。( リバースプロキシーモード )"
 
 #: ../../admin/event-logging-formats.en.rst:173
 msgid "``crat``"
@@ -411,8 +411,8 @@ msgid ""
 "The cached header length in the origin server response to Traffic Server "
 "(in bytes)."
 msgstr ""
-"キャッシュしたオリジンサーバーから Traffic Server へのヘッダーの長さ。( byte "
-"単位 )"
+"キャッシュしたオリジンサーバーから Traffic Server へのヘッダーの長さ。"
+"( byte 単位 )"
 
 #: ../../admin/event-logging-formats.en.rst:188
 msgid "``csshv``"
@@ -471,9 +471,9 @@ msgid ""
 "to the origin server was successfully completed (``FIN``), interrupted "
 "(``INTR``) or timed out (``TIMEOUT``)."
 msgstr ""
-"プロキシー終了ステータスコード。Traffic Server からオリジンサーバーへのリクエ"
-"ストが正常に完了した (``FIN``) もしくは中断された (``INTR``) かタイムアウトし"
-"た (``TIMEOUT``) かどうか。"
+"プロキシー終了ステータスコード。Traffic Server からオリジンサーバーへのリク"
+"エストが正常に完了した (``FIN``) もしくは中断された (``INTR``) かタイムアウ"
+"トした (``TIMEOUT``) かどうか。"
 
 #: ../../admin/event-logging-formats.en.rst:210
 msgid "``phn``"
@@ -507,8 +507,8 @@ msgid ""
 "The proxy hierarchy route; the route Traffic Server used to retrieve the "
 "object."
 msgstr ""
-"プロキシー階層の経路。Traffic Server がオプジェクトを検索するために使用した経"
-"路。"
+"プロキシー階層の経路。Traffic Server がオプジェクトを検索するために使用した"
+"経路。"
 
 #: ../../admin/event-logging-formats.en.rst:222
 #: ../../admin/event-logging-formats.en.rst:372
@@ -521,8 +521,8 @@ msgid ""
 "The proxy request transfer length; the body length in Traffic Server's "
 "request to the origin server."
 msgstr ""
-"プロキシーリクエスト転送長。Traffic Server からオリジンサーバーへのリクエスト"
-"のボディの長さ。"
+"プロキシーリクエスト転送長。Traffic Server からオリジンサーバーへのリクエス"
+"トのボディの長さ。"
 
 #: ../../admin/event-logging-formats.en.rst:226
 #: ../../admin/event-logging-formats.en.rst:375
@@ -535,8 +535,8 @@ msgid ""
 "The proxy request header length; the header length in Traffic Server's "
 "request to the origin server."
 msgstr ""
-"プロキシーリクエストヘッダーの長さ。Traffic Server からオリジンサーバーへのリ"
-"クエストのヘッダーの長さ。"
+"プロキシーリクエストヘッダーの長さ。Traffic Server からオリジンサーバーへの"
+"リクエストのヘッダーの長さ。"
 
 #: ../../admin/event-logging-formats.en.rst:230
 msgid "``pqsi``"
@@ -628,9 +628,9 @@ msgid ""
 "request. For hosts with multiple IP addresses, this field records the IP "
 "address resolved from that particular DNS lookup."
 msgstr ""
-"リクエスト内のホストの DNS 名からルックアップして解決された IP アドレス。複数"
-"の IP アドレスを持つホストの場合、このフィールドは特定の DNS ルックアップによ"
-"り解決された IP アドレスを記録します。"
+"リクエスト内のホストの DNS 名からルックアップして解決された IP アドレス。複"
+"数の IP アドレスを持つホストの場合、このフィールドは特定の DNS ルックアップ"
+"により解決された IP アドレスを記録します。"
 
 #: ../../admin/event-logging-formats.en.rst:258
 msgid ""
@@ -672,8 +672,10 @@ msgstr "``sshl``"
 
 #: ../../admin/event-logging-formats.en.rst:271
 msgid ""
-"The header length in the origin server response to Traffic Server (in bytes)."
-msgstr "オリジンサーバーが Traffic Server へ返すヘッダーの長さ。 ( byte 単位 )"
+"The header length in the origin server response to Traffic Server (in "
+"bytes)."
+msgstr ""
+"オリジンサーバーが Traffic Server へ返すヘッダーの長さ。 ( byte 単位 )"
 
 #: ../../admin/event-logging-formats.en.rst:275
 msgid "``sshv``"
@@ -706,9 +708,9 @@ msgid ""
 "Traffic Server and the time Traffic Server sends the last byte of the "
 "response back to the client."
 msgstr ""
-"Traffic Server がクライアントリクエストを処理するのに費やした時間。クライアン"
-"トが Traffic Server とコネクションを確立した時間から Traffic Server がクライ"
-"アントにレスポンスブロックの最後のバイトを送り返した時間までのミリ秒の数。"
+"Traffic Server がクライアントリクエストを処理するのに費やした時間。クライア"
+"ントが Traffic Server とコネクションを確立した時間から Traffic Server がクラ"
+"イアントにレスポンスブロックの最後のバイトを送り返した時間までのミリ秒の数。"
 
 #: ../../admin/event-logging-formats.en.rst:287
 msgid "``ttmsh``"
@@ -731,9 +733,9 @@ msgid ""
 "fractional number of seconds."
 msgstr ""
 "少数秒での Traffic Server がクライアントリクエストを処理するのに費やした時"
-"間。時間はミリ秒の精度で記述されます。しかし ( ``ttms`` のように ) 整数として"
-"フォーマットして出力する代わりに、秒単位の少数精度の浮動小数点数でフォーマッ"
-"トして表示します。"
+"間。時間はミリ秒の精度で記述されます。しかし ( ``ttms`` のように ) 整数とし"
+"てフォーマットして出力する代わりに、秒単位の少数精度の浮動小数点数でフォー"
+"マットして表示します。"
 
 #: ../../admin/event-logging-formats.en.rst:296
 msgid ""
@@ -756,9 +758,9 @@ msgid ""
 "with Traffic Server and the time at which Traffic Server sends the last "
 "byte of the response back to the client."
 msgstr ""
-"Traffic Server がクライアントリクエストを処理するのに費やした時間。クライアン"
-"トが Traffic Server とコネクションを確立した時間から、Traffic Server がクライ"
-"アントにレスポンスの最後の byte を返した時間の間の秒数。"
+"Traffic Server がクライアントリクエストを処理するのに費やした時間。クライア"
+"ントが Traffic Server とコネクションを確立した時間から、Traffic Server がク"
+"ライアントにレスポンスの最後の byte を返した時間の間の秒数。"
 
 #: ../../admin/event-logging-formats.en.rst:310
 msgid "Logging Format Cross-Reference"
@@ -770,8 +772,8 @@ msgid ""
 "logging fields and standard logging fields for the Squid and Netscape "
 "formats."
 msgstr ""
-"次の章では Traffic Server のロギングフィールドと Squid と Netdcape フォーマッ"
-"トの標準ロギングフィールドの対応を解説します。"
+"次の章では Traffic Server のロギングフィールドと Squid と Netdcape フォー"
+"マットの標準ロギングフィールドの対応を解説します。"
 
 #: ../../admin/event-logging-formats.en.rst:317
 msgid "Squid Logging Formats"
@@ -977,8 +979,8 @@ msgid ""
 "The following is a list of the Netscape Extended-2 logging fields and the "
 "corresponding Traffic Server logging field symbols."
 msgstr ""
-"下記は Netscape Extended-2 ロギングフィールドと対応する Traffic Server ロギン"
-"グフィールド記号の表です。"
+"下記は Netscape Extended-2 ロギングフィールドと対応する Traffic Server ロギ"
+"ングフィールド記号の表です。"
 
 #: ../../admin/event-logging-formats.en.rst:387
 msgid "Netscape Extended-2"

@@ -44,17 +44,17 @@ msgid ""
 "Bounce all Traffic Server nodes in the cluster. Bouncing Traffic Server "
 "shuts down and immediately restarts Traffic Server, node-by-node."
 msgstr ""
-"クラスター内の全ての Traffic Server ノードを再起動します。ノードからノードへ "
-"Traffic Server のバウンシングはシャットダウンし、すぐに Traffic Server を再起"
-"動します。"
+"クラスター内の全ての Traffic Server ノードを再起動します。ノードからノード"
+"へ Traffic Server のバウンシングはシャットダウンし、すぐに Traffic Server を"
+"再起動します。"
 
 #: ../../reference/commands/traffic_line.en.rst:49
 msgid ""
 "Bounce Traffic Server on the local node. Bouncing Traffic Server shuts down "
 "and immediately restarts the Traffic Server node."
 msgstr ""
-"ローカルノードで Traffic Server を再起動させます。Traffic Server のバウンスは"
-"シャットダウンし、すぐに Traffic Server ノードを再起動します。"
+"ローカルノードで Traffic Server を再起動させます。Traffic Server のバウンス"
+"はシャットダウンし、すぐに Traffic Server ノードを再起動します。"
 
 #: ../../reference/commands/traffic_line.en.rst:54
 msgid "Clears accumulated statistics on all nodes in the cluster."
@@ -73,8 +73,8 @@ msgid ""
 "Restart the :program:`traffic_manager` and :program:`traffic_server` "
 "processes on the local node."
 msgstr ""
-"ローカルノードの :program:`traffic_manager` と :program:`traffic_server` プロ"
-"セスを再起動します。"
+"ローカルノードの :program:`traffic_manager` と :program:`traffic_server` プ"
+"ロセスを再起動します。"
 
 #: ../../reference/commands/traffic_line.en.rst:71
 msgid ""
