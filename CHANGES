@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-1606] Log buffers are not flushed periodically when TS is launched 
+   with NO_REMOTE_MANAGEMENT flag
+
   *) [TS-2481] Incorrect origin server port used sometimes (with keep-alive).
    Author: Dimitry Andric <dimitry@andric.com>
 
