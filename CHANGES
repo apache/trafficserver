@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2519] Make build version metrics non-persistent.
+
   *) [TS-1606] Log buffers are not flushed periodically when TS is launched 
    with NO_REMOTE_MANAGEMENT flag
 
