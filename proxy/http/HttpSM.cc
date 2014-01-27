@@ -4536,8 +4536,8 @@ HttpSM::do_http_server_open(bool raw)
     HttpServerSession *existing_ss = ua_session->get_server_session();
 
     if (existing_ss) {
-      // [amc] Is this OK? Should we compare ports? (not done by ats_ip_addr_cmp)
-      if (ats_ip_addr_eq(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa)) {
+      if (ats_ip_addr_eq(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa) &&
+          ats_ip_port_cast(&existing_ss->server_ip) == ats_ip_port_cast(&t_state.current.server->addr)) {
         ua_session->attach_server_session(NULL);
         existing_ss->state = HSS_ACTIVE;
         this->attach_server_session(existing_ss);

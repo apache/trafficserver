@@ -64,10 +64,15 @@
 #define MGMT_EVENT_ROLL_LOG_FILES        10008
 #define MGMT_EVENT_LIBRECORDS            10009
 #define MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION   10010
+// cache storage operations - each is a distinct event.
+// this is done because the code paths share nothing but boilerplate logic
+// so it's easier to do this than to try to encode an opcode and yet another
+// case statement.
+#define MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE     10011
 
 /***********************************************************************
  *
- * MODULAIZATTION: if you are adding new signals, please ensure to add
+ * MODULARIZATION: if you are adding new signals, please ensure to add
  *                 the corresponding signals in librecords/I_RecSignals.h
  *
  *
@@ -87,7 +92,7 @@
 #define MGMT_SIGNAL_LOGGING_WARNING       10
 // Currently unused: 11
 // Currently unused: 12
-#define MGMT_SIGNAL_PLUGIN_ADD_REC        13
+// Currently unused: 13
 #define MGMT_SIGNAL_PLUGIN_SET_CONFIG     14
 #define MGMT_SIGNAL_LOG_FILES_ROLLED      15
 #define MGMT_SIGNAL_LIBRECORDS            16

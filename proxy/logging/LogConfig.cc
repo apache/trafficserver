@@ -596,9 +596,9 @@ LogConfig::setup_collation(LogConfig * prev_config)
     }
   } else {
     if (!collation_port) {
-      Note("Cannot activate log collation, %d is and invalid " "collation port", collation_port);
+      Note("Cannot activate log collation, %d is an invalid collation port", collation_port);
     } else if (collation_mode > COLLATION_HOST && strcmp(collation_host, "none") == 0) {
-      Note("Cannot activate log collation, \"%s\" is and invalid " "collation host", collation_host);
+      Note("Cannot activate log collation, \"%s\" is an invalid collation host", collation_host);
     } else {
       if (collation_mode == COLLATION_HOST) {
 

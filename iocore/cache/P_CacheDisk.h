@@ -28,7 +28,7 @@
 
 extern int cache_config_max_disk_errors;
 
-#define DISK_BAD(_x)                    (_x->num_errors >= cache_config_max_disk_errors)
+#define DISK_BAD(_x)                    ((_x)->num_errors >= cache_config_max_disk_errors)
 #define DISK_BAD_SIGNALLED(_x)          (_x->num_errors > cache_config_max_disk_errors)
 #define SET_DISK_BAD(_x)                (_x->num_errors = cache_config_max_disk_errors)
 #define SET_DISK_OKAY(_x)               (_x->num_errors = 0)

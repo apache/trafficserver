@@ -264,7 +264,6 @@ HttpProxyPort::processOptions(char const* opts) {
       af_set_p = true;
     } else if (0 == strcasecmp(OPT_SSL, item)) {
       m_type = TRANSPORT_SSL;
-      m_inbound_transparent_p = m_outbound_transparent_p = false;
     } else if (0 == strcasecmp(OPT_PLUGIN, item)) {
       m_type = TRANSPORT_PLUGIN;
     } else if (0 == strcasecmp(OPT_TRANSPARENT_INBOUND, item)) {
@@ -321,14 +320,21 @@ HttpProxyPort::processOptions(char const* opts) {
         (m_host_res_preference[0] != HOST_RES_PREFER_CLIENT ||
          m_host_res_preference[1] != HOST_RES_PREFER_NONE
     )) {
-      Warning("Outbound transparent ports require the IP address resolution ordering '%s,%s'. "
+      Warning("Outbound transparent port '%s' requires the IP address resolution ordering '%s,%s'. "
               "This is set automatically and does not need to be set explicitly."
+              , opts
               , HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_CLIENT]
               , HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE]
         );
     }
     m_host_res_preference[0] = HOST_RES_PREFER_CLIENT;
     m_host_res_preference[1] = HOST_RES_PREFER_NONE;
+  }
+
+  // Can't be inbound transparent and SSL.
+  if (TRANSPORT_SSL == m_type && m_inbound_transparent_p) {
+    Warning("SSL and inbound transparency on the same port is not supported - transparency disabled:  '%s'", opts);
+    m_inbound_transparent_p = false;
   }
 
   // Transparent pass-through requires tr-in

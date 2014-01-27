@@ -1,5 +1,5 @@
-Architecture and Hacking
-************************
+Hacking
+*******
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -19,19 +19,8 @@ Architecture and Hacking
   under the License.
 
 Introduction
---------------
+------------
 
-The original architectural documents for Traffic Server were lost in the transition to an open source project. The
-documents in this section are provisional and were written based on the existing code. The purpose is to have a high
-level description of aspects of Traffic Server to better inform ongoing work.
+This is a documentation stub on how to hack Apache Traffic Server. Here we try to document things such as how to write
+and run unit or regression tests or how to inspect the state of the core with a debugger.
 
-In the final section on "hacking" we try to document our approaches to understanding and modifying the source.
-
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-   cache/cache.en
-   proposals/hostdb.en
-   hacking/index.en

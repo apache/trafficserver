@@ -58,6 +58,7 @@ TSError handle_proxy_state_get(struct SocketInfo sock_info);
 TSError handle_proxy_state_set(struct SocketInfo sock_info, char *req);
 TSError handle_reconfigure(struct SocketInfo sock_info);
 TSError handle_restart(struct SocketInfo sock_info, char *req, bool bounce);
+TSError handle_storage_device_cmd_offline(struct SocketInfo sock_info, char *req);
 
 TSError handle_event_resolve(struct SocketInfo sock_info, char *req);
 TSError handle_event_get_mlt(struct SocketInfo sock_info);

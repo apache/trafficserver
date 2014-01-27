@@ -464,6 +464,18 @@ Bounce(bool cluster)
 }
 
 
+/*-------------------------------------------------------------------------
+ * StorageDeviceCmdOffline
+ *-------------------------------------------------------------------------
+ * Disable a storage device.
+ */
+TSError
+StorageDeviceCmdOffline(char const* dev)
+{
+  TSError ret;
+  ret = send_request_name(main_socket_fd, STORAGE_DEVICE_CMD_OFFLINE, dev);
+  return TS_ERR_OKAY != ret ? ret : parse_reply(main_socket_fd);
+}
 /***************************************************************************
  * Record Operations
  ***************************************************************************/

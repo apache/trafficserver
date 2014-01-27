@@ -6663,7 +6663,17 @@ TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence 
     syncer = RecRawStatSyncCount;
     break;
   }
-  RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, (RecPersistT)persist, id, syncer);
+
+  switch (persist) {
+  case TS_STAT_PERSISTENT:
+    RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RECP_PERSISTENT, id, syncer);
+    break;
+  case TS_STAT_NON_PERSISTENT:
+    RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RECP_NON_PERSISTENT, id, syncer);
+    break;
+  default:
+    return TS_ERROR;
+  }
 
   return id;
 }

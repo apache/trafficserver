@@ -213,8 +213,13 @@ usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_des
   for (unsigned i = 0; i < n_argument_descriptions; i++) {
     if (!argument_descriptions[i].description)
       continue;
-    fprintf(stderr, "  -%c, --%-17s %s",
-            argument_descriptions[i].key,
+
+    fprintf(stderr, "  ");
+
+    if ('-' == argument_descriptions[i].key) fprintf(stderr, "   ");
+    else fprintf(stderr, "-%c,", argument_descriptions[i].key);
+                                               
+    fprintf(stderr, " --%-17s %s",
             argument_descriptions[i].name,
             argument_types_descriptions[argument_descriptions[i].type ?
                                         strchr(argument_types_keys,

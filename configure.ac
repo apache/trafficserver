@@ -1107,9 +1107,6 @@ AX_BOOST_BASE([1.33],
 #
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
-if test "x${enable_crypto}" != "xyes"; then
-  AC_MSG_ERROR([Need at least one SSL library, --with-openssl is supported])
-fi
 
 #
 # Check for NextProtocolNegotiation TLS extension support.

@@ -374,9 +374,7 @@ public:
   enum InitFlags
   {
     FIELDS_INITIALIZED = 1,
-    THREADS_CREATED = 2,
-    PERIODIC_WAKEUP_SCHEDULED = 4,
-    FULLY_INITIALIZED = 8
+    FULLY_INITIALIZED = 2
   };
 
   enum ConfigFlags

@@ -62,6 +62,10 @@ char * RecConfigReadLogDir();
 // value, NULL is returned. The caller MUST release the result with ats_free().
 char * RecConfigReadConfigPath(const char * file_variable, const char * default_value = NULL);
 
+// Return a copy of the persistent stats file. This is $RUNTIMEDIR/records.snap.
+// The caller MUST release the result with ats_free().
+char * RecConfigReadPersistentStatsPath();
+
 // Test whether the named configuration value is overridden by an environment variable. Return either
 // the overridden value, or the original value. Caller MUST NOT free the result.
 const char * RecConfigOverrideFromEnvironment(const char * name, const char * value);
@@ -69,11 +73,17 @@ const char * RecConfigOverrideFromEnvironment(const char * name, const char * va
 //-------------------------------------------------------------------------
 // Stat Registration
 //-------------------------------------------------------------------------
-int RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type);
-int RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type);
-int RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type);
-int RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type);
+int _RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type);
+#define RecRegisterStatInt(rec_type, name, data_default, persist_type) _RecRegisterStatInt((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
 
+int _RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type);
+#define RecRegisterStatFloat(rec_type, name, data_default, persist_type) _RecRegisterStatFloat((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
+
+int _RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type);
+#define RecRegisterStatString(rec_type, name, data_default, persist_type) _RecRegisterStatString((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
+
+int _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type);
+#define RecRegisterStatCounter(rec_type, name, data_default, persist_type) _RecRegisterStatCounter((rec_type), (name), (data_default), REC_PERSISTENCE_TYPE(persist_type))
 
 //-------------------------------------------------------------------------
 // Config Registration
@@ -141,6 +151,7 @@ int RecGetRecordByte(const char *name, RecByte * rec_byte, bool lock = true);
 //------------------------------------------------------------------------
 int RecGetRecordType(const char *name, RecT * rec_type, bool lock = true);
 int RecGetRecordDataType(const char *name, RecDataT * data_type, bool lock = true);
+int RecGetRecordPersistenceType(const char *name, RecPersistT * persist_type, bool lock = true);
 int RecGetRecordUpdateCount(RecT data_type);
 int RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true);
 

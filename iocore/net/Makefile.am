@@ -40,7 +40,7 @@ test_certlookup_SOURCES = \
 test_certlookup_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  @LIBSSL@
+  @OPENSSL_LIBS@
 
 libinknet_a_SOURCES = \
   Connection.cc \

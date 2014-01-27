@@ -291,6 +291,20 @@ Bounce(bool cluster)
   return TS_ERR_OKAY;
 }
 
+/*-------------------------------------------------------------------------
+ * StorageDeviceCmdOffline
+ *-------------------------------------------------------------------------
+ * Disable a storage device.
+ * [amc] I don't think this is called but is required because of the way the
+ * CoreAPI is linked (it must match the remote CoreAPI signature so compiling
+ * this source or CoreAPIRemote.cc yields the same set of symbols).
+ */
+TSError
+StorageDeviceCmdOffline(char const* dev)
+{
+  lmgmt->signalEvent(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, dev);
+  return TS_ERR_OKAY;
+}
 /**************************************************************************
  * RECORD OPERATIONS
  *************************************************************************/

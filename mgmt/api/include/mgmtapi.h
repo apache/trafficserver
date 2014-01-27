@@ -1026,6 +1026,12 @@ extern "C"
  */
   tsapi TSError TSBounce(bool cluster);
 
+/* TSStorageDeviceOp: Request an operation on a storage device.
+ * @arg dev Target device, specified by path to device.
+ * @return Success.
+ */
+  tsapi TSError TSStorageDeviceCmdOffline(char const* dev);
+
 /*--- diags output operations ---------------------------------------------*/
 /* TSDiags: enables users to manipulate run-time diagnostics, and print
  *           user-formatted notices, warnings and errors

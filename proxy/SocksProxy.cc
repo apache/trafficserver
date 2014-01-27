@@ -535,11 +535,11 @@ start_SocksProxy(int port)
   if (socksproxy_stat_block) {
     RecRegisterRawStat(socksproxy_stat_block, RECT_PROCESS,
                        "proxy.process.socks.proxy.http_connections",
-                       RECD_INT, RECP_NULL, socksproxy_http_connections_stat, RecRawStatSyncCount);
+                       RECD_INT, RECP_PERSISTENT, socksproxy_http_connections_stat, RecRawStatSyncCount);
 
     RecRegisterRawStat(socksproxy_stat_block, RECT_PROCESS,
                        "proxy.process.socks.proxy.tunneled_connections",
-                       RECD_INT, RECP_NULL, socksproxy_tunneled_connections_stat, RecRawStatSyncCount);
+                       RECD_INT, RECP_PERSISTENT, socksproxy_tunneled_connections_stat, RecRawStatSyncCount);
   }
 }
 

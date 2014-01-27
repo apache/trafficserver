@@ -40,4 +40,4 @@ traffic_cop_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/lib/records/librec4cop.a \
-  @LIBRESOLV@ @LIBSSL@
+  @LIBRESOLV@ @OPENSSL_LIBS@

@@ -2039,6 +2039,7 @@ build_vol_hash_table(CacheHostRecord *cp)
   unsigned int *gotvol = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
   unsigned int *rnd = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
   unsigned short *ttable = (unsigned short *)ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE);
+  unsigned short *old_table;
   unsigned int *rtable_entries = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
   unsigned int rtable_size = 0;
 
@@ -2088,8 +2089,8 @@ build_vol_hash_table(CacheHostRecord *cp)
     Debug("cache_init", "build_vol_hash_table index %d mapped to %d requested %d got %d", i, mapping[i], forvol[i], gotvol[i]);
   }
   // install new table
-  if (cp->vol_hash_table)
-    new_Freer(cp->vol_hash_table, CACHE_MEM_FREE_TIMEOUT);
+  if (0 != (old_table = ink_atomic_swap(&(cp->vol_hash_table), ttable)))
+    new_Freer(old_table, CACHE_MEM_FREE_TIMEOUT);
   ats_free(mapping);
   ats_free(p);
   ats_free(forvol);
@@ -2097,7 +2098,6 @@ build_vol_hash_table(CacheHostRecord *cp)
   ats_free(rnd);
   ats_free(rtable_entries);
   ats_free(rtable);
-  cp->vol_hash_table = ttable;
 }
 
 void
@@ -2108,29 +2108,94 @@ Cache::vol_initialized(bool result) {
     open_done();
 }
 
+/** Set the state of a disk programmatically.
+*/
+bool
+CacheProcessor::mark_storage_offline( CacheDisk* d ///< Target disk
+  ) {
+  bool zret; // indicates whether there's any online storage left.
+  int p;
+  uint64_t total_bytes_delete = 0;
+  uint64_t total_dir_delete = 0;
+  uint64_t used_dir_delete = 0;
+
+  if (!DISK_BAD(d)) SET_DISK_BAD(d);
+
+  for (p = 0; p < gnvol; p++) {
+    if (d->fd == gvol[p]->fd) {
+      total_dir_delete += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
+      used_dir_delete += dir_entries_used(gvol[p]);
+      total_bytes_delete += gvol[p]->len - vol_dirlen(gvol[p]);
+    }
+  }
+
+  RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
+  RecIncrGlobalRawStat(cache_rsb, cache_direntries_total_stat, -total_dir_delete);
+  RecIncrGlobalRawStat(cache_rsb, cache_direntries_used_stat, -used_dir_delete);
+
+  if (theCache) {
+    rebuild_host_table(theCache);
+  }
+  if (theStreamCache) {
+    rebuild_host_table(theStreamCache);
+  }
+
+  zret = this->has_online_storage();
+  if (!zret) {
+    Warning("All storage devices offline, cache disabled");
+    CacheProcessor::cache_ready = 0;
+  } else { // check cache types specifically
+    if (theCache && !theCache->hosttable->gen_host_rec.vol_hash_table) {
+      unsigned int caches_ready = 0;
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
+      caches_ready = ~caches_ready;
+      CacheProcessor::cache_ready &= caches_ready;
+      Warning("all volumes for http cache are corrupt, http cache disabled");
+    }
+    if (theStreamCache && !theStreamCache->hosttable->gen_host_rec.vol_hash_table) {
+      unsigned int caches_ready = 0;
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
+      caches_ready = ~caches_ready;
+      CacheProcessor::cache_ready &= caches_ready;
+      Warning("all volumes for mixt cache are corrupt, mixt cache disabled");
+    }
+  }
+
+  return zret;
+}
+
+bool
+CacheProcessor::has_online_storage() const {
+  CacheDisk** dptr = gdisks;
+  for (int disk_no = 0 ; disk_no < gndisks ; ++disk_no, ++dptr) {
+    if (!DISK_BAD(*dptr)) return true;
+  }
+  return false;
+}
+
 int
 AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data) {
   /* search for the matching file descriptor */
   if (!CacheProcessor::cache_ready)
     return EVENT_DONE;
   int disk_no = 0;
-  int good_disks = 0;
   AIOCallback *cb = (AIOCallback *) data;
 #if TS_USE_INTERIM_CACHE == 1
   for (; disk_no < gn_interim_disks; disk_no++) {
     CacheDisk *d = g_interim_disks[disk_no];
 
     if (d->fd == cb->aiocb.aio_fildes) {
+      char message[256];
+
       d->num_errors++;
       if (!DISK_BAD(d)) {
-        char message[128];
-        snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
+        snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
         REC_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
-        char message[128];
         snprintf(message, sizeof(message),
-            "too many errors accessing disk %s: declaring disk bad", d->path);
+                 "too many errors [%d] accessing disk %s: declaring disk bad", d->num_errors, d->path);
         Warning("%s", message);
         REC_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
         good_interim_disks--;
@@ -2138,77 +2203,28 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
     }
   }
 #endif
+
   for (; disk_no < gndisks; disk_no++) {
     CacheDisk *d = gdisks[disk_no];
 
     if (d->fd == cb->aiocb.aio_fildes) {
+      char message[256];
       d->num_errors++;
 
       if (!DISK_BAD(d)) {
-        char message[128];
         snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
         REC_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
-
-        char message[128];
         snprintf(message, sizeof(message), "too many errors accessing disk %s [%d/%d]: declaring disk bad", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
         REC_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
-        /* subtract the disk space that was being used from  the cache size stat */
-        // dir entries stat
-        int p;
-        uint64_t total_bytes_delete = 0;
-        uint64_t total_dir_delete = 0;
-        uint64_t used_dir_delete = 0;
-
-        for (p = 0; p < gnvol; p++) {
-          if (d->fd == gvol[p]->fd) {
-            total_dir_delete += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
-            used_dir_delete += dir_entries_used(gvol[p]);
-            total_bytes_delete += gvol[p]->len - vol_dirlen(gvol[p]);
-          }
-        }
-
-        RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
-        RecIncrGlobalRawStat(cache_rsb, cache_direntries_total_stat, -total_dir_delete);
-        RecIncrGlobalRawStat(cache_rsb, cache_direntries_used_stat, -used_dir_delete);
-
-        if (theCache) {
-          rebuild_host_table(theCache);
-        }
-        if (theStreamCache) {
-          rebuild_host_table(theStreamCache);
-        }
+        cacheProcessor.mark_storage_offline(d); // take it out of service
       }
-      if (good_disks)
-        return EVENT_DONE;
+      break;
     }
-    if (!DISK_BAD(d))
-      good_disks++;
-  }
-  if (!good_disks) {
-    Warning("all disks are bad, cache disabled");
-    CacheProcessor::cache_ready = 0;
-    delete cb;
-    return EVENT_DONE;
   }
 
-  if (theCache && !theCache->hosttable->gen_host_rec.vol_hash_table) {
-    unsigned int caches_ready = 0;
-    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
-    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
-    caches_ready = ~caches_ready;
-    CacheProcessor::cache_ready &= caches_ready;
-    Warning("all volumes for http cache are corrupt, http cache disabled");
-  }
-  if (theStreamCache && !theStreamCache->hosttable->gen_host_rec.vol_hash_table) {
-    unsigned int caches_ready = 0;
-    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
-    caches_ready = ~caches_ready;
-    CacheProcessor::cache_ready &= caches_ready;
-    Warning("all volumes for mixt cache are corrupt, mixt cache disabled");
-  }
   delete cb;
   return EVENT_DONE;
 }
@@ -3475,3 +3491,18 @@ CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, C
   return caches[frag_type]->remove(cont, &md5, frag_type, true, false, const_cast<char*>(hostname), len);
 }
 
+CacheDisk*
+CacheProcessor::find_by_path(char const* path, int len)
+{
+  if (CACHE_INITIALIZED == initialized) {
+    // If no length is passed in, assume it's null terminated.
+    if (0 >= len && 0 != *path) len = strlen(path);
+
+    for ( int i = 0 ; i < gndisks ; ++i ) {
+      if (0 == strncmp(path, gdisks[i]->path, len))
+        return gdisks[i];
+    }
+  }
+
+  return 0;
+}

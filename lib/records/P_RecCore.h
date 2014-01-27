@@ -49,9 +49,6 @@ extern LLQ *g_rec_config_contents_llq;
 extern InkHashTable *g_rec_config_contents_ht;
 extern ink_mutex g_rec_config_lock;
 
-// stats.snap items
-extern const char *g_stats_snap_fpath;
-
 //-------------------------------------------------------------------------
 // Initialization
 //-------------------------------------------------------------------------

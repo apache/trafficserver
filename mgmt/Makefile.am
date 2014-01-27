@@ -114,5 +114,5 @@ traffic_manager_LDADD += \
   $(top_builddir)/lib/tsconfig/libtsconfig.la
 endif
 
-traffic_manager_LDADD += @LIBSSL@
+traffic_manager_LDADD += @OPENSSL_LIBS@
 

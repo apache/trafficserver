@@ -51,10 +51,10 @@ RecordsConfigRegister()
   RecRegisterConfigCounter(RECT_CONFIG, "proxy.config.link_test_3", 0, RECU_DYNAMIC, RECC_NULL, NULL);
 
   // NODE
-  RecRegisterStatString(RECT_NODE, "proxy.node.cb_test_1", "cb_test_1__original", RECP_NULL);
-  RecRegisterStatString(RECT_NODE, "proxy.node.cb_test_2", "cb_test_2__original", RECP_NULL);
-  RecRegisterStatInt(RECT_NODE, "proxy.node.cb_test_int", 0, RECP_NULL);
-  RecRegisterStatFloat(RECT_NODE, "proxy.node.cb_test_float", 0.0f, RECP_NULL);
-  RecRegisterStatCounter(RECT_NODE, "proxy.node.cb_test_count", 0, RECP_NULL);
+  RecRegisterStatString(RECT_NODE, "proxy.node.cb_test_1", "cb_test_1__original", RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_NODE, "proxy.node.cb_test_2", "cb_test_2__original", RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.cb_test_int", 0, RECP_NON_PERSISTENT);
+  RecRegisterStatFloat(RECT_NODE, "proxy.node.cb_test_float", 0.0f, RECP_NON_PERSISTENT);
+  RecRegisterStatCounter(RECT_NODE, "proxy.node.cb_test_count", 0, RECP_NON_PERSISTENT);
 
 }

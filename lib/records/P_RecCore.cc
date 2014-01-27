@@ -291,25 +291,25 @@ recv_message_cb(RecMessage * msg, RecMessageT msg_type, void */* cookie */)
   }
 
 int
-RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
+_RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_int, RECD_INT);
 }
 
 int
-RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
+_RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_float, RECD_FLOAT);
 }
 
 int
-RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
+_RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_string, RECD_STRING);
 }
 
 int
-RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
+_RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
 }
@@ -531,15 +531,42 @@ RecReadStatsFile()
   RecRecord *r;
   RecMessage *m;
   RecMessageItr itr;
+  RecPersistT persist_type = RECP_NULL;
+  xptr<char> snap_fpath(RecConfigReadPersistentStatsPath());
 
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
 
-  if ((m = RecMessageReadFromDisk(g_stats_snap_fpath)) != NULL) {
+  if ((m = RecMessageReadFromDisk(snap_fpath)) != NULL) {
     if (RecMessageUnmarshalFirst(m, &itr, &r) != REC_ERR_FAIL) {
       do {
-        if ((r->name == NULL) || (!strlen(r->name)))
+        if ((r->name == NULL) || (!strlen(r->name))) {
           continue;
+        }
+
+        // If we don't have a persistence type for this record, it means that it is not a stat, or it is
+        // not registered yet. Either way, it's ok to just set the persisted value and keep going.
+        if (RecGetRecordPersistenceType(r->name, &persist_type, false /* lock */) != REC_ERR_OKAY) {
+          RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
+          continue;
+        }
+
+        if (!REC_TYPE_IS_STAT(r->rec_type)) {
+          // This should not happen, but be defensive against records changing their type ..
+          RecLog(DL_Warning, "skipping restore of non-stat record '%s'", r->name);
+          continue;
+        }
+
+        // Check whether the persistence type was changed by a new software version. If the record is
+        // already registered with an updated persistence type, then we don't want to set it. We should
+        // keep the registered value.
+        if (persist_type == RECP_NON_PERSISTENT) {
+          RecDebug(DL_Debug, "preserving current value of formerly persistent stat '%s'", r->name);
+          continue;
+        }
+
+        RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
         RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
       } while (RecMessageUnmarshalNext(m, &itr, &r) != REC_ERR_FAIL);
     }
@@ -562,6 +589,7 @@ RecSyncStatsFile()
   RecMessage *m;
   int i, num_records;
   bool sync_to_disk;
+  xptr<char> snap_fpath(RecConfigReadPersistentStatsPath());
 
   /*
    * g_mode_type should be initialized by
@@ -577,7 +605,7 @@ RecSyncStatsFile()
       r = &(g_records[i]);
       rec_mutex_acquire(&(r->lock));
       if (REC_TYPE_IS_STAT(r->rec_type)) {
-        if (r->stat_meta.persist_type != RECP_NON_PERSISTENT) {
+        if (r->stat_meta.persist_type == RECP_PERSISTENT) {
           m = RecMessageMarshal_Realloc(m, r);
           sync_to_disk = true;
         }
@@ -585,8 +613,8 @@ RecSyncStatsFile()
       rec_mutex_release(&(r->lock));
     }
     if (sync_to_disk) {
-      RecDebug(DL_Note, "Writing '%s' [%d bytes]", g_stats_snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
-      RecMessageWriteToDisk(m, g_stats_snap_fpath);
+      RecDebug(DL_Note, "Writing '%s' [%d bytes]", (const char *)snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
+      RecMessageWriteToDisk(m, snap_fpath);
     }
     RecMessageFree(m);
   }

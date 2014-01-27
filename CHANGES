@@ -5,6 +5,26 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2519] Make build version metrics non-persistent.
+
+  *) [TS-1606] Log buffers are not flushed periodically when TS is launched 
+   with NO_REMOTE_MANAGEMENT flag
+
+  *) [TS-2481] Incorrect origin server port used sometimes (with keep-alive).
+   Author: Dimitry Andric <dimitry@andric.com>
+
+  *) [TS-2526] Remove the g_stats_snap_fpath global variable.
+
+  *) [TS-2525] Remove restrictions on outbound transparency with SSL.
+
+  *) [TS-2425] Update to TS-2261 for loading plugins as root
+
+  *) [TS-2505] Add traffic_line --offline option.
+
+  *) [TS-2305] Fall back to ftruncate if posix_fallocate fails.
+
+  *) [TS-2504] Support OpenSSL installations that use the lib64 directory.
+
   *) [TS-799] Have AdminClient.pm created from .in file.
 
   *) [TS-2509] Add the const qualifier to pure HttpTunnel member functions.

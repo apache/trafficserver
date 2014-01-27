@@ -415,3 +415,75 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
 void force_link_CacheTest() {
 }
+
+// run -R 3 -r cache_disk_replacement_stability
+
+REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, int *pstatus) {
+  static int const MAX_VOLS = 26; // maximum values used in any test.
+  static uint64_t DEFAULT_SKIP = 8192;
+  static uint64_t DEFAULT_STRIPE_SIZE = 1024ULL * 1024 * 1024 * 911; // 911G
+  CacheDisk disk; // Only need one because it's just checked for failure.
+  CacheHostRecord hr1, hr2;
+  Vol* sample;
+  static int const sample_idx = 16;
+  Vol vols[MAX_VOLS];
+  Vol* vol_ptrs[MAX_VOLS]; // array of pointers.
+  char buff[2048];
+
+  // Only run at the highest levels.
+  if (REGRESSION_TEST_EXTENDED > level) {
+    *pstatus = REGRESSION_TEST_PASSED;
+    return;
+  }
+
+  *pstatus = REGRESSION_TEST_INPROGRESS;
+
+  disk.num_errors = 0;
+
+  for ( int i = 0 ; i < MAX_VOLS ; ++i ) {
+    vol_ptrs[i] = vols + i;
+    vols[i].disk = &disk;
+    vols[i].len = DEFAULT_STRIPE_SIZE;
+    snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64,
+             'a' + i, DEFAULT_SKIP, vols[i].len);
+    vols[i].hash_id_md5.encodeBuffer(buff, strlen(buff));
+  }
+
+  hr1.vol_hash_table = 0;
+  hr1.vols = vol_ptrs;
+  hr1.num_vols = MAX_VOLS;
+  build_vol_hash_table(&hr1);
+
+  hr2.vol_hash_table = 0;
+  hr2.vols = vol_ptrs;
+  hr2.num_vols = MAX_VOLS;
+
+  sample = vols + sample_idx;
+  sample->len = 1024ULL * 1024 * 1024 * (1024+128); // 1.1 TB
+  snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64,
+           'a' + sample_idx, DEFAULT_SKIP, sample->len);
+  sample->hash_id_md5.encodeBuffer(buff, strlen(buff));
+  build_vol_hash_table(&hr2);
+
+  // See what the difference is
+  int to = 0, from = 0;
+  int then = 0, now = 0;
+  for ( int i = 0 ; i < VOL_HASH_TABLE_SIZE ; ++i ) {
+    if (hr1.vol_hash_table[i] == sample_idx) ++then;
+    if (hr2.vol_hash_table[i] == sample_idx) ++now;
+    if (hr1.vol_hash_table[i] != hr2.vol_hash_table[i]) {
+      if (hr1.vol_hash_table[i] == sample_idx)
+        ++from;
+      else
+        ++to;
+    }
+  }
+  rprintf(t, "Cache stability difference - "
+          "delta = %d of %d : %d to, %d from, originally %d slots, now %d slots (net gain = %d/%d)\n"
+          , to+from, VOL_HASH_TABLE_SIZE, to, from, then, now, now-then, to-from
+    );
+  *pstatus = REGRESSION_TEST_PASSED;
+
+  hr1.vols = 0;
+  hr2.vols = 0;
+}

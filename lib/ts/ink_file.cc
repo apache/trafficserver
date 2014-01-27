@@ -344,14 +344,19 @@ ink_file_fd_zerofill(int fd, off_t size)
     return errno;
   }
 
+  // ZFS does not implement posix_fallocate() and fails with EINVAL. As a general workaround,
+  // just fall back to ftrucate if the preallocation fails.
 #if HAVE_POSIX_FALLOCATE
-  return posix_fallocate(fd, 0, size);
-#else
+  if (posix_fallocate(fd, 0, size) == 0) {
+    return 0;
+  }
+#endif
+
   if (ftruncate(fd, size) < 0) {
     return errno;
   }
+
   return 0;
-#endif
 }
 
 bool
