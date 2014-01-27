@@ -25,7 +25,7 @@ require 5.006;
 use Carp;
 use IO::Socket::UNIX;
 use IO::Select;
-our $VERSION = "0.01";
+# VERSION
 
 use constant {
     TS_FILE_READ            => 0,
