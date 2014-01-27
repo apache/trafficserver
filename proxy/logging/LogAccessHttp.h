@@ -71,7 +71,6 @@ public:
   virtual int marshal_client_req_header_len(char *);    // INT
   virtual int marshal_client_req_body_len(char *);      // INT
   virtual int marshal_client_finish_status_code(char *);        // INT
-  virtual int marshal_client_accelerator_id(char *);    // STR
 
   //
   // proxy -> client fields

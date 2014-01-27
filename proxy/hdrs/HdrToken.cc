@@ -177,9 +177,9 @@ static const char *_hdrtoken_strs[] = {
   "PUT",
   "TRACE",
   "PUSH",
-  "X-ID",
   
   // Header extensions
+  "X-ID",
   "X-Forwarded-For",
   "TE",
 };
@@ -505,9 +505,9 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "PUT",
   "TRACE",
   "PUSH",
-  "X-ID",
   
   // Header extensions
+  "X-ID",
   "X-Forwarded-For",
   "TE",
 };

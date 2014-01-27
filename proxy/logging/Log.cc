@@ -706,15 +706,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "phi", field);
 
-  // X-WAID
-  field = NEW(new LogField("accelerator_id", "xid",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_accelerator_id,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "xid", field);
-  // X-WAID
-
   // server -> proxy fields
 
   field = NEW(new LogField("server_host_ip", "shi",
