@@ -47,6 +47,9 @@ static int ClearNode;
 static char ZeroCluster[1024];
 static char ZeroNode[1024];
 static char StorageCmdOffline[1024];
+static int ShowAlarms;
+static int ShowStatus;
+static char ClearAlarms[1024];
 static int VersionFlag;
 
 static TSError
@@ -74,6 +77,7 @@ handleArgInvocation()
     TSError err;
     TSRecordEle *rec_ele = TSRecordEleCreate();
     char *name = *ZeroNode ? ZeroNode : ZeroCluster;
+
     if ((err = TSRecordGet(name, rec_ele)) != TS_ERR_OKAY) {
       fprintf(stderr, "%s: %s\n", programName, TSGetErrorMessage(err));
       TSRecordEleDestroy(rec_ele);
@@ -87,6 +91,87 @@ handleArgInvocation()
     return TS_ERR_FAIL;
   } else if (*StorageCmdOffline) {
     return TSStorageDeviceCmdOffline(StorageCmdOffline);
+  } else if (ShowAlarms == 1) {
+    // Show all active alarms, this was moved from the old traffic_shell implementation (show:alarms).
+    TSList events = TSListCreate();
+
+    if (TS_ERR_OKAY != TSActiveEventGetMlt(events)) {
+      TSListDestroy(events);
+      fprintf(stderr, "Error Retrieving Alarm List\n");
+      return TS_ERR_FAIL;
+    }
+
+    int count = TSListLen(events);
+
+    if (count > 0) {
+      printf("Active Alarms\n");
+      for (int i = 0; i < count; i++) {
+        char* name = static_cast<char *>(TSListDequeue(events));
+        printf("  %d. %s\n", i + 1, name);
+      }
+    } else {
+      printf("\nNo active alarms.\n");
+    }
+    TSListDestroy(events);
+    return TS_ERR_OKAY;
+  } else if (*ClearAlarms != '\0') {
+    // Clear (some) active alarms, this was moved from the old traffic_shell implementation (config:alarm)
+    TSList events = TSListCreate();
+    size_t len = strlen(ClearAlarms);
+
+    if (TS_ERR_OKAY != TSActiveEventGetMlt(events)) {
+      TSListDestroy(events);
+      fprintf(stderr, "Error Retrieving Alarm List\n");
+      return TS_ERR_FAIL;
+    }
+
+    int count = TSListLen(events);
+
+    if (count == 0) {
+      printf("No Alarms to resolve\n");
+      TSListDestroy(events);
+      return TS_ERR_OKAY;
+    }
+
+    int errors = 0;
+    bool all = false;
+    int num = -1;
+
+    if ((3 == len) && (0 == strncasecmp(ClearAlarms, "all", len))) {
+      all = true;
+    } else  {
+      num = strtol(ClearAlarms, NULL, 10) - 1;
+      if (num <= 0)
+        num = -1;
+    }
+
+    for (int i = 0; i < count; i++) {
+      char* name = static_cast<char*>(TSListDequeue(events));
+
+      if (all || ((num > -1) && (num == i)) || ((strlen(name) == len) && (0 == strncasecmp(ClearAlarms, name, len)))) {
+        if (TS_ERR_OKAY != TSEventResolve(name)) {
+          fprintf(stderr, "Errur: Unable to resolve alarm %s\n", name);
+          ++errors;
+        }
+        if (num > 0) // If a specific event number was specified, we can stop now
+          break;
+      }
+    }
+    TSListDestroy(events);
+    return (errors > 0 ? TS_ERR_FAIL: TS_ERR_OKAY);
+  } else if (ShowStatus == 1) {
+    switch (TSProxyStateGet()) {
+    case TS_PROXY_ON:
+      printf("Proxy -- on\n");
+      break;
+    case TS_PROXY_OFF:
+      printf("Proxy -- off\n");
+      break;
+    case TS_PROXY_UNDEFINED:
+      printf("Proxy status undefined\n");
+      break;
+    }
+    return TS_ERR_OKAY;
   } else if (*ReadVar != '\0') {        // Handle a value read
     if (*SetVar != '\0' || *VarValue != '\0') {
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
@@ -166,6 +251,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
   ZeroNode[0] = '\0';
   VersionFlag = 0;
   *StorageCmdOffline = 0;
+  ShowAlarms = 0;
+  ShowStatus = 0;
+  ClearAlarms[0] = '\0';
 
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME,"traffic_line", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -190,6 +278,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
     {"zero_cluster", 'Z', "Zero Specific Statistic (cluster wide)", "S1024", &ZeroCluster, NULL, NULL},
     {"zero_node", 'z', "Zero Specific Statistic (local node)", "S1024", &ZeroNode, NULL, NULL},
     {"offline", '-', "Mark cache storage offline", "S1024", &StorageCmdOffline, NULL, NULL},
+    {"alarms", '-', "Show all alarms", "F", &ShowAlarms, NULL, NULL},
+    {"clear_alarms", '-', "Clear specified, or all,  alarms", "S1024", &ClearAlarms, NULL, NULL},
+    {"status", '-', "Show proxy server status", "F", &ShowStatus, NULL, NULL},
     {"version", 'V', "Print Version Id", "T", &VersionFlag, NULL, NULL},
   };
 
