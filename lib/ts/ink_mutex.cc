@@ -29,44 +29,4 @@
 
 x_pthread_mutexattr_t _g_mattr;
 
-ProcessMutex __global_death = PTHREAD_MUTEX_INITIALIZER;
-ProcessMutex *gobal_death_mutex = &__global_death;
-
-void
-ink_ProcessMutex_destroy(ProcessMutex * m)
-{
-  pthread_mutex_destroy(m);
-}
-
-void
-ink_ProcessMutex_acquire(ProcessMutex * m)
-{
-  if (pthread_mutex_lock(m) != 0) {
-    abort();
-  }
-}
-
-void
-ink_ProcessMutex_release(ProcessMutex * m)
-{
-  if (pthread_mutex_unlock(m) != 0) {
-    abort();
-  }
-}
-
-int
-ink_ProcessMutex_try_acquire(ProcessMutex * m)
-{
-  return pthread_mutex_trylock(m) == 0;
-}
-
-void
-ink_ProcessMutex_print(FILE * out, ProcessMutex * m)
-{
-  (void) out;
-  (void) m;
-  if(m == gobal_death_mutex)
-    fprintf(out, "Global ProcessMutex\n");
-  else
-    fprintf(out, "ProcessMutex\n");
-}
+ink_mutex __global_death = PTHREAD_MUTEX_INITIALIZER;

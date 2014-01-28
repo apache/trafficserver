@@ -126,7 +126,7 @@ extern "C"
 
     uint32_t nr_thread_cache;
     InkThreadCache *pThreadCache;
-    InkMutex lock;
+    ink_mutex lock;
   } InkFreeList, *PInkFreeList;
 
   /* reclaimable freelist API */

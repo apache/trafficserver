@@ -171,7 +171,7 @@ ink_atomic_decrement(volatile Type * mem, Amount count) {
 
 // Special hacks for ARM 32-bit
 #if defined(__arm__) && (SIZEOF_VOIDP == 4)
-extern ProcessMutex __global_death;
+extern ink_mutex __global_death;
 
 template<>
 inline int64_t
