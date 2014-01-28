@@ -611,8 +611,8 @@ asn1_strdup(ASN1_STRING * s)
 }
 
 // Given a certificate and it's corresponding SSL_CTX context, insert hash
-// table aliases for all of the subject and subjectAltNames. Note that we don't
-// deal with wildcards (yet).
+// table aliases for subject CN and subjectAltNames DNS without wildcard,
+// insert trie aliases for those with wildcard.
 static void
 ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfile)
 {

@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2031] Prevent duplicate SSL SNI name registration.
+   Author: Feifei Cai <ffcai@yahoo-inc.com>
+
   *) [TS-2501] Refactor and improve performance for the case without
    expansions. Review: Alexey Ivanov <aivanov@linkedin.com>.
 
