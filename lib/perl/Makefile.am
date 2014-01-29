@@ -29,7 +29,7 @@ Makefile-pl: Makefile.PL
 	$(PERL) Makefile.PL INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix)
 
 distclean-local:
-	-rm -f Makefile-pl
+	-rm -rf Makefile-pl MYMETA.* blip
 
 #test: check
 
