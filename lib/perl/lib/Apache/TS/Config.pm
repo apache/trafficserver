@@ -27,7 +27,7 @@ require Exporter;
 our @ISA    = qw( Exporter );
 our @EXPORT = qw(TS_CONF_UNMODIFIED TS_CONF_MODIFIED TS_CONF_REMOVED);
 
-our $VERSION = "1.0";
+# VERSION
 
 # Constants
 use constant {

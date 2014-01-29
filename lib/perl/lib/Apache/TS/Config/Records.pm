@@ -36,7 +36,7 @@ require 5.006;
 
 use Carp;
 
-our $VERSION = "1.0";
+# VERSION
 
 
 #
