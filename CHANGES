@@ -2,6 +2,7 @@
 Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2530] Check for loopback interfaces when computing the local address.
+   Author: Ron Barber rbarber@yahoo-inc.com
 
   *) [TS-2031] Prevent duplicate SSL SNI name registration.
    Author: Feifei Cai <ffcai@yahoo-inc.com>
