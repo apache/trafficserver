@@ -49,16 +49,16 @@ The following operators are available::
 
   rm-header header-name                 [operator_flags]
   add-header header <value>             [operator_flags]
+  set-header header <value>             [operator_flags]
   set-status <status-code>              [operator_flags]
+  set-destination [qual] <value>        [operator_flags]
+  set-redirect <value>                  [operator_flags]
+  set-timeout-out <value>               [operator_flags]
   set-status-reason <value>             [operator_flags]
-  set-config config <value>             [operator_flags]
-  no-op                                 [operator_flags]
+  set-config overridable-config <value> [operator_flags]
   counter counter-name                  [operator_flags]
+  no-op                                 [operator_flags]
 
-The following operator(s) currently only works when instantiating the
-plugin as a remap plugin::
-
-  set-destination [qual] value
 
 Where qual is one of the support URL qualifiers::
 
@@ -124,6 +124,7 @@ each rule. This implies that a new hook condition starts a new rule as well.::
 
   cond %{READ_RESPONSE_HDR_HOOK}   (this is the default hook)
   cond %{READ_REQUEST_HDR_HOOK}
+  cond %{READ_REQUEST_PRE_REMAP_HOOK}
   cond %{SEND_REQUEST_HDR_HOOK}
   cond %{SEND_RESPONSE_HDR_HOOK}
 

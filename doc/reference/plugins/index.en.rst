@@ -44,6 +44,7 @@ Apache Traffic Server releases.
   conf_remap.en
   gzip.en
   header_filter.en
+  header_rewrite.en
   regex_remap.en
   stats_over_http.en
 
