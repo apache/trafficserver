@@ -47,13 +47,13 @@ Operators
 
 The following operators are available::
 
-  rm-header header-name                 [flags]
-  add-header header <value>             [flags]
-  set-status <status-code>              [flags]
-  set-status-reason <value>             [flags]
-  set-config config <value>             [flags]
-  no-op                                 [flags]
-  counter counter-name                  [flags]
+  rm-header header-name                 [operator_flags]
+  add-header header <value>             [operator_flags]
+  set-status <status-code>              [operator_flags]
+  set-status-reason <value>             [operator_flags]
+  set-config config <value>             [operator_flags]
+  no-op                                 [operator_flags]
+  counter counter-name                  [operator_flags]
 
 The following operator(s) currently only works when instantiating the
 plugin as a remap plugin::
@@ -74,7 +74,9 @@ For example (as a remap rule)::
 
 Operator flags
 --------------
-::
+
+The operator flags are optional, and must not contain whitespaces inside
+the brackets. Currently, only one flag is supported::
 
   [L]   Last rule, do not continue
 
@@ -95,22 +97,22 @@ Conditions
 The conditions are used as qualifiers: The operators specified will
 only be evaluated if the condition(s) are met::
 
-  cond %{STATUS} operand                        [flags]
-  cond %{RANDOM:nn} operand                     [flags]
-  cond %{ACCESS:file}                           [flags]
-  cond %{TRUE}                                  [flags]
-  cond %{FALSE}                                 [flags]
-  cond %{HEADER:header-name} operand            [flags]
-  cond %{COOKIE:cookie-name} operand            [flags]
-  cond %{CLIENT-HEADER:header-name} operand     [flags]
-  cond %{PROTOCOL} operand                      [flags]
-  cond %{PORT} operand                          [flags]
-  cond %{HOST} operand                          [flags]
-  cond %{TOHOST} operand                        [false]
-  cond %{FROMHOST} operand                      [false]
-  cond %{PATH} operand                          [false]
-  cond %{PARAMS} operand                        [false]
-  cond %{QUERY} operand                         [false]
+  cond %{STATUS} operand                        [condition_flags]
+  cond %{RANDOM:nn} operand                     [condition_flags]
+  cond %{ACCESS:file}                           [condition_flags]
+  cond %{TRUE}                                  [condition_flags]
+  cond %{FALSE}                                 [condition_flags]
+  cond %{HEADER:header-name} operand            [condition_flags]
+  cond %{COOKIE:cookie-name} operand            [condition_flags]
+  cond %{CLIENT-HEADER:header-name} operand     [condition_flags]
+  cond %{PROTOCOL} operand                      [condition_flags]
+  cond %{PORT} operand                          [condition_flags]
+  cond %{HOST} operand                          [condition_flags]
+  cond %{TOHOST} operand                        [condition_flags]
+  cond %{FROMHOST} operand                      [condition_flags]
+  cond %{PATH} operand                          [condition_flags]
+  cond %{PARAMS} operand                        [condition_flags]
+  cond %{QUERY} operand                         [condition_flags]
 
 The difference between HEADER and CLIENT-HEADER is that HEADER adapts to the
 hook it's running in, whereas CLIENT-HEADER always applies to the client
@@ -132,9 +134,12 @@ configuration, but being the default it is also optional.
 ---------------
 Condition flags
 ---------------
-::
 
-  [NC]  Not case sensitive condition (when applicable)
+The condition flags are optional, and you can combine more than one into
+a comma separated list of flags. Note that whitespaces are not allowed inside
+the brackets::
+
+  [NC]  Not case sensitive condition (when applicable) [NOT IMPLEMENTED!]
   [AND] AND with next condition (default)
   [OR]  OR with next condition
   [NOT] Invert this condition
