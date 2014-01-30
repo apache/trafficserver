@@ -20,7 +20,6 @@ SUBDIRS = \
   cacheurl \
   conf_remap \
   gzip \
-  header_filter \
   header_rewrite \
   libloader \
   regex_remap \

@@ -346,10 +346,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   } else {
     RulesConfig* conf = static_cast<RulesConfig*>(ih);
 
-    // ToDo: Would it be faster / better to register the global hook for all
-    // hooks, as we do in header_filter, regardless if there's a known config
-    // for that hook? For now, we assume it's cheaper / faster to create a
-    // TXN hook when necessary.
+    // TODO: We should optimize this to not create continuations every time,
+    // but instead save the continuations, with configurations, as the per
+    // remap instance data.
 
     // Go through all hooks we support, and setup the txn hook(s) as necessary
     for (int i=TS_HTTP_READ_REQUEST_HDR_HOOK; i<TS_HTTP_LAST_HOOK; ++i) {

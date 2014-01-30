@@ -1953,7 +1953,6 @@ AC_CONFIG_FILES([
   plugins/experimental/xdebug/Makefile
   plugins/gzip/Makefile
   plugins/libloader/Makefile
-  plugins/header_filter/Makefile
   plugins/header_rewrite/Makefile
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
