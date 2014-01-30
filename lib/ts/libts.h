@@ -62,7 +62,6 @@
 #include "ink_memory.h"
 #include "ink_mutex.h"
 #include "ink_queue.h"
-#include "ink_process.h"
 #include "ink_rand.h"
 #include "ink_resolver.h"
 #include "ink_resource.h"

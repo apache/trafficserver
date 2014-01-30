@@ -128,8 +128,6 @@ libtsutil_la_SOURCES = \
   ink_mutex.cc \
   ink_mutex.h \
   ink_platform.h \
-  ink_process.cc \
-  ink_process.h \
   ink_queue.cc \
   ink_queue.h \
   ink_queue_ext.cc \

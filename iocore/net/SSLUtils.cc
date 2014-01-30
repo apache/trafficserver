@@ -66,6 +66,11 @@
 #endif
 #endif
 
+// openssl version must be 0.9.4 or greater
+#if (OPENSSL_VERSION_NUMBER < 0x00090400L)
+#error Traffic Server requires an OpenSSL library version 0.9.4 or greater
+#endif
+
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
 typedef const SSL_METHOD * ink_ssl_method_t;
 #else
@@ -375,8 +380,6 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
   *buf = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *> (userdata);
 
-  char *pass = static_cast<char *> (ats_malloc(size));
-
   Debug("ssl", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
 
   // only respond to reading private keys, not writing them (does ats even do that?)
@@ -384,12 +387,11 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
     // execute the dialog program and use the first line output as the passphrase
     FILE *f = popen(ud->_serverDialog, "r");
     if (f) {
-      if (fgets(pass, size, f)) {
+      if (fgets(buf, size, f)) {
         // remove any ending CR or LF
-        for (char *psrc = pass, *pdst = buf; *psrc; psrc++, pdst++) {
-          *pdst = *psrc;
-          if (*pdst == '\n' || *pdst == '\r') {
-            *pdst = 0;
+        for (char *pass = buf; *pass; pass++) {
+          if (*pass == '\n' || *pass == '\r') {
+            *pass = 0;
             break;
           }
         }
@@ -399,8 +401,6 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
       Error("could not open dialog '%s' - %s", ud->_serverDialog, strerror(errno));
     }
   }
-  memset(pass, 0, size); // paranoid, zero out the buffer
-  ats_free(pass);
   return strlen(buf);
 }
 
@@ -411,8 +411,6 @@ ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, voi
 
   *buf = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *> (userdata);
-
-  char *pass = static_cast<char *> (ats_malloc(size));
 
   Debug("ssl", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
 
@@ -428,16 +426,11 @@ ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, voi
     fprintf(stdout, "\n");
     // get passphrase
     // if error, then no passphrase
-    if (ssl_getpassword("Enter passphrase:", pass, size) <= 0) {
-      *pass = 0;
+    if (ssl_getpassword("Enter passphrase:", buf, size) <= 0) {
+      *buf = 0;
     }
     fprintf(stdout, "\n");
-    if (strlen(pass) < static_cast<size_t> (size)) {
-      strcpy(buf, pass);
-    }
   }
-  memset(pass, 0, size); // paranoid, zero out the buffer
-  ats_free(pass);
   return strlen(buf);
 }
 
@@ -607,24 +600,22 @@ SSLInitServerContext(
 
   // pass phrase dialog configuration
   passphrase_cb_userdata ud(params, serverDialog, serverCertPtr, serverKeyPtr);
-  bool bIsExec = false;
 
-  if(serverDialog && strncmp(serverDialog,"exec:",5) == 0) {
-    bIsExec = true;
-    ud._serverDialog = &serverDialog[5];
-    // validate the exec program
-    if(!ssl_private_key_validate_exec(ud._serverDialog)) {
-      SSLError("failed to access '%s' pass phrase program: %s", (const char *)ud._serverDialog,strerror(errno));
-      goto fail;
-    }
-  }
-
-  if(serverDialog) {
-    int (*passwd_cb)(char *buf, int size, int rwflag, void *userdata);
-    if(bIsExec) { // use exec handler call back
+  if (serverDialog) {
+    pem_password_cb * passwd_cb = NULL;
+    if (strncmp(serverDialog, "exec:", 5) == 0) {
+      ud._serverDialog = &serverDialog[5];
+      // validate the exec program
+      if (!ssl_private_key_validate_exec(ud._serverDialog)) {
+        SSLError("failed to access '%s' pass phrase program: %s", (const char *) ud._serverDialog, strerror(errno));
+        goto fail;
+      }
       passwd_cb = ssl_private_key_passphrase_callback_exec;
-    } else { // use stdin/out
+    } else if (strcmp(serverDialog, "builtin") == 0) {
       passwd_cb = ssl_private_key_passphrase_callback_builtin;
+    } else { // unknown config
+      SSLError("unknown "SSL_KEY_DIALOG" configuration value '%s'", serverDialog);
+      goto fail;
     }
     SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
     SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
@@ -715,17 +706,17 @@ SSLInitServerContext(
       goto fail;
     }
   }
-#define SSL_CLEAR_PW_REFERENCES { \
-  memset(static_cast<void *>(&ud),0,sizeof(ud));\
-  SSL_CTX_set_default_passwd_cb(ctx, NULL);\
-  SSL_CTX_set_default_passwd_cb_userdata(ctx, NULL);\
+#define SSL_CLEAR_PW_REFERENCES(UD,CTX) { \
+  memset(static_cast<void *>(&UD),0,sizeof(UD));\
+  SSL_CTX_set_default_passwd_cb(CTX, NULL);\
+  SSL_CTX_set_default_passwd_cb_userdata(CTX, NULL);\
   }
 
-  SSL_CLEAR_PW_REFERENCES
+  SSL_CLEAR_PW_REFERENCES(ud,ctx)
   return ssl_context_enable_ecdh(ctx);
 
 fail:
-  SSL_CLEAR_PW_REFERENCES
+  SSL_CLEAR_PW_REFERENCES(ud,ctx)
   SSL_CTX_free(ctx);
   return NULL;
 }
