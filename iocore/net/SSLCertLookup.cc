@@ -216,7 +216,7 @@ bool
 SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
 {
   ats_wildcard_matcher wildcard;
-  bool inserted = true;
+  bool inserted = false;
 
   if (wildcard.match(name)) {
     // We turn wildcards into the reverse DNS form, then insert them into the trie
@@ -231,17 +231,37 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
       return false;
     }
 
-    Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
     entry = new SSLEntry(ctx);
     inserted = this->wildcards.Insert(reversed, entry, 0 /* rank */, -1 /* keylen */);
-    if (inserted) {
-      entry.release();
+    if (!inserted) {
+      SSLEntry * found;
+
+      // We fail to insert, so the longest wildcard match search should return the full match value.
+      found = this->wildcards.Search(reversed);
+      if (found != NULL && found->ctx != ctx) {
+        Warning("previously indexed wildcard certificate for '%s' as '%s', cannot index it with SSL_CTX %p now",
+            name, reversed, ctx);
+      }
+
+      goto done;
     }
+
+    Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
+    entry.release();
   } else {
-    Debug("ssl", "indexed '%s' with SSL_CTX %p", name, ctx);
+    InkHashTableValue value;
+
+    if (ink_hash_table_lookup(this->hostnames, name, &value) && (void *)ctx != value) {
+      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX %p now", name, value, ctx);
+      goto done;
+    }
+
+    inserted = true;
     ink_hash_table_insert(this->hostnames, name, (void *)ctx);
+    Debug("ssl", "indexed '%s' with SSL_CTX %p", name, ctx);
   }
 
+done:
   // Keep a unique reference to the SSL_CTX, so that we can free it later. Since we index by name, multiple
   // certificates can be indexed for the same name. If this happens, we will overwrite the previous pointer
   // and leak a context. So if we insert a certificate, keep an ownership reference to it.

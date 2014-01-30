@@ -120,6 +120,21 @@ Options
    used this storage to other storage. This has exactly the same effect as a disk failure for that storage. This does
    not persist across restarts of the :program:`traffic_server` process.
 
+.. option:: --alarms
+
+   List all alarm events that have not been acknowledged (cleared).
+
+.. option:: --clear_alarms [all | #event | name]
+
+   Clear (acknowledge) an alarm event. The arguments are "all" for all current
+   alarms, a specific alarm number (e.g. ''1''), or an alarm string identifier
+   (e.g. ''MGMT_ALARM_PROXY_CONFIG_ERROR'').
+
+.. option:: --status
+
+   Show the current proxy server status, indicating if we're running or not.
+
+
 .. traffic-line-performance-statistics
 
 Performance Statistics

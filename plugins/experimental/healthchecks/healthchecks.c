@@ -153,7 +153,7 @@ setup_watchers(int fd)
   char *dname;
 
   while (conf) {
-    conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF|IN_CLOSE_WRITE);
+    conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF|IN_CLOSE_WRITE|IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
     strncpy(fname, conf->fname, MAX_FILENAME_LEN - 1);
     dname = dirname(fname);
@@ -163,7 +163,7 @@ setup_watchers(int fd)
       dir = TSmalloc(sizeof(HCDirEntry));
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_FILENAME_LEN - 1);
-      dir->wd = inotify_add_watch(fd, dname, IN_CREATE|IN_MOVED_FROM|IN_MOVED_TO);
+      dir->wd = inotify_add_watch(fd, dname, IN_CREATE|IN_MOVED_FROM|IN_MOVED_TO|IN_ATTRIB);
       if (!head_dir)
         head_dir = dir;
       else
@@ -242,7 +242,7 @@ hc_thread(void *data ATS_UNUSED)
           HCFileData *new_data = TSmalloc(sizeof(HCFileData));
           HCFileData *old_data;
 
-          if (event->mask & (IN_CLOSE_WRITE)) {
+          if (event->mask & (IN_CLOSE_WRITE|IN_ATTRIB)) {
             TSDebug(PLUGIN_NAME, "Modify file event (%d) on %s", event->mask, finfo->fname);
           } else if (event->mask & (IN_CREATE|IN_MOVED_TO)) {
             TSDebug(PLUGIN_NAME, "Create file event (%d) on %s", event->mask, finfo->fname);

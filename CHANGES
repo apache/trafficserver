@@ -7,6 +7,21 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2544] conf_remap plugin: allow for multiple configuration files.
+
+  *) [TS-2530] Check for loopback interfaces when computing the local address.
+   Author: Ron Barber rbarber@yahoo-inc.com
+
+  *) [TS-2031] Prevent duplicate SSL SNI name registration.
+   Author: Feifei Cai <ffcai@yahoo-inc.com>
+
+  *) [TS-2501] Refactor and improve performance for the case without
+   expansions. Review: Alexey Ivanov <aivanov@linkedin.com>.
+
+  *) [TS-2533 ] Add three commands previously provided by traffic_shell.
+
+  *) [TS-2304] Make the healthcheck plugin watch for file permission changes.
+
   *) [TS-2519] Make build version metrics non-persistent.
 
   *) [TS-1606] Log buffers are not flushed periodically when TS is launched 

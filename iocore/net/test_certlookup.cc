@@ -56,12 +56,12 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int /* atype ATS_UNUSED
   box.check(lookup.insert(notwild, "*.notwild.com"), "insert wildcard context");
   box.check(lookup.insert(b_notwild, "*.b.notwild.com"), "insert wildcard context");
 
-  // XXX inserting the same certificate multiple times ought to always fail, but it doesn't
-  // when we store a hash value.
-  lookup.insert(foo, "www.foo.com");
-  lookup.insert(wild, "*.wild.com");
-  lookup.insert(notwild, "*.notwild.com");
-  lookup.insert(b_notwild, "*.b.notwild.com");
+  // To test name collisions, we need to shuffle the SSL_CTX's so that we try to
+  // index the same name with a different SSL_CTX.
+  box.check(lookup.insert(wild, "www.foo.com") == false, "insert host duplicate");
+  box.check(lookup.insert(foo, "*.wild.com") == false, "insert wildcard duplicate");
+  box.check(lookup.insert(b_notwild, "*.notwild.com") == false, "insert wildcard conext duplicate");
+  box.check(lookup.insert(notwild, "*.b.notwild.com") == false, "insert wildcard conext duplicate");
 
   // Basic wildcard cases.
   box.check(lookup.findInfoInHash("a.wild.com") == wild, "wildcard lookup for a.wild.com");
@@ -186,6 +186,7 @@ SSLReleaseContext(SSL_CTX * ctx)
 
 int main(int argc, const char ** argv)
 {
+  diags = new Diags(NULL, NULL, stdout);
   res_track_memory = 1;
 
   SSL_library_init();
