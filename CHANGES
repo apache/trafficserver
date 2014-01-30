@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2544] conf_remap plugin: allow for multiple configuration files.
+
   *) [TS-2530] Check for loopback interfaces when computing the local address.
    Author: Ron Barber rbarber@yahoo-inc.com
 

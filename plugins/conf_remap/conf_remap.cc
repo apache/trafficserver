@@ -25,7 +25,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-static const char* PLUGIN_NAME = "conf_remap";
+static const char PLUGIN_NAME[] = "conf_remap";
+
 // This makes the plugin depend on the version of traffic server installed, but that's
 // OK, since this plugin is distributed only with the "core" (it's a core piece).
 #define MAX_OVERRIDABLE_CONFIGS TS_CONFIG_LAST_ENTRY
@@ -85,9 +86,11 @@ RemapConfigs::parse_file(const char* fn)
     return false;
 
   if (NULL == (file = TSfopen(fn, "r"))) {
-    TSError("conf_remap: could not open config file %s", fn);
+    TSError("%s: could not open config file %s", PLUGIN_NAME, fn);
     return false;
   }
+
+  TSDebug(PLUGIN_NAME, "loading configuration file %s", fn);
 
   while (NULL != TSfgets(file, buf, sizeof(buf))) {
     char *ln, *tok;
@@ -103,26 +106,26 @@ RemapConfigs::parse_file(const char* fn)
       continue;
 
     if (strncmp(tok, "CONFIG", 6)) {
-      TSError("conf_remap: file %s, line %d: non-CONFIG line encountered", fn, line_num);
+      TSError("%s: file %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, fn, line_num);
       continue;
     }
 
     // Find the configuration name
     tok = strtok_r(NULL, " \t", &ln);
     if (TSHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
-      TSError("conf_remap: file %s, line %d: no records.config name given", fn, line_num);
+      TSError("%s: file %s, line %d: no records.config name given", PLUGIN_NAME, fn, line_num);
       continue;
     }
     
     // Find the type (INT or STRING only)
     tok = strtok_r(NULL, " \t", &ln);
     if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
-      TSError("conf_remap: file %s, line %d: only INT and STRING types supported", fn, line_num);
+      TSError("%s: file %s, line %d: only INT and STRING types supported", PLUGIN_NAME, fn, line_num);
       continue;
     }
 
     if (type != expected_type) {
-      TSError("conf_remap: file %s, line %d: mismatch between provide data type, and expected type", fn, line_num);
+      TSError("%s: file %s, line %d: mismatch between provide data type, and expected type", PLUGIN_NAME, fn, line_num);
       continue;
     }
 
@@ -146,7 +149,7 @@ RemapConfigs::parse_file(const char* fn)
       tok = NULL;
     }
     if (!tok) {
-      TSError("conf_remap: file %s, line %d: the configuration must provide a value", fn, line_num);
+      TSError("%s: file %s, line %d: the configuration must provide a value", PLUGIN_NAME, fn, line_num);
       continue;
     }
 
@@ -160,7 +163,7 @@ RemapConfigs::parse_file(const char* fn)
       _items[_current]._data_len = strlen(tok);
       break;
     default:
-      TSError("conf_remap: file %s, line %d: type not support (unheard of)", fn, line_num);
+      TSError("%s: file %s, line %d: type not support (unheard of)", PLUGIN_NAME, fn, line_num);
       continue;
       break;
     }
@@ -204,11 +207,13 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
   } else {
     RemapConfigs* conf = new(RemapConfigs);
 
-    if (conf->parse_file(argv[2])) {
-      *ih = static_cast<void*>(conf);
-    } else {
-      *ih = NULL;
-      delete conf;
+    for (int i=2; i < argc; ++i) {
+      if (conf->parse_file(argv[i])) {
+        *ih = static_cast<void*>(conf);
+      } else {
+        *ih = NULL;
+        delete conf;
+      }
     }
   }
 
