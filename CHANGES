@@ -1,6 +1,16 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2534] Make sure RecRecord structs are always properly initialized.
+
+  *) [TS-2483] Add a new metric, proxy.node.restarts.proxy.cache_ready_time,
+   tracking absolute time when the cache started (finished
+   initialization). Until cache is available, or no cache configured, this
+   metric stays at a value of "0".
+
+  *) [TS-2517 First implementation of traffic_shell.pl, and reorg the modules
+   a bit for more consistency. Also fixes a timeout issue in AdminClient.pm.
+
   *) [TS-1467] Disable client initiated renegotiation (SSL) DDoS by default
 
   *) [TS-2538] Cleanup of ProcessMutex (unused) and InkMutex (dupe of
@@ -93,11 +103,6 @@ Changes with Apache Traffic Server 4.2.0
   *) [TS-2487] Export PUSH HTTP method constants to the TS API.
 
   *) [TS-2486] Eliminate SIMPLE_MEMCPY_INIT define.
-
-  *) [TS-2483] Add a new metric, proxy.node.restarts.proxy.cache_ready_time,
-   tracking absolute time when the cache started (finished
-   initialization). Until cache is available, or no cache configured, this
-   metric stays at a value of "0".
 
   *) [TS-2476] Fix size_t format string.
    Author: Radim Kolar <hsn@sendmail.cz>
