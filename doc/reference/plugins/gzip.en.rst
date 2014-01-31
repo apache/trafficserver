@@ -1,3 +1,5 @@
+.. _gzip-plugin:
+
 gzip / deflate Plugin
 *********************
 

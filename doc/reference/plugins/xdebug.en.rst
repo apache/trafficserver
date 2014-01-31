@@ -1,3 +1,5 @@
+.. _xdebug-plugin:
+
 XDebug Plugin
 *************
 

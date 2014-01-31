@@ -1,3 +1,5 @@
+.. _stale-while-revalidate-plugin:
+
 Stale While Revalidate Plugin (undocumented)
 ********************************************
 

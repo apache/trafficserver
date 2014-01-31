@@ -1,3 +1,5 @@
+.. _esi-plugin:
+
 ESI Plugin (undocumented)
 *************************
 

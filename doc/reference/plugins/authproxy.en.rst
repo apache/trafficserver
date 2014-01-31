@@ -1,4 +1,4 @@
-.. _authproxy_plugin:
+.. _authproxy-plugin:
 
 AuthProxy Plugin
 ****************
