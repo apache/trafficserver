@@ -5039,14 +5039,6 @@ TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
   s->api_txn_no_activity_timeout_value = timeout;
 }
 
-
-// TS-2196: TSHttpTxnCacheLookupSkip will be removed in the 5.x release.
-TSReturnCode
-TSHttpTxnCacheLookupSkip(TSHttpTxn txnp)
-{
-  return TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
-}
-
 TSReturnCode
 TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag)
 {
