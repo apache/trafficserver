@@ -184,8 +184,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
     ink_mutex_init(&g_rec_config_lock, NULL);
-    g_rec_config_contents_llq = create_queue();
-    g_rec_config_contents_ht = ink_hash_table_create(InkHashTableKeyType_String);
     // Import the file into memory; try the following in this order:
     // ./etc/trafficserver/records.config.shadow
     // ./records.config.shadow
