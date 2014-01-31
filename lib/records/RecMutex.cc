@@ -33,6 +33,14 @@ rec_mutex_init(RecMutex * m, const char *name)
 }
 
 int
+rec_mutex_destroy(RecMutex * m)
+{
+  ink_assert(m->nthread_holding == 0);
+  ink_assert(m->thread_holding == 0);
+  return ink_mutex_destroy(&(m->the_mutex));
+}
+
+int
 rec_mutex_acquire(RecMutex * m)
 {
 
@@ -45,7 +53,6 @@ rec_mutex_acquire(RecMutex * m)
 
   m->nthread_holding++;
   return 0;
-
 }
 
 int
@@ -59,7 +66,5 @@ rec_mutex_release(RecMutex * m)
       ink_mutex_release(&(m->the_mutex));
     }
   }
-
   return 0;
-
 }

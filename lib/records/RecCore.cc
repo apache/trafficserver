@@ -170,7 +170,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
   // initialize record array for our internal stats (this can be reallocated later)
   g_records = (RecRecord *)ats_malloc(REC_MAX_RECORDS * sizeof(RecRecord));
-  memset(g_records, 0, REC_MAX_RECORDS * sizeof(RecRecord));
 
   // initialize record hash index
   g_records_ht = ink_hash_table_create(InkHashTableKeyType_String);

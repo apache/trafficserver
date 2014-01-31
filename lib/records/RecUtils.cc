@@ -27,6 +27,22 @@
 #include "P_RecTree.h"
 
 //-------------------------------------------------------------------------
+// RecRecord initializer / Free
+//-------------------------------------------------------------------------
+void
+RecRecordInit(RecRecord *r)
+{
+  ink_zero(*r);
+  rec_mutex_init(&(r->lock), NULL);
+}
+
+void
+RecRecordFree(RecRecord *r)
+{
+  rec_mutex_destroy(&(r->lock));
+}
+
+//-------------------------------------------------------------------------
 // RecAlloc
 //-------------------------------------------------------------------------
 RecRecord*
@@ -39,12 +55,12 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 
   int i = ink_atomic_increment(&g_num_records, 1);
   RecRecord *r = &(g_records[i]);
-  // Note: record should already be memset to 0 from RecCoreInit()
+
+  RecRecordInit(r);
   r->rec_type = rec_type;
   r->name = ats_strdup(name);
   r->order = i;
   r->data_type = data_type;
-  rec_mutex_init(&(r->lock), NULL);
 
   g_records_tree->rec_tree_insert(r->name);
 
