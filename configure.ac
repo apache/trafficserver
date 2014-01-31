@@ -1920,7 +1920,7 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/async_timer/Makefile
   lib/wccp/Makefile
   lib/perl/Makefile
-  lib/perl/lib/Apache/TS/AdminClient.pm
+  lib/perl/lib/Apache/TS.pm
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile

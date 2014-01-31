@@ -25,8 +25,11 @@ require 5.006;
 use Carp;
 use IO::Socket::UNIX;
 use IO::Select;
-our $VERSION = "0.01";
 
+use Apache::TS;
+
+
+# Mgmt API command constants, should track ts/mgmtapi.h
 use constant {
     TS_FILE_READ            => 0,
     TS_FILE_WRITE           => 1,
@@ -108,7 +111,7 @@ sub new {
 # what you want.
 sub _find_socket {
     my @sockets_def = (
-        '@prefix@/@rel_runtimedir@/mgmtapisocket',
+        Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapisocket',
         '/usr/local/var/trafficserver/mgmtapisocket',
         '/var/trafficserver/mgmtapisocket'
     );
