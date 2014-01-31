@@ -78,25 +78,45 @@ use constant {
     TS_ERR_FAIL                => 12
 };
 
+
+# Semi-intelligent way of finding the mgmtapi socket.
+sub _find_socket {
+    my $path = shift || "";
+    my $name = shift || "mgmtapisocket";
+    my @sockets_def = (
+        $path,
+        Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapisocket',
+        '/usr/local/var/trafficserver',
+        '/usr/local/var/run/trafficserver',
+        '/usr/local/var/run',
+        '/var/trafficserver',
+        '/var/run/trafficserver',
+        '/var/run',
+        '/opt/ats/var/trafficserver',
+    );
+
+    foreach my $socket (@sockets_def) {
+        return $socket if (-S $socket);
+        return "${socket}/${name}" if (-S "${socket}/${name}");
+
+    }
+    return undef;
+}
+
 #
 # Constructor
 #
 sub new {
-    my ( $class, %args ) = @_;
+    my ($class, %args) = @_;
     my $self = {};
 
-    $self->{_socket_path} = $args{socket_path} || _find_socket();
+    $self->{_socket_path} = _find_socket($args{socket_path});
     $self->{_socket} = undef;
     croak
 "Unable to locate socket, please pass socket_path with the management api socket location to Apache::TS::AdminClient"
-      if ( !$self->{_socket_path} );
-    if (   ( !-r $self->{_socket_path} )
-        or ( !-w $self->{_socket_path} )
-        or ( !-S $self->{_socket_path} ) )
-    {
+      if (!$self->{_socket_path});
+    if ((!-r $self->{_socket_path}) or (!-w $self->{_socket_path}) or (!-S $self->{_socket_path})) {
         croak "Unable to open $self->{_socket_path} for reads or writes";
-
-        # see croak in "sub open_socket()" for other source of carp errors
     }
 
     $self->{_select} = IO::Select->new();
@@ -105,20 +125,6 @@ sub new {
     $self->open_socket();
 
     return $self;
-}
-
-# Keeping this primarily for backwards compatibility, the new autoconf generated path is usually
-# what you want.
-sub _find_socket {
-    my @sockets_def = (
-        Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapisocket',
-        '/usr/local/var/trafficserver/mgmtapisocket',
-        '/var/trafficserver/mgmtapisocket'
-    );
-    foreach my $socket (@sockets_def) {
-        return $socket if ( -S $socket );
-    }
-    return undef;
 }
 
 #
@@ -136,8 +142,8 @@ sub open_socket {
     my $self = shift;
     my %args = @_;
 
-    if ( defined( $self->{_socket} ) ) {
-        if ( $args{force} || $args{reopen} ) {
+    if (defined($self->{_socket})) {
+        if ($args{force} || $args{reopen}) {
             $self->close_socket();
         }
         else {
@@ -148,10 +154,10 @@ sub open_socket {
     $self->{_socket} = IO::Socket::UNIX->new(
         Type => SOCK_STREAM,
         Peer => $self->{_socket_path}
-    ) or croak("Error opening socket - $@");
+   ) or croak("Error opening socket - $@");
 
-    return undef unless defined( $self->{_socket} );
-    $self->{_select}->add( $self->{_socket} );
+    return undef unless defined($self->{_socket});
+    $self->{_select}->add($self->{_socket});
 
     return $self;
 }
@@ -160,10 +166,10 @@ sub close_socket {
     my $self = shift;
 
     # if socket doesn't exist, return as there's nothing to do.
-    return unless defined( $self->{_socket} );
+    return unless defined($self->{_socket});
 
     # gracefully close socket.
-    $self->{_select}->remove( $self->{_socket} );
+    $self->{_select}->remove($self->{_socket});
     $self->{_socket}->close();
     $self->{_socket} = undef;
 
@@ -171,52 +177,61 @@ sub close_socket {
 }
 
 #
+# Do reads()'s on our Unix domain socket, takes an optional timeout, in ms's.
+#
+sub _do_read {
+    my $self = shift;
+    my $timeout = shift || 1/1000.0; # 1ms by default
+    my $res = "";
+
+    while ($self->{_select}->can_read($timeout)) {
+        my $rc = $self->{_socket}->sysread($res, 1024, length($res));
+    }
+
+    return $res || undef;
+}
+
+
+#
 # Get (read) a stat out of the local manager. Note that the assumption is
 # that you are calling this with an existing stats "name".
 #
 sub get_stat {
-    my ( $self, $stat ) = @_;
+    my ($self, $stat) = @_;
     my $res               = "";
     my $max_read_attempts = 25;
 
-    return undef unless defined( $self->{_socket} );
+    return undef unless defined($self->{_socket});
     return undef unless $self->{_select}->can_write(10);
 
 # This is a total hack for now, we need to wrap this into the proper mgmt API library.
-    $self->{_socket}
-      ->print( pack( "sla*", TS_RECORD_GET, length($stat) ), $stat );
+    $self->{_socket}->print(pack("sla*", TS_RECORD_GET, length($stat)), $stat);
+    $res = $self->_do_read();
 
-    while ( $res eq "" ) {
-        return undef if ( $max_read_attempts-- < 0 );
-        return undef unless $self->{_select}->can_read(10);
+    my @resp = unpack("sls", $res);
+    return undef unless (scalar(@resp) == 3);
 
-        my $status = $self->{_socket}->sysread( $res, 1024 );
-        return undef unless defined($status) || ( $status == 0 );
-
-    }
-    my @resp = unpack( "sls", $res );
-    return undef unless ( scalar(@resp) == 3 );
-
-    if ( $resp[0] == TS_ERR_OKAY ) {
-        if ( $resp[2] < TS_REC_FLOAT ) {
-            @resp = unpack( "slsq", $res );
-            return undef unless ( scalar(@resp) == 4 );
-            return int( $resp[3] );
+    if ($resp[0] == TS_ERR_OKAY) {
+        if ($resp[2] < TS_REC_FLOAT) {
+            @resp = unpack("slsq", $res);
+            return undef unless (scalar(@resp) == 4);
+            return int($resp[3]);
         }
-        elsif ( $resp[2] == TS_REC_FLOAT ) {
-            @resp = unpack( "slsf", $res );
-            return undef unless ( scalar(@resp) == 4 );
+        elsif ($resp[2] == TS_REC_FLOAT) {
+            @resp = unpack("slsf", $res);
+            return undef unless (scalar(@resp) == 4);
             return $resp[3];
         }
-        elsif ( $resp[2] == TS_REC_STRING ) {
-            @resp = unpack( "slsa*", $res );
-            return undef unless ( scalar(@resp) == 4 );
+        elsif ($resp[2] == TS_REC_STRING) {
+            @resp = unpack("slsa*", $res);
+            return undef unless (scalar(@resp) == 4);
             return $resp[3];
         }
     }
 
     return undef;
 }
+*get_config = \&get_stat;
 
 1;
 
@@ -246,25 +261,43 @@ request strings can be found in RecordsConfig.cc which is included with Apache T
 A list of valid request strings are included with this documentation, but this included list may not be complete
 as future releases of Apache Traffic Server may include new request strings or remove existing ones.  
 
-=head1 OPTIONS
+=head1 CONSTRUCTOR
 
-=head2 socket_path
+When the object is created for this module, it assumes the 'Unix Domain Socket' is at the default location from
+the Apache Traffic Server installation. This can be changed when creating the object by setting B<'socket_path'>.
+For example: 
 
-When the object is created for this module, it assumes the 'Unix Domain Socket' is at the default location of 
-B<'/usr/local/var/trafficserver/cli'>  This can be changed when creating the object by setting B<'socket_path'>. For example: 
+=over 4
 
-  my $cli = AdminClient->new(socket_path=> "/dev/null");
+=item my $cli = AdminClient->new(socket_path=> "/var/trafficserver");
 
-would make the module look for the 'Unix Domain Socket' at /dev/null.  Of course this isn't a realistic example, but can be used when
-modified appropiately.  
 
-=head2 traffic_line
+This would make the module look for the 'Unix Domain Socket' in the directory '/var/trafficserver'. The path
+can optionally include the name of the Socket file, without it the constructor defaults to 'mgmtapisocket'.
+
+=back
+
+=head1 PUBLIC METHODS
+
+To read a single metric (or configuration), two APIs are available:
+
+=over 4
+
+=item $cli->get_stat($stats_name);
+
+=item $cli->get_config($config_name);
+
+This will return a (scalar) value for this metric or configuration.
+
+=back
+
+=head1 traffic_line
 
 There is a command line tool included with Apache Traffic Server called traffic_line which overlaps with this module.  traffic_line 
 can be used to read and write statistics or config settings that this module can.  Hence if you don't want to write a perl one-liner to 
 get to this information, traffic_line is your tool.
 
-=head1 List of Request Strings
+=head1 List of configurations
 
 The Apache Traffic Server Administration Manual will explain what these strings represent.  (http://trafficserver.apache.org/docs/)
 

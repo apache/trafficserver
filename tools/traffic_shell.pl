@@ -23,7 +23,7 @@ use Apache::TS::AdminClient;
 
 # Global mgmt API connection...
 my $CLI = Apache::TS::AdminClient->new() || die "Can't connect to the mgmt port";
-my $ETC_PATH = Apache::TS::PREFIX . '/' . $CLI->get_stat("proxy.config.config_dir");
+my $ETC_PATH = Apache::TS::PREFIX . '/' . $CLI->get_config("proxy.config.config_dir");
 
 # Helper functions around reading other configs
 sub print_config {
