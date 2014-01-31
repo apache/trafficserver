@@ -110,12 +110,23 @@ public:
     return npnEndpoint;
   }
 
+  bool getSSLClientRenegotiationAbort() const
+  {
+    return sslClientRenegotiationAbort;
+  };
+
+  void setSSLClientRenegotiationAbort(bool state)
+  {
+    sslClientRenegotiationAbort = state;
+  };
+
 private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection & operator =(const SSLNetVConnection &);
 
   bool sslHandShakeComplete;
   bool sslClientConnection;
+  bool sslClientRenegotiationAbort;
   const SSLNextProtocolSet * npnSet;
   Continuation * npnEndpoint;
 };

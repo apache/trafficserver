@@ -1279,7 +1279,8 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.ssl.hsts_include_subdomains", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-
+  {RECT_CONFIG, "proxy.config.ssl.allow_client_renegotiation", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
   //##############################################################################
   //# ICP Configuration
   //##############################################################################

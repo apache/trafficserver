@@ -2061,6 +2061,12 @@ SSL Termination
   to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
   needs to be set to a non ``-1`` value for this configuration to take effect.
 
+.. ts:cv:: CONFIG proxy.config.ssl.allow_client_renegotiation INT 0
+
+  This configuration specifies whether the client is able to initiate
+  renegotiation of the SSL connection.  The default of ``0``, means
+  the client can't initiate renegotiation.
+
 Client-Related Configuration
 ----------------------------
 

@@ -77,6 +77,7 @@ struct SSLConfigParams : public ConfigInfo
   long    ssl_ctx_options;
 
   static int ssl_maxrecord;
+  static bool ssl_allow_client_renegotiation;
 
   void initialize();
   void cleanup();

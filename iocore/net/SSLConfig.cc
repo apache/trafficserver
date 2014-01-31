@@ -42,6 +42,7 @@
 int SSLConfig::configid = 0;
 int SSLCertificateConfig::configid = 0;
 int SSLConfigParams::ssl_maxrecord = 0;
+bool SSLConfigParams::ssl_allow_client_renegotiation = false;
 
 static ConfigUpdateHandler<SSLCertificateConfig> * sslCertUpdate;
 
@@ -232,11 +233,12 @@ SSLConfigParams::initialize()
   ats_free_null(ssl_client_private_key_filename);
   ats_free_null(ssl_client_private_key_path);
 
-
   REC_ReadConfigStringAlloc(clientCACertFilename, "proxy.config.ssl.client.CA.cert.filename");
   REC_ReadConfigStringAlloc(clientCACertRelativePath, "proxy.config.ssl.client.CA.cert.path");
   set_paths_helper(clientCACertRelativePath, clientCACertFilename, &clientCACertPath, &clientCACertFilename);
   ats_free(clientCACertRelativePath);
+
+  REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 }
 
 void

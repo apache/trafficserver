@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-1467] Disable client initiated renegotiation (SSL) DDoS by default
+
   *) [TS-2538] Cleanup of ProcessMutex (unused) and InkMutex (dupe of
    ink_mutex). We now use ink_mutex consistently.
 

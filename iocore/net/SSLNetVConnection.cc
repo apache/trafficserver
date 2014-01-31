@@ -191,6 +191,13 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   MIOBufferAccessor &buf = s->vio.buffer;
   int64_t ntodo = s->vio.ntodo();
 
+  if (sslClientRenegotiationAbort == true) {
+    this->read.triggered = 0;
+    readSignalError(nh, (int)r);
+    Debug("ssl", "[SSLNetVConnection::net_read_io] client renegotiation setting read signal error");
+    return;
+  }
+
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
   if (!lock) {
     readReschedule(nh);
@@ -435,6 +442,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
 SSLNetVConnection::SSLNetVConnection():
   sslHandShakeComplete(false),
   sslClientConnection(false),
+  sslClientRenegotiationAbort(false),
   npnSet(NULL),
   npnEndpoint(NULL)
 {
@@ -465,6 +473,7 @@ SSLNetVConnection::free(EThread * t) {
   }
   sslHandShakeComplete = false;
   sslClientConnection = false;
+  sslClientRenegotiationAbort = false;
   npnSet = NULL;
   npnEndpoint= NULL;
 

@@ -170,7 +170,14 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
   const char *        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
-  Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
+  Debug("ssl", "ssl_servername_callback ssl=%p ad=%d lookup=%p server=%s handshake_complete=%d", ssl, *ad, lookup, servername,
+    netvc->getSSLHandShakeComplete());
+
+  // catch the client renegotiation early on
+  if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
+    Debug("ssl", "ssl_servername_callback trying to renegotiate from the client");
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
 
   // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
@@ -193,7 +200,7 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
   }
 
   ctx = SSL_get_SSL_CTX(ssl);
-  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
+  Debug("ssl", "ssl_servername_callback found SSL context %p for requested name '%s'", ctx, servername);
 
   if (ctx == NULL) {
     return SSL_TLSEXT_ERR_NOACK;
@@ -662,6 +669,26 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
   X509_free(cert);
 }
 
+// This callback function is executed while OpenSSL processes the SSL
+// handshake and does SSL record layer stuff.  It's used to trap
+// client-initiated renegotiations
+static void
+ssl_callback_info(const SSL *ssl, int where, int ret)
+{
+  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+
+  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+      SSLConfigParams::ssl_allow_client_renegotiation == false) {
+    int state = SSL_get_state(ssl);
+
+    if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
+      netvc->setSSLClientRenegotiationAbort(true);
+      Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
+    }
+  }
+}
+
 static bool
 ssl_store_ssl_context(
     const SSLConfigParams * params,
@@ -681,6 +708,8 @@ ssl_store_ssl_context(
   if (!ctx) {
     return false;
   }
+
+  SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
 #if TS_USE_TLS_NPN
   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
