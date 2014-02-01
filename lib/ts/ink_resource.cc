@@ -25,31 +25,10 @@
 
 #include "ink_assert.h"
 #include "ink_atomic.h"
-#include "ink_defs.h"
 #include "ink_resource.h"
 #include "ink_stack_trace.h"
 
-volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
-
-/*-------------------------------------------------------------------------
--------------------------------------------------------------------------*/
-char *
-_xstrdup(const char *str, int length, const char* /* path ATS_UNUSED */)
-{
-  char *newstr;
-
-  if (likely(str)) {
-    if (length < 0)
-      length = strlen(str);
-
-    newstr = (char *)ats_malloc(length + 1);
-    ink_strlcpy(newstr, str, length + 1);
-    return newstr;
-  }
-  return NULL;
-}
-
-typedef struct Resource Resource;
+volatile int res_track_memory = 0; // Disabled by default
 
 Resource *
 res_lookup(const char */* path ATS_UNUSED */)

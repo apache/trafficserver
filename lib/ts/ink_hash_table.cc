@@ -33,7 +33,6 @@
 #include "ink_error.h"
 #include "ink_hash_table.h"
 #include "ink_memory.h"
-#include "ink_resource.h"
 
 /*===========================================================================*
 

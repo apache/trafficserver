@@ -64,7 +64,6 @@
 #include "ink_queue.h"
 #include "ink_rand.h"
 #include "ink_resolver.h"
-#include "ink_resource.h"
 #include "ink_sock.h"
 #include "ink_inet.h"
 #include "ink_sprintf.h"

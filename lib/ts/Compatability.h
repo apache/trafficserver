@@ -31,7 +31,6 @@
 #include <strings.h>
 
 #include "ink_defs.h"
-#include "ink_resource.h"
 
 // We can't use #define for min and max becuase it will conflict with
 // other declarations of min and max functions.  This conflict

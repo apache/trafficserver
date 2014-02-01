@@ -29,7 +29,6 @@
 #include "ink_assert.h"
 #include "ink_atomic.h"
 #include "ink_defs.h"
-#include "ink_resource.h"
 #include "ink_string.h"
 #include "Allocator.h"
 #include "Regex.h"
