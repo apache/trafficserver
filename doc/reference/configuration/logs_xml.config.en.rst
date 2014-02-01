@@ -165,7 +165,7 @@ The following list shows the ``LogObject`` specifications.
     If the name does not contain an extension (for example, ``squid``),
     then the extension ``.log`` is automatically appended to it for
     ASCII logs and ``.blog`` for binary logs (refer to :ref:`Mode =
-    "valid_logging_mode" <LogObject-Mode>`_).
+    "valid_logging_mode" <LogObject-Mode>`).
 
     If you do not want an extension to be added, then end the filename
     with a single (.) dot (for example: ``squid.`` ).

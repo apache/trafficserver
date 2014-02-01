@@ -1878,7 +1878,7 @@ http_hdrs     Logs the headers for HTTP requests and responses
 ============  =====================================================
 
   Traffic Server plugins will typically log debug messages using
-  the :func:`TSDebug` API, passing the plugin name as the debug
+  the :c:func:`TSDebug` API, passing the plugin name as the debug
   tag.
 
 Reverse Proxy

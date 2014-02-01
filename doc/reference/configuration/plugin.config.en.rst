@@ -45,7 +45,7 @@ processing.
 
 An option list of whitespace-separated arguments may follow the
 plugin name. These are passed as an argument vector to the plugin's
-initialization function, :func:`TSPluginInit`. Arguments that begin
+initialization function, :c:func:`TSPluginInit`. Arguments that begin
 with the ``$`` character designate Traffic Server configuration
 variables. These arguments will be replaced with the value of the
 corresponding configuration variable before the plugin is loaded.

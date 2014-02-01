@@ -426,8 +426,8 @@ directives are allowed.
 
   Included remap files are not currently tracked by the configuration
   subsystem. Changes to included remap files will not be noticed
-  by online configuration changes applied by :option:`traffic_line
-  -x` unless :file:`remap.config` has also changed.
+  by online configuration changes applied by :option:`traffic_line -x`
+  unless :file:`remap.config` has also changed.
 
 Examples
 --------
