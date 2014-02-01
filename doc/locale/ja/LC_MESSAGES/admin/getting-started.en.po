@@ -13,11 +13,11 @@ msgstr ""
 
 #: ../../admin/getting-started.en.rst:5
 msgid "Getting Started"
-msgstr "Getting Started"
+msgstr "はじめに"
 
 #: ../../admin/getting-started.en.rst:29
 msgid "Before you start"
-msgstr "Before you start"
+msgstr "始める前に"
 
 #: ../../admin/getting-started.en.rst:31
 msgid ""
@@ -92,7 +92,7 @@ msgstr ""
 
 #: ../../admin/getting-started.en.rst:61
 msgid "Building Traffic Server"
-msgstr "Building Traffic Server"
+msgstr "Traffic Server のビルド"
 
 #: ../../admin/getting-started.en.rst:63
 msgid ""
@@ -246,7 +246,7 @@ msgstr ""
 
 #: ../../admin/getting-started.en.rst:140
 msgid "Start Traffic Server"
-msgstr "Start Traffic Server"
+msgstr "Traffic Server を起動する"
 
 #: ../../admin/getting-started.en.rst:142
 msgid ""
@@ -274,7 +274,7 @@ msgstr ""
 
 #: ../../admin/getting-started.en.rst:157
 msgid "Start Traffic Line"
-msgstr "Start Traffic Line"
+msgstr "Traffic Line を使用する"
 
 #: ../../admin/getting-started.en.rst:159
 msgid ""
@@ -312,7 +312,7 @@ msgstr ""
 
 #: ../../admin/getting-started.en.rst:180
 msgid "Stop Traffic Server"
-msgstr "Stop Traffic Server"
+msgstr "Traffic Server を停止する"
 
 #: ../../admin/getting-started.en.rst:182
 msgid ""
@@ -330,7 +330,4 @@ msgstr ""
 
 #: ../../admin/getting-started.en.rst:79
 msgid "curl (both for :program:`traffic_top`)"
-msgstr ""
-
-#~ msgid "curl (both for tstop)"
-#~ msgstr "curl (both for tstop)"
+msgstr "curl (both for :program:`traffic_top`)"

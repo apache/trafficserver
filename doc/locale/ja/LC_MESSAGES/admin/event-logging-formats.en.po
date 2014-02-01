@@ -723,7 +723,6 @@ msgid "``ttmsf``"
 msgstr "``ttmsf``"
 
 #: ../../admin/event-logging-formats.en.rst:290
-#, fuzzy
 msgid ""
 "The time Traffic Server spends processing the client request as a "
 "fractional number of seconds. Time is specified in millisecond resolution; "
@@ -995,12 +994,12 @@ msgstr "``pfs``"
 
 #: ../../admin/event-logging-formats.en.rst:406
 msgid "``ss``"
-msgstr ""
+msgstr "``ss``"
 
 #: ../../admin/event-logging-formats.en.rst:76
 msgid "``chp``"
-msgstr ""
+msgstr "``chp``"
 
 #: ../../admin/event-logging-formats.en.rst:76
 msgid "The port number of the client's host machine."
-msgstr ""
+msgstr "クライアントのホストマシンのポート番号。"
