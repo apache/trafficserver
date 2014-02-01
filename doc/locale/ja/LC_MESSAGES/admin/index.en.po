@@ -154,7 +154,7 @@ msgstr ""
 "サーバーとして設定されています。(一般的に、オリジンサーバーとして公開された"
 "ホスト名は Traffic Server に解決され、実際のオリジンサーバーのように振る舞い"
 "ます。)リバースプロキシー機能はサーバーアクセラレーションとも呼ばれます。リ"
-"バースプロキシーは :ref:`reverse-proxy-http-redirects` で詳しく述べられてい"
+"バースプロキシーは :ref:`reverse-proxy-and-http-redirects` で詳しく述べられてい"
 "ます。"
 
 #: ../../admin/index.en.rst:113
@@ -182,7 +182,7 @@ msgid ""
 "caching is described in more detail in :ref:`hierarchical-caching`."
 msgstr ""
 "Traffic Server は ICP(Internet Cache Protocol) のピアイングをサポートしてい"
-"ます。階層的キャッシュは :ref:`hierachical-caching` で詳しく述べられていま"
+"ます。階層的キャッシュは :ref:`hierarchical-caching` で詳しく述べられていま"
 "す。"
 
 #: ../../admin/index.en.rst:126
@@ -264,7 +264,7 @@ msgstr ""
 "べてのディスクが壊れた場合、Traffic Server は proxy-only モードに切り替わり"
 "ます。特定のプロトコルやオリジンサーバーのデータを保存するための一定のディス"
 "クスペースを予約するためにキャッシュを分割することができます。キャッシュに関"
-"するより詳しい情報は :ref:`configure-the-cache` を参照してください。"
+"するより詳しい情報は :ref:`configuring-the-cache` を参照してください。"
 
 #: ../../admin/index.en.rst:162
 msgid "The RAM Cache"
@@ -547,7 +547,7 @@ msgid ""
 "Traffic Server logging options are described in :ref:`working-with-log-"
 "files`."
 msgstr ""
-"Traffic Server ロギングオプションは :ref:`working-log-files` に書かれていま"
+"Traffic Server ロギングオプションは :ref:`working-with-log-files` に書かれていま"
 "す。"
 
 #: ../../admin/index.en.rst:289
@@ -615,7 +615,7 @@ msgstr ""
 
 #: ../../admin/index.en.rst:314
 msgid "Tuning Traffic Server"
-msgstr ""
+msgstr "Traffic Server のチューニング"
 
 #: ../../admin/index.en.rst:316
 msgid ""
@@ -623,3 +623,6 @@ msgid ""
 "number of options that allow to optimally tune Apache Traffic Server for "
 "maximum performance."
 msgstr ""
+"最後にこの最終章 :ref:`performance-tuning` で Apache Traffic Server が最大限の"
+"パフォーマンスを発揮するように最適なチューニングをするための膨大な数の"
+"オプションについて論じます。"
