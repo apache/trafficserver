@@ -24,6 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <string>
 
 static const char PLUGIN_NAME[] = "conf_remap";
 
@@ -48,7 +49,7 @@ struct RemapConfigs
     memset(_items, 0, sizeof(_items));
   };
 
-  bool parse_file(const char *fn);
+  bool parse_file(const char *filename);
 
   Item _items[MAX_OVERRIDABLE_CONFIGS];
   int _current;
@@ -74,7 +75,7 @@ str_to_datatype(const char* str)
 
 // Config file parser, somewhat borrowed from P_RecCore.i
 bool
-RemapConfigs::parse_file(const char* fn)
+RemapConfigs::parse_file(const char* filename)
 {
   int line_num = 0;
   TSFile file;
@@ -82,15 +83,27 @@ RemapConfigs::parse_file(const char* fn)
   TSOverridableConfigKey name;
   TSRecordDataType type, expected_type;
 
-  if (!fn || ('\0' == *fn))
+  std::string path;
+
+  if (!filename || ('\0' == *filename))
     return false;
 
-  if (NULL == (file = TSfopen(fn, "r"))) {
-    TSError("%s: could not open config file %s", PLUGIN_NAME, fn);
+  if (*filename == '/') {
+    // Absolute path, just use it.
+    path = filename;
+  } else {
+    // Relative path. Make it relative to the configuration directory.
+    path = TSConfigDirGet();
+    path += "/";
+    path += filename;
+  }
+
+  if (NULL == (file = TSfopen(path.c_str(), "r"))) {
+    TSError("%s: could not open config file %s", PLUGIN_NAME, path.c_str());
     return false;
   }
 
-  TSDebug(PLUGIN_NAME, "loading configuration file %s", fn);
+  TSDebug(PLUGIN_NAME, "loading configuration file %s", path.c_str());
 
   while (NULL != TSfgets(file, buf, sizeof(buf))) {
     char *ln, *tok;
@@ -106,26 +119,26 @@ RemapConfigs::parse_file(const char* fn)
       continue;
 
     if (strncmp(tok, "CONFIG", 6)) {
-      TSError("%s: file %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, fn, line_num);
+      TSError("%s: file %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
     // Find the configuration name
     tok = strtok_r(NULL, " \t", &ln);
     if (TSHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
-      TSError("%s: file %s, line %d: no records.config name given", PLUGIN_NAME, fn, line_num);
+      TSError("%s: file %s, line %d: no records.config name given", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
     
     // Find the type (INT or STRING only)
     tok = strtok_r(NULL, " \t", &ln);
     if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
-      TSError("%s: file %s, line %d: only INT and STRING types supported", PLUGIN_NAME, fn, line_num);
+      TSError("%s: file %s, line %d: only INT and STRING types supported", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
     if (type != expected_type) {
-      TSError("%s: file %s, line %d: mismatch between provide data type, and expected type", PLUGIN_NAME, fn, line_num);
+      TSError("%s: file %s, line %d: mismatch between provide data type, and expected type", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
@@ -149,7 +162,7 @@ RemapConfigs::parse_file(const char* fn)
       tok = NULL;
     }
     if (!tok) {
-      TSError("%s: file %s, line %d: the configuration must provide a value", PLUGIN_NAME, fn, line_num);
+      TSError("%s: file %s, line %d: the configuration must provide a value", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
@@ -163,7 +176,7 @@ RemapConfigs::parse_file(const char* fn)
       _items[_current]._data_len = strlen(tok);
       break;
     default:
-      TSError("%s: file %s, line %d: type not support (unheard of)", PLUGIN_NAME, fn, line_num);
+      TSError("%s: file %s, line %d: type not support (unheard of)", PLUGIN_NAME, path.c_str(), line_num);
       continue;
       break;
     }
