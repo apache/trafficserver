@@ -62,7 +62,7 @@ lib/ts/test_atomic
 lib/ts/test_freelist
 lib/ts/test_Map
 lib/ts/test_Vec
-lib/perl/lib/Apache/TS/AdminClient.pm
+lib/perl/lib/Apache/TS.pm
 
 
 iocore/net/test_certlookup
