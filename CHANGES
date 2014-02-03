@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2532] Fix make distclean for C++ API examples.
+
   *) [TS-2306] Client connection hang while downloading big file from origin
    server over SSL connection
 
