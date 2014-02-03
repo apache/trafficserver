@@ -588,6 +588,24 @@ if test "x${have_gnu_cxx_hash_map}" = "xyes" ; then
   AC_DEFINE(HAVE_GNU_CXX_HASH_MAP, 1, [whether __gnu_cxx::hash_map is available])
 fi
 
+# And check for std::shared_ptr vs std::tr1::shared_ptr
+TS_FLAG_HEADERS([unordered_map unordered_set])
+AC_MSG_CHECKING([for std::shared_ptr])
+AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([
+    #include <memory>
+    using std::shared_ptr;
+    ], [
+  ])],
+  [ have_std_shared_ptr=yes ],
+  [ have_std_shared_ptr=no ]
+)
+
+AC_MSG_RESULT([$have_std_shared_ptr])
+if test "x${have_std_shared_ptr}" = "xyes" ; then
+  AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
+fi
+
 AC_LANG_POP()
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS

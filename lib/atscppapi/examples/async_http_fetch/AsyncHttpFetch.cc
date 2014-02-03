@@ -104,7 +104,7 @@ private:
       const void *body;
       size_t body_size;
       async_http_fetch.getResponseBody(body, body_size);
-      TS_DEBUG(TAG, "Response body is [%.*s]", static_cast<int>(body_size), body);
+      TS_DEBUG(TAG, "Response body is [%.*s]", static_cast<int>(body_size), static_cast<const char*>(body));
     } else {
       TS_ERROR(TAG, "Fetch did not complete successfully; Result %d",
                static_cast<int>(async_http_fetch.getResult()));

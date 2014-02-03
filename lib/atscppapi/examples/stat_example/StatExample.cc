@@ -23,8 +23,6 @@
 #include <atscppapi/PluginInit.h>
 #include <cstring>
 
-#include <inttypes.h>
-
 using namespace atscppapi;
 using std::string;
 
@@ -56,7 +54,7 @@ public:
   virtual void handleReadRequestHeadersPostRemap(Transaction &transaction) {
     TS_DEBUG(TAG, "Received a request, incrementing the counter.");
     stat.increment();
-    TS_DEBUG(TAG, "Stat '%s' value = %" PRId64, STAT_NAME.c_str(), stat.get());
+    TS_DEBUG(TAG, "Stat '%s' value = %lld", STAT_NAME.c_str(), static_cast<long long>(stat.get()));
     transaction.resume();
   }
 };
