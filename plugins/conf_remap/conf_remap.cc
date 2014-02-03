@@ -50,6 +50,7 @@ struct RemapConfigs
   };
 
   bool parse_file(const char *filename);
+  bool parse_inline(const char *arg);
 
   Item _items[MAX_OVERRIDABLE_CONFIGS];
   int _current;
@@ -71,6 +72,50 @@ str_to_datatype(const char* str)
   }
 
   return type;
+}
+
+// Parse an inline key=value config pair.
+bool
+RemapConfigs::parse_inline(const char *arg)
+{
+  const char * sep;
+  std::string key;
+  std::string value;
+
+  TSOverridableConfigKey name;
+  TSRecordDataType type;
+
+  // Each token should be a status code then a URL, separated by '='.
+  sep = strchr(arg, '=');
+  if (sep == NULL) {
+    return false;
+  }
+
+  key = std::string(arg, std::distance(arg, sep));
+  value = std::string(sep + 1, std::distance(sep + 1, arg + strlen(arg)));
+
+  if (TSHttpTxnConfigFind(key.c_str(), -1 /* len */, &name, &type) != TS_SUCCESS) {
+    TSError("%s: invalid configuration variable '%s'", PLUGIN_NAME, key.c_str());
+    return false;
+  }
+
+  switch (type) {
+    case TS_RECORDDATATYPE_INT:
+      _items[_current]._data.rec_int = strtoll(value.c_str(), NULL, 10);
+      break;
+    case TS_RECORDDATATYPE_STRING:
+      _items[_current]._data.rec_string = TSstrdup(value.c_str());
+      _items[_current]._data_len = value.size();
+      break;
+    default:
+      TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, key.c_str());
+      return false;
+  }
+
+  _items[_current]._name = name;
+  _items[_current]._type = type;
+  ++_current;
+  return true;
 }
 
 // Config file parser, somewhat borrowed from P_RecCore.i
@@ -214,23 +259,33 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
+  RemapConfigs* conf = new(RemapConfigs);
+
   if (argc < 3) {
     TSError("Unable to create remap instance, need configuration file");
     return TS_ERROR;
-  } else {
-    RemapConfigs* conf = new(RemapConfigs);
+  }
 
-    for (int i=2; i < argc; ++i) {
-      if (conf->parse_file(argv[i])) {
-        *ih = static_cast<void*>(conf);
-      } else {
-        *ih = NULL;
-        delete conf;
+  for (int i = 2; i < argc; ++i) {
+    if (strchr(argv[i], '=') != NULL) {
+      // Parse as an inline key=value pair ...
+      if (!conf->parse_inline(argv[i])) {
+        goto fail;
+      }
+    } else {
+      // Parse as a config file ...
+      if (!conf->parse_file(argv[i])) {
+        goto fail;
       }
     }
   }
 
+  *ih = static_cast<void*>(conf);
   return TS_SUCCESS;
+
+fail:
+  delete conf;
+  return TS_ERROR;
 }
 
 void
