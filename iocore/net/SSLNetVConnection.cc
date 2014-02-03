@@ -251,16 +251,14 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
-  // If there is nothing to do, disable connection
-  if (ntodo <= 0) {
+  // If there is nothing to do or no space available, disable connection
+  if (ntodo <= 0 || !buf.writer()->write_avail()) {
     read_disable(nh, this);
     return;
   }
 
+  // not sure if this do-while loop is really needed here, please replace this comment if you know
   do {
-    if (!buf.writer()->write_avail()) {
-      buf.writer()->add_block();
-    }
     ret = ssl_read_from_net(this, lthread, r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;

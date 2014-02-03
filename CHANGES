@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2306] Client connection hang while downloading big file from origin
+   server over SSL connection
+
   *) [TS-2353] Add ability to load ssl certs that are owned by root and only
    read only by the user
 
