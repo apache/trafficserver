@@ -127,6 +127,6 @@ void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED
   // once every second. You should really avoid flushing the log unless it's really necessary.
   log.flush();
 
-  GlobalPlugin *instance = new GlobalHookPlugin();
+  new GlobalHookPlugin();
 }
 

@@ -27,7 +27,6 @@ using namespace atscppapi;
 using std::string;
 
 namespace {
-atscppapi::Logger *log;
 #define TAG "null_transformation"
 }
 
@@ -73,5 +72,5 @@ public:
 
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "TSPluginInit");
-  GlobalPlugin *instance = new GlobalHookPlugin();
+  new GlobalHookPlugin();
 }

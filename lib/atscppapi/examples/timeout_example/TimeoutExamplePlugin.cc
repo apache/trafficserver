@@ -50,7 +50,5 @@ public:
 
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "TSPluginInit");
-  GlobalPlugin *instance = new TimeoutExamplePlugin();
+  new TimeoutExamplePlugin();
 }
-
-

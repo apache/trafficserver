@@ -111,6 +111,7 @@ example/app-template/records.config
 */.libs
 */*/.libs
 */*/*/.libs
+*/*/*/*/.libs
 
 .svn
 */.svn/
