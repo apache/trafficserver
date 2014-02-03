@@ -33,6 +33,7 @@ public:
   PostBufferTransformationPlugin(Transaction &transaction)
     : TransformationPlugin(transaction, REQUEST_TRANSFORMATION), transaction_(transaction) {
     buffer_.reserve(1024); // not required, this is an optimization to start the buffer at a slightly higher value.
+    (void)transaction_;
   }
 
   void consume(const string &data) {
