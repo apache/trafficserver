@@ -1082,12 +1082,23 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
     // includes support for FILE scheme
     if ((fromScheme != URL_SCHEME_HTTP && fromScheme != URL_SCHEME_HTTPS &&
          fromScheme != URL_SCHEME_FILE &&
-         fromScheme != URL_SCHEME_TUNNEL) ||
+         fromScheme != URL_SCHEME_TUNNEL &&
+         fromScheme != URL_SCHEME_WS &&
+         fromScheme != URL_SCHEME_WSS) ||
         (toScheme != URL_SCHEME_HTTP && toScheme != URL_SCHEME_HTTPS &&
-         toScheme != URL_SCHEME_TUNNEL)) {
-      errStr = "Only http, https, and tunnel remappings are supported";
+         toScheme != URL_SCHEME_TUNNEL && toScheme != URL_SCHEME_WS &&
+         toScheme != URL_SCHEME_WSS)) {
+      errStr = "Only http, https, ws, wss, and tunnel remappings are supported";
       goto MAP_ERROR;
     }
+
+    // If mapping from WS or WSS we must map out to WS or WSS
+    if ( (fromScheme == URL_SCHEME_WSS || fromScheme == URL_SCHEME_WS) &&
+         (toScheme != URL_SCHEME_WSS && toScheme != URL_SCHEME_WS)) {
+      errStr = "WS or WSS can only be mapped out to WS or WSS.";
+      goto MAP_ERROR;
+    }
+
     // Check if a tag is specified.
     if (bti->paramv[3] != NULL) {
       if (maptype == FORWARD_MAP_REFERER) {

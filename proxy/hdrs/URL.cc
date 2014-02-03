@@ -33,6 +33,8 @@ const char *URL_SCHEME_FTP;
 const char *URL_SCHEME_GOPHER;
 const char *URL_SCHEME_HTTP;
 const char *URL_SCHEME_HTTPS;
+const char *URL_SCHEME_WSS;
+const char *URL_SCHEME_WS;
 const char *URL_SCHEME_MAILTO;
 const char *URL_SCHEME_NEWS;
 const char *URL_SCHEME_NNTP;
@@ -52,6 +54,8 @@ int URL_WKSIDX_FTP;
 int URL_WKSIDX_GOPHER;
 int URL_WKSIDX_HTTP;
 int URL_WKSIDX_HTTPS;
+int URL_WKSIDX_WS;
+int URL_WKSIDX_WSS;
 int URL_WKSIDX_MAILTO;
 int URL_WKSIDX_NEWS;
 int URL_WKSIDX_NNTP;
@@ -71,6 +75,8 @@ int URL_LEN_FTP;
 int URL_LEN_GOPHER;
 int URL_LEN_HTTP;
 int URL_LEN_HTTPS;
+int URL_LEN_WS;
+int URL_LEN_WSS;
 int URL_LEN_MAILTO;
 int URL_LEN_NEWS;
 int URL_LEN_NNTP;
@@ -106,6 +112,8 @@ url_init()
     URL_SCHEME_GOPHER = hdrtoken_string_to_wks("gopher");
     URL_SCHEME_HTTP = hdrtoken_string_to_wks("http");
     URL_SCHEME_HTTPS = hdrtoken_string_to_wks("https");
+    URL_SCHEME_WSS = hdrtoken_string_to_wks("wss");
+    URL_SCHEME_WS = hdrtoken_string_to_wks("ws");
     URL_SCHEME_MAILTO = hdrtoken_string_to_wks("mailto");
     URL_SCHEME_NEWS = hdrtoken_string_to_wks("news");
     URL_SCHEME_NNTP = hdrtoken_string_to_wks("nntp");
@@ -125,6 +133,8 @@ url_init()
       URL_SCHEME_GOPHER && 
       URL_SCHEME_HTTP && 
       URL_SCHEME_HTTPS && 
+      URL_SCHEME_WS &&
+      URL_SCHEME_WSS &&
       URL_SCHEME_MAILTO && 
       URL_SCHEME_NEWS && 
       URL_SCHEME_NNTP && 
@@ -145,6 +155,8 @@ url_init()
     URL_WKSIDX_GOPHER = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);
     URL_WKSIDX_HTTP = hdrtoken_wks_to_index(URL_SCHEME_HTTP);
     URL_WKSIDX_HTTPS = hdrtoken_wks_to_index(URL_SCHEME_HTTPS);
+    URL_WKSIDX_WS = hdrtoken_wks_to_index(URL_SCHEME_WS);
+    URL_WKSIDX_WSS = hdrtoken_wks_to_index(URL_SCHEME_WSS);
     URL_WKSIDX_MAILTO = hdrtoken_wks_to_index(URL_SCHEME_MAILTO);
     URL_WKSIDX_NEWS = hdrtoken_wks_to_index(URL_SCHEME_NEWS);
     URL_WKSIDX_NNTP = hdrtoken_wks_to_index(URL_SCHEME_NNTP);
@@ -164,6 +176,8 @@ url_init()
     URL_LEN_GOPHER = hdrtoken_wks_to_length(URL_SCHEME_GOPHER);
     URL_LEN_HTTP = hdrtoken_wks_to_length(URL_SCHEME_HTTP);
     URL_LEN_HTTPS = hdrtoken_wks_to_length(URL_SCHEME_HTTPS);
+    URL_LEN_WS = hdrtoken_wks_to_length(URL_SCHEME_WS);
+    URL_LEN_WSS = hdrtoken_wks_to_length(URL_SCHEME_WSS);
     URL_LEN_MAILTO = hdrtoken_wks_to_length(URL_SCHEME_MAILTO);
     URL_LEN_NEWS = hdrtoken_wks_to_length(URL_SCHEME_NEWS);
     URL_LEN_NNTP = hdrtoken_wks_to_length(URL_SCHEME_NNTP);

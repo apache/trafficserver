@@ -285,6 +285,7 @@ HttpClientSession::do_io_close(int alerrno)
       HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
     }
   }
+
   // Prevent double closing
   ink_release_assert(read_state != HCS_CLOSED);
 

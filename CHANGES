@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2541] Add WebSocket support
+
   *) [TS-2550] Add inline configuration overrised to the conf_remap plugin.
 
   *) [TS-2546] Move xptr and _xstrdup to ink_memory.{h,cc}.

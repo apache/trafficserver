@@ -68,9 +68,12 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
 {
   if (the_method == HTTP_WKSIDX_CONNECT) {
     return true;
-  } else if (the_scheme == URL_WKSIDX_HTTP || the_scheme == URL_WKSIDX_HTTPS)
+  } else if (the_scheme == URL_WKSIDX_HTTP || the_scheme == URL_WKSIDX_HTTPS) {
     return is_this_http_method_supported(the_method);
-  else
+  } else if ((the_scheme == URL_WKSIDX_WS || the_scheme == URL_WKSIDX_WSS) &&
+            the_method == HTTP_WKSIDX_GET) {
+    return true;
+  } else
     return false;
 }
 

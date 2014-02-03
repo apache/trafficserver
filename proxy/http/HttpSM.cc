@@ -1583,9 +1583,19 @@ HttpSM::handle_api_return()
     }
   case HttpTransact::SERVER_READ:
     {
-      setup_server_transfer();
-      perform_cache_write_action();
-      tunnel.tunnel_run();
+      if (unlikely(t_state.did_upgrade_succeed)) {
+       // We've sucessfully handled the upgrade, let's now setup
+       // a blind tunnel.
+       if(t_state.is_websocket) {
+         HTTP_INCREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
+       }
+
+       setup_blind_tunnel(true);
+      } else {
+       setup_server_transfer();
+       perform_cache_write_action();
+       tunnel.tunnel_run();
+      }
       break;
     }
   case HttpTransact::SERVE_FROM_CACHE:
@@ -2739,6 +2749,11 @@ HttpSM::tunnel_handler(int event, void *data)
   ink_assert(data == &tunnel);
   // The tunnel calls this when it is done
   terminate_sm = true;
+
+  if (unlikely(t_state.is_websocket)) {
+    HTTP_DECREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
+  }
+
   return 0;
 }
 
@@ -6136,6 +6151,7 @@ HttpSM::setup_server_transfer_to_cache_only()
 void
 HttpSM::setup_server_transfer()
 {
+  DebugSM("http", "Setup Server Transfer");
   int64_t alloc_index, hdr_size;
   int64_t nbytes;
 
@@ -6806,6 +6822,7 @@ HttpSM::set_next_state()
       break;
     }
   
+  case HttpTransact::HTTP_POST_REMAP_UPGRADE:
   case HttpTransact::HTTP_POST_REMAP_SKIP:
     {
       call_transact_and_set_next_state(NULL);

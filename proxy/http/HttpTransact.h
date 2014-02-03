@@ -79,11 +79,19 @@
 }
 
 
-#define TRANSACT_RETURN(n, r)  \
+#define TRANSACT_SETUP_RETURN(n, r) \
 s->next_action = n; \
 s->transact_return_point = r; \
 DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", "Next action %s; %s", #n, #r); \
+
+#define TRANSACT_RETURN(n, r)  \
+TRANSACT_SETUP_RETURN(n, r) \
 return; \
+
+#define TRANSACT_RETURN_VAL(n, r, v) \
+TRANSACT_SETUP_RETURN(n, r) \
+return v; \
+
 
 #define SET_UNPREPARE_CACHE_ACTION(C) \
 { \
@@ -499,7 +507,8 @@ public:
     HTTP_REMAP_REQUEST,
     HTTP_API_POST_REMAP,
     HTTP_POST_REMAP_SKIP,
-    
+    HTTP_POST_REMAP_UPGRADE,
+
     HTTP_API_OS_DNS,
     HTTP_API_SEND_REQUEST_HDR,
     HTTP_API_READ_CACHE_HDR,
@@ -894,6 +903,16 @@ public:
     StateMachineAction_t next_action;   // out
     StateMachineAction_t api_next_action;       // out
     void (*transact_return_point) (HttpTransact::State* s);    // out
+
+    // We keep this so we can jump back to the upgrade handler after remap is complete
+    bool is_upgrade_request;
+    void (*post_remap_upgrade_return_point) (HttpTransact::State* s);    // out
+    const char *upgrade_token_wks;
+
+    // Some WebSocket state
+    bool is_websocket;
+    bool did_upgrade_succeed;
+
     char *internal_msg_buffer;  // out
     char *internal_msg_buffer_type;     // out
     int64_t internal_msg_buffer_size;       // out
@@ -1031,6 +1050,11 @@ public:
         next_action(STATE_MACHINE_ACTION_UNDEFINED),
         api_next_action(STATE_MACHINE_ACTION_UNDEFINED),
         transact_return_point(NULL),
+        is_upgrade_request(false),
+        post_remap_upgrade_return_point(NULL),
+        upgrade_token_wks(NULL),
+        is_websocket(false),
+        did_upgrade_succeed(false),
         internal_msg_buffer(0),
         internal_msg_buffer_type(0),
         internal_msg_buffer_size(0),
@@ -1259,6 +1283,10 @@ public:
   static void merge_warning_header(HTTPHdr* cached_header, HTTPHdr* response_header);
   static void SetCacheFreshnessLimit(State* s);
   static void HandleApiErrorJump(State *);
+  static void handle_websocket_upgrade_pre_remap(State *s);
+  static void handle_websocket_upgrade_post_remap(State *s);
+  static bool handle_upgrade_request(State *s);
+  static void handle_websocket_connection(State *s);
 
   static void HandleCacheOpenReadPush(State* s, bool read_successful);
   static void HandlePushResponseHdr(State* s);
@@ -1298,6 +1326,7 @@ public:
   static bool is_request_cache_lookupable(State* s);
   static bool is_request_valid(State* s, HTTPHdr* incoming_request);
   static bool is_request_retryable(State* s);
+
   static bool is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* response);
   static bool is_response_valid(State* s, HTTPHdr* incoming_response);
 

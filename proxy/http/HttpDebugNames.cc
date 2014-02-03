@@ -396,7 +396,8 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
     return ("HTTP_API_POST_REMAP");
   case HttpTransact::HTTP_POST_REMAP_SKIP:
     return ("HTTP_POST_REMAP_SKIP");
-
+  case HttpTransact::HTTP_POST_REMAP_UPGRADE:
+    return ("HTTP_POST_REMAP_UPGRADE");
   }
 
   return ("unknown state name");
