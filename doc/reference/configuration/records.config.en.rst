@@ -2067,6 +2067,13 @@ SSL Termination
   renegotiation of the SSL connection.  The default of ``0``, means
   the client can't initiate renegotiation.
 
+.. ts:cv:: CONFIG proxy.config.ssl.cert.load_elevated INT 0
+
+  Enables (``1``) or disables (``0``) elevation of traffic_server
+  privileges during loading of SSL certificates.  By enabling this, SSL
+  certificate files' access rights can be restricted to help reduce the
+  vulnerability of certificates.
+
 Client-Related Configuration
 ----------------------------
 

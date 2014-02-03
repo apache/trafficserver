@@ -23,6 +23,7 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "P_Net.h"
+#include "ink_cap.h"
 
 #include <openssl/err.h>
 #include <openssl/bio.h>
@@ -839,6 +840,11 @@ SSLParseCertificateConfiguration(
     Error("failed to read SSL certificate configuration from %s", params->configFilePath);
     return false;
   }
+
+  // elevate/allow file access to root read only files/certs
+  uint32_t elevate_setting = 0;
+  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  ElevateAccess elevate_access(elevate_setting != 0); // destructor will demote for us
 
   line = tokLine(file_buf, &tok_state);
   while (line != NULL) {
