@@ -1395,35 +1395,6 @@ HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
   }
 }
 
-inline const char*
-conn_state_enum_to_str(HttpTransact::ServerState_t the_state)
-{
-  switch (the_state) {
-  case HttpTransact::STATE_UNDEFINED:
-    return "STATE_UNDEFINED";
-  case HttpTransact::ACTIVE_TIMEOUT:
-    return "ACTIVE_TIMEOUT";
-  case HttpTransact::BAD_INCOMING_RESPONSE:
-    return "BAD_INCOMING_RESPONSE";
-  case HttpTransact::CONNECTION_ALIVE:
-    return "CONNECTION_ALIVE";
-  case HttpTransact::CONNECTION_CLOSED:
-    return "CONNECTION_CLOSED";
-  case HttpTransact::CONNECTION_ERROR:
-    return "CONNECTION_ERROR";
-  case HttpTransact::INACTIVE_TIMEOUT:
-    return "INACTIVE_TIMEOUT";
-  case HttpTransact::OPEN_RAW_ERROR:
-    return "OPEN_RAW_ERROR";
-  case HttpTransact::PARSE_ERROR:
-    return "PARSE_ERROR";
-  case HttpTransact::TRANSACTION_COMPLETE:
-    return "TRANSACTION_COMPLETE";
-  default:
-    return "BOGUG_STATE";
-  }
-}
-
 inline bool
 is_response_body_precluded(HTTPStatus status_code, int method)
 {
