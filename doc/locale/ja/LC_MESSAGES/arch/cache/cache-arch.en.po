@@ -891,7 +891,7 @@ msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:506
 msgid "Cache Operations"
-msgstr ""
+msgstr "キャッシュ操作"
 
 #: ../../arch/cache/cache-arch.en.rst:508
 msgid ""
@@ -899,6 +899,9 @@ msgid ""
 "remapped. Tunneled transactions do not interact with the cache because the "
 "headers are never parsed."
 msgstr ""
+"キャッシュアクティビティは HTTP リクエストヘッダがパースされ、リマップされて"
+"から開始します。トンネルされたトランザクションはヘッダがパースされることがない"
+"ためキャッシュに影響しません。"
 
 #: ../../arch/cache/cache-arch.en.rst:510
 msgid ""
@@ -911,6 +914,14 @@ msgid ""
 "course of the transaction as well. This is done to avoid the cost of cache "
 "activity for objects that cannot be in the cache."
 msgstr ""
+"ロジックを理解するため、\"キャッシュバリッド\" という用語を紹介しなければ"
+"なりません。これはキャッシュされるのに有効なオブジェクトに直接関係するもの"
+"を意味します。（例えばキャッシュバリッドな URL を参照する ``DELETE`` は"
+"それ自身はキャッシュできません） |TS| はトランザクション中に何度かキャッシュの"
+"正当性を計算してキャッシュバリッドの結果によってのみキャッシュ操作を行うため、"
+"この用語は重要です。正当性の基準は同様にトランザクション中の変更を使用しま"
+"した。この処理はキャッシュできないオブジェクトの為のキャッシュアクティビティに"
+"よるコストを避けるために実行されます。"
 
 #: ../../arch/cache/cache-arch.en.rst:512
 msgid ""
@@ -918,6 +929,9 @@ msgid ""
 "deleting entries as a special case of writing where only the volume "
 "directory is updated."
 msgstr ""
+"3 つの基本的なキャッシュ操作は検索、読込み、そして書込みです。エントリの"
+"削除はボリュームディレクトリが更新される場合のみの書込みの特殊なケースとして"
+"扱います。"
 
 #: ../../arch/cache/cache-arch.en.rst:514
 msgid ""
@@ -926,10 +940,14 @@ msgid ""
 "read`_ is attempted. If either the lookup or the read fails and the content "
 "is considered cacheable then a `cache write`_ is attempted."
 msgstr ""
+"クライアントリクエストヘッダがパースされてキャッシュできると決定された後、 "
+"`キャッシュ検索`_ が行われます。成功した場合 `キャッシュ読込み`_ が試みられ"
+"ます。検索か読込みのいずれかが失敗してかつコンテンツがキャッシュできると判断"
+"される場合、 `キャッシュ書込み`_  が試みられます。"
 
 #: ../../arch/cache/cache-arch.en.rst:517
 msgid "Cacheability"
-msgstr ""
+msgstr "キャッシャビリティ"
 
 #: ../../arch/cache/cache-arch.en.rst:519
 msgid ""
@@ -944,89 +962,106 @@ msgid ""
 "server response). Those checks are described as appropriate in the sections "
 "on the relevant operations."
 msgstr ""
+"キャッシュに関するリクエストで最初に行われるのは、潜在的にキャッシュするのに"
+"有効なオブジェクトであるかどうかを決定することです。最初のパースとリマップの"
+"後、このチェックは主にネガティブな結果を検出するために行われます。これはもし"
+"ネガティブな結果が出た場合は全ての後のキャッシュ処理がスキップされる、すなわち"
+"キャッシュに配置されずキャッシュ検索も実行されなくなるためです。それらを変更"
+"する設定オプションに加え、必要条件が数多く存在します。追加のキャッシャビリティ"
+"チェックは、トランザクションについてより多くのことが分かった際の処理"
+"（プラグイン操作やオリジンサーバレスポンスのような）以降に実行されます。"
+"それらのチェックについては関連する操作のセクションで適切に説明します。"
 
 #: ../../arch/cache/cache-arch.en.rst:521
 msgid "The set of things which can affect cacheability are"
-msgstr ""
+msgstr "キャッシャビリティに影響できる項目のセットは、"
 
 #: ../../arch/cache/cache-arch.en.rst:523
 msgid "Built in constraints"
-msgstr ""
+msgstr "組込みの制約"
 
 #: ../../arch/cache/cache-arch.en.rst:524
 msgid "Settings in :file:`records.config`"
-msgstr ""
+msgstr ":file:`records.config` の設定"
 
 #: ../../arch/cache/cache-arch.en.rst:525
 msgid "Settings in :file:`cache.config`"
-msgstr ""
+msgstr ":file:`cache.config` の設定"
 
 #: ../../arch/cache/cache-arch.en.rst:526
 msgid "Plugin operations"
-msgstr ""
+msgstr "プラグインの操作"
 
 #: ../../arch/cache/cache-arch.en.rst:528
 msgid ""
 "The initial internal checks, along with their :file:`records.config` "
 "overrides[#]_, are done in::"
 msgstr ""
+"初期の内部チェック、それらの :file:`records.config` を伴ったオーバー"
+"ライドは以下の関数内で処理されます。 ::"
 
 #: ../../arch/cache/cache-arch.en.rst:532
 msgid "The checks that are done are"
-msgstr ""
+msgstr "チェックは以下のように行われます。"
 
 #: ../../arch/cache/cache-arch.en.rst:537
 msgid "Cacheable Method"
-msgstr ""
+msgstr "キャッシュ可能なメソッド"
 
 #: ../../arch/cache/cache-arch.en.rst:535
 msgid ""
 "The request must be one of ``GET``, ``HEAD``, ``POST``, ``DELETE``, ``PUT``."
 msgstr ""
+"リクエストは ``GET``, ``HEAD``, ``POST``, ``DELETE``, ``PUT`` のいずれかで"
+"なければなりません。"
 
 #: ../../arch/cache/cache-arch.en.rst:537
 msgid "See ``HttpTransact::is_method_cache_lookupable()``."
-msgstr ""
+msgstr "``HttpTransact::is_method_cache_lookupable()`` を確認してください。"
 
 #: ../../arch/cache/cache-arch.en.rst:551
 msgid "Dynamic URL"
-msgstr ""
+msgstr "動的 URL"
 
 #: ../../arch/cache/cache-arch.en.rst:540
 msgid ""
 "|TS| tries to avoid caching dynamic content because it's dynamic. A URL is "
 "considered dynamic if it"
 msgstr ""
+"URL が動的であるため |TS| は動的コンテンツのキャッシングを避けようとします。"
+"もし以下の条件に当てはまるなら URL は動的であると考えられます。"
 
 #: ../../arch/cache/cache-arch.en.rst:542
 msgid "is not ``HTTP`` or ``HTTPS``"
-msgstr ""
+msgstr "``HTTP`` や ``HTTPS`` ではない"
 
 #: ../../arch/cache/cache-arch.en.rst:543
 msgid "has query parameters"
-msgstr ""
+msgstr "クエリパラメータを含む"
 
 #: ../../arch/cache/cache-arch.en.rst:544
 msgid "ends in ``asp``"
-msgstr ""
+msgstr "``asp`` で終わる"
 
 #: ../../arch/cache/cache-arch.en.rst:545
 msgid "has ``cgi`` in the path"
-msgstr ""
+msgstr "パスに ``cgi`` を含む"
 
 #: ../../arch/cache/cache-arch.en.rst:547
 msgid "This check can be disabled by setting a non-zero value for::"
-msgstr ""
+msgstr "このチェックは以下にゼロでない値を設定することで無効にできます::"
 
 #: ../../arch/cache/cache-arch.en.rst:551
 msgid ""
 "In addition if a TTL is set for rule that matches in :file:`cache.config` "
 "then this check is not done."
 msgstr ""
+"加えて、 :file:`cache.config` にマッチするルールに TTL が設定されていたら"
+"このチェックは行われません。"
 
 #: ../../arch/cache/cache-arch.en.rst:554
 msgid "Range Request"
-msgstr ""
+msgstr "レンジリクエスト"
 
 #: ../../arch/cache/cache-arch.en.rst:554
 msgid ""
@@ -1034,12 +1069,18 @@ msgid ""
 "`records.config` is non-zero. This does not mean the range request can be "
 "cached, only that it might be satisfiable from the cache."
 msgstr ""
+":file:`records.config` の :ts:cv:`proxy.config.http.cache.range.lookup` が"
+"ゼロでない値である場合に限りキャッシュバリッドです。これはレンジリクエストが"
+"キャッシュ可能であることを意味しません。キャッシュから満たされるかもしれないと"
+"いうだけです。"
 
 #: ../../arch/cache/cache-arch.en.rst:556
 msgid ""
 "A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request "
 "to be viewed as cache valid."
 msgstr ""
+"プラグインはリクエストがキャッシュバリッドと見なされる事を強制するため "
+":c:func:`TSHttpTxnReqCacheableSet()` を呼び出せます。"
 
 #: ../../arch/cache/cache-arch.en.rst:558
 msgid ""
@@ -1050,6 +1091,12 @@ msgid ""
 "directive (from the administrator point of view) is effective in preventing "
 "caching of the object."
 msgstr ""
+"コード上ではこのロジックにおいてステートマシンインスタンスの "
+"``cache_info.directives`` の中の ``does_config_permit_lookup`` の値を設定する"
+"ことにより :file:`cache.config` をチェックするように見えますが、その値が使用"
+"されている箇所は発見できません。 ``does_config_permit_storing`` ディレクティブ"
+"が設定されてその後にチェックされるので、このディレクティブは（管理者の観点"
+"から）オブジェクトのキャッシュすることを妨げるのに効果的です。"
 
 #: ../../arch/cache/cache-arch.en.rst:561
 msgid "Cache Lookup"
