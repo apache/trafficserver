@@ -1139,10 +1139,6 @@ TS_CHECK_CRYPTO_EC_KEYS
 TS_CHECK_CRYPTO_SNI
 
 #
-# Check for RFC5077 TLS session ticket support.
-TS_CHECK_CRYPTO_TICKETS
-
-#
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
 

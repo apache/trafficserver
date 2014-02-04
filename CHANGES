@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2552] configure fails to detect missing the #define for
+   SSL_CTX_set_tlsext_ticket_key_cb().
+
   *) [TS-2549] printf() compiler warnings  on OSX (clang) with the CPP APIs.
 
   *) [TS-2532] Fix make distclean for C++ API examples.
