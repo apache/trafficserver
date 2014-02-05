@@ -11,6 +11,44 @@ Changes with Apache Traffic Server 5.0.0
 
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2552] configure fails to detect missing the #define for
+   SSL_CTX_set_tlsext_ticket_key_cb().
+
+  *) [TS-2549] printf() compiler warnings  on OSX (clang) with the CPP APIs.
+
+  *) [TS-2532] Fix make distclean for C++ API examples.
+
+  *) [TS-2306] Client connection hang while downloading big file from origin
+   server over SSL connection
+
+  *) [TS-2353] Add ability to load ssl certs that are owned by root and only
+   read only by the user
+
+  *) [TS-2551] Eliminate the tr1 dependency from CPP APIs.
+
+  *) [TS-2541] Add WebSocket support
+
+  *) [TS-2550] Add inline configuration overrised to the conf_remap plugin.
+
+  *) [TS-2546] Move xptr and _xstrdup to ink_memory.{h,cc}.
+
+  *) [TS-2180] Small memory leak in RecCore.cc, from previous refactoring.
+
+  *) [TS-2534] Make sure RecRecord structs are always properly initialized.
+
+  *) [TS-2483] Add a new metric, proxy.node.restarts.proxy.cache_ready_time,
+   tracking absolute time when the cache started (finished
+   initialization). Until cache is available, or no cache configured, this
+   metric stays at a value of "0".
+
+  *) [TS-2517 First implementation of traffic_shell.pl, and reorg the modules
+   a bit for more consistency. Also fixes a timeout issue in AdminClient.pm.
+
+  *) [TS-1467] Disable client initiated renegotiation (SSL) DDoS by default
+
+  *) [TS-2538] Cleanup of ProcessMutex (unused) and InkMutex (dupe of
+   ink_mutex). We now use ink_mutex consistently.
+
   *) [TS-2544] conf_remap plugin: allow for multiple configuration files.
 
   *) [TS-2530] Check for loopback interfaces when computing the local address.

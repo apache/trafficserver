@@ -40,9 +40,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-typedef pthread_mutex_t ProcessMutex;
-typedef ProcessMutex ink_mutex;
-typedef ProcessMutex InkMutex;
+typedef pthread_mutex_t ink_mutex;
 
 // just a wrapper so that the constructor gets executed
 // before the first call to ink_mutex_init();
@@ -114,16 +112,6 @@ ink_mutex_try_acquire(ink_mutex * m)
 }
 
 #endif /* #if defined(POSIX_THREAD) */
-
-
-/* process mutex */
-
-void ink_ProcessMutex_destroy(ProcessMutex *);
-void ink_ProcessMutex_acquire(ProcessMutex *);
-void ink_ProcessMutex_release(ProcessMutex *);
-int ink_ProcessMutex_try_acquire(ProcessMutex *);
-void ink_ProcessMutex_print(FILE * out, ProcessMutex *);
-
 
 struct ink_scoped_mutex
 {

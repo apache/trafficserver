@@ -1,3 +1,5 @@
+.. _cacheurl-plugin:
+
 CacheURL Plugin
 ***************
 

@@ -295,7 +295,7 @@ with corresponding HTTP response codes and customizable files.
    ``request#scheme_unsupported``
 
 
-.. standard-http-response-messages:
+.. _standard-http-response-messages:
 
 Standard HTTP Response Messages
 -------------------------------

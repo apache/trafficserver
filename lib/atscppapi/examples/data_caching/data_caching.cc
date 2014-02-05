@@ -90,7 +90,7 @@ void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED
   int do_overwrite = 1;
   setenv(utils::DISABLE_DATA_CACHING_ENV_FLAG.c_str(), "true", do_overwrite);
 
-  GlobalPlugin *instance = new GlobalHookPlugin();
+  new GlobalHookPlugin();
 
   TSMutex nullMutex = NULL;
   TSCont globalCont = TSContCreate(handlePostRemap, nullMutex);

@@ -140,6 +140,11 @@ register_stat_callbacks()
                      RECD_INT, RECP_NON_PERSISTENT,
                      (int) http_current_active_client_connections_stat, RecRawStatSyncSum);
   HTTP_CLEAR_DYN_STAT(http_current_active_client_connections_stat);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.websocket.current_active_client_connections",
+                     RECD_INT, RECP_NON_PERSISTENT,
+                     (int) http_websocket_current_active_client_connections_stat, RecRawStatSyncSum);
+  HTTP_CLEAR_DYN_STAT(http_websocket_current_active_client_connections_stat);
   // Current Transaction Stats
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.current_client_transactions",

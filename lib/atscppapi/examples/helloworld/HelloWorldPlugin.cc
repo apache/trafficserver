@@ -30,7 +30,7 @@ public:
 
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   std::cout << "Hello from " << argv[0] << std::endl;
-  atscppapi::GlobalPlugin *instance = new HelloWorldPlugin();
+  new HelloWorldPlugin();
 }
 
 

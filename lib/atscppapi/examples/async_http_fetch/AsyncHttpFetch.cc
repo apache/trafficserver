@@ -59,8 +59,8 @@ public:
     // we'll add some custom headers for this request
     AsyncHttpFetch2 *provider2 = new AsyncHttpFetch2("http://127.0.0.1/");
     Headers &request_headers = provider2->getRequestHeaders();
-    request_headers.set("Header1", "Value1");
-    request_headers.set("Header2", "Value2");
+    request_headers["Header1"]  = "Value1";
+    request_headers["Header2"]  = "Value2";
     Async::execute<AsyncHttpFetch2>(this, provider2, getMutex());
     ++num_fetches_pending_;
   }
@@ -104,7 +104,7 @@ private:
       const void *body;
       size_t body_size;
       async_http_fetch.getResponseBody(body, body_size);
-      TS_DEBUG(TAG, "Response body is [%.*s]", body_size, body);
+      TS_DEBUG(TAG, "Response body is [%.*s]", static_cast<int>(body_size), static_cast<const char*>(body));
     } else {
       TS_ERROR(TAG, "Fetch did not complete successfully; Result %d",
                static_cast<int>(async_http_fetch.getResult()));
@@ -137,6 +137,6 @@ public:
 
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
-  GlobalPlugin *instance = new GlobalHookPlugin();
+  new GlobalHookPlugin();
 }
 

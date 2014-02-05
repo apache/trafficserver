@@ -1,3 +1,5 @@
+.. _regex-remap-plugin:
+
 Regex Remap Plugin
 ******************
 

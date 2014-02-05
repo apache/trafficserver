@@ -40,6 +40,7 @@
 #define I_IOBuffer_h
 
 #include "libts.h"
+#include "ink_resource.h"
 
 struct MIOBufferAccessor;
 

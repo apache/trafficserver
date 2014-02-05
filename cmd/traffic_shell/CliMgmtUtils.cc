@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include "CliMgmtUtils.h"
 #include "CliDisplay.h"
-#include "ink_resource.h"
 #include "definitions.h"
 #include "ConfigCmd.h"
 

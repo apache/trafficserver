@@ -1,3 +1,5 @@
+.. _buffer-upload-plugin:
+
 Buffer Upload Plugin
 ********************
 

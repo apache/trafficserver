@@ -29,7 +29,6 @@
 #include "ink_assert.h"
 #include "ink_atomic.h"
 #include "ink_defs.h"
-#include "ink_resource.h"
 #include "ink_string.h"
 #include "Allocator.h"
 #include "Regex.h"
@@ -374,11 +373,11 @@ hdrtoken_wks_to_flags(const char *wks)
 
 // bits 56-60 were used for a benchmark hack, but are now free to be used
 // for something else
-#define MIME_PRESENCE_UNUSED_1			(TOK_64_CONST(1) << 56)
-#define MIME_PRESENCE_UNUSED_2	 		(TOK_64_CONST(1) << 57)
+#define MIME_PRESENCE_UNUSED_1      (TOK_64_CONST(1) << 56)
+#define MIME_PRESENCE_UNUSED_2			(TOK_64_CONST(1) << 57)
 #define MIME_PRESENCE_UNUSED_3			(TOK_64_CONST(1) << 58)
-#define MIME_PRESENCE_UNUSED_4			(TOK_64_CONST(1) << 59)
-#define MIME_PRESENCE_UNUSED_5			(TOK_64_CONST(1) << 60)
+#define MIME_PRESENCE_UNUSED_4      (TOK_64_CONST(1) << 59)
+#define MIME_PRESENCE_UNUSED_5      (TOK_64_CONST(1) << 60)
 
 #define MIME_PRESENCE_XREF			(TOK_64_CONST(1) << 61)
 #define MIME_PRESENCE_INT_DATA_INFO		(TOK_64_CONST(1) << 62)

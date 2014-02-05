@@ -219,3 +219,23 @@ ats_mlock(caddr_t addr, size_t len)
   int res = mlock(a, l);
   return res;
 }
+
+
+/*-------------------------------------------------------------------------
+  Moved from old ink_resource.h
+  -------------------------------------------------------------------------*/
+char *
+_xstrdup(const char *str, int length, const char* /* path ATS_UNUSED */)
+{
+  char *newstr;
+
+  if (likely(str)) {
+    if (length < 0)
+      length = strlen(str);
+
+    newstr = (char *)ats_malloc(length + 1);
+    ink_strlcpy(newstr, str, length + 1);
+    return newstr;
+  }
+  return NULL;
+}

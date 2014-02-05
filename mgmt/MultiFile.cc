@@ -24,7 +24,6 @@
 #include "ink_platform.h"
 #include "ink_defs.h"
 #include "ink_assert.h"
-#include "ink_resource.h"
 #include "ink_error.h"
 #include "ink_file.h"
 #include "ink_string.h"

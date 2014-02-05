@@ -1,4 +1,4 @@
-.. _header_rewrite-plugin
+.. _header-rewrite-plugin:
 
 Header Rewrite Plugin
 *********************

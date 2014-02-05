@@ -145,6 +145,11 @@ static const char *_hdrtoken_strs[] = {
   "chunked",
   "close",
   
+  // WS
+  "websocket",
+  "Sec-WebSocket-Key",
+  "Sec-WebSocket-Version",
+
   // URL schemes
   "file",
   "ftp",
@@ -164,6 +169,8 @@ static const char *_hdrtoken_strs[] = {
   "mmsu",
   "mmst",
   "mms",
+  "wss",
+  "ws",
   
   // HTTP methods
   "CONNECT",
@@ -203,6 +210,8 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"mms", HDRTOKEN_TYPE_SCHEME},
   {"mmsu", HDRTOKEN_TYPE_SCHEME},
   {"mmst", HDRTOKEN_TYPE_SCHEME},
+  {"wss", HDRTOKEN_TYPE_SCHEME},
+  {"ws", HDRTOKEN_TYPE_SCHEME},
 
   {"CONNECT", HDRTOKEN_TYPE_METHOD},
   {"DELETE", HDRTOKEN_TYPE_METHOD},
@@ -309,6 +318,8 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"@DataInfo", MIME_SLOTID_NONE, MIME_PRESENCE_INT_DATA_INFO, HTIF_NONE},
   {"X-ID", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)},
   {"X-Forwarded-For", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS)},
+  {"Sec-WebSocket-Key", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
+  {"Sec-WebSocket-Version", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {NULL, 0, 0, 0}
 };
 
@@ -473,6 +484,11 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "chunked",
   "close",
   
+  // WS
+  "websocket",
+  "Sec-WebSocket-Key",
+  "Sec-WebSocket-Version",
+
   // URL schemes
   "file",
   "ftp",
@@ -492,6 +508,8 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "mmsu",
   "mmst",
   "mms",
+  "wss",
+  "ws",
   
   // HTTP methods
   "CONNECT",

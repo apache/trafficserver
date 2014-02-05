@@ -1,3 +1,5 @@
+.. _mysql-remap-plugin:
+
 MySQL Remap Plugin
 ******************
 

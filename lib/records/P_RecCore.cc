@@ -33,6 +33,7 @@
 
 RecModeT g_mode_type = RECM_NULL;
 
+
 //-------------------------------------------------------------------------
 // send_reset_message
 //-------------------------------------------------------------------------
@@ -439,7 +440,8 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       // We don't need to ats_strdup() here as we will make copies of any
       // strings when we marshal them into our RecMessage buffer.
       RecRecord r2;
-      memset(&r2, 0, sizeof(RecRecord));
+
+      RecRecordInit(&r2);
       r2.rec_type = rec_type;
       r2.name = name;
       r2.data_type = (data_type != RECD_NULL) ? data_type : r1->data_type;
@@ -448,6 +450,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         r2.stat_meta.data_raw = *data_raw;
       }
       err = send_set_message(&r2);
+      RecRecordFree(&r2);
     }
   } else {
     // Add the record but do not set the 'registered' flag, as this
@@ -850,13 +853,15 @@ RecResetStatRecord(const char *name)
       err = REC_ERR_OKAY;
     } else {
       RecRecord r2;
-      memset(&r2, 0, sizeof(RecRecord));
+
+      RecRecordInit(&r2);
       r2.rec_type = r1->rec_type;
       r2.name = r1->name;
       r2.data_type = r1->data_type;
       r2.data = r1->data_default;
 
       err = send_reset_message(&r2);
+      RecRecordFree(&r2);
     }
   } else {
     err = REC_ERR_FAIL;
@@ -893,13 +898,15 @@ RecResetStatRecord(RecT type, bool all)
         rec_mutex_release(&(r1->lock));
       } else {
         RecRecord r2;
-        memset(&r2, 0, sizeof(RecRecord));
+
+        RecRecordInit(&r2);
         r2.rec_type = r1->rec_type;
         r2.name = r1->name;
         r2.data_type = r1->data_type;
         r2.data = r1->data_default;
 
         err = send_reset_message(&r2);
+        RecRecordFree(&r2);
       }
     }
   }
@@ -936,13 +943,15 @@ RecSetSyncRequired(char *name, bool lock)
 
       /*
          RecRecord r2;
-         memset(&r2, 0, sizeof(RecRecord));
+
+         RecRecordInit(&r2);
          r2.rec_type  = r1->rec_type;
          r2.name      = r1->name;
          r2.data_type = r1->data_type;
          r2.data      = r1->data_default;
 
          err = send_set_message(&r2);
+         RecRecordFree(&r2);
        */
     }
   }

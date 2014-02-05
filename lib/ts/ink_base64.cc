@@ -33,7 +33,6 @@
  */
 #include "libts.h"
 #include "ink_assert.h"
-#include "ink_resource.h"
 
 // TODO: The code here seems a bit klunky, and could probably be improved a bit.
 

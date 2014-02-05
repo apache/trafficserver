@@ -29,7 +29,6 @@
  ****************************************************************************/
 
 #include "ink_platform.h"
-#include "ink_resource.h"
 #include "ink_hash_table.h"
 #include "ink_hash_table.h"
 

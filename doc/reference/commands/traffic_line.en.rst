@@ -135,7 +135,7 @@ Options
    Show the current proxy server status, indicating if we're running or not.
 
 
-.. traffic-line-performance-statistics
+.. _traffic-line-performance-statistics:
 
 Performance Statistics
 ======================

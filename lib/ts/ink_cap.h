@@ -21,9 +21,9 @@
   limitations under the License.
 
  */
-
 #if !defined (_ink_cap_h_)
 #define _ink_cap_h_
+#include "ink_mutex.h"
 
 /// Generate a debug message with the current capabilities for the process.
 extern void DebugCapabilities(
@@ -66,7 +66,10 @@ public:
 #if TS_USE_POSIX_CAP
     elevateFileAccess(true);
 #else
+    // Since we are setting a process-wide credential, we have to block any other thread
+    // attempting to elevate until this one demotes.
     restoreRootPriv(&saved_uid);
+    ink_mutex_acquire(&lock);
 #endif
     elevated = true;
   }
@@ -76,6 +79,7 @@ public:
     elevateFileAccess(false);
 #else
     removeRootPriv(saved_uid);
+    ink_mutex_release(&lock);
 #endif
     elevated = false;
   }
@@ -89,6 +93,9 @@ public:
 private:
   bool elevated;
   uid_t saved_uid;
+#if !TS_USE_POSIX_CAP
+  static ink_mutex lock; // only one thread at a time can elevate
+#endif
 };
 
 #endif

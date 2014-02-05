@@ -66,6 +66,7 @@ enum
   http_background_fill_current_count_stat,
   http_current_client_connections_stat,
   http_current_active_client_connections_stat,
+  http_websocket_current_active_client_connections_stat,
   http_current_client_transactions_stat,
   http_total_incoming_connections_stat,
   http_current_parent_proxy_transactions_stat,

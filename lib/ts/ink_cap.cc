@@ -24,11 +24,16 @@
 # include "ink_config.h"
 # include "Diags.h"
 # include "ink_cap.h"
+# include "ink_thread.h"
 
 # if TS_USE_POSIX_CAP
 #   include <sys/capability.h>
 #   include <sys/prctl.h>
 # endif
+
+# if !TS_USE_POSIX_CAP
+ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
+#endif
 
 void
 DebugCapabilities(char const* tag) {

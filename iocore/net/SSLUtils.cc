@@ -23,6 +23,7 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "P_Net.h"
+#include "ink_cap.h"
 
 #include <openssl/err.h>
 #include <openssl/bio.h>
@@ -69,9 +70,11 @@ typedef const SSL_METHOD * ink_ssl_method_t;
 typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
-#if TS_USE_TLS_TICKETS
-static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
-#endif /* TS_USE_TLS_TICKETS */
+// Check if the ticket_key callback #define is available, and if so, enable session tickets.
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
+#  define HAVE_OPENSSL_SESSION_TICKETS 1
+   static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
+#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct ssl_ticket_key_t
 {
@@ -170,7 +173,14 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
   const char *        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
-  Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
+  Debug("ssl", "ssl_servername_callback ssl=%p ad=%d lookup=%p server=%s handshake_complete=%d", ssl, *ad, lookup, servername,
+    netvc->getSSLHandShakeComplete());
+
+  // catch the client renegotiation early on
+  if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
+    Debug("ssl", "ssl_servername_callback trying to renegotiate from the client");
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
 
   // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
@@ -193,7 +203,7 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
   }
 
   ctx = SSL_get_SSL_CTX(ssl);
-  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
+  Debug("ssl", "ssl_servername_callback found SSL context %p for requested name '%s'", ctx, servername);
 
   if (ctx == NULL) {
     return SSL_TLSEXT_ERR_NOACK;
@@ -246,7 +256,7 @@ ssl_context_enable_ecdh(SSL_CTX * ctx)
 static SSL_CTX *
 ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 {
-#if TS_USE_TLS_TICKETS
+#if HAVE_OPENSSL_SESSION_TICKETS
   xptr<char>          ticket_key_data;
   int                 ticket_key_len;
   ssl_ticket_key_t *  ticket_key = NULL;
@@ -287,10 +297,10 @@ fail:
   delete ticket_key;
   return ctx;
 
-#else /* TS_USE_TLS_TICKETS */
+#else /* !HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
   return ctx;
-#endif /* TS_USE_TLS_TICKETS */
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
 }
 
 void
@@ -662,6 +672,26 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
   X509_free(cert);
 }
 
+// This callback function is executed while OpenSSL processes the SSL
+// handshake and does SSL record layer stuff.  It's used to trap
+// client-initiated renegotiations
+static void
+ssl_callback_info(const SSL *ssl, int where, int ret)
+{
+  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+
+  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+      SSLConfigParams::ssl_allow_client_renegotiation == false) {
+    int state = SSL_get_state(ssl);
+
+    if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
+      netvc->setSSLClientRenegotiationAbort(true);
+      Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
+    }
+  }
+}
+
 static bool
 ssl_store_ssl_context(
     const SSLConfigParams * params,
@@ -681,6 +711,8 @@ ssl_store_ssl_context(
   if (!ctx) {
     return false;
   }
+
+  SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
 #if TS_USE_TLS_NPN
   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
@@ -811,6 +843,11 @@ SSLParseCertificateConfiguration(
     return false;
   }
 
+  // elevate/allow file access to root read only files/certs
+  uint32_t elevate_setting = 0;
+  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  ElevateAccess elevate_access(elevate_setting != 0); // destructor will demote for us
+
   line = tokLine(file_buf, &tok_state);
   while (line != NULL) {
 
@@ -865,7 +902,7 @@ SSLParseCertificateConfiguration(
   return true;
 }
 
-#if TS_USE_TLS_TICKETS
+#if HAVE_OPENSSL_SESSION_TICKETS
 /*
  * RFC 5077. Create session ticket to resume SSL session without requiring session-specific state at the TLS server.
  * Specifically, it distributes the encrypted session-state information to the client in the form of a ticket and
@@ -910,7 +947,7 @@ ssl_callback_session_ticket(
 
   return -1;
 }
-#endif /* TS_USE_TLS_TICKETS */
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
 
 void
 SSLReleaseContext(SSL_CTX * ctx)

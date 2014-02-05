@@ -15,6 +15,8 @@
   specific language governing permissions and limitations
   under the License.
 
+.. _conf-remap-plugin:
+
 conf_remap Plugin
 =================
 
@@ -23,14 +25,26 @@ directives dependent on actual remapping rules. The plugin is built
 and installed as part of the normal Apache Traffic Server installation
 process.
 
-If you want to achieve this behaviour now, configure a remap rule
-like this::
+The `conf_remap` plugin accepts configuration directives in the
+arguments list or in a separate configuration file. In both cases,
+only string and integer directives are supported.
 
-    map http://cdn.example.com/ http://some-server.example.com @plugin=conf_remap.so @pparam=/etc/trafficserver/cdn.conf
+When using a separate configuration file, the standard
+:file:`records.config` syntax is used, for example::
 
-where `cdn.conf` would look like :file:`records.config`. For example::
+    map http://cdn.example.com/ http://some-server.example.com \
+      @plugin=conf_remap.so @pparam=/etc/trafficserver/cdn.conf
+
+where `cdn.conf` contains::
 
     CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
+
+When using inline arguments, the `conf_remap` plugin accepts a
+``key=value`` syntax, where the ``KEY`` is the name of the configuration
+directive and ``VALUE`` is the desired value, for example::
+
+    map http://cdn.example.com/ http://some-server.example.com \
+      @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1
 
 Doing this, you will override your global default configuration on
 a per mapping rule. For more details on the APIs, functionality, and a

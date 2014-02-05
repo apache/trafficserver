@@ -57,7 +57,7 @@ message and aborts in both release and debug mode.
 
 :func:`TSDebugSpecific` emits a debug line even if the debug tag
 is turned off, as long as debug flag is enabled. This can be used
-in conjuction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`,
+in conjunction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`,
 :func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable
 debugging on specific session and transaction objects.
 

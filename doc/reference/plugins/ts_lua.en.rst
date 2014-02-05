@@ -1,3 +1,5 @@
+.. _ts-lua-plugin:
+
 ts-lua Plugin
 *************
 

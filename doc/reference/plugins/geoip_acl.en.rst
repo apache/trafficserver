@@ -1,3 +1,5 @@
+.. _geoip-acl-plugin:
+
 GeoIP ACLs Plugin
 *****************
 

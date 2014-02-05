@@ -171,7 +171,7 @@ System Variables
    The directory that contains Traffic Server configuration files.
    This is a read-only configuration option that contains the
    ``SYSCONFDIR`` value specified at build time relative to the
-   installation prefic. THe ``$TS_ROOT`` environment variable can
+   installation prefix. The ``$TS_ROOT`` environment variable can
    be used alter the installation prefix at run time.
 
 .. ts:cv:: CONFIG proxy.config.alarm_email STRING
@@ -1878,7 +1878,7 @@ http_hdrs     Logs the headers for HTTP requests and responses
 ============  =====================================================
 
   Traffic Server plugins will typically log debug messages using
-  the :func:`TSDebug` API, passing the plugin name as the debug
+  the :c:func:`TSDebug` API, passing the plugin name as the debug
   tag.
 
 Reverse Proxy
@@ -2060,6 +2060,19 @@ SSL Termination
   Enables (``1``) or disables (``0``) adding the includeSubdomain value
   to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
   needs to be set to a non ``-1`` value for this configuration to take effect.
+
+.. ts:cv:: CONFIG proxy.config.ssl.allow_client_renegotiation INT 0
+
+  This configuration specifies whether the client is able to initiate
+  renegotiation of the SSL connection.  The default of ``0``, means
+  the client can't initiate renegotiation.
+
+.. ts:cv:: CONFIG proxy.config.ssl.cert.load_elevated INT 0
+
+  Enables (``1``) or disables (``0``) elevation of traffic_server
+  privileges during loading of SSL certificates.  By enabling this, SSL
+  certificate files' access rights can be restricted to help reduce the
+  vulnerability of certificates.
 
 Client-Related Configuration
 ----------------------------

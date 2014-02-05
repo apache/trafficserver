@@ -82,6 +82,6 @@ public:
 };
 
 TsReturnCode TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED, int errbuf_size ATSCPPAPI_UNUSED) {
-  MyRemapPlugin *new_remap_plugin = new MyRemapPlugin(instance_handle);
+  new MyRemapPlugin(instance_handle);
   return TS_SUCCESS;
 }
