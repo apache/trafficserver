@@ -216,9 +216,8 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     return 0;
   }
 
-  TSIOBuffer input_bufp = TSVIOBufferGet(input_viop);
-
-  if (!input_bufp) {
+  TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
+  if (!readerp) {
     if (TSVConnClosedGet(contp)) {
       TSContDestroy(contp);
 
@@ -236,7 +235,6 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     return 0;
   }
 
-  TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
   int avail = TSIOBufferReaderAvail(readerp);
 
   if (avail) {
