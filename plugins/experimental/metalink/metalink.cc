@@ -301,6 +301,57 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
+/* Compute SHA-256 digest, write to cache, and store there the request URL */
+
+static int
+http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
+{
+  TransformData *data = (TransformData *) TSmalloc(sizeof(TransformData));
+  data->txnp = (TSHttpTxn) edata;
+
+  /* Can't TSVConnWrite() before TS_HTTP_RESPONSE_TRANSFORM_HOOK */
+  data->bufp = NULL;
+
+  TSVConn connp = TSTransformCreate(transform_handler, data->txnp);
+  TSContDataSet(connp, data);
+
+  TSHttpTxnHookAdd(data->txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+
+  TSHttpTxnReenable(data->txnp, TS_EVENT_HTTP_CONTINUE);
+
+  return 0;
+}
+
+static int
+cache_open_read(TSCont contp, void *edata)
+{
+  SendData *data = (SendData *) TSContDataGet(contp);
+  TSVConn connp = (TSVConn) edata;
+
+  data->read_bufp = TSIOBufferCreate();
+  TSVConnRead(connp, contp, data->read_bufp, INT64_MAX);
+
+  return 0;
+}
+
+static int
+cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
+{
+  SendData *data = (SendData *) TSContDataGet(contp);
+  TSContDestroy(contp);
+
+  TSCacheKeyDestroy(data->key);
+
+  TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->url_loc);
+  TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->location_loc);
+  TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->hdr_loc);
+
+  TSHttpTxnReenable(data->txnp, TS_EVENT_HTTP_CONTINUE);
+  TSfree(data);
+
+  return 0;
+}
+
 static int
 rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
@@ -325,36 +376,6 @@ rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   default:
     TSAssert(!"Unexpected event");
   }
-
-  TSCacheKeyDestroy(data->key);
-
-  TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->url_loc);
-  TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->location_loc);
-  TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->hdr_loc);
-
-  TSHttpTxnReenable(data->txnp, TS_EVENT_HTTP_CONTINUE);
-  TSfree(data);
-
-  return 0;
-}
-
-static int
-cache_open_read(TSCont contp, void *edata)
-{
-  SendData *data = (SendData *) TSContDataGet(contp);
-  TSVConn connp = (TSVConn) edata;
-
-  data->read_bufp = TSIOBufferCreate();
-  TSVConnRead(connp, contp, data->read_bufp, INT64_MAX);
-
-  return 0;
-}
-
-static int
-cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
-{
-  SendData *data = (SendData *) TSContDataGet(contp);
-  TSContDestroy(contp);
 
   TSCacheKeyDestroy(data->key);
 
@@ -493,27 +514,6 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   TSHttpTxnReenable(data->txnp, TS_EVENT_HTTP_CONTINUE);
   TSfree(data);
-
-  return 0;
-}
-
-/* Compute SHA-256 digest, write to cache, and store there the request URL */
-
-static int
-http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
-{
-  TransformData *data = (TransformData *) TSmalloc(sizeof(TransformData));
-  data->txnp = (TSHttpTxn) edata;
-
-  /* Can't TSVConnWrite() before TS_HTTP_RESPONSE_TRANSFORM_HOOK */
-  data->bufp = NULL;
-
-  TSVConn connp = TSTransformCreate(transform_handler, data->txnp);
-  TSContDataSet(connp, data);
-
-  TSHttpTxnHookAdd(data->txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
-
-  TSHttpTxnReenable(data->txnp, TS_EVENT_HTTP_CONTINUE);
 
   return 0;
 }
