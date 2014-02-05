@@ -101,7 +101,7 @@ Squid log in XML
     <LogFormat>
       <Name = "squid"/>
       <Format = "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc>
-                 %<caun> %<phr>/%<pqsn> %<psct> %<xid>"/>
+                 %<caun> %<phr>/%<pqsn> %<psct>"/>
     </LogFormat>
 
 Netscape Formats
