@@ -219,10 +219,19 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   TSIOBuffer input_bufp = TSVIOBufferGet(input_viop);
 
   if (!input_bufp) {
-    int ndone = TSVIONDoneGet(input_viop);
-    TSVIONBytesSet(data->output_viop, ndone);
+    if (TSVConnClosedGet(contp)) {
+      TSContDestroy(contp);
 
-    TSVIOReenable(data->output_viop);
+      TSIOBufferDestroy(data->output_bufp);
+      TSfree(data);
+
+    } else {
+
+      int ndone = TSVIONDoneGet(input_viop);
+      TSVIONBytesSet(data->output_viop, ndone);
+
+      TSVIOReenable(data->output_viop);
+    }
 
     return 0;
   }
