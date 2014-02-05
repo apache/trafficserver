@@ -124,23 +124,19 @@ cache_open_write(TSCont contp, void *edata)
   int length;
 
   TransformData *transform_data = (TransformData *) TSContDataGet(contp);
+  TSContDestroy(contp);
 
   TSCacheKeyDestroy(transform_data->key);
-
-  WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
-  write_data->connp = (TSVConn) edata;
-
-  contp = TSContCreate(write_handler, NULL);
-  TSContDataSet(contp, write_data);
-
-  write_data->bufp = TSIOBufferCreate();
-  TSIOBufferReader readerp = TSIOBufferReaderAlloc(write_data->bufp);
 
   if (TSHttpTxnClientReqGet(transform_data->txnp, &req_bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("Couldn't retrieve client request header");
 
+    TSfree(transform_data);
+
     return 0;
   }
+
+  TSfree(transform_data);
 
   if (TSHttpHdrUrlGet(req_bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
@@ -159,6 +155,15 @@ cache_open_write(TSCont contp, void *edata)
   TSHandleMLocRelease(req_bufp, hdr_loc, url_loc);
   TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
 
+  WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
+  write_data->connp = (TSVConn) edata;
+
+  contp = TSContCreate(write_handler, NULL);
+  TSContDataSet(contp, write_data);
+
+  write_data->bufp = TSIOBufferCreate();
+  TSIOBufferReader readerp = TSIOBufferReaderAlloc(write_data->bufp);
+
   int nbytes = TSIOBufferWrite(write_data->bufp, value, length);
 
   TSVConnWrite(write_data->connp, contp, readerp, nbytes);
@@ -170,8 +175,10 @@ static int
 cache_open_write_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   TransformData *data = (TransformData *) TSContDataGet(contp);
+  TSContDestroy(contp);
 
   TSCacheKeyDestroy(data->key);
+  TSfree(data);
 
   return 0;
 }
@@ -181,8 +188,9 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   const char *value;
   int64_t length;
-  char digest[32];
   TransformData *data = (TransformData *) TSContDataGet(contp);
+
+  TSVIO input_viop = TSVConnWriteVIOGet(contp);
 
   /* Can't TSVConnWrite() before TS_HTTP_RESPONSE_TRANSFORM_HOOK */
   if (!data->output_bufp) {
@@ -191,12 +199,23 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     data->output_bufp = TSIOBufferCreate();
     TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->output_bufp);
 
-    data->output_viop = TSVConnWrite(output_connp, contp, readerp, INT64_MAX);
+    int nbytes = TSVIONBytesGet(input_viop);
+    data->output_viop = TSVConnWrite(output_connp, contp, readerp, nbytes < 0 ? INT64_MAX : nbytes);
 
     SHA256_Init(&data->c);
   }
 
-  TSVIO input_viop = TSVConnWriteVIOGet(contp);
+  int ntodo = TSVIONTodoGet(input_viop);
+  if (!ntodo) {
+
+    int ndone = TSVIONDoneGet(input_viop);
+    TSVIONBytesSet(data->output_viop, ndone);
+
+    TSVIOReenable(data->output_viop);
+
+    return 0;
+  }
+
   TSIOBuffer input_bufp = TSVIOBufferGet(input_viop);
 
   if (!input_bufp) {
@@ -211,7 +230,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
   int avail = TSIOBufferReaderAvail(readerp);
 
-  if (avail > 0) {
+  if (avail) {
     TSIOBufferCopy(data->output_bufp, readerp, avail, 0);
 
     /* Feed content to message digest */
@@ -228,34 +247,10 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
     int ndone = TSVIONDoneGet(input_viop);
     TSVIONDoneSet(input_viop, ndone + avail);
-  }
-
-  /* If not finished and we copied some content */
-  int ntodo = TSVIONTodoGet(input_viop);
-
-  if (ntodo > 0) {
-    if (avail > 0) {
-      TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_READY, input_viop);
-
-      TSVIOReenable(data->output_viop);
-    }
-  /* If finished */
-  } else {
-    TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_COMPLETE, input_viop);
-
-    int ndone = TSVIONDoneGet(input_viop);
-    TSVIONBytesSet(data->output_viop, ndone);
 
     TSVIOReenable(data->output_viop);
 
-    SHA256_Final((unsigned char *) digest, &data->c);
-
-    data->key = TSCacheKeyCreate();
-    if (TSCacheKeyDigestSet(data->key, digest, sizeof(digest)) != TS_SUCCESS) {
-      return 0;
-    }
-
-    TSCacheWrite(contp, data->key);
+    TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_READY, input_viop);
   }
 
   return 0;
@@ -264,15 +259,27 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 static int
 transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 {
+  char digest[32];
+
   TransformData *data = (TransformData *) TSContDataGet(contp);
 
   TSVConn output_connp = TSTransformOutputVConnGet(contp);
   TSVConnShutdown(output_connp, 0, 1);
 
   TSIOBufferDestroy(data->output_bufp);
-  TSfree(data);
 
-  TSContDestroy(contp);
+  SHA256_Final((unsigned char *) digest, &data->c);
+
+  data->key = TSCacheKeyCreate();
+  if (TSCacheKeyDigestSet(data->key, digest, sizeof(digest)) != TS_SUCCESS) {
+    TSContDestroy(contp);
+
+    TSfree(data);
+
+    return 0;
+  }
+
+  TSCacheWrite(contp, data->key);
 
   return 0;
 }
