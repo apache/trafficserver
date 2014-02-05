@@ -41,16 +41,21 @@ msgid ""
 "list or in a separate configuration file. In both cases, only string and "
 "integer directives are supported."
 msgstr ""
+"`conf_remap` プラグインは引数リストもしくは分割された設定ファイル内の設定"
+"ディレクティブを受け付けます。どちらのケースも文字列と整数のディレクティブが"
+"サポートされています。"
 
 #: ../../reference/plugins/conf_remap.en.rst:32
 msgid ""
 "When using a separate configuration file, the standard :file:`records."
 "config` syntax is used, for example::"
 msgstr ""
+"分割された設定ファイルを使用するときは、:file:`records.config` の標準構文が"
+"使用されます。例::"
 
 #: ../../reference/plugins/conf_remap.en.rst:38
 msgid "where `cdn.conf` contains::"
-msgstr ""
+msgstr "`cdn.conf` には以下の設定が書かれています::"
 
 #: ../../reference/plugins/conf_remap.en.rst:42
 msgid ""
@@ -58,14 +63,6 @@ msgid ""
 "``key=value`` syntax, where the ``KEY`` is the name of the configuration "
 "directive and ``VALUE`` is the desired value, for example::"
 msgstr ""
-
-#~ msgid ""
-#~ "If you want to achieve this behaviour now, configure a remap rule like "
-#~ "this::"
-#~ msgstr ""
-#~ "この振る舞いをいま得たいのであれば、remap ルールをこのように設定してくだ"
-#~ "さい。"
-
-#~ msgid ""
-#~ "where `cdn.conf` would look like :file:`records.config`. For example::"
-#~ msgstr "この `cdn.conf` は :file:`records.config` のように見えます。例えば"
+"インラインの引数を使用するときは、`conf_remap` は ``key=value`` の構文を"
+"受け付け、``KEY`` は設定ディレクティブの名前、``VALUE`` は指定したい値と"
+"なります。例::"
