@@ -11,11 +11,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/plugins/xdebug.en.rst:2
+#: ../../reference/plugins/xdebug.en.rst:4
 msgid "XDebug Plugin"
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:21
+#: ../../reference/plugins/xdebug.en.rst:23
 msgid ""
 "The `XDebug` plugin allows HTTP clients to debug the operation of the "
 "Traffic Server cache using the ``X-Debug`` header. The plugin is triggered "
@@ -26,37 +26,37 @@ msgid ""
 "client response."
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:29
+#: ../../reference/plugins/xdebug.en.rst:31
 msgid ""
 "`XDebug` is a global plugin. It is installed by adding it to the :file:"
 "`plugin.config` file."
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:33
+#: ../../reference/plugins/xdebug.en.rst:35
 msgid "Debugging Headers"
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:35
+#: ../../reference/plugins/xdebug.en.rst:37
 msgid ""
 "The `XDebug` plugin is able to generate the following debugging headers:"
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:40
+#: ../../reference/plugins/xdebug.en.rst:42
 msgid "Via"
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:38
+#: ../../reference/plugins/xdebug.en.rst:40
 msgid ""
 "If the ``Via`` header is requested, the `XDebug` plugin sets the :ts:cv:"
 "`proxy.config.http.insert_response_via_str` configuration variable to ``3`` "
 "for the request."
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:44
+#: ../../reference/plugins/xdebug.en.rst:46
 msgid "X-Cache-Key"
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:43
+#: ../../reference/plugins/xdebug.en.rst:45
 msgid ""
 "The ``X-Cache-Key`` contains the URL that identifies the HTTP object in the "
 "Traffic Server cache. This header is particularly useful if a custom cache "
