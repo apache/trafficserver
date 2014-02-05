@@ -28,14 +28,6 @@ msgstr ""
 "スタンダードです。Cisco™ から公式にサポートされているようには見えないもの"
 "の、多くの Cisco のルーターで利用可能です。WCCP の主な利益は次のとおりです。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:31
-msgid ""
-"If already have a router that supports WCCP inline you do not not have to "
-"change your network topology."
-msgstr ""
-"もしすでに WCCP インラインに対応したルーターを持っているのならネットワークト"
-"ポロジを変更する必要はありません。"
-
 #: ../../admin/transparent-proxy/wccp-configuration.en.rst:33
 msgid ""
 "WCCP fails open so that if the Traffic Server machine fails, it is bypassed "
@@ -283,3 +275,16 @@ msgstr ""
 "うことができません。幸いパケットの転送と返送に使われる GRE トンネルが "
 "Traffic Server のためにシミュレートされたインターフェースとして使用できま"
 "す。"
+
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:31
+msgid ""
+"If already have a router that supports WCCP inline you do not have to "
+"change your network topology."
+msgstr ""
+
+#~ msgid ""
+#~ "If already have a router that supports WCCP inline you do not not have "
+#~ "to change your network topology."
+#~ msgstr ""
+#~ "もしすでに WCCP インラインに対応したルーターを持っているのならネットワー"
+#~ "クトポロジを変更する必要はありません。"

@@ -467,12 +467,6 @@ msgid ""
 "address will be the same as the client local address."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:287
-msgid ""
-"Set the default local outbound IP address for IPv4 connectionsn to "
-"``192.168.101.18``.::"
-msgstr ""
-
 #: ../../reference/configuration/records.config.en.rst:293
 msgid ""
 "Set the default local outbound IP address to ``192.168.101.17`` for IPv4 "
@@ -811,27 +805,8 @@ msgid ""
 "address."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:436
-msgid ""
-"Inbound transparent. The proxy port will accept connections to any IP "
-"address on the port. To have IPv6 inbound transparent you must use this and "
-"the ``ipv6`` option. This overrides :ts:cv:`proxy.local."
-"incoming_ip_to_bind`."
-msgstr ""
-
 #: ../../reference/configuration/records.config.en.rst:438
 msgid "Not compatible with: ``ip-in``, ``ssl``, ``blind``"
-msgstr ""
-
-#: ../../reference/configuration/records.config.en.rst:441
-msgid ""
-"Outbound transparent. If ATS connects to an origin server for a transaction "
-"on this port, it will use the client's address as its local address. This "
-"overrides :ts:cv:`proxy.local.outgoing_ip_to_bind`."
-msgstr ""
-
-#: ../../reference/configuration/records.config.en.rst:443
-msgid "Not compatible with: ``ip-out``, ``ssl``, ``ip-resolve``"
 msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:446
@@ -853,16 +828,6 @@ msgid ""
 "error response to the client. It effectively enables :ts:cv:`proxy.config."
 "http.use_client_target_addr` for the transaction as there is no other place "
 "to obtain the origin server address."
-msgstr ""
-
-#: ../../reference/configuration/records.config.en.rst:454
-msgid ""
-"Set the local IP address for the port. This is the address to which clients "
-"will connect. This forces the IP address family for the port. The ``ipv4`` "
-"or ``ipv6`` can be used but it is optional and is an error for it to "
-"disagree with the IP address family of this value. An IPv6 address **must** "
-"be enclosed in square brackets. If this options is omitted :ts:cv:`proxy."
-"local.incoming_ip_to_bind` is used."
 msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:456
@@ -900,10 +865,6 @@ msgid ""
 "Require SSL termination for inbound connections. SSL :ref:`must be "
 "configured <configuring-ssl-termination>` for this option to provide a "
 "functional server port."
-msgstr ""
-
-#: ../../reference/configuration/records.config.en.rst:473
-msgid "Not compatible with: ``tr-in``, ``tr-out``, ``blind``."
 msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:476
@@ -2894,11 +2855,11 @@ msgstr "クライアント証明書が検証される証明書認証局のファ
 msgid "TBD"
 msgstr "TBD"
 
-#: ../../reference/configuration/records.config.en.rst:2050
+#: ../../reference/configuration/records.config.en.rst:2078
 msgid "Client-Related Configuration"
 msgstr "クライアント関連の設定"
 
-#: ../../reference/configuration/records.config.en.rst:2054
+#: ../../reference/configuration/records.config.en.rst:2082
 msgid ""
 "Configures Traffic Server to verify the origin server certificate with the "
 "Certificate Authority (CA)."
@@ -2906,17 +2867,17 @@ msgstr ""
 "Traffic Server がオリジンサーバー証明書を証明書認証局 (CA) で検証するように"
 "設定します。"
 
-#: ../../reference/configuration/records.config.en.rst:2059
+#: ../../reference/configuration/records.config.en.rst:2087
 msgid "The filename of SSL client certificate installed on Traffic Server."
 msgstr ""
 "Traffic Server にインストールされた SSL クライアント証明書のファイル名。"
 
-#: ../../reference/configuration/records.config.en.rst:2063
+#: ../../reference/configuration/records.config.en.rst:2091
 msgid ""
 "The location of the SSL client certificate installed on Traffic Server."
 msgstr "Traffic Server にインストールされた SSL クライアント証明書の場所。"
 
-#: ../../reference/configuration/records.config.en.rst:2068
+#: ../../reference/configuration/records.config.en.rst:2096
 msgid ""
 "The filename of the Traffic Server private key. Change this variable only "
 "if the private key is not located in the Traffic Server SSL client "
@@ -2925,7 +2886,7 @@ msgstr ""
 "Traffic Server 秘密鍵のファイル名。この変数は秘密鍵が Traffic Server SSL ク"
 "ライアント証明書ファイル内に無い場合のみ変更してください。"
 
-#: ../../reference/configuration/records.config.en.rst:2074
+#: ../../reference/configuration/records.config.en.rst:2102
 msgid ""
 "The location of the Traffic Server private key. Change this variable only "
 "if the private key is not located in the SSL client certificate file."
@@ -2933,114 +2894,114 @@ msgstr ""
 "Traffic Server 秘密鍵の場所です。この変数は秘密鍵が SSL 証明書内に無い場合の"
 "み変更してください。"
 
-#: ../../reference/configuration/records.config.en.rst:2080
+#: ../../reference/configuration/records.config.en.rst:2108
 msgid ""
 "The filename of the certificate authority against which the origin server "
 "will be verified."
 msgstr "検証されるオリジンサーバーに対する証明書認証局ファイルの名前です。"
 
-#: ../../reference/configuration/records.config.en.rst:2085
+#: ../../reference/configuration/records.config.en.rst:2113
 msgid ""
 "Specifies the location of the certificate authority file against which the "
 "origin server will be verified."
 msgstr ""
 "検証されるオリジンサーバーに対する証明書認証局ファイルの場所を指定します。"
 
-#: ../../reference/configuration/records.config.en.rst:2089
+#: ../../reference/configuration/records.config.en.rst:2117
 msgid "ICP Configuration"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2093
+#: ../../reference/configuration/records.config.en.rst:2121
 msgid "Sets ICP mode for hierarchical caching:"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2095
+#: ../../reference/configuration/records.config.en.rst:2123
 msgid "``0`` = disables ICP"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2096
+#: ../../reference/configuration/records.config.en.rst:2124
 msgid "``1`` = allows Traffic Server to receive ICP queries only"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2097
+#: ../../reference/configuration/records.config.en.rst:2125
 msgid "``2`` = allows Traffic Server to send and receive ICP queries"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2099
+#: ../../reference/configuration/records.config.en.rst:2127
 msgid "Refer to `ICP Peering <../hierachical-caching#ICPPeering>`_."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2103
+#: ../../reference/configuration/records.config.en.rst:2131
 msgid "Specifies the network interface used for ICP traffic."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2107
+#: ../../reference/configuration/records.config.en.rst:2135
 msgid ""
 "The Traffic Server installation script detects your network interface and "
 "sets this variable appropriately. If your system has multiple network "
 "interfaces, check that this variable specifies the correct interface."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2115
+#: ../../reference/configuration/records.config.en.rst:2143
 msgid "Specifies the UDP port that you want to use for ICP messages."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2120
+#: ../../reference/configuration/records.config.en.rst:2148
 msgid "Specifies the timeout used for ICP queries."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2123
+#: ../../reference/configuration/records.config.en.rst:2151
 msgid "Scheduled Update Configuration"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2127
+#: ../../reference/configuration/records.config.en.rst:2155
 msgid "Enables (``1``) or disables (``0``) the Scheduled Update option."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2132
+#: ../../reference/configuration/records.config.en.rst:2160
 msgid ""
 "Enables (``1``) or disables (``0``) a force immediate update. When enabled, "
 "Traffic Server overrides the scheduling expiration time for all scheduled "
 "update entries and initiates updates until this option is disabled."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2140
+#: ../../reference/configuration/records.config.en.rst:2168
 msgid ""
 "Specifies the number of times Traffic Server can retry the scheduled update "
 "of a URL in the event of failure."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2146
+#: ../../reference/configuration/records.config.en.rst:2174
 msgid ""
 "Specifies the delay (in seconds) between each scheduled update retry for a "
 "URL in the event of failure."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2152
+#: ../../reference/configuration/records.config.en.rst:2180
 msgid ""
 "Specifies the maximum simultaneous update requests allowed at any time. "
 "This option prevents the scheduled update process from overburdening the "
 "host."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2157
+#: ../../reference/configuration/records.config.en.rst:2185
 msgid "Plug-in Configuration"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2161
+#: ../../reference/configuration/records.config.en.rst:2189
 msgid "Specifies the location of Traffic Server plugins."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2173
+#: ../../reference/configuration/records.config.en.rst:2201
 msgid "Sockets"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2177
+#: ../../reference/configuration/records.config.en.rst:2205
 msgid ""
 "default: ``1`` meaning ``on`` all Platforms except Linux: ``45`` seconds"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2179
+#: ../../reference/configuration/records.config.en.rst:2207
 msgid ""
 "This directive enables operating system specific optimizations for a "
 "listening socket. ``defer_accept`` holds a call to ``accept(2)`` back until "
@@ -3048,56 +3009,56 @@ msgid ""
 "seconds."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2184
+#: ../../reference/configuration/records.config.en.rst:2212
 msgid ""
 "Sets the send buffer size for connections from the client to Traffic Server."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2188
+#: ../../reference/configuration/records.config.en.rst:2216
 msgid ""
 "Sets the receive buffer size for connections from the client to Traffic "
 "Server."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2192
+#: ../../reference/configuration/records.config.en.rst:2220
 msgid ""
 "Turns different options \"on\" for the socket handling client connections:::"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2199
-#: ../../reference/configuration/records.config.en.rst:2221
+#: ../../reference/configuration/records.config.en.rst:2227
+#: ../../reference/configuration/records.config.en.rst:2249
 msgid ""
 "This is a flag and you look at the bits set. Therefore, you must set the "
 "value to ``3`` if you want to enable both options above."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2205
+#: ../../reference/configuration/records.config.en.rst:2233
 msgid ""
 "Sets the send buffer size for connections from Traffic Server to the origin "
 "server."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2209
+#: ../../reference/configuration/records.config.en.rst:2237
 msgid ""
 "Sets the receive buffer size for connections from Traffic Server to the "
 "origin server."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2214
+#: ../../reference/configuration/records.config.en.rst:2242
 msgid "Turns different options \"on\" for the origin server socket:::"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2227
+#: ../../reference/configuration/records.config.en.rst:2255
 msgid ""
 "Same as the command line option ``--accept_mss`` that sets the MSS for all "
 "incoming requests."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2258
+#: ../../reference/configuration/records.config.en.rst:2286
 msgid "Undocumented"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2260
+#: ../../reference/configuration/records.config.en.rst:2288
 msgid ""
 "These are referenced but not documented. Please contribute a definition."
 msgstr ""
@@ -3105,19 +3066,6 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:62
 msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)"
 msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
-
-#: ../../reference/configuration/records.config.en.rst:171
-msgid ""
-"The directory that contains Traffic Server configuration files. This is a "
-"read-only configuration option that contains the ``SYSCONFDIR`` value "
-"specified at build time relative to the installation prefic. THe ``"
-"$TS_ROOT`` environment variable can be used alter the installation prefix "
-"at run time."
-msgstr ""
-"Traffic Server の設定ファイルを含むディレクトリ。これはビルド時に指定された "
-"``SYSCONFDIR`` のインストールした場所のプレフィックスからの相対の値を含んだ"
-"読み取り専用の設定オプションです。``$TS_ROOT`` 環境変数はインストールした場"
-"所のプレフィックスを実行時に切り替えるために使うことができます。"
 
 #: ../../reference/configuration/records.config.en.rst:207
 msgid ""
@@ -3348,12 +3296,6 @@ msgstr ""
 msgid "Logs the headers for HTTP requests and responses"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:1880
-msgid ""
-"Traffic Server plugins will typically log debug messages using the :func:"
-"`TSDebug` API, passing the plugin name as the debug tag."
-msgstr ""
-
 #: ../../reference/configuration/records.config.en.rst:1959
 msgid ""
 "Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by "
@@ -3393,7 +3335,7 @@ msgstr ""
 "す。``0`` の場合、SSL ライブラリはデフォルト値を使用し、これは一般的に 300 "
 "秒です。"
 
-#: ../../reference/configuration/records.config.en.rst:2165
+#: ../../reference/configuration/records.config.en.rst:2193
 msgid ""
 "When this variable is set to ``0``, plugin remap callbacks are executed in "
 "line on network threads. If remap processing takes significant time, this "
@@ -3402,7 +3344,7 @@ msgid ""
 "network threads to service additional requests."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2231
+#: ../../reference/configuration/records.config.en.rst:2259
 msgid ""
 "Same as the command line option ``--poll_timeout``, or ``-t``, which "
 "specifies the timeout used for the polling mechanism used. This timeout is "
@@ -3411,7 +3353,7 @@ msgid ""
 "``10`` on all platforms."
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2237
+#: ../../reference/configuration/records.config.en.rst:2265
 msgid ""
 "Changing this configuration can reduce CPU usage on an idle system, since "
 "periodic tasks gets processed at these intervals. On busy servers, this "
@@ -3422,6 +3364,104 @@ msgid ""
 "alternatives to this could be::"
 msgstr ""
 
-#: ../../reference/configuration/records.config.en.rst:2249
+#: ../../reference/configuration/records.config.en.rst:2277
 msgid "The relevant configurations for this are::"
 msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:171
+msgid ""
+"The directory that contains Traffic Server configuration files. This is a "
+"read-only configuration option that contains the ``SYSCONFDIR`` value "
+"specified at build time relative to the installation prefix. The ``"
+"$TS_ROOT`` environment variable can be used alter the installation prefix "
+"at run time."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:287
+msgid ""
+"Set the default local outbound IP address for IPv4 connections to "
+"``192.168.101.18``.::"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:436
+msgid ""
+"Inbound transparent. The proxy port will accept connections to any IP "
+"address on the port. To have IPv6 inbound transparent you must use this and "
+"the ``ipv6`` option. This overrides :ts:cv:`proxy.local."
+"incoming_ip_to_bind` for this port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:441
+msgid ""
+"Outbound transparent. If ATS connects to an origin server for a transaction "
+"on this port, it will use the client's address as its local address. This "
+"overrides :ts:cv:`proxy.local.outgoing_ip_to_bind` for this port."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:443
+msgid "Not compatible with: ``ip-out``, ``ip-resolve``"
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:454
+msgid ""
+"Set the local IP address for the port. This is the address to which clients "
+"will connect. This forces the IP address family for the port. The ``ipv4`` "
+"or ``ipv6`` can be used but it is optional and is an error for it to "
+"disagree with the IP address family of this value. An IPv6 address **must** "
+"be enclosed in square brackets. If this option is omitted :ts:cv:`proxy."
+"local.incoming_ip_to_bind` is used."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:473
+msgid "Not compatible with: ``tr-in``, ``blind``."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:1880
+msgid ""
+"Traffic Server plugins will typically log debug messages using the :c:func:"
+"`TSDebug` API, passing the plugin name as the debug tag."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2051
+msgid ""
+"This configuration specifies the max-age value that will be used when "
+"adding the Strict-Transport-Security header.  The value is in seconds. A "
+"value of ``0`` will set the max-age value to ``0`` and should remove the "
+"HSTS entry from the client.  A value of ``-1`` will disable this feature "
+"and not set the header.  This option is only used for HTTPS requests and "
+"the header will not be set on HTTP requests."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2060
+msgid ""
+"Enables (``1``) or disables (``0``) adding the includeSubdomain value to "
+"the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age needs "
+"to be set to a non ``-1`` value for this configuration to take effect."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2066
+msgid ""
+"This configuration specifies whether the client is able to initiate "
+"renegotiation of the SSL connection.  The default of ``0``, means the "
+"client can't initiate renegotiation."
+msgstr ""
+
+#: ../../reference/configuration/records.config.en.rst:2072
+msgid ""
+"Enables (``1``) or disables (``0``) elevation of traffic_server privileges "
+"during loading of SSL certificates.  By enabling this, SSL certificate "
+"files' access rights can be restricted to help reduce the vulnerability of "
+"certificates."
+msgstr ""
+
+#~ msgid ""
+#~ "The directory that contains Traffic Server configuration files. This is "
+#~ "a read-only configuration option that contains the ``SYSCONFDIR`` value "
+#~ "specified at build time relative to the installation prefic. THe ``"
+#~ "$TS_ROOT`` environment variable can be used alter the installation "
+#~ "prefix at run time."
+#~ msgstr ""
+#~ "Traffic Server の設定ファイルを含むディレクトリ。これはビルド時に指定され"
+#~ "た ``SYSCONFDIR`` のインストールした場所のプレフィックスからの相対の値を"
+#~ "含んだ読み取り専用の設定オプションです。``$TS_ROOT`` 環境変数はインストー"
+#~ "ルした場所のプレフィックスを実行時に切り替えるために使うことができます。"

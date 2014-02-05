@@ -11,28 +11,45 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../arch/index.en.rst:2
-msgid "Architecture"
-msgstr "アーキテクチャ"
-
 #: ../../arch/index.en.rst:22
 msgid "Introduction"
 msgstr "導入"
 
+#: ../../arch/index.en.rst:30
+msgid "Contents:"
+msgstr "内容:"
+
+#: ../../arch/index.en.rst:2
+msgid "Architecture and Hacking"
+msgstr ""
+
 #: ../../arch/index.en.rst:24
 msgid ""
 "The original architectural documents for Traffic Server were lost in the "
-"transation to an open source project. The documents in this section are "
+"transition to an open source project. The documents in this section are "
 "provisional and were written based on the existing code. The purpose is to "
 "have a high level description of aspects of Traffic Server to better inform "
 "ongoing work."
 msgstr ""
-"Traffic Server のオリジナルのアーキテクチャに関するドキュメントは、オープン"
-"ソースプロジェクトへの移行時に失われました。このセクションのドキュメントは暫"
-"定的なものであり、既存のコードを元に書かれています。このドキュメントの目的は"
-"進行中の作業をより知らせるため、 Traffic Server の側面の高度な説明をすること"
-"です。"
 
 #: ../../arch/index.en.rst:28
-msgid "Contents:"
-msgstr "内容:"
+msgid ""
+"In the final section on \"hacking\" we try to document our approaches to "
+"understanding and modifying the source."
+msgstr ""
+
+#~ msgid "Architecture"
+#~ msgstr "アーキテクチャ"
+
+#~ msgid ""
+#~ "The original architectural documents for Traffic Server were lost in the "
+#~ "transation to an open source project. The documents in this section are "
+#~ "provisional and were written based on the existing code. The purpose is "
+#~ "to have a high level description of aspects of Traffic Server to better "
+#~ "inform ongoing work."
+#~ msgstr ""
+#~ "Traffic Server のオリジナルのアーキテクチャに関するドキュメントは、オープ"
+#~ "ンソースプロジェクトへの移行時に失われました。このセクションのドキュメン"
+#~ "トは暫定的なものであり、既存のコードを元に書かれています。このドキュメン"
+#~ "トの目的は進行中の作業をより知らせるため、 Traffic Server の側面の高度な"
+#~ "説明をすることです。"

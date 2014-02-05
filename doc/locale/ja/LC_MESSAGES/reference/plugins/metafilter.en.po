@@ -11,31 +11,31 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/plugins/metafilter.en.rst:19
+#: ../../reference/plugins/metafilter.en.rst:21
 msgid "Metalink plugin"
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:21
+#: ../../reference/plugins/metafilter.en.rst:23
 msgid ""
 "The `metalink` plugin implements the `Metalink <http://en.wikipedia.org/"
 "wiki/Metalink>`_ protocol in order to try not to download the same file "
 "twice. This improves cache efficiency and speeds up user downloads."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:26
+#: ../../reference/plugins/metafilter.en.rst:28
 msgid ""
 "Take standard headers and knowledge about objects in the cache and "
 "potentially rewrite those headers so that a client will use a URL that is "
 "already cached instead of one that isn't."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:30
+#: ../../reference/plugins/metafilter.en.rst:32
 msgid ""
 "The `metalink` headers are specified in :rfc:`6429` and :rfc:`3230` and are "
 "sent by various download redirectors or content distribution networks."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:34
+#: ../../reference/plugins/metafilter.en.rst:36
 msgid ""
 "A lot of download sites distribute the same files from many different "
 "mirrors and users don't know which mirrors are already cached. These sites "
@@ -45,17 +45,17 @@ msgid ""
 "others (takes hours), which is frustrating."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:41
+#: ../../reference/plugins/metafilter.en.rst:43
 msgid ""
 "An extreme example of this happens when users share a limited, possibly "
 "unreliable internet connection, as is common in parts of Africa for example."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:46
+#: ../../reference/plugins/metafilter.en.rst:48
 msgid "How it works"
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:48
+#: ../../reference/plugins/metafilter.en.rst:50
 msgid ""
 "When the `metalink` plugin sees a response with a ``Location: ...`` header "
 "and a ``Digest: SHA-256=...`` header, it checks to see if the URL in the "
@@ -65,27 +65,27 @@ msgid ""
 "rewites the ``Location`` header with the URL from that object."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:56
+#: ../../reference/plugins/metafilter.en.rst:58
 msgid ""
 "That way a client should get sent to a URL that's already cached and the "
 "user won't end up downloading the file again."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:60
+#: ../../reference/plugins/metafilter.en.rst:62
 msgid "Installation"
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:62
+#: ../../reference/plugins/metafilter.en.rst:64
 msgid ""
 "`metalink` is a global plugin. It is enabled by adding it to your :file:"
 "`plugin.config` file. There are no options."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:66
+#: ../../reference/plugins/metafilter.en.rst:68
 msgid "Implementation Status"
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:68
+#: ../../reference/plugins/metafilter.en.rst:70
 msgid ""
 "The `metalink` plugin implements the ``TS_HTTP_SEND_RESPONSE_HDR_HOOK`` "
 "hook to check and potentially rewrite the ``Location: ...`` and ``Digest: "
@@ -96,7 +96,7 @@ msgid ""
 "also check if the URL is fresh or not."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:77
+#: ../../reference/plugins/metafilter.en.rst:79
 msgid ""
 "The plugin implements ``TS_HTTP_READ_RESPONSE_HDR_HOOK`` and a null "
 "transform to compute the SHA-256 digest for content as it's added to the "
@@ -105,7 +105,7 @@ msgid ""
 "the object is the request URL."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:83
+#: ../../reference/plugins/metafilter.en.rst:85
 msgid ""
 "To check if the cache already contains content that matches a digest, the "
 "plugin must call :c:func:`TSCacheRead` with the digest as the key, read the "
@@ -114,7 +114,7 @@ msgid ""
 "improved."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:89
+#: ../../reference/plugins/metafilter.en.rst:91
 msgid ""
 "An early version of the plugin scanned ``Link: <...>; rel=duplicate`` "
 "headers. If the URL in the ``Location: ...`` header was not already cached, "
@@ -128,7 +128,7 @@ msgid ""
 ">; rel=duplicate`` headers."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:101
+#: ../../reference/plugins/metafilter.en.rst:103
 msgid ""
 "The ``Digest: SHA-256=...`` header is also more efficient than ``Link: <..."
 ">; rel=duplicate`` headers because it involves a constant number of cache "
@@ -136,13 +136,13 @@ msgid ""
 "<...>; rel=duplicate`` headers MUST be ignored:"
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:106
+#: ../../reference/plugins/metafilter.en.rst:108
 msgid ""
 "If Instance Digests are not provided by the Metalink servers, the Link "
 "header fields pertaining to this specification MUST be ignored."
 msgstr ""
 
-#: ../../reference/plugins/metafilter.en.rst:109
+#: ../../reference/plugins/metafilter.en.rst:111
 msgid ""
 "Metalinks contain whole file hashes as described in Section 6, and MUST "
 "include SHA-256, as specified in [FIPS-180-3]."

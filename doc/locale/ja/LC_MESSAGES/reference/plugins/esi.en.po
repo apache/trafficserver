@@ -11,10 +11,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/plugins/esi.en.rst:2
+#: ../../reference/plugins/esi.en.rst:4
 msgid "ESI Plugin (undocumented)"
 msgstr ""
 
-#: ../../reference/plugins/esi.en.rst:22
+#: ../../reference/plugins/esi.en.rst:24
 msgid "This plugin implements the ESI specification."
 msgstr ""

@@ -11,10 +11,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/plugins/stale_while_revalidate.en.rst:2
+#: ../../reference/plugins/stale_while_revalidate.en.rst:4
 msgid "Stale While Revalidate Plugin (undocumented)"
 msgstr ""
 
-#: ../../reference/plugins/stale_while_revalidate.en.rst:21
+#: ../../reference/plugins/stale_while_revalidate.en.rst:23
 msgid "refresh content asynchronously while serving stale data"
 msgstr ""

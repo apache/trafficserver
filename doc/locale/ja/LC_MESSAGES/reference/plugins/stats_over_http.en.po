@@ -11,11 +11,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/plugins/stats_over_http.en.rst:2
+#: ../../reference/plugins/stats_over_http.en.rst:4
 msgid "Stats over HTTP Plugin"
 msgstr ""
 
-#: ../../reference/plugins/stats_over_http.en.rst:22
+#: ../../reference/plugins/stats_over_http.en.rst:24
 msgid ""
 "This plugin implements an HTTP interface to all Traffic Server statistics. "
 "The metrics returned are in a JSON format, for easy processing. This plugin "
@@ -23,28 +23,28 @@ msgid ""
 "after install."
 msgstr ""
 
-#: ../../reference/plugins/stats_over_http.en.rst:26
+#: ../../reference/plugins/stats_over_http.en.rst:28
 msgid "To enable this plugin, add to the plugin.conf file::"
 msgstr ""
 
-#: ../../reference/plugins/stats_over_http.en.rst:31
+#: ../../reference/plugins/stats_over_http.en.rst:33
 msgid ""
 "After starting Traffic Server, the JSON metrics are now available on the "
 "default URL::"
 msgstr ""
 
-#: ../../reference/plugins/stats_over_http.en.rst:37
+#: ../../reference/plugins/stats_over_http.en.rst:39
 msgid ""
 "where host and port is the hostname/IP and port number of the server. You "
 "can optionally modify the path to use, and this is highly recommended in a "
 "public facing server. For example::"
 msgstr ""
 
-#: ../../reference/plugins/stats_over_http.en.rst:44
+#: ../../reference/plugins/stats_over_http.en.rst:46
 msgid "and the URL would then be e.g.::"
 msgstr ""
 
-#: ../../reference/plugins/stats_over_http.en.rst:49
+#: ../../reference/plugins/stats_over_http.en.rst:51
 msgid ""
 "This is weak security at best, since the secret could possibly leak if you "
 "are careless and send it over clear text."

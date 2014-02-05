@@ -52,11 +52,11 @@ msgstr ""
 "安定的なプラグインです。これらは Apache Traffic Server のリリースにデフォル"
 "トでインストールされれています。"
 
-#: ../../reference/plugins/index.en.rst:51
+#: ../../reference/plugins/index.en.rst:52
 msgid "Experimental plugins"
 msgstr "実験的なプラグイン"
 
-#: ../../reference/plugins/index.en.rst:53
+#: ../../reference/plugins/index.en.rst:54
 msgid ""
 "Plugins that are considered experimental are located in the `plugins/"
 "experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"

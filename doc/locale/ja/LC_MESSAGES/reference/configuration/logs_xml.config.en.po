@@ -256,14 +256,6 @@ msgid ""
 "default logging directory."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:165
-msgid ""
-"If the name does not contain an extension (for example, ``squid``), then "
-"the extension ``.log`` is automatically appended to it for ASCII logs and "
-"``.blog`` for binary logs (refer to :ref:`Mode = \"valid_logging_mode\" "
-"<LogObject-Mode>`_)."
-msgstr ""
-
 #: ../../reference/configuration/logs_xml.config.en.rst:170
 msgid ""
 "If you do not want an extension to be added, then end the filename with a "
@@ -509,4 +501,12 @@ msgid ""
 "When host1 disconnects, logs would be sent to failhostA. If failhostA "
 "disconnects, log entries would be sent to failhostB until host1 or "
 "failhostA comes back. Logs would also be sent to host2."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:165
+msgid ""
+"If the name does not contain an extension (for example, ``squid``), then "
+"the extension ``.log`` is automatically appended to it for ASCII logs and "
+"``.blog`` for binary logs (refer to :ref:`Mode = \"valid_logging_mode\" "
+"<LogObject-Mode>`)."
 msgstr ""
