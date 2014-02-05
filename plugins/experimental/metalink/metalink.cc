@@ -270,9 +270,6 @@ transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 
   TransformData *data = (TransformData *) TSContDataGet(contp);
 
-  TSVConn output_connp = TSTransformOutputVConnGet(contp);
-  TSVConnShutdown(output_connp, 0, 1);
-
   TSIOBufferDestroy(data->output_bufp);
 
   SHA256_Final((unsigned char *) digest, &data->c);
