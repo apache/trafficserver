@@ -132,35 +132,61 @@ msgstr "クラスター内のパフォーマンス統計をゼロにリセット
 msgid "Reset performance statistics to zero on the local node."
 msgstr "ローカルノードのパフォーマンス統計をゼロにリセットします。"
 
-#: ../../reference/commands/traffic_line.en.rst:119
+#: ../../reference/commands/traffic_line.en.rst:141
 msgid "Performance Statistics"
 msgstr "パフォーマンス統計"
 
-#: ../../reference/commands/traffic_line.en.rst:123
+#: ../../reference/commands/traffic_line.en.rst:145
 msgid ""
 "The :option:`traffic_line -r` option accepts the following variable names::"
 msgstr ":option:`traffic_line -r` オプションは次の変数名を受け入れます。"
 
-#: ../../reference/commands/traffic_line.en.rst:775
+#: ../../reference/commands/traffic_line.en.rst:797
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/commands/traffic_line.en.rst:777
+#: ../../reference/commands/traffic_line.en.rst:799
 msgid "Configure Traffic Server to log in Squid format::"
 msgstr "Squid フォーマットでログを取るように Traffic Server を設定するには"
 
-#: ../../reference/commands/traffic_line.en.rst:784
+#: ../../reference/commands/traffic_line.en.rst:806
 msgid "Files"
 msgstr "ファイル"
 
-#: ../../reference/commands/traffic_line.en.rst:786
+#: ../../reference/commands/traffic_line.en.rst:808
 msgid ":file:`records.config`, :file:`ssl_multicert.config`"
 msgstr ":file:`records.config`、 :file:`ssl_multicert.config`"
 
-#: ../../reference/commands/traffic_line.en.rst:789
+#: ../../reference/commands/traffic_line.en.rst:811
 msgid "See also"
 msgstr "参照"
 
-#: ../../reference/commands/traffic_line.en.rst:791
+#: ../../reference/commands/traffic_line.en.rst:813
 msgid ":manpage:`records.config(5)`"
 msgstr ":manpage:`records.config(5)`"
+
+#: ../../reference/commands/traffic_line.en.rst:118
+msgid ""
+"Mark a cache storage device as offline. The storage is identified by a "
+"*path* which must match exactly a path specified in :file:`storage.config`. "
+"This removes the storage from the cache and redirects requests that would "
+"have used this storage to other storage. This has exactly the same effect "
+"as a disk failure for that storage. This does not persist across restarts "
+"of the :program:`traffic_server` process."
+msgstr ""
+
+#: ../../reference/commands/traffic_line.en.rst:125
+msgid "List all alarm events that have not been acknowledged (cleared)."
+msgstr ""
+
+#: ../../reference/commands/traffic_line.en.rst:129
+msgid ""
+"Clear (acknowledge) an alarm event. The arguments are \"all\" for all "
+"current alarms, a specific alarm number (e.g. ''1''), or an alarm string "
+"identifier (e.g. ''MGMT_ALARM_PROXY_CONFIG_ERROR'')."
+msgstr ""
+
+#: ../../reference/commands/traffic_line.en.rst:135
+msgid ""
+"Show the current proxy server status, indicating if we're running or not."
+msgstr ""

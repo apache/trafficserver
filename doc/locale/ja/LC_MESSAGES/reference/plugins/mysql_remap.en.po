@@ -11,11 +11,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/plugins/mysql_remap.en.rst:2
+#: ../../reference/plugins/mysql_remap.en.rst:4
 msgid "MySQL Remap Plugin"
 msgstr "MySQL リマッププラグイン"
 
-#: ../../reference/plugins/mysql_remap.en.rst:22
+#: ../../reference/plugins/mysql_remap.en.rst:24
 msgid ""
 "This is a basic plugin for doing dynamic \"remaps\" from a database. It "
 "essentially rewrites the incoming request's Host header / origin server "
@@ -25,21 +25,21 @@ msgstr ""
 "す。本質的には届いたリクエストの Host ヘッダーを書き換えます / オリジンサー"
 "バーの接続をデータベースから取得したものに。"
 
-#: ../../reference/plugins/mysql_remap.en.rst:26
+#: ../../reference/plugins/mysql_remap.en.rst:28
 msgid "The generic proxying setup is the following::"
 msgstr "一般的なプロキシーのセットアップは次のとおりです ::"
 
-#: ../../reference/plugins/mysql_remap.en.rst:30
+#: ../../reference/plugins/mysql_remap.en.rst:32
 msgid "Without the plugin a request like::"
 msgstr "このプラグインを使わない場合のリクエストはこの様になります ::"
 
-#: ../../reference/plugins/mysql_remap.en.rst:35
+#: ../../reference/plugins/mysql_remap.en.rst:37
 msgid "Ends up requesting ``http://original.host.com/path/to/something``"
 msgstr ""
 "最終的には ``http://original.host.com/path/to/something`` にリクエストしま"
 "す。"
 
-#: ../../reference/plugins/mysql_remap.en.rst:37
+#: ../../reference/plugins/mysql_remap.en.rst:39
 msgid ""
 "With this plugin enabled, you can easily change that to anywhere you "
 "desire. Imagine the many possibilities...."
@@ -47,7 +47,7 @@ msgstr ""
 "このプラグインを有効化すると、どこでも望んだ場所に簡単に変更できます。多くの"
 "可能性を想像してください...."
 
-#: ../../reference/plugins/mysql_remap.en.rst:40
+#: ../../reference/plugins/mysql_remap.en.rst:42
 msgid ""
 "We have benchmarked the plugin with ab at about 9200 requests/sec (1.7k "
 "object) on a commodity hardware with a local setup of both, MySQL and "
@@ -59,32 +59,32 @@ msgstr ""
 "リクエスト / 秒 (1.7k オブジェクト ) となりました。実際のパフォーマンスは十"
 "分に高く、MySQL の最大クエリー / 秒次第です。"
 
-#: ../../reference/plugins/mysql_remap.en.rst:46
+#: ../../reference/plugins/mysql_remap.en.rst:48
 msgid "Installation"
 msgstr "インストール"
 
-#: ../../reference/plugins/mysql_remap.en.rst:48
+#: ../../reference/plugins/mysql_remap.en.rst:50
 msgid "This plugin is only built if the configure option ::"
 msgstr "このプラグインはビルド時の設定オプションに ::"
 
-#: ../../reference/plugins/mysql_remap.en.rst:52
+#: ../../reference/plugins/mysql_remap.en.rst:54
 msgid "is given at build time."
 msgstr "が与えられている場合にのみビルドされます。"
 
-#: ../../reference/plugins/mysql_remap.en.rst:55
+#: ../../reference/plugins/mysql_remap.en.rst:57
 msgid "Configuration"
 msgstr "設定"
 
-#: ../../reference/plugins/mysql_remap.en.rst:57
+#: ../../reference/plugins/mysql_remap.en.rst:59
 msgid "Import the default schema to a database you create::"
 msgstr "作成したデータベースへのデフォルトスキーマを取り込みます ::"
 
-#: ../../reference/plugins/mysql_remap.en.rst:62
+#: ../../reference/plugins/mysql_remap.en.rst:64
 msgid ""
 "insert some interesting values in mysql_remap.hostname & mysql_remap.map"
 msgstr "mysql_remap.hostname と mysql_remap.map に興味深い値を入れます"
 
-#: ../../reference/plugins/mysql_remap.en.rst:65
+#: ../../reference/plugins/mysql_remap.en.rst:67
 msgid ""
 "Traffic Server plugin configuration is done inside a global configuration "
 "file: ``/etc/trafficserver/plugin.config``::"
@@ -92,16 +92,19 @@ msgstr ""
 "Traffic Server プラグイン設定はグローバル設定ファイル :file: ``/etc/"
 "trafficserver/plugin.config`` で完了します ::"
 
-#: ../../reference/plugins/mysql_remap.en.rst:70
+#: ../../reference/plugins/mysql_remap.en.rst:72
 msgid "The INI file should contain the following values::"
 msgstr "INI ファイルは次の値を含むべきです ::"
 
-#: ../../reference/plugins/mysql_remap.en.rst:79
-msgid "To debug errors, start trafficserver manually using ::"
-msgstr ""
-"エラーをデバッグするために、Traffic Server を手動で次のように開始してくださ"
-"い::"
-
-#: ../../reference/plugins/mysql_remap.en.rst:83
+#: ../../reference/plugins/mysql_remap.en.rst:85
 msgid "And resolve any errors or warnings displayed."
 msgstr "そして表示されたエラーや警告を解決してください。"
+
+#: ../../reference/plugins/mysql_remap.en.rst:81
+msgid "To debug errors, start trafficserver manually using::"
+msgstr ""
+
+#~ msgid "To debug errors, start trafficserver manually using ::"
+#~ msgstr ""
+#~ "エラーをデバッグするために、Traffic Server を手動で次のように開始してくだ"
+#~ "さい::"

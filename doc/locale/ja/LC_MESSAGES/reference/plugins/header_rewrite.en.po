@@ -53,12 +53,6 @@ msgstr ""
 msgid "The following operators are available::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:58
-msgid ""
-"The following operator(s) currently only works when instantiating the "
-"plugin as a remap plugin::"
-msgstr ""
-
 #: ../../reference/plugins/header_rewrite.en.rst:63
 msgid "Where qual is one of the support URL qualifiers::"
 msgstr ""
@@ -71,27 +65,27 @@ msgstr ""
 msgid "Operator flags"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:82
+#: ../../reference/plugins/header_rewrite.en.rst:84
 msgid "Variable expansion"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:83
+#: ../../reference/plugins/header_rewrite.en.rst:85
 msgid ""
 "Currently only limited variable expansion is supported in add-header. "
 "Supported substitutions include::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:94
+#: ../../reference/plugins/header_rewrite.en.rst:96
 msgid "Conditions"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:95
+#: ../../reference/plugins/header_rewrite.en.rst:97
 msgid ""
 "The conditions are used as qualifiers: The operators specified will only be "
 "evaluated if the condition(s) are met::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:115
+#: ../../reference/plugins/header_rewrite.en.rst:117
 msgid ""
 "The difference between HEADER and CLIENT-HEADER is that HEADER adapts to "
 "the hook it's running in, whereas CLIENT-HEADER always applies to the "
@@ -99,56 +93,69 @@ msgid ""
 "if no other conditions are specified."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:120
+#: ../../reference/plugins/header_rewrite.en.rst:122
 msgid ""
 "These conditions have to be first in a ruleset, and you can only have one "
 "in each rule. This implies that a new hook condition starts a new rule as "
 "well.::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:128
+#: ../../reference/plugins/header_rewrite.en.rst:131
 msgid ""
 "For remap.config plugin instanations, the default hook is named "
 "REMAP_PSEUDO_HOOK. This can be useful if you are mixing other hooks in a "
 "configuration, but being the default it is also optional."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:134
+#: ../../reference/plugins/header_rewrite.en.rst:137
 msgid "Condition flags"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:143
+#: ../../reference/plugins/header_rewrite.en.rst:149
 msgid "Operands to conditions"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:151
+#: ../../reference/plugins/header_rewrite.en.rst:157
 msgid "The absence of a \"matcher\" means value exists)."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:154
+#: ../../reference/plugins/header_rewrite.en.rst:160
 msgid "Values"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:155
+#: ../../reference/plugins/header_rewrite.en.rst:161
 msgid "Setting e.g. a header with a value can take the following formats:"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:157
+#: ../../reference/plugins/header_rewrite.en.rst:163
 msgid "Any of the cond definitions, that extracts a value from the request"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:158
+#: ../../reference/plugins/header_rewrite.en.rst:164
 msgid "$N 0 <= N <= 9, as grouped in a regular expression"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:159
+#: ../../reference/plugins/header_rewrite.en.rst:165
 msgid "string (which can contain the above)"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:160
+#: ../../reference/plugins/header_rewrite.en.rst:166
 msgid "null"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:163
+#: ../../reference/plugins/header_rewrite.en.rst:169
 msgid "Examples"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:78
+msgid ""
+"The operator flags are optional, and must not contain whitespaces inside "
+"the brackets. Currently, only one flag is supported::"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:139
+msgid ""
+"The condition flags are optional, and you can combine more than one into a "
+"comma separated list of flags. Note that whitespaces are not allowed inside "
+"the brackets::"
 msgstr ""
