@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2553] Fix a segfault in the Metalink plugin reported by Faysal Banna
+   and preserve the Content-Length header
+   Author: Jack Bates <jack@nottheoilrig.com>
+
   *) [TS-2195] Remove the (deprecated) TSHttpTxnCacheLookupSkip API.
 
   *) [TS-2229] Deprecate the header_filter plugin, use header_rewrite instead.
