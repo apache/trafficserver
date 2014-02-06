@@ -2815,6 +2815,9 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
   case VC_EVENT_ERROR:
     t_state.squid_codes.log_code = SQUID_LOG_ERR_READ_TIMEOUT;
     t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
+    /* fallthru */
+
+  case VC_EVENT_EOS:
 
     switch (event) {
     case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -2826,26 +2829,23 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     case VC_EVENT_ERROR:
       t_state.current.server->state = HttpTransact::CONNECTION_ERROR;
       break;
+    case VC_EVENT_EOS:
+      t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
+      t_state.squid_codes.log_code = SQUID_LOG_ERR_READ_ERROR;
+      break;
     }
 
-    t_state.current.server->abort = HttpTransact::ABORTED;
-    tunnel.abort_cache_write_finish_others(p);
-    close_connection = true;
-    break;
-  case VC_EVENT_EOS:
-    // Transfer terminated - check to see if this
-    //  is an abort
-    close_connection = true;
-    t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
-
+    close_connection = false;
     ink_assert(p->vc_type == HT_HTTP_SERVER);
+
     if (is_http_server_eos_truncation(p)) {
-      DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] aborting cache writes due to server truncation", sm_id);
-      tunnel.abort_cache_write_finish_others(p);
+      DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] aborting HTTP tunnel due to server truncation", sm_id);
+      tunnel.chain_abort_all(p);
       t_state.current.server->abort = HttpTransact::ABORTED;
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
     } else {
+      DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] finishing HTTP tunnel", sm_id);
       p->read_success = true;
       t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
       // Appending reason to a response without Content-Length will result in
