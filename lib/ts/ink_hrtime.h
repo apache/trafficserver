@@ -298,7 +298,7 @@ ink_time()
 static inline int
 ink_hrtime_diff_msec(ink_hrtime t1, ink_hrtime t2)
 {
-  return (int) ((t1 - t2) / 1000);
+  return (int) ink_hrtime_to_msec(t1 - t2);
 }
 
 static inline ink_hrtime
