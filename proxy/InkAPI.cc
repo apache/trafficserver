@@ -8291,3 +8291,29 @@ TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
 
   return (s->background_fill == BACKGROUND_FILL_STARTED);
 }
+
+int
+TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
+ {
+   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+   HttpSM *sm = (HttpSM *) txnp;
+   HTTPHdr *req, *resp;
+
+   // We allow for either request or response to be empty (or both), in
+   // which case we default to the transactions request or response.
+   if (request) {
+     sdk_sanity_check_mbuffer(request);
+     req = reinterpret_cast<HTTPHdr*>(request);
+   } else {
+     req = &(sm->t_state.hdr_info.client_request);
+   }
+   if (response) {
+     sdk_sanity_check_mbuffer(response);
+     resp = reinterpret_cast<HTTPHdr*>(response);
+   } else {
+     resp = &(sm->t_state.hdr_info.server_response);
+   }
+
+   // Make sure these are valid response / requests, then verify if it's cacheable.
+   return (req->valid() && resp->valid() && HttpTransact::is_response_cacheable(&(sm->t_state), req, resp)) ? 1: 0;
+ }

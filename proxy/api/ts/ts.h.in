@@ -3299,10 +3299,22 @@ extern "C"
   */
   tsapi TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, TSHRTime *time);
 
+  /**
+    Test whether a request / response header pair would be cacheable under the current
+    configuration. This would typically be used in TS_HTTP_READ_RESPONSE_HDR_HOOK, when
+    you have both the client request and server response ready.
+
+    @param txnp the transaction pointer
+    @param request the client request header. If NULL, use the transactions client request.
+    @param response the server response header. If NULL, use the transactions origin response.
+
+    @return 1 if the request / response is cacheable, 0 otherwise
+  */
+  tsapi int TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response);
+
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif /* __TS_API_H__ */
-
