@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.2
 
+  *) [TS-2560] regex_remap lowercase substitutions is not being initialized in
+   the construtor
+
   *) [TS-2867] Remove clock functionality from traffic_shell to address temporary file
    handling issues.
 
