@@ -145,7 +145,7 @@ ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool slee
   if (sleep) {
     ink_mutex_acquire(&lock);
     if (INK_ATOMICLIST_EMPTY(al)) {
-      timespec ts = ink_based_hrtime_to_timespec(timeout);
+      timespec ts = ink_hrtime_to_timespec(timeout);
       ink_cond_timedwait(&might_have_data, &lock, &ts);
     }
     ink_mutex_release(&lock);
