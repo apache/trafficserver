@@ -117,7 +117,7 @@ class RemapRegex
 {
  public:
   RemapRegex(const std::string& reg, const std::string& sub, const std::string& opt) :
-    _num_subs(-1), _rex(NULL), _extra(NULL), _order(-1), _simple(false),
+    _num_subs(-1), _rex(NULL), _extra(NULL), _order(-1), _simple(false), _lowercase_substitutions(false),
     _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
