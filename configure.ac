@@ -475,6 +475,20 @@ AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [ test "x${enable_example_plugins}" = "x
 
 
 #
+# Test tools. The test tools are always built, but not always installed. Installing
+# them is useful for QA, but not useful for most users, so we default this to disabled.
+#
+
+AC_MSG_CHECKING([whether to install testing tools])
+AC_ARG_ENABLE([test-tools],
+  [AS_HELP_STRING([--enable-test-tools],[install testing tools])],
+  [],
+  [enable_test_tools=no]
+)
+AC_MSG_RESULT([$enable_test_tools])
+AM_CONDITIONAL([BUILD_TEST_TOOLS], [ test "x${enable_test_tools}" = "xyes" ])
+
+#
 # build c++ api
 #
 AC_MSG_CHECKING([whether to build c++ api])
