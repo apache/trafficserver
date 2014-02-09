@@ -1145,6 +1145,9 @@ TS_CHECK_CRYPTO
 TS_CHECK_CRYPTO_NEXTPROTONEG
 
 #
+# Check for ALPN TLS extension support.
+TS_CHECK_CRYPTO_ALPN
+#
 # Check for EC key support.
 TS_CHECK_CRYPTO_EC_KEYS
 
