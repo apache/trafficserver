@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-1622] Add a new API, TSHttpTxnIsCacheable(), which allows a plugin
+   to determine whether a request (and/or response) would be cacheable.
+
   *) [TS-2560] regex_remap lowercase substitutions is not being initialized in
    the construtor
 
