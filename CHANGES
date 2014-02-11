@@ -1,8 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.6
 
+  *) [TS-2568] Better template messages.
 
   *) [TS-2297] fix out of tree build for TSConfig
+
 
 Changes with Apache Traffic Server 3.2.5
 
@@ -28,6 +30,7 @@ Changes with Apache Traffic Server 3.2.5
 
   *) [TS-1470] Fix cache sizes > 16TB (part 2 - Don't reset the cache after restart)
    Author: Jan Van Doorn <Jan_VanDoorn@cable.comcast.com>
+
 
 Changes with Apache Traffic Server 3.2.4
 
@@ -74,6 +77,7 @@ Changes with Apache Traffic Server 3.2.4
 
   *) [TS-1470] Fix cache sizes > 16TB
    Author: Jan Van Doorn <Jan_VanDoorn@cable.comcast.com>
+
 
 Changes with Apache Traffic Server 3.2.1
 
