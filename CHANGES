@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2568] Better template messages.
+
   *) [TS-2567] Add --install-test-tools configure option.
 
   *) [TS-1622] Add a new API, TSHttpTxnIsCacheable(), which allows a plugin
