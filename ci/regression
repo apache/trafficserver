@@ -89,6 +89,7 @@ configure() {
       --enable-debug \
       --enable-werror \
       --enable-example-plugins \
+      --enable-test-tools \
       --enable-experimental-plugins \
       $(extras) \
       CC="$CC" \
