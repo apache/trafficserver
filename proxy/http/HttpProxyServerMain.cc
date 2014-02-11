@@ -163,8 +163,10 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   if (port.isSSL()) {
     HttpAccept * accept = NEW(new HttpAccept(accept_opt));
     SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(accept));
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, accept);
+
+    // ALPN selects the first server-offered protocol, so make sure that we offer HTTP/1.1 first.
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, accept);
+    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, accept);
 
     ink_scoped_mutex lock(ssl_plugin_mutex);
     ssl_plugin_acceptors.push(ssl);

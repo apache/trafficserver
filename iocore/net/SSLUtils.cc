@@ -718,6 +718,10 @@ ssl_store_ssl_context(
   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
 #endif /* TS_USE_TLS_NPN */
 
+#if TS_USE_TLS_ALPN
+  SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
+#endif /* TS_USE_TLS_ALPN */
+
   certpath = Layout::relative_to(params->serverCertPathOnly, cert);
 
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
@@ -896,6 +900,13 @@ SSLParseCertificateConfiguration(
   // context.
   if (lookup->ssl_default == NULL) {
     lookup->ssl_default = ssl_context_enable_sni(SSLDefaultServerContext(), lookup);
+
+    // The ALPN negotiation happens before certificate selection, so we need to install the ALPN callback
+    // on the default SSL context.
+#if TS_USE_TLS_ALPN
+  SSL_CTX_set_alpn_select_cb(lookup->ssl_default, SSLNetVConnection::select_next_protocol, NULL);
+#endif /* TS_USE_TLS_ALPN */
+
     lookup->insert(lookup->ssl_default, "*");
   }
 
