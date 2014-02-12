@@ -774,7 +774,7 @@ Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  `TS_CONFIG_
 Be careful to always have the low water mark equal or less than the high water mark. If you set only one, the other will
 be set to the same value.
 
-If using c:func:`TSHttpTxnConfigIntSet`, it must be called no later than `TS_HTTP_READ_RESPONSE_HDR_HOOK`.
+If using :c:func:`TSHttpTxnConfigIntSet`, it must be called no later than `TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 
 .. _reducing-origin-server-requests-avoiding-the-thundering-herd:
 
