@@ -698,7 +698,7 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
 // ALPN TLS extension callback. Given the client's set of offered
 // protocols, we have to select a protocol to use for this session.
 int
-SSLNetVConnection::select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in, unsigned inlen, void *)
+SSLNetVConnection::select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in ATS_UNUSED, unsigned inlen ATS_UNUSED, void *)
 {
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
   const unsigned char * npn = NULL;
