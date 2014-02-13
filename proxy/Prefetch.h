@@ -433,14 +433,6 @@ public:
 };
 
 
-#define TS_ReadConfigInteger            REC_ReadConfigInteger
-#define TS_ReadConfigString             REC_ReadConfigString
-#define TS_EstablishStaticConfigInteger REC_EstablishStaticConfigInteger
-#define TS_RegisterConfigUpdateFunc     REC_RegisterConfigUpdateFunc
-#define TS_ReadConfigStringAlloc        REC_ReadConfigStringAlloc
-#define TS_ConfigReadInteger            REC_ConfigReadInteger
-#define TS_ConfigReadString             REC_ConfigReadString
-
 #define PREFETCH_CONFIG_UPDATE_TIMEOUT  (HRTIME_SECOND*60)
 
 #endif // PREFETCH
