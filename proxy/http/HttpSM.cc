@@ -1655,10 +1655,12 @@ HttpSM::state_http_server_open(int event, void *data)
 
   switch (event) {
   case NET_EVENT_OPEN:
-    session = (2 == t_state.txn_conf->share_server_sessions) ? 
+    session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.txn_conf->server_session_sharing_pool) ? 
       THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
       httpServerSessionAllocator.alloc();
-    session->share_session = t_state.txn_conf->share_server_sessions;
+    session->sharing_pool = static_cast<TSServerSessionSharingPoolType>(t_state.txn_conf->server_session_sharing_pool);
+    session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
+//    session->share_session = t_state.txn_conf->share_server_sessions;
 
     // If origin_max_connections or origin_min_keep_alive_connections is
     // set then we are metering the max and or min number
@@ -4517,7 +4519,7 @@ HttpSM::do_http_server_open(bool raw)
   // to do this but as far I can tell the code that prevented keep-alive if
   // there is a request body has been removed.
 
-  if (raw == false && t_state.txn_conf->share_server_sessions &&
+  if (raw == false && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
       (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) &&
        !is_private() && ua_session != NULL) {
     HSMresult_t shared_result;
@@ -4547,10 +4549,15 @@ HttpSM::do_http_server_open(bool raw)
   // This bug was due to when share_server_sessions is set to 0
   // and we have keep-alive, we are trying to open a new server session
   // when we already have an attached server session.
-  else if ((!t_state.txn_conf->share_server_sessions || is_private()) && (ua_session != NULL)) {
+  else if ((TS_SERVER_SESSION_SHARING_MATCH_NONE == t_state.txn_conf->server_session_sharing_match || is_private()) &&
+           (ua_session != NULL)) {
     HttpServerSession *existing_ss = ua_session->get_server_session();
 
     if (existing_ss) {
+      // [amc] Not sure if this is the best option, but we don't get here unless session sharing is disabled
+      // so there's point in further checking on the match or pool values. But why check anything? The
+      // client has already exchanged a request with this specific origin server and has sent another one
+      // shouldn't we just automatically keep the association?
       if (ats_ip_addr_eq(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa) &&
           ats_ip_port_cast(&existing_ss->server_ip) == ats_ip_port_cast(&t_state.current.server->addr)) {
         ua_session->attach_server_session(NULL);

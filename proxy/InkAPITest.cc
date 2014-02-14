@@ -6096,8 +6096,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
     TSSkipRemappingSet(txnp,1);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
-  
-  
+
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     {
       int lookup_status;
@@ -6259,7 +6258,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache) (RegressionTest * test, int /* a
   socktest->first_time = true;
   socktest->magic = MAGIC_ALIVE;
   TSContDataSet(cont, socktest);
-  
+
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
   /* Register to HTTP hooks that are called in case of a cache MISS */
   TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, cont);
@@ -6752,7 +6751,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
       } else {
         SDK_RPRINT(data->test, "TSHttpTxnTransformedResponseCache", "TestCase1", TC_FAIL, "Value's Mismatch");
       }
-      
+
       /* Note: response is available using test->browser->response pointer */
       *(data->pstatus) = REGRESSION_TEST_PASSED;
       if (data->browser1->status != REQUEST_SUCCESS) {
@@ -6835,9 +6834,9 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform) (RegressionTest * test, int 
 
   /* Prepare the buffer to be appended to responses */
   load(TRANSFORM_APPEND_STRING);
-  
+
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont); //so we can skip remapping
-  
+
   /* Register to HTTP hooks that are called in case of a cache MISS */
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
 
@@ -7345,6 +7344,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.keep_alive_enabled_out",
   "proxy.config.http.keep_alive_post_out",
   "proxy.config.http.share_server_sessions",
+  "proxy.config.http.server_session_sharing.pool",
+  "proxy.config.http.server_session_sharing.match",
   "proxy.config.net.sock_recv_buffer_size_out",
   "proxy.config.net.sock_send_buffer_size_out",
   "proxy.config.net.sock_option_flag_out",
@@ -7433,7 +7434,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atyp
   const char *sval_read;
   const char *test_string = "The Apache Traffic Server";
   int len;
-  
+
 
   s->init();
 
@@ -7457,6 +7458,9 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atyp
     switch (type) {
     case TS_RECORDDATATYPE_INT:
       ival_rand = generator.random() % 126; // to fit in a signed byte
+      // 4.1 backwards compatibility - remove for 5.0
+      if (TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS == key) ival_rand %= 2;
+      // end BC
       TSHttpTxnConfigIntSet(txnp, key, ival_rand);
       TSHttpTxnConfigIntGet(txnp, key, &ival_read);
       if (ival_rand != ival_read) {

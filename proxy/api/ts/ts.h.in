@@ -520,6 +520,27 @@ extern "C"
     AFTER_BODY
   } TSFetchWakeUpOptions;
 
+#ifndef _HTTP_PROXY_API_ENUMS_H_
+#define _HTTP_PROXY_API_ENUMS_H_
+  /// Server session sharing values - match
+  /// Must be identical to definition in HttpProxyAPIEnums.h
+  typedef enum
+  {
+    TS_SERVER_SESSION_SHARING_MATCH_NONE,
+    TS_SERVER_SESSION_SHARING_MATCH_BOTH,
+    TS_SERVER_SESSION_SHARING_MATCH_IP,
+    TS_SERVER_SESSION_SHARING_MATCH_HOST
+  } TSServerSessionSharingMatchType;
+
+  /// Server session sharing values - pool
+  /// Must be identical to definition in HttpProxyAPIEnums.h
+  typedef enum
+  {
+    TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
+    TS_SERVER_SESSION_SHARING_POOL_THREAD
+  } TSServerSessionSharingPoolType;
+#endif
+
   /* librecords types */
 
   /* The values of this enum must match enum RecT in I_RecDefs.h */
@@ -612,7 +633,9 @@ extern "C"
     TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN,
     TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT,
     TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT,
-    TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS,
+    TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS, // DEPRECATED
+    TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL,
+    TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH,
     TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT,
     TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT,
     TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT,

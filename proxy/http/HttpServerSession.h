@@ -47,6 +47,7 @@
 #include "P_Net.h"
 
 #include "HttpConnectionCount.h"
+#include "HttpProxyAPIEnums.h"
 
 class HttpSM;
 class MIOBuffer;
@@ -72,7 +73,9 @@ public:
       hostname_hash(),
       host_hash_computed(false), con_id(0), transact_count(0),
       state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
-      private_session(false), share_session(0),
+      private_session(false),
+      sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
+      sharing_pool(TS_SERVER_SESSION_SHARING_POOL_GLOBAL),
       enable_origin_connection_limiting(false),
       connection_count(NULL), read_buffer(NULL),
       server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
@@ -137,8 +140,10 @@ public:
   //  are sent over them
   bool private_session;
 
-  // Copy of the owning SM's share_server_session setting
-  int share_session;
+  // Copy of the owning SM's server session sharing settings
+  TSServerSessionSharingMatchType sharing_match;
+  TSServerSessionSharingPoolType sharing_pool;
+  //  int share_session;
 
   LINK(HttpServerSession, lru_link);
   LINK(HttpServerSession, hash_link);
