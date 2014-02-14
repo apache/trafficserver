@@ -286,6 +286,14 @@ SSLCertificateConfig::reconfigure()
   SSLConfig::scoped_config params;
   SSLCertLookup * lookup = NEW(new SSLCertLookup());
 
+  // Test SSL certificate loading startup. With large numbers of certificates, reloading can take time, so delay
+  // twice the healthcheck period to simulate a loading a large certificate set.
+  if (is_action_tag_set("test.multicert.delay")) {
+    const int secs = 60;
+    Debug("ssl", "delaying certificate reload by %dsecs", secs);
+    ink_hrtime_sleep(HRTIME_SECONDS(secs));
+  }
+
   if (SSLParseCertificateConfiguration(params, lookup)) {
     configid = configProcessor.set(configid, lookup);
   } else {
