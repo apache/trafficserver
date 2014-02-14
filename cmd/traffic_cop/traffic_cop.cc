@@ -48,7 +48,6 @@ union semun
 #include <grp.h>
 
 static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
-static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";
 
 #define OPTIONS_MAX     32
 #define OPTIONS_LEN_MAX 1024
@@ -60,6 +59,7 @@ static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";
 #define COP_FATAL    LOG_ALERT
 #define COP_WARNING  LOG_ERR
 #define COP_DEBUG    LOG_DEBUG
+#define COP_NOTICE   LOG_NOTICE
 
 static const char *runtime_dir;
 static char config_file[PATH_NAME_MAX];
@@ -76,6 +76,11 @@ static char syslog_fac_str[PATH_NAME_MAX] = "LOG_DAEMON";
 
 static int killsig = SIGKILL;
 static int coresig = 0;
+
+static int debug_flag = false;
+static int stdout_flag = false;
+static int version_flag = false;
+static int stop_flag = false;
 
 static char* admin_user;
 static uid_t admin_uid;
@@ -132,7 +137,6 @@ AppVersionInfo appVersionInfo;
 static char const localhost[] = "127.0.0.1";
 
 static void cop_log(int priority, const char *format, ...) TS_PRINTFLIKE(2, 3);
-inline static void dummy_cop_log_trace(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
 static void get_admin_user(void);
 
@@ -150,67 +154,42 @@ struct ConfigValue
 typedef std::map<std::string, ConfigValue> ConfigValueTable;
 static ConfigValueTable configTable;
 
-inline static void
-dummy_cop_log_trace(const char *format, ...)
+#define cop_log_trace(...) do { if (debug_flag) cop_log(COP_DEBUG, __VA_ARGS__); } while (0)
+
+static const char *
+priority_name(int priority)
 {
-  (void)format;
+  switch (priority) {
+    case COP_DEBUG:   return "DEBUG";
+    case COP_WARNING: return "WARNING";
+    case COP_FATAL:   return "FATAL";
+    case COP_NOTICE:  return "NOTICE";
+    default:          return "unknown";
+  }
 }
-
-#if TS_USE_COP_DEBUG
-#define cop_log_trace(...)              cop_log(COP_DEBUG, __VA_ARGS__)
-#else
-#define cop_log_trace(...)      if (0) dummy_cop_log_trace(__VA_ARGS__)
-#endif
-
 
 static void
 cop_log(int priority, const char *format, ...)
 {
   va_list args;
-  char buffer[8192];
-#if TS_USE_COP_DEBUG
-  static FILE *trace_file = NULL;
-  struct timeval now;
-  double now_f;
-#endif
 
   va_start(args, format);
 
-#if TS_USE_COP_DEBUG
-  if (!trace_file) {
-    if (!unlink(COP_TRACE_FILE))
-      trace_file = fopen(COP_TRACE_FILE, "w");
-  }
-  if (trace_file) {
+  if (stdout_flag) {
+    struct timeval now;
+    double now_f;
+
     gettimeofday(&now, NULL);
     now_f = now.tv_sec + now.tv_usec / 1000000.0f;
-    switch (priority) {
-    case COP_DEBUG:
-      fprintf(trace_file, "<%.4f> [DEBUG]: ", now_f);
-      break;
-    case COP_WARNING:
-      fprintf(trace_file, "<%.4f> [WARNING]: ", now_f);
-      break;
-    case COP_FATAL:
-      fprintf(trace_file, "<%.4f> [FATAL]: ", now_f);
-      break;
-    default:
-      fprintf(trace_file, "<%.4f> [unknown]: ", now_f);
-      break;
-    }
 
-    va_list args_tmp;
-    va_copy(args_tmp, args);
-
-    vfprintf(trace_file, format, args_tmp);
-    fflush(trace_file);
-
-    va_end(args_tmp);
+    fprintf(stdout, "<%.4f> [%s]: ", now_f, priority_name(priority));
+    vfprintf(stdout, format, args);
+    fflush(stdout);
+  } else {
+    char buffer[8192];
+    vsprintf(buffer, format, args);
+    syslog(priority, "%s", buffer);
   }
-#endif
-
-  vsprintf(buffer, format, args);
-  syslog(priority, "%s", buffer);
 
   va_end(args);
 }
@@ -620,8 +599,11 @@ config_reload_records()
   config_read_int("proxy.local.cluster.type", &tmp_int);
   cluster_type = static_cast<MgmtClusterType>(tmp_int);
 
-  config_read_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str), true);
-  process_syslog_config();
+  if (stdout_flag) {
+    config_read_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str), true);
+    process_syslog_config();
+  }
+
   config_read_int("proxy.config.cop.core_signal", &coresig, true);
 
   config_read_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb, true);
@@ -1633,7 +1615,7 @@ check_lockfile()
     exit(1);
   }
 
-  cop_log(LOG_NOTICE, "--- Cop Starting [Version: %s] ---\n", appVersionInfo.FullVersionInfoStr);
+  cop_log(COP_NOTICE, "--- Cop Starting [Version: %s] ---\n", appVersionInfo.FullVersionInfoStr);
   cop_log_trace("Leaving check_lockfile()\n");
 }
 
@@ -1773,10 +1755,15 @@ init()
   cop_log_trace("Leaving init()\n");
 }
 
-int version_flag = 0;
+static const ArgumentDescription argument_descriptions[] = {
+  { "debug", 'd', "Enable debug logging", "F", &debug_flag, NULL, NULL },
+  { "stdout", 'o', "Print log messages to standard output", "F", &stdout_flag, NULL, NULL },
+  { "stop", 's', "Send child processes SIGSTOP instead of SIGKILL", "F", &stop_flag, NULL, NULL },
+  { "version", 'V', "Print Version String", "T", &version_flag, NULL, NULL},
+};
 
 int
-main(int argc, char *argv[])
+main(int /* argc */, char *argv[])
 {
   int fd;
   appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -1784,16 +1771,19 @@ main(int argc, char *argv[])
   // Before accessing file system initialize Layout engine
   Layout::create();
 
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-stop") == 0) {
-      ink_fputln(stdout, "Cool! I think I'll be a STOP cop!");
-      killsig = SIGSTOP;
-    } else if (strcmp(argv[i], "-V") == 0) {
-      ink_fputln(stderr, appVersionInfo.FullVersionInfoStr);
-      exit(0);
-    }
+  process_args(argument_descriptions, countof(argument_descriptions), argv);
+
+  // Check for version number request
+  if (version_flag) {
+    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
+    exit(0);
   }
-  // Detach STDIN, STDOUT, and STDERR (basically, "nohup"). /leif
+
+  if (stop_flag) {
+    cop_log_trace("Cool! I think I'll be a STOP cop!");
+    killsig = SIGSTOP;
+  }
+
   signal(SIGHUP, SIG_IGN);
   signal(SIGTSTP, SIG_IGN);
   signal(SIGTTOU, SIG_IGN);
@@ -1823,17 +1813,20 @@ main(int argc, char *argv[])
   setpgrp();
 #endif
 
-  close(STDIN_FILENO);
-  close(STDOUT_FILENO);
-  close(STDERR_FILENO);
-  if ((fd = open("/dev/null", O_WRONLY, 0)) >= 0) {
-    fcntl(fd, F_DUPFD, STDIN_FILENO);
-    fcntl(fd, F_DUPFD, STDOUT_FILENO);
-    fcntl(fd, F_DUPFD, STDERR_FILENO);
-    close(fd);
-  } else {
-    ink_fputln(stderr, "Unable to open /dev/null");
-    return 0;
+  // Detach STDIN, STDOUT, and STDERR (basically, "nohup"). /leif
+  if (!stdout_flag) {
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+    if ((fd = open("/dev/null", O_WRONLY, 0)) >= 0) {
+      fcntl(fd, F_DUPFD, STDIN_FILENO);
+      fcntl(fd, F_DUPFD, STDOUT_FILENO);
+      fcntl(fd, F_DUPFD, STDERR_FILENO);
+      close(fd);
+    } else {
+      ink_fputln(stderr, "Unable to open /dev/null");
+      return 0;
+    }
   }
 
   // Initialize and start it up.
