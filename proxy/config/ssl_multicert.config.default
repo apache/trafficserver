@@ -28,7 +28,7 @@
 #   square brackets if they have a port, eg, [::1]:80.
 #
 # ssl_key_name=FILENAME
-#   The name of the file containg the private key for this certificate.
+#   The name of the file containing the private key for this certificate.
 #   If the key is contained in the certificate file, this field can be
 #   omitted.
 #
@@ -40,9 +40,16 @@
 #   The name of the file containing the TLS certificate. This is the
 #   only field that is required to be present.
 #
+# ssl_key_dialog=[builtin|exec:/path/to/program]
+#   Method used to provide a pass phrase for encrypted private keys.
+#   Two options are supported: builtin and exec
+#     builtin - Requests passphrase via stdin/stdout. Useful for debugging.
+#     exec: - Executes a program and uses the stdout output for the pass
+#       phrase.
+#
 # Examples:
 #   ssl_cert_name=foo.pem
 #   dest_ip=*	ssl_cert_name=bar.pem ssl_key_name=barKey.pem
 #   dest_ip=209.131.48.79	ssl_cert_name=server.pem ssl_key_name=serverKey.pem
 #   dest_ip=10.0.0.1:99 ssl_cert_name=port99.pem
-
+#   ssl_cert_name=foo.pem ssl_key_dialog="exec:/usr/bin/mypass foo 'ba r'"

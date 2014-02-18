@@ -94,6 +94,22 @@ ticket_key_name=FILENAME
   specified, and internal session ticket key is generated. This
   key will be different each time Traffic Server is started.
 
+ssl_key_dialog=builtin|"exec:/path/to/program [args]"
+  Method used to provide a pass phrase for encrypted private keys.  If the
+  pass phrase is incorrect, SSL negotiation for this dest_ip will fail for
+  clients who attempt to connect.
+  Two options are supported: builtin and exec
+    ``builtin`` - Requests pass phrase via stdin/stdout. User will be
+      provided the ssl_cert_name and be prompted for the pass phrase.
+      Useful for debugging.
+    ``exec:`` - Executes program /path/to/program and passes args, if
+      specified, to the program and reads the output from stdout for
+      the pass phrase.  If args are provided then the entire exec: string
+      must be quoted with "" (see examples).  Arguments with white space
+      are supported by single quoting (').  The intent is that this
+      program runs a security check to ensure that the system is not
+      compromised by an attacker before providing the pass phrase.
+
 Certificate Selection
 =====================
 
@@ -153,9 +169,21 @@ key.
     dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=1 ticket_key_name=ticket.key
 
 The following example configures Traffic Server to use the SSL
-certificate ``server.pem`` and disable sessiont ticket for all
+certificate ``server.pem`` and disable session ticket for all
 requests to the IP address 111.11.11.1.
 
 ::
 
     dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=0
+
+The following examples configure Traffic Server to use the SSL
+certificate ``server.pem`` which includes an encrypted private key.
+The external program /usr/bin/mypass will be called on startup with one
+parameter (foo) in the first example, and with two parameters (foo)
+and (ba r) in the second example, the program (mypass) will return the
+pass phrase to decrypt the keys.
+
+::
+
+    ssl_cert_name=server1.pem ssl_key_dialog="exec:/usr/bin/mypass foo"
+    ssl_cert_name=server2.pem ssl_key_dialog="exec:/usr/bin/mypass foo 'ba r'"

@@ -48,14 +48,6 @@ struct SSLCertLookup;
 // Create a default SSL server context.
 SSL_CTX * SSLDefaultServerContext();
 
-// Create and initialize a SSL server context.
-SSL_CTX *
-SSLInitServerContext(
-    const SSLConfigParams * param,
-    const char * serverCertPtr,
-    const char * serverCaCertPtr,
-    const char * serverKeyPtr);
-
 // Create and initialize a SSL client context.
 SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);
 
