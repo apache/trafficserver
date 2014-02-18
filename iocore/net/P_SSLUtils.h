@@ -54,7 +54,8 @@ SSLInitServerContext(
     const SSLConfigParams * param,
     const char * serverCertPtr,
     const char * serverCaCertPtr,
-    const char * serverKeyPtr);
+    const char * serverKeyPtr,
+    const char * serverDialog);
 
 // Create and initialize a SSL client context.
 SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);

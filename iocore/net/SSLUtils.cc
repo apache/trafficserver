@@ -31,6 +31,8 @@
 #include <openssl/x509.h>
 #include <openssl/asn1.h>
 #include <openssl/rand.h>
+#include <unistd.h>
+#include <termios.h>
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -55,6 +57,7 @@
 #define SSL_CA_TAG            "ssl_ca_name"
 #define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
 #define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
+#define SSL_KEY_DIALOG        "ssl_key_dialog"
 
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
@@ -62,6 +65,11 @@
 #else
 #define evp_md_func EVP_sha256()
 #endif
+#endif
+
+// openssl version must be 0.9.4 or greater
+#if (OPENSSL_VERSION_NUMBER < 0x00090400L)
+#error Traffic Server requires an OpenSSL library version 0.9.4 or greater
 #endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
@@ -303,6 +311,160 @@ fail:
 #endif /* HAVE_OPENSSL_SESSION_TICKETS */
 }
 
+struct passphrase_cb_userdata
+{
+    const SSLConfigParams * _configParams;
+    const char * _serverDialog;
+    const char * _serverCert;
+    const char * _serverKey;
+
+    passphrase_cb_userdata(const SSLConfigParams *params,const char *dialog, const char *cert, const char *key) :
+            _configParams(params), _serverDialog(dialog), _serverCert(cert), _serverKey(key) {}
+};
+
+// RAII implementation for struct termios
+struct ssl_termios : public  termios
+{
+  ssl_termios(int fd) {
+    _fd = -1;
+    // populate base class data
+    if(tcgetattr(fd, this) == 0) { // success
+       _fd = fd;
+    }
+    // save our copy
+    _initialAttr = *this;
+  }
+
+  ~ssl_termios() {
+    if(_fd != -1) {
+      tcsetattr(_fd, 0, &_initialAttr);
+    }
+  }
+
+  bool ok() {
+    return (_fd != -1);
+  }
+
+private:
+  int _fd;
+  struct termios _initialAttr;
+};
+
+static int
+ssl_getpassword(const char* prompt, char* buffer, int size)
+{
+  fprintf(stdout, "%s", prompt);
+
+  // disable echo and line buffering
+  ssl_termios tty_attr(STDIN_FILENO);
+
+  if(!tty_attr.ok()) return -1;
+
+  tty_attr.c_lflag &= ~ICANON; // no buffer, no backspace
+  tty_attr.c_lflag &= ~ECHO; // no echo
+  tty_attr.c_lflag &= ~ISIG; // no signal for ctrl-c
+
+  if (tcsetattr(STDIN_FILENO, 0, &tty_attr) < 0)
+    return -1;
+
+  int i = 0;
+  int ch = 0;
+  *buffer = 0;
+  while ((ch = getchar()) != '\n' && ch != EOF) {
+    // make sure room in buffer
+    if (i >= size - 1) {
+      return -1;
+    }
+
+    buffer[i] = ch;
+    buffer[++i] = 0;
+  }
+  return i;
+}
+
+static int
+ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *userdata)
+{
+  if(0 == size) return 0;
+
+  *buf = 0;
+  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *> (userdata);
+
+  Debug("ssl", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+
+  // only respond to reading private keys, not writing them (does ats even do that?)
+  if (0 == rwflag) {
+    // execute the dialog program and use the first line output as the passphrase
+    FILE *f = popen(ud->_serverDialog, "r");
+    if (f) {
+      if (fgets(buf, size, f)) {
+        // remove any ending CR or LF
+        for (char *pass = buf; *pass; pass++) {
+          if (*pass == '\n' || *pass == '\r') {
+            *pass = 0;
+            break;
+          }
+        }
+      }
+      pclose(f);
+    } else {// popen failed
+      Error("could not open dialog '%s' - %s", ud->_serverDialog, strerror(errno));
+    }
+  }
+  return strlen(buf);
+}
+
+static int
+ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, void *userdata)
+{
+  if(0 == size) return 0;
+
+  *buf = 0;
+  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *> (userdata);
+
+  Debug("ssl", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+
+  // only respond to reading private keys, not writing them (does ats even do that?)
+  if (0 == rwflag) {
+    // output request
+    fprintf(stdout, "Some of your private key files are encrypted for security reasons.\n");
+    fprintf(stdout, "In order to read them you have to provide the pass phrases.\n");
+    fprintf(stdout, "ssl_cert_name=%s", ud->_serverCert);
+    if (ud->_serverKey) { // output ssl_key_name if provided
+      fprintf(stdout, " ssl_key_name=%s", ud->_serverKey);
+    }
+    fprintf(stdout, "\n");
+    // get passphrase
+    // if error, then no passphrase
+    if (ssl_getpassword("Enter passphrase:", buf, size) <= 0) {
+      *buf = 0;
+    }
+    fprintf(stdout, "\n");
+  }
+  return strlen(buf);
+}
+
+static bool
+ssl_private_key_validate_exec(const char *cmdLine)
+{
+  if(NULL == cmdLine) {
+    errno = EINVAL;
+    return false;
+  }
+
+  bool bReturn = false;
+  char *cmdLineCopy = ats_strdup(cmdLine);
+  char *ptr = cmdLineCopy;
+
+  while(*ptr && !isspace(*ptr)) ++ptr;
+  *ptr = 0;
+  if (access(cmdLineCopy, X_OK) != -1) {
+    bReturn = true;
+  }
+  ats_free(cmdLineCopy);
+  return bReturn;
+}
+
 void
 SSLInitializeLibrary()
 {
@@ -417,7 +579,8 @@ SSLInitServerContext(
     const SSLConfigParams * params,
     const char * serverCertPtr,
     const char * serverCaCertPtr,
-    const char * serverKeyPtr)
+    const char * serverKeyPtr,
+    const char * serverDialog)
 {
   int         session_id_context;
   int         server_verify_client;
@@ -444,6 +607,29 @@ SSLInitServerContext(
   SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
   SSL_CTX_set_quiet_shutdown(ctx, 1);
+
+  // pass phrase dialog configuration
+  passphrase_cb_userdata ud(params, serverDialog, serverCertPtr, serverKeyPtr);
+
+  if (serverDialog) {
+    pem_password_cb * passwd_cb = NULL;
+    if (strncmp(serverDialog, "exec:", 5) == 0) {
+      ud._serverDialog = &serverDialog[5];
+      // validate the exec program
+      if (!ssl_private_key_validate_exec(ud._serverDialog)) {
+        SSLError("failed to access '%s' pass phrase program: %s", (const char *) ud._serverDialog, strerror(errno));
+        goto fail;
+      }
+      passwd_cb = ssl_private_key_passphrase_callback_exec;
+    } else if (strcmp(serverDialog, "builtin") == 0) {
+      passwd_cb = ssl_private_key_passphrase_callback_builtin;
+    } else { // unknown config
+      SSLError("unknown "SSL_KEY_DIALOG" configuration value '%s'", serverDialog);
+      goto fail;
+    }
+    SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
+  }
 
   // XXX OpenSSL recommends that we should use SSL_CTX_use_certificate_chain_file() here. That API
   // also loads only the first certificate, but it allows the intermediate CA certificate chain to
@@ -530,10 +716,17 @@ SSLInitServerContext(
       goto fail;
     }
   }
+#define SSL_CLEAR_PW_REFERENCES(UD,CTX) { \
+  memset(static_cast<void *>(&UD),0,sizeof(UD));\
+  SSL_CTX_set_default_passwd_cb(CTX, NULL);\
+  SSL_CTX_set_default_passwd_cb_userdata(CTX, NULL);\
+  }
 
+  SSL_CLEAR_PW_REFERENCES(ud,ctx)
   return ssl_context_enable_ecdh(ctx);
 
 fail:
+  SSL_CLEAR_PW_REFERENCES(ud,ctx)
   SSL_CTX_free(ctx);
   return NULL;
 }
@@ -701,13 +894,14 @@ ssl_store_ssl_context(
     xptr<char>& ca,
     xptr<char>& key,
     const int session_ticket_enabled,
-    xptr<char>& ticket_key_filename)
+    xptr<char>& ticket_key_filename,
+    xptr<char>& dialog)
 {
   SSL_CTX *   ctx;
   xptr<char>  certpath;
   xptr<char>  session_key_path;
 
-  ctx = ssl_context_enable_sni(SSLInitServerContext(params, cert, ca, key), lookup);
+  ctx = ssl_context_enable_sni(SSLInitServerContext(params, cert, ca, key, dialog), lookup);
   if (!ctx) {
     return false;
   }
@@ -772,7 +966,8 @@ ssl_extract_certificate(
     xptr<char>& ca,     // CA public certificate
     xptr<char>& key,    // Private key
     int&  session_ticket_enabled,  // session ticket enabled
-    xptr<char>& ticket_key_filename) // session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+    xptr<char>& ticket_key_filename, // session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+    xptr<char>& dialog) // Private key dialog
 {
   for (int i = 0; i < MATCHER_MAX_TOKENS; ++i) {
     const char * label;
@@ -807,6 +1002,10 @@ ssl_extract_certificate(
 
     if (strcasecmp(label, SSL_SESSION_TICKET_KEY_FILE_TAG) == 0) {
       ticket_key_filename = ats_strdup(value);
+    }
+
+    if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
+      dialog = ats_strdup(value);
     }
   }
 
@@ -869,6 +1068,7 @@ SSLParseCertificateConfiguration(
       xptr<char> key;
       int session_ticket_enabled = -1;
       xptr<char> ticket_key_filename;
+      xptr<char> dialog;
       const char * errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
@@ -878,8 +1078,8 @@ SSLParseCertificateConfiguration(
                      __func__, params->configFilePath, line_num, errPtr);
         REC_SignalError(errBuf, alarmAlready);
       } else {
-        if (ssl_extract_certificate(&line_info, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename)) {
-          if (!ssl_store_ssl_context(params, lookup, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename)) {
+        if (ssl_extract_certificate(&line_info, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename,dialog)) {
+          if (!ssl_store_ssl_context(params, lookup, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename,dialog)) {
             Error("failed to load SSL certificate specification from %s line %u",
                 params->configFilePath, line_num);
           }
