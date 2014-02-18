@@ -20,6 +20,7 @@
  * @file Headers.cc
  */
 #include "atscppapi/Headers.h"
+#include "atscppapi/shared_ptr.h"
 #include "InitializableValue.h"
 #include "logging_internal.h"
 #include <string>
@@ -147,45 +148,46 @@ bool header_field_value_iterator::operator!=(const header_field_value_iterator& 
 /**
  * @private
  */
-struct HeaderFieldState: noncopyable {
+struct MLocContainer {
   TSMBuffer hdr_buf_;
   TSMLoc hdr_loc_;
   TSMLoc field_loc_;
-  HeaderFieldState() : hdr_buf_(NULL), hdr_loc_(NULL), field_loc_(NULL) { }
-  void reset(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc) {
-    hdr_buf_ = bufp;
-    hdr_loc_ = hdr_loc;
-    field_loc_ = field_loc;
+  MLocContainer(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc) :
+    hdr_buf_(bufp), hdr_loc_(hdr_loc), field_loc_(field_loc) { }
+  ~MLocContainer() {
+    if (field_loc_ != TS_NULL_MLOC) {
+      TSHandleMLocRelease(hdr_buf_, hdr_loc_, field_loc_);
+    }
   }
 };
 
-HeaderField::HeaderField(void *bufp, void *hdr_loc, void *field_loc)
-{
-  state_ = new HeaderFieldState();
-  state_->hdr_buf_ = static_cast<TSMBuffer>(bufp);
-  state_->hdr_loc_ = static_cast<TSMLoc>(hdr_loc);
-  state_->field_loc_ = static_cast<TSMLoc>(field_loc);
-}
+/**
+ * @private
+ */
+struct HeaderFieldIteratorState {
+  shared_ptr<MLocContainer> mloc_container_;
+  HeaderFieldIteratorState(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc)
+    : mloc_container_(new MLocContainer(bufp, hdr_loc, field_loc)) { }
+};
 
 HeaderField::~HeaderField() {
-  delete state_;
 }
 
 HeaderField::size_type HeaderField::size() const {
-  return TSMimeHdrFieldValuesCount(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_);
+  return TSMimeHdrFieldValuesCount(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_);
 }
 
 header_field_value_iterator HeaderField::begin() {
-  return header_field_value_iterator(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_, 0);
+  return header_field_value_iterator(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_, 0);
 }
 
 header_field_value_iterator HeaderField::end() {
-  return header_field_value_iterator(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_, size());
+  return header_field_value_iterator(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_, size());
 }
 
 HeaderFieldName HeaderField::name() const {
   int length = 0;
-  const char *str = TSMimeHdrFieldNameGet(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_, &length);
+  const char *str = TSMimeHdrFieldNameGet(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_, &length);
   if (str && length) {
     return std::string(str, length);
   }
@@ -211,12 +213,29 @@ std::string HeaderField::values(const char join) {
   return values(std::string().append(1,join));
 }
 
+std::string Headers::value(const std::string key, size_type index /* = 0 */) {
+  header_field_iterator iter = find(key);
+  if (iter == end()) {
+    return string();
+  }
+  if (index == 0) { // skip for loop
+    return *((*iter).begin());
+  }
+  for (; iter != end(); iter.nextDup()) {
+    if (index < (*iter).size()) {
+      return (*iter)[index];
+    }
+    index -= (*iter).size();
+  }
+  return string();
+}
+
 bool HeaderField::empty() {
   return (begin() == end());
 }
 
 bool HeaderField::clear() {
-  return (TSMimeHdrFieldValuesClear(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_) == TS_SUCCESS);
+  return (TSMimeHdrFieldValuesClear(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_) == TS_SUCCESS);
 }
 
 bool HeaderField::erase(header_field_value_iterator it) {
@@ -228,11 +247,11 @@ bool HeaderField::append(const std::string &value) {
 }
 
 bool HeaderField::append(const char *value, int length) {
-  return (TSMimeHdrFieldValueStringInsert(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_, -1, value, -1) == TS_SUCCESS);
+  return (TSMimeHdrFieldValueStringInsert(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_, -1, value, -1) == TS_SUCCESS);
 }
 
 bool HeaderField::setName(const std::string &str) {
-  return (TSMimeHdrFieldNameSet(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_, str.c_str(), str.length()) == TS_SUCCESS);
+  return (TSMimeHdrFieldNameSet(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_, str.c_str(), str.length()) == TS_SUCCESS);
 }
 
 bool HeaderField::operator==(const char *field_name) const {
@@ -266,7 +285,7 @@ bool HeaderField::operator=(const char *field_value) {
 }
 
 std::string HeaderField::operator[](const int index) {
-  return *header_field_value_iterator(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_, index);
+  return *header_field_value_iterator(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_, iter_.state_->mloc_container_->field_loc_, index);
 }
 
 std::string HeaderField::str() {
@@ -286,50 +305,40 @@ std::ostream& operator<<(std::ostream& os, HeaderField& obj) {
   return os;
 }
 
-/**
- * @private
- */
-struct HeaderFieldIteratorState: noncopyable {
-  TSMBuffer hdr_buf_;
-  TSMLoc hdr_loc_;
-  TSMLoc field_loc_;
-  HeaderFieldIteratorState() : hdr_buf_(NULL), hdr_loc_(NULL), field_loc_(NULL) { }
-  void reset(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc) {
-    hdr_buf_ = bufp;
-    hdr_loc_ = hdr_loc;
-    field_loc_ = field_loc;
+header_field_iterator::header_field_iterator(void *hdr_buf, void *hdr_loc, void *field_loc) :
+  state_(new HeaderFieldIteratorState(static_cast<TSMBuffer>(hdr_buf), static_cast<TSMLoc>(hdr_loc),
+                                      static_cast<TSMLoc>(field_loc))) { }
+
+header_field_iterator::header_field_iterator(const header_field_iterator& it) :
+  state_(new HeaderFieldIteratorState(*it.state_)) { } 
+
+header_field_iterator &header_field_iterator::operator=(const header_field_iterator &rhs) {
+  if (this != &rhs) {
+    delete state_;
+    state_ = new HeaderFieldIteratorState(*rhs.state_);
   }
-};
-
-header_field_iterator::header_field_iterator() {
-  state_ = new HeaderFieldIteratorState();
-}
-
-header_field_iterator::header_field_iterator(void *bufp, void *hdr_loc, void *field_loc) {
-  state_ = new HeaderFieldIteratorState();
-  state_->reset(static_cast<TSMBuffer>(bufp), static_cast<TSMLoc>(hdr_loc), static_cast<TSMLoc>(field_loc));
-}
-
-header_field_iterator::header_field_iterator(HeaderField &hf) {
-  state_ = new HeaderFieldIteratorState();
-  state_->reset(hf.state_->hdr_buf_, hf.state_->hdr_loc_, hf.state_->field_loc_);
-}
-
-header_field_iterator::header_field_iterator(const header_field_iterator& it) {
-  state_ = new HeaderFieldIteratorState();
-  state_->reset(it.state_->hdr_buf_, it.state_->hdr_loc_, it.state_->field_loc_);
+  return *this;
 }
 
 header_field_iterator::~header_field_iterator() {
   delete state_;
 }
 
-header_field_iterator& header_field_iterator::operator++() {
-  if (state_->field_loc_ == TS_NULL_MLOC) {
-    return *this;
+// utility function to use to advance iterators using different functions
+HeaderFieldIteratorState *advanceIterator(HeaderFieldIteratorState *state,
+                                          TSMLoc (*getNextField)(TSMBuffer, TSMLoc, TSMLoc)) {
+  if (state->mloc_container_->field_loc_ != TS_NULL_MLOC) {
+    TSMBuffer hdr_buf = state->mloc_container_->hdr_buf_;
+    TSMLoc hdr_loc = state->mloc_container_->hdr_loc_;
+    TSMLoc next_field_loc = getNextField(hdr_buf, hdr_loc, state->mloc_container_->field_loc_);
+    delete state;
+    state = new HeaderFieldIteratorState(hdr_buf, hdr_loc, next_field_loc);
   }
+  return state;
+}
 
-  state_->field_loc_ = TSMimeHdrFieldNext(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_);
+header_field_iterator& header_field_iterator::operator++() {
+  state_ = advanceIterator(state_, TSMimeHdrFieldNext);  
   return *this;
 }
 
@@ -339,9 +348,14 @@ header_field_iterator header_field_iterator::operator++(int) {
   return tmp;
 }
 
+header_field_iterator& header_field_iterator::nextDup() {
+  state_ = advanceIterator(state_, TSMimeHdrFieldNextDup);  
+  return *this;
+}
+
 bool header_field_iterator::operator==(const header_field_iterator& rhs) const {
-  return (state_->hdr_buf_ == rhs.state_->hdr_buf_) && (state_->hdr_loc_ == rhs.state_->hdr_loc_) &&
-      (state_->field_loc_ == rhs.state_->field_loc_);
+  return (state_->mloc_container_->hdr_buf_ == rhs.state_->mloc_container_->hdr_buf_) && (state_->mloc_container_->hdr_loc_ == rhs.state_->mloc_container_->hdr_loc_) &&
+      (state_->mloc_container_->field_loc_ == rhs.state_->mloc_container_->field_loc_);
 }
 
 bool header_field_iterator::operator!=(const header_field_iterator& rhs) const {
@@ -349,11 +363,7 @@ bool header_field_iterator::operator!=(const header_field_iterator& rhs) const {
 }
 
 HeaderField header_field_iterator::operator*() {
-  return HeaderField(state_->hdr_buf_, state_->hdr_loc_, state_->field_loc_);
-}
-
-HeaderField header_field_iterator::operator()() {
-  return operator*();
+  return HeaderField(*this);
 }
 
 /**
@@ -415,7 +425,7 @@ bool Headers::clear() {
 }
 
 bool Headers::erase(header_field_iterator it) {
-  return (TSMimeHdrFieldDestroy(it.state_->hdr_buf_, it.state_->hdr_loc_, it.state_->field_loc_) == TS_SUCCESS);
+  return (TSMimeHdrFieldDestroy(it.state_->mloc_container_->hdr_buf_, it.state_->mloc_container_->hdr_loc_, it.state_->mloc_container_->field_loc_) == TS_SUCCESS);
 }
 
 Headers::size_type Headers::erase(const std::string &key) {
@@ -423,20 +433,15 @@ Headers::size_type Headers::erase(const std::string &key) {
 }
 
 Headers::size_type Headers::erase(const char *key, int length) {
-  header_field_iterator it;
-  header_field_iterator prev_iter;
-  size_type count = 0;
-  while((it = find(key, length)) != end() &&
-      it != prev_iter) {
-
-    if(erase(it) != true)
-      return count;
-
-    // If find continues to return the same element because erase fails then we will stop.
-    prev_iter = it;
-    count++;
+  header_field_iterator iter = find(key, length);
+  size_type erased_count = 0;
+  while (iter != end()) {
+    header_field_iterator iter_to_delete = iter;
+    iter.nextDup();
+    erase(iter_to_delete);
+    ++erased_count;
   }
-  return count;
+  return erased_count;
 }
 
 Headers::size_type Headers::count(const char *key, int length) {
@@ -458,12 +463,10 @@ std::string Headers::values(const std::string &key, const char *join) {
   Headers::size_type num_header_fields = count(key);
   ret.reserve(128 * num_header_fields);
 
-  for (header_field_iterator it = begin(); it != end(); ++it) {
-    if (*it == key) {
-      ret.append((*it).values(join));
-      if (--num_header_fields > 0) {
-        ret.append(join);
-      }
+  for (header_field_iterator it = find(key); it != end(); it.nextDup()) {
+    ret.append((*it).values(join));
+    if (--num_header_fields > 0) {
+      ret.append(join);
     }
   }
 
@@ -502,7 +505,7 @@ Headers::iterator Headers::append(const std::string &key, const std::string &val
     return end();
 }
 
-Headers::iterator Headers::eraseAndSet(const std::string &key, const std::string &value) {
+Headers::iterator Headers::set(const std::string &key, const std::string &value) {
   erase(key);
   return append(key, value);
 }
