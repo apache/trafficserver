@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-612] Add support for SSL keys with passphrases.
+   Author: Ron Barber <rbarber@yahoo-inc.com>
+
   *) [TS-2319] Change default behavior for the various ignore-mismatch
    configurations.
 
