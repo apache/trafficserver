@@ -555,6 +555,77 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   return field_count;
 }
 
+//
+// Parse escape string, supports two forms:
+//
+// 1) Octal representation: '\abc', for example: '\060'
+//    0 < (a*8^2 + b*8 + c) < 255
+//
+// 2) Hex representation: '\xab', for exampe: '\x3A'
+//    0 < (a*16 + b) < 255
+//
+// Return -1 if the beginning four characters are not valid
+// escape sequence, otherwise reutrn unsigned char value of the
+// escape sequence in the string.
+//
+// NOTE: The value of escape sequence should be greater than 0
+//       and less than 255, since:
+//       - 0 is terminator of string, and
+//       - 255('\377') has been used as LOG_FIELD_MARKER.
+//
+int
+LogFormat::parse_escape_string(const char *str, int len)
+{
+  int sum, start = 0;
+  unsigned char a, b, c;
+
+  if (str[start] != '\\' || len < 2)
+    return -1;
+
+  if (str[start + 1] == '\\')
+    return '\\';
+
+  if (len < 4)
+    return -1;
+
+  a = (unsigned char)str[start + 1];
+  b = (unsigned char)str[start + 2];
+  c = (unsigned char)str[start + 3];
+
+  if (isdigit(a) && isdigit(b) && isdigit(b)) {
+
+    sum = (a - '0')*64 + (b - '0')*8 + (c - '0');
+
+    if (sum == 0 || sum >= 255) {
+      Warning("Octal escape sequence out of range: \\%c%c%c, treat it as normal string\n", a, b, c);
+      return -1;
+    } else
+      return sum;
+
+  } else if (tolower(a) == 'x' && isxdigit(b) && isxdigit(c)) {
+    int i, j;
+    if (isdigit(b))
+      i = b - '0';
+    else
+      i = toupper(b) - 'A' + 10;
+
+    if (isdigit(c))
+      j = c - '0';
+    else
+      j = toupper(c) - 'A' + 10;
+
+    sum = i*16 + j;
+
+    if (sum == 0 || sum >= 255) {
+      Warning("Hex escape sequence out of range: \\%c%c%c, treat it as normal string\n", a, b, c);
+      return -1;
+    } else
+      return sum;
+  }
+
+  return -1;
+}
+
 /*-------------------------------------------------------------------------
   LogFormat::parse_format_string
 
@@ -594,6 +665,7 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   unsigned field_count = 0;
   unsigned field_len;
   unsigned start, stop;
+  int escape_char;
 
   for (start = 0; start < len; start++) {
     //
@@ -623,21 +695,41 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
         fields_pos += field_len;
         (*printf_str)[printf_pos++] = LOG_FIELD_MARKER;
         ++field_count;
+        start = stop;
       } else {
         //
-        // This was not a logging field spec after all, so copy it
-        // over to the printf string as is.
+        // This was not a logging field spec after all,
+        // then try to detect and parse escape string.
         //
-        memcpy(&(*printf_str)[printf_pos], &format_str[start], stop - start + 1);
-        printf_pos += stop - start + 1;
+        escape_char = parse_escape_string(&format_str[start], (len - start));
+
+        if (escape_char == '\\') {
+          start += 1;
+          (*printf_str)[printf_pos++] = (char)escape_char;
+        } else if (escape_char >= 0) {
+          start += 3;
+          (*printf_str)[printf_pos++] = (char)escape_char;
+        } else {
+          memcpy(&(*printf_str)[printf_pos], &format_str[start], stop - start + 1);
+          printf_pos += stop - start + 1;
+        }
       }
-      start = stop;
     } else {
       //
-      // This was not the start of a logging field spec, so simply
-      // put this char into the printf_str.
+      // This was not the start of a logging field spec,
+      // then try to detect and parse escape string.
       //
-      (*printf_str)[printf_pos++] = format_str[start];
+      escape_char = parse_escape_string(&format_str[start], (len - start));
+
+      if (escape_char == '\\') {
+        start += 1;
+        (*printf_str)[printf_pos++] = (char)escape_char;
+      } else if (escape_char >= 0) {
+        start += 3;
+        (*printf_str)[printf_pos++] = (char)escape_char;
+      } else {
+        (*printf_str)[printf_pos++] = format_str[start];
+      }
     }
   }
 
