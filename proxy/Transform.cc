@@ -251,20 +251,16 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
       // exist).
       if (m_tvc->m_closed == 0) {
         if (m_closed == TS_VC_CLOSE_ABORT) {
-          if (m_read_vio.op == VIO::NONE) {
-            if (!m_called_user) {
-              m_called_user = 1;
-              m_tvc->m_cont->handleEvent(VC_EVENT_ERROR, NULL);
-            }
+          if (m_read_vio.op == VIO::NONE && !m_called_user) {
+            m_called_user = 1;
+            m_tvc->m_cont->handleEvent(VC_EVENT_ERROR, NULL);
           } else {
             m_read_vio._cont->handleEvent(VC_EVENT_ERROR, &m_read_vio);
           }
         } else {
-          if (m_read_vio.op == VIO::NONE) {
-            if (!m_called_user) {
-              m_called_user = 1;
-              m_tvc->m_cont->handleEvent(VC_EVENT_EOS, NULL);
-            }
+          if (m_read_vio.op == VIO::NONE && !m_called_user) {
+            m_called_user = 1;
+            m_tvc->m_cont->handleEvent(VC_EVENT_EOS, NULL);
           } else {
             m_read_vio._cont->handleEvent(VC_EVENT_EOS, &m_read_vio);
           }
