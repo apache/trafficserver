@@ -175,6 +175,25 @@ HttpSessionManager::purge_keepalives()
   }
 }
 
+bool
+HttpSessionManager::match(HttpServerSession* s, sockaddr const* addr, INK_MD5 const& hostname_hash, HttpSM* sm)
+{
+  return
+    (TS_SERVER_SESSION_SHARING_MATCH_HOST == sm->t_state.txn_conf->server_session_sharing_match || 
+          (ats_ip_addr_eq(&s->server_ip.sa, addr) && ats_ip_port_cast(addr) == ats_ip_port_cast(addr)))
+    && (TS_SERVER_SESSION_SHARING_MATCH_IP == sm->t_state.txn_conf->server_session_sharing_match ||
+        s->hostname_hash == hostname_hash)
+    ;
+}
+
+bool
+HttpSessionManager::match(HttpServerSession* s, sockaddr const* addr, char const* hostname, HttpSM* sm)
+{
+  INK_MD5 hostname_hash;
+  ink_code_md5((unsigned char *) hostname, strlen(hostname), reinterpret_cast<unsigned char *>(&hostname_hash));
+  return match(s, addr, hostname_hash, sm);
+}
+
 HSMresult_t
 _acquire_session(SessionBucket *bucket, sockaddr const* ip, INK_MD5 &hostname_hash, HttpSM *sm)
 {
@@ -188,18 +207,14 @@ _acquire_session(SessionBucket *bucket, sockaddr const* ip, INK_MD5 &hostname_ha
   //  the 2nd level bucket
   b = bucket->l2_hash[l2_index].head;
   while (b != NULL) {
-    if (ats_ip_addr_eq(&b->server_ip.sa, ip) &&
-      ats_ip_port_cast(ip) == ats_ip_port_cast(&b->server_ip)
-    ) {
-      if (hostname_hash == b->hostname_hash) {
-        bucket->lru_list.remove(b);
-        bucket->l2_hash[l2_index].remove(b);
-        b->state = HSS_ACTIVE;
-        to_return = b;
-        Debug("http_ss", "[%" PRId64 "] [acquire session] " "return session from shared pool", to_return->con_id);
-        sm->attach_server_session(to_return);
-        return HSM_DONE;
-      }
+    if (HttpSessionManager::match(b, ip, hostname_hash, sm)) {
+      bucket->lru_list.remove(b);
+      bucket->l2_hash[l2_index].remove(b);
+      b->state = HSS_ACTIVE;
+      to_return = b;
+      Debug("http_ss", "[%" PRId64 "] [acquire session] " "return session from shared pool", to_return->con_id);
+      sm->attach_server_session(to_return);
+      return HSM_DONE;
     }
 
     b = b->hash_link.next;
@@ -234,14 +249,11 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   if (to_return != NULL) {
     ua_session->attach_server_session(NULL);
 
-    if (ats_ip_addr_eq(&to_return->server_ip.sa, ip) &&
-	ats_ip_port_cast(&to_return->server_ip) == ats_ip_port_cast(ip)) {
-      if (hostname_hash == to_return->hostname_hash) {
-        Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
-        to_return->state = HSS_ACTIVE;
-        sm->attach_server_session(to_return);
-        return HSM_DONE;
-      }
+    if (match(to_return, ip, hostname_hash, sm)) {
+      Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
+      to_return->state = HSS_ACTIVE;
+      sm->attach_server_session(to_return);
+      return HSM_DONE;
     }
     // Release this session back to the main session pool and
     //   then continue looking for one from the shared pool
@@ -257,7 +269,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
 
   ink_assert(l1_index < HSM_LEVEL1_BUCKETS);
 
-  if (2 == sm->t_state.txn_conf->share_server_sessions) {
+  if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.txn_conf->server_session_sharing_pool) {
     ink_assert(ethread->l1_hash);
     return _acquire_session(ethread->l1_hash + l1_index, ip, hostname_hash, sm);
   } else {
@@ -283,7 +295,7 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
 
   ink_assert(l1_index < HSM_LEVEL1_BUCKETS);
 
-  if (2 == to_release->share_session) {
+  if (TS_SERVER_SESSION_SHARING_POOL_THREAD == to_release->sharing_pool) {
     bucket = ethread->l1_hash + l1_index;
   } else {
     bucket = g_l1_hash + l1_index;

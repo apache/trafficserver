@@ -78,6 +78,23 @@ public:
   void init();
   int main_handler(int event, void *data);
 
+  /// Check if a session is a valid match.
+  static bool match(
+		    HttpServerSession* s, ///< Session to check for match.
+		    sockaddr const* addr, ///< IP address.
+		    INK_MD5 const& hostname_hash, ///< Hash of hostname of origin server.
+		    HttpSM* sm ///< State machine (for configuration data).
+		    );
+
+  /// Check if a session is a valid match.
+  static bool match(
+		    HttpServerSession* s, ///< Session to check for match.
+		    sockaddr const* addr, ///< IP address.
+		    char const* hostname, ///< Hostname of origin server.
+		    HttpSM* sm ///< State machine (for configuration data).
+		    );
+
+
 private:
   //    Global l1 hash, used when there is no per-thread buckets
   SessionBucket g_l1_hash[HSM_LEVEL1_BUCKETS];

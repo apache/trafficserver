@@ -1909,33 +1909,33 @@ PrefetchConfiguration::readConfiguration()
   int fd = -1;
 
   local_http_server_port = stuffer_port = 0;
-  prefetch_enabled = TS_ConfigReadInteger("proxy.config.prefetch.prefetch_enabled");
+  prefetch_enabled = REC_ConfigReadInteger("proxy.config.prefetch.prefetch_enabled");
   if (prefetch_enabled <= 0) {
     prefetch_enabled = 0;
     return 0;
   }
 
   local_http_server_port = HttpProxyPort::findHttp(AF_INET)->m_port;
-  TS_ReadConfigInteger(stuffer_port, "proxy.config.prefetch.child_port");
-  TS_ReadConfigInteger(url_buffer_size, "proxy.config.prefetch.url_buffer_size");
-  TS_ReadConfigInteger(url_buffer_timeout, "proxy.config.prefetch.url_buffer_timeout");
-  TS_ReadConfigInteger(keepalive_timeout, "proxy.config.prefetch.keepalive_timeout");
+  REC_ReadConfigInteger(stuffer_port, "proxy.config.prefetch.child_port");
+  REC_ReadConfigInteger(url_buffer_size, "proxy.config.prefetch.url_buffer_size");
+  REC_ReadConfigInteger(url_buffer_timeout, "proxy.config.prefetch.url_buffer_timeout");
+  REC_ReadConfigInteger(keepalive_timeout, "proxy.config.prefetch.keepalive_timeout");
   if (keepalive_timeout <= 0)
     keepalive_timeout = 3600;
 
-  TS_ReadConfigInteger(push_cached_objects, "proxy.config.prefetch.push_cached_objects");
+  REC_ReadConfigInteger(push_cached_objects, "proxy.config.prefetch.push_cached_objects");
 
-  TS_ReadConfigInteger(max_object_size, "proxy.config.prefetch.max_object_size");
+  REC_ReadConfigInteger(max_object_size, "proxy.config.prefetch.max_object_size");
 
-  TS_ReadConfigInteger(max_recursion, "proxy.config.prefetch.max_recursion");
+  REC_ReadConfigInteger(max_recursion, "proxy.config.prefetch.max_recursion");
 
-  TS_ReadConfigInteger(redirection, "proxy.config.prefetch.redirection");
+  REC_ReadConfigInteger(redirection, "proxy.config.prefetch.redirection");
 
-  char *tstr = TS_ConfigReadString("proxy.config.prefetch.default_url_proto");
+  char *tstr = REC_ConfigReadString("proxy.config.prefetch.default_url_proto");
   if (config_read_proto(default_url_blast, tstr))
     goto Lerror;
 
-  tstr = TS_ConfigReadString("proxy.config.prefetch.default_data_proto");
+  tstr = REC_ConfigReadString("proxy.config.prefetch.default_data_proto");
   if (config_read_proto(default_data_blast, tstr))
     goto Lerror;
 

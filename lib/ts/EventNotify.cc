@@ -141,11 +141,8 @@ EventNotify::timedwait(int timeout) // milliseconds
     return errno;
 #else
   ink_timestruc abstime;
-  ink_hrtime curtime;
 
-  curtime = ink_get_hrtime_internal() + timeout * HRTIME_MSECOND;
-  abstime = ink_based_hrtime_to_timespec(curtime);
-
+  abstime = ink_hrtime_to_timespec(ink_get_hrtime_internal() + HRTIME_SECONDS(timeout));
   return ink_cond_timedwait(&m_cond, &m_mutex, &abstime);
 #endif
 }

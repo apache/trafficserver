@@ -634,6 +634,12 @@ static int fast(int sock, int speed, int d) {
   return 0;
 }
 
+// Return the number of milliseconds elapsed since the start of the request.
+static ink_hrtime elapsed_from_start(int sock) {
+  ink_hrtime now = ink_get_hrtime_internal();
+  return ink_hrtime_diff_msec(now, fd[sock].start);
+}
+
 static int faster_than(int sock, int speed, int d) {
   if (!speed) return 1;
   int64_t t = now - fd[sock].start + 1;
@@ -1980,7 +1986,7 @@ static int read_response(int sock) {
 
     strcpy(fd[sock].response_header, fd[sock].req_header);
 
-    b1latency += ((ink_get_hrtime_internal() - fd[sock].start) / HRTIME_MSECOND);
+    b1latency += (int)elapsed_from_start(sock);
     new_cbytes += err;
     new_tbytes += err;
     fd[sock].req_pos += err;
@@ -2011,7 +2017,7 @@ static int read_response(int sock) {
             }
             if (fd[sock].response_length && verbose_errors &&
                 expected_length != cli && !nocheck_length)
-              fprintf(stderr, "bad Content-Length expected %d got %d orig %d",
+              fprintf(stderr, "bad Content-Length expected %d got %d orig %d\n",
                       expected_length, cli, fd[sock].response_length);
             fd[sock].response_length = fd[sock].length = cli;
         }
@@ -2071,8 +2077,8 @@ static int read_response(int sock) {
           if (e) *e = 0;
           else *p = 0;
         }
-        printf("error response %d: '%s':'%s'\n", sock,
-               fd[sock].base_url, fd[sock].req_header);
+        printf("error response %d after %dms: '%s':'%s'\n",
+            sock, (int)elapsed_from_start(sock), fd[sock].base_url, fd[sock].req_header);
       }
       return read_response_error(sock);
     }
@@ -2185,7 +2191,7 @@ Ldone:
   }
   if (verbose) printf("read %d done\n", sock);
   new_ops++;
-  double thislatency =((ink_get_hrtime_internal() - fd[sock].start) / HRTIME_MSECOND);
+  double thislatency = elapsed_from_start(sock);
   latency += (int)thislatency;
   lat_ops++;
   if (fd[sock].keepalive > 0) {

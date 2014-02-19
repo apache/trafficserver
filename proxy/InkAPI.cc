@@ -2976,7 +2976,7 @@ TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
       return TS_NULL_MLOC;
     if (f->is_live()) {
       MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, handle->mh);
-      
+
       h->field_ptr = f;
       return reinterpret_cast<TSMLoc>(h);
     }
@@ -3913,7 +3913,7 @@ TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure((void*) input) == TS_SUCCESS);
   sdk_assert(length > 0);
-  
+
   if (((CacheInfo *) key)->magic != CACHE_INFO_MAGIC_ALIVE)
     return TS_ERROR;
 
@@ -4617,7 +4617,7 @@ TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
     *obj = reinterpret_cast<TSMLoc>(hptr->m_http);
     sdk_sanity_check_mbuffer(*bufp);
     return TS_SUCCESS;
-  } 
+  }
 
   return TS_ERROR;
 }
@@ -5179,7 +5179,7 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
     *(reinterpret_cast<HTTPHdr**>(bufp)) = hptr;
     *obj = reinterpret_cast<TSMLoc>(hptr->m_http);
     return sdk_sanity_check_mbuffer(*bufp);
-  } 
+  }
 
   return TS_ERROR;
 }
@@ -5200,7 +5200,7 @@ sockaddr const*
 TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
- 
+
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   return TSHttpSsnClientAddrGet(ssnp);
 }
@@ -5221,7 +5221,7 @@ sockaddr const*
 TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
- 
+
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   return TSHttpSsnIncomingAddrGet(ssnp);
 }
@@ -7265,7 +7265,7 @@ TSReturnCode
 TSAIOWrite(int fd, off_t offset, char* buf, const size_t bufSize, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure (contp) == TS_SUCCESS);
-  
+
   Continuation* pCont = (Continuation*) contp;
   AIOCallback* pAIO = new_AIOCallback();
 
@@ -7305,7 +7305,7 @@ TSRecordDump(TSRecordType rec_type, TSRecordDumpCb callback, void *edata)
   RecDumpRecords((RecT)rec_type, (RecDumpEntryCb)callback, edata);
 }
 
-/* ability to skip the remap phase of the State Machine 
+/* ability to skip the remap phase of the State Machine
    this only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
 */
 void
@@ -7352,7 +7352,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->keep_alive_post_out;
     break;
   case TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS:
-    ret = &sm->t_state.txn_conf->share_server_sessions;
+    ink_assert("Deprecated config key value - TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS");
+//    ret = &sm->t_state.txn_conf->share_server_sessions;
+    break;
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL:
+    ret = &sm->t_state.txn_conf->server_session_sharing_pool;
+    break;
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
+    ret = &sm->t_state.txn_conf->server_session_sharing_match;
     break;
   case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
     typ = OVERRIDABLE_TYPE_INT;
@@ -7639,6 +7646,26 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   s->t_state.setup_per_txn_configs();
 
+  // 4.1.X backwards compatibility - remove for 5.0
+  if (TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS == conf) {
+    switch (value) {
+    case 0: s->t_state.txn_conf->server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_NONE; break;
+    case 1:
+      s->t_state.txn_conf->server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
+      s->t_state.txn_conf->server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
+      break;
+    case 2:
+      s->t_state.txn_conf->server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
+      s->t_state.txn_conf->server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
+      break;
+    default:
+      return TS_ERROR;
+      break; // make the compiler happy
+    }
+    return TS_SUCCESS;
+  }
+  // end 4.1.X BC
+
   void *dest = _conf_to_memberp(conf, s, &type);
 
   if (!dest)
@@ -7664,8 +7691,26 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
+  HttpSM *s = reinterpret_cast<HttpSM*>(txnp);
   OverridableDataType type;
-  void* src = _conf_to_memberp(conf, (HttpSM*)txnp, &type);
+
+  // 4.1.X backwards compatibility - remove for 5.0
+  if (TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS == conf) {
+    if (s->t_state.txn_conf->server_session_sharing_match == TS_SERVER_SESSION_SHARING_MATCH_NONE)
+      *value = 0;
+    else if (s->t_state.txn_conf->server_session_sharing_match == TS_SERVER_SESSION_SHARING_MATCH_BOTH &&
+             s->t_state.txn_conf->server_session_sharing_pool == TS_SERVER_SESSION_SHARING_POOL_GLOBAL)
+      *value = 1;
+    else if (s->t_state.txn_conf->server_session_sharing_match == TS_SERVER_SESSION_SHARING_MATCH_BOTH &&
+             s->t_state.txn_conf->server_session_sharing_pool == TS_SERVER_SESSION_SHARING_POOL_THREAD)
+      *value = 2;
+    else
+      return TS_ERROR;
+    return TS_SUCCESS;
+  }
+  // end 4.1.X BC
+
+  void* src = _conf_to_memberp(conf, s, &type);
 
   if (!src)
     return TS_ERROR;
@@ -8040,6 +8085,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       else if (!strncmp(name, "proxy.config.http.cache.max_open_read_retries", length))
         cnf = TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES;
       break;
+    case 'l':
+      if (0 == strncmp(name, "proxy.config.http.server_session_sharing.pool", length))
+        cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL;
+      break;
     }
     break;
 
@@ -8068,6 +8117,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 't':
       if (!strncmp(name, "proxy.config.http.forward.proxy_auth_to_parent", length))
         cnf = TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT;
+      break;
+    case 'h':
+      if (0 == strncmp(name, "proxy.config.http.server_session_sharing.match", length))
+        cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH;
       break;
     }
     break;
@@ -8291,3 +8344,29 @@ TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
 
   return (s->background_fill == BACKGROUND_FILL_STARTED);
 }
+
+int
+TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
+ {
+   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+   HttpSM *sm = (HttpSM *) txnp;
+   HTTPHdr *req, *resp;
+
+   // We allow for either request or response to be empty (or both), in
+   // which case we default to the transactions request or response.
+   if (request) {
+     sdk_sanity_check_mbuffer(request);
+     req = reinterpret_cast<HTTPHdr*>(request);
+   } else {
+     req = &(sm->t_state.hdr_info.client_request);
+   }
+   if (response) {
+     sdk_sanity_check_mbuffer(response);
+     resp = reinterpret_cast<HTTPHdr*>(response);
+   } else {
+     resp = &(sm->t_state.hdr_info.server_response);
+   }
+
+   // Make sure these are valid response / requests, then verify if it's cacheable.
+   return (req->valid() && resp->valid() && HttpTransact::is_response_cacheable(&(sm->t_state), req, resp)) ? 1: 0;
+ }

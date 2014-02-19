@@ -62,10 +62,25 @@ AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   )
   LIBS=$_npn_saved_LIBS
 
-  AC_MSG_CHECKING(whether to enable NextProtocolNegotiation TLS extension support)
+  AC_MSG_CHECKING(whether to enable Next Protocol Negotiation TLS extension support)
   AC_MSG_RESULT([$enable_tls_npn])
   TS_ARG_ENABLE_VAR([use], [tls-npn])
   AC_SUBST(use_tls_npn)
+])
+
+AC_DEFUN([TS_CHECK_CRYPTO_ALPN], [
+  enable_tls_alpn=yes
+  _alpn_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_FUNCS(SSL_CTX_set_alpn_protos SSL_CTX_set_alpn_select_cb SSL_get0_alpn_selected SSL_select_next_proto,
+    [], [enable_tls_alpn=no]
+  )
+  LIBS=$_alpn_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable Application Layer Protocol Negotiation TLS extension support)
+  AC_MSG_RESULT([$enable_tls_alpn])
+  TS_ARG_ENABLE_VAR([use], [tls-alpn])
+  AC_SUBST(use_tls_alpn)
 ])
 
 AC_DEFUN([TS_CHECK_CRYPTO_SNI], [

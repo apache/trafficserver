@@ -545,23 +545,38 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     }
     sslHandShakeComplete = 1;
 
-#if TS_USE_TLS_NPN
     {
       const unsigned char * proto = NULL;
       unsigned len = 0;
 
-      SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+      // If it's possible to negotiate both NPN and ALPN, then ALPN
+      // is preferred since it is the server's preference.  The server
+      // preference would not be meaningful if we let the client
+      // preference have priority.
+
+#if TS_USE_TLS_ALPN
+      SSL_get0_alpn_selected(ssl, &proto, &len);
+#endif /* TS_USE_TLS_ALPN */
+
+#if TS_USE_TLS_NPN
+      if (len == 0) {
+        SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+      }
+#endif /* TS_USE_TLS_NPN */
+
       if (len) {
-        if (this->npnSet) {
-          this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
-          this->npnSet = NULL;
-        }
+        // If there's no NPN set, we should not have done this negotiation.
+        ink_assert(this->npnSet != NULL);
+
+        this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
+        this->npnSet = NULL;
+
+        ink_assert(this->npnEndpoint != NULL);
         Debug("ssl", "client selected next protocol %.*s", len, proto);
       } else {
         Debug("ssl", "client did not select a next protocol");
       }
     }
-#endif /* TS_USE_TLS_NPN */
 
     return EVENT_DONE;
 
@@ -661,6 +676,9 @@ SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet * s)
   this->npnSet = s;
 }
 
+// NextProtocolNegotiation TLS extension callback. The NPN extension
+// allows the client to select a preferred protocol, so all we have
+// to do here is tell them what out protocol set is.
 int
 SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen,
                                            void * /*arg ATS_UNUSED */)
@@ -674,5 +692,33 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
     return SSL_TLSEXT_ERR_OK;
   }
 
+  return SSL_TLSEXT_ERR_NOACK;
+}
+
+// ALPN TLS extension callback. Given the client's set of offered
+// protocols, we have to select a protocol to use for this session.
+int
+SSLNetVConnection::select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in ATS_UNUSED, unsigned inlen ATS_UNUSED, void *)
+{
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  const unsigned char * npn = NULL;
+  unsigned npnsz = 0;
+
+  ink_release_assert(netvc != NULL);
+
+  if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
+    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
+    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
+
+#if HAVE_SSL_SELECT_NEXT_PROTO
+    if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
+      Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
+      return SSL_TLSEXT_ERR_OK;
+    }
+#endif /* HAVE_SSL_SELECT_NEXT_PROTO */
+  }
+
+  *out = NULL;
+  *outlen = 0;
   return SSL_TLSEXT_ERR_NOACK;
 }

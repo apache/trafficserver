@@ -24,3 +24,7 @@ Introduction
 This is a documentation stub on how to hack Apache Traffic Server. Here we try to document things such as how to write
 and run unit or regression tests or how to inspect the state of the core with a debugger.
 
+.. toctree::
+   :maxdepth: 1
+
+   config-var-impl.en
