@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2578] Close the client connection when you close TransformTerminus.
+   Author: Jack Bates <jack@nottheoilrig.com>
+
   *) [TS-2657] Eliminate TSHttpTxnSetHttpRetBody() and improve upon
    TSHttpTxnErrorBodySet(). This also reduces the size of the HttpSM by 25%.
 

@@ -250,26 +250,17 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
       // the user back instead of the read_vio cont (which won't
       // exist).
       if (m_tvc->m_closed == 0) {
-        if (m_closed == TS_VC_CLOSE_ABORT) {
-          if (m_read_vio.op == VIO::NONE) {
-            if (!m_called_user) {
-              m_called_user = 1;
-              m_tvc->m_cont->handleEvent(VC_EVENT_ERROR, NULL);
-            }
-          } else {
-            m_read_vio._cont->handleEvent(VC_EVENT_ERROR, &m_read_vio);
-          }
+        int ev = (m_closed == TS_VC_CLOSE_ABORT) ? VC_EVENT_ERROR : VC_EVENT_EOS;
+
+        if (!m_called_user) {
+          m_called_user = 1;
+          m_tvc->m_cont->handleEvent(ev, NULL);
         } else {
-          if (m_read_vio.op == VIO::NONE) {
-            if (!m_called_user) {
-              m_called_user = 1;
-              m_tvc->m_cont->handleEvent(VC_EVENT_EOS, NULL);
-            }
-          } else {
-            m_read_vio._cont->handleEvent(VC_EVENT_EOS, &m_read_vio);
-          }
+          ink_assert(m_read_vio._cont != NULL);
+          m_read_vio._cont->handleEvent(ev, &m_read_vio);
         }
       }
+
       return 0;
     }
   }
