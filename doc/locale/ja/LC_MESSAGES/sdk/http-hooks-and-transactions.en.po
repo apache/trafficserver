@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:2
 msgid "HTTP Hooks and Transactions"
-msgstr ""
+msgstr "HTTP フックとトランザクション"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:21
 msgid ""
@@ -38,20 +38,25 @@ msgid ""
 "to be called back for every single transaction or only for specific "
 "transactions."
 msgstr ""
+"フックは Traffic Server のトランザクション処理内のプラグインが介入して処理を"
+"行えるポイントです。プラグインのコールバック関数を登録することでフックへ関数"
+"を \"追加\" します。関数を全てのトランザクション、もしくは特定のトランザク"
+"ションでのみコールバックされるように登録できます。"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:27
 msgid "This chapter contains the following sections:"
-msgstr ""
+msgstr "この章では下記の節を含みます。"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:40
 msgid "The Set of Hooks"
-msgstr ""
+msgstr "フックのセット"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:42
 msgid ""
 "To understand hooks and transactions, you should be familiar with the "
 "following terminology:"
 msgstr ""
+"フックとトランザクションを理解するため、下記の専門用語を知る必要があります。"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:48
 msgid ""
@@ -60,6 +65,10 @@ msgid ""
 "when Traffic Server receives a request and ends when Traffic Server sends "
 "the response."
 msgstr ""
+"**トランザクション** は、クライアントからの単一の HTTP リクエストと Traffic "
+"Server がクライアントに送信するレスポンスから成立します。従って、トランザ"
+"クションは Traffic Server がリクエストを受け取った際に開始し、 Traffic Server "
+"がレスポンスを送信する際に終了します。"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:71
 msgid ""
@@ -68,14 +77,18 @@ msgid ""
 "The session starts when the client connection opens and ends when the "
 "connection closes."
 msgstr ""
+"**セッション** は、 Traffic Server への一つのクライアントコネクションから"
+"成立します。これは一つまたは幾つかの連続したトランザクションから成立できます。"
+"セッションはクライアントコネクションを open する際に開始し、コネクションを "
+"close する際に終了します。"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:79
 msgid "HTTP Transaction State Diagram"
-msgstr ""
+msgstr "HTTP トランザクションの状態遷移図"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:46
 msgid "HTTP Transaction"
-msgstr ""
+msgstr "HTTP トランザクション"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:53
 msgid ""
@@ -86,10 +99,15 @@ msgid ""
 "Server API provides hooks to a subset of these states, as illustrated in "
 "the :ref:`http-txn-state-diagram` below."
 msgstr ""
+"Traffic Server はトランザクションの処理に **HTTP ステートマシン** を使用"
+"します。ステートマシンは洗練されたキャッシュとドキュメント検索に伴う（例えば、"
+"代替の選択、フレッシュネスの判定基準、階層的キャッシュを考慮した）複雑な状態の"
+"セットに従います。 :ref:`http-txn-state-diagram` 以下で図示しているように、 "
+"Traffic Server API はこれらの状態のサブセットへのフックを提供します。"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:61
 msgid "Transform hooks"
-msgstr ""
+msgstr "トランスフォームフック"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:63
 msgid ""
@@ -98,7 +116,12 @@ msgid ""
 "transform. To see where in the HTTP transaction they are called, look for "
 "the \"set up transform\" ovals in the :ref:`http-txn-state-diagram` below."
 msgstr ""
+"2 つの **トランスフォームフック** 、 ``TS_HTTP_REQUEST_TRANSFORM_HOOK`` と "
+"``TS_HTTP_RESPONSE_TRANSFORM_HOOK``は HTTP トランスフォームの過程で呼び出され"
+"ます。 HTTP トランザクションの中でこれらが呼び出される場所を確認するには、 "
+":ref:`http-txn-state-diagram` 以下の \"set up transform\" の楕円を見て"
+"ください。"
 
 #: ../../sdk/http-hooks-and-transactions.en.rst:69
 msgid "HTTP session"
-msgstr ""
+msgstr "HTTP セッション"
