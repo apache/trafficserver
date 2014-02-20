@@ -234,7 +234,17 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   /* Initialize data here because can't call TSVConnWrite() before
    * TS_HTTP_RESPONSE_TRANSFORM_HOOK */
   if (!data->output_bufp) {
+
+    /* Avoid failed assert "sdk_sanity_check_iocore_structure(connp) ==
+     * TS_SUCCESS" in TSVConnWrite() if the response is 304 Not Modified */
     TSVConn output_connp = TSTransformOutputVConnGet(contp);
+    if (!output_connp) {
+      TSContDestroy(contp);
+
+      TSfree(data);
+
+      return 0;
+    }
 
     data->output_bufp = TSIOBufferCreate();
     TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->output_bufp);
