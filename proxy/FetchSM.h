@@ -40,7 +40,7 @@ public:
   FetchSM()
   { }
 
-  void init(Continuation* cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char* headers, int length, unsigned int ip, int port)
+  void init(Continuation* cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char* headers, int length, sockaddr const * addr)
   {
     //_headers.assign(headers);
     Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--", __FUNCTION__, length, headers);
@@ -60,8 +60,7 @@ public:
     mutex = new_ProxyMutex();
     callback_events = events;
     callback_options = options;
-    _ip = ip;
-    _port = port;
+    _addr = addr;
     writeRequest(headers,length);
     SET_HANDLER(&FetchSM::fetch_handler);
   }
@@ -105,8 +104,7 @@ private:
   bool req_finished;
   bool header_done;
   bool resp_finished;
-  unsigned int _ip;
-  int _port;
+  sockaddr const * _addr;
 };
 
 #endif

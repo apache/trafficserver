@@ -7178,10 +7178,8 @@ TSFetchPages(TSFetchUrlParams_t *params)
   while (myparams != NULL) {
     FetchSM *fetch_sm =  FetchSMAllocator.alloc();
     sockaddr* addr = ats_ip_sa_cast(&myparams->ip);
-    in_addr_t ip = ats_ip4_addr_cast(addr);
-    uint16_t port = ats_ip_port_host_order(addr);
 
-    fetch_sm->init((Continuation*)myparams->contp, myparams->options,myparams->events, myparams->request, myparams->request_len, ip, port);
+    fetch_sm->init((Continuation*)myparams->contp, myparams->options,myparams->events, myparams->request, myparams->request_len, addr);
     fetch_sm->httpConnect();
     myparams= myparams->next;
   }
@@ -7193,13 +7191,10 @@ TSFetchUrl(const char* headers, int request_len, sockaddr const* ip , TSCont con
   if (callback_options != NO_CALLBACK) {
     sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   }
-  sdk_assert(ats_is_ip4(ip));
 
   FetchSM *fetch_sm =  FetchSMAllocator.alloc();
-  in_addr_t addr = ats_ip4_addr_cast(ip);
-  unsigned short port = ats_ip_port_cast(ip);
 
-  fetch_sm->init((Continuation*)contp, callback_options, events, headers, request_len, addr, port);
+  fetch_sm->init((Continuation*)contp, callback_options, events, headers, request_len, ip);
   fetch_sm->httpConnect();
 }
 
