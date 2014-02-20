@@ -272,25 +272,22 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   }
 
   /* Avoid failed assert "sdk_sanity_check_iocore_structure(readerp) ==
-   * TS_SUCCESS" in TSIOBufferReaderAvail() if the status code is 302?  or the
-   * message body is empty? */
+   * TS_SUCCESS" in TSIOBufferReaderAvail() if the client or server disconnects
+   * or the content length is zero.
+   *
+   * Don't update the downstream nbytes and reenable it because if not at the
+   * end yet and can't read any more content then can't compute the digest.
+   *
+   * (There hasn't been a TS_EVENT_VCONN_WRITE_COMPLETE event from downstream
+   * yet so if the response has a "Content-Length: ..." header, it is greater
+   * than the content so far.  ntodo is still greater than zero so if the
+   * response is "Transfer-Encoding: chunked", not at the end yet.) */
   TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
   if (!readerp) {
+    TSContDestroy(contp);
 
-    /* Avoid segfault in TSVIOReenable() if the client disconnected */
-    if (TSVConnClosedGet(contp)) {
-      TSContDestroy(contp);
-
-      TSIOBufferDestroy(data->output_bufp);
-      TSfree(data);
-
-    } else {
-
-      int ndone = TSVIONDoneGet(input_viop);
-      TSVIONBytesSet(data->output_viop, ndone);
-
-      TSVIOReenable(data->output_viop);
-    }
+    TSIOBufferDestroy(data->output_bufp);
+    TSfree(data);
 
     return 0;
   }
