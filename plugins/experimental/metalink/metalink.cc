@@ -259,12 +259,11 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
    * nbytes is INT64_MAX.
    *
    * In that case to get it to send a TS_EVENT_VCONN_WRITE_COMPLETE event,
-   * update the downstream nbytes and reenable it. */
+   * update the downstream nbytes and reenable it.  Zero the downstream nbytes
+   * is a shortcut. */
   int ntodo = TSVIONTodoGet(input_viop);
   if (!ntodo) {
-
-    int ndone = TSVIONDoneGet(input_viop);
-    TSVIONBytesSet(data->output_viop, ndone);
+    TSVIONBytesSet(data->output_viop, 0);
 
     TSVIOReenable(data->output_viop);
 
