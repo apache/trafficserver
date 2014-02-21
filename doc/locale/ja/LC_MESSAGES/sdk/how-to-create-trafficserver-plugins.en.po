@@ -28,13 +28,15 @@ msgstr ""
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:4
 msgid "How to Create Traffic Server Plugins"
-msgstr ""
+msgstr "Traffic Server プラグインの作成方法"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:28
 msgid ""
 "This chapter provides a foundation for designing and writing plugins. "
 "Reading this chapter will help you to understand:"
 msgstr ""
+"この章ではプラグインの設計と書き方の基礎について説明します。この章を読むことは"
+"下記の理解の手助けになるでしょう。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:31
 msgid ""
@@ -43,34 +45,42 @@ msgid ""
 "callback mechanism for Traffic Server to \"wake up\" your plugin and put it "
 "to work."
 msgstr ""
+"非同期イベントモード。 Traffic Server 全体で用いられる設計パラダイムです。"
+"プラグインもこの設計に従っていなければなりません。これは Traffic Server "
+"がプラグインを \"起こして\" 処理を実行するコールバックメカニズムを含みます。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:36
 msgid ""
 "Traffic Server's HTTP processing, with an overview of the HTTP state "
 "machine."
 msgstr ""
+"HTTP ステートマシンの概要を伴う Traffic Server の HTTP 処理"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:39
 msgid ""
 "How plugins can hook onto and modify/extend Traffic Server's HTTP "
 "processing."
 msgstr ""
+"プラグインがフックを入れて、 Traffic Server の HTTP 処理を変更 / 拡張する方法"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:47
 msgid "The Asynchronous Event Model"
-msgstr ""
+msgstr "非同期イベントモデル"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:49
 msgid ""
 "Traffic Server is a multi-threaded process. There are two main reasons why "
 "a server might use multiple threads:"
 msgstr ""
+"Traffic Server はマルチスレッドで動作するプロセスです。サーバがマルチスレッド"
+"を使用する主な理由は二つあります。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:52
 msgid ""
 "To take advantage of the concurrency available with multiple CPUs and "
 "multiple I/O devices."
 msgstr ""
+"複数 CPU と複数 I/O デバイスが使用可能な平行性の利点を得るため"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:55
 msgid ""
@@ -78,6 +88,9 @@ msgid ""
 "example, a server could create one thread for each connection, allowing the "
 "operating system (OS) to control switching between threads."
 msgstr ""
+"同時に大量のクライアントコネクションを持つことによる平行性を管理するため。"
+"例として、OS にスレッドの切り替えを制御させることでコネクション毎に一つの"
+"スレッドを作成できます。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:60
 msgid ""
@@ -85,6 +98,9 @@ msgid ""
 "Server does not use a separate OS thread per transaction because it would "
 "not be efficient when handling thousands of simultaneous connections."
 msgstr ""
+"Traffic Server は最初の理由の為に複数スレッドを使用します。しかしながら数千の"
+"同時コネクションを処理する際に効率が悪くなるため、 Traffic Server はトランザク"
+"ション処理毎の OS スレッドの分離を行いません。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:65
 msgid ""
@@ -97,10 +113,17 @@ msgid ""
 "HTTP state machines (which handle HTTP transactions) are implemented as "
 "continuations."
 msgstr ""
+"代わりに、効率的な処理のスケジューリングのために Traffic Server は特殊な"
+"イベント駆動メカニズム、イベントシステムと継続を提供します。 **イベント"
+"システム** はスレッド上で行われる処理のスケジューリングに使用されます。 "
+"**継続** は待機点に到達するまで幾つかの処理を実行可能な、受動的なイベント駆動"
+"ステートマシンです。これは更なる処理を行うのに適した状態の通知を受け取るまで"
+"スリープします。例として、 HTTP ステートマシン（ HTTP トランザクションを処理"
+"するもの）は継続として実装されます。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:93
 msgid "Traffic Server Internals"
-msgstr ""
+msgstr "Traffic Server 内部構造"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:95
 msgid ""
@@ -109,10 +132,13 @@ msgid ""
 "Traffic Server starts up; they then wait for events that trigger them into "
 "activity."
 msgstr ""
+"プラグインは一般的に継続として実装されます。（ ``hello-world`` を除く）プラグ"
+"インのサンプルコードの全ては Traffic Server 起動時に作成される継続です。それら"
+"はその後、活動するきっかけとなるイベントを待ちます。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:107
 msgid "Traffic Server with Plugins"
-msgstr ""
+msgstr "プラグインと Traffic Server"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:109
 msgid ""
@@ -130,6 +156,18 @@ msgid ""
 "client connections and then creates transaction state machines to handle "
 "each protocol transaction."
 msgstr ""
+"プラグインは特定のイベントが発生する度に毎回呼び出される、たった一つの静的な"
+"継続から成立する可能性があります。このようなプラグインの例として ``blacklist-"
+"1.c``、 ``basic-auth.c`` そして ``redirect-1.c`` があります。あるいは、"
+"プラグインは必要に応じ他の継続を動的に作成する可能性があります。トランス"
+"フォームプラグインはこの方法で作られています。静的な親継続は全トランザクション"
+"が変換可能でないか確認するためにチェックを行い、トランザクションが変換可能な際"
+"は静的な継続は **vconnection** と呼ばれる継続の型を作成します。 vconnection は"
+"変換が完了するまで生存し続け、その後破棄されます。この設計は全てのサンプルの"
+"トランスフォームプラグインに見られます。新しいプロトコルのサポートを行うプラグ"
+"インも、このアーキテクチャを持ちます。静的な継続はやって来るクライアント"
+"コネクションを listen し、その後各プロトコルのトランザクションを処理するため、"
+"トランザクションステートマシンを作成します。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:123
 msgid ""
@@ -141,14 +179,20 @@ msgid ""
 "``TSVConnRead``, ``TSCacheWrite``, and ``TSMgmtUpdateRegister``, to name a "
 "few."
 msgstr ""
+"プラグインを書く際、継続にイベントを送信する方法は幾つか存在します。 HTTP "
+"プラグインについては、 HTTP ステートマシンが必要に応じてプラグインを起こす"
+"呼び出しを送信することを可能にする \"フック\" のメカニズムが存在します。"
+"加えて、幾つかの Traffic Server API 関数、 ``TSContCall``、 ``TSVConnRead``、 "
+"``TSCacheWrite`` そして ``TSMgmtUpdateRegister`` は Traffic Server サブ"
+"プロセスがプラグインにイベントを送信するきっかけとなります。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:132
 msgid "Traffic Server HTTP State Machine"
-msgstr ""
+msgstr "Traffic Server HTTP ステートマシン"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:151
 msgid "HTTP Transaction"
-msgstr ""
+msgstr "HTTP トランザクション"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:153
 msgid ""
@@ -159,10 +203,17 @@ msgid ""
 "server. The following diagram shows some states in a typical transaction - "
 "specifically, the scenario wherein content is served from cache."
 msgstr ""
+"HTTP トランザクションはウェブドキュメントに対するクライアントリクエストと "
+"Traffic Server のレスポンスから成立します。レスポンスは要求されたウェブ"
+"サーバーのコンテンツになるかも知れないし、エラーメッセージになるかも知れま"
+"せん。コンテンツは Traffic Server のキャッシュから配信されるかも知れませんし "
+"Traffic Server がオリジンサーバーから取得するであろうものから配信されるかも"
+"知れません。以下の図は典型的なトランザクション、特にコンテンツがキャッシュから"
+"配信される際のシナリオにおける幾つかの状態を示したものです。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:168
 msgid "Simplified HTTP Transaction"
-msgstr ""
+msgstr "簡略化された HTTP トランザクション"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:170
 msgid ""
@@ -173,14 +224,20 @@ msgid ""
 "issues a request for the content. If the content is in the cache (a \"hit"
 "\"), then Traffic Server checks it for freshness."
 msgstr ""
+"上の図において、 Traffic Server はクライアントコネクションを accept し、"
+"リクエストヘッダーを読込み、オリジンサーバの IP アドレスをルックアップし、"
+"キャッシュ上でリクエストされたコンテンツを検索します。キャッシュにコンテンツが"
+"ない場合（ \"ミス\" ）、 Traffic Server はオリジンサーバへのコネクションを "
+"open し、コンテンツのリクエストを発行します。キャッシュにコンテンツがある場合"
+"（ \"ヒット\" ）、 Traffic Server はフレッシュネスをチェックします。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:194
 msgid "API Hooks Corresponding to States Listed in"
-msgstr ""
+msgstr "リストの状態に対応した API フック"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:211
 msgid "Blacklist Plugin"
-msgstr ""
+msgstr "ブラックリストプラグイン"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:213
 msgid ""
@@ -192,10 +249,17 @@ msgid ""
 "state, it then calls the Blacklist plugin to provide the error message "
 "that's sent to the client."
 msgstr ""
+"Traffic Server はオリジンサーバの DNS ルックアップの直後にブラックリストプラグ"
+"インを呼び出します。このプラグインはリクエストされたホストをブラックリストに"
+"載ったサーバのリストと照合します。リクエストが許可される場合、トランザクション"
+"は進みます。ホストが許可されない場合、ブラックリストプラグインはトランザク"
+"ションをエラー状態に送ります。 HTTP ステートマシンが \"send reply header\" "
+"状態を取得した際、ブラックリストプラグインはクライアントへ送信するエラー"
+"メッセージを提供する為に呼び出します。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:222
 msgid "Types of Hooks"
-msgstr ""
+msgstr "フックのタイプ"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:234
 msgid ""
@@ -207,6 +271,13 @@ msgid ""
 "transactions for transformability followed by a **transform hook**, which "
 "is a type of transaction hook used specifically for transforms."
 msgstr ""
+"フィルタリング、ベーシック認証、リダイレクトを行うような **ヘッダー操作プラグ"
+"イン** は通常 DNS ルックアップやリクエストヘッダの読込みの状態へのグローバル"
+"フックを持ちます。この先トランザクションに対して特定のアクションが実行される"
+"必要がある場合、プラグインは自身をトランザクションフックに追加します。 "
+"**トランスフォームプラグイン** は全トランザクションが、変換のために特別に使用"
+"されるトランザクションフックのタイプである **トランスフォームフック** により"
+"変換可能か確認するために、グローバルフックを必要とします。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:42
 msgid ""
@@ -214,6 +285,9 @@ msgid ""
 "roadmap-for-creating-plugins.en>`, with an overview of the functionality "
 "provided by the Traffic Server API."
 msgstr ""
+"Traffic Server API により提供される機能の概要を伴う :doc:`プラグインを書くまで"
+"のロードマップ <how-to-create-trafficserver-plugins/roadmap-for-creating-"
+"plugins.en>`"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:74
 msgid ""
@@ -228,14 +302,24 @@ msgid ""
 "continuation receives an event, it wakes up, does some work, and either "
 "destroys itself or goes back to sleep & waits for the next event."
 msgstr ""
+"継続オブジェクトは Traffic Server 全体で使用されます。その幾つかは Traffic "
+"Server プロセスが実行中ずっと生存する可能性がありますが、他のものは特定の"
+"要求に合わせて（おそらくは他の継続によって）生成され、その後破棄されます。 "
+":ref:`TSInternals` （下記）は Traffic Server の主要なコンポーネントがどのよう"
+"に影響し合うのかを示しています。 Traffic Server は、キャッシュやネットワーク "
+"I/O タスクを統合する *キャッシュプロセッサー* と *ネットプロセッサー* のような"
+"幾つかの **プロセッサー** を持ちます。プロセッサーはイベントシステムと対話し、"
+"スレッド上の作業をスケジュールします。実行スレッドは継続にイベントを送信する"
+"ことで継続をコールバックします。継続がイベントを受信した際、起動し、幾つかの"
+"処理を行い、自身を破棄するか再び眠り次のイベントを待ちます。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:86
 msgid "**Traffic Server Internals**"
-msgstr ""
+msgstr "**Traffic Server の内部構造**"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:100
 msgid "**Traffic Server with Plugins**"
-msgstr ""
+msgstr "**プラグインと Traffic Server**"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:134
 msgid ""
@@ -249,6 +333,14 @@ msgid ""
 "relevance to plugins. You can view the API hooks and corresponding HTTP "
 "states in the :ref:`http-txn-state-diagram`."
 msgstr ""
+"Traffic Server は高度な HTTP キャッシュとプロキシを行います。重要な特徴として"
+"オルタネイトとドキュメントのフレッシュネスのチェック、フィルタリング、階層的"
+"キャッシュのサポート、そしてホスティングを含みます。 Traffic Server は同時に"
+"数千のクライアントリクエストを処理し、各リクエストは HTTP ステートマシンにより"
+"処理されます。これらのマシンは Traffic Server の機能をサポートするために要求"
+"される状態の全てを含む、複雑な状態遷移図に従います。 Traffic Server API は、"
+"プラグインとの関連を選択されたこれらの状態のサブセットへのフックを提供します。"
+" :ref:`http-txn-state-diagram` でAPI フックと関係する HTTP 状態が見られます。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:145
 msgid ""
@@ -257,10 +349,13 @@ msgid ""
 "Complete details about hooking on to Traffic Server processes are provided "
 "in :doc:`http-hooks-and-transactions.en`."
 msgstr ""
+"この節（の下）の例ではプラグインの典型的な介入と Traffic Server の HTTP トラン"
+"ザクション処理の拡張方法について説明します。 Traffic Server の処理へのフックに"
+"関する完全な詳細は :doc:`http-hooks-and-transactions.en` にあります。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:161
 msgid "**Simplified HTTP Transaction**"
-msgstr ""
+msgstr "**簡略化された HTTP トランザクション**"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:177
 msgid ""
@@ -274,10 +369,18 @@ msgid ""
 "Traffic Server first sends the response content before it closes the "
 "transaction."
 msgstr ""
+"コンテンツが新鮮である場合、 Traffic Server はクライアントにリプライヘッダーを"
+"送信します。コンテンツが新鮮ではない場合、 Traffic Server はオリジンサーバへ"
+"コネクションを open し、コンテンツをリクエストします。上図、 :ref:`Simplified"
+"HTTPTransaction` はエラーのイベントにおける振る舞いを示して *いません。* "
+"いずれかの段階でエラーがあった場合、 HTTP ステートマシンは \"send reply header"
+"\" 状態にジャンプし、返信をします。返信がエラーだった場合、トランザクションは "
+"close します。返信がエラーでなかった場合、 Traffic Server はトランザクション"
+"を close する前にまずレスポンスコンテンツを送信します。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:187
 msgid "**API Hooks Corresponding to States**"
-msgstr ""
+msgstr "**API フックと状態の関係**"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:196
 msgid ""
@@ -288,10 +391,16 @@ msgid ""
 "server, this hook is the right one to use. The Blacklist plugin works in "
 "this manner, as shown in the :ref:`BlackListPlugin` diagram below."
 msgstr ""
+"プラグインを開始するトリガーとしてフックを使用できます。フックの名前は"
+"ちょうど完了した Traffic Server 状態を示します。例えば、 \"OS DNS lookup\" "
+"フックはオリジンサーバの DNS ルックアップの直 *後* にプラグインが動作します。 "
+"リクエストされたオリジンサーバの IP アドレスを要求するプラグインのため、この"
+"フックは使用するのが正しいです。ブラックリストプラグインは下図の :ref:`Black"
+"ListPlugin` で示す通り、この方法で動作します。"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:204
 msgid "**Blacklist Plugin**"
-msgstr ""
+msgstr "**ブラックリストプラグイン**"
 
 #: ../../sdk/how-to-create-trafficserver-plugins.en.rst:224
 msgid ""
@@ -305,3 +414,11 @@ msgid ""
 "chapters: :doc:`header-based-plugin-examples.en` and :doc:`http-"
 "transformation-plugin.en`"
 msgstr ""
+"\"origin server DNS lookup\" 状態へのブラックリストプラグインのフックは ****"
+"グローバルフック**** であり、プラグインが DNS ルックアップイベントを伴う "
+"HTTP トランザクションのたびに *毎回* 呼び出されることを意味します。このプラグ"
+"インの \"send reply hook\" 状態へのフックは ****トランザクションフック**** で"
+"あり、 *特定のトランザクション* （ブラックリストの例では、ブラックリストに"
+"載ったサーバへのリクエストに対してのみ使用される）でのみ動作します。"
+"セットアップフックの幾つかの例はコード例の章が提供されています。: :doc:"
+"`header-based-plugin-examples.en` と :doc:`http-transformation-plugin.en`"
