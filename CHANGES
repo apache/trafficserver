@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2584] Fix failed assert transforming and caching negative responses
+
   *) [TS-2582] Make traffic_cop debugging eadier by logging to stdout.
 
   *) [TS-2579] Remove ipv4 limit for FetchSM and TSFetchUrl/TSFetchPages.

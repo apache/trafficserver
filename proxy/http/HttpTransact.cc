@@ -4783,6 +4783,11 @@ HttpTransact::set_headers_for_cache_write(State* s, HTTPInfo* cache_info, HTTPHd
 
   if (!cache_info->valid()) {
     cache_info->create();
+    cache_info->response_set(response);
+  } else if (!s->negative_caching) {
+    cache_info->response_set(response);
+  } else {
+    ink_assert(cache_info->response_get()->valid());
   }
 
   /* Store the requested URI */
@@ -4805,11 +4810,6 @@ HttpTransact::set_headers_for_cache_write(State* s, HTTPInfo* cache_info, HTTPHd
     request->url_set(s->hdr_info.client_request.url_get());
   }
   cache_info->request_set(request);
-  if (!s->negative_caching)
-    cache_info->response_set(response);
-  else {
-    ink_assert(cache_info->response_get()->valid());
-  }
 
   if (s->api_server_request_body_set)
     cache_info->request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
