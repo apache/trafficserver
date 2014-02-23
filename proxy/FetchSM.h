@@ -60,7 +60,7 @@ public:
     mutex = new_ProxyMutex();
     callback_events = events;
     callback_options = options;
-    _addr = addr;
+    _addr.assign(addr);
     writeRequest(headers,length);
     SET_HANDLER(&FetchSM::fetch_handler);
   }
@@ -104,7 +104,7 @@ private:
   bool req_finished;
   bool header_done;
   bool resp_finished;
-  sockaddr const * _addr;
+  IpEndpoint _addr;
 };
 
 #endif
