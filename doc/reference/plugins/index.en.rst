@@ -69,7 +69,7 @@ directory of the Apache Traffic Server source tree. Exmperimental plugins can be
   esi.en
   geoip_acl.en
   hipes.en
-  metafilter.en
+  metalink.en
   mysql_remap.en
   stale_while_revalidate.en
   ts_lua.en

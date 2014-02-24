@@ -15,7 +15,7 @@
   specific language governing permissions and limitations
   under the License.
 
-.. _metafilter-plugin:
+.. _metalink-plugin:
 
 Metalink plugin
 ===============
