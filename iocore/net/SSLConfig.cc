@@ -43,6 +43,7 @@ int SSLConfig::configid = 0;
 int SSLCertificateConfig::configid = 0;
 int SSLConfigParams::ssl_maxrecord = 0;
 bool SSLConfigParams::ssl_allow_client_renegotiation = false;
+init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> * sslCertUpdate;
 

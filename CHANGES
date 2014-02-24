@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2437] Add a lifecycle hook to expose loaded SSL certificates to plugins.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
   *) [TS-2582] Make traffic_cop debugging eadier by logging to stdout.
 
   *) [TS-2579] Remove ipv4 limit for FetchSM and TSFetchUrl/TSFetchPages.

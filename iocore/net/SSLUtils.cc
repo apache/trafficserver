@@ -601,6 +601,10 @@ SSLInitClientContext(const SSLConfigParams * params)
     }
   }
 
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);
+  }
+
   return client_ctx;
 
 fail:
@@ -761,6 +765,10 @@ ssl_store_ssl_context(
   Debug("ssl", "importing SNI names from %s", (const char *)certpath);
   ssl_index_certificate(lookup, ctx, certpath);
 
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
+
   return true;
 }
 
@@ -908,6 +916,10 @@ SSLParseCertificateConfiguration(
 #endif /* TS_USE_TLS_ALPN */
 
     lookup->insert(lookup->ssl_default, "*");
+    if (SSLConfigParams::init_ssl_ctx_cb) {
+      SSLConfigParams::init_ssl_ctx_cb(lookup->ssl_default, true);
+    }
+
   }
 
   return true;

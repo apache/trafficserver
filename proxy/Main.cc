@@ -118,6 +118,7 @@ static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_N
 
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void*  mgmt_storage_device_cmd_callback(void* x, char* data, int len);
+static void init_ssl_ctx_callback(void *ctx, bool server);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
 
@@ -1523,7 +1524,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
 
-    sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
@@ -1535,6 +1535,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
     // Init plugins as soon as logging is ready.
     plugin_init();        // plugin.config
+
+    SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
+    sslNetProcessor.start(getNumSSLThreads(), stacksize);
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
     cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);
@@ -1698,4 +1701,16 @@ mgmt_storage_device_cmd_callback(void* data, char* arg, int len)
     }
   }
   return NULL;
+}
+
+static void
+init_ssl_ctx_callback(void *ctx, bool server)
+{
+  TSEvent event = server ? TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED : TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED;
+  APIHook *hook = lifecycle_hooks->get(server ? TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK : TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK);
+
+  while (hook) {
+    hook->invoke(event, ctx);
+    hook = hook->next();
+  }
 }
