@@ -34,7 +34,6 @@
         </expression>
     </statistics>
 
-
     <statistics
 	minimum="0">
         <destination>proxy.node.http.cache_current_connections_count</destination>
@@ -139,7 +138,7 @@
         </expression>
     </statistics>
 
-  
+
 	<!-- ########################################################################### -->
     <!-- StatAggregation::Ag_TotalDocumentsServed() -->
     <statistics
@@ -259,6 +258,47 @@
     </statistics>
 
 
+	<!-- ssl stats -->
+    <statistics>
+      <destination>proxy.node.https.user_agent_total_request_bytes</destination>
+      <destination scope="cluster">proxy.cluster.https.user_agent_total_request_bytes</destination>
+      <expression>
+          proxy.process.https.user_agent_request_document_total_size +
+          proxy.process.https.user_agent_request_header_total_size
+       </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+       <destination>proxy.node.https.user_agent_total_response_bytes</destination>
+       <destination scope="cluster">proxy.cluster.https.user_agent_total_response_bytes</destination>
+       <expression>
+            proxy.process.https.user_agent_response_document_total_size +
+            proxy.process.https.user_agent_response_header_total_size
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.https.origin_server_total_request_bytes</destination>
+        <destination scope="cluster">proxy.cluster.https.origin_server_total_request_bytes</destination>
+        <expression>
+            proxy.process.https.origin_server_request_document_total_size +
+            proxy.process.https.origin_server_request_header_total_size
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.https.origin_server_total_response_bytes</destination>
+        <destination scope="cluster">proxy.cluster.https.origin_server_total_response_bytes</destination>
+         <expression>
+            proxy.process.https.origin_server_response_document_total_size +
+            proxy.process.https.origin_server_response_header_total_size
+        </expression>
+    </statistics>
+
+
         <!-- add up the downstream (client<=>proxy) traffic volume -->
     <statistics
 	minimum="0">
@@ -269,6 +309,14 @@
         </expression>
     </statistics>
 
+    <statistics
+	minimum="0">
+        <destination>proxy.node.https.user_agent_total_bytes</destination>
+        <expression>
+            proxy.node.https.user_agent_total_request_bytes  +
+            proxy.node.https.user_agent_total_response_bytes
+        </expression>
+    </statistics>
 
         <!-- add up the upstream (client<=>proxy) traffic volume -->
     <statistics
@@ -282,6 +330,14 @@
         </expression>
     </statistics>
 
+    <statistics
+	minimum="0">
+        <destination>proxy.node.https.origin_server_total_bytes</destination>
+        <expression>
+            proxy.node.https.origin_server_total_request_bytes  +
+            proxy.node.https.origin_server_total_response_bytes
+        </expression>
+    </statistics>
 
         <!-- PP_bytes is missing!! -->
     <statistics

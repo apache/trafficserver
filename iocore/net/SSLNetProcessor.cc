@@ -62,7 +62,7 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
   // initialization hasn't failed already.
   client_ctx = SSLInitClientContext(params);
   if (!client_ctx) {
-    SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
+    SSLError(NULL,"Can't initialize the SSL client, HTTPS in remap rules will not function");
   }
 
   if (number_of_ssl_threads < 1) {

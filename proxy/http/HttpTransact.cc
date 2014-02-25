@@ -1287,6 +1287,9 @@ HttpTransact::HandleRequest(State* s)
   ink_assert(!s->hdr_info.server_request.valid());
 
   HTTP_INCREMENT_TRANS_STAT(http_incoming_requests_stat);
+  if(s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
+    HTTP_INCREMENT_TRANS_STAT(https_incoming_requests_stat);
+  }
 
   if (s->api_release_server_session == true) {
     s->api_release_server_session = false;
@@ -7842,6 +7845,9 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
     DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
 
   HTTP_INCREMENT_TRANS_STAT(http_outgoing_requests_stat);
+  if(s->next_hop_scheme == URL_WKSIDX_HTTPS) {
+    HTTP_INCREMENT_TRANS_STAT(https_outgoing_requests_stat);
+  }
 }
 
 // build a (status_code) response based upon the given info
@@ -8764,6 +8770,15 @@ HttpTransact::update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hr
   HTTP_SUM_TRANS_STAT(http_user_agent_request_document_total_size_stat, user_agent_request_body_size);
   HTTP_SUM_TRANS_STAT(http_user_agent_response_document_total_size_stat, user_agent_response_body_size);
 
+  // ssl stats
+  // ssl user agent/client stats
+  if(s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
+    HTTP_SUM_TRANS_STAT(https_user_agent_request_header_total_size_stat, user_agent_request_header_size);
+    HTTP_SUM_TRANS_STAT(https_user_agent_request_document_total_size_stat, user_agent_request_body_size);
+    HTTP_SUM_TRANS_STAT(https_user_agent_response_header_total_size_stat, user_agent_response_header_size);
+    HTTP_SUM_TRANS_STAT(https_user_agent_response_document_total_size_stat, user_agent_response_body_size);
+  }
+
   // proxy stats
   if (s->current.request_to == HttpTransact::PARENT_PROXY) {
     HTTP_SUM_TRANS_STAT(http_parent_proxy_request_total_bytes_stat,
@@ -8779,6 +8794,13 @@ HttpTransact::update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hr
     HTTP_SUM_TRANS_STAT(http_origin_server_response_header_total_size_stat, origin_server_response_header_size);
     HTTP_SUM_TRANS_STAT(http_origin_server_request_document_total_size_stat, origin_server_request_body_size);
     HTTP_SUM_TRANS_STAT(http_origin_server_response_document_total_size_stat, origin_server_response_body_size);
+    // ssl origin
+    if(s->next_hop_scheme == URL_WKSIDX_HTTPS) {
+      HTTP_SUM_TRANS_STAT(https_origin_server_request_header_total_size_stat, origin_server_request_header_size);
+      HTTP_SUM_TRANS_STAT(https_origin_server_response_header_total_size_stat, origin_server_response_header_size);
+      HTTP_SUM_TRANS_STAT(https_origin_server_request_document_total_size_stat, origin_server_request_body_size);
+      HTTP_SUM_TRANS_STAT(https_origin_server_response_document_total_size_stat, origin_server_response_body_size);
+    }
   }
 
   if (s->method == HTTP_WKSIDX_PUSH) {

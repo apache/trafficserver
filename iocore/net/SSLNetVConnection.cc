@@ -132,7 +132,7 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          SSLError("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          SSLError(static_cast<SSLNetVConnection *>(vc),"[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -147,7 +147,7 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
       default:
         event = SSL_READ_ERROR;
         ret = errno;
-        SSLError("[SSL_NetVConnection::ssl_read_from_net]");
+        SSLError(static_cast<SSLNetVConnection *>(vc),"[SSL_NetVConnection::ssl_read_from_net]");
         break;
       }                         // switch
       break;
@@ -430,7 +430,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     default:
       r = -errno;
       Debug("ssl", "SSL_write-SSL_ERROR_SSL");
-      SSLError("SSL_write");
+      SSLError(this,"SSL_write");
       break;
     }
     return (r);
@@ -495,7 +495,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       this->ssl = make_ssl_connection(lookup->defaultContext(), this);
       if (this->ssl == NULL) {
         Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
-        SSLError("SSL_StartHandShake");
+        SSLError(this,"SSL_StartHandShake");
         return EVENT_ERROR;
       }
     }
@@ -523,7 +523,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
-    SSLDebug("SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
+    SSLDebug(this,"SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
   }
 
   switch (ssl_error) {
@@ -660,7 +660,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
-    SSLError("sslClientHandShakeEvent");
+    SSLError(this, "sslClientHandShakeEvent");
     return EVENT_ERROR;
     break;
 

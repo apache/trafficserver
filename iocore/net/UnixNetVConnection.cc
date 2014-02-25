@@ -806,6 +806,7 @@ UnixNetVConnection::UnixNetVConnection()
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);
   SET_HANDLER((NetVConnHandler) & UnixNetVConnection::startEvent);
+  attributes = HttpProxyPort::TRANSPORT_DEFAULT;
 }
 
 // Private methods

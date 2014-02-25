@@ -1629,6 +1629,20 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_NODE, "proxy.node.http.current_parent_proxy_connections", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  // ssl
+  {RECT_NODE, "proxy.node.https.user_agent_total_request_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.https.user_agent_total_response_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.https.origin_server_total_request_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.https.origin_server_total_response_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.https.user_agent_total_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.https.origin_server_total_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+
   //# Cache
   {RECT_NODE, "proxy.node.cache.contents.num_docs", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1787,6 +1801,17 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CLUSTER, "proxy.cluster.http.parent_proxy_total_response_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  // ssl
+  {RECT_CLUSTER, "proxy.cluster.https.throughput", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.https.user_agent_total_request_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.https.user_agent_total_response_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.https.origin_server_total_request_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.https.origin_server_total_response_bytes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   //# Cache
   {RECT_CLUSTER, "proxy.cluster.cache.contents.num_docs", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1850,6 +1875,13 @@ RecordElement RecordsConfig[] = {
   {RECT_CLUSTER, "proxy.cluster.current_client_connections", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CLUSTER, "proxy.cluster.current_server_connections", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  // ssl
+  {RECT_CLUSTER, "proxy.cluster.https.user_agent_xacts_per_second", RECD_FLOAT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.https.client_throughput_out", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.https.client_throughput_out_kbit", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //

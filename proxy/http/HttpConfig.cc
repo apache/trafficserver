@@ -1108,6 +1108,67 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_PERSISTENT,
                      (int) http_total_x_redirect_stat, RecRawStatSyncCount);
 
+  // SSL stats
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.incoming_requests",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_incoming_requests_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.outgoing_requests",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_outgoing_requests_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.current_client_connections",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) https_current_client_connections_stat, RecRawStatSyncSum);
+  HTTP_CLEAR_DYN_STAT(https_current_client_connections_stat);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.total_client_connections",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_total_client_connections_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.current_server_connections",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) https_current_server_connections_stat, RecRawStatSyncSum);
+  HTTP_CLEAR_DYN_STAT(https_current_server_connections_stat);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.total_server_connections",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_total_server_connections_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.user_agent_request_document_total_size",
+                     RECD_INT, RECP_PERSISTENT, (int) https_user_agent_request_document_total_size_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.user_agent_request_header_total_size",
+                     RECD_INT, RECP_PERSISTENT, (int) https_user_agent_request_header_total_size_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.user_agent_response_document_total_size",
+                     RECD_INT, RECP_PERSISTENT, (int) https_user_agent_response_document_total_size_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.user_agent_response_header_total_size",
+                     RECD_INT, RECP_PERSISTENT, (int) https_user_agent_response_header_total_size_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.origin_server_request_document_total_size",
+                     RECD_INT, RECP_PERSISTENT, (int) https_origin_server_request_document_total_size_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.origin_server_request_header_total_size",
+                     RECD_INT, RECP_PERSISTENT, (int) https_origin_server_request_header_total_size_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.origin_server_response_document_total_size",
+                     RECD_INT, RECP_PERSISTENT,
+                     (int) https_origin_server_response_document_total_size_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.origin_server_response_header_total_size",
+                     RECD_INT, RECP_PERSISTENT, (int) https_origin_server_response_header_total_size_stat, RecRawStatSyncSum);
+
 }
 
 
