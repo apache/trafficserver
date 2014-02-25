@@ -2269,7 +2269,7 @@ Sockets
    Sets the receive buffer size for connections from Traffic Server to
    the origin server.
 
-.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_out INT 0
+.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_out INT 1
 
    Turns different options "on" for the origin server socket:::
 
