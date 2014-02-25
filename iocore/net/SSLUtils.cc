@@ -592,12 +592,16 @@ SSLInitClientContext(const SSLConfigParams * params)
     SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
 
     if (params->clientCACertFilename != NULL && params->clientCACertPath != NULL) {
-      if ((!SSL_CTX_load_verify_locations(client_ctx, params->clientCACertFilename, params->clientCACertPath)) ||
-          (!SSL_CTX_set_default_verify_paths(client_ctx))) {
+      if (!SSL_CTX_load_verify_locations(client_ctx, params->clientCACertFilename, params->clientCACertPath)) {
         SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)",
             params->clientCACertFilename, params->clientCACertPath);
         goto fail;
       }
+    }
+
+    if (!SSL_CTX_set_default_verify_paths(client_ctx)) {
+      SSLError("failed to set the default verify paths");
+      goto fail;
     }
   }
 
