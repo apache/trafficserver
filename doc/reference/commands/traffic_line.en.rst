@@ -792,6 +792,222 @@ The :option:`traffic_line -r` option accepts the following variable names::
     proxy.process.cache.volume_0.hdr_marshal_bytes
     proxy.process.cache.volume_0.gc_bytes_evacuated
     proxy.process.cache.volume_0.gc_frags_evacuated
+    proxy.process.https.incoming_requests
+    proxy.process.https.outgoing_requests
+    proxy.process.https.current_client_connections
+    proxy.process.https.total_client_connections
+    proxy.process.https.current_server_connections
+    proxy.process.https.total_server_connections
+    proxy.node.https.user_agent_total_request_bytes
+    proxy.process.https.user_agent_request_document_total_size
+    proxy.process.https.user_agent_request_header_total_size
+    proxy.node.https.user_agent_total_response_bytes
+    proxy.process.https.user_agent_response_document_total_size
+    proxy.process.https.user_agent_response_header_total_size
+    proxy.node.https.origin_server_total_request_bytes
+    proxy.process.https.origin_server_request_document_total_size
+    proxy.process.https.origin_server_request_header_total_size
+    proxy.node.https.origin_server_total_response_bytes
+    proxy.process.https.origin_server_response_document_total_size
+    proxy.process.https.origin_server_response_header_total_size
+    proxy.node.https.user_agent_total_bytes
+    proxy.node.https.user_agent_total_request_bytes
+    proxy.node.https.user_agent_total_response_bytes
+    proxy.node.https.origin_server_total_bytes
+    proxy.node.https.origin_server_total_request_bytes
+    proxy.node.https.origin_server_total_response_bytes
+    proxy.process.ssl.user_agent_other_errors
+    proxy.process.ssl.user_agent_expired_cert
+    proxy.process.ssl.user_agent_revoked_cert
+    proxy.process.ssl.user_agent_unknown_cert
+    proxy.process.ssl.user_agent_cert_verify_failed
+    proxy.process.ssl.user_agent_bad_cert
+    proxy.process.ssl.user_agent_decryption_failed
+    proxy.process.ssl.user_agent_wrong_version
+    proxy.process.ssl.user_agent_unknown_ca
+    proxy.process.ssl.origin_server_other_errors
+    proxy.process.ssl.origin_server_expired_cert
+    proxy.process.ssl.origin_server_revoked_cert
+    proxy.process.ssl.origin_server_unknown_cert
+    proxy.process.ssl.origin_server_cert_verify_failed
+    proxy.process.ssl.origin_server_bad_cert
+    proxy.process.ssl.origin_server_decryption_failed
+    proxy.process.ssl.origin_server_wrong_version
+    proxy.process.ssl.origin_server_unknown_ca
+    proxy.process.ssl.user_agent_sessions
+    proxy.process.ssl.user_agent_session_hit
+    proxy.process.ssl.user_agent_session_miss
+    proxy.process.ssl.user_agent_session_timeout
+    proxy.process.ssl.cipher.user_agent.{cipherName}
+
+Statistics Descriptions
+=======================
+
+proxy.process.https.incoming_requests
+  Total number of inbound https requests.
+
+proxy.process.https.outgoing_requests
+  Total number of outbound https requests.
+
+proxy.process.https.current_client_connections
+  Current number of https connected clients.
+
+proxy.process.https.total_client_connections
+  Total number of inbound https connections.
+
+proxy.process.https.current_server_connections
+  Current number of https connected origins.
+
+proxy.process.https.total_server_connections
+  Total number of outbound https connections.
+
+proxy.node.https.user_agent_total_request_bytes
+  Total number of bytes received from https connected clients.
+
+proxy.process.https.user_agent_request_document_total_size
+  Total size of body data received from https connected clients.
+
+proxy.process.https.user_agent_request_header_total_size
+  Total size of request headers received from https connected clients.
+
+proxy.node.https.user_agent_total_response_bytes
+  Total number of bytes sent to https connected clients.
+
+proxy.process.https.user_agent_response_document_total_size
+  Total size of response body data sent to https connected clients.
+
+proxy.process.https.user_agent_response_header_total_size
+  Total size of response headers sent to https connected clients.
+
+proxy.node.https.origin_server_total_request_bytes
+  Total number of bytes sent to https connected origins.
+
+proxy.process.https.origin_server_request_document_total_size
+  Total size of request body data sent to https connected origins.
+
+proxy.process.https.origin_server_request_header_total_size
+  Total size of request headers sent to https connected origins.
+
+proxy.node.https.origin_server_total_response_bytes
+  Total number of bytes received from https connected origins.
+
+proxy.process.https.origin_server_response_document_total_size
+  Total size of response body data from https connected origins.
+
+proxy.process.https.origin_server_response_header_total_size
+  Total size of header data from https connected origins.
+
+proxy.node.https.user_agent_total_bytes
+  Total bytes transferred to/from https connected clients.
+
+proxy.node.https.origin_server_total_bytes
+  Total bytes transferred to/from https connected origins.
+
+proxy.process.ssl.user_agent_other_errors
+  Total number of *other* ssl client connection errors (counts ssl
+  errors that are not captured in other user agent stats below)
+
+proxy.process.ssl.user_agent_expired_cert
+  Total number of ssl client connection failures where the cert was
+  expired.
+
+proxy.process.ssl.user_agent_revoked_cert
+  Total number of ssl client connection failures where the cert was
+  revoked.
+
+proxy.process.ssl.user_agent_unknown_cert
+  Total number of ssl client connection failures related to the cert,
+  but specific error was unknown.
+
+proxy.process.ssl.user_agent_cert_verify_failed
+  Total number of ssl client connection failures where cert verification
+  failed.
+
+proxy.process.ssl.user_agent_bad_cert
+  Total number of ssl client connection failures where the cert is bad.
+
+proxy.process.ssl.user_agent_decryption_failed
+  Total number of ssl client connection decryption failures (during
+  negotiation).
+
+proxy.process.ssl.user_agent_wrong_version
+  Total number of ssl client connections that provided an invalid protocol
+  version.
+
+proxy.process.ssl.user_agent_unknown_ca
+  Total number of ssl client connection that failed due to unknown ca.
+
+proxy.process.ssl.origin_server_other_errors
+  Total number of *other* ssl origin server connection errors (counts ssl
+  errors that are not captured in other origin server stats below).
+
+proxy.process.ssl.origin_server_expired_cert
+  Total number of ssl origin server connection failures where the cert
+  was expired.
+
+proxy.process.ssl.origin_server_revoked_cert
+  Total number of ssl origin server connection failures where the cert
+  was revoked.
+
+proxy.process.ssl.origin_server_unknown_cert
+  Total number of ssl origin server connection failures related to the
+  cert where specific error was unknown.
+
+proxy.process.ssl.origin_server_cert_verify_failed
+  Total number of ssl origin server connection failures where cert
+  verification failed.
+
+proxy.process.ssl.origin_server_bad_cert
+  Total number of ssl origin server connection failures where the cert
+  is bad.
+
+proxy.process.ssl.origin_server_decryption_failed
+  Total number of ssl origin server connection decryption failures
+  (during negotiation).
+
+proxy.process.ssl.origin_server_wrong_version
+  Total number of ssl origin server connections that provided an invalid
+  protocol version.
+
+proxy.process.ssl.origin_server_unknown_ca
+  Total number of ssl origin server connection that failed due to
+  unknown ca.
+
+proxy.process.ssl.user_agent_sessions
+  Total number of ssl/tls sessions created.
+
+proxy.process.ssl.user_agent_session_hit
+  Total number of session hits.  A previous session was reused which
+  resulted in an abbreviated ssl client negotiation.
+
+proxy.process.ssl.user_agent_session_miss
+  Total number of session misses.  The ssl client provided a session id
+  that was not found in cache and, therefore, could not be used.
+
+proxy.process.ssl.user_agent_session_timeout
+  Total number of session timeouts.  The ssl client provided a session, but
+  it could not be used because it was past the session timeout.
+
+proxy.process.ssl.cipher.user_agent.{cipherName}
+  Total number of ssl client connections that used cipherName.  The list of
+  cipher stats is dynamic and depends upon the installed ciphers for the
+  system.  Some common cipher stats are:
+    proxy.process.ssl.cipher.user_agent.ECDHE-RSA-RC4-SHA
+    proxy.process.ssl.cipher.user_agent.ECDHE-RSA-AES128-SHA256
+    proxy.process.ssl.cipher.user_agent.ECDHE-RSA-AES128-GCM-SHA256
+    proxy.process.ssl.cipher.user_agent.ECDHE-RSA-AES128-SHA
+    proxy.process.ssl.cipher.user_agent.RC4-SHA
+    proxy.process.ssl.cipher.user_agent.RC4-MD5
+    proxy.process.ssl.cipher.user_agent.AES128-GCM-SHA256
+    proxy.process.ssl.cipher.user_agent.AES128-SHA
+  There are two ways to get the list of cipher stats:
+  1.  Run ATS with debug logging and show ssl diags:
+      CONFIG proxy.config.diags.debug.enabled INT 1
+      CONFIG proxy.config.diags.debug.tags STRING ssl.*
+      View output of traffic.out looking for lines like:
+         (ssl) Registering ssl cipher stat 'proxy.process.ssl.cipher.user_agent.ECDHE-RSA-AES256-GCM-SHA384'
+  2.  Run this script (just asks openssl to tell us):
+         openssl ciphers | awk '{n=split($0,a,":"); for (i = 0; ++i <= n;) print "proxy.process.ssl.cipher.user_agent." a[i];}'
 
 Examples
 ========

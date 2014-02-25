@@ -60,7 +60,8 @@ ClassAllocator<HttpClientSession> httpClientSessionAllocator("httpClientSessionA
 HttpClientSession::HttpClientSession()
   : VConnection(NULL), con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
     tcp_init_cwnd_set(false),
-    transact_count(0), half_close(false), conn_decrease(false), bound_ss(NULL),
+    transact_count(0), half_close(false), conn_decrease(false), 
+    client_vc_attributes(HttpProxyPort::TRANSPORT_DEFAULT), bound_ss(NULL),
     read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
     ka_vio(NULL), slave_ka_vio(NULL),
     cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
@@ -99,6 +100,9 @@ HttpClientSession::cleanup()
 
   if (conn_decrease) {
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
+    if(client_vc_attributes == HttpProxyPort::TRANSPORT_SSL) {
+      HTTP_DECREMENT_DYN_STAT(https_current_client_connections_stat);
+    }
     conn_decrease = false;
   }
 }
@@ -186,11 +190,16 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   ink_assert(!!lock);
   this->backdoor_connect = backdoor;
+  client_vc_attributes = client_vc->attributes;
 
   // Unique client session identifier.
   con_id = ink_atomic_increment((int64_t *) (&next_cs_id), 1);
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
+  if(client_vc_attributes == HttpProxyPort::TRANSPORT_SSL) {
+    HTTP_INCREMENT_DYN_STAT(https_current_client_connections_stat);
+    HTTP_INCREMENT_DYN_STAT(https_total_client_connections_stat);
+  }
   conn_decrease = true;
   HTTP_INCREMENT_DYN_STAT(http_total_client_connections_stat);
   /* inbound requests stat should be incremented here, not after the
@@ -329,6 +338,9 @@ HttpClientSession::do_io_close(int alerrno)
     client_vc = NULL;
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
+    if(client_vc_attributes == HttpProxyPort::TRANSPORT_SSL) {
+       HTTP_DECREMENT_DYN_STAT(https_current_client_connections_stat);
+    }
     conn_decrease = false;
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }

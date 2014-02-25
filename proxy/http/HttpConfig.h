@@ -346,6 +346,22 @@ enum
   http_response_status_505_count_stat,
   http_response_status_5xx_count_stat,
 
+  // SSL related stats
+  https_incoming_requests_stat,
+  https_outgoing_requests_stat,
+  https_current_client_connections_stat,
+  https_total_client_connections_stat,
+  https_current_server_connections_stat,
+  https_total_server_connections_stat,
+  https_user_agent_request_document_total_size_stat,
+  https_user_agent_request_header_total_size_stat,
+  https_user_agent_response_document_total_size_stat,
+  https_user_agent_response_header_total_size_stat,
+  https_origin_server_request_document_total_size_stat,
+  https_origin_server_request_header_total_size_stat,
+  https_origin_server_response_document_total_size_stat,
+  https_origin_server_response_header_total_size_stat,
+
   http_stat_count
 };
 

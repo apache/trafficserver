@@ -72,6 +72,10 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
   magic = HTTP_SS_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
   HTTP_INCREMENT_DYN_STAT(http_total_server_connections_stat);
+  if(server_vc->attributes == HttpProxyPort::TRANSPORT_SSL) {
+    HTTP_SUM_GLOBAL_DYN_STAT(https_current_server_connections_stat, 1);
+    HTTP_INCREMENT_DYN_STAT(https_total_server_connections_stat);
+  }
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
@@ -117,6 +121,11 @@ HttpServerSession::do_io_close(int alerrno)
   if (state == HSS_ACTIVE) {
     HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
     this->server_trans_stat--;
+  }
+
+  // update ssl stat before disposal of server_vc
+  if(server_vc->attributes == HttpProxyPort::TRANSPORT_SSL) {
+    HTTP_SUM_GLOBAL_DYN_STAT(https_current_server_connections_stat, -1);
   }
 
   server_vc->do_io_close(alerrno);

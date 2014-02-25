@@ -117,6 +117,8 @@ private:
   bool half_close;
   bool conn_decrease;
   void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
+  // The saved off client_vc->atrributes (is a HttpProxyPort::TransportType)
+  int client_vc_attributes;
 
   HttpServerSession *bound_ss;
 

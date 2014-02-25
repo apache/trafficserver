@@ -36,6 +36,7 @@
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "I_RecHttp.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -85,6 +86,8 @@ public:
   virtual void setSSLClientConnection(bool state)
   {
     sslClientConnection = state;
+    // set attributes to indicate SSL transport
+    attributes = (state ? HttpProxyPort::TRANSPORT_SSL : HttpProxyPort::TRANSPORT_DEFAULT);
   };
   int sslServerHandShakeEvent(int &err);
   int sslClientHandShakeEvent(int &err);
