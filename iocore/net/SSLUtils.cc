@@ -81,13 +81,16 @@ typedef SSL_METHOD * ink_ssl_method_t;
 // gather user provided settings from ssl_multicert.config in to a single struct
 struct ssl_user_config
 {
-    xptr<char> addr;   // dest_ip - IPv[64] address to match
-    xptr<char> cert;   // ssl_cert_name - certificate
-    xptr<char> ca;     // ssl_ca_name - CA public certificate
-    xptr<char> key;    // ssl_key_name - Private key
-    int  session_ticket_enabled;  // ssl_ticket_enabled - session ticket enabled
-    xptr<char> ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
-    xptr<char> dialog; // ssl_key_dialog - Private key dialog
+  ssl_user_config () : session_ticket_enabled(1) {
+  }
+
+  int session_ticket_enabled;  // ssl_ticket_enabled - session ticket enabled
+  xptr<char> addr;   // dest_ip - IPv[64] address to match
+  xptr<char> cert;   // ssl_cert_name - certificate
+  xptr<char> ca;     // ssl_ca_name - CA public certificate
+  xptr<char> key;    // ssl_key_name - Private key
+  xptr<char> ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+  xptr<char> dialog; // ssl_key_dialog - Private key dialog
 };
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
