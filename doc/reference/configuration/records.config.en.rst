@@ -1126,12 +1126,12 @@ Cache Control
 
    When enabled (``1``), Traffic Server looks up range requests in the cache.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept:`` header of the
-   request. If set to ``2``, this logic only happens in the absence of a
+   request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1142,12 +1142,12 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Language:`` header even if it does not match the ``Accept-Language:``
-   header of the request. If set to ``2``, this logic only happens in the absence of a
+   header of the request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1159,12 +1159,12 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Encoding:`` header even if it does not match the ``Accept-Encoding:``
-   header of the request. If set to ``2``, this logic only happens in the absence of a
+   header of the request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1176,12 +1176,12 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept-Charset:`` header
-   of the request. If set to ``2``, this logic only happens in the absence of a
+   of the request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1193,7 +1193,7 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 0
    :reloadable:
 
    When enabled (``1``), Traffic Server ignores any ``Cache-Control:

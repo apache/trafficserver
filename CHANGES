@@ -1,11 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2319] Change default behavior for the various ignore-mismatch
+   configurations.
+
   *) [TS-2563] Always set the SSL default verify paths.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 
-  *) [TS-2437] Add a lifecycle hook to expose loaded SSL certificates to plugins.
-   Author: Wei Sun <sunwei@yahoo-inc.com>
+  *) [TS-2437] Add a lifecycle hook to expose loaded SSL certificates to
+   plugins. Author: Wei Sun <sunwei@yahoo-inc.com>
 
   *) [TS-2582] Make traffic_cop debugging eadier by logging to stdout.
 
