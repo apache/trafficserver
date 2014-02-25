@@ -746,7 +746,7 @@ HTTP Connection Timeouts
 
    Specifies how long Traffic Server keeps connections to origin servers open if the transaction stalls.
 
-.. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_in INT 0
+.. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_in INT 900
    :reloadable:
 
    The maximum amount of time Traffic Server can remain connected to a client. If the transfer to the client is not complete before this
