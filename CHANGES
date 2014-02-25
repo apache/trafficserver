@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2531] The default remap rule doesn't match a forward proxy request
+
   *) [TS-612] Add support for SSL keys with passphrases.
    Author: Ron Barber <rbarber@yahoo-inc.com>
 
