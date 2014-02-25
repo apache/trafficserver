@@ -926,8 +926,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     p->chunked_handler.dechunked_reader->consume(p->chunked_handler.skip_bytes);
 
     // If there is data to process in the buffer, do it now
-    if (p->chunked_handler.dechunked_reader->read_avail())
-      producer_handler(VC_EVENT_READ_READY, p);
+    producer_handler(VC_EVENT_READ_READY, p);
   } else if (p->do_dechunking || p->do_chunked_passthru) {
     // remove the dechunked reader marker so that it doesn't act like a buffer guard
     if (p->do_dechunking)
@@ -947,9 +946,8 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     //p->chunked_handler.chunked_reader->consume(
     //p->chunked_handler.skip_bytes);
 
-    if (p->chunked_handler.chunked_reader->read_avail()) {
-      producer_handler(VC_EVENT_READ_READY, p);
-    } else if (sm->redirection_tries > 0 && p->vc_type == HT_HTTP_CLIENT) {     // read_avail() == 0
+    producer_handler(VC_EVENT_READ_READY, p);
+    if (!p->chunked_handler.chunked_reader->read_avail() && sm->redirection_tries > 0 && p->vc_type == HT_HTTP_CLIENT) {     // read_avail() == 0
       // [bug 2579251]
       // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the
       // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set

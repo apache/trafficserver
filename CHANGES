@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2589] Don't hold up the response until the server starts sending content.
+   Author: Jack Bates <jack@nottheoilrig.com>
+
   *) [TS-2687] Support for MIPS paltform.
    Author: Dejan Latinovic <Dejan.Latinovic@rt-rk.com> 
 
