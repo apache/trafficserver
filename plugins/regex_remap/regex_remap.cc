@@ -118,7 +118,8 @@ class RemapRegex
  public:
   RemapRegex(const std::string& reg, const std::string& sub, const std::string& opt) :
     _num_subs(-1), _rex(NULL), _extra(NULL), _order(-1), _simple(false), _lowercase_substitutions(false),
-    _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1)
+    _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1),
+    _first_item(NULL), _last_item(NULL)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
 
@@ -180,7 +181,41 @@ class RemapRegex
         _lowercase_substitutions = atoi(opt_val.c_str());
         TSDebug(PLUGIN_NAME, "lowercasing %d", _lowercase_substitutions);
       } else {
-        TSError("Unknown options: %s", opt.c_str());
+        TSOverridableConfigKey name;
+        TSRecordDataType type;
+        std::string opt_name = opt.substr(start, pos1-start-1);
+        if (TS_SUCCESS == TSHttpTxnConfigFind(opt_name.c_str(), opt_name.length(), &name, &type)) {
+          Item *cur = (Item *) TSmalloc(sizeof(Item));
+          switch (type) {
+            case TS_RECORDDATATYPE_INT:
+              cur->data.rec_int = strtoll(opt_val.c_str(), NULL, 10);
+              break;
+            case TS_RECORDDATATYPE_STRING:
+              cur->data.rec_string = TSstrdup(opt_val.c_str());
+              cur->data_len = opt_val.size();
+              break;
+            default:
+              TSfree(cur);
+              cur = NULL;
+              TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
+              break;
+          }
+          if (cur) {
+            TSDebug(PLUGIN_NAME, "%s = %s", opt_name.c_str(), opt_val.c_str());
+            cur->name = name;
+            cur->type = type;
+            cur->next = NULL;
+            if (NULL == _first_item) {
+              _first_item = cur;
+              _last_item = cur;
+            } else {
+              _last_item->next = cur;
+              _last_item = cur;
+            }
+          }
+        } else {
+          TSError("Unknown options: %s", opt.c_str());
+        }
       }
       start = opt.find_first_of("@", pos2);
     }
@@ -490,6 +525,16 @@ class RemapRegex
   inline int dns_timeout_option() const  { return _dns_timeout; };
   inline bool lowercase_substitutions_option() const  { return _lowercase_substitutions; };
 
+  struct Item {
+    TSOverridableConfigKey name;
+    TSRecordDataType type;
+    TSRecordData data;
+    int data_len; // Used when data is a string
+    Item* next;
+  };
+
+  inline Item* get_override_items() const { return _first_item; };
+
  private:
   char* _rex_string;
   char* _subst;
@@ -510,6 +555,9 @@ class RemapRegex
   int _no_activity_timeout;
   int _connect_timeout;
   int _dns_timeout;
+
+  Item* _first_item;
+  Item* _last_item;
 };
 
 struct RemapInstance
@@ -762,6 +810,15 @@ TSRemapDeleteInstance(void* ih)
 
   re = ri->first;
   while (re) {
+    RemapRegex::Item *item = re->get_override_items();
+    while (item) {
+      RemapRegex::Item *tmp = item;
+      if (TS_RECORDDATATYPE_STRING == item->type) {
+        TSfree(item->data.rec_string);
+      }
+      item = item->next;
+      TSfree(tmp);
+    }
     tmp = re;
     re = re->next();
     delete tmp;
@@ -861,6 +918,24 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (re->lowercase_substitutions_option() == true) {
         TSDebug(PLUGIN_NAME, "Setting lowercasing substitutions on");
         lowercase_substitutions = true;
+      }
+      if (re->get_override_items() != NULL) {
+        RemapRegex::Item *item = re->get_override_items();
+        while (item) {
+          switch (item->type) {
+            case TS_RECORDDATATYPE_INT:
+              TSHttpTxnConfigIntSet(txnp, item->name, item->data.rec_int);
+              TSDebug(PLUGIN_NAME, "Setting config id %d to %" PRId64"", item->name, item->data.rec_int);
+              break;
+            case TS_RECORDDATATYPE_STRING:
+              TSHttpTxnConfigStringSet(txnp, item->name, item->data.rec_string, item->data_len);
+              TSDebug(PLUGIN_NAME, "Setting config id %d to %s", item->name, item->data.rec_string);
+              break;
+            default:
+              break; // Error ?
+          }
+          item = item->next;
+        }
       }
 
       // Update profiling if requested
