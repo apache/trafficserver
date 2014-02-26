@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2592] Use proxy allocator for ioBufAllocator
+
   *) [TS-2576] Add Oct/Hex escape representation into LogFormat
 
   *) [TS-2494] fix the crash that return the stale cached document

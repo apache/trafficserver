@@ -290,7 +290,7 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
   switch (type) {
   case MEMALIGNED:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(size_index))
-      _data = (char *) ioBufAllocator[size_index].alloc_void();
+      _data = (char *) THREAD_ALLOC(ioBufAllocator[size_index], this_thread());
     // coverity[dead_error_condition]
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(size_index))
       _data = (char *)ats_memalign(ats_pagesize(), index_to_buffer_size(size_index));
@@ -298,7 +298,7 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
   default:
   case DEFAULT_ALLOC:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(size_index))
-      _data = (char *) ioBufAllocator[size_index].alloc_void();
+      _data = (char *) THREAD_ALLOC(ioBufAllocator[size_index], this_thread());
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(size_index))
       _data = (char *)ats_malloc(BUFFER_SIZE_FOR_XMALLOC(size_index));
     break;
@@ -317,14 +317,14 @@ IOBufferData::dealloc()
   switch (_mem_type) {
   case MEMALIGNED:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index))
-      ioBufAllocator[_size_index].free_void(_data);
+      THREAD_FREE(_data, ioBufAllocator[_size_index], this_thread());
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index))
       ::free((void *) _data);
     break;
   default:
   case DEFAULT_ALLOC:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index))
-      ioBufAllocator[_size_index].free_void(_data);
+      THREAD_FREE(_data, ioBufAllocator[_size_index], this_thread());
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index))
       ats_free(_data);
     break;
@@ -536,7 +536,7 @@ IOBufferBlock::realloc(int64_t i)
     return;
 
   ink_release_assert(i > data->_size_index && i != BUFFER_SIZE_NOT_ALLOCATED);
-  void *b = ioBufAllocator[i].alloc_void();
+  void *b = THREAD_ALLOC(ioBufAllocator[i], this_thread());
   realloc_set_internal(b, BUFFER_SIZE_FOR_INDEX(i), i);
 }
 

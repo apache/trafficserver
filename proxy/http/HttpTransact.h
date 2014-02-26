@@ -1389,7 +1389,7 @@ HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
 {
   ink_assert(buffer);
   if (size >= 0) {
-    ioBufAllocator[size].free_void(buffer);
+    THREAD_FREE(buffer, ioBufAllocator[size], this_thread());
   } else {
     ats_free(buffer);
   }
