@@ -21,12 +21,15 @@
 cache.config
 ============
 
-The :file:`cache.config` file defines how Traffic Server caches web objects. You
-can add caching rules to specify the following: - Not to cache objects
-from specific IP addresses - How long to pin particular objects in the
-cache - How long to consider cached objects as fresh - Whether to ignore
-no-cache directives from the server
+The :file:`cache.config` file (by default, located in 
+``/opt/trafficserver/etc/trafficserver/``) defines how Traffic Server caches 
+web objects. You can add caching rules to specify the following: 
 
+    - Not to cache objects from specific IP addresses 
+    - How long to pin particular objects in the cache
+    - How long to consider cached objects as fresh 
+    - Whether to ignore no-cache directives from the server
+    
 .. important::
 
    After you modify the :file:`cache.config` file, navigate to
@@ -132,7 +135,7 @@ The following list shows possible actions and their allowed values.
 ``cache-responses-to-cookies``
    Change the style of caching with regard to cookies. This effectively
    overrides the configuration parameter
-   :ref:`proxy.config.http.cache.cache_responses_to_cookies`
+   :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
    and uses the same values with the same semantics. The override happens
    only for requests that match.
     
