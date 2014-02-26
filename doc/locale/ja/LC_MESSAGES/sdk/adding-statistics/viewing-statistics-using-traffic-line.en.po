@@ -1,0 +1,35 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../sdk/adding-statistics/viewing-statistics-using-traffic-line.en.rst:2
+msgid "Viewing Statistics Using Traffic Line"
+msgstr ""
+
+#: ../../sdk/adding-statistics/viewing-statistics-using-traffic-line.en.rst:23
+msgid "To view statistics for your plugin, follow the steps below:"
+msgstr ""
+
+#: ../../sdk/adding-statistics/viewing-statistics-using-traffic-line.en.rst:25
+msgid ""
+"Make sure you know the name of your statistic (i.e., the name used in the "
+"``TSStatCoupledGlobalAdd``, ``TSStatCreate``, or "
+"``TSStatCoupledGlobalCategoryCreate`` call)."
+msgstr ""
+
+#: ../../sdk/adding-statistics/viewing-statistics-using-traffic-line.en.rst:29
+msgid "In your ``<Traffic Server>/bin`` directory, enter the following:"
+msgstr ""
+
+#: ../../sdk/adding-statistics/viewing-statistics-using-traffic-line.en.rst:31
+msgid "::::text ./traffic\\_line -r the\\_name"
+msgstr ""

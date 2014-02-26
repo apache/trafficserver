@@ -1,0 +1,50 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:2
+msgid "Unable to Load Plugins"
+msgstr ""
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:21
+msgid "To load plugins, follow the steps below."
+msgstr ""
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:23
+msgid ""
+"Make sure that your plugin source code contains an ``TSPluginInit`` "
+"initialization function."
+msgstr ""
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:26
+msgid "Compile your plugin source code, creating a shared library."
+msgstr ""
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:28
+msgid "Add an entry to the ``plugin.config`` file for your plugin."
+msgstr ""
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:30
+msgid ""
+"Add the path to your plugin shared library to the :file:`records.config` "
+"file."
+msgstr ""
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:33
+msgid "Restart Traffic Server."
+msgstr ""
+
+#: ../../sdk/troubleshooting-tips/unable-to-load-plugins.en.rst:35
+msgid ""
+"For detailed information about each step above, refer to :doc:`../getting-"
+"started/a-simple-plugin.en`."
+msgstr ""

@@ -57,6 +57,7 @@ To compile with an alternate set of compilers, e.g. LLVM/Clang
 
 
 INITIAL CONFIGURATION
+---------------------
 
 Next set the cluster interface in 'records.config'. The network
 interface name will vary depending on the host operating system.
@@ -72,6 +73,7 @@ To start the Traffic Server process stack (TC, TM, TS):
 
 
 INSTALLATION HELP
+-----------------
 
 The Apache Traffic Server group cannot field user's installation
 questions.  There are many valuable forums to help you get started.
@@ -80,7 +82,7 @@ Users Mailing List at
 
     http://cwiki.apache.org/confluence/display/TS/Traffic+Server
 
-Thanks for using the Apache Traffic Server, version 3.
+Thanks for using the Apache Traffic Server, version 5.
 
              The Apache Software Foundation
              http://www.apache.org/

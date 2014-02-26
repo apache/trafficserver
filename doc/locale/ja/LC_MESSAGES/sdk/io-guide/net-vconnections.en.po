@@ -1,0 +1,37 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../sdk/io-guide/net-vconnections.en.rst:2
+msgid "Net Vconnections"
+msgstr ""
+
+#: ../../sdk/io-guide/net-vconnections.en.rst:21
+msgid ""
+"A **network** **vconnection** (or*\\* netvconnection*\\ \\*) is a wrapper "
+"around a TCP socket that enables the socket to work within the Traffic "
+"Server vconnection framework. See `vconnections <index.en."
+"html#Vconnections>`__ for more information about the Traffic Server "
+"abstraction for doing asynchronous IO."
+msgstr ""
+
+#: ../../sdk/io-guide/net-vconnections.en.rst:27
+msgid "The netvconnection functions are listed below:"
+msgstr ""
+
+#: ../../sdk/io-guide/net-vconnections.en.rst:29
+msgid "[dox 'TSNetAccept'] in [dox \"TSNetAccept\" :src\\_file]"
+msgstr ""
+
+#: ../../sdk/io-guide/net-vconnections.en.rst:30
+msgid "[dox %TSNetConnect%] in [dox :src\\_file]"
+msgstr ""

@@ -598,8 +598,40 @@ Value Effect
        origin servers.
 
 .. ts:cv:: CONFIG proxy.config.http.share_server_sessions INT 1
+   :deprecated:
 
    Enables (``1``) or disables (``0``) the reuse of server sessions.
+
+.. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
+
+   Enable and set the ability to re-use server connections across client connections. The valid values are
+
+   none
+      Do not match, do not re-use server sessions.
+
+   ip
+      Re-use server sessions, check only that the IP address and port of the origin server matches.
+
+   host
+      Re-use server sessions, check only that the fully qualified domain name matches.
+
+   both
+      Re-use server sessions, but only if the IP address and fully qualified domain name match.
+
+   It is strongly recommended to use either *none* or *both* for this value unless you have a specific need to use *ip*
+   or *host*. The most common reason is virtual hosts that share an IP address in which case performance can be enhanced
+   if those sessions can be re-used. However, not all web servers support requests for different virtual hosts on the
+   same connection so use with caution.
+
+.. ts:cv:: CONFIG proxy.config.http.server_session_sharing.pool STRING thread
+
+   Control the scope of server session re-use if it is enabled by :ts:cv:`proxy.config.server_session_sharing.match`. The valid values are
+
+   global
+      Re-use sessions from a global pool of all server sessions.
+
+   thread
+      Re-use sessions from a per-thread pool.
 
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
@@ -746,7 +778,7 @@ HTTP Connection Timeouts
 
    Specifies how long Traffic Server keeps connections to origin servers open if the transaction stalls.
 
-.. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_in INT 0
+.. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_in INT 900
    :reloadable:
 
    The maximum amount of time Traffic Server can remain connected to a client. If the transfer to the client is not complete before this
@@ -1001,7 +1033,7 @@ Cache Control
 
    Enables (``1``) or disables (``0``) caching of HTTP requests.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
    :reloadable:
 
    Enables (``1``) or disables (``0``) caching objects that have an empty
@@ -1094,12 +1126,12 @@ Cache Control
 
    When enabled (``1``), Traffic Server looks up range requests in the cache.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept:`` header of the
-   request. If set to ``2``, this logic only happens in the absence of a
+   request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1110,12 +1142,12 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Language:`` header even if it does not match the ``Accept-Language:``
-   header of the request. If set to ``2``, this logic only happens in the absence of a
+   header of the request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1127,12 +1159,12 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Encoding:`` header even if it does not match the ``Accept-Encoding:``
-   header of the request. If set to ``2``, this logic only happens in the absence of a
+   header of the request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1144,12 +1176,12 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 2
    :reloadable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept-Charset:`` header
-   of the request. If set to ``2``, this logic only happens in the absence of a
+   of the request. If set to ``2`` (default), this logic only happens in the absence of a
    ``Vary`` header in the cached response (which is the recommended and safe use).
 
    .. note::
@@ -1161,7 +1193,7 @@ Cache Control
       you can also enable this configuration with a ``1``.
 
 
-.. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
+.. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 0
    :reloadable:
 
    When enabled (``1``), Traffic Server ignores any ``Cache-Control:
@@ -1196,15 +1228,15 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
-   The maximum number of alternates that are allowed for any given URL. 
+   The maximum number of alternates that are allowed for any given URL.
    Disable by setting to 0. Note that this setting will not strictly enforce
-   this if the variable ``proxy.config.cache.vary_on_user_agent`` is set 
+   this if the variable ``proxy.config.cache.vary_on_user_agent`` is set
    to 1 (by default it is 0).
 
 .. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
 
-   Sets the target size of a contiguous fragment of a file in the disk cache. Accepts values that are powers of 2, e.g. 65536, 131072, 
-   262144, 524288, 1048576, 2097152, etc. When setting this, consider that larger numbers could waste memory on slow connections, 
+   Sets the target size of a contiguous fragment of a file in the disk cache. Accepts values that are powers of 2, e.g. 65536, 131072,
+   262144, 524288, 1048576, 2097152, etc. When setting this, consider that larger numbers could waste memory on slow connections,
    but smaller numbers could increase (waste) seeks.
 
 RAM Cache
@@ -1406,8 +1438,8 @@ hostname to ``host_x.y.com``.
 
 .. ts:cv:: CONFIG proxy.config.dns.validate_query_name INT 0
 
-   When enabled (1) provides additional resilience against DNS forgery (for instance 
-   in DNS Injection attacks), particularly in forward or transparent proxies, but 
+   When enabled (1) provides additional resilience against DNS forgery (for instance
+   in DNS Injection attacks), particularly in forward or transparent proxies, but
    requires that the resolver populates the queries section of the response properly.
 
 HostDB
@@ -2237,7 +2269,7 @@ Sockets
    Sets the receive buffer size for connections from Traffic Server to
    the origin server.
 
-.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_out INT 0
+.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_out INT 1
 
    Turns different options "on" for the origin server socket:::
 

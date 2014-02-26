@@ -1,0 +1,36 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../sdk/io-guide/guide-to-cache-api/errors.en.rst:2
+msgid "Errors"
+msgstr ""
+
+#: ../../sdk/io-guide/guide-to-cache-api/errors.en.rst:21
+msgid ""
+"Errors pertaining to the failure of various cache operations are indicated "
+"by ``TSCacheError`` (enumeration). They are as follows:"
+msgstr ""
+
+#: ../../sdk/io-guide/guide-to-cache-api/errors.en.rst:24
+msgid "``TS_CACHE_ERROR_NO_DOC`` - the key does not match a cached resource"
+msgstr ""
+
+#: ../../sdk/io-guide/guide-to-cache-api/errors.en.rst:26
+msgid ""
+"``TS_CACHE_ERROR_DOC_BUSY`` - e.g, another continuation could be writing to "
+"the cache location"
+msgstr ""
+
+#: ../../sdk/io-guide/guide-to-cache-api/errors.en.rst:29
+msgid "``TS_CACHE_ERROR_NOT_READY`` - the cache is not ready"
+msgstr ""

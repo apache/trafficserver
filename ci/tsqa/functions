@@ -160,7 +160,8 @@ alive() {
 # Start up Traffic Server. Test for all the processes so that we have a better
 # chance of delaying the test until traffic_server is ready.
 startup() {
-  tsexec traffic_cop &
+  local log=$TSQA_ROOT/$(logdir)/cop.log
+  ( tsexec traffic_cop --stdout > $log )&
   for proc in cop manager server; do
     for i in $(seq 10) ; do
       alive $proc && msg $proc is alive && break

@@ -1,0 +1,44 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:2
+msgid "Plugin Registration and Version Checking"
+msgstr ""
+
+#: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:21
+msgid ""
+"Make sure that the functions in your plugin are supported in your version "
+"of Traffic Server."
+msgstr ""
+
+#: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:24
+msgid "Use the following interfaces:"
+msgstr ""
+
+#: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:29
+msgid ""
+"The following version of ``hello-world`` registers the plugin and ensures "
+"it's running with a compatible version of Traffic Server."
+msgstr ""
+
+#: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:26
+msgid ""
+"`TSPluginRegister <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a6d7f514e70abaf097c4a3f1ba01f6df8>`_"
+msgstr ""
+
+#: ../../sdk/getting-started/plugin-registration-and-version-checking.en.rst:27
+msgid ""
+"`TSTrafficServerVersionGet <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a3ef91e01612ffdce6dd040f836db08e8>`_"
+msgstr ""

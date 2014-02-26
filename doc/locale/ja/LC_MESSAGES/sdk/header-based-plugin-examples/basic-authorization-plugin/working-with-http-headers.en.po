@@ -1,0 +1,33 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/working-with-http-headers.en.rst:2
+msgid "Working With HTTP Headers"
+msgstr ""
+
+#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/working-with-http-headers.en.rst:21
+msgid ""
+"The plugin checks all client request headers for the Proxy-Authorization "
+"MIME field, which should contain the user name and password. The plugin's "
+"continuation handler, ``auth-plugin``, calls ``handle_dns`` to check the "
+"``Proxy-Authorization`` field. The ``handle_dns`` routine uses "
+"``TSHttpTxnClientReqGet`` and ``TSMimeHdrFieldFind`` to obtain the ``Proxy-"
+"Authorization`` field:"
+msgstr ""
+
+#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/working-with-http-headers.en.rst:46
+msgid ""
+"If the ``Proxy-Authorization`` field is present, then the plugin checks "
+"that the authentication type is \"Basic\", and the user name and password "
+"are present and valid:"
+msgstr ""

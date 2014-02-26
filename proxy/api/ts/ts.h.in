@@ -310,6 +310,20 @@ extern "C"
 
         Event: TS_EVENT_LIFECYCLE_CACHE_READY
 
+      TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK
+
+        called every time after a server SSL_CTX has finished the initialization.
+        It exposes the initialized SSL_CTX pointer.
+
+        Event: TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED
+
+      TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK
+
+        called once, after the client SSL_CTX has finished the initialization.
+        It exposes the initialized SSL_CTX pointer.
+
+        Event: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
+
       Ordering guarantees:
 
       - TS_LIFECYCLE_PORTS_INITIALIZED_HOOK before TS_LIFECYCLE_PORTS_READY_HOOK.
@@ -322,6 +336,8 @@ extern "C"
     TS_LIFECYCLE_PORTS_INITIALIZED_HOOK,
     TS_LIFECYCLE_PORTS_READY_HOOK,
     TS_LIFECYCLE_CACHE_READY_HOOK,
+    TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK,
+    TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
     TS_LIFECYCLE_LAST_HOOK
   } TSLifecycleHookID;
 
@@ -413,6 +429,8 @@ extern "C"
     TS_EVENT_LIFECYCLE_PORTS_INITIALIZED = 60018,
     TS_EVENT_LIFECYCLE_PORTS_READY = 60019,
     TS_EVENT_LIFECYCLE_CACHE_READY = 60020,
+    TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60021,
+    TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60022,
     TS_EVENT_MGMT_UPDATE = 60100,
 
     /* EVENTS 60200 - 60202 for internal use */
@@ -520,6 +538,27 @@ extern "C"
     AFTER_BODY
   } TSFetchWakeUpOptions;
 
+#ifndef _HTTP_PROXY_API_ENUMS_H_
+#define _HTTP_PROXY_API_ENUMS_H_
+  /// Server session sharing values - match
+  /// Must be identical to definition in HttpProxyAPIEnums.h
+  typedef enum
+  {
+    TS_SERVER_SESSION_SHARING_MATCH_NONE,
+    TS_SERVER_SESSION_SHARING_MATCH_BOTH,
+    TS_SERVER_SESSION_SHARING_MATCH_IP,
+    TS_SERVER_SESSION_SHARING_MATCH_HOST
+  } TSServerSessionSharingMatchType;
+
+  /// Server session sharing values - pool
+  /// Must be identical to definition in HttpProxyAPIEnums.h
+  typedef enum
+  {
+    TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
+    TS_SERVER_SESSION_SHARING_POOL_THREAD
+  } TSServerSessionSharingPoolType;
+#endif
+
   /* librecords types */
 
   /* The values of this enum must match enum RecT in I_RecDefs.h */
@@ -612,7 +651,9 @@ extern "C"
     TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN,
     TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT,
     TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT,
-    TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS,
+    TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS, // DEPRECATED
+    TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL,
+    TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH,
     TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT,
     TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT,
     TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT,
@@ -2331,6 +2372,13 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
 
   tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
+
+  /** Get SSL object of this session.
+      Retrieves the SSL object of the SSL connection.
+
+      @return SSL object of this session
+   */
+  tsapi void* TSHttpSsnSSLConnectionGet(TSHttpSsn ssnp); //returns SSL *
 
   /** Get client address for transaction @a txnp.
       Retrieves the socket address of the remote client that has

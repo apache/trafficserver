@@ -326,4 +326,11 @@ ink_hrtime_add(ink_hrtime t1, ink_hrtime t2)
   return (t1 + t2);
 }
 
+static inline void
+ink_hrtime_sleep(ink_hrtime delay)
+{
+  struct timespec ts = ink_hrtime_to_timespec(delay);
+  nanosleep(&ts, NULL);
+}
+
 #endif /* _ink_hrtime_h_ */

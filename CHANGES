@@ -1,6 +1,43 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2590] Translate documentation into Japanese.
+   Authors: Masaori Koshiba <masaori335@gmail.com>
+            Masakazu Kitajo <m4sk17@gmail.com>
+            syucream <syucream1031@gmail.com>
+
+  *) [TS-2586] Improvements to the internal implementation of overridable
+   configuration lookups (_conf_to_memberp() ).
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2210] Add a plugin API to manipulate the session's SSL context.
+   Author: Kang Li <kangli@yahoo-inc.com>
+
+  *) [TS-2542] Turn on caching zero length responses by default.
+
+  *) [TS-2405] Change the default for proxy.config.net.sock_option_flag_out to
+   1, which enables TCP_NODELAY.
+
+  *) [TS-2531] The default remap rule doesn't match a forward proxy request
+
+  *) [TS-612] Add support for SSL keys with passphrases.
+   Author: Ron Barber <rbarber@yahoo-inc.com>
+
+  *) [TS-2319] Change default behavior for the various ignore-mismatch
+   configurations.
+
+  *) [TS-2563] Always set the SSL default verify paths.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2437] Add a lifecycle hook to expose loaded SSL certificates to
+   plugins. Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2582] Make traffic_cop debugging eadier by logging to stdout.
+
+  *) [TS-2579] Remove ipv4 limit for FetchSM and TSFetchUrl/TSFetchPages.
+
+  *) [TS-1893] Add more options to server session control.
+
   *) [TS-2239] Initial ALPN TLS extension support.
 
   *) [TS-2568] Better template messages.

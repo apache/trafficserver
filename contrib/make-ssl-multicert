@@ -42,6 +42,6 @@ for (( i = 0 ; i < $COUNT ; i += $NPROCS )); do
   wait
 
   for ((j = i; j < (i + $NPROCS) && j < $COUNT; j++ )) ; do
-    echo ssl_cert_name=test$i.pem
+    echo ssl_cert_name=test$j.pem
   done >> ssl_multicert.config
 done

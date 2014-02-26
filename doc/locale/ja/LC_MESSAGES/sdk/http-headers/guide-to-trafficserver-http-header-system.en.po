@@ -1,0 +1,47 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-08 17:57+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system.en.rst:1
+msgid "Guide to Traffic Server HTTP Header System"
+msgstr ""
+
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system.en.rst:22
+msgid "No Null-Terminated Strings"
+msgstr ""
+
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system.en.rst:24
+msgid ""
+"It's not safe to assume that string data contained in marshal buffers (such "
+"as URLs and MIME fields) is stored in null-terminated string copies. "
+"Therefore, your plugins should always use the length parameter when "
+"retrieving or manipulating these strings. You **cannot** pass in ``NULL`` "
+"for string-length return values; string values returned from marshall "
+"buffers are not null-terminated. If you need a null-terminated value, then "
+"use ``TSstrndup`` to automatically null-terminate a string. The strings "
+"that come back and are not null-terminated **cannot** be passed into the "
+"common ``str*()`` routines"
+msgstr ""
+
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system.en.rst:35
+msgid ""
+"Values returned from a marshall buffer can be ``NULL``, which means the "
+"field or object requested does not exist."
+msgstr ""
+
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system.en.rst:38
+msgid "For example (from the ``blacklist-1`` sample)"
+msgstr ""
+
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system.en.rst:50
+msgid "See the sample plugins for additional examples."
+msgstr ""

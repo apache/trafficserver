@@ -37,6 +37,7 @@ plugins = \
   remap.la \
   replace-header.la \
   response-header-1.la \
+  secure-link.la \
   server-transform.la \
   thread-1.la \
   version.la
@@ -68,6 +69,7 @@ server_transform_la_SOURCES = server-transform/server-transform.c
 thread_1_la_SOURCES = thread-1/thread-1.c
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
 version_la_SOURCES = version/version.c
+secure_link_la_SOURCES = secure-link/secure-link.c
 
 # The following examples do not build:
 #
