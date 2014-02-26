@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2494] fix the crash that return the stale cached document
+   when os is down, even if it`s status is not 200 (ok).
   *) [TS-2590] Translate documentation into Japanese.
    Authors: Masaori Koshiba <masaori335@gmail.com>
             Masakazu Kitajo <m4sk17@gmail.com>

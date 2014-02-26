@@ -4286,7 +4286,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
           s->next_action = HttpTransact::SERVE_FROM_CACHE;
         }
 
-        client_response_code = HTTP_STATUS_OK;
+        client_response_code = s->cache_info.object_read->response_get()->status_get();
       }
 
       ink_assert(base_response->valid());
