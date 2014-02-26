@@ -5184,6 +5184,24 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   return TS_ERROR;
 }
 
+void *
+TSHttpSsnSSLConnectionGet(TSHttpSsn ssnp)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void*)ssnp) == TS_SUCCESS);
+
+  HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
+  if (cs == NULL) {
+    return NULL;
+  }
+
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(cs->get_netvc());
+  if (ssl_vc == NULL) {
+    return NULL;
+  }
+
+  return (void *)ssl_vc->ssl;
+}
+
 sockaddr const*
 TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
 {
