@@ -1210,7 +1210,7 @@ Cache Control
 
    When enabled (``1``), Traffic Server will keep certain HTTP objects in the cache for a certain time as specified in cache.config.
 
-.. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_percent INT 10
+.. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_percent INT 0
 
    The size of the region (as a percentage of the total content storage in a :term:`cache stripe`) in front of the
    :term:`write cursor` that constitutes a recent access hit for evacutating the accessed object.
@@ -1219,6 +1219,8 @@ Cache Control
    thereby preserved from being overwritten. This is done if it is no more than a specific number of bytes in front of
    the write cursor. The number of bytes is a percentage of the total number of bytes of content storage in the cache
    stripe where the object is stored and that percentage is set by this variable.
+
+   By default, the feature is off (set to 0).
 
 .. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_size_limit INT 0
    :metric: bytes
