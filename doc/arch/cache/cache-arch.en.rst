@@ -589,7 +589,7 @@ Cache read starts after a successful `cache lookup`_. At this point the first ``
 
 .. sidebar:: Read while write
 
-   There is provision in the code to support "read while write", that is serving an object from cache in one transaction while it is being written in another. It is unclear to me if this actually works. It must specifically enabled in :file:`records.config` and if not, a cache read will fail if the object is currently be written or updated.
+   There is provision in the code to support "read while write", that is serving an object from cache in one transaction while it is being written in another. Several settings are needed for it to be used. See :ref:`reducing-origin-server-requests-avoiding-the-thundering-herd`. It must specifically enabled in :file:`records.config` and if not, a cache read will fail if the object is currently be written or updated.
 
 At this point an alternate for the object is selected. This is done by comparing the client request to the stored response headers, but it can be controlled by a plugin using ``TS_HTTP_ALT_SELECT_HOOK``.
 
@@ -599,7 +599,7 @@ Most of this work is done in::
 
    HttpTransact::what_is_document_freshness
 
-First the TTL (time to live) value which can be set in:file:`cache.config` is checked if the request matches the configuration file line. This is done based on when the object was placed in cache, not on any data in the headers.
+First the TTL (time to live) value which can be set in :file:`cache.config` is checked if the request matches the configuration file line. This is done based on when the object was placed in cache, not on any data in the headers.
 
 Next an internal flag ("needs-revalidate-once") is checked if the :file:`cache.config` value "revalidate-after" is not set, and if set the object is marked "stale".
 
