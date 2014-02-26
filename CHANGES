@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2542] Turn on caching zero length responses by default.
+
   *) [TS-2405] Change the default for proxy.config.net.sock_option_flag_out to
    1, which enables TCP_NODELAY.
 

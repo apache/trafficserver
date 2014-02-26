@@ -1033,7 +1033,7 @@ Cache Control
 
    Enables (``1``) or disables (``0``) caching of HTTP requests.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 0
+.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
    :reloadable:
 
    Enables (``1``) or disables (``0``) caching objects that have an empty
