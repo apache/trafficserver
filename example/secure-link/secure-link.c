@@ -146,6 +146,10 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
   char *ptr;
   secure_link_info *sli;
 
+  // squash unused variable warnings ...
+  (void)errbuf;
+  (void)errbuf_size;
+
   sli = (secure_link_info *)TSmalloc(sizeof(secure_link_info));
   sli->secret = NULL;
   sli->strict = 0;
@@ -188,5 +192,10 @@ TSRemapDeleteInstance(void *ih)
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
+  // squash unused variable warnings ...
+  (void)api_info;
+  (void)errbuf;
+  (void)errbuf_size;
+
   return TS_SUCCESS;
 }
