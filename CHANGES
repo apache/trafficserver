@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2590] Translate documentation into Japanese.
+   Authors: Masaori Koshiba <masaori335@gmail.com>
+            Masakazu Kitajo <m4sk17@gmail.com>
+            syucream <syucream1031@gmail.com>
+
   *) [TS-2568] Better template messages.
 
   *) [TS-2552] configure fails to detect missing the #define for
