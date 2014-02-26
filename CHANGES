@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2586] Improvements to the internal implementation of overridable
+   configuration lookups (_conf_to_memberp() ).
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
   *) [TS-2210] Add a plugin API to manipulate the session's SSL context.
    Author: Kang Li <kangli@yahoo-inc.com>
 

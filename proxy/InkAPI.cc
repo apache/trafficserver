@@ -7331,8 +7331,10 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
 }
 
 // Little helper function to find the struct member
-void*
-_conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *typep)
+static void*
+_conf_to_memberp(TSOverridableConfigKey conf,
+    OverridableHttpConfigParams *overridableHttpConfig,
+    OverridableDataType *typep)
 {
   // The default is "Byte", make sure to override that for those configs which are "Int".
   OverridableDataType typ = OVERRIDABLE_TYPE_BYTE;
@@ -7340,298 +7342,298 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
 
   switch (conf) {
   case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
-    ret = &sm->t_state.txn_conf->maintain_pristine_host_hdr;
+    ret = &overridableHttpConfig->maintain_pristine_host_hdr;
     break;
   case TS_CONFIG_HTTP_CHUNKING_ENABLED:
-    ret = &sm->t_state.txn_conf->chunking_enabled;
+    ret = &overridableHttpConfig->chunking_enabled;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED:
-    ret = &sm->t_state.txn_conf->negative_caching_enabled;
+    ret = &overridableHttpConfig->negative_caching_enabled;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->negative_caching_lifetime;
+    ret = &overridableHttpConfig->negative_caching_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
-    ret = &sm->t_state.txn_conf->cache_when_to_revalidate;
+    ret = &overridableHttpConfig->cache_when_to_revalidate;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN:
-    ret = &sm->t_state.txn_conf->keep_alive_enabled_in;
+    ret = &overridableHttpConfig->keep_alive_enabled_in;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT:
-    ret = &sm->t_state.txn_conf->keep_alive_enabled_out;
+    ret = &overridableHttpConfig->keep_alive_enabled_out;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
-    ret = &sm->t_state.txn_conf->keep_alive_post_out;
+    ret = &overridableHttpConfig->keep_alive_post_out;
     break;
   case TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS:
     ink_assert("Deprecated config key value - TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS");
-//    ret = &sm->t_state.txn_conf->share_server_sessions;
+//    ret = &overridableHttpConfig->share_server_sessions;
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL:
-    ret = &sm->t_state.txn_conf->server_session_sharing_pool;
+    ret = &overridableHttpConfig->server_session_sharing_pool;
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
-    ret = &sm->t_state.txn_conf->server_session_sharing_match;
+    ret = &overridableHttpConfig->server_session_sharing_match;
     break;
   case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_recv_buffer_size_out;
+    ret = &overridableHttpConfig->sock_recv_buffer_size_out;
     break;
   case TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_send_buffer_size_out;
+    ret = &overridableHttpConfig->sock_send_buffer_size_out;
     break;
   case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_option_flag_out;
+    ret = &overridableHttpConfig->sock_option_flag_out;
     break;
   case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
-    ret = &sm->t_state.txn_conf->fwd_proxy_auth_to_parent;
+    ret = &overridableHttpConfig->fwd_proxy_auth_to_parent;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM:
-    ret = &sm->t_state.txn_conf->anonymize_remove_from;
+    ret = &overridableHttpConfig->anonymize_remove_from;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER:
-    ret = &sm->t_state.txn_conf->anonymize_remove_referer;
+    ret = &overridableHttpConfig->anonymize_remove_referer;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT:
-    ret = &sm->t_state.txn_conf->anonymize_remove_user_agent;
+    ret = &overridableHttpConfig->anonymize_remove_user_agent;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE:
-    ret = &sm->t_state.txn_conf->anonymize_remove_cookie;
+    ret = &overridableHttpConfig->anonymize_remove_cookie;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP:
-    ret = &sm->t_state.txn_conf->anonymize_remove_client_ip;
+    ret = &overridableHttpConfig->anonymize_remove_client_ip;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
-    ret = &sm->t_state.txn_conf->anonymize_insert_client_ip;
+    ret = &overridableHttpConfig->anonymize_insert_client_ip;
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
-    ret = &sm->t_state.txn_conf->proxy_response_server_enabled;
+    ret = &overridableHttpConfig->proxy_response_server_enabled;
     break;
   case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
-    ret = &sm->t_state.txn_conf->insert_squid_x_forwarded_for;
+    ret = &overridableHttpConfig->insert_squid_x_forwarded_for;
     break;
   case TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->server_tcp_init_cwnd;
+    ret = &overridableHttpConfig->server_tcp_init_cwnd;
     break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
-    ret = &sm->t_state.txn_conf->send_http11_requests;
+    ret = &overridableHttpConfig->send_http11_requests;
     break;
   case TS_CONFIG_HTTP_CACHE_HTTP:
-    ret = &sm->t_state.txn_conf->cache_http;
+    ret = &overridableHttpConfig->cache_http;
     break;
   case TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL:
-    ret = &sm->t_state.txn_conf->cache_cluster_cache_local;
+    ret = &overridableHttpConfig->cache_cluster_cache_local;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
-    ret = &sm->t_state.txn_conf->cache_ignore_client_no_cache;
+    ret = &overridableHttpConfig->cache_ignore_client_no_cache;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE:
-    ret = &sm->t_state.txn_conf->cache_ignore_client_cc_max_age;
+    ret = &overridableHttpConfig->cache_ignore_client_cc_max_age;
     break;
   case TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE:
-    ret = &sm->t_state.txn_conf->cache_ims_on_client_no_cache;
+    ret = &overridableHttpConfig->cache_ims_on_client_no_cache;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE:
-    ret = &sm->t_state.txn_conf->cache_ignore_server_no_cache;
+    ret = &overridableHttpConfig->cache_ignore_server_no_cache;
     break;
   case TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES:
-    ret = &sm->t_state.txn_conf->cache_responses_to_cookies;
+    ret = &overridableHttpConfig->cache_responses_to_cookies;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION:
-    ret = &sm->t_state.txn_conf->cache_ignore_auth;
+    ret = &overridableHttpConfig->cache_ignore_auth;
     break;
   case TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC:
-    ret = &sm->t_state.txn_conf->cache_urls_that_look_dynamic;
+    ret = &overridableHttpConfig->cache_urls_that_look_dynamic;
     break;
   case TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS:
-    ret = &sm->t_state.txn_conf->cache_required_headers;
+    ret = &overridableHttpConfig->cache_required_headers;
     break;
   case TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR:
-    ret = &sm->t_state.txn_conf->insert_request_via_string;
+    ret = &overridableHttpConfig->insert_request_via_string;
     break;
   case TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR:
-    ret = &sm->t_state.txn_conf->insert_response_via_string;
+    ret = &overridableHttpConfig->insert_response_via_string;
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->cache_heuristic_min_lifetime;
+    ret = &overridableHttpConfig->cache_heuristic_min_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->cache_heuristic_max_lifetime;
+    ret = &overridableHttpConfig->cache_heuristic_max_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->cache_guaranteed_min_lifetime;
+    ret = &overridableHttpConfig->cache_guaranteed_min_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->cache_guaranteed_max_lifetime;
+    ret = &overridableHttpConfig->cache_guaranteed_max_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->cache_max_stale_age;
+    ret = &overridableHttpConfig->cache_max_stale_age;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->keep_alive_no_activity_timeout_in;
+    ret = &overridableHttpConfig->keep_alive_no_activity_timeout_in;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->keep_alive_no_activity_timeout_out;
+    ret = &overridableHttpConfig->keep_alive_no_activity_timeout_out;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->transaction_no_activity_timeout_in;
+    ret = &overridableHttpConfig->transaction_no_activity_timeout_in;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->transaction_no_activity_timeout_out;
+    ret = &overridableHttpConfig->transaction_no_activity_timeout_out;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->transaction_active_timeout_out;
+    ret = &overridableHttpConfig->transaction_active_timeout_out;
     break;
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->origin_max_connections;
+    ret = &overridableHttpConfig->origin_max_connections;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->connect_attempts_max_retries;
+    ret = &overridableHttpConfig->connect_attempts_max_retries;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->connect_attempts_max_retries_dead_server;
+    ret = &overridableHttpConfig->connect_attempts_max_retries_dead_server;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->connect_attempts_rr_retries;
+    ret = &overridableHttpConfig->connect_attempts_rr_retries;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->connect_attempts_timeout;
+    ret = &overridableHttpConfig->connect_attempts_timeout;
     break;
   case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->post_connect_attempts_timeout;
+    ret = &overridableHttpConfig->post_connect_attempts_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->down_server_timeout;
+    ret = &overridableHttpConfig->down_server_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->client_abort_threshold;
+    ret = &overridableHttpConfig->client_abort_threshold;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_TIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->freshness_fuzz_time;
+    ret = &overridableHttpConfig->freshness_fuzz_time;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->freshness_fuzz_min_time;
+    ret = &overridableHttpConfig->freshness_fuzz_min_time;
     break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
-    ret = &sm->t_state.txn_conf->doc_in_cache_skip_dns;
+    ret = &overridableHttpConfig->doc_in_cache_skip_dns;
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->background_fill_active_timeout;
+    ret = &overridableHttpConfig->background_fill_active_timeout;
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     typ = OVERRIDABLE_TYPE_STRING;
-    ret = &sm->t_state.txn_conf->proxy_response_server_string;
+    ret = &overridableHttpConfig->proxy_response_server_string;
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &sm->t_state.txn_conf->cache_heuristic_lm_factor;
+    ret = &overridableHttpConfig->cache_heuristic_lm_factor;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY:
     typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &sm->t_state.txn_conf->freshness_fuzz_prob;
+    ret = &overridableHttpConfig->freshness_fuzz_prob;
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD:
     typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &sm->t_state.txn_conf->background_fill_threshold;
+    ret = &overridableHttpConfig->background_fill_threshold;
     break;
   case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_packet_mark_out;
+    ret = &overridableHttpConfig->sock_packet_mark_out;
     break;
   case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->sock_packet_tos_out;
+    ret = &overridableHttpConfig->sock_packet_tos_out;
     break;
   case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
-    ret = &sm->t_state.txn_conf->insert_age_in_response;
+    ret = &overridableHttpConfig->insert_age_in_response;
     break;
   case TS_CONFIG_HTTP_CHUNKING_SIZE:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->http_chunking_size;
+    ret = &overridableHttpConfig->http_chunking_size;
     break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
-    ret = &sm->t_state.txn_conf->flow_control_enabled;
+    ret = &overridableHttpConfig->flow_control_enabled;
     break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->flow_low_water_mark;
+    ret = &overridableHttpConfig->flow_low_water_mark;
     break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->flow_high_water_mark;
+    ret = &overridableHttpConfig->flow_high_water_mark;
     break;
   case TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP:
-    ret = &sm->t_state.txn_conf->cache_range_lookup;
+    ret = &overridableHttpConfig->cache_range_lookup;
     break;
   case TS_CONFIG_HTTP_NORMALIZE_AE_GZIP:
-    ret = &sm->t_state.txn_conf->normalize_ae_gzip;
+    ret = &overridableHttpConfig->normalize_ae_gzip;
     break;
   case TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->default_buffer_size_index;
+    ret = &overridableHttpConfig->default_buffer_size_index;
     break;
   case TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->default_buffer_water_mark;
+    ret = &overridableHttpConfig->default_buffer_water_mark;
     break;
   case TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->request_hdr_max_size;
+    ret = &overridableHttpConfig->request_hdr_max_size;
     break;
   case TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->response_hdr_max_size;
+    ret = &overridableHttpConfig->response_hdr_max_size;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED:
-    ret = &sm->t_state.txn_conf->negative_revalidating_enabled;
+    ret = &overridableHttpConfig->negative_revalidating_enabled;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->negative_revalidating_lifetime;
+    ret = &overridableHttpConfig->negative_revalidating_lifetime;
     break;
   case TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED:
-    ret = &sm->t_state.txn_conf->accept_encoding_filter_enabled;
+    ret = &overridableHttpConfig->accept_encoding_filter_enabled;
     break;
   case TS_CONFIG_SSL_HSTS_MAX_AGE:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->proxy_response_hsts_max_age;
+    ret = &overridableHttpConfig->proxy_response_hsts_max_age;
     break;
   case TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS:
     typ = OVERRIDABLE_TYPE_BYTE;
-    ret = &sm->t_state.txn_conf->proxy_response_hsts_include_subdomains;
+    ret = &overridableHttpConfig->proxy_response_hsts_include_subdomains;
     break;
   case TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->cache_open_read_retry_time;
+    ret = &overridableHttpConfig->cache_open_read_retry_time;
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES:
     typ = OVERRIDABLE_TYPE_INT;
-    ret = &sm->t_state.txn_conf->max_cache_open_read_retries;
+    ret = &overridableHttpConfig->max_cache_open_read_retries;
     break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
@@ -7679,7 +7681,7 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
   }
   // end 4.1.X BC
 
-  void *dest = _conf_to_memberp(conf, s, &type);
+  void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, &type);
 
   if (!dest)
     return TS_ERROR;
@@ -7723,7 +7725,7 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
   }
   // end 4.1.X BC
 
-  void* src = _conf_to_memberp(conf, s, &type);
+  void* src = _conf_to_memberp(conf, s->t_state.txn_conf, &type);
 
   if (!src)
     return TS_ERROR;
@@ -7752,7 +7754,7 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 
   s->t_state.setup_per_txn_configs();
 
-  TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, s, &type));
+  TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, s->t_state.txn_conf, &type));
 
   if (type != OVERRIDABLE_TYPE_FLOAT)
     return TS_ERROR;
@@ -7772,7 +7774,7 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
   OverridableDataType type;
-  TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, (HttpSM*)txnp, &type));
+  TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, ((HttpSM*)txnp)->t_state.txn_conf, &type));
 
   if (type != OVERRIDABLE_TYPE_FLOAT)
     return TS_ERROR;
