@@ -144,7 +144,9 @@ there are problems with the HTTP transactions requested by the browser.
 These Traffic Server response messages correspond to standard HTTP
 response codes, but provide more information. A list of the more
 frequently-encountered HTTP response codes is provided in :ref:`standard-http-response-messages`.
-You can customize the Traffic Server response messages, if desired.
+You can customize the Traffic Server response messages (typically in 
+proxy/config/body_factory/default/, but set by 
+:ts:cv:`proxy.config.body_factory.template_sets_dir`).
 
 The following table lists the hard-coded Traffic Server HTTP messages,
 with corresponding HTTP response codes and customizable files.
