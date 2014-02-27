@@ -151,7 +151,7 @@ SSLConfigParams::initialize()
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
 
-  // These are not available in all, older versions of OpenSSL (e.g. CentOS6)
+  // These are not available in all versions of OpenSSL (e.g. CentOS6). Also see http://s.apache.org/TS-2355.
 #ifdef SSL_OP_NO_TLSv1_1
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_1");
   if (!options)
