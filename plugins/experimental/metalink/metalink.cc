@@ -234,7 +234,17 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   /* Initialize data here because can't call TSVConnWrite() before
    * TS_HTTP_RESPONSE_TRANSFORM_HOOK */
   if (!data->output_bufp) {
+
+    /* Avoid failed assert "sdk_sanity_check_iocore_structure(connp) ==
+     * TS_SUCCESS" in TSVConnWrite() if the response is 304 Not Modified */
     TSVConn output_connp = TSTransformOutputVConnGet(contp);
+    if (!output_connp) {
+      TSContDestroy(contp);
+
+      TSfree(data);
+
+      return 0;
+    }
 
     data->output_bufp = TSIOBufferCreate();
     TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->output_bufp);
@@ -259,12 +269,11 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
    * nbytes is INT64_MAX.
    *
    * In that case to get it to send a TS_EVENT_VCONN_WRITE_COMPLETE event,
-   * update the downstream nbytes and reenable it. */
+   * update the downstream nbytes and reenable it.  Zero the downstream nbytes
+   * is a shortcut. */
   int ntodo = TSVIONTodoGet(input_viop);
   if (!ntodo) {
-
-    int ndone = TSVIONDoneGet(input_viop);
-    TSVIONBytesSet(data->output_viop, ndone);
+    TSVIONBytesSet(data->output_viop, 0);
 
     TSVIOReenable(data->output_viop);
 
@@ -272,25 +281,22 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   }
 
   /* Avoid failed assert "sdk_sanity_check_iocore_structure(readerp) ==
-   * TS_SUCCESS" in TSIOBufferReaderAvail() if the status code is 302?  or the
-   * message body is empty? */
+   * TS_SUCCESS" in TSIOBufferReaderAvail() if the client or server disconnects
+   * or the content length is zero.
+   *
+   * Don't update the downstream nbytes and reenable it because if not at the
+   * end yet and can't read any more content then can't compute the digest.
+   *
+   * (There hasn't been a TS_EVENT_VCONN_WRITE_COMPLETE event from downstream
+   * yet so if the response has a "Content-Length: ..." header, it is greater
+   * than the content so far.  ntodo is still greater than zero so if the
+   * response is "Transfer-Encoding: chunked", not at the end yet.) */
   TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
   if (!readerp) {
+    TSContDestroy(contp);
 
-    /* Avoid segfault in TSVIOReenable() if the client disconnected */
-    if (TSVConnClosedGet(contp)) {
-      TSContDestroy(contp);
-
-      TSIOBufferDestroy(data->output_bufp);
-      TSfree(data);
-
-    } else {
-
-      int ndone = TSVIONDoneGet(input_viop);
-      TSVIONBytesSet(data->output_viop, ndone);
-
-      TSVIOReenable(data->output_viop);
-    }
+    TSIOBufferDestroy(data->output_bufp);
+    TSfree(data);
 
     return 0;
   }
@@ -566,6 +572,12 @@ digest_handler(TSCont contp, TSEvent event, void *edata)
 static int
 location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
+  const char *value;
+  int length;
+
+  /* ATS_BASE64_DECODE_DSTLEN() */
+  char digest[33];
+
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
 
@@ -576,28 +588,20 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   /* No: Check if the "Digest: SHA-256=..." digest already exists in the cache */
   case TS_EVENT_CACHE_OPEN_READ_FAILED:
-    {
-      const char *value;
-      int length;
 
-      /* ATS_BASE64_DECODE_DSTLEN() */
-      char digest[33];
-
-      value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->digest_loc, data->idx, &length);
-      if (TSBase64Decode(value + 8, length - 8, (unsigned char *) digest, sizeof(digest), NULL) != TS_SUCCESS
-          || TSCacheKeyDigestSet(data->key, digest, 32 /* SHA-256 */ ) != TS_SUCCESS) {
-        break;
-      }
-
-      contp = TSContCreate(digest_handler, NULL);
-      TSContDataSet(contp, data);
-
-      TSCacheRead(contp, data->key);
-      TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->digest_loc);
-
-      return 0;
+    value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->digest_loc, data->idx, &length);
+    if (TSBase64Decode(value + 8, length - 8, (unsigned char *) digest, sizeof(digest), NULL) != TS_SUCCESS
+        || TSCacheKeyDigestSet(data->key, digest, 32 /* SHA-256 */ ) != TS_SUCCESS) {
+      break;
     }
-    break;
+
+    contp = TSContCreate(digest_handler, NULL);
+    TSContDataSet(contp, data);
+
+    TSCacheRead(contp, data->key);
+    TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->digest_loc);
+
+    return 0;
 
   default:
     TSAssert(!"Unexpected event");

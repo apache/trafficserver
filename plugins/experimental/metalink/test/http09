@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+print '''1..1 http09
+# The proxy doesn't crash on an HTTP/0.9 response'''
+
+# http://www.w3.org/Protocols/HTTP/AsImplemented
+#
+# The proxy crashes only after the response is complete.  It closes the client
+# connection whether it crashes or not because an HTTP/0.9 response is complete
+# only after the server closes its connection, and then the proxy normally does
+# the same thing to the client connection (although it upgrades the response to
+# HTTP/1.1).  So the only way to check that the proxy didn't crash is to open
+# another connection.
+
+from twisted.internet import error, protocol, reactor, tcp
+from twisted.web import http
+
+def callback():
+  print 'not ok 1 - Why didn\'t the test finish yet?'
+
+  reactor.stop()
+
+reactor.callLater(2, callback)
+
+class factory(protocol.Factory):
+  class protocol(protocol.Protocol):
+    def connectionMade(ctx):
+      ctx.transport.write('http09\r\n')
+
+      # The proxy crashes only after the response is complete
+      ctx.transport.loseConnection()
+
+server = tcp.Port(0, factory())
+server.startListening()
+
+print '# Listening on {0}:{1}'.format(*server.socket.getsockname())
+
+class factory(protocol.ClientFactory):
+  def clientConnectionFailed(ctx, connector, reason):
+
+    print 'Bail out!'
+    reason.printTraceback()
+
+    reactor.stop()
+
+  class protocol(http.HTTPClient):
+    def connectionLost(ctx, reason):
+
+      # Open another connection
+      class factory(protocol.ClientFactory):
+        def clientConnectionFailed(ctx, connector, reason):
+          print 'not ok 1 - Did the proxy crash?  (Can\'t open another connection to it.)'
+
+          reactor.stop()
+
+        class protocol(protocol.Protocol):
+          def connectionMade(ctx):
+            print 'ok 1 - The proxy didn\'t crash (opened another connection to it)'
+
+            reactor.stop()
+
+      reactor.callLater(1, tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect)
+
+    connectionMade = lambda ctx: ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*server.socket.getsockname()))
+
+tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
+
+reactor.run()
