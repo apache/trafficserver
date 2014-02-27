@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2593] HTTPS to origin fails on CentOS6.x. This is a regression of
+   sort from TS-2355.
+
   *) [TS-2590] Translate documentation into Japanese.
    Authors: Masaori Koshiba <masaori335@gmail.com>
             Masakazu Kitajo <m4sk17@gmail.com>
