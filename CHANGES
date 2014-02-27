@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2593] HTTPS to origin fails on CentOS6.x. This is a regression of
+   sort from TS-2355.
+
   *) [TS-2592] Use proxy allocator for ioBufAllocator
 
   *) [TS-2576] Add Oct/Hex escape representation into LogFormat
