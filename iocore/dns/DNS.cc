@@ -385,10 +385,12 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
       len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
       memcpy(qname, x, len);
       qname_len = len;
+      orig_qname_len = qname_len;
       qname[len] = 0;
     } else {
       ink_strlcpy(qname, x, MAXDNAME);
       qname_len = strlen(qname);
+      orig_qname_len = qname_len;
     }
   } else {                    //T_PTR
     IpAddr const* ip = reinterpret_cast<IpAddr const*>(x);
@@ -1045,8 +1047,8 @@ DNSEntry::mainEvent(int event, Event *e)
       if (dns_search)
         domains = dnsH->m_res->dnsrch;
       if (domains && !strnchr(qname, '.', MAXDNAME)) {
-        qname[qname_len] = '.';
-        ink_strlcpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
+        qname[orig_qname_len] = '.';
+        ink_strlcpy(qname + orig_qname_len + 1, *domains, MAXDNAME - (orig_qname_len + 1));
         qname_len = strlen(qname);
         ++domains;
       }
@@ -1120,29 +1122,29 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
       return;
     } else if (e->domains && *e->domains) {
       do {
-        Debug("dns", "domain extending %s", e->qname);
+        Debug("dns", "domain extending, last tried '%s', original '%.*s'", e->qname, e->orig_qname_len, e->qname);
         //int l = _strlen(e->qname);
         char *dot = strchr(e->qname, '.');
         if (dot) {
-          if (e->qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
-            Debug("dns", "domain too large %s + %s", e->qname, *e->domains);
+          if (e->orig_qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
+            Debug("dns", "domain too large %.*s + %s", e->orig_qname_len, e->qname, *e->domains);
             goto LnextDomain;
           }
-          if (e->qname[e->qname_len - 1] != '.') {
-            e->qname[e->qname_len] = '.';
-            ink_strlcpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
+          if (e->qname[e->orig_qname_len - 1] != '.') {
+            e->qname[e->orig_qname_len] = '.';
+            ink_strlcpy(e->qname + e->orig_qname_len + 1, *e->domains, MAXDNAME - (e->orig_qname_len + 1));
             e->qname_len = strlen(e->qname);
           } else {
-            ink_strlcpy(e->qname + e->qname_len, *e->domains, MAXDNAME - e->qname_len);
+            ink_strlcpy(e->qname + e->orig_qname_len, *e->domains, MAXDNAME - e->orig_qname_len);
             e->qname_len = strlen(e->qname);
           }
         } else {
-          if (e->qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
-            Debug("dns", "domain too large %s + %s", e->qname, *e->domains);
+          if (e->orig_qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
+            Debug("dns", "domain too large %.*s + %s", e->orig_qname_len, e->qname, *e->domains);
             goto LnextDomain;
           }
-          e->qname[e->qname_len] = '.';
-          ink_strlcpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
+          e->qname[e->orig_qname_len] = '.';
+          ink_strlcpy(e->qname + e->orig_qname_len + 1, *e->domains, MAXDNAME - (e->orig_qname_len + 1));
           e->qname_len = strlen(e->qname);
         }
         ++(e->domains);
