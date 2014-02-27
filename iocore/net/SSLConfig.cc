@@ -149,12 +149,19 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
+
+  // These are not available in all, older versions of OpenSSL (e.g. CentOS6)
+#ifdef SSL_OP_NO_TLSv1_1
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_1");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1_1;
+#endif
+#ifdef SSL_OP_NO_TLSv1_2
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_2");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
+#endif
+
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
   REC_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
   if (options)
