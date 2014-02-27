@@ -1450,6 +1450,7 @@ HostDB
 
 .. ts:cv:: CONFIG proxy.config.hostdb.serve_stale_for INT
    :metric: seconds
+   :reloadable:
 
    The number of seconds for which to use a stale NS record while initiating a
    background fetch for the new data.
