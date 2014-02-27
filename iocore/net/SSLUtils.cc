@@ -651,54 +651,56 @@ SSLInitServerContext(
     SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
   }
 
-  // XXX OpenSSL recommends that we should use SSL_CTX_use_certificate_chain_file() here. That API
-  // also loads only the first certificate, but it allows the intermediate CA certificate chain to
-  // be in the same file. SSL_CTX_use_certificate_chain_file() was added in OpenSSL 0.9.3.
-  completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.cert);
-  if (!SSL_CTX_use_certificate_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
-    SSLError("failed to load certificate from %s", (const char *)completeServerCertPath);
-    goto fail;
-  }
+  // if sslMultCertSettings.cert == NULL, then we are initing the default context so skip server cert init
+  if (sslMultCertSettings.cert) {
+    // XXX OpenSSL recommends that we should use SSL_CTX_use_certificate_chain_file() here. That API
+    // also loads only the first certificate, but it allows the intermediate CA certificate chain to
+    // be in the same file. SSL_CTX_use_certificate_chain_file() was added in OpenSSL 0.9.3.
+    completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.cert);
+    if (!SSL_CTX_use_certificate_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
+      SSLError("failed to load certificate from %s", (const char *) completeServerCertPath);
+      goto fail;
+    }
 
-  // First, load any CA chains from the global chain file.
-  if (params->serverCertChainFilename) {
-    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-      SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
+    // First, load any CA chains from the global chain file.
+    if (params->serverCertChainFilename) {
+      xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
+      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+        SSLError("failed to load global certificate chain from %s", (const char *) completeServerCertChainPath);
+        goto fail;
+      }
+    }
+
+    // Now, load any additional certificate chains specified in this entry.
+    if (sslMultCertSettings.ca) {
+      xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
+      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+        SSLError("failed to load certificate chain from %s", (const char *) completeServerCertChainPath);
+        goto fail;
+      }
+    }
+
+    if (!sslMultCertSettings.key) {
+      // assume private key is contained in cert obtained from multicert file.
+      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
+        SSLError("failed to load server private key from %s", (const char *) completeServerCertPath);
+        goto fail;
+      }
+    } else if (params->serverKeyPathOnly != NULL) {
+      xptr<char> completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, sslMultCertSettings.key));
+      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
+        SSLError("failed to load server private key from %s", (const char *) completeServerKeyPath);
+        goto fail;
+      }
+    } else {
+      SSLError("empty SSL private key path in records.config");
+    }
+
+    if (!SSL_CTX_check_private_key(ctx)) {
+      SSLError("server private key does not match the certificate public key");
       goto fail;
     }
   }
-
-  // Now, load any additional certificate chains specified in this entry.
-  if (sslMultCertSettings.ca) {
-    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-      SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
-      goto fail;
-    }
-  }
-
-  if (!sslMultCertSettings.key) {
-    // assume private key is contained in cert obtained from multicert file.
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", (const char *)completeServerCertPath);
-      goto fail;
-    }
-  } else if (params->serverKeyPathOnly != NULL) {
-    xptr<char> completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, sslMultCertSettings.key));
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
-      goto fail;
-    }
-  } else {
-    SSLError("empty SSL private key path in records.config");
-  }
-
-  if (!SSL_CTX_check_private_key(ctx)) {
-    SSLError("server private key does not match the certificate public key");
-    goto fail;
-  }
-
   if (params->clientCertLevel != 0) {
 
     if (params->serverCACertFilename != NULL && params->serverCACertPath != NULL) {
@@ -846,10 +848,14 @@ asn1_strdup(ASN1_STRING * s)
 static void
 ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfile)
 {
-  X509_NAME * subject = NULL;
+  X509_NAME *   subject = NULL;
+  X509 *        cert;
+  ats_file_bio  bio(certfile, "r");
 
-  ats_file_bio bio(certfile, "r");
-  X509* cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
+  cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
+  if (NULL == cert) {
+    return;
+  }
 
   // Insert a key for the subject CN.
   subject = X509_get_subject_name(cert);
@@ -865,14 +871,14 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
       ASN1_STRING * cn = X509_NAME_ENTRY_get_data(e);
       xptr<char> name(asn1_strdup(cn));
 
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *)name, certfile);
+      Debug("ssl", "mapping '%s' to certificate %s", (const char *) name, certfile);
       lookup->insert(ctx, name);
     }
   }
 
 #if HAVE_OPENSSL_TS_H
   // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+  GENERAL_NAMES * names = (GENERAL_NAMES *) X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
   if (names) {
     unsigned count = sk_GENERAL_NAME_num(names);
     for (unsigned i = 0; i < count; ++i) {
@@ -881,7 +887,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
       name = sk_GENERAL_NAME_value(names, i);
       if (name->type == GEN_DNS) {
         xptr<char> dns(asn1_strdup(name->d.dNSName));
-        Debug("ssl", "mapping '%s' to certificate %s", (const char *)dns, certfile);
+        Debug("ssl", "mapping '%s' to certificate %s", (const char *) dns, certfile);
         lookup->insert(ctx, dns);
       }
     }
@@ -1112,19 +1118,9 @@ SSLParseCertificateConfiguration(
   // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
   // context.
   if (lookup->ssl_default == NULL) {
-    lookup->ssl_default = ssl_context_enable_sni(SSLDefaultServerContext(), lookup);
-
-    // The ALPN negotiation happens before certificate selection, so we need to install the ALPN callback
-    // on the default SSL context.
-#if TS_USE_TLS_ALPN
-  SSL_CTX_set_alpn_select_cb(lookup->ssl_default, SSLNetVConnection::select_next_protocol, NULL);
-#endif /* TS_USE_TLS_ALPN */
-
-    lookup->insert(lookup->ssl_default, "*");
-    if (SSLConfigParams::init_ssl_ctx_cb) {
-      SSLConfigParams::init_ssl_ctx_cb(lookup->ssl_default, true);
-    }
-
+    ssl_user_config sslMultiCertSettings;
+    sslMultiCertSettings.addr = ats_strdup("*");
+    ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
   }
 
   return true;
