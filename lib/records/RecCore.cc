@@ -36,8 +36,6 @@ InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
 
-int g_num_update[RECT_MAX];
-
 RecTree *g_records_tree = NULL;
 
 //-------------------------------------------------------------------------
@@ -202,10 +200,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     if (file_exists) {
       RecReadConfigFile(true);
     }
-  }
-
-  for (int i = 0; i < RECT_MAX; i++) {
-    g_num_update[i] = 0;
   }
 
   g_initialized = true;
@@ -493,12 +487,6 @@ RecGetRecordPersistenceType(const char *name, RecPersistT * persist_type, bool l
   }
 
   return err;
-}
-
-int
-RecGetRecordUpdateCount(RecT data_type)
-{
-  return g_num_update[data_type];
 }
 
 int

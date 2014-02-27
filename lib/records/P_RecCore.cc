@@ -420,7 +420,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
             break;
           }
         }
-        g_num_update[r1->rec_type]++;
 
         if (RecDataSet(data_type, &(r1->data), data)) {
           r1->sync_required = REC_SYNC_REQUIRED;

@@ -63,8 +63,7 @@ enum RecT
   RECT_CLUSTER = 8,
   RECT_LOCAL = 16,
   RECT_PLUGIN = 32,
-  RECT_ALL = 63,
-  RECT_MAX
+  RECT_ALL = 63
 };
 
 enum RecDataT

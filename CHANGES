@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2599] Remove dead code in RedCore related to Record Types
+
   *) [TS-2593] HTTPS to origin fails on CentOS6.x. This is a regression of
    sort from TS-2355.
 

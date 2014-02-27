@@ -152,7 +152,6 @@ int RecGetRecordByte(const char *name, RecByte * rec_byte, bool lock = true);
 int RecGetRecordType(const char *name, RecT * rec_type, bool lock = true);
 int RecGetRecordDataType(const char *name, RecDataT * data_type, bool lock = true);
 int RecGetRecordPersistenceType(const char *name, RecPersistT * persist_type, bool lock = true);
-int RecGetRecordUpdateCount(RecT data_type);
 int RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true);
 
 int RecGetRecordUpdateType(const char *name, RecUpdateT * update_type, bool lock = true);

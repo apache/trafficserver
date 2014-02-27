@@ -571,8 +571,7 @@ extern "C"
       TS_RECORDTYPE_CLUSTER = 8,
       TS_RECORDTYPE_LOCAL = 16,
       TS_RECORDTYPE_PLUGIN = 32,
-      TS_RECORDTYPE_ALL = 63,
-      TS_RECORDTYPE_MAX
+      TS_RECORDTYPE_ALL = 63
     } TSRecordType;
 
   /* The values of this enum must match enum RecDataT in I_RecDefs.h */
