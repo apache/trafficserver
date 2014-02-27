@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.0
 
+  *) [TS-2569] Set the default SSL options correctly.
+   Author: Ron Barber <rbarber@yahoo-inc.com>
+
   *) [TS-2620] Make the stats_over_http plugin publish node and plugin stats.
 
   *) [TS-2607] Fix TS_USE_HWLOC #define in build process
