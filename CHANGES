@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2522] Better hook management for header_rewrite plugin, and some
+   cleanup.
+
   *) [TS-2169] Add SSL statistics
    Author: Ron Barber <rbarber@yahoo-inc.com>
 

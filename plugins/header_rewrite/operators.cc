@@ -361,7 +361,7 @@ OperatorRMHeader::exec(const Resources& res) const
     TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on header %s", _header.c_str());
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
     while (field_loc) {
-      TSDebug(PLUGIN_NAME, "\tdeleting header %s", _header.c_str());
+      TSDebug(PLUGIN_NAME, "   Deleting header %s", _header.c_str());
       tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
       TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
       TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -405,7 +405,7 @@ OperatorAddHeader::exec(const Resources& res) const
 
     if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-        TSDebug(PLUGIN_NAME, "   adding header %s", _header.c_str());
+        TSDebug(PLUGIN_NAME, "   Adding header %s", _header.c_str());
         TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
       }
       TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -445,7 +445,7 @@ OperatorSetHeader::exec(const Resources& res) const
       // No existing header, so create one
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-          TSDebug(PLUGIN_NAME, "   adding header %s", _header.c_str());
+          TSDebug(PLUGIN_NAME, "   Adding header %s", _header.c_str());
           TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
         }
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
@@ -458,7 +458,7 @@ OperatorSetHeader::exec(const Resources& res) const
         if (first) {
           first = false;
           if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
-            TSDebug(PLUGIN_NAME, "   overwriting header %s", _header.c_str());
+            TSDebug(PLUGIN_NAME, "   Overwriting header %s", _header.c_str());
           }
         } else {
           TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
