@@ -484,7 +484,9 @@ SSLNetVConnection::free(EThread * t) {
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
-  if (event == SSL_EVENT_SERVER) {
+
+  switch (event) {
+  case SSL_EVENT_SERVER:
     if (this->ssl == NULL) {
       SSLCertificateConfig::scoped_config lookup;
 
@@ -492,21 +494,30 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
       this->ssl = make_ssl_connection(lookup->defaultContext(), this);
-      if (this->ssl == NULL) {
-        Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
-        SSLErrorVC(this, "SSL_StartHandShake");
-        return EVENT_ERROR;
-      }
+    }
+
+    if (this->ssl == NULL) {
+      SSLErrorVC(this, "failed to create SSL server session");
+      return EVENT_ERROR;
     }
 
     return sslServerHandShakeEvent(err);
-  } else {
-    ink_assert(event == SSL_EVENT_CLIENT);
+
+  case SSL_EVENT_CLIENT:
     if (this->ssl == NULL) {
       this->ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
     }
-    ink_assert(event == SSL_EVENT_CLIENT);
-    return (sslClientHandShakeEvent(err));
+
+    if (this->ssl == NULL) {
+      SSLErrorVC(this, "failed to create SSL client session");
+      return EVENT_ERROR;
+    }
+
+    return sslClientHandShakeEvent(err);
+
+  default:
+    ink_assert(0);
+    return EVENT_ERROR;
   }
 
 }

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2615] Better logging and error handling in SSL client session startup.
+
   *) [TS-2613] Can't turn on attach server session to client from records.config
 
   *) [TS-2611] Add a new S3 authentication plugin, s3_auth. This only supports
