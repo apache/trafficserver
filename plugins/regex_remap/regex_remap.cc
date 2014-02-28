@@ -182,11 +182,11 @@ class RemapRegex
         _lowercase_substitutions = atoi(opt_val.c_str());
         TSDebug(PLUGIN_NAME, "Lowercasing %d", _lowercase_substitutions);
       } else {
-        TSOverridableConfigKey name;
+        TSOverridableConfigKey key;
         TSRecordDataType type;
         std::string opt_name = opt.substr(start, pos1-start-1);
 
-        if (TS_SUCCESS == TSHttpTxnConfigFind(opt_name.c_str(), opt_name.length(), &name, &type)) {
+        if (TS_SUCCESS == TSHttpTxnConfigFind(opt_name.c_str(), opt_name.length(), &key, &type)) {
           Override* cur = new Override;
 
           switch (type) {
@@ -208,7 +208,7 @@ class RemapRegex
           }
           if (cur) {
             TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
-            cur->name = name;
+            cur->key = key;
             cur->type = type;
             cur->next = NULL;
             if (NULL == last_override) {
@@ -532,7 +532,7 @@ class RemapRegex
 
   // Hold an overridable configurations
   struct Override {
-    TSOverridableConfigKey name;
+    TSOverridableConfigKey key;
     TSRecordDataType type;
     TSRecordData data;
     int data_len; // Used when data is a string
@@ -932,16 +932,16 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       while (override) {
         switch (override->type) {
         case TS_RECORDDATATYPE_INT:
-          TSHttpTxnConfigIntSet(txnp, override->name, override->data.rec_int);
-          TSDebug(PLUGIN_NAME, "Setting config id %d to `%" PRId64 "'", override->name, override->data.rec_int);
+          TSHttpTxnConfigIntSet(txnp, override->key, override->data.rec_int);
+          TSDebug(PLUGIN_NAME, "Setting config id %d to `%" PRId64 "'", override->key, override->data.rec_int);
           break;
         case TS_RECORDDATATYPE_FLOAT:
-          TSHttpTxnConfigFloatSet(txnp, override->name, override->data.rec_float);
-          TSDebug(PLUGIN_NAME, "Setting config id %d to `%f'", override->name, override->data.rec_float);
+          TSHttpTxnConfigFloatSet(txnp, override->key, override->data.rec_float);
+          TSDebug(PLUGIN_NAME, "Setting config id %d to `%f'", override->key, override->data.rec_float);
           break;
         case TS_RECORDDATATYPE_STRING:
-          TSHttpTxnConfigStringSet(txnp, override->name, override->data.rec_string, override->data_len);
-          TSDebug(PLUGIN_NAME, "Setting config id %d to `%s'", override->name, override->data.rec_string);
+          TSHttpTxnConfigStringSet(txnp, override->key, override->data.rec_string, override->data_len);
+          TSDebug(PLUGIN_NAME, "Setting config id %d to `%s'", override->key, override->data.rec_string);
           break;
         default:
           break; // Error ?
