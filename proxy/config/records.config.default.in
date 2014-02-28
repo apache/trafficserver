@@ -531,7 +531,6 @@ CONFIG proxy.config.ssl.CA.cert.path STRING @rel_sysconfdir@
    ################################
    # client related configuration #
    ################################
-CONFIG proxy.config.ssl.client.verify.server INT 0
 CONFIG proxy.config.ssl.client.cert.filename STRING NULL
 CONFIG proxy.config.ssl.client.cert.path STRING @rel_sysconfdir@
    # Fill in private key file and path only if the client's
@@ -541,6 +540,7 @@ CONFIG proxy.config.ssl.client.private_key.path STRING @rel_sysconfdir@
    # The CA file name and path are the
    # certificate authority certificate that
    # server certificates will be verified against.
+CONFIG proxy.config.ssl.client.verify.server INT 0
 CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
 CONFIG proxy.config.ssl.client.CA.cert.path STRING @rel_sysconfdir@
 ##############################################################################
