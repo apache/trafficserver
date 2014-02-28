@@ -119,7 +119,7 @@ class RemapRegex
   RemapRegex(const std::string& reg, const std::string& sub, const std::string& opt) :
     _num_subs(-1), _rex(NULL), _extra(NULL), _order(-1), _simple(false), _lowercase_substitutions(false),
     _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1),
-    _first_item(NULL), _last_item(NULL)
+    _first_override(NULL), _last_override(NULL)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
 
@@ -179,13 +179,17 @@ class RemapRegex
         _dns_timeout = atoi(opt_val.c_str());
       } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
         _lowercase_substitutions = atoi(opt_val.c_str());
-        TSDebug(PLUGIN_NAME, "lowercasing %d", _lowercase_substitutions);
+        TSDebug(PLUGIN_NAME, "Lowercasing %d", _lowercase_substitutions);
       } else {
         TSOverridableConfigKey name;
         TSRecordDataType type;
         std::string opt_name = opt.substr(start, pos1-start-1);
+
         if (TS_SUCCESS == TSHttpTxnConfigFind(opt_name.c_str(), opt_name.length(), &name, &type)) {
-          Item *cur = (Item *) TSmalloc(sizeof(Item));
+          Override* cur = new Override;
+
+          cur.set_value(type, opt_val);
+
           switch (type) {
             case TS_RECORDDATATYPE_INT:
               cur->data.rec_int = strtoll(opt_val.c_str(), NULL, 10);
@@ -195,22 +199,22 @@ class RemapRegex
               cur->data_len = opt_val.size();
               break;
             default:
-              TSfree(cur);
+              delete cur;
               cur = NULL;
               TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
               break;
           }
           if (cur) {
-            TSDebug(PLUGIN_NAME, "%s = %s", opt_name.c_str(), opt_val.c_str());
+            TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
             cur->name = name;
             cur->type = type;
             cur->next = NULL;
-            if (NULL == _first_item) {
-              _first_item = cur;
-              _last_item = cur;
+            if (NULL == _first_override) {
+              _first_override = cur;
+              _last_override = cur;
             } else {
-              _last_item->next = cur;
-              _last_item = cur;
+              _last_override->next = cur;
+              _last_override = cur;
             }
           }
         } else {
@@ -219,7 +223,7 @@ class RemapRegex
       }
       start = opt.find_first_of("@", pos2);
     }
-  };
+  }
 
   ~RemapRegex()
   {
@@ -233,13 +237,13 @@ class RemapRegex
       pcre_free(_rex);
     if (_extra)
       pcre_free(_extra);
-  };
+  }
 
   // For profiling information
   inline void
   print(int ix, int max, const char* now)
   {
-    fprintf(stderr, "[%s]:\tRegex %d ( %s ): %.2f%%\n", now, ix, _rex_string, 100.0 * _hits / max);
+    fprintf(stderr, "[%s]:    Regex %d ( %s ): %.2f%%\n", now, ix, _rex_string, 100.0 * _hits / max);
   }
 
   inline void
@@ -336,7 +340,7 @@ class RemapRegex
       }
     }
     return 0;
-  };
+  }
 
   // Perform the regular expression matching against a string.
   int
@@ -350,7 +354,7 @@ class RemapRegex
                      0,                    // default options
                      ovector,              // output vector for substring information
                      OVECCOUNT);           // number of elements in the output vector
-  };
+  }
 
   // Get the lengths of the matching string(s), taking into account variable substitutions.
   // We also calculate a total length for the new string, which is the max length the
@@ -407,7 +411,7 @@ class RemapRegex
     }
 
     return len;
-  };
+  }
 
   // Perform substitution on the $0 - $9 variables in the "src" string. $0 is the entire
   // regex that was matches, while $1 - $9 are the corresponding groups. Return the final
@@ -501,39 +505,40 @@ class RemapRegex
     }
 
     return 0; // Shouldn't happen.
-  };
+  }
 
   // setter / getters for members the linked list.
-  inline void set_next(RemapRegex* next) { _next = next; };
-  inline RemapRegex* next() const { return _next; };
+  inline void set_next(RemapRegex* next) { _next = next; }
+  inline RemapRegex* next() const { return _next; }
 
   // setter / getters for order number within the linked list
-  inline void set_order(int order) { _order = order; };
-  inline int order() { return _order; };
+  inline void set_order(int order) { _order = order; }
+  inline int order() { return _order; }
 
   // Various getters
-  inline const char* regex() const { return _rex_string;  };
-  inline const char* substitution() const { return _subst;  };
+  inline const char* regex() const { return _rex_string;  }
+  inline const char* substitution() const { return _subst;  }
   inline int substitutions_used() const { return _num_subs; }
 
   inline bool is_simple() const { return _simple; }
 
-  inline TSHttpStatus status_option() const { return _status; };
-  inline int active_timeout_option() const  { return _active_timeout; };
-  inline int no_activity_timeout_option() const  { return _no_activity_timeout; };
-  inline int connect_timeout_option() const  { return _connect_timeout; };
-  inline int dns_timeout_option() const  { return _dns_timeout; };
-  inline bool lowercase_substitutions_option() const  { return _lowercase_substitutions; };
+  inline TSHttpStatus status_option() const { return _status; }
+  inline int active_timeout_option() const  { return _active_timeout; }
+  inline int no_activity_timeout_option() const  { return _no_activity_timeout; }
+  inline int connect_timeout_option() const  { return _connect_timeout; }
+  inline int dns_timeout_option() const  { return _dns_timeout; }
+  inline bool lowercase_substitutions_option() const  { return _lowercase_substitutions; }
 
-  struct Item {
+  // Hold an overridable configurations
+  struct Override {
     TSOverridableConfigKey name;
     TSRecordDataType type;
     TSRecordData data;
     int data_len; // Used when data is a string
-    Item* next;
+    Override* next;
   };
 
-  inline Item* get_override_items() const { return _first_item; };
+  Override* get_overrides() const { return _first_override; }
 
  private:
   char* _rex_string;
@@ -556,8 +561,8 @@ class RemapRegex
   int _connect_timeout;
   int _dns_timeout;
 
-  Item* _first_item;
-  Item* _last_item;
+  Override* _first_override;
+  Override* _last_override;
 };
 
 struct RemapInstance
@@ -566,7 +571,7 @@ struct RemapInstance
     first(NULL), last(NULL), profile(false), method(false), query_string(true),
     matrix_params(false), hits(0), misses(0),
     filename("unknown")
-  { };
+  { }
 
   RemapRegex* first;
   RemapRegex* last;
@@ -620,7 +625,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
   }
 
   setup_memory_allocation();
-  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
+  TSDebug(PLUGIN_NAME, "Plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -693,7 +698,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     TSError("%s: unable to open %s", PLUGIN_NAME, (ri->filename).c_str());
     return TS_ERROR;
   }
-  TSDebug(PLUGIN_NAME, "loading regular expression maps from %s", (ri->filename).c_str());
+  TSDebug(PLUGIN_NAME, "Loading regular expressions from %s", (ri->filename).c_str());
 
   while (!f.eof()) {
     std::string line, regex, subst, options;
@@ -752,7 +757,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
           PLUGIN_NAME, (ri->filename).c_str(), lineno, erroffset, error);
       delete(cur);
     } else {
-      TSDebug(PLUGIN_NAME, "added regex=%s with substitution=%s and options `%s'",
+      TSDebug(PLUGIN_NAME, "Added regex=%s with subs=%s and options `%s'",
                regex.c_str(), subst.c_str(), options.c_str());
       cur->set_order(++count);
       if (ri->first == NULL)
@@ -793,8 +798,8 @@ TSRemapDeleteInstance(void* ih)
     }
 
     fprintf(stderr, "[%s]: Profiling information for regex_remap file `%s':\n", now, (ri->filename).c_str());
-    fprintf(stderr, "[%s]:\tTotal hits (matches): %d\n", now, ri->hits);
-    fprintf(stderr, "[%s]:\tTotal missed (no regex matches): %d\n", now, ri->misses);
+    fprintf(stderr, "[%s]:    Total hits (matches): %d\n", now, ri->hits);
+    fprintf(stderr, "[%s]:    Total missed (no regex matches): %d\n", now, ri->misses);
 
     if (ri->hits > 0) { // Avoid divide by zeros...
       int ix = 1;
@@ -810,14 +815,16 @@ TSRemapDeleteInstance(void* ih)
 
   re = ri->first;
   while (re) {
-    RemapRegex::Item *item = re->get_override_items();
-    while (item) {
-      RemapRegex::Item *tmp = item;
-      if (TS_RECORDDATATYPE_STRING == item->type) {
-        TSfree(item->data.rec_string);
+    RemapRegex::Override *override = re->get_overrides();
+
+    while (override) {
+      RemapRegex::Override* tmp = override;
+
+      if (TS_RECORDDATATYPE_STRING == override->type) {
+        TSfree(override->data.rec_string);
       }
-      item = item->next;
-      TSfree(tmp);
+      override = override->next;
+      delete tmp;
     }
     tmp = re;
     re = re->next();
@@ -919,23 +926,23 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         TSDebug(PLUGIN_NAME, "Setting lowercasing substitutions on");
         lowercase_substitutions = true;
       }
-      if (re->get_override_items() != NULL) {
-        RemapRegex::Item *item = re->get_override_items();
-        while (item) {
-          switch (item->type) {
-            case TS_RECORDDATATYPE_INT:
-              TSHttpTxnConfigIntSet(txnp, item->name, item->data.rec_int);
-              TSDebug(PLUGIN_NAME, "Setting config id %d to %" PRId64"", item->name, item->data.rec_int);
-              break;
-            case TS_RECORDDATATYPE_STRING:
-              TSHttpTxnConfigStringSet(txnp, item->name, item->data.rec_string, item->data_len);
-              TSDebug(PLUGIN_NAME, "Setting config id %d to %s", item->name, item->data.rec_string);
-              break;
-            default:
-              break; // Error ?
-          }
-          item = item->next;
+
+      RemapRegex::Override *override = re->get_overrides();
+
+      while (override) {
+        switch (override->type) {
+        case TS_RECORDDATATYPE_INT:
+          TSHttpTxnConfigIntSet(txnp, override->name, override->data.rec_int);
+          TSDebug(PLUGIN_NAME, "Setting config id %d to `%" PRId64 "'", override->name, override->data.rec_int);
+          break;
+        case TS_RECORDDATATYPE_STRING:
+          TSHttpTxnConfigStringSet(txnp, override->name, override->data.rec_string, override->data_len);
+          TSDebug(PLUGIN_NAME, "Setting config id %d to `%s'", override->name, override->data.rec_string);
+          break;
+        default:
+          break; // Error ?
         }
+        override = override->next;
       }
 
       // Update profiling if requested
