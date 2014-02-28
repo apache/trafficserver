@@ -119,7 +119,7 @@ class RemapRegex
   RemapRegex(const std::string& reg, const std::string& sub, const std::string& opt) :
     _num_subs(-1), _rex(NULL), _extra(NULL), _order(-1), _simple(false), _lowercase_substitutions(false),
     _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1),
-    _first_override(NULL), _last_override(NULL)
+    _first_override(NULL)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
 
@@ -151,6 +151,7 @@ class RemapRegex
     // Parse options
     std::string::size_type start = opt.find_first_of("@");
     std::string::size_type pos1, pos2;
+    Override* last_override = NULL;
 
     while (start != std::string::npos) {
       std::string opt_val;
@@ -188,34 +189,34 @@ class RemapRegex
         if (TS_SUCCESS == TSHttpTxnConfigFind(opt_name.c_str(), opt_name.length(), &name, &type)) {
           Override* cur = new Override;
 
-          cur.set_value(type, opt_val);
-
           switch (type) {
-            case TS_RECORDDATATYPE_INT:
-              cur->data.rec_int = strtoll(opt_val.c_str(), NULL, 10);
-              break;
-            case TS_RECORDDATATYPE_STRING:
-              cur->data.rec_string = TSstrdup(opt_val.c_str());
-              cur->data_len = opt_val.size();
-              break;
-            default:
-              delete cur;
-              cur = NULL;
-              TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
-              break;
+          case TS_RECORDDATATYPE_INT:
+            cur->data.rec_int = strtoll(opt_val.c_str(), NULL, 10);
+            break;
+          case TS_RECORDDATATYPE_FLOAT:
+            cur->data.rec_float = strtof(opt_val.c_str(), NULL);
+            break;
+          case TS_RECORDDATATYPE_STRING:
+            cur->data.rec_string = TSstrdup(opt_val.c_str());
+            cur->data_len = opt_val.size();
+            break;
+          default:
+            delete cur;
+            cur = NULL;
+            TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
+            break;
           }
           if (cur) {
             TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
             cur->name = name;
             cur->type = type;
             cur->next = NULL;
-            if (NULL == _first_override) {
+            if (NULL == last_override) {
               _first_override = cur;
-              _last_override = cur;
             } else {
-              _last_override->next = cur;
-              _last_override = cur;
+              last_override->next = cur;
             }
+            last_override = cur;
           }
         } else {
           TSError("Unknown options: %s", opt.c_str());
@@ -562,7 +563,6 @@ class RemapRegex
   int _dns_timeout;
 
   Override* _first_override;
-  Override* _last_override;
 };
 
 struct RemapInstance
@@ -934,6 +934,10 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         case TS_RECORDDATATYPE_INT:
           TSHttpTxnConfigIntSet(txnp, override->name, override->data.rec_int);
           TSDebug(PLUGIN_NAME, "Setting config id %d to `%" PRId64 "'", override->name, override->data.rec_int);
+          break;
+        case TS_RECORDDATATYPE_FLOAT:
+          TSHttpTxnConfigFloatSet(txnp, override->name, override->data.rec_float);
+          TSDebug(PLUGIN_NAME, "Setting config id %d to `%f'", override->name, override->data.rec_float);
           break;
         case TS_RECORDDATATYPE_STRING:
           TSHttpTxnConfigStringSet(txnp, override->name, override->data.rec_string, override->data_len);
