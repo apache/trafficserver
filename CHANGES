@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2585] Add overridable configs support to regex_remap plugin.
+   Author: Ethan Lai <yzlai@yahoo.com>
+
   *) [TS-2569] Set the default SSL options correctly.
    Author: Ron Barber <rbarber@yahoo-inc.com>
 
@@ -1324,7 +1327,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1500] let ssl_multicert.config specify sslcert per port
 
   *) [TS-1621] Adopt ConfigUpdateHandler pattern.
-     Author: Ethan Lai <yzlai@yahoo.com>
+   Author: Ethan Lai <yzlai@yahoo.com>
 
   *) [TS-1619] simplify ConfigurationProcessor reconfiguration pattern.
 
