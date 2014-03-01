@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2603] Do not update HostDB for server intercept requests.
+   Author: Quehan <quehan@taobao.com>
+
   *) [TS-2622] Optimize the ink_cluster_time() function.
    Author: Yu Qing <zhuangyuan@taobao.com>
 

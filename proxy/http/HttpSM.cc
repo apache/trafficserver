@@ -3926,7 +3926,7 @@ HttpSM::do_hostdb_update_if_necessary()
 {
   int issue_update = 0;
 
-  if (t_state.current.server == NULL) {
+  if (t_state.current.server == NULL || plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
     // No server, so update is not necessary
     return;
   }
