@@ -19,7 +19,7 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2014-03-09 14:14+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -28,11 +28,11 @@ msgstr ""
 
 #: ../../reference/commands/traffic_cop.en.rst:20
 msgid "traffic_cop"
-msgstr ""
+msgstr "traffic_cop"
 
 #: ../../reference/commands/traffic_cop.en.rst:25
 msgid "Description"
-msgstr ""
+msgstr "概要"
 
 #: ../../reference/commands/traffic_cop.en.rst:27
 msgid ""
@@ -42,6 +42,10 @@ msgid ""
 "determined to be unresponsive, :program:`traffic_cop` will kill and restart "
 "them."
 msgstr ""
+":program:`traffic_cop` は :program:`traffic_manager` と :program:"
+"`traffic_server` の起動とレスポンスによりそれらを監視することに責任を持つ番"
+"犬プログラムです。どちらかのプロセスがレスポンスがないと判断された場合、:"
+"program:`traffic_cop` はそれらをキルしてリスタートします。"
 
 #: ../../reference/commands/traffic_cop.en.rst:33
 msgid ""
@@ -51,20 +55,27 @@ msgid ""
 "the :ts:cv:`proxy.config.cop.linux_min_swapfree_kb` and :ts:cv:`proxy."
 "config.cop.linux_min_memfree_kb` variables."
 msgstr ""
+"Linux では :program:`traffic_cop` は使用可能なメモリーとスワップスペースも監"
+"視し、使用可能なメモリが最小閾値を下回った場合、監視しているプロセスを再起動"
+"します。メモリーの閾値は :ts:cv:`proxy.config.cop.linux_min_swapfree_kb` "
+"と :ts:cv:`proxy.config.cop.linux_min_memfree_kb` 変数で設定することができま"
+"す。"
 
 #: ../../reference/commands/traffic_cop.en.rst:39
 msgid "The following options are available:"
-msgstr ""
+msgstr "次のオプションが使用可能です。"
 
 #: ../../reference/commands/traffic_cop.en.rst:43
 msgid ""
 "Kill children using ``SIGSTOP`` instead of ``SIGKILL``. This option is "
 "primarily for debugging."
 msgstr ""
+"``SIGKILL`` の代わりに ``SIGSTOP`` を使用して子プロセスをキルします。このオ"
+"プションは主にデバッグ用です。"
 
 #: ../../reference/commands/traffic_cop.en.rst:48
 msgid "Print version information and exit."
-msgstr ""
+msgstr "バージョン情報を表示して終了します。"
 
 #: ../../reference/commands/traffic_cop.en.rst:50
 msgid ""
@@ -72,13 +83,18 @@ msgid ""
 "purposes, the ``--enable-cop-debug`` build option causes it to log trace "
 "messages to :file:`/tmp/traffic_cop.trace`."
 msgstr ""
+":program:`traffic_cop` は通常 syslog にログを取りますが、デバッグを目的とし"
+"て ``--enable-cop-debug`` ビルドオプションを使用することで :file:`/tmp/"
+"traffic_cop.trace` にトレースメッセージを記録するようになります。"
 
 #: ../../reference/commands/traffic_cop.en.rst:56
 msgid "See also"
-msgstr ""
+msgstr "参照"
 
 #: ../../reference/commands/traffic_cop.en.rst:58
 msgid ""
 ":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
 "`traffic_server(8)`"
 msgstr ""
+":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
+"`traffic_server(8)`"
