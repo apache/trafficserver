@@ -1061,12 +1061,33 @@ CacheVC::openReadStartHead(int event, Event * e)
 #ifdef HTTP_CACHE
     CacheHTTPInfo *alternate_tmp;
     if (frag_type == CACHE_FRAG_TYPE_HTTP) {
+      uint32_t uml;
       ink_assert(doc->hlen);
       if (!doc->hlen)
         goto Ldone;
-      if (vector.get_handles(doc->hdr(), doc->hlen) != doc->hlen) {
+      if ((uml = vector.get_handles(doc->hdr(), doc->hlen)) != doc->hlen) {
         if (buf) {
-          Note("OpenReadHead failed for cachekey %X : vector inconsistency with %d", key.word(0), doc->hlen);
+          HTTPCacheAlt* alt = reinterpret_cast<HTTPCacheAlt*>(doc->hdr());
+          int32_t alt_length = 0;
+          // count should be reasonable, as vector is initialized and unlikly to be too corrupted
+          // by bad disk data - count should be the number of successfully unmarshalled alts.
+          for ( int32_t i = 0 ; i < vector.count() ; ++i ) {
+            CacheHTTPInfo* info = vector.get(i);
+            if (info && info->m_alt) alt_length += info->m_alt->m_unmarshal_len;
+          }
+          Note("OpenReadHead failed for cachekey %X : vector inconsistency - "
+               "unmarshalled %d expecting %d in %d (base=%d, flen=%d) "
+               "- vector n=%d size=%d"
+               "first alt=%d[%s]"
+               , key.word(0)
+               , uml, doc->hlen, doc->len, sizeofDoc, doc->_flen
+               , vector.count(), alt_length
+               , alt->m_magic
+               , (CACHE_ALT_MAGIC_ALIVE == alt->m_magic ? "alive"
+                  : CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ? "serial"
+                  : CACHE_ALT_MAGIC_DEAD == alt->m_magic ? "dead"
+                  : "bogus")
+            );
           dir_delete(&key, vol, &dir);
         }
         err = ECACHE_BAD_META_DATA;
