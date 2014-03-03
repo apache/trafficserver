@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2019] Fix the "vector inconsistency" errors.
+
   *) [TS-2585] Add overridable configs support to regex_remap plugin.
    Author: Ethan Lai <yzlai@yahoo.com>
 
