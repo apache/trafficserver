@@ -86,8 +86,7 @@ enum TunnelChunkingAction_t
 
 struct ChunkedHandler
 {
-  enum ChunkedState
-  {
+  enum ChunkedState {
     CHUNK_READ_CHUNK = 0,
     CHUNK_READ_SIZE_START,
     CHUNK_READ_SIZE,
@@ -103,6 +102,14 @@ struct ChunkedHandler
   };
 
   static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
+
+  enum Action {
+    ACTION_DOCHUNK = 0,
+    ACTION_DECHUNK,
+    ACTION_PASSTHRU,
+  };
+
+  Action action;
 
   IOBufferReader *chunked_reader;
   MIOBuffer *dechunked_buffer;
@@ -137,7 +144,9 @@ struct ChunkedHandler
   //@}
   ChunkedHandler();
 
-  void init(IOBufferReader * buffer_in, HttpTunnelProducer * p);
+  void init(IOBufferReader *buffer_in, HttpTunnelProducer *p);
+  void init_by_action(IOBufferReader *buffer_in, Action action);
+  void clear();
 
   /// Set the max chunk @a size.
   /// If @a size is zero it is set to @c DEFAULT_MAX_CHUNK_SIZE.

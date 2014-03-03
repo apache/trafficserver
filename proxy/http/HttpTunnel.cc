@@ -70,27 +70,63 @@ ChunkedHandler::ChunkedHandler()
 void
 ChunkedHandler::init(IOBufferReader * buffer_in, HttpTunnelProducer * p)
 {
+  if (p->do_chunking)
+    init_by_action(buffer_in, ACTION_DOCHUNK);
+  else if (p->do_dechunking)
+    init_by_action(buffer_in, ACTION_DECHUNK);
+  else
+    init_by_action(buffer_in, ACTION_PASSTHRU);
+  return;
+}
+
+void
+ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action)
+{
   running_sum = 0;
   num_digits = 0;
   cur_chunk_size = 0;
   bytes_left = 0;
   truncation = false;
+  this->action = action;
 
-  if (p->do_chunking) {
+  switch (action) {
+  case ACTION_DOCHUNK:
     dechunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
     dechunked_reader->mbuf->water_mark = min_block_transfer_bytes;
     chunked_buffer = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
     chunked_size = 0;
-  } else {
-    ink_assert(p->do_dechunking || p->do_chunked_passthru);
+    break;
+  case ACTION_DECHUNK:
     chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
-
-    if (p->do_dechunking) {
-      // This is the min_block_transfer_bytes value.
-      dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
-      dechunked_size = 0;
-    }
+    dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
+    dechunked_size = 0;
+    break;
+  case ACTION_PASSTHRU:
+    chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
+    break;
+  default:
+    ink_release_assert(!"Unknown action");
   }
+
+  return;
+}
+
+void
+ChunkedHandler::clear()
+{
+  switch (action) {
+  case ACTION_DOCHUNK:
+    free_MIOBuffer(chunked_buffer);
+    break;
+  case ACTION_DECHUNK:
+    free_MIOBuffer(dechunked_buffer);
+    break;
+  case ACTION_PASSTHRU:
+  default:
+    break;
+  }
+
+  return;
 }
 
 void
