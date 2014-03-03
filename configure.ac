@@ -1367,7 +1367,7 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
   )
 
   # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
-  PKG_CHECK_MODULES([hwloc], [hwloc], [use_hwloc=yes], [use_hwloc=no])
+  PKG_CHECK_MODULES([hwloc], [hwloc], [use_hwloc=1], [use_hwloc=0])
   AC_SUBST([hwloc_CFLAGS])
   AC_SUBST([hwloc_LIBS])
 ])

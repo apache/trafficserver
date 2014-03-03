@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2607] Fix TS_USE_HWLOC #define in build process
+
   *) [TS-2595] DNS lookup failed with multiple search domains. 
    Author: Thach Tran <tranngocthachs@gmail.com>
 
