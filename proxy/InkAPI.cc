@@ -585,6 +585,15 @@ sdk_sanity_check_continuation(TSCont cont)
 }
 
 TSReturnCode
+sdk_sanity_check_fetch_sm(TSFetchSM fetch_sm)
+{
+  if (fetch_sm == NULL)
+    return TS_ERROR;
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 sdk_sanity_check_http_ssn(TSHttpSsn ssnp)
 {
   if (ssnp == NULL)
@@ -7214,6 +7223,96 @@ TSFetchUrl(const char* headers, int request_len, sockaddr const* ip , TSCont con
 
   fetch_sm->init((Continuation*)contp, callback_options, events, headers, request_len, ip);
   fetch_sm->httpConnect();
+}
+
+TSFetchSM
+TSFetchCreate(TSCont contp, TSFetchMethod method,
+              const char *url, const char *version,
+              struct sockaddr const* client_addr, int flags)
+{
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(ats_is_ip4(client_addr));
+
+  FetchSM *fetch_sm = FetchSMAllocator.alloc();
+
+  fetch_sm->ext_init((Continuation*)contp, method, url, version,
+                     client_addr, flags);
+
+  return (TSFetchSM)fetch_sm;
+}
+
+void
+TSFetchHeaderAdd(TSFetchSM fetch_sm,
+                 const char *name, int name_len,
+                 const char *value, int value_len)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  ((FetchSM*)fetch_sm)->ext_add_header(name, name_len, value, value_len);
+}
+
+void
+TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  ((FetchSM*)fetch_sm)->ext_write_data(data, len);
+}
+
+ssize_t
+TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  return ((FetchSM*)fetch_sm)->ext_read_data((char *)buf, len);
+}
+
+void
+TSFetchLaunch(TSFetchSM fetch_sm)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  ((FetchSM*)fetch_sm)->ext_lanuch();
+}
+
+void
+TSFetchDestroy(TSFetchSM fetch_sm)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  ((FetchSM*)fetch_sm)->ext_destroy();
+}
+
+void
+TSFetchUserDataSet(TSFetchSM fetch_sm, void *data)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  ((FetchSM*)fetch_sm)->ext_set_user_data(data);
+}
+
+void*
+TSFetchUserDataGet(TSFetchSM fetch_sm)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  return ((FetchSM*)fetch_sm)->ext_get_user_data();
+}
+
+TSMBuffer
+TSFetchRespHdrMBufGet(TSFetchSM fetch_sm)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  return ((FetchSM*)fetch_sm)->resp_hdr_bufp();
+}
+
+TSMLoc
+TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  return ((FetchSM*)fetch_sm)->resp_hdr_mloc();
 }
 
 TSReturnCode

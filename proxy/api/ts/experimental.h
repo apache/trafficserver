@@ -37,6 +37,37 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
+  /* For Extended FetchSM APIs */
+  typedef enum {
+    TS_FETCH_METHOD_NONE,
+    TS_FETCH_METHOD_GET,
+    TS_FETCH_METHOD_POST,
+    TS_FETCH_METHOD_CONNECT,
+    TS_FETCH_METHOD_DELETE,
+    TS_FETCH_METHOD_HEAD,
+    TS_FETCH_METHOD_PURGE,
+    TS_FETCH_METHOD_PUT,
+    TS_FETCH_METHOD_LAST
+  } TSFetchMethod;
+
+  typedef enum
+  {
+    TS_FETCH_EVENT_EXT_HEAD_READY = -1,
+    TS_FETCH_EVENT_EXT_HEAD_DONE = -2,
+    TS_FETCH_EVENT_EXT_BODY_READY = -3,
+    TS_FETCH_EVENT_EXT_BODY_DONE = -4,
+  } TSFetchEventExt;
+
+  typedef enum
+  {
+    TS_FETCH_FLAGS_NONE = 0,           // do nothing
+    TS_FETCH_FLAGS_STREAM = 1 << 1,    // enable stream IO
+    TS_FETCH_FLAGS_DECHUNK = 1 << 2,   // dechunk body content
+    TS_FETCH_FLAGS_NEWLOCK = 1 << 3,   // allocate new lock for fetch sm
+  } TSFetchFlags;
+
+  typedef struct tsapi_fetchsm* TSFetchSM;
+
   /* Forward declaration of in_addr, any user of these APIs should probably 
      include net/netinet.h or whatever is appropriate on the platform. */
   struct in_addr;
@@ -599,6 +630,94 @@ extern "C"
      A hook is already present, it is replace by hook_fn
      return value 0 indicates success */
   tsapi int TSPrefetchHookSet(int hook_no, TSPrefetchHook hook_fn);
+
+
+  /**
+   * Extended FetchSM's AIPs
+   */
+
+  /*
+   * Create FetchSM, this API will enable stream IO automatically.
+   *
+   * @param contp: continuation to be callbacked.
+   * @param method: request method.
+   * @param url: scheme://host[:port]/path.
+   * @param version: client http version, eg: "HTTP/1.1".
+   * @param client_addr: client addr sent to log.
+   * @param flags: can be bitwise OR of several TSFetchFlags.
+   *
+   * return TSFetchSM which should be destroyed by TSFetchDestroy().
+   */
+  tsapi TSFetchSM TSFetchCreate(TSCont contp, TSFetchMethod method,
+                                const char *url, const char *version,
+                                struct sockaddr const* client_addr, int flags);
+
+  /*
+   * Create FetchSM, this API will enable stream IO automatically.
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   * @param name: name of header.
+   * @param name_len: len of name.
+   * @param value: value of header.
+   * @param name_len: len of value.
+   *
+   * return TSFetchSM which should be destroyed by TSFetchDestroy().
+   */
+  tsapi void TSFetchHeaderAdd(TSFetchSM fetch_sm,
+                              const char *name, int name_len,
+                              const char *value, int value_len);
+
+  /*
+   * Write data to FetchSM
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   * @param data/len: data to be written to fetch sm.
+   */
+  tsapi void TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len);
+
+  /*
+   * Read up to *len* bytes from FetchSM into *buf*.
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   * @param buf/len: buffer to contain data from fetch sm.
+   */
+  tsapi ssize_t TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len);
+
+  /*
+   * Lanuch FetchSM to do http request, before calling this API,
+   * you should append http request header into fetch sm through
+   * TSFetchWriteData() API
+   *
+   * @param fetch_sm: comes from returned value of TSFetchCreate().
+   */
+  tsapi void TSFetchLaunch(TSFetchSM fetch_sm);
+
+  /*
+   * Destroy FetchSM
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   */
+  tsapi void TSFetchDestroy(TSFetchSM fetch_sm);
+
+  /*
+   * Set user-defined data in FetchSM
+   */
+  tsapi void TSFetchUserDataSet(TSFetchSM fetch_sm, void *data);
+
+  /*
+   * Get user-defined data in FetchSM
+   */
+  tsapi void* TSFetchUserDataGet(TSFetchSM fetch_sm);
+
+  /*
+   * Get client response hdr mbuffer
+   */
+  tsapi TSMBuffer TSFetchRespHdrMBufGet(TSFetchSM fetch_sm);
+
+  /*
+   * Get client response hdr mloc
+   */
+  tsapi TSMLoc TSFetchRespHdrMLocGet(TSFetchSM fetch_sm);
 
 #ifdef __cplusplus
 }

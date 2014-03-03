@@ -40,30 +40,56 @@ public:
   FetchSM()
   { }
 
-  void init(Continuation* cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char* headers, int length, sockaddr const * addr)
+  void init_comm()
   {
-    //_headers.assign(headers);
-    Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--", __FUNCTION__, length, headers);
+    recursion = 0;
     req_finished = 0;
     resp_finished = 0;
     header_done = 0;
+    user_data = NULL;
+    has_sent_header = false;
+    req_method = TS_FETCH_METHOD_NONE;
+    req_content_length = 0;
+    resp_is_chunked = -1;
+    resp_content_length = -1;
+    resp_recived_body_len = 0;
+    cont_mutex.clear();
     req_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
     req_reader = req_buffer->alloc_reader();
     resp_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     resp_reader = resp_buffer->alloc_reader();
-    response_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-    response_reader = response_buffer->alloc_reader();
-    contp = cont;
     http_parser_init(&http_parser);
     client_response_hdr.create(HTTP_TYPE_RESPONSE);
     client_response  = NULL;
-    mutex = new_ProxyMutex();
+    SET_HANDLER(&FetchSM::fetch_handler);
+  }
+
+  void init(Continuation* cont, TSFetchWakeUpOptions options,
+            TSFetchEvent events, const char* headers, int length,
+            sockaddr const *addr)
+  {
+    Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--",
+          __FUNCTION__, length, headers);
+    init_comm();
+    contp = cont;
     callback_events = events;
     callback_options = options;
     _addr.assign(addr);
+    fetch_flags = TS_FETCH_FLAGS_NONE;
     writeRequest(headers,length);
-    SET_HANDLER(&FetchSM::fetch_handler);
+    mutex = new_ProxyMutex();
+
+    //
+    // We had dropped response_buffer/respone_reader to avoid unnecessary
+    // memory copying. But for the original TSFetchURL() API, PluginVC may
+    // stop adding data to resp_buffer when the pending data in resp_buffer
+    // reach its water_mark.
+    //
+    // So we should set the water_mark of resp_buffer with a large value,
+    // INT64_MAX would be reasonable.
+    resp_buffer->water_mark = INT64_MAX;
   }
+
   int fetch_handler(int event, void *data);
   void process_fetch_read(int event);
   void process_fetch_write(int event);
@@ -72,8 +98,29 @@ public:
   void get_info_from_buffer(IOBufferReader *reader);
   char* resp_get(int* length);
 
+  TSMBuffer resp_hdr_bufp();
+  TSMLoc resp_hdr_mloc();
+
+  //
+  // Extended APIs for FetchSM
+  //
+  // *flags* can be bitwise OR of several TSFetchFlags
+  //
+  void ext_init(Continuation *cont, TSFetchMethod method,
+                const char *url, const char *version,
+                const sockaddr *client_addr, int flags);
+  void ext_add_header(const char *name, int name_len,
+                      const char *value, int value_len);
+  void ext_lanuch();
+  void ext_destroy();
+  ssize_t ext_read_data(char *buf, size_t len);
+  void ext_write_data(const void *data, size_t len);
+  void ext_set_user_data(void *data);
+  void* ext_get_user_data();
+
 private:
   int InvokePlugin(int event, void*data);
+  void InvokePluginExt(int error_event = 0);
 
   void writeRequest(const char *headers,int length)
   {
@@ -85,11 +132,15 @@ private:
 
   int64_t getReqLen() const { return req_reader->read_avail(); }
 
+  bool has_body();
+  bool check_body_done();
+  bool check_chunked();
+  int dechunk_body();
+
+  int recursion;
   TSVConn http_vc;
   VIO *read_vio;
   VIO *write_vio;
-  MIOBuffer *response_buffer;   // response to FetchSM call
-  IOBufferReader *response_reader;      // response to FetchSM call
   MIOBuffer *req_buffer;
   IOBufferReader *req_reader;
   char *client_response;
@@ -97,6 +148,7 @@ private:
   MIOBuffer *resp_buffer;       // response to HttpConnect Call
   IOBufferReader *resp_reader;
   Continuation *contp;
+  Ptr<ProxyMutex> cont_mutex;
   HTTPParser http_parser;
   HTTPHdr client_response_hdr;
   TSFetchEvent callback_events;
@@ -105,6 +157,14 @@ private:
   bool header_done;
   bool resp_finished;
   IpEndpoint _addr;
+  int resp_is_chunked;
+  int fetch_flags;
+  void *user_data;
+  bool has_sent_header;
+  TSFetchMethod req_method;
+  int64_t req_content_length;
+  int64_t resp_content_length;
+  int64_t resp_recived_body_len;
 };
 
 #endif
