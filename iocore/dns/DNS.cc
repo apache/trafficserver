@@ -384,12 +384,10 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
     if (len) {
       len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
       memcpy(qname, x, len);
-      qname_len = len;
-      orig_qname_len = qname_len;
       qname[len] = 0;
+      orig_qname_len = qname_len = len;
     } else {
-      ink_strlcpy(qname, x, MAXDNAME);
-      qname_len = strlen(qname);
+      qname_len = ink_strlcpy(qname, x, MAXDNAME);
       orig_qname_len = qname_len;
     }
   } else {                    //T_PTR
