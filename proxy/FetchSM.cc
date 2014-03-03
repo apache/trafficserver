@@ -289,43 +289,81 @@ out:
 void
 FetchSM::get_info_from_buffer(IOBufferReader *the_reader)
 {
-  char *info;
-//  char *info_start;
-
+  char *buf, *info;
   int64_t read_avail, read_done;
   IOBufferBlock *blk;
-  char *buf;
+  IOBufferReader *reader = the_reader;
 
-  if (!the_reader)
+  if (!reader) {
+    client_bytes = 0;
     return ;
+  }
 
-  read_avail = the_reader->read_avail();
+  read_avail = reader->read_avail();
   Debug(DEBUG_TAG, "[%s] total avail %" PRId64 , __FUNCTION__, read_avail);
-  //size_t hdr_size = _headers.size();
-  //info = (char *)ats_malloc(sizeof(char) * (read_avail+1) + hdr_size);
+  if (!read_avail) {
+    client_bytes = 0;
+    return;
+  }
+
   info = (char *)ats_malloc(sizeof(char) * (read_avail+1));
   client_response = info;
 
-  //ink_strlcpy(info, _headers.data(), sizeof(char) * (read_avail+1));
-  //info += hdr_size;
+  if (!check_chunked()) {
+    /* Read the data out of the reader */
+    while (read_avail > 0) {
+      if (reader->block != NULL)
+        reader->skip_empty_blocks();
+      blk = reader->block;
 
-  /* Read the data out of the reader */
-  while (read_avail > 0) {
-    if (the_reader->block != NULL)
-      the_reader->skip_empty_blocks();
-    blk = the_reader->block;
+      // This is the equivalent of TSIOBufferBlockReadStart()
+      buf = blk->start() + reader->start_offset;
+      read_done = blk->read_avail() - reader->start_offset;
 
-    // This is the equivalent of TSIOBufferBlockReadStart()
-    buf = blk->start() + the_reader->start_offset;
-    read_done = blk->read_avail() - the_reader->start_offset;
-
-    if (read_done > 0) {
-      memcpy(info, buf, read_done);
-      the_reader->consume(read_done);
-      read_avail -= read_done;
-      info += read_done;
+      if (read_done > 0) {
+        memcpy(info, buf, read_done);
+        reader->consume(read_done);
+        read_avail -= read_done;
+        info += read_done;
+        client_bytes += read_done;
+      }
     }
+    client_response[client_bytes] = '\0';
+    return;
   }
+
+  reader = chunked_handler.dechunked_reader;
+  do {
+    if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
+      chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
+    }
+
+    if (!dechunk_body())
+      break;
+
+    /* Read the data out of the reader */
+    read_avail = reader->read_avail();
+    while (read_avail > 0) {
+      if (reader->block != NULL)
+        reader->skip_empty_blocks();
+      blk = reader->block;
+
+      // This is the equivalent of TSIOBufferBlockReadStart()
+      buf = blk->start() + reader->start_offset;
+      read_done = blk->read_avail() - reader->start_offset;
+
+      if (read_done > 0) {
+        memcpy(info, buf, read_done);
+        reader->consume(read_done);
+        read_avail -= read_done;
+        info += read_done;
+        client_bytes += read_done;
+      }
+    }
+  } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
+
+  client_response[client_bytes] = '\0';
+  return;
 }
 
 void
@@ -360,13 +398,7 @@ FetchSM::process_fetch_read(int event)
     if (fetch_flags & TS_FETCH_FLAGS_STREAM)
       return InvokePluginExt();
     if(callback_options == AFTER_HEADER || callback_options == AFTER_BODY) {
-      bytes = resp_reader->read_avail();
       get_info_from_buffer(resp_reader);
-      Debug(DEBUG_TAG, "[%s] number of bytes %"PRId64"", __FUNCTION__, bytes);
-      if(client_response!=NULL)
-        client_response[bytes] = '\0';
-      Debug(DEBUG_TAG, "[%s] Completed data fetch of size %"PRId64", notifying caller", __FUNCTION__, bytes);
-      client_bytes = bytes;
       InvokePlugin( callback_events.success_event_id, (void *) this);
     }
     Debug(DEBUG_TAG, "[%s] received EOS", __FUNCTION__);

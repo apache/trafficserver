@@ -76,7 +76,7 @@ public:
     callback_events = events;
     callback_options = options;
     _addr.assign(addr);
-    fetch_flags = TS_FETCH_FLAGS_NONE;
+    fetch_flags = TS_FETCH_FLAGS_DECHUNK;
     writeRequest(headers,length);
     mutex = new_ProxyMutex();
 
