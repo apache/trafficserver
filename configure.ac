@@ -1354,20 +1354,36 @@ AC_SUBST(use_linux_native_aio)
 # If we don't find it, disable checking for header.
 use_hwloc=0
 AS_IF([test "x$enable_hwloc" = "xyes"], [
-  AC_CHECK_HEADERS([hwloc.h], [],
-    [AC_MSG_WARN([hwloc.h header not found, try --disable-hwloc])], []
-  )
-
-  # Old versions of libhwloc don't have HWLOC_OBJ_PU.
-  AC_CHECK_DECL(HWLOC_OBJ_PU,
-    [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
-    [#include <hwloc.h>]
-  )
-
   # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
-  PKG_CHECK_MODULES([hwloc], [hwloc], [use_hwloc=1], [use_hwloc=0])
-  AC_SUBST([hwloc_CFLAGS])
-  AC_SUBST([hwloc_LIBS])
+  PKG_CHECK_MODULES([hwloc], [hwloc], [
+    SAVE_LIBS="$LIBS"
+    LIBS="-lhwloc"
+    AC_LANG_PUSH([C++])
+    AC_MSG_CHECKING([for hwloc C++ linking])
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
+      use_hwloc=1
+      AC_SUBST([hwloc_CFLAGS])
+      AC_SUBST([hwloc_LIBS])
+      AC_MSG_RESULT([yes])
+      # Old versions of libhwloc don't have HWLOC_OBJ_PU.
+      AC_CHECK_DECL(HWLOC_OBJ_PU,
+        [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
+        [#include <hwloc.h>]
+      )
+    ], [
+      AC_MSG_RESULT([no])
+      AC_MSG_WARN([hwloc not linkable, try --disable-hwloc])
+      AC_SUBST([hwloc_CFLAGS],[""])
+      AC_SUBST([hwloc_LIBS],[""])
+    ])
+    AC_LANG_POP()
+    LIBS="$SAVE_LIBS"
+  ], [
+    AC_MSG_WARN([hwloc not found, try --disable-hwloc])
+    AC_SUBST([hwloc_CFLAGS],[""])
+    AC_SUBST([hwloc_LIBS],[""])
+  ])
 ])
 
 AC_SUBST(use_hwloc)
