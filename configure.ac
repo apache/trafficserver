@@ -1836,6 +1836,7 @@ AC_CHECK_TYPE([struct tcp_info],
   [[#include <netinet/tcp.h>]]
 )
 AM_CONDITIONAL([BUILD_TCPINFO_PLUGIN], [ test "x${enable_tcpinfo_plugin}" != "xno" ])
+AM_CONDITIONAL([BUILD_COLLAPSED_CONNECTION_PLUGIN], [ test "x${enable_collapsed_connection_plugin}" != "xno" ])
 
 # See if we can build the remap_stats plugin
 AS_IF([test "x$enable_experimental_plugins" = xyes],
@@ -1953,6 +1954,7 @@ AC_CONFIG_FILES([
   plugins/experimental/balancer/Makefile
   plugins/experimental/buffer_upload/Makefile
   plugins/experimental/channel_stats/Makefile
+  plugins/experimental/collapsed_connection/Makefile
   plugins/experimental/custom_redirect/Makefile
   plugins/experimental/escalate/Makefile
   plugins/experimental/esi/Makefile

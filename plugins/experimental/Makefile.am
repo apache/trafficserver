@@ -22,6 +22,7 @@ SUBDIRS = \
  escalate \
  buffer_upload \
  channel_stats \
+ collapsed_connection \
  custom_redirect \
  esi \
  geoip_acl \

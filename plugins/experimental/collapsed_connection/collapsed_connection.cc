@@ -531,7 +531,7 @@ updateOrRemoveHashEntry(CcTxnData * txn_data)
  * @return uint32_t hash_key
  */
 static uint32_t
-getCacheUrlHashKey(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc)
+getCacheUrlHashKey(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc /* hdr_loc ATS_UNUSED */)
 {
   TSMLoc url_loc = TS_NULL_MLOC;
   int url_len;
@@ -620,7 +620,7 @@ isResponseCacheable(TSMBuffer bufp, TSMLoc hdr_loc)
  * @return int
  */
 static int
-retryCacheUrlLock(TSCont contp, TSEvent event, void *edata)
+retryCacheUrlLock(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   TryLockData *data = reinterpret_cast < TryLockData * >(TSContDataGet(contp));
   TSDebug(PLUGIN_NAME, "[%zu] event = %d retry", data->txn_data->seq_id, data->event);
@@ -899,7 +899,7 @@ testCacheLookupResult(CcTxnData * txn_data)
  * @return int
  */
 static int
-collapsedConnectionMainHandler(TSCont contp, TSEvent event, void *edata)
+collapsedConnectionMainHandler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = reinterpret_cast < TSHttpTxn > (edata);
   CcTxnData *txn_data = getCcTxnData(txnp, TS_EVENT_HTTP_POST_REMAP == event, false);
@@ -1082,7 +1082,7 @@ TSRemapDeleteInstance(void *ih)
 // This is the main "entry" point for the plugin, called for every request.
 //
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   TSHttpTxn txnp = static_cast < TSHttpTxn > (rh);
   CcPluginData *plugin_data = getCcPlugin();
