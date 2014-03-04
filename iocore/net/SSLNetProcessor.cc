@@ -69,6 +69,9 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
     return -1;
   }
 
+  // Initialize SSL statistics. This depends on an initial set of certificates being loaded above.
+  SSLInitializeStatistics();
+
   SSLNetProcessor::ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL", stacksize);
   return UnixNetProcessor::start(0, stacksize);
 }

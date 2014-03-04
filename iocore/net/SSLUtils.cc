@@ -25,6 +25,7 @@
 #include "P_Net.h"
 #include "ink_cap.h"
 
+#include <string>
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
@@ -109,6 +110,9 @@ struct ssl_ticket_key_t
 static int ssl_session_ticket_index = 0;
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
+
+RecRawStatBlock *ssl_rsb = NULL;
+static InkHashTable *ssl_cipher_name_table = NULL;
 
 struct ats_file_bio
 {
@@ -488,6 +492,37 @@ ssl_private_key_validate_exec(const char *cmdLine)
   return bReturn;
 }
 
+static int
+SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
+{
+  // Grab all the stats we want from OpenSSL and set the stats. This function only needs to be called by one of the
+  // involved stats, all others *must* call RecRawStatSyncSum.
+  SSLCertificateConfig::scoped_config certLookup;
+
+  int64_t sessions = 0;
+  int64_t hits = 0;
+  int64_t misses = 0;
+  int64_t timeouts = 0;
+
+  if (certLookup) {
+    const unsigned ctxCount = certLookup->count();
+    for (size_t i = 0; i < ctxCount; i++) {
+      SSL_CTX * ctx = certLookup->get(i);
+
+      sessions += SSL_CTX_sess_accept_good(ctx);
+      hits += SSL_CTX_sess_hits(ctx);
+      misses += SSL_CTX_sess_misses(ctx);
+      timeouts += SSL_CTX_sess_timeouts(ctx);
+    }
+  }
+
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_sessions_stat, sessions);
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_hit_stat, hits);
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_miss_stat, misses);
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_timeout_stat, timeouts);
+  return RecRawStatSyncCount(name, data_type, data, rsb, id);
+}
+
 void
 SSLInitializeLibrary()
 {
@@ -517,7 +552,224 @@ SSLInitializeLibrary()
 }
 
 void
-SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...)
+SSLInitializeStatistics()
+{
+  SSL_CTX *               ctx;
+  SSL *                   ssl;
+  STACK_OF(SSL_CIPHER) *  ciphers;
+
+  // Allocate SSL statistics block.
+  ssl_rsb = RecAllocateRawStatBlock((int) Ssl_Stat_Count);
+  ink_assert(ssl_rsb != NULL);
+
+  // SSL client errors.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_other_errors",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_other_errors_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_expired_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_expired_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_revoked_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_revoked_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_unknown_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_cert_verify_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_cert_verify_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_bad_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_bad_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_decryption_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_decryption_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_wrong_version",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_wrong_version_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_ca",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_unknown_ca_stat,
+                     RecRawStatSyncSum);
+
+  // Polled SSL context statistics.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_sessions",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_sessions_stat,
+                     SSLRecRawStatSyncCount); //<- only use this fn once
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_hit",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_session_hit_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_miss",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_session_miss_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_timeout",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_session_timeout_stat,
+                     RecRawStatSyncCount);
+
+  // SSL server errors.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_other_errors",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_other_errors_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_expired_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_expired_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_revoked_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_revoked_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_unknown_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_cert_verify_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_cert_verify_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_bad_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_bad_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_decryption_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_decryption_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_wrong_version",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_wrong_version_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_ca",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_unknown_ca_stat,
+                     RecRawStatSyncSum);
+
+  // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
+  // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
+  // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
+  // configuration reloads and works for the case where we honor the client cipher preference.
+
+  // initialize stat name->index hash table
+  ssl_cipher_name_table = ink_hash_table_create(InkHashTableKeyType_Word);
+
+  ctx = SSLDefaultServerContext();
+  ssl = SSL_new(ctx);
+  ciphers = SSL_get_ciphers(ssl);
+
+  for (int index = 0; index < sk_SSL_CIPHER_num(ciphers); index++) {
+    SSL_CIPHER * cipher = sk_SSL_CIPHER_value(ciphers, index);
+    const char * cipherName = SSL_CIPHER_get_name(cipher);
+    std::string  statName = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
+
+    // If room in allocated space ...
+    if ((ssl_cipher_stats_start + index) > ssl_cipher_stats_end) {
+      // Too many ciphers, increase ssl_cipher_stats_end.
+      SSLError("too many ciphers to register metric '%s', increase SSL_Stats::ssl_cipher_stats_end",
+               statName.c_str());
+      continue;
+    }
+
+    // If not already registered ...
+    if (!ink_hash_table_isbound(ssl_cipher_name_table, cipherName)) {
+      ink_hash_table_insert(ssl_cipher_name_table, cipherName, (void *)(intptr_t) (ssl_cipher_stats_start + index));
+      // Register as non-persistent since the order/index is dependent upon configuration.
+      RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(),
+                         RECD_INT, RECP_NON_PERSISTENT, (int) ssl_cipher_stats_start + index,
+                         RecRawStatSyncSum);
+      SSL_CLEAR_DYN_STAT((int) ssl_cipher_stats_start + index);
+      Debug("ssl", "registering SSL cipher metric '%s'", statName.c_str());
+    }
+  }
+
+  SSL_free(ssl);
+  SSL_CTX_free(ctx);
+}
+
+// return true if we have a stat for the error
+static bool
+increment_ssl_client_error(unsigned long err)
+{
+  // we only look for LIB_SSL errors atm
+  if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
+    return false;
+  }
+
+  // error was in LIB_SSL, now just switch on REASON
+  // (we ignore FUNCTION with the prejudice that we don't care what function
+  // the error came from, hope that's ok?)
+  switch (ERR_GET_REASON(err)) {
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_expired_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_revoked_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_cert_stat);
+    break;
+  case SSL_R_CERTIFICATE_VERIFY_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_cert_verify_failed_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_bad_cert_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_decryption_failed_stat);
+    break;
+  case SSL_R_WRONG_VERSION_NUMBER:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_wrong_version_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_ca_stat);
+    break;
+  default:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
+    return false;
+  }
+
+  return true;
+}
+
+// return true if we have a stat for the error
+
+static bool
+increment_ssl_server_error(unsigned long err)
+{
+  // we only look for LIB_SSL errors atm
+  if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
+    return false;
+  }
+
+  // error was in LIB_SSL, now just switch on REASON
+  // (we ignore FUNCTION with the prejudice that we don't care what function
+  // the error came from, hope that's ok?)
+  switch (ERR_GET_REASON(err)) {
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_expired_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_revoked_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_cert_stat);
+    break;
+  case SSL_R_CERTIFICATE_VERIFY_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_cert_verify_failed_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_bad_cert_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_decryption_failed_stat);
+    break;
+  case SSL_R_WRONG_VERSION_NUMBER:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_wrong_version_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_ca_stat);
+    break;
+  default:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
+    return false;
+  }
+
+  return true;
+}
+
+void
+SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char * fmt, ...)
 {
   unsigned long l;
   char buf[256];
@@ -539,6 +791,17 @@ SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...)
       diags->error(DL_Error, loc.file, loc.func, loc.line,
           "SSL::%lu:%s:%s:%d%s%s", es, ERR_error_string(l, buf), file, line,
           (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "");
+    }
+
+    // Tally desired stats (only client/server connection stats, not init
+    // issues where vc is NULL)
+    if (vc) {
+      // getSSLClientConnection - true if ats is client (we update server stats)
+      if (vc->getSSLClientConnection()) {
+        increment_ssl_server_error(l); // update server error stats
+      } else {
+        increment_ssl_client_error(l); // update client error stat
+      }
     }
   }
 
@@ -900,7 +1163,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 
 // This callback function is executed while OpenSSL processes the SSL
 // handshake and does SSL record layer stuff.  It's used to trap
-// client-initiated renegotiations
+// client-initiated renegotiations and update cipher stats
 static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
@@ -914,6 +1177,18 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
     if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
       netvc->setSSLClientRenegotiationAbort(true);
       Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
+    }
+  }
+  if (where & SSL_CB_HANDSHAKE_DONE) {
+    // handshake is complete
+    const SSL_CIPHER * cipher = SSL_get_current_cipher(ssl);
+    if (cipher) {
+      const char * cipherName = SSL_CIPHER_get_name(cipher);
+      // lookup index of stat by name and incr count
+      InkHashTableValue data;
+      if (ink_hash_table_lookup(ssl_cipher_name_table, cipherName, &data)) {
+        SSL_INCREMENT_DYN_STAT((intptr_t)data);
+      }
     }
   }
 }

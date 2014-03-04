@@ -75,10 +75,9 @@ do_SSL_write(SSL * ssl, void *buf, int size)
 
 
 static int
-ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
+ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
 {
-  NetState *s = &vc->read;
-  SSLNetVConnection *sslvc = (SSLNetVConnection *) vc;
+  NetState *s = &sslvc->read;
   MIOBufferAccessor & buf = s->vio.buffer;
   IOBufferBlock *b = buf.writer()->first_write_block();
   int event = SSL_READ_ERROR_NONE;
@@ -132,7 +131,7 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          SSLError("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          SSLErrorVC(sslvc, "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -147,7 +146,7 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
       default:
         event = SSL_READ_ERROR;
         ret = errno;
-        SSLError("[SSL_NetVConnection::ssl_read_from_net]");
+        SSLErrorVC(sslvc, "[SSL_NetVConnection::ssl_read_from_net]");
         break;
       }                         // switch
       break;
@@ -158,7 +157,7 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%" PRId64, bytes_read);
     buf.writer()->fill(bytes_read);
     s->vio.ndone += bytes_read;
-    vc->netActivity(lthread);
+    sslvc->netActivity(lthread);
 
     ret = bytes_read;
 
@@ -430,7 +429,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     default:
       r = -errno;
       Debug("ssl", "SSL_write-SSL_ERROR_SSL");
-      SSLError("SSL_write");
+      SSLErrorVC(this, "SSL_write");
       break;
     }
     return (r);
@@ -495,7 +494,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       this->ssl = make_ssl_connection(lookup->defaultContext(), this);
       if (this->ssl == NULL) {
         Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
-        SSLError("SSL_StartHandShake");
+        SSLErrorVC(this, "SSL_StartHandShake");
         return EVENT_ERROR;
       }
     }
@@ -523,7 +522,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
-    SSLDebug("SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
+    SSLDebugVC(this,"SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
   }
 
   switch (ssl_error) {
@@ -660,7 +659,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
-    SSLError("sslClientHandShakeEvent");
+    SSLErrorVC(this, "sslClientHandShakeEvent");
     return EVENT_ERROR;
     break;
 

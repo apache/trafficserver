@@ -75,6 +75,8 @@ struct SSLContextStorage
 
   bool insert(SSL_CTX * ctx, const char * name);
   SSL_CTX * lookup(const char * name) const;
+  unsigned count() const { return this->references.count(); }
+  SSL_CTX * get(unsigned i) const { return this->references[i]; }
 
 private:
   struct SSLEntry
@@ -139,6 +141,18 @@ SSLCertLookup::insert(SSL_CTX * ctx, const IpEndpoint& address)
 {
   SSLAddressLookupKey key(address);
   return this->ssl_storage->insert(ctx, key.get());
+}
+
+unsigned
+SSLCertLookup::count() const
+{
+  return ssl_storage->count();
+}
+
+SSL_CTX *
+SSLCertLookup::get(unsigned i) const
+{
+  return ssl_storage->get(i);
 }
 
 struct ats_wildcard_matcher
