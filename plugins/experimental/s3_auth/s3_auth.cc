@@ -366,7 +366,7 @@ S3Request::authorize(S3Config *s3)
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main continuation.
 int
-event_handler(TSCont cont, TSEvent event, void* edata)
+event_handler(TSCont cont, TSEvent /* event */, void* edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   S3Request request(txnp);
@@ -488,7 +488,7 @@ TSRemapDeleteInstance(void* ih)
 // This is the main "entry" point for the plugin, called for every request.
 //
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo */* rri */)
 {
   S3Config* s3 = static_cast<S3Config*>(ih);
 
