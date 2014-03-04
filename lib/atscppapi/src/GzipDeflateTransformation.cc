@@ -35,7 +35,7 @@ using std::vector;
 namespace {
 const int GZIP_MEM_LEVEL = 8;
 const int WINDOW_BITS = 31; // Always use 31 for gzip.
-const int ONE_KB = 1024;
+const unsigned int ONE_KB = 1024;
 }
 
 /**
@@ -94,7 +94,7 @@ void GzipDeflateTransformation::consume(const string &data) {
 
   // For small payloads the size can actually be greater than the original input
   // so we'll use twice the original size to avoid needless repeated calls to deflate.
-  unsigned long buffer_size = data.length() < static_cast<string::size_type>(ONE_KB ? 2 * ONE_KB : data.length());
+  unsigned long buffer_size = (data.length() < ONE_KB) ? 2 * ONE_KB : data.length();
   vector<unsigned char> buffer(buffer_size);
 
   do {
