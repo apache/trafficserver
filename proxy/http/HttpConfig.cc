@@ -1531,6 +1531,7 @@ HttpConfig::reconfigure()
   params->oride.server_tcp_init_cwnd = m_master.oride.server_tcp_init_cwnd;
   params->oride.origin_max_connections = m_master.oride.origin_max_connections;
   params->origin_min_keep_alive_connections = m_master.origin_min_keep_alive_connections;
+  params->attach_server_session_to_client = m_master.attach_server_session_to_client;
 
   if (params->oride.origin_max_connections &&
       params->oride.origin_max_connections < params->origin_min_keep_alive_connections ) {
