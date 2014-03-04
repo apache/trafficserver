@@ -250,6 +250,40 @@ ConditionPath::eval(const Resources& res)
   return static_cast<const Matchers<std::string>*>(_matcher)->test(s);
 }
 
+// ConditionToHost
+void
+ConditionToHost::initialize(Parser& p)
+{
+  Condition::initialize(p);
+
+  Matchers<std::string>* match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+
+  _matcher = match;
+}
+
+void ConditionToHost::append_value(std::string& s, const Resources& res) {
+  int to_host_len = 0;
+  const char *to_host = TSUrlHostGet(res._rri->requestBufp, res._rri->requestUrl, &to_host_len);
+  TSDebug(PLUGIN_NAME, "Appending TOHOST to evaluation value: %.*s", to_host_len, to_host);
+  s.append(to_host, to_host_len);
+}
+
+bool
+ConditionToHost::eval(const Resources& res)
+{
+  std::string s;
+
+  if (NULL == res._rri) {
+    TSDebug(PLUGIN_NAME, "TOHOST requires remap initialization! Evaluating to false!");
+    return false;
+  }
+  append_value(s, res);
+  TSDebug(PLUGIN_NAME, "Evaluating TOHOST - %s", s.c_str());
+
+  return static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+}
+
 // ConditionQuery
 void
 ConditionQuery::initialize(Parser& p)
