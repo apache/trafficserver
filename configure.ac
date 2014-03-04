@@ -1978,6 +1978,7 @@ AC_CONFIG_FILES([
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/metalink/Makefile
   plugins/experimental/rfc5861/Makefile
+  plugins/experimental/s3_auth/Makefile
   plugins/experimental/spdy/Makefile
   plugins/experimental/tcp_info/Makefile
   plugins/experimental/healthchecks/Makefile

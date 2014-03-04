@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2611] Add a new S3 authentication plugin, s3_auth. This only supports
+   the v2 features of the S3 API.
+
   *) [TS-2522] Better hook management for header_rewrite plugin, and some
    cleanup.
 
