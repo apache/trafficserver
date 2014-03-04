@@ -95,6 +95,8 @@ condition_factory(const std::string& cond)
     c = new ConditionHeader();
   } else if (c_name == "PATH") {
     c = new ConditionPath();
+  } else if (c_name == "TOHOST") {
+    c = new ConditionToHost();
   } else if (c_name == "CLIENT-HEADER") {
     c = new ConditionHeader(true);
   } else if (c_name == "QUERY") {

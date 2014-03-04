@@ -247,6 +247,25 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionPath);
 };
 
+// tohost 
+class ConditionToHost : public Condition
+{
+public:
+  explicit ConditionToHost()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionToHost");
+  };
+
+  void initialize(Parser& p);
+  void append_value(std::string& s, const Resources& res);
+
+protected:
+  bool eval(const Resources& res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionToHost);
+};
+
 
 // query
 class ConditionQuery : public Condition
