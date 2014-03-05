@@ -523,11 +523,6 @@ CONFIG proxy.config.ssl.server.cert.path STRING @rel_sysconfdir@
    # fill in the private key path. Private key names specified in
    # ssl_multicert.config will be located relative to this path.
 CONFIG proxy.config.ssl.server.private_key.path STRING @rel_sysconfdir@
-   # The CA file name and path are the
-   # certificate authority certificate that
-   # client certificates will be verified against.
-CONFIG proxy.config.ssl.CA.cert.filename STRING NULL
-CONFIG proxy.config.ssl.CA.cert.path STRING @rel_sysconfdir@
    ################################
    # client related configuration #
    ################################
