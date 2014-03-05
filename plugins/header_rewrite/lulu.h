@@ -43,8 +43,8 @@
 #error "Define barriers"
 #endif
 
-extern const char* PLUGIN_NAME;
-extern const char* PLUGIN_NAME_DBG;
+extern const char PLUGIN_NAME[];
+extern const char PLUGIN_NAME_DBG[];
 
 
 // From google styleguide: http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml

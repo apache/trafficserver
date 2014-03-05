@@ -60,7 +60,6 @@ public:
       _rri(rri), changed_url(false), _ready(false)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (RemapAPI)");
-    TSDebug(PLUGIN_NAME, "rri: %p", _rri);
   }
 
   ~Resources() { destroy(); }

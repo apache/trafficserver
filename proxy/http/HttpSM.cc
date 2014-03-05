@@ -2953,6 +2953,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     // origin server
     if (t_state.http_config_param->attach_server_session_to_client == 1 &&
         ua_session && t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
+      Debug("http", "attaching server session to the client");
       ua_session->attach_server_session(server_session);
     } else {
       // Release the session back into the shared session pool
