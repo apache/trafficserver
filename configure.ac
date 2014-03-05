@@ -215,19 +215,6 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
-#
-# Micro
-#
-AC_MSG_CHECKING([whether to enable micro-TS])
-AC_ARG_ENABLE([micro],
-  [AS_HELP_STRING([--enable-micro],[enable micro-TS build [default=no]])],
-  [],
-  [enable_micro=no]
-)
-AC_MSG_RESULT([$enable_micro])
-AS_IF([test "x$enable_micro" = "xyes"], [is_micro_build=1], [is_micro_build=0])
-AC_SUBST(is_micro_build)
-
 AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT"])
 AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
 AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
