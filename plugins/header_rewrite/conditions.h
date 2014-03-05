@@ -247,13 +247,13 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionPath);
 };
 
-// tohost 
-class ConditionToHost : public Condition
+// origin-host 
+class ConditionOriginHost : public Condition
 {
 public:
-  explicit ConditionToHost()
+  explicit ConditionOriginHost()
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionToHost");
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionOriginHost");
   };
 
   void initialize(Parser& p);
@@ -263,7 +263,7 @@ protected:
   bool eval(const Resources& res);
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionToHost);
+  DISALLOW_COPY_AND_ASSIGN(ConditionOriginHost);
 };
 
 

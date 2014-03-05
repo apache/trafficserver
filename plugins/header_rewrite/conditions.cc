@@ -250,9 +250,9 @@ ConditionPath::eval(const Resources& res)
   return static_cast<const Matchers<std::string>*>(_matcher)->test(s);
 }
 
-// ConditionToHost
+// ConditionOriginHost
 void
-ConditionToHost::initialize(Parser& p)
+ConditionOriginHost::initialize(Parser& p)
 {
   Condition::initialize(p);
 
@@ -262,24 +262,24 @@ ConditionToHost::initialize(Parser& p)
   _matcher = match;
 }
 
-void ConditionToHost::append_value(std::string& s, const Resources& res) {
-  int to_host_len = 0;
-  const char *to_host = TSUrlHostGet(res._rri->requestBufp, res._rri->requestUrl, &to_host_len);
-  TSDebug(PLUGIN_NAME, "Appending TOHOST to evaluation value: %.*s", to_host_len, to_host);
-  s.append(to_host, to_host_len);
+void ConditionOriginHost::append_value(std::string& s, const Resources& res) {
+  int origin_host_len = 0;
+  const char *origin_host = TSUrlHostGet(res._rri->requestBufp, res._rri->requestUrl, &origin_host_len);
+  TSDebug(PLUGIN_NAME, "Appending ORIGIN-HOST to evaluation value: %.*s", origin_host_len, origin_host);
+  s.append(origin_host, origin_host_len);
 }
 
 bool
-ConditionToHost::eval(const Resources& res)
+ConditionOriginHost::eval(const Resources& res)
 {
   std::string s;
 
   if (NULL == res._rri) {
-    TSDebug(PLUGIN_NAME, "TOHOST requires remap initialization! Evaluating to false!");
+    TSDebug(PLUGIN_NAME, "ORIGIN-HOST requires remap initialization! Evaluating to false!");
     return false;
   }
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating TOHOST - %s", s.c_str());
+  TSDebug(PLUGIN_NAME, "Evaluating ORIGIN-HOST - %s", s.c_str());
 
   return static_cast<const Matchers<std::string>*>(_matcher)->test(s);
 }
