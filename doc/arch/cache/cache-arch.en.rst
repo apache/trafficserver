@@ -416,7 +416,7 @@ The in memory volume directory entries are defined as described below.
 
 .. _dir-size:
 
-   The *size* and *big* values are used to calculate the approximate size of the span which contains the object. This value is used as the number of bytes to read from storage at the offset value. The exact size is contained in the object metadata in :cpp:class:`Doc` which is consulted once the read has completed. For this reason the approximate size needs to be at least as large as the actual size but can be larger, at the cost of reading the extraneous bytes.
+   The *size* and *big* values are used to calculate the approximate size of the fragment which contains the object. This value is used as the number of bytes to read from storage at the offset value. The exact size is contained in the object metadata in :cpp:class:`Doc` which is consulted once the read has completed. For this reason the approximate size needs to be at least as large as the actual size but can be larger, at the cost of reading the extraneous bytes.
 
    The computation of the approximate size of the fragment is defined as::
 
@@ -633,7 +633,7 @@ Cache Write
 
 Writing to cache is handled by an instance of the class :cpp:class:`CacheVC`. This is a virtual connection which
 receives data and writes it to cache, acting as a sink. For a standard transaction data transfers between virtual
-connections (*VConns*) are handled by :cpp:class:HttpTunnel. Writing to cache is done by attaching a ``CacheVC``
+connections (*VConns*) are handled by :cpp:class:`HttpTunnel`. Writing to cache is done by attaching a ``CacheVC``
 instance as a tunnel consumer. It therefore operates in parallel with the virtual connection that transfers data to the
 client. The data does not flow to the cache and then to the client, it is split and goes both directions in parallel.
 This avoids any data synchronization issues between the two.
@@ -686,7 +686,7 @@ Aggregation Buffer
 Disk writes to cache are handled through an *aggregation buffer*. There is one for each :cpp:class:`Vol` instance. To
 minimize the number of system calls data is written to disk in units of roughly :ref:`target fragment size
 <target-fragment-size>` bytes. The algorithm used is simple - data is piled up in the aggregation buffer until no more
-will fit without going over the targer fragment size, at which point the buffer is written to disk and the volume
+will fit without going over the target fragment size, at which point the buffer is written to disk and the volume
 directory entries for objects with data in the buffer are updated with the actual disk locations for those objects
 (which are determined by the write to disk action). After the buffer is written it is cleared and process repeats. There
 is a special lookup table for the aggregation buffer so that object lookup can find cache data in that memory.
@@ -718,7 +718,7 @@ the evacuation bucket (array element) that corresponds to the evacuation region 
 although no ordering per bucket is enforced in the linked list (this sorting is handled during evacuation). Objects are
 evacuated by specifying the first or earliest fragment in the evactuation block. The evactuation operation will then
 continue the evacuation for subsequent fragments in the object by adding those fragments in evacuation blocks. Note that
-the actual evacuation of those fragments is delayed until the write cursor reaches the fragments, it is not ncessarily
+the actual evacuation of those fragments is delayed until the write cursor reaches the fragments, it is not necessarily
 done at the time the first / earliest fragment is evacuated.
 
 There are two types of evacuations, reader based and forced. The ``EvacuationBlock`` has a reader count to track this.
@@ -801,7 +801,7 @@ single span. Spans that refer to the same file with overlapping offsets are also
 
 .. note:: The span logic is also used by the HostDB and more than one otherwise inexplicable feature is provided by the span logic for that module.
 
-After configuration initialization the cache processor is started by calling :ccp:func:`CacheProcessor::start()`. This
+After configuration initialization the cache processor is started by calling :cpp:func:`CacheProcessor::start()`. This
 does a number of things.
 
 For each valid span, an instance of :cpp:class:`CacheDisk` is created. This class is a continuation and so can be used
