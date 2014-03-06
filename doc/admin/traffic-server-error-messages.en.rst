@@ -205,6 +205,12 @@ with corresponding HTTP response codes and customizable files.
    of the HTTP protocol.
    ``response#bad_version``
 
+``Invalid Content Length``
+   ``400``
+   Could not process this request because the specified ``Content-Length``
+   was invalid (less than 0)..
+   ``request#invalid_content_length``
+
 ``Invalid HTTP Request``
    ``400``
    Could not process this ``<client request>`` HTTP method request for ``URL``.
