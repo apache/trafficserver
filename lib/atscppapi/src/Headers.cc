@@ -372,10 +372,23 @@ HeaderField header_field_iterator::operator*() {
 struct HeadersState: noncopyable {
   TSMBuffer hdr_buf_;
   TSMLoc hdr_loc_;
-  HeadersState() : hdr_buf_(NULL), hdr_loc_(NULL) { }
+  bool self_created_structures_;
+  HeadersState() {
+    hdr_buf_ = TSMBufferCreate();
+    hdr_loc_ = TSHttpHdrCreate(hdr_buf_);
+    self_created_structures_ = true;
+  }
   void reset(TSMBuffer bufp, TSMLoc hdr_loc) {
+    if (self_created_structures_) {
+      TSHandleMLocRelease(hdr_buf_, TS_NULL_MLOC /* no parent */, hdr_loc_);
+      TSMBufferDestroy(hdr_buf_);
+      self_created_structures_ = false;
+    }
     hdr_buf_ = bufp;
     hdr_loc_ = hdr_loc;
+  }
+  ~HeadersState() {
+    reset(NULL, NULL);
   }
 };
 

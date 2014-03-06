@@ -26,6 +26,8 @@
 #include "logging_internal.h"
 #include "utils_internal.h"
 
+#include <cstdio>
+
 using namespace atscppapi;
 using std::string;
 
@@ -35,6 +37,7 @@ using std::string;
 struct atscppapi::AsyncHttpFetchState : noncopyable {
   Request request_;
   Response response_;
+  string request_body_;
   AsyncHttpFetch::Result result_;
   const void *body_;
   size_t body_size_;
@@ -42,9 +45,9 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
   TSMLoc hdr_loc_;
   shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
 
-  AsyncHttpFetchState(const string &url_str, HttpMethod http_method)
-    : request_(url_str, http_method, HTTP_VERSION_1_0), result_(AsyncHttpFetch::RESULT_FAILURE), body_(NULL),
-      body_size_(0), hdr_buf_(NULL), hdr_loc_(NULL) { }
+  AsyncHttpFetchState(const string &url_str, HttpMethod http_method, string request_body)
+    : request_(url_str, http_method, HTTP_VERSION_1_0), request_body_(request_body),
+      result_(AsyncHttpFetch::RESULT_FAILURE), body_(NULL), body_size_(0), hdr_buf_(NULL), hdr_loc_(NULL) { }
   
   ~AsyncHttpFetchState() {
     if (hdr_loc_) {
@@ -102,9 +105,17 @@ static int handleFetchEvents(TSCont cont, TSEvent event, void *edata) {
 
 }
 
-AsyncHttpFetch::AsyncHttpFetch(const std::string &url_str, HttpMethod http_method) {
+AsyncHttpFetch::AsyncHttpFetch(const string &url_str, const string &request_body) {
+  init(url_str, HTTP_METHOD_POST, request_body);
+}
+
+AsyncHttpFetch::AsyncHttpFetch(const string &url_str, HttpMethod http_method) {
+  init(url_str, http_method, "");
+}
+
+void AsyncHttpFetch::init(const string &url_str, HttpMethod http_method, const string &request_body) {
   LOG_DEBUG("Created new AsyncHttpFetch object %p", this);
-  state_ = new AsyncHttpFetchState(url_str, http_method);
+  state_ = new AsyncHttpFetchState(url_str, http_method, request_body);
 }
 
 void AsyncHttpFetch::run(shared_ptr<AsyncDispatchControllerBase> sender) {
@@ -129,16 +140,20 @@ void AsyncHttpFetch::run(shared_ptr<AsyncDispatchControllerBase> sender) {
   request_str += ' ';
   request_str += HTTP_VERSION_STRINGS[state_->request_.getVersion()];
   request_str += "\r\n";
-
- /* for (Headers::const_iterator iter = state_->request_.getHeaders().begin(),
-         end = state_->request_.getHeaders().end(); iter != end; ++iter) {
-    request_str += iter->first;
-    request_str += ": ";
-    request_str += Headers::getJoinedValues(iter->second);
-    request_str += "\r\n";
+  Headers &headers = state_->request_.getHeaders();
+  if (headers.size()) {
+    // remove the possibility of keep-alive
+    headers.erase("Connection");
+    headers.erase("Proxy-Connection");
   }
-*/
+  if (!state_->request_body_.empty()) {
+    char size_buf[128];
+    snprintf(size_buf, sizeof(size_buf), "%zu", state_->request_body_.size());
+    state_->request_.getHeaders().set("Content-Length", size_buf);
+  }
+  request_str += headers.str();
   request_str += "\r\n";
+  request_str += state_->request_body_;
 
   LOG_DEBUG("Issing TSFetchUrl with request\n[%s]", request_str.c_str());
   TSFetchUrl(request_str.c_str(), request_str.size(), reinterpret_cast<struct sockaddr const *>(&addr), fetchCont,
