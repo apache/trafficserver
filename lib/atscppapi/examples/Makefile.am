@@ -33,4 +33,5 @@ SUBDIRS = helloworld \
 	  gzip_transformation \
 	  timeout_example \
       internal_transaction_handling \
-      async_timer
+      async_timer \
+      intercept
