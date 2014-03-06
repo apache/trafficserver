@@ -389,11 +389,11 @@ Alarm Configuration
 .. ts:cv:: CONFIG proxy.config.alarm.bin STRING example_alarm_bin.sh
 
    Name of the script file that can execute certain actions when an alarm is signaled. The default file is a sample script named
-   ``example_alarm_bin.sh`` located in the ``bin`` directory. You must dit the script to suit your needs.
+   ``example_alarm_bin.sh`` located in the ``bin`` directory. You must edit the script to suit your needs.
 
 .. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
 
-   The full path to the script file that sends email to alert someone bout Traffic Server problems.
+   The full path to the script file that sends email to alert someone about Traffic Server problems.
 
 HTTP Engine
 ===========
@@ -785,7 +785,7 @@ HTTP Connection Timeouts
    The maximum amount of time Traffic Server can remain connected to a client. If the transfer to the client is not complete before this
    timeout expires, then Traffic Server closes the connection.
 
-The default value of ``0`` specifies that there is no timeout.
+The value of ``0`` specifies that there is no timeout.
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_out INT 0
    :reloadable:
