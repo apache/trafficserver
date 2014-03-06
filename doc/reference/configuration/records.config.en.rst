@@ -392,7 +392,7 @@ Alarm Configuration
 
 .. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
 
-   The full path to the script file that sends email to alert someone bout Traffic Server problems.
+   The full path to the script file that sends email to alert someone about Traffic Server problems.
 
 HTTP Engine
 ===========
