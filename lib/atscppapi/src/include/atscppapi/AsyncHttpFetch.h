@@ -47,6 +47,8 @@ class AsyncHttpFetch : public AsyncProvider {
 public:
   AsyncHttpFetch(const std::string &url_str, HttpMethod http_method = HTTP_METHOD_GET);
 
+  AsyncHttpFetch(const std::string &url_str,  const std::string &request_body);
+
   /**
    * Used to manipulate the headers of the request to be made.
    *
@@ -94,6 +96,7 @@ public:
 
 private:
   AsyncHttpFetchState *state_;
+  void init(const std::string &url_str, HttpMethod http_method, const std::string &request_body);
   friend class utils::internal;
 };
 

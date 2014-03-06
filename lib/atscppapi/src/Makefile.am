@@ -51,7 +51,8 @@ libatscppapi_la_SOURCES = GlobalPlugin.cc \
 			  RemapPlugin.cc \
 			  GzipDeflateTransformation.cc \
 			  GzipInflateTransformation.cc \
-			  AsyncTimer.cc
+			  AsyncTimer.cc \
+                          InterceptPlugin.cc
 
 library_includedir=$(includedir)/atscppapi
 base_include_folder = include/atscppapi/
@@ -82,4 +83,5 @@ library_include_HEADERS = $(base_include_folder)/GlobalPlugin.h \
 			  $(base_include_folder)/AsyncHttpFetch.h \
 			  $(base_include_folder)/GzipDeflateTransformation.h \
 			  $(base_include_folder)/GzipInflateTransformation.h \
-			  $(base_include_folder)/AsyncTimer.h
+			  $(base_include_folder)/AsyncTimer.h \
+			  $(base_include_folder)/InterceptPlugin.h
