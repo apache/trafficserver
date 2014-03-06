@@ -5291,6 +5291,23 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
     }
   }
 
+  /////////////////////////////////////////////////////
+  // get request content length                      //
+  // To avoid parsing content-length twice, we set   //
+  // s->hdr_info.request_content_length here rather  //
+  // than in initialize_state_variables_from_request //
+  /////////////////////////////////////////////////////
+  if (method != HTTP_WKSIDX_TRACE) {
+    int64_t length = incoming_hdr->get_content_length();
+    s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL;    // content length less than zero is invalid
+
+    DebugTxn("http_trans", "[init_stat_vars_from_req] set req cont length to %" PRId64,
+          s->hdr_info.request_content_length);
+
+  } else {
+    s->hdr_info.request_content_length = 0;
+  }
+
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS &&
         method != HTTP_WKSIDX_CONNECT &&
@@ -5312,10 +5329,13 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
-        ! incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) &&
         s->client_info.transfer_encoding != CHUNKED_ENCODING) {
-
-          return NO_POST_CONTENT_LENGTH;
+      if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+        return NO_POST_CONTENT_LENGTH;
+      }
+      if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
+        return INVALID_POST_CONTENT_LENGTH;
+      }
     }
   }
   // Check whether a Host header field is missing in the request.
@@ -5679,19 +5699,6 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
     s->hdr_info.extension_method = true;
   }
 
-  //////////////////////////////////////////////////
-  // get request content length 									//
-  //////////////////////////////////////////////////
-  if (s->method != HTTP_WKSIDX_TRACE) {
-    int64_t length = incoming_request->get_content_length();
-    s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL;    // content length less than zero is invalid
-
-    DebugTxn("http_trans", "[init_stat_vars_from_req] set req cont length to %" PRId64,
-          s->hdr_info.request_content_length);
-
-  } else {
-    s->hdr_info.request_content_length = 0;
-  }
   // if transfer encoding is chunked content length is undefined
   if (s->client_info.transfer_encoding == CHUNKED_ENCODING) {
     s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
@@ -6430,6 +6437,14 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
       DebugTxn("http_trans", "[is_request_valid] TE required is unacceptable.");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported",
+                           const_cast < char *>(URL_MSG));
+      return false;
+    }
+  case INVALID_POST_CONTENT_LENGTH :
+    {
+      DebugTxn("http_trans", "[is_request_valid] post request with negative content length value");
+      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length",
                            const_cast < char *>(URL_MSG));
       return false;
     }
@@ -8919,3 +8934,10 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
     header->set_content_length(s->range_output_cl);
   }
 }
+
+#if TS_HAS_TESTS
+void forceLinkRegressionHttpTransact();
+void forceLinkRegressionHttpTransactCaller() {
+  forceLinkRegressionHttpTransact();
+}
+#endif

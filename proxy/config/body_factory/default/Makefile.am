@@ -36,6 +36,7 @@ dist_bodyfactory_DATA = \
   redirect\#moved_temporarily \
   request\#cycle_detected \
   request\#no_content_length \
+  request\#invalid_content_length \
   request\#no_host \
   request\#scheme_unsupported \
   request\#syntax_error \

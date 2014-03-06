@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2614] Response to invalid Content-Length for POST should be a 400 error
+   Author: Ron Barber <rbarber@yahoo-inc.com>
+
   *) [TS-2615] Better logging and error handling in SSL client session startup.
 
   *) [TS-2613] Can't turn on attach server session to client from records.config
