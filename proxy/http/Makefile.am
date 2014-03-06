@@ -74,7 +74,8 @@ libhttp_a_SOURCES = \
   HttpUpdateSM.h
 
 if BUILD_TESTS
-  libhttp_a_SOURCES += HttpUpdateTester.cc
+  libhttp_a_SOURCES += HttpUpdateTester.cc \
+    RegressionHttpTransact.cc
 endif
 
 #test_UNUSED_SOURCES = \
