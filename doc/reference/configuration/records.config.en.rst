@@ -389,7 +389,7 @@ Alarm Configuration
 .. ts:cv:: CONFIG proxy.config.alarm.bin STRING example_alarm_bin.sh
 
    Name of the script file that can execute certain actions when an alarm is signaled. The default file is a sample script named
-   ``example_alarm_bin.sh`` located in the ``bin`` directory. You must dit the script to suit your needs.
+   ``example_alarm_bin.sh`` located in the ``bin`` directory. You must edit the script to suit your needs.
 
 .. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
 
