@@ -22,14 +22,9 @@ Working with Log Files
 
 
 Traffic Server generates log files that contain information about every
-request it receives and every error it detects.
-
-This chapter discusses the following topics:
-
-.. toctree::
-   :maxdepth: 2
-
-   working-log-files/log-formats.en
+request it receives and every error it detects. This chapter will examine the
+various log features, the configuration formats and also examine the various
+pre-defined log formats that are available.
 
 .. _understanding-traffic-server-log-files:
 
@@ -193,8 +188,6 @@ scripts. Following analysis, either compress the logs and move to an
 archive location, or simply delete them.
 
 
-.. XXX would be nice if we provided a logrotate for this kind of junk, although it could turn out hard, given the patterns..
-
 Setting Log File Management Options
 -----------------------------------
 
@@ -267,7 +260,6 @@ Set standard log file format options by following the steps below:
 6. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
 
-.. XXX:: setting what values?
 
 .. _using-custom-log-formats:
 
@@ -902,3 +894,61 @@ If you need any assistance building your event log, you can try out our
 `online log builder <http://trafficserver.apache.org/logbuilder/>`_. This is a work in progress, so any
 comments, critique or suggestions are most welcome.
 
+Example Event Log File Entries
+==============================
+
+This section shows an example log file entry in each of the standard log
+formats supported by Traffic Server: Squid, Netscape Common, Netscape Extended,
+and Netscape Extended-2.
+
+Squid Format
+------------
+
+The following figure shows a sample log entry in a ``squid.log`` file.
+
+.. figure:: ../static/images/admin/squid_format.jpg
+   :align: center
+   :alt: Sample log entry in squid.log
+
+   Sample log entry in squid.log
+
+====== ========= =============================================================================
+Field  Symbol    Description
+====== ========= =============================================================================
+1      cqtq      The client request timestamp in Squid format; the time of the client
+                 request in seconds since January 1, 1970 UTC (with millisecond resolution).
+2      ttms      The time Traffic Server spent processing the client request; the
+                 number of milliseconds between the time the client established the
+	         connection with Traffic Server and the time Traffic Server sent the
+	         last byte of the response back to the client.
+3      chi       The IP address of the client’s host machine.
+4      crc/pssc  The cache result code; how the cache responded to the request:
+                 ``HIT``, ``MISS``, and so on. Cache result codes are described
+		 :ref:`here <squid-netscape-result-codes>`.
+		 The proxy response status code (the HTTP response status code from
+		 Traffic Server to client).
+5      psql      The length of the Traffic Server response to the client in bytes,
+                 including headers and content.
+6      cqhm      The client request method: ``GET``, ``POST``, and so on.
+7      cauc      The client request canonical URL; blanks and other characters that
+                 might not be parsed by log analysis tools are replaced by escape
+		 sequences. The escape sequence is a percentage sign followed by the
+		 ASCII code number of the replaced character in hex.
+8      caun      The username of the authenticated client. A hyphen (``-``) means
+                 that no authentication was required.
+9      phr/pqsn  The proxy hierarchy route; the route Traffic Server used to retrieve
+                 the object.
+10     psct      The proxy response content type; the object content type taken from
+                 the Traffic Server response header.
+====== ========= =============================================================================
+
+Squid log in XML
+----------------
+
+This is the equivalent XML configuration for the log above::
+
+    <LogFormat>
+      <Name = "squid"/>
+      <Format = "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc>
+                 %<caun> %<phr>/%<pqsn> %<psct>"/>
+    </LogFormat>
