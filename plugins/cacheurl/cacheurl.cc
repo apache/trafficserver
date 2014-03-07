@@ -36,26 +36,37 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ink_defs.h"
+#include <string>
+#include <vector>
 
 #define TOKENCOUNT 10
 #define OVECOUNT 30
-#define PATTERNCOUNT 30
 #define PLUGIN_NAME "cacheurl"
 
-typedef struct {
+struct regex_info {
     pcre *re;       /* Compiled regular expression */
     int tokcount;   /* Token count */
     char *pattern;  /* Pattern string */
     char *replacement; /* Replacement string */
     int *tokens;    /* Array of $x token values */
     int *tokenoffset; /* Array of $x token offsets */
-} regex_info;
+};
 
-typedef struct {
-    regex_info *pr[PATTERNCOUNT]; /* Pattern/replacement list */
-    int patterncount; /* Number of patterns */
-    //pr_list *next; /* Link to next set of patterns, if any */
-} pr_list;
+struct pr_list {
+    std::vector <regex_info *> pr;
+
+    pr_list() {
+    }
+
+    ~pr_list() {
+      for (std::vector<regex_info *>::iterator info = this->pr.begin(); info != this->pr.end(); ++info) {
+        TSfree((*info)->tokens);
+        TSfree((*info)->tokenoffset);
+        pcre_free((*info)->re);
+        TSfree(*info);
+      }
+    }
+};
 
 static int regex_substitute(char **buf, char *str, regex_info *info) {
     int matchcount;
@@ -96,7 +107,7 @@ static int regex_substitute(char **buf, char *str, regex_info *info) {
                 ovector[info->tokens[i]*2]);
     }
     replacelen++; /* Null terminator */
-    *buf = TSmalloc(replacelen);
+    *buf = (char *)TSmalloc(replacelen);
 
     /* perform string replacement */
     offset = 0; /* Where we are adding new data in the string */
@@ -130,7 +141,7 @@ static int regex_compile(regex_info **buf, char *pattern, char *replacement) {
 
     int status = 1;      /* Status (return value) of the function */
 
-    regex_info *info = TSmalloc(sizeof(regex_info));
+    regex_info *info = (regex_info *)TSmalloc(sizeof(regex_info));
 
 
     /* Precompile the regular expression */
@@ -144,8 +155,8 @@ static int regex_compile(regex_info **buf, char *pattern, char *replacement) {
     /* Precalculate the location of $X tokens in the replacement */
     tokcount = 0;
     if (status) {
-        tokens = TSmalloc(sizeof(int) * TOKENCOUNT);
-        tokenoffset = TSmalloc(sizeof(int) * TOKENCOUNT);
+        tokens = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
+        tokenoffset = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
         for (i=0; i<strlen(replacement); i++) {
             if (replacement[i] == '$') {
                 if (tokcount >= TOKENCOUNT) {
@@ -192,12 +203,12 @@ static int regex_compile(regex_info **buf, char *pattern, char *replacement) {
     return status;
 }
 
-static pr_list* load_config_file(const char *config_file) {
+static pr_list *
+load_config_file(const char *config_file) {
     char buffer[1024];
-    char default_config_file[1024];
+    std::string path;
     TSFile fh;
-    pr_list *prl = TSmalloc(sizeof(pr_list));
-    prl->patterncount = 0;
+    pr_list *prl = new pr_list();
 
     /* locations in a config file line, end of line, split start, split end */
     char *eol, *spstart, *spend;
@@ -205,17 +216,26 @@ static pr_list* load_config_file(const char *config_file) {
     int retval;
     regex_info *info = 0;
 
-    if (!config_file) {
+    if (config_file == NULL) {
         /* Default config file of plugins/cacheurl.config */
-        sprintf(default_config_file, "%s/cacheurl.config", TSPluginDirGet());
-        config_file = (const char *)default_config_file;
+        path = TSPluginDirGet();
+        path += "/cacheurl.config";
+    } else if (*config_file != '/') {
+        // Relative paths are relative to the config directory
+        path = TSConfigDirGet();
+        path += "/";
+        path += config_file;
+    } else {
+        // Absolute path ...
+        path = config_file;
     }
-    TSDebug(PLUGIN_NAME, "Opening config file: %s", config_file);
-    fh = TSfopen(config_file, "r");
+
+    TSDebug(PLUGIN_NAME, "Opening config file: %s", path.c_str());
+    fh = TSfopen(path.c_str(), "r");
 
     if (!fh) {
         TSError("[%s] Unable to open %s. No patterns will be loaded\n",
-                PLUGIN_NAME, config_file);
+                PLUGIN_NAME, path.c_str());
         return prl;
     }
 
@@ -265,21 +285,12 @@ static pr_list* load_config_file(const char *config_file) {
             TSError("[%s] Error precompiling regex/replacement. Skipping.\n",
                     PLUGIN_NAME);
         }
-        // TODO - remove patterncount and make pr_list infinite (linked list)
-        if (prl->patterncount >= PATTERNCOUNT) {
-            TSError("[%s] Warning, too many patterns - skipping the rest"
-                    "(max: %d)\n", PLUGIN_NAME, PATTERNCOUNT);
-            TSfree(info);
-            break;
-        }
-        prl->pr[prl->patterncount] = info;
-        prl->patterncount++;
+
+        prl->pr.push_back(info);
     }
     TSfclose(fh);
-    // Make sure the last element is null
-    if (prl->patterncount < PATTERNCOUNT) {
-        prl->pr[prl->patterncount] = NULL;
-    }
+
+    TSDebug(PLUGIN_NAME, "loaded %u regexes", (unsigned)prl->pr.size());
     return prl;
 }
 
@@ -290,7 +301,6 @@ static int rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp) {
 
     char *url;
     int url_length;
-    int i;
     if (ok) {
         url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
         if (!url) {
@@ -301,14 +311,12 @@ static int rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp) {
     }
 
     if (ok) {
-        i=0;
-        while (i < prl->patterncount && prl->pr[i]) {
-            retval = regex_substitute(&newurl, url, prl->pr[i]);
+        for (std::vector<regex_info *>::iterator info = prl->pr.begin(); info != prl->pr.end(); ++info) {
+            retval = regex_substitute(&newurl, url, *info);
             if (retval) {
                 /* Successful match/substitution */
                 break;
             }
-            i++;
         }
         if (newurl) {
             TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s", url, newurl);
@@ -348,7 +356,7 @@ static int handle_hook(TSCont contp, TSEvent event, void *edata) {
 }
 
 /* Generic error message function for errors in plugin initialization */
-static void initialization_error(char *msg) {
+static void initialization_error(const char *msg) {
     TSError("[%s] %s\n", PLUGIN_NAME, msg);
     TSError("[%s] Unable to initialize plugin (disabled).\n", PLUGIN_NAME);
 }
@@ -389,18 +397,10 @@ TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf 
 
 
 void TSRemapDeleteInstance(void *ih) {
-    // Clean up
     TSDebug(PLUGIN_NAME, "Deleting remap instance");
     pr_list *prl = (pr_list *)ih;
-    int i=0;
-    while (prl->pr[i]) {
-        if (prl->pr[i]->tokens) TSfree(prl->pr[i]->tokens);
-        if (prl->pr[i]->tokenoffset) TSfree(prl->pr[i]->tokenoffset);
-        if (prl->pr[i]->re) pcre_free(prl->pr[i]->re);
-        TSfree(prl->pr[i]);
-        i++;
-    }
     TSfree(prl);
+    delete prl;
 }
 
 TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri ATS_UNUSED) {
@@ -418,9 +418,9 @@ void TSPluginInit(int argc, const char *argv[]) {
     TSCont contp;
     pr_list *prl;
 
-    info.plugin_name = PLUGIN_NAME;
-    info.vendor_name = "Apache Software Foundation";
-    info.support_email = "dev@trafficserver.apache.org";
+    info.plugin_name = (char *)PLUGIN_NAME;
+    info.vendor_name = (char *)"Apache Software Foundation";
+    info.support_email = (char *)"dev@trafficserver.apache.org";
 
     if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
         initialization_error("Plugin registration failed.");
