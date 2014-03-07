@@ -71,6 +71,7 @@ directory of the Apache Traffic Server source tree. Exmperimental plugins can be
   hipes.en
   metalink.en
   mysql_remap.en
+  s3_auth.en
   stale_while_revalidate.en
   ts_lua.en
   xdebug.en
