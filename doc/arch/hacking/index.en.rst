@@ -27,4 +27,6 @@ and run unit or regression tests or how to inspect the state of the core with a 
 .. toctree::
    :maxdepth: 1
 
+.. This is not used it seems, certainly doesn't exist...
+
    config-var-impl.en

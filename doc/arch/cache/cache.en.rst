@@ -28,5 +28,6 @@ Contents:
    cache-api.en
    cache-appendix.en
    tier-storage.en
+   ram-cache.en
 
 ..   appendix
