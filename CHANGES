@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2622] Optimize the ink_cluster_time() function.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
   *) [TS-2701] Silence traffic_cop logging on chown of missing lock files.
 
   *) [TS-2656 Determine server connection scheme immediately before

@@ -8333,23 +8333,18 @@ HttpTransact::get_error_string(int erno)
   }
 }
 
-
-volatile ink_time_t global_time;
-volatile int32_t cluster_time_delta;
-
 ink_time_t
 ink_cluster_time(void)
 {
-  ink_time_t old;
-  int highest_delta = 0;
+  int highest_delta;
 
 #ifdef DEBUG
   ink_mutex_acquire(&http_time_lock);
-  ink_time_t local_time = time(NULL);
+  ink_time_t local_time = ink_get_hrtime() / HRTIME_SECOND;
   last_http_local_time = local_time;
   ink_mutex_release(&http_time_lock);
 #else
-  ink_time_t local_time = time(NULL);
+  ink_time_t local_time = ink_get_hrtime() / HRTIME_SECOND;
 #endif
 
   highest_delta = (int) HttpConfig::m_master.cluster_time_delta;
@@ -8366,16 +8361,7 @@ ink_cluster_time(void)
 
   ink_assert(highest_delta >= 0);
 
-  local_time += (ink_time_t) highest_delta;
-  old = global_time;
-
-  while (local_time > global_time) {
-    if (ink_atomic_cas(&global_time, old, local_time))
-      break;
-    old = global_time;
-  }
-
-  return global_time;
+  return local_time + (ink_time_t) highest_delta;
 }
 
 //
