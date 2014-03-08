@@ -251,6 +251,16 @@ Value Effect
 Network
 =======
 
+.. ts:cv:: CONFIG proxy.config.net.connections_throttle INT 10000
+
+   The total number of client and origin server connections that the server
+   can handle simultaneously. This is in fact the max number of file
+   descriptors that the :program:`traffic_server` process can have open at any
+   given time. Roughly 10% of these connections are reserved for origin server
+   connections, i.e. from the default, only ~9,000 client connections can be
+   handled. This should be tuned according to your memory size, and expected
+   work load.
+
 .. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
    Controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
@@ -831,7 +841,7 @@ Origin Server Connect Attempts
 
    .. note::
         This value is used in determining when and if to prune active origin sessions. Without this value set connections
-        to origins can consume all the way up to ``proxy.config.net.connections_throttle`` connections, which in turn can
+        to origins can consume all the way up to ts:cv:`proxy.config.net.connections_throttle` connections, which in turn can
         starve incoming requests from available connections.
 
 .. ts:cv:: CONFIG proxy.config.http.origin_max_connections INT 0

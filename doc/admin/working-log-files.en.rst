@@ -901,6 +901,8 @@ This section shows an example log file entry in each of the standard log
 formats supported by Traffic Server: Squid, Netscape Common, Netscape Extended,
 and Netscape Extended-2.
 
+.. _log-formats-squid-format:
+
 Squid Format
 ------------
 
