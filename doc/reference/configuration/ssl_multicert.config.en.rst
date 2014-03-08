@@ -98,10 +98,12 @@ ssl_key_dialog=builtin|"exec:/path/to/program [args]"
   Method used to provide a pass phrase for encrypted private keys.  If the
   pass phrase is incorrect, SSL negotiation for this dest_ip will fail for
   clients who attempt to connect.
-  Two options are supported: builtin and exec
+  Two options are supported: builtin and exec:
+
     ``builtin`` - Requests pass phrase via stdin/stdout. User will be
       provided the ssl_cert_name and be prompted for the pass phrase.
       Useful for debugging.
+
     ``exec:`` - Executes program /path/to/program and passes args, if
       specified, to the program and reads the output from stdout for
       the pass phrase.  If args are provided then the entire exec: string
