@@ -57,8 +57,7 @@ The following options are available:
 
 :program:`traffic_cop` ordinarily logs to syslog, however for
 debugging purposes, the ``--enable-cop-debug`` build option
-causes it to log trace messages to
-:file:`/tmp/traffic_cop.trace`.
+causes it to log trace messages to ``/tmp/traffic_cop.trace``.
 
 See also
 ========
