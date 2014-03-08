@@ -73,20 +73,18 @@ Caveats that could cause issues include the following:
 
 -  a continuation has data associated with it (``TSContDataGet``).
 
-| \*
-| the reentrant call passes itself as a continuation to the reentrant
-API. In this case, the continuation should not try to access its data
-after calling the reentrant API. The reason for this is that data may be
-modified by the section of code in the continuation's handler that
-handles the event sent by the API. It is recommended that you always
-return after a reentrant call to avoid accessing something that has been
-deallocated.
+-  the reentrant call passes itself as a continuation to the reentrant
+   API. In this case, the continuation should not try to access its data
+   after calling the reentrant API. The reason for this is that data may be
+   modified by the section of code in the continuation's handler that
+   handles the event sent by the API. It is recommended that you always
+   return after a reentrant call to avoid accessing something that has been
+   deallocated.
 
 Below is an example, followed by an explanation.
 
 ::
 
-        ::::c
     continuation_handler (TSCont contp, TSEvent event, void *edata) {
         switch (event) {
             case event1:
