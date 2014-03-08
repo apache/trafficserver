@@ -193,10 +193,18 @@ otherwise, Traffic Server uses the Traffic Server user account name as the defau
 
 A value of ``0`` means no signal will be sent.
 
+.. ts:cv:: CONFIG proxy.config.cop.linux_min_memfree_kb INT 10240
+
+   The minimum amount of free memory space allowed before Traffic Server stops
+   the :program:`traffic_server` and :program:`traffic_manager` processes to 
+   prevent the system from hanging.
+
 .. ts:cv:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 10240
 
-   The minimum amount of free swap space allowed before Traffic Server stops the :program:`traffic_server` and :program:`traffic_manager` processes to
-   prevent the system from hanging. This configuration variable applies if swap is enabled in Linux 2.2 only.
+   The minimum amount of free swap space allowed before Traffic Server stops
+   the :program:`traffic_server` and :program:`traffic_manager` processes to 
+   prevent the system from hanging. This configuration variable applies if
+   swap is enabled in Linux 2.2 only. 
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
