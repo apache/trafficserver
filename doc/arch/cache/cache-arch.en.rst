@@ -82,7 +82,7 @@ possible to control which cache spans (and hence, which cache stripes) are conta
 
 The layout and structure of the cache spans, the cache volumes, and the cache stripes that compose them are derived
 entirely from the :file:`storage.config` and :file:`cache.config` and is recomputed from scratch when the
-:process:`traffic_server` is started. Therefore any change to those files can (and almost always will) invalidate the
+:program:`traffic_server` is started. Therefore any change to those files can (and almost always will) invalidate the
 existing cache in its entirety.
 
 Stripe Structure
@@ -736,7 +736,7 @@ buffer.
 
 When no more cache virtual connections can be processed (due to an empty queue or the aggregation buffer filling) then
 :cpp:member:`Vol::evac_range` is called to clear the range to be overwritten plus an additional
-:ts:const:`EVACUATION_SIZE` range. The buckets covering that range are checked. If there are any items in the buckets a
+:const:`EVACUATION_SIZE` range. The buckets covering that range are checked. If there are any items in the buckets a
 new cache virtual connection (a "doc evacuator") is created and used to read the evacuation item closest to the write
 cursor (i.e. with the smallest offset in the stripe) instead of the aggregation write proceeding. When the read
 completes it is checked for validity and if valid, the cache virtual connection for it is placed at the front of the
