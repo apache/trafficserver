@@ -626,7 +626,7 @@ Value Effect
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.pool STRING thread
 
-   Control the scope of server session re-use if it is enabled by :ts:cv:`proxy.config.server_session_sharing.match`. The valid values are
+   Control the scope of server session re-use if it is enabled by :ts:cv:`proxy.config.http.server_session_sharing.match`. The valid values are
 
    global
       Re-use sessions from a global pool of all server sessions.
@@ -1903,7 +1903,7 @@ Diagnostic Logging Configuration
    Each Traffic Server `diag` and `debug` level message is annotated
    with a subsytem tag. This configuration contains a regular
    expression that filters the messages based on the tag. Some
-   commonly used debug tags are::
+   commonly used debug tags are:
 
 ============  =====================================================
 Tag           Subsytem usage
