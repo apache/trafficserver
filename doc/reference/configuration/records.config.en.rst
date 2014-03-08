@@ -328,6 +328,12 @@ Value Effect
 3     no clustering
 ===== ====================
 
+.. ts:cv:: CONFIG proxy.config.cluster.ethernet_interface INT eth0
+
+The network interface to be used for cluster communication. This has to be
+identical on all members of a clsuter. ToDo: Is that reasonable ?? Should
+this be local"
+
 .. ts:cv:: CONFIG proxy.config.cluster.rsport INT 8088
 
    The reliable service port. The reliable service port is used to send configuration information between the nodes in a cluster. All nodes
