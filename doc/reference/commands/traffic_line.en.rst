@@ -908,7 +908,8 @@ proxy.process.ssl.cipher.user_agent.{cipherName}
   Total number of ssl client connections that used cipherName.  The list of
   cipher stats is dynamic and depends upon the installed ciphers and the
   cipher configuration of ats (proxy.config.ssl.server.cipher_suite).
-  Some common cipher stats are:
+  Some common cipher stats are::
+
     proxy.process.ssl.cipher.user_agent.ECDHE-RSA-RC4-SHA
     proxy.process.ssl.cipher.user_agent.ECDHE-RSA-AES128-SHA256
     proxy.process.ssl.cipher.user_agent.ECDHE-RSA-AES128-GCM-SHA256
@@ -917,14 +918,18 @@ proxy.process.ssl.cipher.user_agent.{cipherName}
     proxy.process.ssl.cipher.user_agent.RC4-MD5
     proxy.process.ssl.cipher.user_agent.AES128-GCM-SHA256
     proxy.process.ssl.cipher.user_agent.AES128-SHA
-  There are two ways to get the list of cipher stats:
-  1.  Run ATS with debug logging and show ssl diags:
+
+There are two ways to get the list of cipher stats:
+
+1.  Run ATS with debug logging and show ssl diags::
+
       CONFIG proxy.config.diags.debug.enabled INT 1
       CONFIG proxy.config.diags.debug.tags STRING ssl.*
       View output of traffic.out looking for lines like:
          (ssl) Registering ssl cipher stat 'proxy.process.ssl.cipher.user_agent.ECDHE-RSA-AES256-GCM-SHA384'
-  2.  Run this (asks openssl to tell us) to get a list of all possible ciphers
-    on the system (not all may be available as stats):
+
+2.  Run this (asks openssl to tell us) to get a list of all possible ciphers on the system (not all may be available as stats)::
+
          openssl ciphers | sed 's/\([^:]\+\)/proxy.process.ssl.cipher.user_agent.\1/g; s/:/\n/g'
 
 Examples
