@@ -144,7 +144,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
     cpu_mask = (char *) alloca(cpu_mask_len);
     hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
-    Debug("iocore_thread","EThread: %d %s: %d CPU Map: %s\n", i, obj_name, obj->logical_index, cpu_mask);
+    Debug("iocore_thread","EThread: %d %s: %d CPU Mask: %s\n", i, obj_name, obj->logical_index, cpu_mask);
     hwloc_set_thread_cpubind(ink_get_topology(), tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
 #endif
   }
