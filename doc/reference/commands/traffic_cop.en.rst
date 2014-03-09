@@ -44,7 +44,9 @@ The following options are available:
 
 .. option:: -o, --stdout
 
-    Print messages to standard output instead of the system log.
+  :program:`traffic_cop` ordinarily logs to syslog, however for
+  debugging purposes, this option causes it to print messages to
+  standard output instead.
 
 .. option:: -s, --stop
 
@@ -54,10 +56,6 @@ The following options are available:
 .. option:: -V, --version
 
    Print version information and exit.
-
-:program:`traffic_cop` ordinarily logs to syslog, however for
-debugging purposes, the ``--enable-cop-debug`` build option
-causes it to log trace messages to ``/tmp/traffic_cop.trace``.
 
 See also
 ========
