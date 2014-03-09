@@ -28,23 +28,27 @@ msgstr ""
 
 #: ../../admin/monitoring-traffic.en.rst:5
 msgid "Monitoring Traffic"
-msgstr ""
+msgstr "トラフィックの監視"
 
 #: ../../admin/monitoring-traffic.en.rst:24
 msgid ""
 "Traffic Server provides several options for monitoring system performance "
 "and analyzing network traffic."
 msgstr ""
+"Traffic Server はシステムのパフォーマンスとネットワークトラフィックの分析の"
+"ためのいくつかのオプションを提供します。"
 
 #: ../../admin/monitoring-traffic.en.rst:31
 msgid "Traffic Server Monitoring Tools"
-msgstr ""
+msgstr "Traffic Server 監視ツール"
 
 #: ../../admin/monitoring-traffic.en.rst:33
 msgid ""
 "Traffic Server provides the following tools to monitor system performance "
 "and analyze network traffic:"
 msgstr ""
+"Traffic Server はシステムのパフォーマンスとネットワークトラフィックを分析"
+"する以下のツールを提供しています。"
 
 #: ../../admin/monitoring-traffic.en.rst:36
 msgid ""
@@ -52,6 +56,8 @@ msgid ""
 "detected failure conditions; refer to `Working with Traffic Manager "
 "Alarms`_."
 msgstr ""
+"Traffic Server はあらゆる故障状態を伝えるアラームをきっかけに E メールを送信"
+"できます。\\ `Traffic Manager のアラームを使用する`_\\ を参照してください。"
 
 #: ../../admin/monitoring-traffic.en.rst:38
 msgid ""
@@ -59,6 +65,9 @@ msgid ""
 "viewing Traffic Server performance and network traffic information; refer "
 "to `Viewing Statistics from Traffic Line`_."
 msgstr ""
+"Traffic Line コマンドラインインターフェースは Traffic Server の"
+"パフォーマンスとネットワークトラフィック情報を見るための代替手段を"
+"提供します。\\ `Traffic Line で統計を見る`_\\ を参照してください。"
 
 #: ../../admin/monitoring-traffic.en.rst:41
 msgid ""
@@ -66,10 +75,14 @@ msgid ""
 "of viewing Traffic Server performance and network traffic information; "
 "refer to `Starting Traffic Shell <../getting-started#StartTrafficShell>`_."
 msgstr ""
+"Traffic Shell コマンドラインツールは Traffic Server のパフォーマンスと"
+"ネットワークトラフィック情報を見るもう一つの代替手段を提供します。"
+"`Starting Traffic Shell <../getting-started#StartTrafficShell>`_ を参照"
+"してください。"
 
 #: ../../admin/monitoring-traffic.en.rst:48
 msgid "Working with Traffic Manager Alarms"
-msgstr ""
+msgstr "Traffic Manager のアラームを使用する"
 
 #: ../../admin/monitoring-traffic.en.rst:50
 msgid ""
@@ -77,36 +90,45 @@ msgid ""
 "space allocated to event logs could be full or Traffic Server may not be "
 "able to write to a configuration file."
 msgstr ""
+"Traffic Server は問題を検出するとアラームを発します。例えば、イベントログに"
+"割り当てたスペースに空きがないときや Traffic Server が設定ファイルに書き込め"
+"ないときです。"
 
 #: ../../admin/monitoring-traffic.en.rst:55
 msgid "Configuring Traffic Server to Email Alarms"
-msgstr ""
+msgstr "Traffic Server がアラームを E メール で送信するように設定する"
 
 #: ../../admin/monitoring-traffic.en.rst:57
 msgid ""
 "To configure Traffic Server to send an email to a specific address whenever "
 "an alarm occurs, follow the steps below:"
 msgstr ""
+"アラームが発生したときに Traffic Server が指定したアドレスに E メールを送信"
+"するように設定するには、以下の手順に従ってください。"
 
 #: ../../admin/monitoring-traffic.en.rst:60
 msgid "In the :file:`records.config` file"
 msgstr ""
+":file:`records.config` ファイルで"
 
 #: ../../admin/monitoring-traffic.en.rst:61
 msgid ""
 "Set the :ts:cv:`proxy.config.alarm_email` variable to the email address "
 "alarms will be routed to."
 msgstr ""
+":ts:cv:`proxy.config.alarm_email` 変数をアラームが送信される "
+"E メールアドレスに設定"
 
 #: ../../admin/monitoring-traffic.en.rst:62
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
+"設定の変更を適用するために :option:`traffic_line -x` コマンドを実行"
 
 #: ../../admin/monitoring-traffic.en.rst:66
 msgid "Using a Script File for Alarms"
-msgstr ""
+msgstr "アラームにスクリプトファイルを使用する"
 
 #: ../../admin/monitoring-traffic.en.rst:68
 msgid ""
@@ -116,10 +138,15 @@ msgid ""
 "``example_alarm_bin.sh`` in the ``bin`` directory; simply modify the file "
 "to suit your needs."
 msgstr ""
+"アラームメッセージは Traffic Server に組み込まれているのでそれらを変更する"
+"ことはできません。しかし、アラームが発されたときにあるアクションを実行する"
+"ためにスクリプトを書くことができます。Traffic Server は ``bin`` ディレクトリ"
+"に ``example_alarm_bin.sh`` という名前のサンプルスクリプトを提供しています。"
+"必要に応じてこのファイルを編集してください。"
 
 #: ../../admin/monitoring-traffic.en.rst:75
 msgid "Viewing Statistics from Traffic Line"
-msgstr ""
+msgstr "Traffic Line で統計を見る"
 
 #: ../../admin/monitoring-traffic.en.rst:77
 msgid ""
@@ -131,10 +158,17 @@ msgid ""
 "about a Traffic Server node or cluster by specifying the variable that "
 "corresponds to the statistic you want to see."
 msgstr ""
+"Traffic Line コマンドラインインターフェースを Traffic Server の"
+"パフォーマンスや Web トラフィックの統計を見るために使用することができます。"
+"統計を見ることに加え、Traffic Server システムを設定、停止、起動、再起動する"
+"こともできます。追加の情報については :ref:`configure-using-traffic-line` と "
+":ref:`traffic-line-commands` を参照してください。見たい統計に対応する変数を"
+"指定することで Traffic Server の特定のノードまたはクラスターに関する特定の"
+"情報を見ることができます。"
 
 #: ../../admin/monitoring-traffic.en.rst:86
 msgid "**To view a statistic**, enter the following command:::"
-msgstr ""
+msgstr "**統計を見るためには**\\ 次のコマンドを入力してください。"
 
 #: ../../admin/monitoring-traffic.en.rst:90
 msgid ""
@@ -142,12 +176,17 @@ msgid ""
 "view. For a list of variables you can specify, refer to :ref:`Traffic Line "
 "Variables <traffic-line-performance-statistics>`."
 msgstr ""
+"``variable`` の部分は見たい情報を示す変数です。指定できる変数の一覧については "
+":ref:`Traffic Line 変数 <traffic-line-performance-statistics>` を"
+"参照してください。"
 
 #: ../../admin/monitoring-traffic.en.rst:94
 msgid ""
 "For example, the following command displays the document hit rate for the "
 "Traffic Server node:::"
 msgstr ""
+"例えば、次のコマンドは Traffic Server ノードのドキュメントヒット率を"
+"表示します。"
 
 #: ../../admin/monitoring-traffic.en.rst:99
 msgid ""
@@ -155,3 +194,6 @@ msgid ""
 "the Traffic Line command with ``./`` (for example: :option:`traffic_line -"
 "r` ``variable``)."
 msgstr ""
+"Traffic Server ``bin`` ディレクトリが path に無い場合は、``./`` を "
+"Traffic Line コマンドの前に付けてください "
+"( 例: :option:`traffic_line -r` ``variable``) 。
