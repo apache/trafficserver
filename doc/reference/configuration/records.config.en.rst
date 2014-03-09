@@ -241,15 +241,16 @@ A value of ``0`` means no signal will be sent.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.affinity INT 0
 
-   Bind threads to specific CPUs or CPU cores.
+   Bind threads to specific processing units.
 
 ===== ====================
 Value Effect
 ===== ====================
-1     assign threads to sockets
-2     assign threads to real cores
-3     assign threads to logical cores
-0     don't assign threads to any cores
+0     assign threads to machine
+1     assign threads to NUMA nodes
+2     assign threads to sockets
+3     assign threads to cores
+4     assign threads to processing units
 ===== ====================
 
 .. note::

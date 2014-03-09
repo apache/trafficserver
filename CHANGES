@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2624] Make thread affinity more robust
+
   *) [TS-2620] Make the stats_over_http plugin publish node and plugin stats.
 
   *) [TS-2614] Response to invalid Content-Length for POST should be a 400 error
