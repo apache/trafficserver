@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2628] traffic_line should tell you when a reload is needed.
+
   *) [TS-2627] Reduce management socket code duplication.
 
   *) [TS-2625] trafficserver.in doesn't use TS_BASE

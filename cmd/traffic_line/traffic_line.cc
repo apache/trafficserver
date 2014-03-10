@@ -213,8 +213,27 @@ handleArgInvocation()
       TSError err;
       TSActionNeedT action;
 
-      if ((err = TSRecordSet(SetVar, VarValue, &action)) != TS_ERR_OKAY)
+      if ((err = TSRecordSet(SetVar, VarValue, &action)) != TS_ERR_OKAY) {
         fprintf(stderr, "%s: Please correct your variable name and|or value\n", programName);
+        return err;
+      }
+
+      switch (action) {
+      case TS_ACTION_SHUTDOWN:
+        printf("Set %s, full shutdown required\n", SetVar);
+        break;
+      case TS_ACTION_RESTART:
+        printf("Set %s, restart required\n", SetVar);
+        break;
+      case TS_ACTION_RECONFIGURE:
+        printf("Set %s, reconfiguration required\n", SetVar);
+        break;
+      case TS_ACTION_DYNAMIC:
+      default:
+        printf("Set %s\n", SetVar);
+        break;
+      }
+
       return err;
     }
   } else if (*VarValue != '\0') {       // We have a value but no variable to set
