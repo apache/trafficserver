@@ -11,8 +11,6 @@ Changes with Apache Traffic Server 4.1.3
   *) [TS-2469] remove libreadline which is gpl licensed.
    Author: Ben Aitchison <ben@meh.net.nz>
 
-  *) [TS-2712] Explicitly use subdir-objects in automake init.
-
   *) [TS-2497] Failed post results in tunnel buffers being returned to
    freelist prematurely.
    Reporter: Thomas Jackson <thjackso@linkedin.com>
