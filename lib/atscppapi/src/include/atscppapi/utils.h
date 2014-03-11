@@ -32,9 +32,11 @@
 #include <stdint.h>
 
 #ifndef ATSCPPAPI_UNUSED
+#ifdef __GNUC__
 #define ATSCPPAPI_UNUSED __attribute__ ((unused))
+#else
+#define ATSCPPAPI_UNUSED
 #endif
-
 namespace atscppapi {
 namespace utils {
 
