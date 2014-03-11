@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2627] Reduce management socket code duplication.
+
   *) [TS-2625] trafficserver.in doesn't use TS_BASE
 
   *) [TS-2624] Make thread affinity more robust

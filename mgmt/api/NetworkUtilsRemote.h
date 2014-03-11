@@ -64,7 +64,6 @@ TSError disconnect();
 TSError reconnect();
 TSError reconnect_loop(int num_attempts);
 TSError connect_and_send(const char *msg, int msg_len);
-TSError socket_write_conn(int fd, const char *msg_buf, int bytes);
 void *socket_test_thread(void *arg);
 
 /*****************************************************************************
