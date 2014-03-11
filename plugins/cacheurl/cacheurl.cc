@@ -137,8 +137,6 @@ static int regex_compile(regex_info **buf, char *pattern, char *replacement) {
     int *tokens;
     int *tokenoffset;
 
-    int i;
-
     int status = 1;      /* Status (return value) of the function */
 
     regex_info *info = (regex_info *)TSmalloc(sizeof(regex_info));
@@ -157,7 +155,7 @@ static int regex_compile(regex_info **buf, char *pattern, char *replacement) {
     if (status) {
         tokens = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
         tokenoffset = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
-        for (i=0; i<strlen(replacement); i++) {
+        for (unsigned i = 0; i<strlen(replacement); i++) {
             if (replacement[i] == '$') {
                 if (tokcount >= TOKENCOUNT) {
                     TSError("[%s] Error: too many tokens in replacement "
