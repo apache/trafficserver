@@ -37,6 +37,8 @@
 #else
 #define ATSCPPAPI_UNUSED
 #endif
+#endif
+
 namespace atscppapi {
 namespace utils {
 
