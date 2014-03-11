@@ -21,6 +21,10 @@ TSQA_TSXS=${TSQA_TSXS:-/opt/ats/bin/tsxs}
 TSQA_TESTNAME=$(basename $0)
 source $(dirname $0)/functions
 
+# Make up an arbitratry URL to generate error logs. We use the loopback address
+# number because I've seen "localhost" resolve to an IPv6 address. That sucked.
+URL=http://127.0.0.1:$PORT
+
 # This test verifies that online reloading of the logging configuration
 # does not crash Traffic Server.
 check() {
@@ -28,18 +32,18 @@ check() {
 
   for i in $(seq $COUNT) ; do
     msg check $i ...
-    curl --silent --show-error -o /dev/null -H "Host: not there" http://localhost:$PORT
+    curl --silent --show-error -o /dev/null -H "Host: not there" $URL
     tsexec traffic_line -s proxy.config.diags.debug.tags -v 'log-.*'
     tsexec traffic_line -s proxy.config.diags.debug.enabled -v 1
     tsexec traffic_line -x
-    sleep 1
-    curl --silent --show-error -o /dev/null -H "Host: not there" http://localhost:$PORT
+    msgwait 2
+    curl --silent --show-error -o /dev/null -H "Host: not there" $URL
     # Set a harmless proxy.config.log.hostname to trigger a config reload ...
     tsexec traffic_line -s proxy.config.log.hostname -v jpeach-test-$$-$i
     tsexec traffic_line -s proxy.config.log.search_top_sites -v $i
     tsexec traffic_line -x
-    sleep 1
-    curl --silent --show-error -o /dev/null -H "Host: not there" http://localhost:$PORT
+    msgwait 2
+    curl --silent --show-error -o /dev/null -H "Host: not there" $URL
     crash
 
     # Verify that we have all the error logs that we expect.
@@ -56,6 +60,7 @@ bootstrap
 alive cop || startup || fatal unable to start Traffic Server
 trap shutdown 0 EXIT
 
+msgwait 6
 check
 
 exit $TSQA_FAIL
