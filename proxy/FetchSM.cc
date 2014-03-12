@@ -238,7 +238,7 @@ FetchSM::InvokePluginExt(int error_event)
     goto out;
   }
 
-  Debug(DEBUG_TAG, "[%s] chunked:%d, content_len:%ld, recived_len:%ld, avail:%ld\n",
+  Debug(DEBUG_TAG, "[%s] chunked:%d, content_len: %" PRId64 ", recived_len: %" PRId64 ", avail: %" PRId64 "\n",
         __FUNCTION__, resp_is_chunked, resp_content_length, resp_recived_body_len,
         resp_is_chunked > 0 ? chunked_handler.chunked_reader->read_avail() : resp_reader->read_avail());
 
