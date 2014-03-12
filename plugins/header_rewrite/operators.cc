@@ -167,9 +167,11 @@ OperatorSetDestination::exec(const Resources& res) const
     TSMBuffer bufp;
     TSMLoc url_m_loc;
     if (res._rri) {
+      TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() using remap plugin TSMBuffer.");
       bufp = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
     } else {
+      TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() using global plugin TSMBuffer.");
       bufp = res.bufp;
       if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
         TSDebug(PLUGIN_NAME, "TSHttpHdrUrlGet was unable to return the url m_loc");
