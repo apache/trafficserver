@@ -131,8 +131,7 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
 
         /* Now call the client to tell them about data */
         if (in_data.length() > 0) {
-          ScopedSharedMutexLock scopedLock(state->transformation_plugin_.getMutex());
-          state->transformation_plugin_.consume(in_data);
+           state->transformation_plugin_.consume(in_data);
         }
       }
 
@@ -155,12 +154,11 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
 
         /* Call back the write VIO continuation to let it know that we have completed the write operation. */
         if (!state->input_complete_dispatched_) {
-          ScopedSharedMutexLock scopedLock(state->transformation_plugin_.getMutex());
-          state->transformation_plugin_.handleInputComplete();
-          state->input_complete_dispatched_ = true;
-          if (vio_cont) {
-            TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
-          }
+         state->transformation_plugin_.handleInputComplete();
+         state->input_complete_dispatched_ = true;
+         if (vio_cont) {
+           TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
+         }
         }
       }
     } else {
@@ -169,12 +167,11 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
 
       /* Call back the write VIO continuation to let it know that we have completed the write operation. */
       if (!state->input_complete_dispatched_) {
-        ScopedSharedMutexLock scopedLock(state->transformation_plugin_.getMutex());
-        state->transformation_plugin_.handleInputComplete();
-        state->input_complete_dispatched_ = true;
-        if (vio_cont) {
-          TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
-        }
+       state->transformation_plugin_.handleInputComplete();
+       state->input_complete_dispatched_ = true;
+       if (vio_cont) {
+         TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
+       }
       }
     }
   } else {
@@ -236,7 +233,6 @@ TransformationPlugin::~TransformationPlugin() {
 }
 
 size_t TransformationPlugin::produce(const std::string &data) {
-  ScopedSharedMutexLock scopedLock(state_->transformation_plugin_.getMutex());
   LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p producing output with length=%ld", this, state_->txn_, data.length());
   int64_t write_length = static_cast<int64_t>(data.length());
   if (!write_length) {
@@ -286,7 +282,6 @@ size_t TransformationPlugin::produce(const std::string &data) {
 }
 
 size_t TransformationPlugin::setOutputComplete() {
-  ScopedSharedMutexLock scopedLock(state_->transformation_plugin_.getMutex());
   int connection_closed = TSVConnClosedGet(state_->vconn_);
   LOG_DEBUG("OutputComplete TransformationPlugin=%p tshttptxn=%p vconn=%p connection_closed=%d, total bytes written=%" PRId64, this, state_->txn_, state_->vconn_, connection_closed,state_->bytes_written_);
 
