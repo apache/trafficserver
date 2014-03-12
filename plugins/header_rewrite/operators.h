@@ -185,6 +185,25 @@ private:
   Value _timeout;
 };
 
+class OperatorSkipRemap : public Operator
+{
+public:
+  OperatorSkipRemap()
+    : _skip_remap(false)
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSkipRemap");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSkipRemap);
+
+  bool _skip_remap;
+};
+
 
 // All the header operators share a base class
 class OperatorRMHeader : public OperatorHeaders

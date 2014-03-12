@@ -51,6 +51,8 @@ operator_factory(const std::string& op)
     o = new OperatorSetRedirect();
   } else if (op == "timeout-out") {
     o = new OperatorSetTimeoutOut();
+  } else if (op == "skip-remap") {
+    o = new OperatorSkipRemap();
   } else if (op == "no-op") {
     o = new OperatorNoOp();
   } else if (op == "counter") {

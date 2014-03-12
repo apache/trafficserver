@@ -364,6 +364,24 @@ OperatorSetTimeoutOut::exec(const Resources& res) const
   }
 }
 
+// OperatorSkipRemap
+void
+OperatorSkipRemap::initialize(Parser& p)
+{
+  Operator::initialize(p);
+
+  if (p.get_arg() == "1" || p.get_arg() == "true") {
+    _skip_remap = true;
+  }
+}
+
+void
+OperatorSkipRemap::exec(const Resources& res) const
+{
+  TSDebug(PLUGIN_NAME, "OperatorSkipRemap::exec() skipping remap: %s", _skip_remap ? "True" : "False");
+  TSSkipRemappingSet(res.txnp, _skip_remap ? 1 : 0);
+}
+
 
 // OperatorRMHeader
 void
