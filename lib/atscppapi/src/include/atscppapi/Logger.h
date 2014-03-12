@@ -125,17 +125,6 @@ extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1,2);
     TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__); \
   } while (false)
 
-/**
- * A helper macro for Logger objects that allows you to easily add a error level message
- * which will include file, line, and function name with the message. This macro will also
- * use invoke TS_DEBUG
- */
-#define LOG_ERROR2(log, log_tag, fmt, ...)       \
-  do { \
-    (log).logError("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__); \
-    TS_DEBUG((log_tag), fmt, ## __VA_ARGS__);                           \
-  } while (false)
-
 namespace atscppapi {
 
 struct LoggerState;
