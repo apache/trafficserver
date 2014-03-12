@@ -1,5 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
+  *) [TS-2631] Header_rewrite should support changing destination in non-remap case.
 
   *) [TS-2623] Remove the limit on the number of cachurl regular expressions.
 
