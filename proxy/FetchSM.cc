@@ -376,7 +376,7 @@ FetchSM::process_fetch_read(int event)
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
     bytes = resp_reader->read_avail();
-    Debug(DEBUG_TAG, "[%s] number of bytes in read ready %"PRId64"", __FUNCTION__, bytes);
+    Debug(DEBUG_TAG, "[%s] number of bytes in read ready %" PRId64, __FUNCTION__, bytes);
     if (header_done == 0 && ((fetch_flags & TS_FETCH_FLAGS_STREAM) || callback_options == AFTER_HEADER)) {
       if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, 0) == PARSE_DONE) {
         header_done = 1;
