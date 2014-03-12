@@ -32,6 +32,7 @@
 static const char *programName;
 
 static char ReadVar[1024];
+static char MatchVar[1024];
 static char SetVar[1024];
 static char VarValue[1024];
 static int ReRead;
@@ -205,6 +206,46 @@ handleArgInvocation()
       TSRecordEleDestroy(rec_ele);
       return err;
     }
+  } else if (*MatchVar != '\0') {        // Handle a value read
+    if (*SetVar != '\0' || *VarValue != '\0') {
+      fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
+      return TS_ERR_FAIL;
+    } else {
+      TSError err;
+      TSList list = TSListCreate();
+
+      if ((err = TSRecordGetMatchMlt(MatchVar, list)) != TS_ERR_OKAY) {
+        fprintf(stderr, "%s: %s\n", programName, TSGetErrorMessage(err));
+      }
+
+      // If the RPC call failed, the list will be empty, so we won't print anything. Otherwise,
+      // print all the results, freeing them as we go.
+      for (TSRecordEle * rec_ele = (TSRecordEle *) TSListDequeue(list); rec_ele;
+          rec_ele = (TSRecordEle *) TSListDequeue(list)) {
+        switch (rec_ele->rec_type) {
+        case TS_REC_INT:
+          printf("%s %" PRId64 "\n", rec_ele->rec_name, rec_ele->int_val);
+          break;
+        case TS_REC_COUNTER:
+          printf("%s %" PRId64 "\n", rec_ele->rec_name, rec_ele->counter_val);
+          break;
+        case TS_REC_FLOAT:
+          printf("%s %f\n", rec_ele->rec_name, rec_ele->float_val);
+          break;
+        case TS_REC_STRING:
+          printf("%s %s\n", rec_ele->rec_name, rec_ele->string_val);
+          break;
+        default:
+          // just skip it ...
+          break;
+        }
+
+        TSRecordEleDestroy(rec_ele);
+      }
+
+      TSListDestroy(list);
+      return err;
+    }
   } else if (*SetVar != '\0') { // Setting a variable
     if (*VarValue == '\0') {
       fprintf(stderr, "%s: Set requires a -v argument\n", programName);
@@ -254,6 +295,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   programName = argv[0];
 
   ReadVar[0] = '\0';
+  MatchVar[0] = '\0';
   SetVar[0] = '\0';
   VarValue[0] = '\0';
   ReRead = 0;
@@ -282,6 +324,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   ArgumentDescription argument_descriptions[] = {
     {"query_deadhosts", 'q', "Query congested sites", "F", &QueryDeadhosts, NULL, NULL},
     {"read_var", 'r', "Read Variable", "S1024", &ReadVar, NULL, NULL},
+    {"match_var", 'm', "Match Variable", "S1024", &MatchVar, NULL, NULL},
     {"set_var", 's', "Set Variable (requires -v option)", "S1024", &SetVar, NULL, NULL},
     {"value", 'v', "Set Value (used with -s option)", "S1024", &VarValue, NULL, NULL},
     {"help", 'h', "Help", NULL, NULL, NULL, usage},

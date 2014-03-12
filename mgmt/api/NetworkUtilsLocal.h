@@ -69,7 +69,7 @@ TSError send_reply(struct SocketInfo sock_info, TSError retval);
 TSError send_reply_list(struct SocketInfo sock_info, TSError retval, char *list);
 
 TSError send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, int val_size,
-                               TSRecordT rec_type);
+                               TSRecordT rec_type, const char *rec_name);
 TSError send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT action_need);
 TSError send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int size, char *text);
 TSError send_proxy_state_get_reply(struct SocketInfo sock_info, TSProxyStateT state);

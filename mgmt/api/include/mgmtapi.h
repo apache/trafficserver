@@ -1174,6 +1174,12 @@ extern "C"
  */
   tsapi TSError TSRecordGetMlt(TSStringList rec_names, TSList rec_vals);
 
+/* TSRecordGetMatchMlt: gets a set of records
+ * Input:  rec_regex - regular expression to match against record names
+ * Output: TSError, TSList of TSRecordEle
+ */
+  tsapi TSError TSRecordGetMatchMlt(const char *rec_regex, TSList list);
+
 /* TSRecordSet*: sets a record w/ a known type
  * Input:  rec_name     - the name of the record (proxy.config.record_name)
  *         *_val        - the value to set the record to

@@ -80,6 +80,7 @@ typedef enum
   STATS_RESET_NODE,
   STATS_RESET_CLUSTER,
   STORAGE_DEVICE_CMD_OFFLINE,
+  RECORD_MATCH_GET,
   UNDEFINED_OP /* This must be last */
 } OpType;
 

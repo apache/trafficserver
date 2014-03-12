@@ -513,22 +513,20 @@ send_reply_list(struct SocketInfo sock_info, TSError retval, char *list)
  * output: TS_ERR_*
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
- *        format = <TSError> <rec_val_len> <rec_type> <rec_val>
+ *        format = <TSError> <rec_val_len> <name_size> <rec_type> <rec_val> <rec_name>
  **********************************************************************/
 TSError
-send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, int val_size, TSRecordT rec_type)
+send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, int val_size,
+    TSRecordT rec_type, const char *rec_name)
 {
   TSError ret;
   int msg_pos = 0, total_len;
   char *msg;
   int16_t record_t, ret_val;
-  int32_t v_size;                 // to be safe, typecast
+  int32_t v_size = (int32_t) val_size; // to be safe, typecast
+  int32_t n_size = rec_name ? (int32_t)strlen(rec_name) : 0;
 
-  if (!val) {
-    return TS_ERR_PARAMS;
-  }
-
-  total_len = SIZE_ERR_T + SIZE_LEN + SIZE_REC_T + val_size;
+  total_len = SIZE_ERR_T + SIZE_LEN + SIZE_LEN + SIZE_REC_T + v_size + n_size;
   msg = (char *)ats_malloc(sizeof(char) * total_len);
 
   // write the return value
@@ -537,8 +535,11 @@ send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, in
   msg_pos += SIZE_ERR_T;
 
   // write the size of the record value
-  v_size = (int32_t) val_size;
   memcpy(msg + msg_pos, (void *) &v_size, SIZE_LEN);
+  msg_pos += SIZE_LEN;
+
+  // write the size of the record name
+  memcpy(msg + msg_pos, (void *) &n_size, SIZE_LEN);
   msg_pos += SIZE_LEN;
 
   // write the record type
@@ -547,7 +548,16 @@ send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, in
   msg_pos += SIZE_REC_T;
 
   // write the record value
-  memcpy(msg + msg_pos, val, val_size);
+  if (v_size) {
+    memcpy(msg + msg_pos, val, v_size);
+    msg_pos += v_size;
+  }
+
+  // write the record name
+  if (n_size) {
+    memcpy(msg + msg_pos, rec_name, n_size);
+    msg_pos += n_size;
+  }
 
   // now push it to the socket
   ret = socket_write_n(sock_info, msg, total_len);

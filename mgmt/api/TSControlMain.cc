@@ -210,198 +210,83 @@ ts_ctrl_main(void *arg)
               con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
               continue;
             }
+
             // determine which handler function to call based on operation
             switch (op_t) {
             case RECORD_GET:
               ret = handle_record_get(client_entry->sock_info, req);
-              ats_free(req);     // free memory for req
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_record_get\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
+              break;
+
+            case RECORD_MATCH_GET:
+              ret = handle_record_match(client_entry->sock_info, req);
+              // XXX
               break;
 
             case RECORD_SET:
               ret = handle_record_set(client_entry->sock_info, req);
-              ats_free(req);
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_record_set\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
-
               break;
 
             case FILE_READ:
               ret = handle_file_read(client_entry->sock_info, req);
-              ats_free(req);
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_file_read\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
-
               break;
 
             case FILE_WRITE:
               ret = handle_file_write(client_entry->sock_info, req);
-              ats_free(req);
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_file_write\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
-
               break;
 
             case PROXY_STATE_GET:
               ret = handle_proxy_state_get(client_entry->sock_info);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_proxy_state_get\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
-
               break;
 
             case PROXY_STATE_SET:
               ret = handle_proxy_state_set(client_entry->sock_info, req);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_proxy_state_set\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
-
               break;
 
             case RECONFIGURE:
               ret = handle_reconfigure(client_entry->sock_info);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_reconfigure\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
-
               break;
 
             case RESTART:
               ret = handle_restart(client_entry->sock_info, req, false);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_restart\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case BOUNCE:
               ret = handle_restart(client_entry->sock_info, req, true);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_restart bounce\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case STORAGE_DEVICE_CMD_OFFLINE:
               ret = handle_storage_device_cmd_offline(client_entry->sock_info, req);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_storage_device_cmd_offline\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case EVENT_RESOLVE:
               ret = handle_event_resolve(client_entry->sock_info, req);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_event_resolve\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case EVENT_GET_MLT:
               ret = handle_event_get_mlt(client_entry->sock_info);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:event_get_mlt\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case EVENT_ACTIVE:
               ret = handle_event_active(client_entry->sock_info, req);
-              ats_free(req);     // free the request allocated by preprocess_msg
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:event_active\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case SNAPSHOT_TAKE:
             case SNAPSHOT_RESTORE:
             case SNAPSHOT_REMOVE:
               ret = handle_snapshot(client_entry->sock_info, req, op_t);
-              ats_free(req);
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_snapshot\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case SNAPSHOT_GET_MLT:
               ret = handle_snapshot_get_mlt(client_entry->sock_info);
-              ats_free(req);
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR:snapshot_get_mlt\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case DIAGS:
-              if (req) {
-                handle_diags(client_entry->sock_info, req);
-                ats_free(req);
-              }
+              ret = handle_diags(client_entry->sock_info, req);
               break;
 
             case STATS_RESET_CLUSTER:
             case STATS_RESET_NODE:
               ret = handle_stats_reset(client_entry->sock_info, req, op_t);
-              ats_free(req);
-              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-                Debug("ts_main", "[ts_ctrl_main] ERROR: stats_reset\n");
-                remove_client(client_entry, accepted_con);
-                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-                continue;
-              }
               break;
 
             case UNDEFINED_OP:
@@ -409,6 +294,16 @@ ts_ctrl_main(void *arg)
               break;
 
             }                   // end switch (op_t)
+
+            ats_free(req);
+
+            if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
+              Debug("ts_main", "[ts_ctrl_main] ERROR: sending response for message op %d\n", (int)op_t);
+              remove_client(client_entry, accepted_con);
+              con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
+              continue;
+            }
+
           }                     // end if(client_entry->sock_info.fd && FD_ISSET(client_entry->sock_info.fd, &selectFDs))
 
           con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -487,16 +382,16 @@ handle_record_get(struct SocketInfo sock_info, char *req)
   // create and send reply back to client
   switch (ele->rec_type) {
   case TS_REC_INT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->int_val), sizeof(TSInt), ele->rec_type);
+    ret = send_record_get_reply(sock_info, ret, &(ele->int_val), sizeof(TSInt), ele->rec_type, ele->rec_name);
     break;
   case TS_REC_COUNTER:
-    ret = send_record_get_reply(sock_info, ret, &(ele->counter_val), sizeof(TSCounter), ele->rec_type);
+    ret = send_record_get_reply(sock_info, ret, &(ele->counter_val), sizeof(TSCounter), ele->rec_type, ele->rec_name);
     break;
   case TS_REC_FLOAT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->float_val), sizeof(TSFloat), ele->rec_type);
+    ret = send_record_get_reply(sock_info, ret, &(ele->float_val), sizeof(TSFloat), ele->rec_type, ele->rec_name);
     break;
   case TS_REC_STRING:
-    ret = send_record_get_reply(sock_info, ret, ele->string_val, strlen(ele->string_val), ele->rec_type);
+    ret = send_record_get_reply(sock_info, ret, ele->string_val, strlen(ele->string_val), ele->rec_type, ele->rec_name);
     break;
   default:                     // invalid record type
     ret = send_reply(sock_info, TS_ERR_FAIL);
@@ -513,6 +408,70 @@ handle_record_get(struct SocketInfo sock_info, char *req)
   return ret;
 }
 
+struct record_match_state {
+  TSError     err;
+  SocketInfo  sock;
+  DFA         regex;
+};
+
+static void
+send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const char *name, int data_type, RecData *rec_val)
+{
+  record_match_state *match = (record_match_state *)edata ;
+
+  if (match->err != TS_ERR_OKAY) {
+    return;
+  }
+
+  if (match->regex.match(name) >= 0) {
+    switch (data_type) {
+    case RECD_INT:
+      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_int), sizeof(TSInt), TS_REC_INT, name);
+      break;
+    case RECD_COUNTER:
+      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_counter), sizeof(TSCounter), TS_REC_COUNTER, name);
+      break;
+    case RECD_STRING:
+      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, rec_val->rec_string, rec_val->rec_string ? strlen(rec_val->rec_string): 0, TS_REC_STRING, name);
+      break;
+    case RECD_FLOAT:
+      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_float), sizeof(TSFloat), TS_REC_FLOAT, name);
+      break;
+    default:
+      break; // skip it
+    }
+  }
+}
+
+TSError
+handle_record_match(struct SocketInfo sock_info, char *req)
+{
+  TSError ret;
+  record_match_state match;
+
+  // parse msg - don't really need since the request itself is the regex itself
+  if (!req) {
+    ret = send_reply(sock_info, TS_ERR_FAIL);
+    return ret;
+  }
+
+  if (match.regex.compile(req, RE_CASE_INSENSITIVE) != 0) {
+    ret = send_reply(sock_info, TS_ERR_FAIL);
+    return ret;
+  }
+
+  match.err = TS_ERR_OKAY;
+  match.sock = sock_info;
+
+  RecDumpRecords(RECT_NULL, send_record_match, &match);
+
+  // If successful, send a list terminator.
+  if (match.err == TS_ERR_OKAY) {
+    return send_record_get_reply(sock_info, TS_ERR_OKAY, NULL, 0, TS_REC_UNDEFINED, NULL);
+  }
+
+  return match.err;
+}
 
 /**************************************************************************
  * handle_record_set
@@ -957,7 +916,7 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
  *        req - the diag message (already formatted with arguments)
  * output: TS_ERR_xx
  *************************************************************************/
-void
+TSError
 handle_diags(struct SocketInfo /* sock_info ATS_UNUSED */, char *req)
 {
   TSError ret;
@@ -1008,12 +967,12 @@ handle_diags(struct SocketInfo /* sock_info ATS_UNUSED */, char *req)
   if (diags_init) {
     diags->print("TSMgmtAPI", DTA(level), "%s", diag_msg);
     ats_free(diag_msg);
-    return;
+    return TS_ERR_OKAY;
   }
 
 Lerror:
   ats_free(diag_msg);
-  return;
+  return TS_ERR_FAIL;
 }
 
 /**************************************************************************

@@ -61,7 +61,6 @@ extern TSInitOptionT ts_init_options;
 /**********************************************************************
  * Socket Helper Functions
  **********************************************************************/
-
 void
 set_socket_paths(const char *path)
 {
@@ -773,32 +772,25 @@ send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text)
   return err;
 }
 
-/**********************************************************************
- * send_record_get_request
- *
- * purpose: sends request to get record value from Traffic Manager
- * input: fd       - file descriptor to use
- *        rec_name - name of record to retrieve value for
- * output: TS_ERR_xx
- * format: RECORD_GET <msg_len> <rec_name>
- **********************************************************************/
-TSError
-send_record_get_request(int fd, char *rec_name)
+static TSError
+send_record_get_x_request(OpType optype, int fd, const char *rec_name)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
-  int16_t op;
+  int16_t op = (int16_t)optype;
   int32_t msg_len;
   TSError err;
 
-  if (!rec_name)
+  ink_assert(op == RECORD_GET || op == RECORD_MATCH_GET);
+
+  if (!rec_name) {
     return TS_ERR_PARAMS;
+  }
 
   total_len = SIZE_OP_T + SIZE_LEN + strlen(rec_name);
   msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
 
   // fill in op type
-  op = (int16_t) RECORD_GET;
   memcpy(msg_buf + msg_pos, (void *) &op, SIZE_OP_T);
   msg_pos += SIZE_OP_T;
 
@@ -816,6 +808,35 @@ send_record_get_request(int fd, char *rec_name)
   return err;
 }
 
+/**********************************************************************
+ * send_record_get_request
+ *
+ * purpose: sends request to get record value from Traffic Manager
+ * input: fd       - file descriptor to use
+ *        rec_name - name of record to retrieve value for
+ * output: TS_ERR_xx
+ * format: RECORD_GET <msg_len> <rec_name>
+ **********************************************************************/
+TSError
+send_record_get_request(int fd, const char *rec_name)
+{
+  return send_record_get_x_request(RECORD_GET, fd, rec_name);
+}
+
+/**********************************************************************
+ * send_record_match_request
+ *
+ * purpose: sends request to get a list of matching record values from Traffic Manager
+ * input: fd       - file descriptor to use
+ *        rec_name - regex to match against record names
+ * output: TS_ERR_xx
+ * format: sequence of RECORD_GET <msg_len> <rec_name>
+ **********************************************************************/
+TSError
+send_record_match_request(int fd, const char *rec_regex)
+{
+  return send_record_get_x_request(RECORD_MATCH_GET, fd, rec_regex);
+}
 
 /*------ control functions -------------------------------------------*/
 /**********************************************************************
@@ -1231,19 +1252,25 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
  *        rec_value - the value of the record in string format
  * output: errors on error or fill up class with response &
  *         return SUCC
- * notes: reply format = <TSError> <val_size> <rec_type> <record_value>
+ * notes: reply format = <TSError> <val_size> <name_size> <rec_type> <record_value> <record_name>
+ * Zero-length values and names are supported. If the size field is 0, the corresponding
+ * value field is not transmitted.
  * It's the responsibility of the calling function to conver the rec_value
  * based on the rec_type!!
  **********************************************************************/
 TSError
-parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val)
+parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_name)
 {
   int16_t ret_val, rec_t;
-  int32_t rec_size;
+  int32_t val_size, name_size;
   TSError err_t;
 
-  if (!rec_type || !rec_val)
+  if (!rec_type || !rec_val) {
     return TS_ERR_PARAMS;
+  }
+
+  *rec_name = NULL;
+  *rec_val = NULL;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { //time expired before ready to read
@@ -1253,49 +1280,72 @@ parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val)
   // get the return value (TSError type)
   err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
   if (err_t != TS_ERR_OKAY) {
-    return err_t;
+    goto fail;
   }
 
   // if !TS_ERR_OKAY, stop reading rest of msg
   err_t = (TSError) ret_val;
   if (err_t != TS_ERR_OKAY) {
-    return err_t;
+    goto fail;
   }
 
   // now get size of record_value
-  err_t = socket_read_conn(fd, (uint8_t *)&rec_size, SIZE_LEN);
+  err_t = socket_read_conn(fd, (uint8_t *)&val_size, SIZE_LEN);
   if (err_t != TS_ERR_OKAY) {
-    return err_t;
+    goto fail;
+  }
+
+  // now get size of record name
+  err_t = socket_read_conn(fd, (uint8_t *)&name_size, SIZE_LEN);
+  if (err_t != TS_ERR_OKAY) {
+    goto fail;
   }
 
   // get the record type
   err_t = socket_read_conn(fd, (uint8_t *)&rec_t, SIZE_REC_T);
   if (err_t != TS_ERR_OKAY) {
-    return err_t;
+    goto fail;
   }
 
   *rec_type = (TSRecordT) rec_t;
 
-  // get record value
-  // allocate correct amount of memory for record value
-  if (*rec_type == TS_REC_STRING) {
-    *rec_val = ats_malloc(sizeof(char) * (rec_size + 1));
-  } else {
-    *rec_val = ats_malloc(sizeof(char) * (rec_size));
+  // get record value (if there is one)
+  if (val_size) {
+    if (*rec_type == TS_REC_STRING) {
+      *rec_val = ats_malloc(sizeof(char) * (val_size + 1));
+    } else {
+      *rec_val = ats_malloc(sizeof(char) * (val_size));
+    }
+
+    err_t = socket_read_conn(fd, (uint8_t *)(*rec_val), val_size);
+    if (err_t != TS_ERR_OKAY) {
+      goto fail;
+    }
+
+    // add end of string to end of the record value
+    if (*rec_type == TS_REC_STRING) {
+      ((char *) (*rec_val))[val_size] = '\0';
+    }
   }
 
-  err_t = socket_read_conn(fd, (uint8_t *)(*rec_val), rec_size);
-  if (err_t != TS_ERR_OKAY) {
-    ats_free(*rec_val);
-    *rec_val = NULL;
-    return err_t;
+  // get the record name (if there is one)
+  if (name_size) {
+    *rec_name = (char *)ats_malloc(sizeof(char) * (name_size + 1));
+    err_t = socket_read_conn(fd, (uint8_t *)(*rec_name), name_size);
+    if (err_t != TS_ERR_OKAY) {
+      goto fail;
+    }
+
+    (*rec_name)[name_size] = '\0';
   }
 
-  // add end of string to end of the record value
-  if (*rec_type == TS_REC_STRING) {
-    ((char *) (*rec_val))[rec_size] = '\0';
-  }
+  return TS_ERR_OKAY;
 
+fail:
+  ats_free(*rec_val);
+  ats_free(*rec_name);
+  *rec_val = NULL;
+  *rec_name = NULL;
   return err_t;
 }
 

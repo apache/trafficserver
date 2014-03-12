@@ -476,54 +476,113 @@ StorageDeviceCmdOffline(char const* dev)
   ret = send_request_name(main_socket_fd, STORAGE_DEVICE_CMD_OFFLINE, dev);
   return TS_ERR_OKAY != ret ? ret : parse_reply(main_socket_fd);
 }
+
 /***************************************************************************
  * Record Operations
  ***************************************************************************/
-// note that the record value is being sent as chunk of memory, regardless of
-// record type; it's not being converted to a string!!
-TSError
-MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
+static TSError
+mgmt_record_get_reply(TSRecordEle * rec_ele)
 {
   TSError ret;
   void *val;
+  char *name;
 
-  if (!rec_name || !rec_ele)
-    return TS_ERR_PARAMS;
-
-  rec_ele->rec_name = ats_strdup(rec_name);
-
-  // create and send request
-  ret = send_record_get_request(main_socket_fd, rec_ele->rec_name);
-  if (ret != TS_ERR_OKAY)
-    return ret;
+  rec_ele->rec_name = NULL;
+  rec_ele->rec_type = TS_REC_UNDEFINED;
 
   // parse the reply to get record value and type
-  ret = parse_record_get_reply(main_socket_fd, &(rec_ele->rec_type), &val);
-  if (ret != TS_ERR_OKAY)
+  ret = parse_record_get_reply(main_socket_fd, &(rec_ele->rec_type), &val, &name);
+  if (ret != TS_ERR_OKAY) {
     return ret;
+  }
 
   // convert the record value to appropriate type
-  switch (rec_ele->rec_type) {
-  case TS_REC_INT:
-    rec_ele->int_val = *(TSInt *) val;
-    break;
-  case TS_REC_COUNTER:
-    rec_ele->counter_val = *(TSCounter *) val;
-    break;
-  case TS_REC_FLOAT:
-    rec_ele->float_val = *(TSFloat *) val;
-    break;
-  case TS_REC_STRING:
-    rec_ele->string_val = ats_strdup((char *) val);
-    break;
-  default:                     // ERROR - invalid record type
-    return TS_ERR_FAIL;
+  if (val) {
+    switch (rec_ele->rec_type) {
+    case TS_REC_INT:
+      rec_ele->int_val = *(TSInt *) val;
+      break;
+    case TS_REC_COUNTER:
+      rec_ele->counter_val = *(TSCounter *) val;
+      break;
+    case TS_REC_FLOAT:
+      rec_ele->float_val = *(TSFloat *) val;
+      break;
+    case TS_REC_STRING:
+      rec_ele->string_val = ats_strdup((char *) val);
+      break;
+    default:
+      ; // nothing ... shut up compiler!
+    }
+  }
+
+  if (name) {
+    rec_ele->rec_name = name;
   }
 
   ats_free(val);
   return TS_ERR_OKAY;
 }
 
+// note that the record value is being sent as chunk of memory, regardless of
+// record type; it's not being converted to a string!!
+TSError
+MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
+{
+  TSError ret;
+
+  if (!rec_name || !rec_ele) {
+    return TS_ERR_PARAMS;
+  }
+
+  // create and send request
+  ret = send_record_get_request(main_socket_fd, rec_ele->rec_name);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+
+  return mgmt_record_get_reply(rec_ele);
+}
+
+TSError
+MgmtRecordGetMatching(const char * regex, TSList rec_vals)
+{
+  TSError       ret;
+  TSRecordEle * rec_ele;
+
+  ret = send_record_match_request(main_socket_fd, regex);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+
+  for (;;) {
+    rec_ele = TSRecordEleCreate();
+
+    // parse the reply to get record value and type
+    ret = mgmt_record_get_reply(rec_ele);
+    if (ret != TS_ERR_OKAY) {
+      goto fail;
+    }
+
+    // A NULL record ends the list.
+    if (rec_ele->rec_type == TS_REC_UNDEFINED) {
+      break;
+    }
+
+    enqueue((LLQ *) rec_vals, rec_ele);
+  }
+
+  return TS_ERR_OKAY;
+
+fail:
+
+  TSRecordEleDestroy(rec_ele);
+  for (rec_ele = (TSRecordEle *) dequeue((LLQ *) rec_vals); rec_ele; rec_ele = (TSRecordEle *) dequeue((LLQ *) rec_vals)) {
+      TSRecordEleDestroy(rec_ele);
+  }
+
+  return ret;
+}
 
 TSError
 MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)

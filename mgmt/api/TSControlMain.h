@@ -49,6 +49,7 @@ void delete_client(ClientT * client);
 void *ts_ctrl_main(void *arg);
 
 TSError handle_record_get(struct SocketInfo sock_info, char *req);
+TSError handle_record_match(struct SocketInfo sock_info, char *req);
 TSError handle_record_set(struct SocketInfo sock_info, char *req);
 
 TSError handle_file_read(struct SocketInfo sock_info, char *req);
@@ -67,7 +68,7 @@ TSError handle_event_active(struct SocketInfo sock_info, char *req);
 TSError handle_snapshot(struct SocketInfo sock_info, char *req, OpType op);
 TSError handle_snapshot_get_mlt(struct SocketInfo sock_info);
 
-void handle_diags(struct SocketInfo sock_info, char *req);
+TSError handle_diags(struct SocketInfo sock_info, char *req);
 
 TSError handle_stats_reset(struct SocketInfo sock_info, char *req, OpType op);
 

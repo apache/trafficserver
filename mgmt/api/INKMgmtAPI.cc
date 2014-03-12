@@ -1581,6 +1581,15 @@ TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
   return TS_ERR_OKAY;
 }
 
+tsapi TSError
+TSRecordGetMatchMlt(const char * regex, TSList rec_vals)
+{
+  if (!regex || !rec_vals) {
+    return TS_ERR_PARAMS;
+  }
+
+  return MgmtRecordGetMatching(regex, rec_vals);
+}
 
 tsapi TSError
 TSRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)

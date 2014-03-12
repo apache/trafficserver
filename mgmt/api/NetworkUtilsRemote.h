@@ -76,7 +76,8 @@ TSError send_request_bool(int fd, OpType op, bool flag);
 
 TSError send_file_read_request(int fd, TSFileNameT file);
 TSError send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text);
-TSError send_record_get_request(int fd, char *rec_name);
+TSError send_record_get_request(int fd, const char *rec_name);
+TSError send_record_match_request(int fd, const char *rec_regex);
 
 TSError send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear);
 
@@ -93,7 +94,7 @@ TSError parse_reply_list(int fd, char **list);
 
 TSError parse_file_read_reply(int fd, int *version, int *size, char **text);
 
-TSError parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val);
+TSError parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_name);
 TSError parse_record_set_reply(int fd, TSActionNeedT * action_need);
 
 TSError parse_proxy_state_get_reply(int fd, TSProxyStateT * state);

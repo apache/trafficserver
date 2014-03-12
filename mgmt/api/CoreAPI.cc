@@ -383,6 +383,15 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
   return TS_ERR_OKAY;
 }
 
+// This is not implemented in the Core side of the API because we don't want
+// to buffer up all the matching records in memory. We stream the records
+// directory onto the management socket in handle_record_match(). This stub
+// is just here for link time dependencies.
+TSError
+MgmtRecordGetMatching(const char * /* regex */, TSList /* rec_vals */)
+{
+  return TS_ERR_FAIL;
+}
 
 /*-------------------------------------------------------------------------
  * reads the RecordsConfig info to determine which type of action is needed
