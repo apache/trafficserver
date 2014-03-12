@@ -370,9 +370,6 @@ OperatorSkipRemap::initialize(Parser& p)
 {
   Operator::initialize(p);
 
-  if (p.get_arg() == "1" || p.get_arg() == "true") {
-    _skip_remap = true;
-  }
 }
 
 void
