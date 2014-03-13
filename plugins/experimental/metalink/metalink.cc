@@ -100,6 +100,9 @@ typedef struct {
 
   TSIOBuffer cache_bufp;
 
+  const char *value;
+  int64_t length;
+
 } SendData;
 
 /* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null transform */
@@ -468,9 +471,6 @@ cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 static int
 rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  char *value;
-  int length;
-
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
 
@@ -479,12 +479,8 @@ rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   /* Yes: Rewrite the "Location: ..." header and reenable the response */
   case TS_EVENT_CACHE_OPEN_READ:
 
-    /* Allocation!  Must free! */
-    value = TSUrlStringGet(data->resp_bufp, data->url_loc, &length);
     TSMimeHdrFieldValuesClear(data->resp_bufp, data->hdr_loc, data->location_loc);
-    TSMimeHdrFieldValueStringInsert(data->resp_bufp, data->hdr_loc, data->location_loc, -1, value, length);
-
-    TSfree(value);
+    TSMimeHdrFieldValueStringInsert(data->resp_bufp, data->hdr_loc, data->location_loc, -1, data->value, data->length);
 
     break;
 
@@ -496,9 +492,10 @@ rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     TSAssert(!"Unexpected event");
   }
 
+  TSIOBufferDestroy(data->cache_bufp);
+
   TSCacheKeyDestroy(data->key);
 
-  TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->url_loc);
   TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->location_loc);
   TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->hdr_loc);
 
@@ -513,8 +510,6 @@ rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 static int
 vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 {
-  const char *value;
-  int64_t length;
   SendData *data = (SendData *) TSContDataGet(contp);
 
   TSContDestroy(contp);
@@ -523,8 +518,11 @@ vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
 
   /* No allocation, freed with data->cache_bufp? */
-  value = TSIOBufferBlockReadStart(blockp, readerp, &length);
-  if (TSUrlParse(data->resp_bufp, data->url_loc, &value, value + length) != TS_PARSE_DONE) {
+  const char *value = data->value = TSIOBufferBlockReadStart(blockp, readerp, &data->length);
+
+  /* The start pointer is both an input and an output parameter.  After a
+   * successful parse the start pointer equals the end pointer. */
+  if (TSUrlParse(data->resp_bufp, data->url_loc, &value, value + data->length) != TS_PARSE_DONE) {
     TSIOBufferDestroy(data->cache_bufp);
 
     TSCacheKeyDestroy(data->key);
@@ -539,9 +537,9 @@ vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     return 0;
   }
 
-  TSIOBufferDestroy(data->cache_bufp);
-
   if (TSCacheKeyDigestFromUrlSet(data->key, data->url_loc) != TS_SUCCESS) {
+    TSIOBufferDestroy(data->cache_bufp);
+
     TSCacheKeyDestroy(data->key);
 
     TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->url_loc);
@@ -553,6 +551,8 @@ vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
     return 0;
   }
+
+  TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->url_loc);
 
   /* Check if the URL stored at the digest is cached */
 
