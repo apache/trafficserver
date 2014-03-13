@@ -114,7 +114,7 @@ cache_open_write(TSCont contp, void *edata)
   TSMLoc hdr_loc;
   TSMLoc url_loc;
 
-  const char *value;
+  char *value;
   int length;
 
   WriteData *data = (WriteData *) TSContDataGet(contp);
@@ -142,6 +142,7 @@ cache_open_write(TSCont contp, void *edata)
     return 0;
   }
 
+  /* Allocation!  Must free! */
   value = TSUrlStringGet(req_bufp, url_loc, &length);
   if (!value) {
     TSContDestroy(contp);
@@ -163,6 +164,8 @@ cache_open_write(TSCont contp, void *edata)
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->cache_bufp);
 
   int nbytes = TSIOBufferWrite(data->cache_bufp, value, length);
+
+  TSfree(value);
 
   /* Reuse the TSCacheWrite() continuation */
   TSVConnWrite(data->connp, contp, readerp, nbytes);
@@ -251,7 +254,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   const char *value;
   int64_t length;
 
-  char digest[32];
+  char digest[32]; /* SHA-256 */
 
   TransformData *transform_data = (TransformData *) TSContDataGet(contp);
 
@@ -299,6 +302,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
       TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
       while (blockp) {
 
+        /* No allocation? */
         value = TSIOBufferBlockReadStart(blockp, readerp, &length);
         SHA256_Update(&transform_data->c, value, length);
 
@@ -464,7 +468,7 @@ cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 static int
 rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  const char *value;
+  char *value;
   int length;
 
   SendData *data = (SendData *) TSContDataGet(contp);
@@ -474,9 +478,14 @@ rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   /* Yes: Rewrite the "Location: ..." header and reenable the response */
   case TS_EVENT_CACHE_OPEN_READ:
+
+    /* Allocation!  Must free! */
     value = TSUrlStringGet(data->resp_bufp, data->url_loc, &length);
     TSMimeHdrFieldValuesClear(data->resp_bufp, data->hdr_loc, data->location_loc);
     TSMimeHdrFieldValueStringInsert(data->resp_bufp, data->hdr_loc, data->location_loc, -1, value, length);
+
+    TSfree(value);
+
     break;
 
   /* No: Do nothing, just reenable the response */
@@ -513,6 +522,7 @@ vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->cache_bufp);
   TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
 
+  /* No allocation, freed with data->cache_bufp? */
   value = TSIOBufferBlockReadStart(blockp, readerp, &length);
   if (TSUrlParse(data->resp_bufp, data->url_loc, &value, value + length) != TS_PARSE_DONE) {
     TSIOBufferDestroy(data->cache_bufp);
@@ -588,8 +598,7 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   const char *value;
   int length;
 
-  /* ATS_BASE64_DECODE_DSTLEN() */
-  char digest[33];
+  char digest[33]; /* ATS_BASE64_DECODE_DSTLEN() */
 
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -602,17 +611,21 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   /* No: Check if the "Digest: SHA-256=..." digest already exists in the cache */
   case TS_EVENT_CACHE_OPEN_READ_FAILED:
 
+    /* No allocation, freed with data->resp_bufp? */
     value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->digest_loc, data->idx, &length);
     if (TSBase64Decode(value + 8, length - 8, (unsigned char *) digest, sizeof(digest), NULL) != TS_SUCCESS
         || TSCacheKeyDigestSet(data->key, digest, 32 /* SHA-256 */ ) != TS_SUCCESS) {
       break;
     }
 
+    TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->digest_loc);
+
+    /* Check if the "Digest: SHA-256=..." digest already exists in the cache */
+
     contp = TSContCreate(digest_handler, NULL);
     TSContDataSet(contp, data);
 
     TSCacheRead(contp, data->key);
-    TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->digest_loc);
 
     return 0;
 
@@ -685,6 +698,8 @@ http_send_response_hdr(TSCont contp, void *edata)
   /* If can't parse or lookup the "Location: ..." URL, should still check if
    * the response has a "Digest: SHA-256=..." header?  No: Can't parse or
    * lookup the URL in the "Location: ..." header is an error. */
+
+  /* No allocation, freed with data->resp_bufp? */
   value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->location_loc, -1, &length);
   if (TSUrlParse(data->resp_bufp, data->url_loc, &value, value + length) != TS_PARSE_DONE) {
 
@@ -719,6 +734,7 @@ http_send_response_hdr(TSCont contp, void *edata)
     int count = TSMimeHdrFieldValuesCount(data->resp_bufp, data->hdr_loc, data->digest_loc);
     for (data->idx = 0; data->idx < count; data->idx += 1) {
 
+      /* No allocation, freed with data->resp_bufp? */
       value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->digest_loc, data->idx, &length);
       if (length < 8 + 44 /* 32 bytes, Base64 */ || strncasecmp(value, "SHA-256=", 8)) {
         continue;
