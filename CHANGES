@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
-  *) [TS-2631] Header_rewrite should support changing destination in non-remap case.
+
+  *) [TS-2631] Header_rewrite should support changing destination in non-remap
+   case.
 
   *) [TS-2623] Remove the limit on the number of cachurl regular expressions.
 
@@ -8,18 +10,19 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2627] Reduce management socket code duplication.
 
-  *) [TS-2625] trafficserver.in doesn't use TS_BASE
+  *) [TS-2625] trafficserver.in doesn't use TS_BASE.
 
-  *) [TS-2624] Make thread affinity more robust
+  *) [TS-2624] Make thread affinity more robust.
 
   *) [TS-2620] Make the stats_over_http plugin publish node and plugin stats.
 
-  *) [TS-2614] Response to invalid Content-Length for POST should be a 400 error
-   Author: Ron Barber <rbarber@yahoo-inc.com>
+  *) [TS-2614] Response to invalid Content-Length for POST should be a 400
+   error. Author: Ron Barber <rbarber@yahoo-inc.com>
 
   *) [TS-2615] Better logging and error handling in SSL client session startup.
 
-  *) [TS-2613] Can't turn on attach server session to client from records.config
+  *) [TS-2613] Can't turn on attach server session to client from
+   records.config.
 
   *) [TS-2611] Add a new S3 authentication plugin, s3_auth. This only supports
    the v2 features of the S3 API.
