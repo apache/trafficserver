@@ -29,7 +29,7 @@ public:
   }
 };
 
-void TSPluginInit(int argc, const char *argv[]) {
+void TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ []) {
   new InterceptInstaller();
 }
 
