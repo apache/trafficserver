@@ -345,6 +345,7 @@ transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
   if (TSCacheKeyDigestSet(data->key, digest, sizeof(digest)) != TS_SUCCESS) {
     TSContDestroy(contp);
 
+    TSCacheKeyDestroy(data->key);
     TSfree(data);
 
     return 0;
