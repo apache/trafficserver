@@ -1,34 +1,25 @@
 /** @file
-
-    Implement the Metalink protocol to "dedup" cache entries for
-    equivalent content. This can for example improve the cache hit
-    ratio for content with many different (unique) URLs.
-
-    @section license License
-
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
-
-
-/*
-  This plugin was originally developed by Jack Bates during his Google
-  Summer of Code 2012 project for Metalinker.
-*/
-
+ *
+ * Try not to download the same file twice.  Improve cache efficiency
+ * and speed up downloads.
+ *
+ * @section license License
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed
+ * with this work for additional information regarding copyright
+ * ownership.  The ASF licenses this file to you under the Apache
+ * License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License.  You may obtain a copy of
+ * the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.  See the License for the specific language governing
+ * permissions and limitations under the License. */
 
 #include <strings.h>
 
@@ -36,7 +27,7 @@
 
 #include "ts/ts.h"
 
-/* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null transform.
+/* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null transformation.
  * Compute the SHA-256 digest of the content, write it to the cache and store
  * the request URL at that key.
  *
@@ -47,7 +38,7 @@
  *
  * More details are on the [wiki page] in the Traffic Server wiki.
  *
- * [wiki page]  https://cwiki.apache.org/confluence/display/TS/Metalink */
+ *    [wiki page]   https://cwiki.apache.org/confluence/display/TS/Metalink */
 
 /* TSCacheWrite() and TSVConnWrite() data: Write the digest to the cache and
  * store the request URL at that key */
@@ -67,7 +58,7 @@ typedef struct {
 typedef struct {
   TSHttpTxn txnp;
 
-  /* Null transform */
+  /* Null transformation */
   TSIOBuffer output_bufp;
   TSVIO output_viop;
 
@@ -105,7 +96,7 @@ typedef struct {
 
 } SendData;
 
-/* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null transform */
+/* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null transformation */
 
 /* Write the digest to the cache and store the request URL at that key */
 
@@ -179,7 +170,7 @@ cache_open_write(TSCont contp, void *edata)
 /* Do nothing */
 
 static int
-cache_open_write_failed(TSCont contp, void * /* edata ATS_UNUSED */)
+cache_open_write_failed(TSCont contp, void */* edata ATS_UNUSED */)
 {
   WriteData *data = (WriteData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -191,7 +182,7 @@ cache_open_write_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 }
 
 static int
-write_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
+write_vconn_write_complete(TSCont contp, void */* edata ATS_UNUSED */)
 {
   WriteData *data = (WriteData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -233,26 +224,64 @@ write_handler(TSCont contp, TSEvent event, void *edata)
 /* Copy content from the input buffer to the output buffer without modification
  * and feed it through the message digest at the same time.
  *
- *   1. Check if any more input is possible before doing anything else to avoid
- *      failed asserts.
- *   2. Then deal with any input that's available now.
- *   3. Check if the input is complete after dealing with any available input
- *      in case it was the last of it.  If it is complete, do any bookkeeping
- *      that downstream needs and finish computing the digest.  Otherwise
- *      either wait for more input or abort if no more input is possible.
+ *    1.  Check if we are "closed" before doing anything else to avoid errors.
+ *    2.  Then deal with any input that's available now.
+ *    3.  Check if the input is complete after dealing with any available input
+ *        in case it was the last of it.  If it is complete, tell downstream,
+ *        thank upstream, and finish computing the digest.  Otherwise either
+ *        wait for more input or abort if upstream is "closed".
  *
- * Events are sent from downstream and don't communicate the state of the input
- * (TS_EVENT_VCONN_WRITE_READY, TS_EVENT_VCONN_WRITE_COMPLETE, and
- * TS_EVENT_IMMEDIATE?) Clean up the output buffer on
- * TS_EVENT_VCONN_WRITE_COMPLETE and not before.
+ * The handler is guaranteed to get called at least once, even if the response
+ * is 304 Not Modified, so we are guaranteed an opportunity to clean up e.g.
+ * data that we allocated when we called TSTransformCreate().
  *
- * Gather the state of the input from TSVIONTodoGet() and TSVIOReaderGet().
- * TSVIOReaderGet() is NULL when no more input is possible and the input is
- * complete only when TSVIONTodoGet() is zero.  Handle the end of the input
- * independently from the TS_EVENT_VCONN_WRITE_COMPLETE event from downstream. */
+ * TS_EVENT_VCONN_WRITE_READY and TS_EVENT_VCONN_WRITE_COMPLETE events are sent
+ * from downstream, e.g. by TransformTerminus::handle_event().
+ * TS_EVENT_IMMEDIATE events are sent by INKVConnInternal::do_io_write(),
+ * INKVConnInternal::do_io_close(), and INKVConnInternal::reenable() which are
+ * called from upstream, e.g. by TransformVConnection::do_io_write(),
+ * TransformVConnection::do_io_close(), and HttpTunnel::producer_handler().
+ *
+ * Clean up the output buffer on TS_EVENT_VCONN_WRITE_COMPLETE and not before.
+ * We are guaranteed a TS_EVENT_VCONN_WRITE_COMPLETE event *unless* we are
+ * "closed".  In that case we instead get a TS_EVENT_IMMEDIATE event where
+ * TSVConnClosedGet() is one, so clean up the output buffer in that case as
+ * well.  We'll only ever get one event where TSVConnClosedGet() is one and it
+ * will be our last, so there's no risk of a double free.
+ *
+ * The response headers get sent when TSVConnWrite() gets called and not
+ * before.  (We could potentially edit them until then.)
+ *
+ * The events say nothing about the state of the input.  Gather this instead
+ * from TSVConnClosedGet(), TSVIOReaderGet(), and TSVIONTodoGet() and handle
+ * the end of the input independently from the TS_EVENT_VCONN_WRITE_COMPLETE
+ * event from downstream.
+ *
+ * When TSVConnClosedGet() is one, *we* are "closed".  Some state is already
+ * inconsistent and there's nothing to do except clean up.  (This happens when
+ * the response is 304 Not Modified or when the client or origin disconnect
+ * before the message is complete.)
+ *
+ * When TSVIOReaderGet() is NULL, upstream is "closed".  In that case it's
+ * clearly an error to call TSIOBufferReaderAvail(), it's also an error at that
+ * point to send any events upstream with TSContCall().  (This happens when the
+ * content length is zero or when we get the final chunk of a
+ * "Transfer-Encoding: chunked" response.)
+ *
+ * The input is complete only when TSVIONTodoGet() is zero.  (Don't update the
+ * downstream nbytes otherwise!)  Update the downstream nbytes when the input
+ * is complete in case the response is "Transfer-Encoding: chunked" (in which
+ * case nbytes is unknown until then).  Downstream will (normally) send the
+ * TS_EVENT_VCONN_WRITE_COMPLETE event (and the final chunk if the response is
+ * "Transfer-Encoding: chunked") when ndone equals nbytes and not before.
+ *
+ * Send our own TS_EVENT_VCONN_WRITE_COMPLETE event upstream when the input is
+ * complete otherwise HttpSM::update_stats() won't get called and the
+ * transaction won't get logged.  (If there are upstream transformations they
+ * won't get a chance to clean up otherwise!) */
 
 static int
-vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
+vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 {
   const char *value;
   int64_t length;
@@ -261,6 +290,10 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
   TransformData *transform_data = (TransformData *) TSContDataGet(contp);
 
+  /* Check if we are "closed" before doing anything else to avoid errors.  Some
+   * state is already inconsistent and there's nothing to do except clean up.
+   * (This happens if the response is 304 Not Modified or if the client or
+   * origin disconnect before the message is complete.) */
   int closed = TSVConnClosedGet(contp);
   if (closed) {
     TSContDestroy(contp);
@@ -278,7 +311,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
   TSVIO input_viop = TSVConnWriteVIOGet(contp);
 
-  /* Initialize data here because can't call TSVConnWrite() before
+  /* Initialize data here because we can't call TSVConnWrite() before
    * TS_HTTP_RESPONSE_TRANSFORM_HOOK */
   if (!transform_data->output_bufp) {
     TSVConn output_connp = TSTransformOutputVConnGet(contp);
@@ -296,9 +329,10 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     SHA256_Init(&transform_data->c);
   }
 
-  /* Avoid failed assert "sdk_sanity_check_iocore_structure(readerp) ==
-   * TS_SUCCESS" in TSIOBufferReaderAvail() if the client or origin disconnect
-   * or the content length is zero */
+  /* Then deal with any input that's available now.  Avoid failed assert
+   * "sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS" in
+   * TSIOBufferReaderAvail() if the content length is zero or when we get the
+   * final chunk of a "Transfer-Encoding: chunked" response. */
   TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
   if (readerp) {
 
@@ -325,6 +359,8 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     }
   }
 
+  /* Check if the input is complete after dealing with any available input in
+   * case it was the last of it */
   int ntodo = TSVIONTodoGet(input_viop);
   if (ntodo) {
     TSVIOReenable(transform_data->output_viop);
@@ -338,6 +374,9 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
     TSVIOReenable(transform_data->output_viop);
 
+    /* Avoid failed assert "c->alive == true" in TSContCall() if the content
+     * length is zero or when we get the final chunk of a
+     * "Transfer-Encoding: chunked" response */
     if (readerp) {
       TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_COMPLETE, input_viop);
     }
@@ -358,7 +397,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
       return 0;
     }
 
-    /* Can't reuse the TSTransformCreate() continuation because don't know
+    /* Can't reuse the TSTransformCreate() continuation because we don't know
      * whether to destroy it in cache_open_write()/cache_open_write_failed() or
      * transform_vconn_write_complete() */
     contp = TSContCreate(write_handler, NULL);
@@ -371,7 +410,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 }
 
 static int
-transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
+transform_vconn_write_complete(TSCont contp, void */* edata ATS_UNUSED */)
 {
   TransformData *data = (TransformData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -411,7 +450,7 @@ http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
   TransformData *data = (TransformData *) TSmalloc(sizeof(TransformData));
   data->txnp = (TSHttpTxn) edata;
 
-  /* Can't initialize data here because can't call TSVConnWrite() before
+  /* Can't initialize data here because we can't call TSVConnWrite() before
    * TS_HTTP_RESPONSE_TRANSFORM_HOOK */
   data->output_bufp = NULL;
 
@@ -434,6 +473,7 @@ static int
 cache_open_read(TSCont contp, void *edata)
 {
   SendData *data = (SendData *) TSContDataGet(contp);
+
   TSVConn connp = (TSVConn) edata;
 
   data->cache_bufp = TSIOBufferCreate();
@@ -447,7 +487,7 @@ cache_open_read(TSCont contp, void *edata)
 /* Do nothing, just reenable the response */
 
 static int
-cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
+cache_open_read_failed(TSCont contp, void */* edata ATS_UNUSED */)
 {
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -467,7 +507,7 @@ cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 /* TSCacheRead() handler: Check if the URL stored at the digest is cached */
 
 static int
-rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
+rewrite_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
 {
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
@@ -506,13 +546,13 @@ rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 /* Read the URL stored at the digest */
 
 static int
-vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
+vconn_read_ready(TSCont contp, void */* edata ATS_UNUSED */)
 {
   SendData *data = (SendData *) TSContDataGet(contp);
-
   TSContDestroy(contp);
 
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->cache_bufp);
+
   TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
 
   /* No allocation, freed with data->cache_bufp? */
@@ -591,7 +631,7 @@ digest_handler(TSCont contp, TSEvent event, void *edata)
 /* TSCacheRead() handler: Check if the "Location: ..." URL is already cached */
 
 static int
-location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
+location_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
 {
   const char *value;
   int length;
@@ -602,6 +642,7 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   TSContDestroy(contp);
 
   switch (event) {
+
   /* Yes: Do nothing, just reenable the response */
   case TS_EVENT_CACHE_OPEN_READ:
     break;
@@ -656,8 +697,8 @@ http_send_response_hdr(TSCont contp, void *edata)
   int length;
 
   SendData *data = (SendData *) TSmalloc(sizeof(SendData));
-
   data->txnp = (TSHttpTxn) edata;
+
   if (TSHttpTxnClientRespGet(data->txnp, &data->resp_bufp, &data->hdr_loc) != TS_SUCCESS) {
     TSError("Couldn't retrieve client response header");
 
@@ -673,12 +714,12 @@ http_send_response_hdr(TSCont contp, void *edata)
   /* Metalinks contain whole file hashes as described in Section 6, and MUST
    * include SHA-256, as specified in [FIPS-180-3] */
 
-  /* Assumption: Want to minimize cache read, so check first that:
+  /* Assumption: We want to minimize cache reads, so check first that
    *
-   *   1. response has a "Location: ..." header
-   *   2. response has a "Digest: SHA-256=..." header
+   *    1.  the response has a "Location: ..." header and
+   *    2.  the response has a "Digest: SHA-256=..." header.
    *
-   * Then scan if the URL or digest already exist in the cache */
+   * Then scan if the URL or digest already exist in the cache. */
 
   /* If the response has a "Location: ..." header */
   data->location_loc = TSMimeHdrFieldFind(data->resp_bufp, data->hdr_loc, TS_MIME_FIELD_LOCATION, TS_MIME_LEN_LOCATION);
@@ -693,8 +734,8 @@ http_send_response_hdr(TSCont contp, void *edata)
 
   TSUrlCreate(data->resp_bufp, &data->url_loc);
 
-  /* If can't parse or lookup the "Location: ..." URL, should still check if
-   * the response has a "Digest: SHA-256=..." header?  No: Can't parse or
+  /* If we can't parse or lookup the "Location: ..." URL, should we still check
+   * if the response has a "Digest: SHA-256=..." header?  No: Can't parse or
    * lookup the URL in the "Location: ..." header is an error. */
 
   /* No allocation, freed with data->resp_bufp? */
