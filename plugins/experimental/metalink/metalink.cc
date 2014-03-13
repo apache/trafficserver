@@ -292,7 +292,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
   }
 
   /* Avoid failed assert "sdk_sanity_check_iocore_structure(readerp) ==
-   * TS_SUCCESS" in TSIOBufferReaderAvail() if the client or server disconnects
+   * TS_SUCCESS" in TSIOBufferReaderAvail() if the client or origin disconnect
    * or the content length is zero */
   TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
   if (readerp) {
