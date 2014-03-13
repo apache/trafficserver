@@ -36,8 +36,10 @@
 
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
 
+#if TS_USE_TPROXY
 #if !defined(IP_TRANSPARENT)
 unsigned int const IP_TRANSPARENT = 19;
+#endif
 #endif
 
 //
