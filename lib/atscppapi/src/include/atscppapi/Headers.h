@@ -574,10 +574,16 @@ public:
   HeaderField operator[](const std::string &key);
 
   /**
-    * Get a string representing all the header fields.
+    * Get a human-readable/log-friendly string representing all the header fields.
     * @return a string representation of all the header fields
     */
   std::string str();
+
+  /**
+    * Get a string that can be put on the wire
+    * @return a string representation of all the header fields
+    */
+  std::string wireStr();
 
   friend std::ostream& operator<<(std::ostream &os, Headers &obj);
 

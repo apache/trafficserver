@@ -130,7 +130,10 @@ InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type
 }
 
 InterceptPlugin::~InterceptPlugin() {
-  TSContDestroy(state_->cont_);
+  if (state_->cont_) {
+    // transaction is closing, but intercept hasn't finished. Indicate that plugin is dead
+    TSContDataSet(state_->cont_, NULL);
+  }
   delete state_;
 }
 
@@ -198,7 +201,6 @@ bool InterceptPlugin::doRead() {
           // remaining data in this block is body; 'data' will be pointing to first byte of the body
           num_body_bytes_in_block = endptr - data;
         }
-        ScopedSharedMutexLock scopedLock(getMutex());
         consume(string(startptr, data - startptr), InterceptPlugin::REQUEST_HEADER);
       }
       else {
@@ -206,7 +208,6 @@ bool InterceptPlugin::doRead() {
       }
       if (num_body_bytes_in_block) {
         state_->num_body_bytes_read_ += num_body_bytes_in_block;
-        ScopedSharedMutexLock scopedLock(getMutex());
         consume(string(data, num_body_bytes_in_block), InterceptPlugin::REQUEST_BODY);
       }
       consumed += data_len;
@@ -225,7 +226,6 @@ bool InterceptPlugin::doRead() {
       LOG_ERROR("Read more data than specified in request");
       // TODO: any further action required?
     }
-    ScopedSharedMutexLock scopedLock(getMutex());
     handleInputComplete();
   }
   else {
@@ -255,6 +255,10 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
     TSHttpHdrTypeSet(state_->hdr_buf_, state_->hdr_loc_, TS_HTTP_TYPE_REQUEST);
     break;
 
+  case TS_EVENT_VCONN_WRITE_READY: // nothing to do
+    LOG_DEBUG("Got write ready"); 
+    break;
+
   case TS_EVENT_VCONN_READ_READY:
     LOG_DEBUG("Handling read ready");  
     if (doRead()) {
@@ -277,6 +281,8 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
     if (state_->net_vc_) {
       TSVConnClose(state_->net_vc_);
     }
+    TSContDestroy(state_->cont_);
+    state_->cont_ = NULL;
     break;
 
   default:
@@ -288,7 +294,14 @@ namespace {
 
 int handleEvents(TSCont cont, TSEvent event, void *edata) {
   InterceptPlugin *plugin = static_cast<InterceptPlugin *>(TSContDataGet(cont));
-  utils::internal::dispatchInterceptEvent(plugin, event, edata);
+  if (plugin) {
+    utils::internal::dispatchInterceptEvent(plugin, event, edata);
+  }
+  else {
+    // plugin is dead; cleanup
+    LOG_ERROR("Received event %d after plugin died!", event);
+    TSContDestroy(cont);
+  }
   return 0;
 }
 
