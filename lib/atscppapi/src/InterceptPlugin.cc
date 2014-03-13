@@ -37,6 +37,17 @@
 using namespace atscppapi;
 using std::string;
 
+namespace {
+
+/** This contains info for the continuation callback to invoke the plugin */
+struct PluginHandle {
+  InterceptPlugin *plugin_;
+  shared_ptr<Mutex> mutex_;
+  PluginHandle(InterceptPlugin *plugin, shared_ptr<Mutex> mutex) : plugin_(plugin), mutex_(mutex) { }
+};
+
+}
+
 /**
  * @private
  */
@@ -72,9 +83,12 @@ struct InterceptPlugin::State {
   TSMBuffer hdr_buf_;
   TSMLoc hdr_loc_;
   int num_bytes_written_;
+  PluginHandle *plugin_handle_;
+  bool shut_down_;
 
   State(TSCont cont) : cont_(cont), net_vc_(NULL), expected_body_size_(0), num_body_bytes_read_(0),
-                       hdr_parsed_(false), hdr_buf_(NULL), hdr_loc_(NULL), num_bytes_written_(0) {
+                       hdr_parsed_(false), hdr_buf_(NULL), hdr_loc_(NULL), num_bytes_written_(0), 
+                       plugin_handle_(NULL), shut_down_(false) {
     http_parser_ = TSHttpParserCreate();
   }
   
@@ -98,8 +112,9 @@ int handleEvents(TSCont cont, TSEvent event, void *edata);
 InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type type)
   : TransactionPlugin(transaction) {
   TSCont cont = TSContCreate(handleEvents, TSMutexCreate());
-  TSContDataSet(cont, this);
   state_ = new State(cont);
+  state_->plugin_handle_ = new PluginHandle(this, TransactionPlugin::getMutex());
+  TSContDataSet(cont, state_->plugin_handle_);
   TSHttpTxn txn = static_cast<TSHttpTxn>(transaction.getAtsHandle());
   if (type == SERVER_INTERCEPT) {
     TSHttpTxnServerIntercept(cont, txn);
@@ -130,9 +145,15 @@ InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type
 }
 
 InterceptPlugin::~InterceptPlugin() {
-  if (state_->cont_) {
-    // transaction is closing, but intercept hasn't finished. Indicate that plugin is dead
-    TSContDataSet(state_->cont_, NULL);
+  if (!state_->shut_down_) {
+    // transaction is closing, but intercept hasn't finished. Indicate
+    // that plugin is dead (cleanup will be done by continuation
+    // callback)
+    state_->plugin_handle_->plugin_ = NULL;
+  }
+  else {
+    TSContDestroy(state_->cont_);
+    delete state_->plugin_handle_;
   }
   delete state_;
 }
@@ -281,8 +302,7 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
     if (state_->net_vc_) {
       TSVConnClose(state_->net_vc_);
     }
-    TSContDestroy(state_->cont_);
-    state_->cont_ = NULL;
+    state_->shut_down_ = true;
     break;
 
   default:
@@ -293,14 +313,16 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
 namespace {
 
 int handleEvents(TSCont cont, TSEvent event, void *edata) {
-  InterceptPlugin *plugin = static_cast<InterceptPlugin *>(TSContDataGet(cont));
-  if (plugin) {
-    utils::internal::dispatchInterceptEvent(plugin, event, edata);
+  PluginHandle *plugin_handle = static_cast<PluginHandle *>(TSContDataGet(cont));
+  ScopedSharedMutexLock scopedSharedMutexLock(plugin_handle->mutex_);
+  if (plugin_handle->plugin_) {
+    utils::internal::dispatchInterceptEvent(plugin_handle->plugin_, event, edata);
   }
   else {
     // plugin is dead; cleanup
     LOG_ERROR("Received event %d after plugin died!", event);
     TSContDestroy(cont);
+    delete plugin_handle;
   }
   return 0;
 }
