@@ -261,22 +261,27 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
   TransformData *transform_data = (TransformData *) TSContDataGet(contp);
 
+  int closed = TSVConnClosedGet(contp);
+  if (closed) {
+    TSContDestroy(contp);
+
+    /* Avoid failed assert "sdk_sanity_check_iocore_structure(bufp) ==
+     * TS_SUCCESS" in TSIOBufferDestroy() if the response is 304 Not Modified */
+    if (transform_data->output_bufp) {
+      TSIOBufferDestroy(transform_data->output_bufp);
+    }
+
+    TSfree(transform_data);
+
+    return 0;
+  }
+
   TSVIO input_viop = TSVConnWriteVIOGet(contp);
 
   /* Initialize data here because can't call TSVConnWrite() before
    * TS_HTTP_RESPONSE_TRANSFORM_HOOK */
   if (!transform_data->output_bufp) {
-
-    /* Avoid failed assert "sdk_sanity_check_iocore_structure(connp) ==
-     * TS_SUCCESS" in TSVConnWrite() if the response is 304 Not Modified */
     TSVConn output_connp = TSTransformOutputVConnGet(contp);
-    if (!output_connp) {
-      TSContDestroy(contp);
-
-      TSfree(transform_data);
-
-      return 0;
-    }
 
     transform_data->output_bufp = TSIOBufferCreate();
     TSIOBufferReader readerp = TSIOBufferReaderAlloc(transform_data->output_bufp);
@@ -322,17 +327,6 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
   int ntodo = TSVIONTodoGet(input_viop);
   if (ntodo) {
-
-    /* Don't update the downstream nbytes because the input isn't complete */
-    if (!readerp) {
-      TSContDestroy(contp);
-
-      TSIOBufferDestroy(transform_data->output_bufp);
-      TSfree(transform_data);
-
-      return 0;
-    }
-
     TSVIOReenable(transform_data->output_viop);
 
     TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_READY, input_viop);
