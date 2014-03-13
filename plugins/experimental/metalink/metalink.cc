@@ -225,20 +225,41 @@ write_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 /* Copy content from the input buffer to the output buffer without modification
- * while at the same time feeding it to the message digest */
+ * and feed it through the message digest at the same time.
+ *
+ *   1. Check if any more input is possible before doing anything else to avoid
+ *      failed asserts.
+ *   2. Then deal with any input that's available now.
+ *   3. Check if the input is complete after dealing with any available input
+ *      in case it was the last of it.  If it is complete, do any bookkeeping
+ *      that downstream needs and finish computing the digest.  Otherwise
+ *      either wait for more input or abort if no more input is possible.
+ *
+ * Events are sent from downstream and don't communicate the state of the input
+ * (TS_EVENT_VCONN_WRITE_READY, TS_EVENT_VCONN_WRITE_COMPLETE, and
+ * TS_EVENT_IMMEDIATE?) Clean up the output buffer on
+ * TS_EVENT_VCONN_WRITE_COMPLETE and not before.
+ *
+ * Gather the state of the input from TSVIONTodoGet() and TSVIOReaderGet().
+ * TSVIOReaderGet() is NULL when no more input is possible and the input is
+ * complete only when TSVIONTodoGet() is zero.  Handle the end of the input
+ * independently from the TS_EVENT_VCONN_WRITE_COMPLETE event from downstream. */
 
 static int
 vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   const char *value;
   int64_t length;
-  TransformData *data = (TransformData *) TSContDataGet(contp);
+
+  char digest[32];
+
+  TransformData *transform_data = (TransformData *) TSContDataGet(contp);
 
   TSVIO input_viop = TSVConnWriteVIOGet(contp);
 
   /* Initialize data here because can't call TSVConnWrite() before
    * TS_HTTP_RESPONSE_TRANSFORM_HOOK */
-  if (!data->output_bufp) {
+  if (!transform_data->output_bufp) {
 
     /* Avoid failed assert "sdk_sanity_check_iocore_structure(connp) ==
      * TS_SUCCESS" in TSVConnWrite() if the response is 304 Not Modified */
@@ -246,127 +267,112 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     if (!output_connp) {
       TSContDestroy(contp);
 
-      TSfree(data);
+      TSfree(transform_data);
 
       return 0;
     }
 
-    data->output_bufp = TSIOBufferCreate();
-    TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->output_bufp);
+    transform_data->output_bufp = TSIOBufferCreate();
+    TSIOBufferReader readerp = TSIOBufferReaderAlloc(transform_data->output_bufp);
 
     /* Determines the "Content-Length: ..." header
      * (or "Transfer-Encoding: chunked") */
 
     /* Avoid failed assert "nbytes >= 0" if "Transfer-Encoding: chunked" */
     int nbytes = TSVIONBytesGet(input_viop);
-    data->output_viop = TSVConnWrite(output_connp, contp, readerp, nbytes < 0 ? INT64_MAX : nbytes);
+    transform_data->output_viop = TSVConnWrite(output_connp, contp, readerp, nbytes < 0 ? INT64_MAX : nbytes);
 
-    SHA256_Init(&data->c);
-  }
-
-  /* If the response has a "Content-Length: ..." header then ntodo will never
-   * be zero because there will instead be a TS_EVENT_VCONN_WRITE_COMPLETE
-   * event from downstream after nbytes of content.
-   *
-   * Otherwise (if the response is "Transfer-Encoding: chunked") ntodo will be
-   * zero when the upstream nbytes is known at the end of the content, because
-   * there won't be a TS_EVENT_VCONN_WRITE_COMPLETE event while the downstream
-   * nbytes is INT64_MAX.
-   *
-   * In that case to get it to send a TS_EVENT_VCONN_WRITE_COMPLETE event,
-   * update the downstream nbytes and reenable it.  Zero the downstream nbytes
-   * is a shortcut. */
-  int ntodo = TSVIONTodoGet(input_viop);
-  if (!ntodo) {
-    TSVIONBytesSet(data->output_viop, 0);
-
-    TSVIOReenable(data->output_viop);
-
-    return 0;
+    SHA256_Init(&transform_data->c);
   }
 
   /* Avoid failed assert "sdk_sanity_check_iocore_structure(readerp) ==
    * TS_SUCCESS" in TSIOBufferReaderAvail() if the client or server disconnects
-   * or the content length is zero.
-   *
-   * Don't update the downstream nbytes and reenable it because if not at the
-   * end yet and can't read any more content then can't compute the digest.
-   *
-   * (There hasn't been a TS_EVENT_VCONN_WRITE_COMPLETE event from downstream
-   * yet so if the response has a "Content-Length: ..." header, it is greater
-   * than the content so far.  ntodo is still greater than zero so if the
-   * response is "Transfer-Encoding: chunked", not at the end yet.) */
+   * or the content length is zero */
   TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
-  if (!readerp) {
-    TSContDestroy(contp);
+  if (readerp) {
 
-    TSIOBufferDestroy(data->output_bufp);
-    TSfree(data);
+    int avail = TSIOBufferReaderAvail(readerp);
+    if (avail) {
+      TSIOBufferCopy(transform_data->output_bufp, readerp, avail, 0);
 
-    return 0;
+      /* Feed content to the message digest */
+      TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
+      while (blockp) {
+
+        value = TSIOBufferBlockReadStart(blockp, readerp, &length);
+        SHA256_Update(&transform_data->c, value, length);
+
+        blockp = TSIOBufferBlockNext(blockp);
+      }
+
+      TSIOBufferReaderConsume(readerp, avail);
+
+      /* Call TSVIONDoneSet() for TSVIONTodoGet() condition */
+      int ndone = TSVIONDoneGet(input_viop);
+      TSVIONDoneSet(input_viop, ndone + avail);
+    }
   }
 
-  int avail = TSIOBufferReaderAvail(readerp);
+  int ntodo = TSVIONTodoGet(input_viop);
+  if (ntodo) {
 
-  if (avail) {
-    TSIOBufferCopy(data->output_bufp, readerp, avail, 0);
+    /* Don't update the downstream nbytes because the input isn't complete */
+    if (!readerp) {
+      TSContDestroy(contp);
 
-    /* Feed content to the message digest */
-    TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
-    while (blockp) {
+      TSIOBufferDestroy(transform_data->output_bufp);
+      TSfree(transform_data);
 
-      value = TSIOBufferBlockReadStart(blockp, readerp, &length);
-      SHA256_Update(&data->c, value, length);
-
-      blockp = TSIOBufferBlockNext(blockp);
+      return 0;
     }
 
-    TSIOBufferReaderConsume(readerp, avail);
-
-    /* Call TSVIONDoneSet() for TSVIONTodoGet() condition */
-    int ndone = TSVIONDoneGet(input_viop);
-    TSVIONDoneSet(input_viop, ndone + avail);
-
-    TSVIOReenable(data->output_viop);
+    TSVIOReenable(transform_data->output_viop);
 
     TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_READY, input_viop);
+
+  } else {
+
+    int ndone = TSVIONDoneGet(input_viop);
+    TSVIONBytesSet(transform_data->output_viop, ndone);
+
+    TSVIOReenable(transform_data->output_viop);
+
+    /* Write the digest to the cache */
+
+    SHA256_Final((unsigned char *) digest, &transform_data->c);
+
+    WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
+    write_data->txnp = transform_data->txnp;
+
+    write_data->key = TSCacheKeyCreate();
+    if (TSCacheKeyDigestSet(write_data->key, digest, sizeof(digest)) != TS_SUCCESS) {
+
+      TSCacheKeyDestroy(write_data->key);
+      TSfree(write_data);
+
+      return 0;
+    }
+
+    /* Can't reuse the TSTransformCreate() continuation because don't know
+     * whether to destroy it in cache_open_write()/cache_open_write_failed() or
+     * transform_vconn_write_complete() */
+    contp = TSContCreate(write_handler, NULL);
+    TSContDataSet(contp, write_data);
+
+    TSCacheWrite(contp, write_data->key);
   }
 
   return 0;
 }
 
-/* Write the digest to the cache */
-
 static int
 transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 {
-  char digest[32];
-
-  TransformData *transform_data = (TransformData *) TSContDataGet(contp);
+  TransformData *data = (TransformData *) TSContDataGet(contp);
   TSContDestroy(contp);
 
-  TSIOBufferDestroy(transform_data->output_bufp);
-
-  SHA256_Final((unsigned char *) digest, &transform_data->c);
-
-  WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
-  write_data->txnp = transform_data->txnp;
-
-  TSfree(transform_data);
-
-  write_data->key = TSCacheKeyCreate();
-  if (TSCacheKeyDigestSet(write_data->key, digest, sizeof(digest)) != TS_SUCCESS) {
-
-    TSCacheKeyDestroy(write_data->key);
-    TSfree(write_data);
-
-    return 0;
-  }
-
-  contp = TSContCreate(write_handler, NULL);
-  TSContDataSet(contp, write_data);
-
-  TSCacheWrite(contp, write_data->key);
+  TSIOBufferDestroy(data->output_bufp);
+  TSfree(data);
 
   return 0;
 }
