@@ -30,13 +30,11 @@
 */
 
 
-#include <stdio.h>
-#include <string.h>
+#include <strings.h>
 
 #include <openssl/sha.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
 
 /* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null transform.
  * Compute the SHA-256 digest of the content, write it to the cache and store
