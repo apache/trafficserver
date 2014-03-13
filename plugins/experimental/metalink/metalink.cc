@@ -338,6 +338,10 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
     TSVIOReenable(transform_data->output_viop);
 
+    if (readerp) {
+      TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_COMPLETE, input_viop);
+    }
+
     /* Write the digest to the cache */
 
     SHA256_Final((unsigned char *) digest, &transform_data->c);
