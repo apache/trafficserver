@@ -49,16 +49,20 @@
  *
  * [wiki page]  https://cwiki.apache.org/confluence/display/TS/Metalink */
 
-/* TSVConnWrite() data: Store the request URL */
+/* TSCacheWrite() and TSVConnWrite() data: Write the digest to the cache and
+ * store the request URL at that key */
 
 typedef struct {
+  TSHttpTxn txnp;
+
+  TSCacheKey key;
+
   TSVConn connp;
   TSIOBuffer cache_bufp;
 
 } WriteData;
 
-/* TSTransformCreate() and TSCacheWrite() data: Compute the SHA-256 digest of
- * the content and write it to the cache */
+/* TSTransformCreate() data: Compute the SHA-256 digest of the content */
 
 typedef struct {
   TSHttpTxn txnp;
@@ -69,8 +73,6 @@ typedef struct {
 
   /* Message digest handle */
   SHA256_CTX c;
-
-  TSCacheKey key;
 
 } TransformData;
 
@@ -102,7 +104,85 @@ typedef struct {
 
 /* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null transform */
 
-/* Store the request URL */
+/* Write the digest to the cache and store the request URL at that key */
+
+static int
+cache_open_write(TSCont contp, void *edata)
+{
+  TSMBuffer req_bufp;
+
+  TSMLoc hdr_loc;
+  TSMLoc url_loc;
+
+  const char *value;
+  int length;
+
+  WriteData *data = (WriteData *) TSContDataGet(contp);
+  data->connp = (TSVConn) edata;
+
+  TSCacheKeyDestroy(data->key);
+
+  if (TSHttpTxnClientReqGet(data->txnp, &req_bufp, &hdr_loc) != TS_SUCCESS) {
+    TSError("Couldn't retrieve client request header");
+
+    TSContDestroy(contp);
+
+    TSfree(data);
+
+    return 0;
+  }
+
+  if (TSHttpHdrUrlGet(req_bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
+    TSContDestroy(contp);
+
+    TSfree(data);
+
+    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
+
+    return 0;
+  }
+
+  value = TSUrlStringGet(req_bufp, url_loc, &length);
+  if (!value) {
+    TSContDestroy(contp);
+
+    TSfree(data);
+
+    TSHandleMLocRelease(req_bufp, hdr_loc, url_loc);
+    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
+
+    return 0;
+  }
+
+  TSHandleMLocRelease(req_bufp, hdr_loc, url_loc);
+  TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
+
+  /* Store the request URL */
+
+  data->cache_bufp = TSIOBufferCreate();
+  TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->cache_bufp);
+
+  int nbytes = TSIOBufferWrite(data->cache_bufp, value, length);
+
+  /* Reuse the TSCacheWrite() continuation */
+  TSVConnWrite(data->connp, contp, readerp, nbytes);
+
+  return 0;
+}
+
+/* Do nothing */
+
+static int
+cache_open_write_failed(TSCont contp, void * /* edata ATS_UNUSED */)
+{
+  WriteData *data = (WriteData *) TSContDataGet(contp);
+  TSContDestroy(contp);
+
+  TSCacheKeyDestroy(data->key);
+  TSfree(data);
+
+  return 0;
+}
 
 static int
 write_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
@@ -121,98 +201,25 @@ write_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
   return 0;
 }
 
-/* TSVConnWrite() handler: Store the request URL */
+/* TSCacheWrite() and TSVConnWrite() handler: Write the digest to the cache and
+ * store the request URL at that key */
 
 static int
 write_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
+  case TS_EVENT_CACHE_OPEN_WRITE:
+    return cache_open_write(contp, edata);
+
+  case TS_EVENT_CACHE_OPEN_WRITE_FAILED:
+    return cache_open_write_failed(contp, edata);
+
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     return write_vconn_write_complete(contp, edata);
 
   default:
     TSAssert(!"Unexpected event");
   }
-
-  return 0;
-}
-
-/* Compute the SHA-256 digest of the content, write it to the cache and store
- * the request URL at that key */
-
-static int
-cache_open_write(TSCont contp, void *edata)
-{
-  TSMBuffer req_bufp;
-
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
-
-  const char *value;
-  int length;
-
-  TransformData *transform_data = (TransformData *) TSContDataGet(contp);
-  TSContDestroy(contp);
-
-  TSCacheKeyDestroy(transform_data->key);
-
-  if (TSHttpTxnClientReqGet(transform_data->txnp, &req_bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("Couldn't retrieve client request header");
-
-    TSfree(transform_data);
-
-    return 0;
-  }
-
-  TSfree(transform_data);
-
-  if (TSHttpHdrUrlGet(req_bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
-
-    return 0;
-  }
-
-  value = TSUrlStringGet(req_bufp, url_loc, &length);
-  if (!value) {
-    TSHandleMLocRelease(req_bufp, hdr_loc, url_loc);
-    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
-
-    return 0;
-  }
-
-  TSHandleMLocRelease(req_bufp, hdr_loc, url_loc);
-  TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, hdr_loc);
-
-  /* Store the request URL */
-
-  WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
-  write_data->connp = (TSVConn) edata;
-
-  /* Can't reuse TSTransformCreate() continuation because it already implements
-   * TS_EVENT_VCONN_WRITE_COMPLETE */
-  contp = TSContCreate(write_handler, NULL);
-  TSContDataSet(contp, write_data);
-
-  write_data->cache_bufp = TSIOBufferCreate();
-  TSIOBufferReader readerp = TSIOBufferReaderAlloc(write_data->cache_bufp);
-
-  int nbytes = TSIOBufferWrite(write_data->cache_bufp, value, length);
-
-  TSVConnWrite(write_data->connp, contp, readerp, nbytes);
-
-  return 0;
-}
-
-/* Do nothing */
-
-static int
-cache_open_write_failed(TSCont contp, void * /* edata ATS_UNUSED */)
-{
-  TransformData *data = (TransformData *) TSContDataGet(contp);
-  TSContDestroy(contp);
-
-  TSCacheKeyDestroy(data->key);
-  TSfree(data);
 
   return 0;
 }
@@ -335,40 +342,41 @@ transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   char digest[32];
 
-  TransformData *data = (TransformData *) TSContDataGet(contp);
+  TransformData *transform_data = (TransformData *) TSContDataGet(contp);
+  TSContDestroy(contp);
 
-  TSIOBufferDestroy(data->output_bufp);
+  TSIOBufferDestroy(transform_data->output_bufp);
 
-  SHA256_Final((unsigned char *) digest, &data->c);
+  SHA256_Final((unsigned char *) digest, &transform_data->c);
 
-  data->key = TSCacheKeyCreate();
-  if (TSCacheKeyDigestSet(data->key, digest, sizeof(digest)) != TS_SUCCESS) {
-    TSContDestroy(contp);
+  WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
+  write_data->txnp = transform_data->txnp;
 
-    TSCacheKeyDestroy(data->key);
-    TSfree(data);
+  TSfree(transform_data);
+
+  write_data->key = TSCacheKeyCreate();
+  if (TSCacheKeyDigestSet(write_data->key, digest, sizeof(digest)) != TS_SUCCESS) {
+
+    TSCacheKeyDestroy(write_data->key);
+    TSfree(write_data);
 
     return 0;
   }
 
-  /* Reuse the TSTransformCreate() continuation */
-  TSCacheWrite(contp, data->key);
+  contp = TSContCreate(write_handler, NULL);
+  TSContDataSet(contp, write_data);
+
+  TSCacheWrite(contp, write_data->key);
 
   return 0;
 }
 
-/* TSTransformCreate() and TSCacheWrite() handler */
+/* TSTransformCreate() handler: Compute the SHA-256 digest of the content */
 
 static int
 transform_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
-  case TS_EVENT_CACHE_OPEN_WRITE:
-    return cache_open_write(contp, edata);
-
-  case TS_EVENT_CACHE_OPEN_WRITE_FAILED:
-    return cache_open_write_failed(contp, edata);
-
   case TS_EVENT_IMMEDIATE:
   case TS_EVENT_VCONN_WRITE_READY:
     return vconn_write_ready(contp, edata);
