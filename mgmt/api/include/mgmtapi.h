@@ -1343,7 +1343,7 @@ extern "C"
  */
   TSError TSCfgContextMoveEleDown(TSCfgContext ctx, int index);
 
-/* TSCfgContextAppendEle: apppends the ele to the end of the TSCfgContext
+/* TSCfgContextAppendEle: appends the ele to the end of the TSCfgContext
  * Input:  ctx   - the TSCfgContext
  *         ele - the Ele (typecasted as an TSCfgEle) to append to ctx
  * Output: TSError
