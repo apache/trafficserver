@@ -56,6 +56,8 @@ public:
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/"), getMutex());
     ++num_fetches_pending_;
     AsyncHttpFetch *post_request = new AsyncHttpFetch("http://127.0.0.1/post", "data");
+
+    (void)post_request;
     
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/post", "data"),
                                    getMutex());
@@ -110,7 +112,7 @@ private:
       const void *body;
       size_t body_size;
       async_http_fetch.getResponseBody(body, body_size);
-      TS_DEBUG(TAG, "Response body is [%.*s]", body_size, body);
+      TS_DEBUG(TAG, "Response body is [%.*s]", static_cast<int>(body_size), body);
     } else {
       TS_ERROR(TAG, "Fetch did not complete successfully; Result %d",
                static_cast<int>(async_http_fetch.getResult()));
@@ -144,5 +146,7 @@ public:
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
   GlobalPlugin *instance = new GlobalHookPlugin();
+
+  (void)instance;
 }
 

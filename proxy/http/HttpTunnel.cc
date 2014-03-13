@@ -37,7 +37,6 @@
 #include "HttpDebugNames.h"
 #include "ParseRules.h"
 
-static const int max_chunked_ahead_blocks = 128;
 static const int min_block_transfer_bytes = 256;
 static char const * const CHUNK_HEADER_FMT = "%" PRIx64"\r\n";
 // This should be as small as possible because it will only hold the
