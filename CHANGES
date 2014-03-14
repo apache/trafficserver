@@ -1,6 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2630] Add lib/ts/apidefs.h to place common types.
+
+  *) [TS-2610] Add "client_protocol_stack"(%<cps>) field into LogFormat.
+
+  *) [TS-2612] Indroduce TSHttpConnectWithProtoStack() API.
+
+  *) [TS-1062] Extends and optimizes FetchSM.
+
   *) [TS-2631] Header_rewrite should support changing destination in non-remap
    case.
 
