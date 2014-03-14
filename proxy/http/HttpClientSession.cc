@@ -64,7 +64,7 @@ HttpClientSession::HttpClientSession()
     read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
     ka_vio(NULL), slave_ka_vio(NULL),
     cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
-    cur_hooks(0), proxy_allocated(false), backdoor_connect(false),
+    cur_hooks(0), backdoor_connect(false),
     hooks_set(0),
     outbound_port(0), f_outbound_transparent(false),
     host_res_style(HOST_RES_IPV4), acl_method_mask(0),
@@ -107,10 +107,7 @@ void
 HttpClientSession::destroy()
 {
   this->cleanup();
-  if (proxy_allocated)
-    THREAD_FREE(this, httpClientSessionAllocator, this_thread());
-  else
-    httpClientSessionAllocator.free(this);
+  THREAD_FREE(this, httpClientSessionAllocator, this_thread());
 }
 
 HttpClientSession *

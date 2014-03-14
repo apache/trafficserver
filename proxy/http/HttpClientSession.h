@@ -133,7 +133,6 @@ private:
   TSHttpHookID cur_hook_id;
   APIHook *cur_hook;
   int cur_hooks;
-  bool proxy_allocated;
 
   // api_hooks must not be changed directly
   //  Use ssn_hook_{ap,pre}pend so hooks_set is
