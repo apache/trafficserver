@@ -1913,6 +1913,7 @@ AC_CONFIG_FILES([
   lib/Makefile
   lib/records/Makefile
   lib/ts/Makefile
+  lib/ts/apidefs.h
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
   lib/atscppapi/Makefile
@@ -1979,7 +1980,6 @@ AC_CONFIG_FILES([
   plugins/stats_over_http/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
-  proxy/api/ts/ts.h
   proxy/config/Makefile
   proxy/config/body_factory/Makefile
   proxy/config/body_factory/default/Makefile

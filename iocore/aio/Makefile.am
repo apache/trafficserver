@@ -38,9 +38,7 @@ test_AIO_SOURCES = \
 
 test_AIO_CXXFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_builddir)/proxy \
   -I$(top_srcdir)/proxy/api/ts \
-  -I$(top_builddir)/proxy/api/ts \
   -I$(top_srcdir)/proxy/api \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \

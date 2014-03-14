@@ -22,7 +22,7 @@
  */
 
 #include "ink_config.h"
-#include "ts.h"
+#include "apidefs.h"
 #include "libts.h"
 #include "P_SSLNextProtocolSet.h"
 

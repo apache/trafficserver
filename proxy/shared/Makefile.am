@@ -37,7 +37,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir) \
   -I$(top_srcdir)/proxy/api/ts \
-  -I$(top_builddir)/proxy/api/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/http \
   -I$(top_srcdir)/proxy/hdrs \

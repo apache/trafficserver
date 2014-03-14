@@ -31,7 +31,7 @@
 #include "List.h"
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
-#include "ts.h"
+#include "apidefs.h"
 
 #define CONNECT_SUCCESS   1
 #define CONNECT_FAILURE   0

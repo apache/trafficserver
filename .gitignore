@@ -104,7 +104,6 @@ rc/trafficserver.conf
 rc/trafficserver.service
 
 proxy/api/include/ts
-proxy/api/ts/ts.h
 example/app-template/tsapp
 example/app-template/records.config
 
