@@ -2270,6 +2270,32 @@ extern "C"
   */
   tsapi int TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response);
 
+  /**
+     Return a string respresentation for a TSServerState value. This is useful for plugin debugging.
+
+     @param state the value of this TSServerState
+
+     @return the string representation of the state
+  */
+  tsapi const char* TSHttpServerStateNameLookup(TSServerState state);
+
+  /**
+     Return a string respresentation for a TSHttpHookID value. This is useful for plugin debugging.
+
+     @param hook the value of this TSHttpHookID
+
+     @return the string representation of the hook ID
+  */
+  tsapi const char* TSHttpHookNameLookup(TSHttpHookID hook);
+
+  /**
+     Return a string respresentation for a TSEvent value. This is useful for plugin debugging.
+
+     @param event the value of this TSHttpHookID
+
+     @return the string representation of the event
+  */
+  tsapi const char* TSHttpEventNameLookup(TSEvent event);
 
 #ifdef __cplusplus
 }

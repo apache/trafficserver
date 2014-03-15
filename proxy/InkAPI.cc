@@ -21,9 +21,6 @@
   limitations under the License.
  */
 
-// Avoid complaining about the deprecated APIs.
-// #define TS_DEPRECATED
-
 #include <stdio.h>
 
 #include "libts.h"
@@ -418,12 +415,14 @@ int
 _TSAssert(const char *text, const char *file, int line)
 {
   _ink_assert(text, file, line);
+  return 0;
+}
 #else
 _TSAssert(const char *, const char *, int)
 {
-#endif
- return 0;
+  return 0;
 }
+#endif
 
 // This assert is for internal API use only.
 #if TS_USE_FAST_SDK
@@ -432,7 +431,6 @@ _TSAssert(const char *, const char *, int)
 #define sdk_assert(EX)                                          \
   ( (void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)) )
 #endif
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -8493,4 +8491,24 @@ TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
 
   // Make sure these are valid response / requests, then verify if it's cacheable.
   return (req->valid() && resp->valid() && HttpTransact::is_response_cacheable(&(sm->t_state), req, resp)) ? 1: 0;
+}
+
+
+// Lookup various debug names for common HTTP types.
+const char*
+TSHttpServerStateNameLookup(TSServerState state)
+{
+  return HttpDebugNames::get_server_state_name(static_cast<HttpTransact::ServerState_t>(state));
+}
+
+const char*
+TSHttpHookNameLookup(TSHttpHookID hook)
+{
+  return HttpDebugNames::get_api_hook_name(static_cast<TSHttpHookID>(hook));
+}
+
+const char*
+TSHttpEventNameLookup(TSEvent event)
+{
+  return HttpDebugNames::get_event_name(static_cast<int>(event));
 }
