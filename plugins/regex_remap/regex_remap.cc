@@ -117,7 +117,8 @@ class RemapRegex
 {
  public:
   RemapRegex(const std::string& reg, const std::string& sub, const std::string& opt) :
-    _num_subs(-1), _rex(NULL), _extra(NULL), _order(-1), _simple(false), _lowercase_substitutions(false),
+    _num_subs(-1), _rex(NULL), _extra(NULL), _options(0), _order(-1),
+    _simple(false), _lowercase_substitutions(false),
     _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1),
     _first_override(NULL)
   {
@@ -158,29 +159,38 @@ class RemapRegex
 
       ++start;
       pos1 = opt.find_first_of("=", start);
-      if (pos1 == std::string::npos) {
+      pos2 = opt.find_first_of(" \t\n", pos1);
+      if (pos2 == std::string::npos) {
+        pos2 = opt.length();
+      }
+
+      if (pos1 != std::string::npos) {
+        // Get the value as well
+        ++pos1;
+        opt_val = opt.substr(pos1, pos2-pos1);
+      }
+
+      // These take an option 0|1 value, without value it implies 1
+      if (opt.compare(start, 8, "caseless") == 0) {
+        _options |= PCRE_CASELESS;
+      } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
+        _lowercase_substitutions = true;
+      } else if (opt_val.size() <= 0) {
+        // All other options have a required value
         TSError("Malformed options: %s", opt.c_str());
         break;
       }
-      ++pos1;
-      pos2 = opt.find_first_of(" \t\n", pos1);
-      if (pos2 == std::string::npos)
-        pos2 = opt.length();
-      opt_val = opt.substr(pos1, pos2-pos1);
 
       if (opt.compare(start, 6, "status") == 0) {
-        _status = static_cast<TSHttpStatus>(atoi(opt_val.c_str()));
+        _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), NULL, 10));
       } else if (opt.compare(start, 14, "active_timeout") == 0) {
-        _active_timeout = atoi(opt_val.c_str());
+        _active_timeout = strtol(opt_val.c_str(), NULL, 10);
       } else if (opt.compare(start, 19, "no_activity_timeout") == 0) {
-        _no_activity_timeout = atoi(opt_val.c_str());
+        _no_activity_timeout = strtol(opt_val.c_str(), NULL, 10);
       } else if (opt.compare(start, 15, "connect_timeout") == 0) {
-        _connect_timeout = atoi(opt_val.c_str());
+        _connect_timeout = strtol(opt_val.c_str(), NULL, 10);
       } else if (opt.compare(start, 11, "dns_timeout") == 0) {
-        _dns_timeout = atoi(opt_val.c_str());
-      } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
-        _lowercase_substitutions = atoi(opt_val.c_str());
-        TSDebug(PLUGIN_NAME, "Lowercasing %d", _lowercase_substitutions);
+        _dns_timeout = strtol(opt_val.c_str(), NULL, 10);
       } else {
         TSOverridableConfigKey key;
         TSRecordDataType type;
@@ -229,15 +239,20 @@ class RemapRegex
   ~RemapRegex()
   {
     TSDebug(PLUGIN_NAME, "Calling destructor");
-    if (_rex_string)
-      TSfree(_rex_string);
-    if (_subst)
-      TSfree(_subst);
 
-    if (_rex)
+    if (_rex_string) {
+      TSfree(_rex_string);
+    }
+    if (_subst) {
+      TSfree(_subst);
+    }
+
+    if (_rex) {
       pcre_free(_rex);
-    if (_extra)
+    }
+    if (_extra) {
       pcre_free(_extra);
+    }
   }
 
   // For profiling information
@@ -261,20 +276,23 @@ class RemapRegex
     int ccount;
 
     _rex = pcre_compile(_rex_string,          // the pattern
-                        0,                    // default options
+                        _options,             // options
                         error,                // for error message
                         erroffset,            // for error offset
                         NULL);                // use default character tables
 
-    if (NULL == _rex)
+    if (NULL == _rex) {
       return -1;
+    }
 
     _extra = pcre_study(_rex, 0, error);
-    if ((_extra == NULL) && (*error != 0))
+    if ((_extra == NULL) && (*error != 0)) {
       return -1;
+    }
 
-    if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0)
+    if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0) {
       return -1;
+    }
 
     // Get some info for the string substitutions
     str = _subst;
@@ -550,6 +568,7 @@ class RemapRegex
 
   pcre* _rex;
   pcre_extra* _extra;
+  int _options;
   int _sub_pos[MAX_SUBS];
   int _sub_ix[MAX_SUBS];
   RemapRegex* _next;
@@ -706,11 +725,13 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
 
     getline(f, line);
     ++lineno;
-    if (line.empty())
+    if (line.empty()) {
       continue;
+    }
     pos1 = line.find_first_not_of(" \t\n");
-    if (line[pos1] == '#')
+    if (line[pos1] == '#') {
       continue;  // Skip comment lines
+    }
 
     if (pos1 != std::string::npos) {
       pos2 = line.find_first_of(" \t\n", pos1);
@@ -760,10 +781,11 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
       TSDebug(PLUGIN_NAME, "Added regex=%s with subs=%s and options `%s'",
                regex.c_str(), subst.c_str(), options.c_str());
       cur->set_order(++count);
-      if (ri->first == NULL)
+      if (ri->first == NULL) {
         ri->first = cur;
-      else
+      } else {
         ri->last->set_next(cur);
+      }
       ri->last = cur;
     }
 
@@ -790,9 +812,9 @@ TSRemapDeleteInstance(void* ih)
     char now[64];
     const ink_time_t tim = time(NULL);
 
-    if (ink_ctime_r(&tim, now))
+    if (ink_ctime_r(&tim, now)) {
       now[strlen(now) - 1] = '\0';
-    else {
+    } else {
       memcpy(now, "unknown time", 12);
       *(now + 12) = '\0';
     }
@@ -870,8 +892,9 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     if (TS_SUCCESS == TSHttpTxnClientReqGet(static_cast<TSHttpTxn>(txnp), &mBuf, &reqHttpHdrLoc)) {
       method = TSHttpHdrMethodGet(mBuf, reqHttpHdrLoc, &match_len);
       if (method && (match_len > 0)) {
-        if (match_len > 16)
+        if (match_len > 16) {
           match_len = 16;
+        }
         memcpy(match_buf, method, match_len);
       }
     }
@@ -997,8 +1020,9 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     re = re->next();
     if (re == NULL) {
       retval = TSREMAP_NO_REMAP; // No match
-      if (ri->profile)
+      if (ri->profile) {
         ink_atomic_increment(&(ri->misses), 1);
+      }
     }
   }
 

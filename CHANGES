@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2646] regex_remap: Add a new option, @caseless.
+
   *) [TS-2647] atscppapi: Bug fixes in headers and atscppapi
 
   *) [TS-2598] Expose HttpDebugNames to public plugin APIs.
