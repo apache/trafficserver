@@ -267,7 +267,7 @@ handleArgInvocation()
         printf("Set %s, restart required\n", SetVar);
         break;
       case TS_ACTION_RECONFIGURE:
-        printf("Set %s, reconfiguration required\n", SetVar);
+        // printf("Set %s, reconfiguration required\n", SetVar);
         break;
       case TS_ACTION_DYNAMIC:
       default:
