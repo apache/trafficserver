@@ -185,7 +185,8 @@ SSLNextProtocolSet::NextProtocolEndpoint::NextProtocolEndpoint(
   if (proto == TS_NPN_PROTOCOL_HTTP_1_1 ||
       proto == TS_NPN_PROTOCOL_HTTP_1_0) {
     proto_stack = ((1u << TS_PROTO_TLS) | (1u << TS_PROTO_HTTP));
-  } else if (proto == TS_NPN_PROTOCOL_SPDY_3 ||
+  } else if (proto == TS_NPN_PROTOCOL_SPDY_3_1 ||
+             proto == TS_NPN_PROTOCOL_SPDY_3 ||
              proto == TS_NPN_PROTOCOL_SPDY_2 ||
              proto == TS_NPN_PROTOCOL_SPDY_1) {
     proto_stack = ((1u << TS_PROTO_TLS) | (1u << TS_PROTO_SPDY));

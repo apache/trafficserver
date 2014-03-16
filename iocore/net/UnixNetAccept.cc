@@ -331,8 +331,10 @@ NetAccept::do_blocking_accept(EThread * t)
 
     // Use 'NULL' to Bypass thread allocator
     vc = createSuitableVC(NULL, con);
-    if (!vc)
+    if (!vc) {
+      con.close();
       return -1;
+    }
     vc->from_accept_thread = true;
     vc->id = net_next_connection_number();
     alloc_cache = NULL;
@@ -467,8 +469,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
       } while (res < 0 && (errno == EAGAIN || errno == EINTR));
 
       vc = createSuitableVC(e->ethread, con);
-      if (!vc)
+      if (!vc) {
+        con.close();
         goto Ldone;
+      }
 
     } else {
       res = fd;

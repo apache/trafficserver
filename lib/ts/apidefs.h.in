@@ -1155,6 +1155,7 @@ extern "C"
   extern tsapi const char * TS_NPN_PROTOCOL_SPDY_1;
   extern tsapi const char * TS_NPN_PROTOCOL_SPDY_2;
   extern tsapi const char * TS_NPN_PROTOCOL_SPDY_3;
+  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_3_1;
 
   /* --------------------------------------------------------------------------
      MLoc Constants */

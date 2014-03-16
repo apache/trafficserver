@@ -22,16 +22,26 @@
  */
 
 #include "P_SpdyAcceptCont.h"
+#if TS_HAS_SPDY
+#include "P_SpdySM.h"
+#endif
 
 SpdyAcceptCont::SpdyAcceptCont(Continuation *ep)
     : AcceptCont(new_ProxyMutex()), endpoint(ep)
 {
+#if TS_HAS_SPDY
+  spdy_config_load();
+#endif
   SET_HANDLER(&SpdyAcceptCont::mainEvent);
 }
 
 int
-SpdyAcceptCont::mainEvent(int event, void *netvc)
+SpdyAcceptCont::mainEvent(int /* event */, void *netvc)
 {
-  printf("spdy accepted\n");
+#if TS_HAS_SPDY
+  spdy_sm_create((TSCont)netvc);
+#else
+  (void)(netvc);
+#endif
   return 0;
 }

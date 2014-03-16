@@ -36,3 +36,13 @@ noinst_LIBRARIES = libspdy.a
 libspdy_a_SOURCES = \
   P_SpdyAcceptCont.h \
   SpdyAcceptCont.cc
+
+if BUILD_SPDY
+  libspdy_a_SOURCES += \
+  P_SpdyCallbacks.h \
+  P_SpdyCommon.h \
+  P_SpdySM.h \
+  SpdyCallbacks.cc \
+  SpdyCommon.cc \
+  SpdySM.cc
+endif

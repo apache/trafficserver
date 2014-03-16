@@ -361,8 +361,9 @@ tsapi int TS_HTTP_LEN_PUSH;
 tsapi const char * TS_NPN_PROTOCOL_HTTP_1_0 = "http/1.0";
 tsapi const char * TS_NPN_PROTOCOL_HTTP_1_1 = "http/1.1";
 tsapi const char * TS_NPN_PROTOCOL_SPDY_1   = "spdy/1";   // obsolete
-tsapi const char * TS_NPN_PROTOCOL_SPDY_2   = "spdy/2";   // shipping
-tsapi const char * TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";   // upcoming
+tsapi const char * TS_NPN_PROTOCOL_SPDY_2   = "spdy/2";
+tsapi const char * TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";
+tsapi const char * TS_NPN_PROTOCOL_SPDY_3_1 = "spdy/3.1";
 
 /* MLoc Constants */
 tsapi const TSMLoc TS_NULL_MLOC = (TSMLoc)NULL;

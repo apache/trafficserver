@@ -173,9 +173,20 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   proto->registerEndpoint(TS_PROTO_SPDY, spdy);
 
   if (port.isSSL()) {
-    // ALPN selects the first server-offered protocol, so make sure that we offer HTTP/1.1 first.
+    //
+    // ALPN selects the first server-offered protocol,
+    // so make sure that we offer the newest protocol first.
+    //
+
+    // HTTP
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
+
+    // SPDY
+#if TS_HAS_SPDY
+    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, spdy);
+    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, spdy);
+#endif
 
     ink_scoped_mutex lock(ssl_plugin_mutex);
     ssl_plugin_acceptors.push(ssl);
