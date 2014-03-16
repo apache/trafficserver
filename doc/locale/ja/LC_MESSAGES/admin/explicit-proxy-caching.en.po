@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../admin/explicit-proxy-caching.en.rst:4
 msgid "Explicit Proxy Caching"
-msgstr ""
+msgstr "明示的なプロキシーキャッシュ"
 
 #: ../../admin/explicit-proxy-caching.en.rst:26
 msgid ""
@@ -36,6 +36,9 @@ msgid ""
 "configure client software (i.e., browsers) to send requests directly to "
 "Traffic Server."
 msgstr ""
+"Traffic Server を明示的なプロキシーキャッシュとして使用したい場合は、"
+"クライアントソフトウェア ( すなわちブラウザー ) がリクエストを直接 "
+"Traffic Server に送るように設定しなければなりません。"
 
 #: ../../admin/explicit-proxy-caching.en.rst:30
 msgid ""
@@ -47,24 +50,34 @@ msgid ""
 "configuration instructions from a :ref:`PAC file <using-a-pack-file>` "
 "(Proxy Auto-Configuration file)."
 msgstr ""
+"Traffic Server を透過オプションを使うように ( クライアントのリクエストが"
+"スイッチ/ルーターによってオリジンサーバーへの経路の途中で横取りされ、"
+"Traffic Server マシンに向かうよう方向付けし直されるように ) 設定しない"
+"場合、クライアントは Web ブラウザーがプロキシー設定手順を "
+":ref:`PAC ファイル <using-a-pack-file>` (Proxy Auto-Configuration file) "
+"からダウンロードするようにして HTTTP リクエストを Traffic Server プロキシー"
+"キャッシュに送るように設定しなければなりません。"
 
 #: ../../admin/explicit-proxy-caching.en.rst:39
 msgid "Configuring Browsers Manually"
-msgstr ""
+msgstr "ブラウザーを手動で設定する"
 
 #: ../../admin/explicit-proxy-caching.en.rst:41
 msgid ""
 "To manually configure a browser to send HTTP requests to Traffic Server, "
 "clients must provide the following information:"
 msgstr ""
+"ブラウザーが HTTP リクエストを Traffic Server に送るように手動で設定するには、"
+"クライアントは次の情報を提供しなければなりません。"
 
 #: ../../admin/explicit-proxy-caching.en.rst:44
 msgid "The fully-qualified hostname or IP address of the Traffic Server node"
 msgstr ""
+"Traffic Server ノードの完全修飾ホスト名もしくは IP アドレス"
 
 #: ../../admin/explicit-proxy-caching.en.rst:45
 msgid "The Traffic Server proxy server port (port 8080)"
-msgstr ""
+msgstr "Traffic Server プロキシーサーバーポート ( ポート 8080)"
 
 #: ../../admin/explicit-proxy-caching.en.rst:47
 msgid ""
@@ -76,10 +89,16 @@ msgid ""
 "configuration options on Traffic Server if you want to accept requests from "
 "manually-configured browsers."
 msgstr ""
+"これに加え、クライアントはあるサイトでは Traffic Server を使用しないように"
+"指定することができます。このようなケースでは、一覧にあるサイトへのリクエスト"
+"はオリジンサーバーへ直接向かいます。手動設定の手続きはブラウザーのバージョン"
+"によって異なります。完全なプロキシー設定手順は各ブラウザーのドキュメント"
+"を参照してください。手動で設定されたブラウザーからのリクエストを受け付けたい"
+"場合は、Traffic Server 上で特別な設定を行う必要はありません。"
 
 #: ../../admin/explicit-proxy-caching.en.rst:58
 msgid "Using a PAC File"
-msgstr ""
+msgstr "PAC ファイルの使用"
 
 #: ../../admin/explicit-proxy-caching.en.rst:60
 msgid ""
@@ -89,22 +108,33 @@ msgid ""
 "can store a PAC file on Traffic Server (or on any server in your network) "
 "and then provide the URL for this file to your clients."
 msgstr ""
+"**PAC ファイル**\\ はリクエストがどう扱われるかを決定するためにブラウザーが"
+"呼び出す特別な JavaScript の関数定義です。"
+"クライアントは ( ブラウザーの設定に ) PAC ファイルが読み込まれる URL を"
+"指定しなければなりません。Traffic Server 上に ( もしくはネットワーク内の"
+"いずれかのサーバー上に) PAC ファイルを格納しクライアントに対してこの"
+"ファイルのための URL を提供することができます。"
 
 #: ../../admin/explicit-proxy-caching.en.rst:66
 msgid ""
 "If you want to store a PAC file on the Traffic Server system, then you must "
 "perform the following configuration:"
 msgstr ""
+"Traffic Server システムに PAC ファイルを格納したい場合、次の設定を"
+"行わなければなりません。"
 
 #: ../../admin/explicit-proxy-caching.en.rst:74
 msgid ""
 "Specify the port Traffic Server uses to serve the its synthetic healthchecks. The default "
 "port is 8083, see :ts:cv:`proxy.config.admin.synthetic_port`."
 msgstr ""
+"PAC ファイルを提供するために Traffic Server が使用するポートを指定する。"
+"デフォルトポートは 8083 です。:ts:cv:`proxy.config.admin.autoconf_port` を"
+"参照してください。"
 
 #: ../../admin/explicit-proxy-caching.en.rst:78
 msgid "Sample PAC File"
-msgstr ""
+msgstr "サンプル PAC ファイル"
 
 #: ../../admin/explicit-proxy-caching.en.rst:80
 msgid ""
@@ -113,3 +143,7 @@ msgid ""
 "domain. All other requests go to the Traffic Server named ``myproxy.company."
 "com``.::"
 msgstr ""
+"次のサンプル PAC ファイルは、完全修飾ドメインのないすべてのホストと"
+"ローカルドメインのホストには直接接続するように指示します。その他のすべての"
+"リクエストは ``myproxy.company.com`` と名付けられた Traffic Server に"
+"向かいます。"
