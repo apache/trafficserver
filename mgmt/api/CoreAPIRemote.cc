@@ -487,7 +487,7 @@ mgmt_record_get_reply(TSRecordEle * rec_ele)
   void *val;
   char *name;
 
-  rec_ele->rec_name = NULL;
+  ink_zero(*rec_ele);
   rec_ele->rec_type = TS_REC_UNDEFINED;
 
   // parse the reply to get record value and type
@@ -536,7 +536,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
   }
 
   // create and send request
-  ret = send_record_get_request(main_socket_fd, rec_ele->rec_name);
+  ret = send_record_get_request(main_socket_fd, rec_name);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }

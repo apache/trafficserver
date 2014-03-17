@@ -219,7 +219,6 @@ ts_ctrl_main(void *arg)
 
             case RECORD_MATCH_GET:
               ret = handle_record_match(client_entry->sock_info, req);
-              // XXX
               break;
 
             case RECORD_SET:
@@ -432,7 +431,12 @@ send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const 
       match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_counter), sizeof(TSCounter), TS_REC_COUNTER, name);
       break;
     case RECD_STRING:
-      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, rec_val->rec_string, rec_val->rec_string ? strlen(rec_val->rec_string): 0, TS_REC_STRING, name);
+      // For NULL string parameters, end the literal "NULL" to match the behavior of MgmtRecordGet().
+      if (rec_val->rec_string) {
+        match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, rec_val->rec_string, strlen(rec_val->rec_string), TS_REC_STRING, name);
+      } else {
+        match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, (void *)"NULL", strlen("NULL"), TS_REC_STRING, name);
+      }
       break;
     case RECD_FLOAT:
       match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_float), sizeof(TSFloat), TS_REC_FLOAT, name);
