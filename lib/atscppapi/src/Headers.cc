@@ -539,6 +539,18 @@ std::string Headers::str() {
   return oss.str();
 }
 
+std::string Headers::wireStr() {
+  string retval;
+  for (iterator iter = begin(), last = end(); iter != last; ++iter) {
+    HeaderField hf = *iter;
+    retval += hf.name().str();
+    retval += ": ";
+    retval += hf.values(", ");
+    retval += "\r\n";
+  }
+  return retval;
+}
+
 std::ostream& operator<<(std::ostream &os, atscppapi::Headers &obj) {
   for(header_field_iterator it = obj.begin(); it != obj.end(); ++it) {
     HeaderField hf = *it;
@@ -546,5 +558,6 @@ std::ostream& operator<<(std::ostream &os, atscppapi::Headers &obj) {
   }
   return os;
 }
+
 } /* atscppapi namespace */
 

@@ -151,7 +151,7 @@ void AsyncHttpFetch::run(shared_ptr<AsyncDispatchControllerBase> sender) {
     snprintf(size_buf, sizeof(size_buf), "%zu", state_->request_body_.size());
     state_->request_.getHeaders().set("Content-Length", size_buf);
   }
-  request_str += headers.str();
+  request_str += headers.wireStr();
   request_str += "\r\n";
   request_str += state_->request_body_;
 
