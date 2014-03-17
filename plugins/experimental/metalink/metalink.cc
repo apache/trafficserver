@@ -367,7 +367,15 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 
     TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_READY, input_viop);
 
-  } else {
+  /* Don't finish computing the digest (and tell downstream and thank upstream)
+   * more than once!  There might be multiple TS_EVENT_IMMEDIATE events between
+   * the end of the input and the TS_EVENT_VCONN_WRITE_COMPLETE event from
+   * downstream, e.g. INKVConnInternal::reenable() is called by
+   * HttpTunnel::producer_handler() when more input is available and
+   * TransformVConnection::do_io_shutdown() is called by
+   * HttpSM::tunnel_handler_transform_write() when we send our own
+   * TS_EVENT_VCONN_WRITE_COMPLETE event upstream. */
+  } else if (transform_data->txnp) {
 
     int ndone = TSVIONDoneGet(input_viop);
     TSVIONBytesSet(transform_data->output_viop, ndone);
@@ -387,6 +395,9 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 
     WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
     write_data->txnp = transform_data->txnp;
+
+    /* Don't finish computing the digest more than once! */
+    transform_data->txnp = NULL;
 
     write_data->key = TSCacheKeyCreate();
     if (TSCacheKeyDigestSet(write_data->key, digest, sizeof(digest)) != TS_SUCCESS) {
