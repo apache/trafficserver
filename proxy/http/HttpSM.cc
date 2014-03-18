@@ -6866,7 +6866,7 @@ HttpSM::set_next_state()
         t_state.dns_info.lookup_success = true;
         call_transact_and_set_next_state(NULL);
         break;
-      } else if (url_remap_mode == 2 && t_state.first_dns_lookup) {
+      } else if (url_remap_mode == HttpTransact::URL_REMAP_FOR_OS && t_state.first_dns_lookup) {
         DebugSM("cdn", "Skipping DNS Lookup");
         // skip the DNS lookup
         t_state.first_dns_lookup = false;
