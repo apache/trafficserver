@@ -87,12 +87,13 @@ public:
    */
   void getResponseBody(const void *&body, size_t &body_size) const;
 
-  virtual ~AsyncHttpFetch();
-
   /**
    * Starts a HTTP fetch of the Request contained.
    */  
   virtual void run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller);
+
+protected:
+  virtual ~AsyncHttpFetch();
 
 private:
   AsyncHttpFetchState *state_;

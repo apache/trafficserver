@@ -98,7 +98,7 @@ static int handleFetchEvents(TSCont cont, TSEvent event, void *edata) {
     LOG_DEBUG("Unable to dispatch result from AsyncFetch because promise has died.");
   }
 
-  delete fetch_provider; // we must always be sure to clean up the provider when we're done with it.
+  utils::internal::deleteAsyncHttpFetch(fetch_provider); // we must always clean up when we're done.
   TSContDestroy(cont);
   return 0;
 }
