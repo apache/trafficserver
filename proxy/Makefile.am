@@ -176,7 +176,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ \
+  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @hwloc_LIBS@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = logstats.cc
@@ -192,7 +192,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ \
+  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @hwloc_LIBS@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_sac_SOURCES = \
@@ -246,7 +246,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ \
+  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @hwloc_LIBS@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ -lm
 
 if BUILD_TESTS

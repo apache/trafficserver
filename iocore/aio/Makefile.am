@@ -55,5 +55,4 @@ test_AIO_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@
-
+  @LIBTCL@ @hwloc_LIBS@
