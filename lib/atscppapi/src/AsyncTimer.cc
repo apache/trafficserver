@@ -63,8 +63,7 @@ int handleTimerEvent(TSCont cont, TSEvent event, void *edata) {
 
 AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms) {
   state_ = new AsyncTimerState(type, period_in_ms, initial_period_in_ms, this);
-  TSMutex null_mutex = NULL;
-  state_->cont_ = TSContCreate(handleTimerEvent, null_mutex);
+  state_->cont_ = TSContCreate(handleTimerEvent, TSMutexCreate());
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }
 
@@ -92,6 +91,7 @@ void AsyncTimer::run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller
 }
 
 AsyncTimer::~AsyncTimer() {
+  TSMutexLock(TSContMutexGet(state_->cont_));
   if (state_->initial_timer_action_) {
     LOG_DEBUG("Canceling initial timer action");
     TSActionCancel(state_->initial_timer_action_);
