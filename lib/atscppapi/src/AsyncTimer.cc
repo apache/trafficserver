@@ -27,6 +27,7 @@ using namespace atscppapi;
 
 struct atscppapi::AsyncTimerState {
   TSCont cont_;
+  TSMutex mutex_;
   AsyncTimer::Type type_;
   int period_in_ms_;
   int initial_period_in_ms_;
@@ -36,7 +37,9 @@ struct atscppapi::AsyncTimerState {
   shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
   AsyncTimerState(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms, AsyncTimer *timer)
     : type_(type), period_in_ms_(period_in_ms), initial_period_in_ms_(initial_period_in_ms),
-      initial_timer_action_(NULL), periodic_timer_action_(NULL), timer_(timer) { }
+      initial_timer_action_(NULL), periodic_timer_action_(NULL), timer_(timer) {
+    mutex_ = TSMutexCreate();
+  }
 };
 
 namespace {
@@ -63,8 +66,7 @@ int handleTimerEvent(TSCont cont, TSEvent event, void *edata) {
 
 AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms) {
   state_ = new AsyncTimerState(type, period_in_ms, initial_period_in_ms, this);
-  TSMutex null_mutex = NULL;
-  state_->cont_ = TSContCreate(handleTimerEvent, null_mutex);
+  state_->cont_ = TSContCreate(handleTimerEvent, state_->mutex_);
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }
 
@@ -92,6 +94,7 @@ void AsyncTimer::run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller
 }
 
 AsyncTimer::~AsyncTimer() {
+  TSMutexLock(state_->mutex_);
   if (state_->initial_timer_action_) {
     LOG_DEBUG("Canceling initial timer action");
     TSActionCancel(state_->initial_timer_action_);
@@ -102,5 +105,6 @@ AsyncTimer::~AsyncTimer() {
   }
   LOG_DEBUG("Destroying cont");
   TSContDestroy(state_->cont_);
+  TSMutexUnlock(state_->mutex_);
   delete state_;
 }
