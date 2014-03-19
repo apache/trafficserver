@@ -83,8 +83,11 @@ public:
   }
 
   static void dispatchInterceptEvent(InterceptPlugin *plugin, TSEvent event, void *edata) {
-    ScopedSharedMutexLock scopedSharedMutexLock(plugin->getMutex());
     plugin->handleEvent(static_cast<int>(event), edata);
+  }
+
+  static void deleteAsyncHttpFetch(AsyncHttpFetch *fetch) {
+    delete fetch;
   }
 
 }; /* internal */
