@@ -50,6 +50,7 @@ cmd/traffic_top/traffic_top
 
 lib/ts/ink_autoconf.h
 lib/ts/ink_config.h
+lib/ts/apidefs.h
 lib/ts/stamp-h1
 lib/ts/CompileParseRules
 lib/ts/ParseRulesCType
