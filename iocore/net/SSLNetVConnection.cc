@@ -56,6 +56,30 @@ make_ssl_connection(SSL_CTX * ctx, SSLNetVConnection * netvc)
   return ssl;
 }
 
+static void
+debug_certificate_name(const char * msg, X509_NAME * name)
+{
+  BIO * bio;
+
+  if (name == NULL) {
+    return;
+  }
+
+  bio = BIO_new(BIO_s_mem());
+  if (bio == NULL) {
+    return;
+  }
+
+  if (X509_NAME_print_ex(bio, name, 0 /* indent */, XN_FLAG_ONELINE) > 0) {
+    long len;
+    char * ptr;
+    len = BIO_get_mem_data(bio, &ptr);
+    Debug("ssl", "%s %.*s", msg, (int)len, ptr);
+  }
+
+  BIO_free(bio);
+}
+
 static inline int
 do_SSL_write(SSL * ssl, void *buf, int size)
 {
@@ -538,22 +562,18 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   switch (ssl_error) {
   case SSL_ERROR_NONE:
-    Debug("ssl", "handshake completed successfully");
-    client_cert = SSL_get_peer_certificate(ssl);
-    if (client_cert != NULL) {
-/*	str = X509_NAME_oneline (X509_get_subject_name (client_cert), 0, 0);
-		Free (str);
+    if (is_debug_tag_set("ssl")) {
+      X509 * cert = SSL_get_peer_certificate(ssl);
 
-		str = X509_NAME_oneline (X509_get_issuer_name  (client_cert), 0, 0);
-		Free (str);
-
-		// Add any extra client cert verification stuff here.  SSL
-		// is set up in SSLNetProcessor::start to automatically verify
-		// the client cert's CA, if required.
-*/
-      X509_free(client_cert);
+      Debug("ssl", "SSL server handshake completed successfully");
+      if (cert) {
+        debug_certificate_name("client certificate subject CN is", X509_get_subject_name(cert));
+        debug_certificate_name("client certificate issuer CN is", X509_get_issuer_name(cert));
+        X509_free(cert);
+      }
     }
-    sslHandShakeComplete = 1;
+
+    sslHandShakeComplete = true;
 
     {
       const unsigned char * proto = NULL;
@@ -623,23 +643,18 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   ret = SSL_connect(ssl);
   switch (SSL_get_error(ssl, ret)) {
   case SSL_ERROR_NONE:
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, handshake completed successfully");
-    server_cert = SSL_get_peer_certificate(ssl);
+    if (is_debug_tag_set("ssl")) {
+      X509 * cert = SSL_get_peer_certificate(ssl);
 
-/*	  str = X509_NAME_oneline (X509_get_subject_name (server_cert),0,0);
-	  Free (str);
+      Debug("ssl", "SSL client handshake completed successfully");
+      if (cert) {
+        debug_certificate_name("server certificate subject CN is", X509_get_subject_name(cert));
+        debug_certificate_name("server certificate issuer CN is", X509_get_issuer_name(cert));
+        X509_free(cert);
+      }
+    }
 
-	  str = X509_NAME_oneline (X509_get_issuer_name  (server_cert),0,0);
-	  Free (str);
-*/
-
-/*	 Add certificate verification stuff here before
-     deallocating the certificate.
-*/
-
-    X509_free(server_cert);
-    sslHandShakeComplete = 1;
-
+    sslHandShakeComplete = true;
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:

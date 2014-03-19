@@ -101,8 +101,6 @@ public:
   virtual ~SSLNetVConnection() { }
 
   SSL *ssl;
-  X509 *client_cert;
-  X509 *server_cert;
 
   static int advertise_next_protocol(SSL * ssl, const unsigned char ** out, unsigned * outlen, void *);
   static int select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in, unsigned inlen, void *);
