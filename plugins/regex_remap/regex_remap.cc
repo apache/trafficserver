@@ -116,136 +116,20 @@ struct UrlComponents
 class RemapRegex
 {
  public:
-  RemapRegex(const std::string& reg, const std::string& sub, const std::string& opt) :
+  RemapRegex() :
     _num_subs(-1), _rex(NULL), _extra(NULL), _options(0), _order(-1),
     _simple(false), _lowercase_substitutions(false),
     _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1),
     _first_override(NULL)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
-
-    _status = static_cast<TSHttpStatus>(0);
-
-    if (!reg.empty()) {
-      if (reg == ".") {
-        TSDebug(PLUGIN_NAME, "Rule is simple, and fast!");
-        _simple = true;
-      }
-      _rex_string = TSstrdup(reg.c_str());
-    } else
-      _rex_string = NULL;
-
-    if (!sub.empty()) {
-      _subst = TSstrdup(sub.c_str());
-      _subst_len = sub.length();
-    } else {
-      _subst = NULL;
-      _subst_len = 0;
-    }
-
-    _hits = 0;
-
-    memset(_sub_pos, 0, sizeof(_sub_pos));
-    memset(_sub_ix, 0, sizeof(_sub_ix));
-    _next = NULL;
-
-    // Parse options
-    std::string::size_type start = opt.find_first_of("@");
-    std::string::size_type pos1, pos2;
-    Override* last_override = NULL;
-
-    while (start != std::string::npos) {
-      std::string opt_val;
-
-      ++start;
-      pos1 = opt.find_first_of("=", start);
-      pos2 = opt.find_first_of(" \t\n", pos1);
-      if (pos2 == std::string::npos) {
-        pos2 = opt.length();
-      }
-
-      if (pos1 != std::string::npos) {
-        // Get the value as well
-        ++pos1;
-        opt_val = opt.substr(pos1, pos2-pos1);
-      }
-
-      // These take an option 0|1 value, without value it implies 1
-      if (opt.compare(start, 8, "caseless") == 0) {
-        _options |= PCRE_CASELESS;
-      } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
-        _lowercase_substitutions = true;
-      } else if (opt_val.size() <= 0) {
-        // All other options have a required value
-        TSError("Malformed options: %s", opt.c_str());
-        break;
-      }
-
-      if (opt.compare(start, 6, "status") == 0) {
-        _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), NULL, 10));
-      } else if (opt.compare(start, 14, "active_timeout") == 0) {
-        _active_timeout = strtol(opt_val.c_str(), NULL, 10);
-      } else if (opt.compare(start, 19, "no_activity_timeout") == 0) {
-        _no_activity_timeout = strtol(opt_val.c_str(), NULL, 10);
-      } else if (opt.compare(start, 15, "connect_timeout") == 0) {
-        _connect_timeout = strtol(opt_val.c_str(), NULL, 10);
-      } else if (opt.compare(start, 11, "dns_timeout") == 0) {
-        _dns_timeout = strtol(opt_val.c_str(), NULL, 10);
-      } else {
-        TSOverridableConfigKey key;
-        TSRecordDataType type;
-        std::string opt_name = opt.substr(start, pos1-start-1);
-
-        if (TS_SUCCESS == TSHttpTxnConfigFind(opt_name.c_str(), opt_name.length(), &key, &type)) {
-          Override* cur = new Override;
-
-          switch (type) {
-          case TS_RECORDDATATYPE_INT:
-            cur->data.rec_int = strtoll(opt_val.c_str(), NULL, 10);
-            break;
-          case TS_RECORDDATATYPE_FLOAT:
-            cur->data.rec_float = strtof(opt_val.c_str(), NULL);
-            break;
-          case TS_RECORDDATATYPE_STRING:
-            cur->data.rec_string = TSstrdup(opt_val.c_str());
-            cur->data_len = opt_val.size();
-            break;
-          default:
-            delete cur;
-            cur = NULL;
-            TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
-            break;
-          }
-          if (cur) {
-            TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
-            cur->key = key;
-            cur->type = type;
-            cur->next = NULL;
-            if (NULL == last_override) {
-              _first_override = cur;
-            } else {
-              last_override->next = cur;
-            }
-            last_override = cur;
-          }
-        } else {
-          TSError("Unknown options: %s", opt.c_str());
-        }
-      }
-      start = opt.find_first_of("@", pos2);
-    }
   }
 
   ~RemapRegex()
   {
     TSDebug(PLUGIN_NAME, "Calling destructor");
-
-    if (_rex_string) {
-      TSfree(_rex_string);
-    }
-    if (_subst) {
-      TSfree(_subst);
-    }
+    TSfree(_rex_string);
+    TSfree(_subst);
 
     if (_rex) {
       pcre_free(_rex);
@@ -255,111 +139,16 @@ class RemapRegex
     }
   }
 
+  bool initialize(const std::string& reg, const std::string& sub, const std::string& opt);
+
   // For profiling information
-  inline void
-  print(int ix, int max, const char* now)
+  void increment() { ink_atomic_increment(&(_hits), 1); }
+  void print(int ix, int max, const char* now)
   {
     fprintf(stderr, "[%s]:    Regex %d ( %s ): %.2f%%\n", now, ix, _rex_string, 100.0 * _hits / max);
   }
 
-  inline void
-  increment()
-  {
-    ink_atomic_increment(&(_hits), 1);
-  }
-
-  // Compile and study the regular expression.
-  int
-  compile(const char** error, int* erroffset)
-  {
-    char* str;
-    int ccount;
-
-    _rex = pcre_compile(_rex_string,          // the pattern
-                        _options,             // options
-                        error,                // for error message
-                        erroffset,            // for error offset
-                        NULL);                // use default character tables
-
-    if (NULL == _rex) {
-      return -1;
-    }
-
-    _extra = pcre_study(_rex, 0, error);
-    if ((_extra == NULL) && (*error != 0)) {
-      return -1;
-    }
-
-    if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0) {
-      return -1;
-    }
-
-    // Get some info for the string substitutions
-    str = _subst;
-    _num_subs = 0;
-
-    while (str && *str) {
-      if ('$' == *str) {
-        int ix = -1;
-
-        if (isdigit(*(str+1))) {
-          ix = *(str + 1) - '0';
-        } else {
-          switch (*(str + 1)) {
-          case 'h':
-            ix = SUB_HOST;
-            break;
-          case 'f':
-            ix = SUB_FROM_HOST;
-            break;
-          case 't':
-            ix = SUB_TO_HOST;
-            break;
-          case 'p':
-            ix = SUB_PORT;
-            break;
-          case 's':
-            ix = SUB_SCHEME;
-            break;
-          case 'P':
-            ix = SUB_PATH;
-            break;
-          case 'l':
-            ix = SUB_LOWER_PATH;
-            break;
-          case 'q':
-            ix = SUB_QUERY;
-            break;
-          case 'm':
-            ix = SUB_MATRIX;
-            break;
-          case 'i':
-            ix = SUB_CLIENT_IP;
-            break;
-          default:
-            break;
-          }
-        }
-
-        if (ix > -1) {
-          if ((ix < 10) && (ix > ccount)) {
-            TSDebug(PLUGIN_NAME, "Trying to use unavailable substitution, check the regex!");
-            return -1; // No substitutions available other than $0
-          }
-
-          _sub_ix[_num_subs] = ix;
-          _sub_pos[_num_subs] = (str - _subst);
-          str += 2;
-          ++_num_subs;
-        } else { // Not a valid substitution character, so just ignore it
-          ++str;
-        }
-      } else {
-        ++str;
-      }
-    }
-    return 0;
-  }
+  int compile(const char** error, int* erroffset);
 
   // Perform the regular expression matching against a string.
   int
@@ -375,156 +164,10 @@ class RemapRegex
                      OVECCOUNT);           // number of elements in the output vector
   }
 
-  // Get the lengths of the matching string(s), taking into account variable substitutions.
-  // We also calculate a total length for the new string, which is the max length the
-  // substituted string can have (use it to allocate a buffer before calling substitute() ).
-  int
-  get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url)
-  {
-    int len = _subst_len + 1;   // Bigger then necessary
-
-    for (int i=0; i < _num_subs; i++) {
-      int ix = _sub_ix[i];
-
-      if (ix < 10) {
-        lengths[ix] = ovector[2*ix+1] - ovector[2*ix]; // -1 - -1 == 0
-        len += lengths[ix];
-      } else {
-        int tmp_len;
-
-        switch (ix) {
-        case SUB_HOST:
-          len += req_url->host_len;
-          break;
-        case SUB_FROM_HOST:
-          TSUrlHostGet(rri->requestBufp, rri->mapFromUrl, &tmp_len);
-          len += tmp_len;
-          break;
-        case SUB_TO_HOST:
-          TSUrlHostGet(rri->requestBufp, rri->mapToUrl, &tmp_len);
-          len += tmp_len;
-          break;
-        case SUB_PORT:
-          len += 6; // One extra for snprintf()
-          break;
-        case SUB_SCHEME:
-          len += req_url->scheme_len;
-          break;
-        case SUB_PATH:
-        case SUB_LOWER_PATH:
-          len += req_url->path_len;
-          break;
-        case SUB_QUERY:
-          len += req_url->query_len;
-          break;
-        case SUB_MATRIX:
-          len += req_url->matrix_len;
-          break;
-        case SUB_CLIENT_IP:
-          len += 15; // Allow for 255.255.255.255
-          break;
-        default:
-          break;
-        }
-      }
-    }
-
-    return len;
-  }
-
-  // Perform substitution on the $0 - $9 variables in the "src" string. $0 is the entire
-  // regex that was matches, while $1 - $9 are the corresponding groups. Return the final
-  // length of the string as written to dest (not including the trailing '0').
-  int
-  substitute(char dest[], const char *src, const int ovector[], const int lengths[],
-             TSRemapRequestInfo *rri, UrlComponents *req_url, bool lowercase_substitutions)
-  {
-    if (_num_subs > 0) {
-      char* p1 = dest;
-      char* p2 = _subst;
-      int prev = 0;
-
-      for (int i=0; i < _num_subs; i++) {
-        char *start = p1;
-        int ix = _sub_ix[i];
-
-        memcpy(p1, p2, _sub_pos[i] - prev);
-        p1 += (_sub_pos[i] - prev);
-        if (ix < 10) {
-          memcpy(p1, src + ovector[2*ix], lengths[ix]);
-          p1 += lengths[ix];
-        } else {
-          const char* str = NULL;
-          int len = 0;
-
-          switch (ix) {
-          case SUB_HOST:
-            str = req_url->host;
-            len = req_url->host_len;
-            break;
-          case SUB_FROM_HOST:
-            str = TSUrlHostGet(rri->requestBufp, rri->mapFromUrl, &len);
-            break;
-          case SUB_TO_HOST:
-            str = TSUrlHostGet(rri->requestBufp, rri->mapToUrl, &len);
-            break;
-          case SUB_PORT:
-            p1 += snprintf(p1, 6, "%u", req_url->port);
-            break;
-          case SUB_SCHEME:
-            str = req_url->scheme;
-            len = req_url->scheme_len;
-            break;
-          case SUB_PATH:
-          case SUB_LOWER_PATH:
-            str = req_url->path;
-            len = req_url->path_len;
-            break;
-          case SUB_QUERY:
-            str = req_url->query;
-            len = req_url->query_len;
-            break;
-          case SUB_MATRIX:
-            str = req_url->matrix;
-            len = req_url->matrix_len;
-            break;
-          case SUB_CLIENT_IP:
-            {
-              // TODO: Finish implementing with the addr from above
-              // p1 += snprintf(p1, 15, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-            }
-            break;
-          default:
-            break;
-          }
-          // If one of the rules fetched a read-only string, copy it in.
-          if (str && len > 0) {
-            memcpy(p1, str, len);
-            p1 += len;
-          }
-        }
-        p2 += (_sub_pos[i] - prev + 2);
-        prev = _sub_pos[i] + 2;
-
-        if (lowercase_substitutions == true || ix == SUB_LOWER_PATH) {
-           while (start < p1) {
-             *start = tolower(*start);
-             start++;
-            }
-         }
-      }
-
-      memcpy(p1, p2, _subst_len - (p2 - _subst));
-      p1 += _subst_len - (p2 - _subst);
-      *p1 = 0; // Make sure it's NULL terminated (for safety).
-      return p1 - dest;
-    } else {
-      memcpy(dest, _subst, _subst_len + 1); // No substitutions in the string, copy it all
-      return _subst_len;
-    }
-
-    return 0; // Shouldn't happen.
-  }
+  // Substitutions
+  int get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url);
+  int substitute(char dest[], const char *src, const int ovector[], const int lengths[],
+                 TSRemapRequestInfo *rri, UrlComponents *req_url, bool lowercase_substitutions);
 
   // setter / getters for members the linked list.
   inline void set_next(RemapRegex* next) { _next = next; }
@@ -584,6 +227,368 @@ class RemapRegex
   Override* _first_override;
 };
 
+bool
+RemapRegex::initialize(const std::string& reg, const std::string& sub, const std::string& opt)
+{
+  _status = static_cast<TSHttpStatus>(0);
+
+  if (!reg.empty()) {
+    if (reg == ".") {
+      TSDebug(PLUGIN_NAME, "Rule is simple, and fast!");
+      _simple = true;
+    }
+    _rex_string = TSstrdup(reg.c_str());
+  } else
+    _rex_string = NULL;
+
+  if (!sub.empty()) {
+    _subst = TSstrdup(sub.c_str());
+    _subst_len = sub.length();
+  } else {
+    _subst = NULL;
+    _subst_len = 0;
+  }
+
+  _hits = 0;
+
+  memset(_sub_pos, 0, sizeof(_sub_pos));
+  memset(_sub_ix, 0, sizeof(_sub_ix));
+  _next = NULL;
+
+  // Parse options
+  std::string::size_type start = opt.find_first_of("@");
+  std::string::size_type pos1, pos2;
+  Override* last_override = NULL;
+
+  while (start != std::string::npos) {
+    std::string opt_val;
+
+    ++start;
+    pos1 = opt.find_first_of("=", start);
+    pos2 = opt.find_first_of(" \t\n", pos1);
+    if (pos2 == std::string::npos) {
+      pos2 = opt.length();
+    }
+
+    if (pos1 != std::string::npos) {
+      // Get the value as well
+      ++pos1;
+      opt_val = opt.substr(pos1, pos2-pos1);
+    }
+
+    // These take an option 0|1 value, without value it implies 1
+    if (opt.compare(start, 8, "caseless") == 0) {
+      _options |= PCRE_CASELESS;
+    } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
+      _lowercase_substitutions = true;
+    } else if (opt_val.size() <= 0) {
+      // All other options have a required value
+      TSError("Malformed options: %s", opt.c_str());
+      break;
+    }
+
+    if (opt.compare(start, 6, "status") == 0) {
+      _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), NULL, 10));
+    } else if (opt.compare(start, 14, "active_timeout") == 0) {
+      _active_timeout = strtol(opt_val.c_str(), NULL, 10);
+    } else if (opt.compare(start, 19, "no_activity_timeout") == 0) {
+      _no_activity_timeout = strtol(opt_val.c_str(), NULL, 10);
+    } else if (opt.compare(start, 15, "connect_timeout") == 0) {
+      _connect_timeout = strtol(opt_val.c_str(), NULL, 10);
+    } else if (opt.compare(start, 11, "dns_timeout") == 0) {
+      _dns_timeout = strtol(opt_val.c_str(), NULL, 10);
+    } else {
+      TSOverridableConfigKey key;
+      TSRecordDataType type;
+      std::string opt_name = opt.substr(start, pos1-start-1);
+
+      if (TS_SUCCESS == TSHttpTxnConfigFind(opt_name.c_str(), opt_name.length(), &key, &type)) {
+        Override* cur = new Override;
+
+        switch (type) {
+        case TS_RECORDDATATYPE_INT:
+          cur->data.rec_int = strtoll(opt_val.c_str(), NULL, 10);
+          break;
+        case TS_RECORDDATATYPE_FLOAT:
+          cur->data.rec_float = strtof(opt_val.c_str(), NULL);
+          break;
+        case TS_RECORDDATATYPE_STRING:
+          cur->data.rec_string = TSstrdup(opt_val.c_str());
+          cur->data_len = opt_val.size();
+          break;
+        default:
+          TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
+          return false;
+          break;
+        }
+        if (cur) {
+          TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
+          cur->key = key;
+          cur->type = type;
+          cur->next = NULL;
+          if (NULL == last_override) {
+            _first_override = cur;
+          } else {
+            last_override->next = cur;
+          }
+          last_override = cur;
+        }
+      } else {
+        TSError("Unknown options: %s", opt.c_str());
+      }
+    }
+    start = opt.find_first_of("@", pos2);
+  }
+
+  return true;
+}
+
+// Compile and study the regular expression.
+int
+RemapRegex::compile(const char** error, int* erroffset)
+{
+  char* str;
+  int ccount;
+
+  _rex = pcre_compile(_rex_string,          // the pattern
+                      _options,             // options
+                      error,                // for error message
+                      erroffset,            // for error offset
+                      NULL);                // use default character tables
+
+  if (NULL == _rex) {
+    return -1;
+  }
+
+  _extra = pcre_study(_rex, 0, error);
+  if ((_extra == NULL) && (*error != 0)) {
+    return -1;
+  }
+
+  if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0) {
+    return -1;
+  }
+
+  // Get some info for the string substitutions
+  str = _subst;
+  _num_subs = 0;
+
+  while (str && *str) {
+    if ('$' == *str) {
+      int ix = -1;
+
+      if (isdigit(*(str+1))) {
+        ix = *(str + 1) - '0';
+      } else {
+        switch (*(str + 1)) {
+        case 'h':
+          ix = SUB_HOST;
+          break;
+        case 'f':
+          ix = SUB_FROM_HOST;
+          break;
+        case 't':
+          ix = SUB_TO_HOST;
+          break;
+        case 'p':
+          ix = SUB_PORT;
+          break;
+        case 's':
+          ix = SUB_SCHEME;
+          break;
+        case 'P':
+          ix = SUB_PATH;
+          break;
+        case 'l':
+          ix = SUB_LOWER_PATH;
+          break;
+        case 'q':
+          ix = SUB_QUERY;
+          break;
+        case 'm':
+          ix = SUB_MATRIX;
+          break;
+        case 'i':
+          ix = SUB_CLIENT_IP;
+          break;
+        default:
+          break;
+        }
+      }
+
+      if (ix > -1) {
+        if ((ix < 10) && (ix > ccount)) {
+          TSDebug(PLUGIN_NAME, "Trying to use unavailable substitution, check the regex!");
+          return -1; // No substitutions available other than $0
+        }
+
+        _sub_ix[_num_subs] = ix;
+        _sub_pos[_num_subs] = (str - _subst);
+        str += 2;
+        ++_num_subs;
+      } else { // Not a valid substitution character, so just ignore it
+        ++str;
+      }
+    } else {
+      ++str;
+    }
+  }
+  return 0;
+}
+
+// Get the lengths of the matching string(s), taking into account variable substitutions.
+// We also calculate a total length for the new string, which is the max length the
+// substituted string can have (use it to allocate a buffer before calling substitute() ).
+int
+RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url)
+{
+  int len = _subst_len + 1;   // Bigger then necessary
+
+  for (int i=0; i < _num_subs; i++) {
+    int ix = _sub_ix[i];
+
+    if (ix < 10) {
+      lengths[ix] = ovector[2*ix+1] - ovector[2*ix]; // -1 - -1 == 0
+      len += lengths[ix];
+    } else {
+      int tmp_len;
+
+      switch (ix) {
+      case SUB_HOST:
+        len += req_url->host_len;
+        break;
+      case SUB_FROM_HOST:
+        TSUrlHostGet(rri->requestBufp, rri->mapFromUrl, &tmp_len);
+        len += tmp_len;
+        break;
+      case SUB_TO_HOST:
+        TSUrlHostGet(rri->requestBufp, rri->mapToUrl, &tmp_len);
+        len += tmp_len;
+        break;
+      case SUB_PORT:
+        len += 6; // One extra for snprintf()
+        break;
+      case SUB_SCHEME:
+        len += req_url->scheme_len;
+        break;
+      case SUB_PATH:
+      case SUB_LOWER_PATH:
+        len += req_url->path_len;
+        break;
+      case SUB_QUERY:
+        len += req_url->query_len;
+        break;
+      case SUB_MATRIX:
+        len += req_url->matrix_len;
+        break;
+      case SUB_CLIENT_IP:
+        len += 15; // Allow for 255.255.255.255
+        break;
+      default:
+        break;
+      }
+    }
+  }
+
+  return len;
+}
+
+// Perform substitution on the $0 - $9 variables in the "src" string. $0 is the entire
+// regex that was matches, while $1 - $9 are the corresponding groups. Return the final
+// length of the string as written to dest (not including the trailing '0').
+int
+RemapRegex::substitute(char dest[], const char *src, const int ovector[], const int lengths[],
+                       TSRemapRequestInfo *rri, UrlComponents *req_url, bool lowercase_substitutions)
+{
+  if (_num_subs > 0) {
+    char* p1 = dest;
+    char* p2 = _subst;
+    int prev = 0;
+
+    for (int i=0; i < _num_subs; i++) {
+      char *start = p1;
+      int ix = _sub_ix[i];
+
+      memcpy(p1, p2, _sub_pos[i] - prev);
+      p1 += (_sub_pos[i] - prev);
+      if (ix < 10) {
+        memcpy(p1, src + ovector[2*ix], lengths[ix]);
+        p1 += lengths[ix];
+      } else {
+        const char* str = NULL;
+        int len = 0;
+
+        switch (ix) {
+        case SUB_HOST:
+          str = req_url->host;
+          len = req_url->host_len;
+          break;
+        case SUB_FROM_HOST:
+          str = TSUrlHostGet(rri->requestBufp, rri->mapFromUrl, &len);
+          break;
+        case SUB_TO_HOST:
+          str = TSUrlHostGet(rri->requestBufp, rri->mapToUrl, &len);
+          break;
+        case SUB_PORT:
+          p1 += snprintf(p1, 6, "%u", req_url->port);
+          break;
+        case SUB_SCHEME:
+          str = req_url->scheme;
+          len = req_url->scheme_len;
+          break;
+        case SUB_PATH:
+        case SUB_LOWER_PATH:
+          str = req_url->path;
+          len = req_url->path_len;
+          break;
+        case SUB_QUERY:
+          str = req_url->query;
+          len = req_url->query_len;
+          break;
+        case SUB_MATRIX:
+          str = req_url->matrix;
+          len = req_url->matrix_len;
+          break;
+        case SUB_CLIENT_IP:
+          {
+            // TODO: Finish implementing with the addr from above
+            // p1 += snprintf(p1, 15, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+          }
+          break;
+        default:
+          break;
+        }
+        // If one of the rules fetched a read-only string, copy it in.
+        if (str && len > 0) {
+          memcpy(p1, str, len);
+          p1 += len;
+        }
+      }
+      p2 += (_sub_pos[i] - prev + 2);
+      prev = _sub_pos[i] + 2;
+
+      if (lowercase_substitutions == true || ix == SUB_LOWER_PATH) {
+        while (start < p1) {
+          *start = tolower(*start);
+          start++;
+        }
+      }
+    }
+
+    memcpy(p1, p2, _subst_len - (p2 - _subst));
+    p1 += _subst_len - (p2 - _subst);
+    *p1 = 0; // Make sure it's NULL terminated (for safety).
+    return p1 - dest;
+  } else {
+    memcpy(dest, _subst, _subst_len + 1); // No substitutions in the string, copy it all
+    return _subst_len;
+  }
+
+  return 0; // Shouldn't happen.
+}
+
+
+// Hold one remap instance
 struct RemapInstance
 {
   RemapInstance() :
@@ -766,10 +771,11 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     }
 
     // Got a regex and substitution string
-    RemapRegex* cur = new RemapRegex(regex, subst, options);
+    RemapRegex* cur = new RemapRegex();
 
-    if (cur == NULL) {
+    if (!cur->initialize(regex, subst, options)) {
       TSError("%s: can't create a new regex remap rule", PLUGIN_NAME);
+      delete cur;
       continue;
     }
 
