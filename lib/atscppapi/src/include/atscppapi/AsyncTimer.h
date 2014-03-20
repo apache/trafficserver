@@ -67,7 +67,7 @@ public:
   /**
    * Starts the timer.
    */  
-  void run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller);
+  void run();
 
 private:
   AsyncTimerState *state_;

@@ -90,7 +90,7 @@ public:
   /**
    * Starts a HTTP fetch of the Request contained.
    */  
-  virtual void run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller);
+  virtual void run();
 protected:
   virtual ~AsyncHttpFetch();
 
