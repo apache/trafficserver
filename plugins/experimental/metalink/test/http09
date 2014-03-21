@@ -21,12 +21,13 @@ print '''1..1 http09
 
 # http://www.w3.org/Protocols/HTTP/AsImplemented
 #
-# The proxy crashes only after the response is complete.  It closes the client
-# connection whether it crashes or not because an HTTP/0.9 response is complete
-# only after the origin closes its connection, and then the proxy normally does
-# the same thing to the client connection (although it upgrades the response to
-# HTTP/1.1).  So the only way to check that the proxy didn't crash is to open
-# another connection.
+# The proxy crashes only after the response is complete.  It closes
+# the client connection whether it crashes or not because an HTTP/0.9
+# response is complete only after the origin closes its connection,
+# and then the proxy normally does the same thing to the client
+# connection (although it upgrades the response to HTTP/1.1).  So the
+# only way to check that the proxy didn't crash is to open another
+# connection.
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http

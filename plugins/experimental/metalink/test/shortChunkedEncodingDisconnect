@@ -17,9 +17,9 @@
 # permissions and limitations under the License.
 
 print '''1..1 shortChunkedEncodingDisconnect
-# The proxy closes the client connection and doesn't send a final chunk if the
-# origin disconnects without sending one, before the proxy sends the response
-# headers'''
+# The proxy closes the client connection and doesn't send a final
+# chunk if the origin disconnects without sending one, before the
+# proxy sends the response headers'''
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
@@ -77,10 +77,10 @@ class factory(protocol.ClientFactory):
         # Who cares what happens now?
         reactor.stop()
 
-    # Avoid calling undefined handleResponse() at the end of the message (if
-    # the proxy sent a Content-Length header vs. a chunked response).
-    # (Override connectionLost() when the proxy closes the client connection or
-    # stop the reactor.)
+    # Avoid calling undefined handleResponse() at the end of the
+    # message (if the proxy sent a Content-Length header vs. a chunked
+    # response).  (Override connectionLost() when the proxy closes the
+    # client connection or stop the reactor.)
     def handleResponseEnd(ctx):
       pass
 

@@ -72,10 +72,10 @@ class factory(protocol.ClientFactory):
       else:
         print 'not ok 1 - Did the proxy crash?  (The client connection closed.)'
 
-    # Get a response with a Location and a Digest header and check that the
-    # Location header is not rewritten.  Then get the same response after
-    # caching a matching file from a different URL and check that this time the
-    # header is rewritten.
+    # Get a response with a Location and a Digest header and check
+    # that the Location header is not rewritten.  Then get the same
+    # response after caching a matching file from a different URL and
+    # check that this time the header is rewritten.
     connectionMade = lambda ctx: ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\nGET {0}:{1}/location HTTP/1.1\r\n\r\nGET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
 
     def handleResponsePart(ctx, data):
