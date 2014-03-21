@@ -17,10 +17,11 @@
 # permissions and limitations under the License.
 
 print '''1..1 longer
-# The proxy doesn't choke if the origin sends more content than it advertised'''
+# The proxy doesn't choke if the origin sends more content than it
+# advertised'''
 
-# Unlike the contentLength test, don't stop the reactor at the end of the
-# headers.  Give the proxy time to choke.
+# Unlike the contentLength test, don't stop the reactor at the end of
+# the headers.  Give the proxy time to choke.
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
@@ -78,12 +79,13 @@ class factory(protocol.ClientFactory):
 
         reactor.stop()
 
-    # Avoid calling undefined handleResponse() at the end of the message.
-    # (Override connectionLost() when the proxy crashes or stop the reactor.)
+    # Avoid calling undefined handleResponse() at the end of the
+    # message.  (Override connectionLost() when the proxy crashes or
+    # we stop the reactor.)
     #
-    # Data that was already received will be processed (the end of the
-    # headers), then shutdown events will fire (connections will be closed),
-    # and then finally the reactor will grind to a halt.
+    # Data that was already received will get processed (the end of
+    # the headers), then shutdown events will fire (connections will
+    # get closed), and then finally the reactor will grind to a halt.
     def handleResponseEnd(ctx):
       pass
 

@@ -85,12 +85,13 @@ class factory(protocol.ClientFactory):
 
         reactor.stop()
 
-    # Avoid calling undefined handleResponse() at the end of the message.
-    # (Override connectionLost() when the proxy crashes or stop the reactor.)
+    # Avoid calling undefined handleResponse() at the end of the
+    # message.  (Override connectionLost() when the proxy crashes or
+    # we stop the reactor.)
     #
-    # Data that was already received will be processed (the end of the
-    # headers), then shutdown events will fire (connections will be closed),
-    # and then finally the reactor will grind to a halt.
+    # Data that was already received will get processed (the end of
+    # the headers), then shutdown events will fire (connections will
+    # get closed), and then finally the reactor will grind to a halt.
     def handleResponseEnd(ctx):
       pass
 

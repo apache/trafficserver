@@ -17,8 +17,8 @@
 # permissions and limitations under the License.
 
 print '''1..1 pipeliningDisconnect
-# The proxy doesn't crash if INKVConnInternal::do_io_close() gets called after
-# a message is already complete'''
+# The proxy doesn't crash if INKVConnInternal::do_io_close() gets
+# called after a message is already complete'''
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
@@ -83,8 +83,8 @@ class factory(protocol.ClientFactory):
     def connectionMade(ctx):
 
       # Somehow these magic words frequently cause
-      # INKVConnInternal::do_io_close() to get called after a message is
-      # already complete
+      # INKVConnInternal::do_io_close() to get called after a message
+      # is already complete
       ctx.transport.write('GET {0}:{1}/pipeliningDisconnect0 HTTP/1.1\r\n\r\nGET {0}:{1}/pipeliningDisconnect1 HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
       ctx.transport.loseConnection()
 

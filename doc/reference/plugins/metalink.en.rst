@@ -6,7 +6,7 @@
    except in compliance with the License.  You may obtain a copy of
    the License at
 
-   http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -70,13 +70,13 @@ Implementation Status
 ---------------------
 
 The plugin implements the ``TS_HTTP_SEND_RESPONSE_HDR_HOOK`` hook to
-check and potentially rewrite the :mailheader:`Location: ...` and
-:mailheader:`Digest: SHA-256=...` headers after responses are cached.
-It doesn't do it before they're cached because the contents of the
-cache can change after responses are cached.  It uses
-:c:func:`TSCacheRead` to check if the URL in the
-:mailheader:`Location: ...` header is already cached.  In future, the
-plugin should also check if the URL is fresh or not.
+check and potentially rewrite the :mailheader:`Location` and
+:mailheader:`Digest` headers after responses are cached.  It doesn't
+do it before they're cached because the contents of the cache can
+change after responses are cached.  It uses :c:func:`TSCacheRead` to
+check if the URL in the :mailheader:`Location` header is already
+cached.  In future, the plugin should also check if the URL is fresh
+or not.
 
 The plugin implements the ``TS_HTTP_READ_RESPONSE_HDR_HOOK`` hook and
 `a null transformation`_ to compute the SHA-256 digest for content as

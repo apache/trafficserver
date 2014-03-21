@@ -39,8 +39,9 @@ class factory(http.HTTPFactory):
 
         ctx.write('chunkedEncoding')
 
-        # If the proxy reads the final chunk before it sends the response
-        # headers, it may send a Content-Length header vs. a chunked response
+        # If the proxy reads the final chunk before it sends the
+        # response headers, it may send a Content-Length header vs. a
+        # chunked response
         reactor.callLater(1, ctx.finish)
 
 origin = tcp.Port(0, factory())
@@ -76,13 +77,14 @@ class factory(protocol.ClientFactory):
         # No hope of a final chunk now
         reactor.stop()
 
-    # Avoid calling undefined handleResponse() at the end of the message (if
-    # the proxy sent a Content-Length header vs. a chunked response).
-    # (Override connectionLost() when the proxy crashes or stop the reactor.)
+    # Avoid calling undefined handleResponse() at the end of the
+    # message (if the proxy sent a Content-Length header vs. a chunked
+    # response).  (Override connectionLost() when the proxy crashes or
+    # we stop the reactor.)
     #
-    # Data that was already received will be processed (the end of the
-    # headers), then shutdown events will fire (connections will be closed),
-    # and then finally the reactor will grind to a halt.
+    # Data that was already received will get processed (the end of
+    # the headers), then shutdown events will fire (connections will
+    # get closed), and then finally the reactor will grind to a halt.
     def handleResponseEnd(ctx):
       pass
 

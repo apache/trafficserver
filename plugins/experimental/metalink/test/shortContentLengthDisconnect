@@ -17,9 +17,9 @@
 # permissions and limitations under the License.
 
 print '''1..2 shortContentLengthDisconnect
-# The proxy sends the right Content-Length header and closes the client
-# connection if the origin disconnects before the proxy sends the response
-# headers'''
+# The proxy sends the right Content-Length header and closes the
+# client connection if the origin disconnects before the proxy sends
+# the response headers'''
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
@@ -81,10 +81,10 @@ class factory(protocol.ClientFactory):
 
         print 'ok 1 - Content-Length header'
 
-    # Avoid calling undefined handleResponse() at the end of the message (if
-    # the proxy sent the wrong Content-Length header).  (Override
-    # connectionLost() when the proxy closes the client connection or stop the
-    # reactor.)
+    # Avoid calling undefined handleResponse() at the end of the
+    # message (if the proxy sent the wrong Content-Length header).
+    # (Override connectionLost() when the proxy closes the client
+    # connection or we stop the reactor.)
     def handleResponseEnd(ctx):
       pass
 
