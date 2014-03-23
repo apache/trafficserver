@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../reference/plugins/xdebug.en.rst:4
 msgid "XDebug Plugin"
-msgstr ""
+msgstr "XDebug プラグイン"
 
 #: ../../reference/plugins/xdebug.en.rst:23
 msgid ""
@@ -40,25 +40,35 @@ msgid ""
 "header from the client request and inject the desired headers into the "
 "client response."
 msgstr ""
+"`XDebug` プラグインは HTTP クライアントが ``X-Deubg`` ヘッダーを使用して "
+"Traffic Server キャッシュの操作をデバッグすることを可能にします。"
+"このプラグインはクライアントからのリクエストに ``X-Debug`` ヘッダーが"
+"含まれることによって動作を開始します。このヘッダーの内容はレスポンスに"
+"要望するデバッグヘッダーの名前です。`XDebug` プラグインはクライアントからの"
+"リクエストから ``X-Debug`` ヘッダーを取り除き、クライアントへのレスポンスに"
+"要望されたヘッダーを注入します。"
 
 #: ../../reference/plugins/xdebug.en.rst:31
 msgid ""
 "`XDebug` is a global plugin. It is installed by adding it to the :file:"
 "`plugin.config` file."
 msgstr ""
+"`XDebug` はグローバルなプラグインです。"
+":file:`plugin.config` ファイルに追加することでインストールされます。"
 
 #: ../../reference/plugins/xdebug.en.rst:35
 msgid "Debugging Headers"
-msgstr ""
+msgstr "ヘッダーのデバッグ"
 
 #: ../../reference/plugins/xdebug.en.rst:37
 msgid ""
 "The `XDebug` plugin is able to generate the following debugging headers:"
 msgstr ""
+"`XDebug` プラグインは次のデバッグヘッダーを生成することができます。"
 
 #: ../../reference/plugins/xdebug.en.rst:42
 msgid "Via"
-msgstr ""
+msgstr "Via"
 
 #: ../../reference/plugins/xdebug.en.rst:40
 msgid ""
@@ -66,10 +76,13 @@ msgid ""
 "`proxy.config.http.insert_response_via_str` configuration variable to ``3`` "
 "for the request."
 msgstr ""
+"``Via`` ヘッダーがリクエストされた場合、`XDebug` プラグインはそのリクエストの "
+":ts:cv:`proxy.config.http.insert_response_via_str` 設定変数に ``3`` を"
+"設定します。"
 
 #: ../../reference/plugins/xdebug.en.rst:46
 msgid "X-Cache-Key"
-msgstr ""
+msgstr "X-Cache-Key"
 
 #: ../../reference/plugins/xdebug.en.rst:45
 msgid ""
@@ -77,3 +90,6 @@ msgid ""
 "Traffic Server cache. This header is particularly useful if a custom cache "
 "key is being used."
 msgstr ""
+"``X-Cache-Key`` は Traffic Server キャッシュの中で HTTP オブジェクトを"
+"識別する URL を含んでいます。このヘッダーはカスタムキャッシュキーが"
+"使われている場合に特に便利です。"
