@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../reference/plugins/stats_over_http.en.rst:4
 msgid "Stats over HTTP Plugin"
-msgstr ""
+msgstr "HTTP統計プラグイン"
 
 #: ../../reference/plugins/stats_over_http.en.rst:24
 msgid ""
@@ -37,16 +37,22 @@ msgid ""
 "is now part of the standard ATS build process, and should be available "
 "after install."
 msgstr ""
+"このプラグインはすべての Traffic Server の統計情報にアクセスするための "
+"HTTP インターフェースを実装しています。返されるメトリクスは処理の行いやすい "
+"JSON 形式です。このプラグインは ATS 標準ビルド処理の一部となったので、"
+"インストールすれば利用可能なはずです。"
 
 #: ../../reference/plugins/stats_over_http.en.rst:28
 msgid "To enable this plugin, add to the plugin.conf file::"
-msgstr ""
+msgstr "このプラグインを使用するには plugin.conf ファイルに追加してください。"
 
 #: ../../reference/plugins/stats_over_http.en.rst:33
 msgid ""
 "After starting Traffic Server, the JSON metrics are now available on the "
 "default URL::"
 msgstr ""
+"Traffic Server を開始すると、次のデフォルト URL で JSON 形式のメトリクスが"
+"利用可能になっています。"
 
 #: ../../reference/plugins/stats_over_http.en.rst:39
 msgid ""
@@ -54,13 +60,18 @@ msgid ""
 "can optionally modify the path to use, and this is highly recommended in a "
 "public facing server. For example::"
 msgstr ""
+"host と port の部分はサーバーのホスト名/IP とポート番号です。"
+"オプションで使用するパスを変更することができ、公開されているサーバーでは"
+"強く推奨されます。"
 
 #: ../../reference/plugins/stats_over_http.en.rst:46
 msgid "and the URL would then be e.g.::"
-msgstr ""
+msgstr "URL は例えば次のようになるでしょう。"
 
 #: ../../reference/plugins/stats_over_http.en.rst:51
 msgid ""
 "This is weak security at best, since the secret could possibly leak if you "
 "are careless and send it over clear text."
 msgstr ""
+"不注意により秘密を平文で送った場合それが漏れる可能性があるので、"
+"これはせいぜい弱いセキュリティでしかありません。"
