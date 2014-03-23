@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../reference/plugins/regex_remap.en.rst:4
 msgid "Regex Remap Plugin"
-msgstr ""
+msgstr "Regex リマッププラグイン"
 
 #: ../../reference/plugins/regex_remap.en.rst:24
 msgid ""
@@ -36,16 +36,23 @@ msgid ""
 "This is similar to what you can accomplish using mod_rewrite in Apache "
 "httpd, but obviously not as flexible or sophisticated (yet)."
 msgstr ""
+"これは正規表現をもとにしたリマップルール設定を可能にします。Apache httpd の "
+"mod_rewrite を使って達成できることと似ていますが、( まだ ) 明らかに"
+"柔軟ではなく洗練されていません。"
 
 #: ../../reference/plugins/regex_remap.en.rst:28
 msgid "To use this plugin, configure a remap.config rule like ::"
 msgstr ""
+"このプラグインを使用するには、remap.config のルールを次のように設定"
+"してください。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:42
 msgid ""
 "An optional argument (``@pparam``) with the string \"``profile``\\ \" will "
 "enable profiling of this regex remap rule, e.g. ::"
 msgstr ""
+"文字列 \"``profile``\\ \" を指定した任意の引数 (``@param``) は "
+"regex リマップルールのプロファイリングを有効化します。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:47
 msgid ""
@@ -54,6 +61,10 @@ msgid ""
 "the order of your regular expression, such that the most common matches "
 "appears early in the file. In order to force a profile dump, you can do ::"
 msgstr ""
+"プロファイリングはとても低いオーバーヘッドで、情報はログディレクトリ内にある "
+"``traffic.out`` に出力されます。この情報は、一番よくマッチするものがファイル"
+"の前方に出てくるようにするなど、正規表現の順番を最適化するのに便利です。"
+"プロファイルの出力を強制するには次のようにしてください。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:56
 msgid ""
@@ -61,17 +72,23 @@ msgid ""
 "regular expressions to match. The following optional parameters can be used "
 "to modify the plugin instance behavior ::"
 msgstr ""
+"デフォルトでは URL のパスとクエリー文字列が正規表現のマッチに提供されます。"
+"次の任意のパラメーターがプラグインインスタンスの振る舞いを変更するために"
+"使用できます。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:64
 msgid ""
 "If you wish to match on the HTTP method used (e.g. \"``GET``\\ \"), you "
 "must use the option ``@pparam=method``. e.g. ::"
 msgstr ""
+"使用された HTTP メソッド ( 例 \"``GET``\\ \") でマッチしたい場合は、"
+"``@pparam=method`` オプションを使用しなければなりません。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:69
 msgid ""
 "With this enabled, the string that you will need to match will look like ::"
 msgstr ""
+"これを有効化することで、マッチさせる文字列は次のようになります。"
 
 #: ../../reference/plugins/regex_remap.en.rst:74
 msgid ""
@@ -79,26 +96,32 @@ msgid ""
 "space. There is no space between the method and the rest of the URL (or URI "
 "path)."
 msgstr ""
+"メソッドは常にすべて大文字で、常に後ろに一つのスペースが付きます。"
+"メソッドと URL の残りの部分 ( もしくは URI パス ) の間にスペースはありません。"
 
 #: ../../reference/plugins/regex_remap.en.rst:78
 msgid ""
 "By default, the query string is part of the string that is matched again, "
 "to turn this off use the option 'no-query-string', e.g. ::"
 msgstr ""
+"デフォルトではクエリー文字列はマッチさせる文字列の一部なので、これをオフに"
+"するには 'no-query-string' オプションを使用してください。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:83
 msgid ""
 "Finally, you can also include the matrix parameters in the string, using "
 "the option 'matrix-parameters', e.g. ::"
 msgstr ""
+"最後に、'matrix-parameters' オプションを使用することで、文字列内に"
+"行列パラメーターを含めることができます。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:88
 msgid "A typical regex would look like ::"
-msgstr ""
+msgstr "典型的な regex はこの様になります。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:92
 msgid "The regular expression must not contain any white spaces!"
-msgstr ""
+msgstr "正規表現はスペースを含んではいけません！"
 
 #: ../../reference/plugins/regex_remap.en.rst:94
 msgid ""
@@ -107,27 +130,35 @@ msgid ""
 "always start with a \"/\". Various substitution strings are allowed on the "
 "right hand side during evaluation ::"
 msgstr ""
+"正規表現のマッチが行われる際、URL パス + クエリー文字列のみがマッチされます "
+"( いかなる任意の設定オプションも指定されていない場合) 。パスは常に \"/\" で"
+"始まります。右辺では評価の中で様々な置き換え文字列が使用できます。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:118
 msgid ""
 "You can also provide options, similar to how you configure your remap."
 "config. The following options are available ::"
 msgstr ""
+"remap.config を設定するのと同じようにオプションを提供することもできます。次の"
+"オプションが利用可能です。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:127
 msgid ""
 "This can be useful to force a particular response for some URLs, e.g. ::"
 msgstr ""
+"これはいくつかの URL に特定のレスポンスを強制するのに便利です。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:131
 msgid "Or, to force a 302 redirect ::"
-msgstr ""
+msgstr "もしくは 302 リダイレクトを強制することもできます。 ::"
 
 #: ../../reference/plugins/regex_remap.en.rst:135
 msgid ""
 "Setting the status to 301 or 302 will force the new URL to be used as a "
 "redirect (Location:)."
 msgstr ""
+"status を 301 か 302 に設定すると 新しい URL がリダイレクト (Location:) に"
+"使用されることを強制できます。"
 
 #: ../../reference/plugins/regex_remap.en.rst:32
 msgid ""
@@ -135,6 +166,8 @@ msgid ""
 "specified, the file name is assumed to be a path relative to the Traffic "
 "Server configuration directory."
 msgstr ""
+"ファイル名パラメーターは常に必要です。絶対パスが指定されない限り、"
+"ファイル名は Traffic Server 設定ディレクトリに対する相対パスとみなされます。"
 
 #: ../../reference/plugins/regex_remap.en.rst:36
 msgid ""
@@ -144,6 +177,10 @@ msgid ""
 "of the regular expressions are a match, the default destination URL is "
 "applied (``http://b.com`` in the example above)."
 msgstr ""
+"設定ファイルに記載された正規表現の一覧は順番に評価されます。正規表現が"
+"リクエスト URL にマッチすると、評価は終了し、リライトルールが適用されます。"
+"もしどの正規表現もマッチしない場合は、デフォルトの宛先 URL が適用されます "
+"( 上記の例では ``http://b.com``) 。"
 
 #: ../../reference/plugins/regex_remap.en.rst:114
 msgid ""
@@ -151,3 +188,5 @@ msgid ""
 "regular expression, not to the entire string that the regular expression "
 "was matched against."
 msgstr ""
+"``$0`` 置き換えは、正規表現のマッチに使用された文字列全体ではなく、正規表現に"
+"マッチした文字列を展開します。"
