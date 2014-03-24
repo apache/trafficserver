@@ -538,7 +538,7 @@ StateAuthProxySendResponse(AuthRequestContext * auth, void * /* edata ATS_UNUSED
     status = TSHttpHdrStatusGet(mbuf, mhdr),
     snprintf(msg, sizeof(msg), "%d %s\n", status, TSHttpHdrReasonLookup(status));
 
-    TSHttpTxnErrorBodySet(auth->txn, TSstrdup(msg), strlen(msg), NULL);
+    TSHttpTxnErrorBodySet(auth->txn, TSstrdup(msg), strlen(msg), TSstrdup("text/plain"));
 
     // We must not whack the content length for HEAD responses, since the
     // client already knows that there is no body. Forcing content length to
@@ -664,7 +664,7 @@ StateUnauthorized(AuthRequestContext * auth, void *)
     static const char msg[] = "authorization denied\n";
 
     TSHttpTxnSetHttpRetStatus(auth->txn, TS_HTTP_STATUS_FORBIDDEN);
-    TSHttpTxnErrorBodySet(auth->txn, TSstrdup(msg), sizeof(msg) - 1, NULL);
+    TSHttpTxnErrorBodySet(auth->txn, TSstrdup(msg), sizeof(msg) - 1, TSstrdup("text/plain"));
 
     TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_ERROR);
     return TS_EVENT_CONTINUE;

@@ -870,10 +870,11 @@ HttpTransact::EndRemapRequest(State* s)
   // Check if remap plugin set HTTP return code and return body  //
   /////////////////////////////////////////////////////////////////
   if (s->http_return_code != HTTP_STATUS_NONE) {
-    build_error_response(s, s->http_return_code, NULL, NULL, s->return_xbuf_size ? s->return_xbuf : NULL);
+    build_error_response(s, s->http_return_code, NULL, NULL, s->internal_msg_buffer_size ? s->internal_msg_buffer : NULL);
     s->reverse_proxy = false;
     goto done;
   }
+
   ///////////////////////////////////////////////////////////////
   // if no mapping was found, handle the cases where:          //
   //                                                           //
@@ -3422,8 +3423,15 @@ HttpTransact::HandleStatPage(State* s)
   s->hdr_info.client_response.set_content_length(s->internal_msg_buffer_size);
 
   if (s->internal_msg_buffer_type) {
-    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, s->internal_msg_buffer_type,
-                                          strlen(s->internal_msg_buffer_type));
+    int len = strlen(s->internal_msg_buffer_type);
+
+    if (len > 0) {
+      s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
+                                            s->internal_msg_buffer_type, len);
+    }
+  } else {
+    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
+                                          "text/plain", 9);
   }
 
   s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -5512,9 +5520,7 @@ HttpTransact::handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr)
 
       s->internal_msg_buffer_index = 0;
       s->internal_msg_buffer_size = req_length * 2;
-      if (s->internal_msg_buffer) {
-        free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
-      }
+      s->free_internal_msg_buffer();
 
       if (s->internal_msg_buffer_size <= max_iobuffer_size) {
         s->internal_msg_buffer_fast_allocator_size = buffer_size_to_index(s->internal_msg_buffer_size);
@@ -8175,16 +8181,6 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->hdr_info.client_response.field_delete(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
 
 
-  /////////////////////////////////////////////////////////////
-  // deallocate any existing response body --- it's possible //
-  // that we have previous created an error msg but retried  //
-  // the connection and are now making a new one.            //
-  /////////////////////////////////////////////////////////////
-  s->internal_msg_buffer_index = 0;
-  if (s->internal_msg_buffer) {
-    free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
-  }
-  s->internal_msg_buffer_fast_allocator_size = -1;
 
   ////////////////////////////////////////////////////////////////////
   // create the error message using the "body factory", which will  //
@@ -8193,11 +8189,20 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   // supports language targeting using the Accept-Language header   //
   ////////////////////////////////////////////////////////////////////
 
-  s->internal_msg_buffer = body_factory->fabricate_with_old_api(error_body_type, s, 8192,
-                                                                &s->internal_msg_buffer_size,
-                                                                body_language, sizeof(body_language), 
-                                                                body_type, sizeof(body_type), 
-                                                                format, ap);
+  int64_t len;
+  char *new_msg = body_factory->fabricate_with_old_api(error_body_type, s, 8192,
+                                                       &len,
+                                                       body_language, sizeof(body_language),
+                                                       body_type, sizeof(body_type),
+                                                       format, ap);
+
+  // After the body factory is called, a new "body" is allocated, and we must replace it. It is
+  // unfortunate that there's no way to avoid this fabrication even when there is no substitutions...
+  s->free_internal_msg_buffer();
+  s->internal_msg_buffer = new_msg;
+  s->internal_msg_buffer_size = len;
+  s->internal_msg_buffer_index = 0;
+  s->internal_msg_buffer_fast_allocator_size = -1;
 
   s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
   s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
@@ -8280,9 +8285,7 @@ HttpTransact::build_redirect_response(State* s)
   // set descriptive text //
   //////////////////////////
   s->internal_msg_buffer_index = 0;
-  if (s->internal_msg_buffer) {
-    free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
-  }
+  s->free_internal_msg_buffer();
   s->internal_msg_buffer_fast_allocator_size = -1;
   s->internal_msg_buffer = body_factory->fabricate_with_old_api_build_va("redirect#moved_temporarily", s, 8192,
                                                                          &s->internal_msg_buffer_size,

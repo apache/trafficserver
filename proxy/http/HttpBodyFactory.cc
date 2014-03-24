@@ -122,7 +122,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   ///////////////////////////////////////////
   // check if we don't need to format body //
   ///////////////////////////////////////////
-  if (context->return_xbuf_plain && format) {
+  if (format) {
     int l = ink_bvsprintf(NULL, format, ap);
     if (l < max_buffer_length) {
       buffer = (char *)ats_malloc(l + 1);

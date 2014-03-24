@@ -263,22 +263,21 @@ LuaRemapReject(lua_State * lua)
 {
   LuaRemapRequest * rq;
   int status;
+  size_t body_len;
   const char * body = NULL;
 
   rq = LuaRemapRequest::get(lua, 1);
   status = luaL_checkint(lua, 2);
   if (!lua_isnoneornil(lua, 3)) {
-    body = luaL_checkstring(lua, 3);
+    body = luaL_checklstring(lua, 3, &body_len);
+    // body = luaL_checkstring(lua, 3);
   }
 
   LuaLogDebug("rejecting request %p with status %d", rq->rri, status);
 
   TSHttpTxnSetHttpRetStatus(rq->txn, (TSHttpStatus)status);
   if (body && *body) {
-    // XXX Dubiously guess the content type from the body. This doesn't actually seem to work
-    // so it doesn't matter that our guess is pretty bad.
-    int isplain = (*body != '<');
-    TSHttpTxnSetHttpRetBody(rq->txn, body, isplain);
+    TSHttpTxnErrorBodySet(rq->txn, TSstrdup(body), body_len, NULL); // Defaults to text/html
   }
 
   // A reject terminates plugin chain evaluation but does not update the request URL.

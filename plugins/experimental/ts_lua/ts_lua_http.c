@@ -131,7 +131,7 @@ ts_lua_http_set_retbody(lua_State *L)
     http_ctx = ts_lua_get_http_ctx(L);
 
     body = luaL_checklstring(L, 1, &body_len);
-    TSHttpTxnSetHttpRetBody(http_ctx->txnp, body, 1);
+    TSHttpTxnErrorBodySet(http_ctx->txnp, TSstrdup(body), body_len, NULL); // Defaults to text/html
     return 0;
 }
 
@@ -152,7 +152,7 @@ ts_lua_http_set_resp(lua_State *L)
 
     if (n == 2) {
         body = luaL_checklstring(L, 2, &body_len);
-        TSHttpTxnSetHttpRetBody(http_ctx->txnp, body, 1);
+        TSHttpTxnErrorBodySet(http_ctx->txnp, TSstrdup(body), body_len, NULL); // Defaults to text/html
     }
 
     return 0;

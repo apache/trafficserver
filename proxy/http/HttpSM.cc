@@ -2186,11 +2186,12 @@ HttpSM::state_handle_stat_page(int event, void *data)
 
     if (data) {
       StatPageData *spd = (StatPageData *) data;
+
       t_state.internal_msg_buffer = spd->data;
       if (spd->type)
         t_state.internal_msg_buffer_type = spd->type;
       else
-        t_state.internal_msg_buffer_type = ats_strdup("text/html");
+        t_state.internal_msg_buffer_type = NULL; // Defaults to text/html
       t_state.internal_msg_buffer_size = spd->length;
       t_state.internal_msg_buffer_fast_allocator_size = -1;
     }
@@ -5511,7 +5512,6 @@ HttpSM::setup_server_send_request_api()
 void
 HttpSM::setup_server_send_request()
 {
-  bool api_set;
   int hdr_length;
   int64_t msg_len = 0;  /* lv: just make gcc happy */
 
@@ -5523,8 +5523,7 @@ HttpSM::setup_server_send_request()
   server_entry->vc_handler = &HttpSM::state_send_server_request_header;
   server_entry->write_buffer = new_MIOBuffer(buffer_size_to_index(HTTP_HEADER_BUFFER_SIZE));
 
-  api_set = t_state.api_server_request_body_set ? true : false;
-  if (api_set) {
+  if (t_state.api_server_request_body_set) {
     msg_len = t_state.internal_msg_buffer_size;
     t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
@@ -5535,7 +5534,7 @@ HttpSM::setup_server_send_request()
     write_header_into_buffer(&t_state.hdr_info.server_request, server_entry->write_buffer);
 
   // the plugin decided to append a message to the request
-  if (api_set) {
+  if (t_state.api_server_request_body_set) {
     DebugSM("http", "[%" PRId64 "] appending msg of %" PRId64" bytes to request %s", sm_id, msg_len, t_state.internal_msg_buffer);
     hdr_length += server_entry->write_buffer->write(t_state.internal_msg_buffer, msg_len);
     server_request_body_bytes = msg_len;
@@ -5790,6 +5789,7 @@ void
 HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 {
   bool is_msg_buf_present;
+
   if (t_state.internal_msg_buffer) {
     is_msg_buf_present = true;
     ink_assert(t_state.internal_msg_buffer_size > 0);
@@ -5800,12 +5800,19 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 
     // set internal_msg_buffer_type if available
     if (t_state.internal_msg_buffer_type) {
-      t_state.hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE,
-                                                 MIME_LEN_CONTENT_TYPE,
-                                                 t_state.internal_msg_buffer_type,
-                                                 strlen(t_state.internal_msg_buffer_type));
+      int len = strlen(t_state.internal_msg_buffer_type);
+
+      if (len > 0) {
+        t_state.hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE,
+                                                   MIME_LEN_CONTENT_TYPE,
+                                                   t_state.internal_msg_buffer_type, len);
+      }
       ats_free(t_state.internal_msg_buffer_type);
       t_state.internal_msg_buffer_type = NULL;
+    } else {
+      t_state.hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE,
+                                                 MIME_LEN_CONTENT_TYPE,
+                                                 "text/html", 9);
     }
   } else {
     is_msg_buf_present = false;

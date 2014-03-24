@@ -5423,46 +5423,46 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
   return TS_SUCCESS;
 }
 
+// Set the body, or, if you provide a NULL buffer, clear the body message
 void
-TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype)
+TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetype)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)buf) == TS_SUCCESS);
-  sdk_assert(buflength > 0);
 
   HttpSM *sm = (HttpSM *) txnp;
   HttpTransact::State *s = &(sm->t_state);
 
-  if (s->internal_msg_buffer)
-    HttpTransact::free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
-
-  ats_free_null(s->internal_msg_buffer_type);
+  // Cleanup anything already set.
+  s->free_internal_msg_buffer();
+  ats_free(s->internal_msg_buffer_type);
 
   s->internal_msg_buffer = buf;
-  s->internal_msg_buffer_type = mimetype;
-  s->internal_msg_buffer_size = buflength;
+  s->internal_msg_buffer_size = buf ? buflength : 0;
   s->internal_msg_buffer_fast_allocator_size = -1;
+
+  s->internal_msg_buffer_type = mimetype;
 }
 
 void
 TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)buf) == TS_SUCCESS);
-  sdk_assert(buflength > 0);
 
   HttpSM *sm = (HttpSM *) txnp;
   HttpTransact::State *s = &(sm->t_state);
 
-  if (s->method != HTTP_WKSIDX_GET)
-    return;
+  // Cleanup anything already set.
+  s->free_internal_msg_buffer();
 
-  if (s->internal_msg_buffer)
-    HttpTransact::free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
-
-  s->api_server_request_body_set = true;
-  s->internal_msg_buffer = buf;
-  s->internal_msg_buffer_size = buflength;
+  if (buf) {
+    s->api_server_request_body_set = true;
+    s->internal_msg_buffer = buf;
+    s->internal_msg_buffer_size = buflength;
+  } else {
+    s->api_server_request_body_set = false;
+    s->internal_msg_buffer = NULL;
+    s->internal_msg_buffer_size = 0;
+  }
   s->internal_msg_buffer_fast_allocator_size = -1;
 }
 
@@ -5661,30 +5661,6 @@ TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus)
 
   HttpSM *sm = (HttpSM *) txnp;
   sm->t_state.http_return_code = (HTTPStatus) http_retstatus;
-}
-
-int
-TSHttpTxnGetMaxHttpRetBodySize(void)
-{
-  return HTTP_TRANSACT_STATE_MAX_XBUF_SIZE;
-}
-
-void
-TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char *body_msg, int plain_msg_flag)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State *s = &(sm->t_state);
-
-  s->return_xbuf_size = 0;
-  s->return_xbuf[0] = 0;
-  s->return_xbuf_plain = false;
-  if (body_msg) {
-    ink_strlcpy(s->return_xbuf, body_msg, HTTP_TRANSACT_STATE_MAX_XBUF_SIZE);
-    s->return_xbuf_size = strlen(s->return_xbuf);
-    s->return_xbuf_plain = plain_msg_flag;
-  }
 }
 
 /* control channel for HTTP */

@@ -43,7 +43,7 @@ class Acl
 {
 public:
   Acl()
-    : _html(""), _allow(true), _added_tokens(0)
+    : _allow(true), _added_tokens(0)
   { }
 
   virtual ~Acl()
@@ -53,15 +53,17 @@ public:
   virtual void read_regex(const char* fn) = 0;
   virtual void process_args(int argc, char* argv[]) = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
-  virtual void add_token(const std::string& /* str */) { ++_added_tokens; }
 
+  virtual void add_token(const std::string& /* str */) { ++_added_tokens; }
   void set_allow(bool allow) { _allow = allow; }
-  const char* get_html() const { return _html.c_str(); }
 
   void send_html(TSHttpTxn txnp) const
   {
-    if (_html.size() > 0)
-      TSHttpTxnSetHttpRetBody(txnp, _html.c_str(), true);
+    if (_html.size() > 0) {
+      char* msg = TSstrdup(_html.c_str());
+
+      TSHttpTxnErrorBodySet(txnp, msg, _html.size(), NULL); // Defaults to text/html
+    }
   }
 
   void read_html(const char* fn);

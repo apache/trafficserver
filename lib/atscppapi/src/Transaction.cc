@@ -113,16 +113,7 @@ void Transaction::error(const std::string &page) {
 
 void Transaction::setErrorBody(const std::string &page) {
   LOG_DEBUG("Transaction tshttptxn=%p setting error body page: %s", state_->txn_, page.c_str());
-  char *res_bdy = static_cast<char*>(TSmalloc(page.length() + 1));
-  strncpy(res_bdy, page.c_str(), page.length());
-  res_bdy[page.length()] = '\0';
-
-  std::string str_content_type = "text/html";
-  char *content_type = static_cast<char*>(TSmalloc(str_content_type.length() + 1));
-  strncpy(content_type, str_content_type.c_str(), str_content_type.length());
-  content_type[str_content_type.length()] = '\0';
-
-  TSHttpTxnErrorBodySet(state_->txn_, res_bdy, page.length(), content_type);
+  TSHttpTxnErrorBodySet(state_->txn_, TSstrdup(page.c_str()), page.length(), NULL); // Default to text/html
 }
 
 bool Transaction::isInternalRequest() const {

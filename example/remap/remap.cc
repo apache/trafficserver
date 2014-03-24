@@ -310,13 +310,14 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // How to cancel request processing and return error message to the client
   // We wiil do it each other request
   if (_processing_counter & 1) {
-    char tmp[256];
+    char* tmp = (char*)TSmalloc(256);
     static int my_local_counter = 0;
-    snprintf(tmp, sizeof(tmp) - 1,
-             "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
-             my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
-    TSHttpTxnSetHttpRetStatus((TSHttpTxn) rh, (TSHttpStatus) ((int) TS_HTTP_STATUS_CONTINUE + my_local_counter));   //TS_HTTP_STATUS_SERVICE_UNAVAILABLE); //TS_HTTP_STATUS_NOT_ACCEPTABLE);
-    TSHttpTxnSetHttpRetBody((TSHttpTxn) rh, (const char *) tmp, true);
+
+    size_t len = snprintf(tmp, sizeof(tmp) - 1,
+                          "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
+                          my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
+    TSHttpTxnSetHttpRetStatus((TSHttpTxn) rh, (TSHttpStatus) ((int) TS_HTTP_STATUS_CONTINUE + my_local_counter)); 
+    TSHttpTxnErrorBodySet((TSHttpTxn) rh, tmp, len, NULL); // Defaults to text/html
     my_local_counter++;
   }
   // hardcoded case for remapping

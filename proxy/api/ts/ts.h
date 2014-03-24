@@ -1394,7 +1394,19 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos);
 
 
-  tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
+  /**
+     Sets an error type body to a transaction. Note that both string arguments
+     must be allocated with TSmalloc() or TSstrdup(). The mimetype argument is
+     optional, if not provided it defaults to "text/html". Sending an emptry
+     string would prevent setting a content type header (but that is not adviced).
+
+     @param txnp HTTP transaction whose parent proxy to get.
+     @param buf The body message (must be heap allocated).
+     @param buflength Length of the body message.
+     @param mimetype The MIME type to set the response to (can be NULL, but must
+            be heap allocated if non-NULL).
+  */
+  tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, size_t buflength, char* mimetype);
 
   /**
       Retrieves the parent proxy hostname and port, if parent
@@ -1458,8 +1470,7 @@ extern "C"
   tsapi TSReturnCode TSHttpArgIndexNameLookup(const char* name, int* arg_idx, const char** description);
   tsapi TSReturnCode TSHttpArgIndexLookup(int arg_idx, const char** name, const char** description);
 
-  tsapi int TSHttpTxnGetMaxHttpRetBodySize(void);
-  tsapi void TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char* body_msg, int plain_msg);
+  /* ToDo: This is a leftover from olden days, can we eliminate? */
   tsapi void TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus);
 
   tsapi void TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);
