@@ -1930,37 +1930,37 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
+  lib/atscppapi/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/examples/async_http_fetch/Makefile
+  lib/atscppapi/examples/async_timer/Makefile
+  lib/atscppapi/examples/clientredirect/Makefile
+  lib/atscppapi/examples/clientrequest/Makefile
+  lib/atscppapi/examples/customresponse/Makefile
+  lib/atscppapi/examples/data_caching/Makefile
+  lib/atscppapi/examples/globalhook/Makefile
+  lib/atscppapi/examples/gzip_transformation/Makefile
+  lib/atscppapi/examples/helloworld/Makefile
+  lib/atscppapi/examples/intercept/Makefile
+  lib/atscppapi/examples/internal_transaction_handling/Makefile
+  lib/atscppapi/examples/logger_example/Makefile
+  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
+  lib/atscppapi/examples/null_transformation_plugin/Makefile
+  lib/atscppapi/examples/post_buffer/Makefile
+  lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/serverresponse/Makefile
+  lib/atscppapi/examples/stat_example/Makefile
+  lib/atscppapi/examples/timeout_example/Makefile
+  lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/src/Makefile
+  lib/perl/Makefile
+  lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
   lib/ts/Makefile
   lib/ts/apidefs.h
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
-  lib/atscppapi/Makefile
-  lib/atscppapi/src/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/data_caching/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/intercept/Makefile
   lib/wccp/Makefile
-  lib/perl/Makefile
-  lib/perl/lib/Apache/TS.pm
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
@@ -1972,6 +1972,11 @@ AC_CONFIG_FILES([
   plugins/Makefile
   plugins/cacheurl/Makefile
   plugins/conf_remap/Makefile
+  plugins/gzip/Makefile
+  plugins/header_rewrite/Makefile
+  plugins/libloader/Makefile
+  plugins/regex_remap/Makefile
+  plugins/stats_over_http/Makefile
   plugins/experimental/Makefile
   plugins/experimental/authproxy/Makefile
   plugins/experimental/balancer/Makefile
@@ -1981,22 +1986,17 @@ AC_CONFIG_FILES([
   plugins/experimental/escalate/Makefile
   plugins/experimental/esi/Makefile
   plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/lua/Makefile
+  plugins/experimental/healthchecks/Makefile
   plugins/experimental/hipes/Makefile
-  plugins/experimental/ts_lua/Makefile
+  plugins/experimental/lua/Makefile
   plugins/experimental/metalink/Makefile
+  plugins/experimental/remap_stats/Makefile
   plugins/experimental/rfc5861/Makefile
   plugins/experimental/s3_auth/Makefile
   plugins/experimental/spdy/Makefile
   plugins/experimental/tcp_info/Makefile
-  plugins/experimental/healthchecks/Makefile
-  plugins/experimental/remap_stats/Makefile
+  plugins/experimental/ts_lua/Makefile
   plugins/experimental/xdebug/Makefile
-  plugins/gzip/Makefile
-  plugins/libloader/Makefile
-  plugins/header_rewrite/Makefile
-  plugins/regex_remap/Makefile
-  plugins/stats_over_http/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile
@@ -2006,10 +2006,10 @@ AC_CONFIG_FILES([
   proxy/config/storage.config.default
   proxy/congest/Makefile
   proxy/hdrs/Makefile
-  proxy/shared/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
   proxy/logging/Makefile
+  proxy/shared/Makefile
   proxy/spdy/Makefile
   rc/Makefile
   rc/trafficserver
