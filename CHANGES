@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
   
+  *) [TS-2431] Migrate Taobao SPDY plugin to ATS core.
+
   *) [TS-2651] atscppapi: race conditions in destruction of async providers
  
   *) [TS-2646] regex_remap: Add a new option, @caseless.
