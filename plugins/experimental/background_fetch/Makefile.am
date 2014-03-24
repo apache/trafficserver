@@ -14,28 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- custom_redirect \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- lua \
- metalink \
- remap_stats \
- rfc5861 \
- s3_auth \
- spdy \
- tcp_info \
- ts_lua \
- xdebug
-
-endif
+pkglib_LTLIBRARIES = background_fetch.la
+background_fetch_la_SOURCES = background_fetch.cc
+background_fetch_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

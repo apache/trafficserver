@@ -63,6 +63,7 @@ directory of the Apache Traffic Server source tree. Exmperimental plugins can be
   :maxdepth: 1
 
   authproxy.en
+  background_fetch.en
   balancer.en
   buffer_upload.en
   combo_handler.en

@@ -1978,6 +1978,7 @@ AC_CONFIG_FILES([
   plugins/stats_over_http/Makefile
   plugins/experimental/Makefile
   plugins/experimental/authproxy/Makefile
+  plugins/experimental/background_fetch/Makefile
   plugins/experimental/balancer/Makefile
   plugins/experimental/buffer_upload/Makefile
   plugins/experimental/channel_stats/Makefile
