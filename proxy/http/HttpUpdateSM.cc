@@ -103,10 +103,10 @@ HttpUpdateSM::handle_api_return()
 {
 
   switch (t_state.api_next_action) {
-  case HttpTransact::HTTP_API_SM_START:
+  case HttpTransact::SM_ACTION_API_SM_START:
     call_transact_and_set_next_state(&HttpTransact::ModifyRequest);
     return;
-  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
+  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
     // we have further processing to do
     //  based on what t_state.next_action is
     break;
@@ -116,7 +116,7 @@ HttpUpdateSM::handle_api_return()
   }
 
   switch (t_state.next_action) {
-  case HttpTransact::TRANSFORM_READ:
+  case HttpTransact::SM_ACTION_TRANSFORM_READ:
     {
       if (t_state.cache_info.transform_action == HttpTransact::CACHE_DO_WRITE) {
         // Transform output cachable so initiate the transfer
@@ -153,11 +153,11 @@ HttpUpdateSM::handle_api_return()
       }
       break;
     }
-  case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
-  case HttpTransact::SERVER_READ:
-  case HttpTransact::PROXY_INTERNAL_CACHE_NOOP:
-  case HttpTransact::PROXY_SEND_ERROR_CACHE_NOOP:
-  case HttpTransact::SERVE_FROM_CACHE:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE:
+  case HttpTransact::SM_ACTION_SERVER_READ:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
+  case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
+  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
     {
       cb_event = HTTP_SCH_UPDATE_EVENT_NOT_CACHED;
       t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS;
@@ -165,10 +165,10 @@ HttpUpdateSM::handle_api_return()
       return;
     }
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_DELETE:
-  case HttpTransact::PROXY_INTERNAL_CACHE_UPDATE_HEADERS:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
     {
-      if (t_state.next_action == HttpTransact::PROXY_INTERNAL_CACHE_DELETE) {
+      if (t_state.next_action == HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE) {
         cb_event = HTTP_SCH_UPDATE_EVENT_DELETED;
       } else {
         cb_event = HTTP_SCH_UPDATE_EVENT_UPDATED;
@@ -192,7 +192,7 @@ HttpUpdateSM::set_next_state()
   if (t_state.cache_info.action == HttpTransact::CACHE_DO_NO_ACTION ||
       t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE) {
 
-    if (t_state.next_action == HttpTransact::SERVE_FROM_CACHE) {
+    if (t_state.next_action == HttpTransact::SM_ACTION_SERVE_FROM_CACHE) {
       cb_event = HTTP_SCH_UPDATE_EVENT_NO_ACTION;
       t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT;
     } else {

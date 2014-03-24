@@ -314,7 +314,7 @@ HttpSM::HttpSM()
     transform_info(), post_transform_info(), has_active_plugin_agents(false),
     second_cache_sm(NULL),
     default_handler(NULL), pending_action(NULL), historical_action(NULL),
-    last_action(HttpTransact::STATE_MACHINE_ACTION_UNDEFINED),
+    last_action(HttpTransact::SM_ACTION_UNDEFINED),
     // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
     client_request_hdr_bytes(0), client_request_body_bytes(0),
     server_request_hdr_bytes(0), server_request_body_bytes(0),
@@ -468,7 +468,7 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
       HttpSMList[bucket].sm_list.push(this);
   }
 
-  t_state.api_next_action = HttpTransact::HTTP_API_SM_START;
+  t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_START;
   do_api_callout();
   return EVENT_DONE;
 }
@@ -1427,16 +1427,17 @@ HttpSM::state_api_callout(int event, void *data)
   callout_state = HTTP_API_NO_CALLOUT;
   switch (api_next) {
   case API_RETURN_CONTINUE:
-    if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_RESPONSE_HDR)
+    if (t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR) {
       do_redirect();
+    }
     handle_api_return();
     break;
   case API_RETURN_DEFERED_CLOSE:
-    ink_assert(t_state.api_next_action == HttpTransact::HTTP_API_SM_SHUTDOWN);
+    ink_assert(t_state.api_next_action == HttpTransact::SM_ACTION_API_SM_SHUTDOWN);
     do_api_callout();
     break;
   case API_RETURN_DEFERED_SERVER_ERROR:
-    ink_assert(t_state.api_next_action == HttpTransact::HTTP_API_SEND_REQUEST_HDR);
+    ink_assert(t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR);
     ink_assert(t_state.current.state != HttpTransact::CONNECTION_ALIVE);
     call_transact_and_set_next_state(HttpTransact::HandleResponse);
     break;
@@ -1469,25 +1470,25 @@ void
 HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
-  case HttpTransact::HTTP_API_SM_START:
+  case HttpTransact::SM_ACTION_API_SM_START:
     if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
       setup_blind_tunnel_port();
     } else {
       setup_client_read_request_header();
     }
     return;
-  case HttpTransact::HTTP_API_PRE_REMAP:
-  case HttpTransact::HTTP_API_POST_REMAP:
-  case HttpTransact::HTTP_API_READ_REQUEST_HDR:
-  case HttpTransact::HTTP_API_OS_DNS:
-  case HttpTransact::HTTP_API_READ_CACHE_HDR:
-  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
-  case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
+  case HttpTransact::SM_ACTION_API_PRE_REMAP:
+  case HttpTransact::SM_ACTION_API_POST_REMAP:
+  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_API_OS_DNS:
+  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
+  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
+  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
     // this part is added for automatic redirect
-    if (t_state.api_next_action == HttpTransact::HTTP_API_READ_RESPONSE_HDR && t_state.api_release_server_session) {
+    if (t_state.api_next_action == HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR && t_state.api_release_server_session) {
       t_state.api_release_server_session = false;
       release_server_session();
-    } else if (t_state.api_next_action == HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE &&
+    } else if (t_state.api_next_action == HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE &&
                t_state.api_cleanup_cache_read &&
                t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
       t_state.api_cleanup_cache_read = false;
@@ -1499,10 +1500,10 @@ HttpSM::handle_api_return()
     }
     call_transact_and_set_next_state(NULL);
     return;
-  case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
     setup_server_send_request();
     return;
-  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
+  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
     // Set back the inactivity timeout
     if (ua_session) {
       ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
@@ -1510,7 +1511,7 @@ HttpSM::handle_api_return()
     // we have further processing to do
     //  based on what t_state.next_action is
     break;
-  case HttpTransact::HTTP_API_SM_SHUTDOWN:
+  case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
     state_remove_from_list(EVENT_NONE, NULL);
     return;
   default:
@@ -1519,14 +1520,14 @@ HttpSM::handle_api_return()
   }
 
   switch (t_state.next_action) {
-  case HttpTransact::TRANSFORM_READ:
+  case HttpTransact::SM_ACTION_TRANSFORM_READ:
     {
       HttpTunnelProducer *p = setup_transfer_from_transform();
       perform_transform_cache_write_action();
       tunnel.tunnel_run(p);
       break;
     }
-  case HttpTransact::SERVER_READ:
+  case HttpTransact::SM_ACTION_SERVER_READ:
     {
       if (unlikely(t_state.did_upgrade_succeed)) {
        // We've sucessfully handled the upgrade, let's now setup
@@ -1543,14 +1544,14 @@ HttpSM::handle_api_return()
       }
       break;
     }
-  case HttpTransact::SERVE_FROM_CACHE:
+  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
     {
       setup_cache_read_transfer();
       tunnel.tunnel_run();
       break;
     }
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE:
     {
       if (cache_sm.cache_write_vc) {
         setup_internal_transfer(&HttpSM::tunnel_handler_cache_fill);
@@ -1560,16 +1561,16 @@ HttpSM::handle_api_return()
       break;
     }
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_NOOP:
-  case HttpTransact::PROXY_INTERNAL_CACHE_DELETE:
-  case HttpTransact::PROXY_INTERNAL_CACHE_UPDATE_HEADERS:
-  case HttpTransact::PROXY_SEND_ERROR_CACHE_NOOP:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
+  case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
     {
       setup_internal_transfer(&HttpSM::tunnel_handler);
       break;
     }
 
-  case HttpTransact::REDIRECT_READ:
+  case HttpTransact::SM_ACTION_REDIRECT_READ:
     {
       call_transact_and_set_next_state(HttpTransact::HandleRequest);
       break;
@@ -1834,7 +1835,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     t_state.current.state = HttpTransact::CONNECTION_ALIVE;
     t_state.transact_return_point = HttpTransact::HandleResponse;
-    t_state.api_next_action = HttpTransact::HTTP_API_READ_RESPONSE_HDR;
+    t_state.api_next_action = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // YTS Team, yamsat Plugin
     // Incrementing redirection_tries according to config parameter
@@ -2349,7 +2350,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     //  the cache write.  If this is the case, forward the event
     //  to the transform read state as it will know how to
     //  handle it
-    if (t_state.next_action == HttpTransact::CACHE_ISSUE_WRITE_TRANSFORM) {
+    if (t_state.next_action == HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM) {
       state_common_wait_for_transform_read(&transform_info, &HttpSM::tunnel_handler, event, data);
 
       return 0;
@@ -2380,7 +2381,7 @@ HttpSM::state_cache_open_write(int event, void *data)
 inline void
 HttpSM::setup_cache_lookup_complete_api()
 {
-  t_state.api_next_action = HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE;
+  t_state.api_next_action = HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE;
   do_api_callout();
 }
 
@@ -4673,38 +4674,38 @@ HttpSM::do_api_callout_internal()
   }
 
   switch (t_state.api_next_action) {
-  case HttpTransact::HTTP_API_SM_START:
+  case HttpTransact::SM_ACTION_API_SM_START:
     cur_hook_id = TS_HTTP_TXN_START_HOOK;
     break;
-  case HttpTransact::HTTP_API_PRE_REMAP:
+  case HttpTransact::SM_ACTION_API_PRE_REMAP:
     cur_hook_id = TS_HTTP_PRE_REMAP_HOOK;
     break;
-  case HttpTransact::HTTP_API_POST_REMAP:
+  case HttpTransact::SM_ACTION_API_POST_REMAP:
     cur_hook_id = TS_HTTP_POST_REMAP_HOOK;
     break;
-  case HttpTransact::HTTP_API_READ_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
     cur_hook_id = TS_HTTP_READ_REQUEST_HDR_HOOK;
     break;
-  case HttpTransact::HTTP_API_OS_DNS:
+  case HttpTransact::SM_ACTION_API_OS_DNS:
     cur_hook_id = TS_HTTP_OS_DNS_HOOK;
     break;
-  case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
     cur_hook_id = TS_HTTP_SEND_REQUEST_HDR_HOOK;
     break;
-  case HttpTransact::HTTP_API_READ_CACHE_HDR:
+  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
     cur_hook_id = TS_HTTP_READ_CACHE_HDR_HOOK;
     break;
-  case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
+  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
     cur_hook_id = TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
     break;
-  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
+  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_READ_RESPONSE_HDR_HOOK;
     break;
-  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
+  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     milestones.ua_begin_write = ink_get_hrtime();
     break;
-  case HttpTransact::HTTP_API_SM_SHUTDOWN:
+  case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
       callout_state = HTTP_API_DEFERED_CLOSE;
       return;
@@ -5503,7 +5504,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
 void
 HttpSM::setup_server_send_request_api()
 {
-  t_state.api_next_action = HttpTransact::HTTP_API_SEND_REQUEST_HDR;
+  t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR;
   do_api_callout();
 }
 
@@ -5773,7 +5774,7 @@ HttpSM::setup_error_transfer()
     // Since we need to send the error message, call the API
     //   function
     ink_assert(t_state.internal_msg_buffer_size > 0);
-    t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
     do_api_callout();
   } else {
     DebugSM("http", "[setup_error_transfer] Now closing connection ...");
@@ -6395,7 +6396,7 @@ HttpSM::kill_this()
     //  if the plugin receives event we must reset
     //  the terminate_flag
     terminate_sm = false;
-    t_state.api_next_action = HttpTransact::HTTP_API_SM_SHUTDOWN;
+    t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_SHUTDOWN;
     do_api_callout();
   }
   // The reentrancy_count is still valid up to this point since
@@ -6760,29 +6761,28 @@ HttpSM::set_next_state()
   // Use the returned "next action" code to set the next state handler //
   ///////////////////////////////////////////////////////////////////////
   switch (t_state.next_action) {
-  case HttpTransact::HTTP_API_READ_REQUEST_HDR:
-  case HttpTransact::HTTP_API_PRE_REMAP:
-  case HttpTransact::HTTP_API_POST_REMAP:
-  case HttpTransact::HTTP_API_OS_DNS:
-  case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
-  case HttpTransact::HTTP_API_READ_CACHE_HDR:
-  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
-  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
-  case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
+  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_API_PRE_REMAP:
+  case HttpTransact::SM_ACTION_API_POST_REMAP:
+  case HttpTransact::SM_ACTION_API_OS_DNS:
+  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
+  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
+  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
+  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
     {
       t_state.api_next_action = t_state.next_action;
       do_api_callout();
       break;
     }
-  
-  case HttpTransact::HTTP_POST_REMAP_UPGRADE:
-  case HttpTransact::HTTP_POST_REMAP_SKIP:
+
+  case HttpTransact::SM_ACTION_POST_REMAP_SKIP:
     {
       call_transact_and_set_next_state(NULL);
       break;
     }
-  
-  case HttpTransact::HTTP_REMAP_REQUEST:
+
+  case HttpTransact::SM_ACTION_REMAP_REQUEST:
     {
       if (!remapProcessor.using_separate_thread()) {
         do_remap_request(true); /* run inline */
@@ -6795,8 +6795,8 @@ HttpSM::set_next_state()
       }
       break;
     }
-  
-  case HttpTransact::DNS_LOOKUP:
+
+  case HttpTransact::SM_ACTION_DNS_LOOKUP:
     {
       sockaddr const* addr;
 
@@ -6875,24 +6875,24 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::REVERSE_DNS_LOOKUP:
+  case HttpTransact::SM_ACTION_DNS_REVERSE_LOOKUP:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_reverse_lookup);
       do_hostdb_reverse_lookup();
       break;
     }
 
-  case HttpTransact::CACHE_LOOKUP:
+  case HttpTransact::SM_ACTION_CACHE_LOOKUP:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_read);
       do_cache_lookup_and_read();
       break;
     }
 
-  case HttpTransact::ORIGIN_SERVER_OPEN:
+  case HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN:
     {
-      if (congestionControlEnabled && (t_state.congest_saved_next_action == HttpTransact::STATE_MACHINE_ACTION_UNDEFINED)) {
-        t_state.congest_saved_next_action = HttpTransact::ORIGIN_SERVER_OPEN;
+      if (congestionControlEnabled && (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_UNDEFINED)) {
+        t_state.congest_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
         HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_congestion_control_lookup);
         if (!do_congestion_control_lookup())
           break;
@@ -6925,19 +6925,19 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::SERVER_PARSE_NEXT_HDR:
+  case HttpTransact::SM_ACTION_SERVER_PARSE_NEXT_HDR:
     {
       setup_server_read_response_header();
       break;
     }
 
-  case HttpTransact::PROXY_INTERNAL_100_RESPONSE:
+  case HttpTransact::SM_ACTION_INTERNAL_100_RESPONSE:
     {
       setup_100_continue_transfer();
       break;
     }
 
-  case HttpTransact::SERVER_READ:
+  case HttpTransact::SM_ACTION_SERVER_READ:
     {
       t_state.source = HttpTransact::SOURCE_HTTP_ORIGIN_SERVER;
 
@@ -6949,7 +6949,7 @@ HttpSM::set_next_state()
         tunnel.tunnel_run(p);
       } else {
         ink_assert((t_state.hdr_info.client_response.valid()? true : false) == true);
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+        t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
 
         if (hooks_set) {
           do_api_callout_internal();
@@ -6962,7 +6962,7 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::SERVE_FROM_CACHE:
+  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
     {
       ink_assert(t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE ||
                  t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE_AND_DELETE ||
@@ -6985,7 +6985,7 @@ HttpSM::set_next_state()
         t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
 
         perform_cache_write_action();
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+        t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
         if (hooks_set) {
           do_api_callout_internal();
         } else {
@@ -6996,7 +6996,7 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::CACHE_ISSUE_WRITE:
+  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE:
     {
       ink_assert(cache_sm.cache_write_vc == NULL);
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_write);
@@ -7006,14 +7006,14 @@ HttpSM::set_next_state()
 
     }
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE:
     {
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+      t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_NOOP:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
     {
       if (server_entry == NULL || server_entry->in_tunnel == false) {
         release_server_session();
@@ -7021,16 +7021,16 @@ HttpSM::set_next_state()
       // If we're in state SEND_API_RESPONSE_HDR, it means functions
       // registered to hook SEND_RESPONSE_HDR have already been called. So we do not
       // need to call do_api_callout. Otherwise TS loops infinitely in this state !
-      if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_RESPONSE_HDR) {
+      if (t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR) {
         handle_api_return();
       } else {
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+        t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
         do_api_callout();
       }
       break;
     }
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_DELETE:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
     {
       // Nuke all the alternates since this is mostly likely
       //   the result of a delete method
@@ -7038,31 +7038,31 @@ HttpSM::set_next_state()
       do_cache_delete_all_alts(NULL);
 
       release_server_session();
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+      t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_UPDATE_HEADERS:
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
     {
       issue_cache_update();
       cache_sm.close_read();
 
       release_server_session();
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+      t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
 
     }
 
-  case HttpTransact::PROXY_SEND_ERROR_CACHE_NOOP:
+  case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
     {
       setup_error_transfer();
       break;
     }
 
 
-  case HttpTransact::PROXY_INTERNAL_REQUEST:
+  case HttpTransact::SM_ACTION_INTERNAL_REQUEST:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_handle_stat_page);
       Action *action_handle = statPagesManager.handle_http(this, &t_state.hdr_info.client_request);
@@ -7075,7 +7075,7 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::OS_RR_MARK_DOWN:
+  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
 
@@ -7090,15 +7090,15 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::SSL_TUNNEL:
+  case HttpTransact::SM_ACTION_SSL_TUNNEL:
     {
       setup_blind_tunnel(true);
       break;
     }
 
-  case HttpTransact::ORIGIN_SERVER_RAW_OPEN:{
-      if (congestionControlEnabled && (t_state.congest_saved_next_action == HttpTransact::STATE_MACHINE_ACTION_UNDEFINED)) {
-        t_state.congest_saved_next_action = HttpTransact::ORIGIN_SERVER_RAW_OPEN;
+  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN:{
+      if (congestionControlEnabled && (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_UNDEFINED)) {
+        t_state.congest_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
         HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_congestion_control_lookup);
         if (!do_congestion_control_lookup())
           break;
@@ -7111,14 +7111,14 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::ICP_QUERY:
+  case HttpTransact::SM_ACTION_ICP_QUERY:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_icp_lookup);
       do_icp_lookup();
       break;
     }
 
-  case HttpTransact::CACHE_ISSUE_WRITE_TRANSFORM:
+  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM:
     {
       ink_assert(t_state.cache_info.transform_action == HttpTransact::CACHE_PREPARE_TO_WRITE);
 
@@ -7137,33 +7137,33 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::TRANSFORM_READ:
+  case HttpTransact::SM_ACTION_TRANSFORM_READ:
     {
-      t_state.api_next_action = HttpTransact::HTTP_API_SEND_RESPONSE_HDR;
+      t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
       do_api_callout();
       break;
     }
 
-  case HttpTransact::READ_PUSH_HDR:
+  case HttpTransact::SM_ACTION_READ_PUSH_HDR:
     {
       setup_push_read_response_header();
       break;
     }
 
-  case HttpTransact::STORE_PUSH_BODY:
+  case HttpTransact::SM_ACTION_STORE_PUSH_BODY:
     {
       setup_push_transfer_to_cache();
       tunnel.tunnel_run();
       break;
     }
 
-  case HttpTransact::PREPARE_CACHE_UPDATE:
+  case HttpTransact::SM_ACTION_CACHE_PREPARE_UPDATE:
     {
       ink_assert(t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE);
       do_cache_prepare_update();
       break;
     }
-  case HttpTransact::ISSUE_CACHE_UPDATE:
+  case HttpTransact::SM_ACTION_CACHE_ISSUE_UPDATE:
     {
       if (t_state.api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_ERROR) {
         t_state.cache_info.object_read = NULL;
@@ -7175,15 +7175,14 @@ HttpSM::set_next_state()
     }
 
 #ifdef PROXY_DRAIN
-  case HttpTransact::PROXY_DRAIN_REQUEST_BODY:
+  case HttpTransact::SM_ACTION_DRAIN_REQUEST_BODY:
     {
       do_drain_request_body();
       break;
     }
 #endif /* PROXY_DRAIN */
 
-  case HttpTransact::SEND_QUERY_TO_INCOMING_ROUTER:
-  case HttpTransact::CONTINUE:
+  case HttpTransact::SM_ACTION_CONTINUE:
     {
       ink_release_assert(!"Not implemented");
     }
@@ -7230,9 +7229,9 @@ HttpSM::state_congestion_control_lookup(int event, void *data)
       pending_action->cancel();
       pending_action = NULL;
     }
-    if (t_state.congest_saved_next_action == HttpTransact::ORIGIN_SERVER_OPEN) {
+    if (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN) {
       return state_http_server_open(event, data);
-    } else if (t_state.congest_saved_next_action == HttpTransact::ORIGIN_SERVER_RAW_OPEN) {
+    } else if (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
       return state_raw_http_server_open(event, data);
     }
   }
@@ -7351,7 +7350,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   t_state.request_sent_time = 0;
   t_state.response_received_time = 0;
   t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
-  t_state.next_action = HttpTransact::REDIRECT_READ;
+  t_state.next_action = HttpTransact::SM_ACTION_REDIRECT_READ;
   // we have a new OS and need to have DNS lookup the new OS
   t_state.dns_info.lookup_success = false;
 
