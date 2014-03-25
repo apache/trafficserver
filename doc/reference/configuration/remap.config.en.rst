@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,11 +21,11 @@ remap.config
 
 .. configfile:: remap.config
 
-.. toctree::                                                                                                                                                                                      
+.. toctree::
    :maxdepth: 2
 
 
-The :file:`remap.config` file (by default, located in 
+The :file:`remap.config` file (by default, located in
 ``/opt/trafficserver/etc/trafficserver/``) contains mapping rules that Traffic Server
 uses to perform the following actions:
 
@@ -64,14 +64,14 @@ Traffic Server recognizes three space-delimited fields: ``type``,
     -  ``map`` --translates an incoming request URL to the appropriate
        origin server URL.
 
-    -  ``map_with_recv_port`` --exactly like 'map' except that it uses the port at 
-       which the request was received to perform the mapping instead of the port present 
-       in the request. The regex qualifier can also be used for this type. When present, 
-       'map_with_recv_port' mappings are checked first. If there is a match, then it is 
+    -  ``map_with_recv_port`` --exactly like 'map' except that it uses the port at
+       which the request was received to perform the mapping instead of the port present
+       in the request. The regex qualifier can also be used for this type. When present,
+       'map_with_recv_port' mappings are checked first. If there is a match, then it is
        chosen without evaluating the "regular" forward mapping rules.
 
-    -  ``map_with_referer`` -- extended version of 'map', which can be used to activate 
-       "deep linking protection", where target URLs are only accessible when the Referer 
+    -  ``map_with_referer`` -- extended version of 'map', which can be used to activate
+       "deep linking protection", where target URLs are only accessible when the Referer
        header is set to a URL that is allowed to link to the target.
 
     -  ``reverse_map`` --translates the URL in origin server redirect
@@ -113,12 +113,12 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 Precedence
 ==========
 
-Remap rules are not processed top-down, but based on an internal
-priority
+Remap rules are not processed top-down, but based on an internal priority. Once
+these rules are executed we pick the lowest line number as the match (which
+replicates first-match-wins).
 
-1. ``map_with_recv_port``
-#. ``map`` and ``reverse_map``
-#. ``regex_map``
+1. ``map_with_recv_port`` and ```regex_map_with_recv_port```
+#. ``map`` and ``regex_map`` and ``reverse_map``
 #. ``redirect`` and ``redirect_temporary``
 #. ``regex_redirect`` and ``regex_redirect_temporary``
 
@@ -328,7 +328,7 @@ will be redirected to redirectURL. It can be used to create a so-called
 negative referer list.  If "*" was used as a referer regular expression -
 all referers are allowed.  Various combinations of "*" and "~" in a referer
 list can be used to create different filtering rules.
-    
+
 map_with_referer Examples
 -------------------------
 
