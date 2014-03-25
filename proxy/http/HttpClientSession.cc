@@ -474,7 +474,7 @@ HttpClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
           plugin_lock = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
           if (!plugin_lock) {
             SET_HANDLER(&HttpClientSession::state_api_callout);
-            mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10), ET_NET);
+            mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
             return 0;
           }
         } else {
