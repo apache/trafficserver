@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2664] atscppapi: Removing initializable values
+
   *) [TS-2660] Rename StateMachineAction_t values for legibility.
 
   *) [TS-2662] Re-enable KEEP_ALIVE_POST_OUT by default
