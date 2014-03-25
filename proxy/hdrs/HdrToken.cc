@@ -107,7 +107,6 @@ static const char *_hdrtoken_strs[] = {
   "Sender",                     // NNTP
   "Server",
   "Set-Cookie",
-  "Strict-Transport-Security",
   "Subject",                    // NNTP
   "Summary",                    // NNTP
   "Transfer-Encoding",
@@ -189,6 +188,7 @@ static const char *_hdrtoken_strs[] = {
   // Header extensions
   "X-Forwarded-For",
   "TE",
+  "Strict-Transport-Security"
 };
 
 static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
@@ -446,7 +446,6 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "Sender",                     // NNTP
   "Server",
   "Set-Cookie",
-  "Strict-Transport-Security",
   "Subject",                    // NNTP
   "Summary",                    // NNTP
   "Transfer-Encoding",
@@ -528,6 +527,7 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   // Header extensions
   "X-Forwarded-For",
   "TE",
+  "Strict-Transport-Security"
 };
 
 /*-------------------------------------------------------------------------
