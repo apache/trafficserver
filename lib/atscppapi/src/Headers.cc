@@ -21,7 +21,6 @@
  */
 #include "atscppapi/Headers.h"
 #include "atscppapi/shared_ptr.h"
-#include "InitializableValue.h"
 #include "logging_internal.h"
 #include <string>
 #include <cstring>

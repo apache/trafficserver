@@ -66,12 +66,6 @@ uint16_t getPort(const sockaddr *);
  */
 std::string getIpPortString(const sockaddr *);
 
-/**
- * @brief This is the environment variable that disables caching in all
- * types including InitializableValue.
- */
-extern const std::string DISABLE_DATA_CACHING_ENV_FLAG;
-
 }
 }
 

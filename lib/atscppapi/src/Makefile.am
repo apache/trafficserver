@@ -41,7 +41,6 @@ libatscppapi_la_SOURCES = GlobalPlugin.cc \
 			  Url.cc \
 			  HttpVersion.cc \
 			  HttpMethod.cc \
-			  InitializableValue.cc \
 			  Response.cc \
 			  TransformationPlugin.cc \
 			  Logger.cc \

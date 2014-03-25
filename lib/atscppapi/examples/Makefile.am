@@ -19,7 +19,6 @@ SUBDIRS = helloworld \
 	  globalhook \
       transactionhook \
 	  multiple_transaction_hooks \
-	  data_caching \
 	  clientrequest \
 	  serverresponse \
 	  clientredirect \

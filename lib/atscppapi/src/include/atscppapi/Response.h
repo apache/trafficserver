@@ -50,7 +50,7 @@ public:
   void setStatusCode(HttpStatus);
 
   /** @return Reason phrase of the response */
-  const std::string &getReasonPhrase() const;
+  std::string getReasonPhrase() const;
 
   /** @param New reason phrase to set */
   void setReasonPhrase(const std::string &);

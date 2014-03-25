@@ -22,7 +22,6 @@
 #include "atscppapi/Url.h"
 #include <ts/ts.h>
 #include "atscppapi/noncopyable.h"
-#include "InitializableValue.h"
 #include "logging_internal.h"
 
 using namespace atscppapi;
@@ -34,12 +33,6 @@ using std::string;
 struct atscppapi::UrlState: noncopyable {
   TSMBuffer hdr_buf_;
   TSMLoc url_loc_;
-  InitializableValue<string> url_string_;
-  InitializableValue<string> path_;
-  InitializableValue<string> query_;
-  InitializableValue<string> host_;
-  InitializableValue<string> scheme_;
-  InitializableValue<uint16_t> port_;
   UrlState(TSMBuffer hdr_buf, TSMLoc url_loc) :
       hdr_buf_(hdr_buf), url_loc_(url_loc) {
   }
@@ -67,94 +60,94 @@ bool inline Url::isInitialized() const {
 }
 
 void Url::reset() {
-  state_->url_string_.setInitialized(false);
-  state_->path_.setInitialized(false);
-  state_->query_.setInitialized(false);
-  state_->host_.setInitialized(false);
-  state_->scheme_.setInitialized(false);
-  state_->port_.setInitialized(false);
+
 }
 
-const std::string &Url::getUrlString() const {
-  if (isInitialized() && !state_->url_string_.isInitialized()) {
+std::string Url::getUrlString() const {
+  std::string ret_str;
+  if (isInitialized()) {
     int length;
     char *memptr = TSUrlStringGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      state_->url_string_ = std::string(memptr, length);
+      ret_str = std::string(memptr, length);
       TSfree(memptr);
-      LOG_DEBUG("Got URL [%s]", state_->url_string_.getValue().c_str());
+      LOG_DEBUG("Got URL [%s]", ret_str.c_str());
     } else {
       LOG_ERROR("Got null/zero-length URL string; hdr_buf %p, url_loc %p, ptr %p, length %d", state_->hdr_buf_,
                 state_->url_loc_, memptr, length);
     }
   }
-  return state_->url_string_;
+  return ret_str;
 }
 
-const std::string &Url::getPath() const {
-  if (isInitialized() && !state_->path_.isInitialized()) {
+std::string Url::getPath() const {
+  std::string ret_str;
+  if (isInitialized()) {
     int length;
     const char *memptr = TSUrlPathGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      state_->path_ = std::string(memptr, length);
+      ret_str = std::string(memptr, length);
     }
-    LOG_DEBUG("Using path [%s]", state_->path_.getValue().c_str());
+    LOG_DEBUG("Using path [%s]", ret_str.c_str());
   }
-  return state_->path_;
+  return ret_str;
 }
 
-const std::string &Url::getQuery() const {
-  if (isInitialized() && !state_->query_.isInitialized()) {
+std::string Url::getQuery() const {
+  std::string ret_str;
+  if (isInitialized()) {
     int length;
     const char *memptr = TSUrlHttpQueryGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      state_->query_ = std::string(memptr, length);
+      ret_str = std::string(memptr, length);
     }
-    LOG_DEBUG("Using query [%s]", state_->query_.getValue().c_str());
+    LOG_DEBUG("Using query [%s]", ret_str.c_str());
   }
-  return state_->query_;
+  return ret_str;
 }
 
-const std::string &Url::getScheme() const {
-  if (isInitialized() && !state_->scheme_.isInitialized()) {
+std::string Url::getScheme() const {
+  std::string ret_str;
+  if (isInitialized()) {
     int length;
     const char *memptr = TSUrlSchemeGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      state_->scheme_ = std::string(memptr, length);
+      ret_str = std::string(memptr, length);
     }
-    LOG_DEBUG("Using scheme [%s]", state_->scheme_.getValue().c_str());
+    LOG_DEBUG("Using scheme [%s]", ret_str.c_str());
   }
-  return state_->scheme_;
+  return ret_str;
 }
 
-const std::string &Url::getHost() const {
-  if (isInitialized() && !state_->host_.isInitialized()) {
+std::string Url::getHost() const {
+  std::string ret_str;
+  if (isInitialized()) {
     int length;
     const char *memptr = TSUrlHostGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      state_->host_ = std::string(memptr, length);
+      ret_str = std::string(memptr, length);
     }
-    LOG_DEBUG("Using host [%s]", state_->host_.getValue().c_str());
+    LOG_DEBUG("Using host [%s]", ret_str.c_str());
   }
-  return state_->host_;
+  return ret_str;
 }
 
 uint16_t Url::getPort() const {
-  if (isInitialized() && !state_->port_.isInitialized()) {
-    state_->port_ = TSUrlPortGet(state_->hdr_buf_, state_->url_loc_);
-    LOG_DEBUG("Got port %d", state_->port_.getValue());
+  uint16_t ret_val = 0;
+  if (isInitialized()) {
+    ret_val = static_cast<uint16_t>(TSUrlPortGet(state_->hdr_buf_, state_->url_loc_));
+    LOG_DEBUG("Got port %d", ret_val);
   }
-  return state_->port_;
+  return ret_val;
 }
 
 void Url::setPath(const std::string &path) {
   if (!isInitialized()) {
-    LOG_ERROR("Not initialized");
+    LOG_ERROR("Url %p not initialized", this);
     return;
   }
-  state_->url_string_.setInitialized(false);
+
   if (TSUrlPathSet(state_->hdr_buf_, state_->url_loc_, path.c_str(), path.length()) == TS_SUCCESS) {
-    state_->path_ = path;
     LOG_DEBUG("Set path to [%s]", path.c_str());
   } else {
     LOG_ERROR("Could not set path; hdr_buf %p, url_loc %p", state_->hdr_buf_, state_->url_loc_);
@@ -163,12 +156,11 @@ void Url::setPath(const std::string &path) {
 
 void Url::setQuery(const std::string &query) {
   if (!isInitialized()) {
-    LOG_ERROR("Not initialized");
+    LOG_ERROR("Url %p not initialized", this);
     return;
   }
-  state_->url_string_.setInitialized(false);
+
   if (TSUrlHttpQuerySet(state_->hdr_buf_, state_->url_loc_, query.c_str(), query.length()) == TS_SUCCESS) {
-    state_->query_ = query;
     LOG_DEBUG("Set query to [%s]", query.c_str());
   } else {
     LOG_ERROR("Could not set query; hdr_buf %p, url_loc %p", state_->hdr_buf_, state_->url_loc_);
@@ -177,12 +169,11 @@ void Url::setQuery(const std::string &query) {
 
 void Url::setScheme(const std::string &scheme) {
   if (!isInitialized()) {
-    LOG_ERROR("Not initialized");
+    LOG_ERROR("Url %p not initialized", this);;
     return;
   }
-  state_->url_string_.setInitialized(false);
+
   if (TSUrlSchemeSet(state_->hdr_buf_, state_->url_loc_, scheme.c_str(), scheme.length()) == TS_SUCCESS) {
-    state_->scheme_ = scheme;
     LOG_DEBUG("Set scheme to [%s]", scheme.c_str());
   } else {
     LOG_ERROR("Could not set scheme; hdr_buf %p, url_loc %p", state_->hdr_buf_, state_->url_loc_);
@@ -191,12 +182,11 @@ void Url::setScheme(const std::string &scheme) {
 
 void Url::setHost(const std::string &host) {
   if (!isInitialized()) {
-    LOG_ERROR("Not initialized");
+    LOG_ERROR("Url %p not initialized", this);
     return;
   }
-  state_->url_string_.setInitialized(false);
+
   if (TSUrlHostSet(state_->hdr_buf_, state_->url_loc_, host.c_str(), host.length()) == TS_SUCCESS) {
-    state_->host_ = host;
     LOG_DEBUG("Set host to [%s]", host.c_str());
   } else {
     LOG_ERROR("Could not set host; hdr_buf %p, url_loc %p", state_->hdr_buf_, state_->url_loc_);
@@ -205,12 +195,11 @@ void Url::setHost(const std::string &host) {
 
 void Url::setPort(const uint16_t port) {
   if (!isInitialized()) {
-    LOG_ERROR("Not initialized");
+    LOG_ERROR("Url %p not initialized", this);
     return;
   }
-  state_->url_string_.setInitialized(false);
+
   if (TSUrlPortSet(state_->hdr_buf_, state_->url_loc_, port) == TS_SUCCESS) {
-    state_->port_ = port;
     LOG_DEBUG("Set port to %d", port);
   } else {
     LOG_ERROR("Could not set port; hdr_buf %p, url_loc %p", state_->hdr_buf_, state_->url_loc_);

@@ -22,7 +22,6 @@
 #include "atscppapi/Request.h"
 #include <ts/ts.h>
 #include "atscppapi/noncopyable.h"
-#include "InitializableValue.h"
 #include "utils_internal.h"
 #include "logging_internal.h"
 
@@ -38,11 +37,12 @@ struct atscppapi::RequestState: noncopyable  {
   TSMLoc url_loc_;
   Url url_;
   Headers headers_;
-  InitializableValue<HttpMethod> method_;
-  InitializableValue<HttpVersion> version_;
+  /* method and version are stored here for the case of an unbound request */
+  HttpMethod method_;
+  HttpVersion version_;
   bool destroy_buf_;
-  RequestState() : hdr_buf_(NULL), hdr_loc_(NULL), url_loc_(NULL), method_(HTTP_METHOD_UNKNOWN, false),
-                   version_(HTTP_VERSION_UNKNOWN, false), destroy_buf_(false) { }
+  RequestState() : hdr_buf_(NULL), hdr_loc_(NULL), url_loc_(NULL), method_(HTTP_METHOD_UNKNOWN),
+                   version_(HTTP_VERSION_UNKNOWN), destroy_buf_(false) { }
 };
 
 Request::Request() {
@@ -57,8 +57,8 @@ Request::Request(void *hdr_buf, void *hdr_loc) {
 
 Request::Request(const string &url_str, HttpMethod method, HttpVersion version) {
   state_ = new RequestState();
-  state_->method_.setValue(method);
-  state_->version_.setValue(version);
+  state_->method_ = method;
+  state_->version_ = version;
   state_->destroy_buf_ = true;
   state_->hdr_buf_ = TSMBufferCreate();
   if (TSUrlCreate(state_->hdr_buf_, &state_->url_loc_) == TS_SUCCESS) {
@@ -98,7 +98,7 @@ void Request::init(void *hdr_buf, void *hdr_loc) {
 }
 
 HttpMethod Request::getMethod() const {
-  if (!state_->method_.isInitialized() && state_->hdr_buf_ && state_->hdr_loc_) {
+  if (state_->hdr_buf_ && state_->hdr_loc_) {
     int method_len;
     const char *method_str = TSHttpHdrMethodGet(state_->hdr_buf_, state_->hdr_loc_, &method_len);
     if (method_str && method_len) {
@@ -123,6 +123,8 @@ HttpMethod Request::getMethod() const {
       } else if (method_str == TS_HTTP_METHOD_TRACE) {
         state_->method_ = HTTP_METHOD_TRACE;
       }
+      LOG_DEBUG("Request method=%d [%s] on hdr_buf=%p, hdr_loc=%p",
+          state_->method_, HTTP_METHOD_STRINGS[state_->method_].c_str(), state_->hdr_buf_, state_->hdr_loc_);
     } else {
       LOG_ERROR("TSHttpHdrMethodGet returned null string or it was zero length, hdr_buf=%p, hdr_loc=%p, method str=%p, method_len=%d",
           state_->hdr_buf_, state_->hdr_loc_, method_str, method_len);
@@ -136,10 +138,10 @@ Url &Request::getUrl() {
 }
 
 atscppapi::HttpVersion Request::getVersion() const {
-  if (!state_->version_.isInitialized() && state_->hdr_buf_ && state_->hdr_loc_) {
+  if (state_->hdr_buf_ && state_->hdr_loc_) {
     state_->version_ = utils::internal::getHttpVersion(state_->hdr_buf_, state_->hdr_loc_);
-    LOG_DEBUG("Initializing request version=%d [%s] on hdr_buf=%p, hdr_loc=%p",
-        state_->version_.getValue(), HTTP_VERSION_STRINGS[state_->version_.getValue()].c_str(), state_->hdr_buf_, state_->hdr_loc_);
+    LOG_DEBUG("Request version=%d [%s] on hdr_buf=%p, hdr_loc=%p",
+        state_->version_, HTTP_VERSION_STRINGS[state_->version_].c_str(), state_->hdr_buf_, state_->hdr_loc_);
   }
   return state_->version_;
 }

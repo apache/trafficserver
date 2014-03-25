@@ -29,7 +29,6 @@
 #include "atscppapi/shared_ptr.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
-#include "InitializableValue.h"
 #include "atscppapi/noncopyable.h"
 
 using std::map;

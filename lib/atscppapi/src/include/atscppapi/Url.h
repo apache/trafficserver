@@ -70,27 +70,27 @@ public:
   /**
    * @return The full url as a string, such a url might be http://trafficserver.apache.org/search?q=blah
    */
-  const std::string &getUrlString() const;
+  std::string getUrlString() const;
 
   /**
    * @return The path only portion of the url, such as /search
    */
-  const std::string &getPath() const;
+  std::string getPath() const;
 
   /**
    * @return The query only portion of the url, which might be q=blah
    */
-  const std::string &getQuery() const;
+  std::string getQuery() const;
 
   /**
    * @return The scheme of the url, this will be either http or https.
    */
-  const std::string &getScheme() const;
+  std::string getScheme() const;
 
   /**
    * @return The host only of the url, this might be www.google.com
    */
-  const std::string &getHost() const;
+  std::string getHost() const;
 
   /**
    * @return The port only portion of the url, this will likely be 80 or 443.

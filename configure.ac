@@ -1937,7 +1937,6 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/clientredirect/Makefile
   lib/atscppapi/examples/clientrequest/Makefile
   lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/data_caching/Makefile
   lib/atscppapi/examples/globalhook/Makefile
   lib/atscppapi/examples/gzip_transformation/Makefile
   lib/atscppapi/examples/helloworld/Makefile

@@ -31,7 +31,6 @@
 #include "atscppapi/Transaction.h"
 #include "atscppapi/TransactionPlugin.h"
 #include "atscppapi/TransformationPlugin.h"
-#include "InitializableValue.h"
 #include "atscppapi/utils.h"
 #include "logging_internal.h"
 
@@ -96,12 +95,6 @@ void setupTransactionManagement() {
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
-#ifndef DISABLE_TRANSACTION_DATA_CACHING
-  transaction_data_caching_enabled = (getenv(utils::DISABLE_DATA_CACHING_ENV_FLAG.c_str()) == NULL);
-#endif
-  LOG_DEBUG("Initialized transaction management with data caching %s",
-            (transaction_data_caching_enabled ? "enabled" : "disabled"));
-  // TODO is existence of env variable enough or should we expect a specific value?
 }
 
 void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEvent event) {
