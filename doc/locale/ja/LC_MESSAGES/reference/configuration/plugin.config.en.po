@@ -28,11 +28,11 @@ msgstr ""
 
 #: ../../reference/configuration/plugin.config.en.rst:20
 msgid "plugin.config"
-msgstr ""
+msgstr "plugin.config"
 
 #: ../../reference/configuration/plugin.config.en.rst:25
 msgid "Description"
-msgstr ""
+msgstr "解説"
 
 #: ../../reference/configuration/plugin.config.en.rst:27
 msgid ""
@@ -43,6 +43,12 @@ msgid ""
 "in :file:`remap.config`, whose effects are limited to the specific mapping "
 "rules they are applied to."
 msgstr ""
+":file:`plugin.config` ファイルは Traffic Server で利用可能な実行時に"
+"読み込み可能なプラグインの制御をその設定と同様に行います。このファイルに"
+"記載されたプラグインの一覧は、常に読み込まれ大域的に影響を持っているので "
+"`グローバルプラグイン` として参照されます。これはその影響が適用された"
+"特定のマッピングルールに制限されている :file:`remap.config` に指定された"
+"プラグインとは対照的です。"
 
 #: ../../reference/configuration/plugin.config.en.rst:34
 msgid ""
@@ -54,26 +60,36 @@ msgid ""
 "since plugins can have arbitrary effects on caching and authorization "
 "policies."
 msgstr ""
+"設定の各行は ``.so`` ファイルへのパスで構成されます。このパスは絶対パスにも"
+"プラグインディレクトリ ( 通常は ``/usr/local/libexec/trafficserver``) に"
+"対する相対パスにもできます。プラグインの読み込み失敗は致命的で、"
+"Traffic Server の中断を引き起こします。一般に、プラグインはキャッシュと"
+"認証ポリシーについて恣意的な効果を持っているので、特定のプラグイン無しで"
+"動作することがサービスの提供において安全かどうか知ることはできません。"
 
 #: ../../reference/configuration/plugin.config.en.rst:42
 msgid ""
 "Plugins should only be listed once. The order in which the plugins are "
 "listed is also the order in which they are chained for request processing."
 msgstr ""
+"プラグインは一度のみ記載されるべきです。プラグインが記載される順番は"
+"リクエスト処理のためにプラグインがチェーンされる順番となります。"
 
 #: ../../reference/configuration/plugin.config.en.rst:57
 msgid "Examples"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/configuration/plugin.config.en.rst:71
 msgid "See also"
-msgstr ""
+msgstr "参考"
 
 #: ../../reference/configuration/plugin.config.en.rst:73
 msgid ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSPluginInit(3ts)`, :manpage:`remap."
 "config(5)`"
 msgstr ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSPluginInit(3ts)`, :manpage:`remap."
+"config(5)`"
 
 #: ../../reference/configuration/plugin.config.en.rst:46
 msgid ""
@@ -86,3 +102,10 @@ msgid ""
 "note that most Traffic Server configuration can be changed. If a plugin "
 "requires the current value, it must obtain that using the management API."
 msgstr ""
+"スペース区切りの引数によるオプション一覧がプラグインの後ろに続くことが"
+"あります。これらはプラグインの初期化関数 :c:func:`TSPluginInit` に"
+"引数ベクターとして渡されます。``$`` の文字で始まる引数は Traffic Server 設定"
+"変数を示します。これらの引数はプラグインが読み込まれる前に対応する設定変数の"
+"値に置き換えられます。設定変数の展開を使用する際には、ほとんどの "
+"Traffic Server 設定が変更されうることに注意してください。プラグインが現在の"
+"値を要求する場合は管理 API を使用してそれを取得しなければなりません。"
