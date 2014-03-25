@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2661] Remove unused HttpSM::decided_cached_url.
+
   *) [TS-2658] Additional debug logging for SSL certificates.
 
   *) [TS-2431] Migrate Taobao SPDY plugin to ATS core.

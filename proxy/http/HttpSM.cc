@@ -432,58 +432,6 @@ HttpSM::init()
 
 }
 
-bool
-HttpSM::decide_cached_url(URL * s_url)
-{
-  INK_MD5 md5s, md5l, md5o;
-  bool result = false;
-
-  s_url->MD5_get(&md5s);
-  if (second_cache_sm == NULL) {
-    if (cache_sm.cache_write_vc == NULL && t_state.cache_info.write_lock_state == HttpTransact::CACHE_WL_INIT)
-      return true;
-
-    cache_sm.get_lookup_url()->MD5_get(&md5l);
-    result = (md5s == md5l) ? true : false;
-  } else {
-    // we only get here after we already issued the cache writes
-    // do we need another cache_info for second_cache_sm???????
-    cache_sm.get_lookup_url()->MD5_get(&md5l);
-    second_cache_sm->get_lookup_url()->MD5_get(&md5o);
-
-    if (md5s == md5o) {
-      cache_sm.end_both();
-      t_state.cache_info.object_read = t_state.cache_info.second_object_read;
-      t_state.cache_info.second_object_read = NULL;
-      cache_sm.set_lookup_url(second_cache_sm->get_lookup_url());
-      second_cache_sm->set_lookup_url(NULL);
-      cache_sm.cache_read_vc = second_cache_sm->cache_read_vc;
-      second_cache_sm->cache_read_vc = NULL;
-      cache_sm.read_locked = second_cache_sm->read_locked;
-      cache_sm.cache_write_vc = second_cache_sm->cache_write_vc;
-      second_cache_sm->cache_write_vc = NULL;
-      cache_sm.write_locked = second_cache_sm->write_locked;
-    } else if (md5s == md5l) {
-      second_cache_sm->end_both();
-    } else {
-      cache_sm.end_both();
-      second_cache_sm->end_both();
-    }
-
-    second_cache_sm->mutex.clear();
-    delete second_cache_sm;
-    second_cache_sm = NULL;
-
-    result = cache_sm.cache_write_vc ? true : false;
-    if (result == false) {
-      t_state.cache_info.action = HttpTransact::CACHE_DO_NO_ACTION;
-    } else
-      DebugSM("http_cache_write", "[%" PRId64 "] cache write decide to use URL %s", sm_id, s_url->string_get(&t_state.arena));
-  }
-
-  return result;
-}
-
 void
 HttpSM::set_ua_half_close_flag()
 {
