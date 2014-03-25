@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
+ 
+  *) [TS-2662] Re-enable KEEP_ALIVE_POST_OUT by default
 
   *) [TS-2661] Remove unused HttpSM::decided_cached_url.
 
