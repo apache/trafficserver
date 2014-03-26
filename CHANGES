@@ -1,4 +1,8 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 4.2.1
+
+  *) [TS-2564] Revert field token ordering.
+
 Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2569] Set the default SSL options correctly.
