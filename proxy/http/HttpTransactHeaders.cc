@@ -622,7 +622,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header,
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_SERVER:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_MISS) {
+    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
       log_code = SQUID_LOG_ERR_CONNECT_FAIL;
     }
     break;
