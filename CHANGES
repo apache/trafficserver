@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2665] Clean up ink_stack_trace_dump code
+   Thanks to Alexey Ivanov <aivanov@linkedin.com> for reporting this issue.
+
   *) [TS-2663] Wrong condition on log code for server connection errors.
    Author: David Binderman <dcb314@hotmail.com>
 
