@@ -110,24 +110,27 @@ struct MIMEField
   uint8_t m_readiness:2;          // 2/8
   uint8_t m_flags:2;              // 2/8
 
-  int is_dup_head()
-  {
+  bool is_dup_head() const {
     return (m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
   }
-  int is_live()
-  {
-    return (m_readiness == MIME_FIELD_SLOT_READINESS_LIVE);
-  }
-  int is_cooked()
-  {
+
+  bool is_cooked() {
     return (m_flags & MIME_FIELD_SLOT_FLAGS_COOKED);
   }
-  int supports_commas()
-  {
+
+  bool is_live() const {
+    return (m_readiness == MIME_FIELD_SLOT_READINESS_LIVE);
+  }
+
+  bool is_detached() const {
+    return (m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
+  }
+
+  bool supports_commas() const {
     if (m_wks_idx >= 0)
       return (hdrtoken_index_to_flags(m_wks_idx) & MIME_FLAGS_COMMAS);
     else
-      return (1);               // by default, assume supports commas
+      return true;               // by default, assume supports commas
   }
 
   const char *name_get(int *length);
@@ -1134,7 +1137,7 @@ MIMEHdr::iter_get_next(MIMEFieldIter * iter)
   while (b) {
     for (; slot < (int) b->m_freetop; slot++) {
       f = &(b->m_field_slots[slot]);
-      if (f->m_readiness == MIME_FIELD_SLOT_READINESS_LIVE) {
+      if (f->is_live()) {
         iter->m_slot = slot;
         iter->m_block = b;
         return f;
