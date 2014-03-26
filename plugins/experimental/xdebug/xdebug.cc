@@ -170,7 +170,6 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
     next = TSMimeHdrFieldNextDup(buffer, hdr, field);
 
     // Destroy the current field that we have. We don't want this to go through and potentially confuse the origin.
-    TSMimeHdrFieldRemove(buffer, hdr, field);
     TSMimeHdrFieldDestroy(buffer, hdr, field);
 
     // Now release our reference.
