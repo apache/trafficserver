@@ -23,6 +23,8 @@
 
 #include <list>
 #include <string>
+#include <sstream>
+#include <vector>
 #include <time.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -46,6 +48,7 @@ using namespace EsiLib;
 
 int arg_idx;
 static string SIG_KEY_NAME;
+static vector<string> HEADER_WHITELIST;
 
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
 static string COMBO_HANDLER_PATH;
@@ -215,6 +218,18 @@ TSPluginInit(int argc, const char *argv[])
 
   SIG_KEY_NAME = ((argc > 2) && (strcmp(argv[2], "-") != 0)) ? argv[2] : "";
   LOG_DEBUG("Signature key is [%s]", SIG_KEY_NAME.c_str());
+
+  if ((argc > 3) && (strcmp(argv[3], "-") != 0)) {
+    stringstream strstream(argv[3]);
+    string header;
+    while (getline(strstream, header, ':')) {
+      HEADER_WHITELIST.push_back(header);
+    }
+  }
+
+  for (unsigned int i = 0; i < HEADER_WHITELIST.size(); i++) {
+    LOG_DEBUG("WhiteList: %s", HEADER_WHITELIST[i].c_str());
+  }
 
   TSReleaseAssert(pthread_key_create(&threadKey, NULL) == 0);
 
@@ -767,6 +782,13 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
     TSMLoc field_loc;
     time_t expires_time;
     bool got_expires_time = false;
+    int num_headers = HEADER_WHITELIST.size();
+    int flags_list[num_headers];
+
+    for (int i = 0; i < num_headers; i++) {
+      flags_list[i] = 0;
+    }
+
     for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end();
          ++iter) {
       if (int_data.fetcher->getData(*iter, resp_data) && resp_data.status == TS_HTTP_STATUS_OK) {
@@ -790,6 +812,27 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
           }
           TSHandleMLocRelease(resp_data.bufp, resp_data.hdr_loc, field_loc);
         }
+
+        for (int i = 0; i < num_headers; i++) {
+          if (flags_list[i]) {
+            continue;
+          }
+
+          const string& header = HEADER_WHITELIST[i];
+
+          field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, header.c_str(), header.size());
+          if (field_loc != TS_NULL_MLOC) {
+            int hdr_len = 0;
+            const char* hdr = TSMimeHdrFieldValueStringGet(resp_data.bufp, resp_data.hdr_loc, field_loc, 0, &hdr_len);
+            if (hdr) {
+              string hdr_value = string(hdr, hdr_len);
+              resp_header_fields.append(header + ": " + hdr_value + "\r\n");
+              flags_list[i] = 1;
+            }
+            TSHandleMLocRelease(resp_data.bufp, resp_data.hdr_loc, field_loc);
+          }
+        }
+
       } else {
         LOG_ERROR("Could not get content for requested URL [%s]", iter->c_str());
         int_data.creq.status = TS_HTTP_STATUS_BAD_REQUEST;
