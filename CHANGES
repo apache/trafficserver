@@ -3,6 +3,9 @@ Changes with Apache Traffic Server 4.2.2
 
   *) [TS-2822] Crash in LogBufferIterator::next
 
+  *) [TS-2665] Clean up ink_stack_trace_dump code
+   Thanks to Alexey Ivanov <aivanov@linkedin.com> for reporting this issue.
+
   *) [TS-2784] Make header_rewrite plugins compile on FBSD.
 
   *) [TS-2778] Websockets remap doesn't properly handle the implicit port for wss.
