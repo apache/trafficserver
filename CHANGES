@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2672] TSMimeHdrFieldDestroy should not assert on removed fields.
+
   *) [TS-2554] New plugin: background_fetch, which under certain conditions
    will kick off a background fetch when it detects Range request and
    responses. This allows for the cache to start populating objects that would

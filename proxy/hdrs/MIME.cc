@@ -1517,8 +1517,14 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
 {
   MIMEField *next_dup = field->m_next_dup;
 
-  ink_assert(field->is_live());
+  // If this field is already detached, there's nothing to do. There must
+  // not be a dup list if we detached correctly.
+  if (field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED) {
+    ink_assert(next_dup == NULL);
+    return;
+  }
 
+  ink_assert(field->is_live());
   MIME_HDR_SANITY_CHECK(mh);
 
   // Normally, this function is called with the current dup list head,
