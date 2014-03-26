@@ -1,11 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
-  *) [TS-2664] atscppapi: Removing initializable values
+  *) [TS-2663] Wrong condition on log code for server connection errors.
+   Author: David Binderman <dcb314@hotmail.com>
+
+  *) [TS-2664] atscppapi: Removing initializable values.
 
   *) [TS-2660] Rename StateMachineAction_t values for legibility.
 
-  *) [TS-2662] Re-enable KEEP_ALIVE_POST_OUT by default
+  *) [TS-2662] Re-enable KEEP_ALIVE_POST_OUT by default.
 
   *) [TS-2661] Remove unused HttpSM::decided_cached_url.
 
@@ -17,7 +20,7 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2646] regex_remap: Add a new option, @caseless.
 
-  *) [TS-2647] atscppapi: Bug fixes in headers and atscppapi
+  *) [TS-2647] atscppapi: Bug fixes in headers and atscppapi.
 
   *) [TS-2598] Expose HttpDebugNames to public plugin APIs.
 
