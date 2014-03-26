@@ -69,6 +69,8 @@ public:
    */  
   void run();
 
+  void cancel();
+
 private:
   AsyncTimerState *state_;
 };

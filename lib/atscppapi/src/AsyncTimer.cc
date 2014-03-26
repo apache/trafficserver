@@ -90,8 +90,8 @@ void AsyncTimer::run() {
   }
 }
 
-AsyncTimer::~AsyncTimer() {
-  TSMutexLock(TSContMutexGet(state_->cont_));
+void AsyncTimer::cancel() {
+  TSMutexLock(TSContMutexGet(state_->cont_)); // mutex will be unlocked in destroy
   if (state_->initial_timer_action_) {
     LOG_DEBUG("Canceling initial timer action");
     TSActionCancel(state_->initial_timer_action_);
@@ -102,5 +102,9 @@ AsyncTimer::~AsyncTimer() {
   }
   LOG_DEBUG("Destroying cont");
   TSContDestroy(state_->cont_);
+}
+
+AsyncTimer::~AsyncTimer() {
+  cancel();
   delete state_;
 }
