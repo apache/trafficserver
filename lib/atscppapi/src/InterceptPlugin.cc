@@ -85,6 +85,7 @@ struct InterceptPlugin::State {
   int num_bytes_written_;
   PluginHandle *plugin_handle_;
   bool shut_down_;
+  Headers request_headers_;
 
   State(TSCont cont) : cont_(cont), net_vc_(NULL), expected_body_size_(0), num_body_bytes_read_(0),
                        hdr_parsed_(false), hdr_buf_(NULL), hdr_loc_(NULL), num_bytes_written_(0), 
@@ -197,6 +198,10 @@ bool InterceptPlugin::setOutputComplete() {
   return true;
 }
 
+Headers &InterceptPlugin::getRequestHeaders() {
+  return state_->request_headers_;
+}
+
 bool InterceptPlugin::doRead() {
   int avail = TSIOBufferReaderAvail(state_->input_.reader_);
   if (avail == TS_ERROR) {
@@ -273,6 +278,7 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
 
     state_->hdr_buf_ = TSMBufferCreate();
     state_->hdr_loc_ = TSHttpHdrCreate(state_->hdr_buf_);
+    state_->request_headers_.reset(state_->hdr_buf_, state_->hdr_loc_);
     TSHttpHdrTypeSet(state_->hdr_buf_, state_->hdr_loc_, TS_HTTP_TYPE_REQUEST);
     break;
 

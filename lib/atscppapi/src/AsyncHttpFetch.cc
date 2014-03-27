@@ -118,8 +118,8 @@ void AsyncHttpFetch::init(const string &url_str, HttpMethod http_method, const s
   state_ = new AsyncHttpFetchState(url_str, http_method, request_body);
 }
 
-void AsyncHttpFetch::run(shared_ptr<AsyncDispatchControllerBase> sender) {
-  state_->dispatch_controller_ = sender;
+void AsyncHttpFetch::run() {
+  state_->dispatch_controller_ = getDispatchController(); // keep a copy in state so that cont handler can use it
 
   TSCont fetchCont = TSContCreate(handleFetchEvents, TSMutexCreate());
   TSContDataSet(fetchCont, static_cast<void *>(this)); // Providers have to clean themselves up when they are done.
