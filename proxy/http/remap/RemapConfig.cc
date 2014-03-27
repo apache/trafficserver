@@ -301,6 +301,7 @@ static const remap_directive directives[] = {
   { ".usefilter", parse_activate_directive},
   { ".activefilter", parse_activate_directive},
   { ".activatefilter", parse_activate_directive},
+  { ".useflt", parse_activate_directive},
 
   { ".unusefilter", parse_deactivate_directive},
   { ".deactivatefilter", parse_deactivate_directive},
