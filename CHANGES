@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2554] New plugin: background_fetch, which under certain conditions
+   will kick off a background fetch when it detects Range request and
+   responses. This allows for the cache to start populating objects that would
+   otherwise not be cacheable. This is ideally used together with the
+   read-while-writer feature as well.
+
   *) [TS-2671] Restore missing .useflt remap directive.
 
   *) [TS-2654] Crash in Range requests with read-while-writer.
