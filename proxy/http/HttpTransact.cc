@@ -6732,7 +6732,7 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
 
       case SOURCE_TRANSFORM:
         if (s->range_setup == HttpTransact::RANGE_REQUESTED) {
-          change_response_header_because_of_range_request(s, header);
+          header->set_content_length(s->range_output_cl);
           s->hdr_info.trust_response_cl = true;
         } else if (s->hdr_info.transform_response_cl == HTTP_UNDEFINED_CL) {
           s->hdr_info.trust_response_cl = false;
