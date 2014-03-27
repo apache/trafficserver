@@ -38,6 +38,8 @@ $network = {
 
   "saucy64"   => "192.168.100.21",
   "saucy32"   => "192.168.100.22",
+  "trusty64"  => "192.168.100.23",
+  "trusty32"  => "192.168.100.24",
 }
 
 $vmspec = {
@@ -81,11 +83,12 @@ Vagrant.configure("2") do |config|
   # Always forward SSH keys to VMs.
   config.ssh.forward_agent = true
 
+  # Ubuntu 14.04 (Trusty Tahr)
   # Ubuntu 13.04 (Raring Ringtail)
   # Ubuntu 12.10 (Quantal Quetzal)
   # Ubuntu 12.04 LTS (Precise Pangolin)
   ["i386", "amd64"].each { |arch|
-    ['saucy', 'raring', 'quantal', 'precise'].each { |release|
+    ['saucy', 'raring', 'quantal', 'precise', 'trusty' ].each { |release|
       n = { "i386" => "32", "amd64" => "64" }[arch]
       config.vm.define "#{release}#{n}" do | config |
         config.vm.box = "#{release}#{n}"
