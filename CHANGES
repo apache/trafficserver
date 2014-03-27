@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2671] Restore missing .useflt remap directive.
+
   *) [TS-2654] Crash in Range requests with read-while-writer.
 
   *) [TS-2665] Clean up ink_stack_trace_dump code
