@@ -67,7 +67,8 @@ AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms) {
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }
 
-void AsyncTimer::run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller) {
+void AsyncTimer::run() {
+  state_->dispatch_controller_ = getDispatchController(); // keep a copy in state so that cont handler can use it
   int one_off_timeout_in_ms = 0;
   int regular_timeout_in_ms = 0;
   if (state_->type_ == AsyncTimer::TYPE_ONE_OFF) {
@@ -87,11 +88,10 @@ void AsyncTimer::run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller
     state_->periodic_timer_action_ = TSContScheduleEvery(state_->cont_, regular_timeout_in_ms,
                                                          TS_THREAD_POOL_DEFAULT);
   }
-  state_->dispatch_controller_ = dispatch_controller;
 }
 
-AsyncTimer::~AsyncTimer() {
-  TSMutexLock(TSContMutexGet(state_->cont_));
+void AsyncTimer::cancel() {
+  TSMutexLock(TSContMutexGet(state_->cont_)); // mutex will be unlocked in destroy
   if (state_->initial_timer_action_) {
     LOG_DEBUG("Canceling initial timer action");
     TSActionCancel(state_->initial_timer_action_);
@@ -102,5 +102,9 @@ AsyncTimer::~AsyncTimer() {
   }
   LOG_DEBUG("Destroying cont");
   TSContDestroy(state_->cont_);
+}
+
+AsyncTimer::~AsyncTimer() {
+  cancel();
   delete state_;
 }

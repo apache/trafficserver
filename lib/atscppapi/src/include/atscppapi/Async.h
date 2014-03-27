@@ -46,6 +46,13 @@ public:
    * @return True if the receiver was still alive.
    */
   virtual bool dispatch() = 0;
+
+  /** Renders dispatch unusable to communicate to receiver */
+  virtual void disable() = 0;
+
+  /** Returns true if receiver can be communicated with */
+  virtual bool isEnabled() = 0;
+
   virtual ~AsyncDispatchControllerBase() { }
 };
 
@@ -60,13 +67,31 @@ class AsyncProvider {
 public:
   /**
    * This method is invoked when the async operation is requested. This call should be used
-   * to just start the async operation and *not* block this thread.
-   *
-   * @param dispatch_controller provides a way to dispatch an "async complete" event to the
-   *                            requester.
+   * to just start the async operation and *not* block this thread. On completion, 
+   * getDispatchController() can be used to invoke the receiver.
    */
-  virtual void run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller) = 0;
+  virtual void run() = 0;
+
+  /** Base implementation just breaks communication channel with receiver. Implementations
+   * should add business logic here. */
+  virtual void cancel() {
+    if (dispatch_controller_) {
+      dispatch_controller_->disable();
+    }
+  }
+
   virtual ~AsyncProvider() { }
+
+protected:
+  shared_ptr<AsyncDispatchControllerBase> getDispatchController() { return dispatch_controller_; }
+
+private:
+  shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
+  void doRun(shared_ptr<AsyncDispatchControllerBase> dispatch_controller) {
+    dispatch_controller_ = dispatch_controller;
+    run();
+  }
+  friend class Async;
 };
 
 /**
@@ -86,6 +111,15 @@ public:
       ret = true;
     }
     return ret;
+  }
+
+  void disable() {
+    ScopedSharedMutexLock scopedLock(dispatch_mutex_);
+    event_receiver_ = NULL;
+  }
+
+  bool isEnabled() {
+    return (event_receiver_ != NULL);
   }
 
   /**
@@ -177,7 +211,7 @@ public:
     shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType > > receiver_promise(
       new AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType >(dispatcher));
     event_receiver->receiver_promises_.push_back(receiver_promise); // now if the event receiver dies, we're safe.
-    provider->run(dispatcher);
+    provider->doRun(dispatcher);
   }
 };
 

@@ -22,6 +22,7 @@
 #include <atscppapi/Logger.h>
 #include <atscppapi/Async.h>
 #include <atscppapi/AsyncHttpFetch.h>
+#include <atscppapi/AsyncTimer.h>
 #include <atscppapi/PluginInit.h>
 #include <cstring>
 #include <cassert>
@@ -43,8 +44,31 @@ public:
   AsyncHttpFetch3(string request, HttpMethod method) : AsyncHttpFetch(request, method) { };
 };
 
+class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer> {
+public:
+  DelayedAsyncHttpFetch(string request, HttpMethod method, shared_ptr<Mutex> mutex)
+    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(NULL) { };
+  void run() {
+    timer_ = new AsyncTimer(AsyncTimer::TYPE_ONE_OFF, 1000 /* 1s */);
+    Async::execute(this, timer_, mutex_);
+  }
+  void handleAsyncComplete(AsyncTimer &/*timer ATS_UNUSED */) {
+    TS_DEBUG(TAG, "Receiver should not be reachable");
+    assert(!getDispatchController()->dispatch());
+    delete this;
+  }
+  bool isAlive() {
+    return getDispatchController()->isEnabled();
+  }
+  ~DelayedAsyncHttpFetch() { delete timer_; }
+private:
+  shared_ptr<Mutex> mutex_;
+  AsyncTimer *timer_;
+};
+
 class TransactionHookPlugin : public TransactionPlugin, public AsyncReceiver<AsyncHttpFetch>,
-                              public AsyncReceiver<AsyncHttpFetch2>, public AsyncReceiver<AsyncHttpFetch3> {
+                              public AsyncReceiver<AsyncHttpFetch2>, public AsyncReceiver<AsyncHttpFetch3>,
+                              public AsyncReceiver<DelayedAsyncHttpFetch> {
 public:
   TransactionHookPlugin(Transaction &transaction) :
     TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0) {
@@ -70,6 +94,15 @@ public:
     request_headers.set("Header2", "Value2");
     Async::execute<AsyncHttpFetch2>(this, provider2, getMutex());
     ++num_fetches_pending_;
+
+    DelayedAsyncHttpFetch *delayed_provider = new DelayedAsyncHttpFetch("url", HTTP_METHOD_GET, getMutex());
+    Async::execute<DelayedAsyncHttpFetch>(this, delayed_provider, getMutex());
+
+    // canceling right after starting in this case, but cancel() can be called any time
+    TS_DEBUG(TAG, "Will cancel delayed fetch");
+    assert(delayed_provider->isAlive());
+    delayed_provider->cancel();
+    assert(!delayed_provider->isAlive());
   }
 
   void handleAsyncComplete(AsyncHttpFetch &async_http_fetch) {
@@ -92,6 +125,10 @@ public:
 
   void handleAsyncComplete(AsyncHttpFetch3 & /* async_http_fetch ATS_UNUSED */) {
     assert(!"AsyncHttpFetch3 shouldn't have completed!");
+  }
+
+  void handleAsyncComplete(DelayedAsyncHttpFetch &/*async_http_fetch ATS_UNUSED */) {
+    assert(!"Should've been canceled!");
   }
 
 private:
@@ -138,6 +175,9 @@ public:
     // If we don't make sure to check if it's an internal request we can get ourselves into an infinite loop!
     if (!transaction.isInternalRequest()) {
       transaction.addPlugin(new TransactionHookPlugin(transaction));
+    }
+    else {
+      TS_DEBUG(TAG, "Ignoring internal transaction");
     }
     transaction.resume();
   }
