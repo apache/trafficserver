@@ -818,7 +818,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
             continue;
           }
 
-          string header = HEADER_WHITELIST[i];
+          const string& header = HEADER_WHITELIST[i];
 
           field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, header.c_str(), header.size());
           if (field_loc != TS_NULL_MLOC) {
