@@ -16,8 +16,8 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-print '''1..1 contentLength
-# The proxy forwards the Content-Length header to the client'''
+print '''1..2 location
+# The proxy rewrites the Location header if the file is already cached'''
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
@@ -37,8 +37,16 @@ class factory(http.HTTPFactory):
         ctx.client = None
         ctx.clientproto = version
 
-        ctx.setHeader('Content-Length', 13)
-        ctx.write('contentLength')
+        if target == '/location':
+
+          ctx.write('location')
+          ctx.finish()
+
+        else:
+
+          ctx.setHeader('Digest', 'SHA-256=5urqGOiF4QeIKbVt80iWvlq1FDno8LoAyxYkssVywQ4=')
+          ctx.setHeader('Location', 'http://example.com')
+          ctx.finish()
 
 origin = tcp.Port(0, factory())
 origin.startListening()
@@ -64,36 +72,52 @@ class factory(protocol.ClientFactory):
       else:
         print 'not ok 1 - Did the proxy crash?  (The client connection closed.)'
 
-    connectionMade = lambda ctx: ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+    # Get a response with a Location and a Digest header and check
+    # that the Location header is not rewritten.  Then get the same
+    # response after caching a matching file from a different URL and
+    # check that this time the header is rewritten.
+    connectionMade = lambda ctx: ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\nGET {0}:{1}/location HTTP/1.1\r\n\r\nGET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
 
-    def handleEndHeaders(ctx):
+    def handleResponsePart(ctx, data):
       try:
-        reactor.stop()
+        h, r = data.split('0\r\n\r\n', 1)
 
-      except error.ReactorNotRunning:
+      except ValueError:
         pass
 
       else:
-        print 'not ok 1 - No Content-Length header'
 
-    def handleHeader(ctx, k, v):
-      if k.lower() == 'content-length':
-        if v != '13':
-          print 'not',
+        ctx.firstLine = True
+        ctx.setLineMode(r)
 
-        print 'ok 1 - Content-Length header'
+    def handleStatus(ctx, version, status, message):
+      def handleHeader(k, v):
+        if k.lower() == 'location':
+          if v != 'http://example.com':
+            print 'not',
 
-        reactor.stop()
+          print 'ok 1 - Before'
 
-    # Avoid calling undefined handleResponse() at the end of the
-    # message.  (Override connectionLost() when the proxy crashes or
-    # stop the reactor.)
-    #
-    # Data that was already received will get processed (the end of
-    # the headers), then shutdown events will fire (connections will
-    # get closed), and then finally the reactor will grind to a halt.
-    def handleResponseEnd(ctx):
-      pass
+      ctx.handleHeader = handleHeader
+
+      def handleStatus(version, status, message):
+        del ctx.handleHeader
+
+        def handleStatus(version, staus, message):
+          def handleHeader(k, v):
+            if k.lower() == 'location':
+              if v != 'http://{0}:{1}/location'.format(*origin.socket.getsockname()):
+                print 'not',
+
+              print 'ok 2 - After'
+
+              reactor.stop()
+
+          ctx.handleHeader = handleHeader
+
+        ctx.handleStatus = handleStatus
+
+      ctx.handleStatus = handleStatus
 
 tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
 
