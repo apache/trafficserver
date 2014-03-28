@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2675] metalink: Fix crash and plug memory leaks.
+   Author: Jack Bates <jack@nottheoilrig.com>
+
   *) [TS-2674] Remove debug printf() from traffic_top.
 
   *) [TS-2652] atscppapi: Providing a cancel() in asyncproviders 
