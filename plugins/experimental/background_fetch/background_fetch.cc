@@ -138,7 +138,7 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
   block = TSIOBufferReaderStart(reader);
   do {
     block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
-    fwrite(block_start, block_avail, 1, stderr);
+    ATS_UNUSED_RETURN(fwrite(block_start, block_avail, 1, stderr));
     TSIOBufferReaderConsume(reader, block_avail);
     block = TSIOBufferReaderStart(reader);
   } while (block && block_avail != 0);
