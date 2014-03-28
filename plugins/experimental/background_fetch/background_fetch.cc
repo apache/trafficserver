@@ -437,7 +437,12 @@ bg_fetch_cont(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// Main "plugin".
+// Main "plugin". Before initiating a background fetch, this checks:
+//
+//     1. Is this an internal request? This avoid infinite loops...
+//     2. Is the response from origin a 206 (Partial)?
+//     3. Is the client request a GET request ?
+//     4. Finally, is the request / response cacheable as per current configs.
 //
 static int
 cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void* edata)
@@ -445,33 +450,35 @@ cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED 
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
+  // 1. Make sure it's not an internal request first.
   TSDebug(PLUGIN_NAME, "Testing: request is internal?");
   if (TSHttpIsInternalRequest(txnp) != TS_SUCCESS) {
-    TSMBuffer request;
-    TSMLoc req_hdr;
+    TSMBuffer response;
+    TSMLoc resp_hdr;
 
-    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
-      int method_len;
-      const char* method = TSHttpHdrMethodGet(request, req_hdr, &method_len);
+    if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &response, &resp_hdr)) {
+      // ToDo: Check the MIME type first, to see if it's a type we care about.
+      // ToDo: Such MIME types should probably be per remap rule.
 
-      // Make sure it's not an internal request first, and then examine the Origin server response
-      TSDebug(PLUGIN_NAME, "Testing: request is a GET?");
-      if (TS_HTTP_METHOD_GET == method) {
-        TSMBuffer response;
-        TSMLoc resp_hdr;
+      // 2. Only deal with 206 responses from Origin
+      TSDebug(PLUGIN_NAME, "Testing: response is 206?");
+      if (TS_HTTP_STATUS_PARTIAL_CONTENT == TSHttpHdrStatusGet(response, resp_hdr)) {
+        TSMBuffer request;
+        TSMLoc req_hdr;
 
-        if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &response, &resp_hdr)) {
-          // ToDo: Check the MIME type first, to see if it's a type we care about.
-          // ToDo: Such MIME types should probably be per remap rule.
+        if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
+          int method_len;
+          const char* method = TSHttpHdrMethodGet(request, req_hdr, &method_len);
 
-          // Only deal with 206 responses on a GET request (partial content), anything else is irrelevant
-          TSDebug(PLUGIN_NAME, "Testing: response is 206?");
-          if (TS_HTTP_STATUS_PARTIAL_CONTENT == TSHttpHdrStatusGet(response, resp_hdr)) {
+          // 3. And only deal with GET requests (ToDo: for now?)
+          TSDebug(PLUGIN_NAME, "Testing: request is a GET?");
+          if (TS_HTTP_METHOD_GET == method) {
             // Temporarily change the response status to 200 OK, so we can reevaluate cacheability.
             TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_OK);
             bool cacheable = TSHttpTxnIsCacheable(txnp, NULL, response);
             TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_PARTIAL_CONTENT);
 
+            // 4. Is the request / response cacheable?
             TSDebug(PLUGIN_NAME, "Testing: request / response is cacheable?");
             if (cacheable) {
               BGFetchData* data = new BGFetchData();
@@ -486,12 +493,12 @@ cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED 
               }
             }
           }
-          // Release the response MLoc
-          TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
+          // Release the request MLoc
+          TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
         }
       }
-      // Release the request MLoc
-      TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
+      // Release the response MLoc
+      TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
     }
   }
 
