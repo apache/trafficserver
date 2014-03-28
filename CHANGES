@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2674] Remove debug printf() from traffic_top.
+
   *) [TS-2652] atscppapi: Providing a cancel() in asyncproviders 
   
   *) [TS-2667] atscppapi: Allow intercept plugins to access request headers object
