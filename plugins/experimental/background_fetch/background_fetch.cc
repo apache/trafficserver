@@ -277,8 +277,8 @@ private:
 bool
 BGFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 {
-  TSReleaseAssert(TS_NULL_MLOC == hdr_loc);
-  TSReleaseAssert(TS_NULL_MLOC == url_loc);
+  TSAssert(TS_NULL_MLOC == hdr_loc);
+  TSAssert(TS_NULL_MLOC == url_loc);
   struct sockaddr const* ip = TSHttpTxnClientAddrGet(txnp);
 
   if (ip) {
@@ -334,7 +334,7 @@ BGFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 void
 BGFetchData::schedule()
 {
-  TSReleaseAssert(NULL == _cont);
+  TSAssert(NULL == _cont);
 
   // Setup the continuation
   _cont = TSContCreate(bg_fetch_cont, NULL);
