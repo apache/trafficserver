@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2679] background_fetch plugin can use uninitialized cont pointer.
+
   *) [TS-2675] metalink: Fix crash and plug memory leaks.
    Author: Jack Bates <jack@nottheoilrig.com>
 

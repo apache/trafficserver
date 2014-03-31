@@ -214,7 +214,7 @@ static int bg_fetch_cont(TSCont contp, TSEvent event, void* edata);
 struct BGFetchData
 {
   BGFetchData(BGFetchConfig* cfg=&gConfig)
-    : hdr_loc(TS_NULL_MLOC), url_loc(TS_NULL_MLOC), _config(cfg)
+    : hdr_loc(TS_NULL_MLOC), url_loc(TS_NULL_MLOC), _cont(NULL),  _config(cfg)
   {
     mbuf = TSMBufferCreate();
   }
@@ -334,6 +334,8 @@ BGFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 void
 BGFetchData::schedule()
 {
+  TSReleaseAssert(NULL == _cont);
+
   // Setup the continuation
   _cont = TSContCreate(bg_fetch_cont, NULL);
   TSContDataSet(_cont, static_cast<void*>(this));
