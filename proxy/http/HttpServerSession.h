@@ -136,7 +136,7 @@ public:
   //   transaction stat properly
   int server_trans_stat;
 
-  // Sessions become if authenication headers
+  // Sessions become if authentication headers
   //  are sent over them
   bool private_session;
 
