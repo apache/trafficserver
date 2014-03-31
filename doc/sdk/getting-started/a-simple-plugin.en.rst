@@ -50,6 +50,8 @@ could use the following commands to build a shared library
 ::
 
     tsxs -o hello-world.so -c hello-world.c
+    
+tsxs can be found in ``trafficserver-dev`` package.
 
 This shared library will be your plugin. In order to install it, run
 
