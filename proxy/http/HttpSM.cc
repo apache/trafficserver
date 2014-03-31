@@ -4883,34 +4883,36 @@ HttpSM::mark_server_down_on_client_abort()
 void
 HttpSM::release_server_session(bool serve_from_cache)
 {
-  if (server_session != NULL) {
-    if (t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
-        t_state.hdr_info.server_response.valid() &&
-        (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
-         (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD
-          && t_state.www_auth_content != HttpTransact::CACHE_AUTH_NONE)) &&
-        plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
-      HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
-      server_session->server_trans_stat--;
-      server_session->attach_hostname(t_state.current.server->name);
-      if (t_state.www_auth_content == HttpTransact::CACHE_AUTH_NONE || serve_from_cache == false)
-        server_session->release();
-      else {
-        // an authenticated server connection - attach to the local client
-        // we are serving from cache for the current transaction
-        t_state.www_auth_content = HttpTransact::CACHE_AUTH_SERVE;
-        ua_session->attach_server_session(server_session, false);
-      }
-    } else {
-      server_session->do_io_close();
-    }
-
-    ink_assert(server_entry->vc == server_session);
-    server_entry->in_tunnel = true;
-    vc_table.cleanup_entry(server_entry);
-    server_entry = NULL;
-    server_session = NULL;
+  if (server_session == NULL) {
+    return;
   }
+
+  if (t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
+      t_state.hdr_info.server_response.valid() &&
+      (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
+       (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD
+        && t_state.www_auth_content != HttpTransact::CACHE_AUTH_NONE)) &&
+      plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+    HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
+    server_session->server_trans_stat--;
+    server_session->attach_hostname(t_state.current.server->name);
+    if (t_state.www_auth_content == HttpTransact::CACHE_AUTH_NONE || serve_from_cache == false) {
+      server_session->release();
+    } else {
+      // an authenticated server connection - attach to the local client
+      // we are serving from cache for the current transaction
+      t_state.www_auth_content = HttpTransact::CACHE_AUTH_SERVE;
+      ua_session->attach_server_session(server_session, false);
+    }
+  } else {
+    server_session->do_io_close();
+  }
+
+  ink_assert(server_entry->vc == server_session);
+  server_entry->in_tunnel = true;
+  vc_table.cleanup_entry(server_entry);
+  server_entry = NULL;
+  server_session = NULL;
 }
 
 // void HttpSM::handle_post_failure()
