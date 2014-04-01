@@ -138,7 +138,9 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
   block = TSIOBufferReaderStart(reader);
   do {
     block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
-    ATS_UNUSED_RETURN(fwrite(block_start, block_avail, 1, stderr));
+    if (block_avail > 0) {
+      TSDebug(PLUGIN_NAME, "Headers are:\n%.*s", static_cast<int>(block_avail), block_start);
+    }
     TSIOBufferReaderConsume(reader, block_avail);
     block = TSIOBufferReaderStart(reader);
   } while (block && block_avail != 0);
@@ -209,7 +211,7 @@ BGFetchConfig gConfig;
 // Hold and manage some state for the background fetch continuation
 // This is necessary, because the TXN is likely to not be available
 // during the time we fetch from origin.
-static int bg_fetch_cont(TSCont contp, TSEvent event, void* edata);
+static int cont_bg_fetch(TSCont contp, TSEvent event, void* edata);
 
 struct BGFetchData
 {
@@ -337,7 +339,7 @@ BGFetchData::schedule()
   TSAssert(NULL == _cont);
 
   // Setup the continuation
-  _cont = TSContCreate(bg_fetch_cont, NULL);
+  _cont = TSContCreate(cont_bg_fetch, TSMutexCreate());
   TSContDataSet(_cont, static_cast<void*>(this));
 
   // Initialize the VIO stuff (for the fetch)
@@ -356,7 +358,7 @@ BGFetchData::schedule()
 // expensive (memory allocations etc.), we could eliminate maybe the
 // std::string, but I think it's fine for now.
 static int
-bg_fetch_cont(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
+cont_bg_fetch(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
 {
   BGFetchData* data = static_cast<BGFetchData*>(TSContDataGet(contp));
   int64_t avail;
@@ -438,13 +440,62 @@ bg_fetch_cont(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
   return 0;
 }
 
+///////////////////////////////////////////////////////////////////////////
+// This is a TXN hook, used to verify that the response (before sending to
+// originating client) is indeed cacheable. This has to be deferred, because
+// we might have plugins that changes the cacheability of an Origin response.
+//
+static int
+cont_check_cacheable(TSCont contp, TSEvent /* event ATS_UNUSED */, void* edata)
+{
+  // ToDo: If we want to support per-remap configurations, we have to pass along the data here
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSMBuffer response, request;
+  TSMLoc resp_hdr, req_hdr;
+
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &response, &resp_hdr)) {
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
+      // Temporarily change the response status to 200 OK, so we can reevaluate cacheability.
+      TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_OK);
+      bool cacheable = TSHttpTxnIsCacheable(txnp, NULL, response);
+      TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_PARTIAL_CONTENT);
+
+      TSDebug(PLUGIN_NAME, "Testing: request / response is cacheable?");
+      if (cacheable) {
+        BGFetchData* data = new BGFetchData();
+
+        // Initialize the data structure (can fail) and acquire a privileged lock on the URL
+        if (data->initialize(request, req_hdr, txnp) && data->acquire_url()) {
+          data->schedule();
+        } else {
+          delete data; // Not sure why this would happen, but ok.
+        }
+      }
+      // Release the request MLoc
+      TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
+    }
+    // Release the response MLoc
+    TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
+  }
+
+  // Reenable and continue with the state machine.
+  TSContDestroy(contp);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+
+  return 0;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
-// Main "plugin". Before initiating a background fetch, this checks:
+// Main "plugin", which is a global READ_RESPONSE_HDR hook. Before
+// initiating a background fetch, this checks:
 //
 //     1. Is this an internal request? This avoid infinite loops...
+// and
 //     2. Is the response from origin a 206 (Partial)?
-//     3. Is the client request a GET request ?
-//     4. Finally, is the request / response cacheable as per current configs.
+//
+// We defer the check on cacheability to the SEND_RESPONSE_HDR hook, since
+// there could be other plugins that modifies the response after us.
 //
 static int
 cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void* edata)
@@ -465,39 +516,10 @@ cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED 
       // 2. Only deal with 206 responses from Origin
       TSDebug(PLUGIN_NAME, "Testing: response is 206?");
       if (TS_HTTP_STATUS_PARTIAL_CONTENT == TSHttpHdrStatusGet(response, resp_hdr)) {
-        TSMBuffer request;
-        TSMLoc req_hdr;
+        // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
+        TSCont contp = TSContCreate(cont_check_cacheable, NULL);
 
-        if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
-          int method_len;
-          const char* method = TSHttpHdrMethodGet(request, req_hdr, &method_len);
-
-          // 3. And only deal with GET requests (ToDo: for now?)
-          TSDebug(PLUGIN_NAME, "Testing: request is a GET?");
-          if (TS_HTTP_METHOD_GET == method) {
-            // Temporarily change the response status to 200 OK, so we can reevaluate cacheability.
-            TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_OK);
-            bool cacheable = TSHttpTxnIsCacheable(txnp, NULL, response);
-            TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_PARTIAL_CONTENT);
-
-            // 4. Is the request / response cacheable?
-            TSDebug(PLUGIN_NAME, "Testing: request / response is cacheable?");
-            if (cacheable) {
-              BGFetchData* data = new BGFetchData();
-
-              // Initialize the data structure (can fail) and acquire a privileged lock on the URL
-              if (data->initialize(request, req_hdr, txnp) && data->acquire_url()) {
-                // We schedule this in about 200ms, that gives another request / response
-                // a chance to start before us.
-                data->schedule();
-              } else {
-                delete data;
-              }
-            }
-          }
-          // Release the request MLoc
-          TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
-        }
+        TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       }
       // Release the response MLoc
       TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
