@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2688] atscppapi: new example plugin Boom
+    Author: Omer Shapira <oshapira@linkedin.com> 
+
   *) [TS-2686] Change background_fetch to defer cacheability check until
    SEND_RESPONSE_HDR hook. This allows for other READ_REQUEST_HDR hooks to
    modify the response header before we evaluate.
