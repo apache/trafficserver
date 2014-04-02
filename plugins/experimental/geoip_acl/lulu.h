@@ -29,7 +29,7 @@
 #include "ink_defs.h"
 #include "ink_atomic.h"
 
-// Memory barriers on i386 / linux / gcc
+// Memory barriers
 #if defined(__i386__)
 #define mb()  __asm__ __volatile__ ( "lock; addl $0,0(%%esp)" : : : "memory" )
 #define rmb() __asm__ __volatile__ ( "lock; addl $0,0(%%esp)" : : : "memory" )
@@ -41,6 +41,10 @@
 #elif defined(__arm__)
 #define mb()  __asm__ __volatile__ ( "dmb" : : : "memory")
 #define rmb() __asm__ __volatile__ ( "dmb" : : : "memory")
+#define wmb() __asm__ __volatile__ ( "" : : : "memory")
+#elif defined(__mips__)
+#define mb()  __asm__ __volatile__ ( "sync" : : : "memory")
+#define rmb() __asm__ __volatile__ ( "sync" : : : "memory")
 #define wmb() __asm__ __volatile__ ( "" : : : "memory")
 #else
 #error "Define barriers"

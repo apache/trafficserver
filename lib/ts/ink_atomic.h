@@ -170,7 +170,7 @@ ink_atomic_decrement(volatile Type * mem, Amount count) {
 }
 
 // Special hacks for ARM 32-bit
-#if defined(__arm__) && (SIZEOF_VOIDP == 4)
+#if (defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
 extern ink_mutex __global_death;
 
 template<>
