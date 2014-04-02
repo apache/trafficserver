@@ -19,7 +19,7 @@ API Reference
   under the License.
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
 
   TSAPI.en
   TSDebug.en
