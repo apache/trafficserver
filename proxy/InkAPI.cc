@@ -4938,17 +4938,6 @@ TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-
-  sm->api_enable_redirection = (on ? true : false);
-  return TS_SUCCESS;
-}
-
-TSReturnCode
 TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -7116,6 +7105,20 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
   info->object_size_set(size);
 }
 
+// This API tells the core to follow normal (301/302) redirects using the
+// standard Location: URL. This does not need to be called if you set an
+// explicit URL using TSRedirectUrlSet().
+TSReturnCode
+TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *) txnp;
+
+  sm->enable_redirection = (on ? true : false);
+  return TS_SUCCESS;
+}
+
 // this function should be called at TS_EVENT_HTTP_READ_RESPONSE_HDR
 void
 TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
@@ -7134,13 +7137,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
   sm->redirect_url = (char*)ats_malloc(url_len + 1);
   ink_strlcpy(sm->redirect_url, (char*)url, url_len + 1);
   sm->redirect_url_len = url_len;
-  // have to turn redirection on for this transaction if user wants to redirect to another URL
-  if (sm->enable_redirection == false) {
-    sm->enable_redirection = true;
-    // max-out "redirection_tries" to avoid the regular redirection being turned on in
-    // this transaction improperly. This variable doesn't affect the custom-redirection
-    sm->redirection_tries = HttpConfig::m_master.number_of_redirections;
-  }
+  sm->enable_redirection = true;
 }
 
 const char*

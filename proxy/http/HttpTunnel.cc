@@ -903,8 +903,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   //YTS Team, yamsat Plugin
   // Allocate and copy partial POST data to buffers. Check for the various parameters
   // including the maximum configured post data size
-  if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection
-      && sm->redirection_tries == 0 && (p->vc_type == HT_HTTP_CLIENT)) {
+  if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && (p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_run] client post: %" PRId64" max size: %" PRId64"",
           p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 

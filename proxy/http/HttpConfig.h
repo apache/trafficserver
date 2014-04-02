@@ -929,7 +929,7 @@ HttpConfigParams::HttpConfigParams()
     errors_log_error_pages(1),
     enable_http_info(0),
     cluster_time_delta(0),
-    redirection_enabled(1),
+    redirection_enabled(0),
     number_of_redirections(1),
     post_copy_size(2048),
     ignore_accept_mismatch(0),

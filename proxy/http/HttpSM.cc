@@ -302,8 +302,8 @@ static int next_sm_id = 0;
 HttpSM::HttpSM()
   : Continuation(NULL), proto_stack(1u << TS_PROTO_HTTP), sm_id(-1), magic(HTTP_SM_MAGIC_DEAD),
     //YTS Team, yamsat Plugin
-    enable_redirection(false), api_enable_redirection(true), redirect_url(NULL), redirect_url_len(0), redirection_tries(0), transfered_bytes(0),
-    post_failed(false), debug_on(false),
+    enable_redirection(false), redirect_url(NULL), redirect_url_len(0), redirection_tries(0),
+    transfered_bytes(0), post_failed(false), debug_on(false),
     plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL),
     plugin_tunnel(NULL), reentrancy_count(0),
     history_pos(0), tunnel(), ua_entry(NULL),
@@ -373,12 +373,7 @@ HttpSM::init()
   milestones.sm_start = ink_get_hrtime();
 
   magic = HTTP_SM_MAGIC_ALIVE;
-
   sm_id = 0;
-  enable_redirection = false;
-  api_enable_redirection = true;
-  redirect_url = NULL;
-  redirect_url_len = 0;
 
   // Unique state machine identifier.
   //  changed next_sm_id from int64_t to int because
@@ -1837,11 +1832,9 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.transact_return_point = HttpTransact::HandleResponse;
     t_state.api_next_action = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
-    // YTS Team, yamsat Plugin
-    // Incrementing redirection_tries according to config parameter
     // if exceeded limit deallocate postdata buffers and disable redirection
-    if (enable_redirection && (redirection_tries <= HttpConfig::m_master.number_of_redirections)) {
-      redirection_tries++;
+    if (enable_redirection && (redirection_tries < HttpConfig::m_master.number_of_redirections)) {
+      ++redirection_tries;
     } else {
       tunnel.deallocate_redirect_postdata_buffers();
       enable_redirection = false;
@@ -7267,12 +7260,7 @@ void
 HttpSM::do_redirect()
 {
   DebugSM("http_redirect", "[HttpSM::do_redirect]");
-  if (enable_redirection == false || redirection_tries > (HttpConfig::m_master.number_of_redirections)) {
-    tunnel.deallocate_redirect_postdata_buffers();
-    return;
-  }
-
-  if (api_enable_redirection == false) {
+  if (!enable_redirection || redirection_tries >= HttpConfig::m_master.number_of_redirections) {
     tunnel.deallocate_redirect_postdata_buffers();
     return;
   }
