@@ -941,7 +941,7 @@ Negative Response Caching
 
    .. note::
 
-      ``Cache-Control`` directives from the server forbidding ache are ignored for the following HTTP response codes, regardless
+      ``Cache-Control`` directives from the server forbidding cache are ignored for the following HTTP response codes, regardless
       of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable.
 
       The following negative responses are cached by Traffic Server:::
