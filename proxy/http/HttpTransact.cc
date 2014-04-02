@@ -4412,8 +4412,10 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
           SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVER_REVALIDATED);
         }
       }
-    } else if (s->negative_caching)
+    } else if (s->negative_caching) {
       s->negative_caching = false;
+    }
+
     break;
   }
 
