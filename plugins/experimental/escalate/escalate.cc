@@ -28,64 +28,84 @@
 #include <getopt.h>
 #include <string.h>
 #include <string>
-#include <sstream>
 #include <iterator>
 #include <map>
 
+
+// Constants
+const char PLUGIN_NAME[] = "escalate";
+
+
+static int EscalateResponse(TSCont, TSEvent, void *);
+
 struct EscalationState
 {
-  typedef std::map<unsigned, TSMLoc> urlmap_type;
+  typedef std::map<unsigned, std::string> hostmap_type;
 
-  EscalationState() {
-    this->mbuf = TSMBufferCreate();
+  EscalationState()
+  {
+    handler = TSContCreate(EscalateResponse, NULL);
+    TSContDataSet(handler, this);
   }
 
-  ~EscalationState() {
-    TSMBufferDestroy(this->mbuf);
+  ~EscalationState()
+  {
+    TSContDestroy(handler);
   }
 
-  TSCont      handler;
-  urlmap_type urlmap;
-  TSMBuffer   mbuf;
+  TSCont       handler;
+  hostmap_type hostmap;
 };
 
-static unsigned
-toint(const std::string& str)
-{
-  std::istringstream istr(str);
-  unsigned val;
-
-  istr >> val;
-  return val;
-}
 
 static int
-EscalateResponse(TSCont cont, TSEvent event, void * edata)
+EscalateResponse(TSCont cont, TSEvent event, void* edata)
 {
-  EscalationState * es = (EscalationState *)TSContDataGet(cont);
-  TSHttpTxn         txn = (TSHttpTxn)edata;
-  TSMBuffer         buffer;
-  TSMLoc            hdr;
-  TSHttpStatus      status;
+  EscalationState* es = static_cast<EscalationState*>(TSContDataGet(cont));
+  TSHttpTxn        txn = (TSHttpTxn)edata;
+  TSMBuffer        response;
+  TSMLoc           resp_hdr;
 
-  TSDebug("escalate", "hit escalation hook with event %d", (int)event);
+  TSDebug(PLUGIN_NAME, "Recieved event %d", (int)event);
   TSReleaseAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR);
 
   // First, we need the server response ...
-  TSReleaseAssert(
-    TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS
-  );
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txn, &response, &resp_hdr)) {
+    // Next, the respose status ...
+    TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
 
-  // Next, the respose status ...
-  status = TSHttpHdrStatusGet(buffer, hdr);
+    // If we have an escalation URL for this response code, set the redirection URL and force it
+    // to be followed.
+    EscalationState::hostmap_type::iterator entry = es->hostmap.find((unsigned)status);
 
-  // If we have an escalation URL for this response code, set the redirection URL and force it
-  // to be followed.
-  EscalationState::urlmap_type::iterator entry = es->urlmap.find((unsigned)status);
-  if (entry != es->urlmap.end()) {
-    TSDebug("escalate", "found an escalation entry for HTTP status %u", (unsigned)status);
-    TSHttpTxnRedirectRequest(txn, es->mbuf, entry->second);
-    TSHttpTxnFollowRedirect(txn, 1 /* on */);
+    if (entry != es->hostmap.end()) {
+      TSMBuffer request;
+      TSMLoc    req_hdr;
+
+      TSDebug(PLUGIN_NAME, "found an escalation entry for HTTP status %u", (unsigned)status);
+      if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &request, &req_hdr)) {
+        TSMLoc url;
+
+        if (TS_SUCCESS == TSHttpHdrUrlGet(request, req_hdr, &url)) {
+          char* url_str;
+          int url_len;
+
+          // Update the request URL with the new Host to try.
+          TSUrlHostSet(request, url, entry->second.c_str(), entry->second.size());
+          url_str = TSUrlStringGet(request, url, &url_len);
+
+          TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
+          TSRedirectUrlSet(txn, url_str, url_len);
+
+          TSfree(static_cast<void*>(url_str));
+        }
+        // Release the response MLoc
+        TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
+      }
+    }
+
+    // Release the response MLoc
+    TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
   }
 
   // Set the transaction free ...
@@ -94,52 +114,42 @@ EscalateResponse(TSCont cont, TSEvent event, void * edata)
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface * /* api */, char * /* errbuf */, int /* bufsz */)
+TSRemapInit(TSRemapInterface* /* api */, char* /* errbuf */, int /* bufsz */)
 {
   return TS_SUCCESS;
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char * argv[], void ** instance, char * errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char* argv[], void** instance, char* errbuf, int errbuf_size)
 {
-  EscalationState * es((EscalationState *)instance);
-
-  es = new EscalationState();
-  es->handler = TSContCreate(EscalateResponse, NULL);
-  TSContDataSet(es->handler, es);
+  EscalationState* es = new EscalationState();
 
   // The first two arguments are the "from" and "to" URL string. We can just
   // skip those, since we only ever remap on the error path.
   for (int i = 2; i < argc; ++i) {
-    unsigned  status;
-    TSMLoc    url;
-    char *    sep;
+    unsigned status;
+    char*    sep;
 
-    // Each token should be a status code then a URL, separated by '='.
-    sep = strchr(argv[i], '=');
+    // Each token should be a status code then a URL, separated by ':'.
+    sep = strchr(argv[i], ':');
     if (sep == NULL) {
       snprintf(errbuf, errbuf_size, "missing status code: %s", argv[i]);
       goto fail;
     }
 
-    status = toint(std::string(argv[i], std::distance(argv[i], sep)));
+    *sep = '\0';
+    status = strtol(argv[i], NULL, 10);
+
     if (status < 100 || status > 599) {
       snprintf(errbuf, errbuf_size, "invalid status code: %.*s", (int)std::distance(argv[i], sep), argv[i]);
       goto fail;
     }
 
-    TSReleaseAssert(TSUrlCreate(es->mbuf, &url) == TS_SUCCESS);
-
-    ++sep; // Skip over the '='.
-
-    TSDebug("escalate", "escalating HTTP status %u to %s", status, sep);
-    if (TSUrlParse(es->mbuf, url, (const char **)&sep, argv[i] + strlen(argv[i])) != TS_PARSE_DONE) {
-      snprintf(errbuf, errbuf_size, "invalid target URL: %s", sep);
-      goto fail;
-    }
+    ++sep; // Skip over the ':'
 
     // OK, we have a valid status/URL pair.
-    es->urlmap[status] = url;
+    TSDebug(PLUGIN_NAME, "Redirect of HTTP status %u to %s", status, sep);
+    es->hostmap[status] = sep;
   }
 
   *instance = es;
@@ -151,15 +161,15 @@ fail:
 }
 
 void
-TSRemapDeleteInstance(void * instance)
+TSRemapDeleteInstance(void* instance)
 {
   delete (EscalationState *)instance;
 }
 
 TSRemapStatus
-TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
+TSRemapDoRemap(void* instance, TSHttpTxn txn, TSRemapRequestInfo* /* rri */)
 {
-  EscalationState * es((EscalationState *)instance);
+  EscalationState* es = static_cast<EscalationState *>(instance);
 
   TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, es->handler);
   return TSREMAP_NO_REMAP;
