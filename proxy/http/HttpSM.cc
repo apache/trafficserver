@@ -2708,11 +2708,6 @@ HttpSM::tunnel_handler(int event, void *data)
 bool
 HttpSM::is_http_server_eos_truncation(HttpTunnelProducer * p)
 {
-  // If we are keep alive, an eos event means we
-  //  did not get all the data
-  if (t_state.current.server->keep_alive == HTTP_KEEPALIVE) {
-    return true;
-  }
 
   if ((p->do_dechunking || p->do_chunked_passthru) && p->chunked_handler.truncation) {
     return true;

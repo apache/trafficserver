@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2678] Some sites (e.g. craigslist) fails to load due to
+   incorrect truncated response detection.
+
   *) [TS-2603] Do not update HostDB for server intercept requests.
    Author: Quehan <quehan@taobao.com>
 
