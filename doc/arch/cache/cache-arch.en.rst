@@ -402,7 +402,7 @@ The in memory volume directory entries are defined as described below.
    big         unsigned in:2       Size multiplier
    size        unsigned int:6      Size
    tag         unsigned int:12     Partial key (fast collision check)
-   phase       unsigned int:1      Unknown
+   phase       unsigned int:1      Phase of the ``Doc`` (for dir valid check)
    head        unsigned int:1      Flag: first fragment in an object
    pinned      unsigned int:1      Flag: document is pinned
    token       unsigned int:1      Flag: Unknown
