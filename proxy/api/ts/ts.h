@@ -2227,9 +2227,52 @@ extern "C"
 
   tsapi TSReturnCode TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey* conf, TSRecordDataType* type);
 
+  /**
+     This API informs the core to try to follow redirections (e.g. 301 responses.
+     The new URL would be provided in the standard Location header.
+
+     @param txnp the transaction pointer
+     @param on   turn this on or off (0 or 1)
+
+     @return @c TS_SUCCESS if it succeeded
+  */
   tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
+  /**
+     This is a generalization of the TSHttpTxnFollowRedirect(), but gives finer
+     control over the behavior. Instead of using the Location: header for the new
+     destination, this API takes the new URL as a parameter. Calling this API
+     transfers the ownership of the URL from the plugin to the core, so you must
+     make sure it is heap allocated, and that you do not free it.
+
+     Calling this API implicitly also enables the "Follow Redirect" feature, so
+     there is no rason to call TSHttpTxnFollowRedirect() as well.
+
+     @param txnp the transaction pointer
+     @param url  a heap allocated string with the URL
+     @param url_len the length of the URL
+  */
   tsapi void TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
+  /**
+     Return the current (if set) redirection URL string. This is still owned by the
+     core, and must not be free'd.
+
+     @param txnp the transaction pointer
+     @param url_len_ptr a pointer to where the URL length is to be stored
+
+     @return the url string
+  */
   tsapi const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
+  /**
+     Return the number of redirection retries we have done. This starts off
+     at zero, and can be used to select different URLs based on which attempt this
+     is. This can be useful for example when providing a list of URLs to try, and
+     do so in order until one succeeds.
+
+     @param txnp the transaction pointer
+
+     @return the redirect try count
+  */
+  tsapi int TSRedirectRetriesGet(TSHttpTxn txnp);
 
   /* Get current HTTP connection stats */
   tsapi int TSHttpCurrentClientConnectionsGet(void);

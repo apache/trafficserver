@@ -7134,7 +7134,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
     sm->redirect_url_len = 0;
   }
 
-  sm->redirect_url = url;
+  sm->redirect_url = (char*)url;
   sm->redirect_url_len = url_len;
   sm->enable_redirection = true;
 }
@@ -7148,6 +7148,16 @@ TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
 
   *url_len_ptr = sm->redirect_url_len;
   return sm->redirect_url;
+}
+
+int
+TSRedirectRetriesGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM*)txnp;
+
+  return sm->redirection_tries;
 }
 
 char*

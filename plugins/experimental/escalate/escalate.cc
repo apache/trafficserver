@@ -66,42 +66,45 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
   TSMBuffer        response;
   TSMLoc           resp_hdr;
 
-  TSDebug(PLUGIN_NAME, "Recieved event %d", (int)event);
   TSReleaseAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR);
 
   // First, we need the server response ...
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txn, &response, &resp_hdr)) {
-    // Next, the respose status ...
-    TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
+    int tries = TSRedirectRetriesGet(txn);
 
-    // If we have an escalation URL for this response code, set the redirection URL and force it
-    // to be followed.
-    EscalationState::hostmap_type::iterator entry = es->hostmap.find((unsigned)status);
+    TSDebug(PLUGIN_NAME, "This is try %d", tries);
+    if (0 == tries) { // ToDo: Future support for more than one retry-URL
+      // Next, the response status ...
+      TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
 
-    if (entry != es->hostmap.end()) {
-      TSMBuffer request;
-      TSMLoc    req_hdr;
+      // If we have an escalation URL for this response code, set the redirection URL and force it
+      // to be followed.
+      EscalationState::hostmap_type::iterator entry = es->hostmap.find((unsigned)status);
 
-      TSDebug(PLUGIN_NAME, "found an escalation entry for HTTP status %u", (unsigned)status);
-      if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &request, &req_hdr)) {
-        TSMLoc url;
+      if (entry != es->hostmap.end()) {
+        TSMBuffer request;
+        TSMLoc    req_hdr;
 
-        if (TS_SUCCESS == TSHttpHdrUrlGet(request, req_hdr, &url)) {
-          char* url_str;
-          int url_len;
+        TSDebug(PLUGIN_NAME, "Found an entry for HTTP status %u", (unsigned)status);
+        if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &request, &req_hdr)) {
+          TSMLoc url;
 
-          // Update the request URL with the new Host to try.
-          TSUrlHostSet(request, url, entry->second.c_str(), entry->second.size());
-          url_str = TSUrlStringGet(request, url, &url_len);
+          if (TS_SUCCESS == TSHttpHdrUrlGet(request, req_hdr, &url)) {
+            char* url_str;
+            int url_len;
 
-          TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
-          TSRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
-        }
-        // Release the response MLoc
+            // Update the request URL with the new Host to try.
+            TSUrlHostSet(request, url, entry->second.c_str(), entry->second.size());
+            url_str = TSUrlStringGet(request, url, &url_len);
+
+            TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
+            TSRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
+          }
+          // Release the request MLoc
         TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
+        }
       }
     }
-
     // Release the response MLoc
     TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
   }
