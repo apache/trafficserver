@@ -1729,12 +1729,6 @@ params->push_method_enabled = INT_TO_BOOL(m_master.push_method_enabled);
   m_id = configProcessor.set(m_id, params);
 
 #undef INT_TO_BOOL
-
-// Redirection debug statements
-  Debug("http_init", "proxy.config.http.redirection_enabled = %d", params->redirection_enabled);
-  Debug("http_init", "proxy.config.http.number_of_redirections = %" PRId64"", params->number_of_redirections);
-
-  Debug("http_init", "proxy.config.http.post_copy_size = %" PRId64"", params->post_copy_size);
 }
 
 ////////////////////////////////////////////////////////////////
