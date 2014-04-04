@@ -87,7 +87,7 @@ spdy_show_data_frame(const char *head_str, spdylay_session * /*session*/, uint8_
 
   SpdySM *sm = (SpdySM *)user_data;
 
-  Debug("spdy", "%s DATA frame (sm_id:%"PRIu64", stream_id:%d, flag:%d, length:%d)\n",
+  Debug("spdy", "%s DATA frame (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, length:%d)",
         head_str, sm->sm_id, stream_id, flags, length);
 }
 
@@ -102,12 +102,12 @@ spdy_show_ctl_frame(const char *head_str, spdylay_session * /*session*/, spdylay
   switch (type) {
   case SPDYLAY_SYN_STREAM: {
     spdylay_syn_stream *f = (spdylay_syn_stream *)frame;
-    Debug("spdy", "%s SYN_STREAM (sm_id:%"PRIu64", stream_id:%d, flag:%d, length:%d)\n",
+    Debug("spdy", "%s SYN_STREAM (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, length:%d)",
           head_str, sm->sm_id, f->stream_id, f->hd.flags, f->hd.length);
     int j, i;
     j = i = 0;
     while (f->nv[j]) {
-      Debug("spdy", "    %s: %s\n", f->nv[j], f->nv[j+1]);
+      Debug("spdy", "    %s: %s", f->nv[j], f->nv[j+1]);
       i++;
       j = 2*i;
     }
@@ -115,12 +115,12 @@ spdy_show_ctl_frame(const char *head_str, spdylay_session * /*session*/, spdylay
     break;
   case SPDYLAY_SYN_REPLY: {
     spdylay_syn_reply *f = (spdylay_syn_reply *)frame;
-    Debug("spdy", "%s SYN_REPLY (sm_id:%"PRIu64", stream_id:%d, flag:%d, length:%d)\n",
+    Debug("spdy", "%s SYN_REPLY (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, length:%d)",
           head_str, sm->sm_id, f->stream_id, f->hd.flags, f->hd.length);
     int j, i;
     j = i = 0;
     while (f->nv[j]) {
-      Debug("spdy", "    %s: %s\n", f->nv[j], f->nv[j+1]);
+      Debug("spdy", "    %s: %s", f->nv[j], f->nv[j+1]);
       i++;
       j = 2*i;
     }
@@ -128,34 +128,34 @@ spdy_show_ctl_frame(const char *head_str, spdylay_session * /*session*/, spdylay
     break;
   case SPDYLAY_WINDOW_UPDATE: {
     spdylay_window_update *f = (spdylay_window_update *)frame;
-    Debug("spdy", "%s WINDOW_UPDATE (sm_id:%"PRIu64", stream_id:%d, flag:%d, delta_window_size:%d)\n",
+    Debug("spdy", "%s WINDOW_UPDATE (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, delta_window_size:%d)",
           head_str, sm->sm_id, f->stream_id, f->hd.flags, f->delta_window_size);
   }
     break;
   case SPDYLAY_SETTINGS: {
     spdylay_settings *f = (spdylay_settings *)frame;
-    Debug("spdy", "%s SETTINGS frame (sm_id:%"PRIu64", flag:%d, length:%d, niv:%zu)\n",
+    Debug("spdy", "%s SETTINGS frame (sm_id:%" PRIu64 ", flag:%d, length:%d, niv:%zu)",
           head_str, sm->sm_id, f->hd.flags, f->hd.length, f->niv);
     for (size_t i = 0; i < f->niv; i++) {
-      Debug("spdy", "    (%d:%d)\n", f->iv[i].settings_id, f->iv[i].value);
+      Debug("spdy", "    (%d:%d)", f->iv[i].settings_id, f->iv[i].value);
     }
   }
     break;
   case SPDYLAY_HEADERS: {
     spdylay_headers *f = (spdylay_headers *)frame;
-    Debug("spdy", "%s HEADERS frame (sm_id:%"PRIu64", stream_id:%d, flag:%d, length:%d)\n",
+    Debug("spdy", "%s HEADERS frame (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, length:%d)",
           head_str, sm->sm_id, f->stream_id, f->hd.flags, f->hd.length);
   }
     break;
   case SPDYLAY_RST_STREAM: {
     spdylay_rst_stream *f = (spdylay_rst_stream *)frame;
-    Debug("spdy", "%s RST_STREAM (sm_id:%"PRIu64", stream_id:%d, flag:%d, length:%d, code:%d)\n",
+    Debug("spdy", "%s RST_STREAM (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, length:%d, code:%d)",
           head_str, sm->sm_id, f->stream_id, f->hd.flags, f->hd.length, f->status_code);
   }
     break;
   case SPDYLAY_GOAWAY: {
     spdylay_goaway *f = (spdylay_goaway *)frame;
-    Debug("spdy", "%s GOAWAY frame (sm_id:%"PRIu64", last_good_stream_id:%d, flag:%d, length:%d\n",
+    Debug("spdy", "%s GOAWAY frame (sm_id:%" PRIu64 ", last_good_stream_id:%d, flag:%d, length:%d",
           head_str, sm->sm_id, f->last_good_stream_id, f->hd.flags, f->hd.length);
   }
   default:
@@ -176,7 +176,7 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
   client_addr = TSNetVConnRemoteAddrGet(sm->net_vc);
 
   req->url = url;
-  Debug("spdy", "++++Request[%" PRIu64 ":%d] %s\n", sm->sm_id, req->stream_id, req->url.c_str());
+  Debug("spdy", "++++Request[%" PRIu64 ":%d] %s", sm->sm_id, req->stream_id, req->url.c_str());
 
   //
   // HTTP content should be dechunked before packed into SPDY.
@@ -213,7 +213,7 @@ spdy_send_callback(spdylay_session * /*session*/, const uint8_t *data, size_t le
   sm->total_size += length;
   TSIOBufferWrite(sm->resp_buffer, data, length);
 
-  Debug("spdy", "----spdy_send_callback, length:%zu\n", length);
+  Debug("spdy", "----spdy_send_callback, length:%zu", length);
 
   return length;
 }
@@ -367,7 +367,7 @@ spdy_on_data_chunk_recv_callback(spdylay_session * /*session*/, uint8_t /*flags*
   if (!req)
     return;
 
-  Debug("spdy", "++++Fetcher Append Data, len:%zu\n", len);
+  Debug("spdy", "++++Fetcher Append Data, len:%zu", len);
   TSFetchWriteData(req->fetch_sm, data, len);
 
   return;
@@ -394,11 +394,11 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
 
   req->delta_window_size += length;
 
-  Debug("spdy", "----sm_id:%"PRId64", stream_id:%d, delta_window_size:%d\n",
+  Debug("spdy", "----sm_id:%" PRId64 ", stream_id:%d, delta_window_size:%d",
         sm->sm_id, stream_id, req->delta_window_size);
 
   if (req->delta_window_size >= SPDY_CFG.spdy.initial_window_size/2) {
-    Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%d\n",
+    Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%d",
           req->delta_window_size);
 
     //
