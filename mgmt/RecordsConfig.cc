@@ -985,7 +985,7 @@ RecordElement RecordsConfig[] = {
   //# HostDB
   //#
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.hostdb", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.hostdb", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
   ,
   //       # up to 511 characters, may not be changed while running
   {RECT_CONFIG, "proxy.config.hostdb.filename", RECD_STRING, "host.db", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -999,7 +999,7 @@ RecordElement RecordsConfig[] = {
   ,
   //       # in minutes (all three)
   //       #  0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
-  {RECT_CONFIG, "proxy.config.hostdb.ttl_mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.hostdb.ttl_mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.hostdb.lookup_timeout", RECD_INT, "120", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
