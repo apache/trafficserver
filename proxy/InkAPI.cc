@@ -7129,13 +7129,12 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
   HttpSM *sm = (HttpSM*) txnp;
 
   if (sm->redirect_url != NULL) {
-    ats_free(sm->redirect_url);
+    ats_free((void*)sm->redirect_url);
     sm->redirect_url = NULL;
     sm->redirect_url_len = 0;
   }
 
-  sm->redirect_url = (char*)ats_malloc(url_len + 1);
-  ink_strlcpy(sm->redirect_url, (char*)url, url_len + 1);
+  sm->redirect_url = url;
   sm->redirect_url_len = url_len;
   sm->enable_redirection = true;
 }
@@ -7148,7 +7147,7 @@ TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
   HttpSM *sm = (HttpSM*)txnp;
 
   *url_len_ptr = sm->redirect_url_len;
-  return (const char*)sm->redirect_url;
+  return sm->redirect_url;
 }
 
 char*

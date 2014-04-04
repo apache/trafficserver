@@ -6457,7 +6457,7 @@ HttpSM::kill_this()
     HTTP_SM_SET_DEFAULT_HANDLER(NULL);
 
     if (redirect_url != NULL) {
-      ats_free(redirect_url);
+      ats_free((void*)redirect_url);
       redirect_url = NULL;
       redirect_url_len = 0;
     }
@@ -7295,7 +7295,7 @@ HttpSM::do_redirect()
 
       if (redirect_url != NULL) {
         redirect_request(redirect_url, redirect_url_len);
-        ats_free(redirect_url);
+        ats_free((void*)redirect_url);
         redirect_url = NULL;
         redirect_url_len = 0;
         HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);

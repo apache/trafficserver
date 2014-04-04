@@ -900,6 +900,7 @@ HttpTransact::EndRemapRequest(State* s)
 
       char *redirect_url = s->http_config_param->reverse_proxy_no_host_redirect;
       int redirect_url_len = s->http_config_param->reverse_proxy_no_host_redirect_len;
+
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (redirect_url) {       /* there is a redirect url */
         build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect For Explanation", "request#no_host",

@@ -95,9 +95,7 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
           url_str = TSUrlStringGet(request, url, &url_len);
 
           TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
-          TSRedirectUrlSet(txn, url_str, url_len);
-
-          TSfree(static_cast<void*>(url_str));
+          TSRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
         }
         // Release the response MLoc
         TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);

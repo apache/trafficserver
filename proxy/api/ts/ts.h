@@ -1456,7 +1456,6 @@ extern "C"
    */
   tsapi void TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event);
   tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void* data, const uint64_t size);
-  tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
 
   tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void* arg);
   tsapi void* TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
@@ -2228,9 +2227,7 @@ extern "C"
 
   tsapi TSReturnCode TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey* conf, TSRecordDataType* type);
 
-  /*
-    It's unclear if these actually function properly still.
-  */
+  tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
   tsapi void TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
   tsapi const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
 
