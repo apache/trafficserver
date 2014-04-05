@@ -39,11 +39,6 @@
 #define SSL_EVENT_SERVER 0
 #define SSL_EVENT_CLIENT 1
 
-enum NetDataType
-{
-  NET_DATA_ATTRIBUTES = VCONNECTION_NET_DATA_BASE
-};
-
 /** Holds client options for NetVConnection.
 
     This class holds various options a user can specify for
