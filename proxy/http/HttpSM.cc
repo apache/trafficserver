@@ -4603,7 +4603,20 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
-  if (t_state.scheme == URL_WKSIDX_HTTPS) {
+  int scheme_to_use = t_state.scheme; // get initial scheme
+
+  if (!t_state.is_websocket) { // if not websocket, then get scheme from server request
+    int new_scheme_to_use = t_state.hdr_info.server_request.url_get()->scheme_get_wksidx();
+    // if the server_request url scheme was never set, try the client_request
+    if (new_scheme_to_use < 0) {
+      new_scheme_to_use = t_state.hdr_info.client_request.url_get()->scheme_get_wksidx();
+    }
+    if (new_scheme_to_use >= 0) { // found a new scheme, use it
+      scheme_to_use = new_scheme_to_use;
+    }
+  }
+
+  if (scheme_to_use == URL_WKSIDX_HTTPS) {
     DebugSM("http", "calling sslNetProcessor.connect_re");
     connect_action_handle = sslNetProcessor.connect_re(this,    // state machine
                                                        &t_state.current.server->addr.sa,    // addr + port
