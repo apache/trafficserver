@@ -42,10 +42,11 @@
 #include "api/ts/ts.h"
 #include "api/ts/experimental.h"
 #include "I_RecCore.h"
-#include "I_Layout.h"
+#include <sys/types.h>
 
 #include "InkAPITestTool.cc"
 #include "http/HttpSM.h"
+#include "ts/TestBox.h"
 
 #define TC_PASS 1
 #define TC_FAIL 0
@@ -7663,4 +7664,31 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS) (RegressionTest * test, int /* atype
 
   return;
 }
+
+
+////////////////////////////////////////////////
+// SDK_API_PROTO_STACK_CREATE
+//
+// Unit Test for API: TSClientProtoStackCreate
+////////////////////////////////////////////////
+
+REGRESSION_TEST(SDK_API_TSClientProtoStackCreate)(RegressionTest * t, int /* atype ATS_UNUSED */, int * pstatus)
+{
+  TestBox box(t, pstatus);
+
+  box = REGRESSION_TEST_PASSED;
+
+#define CHECK(expr, expected) do {  \
+  TSClientProtoStack ps = (expr); \
+  box.check(ps == expected, "%s: received %u, expected %u", #expr, (unsigned)ps, (unsigned)expected); \
+} while(0)
+
+ CHECK(TSClientProtoStackCreate(TS_PROTO_NULL), 0);
+ CHECK(TSClientProtoStackCreate((TSProtoType)99, TS_PROTO_NULL), 0);
+ CHECK(TSClientProtoStackCreate(TS_PROTO_SPDY, (TSProtoType)99, TS_PROTO_NULL), 0);
+ CHECK(TSClientProtoStackCreate(TS_PROTO_UDP, TS_PROTO_NULL), 1);
+ CHECK(TSClientProtoStackCreate(TS_PROTO_UDP, TS_PROTO_TCP, TS_PROTO_NULL), 3);
+
+}
+
 

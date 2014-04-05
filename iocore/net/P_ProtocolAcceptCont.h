@@ -31,7 +31,7 @@ class ProtocolAcceptCont: public AcceptCont
 public:
   ProtocolAcceptCont(): AcceptCont(NULL)
   {
-    memset(endpoint, 0, TS_PROTO_MAX * sizeof(AcceptCont *));
+    memset(endpoint, 0, sizeof(endpoint));
     SET_HANDLER(&ProtocolAcceptCont::mainEvent);
   }
   ~ProtocolAcceptCont() {}
@@ -44,7 +44,7 @@ private:
   ProtocolAcceptCont(const ProtocolAcceptCont &); // disabled
   ProtocolAcceptCont& operator =(const ProtocolAcceptCont&); // disabled
 
-  Continuation *endpoint[TS_PROTO_MAX];
+  Continuation *endpoint[sizeof(TSClientProtoStack) * CHAR_BIT];
 };
 
 #endif /* P_ProtocolAcceptCont_H_ */

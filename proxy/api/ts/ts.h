@@ -1576,6 +1576,9 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      Initiate Http Connection */
+
+  tsapi TSClientProtoStack TSClientProtoStackCreate(TSProtoType, ...);
+
   /**
       Allows the plugin to initiate an http connection. The TSVConn the
       plugin receives as the result of successful operates identically to

@@ -116,10 +116,10 @@ extern "C"
     TS_PROTO_HTTP = 12,
     TS_PROTO_SPDY = 13,
     TS_PROTO_RTMP = 14,
-    TS_PROTO_WBSK = 15, /* WebSocket */
+    TS_PROTO_WS   = 15, /* WebSocket */
 
     /* MAX value of TSProtoType  */
-    TS_PROTO_MAX
+    TS_PROTO_NULL = 32
   } TSProtoType;
 
   typedef uint32_t TSClientProtoStack;

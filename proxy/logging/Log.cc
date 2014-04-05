@@ -375,7 +375,7 @@ Log::init_fields()
                        TS_PROTO_HTTP, "HTTP",
                        TS_PROTO_SPDY, "SPDY",
                        TS_PROTO_RTMP, "RTMP",
-                       TS_PROTO_WBSK, "WBSK");
+                       TS_PROTO_WS,   "WS");
 
   field = NEW(new LogField("client_protocol_stack", "cps",
                            LogField::sINT,
