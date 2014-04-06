@@ -496,16 +496,15 @@ Span::init(char *an, int64_t size)
     return "error stat of file";
   }
 
-  int fd = socketManager.open(n, O_RDONLY);
-  if (fd < 0) {
-    Warning("unable to open '%s': %d, %s", n, fd, strerror(errno));
+  xfd fd(socketManager.open(n, O_RDONLY));
+  if (!fd) {
+    Warning("unable to open '%s': %s", n, strerror(errno));
     return "unable to open";
   }
 
   struct statvfs fs;
   if ((ret = fstatvfs(fd, &fs)) < 0) {
     Warning("unable to statvfs '%s': %d %d, %s", n, ret, errno, strerror(errno));
-    socketManager.close(fd);
     return "unable to statvfs";
   }
 
@@ -569,7 +568,6 @@ Span::init(char *an, int64_t size)
   Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", pathname, hw_sector_size, size, blocks, disk_id, file_pathname);
 
 Lfail:
-  socketManager.close(fd);
   return err;
 }
 
@@ -589,9 +587,9 @@ Span::init(char *filename, int64_t size)
   //
   is_mmapable_internal = true;
 
-  int fd = socketManager.open(filename, O_RDONLY);
-  if (fd < 0) {
-    Warning("unable to open '%s': %d, %s", filename, fd, strerror(errno));
+  xfd fd(socketManager.open(filename, O_RDONLY));
+  if (!fd) {
+    Warning("unable to open '%s': %s", filename, strerror(errno));
     return "unable to open";
   }
 
@@ -657,7 +655,6 @@ Span::init(char *filename, int64_t size)
   Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", filename, hw_sector_size, size, blocks, disk_id, file_pathname);
 
 Lfail:
-  socketManager.close(fd);
   return err;
 }
 #endif
@@ -672,9 +669,10 @@ Lfail:
 const char *
 Span::init(char *filename, int64_t size)
 {
-  int devnum = 0, fd, arg = 0;
+  int devnum = 0, arg = 0;
   int ret = 0, is_disk = 0;
   u_int64_t heads, sectors, cylinders, adjusted_sec;
+  xfd fd;
 
   /* Fetch file type */
   struct stat stat_buf;
@@ -705,11 +703,12 @@ Span::init(char *filename, int64_t size)
     break;
   }
 
-  if ((fd = socketManager.open(filename, O_RDONLY)) < 0) {
-    Warning("unable to open '%s': %d, %s", filename, fd, strerror(errno));
+  fd = socketManager.open(filename, O_RDONLY);
+  if (!fd) {
+    Warning("unable to open '%s': %s", filename, strerror(errno));
     return "unable to open";
   }
-  Debug("cache_init", "Span::init - socketManager.open(\"%s\", O_RDONLY) = %d", filename, fd);
+  Debug("cache_init", "Span::init - socketManager.open(\"%s\", O_RDONLY) = %d", filename, (int)fd);
 
   adjusted_sec = 1;
 #ifdef BLKPBSZGET
@@ -821,8 +820,6 @@ Span::init(char *filename, int64_t size)
   }
 
   disk_id = devnum;
-
-  socketManager.close(fd);
 
   return NULL;
 }

@@ -134,4 +134,46 @@ private:
 
 extern SocketManager socketManager;
 
+struct xfd {
+
+  xfd() : m_fd(-1) {
+  }
+
+  explicit xfd(int _fd) : m_fd(_fd) {
+  }
+
+  ~xfd() {
+    if (this->m_fd != -1) {
+      socketManager.close(this->m_fd);
+    }
+  }
+
+  /// Auto convert to a raw file descriptor.
+  operator int() const { return m_fd; }
+
+  /// Boolean operator. Returns true if we have a valid file descriptor.
+  operator bool() const { return m_fd != -1; }
+
+  xfd& operator=(int fd) {
+    if (this->m_fd != -1) {
+      socketManager.close(this->m_fd);
+    }
+
+    this->m_fd = fd;
+    return *this;
+  }
+
+  int release() {
+    int tmp = this->m_fd;
+    this->m_fd = -1;
+    return tmp;
+  }
+
+ private:
+  int m_fd;
+
+  xfd(xfd const&);            // disabled
+  xfd& operator=(xfd const&); // disabled
+};
+
 #endif /*_SocketManager_h_*/
