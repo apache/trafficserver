@@ -19,7 +19,7 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: 2014-01-12 21:37+0900\n"
+"PO-Revision-Date: 2014-05-02 19:26+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -447,7 +447,7 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:0
 msgid "Example"
-msgstr ""
+msgstr "例"
 
 #: ../../reference/configuration/records.config.en.rst:265
 msgid ""
@@ -630,11 +630,11 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:398
 msgid "HTTP Engine"
-msgstr ""
+msgstr "HTTP エンジン"
 
 #: ../../reference/configuration/records.config.en.rst:402
 msgid "Ports used for proxying HTTP traffic."
-msgstr ""
+msgstr "HTTP トラフィックをプロキシーするために使用されるポート。"
 
 #: ../../reference/configuration/records.config.en.rst:404
 msgid ""
@@ -648,192 +648,209 @@ msgid ""
 "values use the last (right most) value specified, except for ``ip-out`` as "
 "detailed later."
 msgstr ""
+"スペースもしくはカンマで区切られた :index:`ポートディスクリプター` のリスト"
+"です。各ディスクリプターはコロンで区切られたキーワードと値の列です。全ての"
+"キーワードが値を持つわけではありません。これらのものは特に言及されます。値の"
+"あるキーワードはオプションとして '=' をキーワードと値を区切る文字として使用"
+"することもできます。キーワードの場合は無視されます。キーワードの順番は重要で"
+"はありませんが、互換性のないオプションが使われた場合 ( 後述 ) 不特定の結果が"
+"起きるかもしれません。値のないオプションは冪等です。後述する ``ip-out`` 以外"
+"の値のあるオプションは最後 ( もっとも右 ) に記述された値を使用します。"
 
 #: ../../reference/configuration/records.config.en.rst:406
 msgid "Quick reference chart."
-msgstr ""
+msgstr "早見表"
 
 #: ../../reference/configuration/records.config.en.rst:409
 msgid "Name"
-msgstr ""
+msgstr "名前"
 
 #: ../../reference/configuration/records.config.en.rst:409
 msgid "Note"
-msgstr ""
+msgstr "注釈"
 
 #: ../../reference/configuration/records.config.en.rst:409
 msgid "Definition"
-msgstr ""
+msgstr "定義"
 
 #: ../../reference/configuration/records.config.en.rst:411
 #: ../../reference/configuration/records.config.en.rst:427
 msgid "*number*"
-msgstr ""
+msgstr "*number*"
 
 #: ../../reference/configuration/records.config.en.rst:411
 msgid "**Required**"
-msgstr ""
+msgstr "**必須**"
 
 #: ../../reference/configuration/records.config.en.rst:411
 msgid "The local port."
-msgstr ""
+msgstr "ローカルポート"
 
 #: ../../reference/configuration/records.config.en.rst:412
 #: ../../reference/configuration/records.config.en.rst:430
 #: ../../reference/configuration/records.config.en.rst:1493
 msgid "ipv4"
-msgstr ""
+msgstr "ipv4"
 
 #: ../../reference/configuration/records.config.en.rst:412
 msgid "**Default**"
-msgstr ""
+msgstr "**デフォルト**"
 
 #: ../../reference/configuration/records.config.en.rst:412
 msgid "Bind to IPv4 address family."
-msgstr ""
+msgstr "IPv4 アドレスファミリーにバインド。"
 
 #: ../../reference/configuration/records.config.en.rst:413
 #: ../../reference/configuration/records.config.en.rst:433
 #: ../../reference/configuration/records.config.en.rst:1494
 msgid "ipv6"
-msgstr ""
+msgstr "ipv6"
 
 #: ../../reference/configuration/records.config.en.rst:413
 msgid "Bind to IPv6 address family."
-msgstr ""
+msgstr "IPv6 アドレスファミリーにバインド。"
 
 #: ../../reference/configuration/records.config.en.rst:414
 #: ../../reference/configuration/records.config.en.rst:438
 msgid "tr-in"
-msgstr ""
+msgstr "tr-in"
 
 #: ../../reference/configuration/records.config.en.rst:414
 msgid "Inbound transparent."
-msgstr ""
+msgstr "インバウンド透過。"
 
 #: ../../reference/configuration/records.config.en.rst:415
 #: ../../reference/configuration/records.config.en.rst:443
 msgid "tr-out"
-msgstr ""
+msgstr "tr-out"
 
 #: ../../reference/configuration/records.config.en.rst:415
 msgid "Outbound transparent."
-msgstr ""
+msgstr "アウトバウンド透過。"
 
 #: ../../reference/configuration/records.config.en.rst:416
 #: ../../reference/configuration/records.config.en.rst:448
 msgid "tr-full"
-msgstr ""
+msgstr "tr-full"
 
 #: ../../reference/configuration/records.config.en.rst:416
 msgid "Fully transparent (inbound and outbound)"
-msgstr ""
+msgstr "完全な透過。 ( インバウンドとアウトバウンド )"
 
 #: ../../reference/configuration/records.config.en.rst:417
 #: ../../reference/configuration/records.config.en.rst:451
 msgid "tr-pass"
-msgstr ""
+msgstr "tr-pass"
 
 #: ../../reference/configuration/records.config.en.rst:417
 msgid "Pass through enabled."
-msgstr ""
+msgstr "パススルー有効化。"
 
 #: ../../reference/configuration/records.config.en.rst:418
 #: ../../reference/configuration/records.config.en.rst:473
 #: ../../reference/configuration/records.config.en.rst:1875
 msgid "ssl"
-msgstr ""
+msgstr "ssl"
 
 #: ../../reference/configuration/records.config.en.rst:418
 msgid "SSL terminated."
-msgstr ""
+msgstr "SSL 終端"
 
 #: ../../reference/configuration/records.config.en.rst:419
 #: ../../reference/configuration/records.config.en.rst:456
 msgid "ip-in"
-msgstr ""
+msgstr "ip-in"
 
 #: ../../reference/configuration/records.config.en.rst:419
 #: ../../reference/configuration/records.config.en.rst:420
 #: ../../reference/configuration/records.config.en.rst:421
 msgid "**Value**"
-msgstr ""
+msgstr "**値**"
 
 #: ../../reference/configuration/records.config.en.rst:419
 msgid "Local inbound IP address."
-msgstr ""
+msgstr "ローカルインバウンド IP アドレス。"
 
 #: ../../reference/configuration/records.config.en.rst:420
 #: ../../reference/configuration/records.config.en.rst:463
 msgid "ip-out"
-msgstr ""
+msgstr "ip-out"
 
 #: ../../reference/configuration/records.config.en.rst:420
 msgid "Local outbound IP address."
-msgstr ""
+msgstr "ローカルアウトバウンド IP アドレス。"
 
 #: ../../reference/configuration/records.config.en.rst:421
 #: ../../reference/configuration/records.config.en.rst:468
 msgid "ip-resolve"
-msgstr ""
+msgstr "ip-resolve"
 
 #: ../../reference/configuration/records.config.en.rst:421
 msgid "IP address resolution style."
-msgstr ""
+msgstr "IP アドレス解決スタイル。"
 
 #: ../../reference/configuration/records.config.en.rst:422
 #: ../../reference/configuration/records.config.en.rst:478
 msgid "blind"
-msgstr ""
+msgstr "blind"
 
 #: ../../reference/configuration/records.config.en.rst:422
 msgid "Blind (``CONNECT``) port."
-msgstr ""
+msgstr "Blind (``CONNECT``) ポート。"
 
 #: ../../reference/configuration/records.config.en.rst:423
 #: ../../reference/configuration/records.config.en.rst:481
 msgid "compress"
-msgstr ""
+msgstr "compress"
 
 #: ../../reference/configuration/records.config.en.rst:423
 msgid "**N/I**"
-msgstr ""
+msgstr "**N/I**"
 
 #: ../../reference/configuration/records.config.en.rst:423
 msgid "Compressed. Not implemented."
-msgstr ""
+msgstr "圧縮。実装されていません。"
 
 #: ../../reference/configuration/records.config.en.rst:427
 msgid ""
 "Local IP port to bind. This is the port to which ATS clients will connect."
 msgstr ""
+"バインドするローカル IP ポート。これは ATS クライアントが接続するポートで"
+"す。"
 
 #: ../../reference/configuration/records.config.en.rst:430
 msgid ""
 "Use IPv4. This is the default and is included primarily for completeness. "
 "This forced if the ``ip-in`` option is used with an IPv4 address."
 msgstr ""
+"IPv4 の使用。これはデフォルトであり、完全性のために最初にインクルードされて"
+"います。 ``ip-in`` オプションが IPv4 アドレスで使用されている場合、これは強"
+"制されます。"
 
 #: ../../reference/configuration/records.config.en.rst:433
 msgid ""
 "Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 "
 "address."
 msgstr ""
+"IPv6 の使用。これは ``ip-in`` オプションが IPv6 アドレスで使用されている場"
+"合、強制されます。"
 
 #: ../../reference/configuration/records.config.en.rst:438
 msgid "Not compatible with: ``ip-in``, ``ssl``, ``blind``"
-msgstr ""
+msgstr "非互換 : ``ip-in``、 ``ssl``、 ``blind``"
 
 #: ../../reference/configuration/records.config.en.rst:446
 msgid ""
 "Fully transparent. This is a convenience option and is identical to "
 "specifying both ``tr-in`` and ``tr-out``."
 msgstr ""
+"完全な透過。これは便利なオプションであり ``tr-in`` と ``tr-out`` の両方を記"
+"述することと同じです。"
 
 #: ../../reference/configuration/records.config.en.rst:448
 msgid ""
 "Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``."
-msgstr ""
+msgstr "非互換 : ``tr-in`` もしくは ``tr-out`` と非互換なオプション全て。"
 
 #: ../../reference/configuration/records.config.en.rst:451
 msgid ""
@@ -844,10 +861,16 @@ msgid ""
 "http.use_client_target_addr` for the transaction as there is no other place "
 "to obtain the origin server address."
 msgstr ""
+"透過的なパススルー。このオプションはインバウンド透過プロキシーポートにのみ便"
+"利です。期待した HTTP ヘッダーのパースに失敗した場合、トランザクションはクラ"
+"イアントへのエラーレスポンスを生成する代わりにブラインドトンネルにスイッチさ"
+"れます。それはオリジンサーバーアドレスを取得する他の場所がないトランザクショ"
+"ンと同様に :ts:cv:`proxy.config.http.use_client_target_addr` を事実上有効化"
+"します。"
 
 #: ../../reference/configuration/records.config.en.rst:456
 msgid "Not compatible with: ``tr-in``."
-msgstr ""
+msgstr "非互換 : ``tr-in``"
 
 #: ../../reference/configuration/records.config.en.rst:459
 msgid ""
@@ -856,6 +879,10 @@ msgid ""
 "this port. If this is omitted :ts:cv:`proxy.local.outgoing_ip_to_bind` is "
 "used."
 msgstr ""
+"アウトバウンドコネクション用のローカル IP アドレスの設定。このポート上のトラ"
+"ンザクションのために ATS がオリジンサーバーへアクセスする際にローカルに使用"
+"されるアドレスです。これが設定されなかった場合、 :ts:cv:`proxy.local."
+"outgoing_ip_to_bind` が使用されます。"
 
 #: ../../reference/configuration/records.config.en.rst:461
 msgid ""
@@ -863,17 +890,22 @@ msgid ""
 "address used is selected by the IP address family of the origin server "
 "address."
 msgstr ""
+"このオプションは各 IP アドレスファミリー毎に 1 回づつ、複数回使うことができ"
+"ます。使用されるアドレスはオリジンサーバーアドレスの IP アドレスファミリーか"
+"ら選択されます。"
 
 #: ../../reference/configuration/records.config.en.rst:463
 #: ../../reference/configuration/records.config.en.rst:468
 msgid "Not compatible with: ``tr-out``."
-msgstr ""
+msgstr "非互換 : ``tr-out``"
 
 #: ../../reference/configuration/records.config.en.rst:466
 msgid ""
 "Set the :ts:cv:`host resolution style <proxy.config.hostdb.ip_resolve>` for "
 "transactions on this proxy port."
 msgstr ""
+"このプロキシーポートのトランザクション用の :ts:cv:`ホスト解決方法 <proxy."
+"config.hostdb.ip_resolve>` の設定。"
 
 #: ../../reference/configuration/records.config.en.rst:471
 msgid ""
@@ -881,30 +913,38 @@ msgid ""
 "configured <configuring-ssl-termination>` for this option to provide a "
 "functional server port."
 msgstr ""
+"インバウンドコネクション用の SSL ターミネーションの要求。このオプションを"
+"使って機能するサーバーポートを提供するには SSL が :ref:`設定されていなければ"
+"なりません <configuring-ssl-termination>` 。"
 
 #: ../../reference/configuration/records.config.en.rst:476
 msgid "Accept only ``CONNECT`` transactions on this port."
-msgstr ""
+msgstr "このポートで ``CONNECT`` トランザクションだけアクセプトします。"
 
 #: ../../reference/configuration/records.config.en.rst:478
 msgid "Not compatible with: ``tr-in``, ``ssl``."
-msgstr ""
+msgstr "非互換 : ``tr-in``、 ``ssl``."
 
 #: ../../reference/configuration/records.config.en.rst:481
 msgid ""
 "Compress the connection. Retained only by inertia, should be considered "
 "\"not implemented\"."
 msgstr ""
+"コネクションの圧縮。惰性により残されています。これは \"実装されていない\" と"
+"考えられるべきです。"
 
 #: ../../reference/configuration/records.config.en.rst:485
 msgid "Listen on port 80 on any address for IPv4 and IPv6.::"
-msgstr ""
+msgstr "IPv4 と IPv6 のどのアドレスでもポート 80 でリッスンします。"
 
 #: ../../reference/configuration/records.config.en.rst:491
 msgid ""
 "Listen transparently on any IPv4 address on port 8080, and transparently on "
 "port 8080 on local address ``fc01:10:10:1::1`` (which implies ``ipv6``).::"
 msgstr ""
+"どの IPv4 アドレスでもポート 8080 を、さらにローカルアドレス "
+"``fc01:10:10:1::1`` ( これは ``IPv6`` を意味します。) のポート 8080 を透過的"
+"にリッスンします。"
 
 #: ../../reference/configuration/records.config.en.rst:499
 msgid ""
@@ -914,71 +954,87 @@ msgid ""
 "IPv4, and connect to origin servers using the local address ``10.10.10.1`` "
 "for IPv4 and ``fc01:10:10:1::1`` for IPv6.::"
 msgstr ""
+"IPv6 ではポート 8080 で完全に透過的にリッスンします。SSL ポートを 443 で設定"
+"します。これらのポートは :ts:cv:`proxy.local.incoming_ip_to_bind` で指定され"
+"た IP アドレスを使います。 IP アドレス ``192.168.17.1``、 ポート 80、 IPv4 "
+"でリッスンして、オリジンサーバーへはローカルアドレス ``10.10.10.1`` を IPv4 "
+"で ``fc01:10:10:1::1`` を IPv6 で使用して接続します。"
 
 #: ../../reference/configuration/records.config.en.rst:505
 msgid ""
 "The range of origin server ports that can be used for tunneling via "
 "``CONNECT``."
 msgstr ""
+"``CONNECT`` によるトンネリングに使用可能なオリジンサーバーポートの幅。"
 
 #: ../../reference/configuration/records.config.en.rst:507
 msgid ""
 "Traffic Server allows tunnels only to the specified ports. Supports both "
 "wildcards ('\\*') and ranges (\"0-1023\")."
 msgstr ""
+"Traffic Server は指定されたポートへしかトンネルを許可しません。ワイルドカー"
+"ド ('\\*') とレンジ (\"0-123\") の両方をサポートします。"
 
 #: ../../reference/configuration/records.config.en.rst:512
 msgid ""
 "These are the ports on the *origin server*, not Traffic Server :ts:cv:"
 "`proxy ports <proxy.config.http.server_ports>`."
 msgstr ""
+"これらは *オリジンサーバー* のポートであり、 Traffic Server :ts:cv:`プロキ"
+"シーポート <proxy.config.http.server_ports>` ではありません。"
 
 #: ../../reference/configuration/records.config.en.rst:517
 msgid ""
 "Set how the ``Via`` field is handled on a request to the origin server."
 msgstr ""
+"オリジンサーバーへのリクエストで ``Via`` フィールドがどのように処理されるか"
+"の設定。"
 
 #: ../../reference/configuration/records.config.en.rst:522
 #: ../../reference/configuration/records.config.en.rst:540
 msgid "Do not modify / set this via header"
-msgstr ""
+msgstr "via ヘッダーを変更または設定しない"
 
 #: ../../reference/configuration/records.config.en.rst:523
 #: ../../reference/configuration/records.config.en.rst:541
 msgid "Update the via, with normal verbosity"
-msgstr ""
+msgstr "通常の冗長さで via ヘッダーを更新"
 
 #: ../../reference/configuration/records.config.en.rst:524
 #: ../../reference/configuration/records.config.en.rst:542
 msgid "Update the via, with higher verbosity"
-msgstr ""
+msgstr "より高い冗長さで via ヘッダーを更新"
 
 #: ../../reference/configuration/records.config.en.rst:525
 #: ../../reference/configuration/records.config.en.rst:543
 msgid "Update the via, with highest verbosity"
-msgstr ""
+msgstr "もっとも高い冗長さで via ヘッダーを更新"
 
 #: ../../reference/configuration/records.config.en.rst:535
 msgid "Set how the ``Via`` field is handled on the response to the client."
 msgstr ""
+"クライアントへのレスポンスで ``Via`` フィールドがどのように処理されるかの設"
+"定。"
 
 #: ../../reference/configuration/records.config.en.rst:553
 msgid "You can specify one of the following:"
-msgstr ""
+msgstr "次のうち 1 つを指定できます。"
 
 #: ../../reference/configuration/records.config.en.rst:555
 msgid "``0`` no Server: header is added to the response."
-msgstr ""
+msgstr "``0`` : Server ヘッダーはレスポンスに追加されません。"
 
 #: ../../reference/configuration/records.config.en.rst:556
 msgid "``1`` the Server: header is added (see string below)."
-msgstr ""
+msgstr "``1`` : Server ヘッダーは追加されます。( 後述の文字列をみてください )"
 
 #: ../../reference/configuration/records.config.en.rst:557
 msgid ""
 "``2`` the Server: header is added only if the response from rigin does not "
 "have one already."
 msgstr ""
+"``2`` : Server ヘッダーはオリジンからのレスポンスがまだ Server ヘッダーを"
+"持っていない場合に追加されます。"
 
 #: ../../reference/configuration/records.config.en.rst:562
 msgid ""
@@ -3389,10 +3445,10 @@ msgid ""
 "$TS_ROOT`` environment variable can be used alter the installation prefix "
 "at run time."
 msgstr ""
-"Traffic Server の設定ファイルを含むディレクトリ。これはビルド時に指定され"
-"た ``SYSCONFDIR`` のインストールした場所のプレフィックスからの相対の値を"
-"含んだ読み取り専用の設定オプションです。``$TS_ROOT`` 環境変数はインストー"
-"ルした場所のプレフィックスを実行時に切り替えるために使うことができます。"
+"Traffic Server の設定ファイルを含むディレクトリ。これはビルド時に指定された "
+"``SYSCONFDIR`` のインストールした場所のプレフィックスからの相対の値を含んだ"
+"読み取り専用の設定オプションです。``$TS_ROOT`` 環境変数はインストールした場"
+"所のプレフィックスを実行時に切り替えるために使うことができます。"
 
 #: ../../reference/configuration/records.config.en.rst:287
 msgid ""
@@ -3448,11 +3504,11 @@ msgid ""
 "and not set the header.  This option is only used for HTTPS requests and "
 "the header will not be set on HTTP requests."
 msgstr ""
-"この設定は Strict-Transport-Security ヘッダーを追加する際に使用される "
-"max-age の値を指定します。値は秒です。``0`` は max-age の値を ``0`` に設定し"
-"クライアントからの HSTS エントリーを削除するはずです。``-1`` はこの機能を"
-"無効化しヘッダーをセットしません。このオプションは HTTPS のリクエストでのみ"
-"使用され HTTP リクエストではヘッダーはセットされません。"
+"この設定は Strict-Transport-Security ヘッダーを追加する際に使用される max-"
+"age の値を指定します。値は秒です。``0`` は max-age の値を ``0`` に設定しクラ"
+"イアントからの HSTS エントリーを削除するはずです。``-1`` はこの機能を無効化"
+"しヘッダーをセットしません。このオプションは HTTPS のリクエストでのみ使用さ"
+"れ HTTP リクエストではヘッダーはセットされません。"
 
 #: ../../reference/configuration/records.config.en.rst:2060
 msgid ""
@@ -3460,9 +3516,9 @@ msgid ""
 "the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age needs "
 "to be set to a non ``-1`` value for this configuration to take effect."
 msgstr ""
-"Strict-Transport-Security ヘッダーへの includeSubdomain の値の追加を"
-"有効化 (``1``) もしくは無効化 (``0``) します。この設定の効果を得るためには "
-"proxy.config.ssl.hsts_max_age が ``-1`` 以外の値に設定されている必要があります。"
+"Strict-Transport-Security ヘッダーへの includeSubdomain の値の追加を有効化 "
+"(``1``) もしくは無効化 (``0``) します。この設定の効果を得るためには proxy."
+"config.ssl.hsts_max_age が ``-1`` 以外の値に設定されている必要があります。"
 
 #: ../../reference/configuration/records.config.en.rst:2066
 msgid ""
@@ -3470,9 +3526,9 @@ msgid ""
 "renegotiation of the SSL connection.  The default of ``0``, means the "
 "client can't initiate renegotiation."
 msgstr ""
-"この設定はクライアントが SSL 接続の再交渉を始めることができるかどうかを"
-"指定します。デフォルトは ``0`` で、クライアントが再交渉を始められないことを"
-"意味します。"
+"この設定はクライアントが SSL 接続の再交渉を始めることができるかどうかを指定"
+"します。デフォルトは ``0`` で、クライアントが再交渉を始められないことを意味"
+"します。"
 
 #: ../../reference/configuration/records.config.en.rst:2072
 msgid ""
@@ -3481,6 +3537,6 @@ msgid ""
 "files' access rights can be restricted to help reduce the vulnerability of "
 "certificates."
 msgstr ""
-"SSL 証明書の読み込みの際に traffic_server の権限の昇格を有効化 (``1``) "
-"もしくは無効化 (``0``) します。これを有効化することで、証明書の脆弱性を低減"
-"するために SSL 証明書ファイルのアクセス権限を制限できるようになります。"
+"SSL 証明書の読み込みの際に traffic_server の権限の昇格を有効化 (``1``) もし"
+"くは無効化 (``0``) します。これを有効化することで、証明書の脆弱性を低減する"
+"ために SSL 証明書ファイルのアクセス権限を制限できるようになります。"
