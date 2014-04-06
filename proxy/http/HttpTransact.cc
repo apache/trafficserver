@@ -8127,7 +8127,6 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     break;
   }
 
-  va_start(ap, format);
   reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *) (http_hdr_reason_lookup(status_code)));
   if (unlikely(!reason_phrase))
     reason_phrase = "Unknown HTTP Status";
@@ -8190,11 +8189,15 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   ////////////////////////////////////////////////////////////////////
 
   int64_t len;
-  char *new_msg = body_factory->fabricate_with_old_api(error_body_type, s, 8192,
+  char * new_msg;
+
+  va_start(ap, format);
+  new_msg = body_factory->fabricate_with_old_api(error_body_type, s, 8192,
                                                        &len,
                                                        body_language, sizeof(body_language),
                                                        body_type, sizeof(body_type),
                                                        format, ap);
+  va_end(ap);
 
   // After the body factory is called, a new "body" is allocated, and we must replace it. It is
   // unfortunate that there's no way to avoid this fabrication even when there is no substitutions...

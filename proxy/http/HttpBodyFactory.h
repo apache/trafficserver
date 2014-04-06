@@ -170,12 +170,15 @@ public:
                                         char* content_type_out_buf, size_t content_type_buf_size,
                                         const char *format, ...)
   {
+    char * msg;
     va_list ap;
 
     va_start(ap, format);
-    return fabricate_with_old_api(type, context, max_buffer_length, resulting_buffer_length,
+    msg = fabricate_with_old_api(type, context, max_buffer_length, resulting_buffer_length,
                                    content_language_out_buf, content_language_buf_size,
                                    content_type_out_buf, content_type_buf_size, format, ap);
+    va_end(ap);
+    return msg;
   }
 
   void dump_template_tables(FILE * fp = stderr);
