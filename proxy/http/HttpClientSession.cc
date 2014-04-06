@@ -498,6 +498,7 @@ HttpClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
     handle_api_return(event);
     break;
 
+  // coverity[unterminated_default]
   default:
     ink_assert(false);
   case HTTP_API_ERROR:
