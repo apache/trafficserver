@@ -171,6 +171,7 @@ newUNIXsocket(char *fpath)
     return socketFD;
   }
 
+  ink_zero(serv_addr);
   serv_addr.sun_family = AF_UNIX;
   ink_strlcpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
 #if defined(darwin) || defined(freebsd)
