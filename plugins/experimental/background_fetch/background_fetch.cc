@@ -22,12 +22,11 @@
     limitations under the License.
 
 */
-
-
-
 #include <stdio.h>
 #include <string.h>
 #include <string>
+#include <stdarg.h>
+#include <getopt.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -168,6 +167,12 @@ public:
     // ToDo: Destroy mutex ? TS-1432
   }
 
+  void create_log(const char* log_name)
+  {
+    TSDebug(PLUGIN_NAME, "Creating log name %s\n", log_name);
+    TSAssert(TS_SUCCESS == TSTextLogObjectCreate(log_name, TS_LOG_MODE_ADD_TIMESTAMP, &log));
+  }
+
   bool acquire(const std::string &url)
   {
     bool ret;
@@ -200,12 +205,14 @@ public:
     return ret;
   }
 
+  TSTextLogObject log;
+
 private:
   OutstandingRequests _urls;
   TSMutex _lock;
 };
 
-BGFetchConfig gConfig;
+BGFetchConfig* gConfig;
 
 //////////////////////////////////////////////////////////////////////////////
 // Hold and manage some state for the background fetch continuation
@@ -215,8 +222,8 @@ static int cont_bg_fetch(TSCont contp, TSEvent event, void* edata);
 
 struct BGFetchData
 {
-  BGFetchData(BGFetchConfig* cfg=&gConfig)
-    : hdr_loc(TS_NULL_MLOC), url_loc(TS_NULL_MLOC), _cont(NULL),  _config(cfg)
+  BGFetchData(BGFetchConfig* cfg=gConfig)
+    : hdr_loc(TS_NULL_MLOC), url_loc(TS_NULL_MLOC), vc(NULL), _bytes(0), _cont(NULL),  _config(cfg)
   {
     mbuf = TSMBufferCreate();
   }
@@ -229,6 +236,12 @@ struct BGFetchData
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, url_loc);
 
     TSMBufferDestroy(mbuf);
+
+    if (vc) {
+      TSError("%s: Destroyed BGFetchDATA while VC was alive", PLUGIN_NAME);
+      TSVConnClose(vc);
+      vc = NULL;
+    }
 
     // If we got schedule, also clean that up
     if (_cont) {
@@ -245,9 +258,11 @@ struct BGFetchData
   bool release_url() const { return _config->release(_url); }
 
   const char* get_url() const { return _url.c_str(); }
+  void add_bytes(int64_t b) { _bytes += b; }
 
   bool initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp);
   void schedule();
+  void log(TSEvent event) const;
 
   TSMBuffer mbuf;
   TSMLoc hdr_loc;
@@ -262,6 +277,7 @@ struct BGFetchData
 
 private:
   std::string _url;
+  int64_t _bytes;
   TSCont _cont;
   BGFetchConfig* _config;
 };
@@ -353,6 +369,39 @@ BGFetchData::schedule()
 }
 
 
+// Log format is:
+//    remap-tag bytes status url
+void
+BGFetchData::log(TSEvent event) const
+{
+  BGFetchConfig* conf = _config ? _config : gConfig;
+
+  if (conf->log) {
+    const char* status;
+
+    switch (event) {
+    case TS_EVENT_VCONN_EOS:
+      status = "EOS";
+      break;
+    case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
+      status = "TIMEOUT";
+      break;
+    case TS_EVENT_ERROR:
+      status = "ERROR";
+    case TS_EVENT_VCONN_READ_COMPLETE:
+      status = "READ_COMP";
+      break;
+    default:
+      status = "UNKNOWN";
+      break;
+    }
+
+    // ToDo: Also deal with per-remap tagging
+    TSTextLogObjectWrite(conf->log, "%s %" PRId64 " %s %s", "-", _bytes, status, _url.c_str());
+  }
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 // Continuation to perform a background fill of a URL. This is pretty
 // expensive (memory allocations etc.), we could eliminate maybe the
@@ -389,13 +438,15 @@ cont_bg_fetch(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
     }
 
     // Setup the NetVC for background fetch
+    TSAssert(NULL == data->vc);
     if ((data->vc = TSHttpConnect((sockaddr*)&data->client_ip)) != NULL) {
       TSHttpHdrPrint(data->mbuf, data->hdr_loc, data->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
       TSIOBufferWrite(data->req_io_buf, "\r\n", 2);
 
       data->r_vio = TSVConnRead(data->vc, contp, data->resp_io_buf, INT64_MAX);
-      data->w_vio = TSVConnWrite(data->vc, contp, data->req_io_buf_reader, TSIOBufferReaderAvail(data->req_io_buf_reader));
+      data->w_vio = TSVConnWrite(data->vc, contp, data->req_io_buf_reader,
+                                 TSIOBufferReaderAvail(data->req_io_buf_reader));
     } else {
       delete data;
       TSError("%s: failed to connect to internal process, major malfunction", PLUGIN_NAME);
@@ -407,6 +458,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
 
   case TS_EVENT_VCONN_READ_READY:
     avail = TSIOBufferReaderAvail(data->resp_io_buf_reader);
+    data->add_bytes(avail);
     TSIOBufferReaderConsume(data->resp_io_buf_reader, avail);
     TSVIONDoneSet(data->r_vio, TSVIONDoneGet(data->r_vio) + avail);
     TSVIOReenable(data->r_vio);
@@ -415,6 +467,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
   case TS_EVENT_VCONN_READ_COMPLETE:
   case TS_EVENT_VCONN_EOS:
   case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
+  case TS_EVENT_ERROR:
     if (event == TS_EVENT_VCONN_INACTIVITY_TIMEOUT) {
       TSDebug(PLUGIN_NAME, "Encountered Inactivity Timeout");
       TSVConnAbort(data->vc, TS_VC_CLOSE_ABORT);
@@ -422,18 +475,20 @@ cont_bg_fetch(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
       TSVConnClose(data->vc);
     }
 
-    // ToDo: Is this really necessary to do here for all 3 cases?
-    TSDebug(PLUGIN_NAME, "Closing down background transaction, event=%d", event);
+    TSDebug(PLUGIN_NAME, "Closing down background transaction, event= %s(%d)", TSHttpEventNameLookup(event), event);
     avail = TSIOBufferReaderAvail(data->resp_io_buf_reader);
+    data->add_bytes(avail);
     TSIOBufferReaderConsume(data->resp_io_buf_reader, avail);
     TSVIONDoneSet(data->r_vio, TSVIONDoneGet(data->r_vio) + avail);
 
-    // Release and Cleanup
+    data->log(event);
+    data->vc = NULL;
+    // Close, release and cleanup
     delete data;
     break;
 
   default:
-    TSDebug(PLUGIN_NAME, "Unhandled event: %d", event); // ToDo: use new API in v5.0.0
+    TSDebug(PLUGIN_NAME, "Unhandled event: %s (%d)", TSHttpEventNameLookup(event), event);
     break;
   }
 
@@ -535,9 +590,13 @@ cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED 
 ///////////////////////////////////////////////////////////////////////////
 // Setup global hooks
 void
-TSPluginInit(int /* argc ATS_UNUSED */, const char* /* argv ATS_UNUSED */[])
+TSPluginInit(int argc, const char* argv[])
 {
   TSPluginRegistrationInfo info;
+  static const struct option longopt[] = {
+    { "log", required_argument, NULL, 'l' },
+    {NULL, no_argument, NULL, '\0' }
+  };
 
   info.plugin_name = (char*)PLUGIN_NAME;
   info.vendor_name = (char*)"Apache Software Foundation";
@@ -546,6 +605,24 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char* /* argv ATS_UNUSED */[])
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_3_0 , &info)) {
     TSError("%s: plugin registration failed.\n", PLUGIN_NAME);
   }
+
+  gConfig = new BGFetchConfig();
+  optind = 1;
+
+  while (true) {
+    int opt = getopt_long(argc, (char * const *)argv, "l", longopt, NULL);
+
+    switch (opt) {
+    case 'l':
+      gConfig->create_log(optarg);
+      break;
+    }
+
+    if (opt == -1) {
+      break;
+    }
+  }
+
 
   TSDebug(PLUGIN_NAME, "Initialized");
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(cont_handle_response, NULL));
