@@ -119,8 +119,9 @@ HttpServerSession::do_io_close(int alerrno)
     this->server_trans_stat--;
   }
 
+  Debug("http_ss", "[%" PRId64 "] session closing, netvc %p", con_id, server_vc);
+
   server_vc->do_io_close(alerrno);
-  Debug("http_ss", "[%" PRId64 "] session closed", con_id);
   server_vc = NULL;
 
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
