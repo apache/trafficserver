@@ -55,7 +55,7 @@ load_config() {
   config.log_level = 1;
   config.log_file = NULL;
   config.hook = 1;
-  
+
   // get the install directory
   const char* install_dir = TSInstallDirGet();
 
@@ -173,7 +173,6 @@ log_tcp_info(const char* event_name, const char* client_ip, const char* server_i
   TSDebug("tcp_info", "logging: %s", buffer);
 }
 
-
 static int
 tcp_info_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
@@ -229,7 +228,7 @@ tcp_info_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         TSDebug("tcp_info", "got the tcp_info struture and now logging");
 
         // get the client address
-        const struct sockaddr *client_addr = TSHttpSsnClientAddrGet(ssnp); 
+        const struct sockaddr *client_addr = TSHttpSsnClientAddrGet(ssnp);
         const struct sockaddr *server_addr = TSHttpSsnIncomingAddrGet(ssnp);
         if (client_addr == NULL || server_addr == NULL)
           goto done;
@@ -241,8 +240,7 @@ tcp_info_hook(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         // convert ip to string
         inet_ntop(client_addr->sa_family, &(client_in_addr->sin_addr), client_str, INET_ADDRSTRLEN);
         inet_ntop(server_addr->sa_family, &(server_in_addr->sin_addr), server_str, INET_ADDRSTRLEN);
-        
-        
+
         log_tcp_info(event_name, client_str, server_str, tcp_info);
       }
     } else {
