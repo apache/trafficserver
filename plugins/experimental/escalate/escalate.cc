@@ -70,7 +70,7 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
 
   // First, we need the server response ...
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txn, &response, &resp_hdr)) {
-    int tries = TSRedirectRetriesGet(txn);
+    int tries = TSHttpTxnRedirectRetries(txn);
 
     TSDebug(PLUGIN_NAME, "This is try %d", tries);
     if (0 == tries) { // ToDo: Future support for more than one retry-URL
@@ -98,7 +98,7 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
             url_str = TSUrlStringGet(request, url, &url_len);
 
             TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
-            TSRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
+            TSHttpTxnRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
           }
           // Release the request MLoc
         TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);

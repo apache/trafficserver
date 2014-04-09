@@ -7121,7 +7121,7 @@ TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
 
 // this function should be called at TS_EVENT_HTTP_READ_RESPONSE_HDR
 void
-TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
+TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)url) == TS_SUCCESS);
@@ -7139,8 +7139,35 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
   sm->enable_redirection = true;
 }
 
+// Deprecated, remove for v6.0.0
+void
+TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)url) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM*) txnp;
+
+  if (sm->redirect_url != NULL) {
+    ats_free(sm->redirect_url);
+    sm->redirect_url = NULL;
+    sm->redirect_url_len = 0;
+  }
+
+  sm->redirect_url = (char*)ats_malloc(url_len + 1);
+  ink_strlcpy(sm->redirect_url, url, url_len + 1);
+  sm->redirect_url_len = url_len;
+  // have to turn redirection on for this transaction if user wants to redirect to another URL
+  if (sm->enable_redirection == false) {
+    sm->enable_redirection = true;
+    // max-out "redirection_tries" to avoid the regular redirection being turned on in
+    // this transaction improperly. This variable doesn't affect the custom-redirection
+    sm->redirection_tries = HttpConfig::m_master.number_of_redirections;
+  }
+}
+
 const char*
-TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
+TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -7150,8 +7177,15 @@ TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
   return sm->redirect_url;
 }
 
+// Deprecated, remove for v6.0.0
+const char*
+TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
+{
+  return TSHttpTxnRedirectUrlGet(txnp, url_len_ptr);
+}
+
 int
-TSRedirectRetriesGet(TSHttpTxn txnp)
+TSHttpTxnRedirectRetries(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 

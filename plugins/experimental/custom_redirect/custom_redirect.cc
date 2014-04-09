@@ -74,7 +74,7 @@ handle_response (TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
                               char* url = (char*)TSmalloc(redirect_url_length+1);
 
                               TSstrlcpy(url, redirect_url_str, redirect_url_length + 1);
-                              TSRedirectUrlSet(txnp, url, redirect_url_length);
+                              TSHttpTxnRedirectUrlSet(txnp, url, redirect_url_length);
                             }
                         }
                         TSHandleMLocRelease (resp_bufp, resp_loc, redirect_url_loc);

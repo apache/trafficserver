@@ -2237,6 +2237,7 @@ extern "C"
      @return @c TS_SUCCESS if it succeeded
   */
   tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
+
   /**
      This is a generalization of the TSHttpTxnFollowRedirect(), but gives finer
      control over the behavior. Instead of using the Location: header for the new
@@ -2251,7 +2252,9 @@ extern "C"
      @param url  a heap allocated string with the URL
      @param url_len the length of the URL
   */
-  tsapi void TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
+  tsapi void TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
+  tsapi TS_DEPRECATED void TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
+
   /**
      Return the current (if set) redirection URL string. This is still owned by the
      core, and must not be free'd.
@@ -2261,7 +2264,9 @@ extern "C"
 
      @return the url string
   */
-  tsapi const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
+  tsapi const char* TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
+  tsapi TS_DEPRECATED const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
+
   /**
      Return the number of redirection retries we have done. This starts off
      at zero, and can be used to select different URLs based on which attempt this
@@ -2272,7 +2277,7 @@ extern "C"
 
      @return the redirect try count
   */
-  tsapi int TSRedirectRetriesGet(TSHttpTxn txnp);
+  tsapi int TSHttpTxnRedirectRetries(TSHttpTxn txnp);
 
   /* Get current HTTP connection stats */
   tsapi int TSHttpCurrentClientConnectionsGet(void);
