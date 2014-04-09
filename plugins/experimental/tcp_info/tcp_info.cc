@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  tcp_info: A plugin to log TCP session information.
 
   @section license License
 
@@ -21,9 +21,6 @@
   limitations under the License.
  */
 
-/* tcp_info.cc:  logs the tcp_info data struture to a file
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ts/ts.h>
@@ -33,78 +30,26 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <getopt.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <string.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
 
+#define TCPI_HOOK_SSN_START     0x01u
+#define TCPI_HOOK_TXN_START     0x02u
+#define TCPI_HOOK_SEND_RESPONSE 0x04u
+#define TCPI_HOOK_SSN_CLOSE     0x08u
+
 struct Config {
   int sample;
   const char* log_file;
   int log_fd;
   int log_level;
-  int hook;
 };
+
 static Config config;
-
-static void
-load_config() {
-  char config_file[PATH_MAX];
-  config.sample = 1000;
-  config.log_level = 1;
-  config.log_file = NULL;
-  config.hook = 1;
-
-  // get the install directory
-  const char* install_dir = TSInstallDirGet();
-
-  // figure out the config file and open it
-  snprintf(config_file, sizeof(config_file), "%s/%s/%s", install_dir, "etc", "tcp_info.config");
-  FILE *file = fopen(config_file, "r");
-  if (file == NULL) {
-    snprintf(config_file, sizeof(config_file), "%s/%s/%s", install_dir, "conf", "tcp_info.config");
-    file = fopen(config_file, "r");
-  }
-  TSDebug("tcp_info", "config file name: %s", config_file);
-  assert(file != NULL);
-
-  // read and parse the lines
-  char line[256];
-  while (fgets(line, sizeof(line), file) != NULL) {
-    char *pos = strchr(line, '=');
-    *pos = '\0';
-    char *value = pos + 1;
-
-    // remove the new line
-    pos = strchr(value, '\n');
-    if (pos != NULL) {
-      *pos = '\0';
-    }
-
-    if (value != NULL) {
-      TSDebug("tcp_info", "config key: %s", line);
-      TSDebug("tcp_info", "config value: %s", value);
-      if (strcmp(line, "sample") == 0) {
-        config.sample = atoi(value);
-      } else if (strcmp(line, "log_file") == 0) {
-        config.log_file = strdup(value);
-      } else if (strcmp(line, "log_level") == 0) {
-        config.log_level = atoi(value);
-      } else if (strcmp(line, "hook") == 0) {
-        config.hook = atoi(value);
-      }
-    }
-  }
-
-  TSDebug("tcp_info", "sample: %d", config.sample);
-  TSDebug("tcp_info", "log filename: %s", config.log_file);
-  TSDebug("tcp_info", "log_level: %d", config.log_level);
-  TSDebug("tcp_info", "hook: %d", config.hook);
-
-  config.log_fd = open(config.log_file, O_APPEND | O_CREAT | O_RDWR, 0666);
-  assert(config.log_fd > 0);
-}
 
 static void
 log_tcp_info(const char* event_name, const char* client_ip, const char* server_ip, struct tcp_info &info) {
@@ -259,39 +204,155 @@ done:
   return 0;
 }
 
-void
-TSPluginInit(int, const char *[]) // int argc, const char *argv[]
+static bool
+parse_unsigned(const char * str, unsigned long& lval)
 {
+  char * end = NULL;
+
+  if (*str == '\0') {
+    return false;
+  }
+
+  lval = strtoul(str, &end, 0 /* base */);
+  if (end == str) {
+    // No valid characters.
+    return false;
+  }
+
+  if (end != '\0') {
+    // Not all charaters consumed.
+    return false;
+  }
+
+  return true;
+}
+
+// Parse a comma-separated list of hook names into a hook bitmask.
+static unsigned
+parse_hook_list(const char * hook_list)
+{
+  unsigned mask = 0;
+  char * tok;
+  char * str;
+  char * last;
+
+  const struct hookmask { const char * name; unsigned mask; } hooks[] = {
+    { "ssn_start", TCPI_HOOK_SSN_START },
+    { "txn_start", TCPI_HOOK_TXN_START },
+    { "send_resp_hdr", TCPI_HOOK_SEND_RESPONSE },
+    { "ssn_close", TCPI_HOOK_SSN_CLOSE },
+    { NULL, 0u }
+  };
+
+  str = TSstrdup(hook_list);
+
+  for (tok = strtok_r(str, ",", &last); tok; tok = strtok_r(NULL, ",", &last)) {
+    bool match = false;
+
+    for (const struct hookmask * m = hooks; m->name != NULL; ++m) {
+      if (strcmp(m->name, tok) == 0) {
+        mask |= m->mask;
+        match = true;
+        break;
+      }
+    }
+
+    if (!match) {
+      TSError("[tcp_info] invalid hook name '%s'", tok);
+    }
+  }
+
+  TSfree(str);
+  return mask;
+}
+
+void
+TSPluginInit(int argc, const char * argv[])
+{
+  static const char usage[] = "tcp_info.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT]";
+  static const struct option longopts[] = {
+    { const_cast<char *>("sample-rate"), required_argument, NULL, 'r' },
+    { const_cast<char *>("log-file"), required_argument, NULL, 'f' },
+    { const_cast<char *>("log-level"), required_argument, NULL, 'l' },
+    { const_cast<char *>("hooks"), required_argument, NULL, 'h' },
+    { NULL, 0, NULL, 0 }
+  };
+
   TSPluginRegistrationInfo info;
+  unsigned hooks = 0;
 
   info.plugin_name = (char*)"tcp_info";
   info.vendor_name = (char*)"Apache Software Foundation";
   info.support_email = (char*)"dev@trafficserver.apache.org";
 
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS)
-    TSError("Plugin registration failed. \n");
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+    TSError("tcp_info: plugin registration failed");
+  }
 
-  // load the configuration file
-  load_config();
+  config.sample = 1000;
+  config.log_level = 1;
+  config.log_file = NULL;
 
-  // add a hook to the state machine
-  // TODO: need another hook before the socket is closed, keeping it in for now because it will be easier to change if or when another hook is added to ATS
-  if ((config.hook & 1) != 0) {
+  optind = 0;
+  for (;;) {
+    unsigned long lval;
+
+    switch (getopt_long(argc, (char * const *)argv, "r:f:l:h:", longopts, NULL)) {
+    case 'r':
+      if (parse_unsigned(optarg, lval)) {
+        config.sample = atoi(optarg);
+      } else {
+        TSError("[tcp_info] invalid sample rate '%s'", optarg);
+      }
+      break;
+    case 'f':
+      config.log_file = optarg;
+      break;
+    case 'l':
+      if (parse_unsigned(optarg, lval) && (lval == 1 || lval == 2)) {
+        config.log_level = atoi(optarg);
+      } else {
+        TSError("[tcp_info] invalid log level '%s'", optarg);
+      }
+      break;
+    case 'h':
+      hooks = parse_hook_list(optarg);
+      break;
+    case -1:
+        goto init;
+    default:
+        TSError("[tcp_info] usage: %s", usage);
+    }
+  }
+
+init:
+
+  TSDebug("tcp_info", "sample: %d", config.sample);
+  TSDebug("tcp_info", "log filename: %s", config.log_file);
+  TSDebug("tcp_info", "log_level: %d", config.log_level);
+  TSDebug("tcp_info", "hook mask: 0x%x", hooks);
+
+  config.log_fd = open(config.log_file, O_APPEND | O_CREAT | O_RDWR, 0666);
+  assert(config.log_fd > 0);
+
+  if (hooks & TCPI_HOOK_SSN_START) {
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, TSContCreate(tcp_info_hook, NULL));
     TSDebug("tcp_info", "added hook to the start of the TCP connection");
   }
-  if ((config.hook & 2) != 0) {
+
+  if (hooks & TCPI_HOOK_TXN_START) {
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, TSContCreate(tcp_info_hook, NULL));
     TSDebug("tcp_info", "added hook to the close of the transaction");
   }
-  if ((config.hook & 4) != 0) {
+
+  if (hooks & TCPI_HOOK_SEND_RESPONSE) {
     TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, TSContCreate(tcp_info_hook, NULL));
     TSDebug("tcp_info", "added hook to the sending of the headers");
   }
-  if ((config.hook & 8) != 0) {
+
+  if (hooks & TCPI_HOOK_SSN_CLOSE) {
     TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, TSContCreate(tcp_info_hook, NULL));
     TSDebug("tcp_info", "added hook to the close of the TCP connection");
   }
 
-  TSDebug("tcp_info", "tcp info module registered");
 }
