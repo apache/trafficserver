@@ -7129,7 +7129,7 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
   HttpSM *sm = (HttpSM*) txnp;
 
   if (sm->redirect_url != NULL) {
-    ats_free((void*)sm->redirect_url);
+    ats_free(sm->redirect_url);
     sm->redirect_url = NULL;
     sm->redirect_url_len = 0;
   }
