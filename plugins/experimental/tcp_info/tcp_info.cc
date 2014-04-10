@@ -219,7 +219,7 @@ parse_unsigned(const char * str, unsigned long& lval)
     return false;
   }
 
-  if (end != '\0') {
+  if (end && *end != '\0') {
     // Not all charaters consumed.
     return false;
   }
