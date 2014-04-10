@@ -309,7 +309,7 @@ extern "C"
 
    */
   /** @deprecated There is no reason to destroy the URL, just release
-      the marshal buffers. */
+      the marshal buffers. Should be removed for v5.0.0 */
   tsapi TS_DEPRECATED TSReturnCode TSUrlDestroy(TSMBuffer bufp, TSMLoc offset);
 
   /**
@@ -2256,6 +2256,7 @@ extern "C"
      @param url_len the length of the URL
   */
   tsapi void TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
+  //  This is deprecated as of v5.0.0.
   tsapi TS_DEPRECATED void TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
 
   /**
@@ -2268,6 +2269,7 @@ extern "C"
      @return the url string
   */
   tsapi const char* TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
+  //  This is deprecated as of v5.0.0.
   tsapi TS_DEPRECATED const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
 
   /**
