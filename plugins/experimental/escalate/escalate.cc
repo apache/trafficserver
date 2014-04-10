@@ -23,6 +23,7 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/experimental.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
