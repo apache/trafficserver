@@ -3,6 +3,19 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2706] Replace the tcp_info plugin config file with options.
 
+  *) [TS-2691] Fix how we count redirect retries in the core and APIs.
+
+  *) [TS-2693] Deprecate the old TSRedirectUrlSet()/TSRedirectUrlGet().
+
+  *) [TS-2692] Add an API to Get the current redirection retry count,
+   TSHttpTxnRedirectRetries().
+
+  *) [TS-2707] Migrate TSRedirectUrlSet/Get to TSHttpTxnRedirectUrlSet/Get.
+
+  *) [TS-2703] Add a text log format to escalate plugin.
+
+  *) [TS-2690] Fixes and improvements for the escalate plugin.
+
   *) [TS-2699] Add TSClientProtoStackCreate API.
 
   *) [TS-2678] Some sites (e.g. craigslist) fails to load due to
