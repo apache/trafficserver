@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2708] Refactor and modernize the tcp_info plugin.
+
   *) [TS-2555] Adding global plugin support to ts_lua plugin.
 
   *) [TS-2717] header-rewrite set-redirect not working.
