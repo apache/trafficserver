@@ -250,6 +250,7 @@ struct MIMEHdrImpl:public HdrHeapObjImpl
 
   // Cooked values
   void recompute_cooked_stuff(MIMEField * changing_field_or_null = NULL);
+  void recompute_accelerators_and_presence_bits();
 };
 
 /***********************************************************************

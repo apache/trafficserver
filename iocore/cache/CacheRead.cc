@@ -28,6 +28,7 @@
 #endif
 
 #define READ_WHILE_WRITER 1
+extern int cache_config_compatibility_4_2_0_fixup;
 
 Action *
 Cache::open_read(Continuation * cont, CacheKey * key, CacheFragType type, char *hostname, int host_len)
@@ -155,6 +156,21 @@ Lcallreturn:
   return &c->_action;
 }
 #endif
+
+uint32_t
+CacheVC::load_http_info(CacheHTTPInfoVector* info, Doc* doc, RefCountObj * block_ptr)
+{
+  uint32_t zret = info->get_handles(doc->hdr(), doc->hlen, block_ptr);
+  if (cache_config_compatibility_4_2_0_fixup &&
+      vol->header->version.ink_major == 23 && vol->header->version.ink_minor == 0
+    ) {
+    for ( int i = info->xcount - 1 ; i >= 0 ; --i ) {
+      info->data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
+      info->data(i).alternate.m_alt->m_request_hdr.m_mime->recompute_accelerators_and_presence_bits();
+    }
+  }
+  return zret;
+}
 
 int
 CacheVC::openReadFromWriterFailure(int event, Event * e)
@@ -868,7 +884,7 @@ Lread:
       // don't want any writers while we are evacuating the vector
       if (!vol->open_write(this, false, 1)) {
         Doc *doc1 = (Doc *) first_buf->data();
-        uint32_t len = write_vector->get_handles(doc1->hdr(), doc1->hlen);
+        uint32_t len = this->load_http_info(write_vector, doc1);
         ink_assert(len == doc1->hlen && write_vector->count() > 0);
         write_vector->remove(alternate_index, true);
         // if the vector had one alternate, delete it's directory entry
@@ -1065,7 +1081,7 @@ CacheVC::openReadStartHead(int event, Event * e)
       ink_assert(doc->hlen);
       if (!doc->hlen)
         goto Ldone;
-      if ((uml = vector.get_handles(doc->hdr(), doc->hlen)) != doc->hlen) {
+      if ((uml = this->load_http_info(&vector, doc)) != doc->hlen) {
         if (buf) {
           HTTPCacheAlt* alt = reinterpret_cast<HTTPCacheAlt*>(doc->hdr());
           int32_t alt_length = 0;

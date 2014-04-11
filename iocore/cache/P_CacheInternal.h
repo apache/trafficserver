@@ -361,6 +361,10 @@ struct CacheVC: public CacheVConnection
       or @c NULL if there is no fragment table.
   */
   virtual HTTPInfo::FragOffset* get_frag_table();
+  /** Load alt pointers and do fixups if needed.
+      @return Length of header data used for alternates.
+   */
+  virtual uint32_t load_http_info(CacheHTTPInfoVector* info, struct Doc* doc, RefCountObj * block_ptr = NULL);
 #endif
   virtual bool is_pread_capable();
   virtual bool set_pin_in_cache(time_t time_pin);
