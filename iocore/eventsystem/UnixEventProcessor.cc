@@ -159,7 +159,10 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 
 #if TS_USE_HWLOC
   int affinity = 0;
-  REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
+  // Commenting this out as a fix for 4.2.x only. This reverts the fix
+  // that exposed another bug and returns to the behavior previous to 4.2.x.
+  // This is also now fixed in master.
+  // REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
   ink_cpuset_t cpuset;
   int socket = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_SOCKET);
   int cu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);

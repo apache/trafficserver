@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.1
 
+  *) [TS-2624] Force CPU affinity to 0 to mimic previous behavior in 4.x branch
+   and avoid regression.
+
   *) [TS-2564] Fixup MIME presence bits and slot accelerators to recover from
    WKS_IDX changes, plus config to turn it off manually.
 
