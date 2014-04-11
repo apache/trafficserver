@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.1
 
+  *) [TS-2564] Fixup MIME presence bits and slot accelerators to recover from
+   WKS_IDX changes, plus config to turn it off manually.
+
   *) [TS-2654] Crash in Range requests with read-while-writer.
 
   *) [TS-2674] Remove debug printf() from traffic_top.

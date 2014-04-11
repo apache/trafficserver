@@ -78,6 +78,9 @@ int cache_config_read_while_writer = 0;
 int cache_config_mutex_retry_delay = 2;
 #ifdef HTTP_CACHE
 static int enable_cache_empty_http_doc = 0;
+/// Fix up a specific known problem with the 4.2.0 release.
+/// Not used for stripes with a cache version later than 4.2.0.
+int cache_config_compatibility_4_2_0_fixup = 1;
 #endif
 
 #if TS_USE_INTERIM_CACHE == 1
@@ -3380,6 +3383,8 @@ ink_cache_init(ModuleVersion v)
 
 #ifdef HTTP_CACHE
   REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
+
+  REC_EstablishStaticConfigInt32(cache_config_compatibility_4_2_0_fixup, "proxy.config.cache.http.compatibility.4-2-0-fixup");
 #endif
 
 #if TS_USE_INTERIM_CACHE == 1
