@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-898] Fix minor regex_remap parsing bug.
+
   *) [TS-2711] Include Lua JIT as a Submodule.
 
   *) [TS-898] Ensure the cache span probe always closes file descriptors.

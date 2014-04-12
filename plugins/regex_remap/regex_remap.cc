@@ -733,12 +733,14 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     if (line.empty()) {
       continue;
     }
-    pos1 = line.find_first_not_of(" \t\n");
-    if (line[pos1] == '#') {
-      continue;  // Skip comment lines
-    }
 
+    pos1 = line.find_first_not_of(" \t\n");
     if (pos1 != std::string::npos) {
+
+      if (line[pos1] == '#') {
+        continue;  // Skip comment lines
+      }
+
       pos2 = line.find_first_of(" \t\n", pos1);
       if (pos2 != std::string::npos) {
         regex = line.substr(pos1, pos2-pos1);
