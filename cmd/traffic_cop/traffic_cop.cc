@@ -737,7 +737,9 @@ spawn_manager()
   } else if (err == -1) {
     cop_log(COP_FATAL, "unable to fork [%d '%s']\n", errno, strerror(errno));
     exit(1);
-  } else {
+  }
+
+  if (log_fd >= 0) {
     close(log_fd);
   }
 

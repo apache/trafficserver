@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-898] Avoid passing -1 to close (2) in traffic_cop.
+
   *) [TS-898] Fix minor regex_remap parsing bug.
 
   *) [TS-2711] Include Lua JIT as a Submodule.
