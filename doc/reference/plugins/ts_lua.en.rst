@@ -248,11 +248,11 @@ Description
 
 This module embeds Lua, via the standard Lua 5.1 interpreter, into Apache Traffic Server. This module acts as remap plugin of Traffic Server, so we should realize **'do_remap'** function in each lua script. We can write this in remap.config:::
 
-     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/libtslua.so @pparam=/etc/trafficserver/script/test_hdr.lua
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so @pparam=/etc/trafficserver/script/test_hdr.lua
 
 Sometimes we want to receive parameters and process them in the script, we should realize **'\__init__'** function in the lua script(sethost.lua is a reference), and we can write this in remap.config:::
 
-     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/libtslua.so @pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so @pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
 
 
 
