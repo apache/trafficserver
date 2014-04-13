@@ -540,7 +540,7 @@ CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
 CONFIG proxy.config.ssl.client.CA.cert.path STRING @rel_sysconfdir@
 ##############################################################################
 #
-# ICP Configuration. NOTE! ICP is currently broken NOTE!
+# ICP Configuration.
 #
 ##############################################################################
    # icp modes
