@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2715] Fix some ESI compile warnings, change the constants to
+   be part of an include.
+
   *) [TS-898] Remove pointless NULL check on address of array.
 
   *) [TS-898] Avoid passing -1 to close (2) in traffic_cop.
