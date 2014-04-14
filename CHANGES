@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.3
 
+  *) [TS-898] Remove pointless NULL check on address of array.
+
   *) [TS-2959] Fix compiler issue for MultiCache.
 
 Changes with Apache Traffic Server 4.2.2

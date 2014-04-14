@@ -1372,7 +1372,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
             // TODO: If we save state (struct) for a run, we probably need to always
             // update the origin data, no matter what the origin_set is.
-            if (origin_set ? (origin_set->find(tok) != origin_set->end()) : 1) {
+            if (origin_set->empty() || (origin_set->find(tok) != origin_set->end())) {
               o_iter = origins.find(tok);
               if (origins.end() == o_iter) {
                 o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
@@ -2208,7 +2208,7 @@ my_exit(const ExitStatus& status)
   }
 
   // Next the totals for all Origins, unless we specified a list of origins to filter.
-  if (!origin_set) {
+  if (origin_set->empty()) {
     first = false;
     if (cl.json) {
       std::cout << "{ \"total\": {" << std::endl;
@@ -2303,7 +2303,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   memset(&totals, 0, sizeof(totals));
   init_elapsed(&totals);
 
-  origin_set = NULL;
+  origin_set = NEW(new OriginSet);
   parse_errors = 0;
 
   // Command line parsing
@@ -2328,13 +2328,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     char *tok;
     char *sep_ptr;
 
-    if (NULL == origin_set)
-        origin_set = NEW(new OriginSet);
-    if (cl.origin_list) {
-      for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != NULL;) {
-        origin_set->insert(tok);
-        tok = strtok_r(NULL, ",", &sep_ptr);
-      }
+    for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != NULL;) {
+      origin_set->insert(tok);
+      tok = strtok_r(NULL, ",", &sep_ptr);
     }
   }
   // Load origins from an "external" file (\n separated)
@@ -2347,9 +2343,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
       usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
       _exit(0);
     }
-
-    if (NULL == origin_set)
-      origin_set = NEW(new OriginSet);
 
     while (!fs.eof()) {
       std::string line;
@@ -2366,8 +2359,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
           char *buf;
 
           buf = ats_strdup(line.substr(start, end).c_str());
-          if (buf)
+          if (buf) {
             origin_set->insert(buf);
+          }
         }
       }
     }
