@@ -87,11 +87,6 @@ public:
 
   virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
 
-  virtual bool is_over_ssl()
-  {
-    return (false);
-  }
-
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
 
