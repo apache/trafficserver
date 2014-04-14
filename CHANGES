@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.3
 
+  *) [TS-2715] Fix some ESI compile warnings, change the constants to
+   be part of an include.
+
   *) [TS-3283] Certain SSL handshake error during client-hello hangs the client and
    leaves network connection open.
 
