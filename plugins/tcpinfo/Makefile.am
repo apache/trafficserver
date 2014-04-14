@@ -16,7 +16,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-pkglib_LTLIBRARIES = tcp_info.la
-tcp_info_la_SOURCES = tcp_info.cc
-tcp_info_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+pkglib_LTLIBRARIES = tcpinfo.la
+tcpinfo_la_SOURCES = tcpinfo.cc
+tcpinfo_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 

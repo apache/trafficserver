@@ -24,4 +24,5 @@ SUBDIRS = \
   libloader \
   regex_remap \
   stats_over_http \
+  tcpinfo \
   experimental

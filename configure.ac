@@ -1927,6 +1927,7 @@ AC_CONFIG_FILES([
   plugins/libloader/Makefile
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
+  plugins/tcpinfo/Makefile
   plugins/experimental/Makefile
   plugins/experimental/authproxy/Makefile
   plugins/experimental/background_fetch/Makefile
@@ -1944,7 +1945,6 @@ AC_CONFIG_FILES([
   plugins/experimental/rfc5861/Makefile
   plugins/experimental/s3_auth/Makefile
   plugins/experimental/spdy/Makefile
-  plugins/experimental/tcp_info/Makefile
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/xdebug/Makefile
   proxy/Makefile

@@ -1,6 +1,6 @@
 /** @file
 
-  tcp_info: A plugin to log TCP session information.
+  tcpinfo: A plugin to log TCP session information.
 
   @section license License
 
@@ -105,12 +105,12 @@ log_tcp_info(Config * config, const char * event_name, TSHttpSsn ssnp)
   TSReleaseAssert(config->log != NULL);
 
   if (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS) {
-    TSDebug("tcp_info", "error getting the client socket fd");
+    TSDebug("tcpinfo", "error getting the client socket fd");
     return;
   }
 
   if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
-    TSDebug("tcp_info", "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
+    TSDebug("tcpinfo", "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
     return;
   }
 
@@ -174,7 +174,7 @@ log_tcp_info(Config * config, const char * event_name, TSHttpSsn ssnp)
   // It's really not clear how we should handle logging failures. It a failure transient
   // or persistent? Should we try to re-open the logs? How frequently should we do that?
   if (ret != TS_SUCCESS) {
-    TSError("[tcp_info] log write failed, disabling logging");
+    TSError("[tcpinfo] log write failed, disabling logging");
     TSTextLogObjectDestroy(config->log);
     config->log = NULL;
   }
@@ -221,7 +221,7 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
     return 0;
   }
 
-  TSDebug("tcp_info", "logging hook called for %s (%s) with log object %p",
+  TSDebug("tcpinfo", "logging hook called for %s (%s) with log object %p",
       TSHttpEventNameLookup(event), event_name, config->log);
 
   if (config->log == NULL) {
@@ -231,11 +231,11 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   // no need to run rand if we are always going log (100%)
   if (config->sample < 1000) {
     random = rand() % 1000;
-    TSDebug("tcp_info", "random: %d, config->sample: %d", random, config->sample);
+    TSDebug("tcpinfo", "random: %d, config->sample: %d", random, config->sample);
   }
 
   if (random < config->sample) {
-    TSDebug("tcp_info", "sampling TCP metrics for %s event", event_name);
+    TSDebug("tcpinfo", "sampling TCP metrics for %s event", event_name);
     log_tcp_info(config, event_name, ssnp);
   }
 
@@ -304,7 +304,7 @@ parse_hook_list(const char * hook_list)
     }
 
     if (!match) {
-      TSError("[tcp_info] invalid hook name '%s'", tok);
+      TSError("[tcpinfo] invalid hook name '%s'", tok);
     }
   }
 
@@ -315,7 +315,7 @@ parse_hook_list(const char * hook_list)
 void
 TSPluginInit(int argc, const char * argv[])
 {
-  static const char usage[] = "tcp_info.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT]";
+  static const char usage[] = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT]";
   static const struct option longopts[] = {
     { const_cast<char *>("sample-rate"), required_argument, NULL, 'r' },
     { const_cast<char *>("log-file"), required_argument, NULL, 'f' },
@@ -326,16 +326,16 @@ TSPluginInit(int argc, const char * argv[])
 
   TSPluginRegistrationInfo info;
   Config *  config = new Config();
-  const char *  filename = "tcp_info";
+  const char *  filename = "tcpinfo";
   TSCont    cont;
   unsigned  hooks = 0;
 
-  info.plugin_name = (char*)"tcp_info";
+  info.plugin_name = (char*)"tcpinfo";
   info.vendor_name = (char*)"Apache Software Foundation";
   info.support_email = (char*)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("tcp_info: plugin registration failed");
+    TSError("[tcpinfo] plugin registration failed");
   }
 
   optind = 0;
@@ -347,7 +347,7 @@ TSPluginInit(int argc, const char * argv[])
       if (parse_unsigned(optarg, lval)) {
         config->sample = atoi(optarg);
       } else {
-        TSError("[tcp_info] invalid sample rate '%s'", optarg);
+        TSError("[tcpinfo] invalid sample rate '%s'", optarg);
       }
       break;
     case 'f':
@@ -357,7 +357,7 @@ TSPluginInit(int argc, const char * argv[])
       if (parse_unsigned(optarg, lval) && (lval <= countof(tcpi_headers))) {
         config->log_level = lval;
       } else {
-        TSError("[tcp_info] invalid log level '%s'", optarg);
+        TSError("[tcpinfo] invalid log level '%s'", optarg);
       }
       break;
     case 'h':
@@ -366,23 +366,23 @@ TSPluginInit(int argc, const char * argv[])
     case -1:
         goto init;
     default:
-        TSError("[tcp_info] usage: %s", usage);
+        TSError("[tcpinfo] usage: %s", usage);
     }
   }
 
 init:
 
 #if !TCPI_PLUGIN_SUPPORTED
-  TSError("[tcp_info] TCP metrics are not supported on this platform");
+  TSError("[tcpinfo] TCP metrics are not supported on this platform");
 #endif
 
-  TSDebug("tcp_info", "sample: %d", config->sample);
-  TSDebug("tcp_info", "log filename: %s", filename);
-  TSDebug("tcp_info", "log_level: %u", config->log_level);
-  TSDebug("tcp_info", "hook mask: 0x%x", hooks);
+  TSDebug("tcpinfo", "sample: %d", config->sample);
+  TSDebug("tcpinfo", "log filename: %s", filename);
+  TSDebug("tcpinfo", "log_level: %u", config->log_level);
+  TSDebug("tcpinfo", "hook mask: 0x%x", hooks);
 
   if (TSTextLogObjectCreate(filename, TS_LOG_MODE_ADD_TIMESTAMP, &config->log) != TS_SUCCESS) {
-    TSError("[tcp_info] failed to create log file '%s'", filename);
+    TSError("[tcpinfo] failed to create log file '%s'", filename);
     delete config;
     return;
   }
@@ -398,27 +398,27 @@ init:
 
   if (hooks & TCPI_HOOK_SSN_START) {
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, cont);
-    TSDebug("tcp_info", "added hook to the start of the TCP connection");
+    TSDebug("tcpinfo", "added hook to the start of the TCP connection");
   }
 
   if (hooks & TCPI_HOOK_TXN_START) {
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, cont);
-    TSDebug("tcp_info", "added hook to the close of the transaction");
+    TSDebug("tcpinfo", "added hook to the close of the transaction");
   }
 
   if (hooks & TCPI_HOOK_SEND_RESPONSE) {
     TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
-    TSDebug("tcp_info", "added hook to the sending of the headers");
+    TSDebug("tcpinfo", "added hook to the sending of the headers");
   }
 
   if (hooks & TCPI_HOOK_SSN_CLOSE) {
     TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, cont);
-    TSDebug("tcp_info", "added hook to the close of the TCP connection");
+    TSDebug("tcpinfo", "added hook to the close of the TCP connection");
   }
 
   if (hooks & TCPI_HOOK_TXN_CLOSE) {
     TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
-    TSDebug("tcp_info", "added hook to the close of the transaction");
+    TSDebug("tcpinfo", "added hook to the close of the transaction");
   }
 
 }
