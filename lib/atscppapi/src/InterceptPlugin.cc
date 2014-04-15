@@ -161,8 +161,8 @@ InterceptPlugin::~InterceptPlugin() {
 
 bool InterceptPlugin::produce(const void *data, int data_size) {
   ScopedSharedMutexLock scopedLock(getMutex());
-  if (!state_->net_vc_) {
-    LOG_ERROR("Intercept not operational yet");
+  if (!state_->net_vc_ || state_->shut_down_) {
+    LOG_ERROR("Intercept not operational");
     return false;
   }
   if (!state_->output_.buffer_) {
@@ -184,8 +184,8 @@ bool InterceptPlugin::produce(const void *data, int data_size) {
 
 bool InterceptPlugin::setOutputComplete() {
   ScopedSharedMutexLock scopedLock(getMutex());
-  if (!state_->net_vc_) {
-    LOG_ERROR("Intercept not operational yet");
+  if (!state_->net_vc_ || state_->shut_down_) {
+    LOG_ERROR("Intercept not operational");
     return false;
   }
   if (!state_->output_.buffer_) {
