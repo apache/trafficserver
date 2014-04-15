@@ -27,28 +27,28 @@ you can set log properties.
 The logging API enables you to:
 
 -  Establish a custom text log for your plugin: see
-   ```TSTextLogObjectCreate`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ae75e85e476efeaa16ded185da7a3081b>`__
+   :c:func:`TSTextLogObjectCreate`
 
 -  Set the log header for your custom text log: see
-   ```TSTextLogObjectHeaderSet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a7c10f89fe8bcb6b733f4a83b5a73b71c>`__
+   :c:func:`TSTextLogObjectHeaderSet`
 
 -  Enable or disable rolling your custom text log: see
-   ```TSTextLogObjectRollingEnabledSet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#aec1e883f0735ee40c8b56d90cf27acd1>`__
+   :c:func:`TSTextLogObjectRollingEnabledSet`
 
 -  Set the rolling interval (in seconds) for your custom text log: see
-   ```TSTextLogObjectRollingIntervalSecSet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#aac0be2e81694db0363c5321e8a2019ce>`__
+   :c:func:`TSTextLogObjectRollingIntervalSecSet`
 
 -  Set the rolling offset for your custom text log: see
-   ```TSTextLogObjectRollingOffsetHrSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a9d90885b975947c241f74c33550180b4>`__
+   :c:func:`TSTextLogObjectRollingOffsetHrSet`
 
 -  Write text entries to the custom text log: see
-   ```TSTextLogObjectWrite`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a34de01e5603ea639d7ce6c7bf9613254>`__
+   :c:func:`TSTextLogObjectWrite`
 
 -  Flush the contents of the custom text log's write buffer to disk: see
-   ```TSTextLogObjectFlush`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ad746b22f992c2adb5f0271e5136a6ca1>`__
+   :c:func:`TSTextLogObjectFlush`
 
 -  Destroy custom text logs when you are done with them: see
-   ```TSTextLogObjectDestroy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af6521931ada7bbc38194e79e60081d54>`__
+   :c:func:`TSTextLogObjectDestroy`
 
 The steps below show how the logging API is used in the
 ``blacklist-1.c`` sample plugin. For the complete source code, see the

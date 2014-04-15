@@ -175,6 +175,6 @@ cancel the action. The following sample code implements this:
 
 The action functions are:
 
--  ```TSActionCancel`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a5d49a6addcc9dbdc7f339ee6b73ac0b6>`__
--  ```TSActionDone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#abe189274ad59911f2a57d345d11bfecb>`__
+-  :c:func:`TSActionCancel`
+-  :c:func:`TSActionDone`
 

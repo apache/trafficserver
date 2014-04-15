@@ -35,7 +35,7 @@ structure. Since only a single writer is allowed, there is no
 corresponding ``TSIOBufferWriter`` data structure. The writer simply
 modifies the IO buffer directly. To see an example that illustrates how
 to use IOBuffers, refer to the sample code in the description of
-```TSIOBufferBlockReadStart`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a367203e6e2cf4349e019952782deb96c>`__.
+:c:func:`TSIOBufferBlockReadStart`.
 
 Additional information about IO buffer functions:
 

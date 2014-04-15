@@ -26,5 +26,5 @@ for reading ``POST`` bodies in plugins as well as using alternative
 transports to the origin server.The intercepting HTTP transaction
 functions are:
 
--  ```TSHttpTxnIntercept`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a3408017633f95161e2ab4fa175c44fa3>`__
+-  :c:func:`TSHttpTxnIntercept`
 

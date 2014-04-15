@@ -21,5 +21,5 @@ Initiate HTTP Connection
 This function enables plugins to initiate HTTP transactions. The
 initiate HTTP connection function is:
 
--  ```TSHttpConnect`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a2b45aa63ac1353b4c52123110197b61e>`__
+-  :c:func:`TSHttpConnect`
 

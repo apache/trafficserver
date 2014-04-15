@@ -40,16 +40,16 @@ the `Traffic Server Administrator's Guide <../../admin/>`__.
 Depending on the result type, you'll use ``TSMgmtIntGet``,
 ``TSMgmtCounterGet``, ``TSMgmtFloatGet``, or ``TSMgmtStringGet`` to
 obtain the variable value (see the example for
-```TSMgmtIntGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a097aaecda41d04b522796ae25eea9a3d>`__.
+:c:func:`TSMgmtIntGet`.
 
 The ``TSMgmt*Get`` functions are:
 
--  ```TSMgmtCounterGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a583e21e614b70256f68658fc6c455ea6>`__
+-  :c:func:`TSMgmtCounterGet`
 
--  ```TSMgmtFloatGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a2ace94b52c71656304b53824d3fa7080>`__
+-  :c:func:`TSMgmtFloatGet`
 
--  ```TSMgmtIntGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a097aaecda41d04b522796ae25eea9a3d>`__
+-  :c:func:`TSMgmtIntGet`
 
--  ```TSMgmtStringGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a14167888ed89d5b30df5bdcdcfdf1c30>`__
+-  :c:func:`TSMgmtStringGet`
 
 
