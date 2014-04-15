@@ -1419,7 +1419,7 @@ AX_LIB_READLINE
 
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
-case $host_os in
+case $host_os_def in
   darwin)
     LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     ;;
