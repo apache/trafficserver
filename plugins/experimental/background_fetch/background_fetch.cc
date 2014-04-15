@@ -158,6 +158,7 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
 class BGFetchConfig {
 public:
   BGFetchConfig()
+    : log(NULL)
   {
     _lock = TSMutexCreate();
   }
