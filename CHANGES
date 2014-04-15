@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2717] header-rewrite set-redirect not working.
+   Author: Igor Brezac
+
   *) [TS-2715] Fix some ESI compile warnings, change the constants to
    be part of an include.
 
