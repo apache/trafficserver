@@ -1417,56 +1417,6 @@ TS_CHECK_TCMALLOC
 # Check for libreadline/libedit
 AX_LIB_READLINE
 
-#
-# Check for Lua, at least version 5.1, sets LUA_CFLAGS and LUA_LIBS. We support both standard
-# Lua and LuaJIT, preferring LuaJIT if the user did not indicate a preference.
-AC_MSG_CHECKING([whether to enable Linux LuaJIT support])
-AC_ARG_ENABLE([luajit],
-  [AS_HELP_STRING([--enable-luajit], [enable LuaJIT support @<:@default=check@:>@])],
-  [enable_luajit="${enableval}"],
-  [enable_luajit=check]
-)
-AC_MSG_RESULT([$enable_luajit])
-
-PKG_CHECK_MODULES([luajit], [luajit], [have_luajit=yes], [have_luajit=no])
-CHECK_LUA([have_lua=yes], [have_lua=no])
-
-case $enable_luajit in
-yes)
-  # LuaJIT required. Fail if it's not available.
-  AS_IF([ test "x${have_luajit}" = "xyes" ], [
-    LUA_CFLAGS="${luajit_CFLAGS}"
-    LUA_LIBS="${luajit_LIBS}"
-    enable_lua_support=LuaJIT
-  ], [
-    AC_MSG_ERROR([LuaJIT package not available])
-  ])
-  ;;
-
-no)
-  # LuaJIT disabled, just check for the regular Lua support.
-  enable_lua_support="${have_lua}"
-  ;;
-
-*)
-  # No user preference, prefer LuaJIT over standard Lua.
-  AS_IF([ test "x${have_luajit}" = "xyes" ], [
-    LUA_CFLAGS="${luajit_CFLAGS}"
-    LUA_LIBS="${luajit_LIBS}"
-    enable_lua_support=LuaJIT
-  ], [
-    enable_lua_support="${have_lua}"
-  ])
-  ;;
-esac
-
-AC_SUBST(LUA_CFLAGS)
-AC_SUBST(LUA_LIBS)
-AC_MSG_CHECKING([whether to enable Lua support])
-AM_CONDITIONAL([BUILD_LUA_SUPPORT], [ test "x${enable_lua_support}" != "xno" ])
-AM_CONDITIONAL([BUILD_HAVE_LUAJIT], [ test "x${have_luajit}" = "xyes" ])
-AC_MSG_RESULT([$enable_lua_support])
-
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
 case $host_os in
@@ -1989,7 +1939,6 @@ AC_CONFIG_FILES([
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/healthchecks/Makefile
   plugins/experimental/hipes/Makefile
-  plugins/experimental/lua/Makefile
   plugins/experimental/metalink/Makefile
   plugins/experimental/remap_stats/Makefile
   plugins/experimental/rfc5861/Makefile

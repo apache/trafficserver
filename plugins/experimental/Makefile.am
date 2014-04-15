@@ -28,7 +28,6 @@ SUBDIRS = \
  geoip_acl \
  healthchecks \
  hipes \
- lua \
  metalink \
  remap_stats \
  rfc5861 \

@@ -30,3 +30,20 @@ endif
 if ENABLE_CPPAPI
 SUBDIRS += atscppapi
 endif
+
+# Some special hacks around building the luajit.
+#
+#  - Copy the luajit source tree if we're doing out-of-source builds
+#  - Upon clean, remove the luajit tree from the out-of-source build tree
+#
+# ToDo: Can we do this without copying the source? I tried setting the VPATH, but
+#       it did not work. Can we make more intelligent build targets, avoiding [ test ] ?
+all-local:
+	@echo "Making all in luajit"
+	test -d "$(top_srcdir)/luajit/src" || (cd "$(top_srcdir)" && git submodule update --init)
+	test -d "$(top_builddir)/$(subdir)/luajit/src" || cp -rf "$(srcdir)/luajit" "$(top_builddir)/$(subdir)/"
+	make -C luajit PREFIX=$(prefix)
+
+clean-local:
+	test "$(top_srcdir)" != "$(top_builddir)" || make -C "$(top_builddir)/$(subdir)/luajit" clean
+	test "$(top_srcdir)" = "$(top_builddir)" || rm -rf "$(top_builddir)/$(subdir)/luajit"
