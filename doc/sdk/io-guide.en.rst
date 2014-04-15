@@ -182,13 +182,13 @@ Plugins <../http-transformation-plugin#WritingContentTransformPlugins>`__.
 
 The vconnection functions are listed below:
 
--  ```TSVConnAbort`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a08444a9b2fee637672e177ede78b6218>`__
--  ```TSVConnClose`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a69344c2c6e57ece0990a5cee73b75215>`__
--  ```TSVConnClosedGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a441d74cd77bf5d5564048682ca83b6ec>`__
--  ```TSVConnRead`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a29674799a8deffdde3d6ae3231aba1dc>`__
--  ```TSVConnReadVIOGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#aa6f8788f062737f211c788ad5fcd2813>`__
--  ```TSVConnShutdown`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a5935b6c762b65fe87057adf94b1b00b4>`__
--  ```TSVConnWrite`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#acea65496d1fcaf01924b0210f3129e6b>`__
--  ```TSVConnWriteVIOGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ae9a38dbd4866c59131a1f3b806a18aab>`__
+-  :c:func:`TSVConnAbort`
+-  :c:func:`TSVConnClose`
+-  :c:func:`TSVConnClosedGet`
+-  :c:func:`TSVConnRead`
+-  :c:func:`TSVConnReadVIOGet`
+-  :c:func:`TSVConnShutdown`
+-  :c:func:`TSVConnWrite`
+-  :c:func:`TSVConnWriteVIOGet`
 
 

@@ -47,6 +47,6 @@ processing a session hook.
 
 The session hook functions are listed below:
 
--  ```TSHttpSsnHookAdd`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a268d493d94fa5461c8200883a9b8d20b>`__
--  ```TSHttpSsnReenable`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a3bbe42bf4757625bdb8bb65e7ac6f52d>`__
+-  :c:func:`TSHttpSsnHookAdd`
+-  :c:func:`TSHttpSsnReenable`
 

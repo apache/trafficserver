@@ -105,12 +105,12 @@ Here's how the interface works:
 
 The configuration functions are:
 
--  ```TSConfigDataGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aed2a6f9d350935ac890f75fdd80605db>`__
+-  :c:func:`TSConfigDataGet`
 
--  ```TSConfigGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a478189d6ad87c6b873d8676cb51508c5>`__
+-  :c:func:`TSConfigGet`
 
--  ```TSConfigRelease`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a06711d4a0e70f1ff27f9b5ca34bb649c>`__
+-  :c:func:`TSConfigRelease`
 
--  ```TSConfigSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a8bba9468fdca478e68035a9776f6e9ca>`__
+-  :c:func:`TSConfigSet`
 
 
