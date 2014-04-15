@@ -1421,9 +1421,7 @@ AX_LIB_READLINE
 # http://luajit.org/install.html.
 case $host_os in
   darwin)
-    if test "x${enable_lua_support}" = "xLuaJIT"; then
-      LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
-    fi
+    LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     ;;
 esac
 
