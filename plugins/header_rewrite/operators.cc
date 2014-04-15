@@ -298,6 +298,9 @@ OperatorSetRedirect::exec(const Resources& res) const
       }
 
       TSHttpTxnSetHttpRetStatus(res.txnp,(TSHttpStatus)_status.get_int_value());
+      const_cast<Resources&>(res).changed_url = true;
+      res._rri->redirect = 1;
+
       //TSHttpHdrStatusSet(res.bufp, res.hdr_loc, (TSHttpStatus)_status.get_int_value());
       const char *start = value.c_str();
       const char *end = value.size() + start;
