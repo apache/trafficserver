@@ -56,6 +56,8 @@ struct atscppapi::TransformationPluginState: noncopyable {
   // sent the input end our write complte.
   bool input_complete_dispatched_;
 
+  std::string request_xform_output_; // in case of request xform, data produced is buffered here
+
   TransformationPluginState(atscppapi::Transaction &transaction, TransformationPlugin &transformation_plugin,
       TransformationPlugin::Type type, TSHttpTxn txn)
     : vconn_(NULL), transaction_(transaction), transformation_plugin_(transformation_plugin), type_(type),
@@ -232,7 +234,7 @@ TransformationPlugin::~TransformationPlugin() {
   delete state_;
 }
 
-size_t TransformationPlugin::produce(const std::string &data) {
+size_t TransformationPlugin::doProduce(const std::string &data) {
   LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p producing output with length=%ld", this, state_->txn_, data.length());
   int64_t write_length = static_cast<int64_t>(data.length());
   if (!write_length) {
@@ -281,7 +283,21 @@ size_t TransformationPlugin::produce(const std::string &data) {
   return static_cast<size_t>(bytes_written);
 }
 
+size_t TransformationPlugin::produce(const std::string &data) {
+  if (state_->type_ == REQUEST_TRANSFORMATION) {
+    state_->request_xform_output_.append(data);
+    return data.size();
+  }
+  else {
+    return doProduce(data);
+  }
+}
+
 size_t TransformationPlugin::setOutputComplete() {
+  if (state_->type_ = REQUEST_TRANSFORMATION) {
+    doProduce(state_->request_xform_output_);
+  }
+
   int connection_closed = TSVConnClosedGet(state_->vconn_);
   LOG_DEBUG("OutputComplete TransformationPlugin=%p tshttptxn=%p vconn=%p connection_closed=%d, total bytes written=%" PRId64, this, state_->txn_, state_->vconn_, connection_closed,state_->bytes_written_);
 

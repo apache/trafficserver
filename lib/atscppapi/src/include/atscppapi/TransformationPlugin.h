@@ -121,6 +121,7 @@ protected:
   TransformationPlugin(Transaction &transaction, Type type);
 private:
   TransformationPluginState *state_; /** Internal state for a TransformationPlugin */
+  size_t doProduce(const std::string &);
 };
 
 } /* atscppapi */
