@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2741] Add a server intercept example plugins and documentation.
+
   *) [TS-2616] Sanitize duplicate Transfer-Encoding: chunked headers.
    Author: Dimitry Andric <dimitry@andric.com>
 

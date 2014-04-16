@@ -28,6 +28,7 @@ plugins = \
   cache-scan.la \
   file-1.la \
   hello.la \
+  intercept.la \
   lifecycle-plugin.la \
   null-transform.la \
   output-header.la \
@@ -57,6 +58,7 @@ bnull_transform_la_SOURCES = bnull-transform/bnull-transform.c
 cache_scan_la_SOURCES = cache-scan/cache-scan.cc
 file_1_la_SOURCES = file-1/file-1.c
 hello_la_SOURCES = hello/hello.c
+intercept_la_SOURCES = intercept/intercept.cc
 lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
 null_transform_la_SOURCES = null-transform/null-transform.c
 output_header_la_SOURCES = output-header/output-header.c
