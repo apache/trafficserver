@@ -39,16 +39,16 @@ corresponding usage of the ``fopen`` family of functions is
 inappropriate due to file descriptor and portability limitations. The
 ``TSfopen`` family of functions consists of the following:
 
--  ```TSfclose`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a2efebe7583752668e6136de0b47bee4f>`__
+-  :c:func:`TSfclose`
 
--  ```TSfflush`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a3cb0cb348ed189a98577f84e0629ca9a>`__
+-  :c:func:`TSfflush`
 
--  ```TSfgets`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a6dcc724a432a287836352b31984e0de8>`__
+-  :c:func:`TSfgets`
 
--  ```TSfopen`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a53b0430d5b0c042bdb3d06689cf244f3>`__
+-  :c:func:`TSfopen`
 
--  ```TSfread`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a29f83c50b52e4fcabfe2b829de5742e2>`__
+-  :c:func:`TSfread`
 
--  ```TSfwrite`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a596a5562db5180ea8818f7bb87336a15>`__
+-  :c:func:`TSfwrite`
 
 

@@ -23,6 +23,6 @@ lookup of a host name, much like a DNS lookup.
 
 The hosts lookup functions are as follows:
 
--  ```TSHostLookup`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ab5bf6eea0ed883e5dc69253965935d12>`__
--  ```TSHostLookupResultAddrGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aecac0767192746af1867f528e01d167b>`__
+-  :c:func:`TSHostLookup`
+-  :c:func:`TSHostLookupResultAddrGet`
 

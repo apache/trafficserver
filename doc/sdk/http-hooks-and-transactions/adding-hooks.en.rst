@@ -34,7 +34,7 @@ There are several ways to add hooks to your plugin.
 
 -  **Transformation hooks** Transformation hooks are a special case of
    transaction hooks. See
-   ```TSVConnCacheObjectSizeGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af5ca2c5b00e4859d2fa5dec466dfd058>`__
+   :c:func:`TSVConnCacheObjectSizeGet`
    for more information about transformation hooks. You add a
    transformation hook using ``TSHttpTxnHookAdd``, as described in `HTTP
    Transactions <HTTP_Transactions.html>`__.
@@ -55,9 +55,9 @@ There are several ways to add hooks to your plugin.
    information on the alternate selection mechanism.
 
 All of the hook addition functions
-(```TSHttpHookAdd`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a19a663edd3ec439f66256fbbb26cc1db>`__,
-```TSHttpSsnHookAdd`` <HTTPSessionFunctions.html#TSHttpSsnHookAdd>`__,
-```TSHttpSsnReenable`` <HTTPSessionFunctions.html#TSHttpSsnReenable>`__)
+(:c:func:`TSHttpHookAdd`,
+:c:func:`TSHttpSsnHookAdd`,
+:c:func:`TSHttpSsnReenable`)
 take ``TSHttpHookID`` (identifies the hook to add on to) and ``TSCont``
 (the basic callback mechanism in Traffic Server). A single ``TSCont``
 can be added to any number of hooks at a time.
@@ -150,4 +150,4 @@ values for ``TSHttpHookID`` are:
     was left open for keep alive has new data available.
 
 The function you use to add a global HTTP hook is
-```TSHttpHookAdd`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a19a663edd3ec439f66256fbbb26cc1db>`__.
+:c:func:`TSHttpHookAdd`.

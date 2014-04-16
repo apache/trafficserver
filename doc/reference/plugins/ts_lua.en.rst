@@ -23,16 +23,6 @@ ts-lua Plugin
 
 Embed the Power of Lua into TrafficServer.
 
-Status
-======
-
-This module is being tested under our production environment.
-
-Version
-=======
-
-ts-lua has not been released yet.
-
 Synopsis
 ========
 
@@ -242,18 +232,52 @@ Synopsis
         return 0
     end
 
+**test_global_hdr.lua**
+
+::
+
+
+    function send_response()
+        ts.client_response.header['Rhost'] = ts.ctx['rhost']
+        return 0
+    end
+
+    function do_global_read_request()
+        local req_host = ts.client_request.header.Host
+
+        if req_host == nil then
+            return 0
+        end
+
+        ts.ctx['rhost'] = string.reverse(req_host)
+
+        ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+
+        return 0
+    end
+
 
 Description
 ===========
 
-This module embeds Lua, via the standard Lua 5.1 interpreter, into Apache Traffic Server. This module acts as remap plugin of Traffic Server, so we should realize **'do_remap'** function in each lua script. We can write this in remap.config:::
+This module embeds Lua, into Apache Traffic Server. This module acts as remap plugin of Traffic Server. In this case we
+should provide **'do_remap'** function in each lua script. We can write this in remap.config:::
 
-     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so @pparam=/etc/trafficserver/script/test_hdr.lua
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so
+@pparam=/etc/trafficserver/script/test_hdr.lua
 
-Sometimes we want to receive parameters and process them in the script, we should realize **'\__init__'** function in the lua script(sethost.lua is a reference), and we can write this in remap.config:::
+Sometimes we want to receive parameters and process them in the script, we should realize **'\__init__'** function in
+the lua script(sethost.lua is a reference), and we can write this in remap.config:::
 
-     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so @pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so
+@pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
 
+This module can also act as a global plugin of Traffic Server. In this case we should provide one of these functions
+(**'do_global_read_request'**, **'do_global_send_request'**, **'do_global_read_response'**,
+**'do_global_send_response'**, **'do_global_cache_lookup_complete'**) in each lua script. We can write this in
+plugin.config:::
+
+     tslua.so /etc/trafficserver/script/test_global_hdr.lua
 
 
 TS API for Lua
@@ -262,7 +286,8 @@ TS API for Lua
 Introduction
 ------------
 
-The API is exposed to Lua in the form of one standard packages ts. This package is in the default global scope and is always available within lua script.
+The API is exposed to Lua in the form of one standard packages ts. This package is in the default global scope and is
+always available within lua script.
 
 
 
@@ -306,7 +331,7 @@ ts.hook
 -------
 **syntax**: *ts.hook(HOOK_POINT, FUNCTION)*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: Hooks are points in http transaction processing where we can step in and do some work.
 FUNCTION will be called when the http transaction steps in to HOOK_POINT.
@@ -323,7 +348,7 @@ Here is an example:::
 
 Hook point constants
 --------------------
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
     TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE
     TS_LUA_HOOK_SEND_REQUEST_HDR
@@ -339,7 +364,7 @@ ts.ctx
 ------
 **syntax**: *ts.ctx[KEY]*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This table can be used to store per-request Lua context data and has a life time identical to the current request.
 
@@ -418,7 +443,7 @@ ts.http.resp_cache_transformed
 ------------------------------
 **syntax**: *ts.http.resp_cache_transformed(BOOL)*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This function can be used to tell trafficserver whether to cache the transformed data.
 
@@ -446,7 +471,7 @@ ts.http.resp_cache_untransformed
 --------------------------------
 **syntax**: *ts.http.resp_cache_untransformed(BOOL)*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This function can be used to tell trafficserver whether to cache the untransformed data.
 
@@ -474,7 +499,7 @@ ts.client_request.client_addr.get_addr
 --------------------------------------
 **syntax**: *ts.client_request.client_addr.get_addr()*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This function can be used to get socket address of the client.
 
@@ -492,7 +517,7 @@ ts.client_request.get_method
 ----------------------------
 **syntax**: *ts.client_request.get_method()*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This function can be used to retrieve the current request's request method name. String like "GET" or 
 "POST" is returned.
@@ -511,7 +536,7 @@ ts.client_request.get_url
 -------------------------
 **syntax**: *ts.client_request.get_url()*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This function can be used to retrieve the whole request's url.
 
@@ -520,7 +545,7 @@ ts.client_request.get_uri
 -------------------------
 **syntax**: *ts.client_request.get_uri()*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This function can be used to retrieve the request's path.
 
@@ -538,7 +563,7 @@ ts.client_request.get_uri_args
 ------------------------------
 **syntax**: *ts.client_request.get_uri_args()*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: This function can be used to retrieve the request's query string.
 
@@ -560,7 +585,7 @@ ts.client_request.header.HEADER
 
 **syntax**: *VALUE = ts.client_request.header.HEADER*
 
-**context**: do_remap or later
+**context**: do_remap/do_global_*/later
 
 **description**: Set, add to, clear or get the current request's HEADER.
 

@@ -46,6 +46,7 @@ Apache Traffic Server releases.
   header_rewrite.en
   regex_remap.en
   stats_over_http.en
+  tcpinfo.en
 
 Experimental plugins
 ====================

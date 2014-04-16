@@ -41,6 +41,12 @@
 #define TS_LUA_FUNCTION_READ_RESPONSE           "do_read_response"
 #define TS_LUA_FUNCTION_SEND_RESPONSE           "do_send_response"
 
+#define TS_LUA_FUNCTION_G_SEND_REQUEST "do_global_send_request"
+#define TS_LUA_FUNCTION_G_READ_REQUEST "do_global_read_request"
+#define TS_LUA_FUNCTION_G_SEND_RESPONSE "do_global_send_response"
+#define TS_LUA_FUNCTION_G_READ_RESPONSE "do_global_read_response"
+#define TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE "do_global_cache_lookup_complete"
+
 #define TS_LUA_MAX_SCRIPT_FNAME_LENGTH      1024
 #define TS_LUA_MAX_URL_LENGTH               2048
 
@@ -84,6 +90,8 @@ typedef struct {
 
     int         intercept_type;
     int         ref;
+
+    int         remap;
 
 } ts_lua_http_ctx;
 

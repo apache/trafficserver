@@ -27,8 +27,8 @@ shared resources and data using the ``TSMutex`` type, as described in
 
 The thread functions are listed below:
 
--  ```TSThreadCreate`` <http://people.apache.org/~amc/ats/doc/html/InkIOCoreAPI_8cc.html#ad087d67be30b68b6d608a5094fceed2a>`__
--  ```TSThreadDestroy`` <http://people.apache.org/~amc/ats/doc/html/InkIOCoreAPI_8cc.html#a600e8ad830081bdcf6caabc07b54c9e4>`__
--  ```TSThreadInit`` <http://people.apache.org/~amc/ats/doc/html/InkIOCoreAPI_8cc.html#a11088d9aaba362827841687864e55242>`__
--  ```TSThreadSelf`` <http://people.apache.org/~amc/ats/doc/html/InkIOCoreAPI_8cc.html#a5cc33c5182755e3d62b4aa55277425d9>`__
+-  :c:func:`TSThreadCreate`
+-  :c:func:`TSThreadDestroy`
+-  :c:func:`TSThreadInit`
+-  :c:func:`TSThreadSelf`
 

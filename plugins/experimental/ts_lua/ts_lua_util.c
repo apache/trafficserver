@@ -280,6 +280,15 @@ ts_lua_destroy_http_ctx(ts_lua_http_ctx* http_ctx)
 
     main_ctx = http_ctx->mctx;
 
+    if(!http_ctx->remap) {
+      if(http_ctx->client_request_bufp) {
+        if(http_ctx->client_request_url) {
+          TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, http_ctx->client_request_url);
+        } 
+        TSHandleMLocRelease(http_ctx->client_request_bufp, TS_NULL_MLOC, http_ctx->client_request_hdrp);
+      }
+    } 
+
     if (http_ctx->server_request_bufp) {
         TSHandleMLocRelease(http_ctx->server_request_bufp, TS_NULL_MLOC, http_ctx->server_request_hdrp);
     }

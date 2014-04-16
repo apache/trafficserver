@@ -177,6 +177,6 @@ Here's how to make sure that all incoming data is consumed:
    because it knows it already holds the mutex.
 
 The transformation functions are: \*
-```TSTransformCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a54c4902bb537d3d40763bd947ed753b9>`__
+:c:func:`TSTransformCreate`
 \*
-```TSTransformOutputVConnGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac6832718a2d9f2658409ad231811e1e3>`__
+:c:func:`TSTransformOutputVConnGet`

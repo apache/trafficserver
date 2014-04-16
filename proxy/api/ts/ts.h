@@ -1381,6 +1381,7 @@ extern "C"
   
   /** Change packet TOS for the server side connection
    *
+      
       @note The change takes effect immediately, if no OS connection has been
       made, then this sets the mark that will be used IF an OS connection
       is established
@@ -2115,7 +2116,8 @@ extern "C"
   tsapi void TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec);
 
   /**
-      Set the rolling offset.
+      Set the rolling offset. rolling_offset_hr specifies the hour (between 0 and 23) when log rolling
+      should take place.
 
    */
   tsapi void TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr);

@@ -1801,11 +1801,13 @@ TS_CHECK_GETHOSTBYNAME_R_STYLE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED
 
 AC_CHECK_TYPE([struct tcp_info],
-  [enable_tcpinfo_plugin=yes],
-  [enable_tcpinfo_plugin=no],
-  [[#include <netinet/tcp.h>]]
+  [AC_DEFINE(HAVE_STRUCT_TCP_INFO, 1, [whether struct tcp_info is available])],
+  [],
+  [[
+   #include <netinet/in.h>
+   #include <netinet/tcp.h>
+  ]]
 )
-AM_CONDITIONAL([BUILD_TCPINFO_PLUGIN], [ test "x${enable_tcpinfo_plugin}" != "xno" ])
 
 # See if we can build the remap_stats plugin
 AS_IF([test "x$enable_experimental_plugins" = xyes],
@@ -1925,6 +1927,7 @@ AC_CONFIG_FILES([
   plugins/libloader/Makefile
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
+  plugins/tcpinfo/Makefile
   plugins/experimental/Makefile
   plugins/experimental/authproxy/Makefile
   plugins/experimental/background_fetch/Makefile
@@ -1942,7 +1945,6 @@ AC_CONFIG_FILES([
   plugins/experimental/rfc5861/Makefile
   plugins/experimental/s3_auth/Makefile
   plugins/experimental/spdy/Makefile
-  plugins/experimental/tcp_info/Makefile
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/xdebug/Makefile
   proxy/Makefile

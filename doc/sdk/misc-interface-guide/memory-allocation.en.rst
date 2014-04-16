@@ -33,14 +33,14 @@ leaks.
 
 The memory allocation functions are:
 
--  ```TSfree`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#afe7f18beddf31a80436a03a5ab7e759f>`__
+-  :c:func:`TSfree`
 
--  ```TSmalloc`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af030092823148cbbc5525c4fcde9bb37>`__
+-  :c:func:`TSmalloc`
 
--  ```TSrealloc`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a3abaf3d50d82377dccd1c16bc7b631ab>`__
+-  :c:func:`TSrealloc`
 
--  ```TSstrdup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a92c01584655c52e46a58986435e17c86>`__
+-  :c:func:`TSstrdup`
 
--  ```TSstrndup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a11072c11fa6d8470ace2963615229146>`__
+-  :c:func:`TSstrndup`
 
 

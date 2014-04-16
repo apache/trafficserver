@@ -3,6 +3,12 @@ Changes with Apache Traffic Server 5.0.0
   
   *) [TS-2720] Fix bug with request transformations in C++ api
 
+  *) [TS-2714] Promote the tcp_info plugin to stable as 'tcpinfo'.
+
+  *) [TS-2708] Refactor and modernize the tcp_info plugin.
+
+  *) [TS-2555] Adding global plugin support to ts_lua plugin.
+
   *) [TS-2717] header-rewrite set-redirect not working.
    Author: Igor Brezac
 
@@ -187,6 +193,7 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2494] fix the crash that return the stale cached document
    when os is down, even if it`s status is not 200 (ok).
+
   *) [TS-2590] Translate documentation into Japanese.
    Authors: Masaori Koshiba <masaori335@gmail.com>
             Masakazu Kitajo <m4sk17@gmail.com>

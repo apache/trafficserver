@@ -33,7 +33,6 @@ SUBDIRS = \
  rfc5861 \
  s3_auth \
  spdy \
- tcp_info \
  ts_lua \
  xdebug
 

@@ -81,24 +81,24 @@ created in ``TSPluginInit``. The ``blacklist-1.c`` code uses
 information, see the
 ```blacklist-1.c`` <../sample-source-code#Sample_blacklist-1.c>`__ code;
 start by looking at the
-```TSPluginInit`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a9a0b0ac9cbce9d6644f66bbe93098313>`__
+:c:func:`TSPluginInit`
 function.
 
 General guidelines for locking shared data are as follows:
 
 1. Create a mutex for the shared data with
-   ```TSMutexCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aa4300d8888c6962a44c9e827d633e433>`__.
+   :c:func:`TSMutexCreate`.
 
 2. Whenever you need to read or modify this data, first lock it by
    calling
-   ```TSMutexLockTry`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac9c08451aa529851b9474e3c035f44bb>`__;
+   :c:func:`TSMutexLockTry`;
    then read or modify the data.
 
 3. When you are done with the data, unlock it with
-   ```TSMutexUnlock`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#afbb474c217fd5b927f1f8487c45646dd>`__.
+   :c:func:`TSMutexUnlock`.
    If you are unlocking data accessed during the processing of an HTTP
    transaction, then you must unlock it before calling
-   ```TSHttpTxnReenable`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac367347e02709ac809994dfb21d3288a>`__.
+   :c:func:`TSHttpTxnReenable`.
 
 Protecting a Continuation's Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -405,7 +405,7 @@ continuation created in ``txn_handler``:
 
 The mutex functions are listed below:
 
--  ```TSMutexCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aa4300d8888c6962a44c9e827d633e433>`__
--  ```TSMutexLock`` <http://people.apache.org/~amc/ats/doc/html/InkIOCoreAPI_8cc.html#a306f9923bc9d3c0f417c185919531934>`__
--  ```TSMutexLockTry`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac9c08451aa529851b9474e3c035f44bb>`__
+-  :c:func:`TSMutexCreate`
+-  :c:func:`TSMutexLock`
+-  :c:func:`TSMutexLockTry`
 
