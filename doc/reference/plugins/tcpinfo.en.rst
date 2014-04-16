@@ -5,20 +5,20 @@ TCPInfo Plugin
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 This global plugin logs TCP metrics at various points in the HTTP
 processing pipeline. The TCP information is retrieved by the
@@ -34,7 +34,11 @@ Plugin Options
 
 The following options may be specified in :file:`plugin.config`:
 
---hooks=LIST
+.. NOTE: if the option name is not long enough, docutils will not
+   add the colspan attribute and the options table formatting will
+   be all messed up. Just a trap for young players.
+
+--hooks=NAMELIST
   This option specifies when TCP information should be logged. The
   argument is a comma-separated list of the event names listed
   below. TCP information will be sampled and logged each time the
@@ -43,11 +47,11 @@ The following options may be specified in :file:`plugin.config`:
   ==============  ===============================================
    Event Name     Triggered when
   ==============  ===============================================
-   send_resp_hdr  The server begins sending an HTTP response.
-   ssn_close      The TCP connection closes.
-   ssn_start      A new TCP connection is accepted.
-   txn_close      A HTTP transaction is completed.
-   txn_start      A HTTP transaction is initiated.
+  send_resp_hdr   The server begins sending an HTTP response.
+  ssn_close       The TCP connection closes.
+  ssn_start       A new TCP connection is accepted.
+  txn_close       A HTTP transaction is completed.
+  txn_start       A HTTP transaction is initiated.
   ==============  ===============================================
 
 --log-file=NAME
@@ -105,13 +109,13 @@ The following options may be specified in :file:`plugin.config`:
 Examples:
 ---------
 
-This example logs the simple TCP information to ``jpeach.log``
+This example logs the simple TCP information to ``tcp-metrics.log``
 at the start of a TCP connection and once for each HTTP
 transaction thereafter::
 
-  tcp_info.so --log-file=jpeach --log-level=1 --hooks=ssn_start,txn_start
+  tcp_info.so --log-file=tcp-metrics --log-level=1 --hooks=ssn_start,txn_start
 
-The file ``jpeach.log`` will contain the following log format::
+The file ``tcp-metrics.log`` will contain the following log format::
 
   timestamp event client server rtt
   20140414.17h40m14s ssn_start 127.0.0.1 127.0.0.1 4000
