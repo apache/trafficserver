@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
+  
+  *) [TS-2720] Fix bug with request transformations in C++ api
 
   *) [TS-2717] header-rewrite set-redirect not working.
    Author: Igor Brezac
