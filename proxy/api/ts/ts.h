@@ -1382,7 +1382,7 @@ extern "C"
   /** Change packet TOS for the server side connection
    *
       
-   note The change takes effect immediately, if no OS connection has been
+      @note The change takes effect immediately, if no OS connection has been
       made, then this sets the mark that will be used IF an OS connection
       is established
       
@@ -1402,7 +1402,6 @@ extern "C"
      string would prevent setting a content type header (but that is not adviced).
 
      @param txnp HTTP transaction whose parent proxy to get.
-     TSError("[tcp_info] TCP metrics are not supported on this platform");
      @param buf The body message (must be heap allocated).
      @param buflength Length of the body message.
      @param mimetype The MIME type to set the response to (can be NULL, but must
@@ -2118,7 +2117,7 @@ extern "C"
 
   /**
       Set the rolling offset. rolling_offset_hr specifies the hour (between 0 and 23) when log rolling
-      shuld take place.
+      should take place.
 
    */
   tsapi void TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr);
