@@ -100,11 +100,11 @@ Event                                    Event Sender                           
 ``TS_EVENT_HOST_LOOKUP``                 ``TSHostLookup``                        ``TSHostLookupResult``
 ``TS_EVENT_TIMEOUT``                     ``TSContSchedule``
 ``TS_EVENT_ERROR``
-``TS_EVENT_VCONN_READ_READY``            ``TSVConnRead``                         ``TSVConn``
-``TS_EVENT_VCONN_WRITE_READY``           ``TSVConnWrite``                        ``TSVConn``
-``TS_EVENT_VCONN_READ_COMPLETE``         ``TSVConnRead``                         ``TSVConn``
-``TS_EVENT_VCONN_WRITE_COMPLETE``        ``TSVConnWrite``                        ``TSVConn``
-``TS_EVENT_VCONN_EOS``                   ``TSVConnRead``                         ``TSVConn``
+``TS_EVENT_VCONN_READ_READY``            ``TSVConnRead``                         ``TSVIO``
+``TS_EVENT_VCONN_WRITE_READY``           ``TSVConnWrite``                        ``TSVIO``
+``TS_EVENT_VCONN_READ_COMPLETE``         ``TSVConnRead``                         ``TSVIO``
+``TS_EVENT_VCONN_WRITE_COMPLETE``        ``TSVConnWrite``                        ``TSVIO``
+``TS_EVENT_VCONN_EOS``                   ``TSVConnRead``                         ``TSVIO``
 ``TS_EVENT_NET_CONNECT``                 ``TSNetConnect``                        ``TSVConn``
 ``TS_EVENT_NET_CONNECT_FAILED``          ``TSNetConnect``                        ``TSVConn``
 ``TS_EVENT_HTTP_CONTINUE``
