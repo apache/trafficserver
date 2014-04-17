@@ -780,6 +780,7 @@ public:
   //##############################################################################
 
   MgmtByte redirection_enabled;
+  MgmtByte redirection_host_no_port;
   MgmtInt number_of_redirections;
   MgmtInt post_copy_size;
 
@@ -933,6 +934,7 @@ HttpConfigParams::HttpConfigParams()
     enable_http_info(0),
     cluster_time_delta(0),
     redirection_enabled(0),
+    redirection_host_no_port(0),
     number_of_redirections(1),
     post_copy_size(2048),
     ignore_accept_mismatch(0),

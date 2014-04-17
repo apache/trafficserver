@@ -1482,9 +1482,11 @@ HttpConfig::startup()
   //# 1. redirection_enabled: if set to 1, redirection is enabled.
   //# 2. number_of_redirections: The maximum number of redirections YTS permits
   //# 3. post_copy_size: The maximum POST data size YTS permits to copy
+  //# 4. redirection_host_no_port: do not include default port in host header during redirection
   //#
   //##############################################################################
   HttpEstablishStaticConfigByte(c.redirection_enabled, "proxy.config.http.redirection_enabled");
+  HttpEstablishStaticConfigByte(c.redirection_host_no_port, "proxy.config.http.redirect_host_no_port");
   HttpEstablishStaticConfigLongLong(c.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
@@ -1722,16 +1724,22 @@ params->push_method_enabled = INT_TO_BOOL(m_master.push_method_enabled);
   //# 1. redirection_enabled: if set to 1, redirection is enabled.
   //# 2. number_of_redirections: The maximum number of redirections YTS permits
   //# 3. post_copy_size: The maximum POST data size YTS permits to copy
+  //# 4. redirection_host_no_port: do not include default port in host header during redirection
   //#
   //##############################################################################
 
   params->redirection_enabled = INT_TO_BOOL(m_master.redirection_enabled);
+  params->redirection_host_no_port = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->number_of_redirections = m_master.number_of_redirections;
   params->post_copy_size = m_master.post_copy_size;
 
   m_id = configProcessor.set(m_id, params);
 
 #undef INT_TO_BOOL
+// Redirection debug statements
+  Debug("http_init", "proxy.config.http.redirection_enabled = %d", params->redirection_enabled);
+  Debug("http_init", "proxy.config.http.redirection_host_no_port = %d", params->redirection_host_no_port);
+  Debug("http_init", "proxy.config.http.number_of_redirections = %" PRId64"", params->number_of_redirections);
 }
 
 ////////////////////////////////////////////////////////////////

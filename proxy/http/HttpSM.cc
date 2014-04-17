@@ -6990,7 +6990,8 @@ HttpSM::set_next_state()
         ink_assert((t_state.hdr_info.client_response.valid()? true : false) == true);
         t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
 
-        if (hooks_set) {
+        // check to see if we are going to handle the redirection from server response and if there is a plugin hook set
+        if (hooks_set && is_redirect_required() == false) {
           do_api_callout_internal();
         } else {
           do_redirect();
@@ -7025,7 +7026,9 @@ HttpSM::set_next_state()
 
         perform_cache_write_action();
         t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
-        if (hooks_set) {
+
+        // check to see if we are going to handle the redirection from server response and if there is a plugin hook set
+        if (hooks_set && is_redirect_required() == false) {
           do_api_callout_internal();
         } else {
           do_redirect();
@@ -7289,9 +7292,8 @@ HttpSM::do_redirect()
     return;
   }
 
-  HTTPStatus status = t_state.hdr_info.client_response.status_get();
   // if redirect_url is set by an user's plugin, yts will redirect to this url anyway.
-  if ((redirect_url != NULL) || (status == HTTP_STATUS_MOVED_TEMPORARILY) || (status == HTTP_STATUS_MOVED_PERMANENTLY)) {
+    if (is_redirect_required()) {
     if (redirect_url != NULL || t_state.hdr_info.client_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
         LogAccessHttp accessor(this);
@@ -7359,6 +7361,10 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   if (!redirectUrl.valid()) {
     redirectUrl.create(NULL);
   }
+
+  // reset the path from previous redirects (if any)
+  t_state.redirect_info.redirect_url.path_set(NULL, 0);
+
   // redirectUrl.user_set(redirect_url, redirect_len);
   redirectUrl.parse(redirect_url, redirect_len);
 
@@ -7377,6 +7383,38 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
     t_state.hdr_info.client_response.destroy();
   }
 
+
+  bool valid_origHost = true;
+  int origHost_len, origMethod_len;
+  char* tmpOrigHost = (char *) t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len);
+  char origHost[origHost_len + 1];
+
+  if (tmpOrigHost)
+    memcpy(origHost, tmpOrigHost, origHost_len);
+  else
+    valid_origHost = false;
+
+  origHost[origHost_len] = '\0';
+  int origPort = t_state.hdr_info.server_request.port_get();
+
+  char *tmpOrigMethod = (char *) t_state.hdr_info.server_request.method_get(&origMethod_len);
+  char origMethod[origMethod_len + 1];
+
+  if (tmpOrigMethod)
+    memcpy(origMethod, tmpOrigMethod, origMethod_len);
+  else
+    valid_origHost = false;
+
+  int scheme = t_state.next_hop_scheme;
+  int scheme_len = hdrtoken_index_to_length(scheme);
+  const char* next_hop_scheme = hdrtoken_index_to_wks(scheme);
+  char scheme_str[scheme_len+1];
+
+  if (next_hop_scheme)
+    memcpy(scheme_str, next_hop_scheme, scheme_len);
+  else
+    valid_origHost = false;
+
   t_state.hdr_info.server_request.destroy();
   // we want to close the server session
   t_state.api_release_server_session = true;
@@ -7387,6 +7425,9 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   t_state.next_action = HttpTransact::SM_ACTION_REDIRECT_READ;
   // we have a new OS and need to have DNS lookup the new OS
   t_state.dns_info.lookup_success = false;
+  t_state.force_dns = false;
+
+  bool noPortInHost = HttpConfig::m_master.redirection_host_no_port;
 
   // check to see if the client request passed a host header, if so copy the host and port from the redirect url and
   // make a new host header
@@ -7398,12 +7439,75 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
       int port = clientUrl.port_get();
       char buf[host_len + 7];
 
-      memcpy(buf, host, host_len);
-      host_len += snprintf(buf + host_len, sizeof(buf) - host_len, ":%d", port);
+      int redirectSchemeLen;
+      const char* redirectScheme = clientUrl.scheme_get(&redirectSchemeLen);
+      if (redirectScheme == NULL) {
+        clientUrl.scheme_set(scheme_str, scheme_len);
+        DebugSM("http_redirect", "[HttpSM::redirect_request] hsot without scheme %s", buf);
+      }
+
+      if (noPortInHost) {
+        int redirectSchemeIdx = clientUrl.scheme_get_wksidx();
+
+        bool defaultPort = (((redirectSchemeIdx == URL_WKSIDX_HTTP) && (port == 80)) ||
+            ((redirectSchemeIdx == URL_WKSIDX_HTTPS) && (port == 443)));
+
+        if (!defaultPort) noPortInHost = false;
+      }
+
+      ink_strlcpy(buf, host, host_len + 1);
+
+      if (!noPortInHost) {
+        char port_buf[6]; // handle upto 5 digit port
+        buf[host_len++] = ':';
+
+        host_len += ink_small_itoa(port, port_buf, sizeof(port_buf));
+        ink_strlcat(buf, port_buf, sizeof(buf));
+      }
+
+      t_state.hdr_info.client_request.m_target_cached = false;
       t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
     } else {
-      // the client request didn't have a host, so remove it from the headers
-      t_state.hdr_info.client_request.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
+      // the client request didn't have a host, so use the current origin host
+      if (valid_origHost)
+      {
+        // the client request didn't have a host, so use the current origin host
+        DebugSM("http_redirect", "[HttpSM::redirect_request] keeping client request host %s://%s", next_hop_scheme, origHost);
+        char* origHost1 = strtok(origHost, ":");
+        origHost_len = strlen(origHost1);
+        int origHostPort_len = origHost_len;
+        char buf[origHostPort_len + 7];
+        ink_strlcpy(buf, origHost1, origHost_len + 1);
+
+        if (noPortInHost) {
+          int redirectSchemeIdx = t_state.next_hop_scheme;
+
+          bool defaultPort = (((redirectSchemeIdx == URL_WKSIDX_HTTP) && (origPort == 80)) ||
+              ((redirectSchemeIdx == URL_WKSIDX_HTTPS) && (origPort == 443)));
+
+          if (!defaultPort) noPortInHost = false;
+        }
+
+        if (!noPortInHost) {
+          char port_buf[6]; // handle upto 5 digit port
+          buf[origHostPort_len++] = ':';
+          origHostPort_len += ink_small_itoa(origPort, port_buf, sizeof(port_buf));
+          ink_strlcat(buf, port_buf, sizeof(buf));
+        }
+
+        url_nuke_proxy_stuff(clientUrl.m_url_impl);
+        url_nuke_proxy_stuff(t_state.hdr_info.client_request.m_url_cached.m_url_impl);
+        t_state.hdr_info.client_request.method_set(origMethod, origMethod_len);
+        if (noPortInHost)
+          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, origHost_len);
+        else
+          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, origHostPort_len);
+        t_state.hdr_info.client_request.m_target_cached = false;
+        clientUrl.scheme_set(scheme_str, scheme_len);
+      } else {
+        // the server request didn't have a host, so remove it from the headers
+        t_state.hdr_info.client_request.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
+      }
     }
 
   }
@@ -7469,4 +7573,38 @@ HttpSM::is_private()
         }
     }
     return res;
+}
+
+// check to see if redirection is enabled and less than max redirections tries or if a plugin enabled redirection
+inline bool
+HttpSM::is_redirect_required()
+{
+  bool redirect_required = (enable_redirection && (redirection_tries <= HttpConfig::m_master.number_of_redirections));
+
+  if (redirect_required == true) {
+    HTTPStatus status = t_state.hdr_info.client_response.status_get();
+    // check to see if the response from the orgin was a 301, 302, or 303
+    switch (status)
+    {
+    case HTTP_STATUS_MULTIPLE_CHOICES:     //300
+    case HTTP_STATUS_MOVED_PERMANENTLY:    //301
+    case HTTP_STATUS_MOVED_TEMPORARILY:    //302
+    case HTTP_STATUS_SEE_OTHER:            //303
+    case HTTP_STATUS_USE_PROXY:            //305
+    case HTTP_STATUS_TEMPORARY_REDIRECT:   //307
+      redirect_required = true;
+      break;
+    default:
+      redirect_required = false;
+      break;
+    }
+
+    // if redirect_url is set by an user's plugin, ats will redirect to this url anyway.
+    if (redirect_url != NULL) {
+      redirect_required = true;
+    } else {
+      redirect_required = false;
+    }
+  }
+  return redirect_required;
 }

@@ -263,6 +263,7 @@ public:
   void add_history_entry(const char *fileline, int event, int reentrant);
   void add_cache_sm();
   bool is_private();
+  bool is_redirect_required();
 
   TSClientProtoStack proto_stack;
   int64_t sm_id;

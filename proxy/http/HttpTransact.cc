@@ -1409,6 +1409,7 @@ HttpTransact::HandleRequest(State* s)
   // if the newly added varible doc_in_cache_skip_dns is not enabled
   if (s->dns_info.lookup_name[0] <= '9' &&
       s->dns_info.lookup_name[0] >= '0' &&
+      (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
      // (s->state_machine->authAdapter.needs_rev_dns() ||
       ( host_rule_in_CacheControlTable() || s->parent_params->ParentTable->hostMatch)) {
     s->force_dns = 1;
@@ -3966,6 +3967,27 @@ HttpTransact::handle_forward_server_connection_open(State* s)
     }
     //s->cache_info.action = CACHE_PREPARE_TO_SERVE;
     // xing xing in the tunneling case, need to check when the cache_read_vc is closed, make sure the cache_read_vc is closed right away
+  }
+
+  CacheVConnection* cw_vc = s->state_machine->get_cache_sm().cache_write_vc;
+
+  if (s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
+    if (s->cache_info.action == CACHE_DO_NO_ACTION) {
+      switch (s->hdr_info.server_response.status_get())
+      {
+      case HTTP_STATUS_MULTIPLE_CHOICES:     //300
+      case HTTP_STATUS_MOVED_PERMANENTLY:    //301
+      case HTTP_STATUS_MOVED_TEMPORARILY:    //302
+      case HTTP_STATUS_SEE_OTHER:            //303
+      case HTTP_STATUS_USE_PROXY:            //305
+      case HTTP_STATUS_TEMPORARY_REDIRECT:   //307
+        break;
+      default:
+        DebugTxn("http_trans", "[hfsco] redirect in progress, non-3xx response, setting cache_do_write");
+        if (cw_vc) s->cache_info.action = CACHE_DO_WRITE;
+        break;
+      }
+    }
   }
 
   switch (s->cache_info.action) {
