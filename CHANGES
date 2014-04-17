@@ -1,7 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
   
-  *) [TS-2720] Fix bug with request transformations in C++ api
+  *) [TS-2720] Fix bug with request transformations in C++ api 
 
   *) [TS-2714] Promote the tcp_info plugin to stable as 'tcpinfo'.
 
