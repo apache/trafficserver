@@ -23,7 +23,7 @@ Balancer Plugin
 
 The ``balancer`` balances requests across multiple origin servers.
 To use this plugin, configure it in a :file:`remap.config` rule, specifying
-a balancing policy and a set of origin servers. For example::
+a balancing policy and a set of origin servers. Don't add this plugin to your plugin.conf or it will not work. For example::
 
    map http://foo.com http://foo.com \
       @plugin=balancer.so @pparam=--policy=hash,url @pparam=one.bar.com @pparam=two.bar.com
