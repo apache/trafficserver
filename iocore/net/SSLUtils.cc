@@ -776,21 +776,29 @@ SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char 
   const char *file, *data;
   int line, flags;
   unsigned long es;
-
   va_list ap;
+
+  ip_text_buffer ip_buf;
+  bool ip_buf_flag = false;
+  if (vc) {
+    ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
+    ip_buf_flag = true;
+  }
 
   es = CRYPTO_thread_id();
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
         diags->log("ssl", DL_Debug, loc.file, loc.func, loc.line,
-            "SSL::%lu:%s:%s:%d%s%s", es, ERR_error_string(l, buf), file, line,
-          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "");
+            "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
+          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "", 
+          ip_buf_flag? ": peer address is " : "", ip_buf);
       }
     } else {
       diags->error(DL_Error, loc.file, loc.func, loc.line,
-          "SSL::%lu:%s:%s:%d%s%s", es, ERR_error_string(l, buf), file, line,
-          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "");
+          "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
+          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
+          ip_buf_flag? ": peer address is " : "", ip_buf);
     }
 
     // Tally desired stats (only client/server connection stats, not init
