@@ -1007,6 +1007,18 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
   // TODO: how about RANGE and IF_RANGE?
 }
 
+void
+HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing)
+{
+  int len = 0;
+  const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
+
+  if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+    outgoing->field_delete(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+  }
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////
 // Deal with lame-o servers by removing the host name from the url.

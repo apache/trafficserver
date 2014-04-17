@@ -7858,6 +7858,11 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
     }
   }
 
+  if (s->txn_conf->send_100_continue_response) {
+    HttpTransactHeaders::remove_100_continue_headers(s, outgoing_request);
+    DebugTxn("http_trans", "[build_request] request expect 100-continue headers removed");
+  }
+
   s->request_sent_time = ink_cluster_time();
   s->current.now = s->request_sent_time;
   // The assert is backwards in this case because request is being (re)sent.

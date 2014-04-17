@@ -80,7 +80,7 @@ debug_certificate_name(const char * msg, X509_NAME * name)
   BIO_free(bio);
 }
 
-static inline int
+int
 do_SSL_write(SSL * ssl, void *buf, int size)
 {
   int r = 0;
