@@ -186,16 +186,8 @@ reverse_dns_name(const char * hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN+1]
     ssize_t len = strcspn(part, ".");
     ssize_t remain = ptr - reversed;
 
-    // We are going to put the '.' separator back for all components except the first.
-    if (*ptr == '\0') {
-      if (remain < len) {
-        return NULL;
-      }
-    } else {
-      if (remain < (len + 1)) {
-        return NULL;
-      }
-      *(--ptr) = '.';
+    if (remain < (len + 1)) {
+      return NULL;
     }
 
     ptr -= len;
@@ -206,6 +198,7 @@ reverse_dns_name(const char * hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN+1]
     part += len;
     if (*part == '.') {
       ++part;
+      *(--ptr) = '.';
     }
   }
 
@@ -239,7 +232,7 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
     char * reversed;
     xptr<SSLEntry> entry;
 
-    reversed = reverse_dns_name(name + 2, namebuf);
+    reversed = reverse_dns_name(name + 1, namebuf);
     if (!reversed) {
       Error("wildcard name '%s' is too long", name);
       return false;

@@ -43,6 +43,7 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int /* atype ATS_UNUSED
   SSL_CTX * notwild = SSL_CTX_new(SSLv23_server_method());
   SSL_CTX * b_notwild = SSL_CTX_new(SSLv23_server_method());
   SSL_CTX * foo = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX * all_com = SSL_CTX_new(SSLv23_server_method());
 
   box = REGRESSION_TEST_PASSED;
 
@@ -50,32 +51,36 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int /* atype ATS_UNUSED
   assert(notwild != NULL);
   assert(b_notwild != NULL);
   assert(foo != NULL);
+  assert(all_com != NULL);
 
   box.check(lookup.insert(foo, "www.foo.com"), "insert host context");
   box.check(lookup.insert(wild, "*.wild.com"), "insert wildcard context");
   box.check(lookup.insert(notwild, "*.notwild.com"), "insert wildcard context");
   box.check(lookup.insert(b_notwild, "*.b.notwild.com"), "insert wildcard context");
+  box.check(lookup.insert(all_com, "*.com"), "insert wildcard context");
 
   // To test name collisions, we need to shuffle the SSL_CTX's so that we try to
   // index the same name with a different SSL_CTX.
-  box.check(lookup.insert(wild, "www.foo.com") == false, "insert host duplicate");
+  box.check(lookup.insert(wild, "*.com") == false, "insert host duplicate");
   box.check(lookup.insert(foo, "*.wild.com") == false, "insert wildcard duplicate");
   box.check(lookup.insert(b_notwild, "*.notwild.com") == false, "insert wildcard conext duplicate");
   box.check(lookup.insert(notwild, "*.b.notwild.com") == false, "insert wildcard conext duplicate");
+  box.check(lookup.insert(all_com, "www.foo.com") == false, "insert wildcard conext duplicate");
 
   // Basic wildcard cases.
   box.check(lookup.findInfoInHash("a.wild.com") == wild, "wildcard lookup for a.wild.com");
   box.check(lookup.findInfoInHash("b.wild.com") == wild, "wildcard lookup for b.wild.com");
-  box.check(lookup.findInfoInHash("wild.com") == wild, "wildcard lookup for wild.com");
+  box.check(lookup.insert(all_com, "www.foo.com") == false, "insert wildcard conext duplicate");
 
   // Verify that wildcard does longest match.
   box.check(lookup.findInfoInHash("a.notwild.com") == notwild, "wildcard lookup for a.notwild.com");
-  box.check(lookup.findInfoInHash("notwild.com") == notwild, "wildcard lookup for notwild.com");
+  box.check(lookup.findInfoInHash("notwild.com") == all_com, "wildcard lookup for notwild.com");
   box.check(lookup.findInfoInHash("c.b.notwild.com") == b_notwild, "wildcard lookup for c.b.notwild.com");
 
   // Basic hostname cases.
   box.check(lookup.findInfoInHash("www.foo.com") == foo, "host lookup for www.foo.com");
-  box.check(lookup.findInfoInHash("www.bar.com") == NULL, "host lookup for www.bar.com");
+  box.check(lookup.findInfoInHash("www.bar.com") == all_com, "host lookup for www.bar.com");
+  box.check(lookup.findInfoInHash("www.bar.net") == NULL, "host lookup for www.bar.net");
 }
 
 REGRESSION_TEST(SSLAddressLookup)(RegressionTest* t, int /* atype ATS_UNUSED */, int * pstatus)
