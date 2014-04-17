@@ -1,6 +1,16 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
-  
+
+  *) [TS-2650] Redirect handling enhancements in ATS
+
+  *) [TS-1125] POST's with Expect: 100-continue are slowed by delayed 100 response
+
+  *) [TS-2548] Add client IP to SSLError() calls in SSLNetVConnection
+
+  *) [TS-2710] ATS serves the wrong cert because it matches wildcard certs incorrectly
+
+  *) [TS-2704] Core dump in state_raw_http_server_open getting EVENT_INTERVAL event
+
   *) [TS-2720] Fix bug with request transformations in C++ api 
 
   *) [TS-2714] Promote the tcp_info plugin to stable as 'tcpinfo'.
