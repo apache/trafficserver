@@ -2,6 +2,7 @@
 Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2732] Add url_sign (Signed URL's) plugin.
+   Author: Jan van Doorn <jvd@knutsel.com>
 
   *) [TS-2650] Redirect handling enhancements in ATS
 
