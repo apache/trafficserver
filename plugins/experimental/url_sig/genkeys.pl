@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,27 +16,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
-
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- custom_redirect \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- remap_stats \
- rfc5861 \
- s3_auth \
- spdy \
- ts_lua \
- url_sig \
- xdebug
-
-endif
+my $len = 32;
+my @chars = ( 'a' .. 'z', 'A' .. 'Z', '0' .. '9', '_' );
+foreach my $i ( 0 .. 15 ) {
+    my $string = "";
+    foreach ( 1 .. $len ) {
+        $string .= $chars[ rand @chars ];
+    }
+    print "key" . $i . " = " . $string . "\n";
+}
+#print "error_url=302 http://www.domain.com/this/is/the/path/error.html\n";
+print "error_url = 403\n";

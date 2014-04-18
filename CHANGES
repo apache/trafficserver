@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2732] Add url_sign (Signed URL's) plugin.
+
   *) [TS-2650] Redirect handling enhancements in ATS
 
   *) [TS-1125] POST's with Expect: 100-continue are slowed by delayed 100 response

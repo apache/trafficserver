@@ -14,27 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- custom_redirect \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- remap_stats \
- rfc5861 \
- s3_auth \
- spdy \
- ts_lua \
- url_sig \
- xdebug
-
-endif
+pkglib_LTLIBRARIES = url_sig.la
+url_sig_la_SOURCES = url_sig.c
+url_sig_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

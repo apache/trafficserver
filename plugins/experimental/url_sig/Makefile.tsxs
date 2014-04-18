@@ -14,27 +14,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
+TSXS?=tsxs
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- custom_redirect \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- remap_stats \
- rfc5861 \
- s3_auth \
- spdy \
- ts_lua \
- url_sig \
- xdebug
+all:	url_sig.c
+	$(TSXS) -v -o url_sig.so $?
 
-endif
+install:
+	$(TSXS) -i -o url_sig.so
+
+clean:
+	rm -f *.lo *.so
