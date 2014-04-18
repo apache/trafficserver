@@ -133,6 +133,5 @@ private:
 typedef int (SSLNetVConnection::*SSLNetVConnHandler) (int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
-extern int do_SSL_write(SSL *ssl, void *buf, int size);
 
 #endif /* _SSLNetVConnection_h_ */

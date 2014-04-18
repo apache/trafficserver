@@ -1452,8 +1452,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.send_http11_requests, "proxy.config.http.send_http11_requests");
 
-  HttpEstablishStaticConfigByte(c.oride.send_100_continue_response, "proxy.config.http.send_100_continue_response");
-
   // HTTP Referer Filtering
   HttpEstablishStaticConfigByte(c.referer_filter_enabled, "proxy.config.http.referer_filter");
   HttpEstablishStaticConfigByte(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
@@ -1695,7 +1693,6 @@ params->push_method_enabled = INT_TO_BOOL(m_master.push_method_enabled);
   params->record_cop_page = INT_TO_BOOL(m_master.record_cop_page);
   params->record_tcp_mem_hit = INT_TO_BOOL(m_master.record_tcp_mem_hit);
   params->oride.send_http11_requests = m_master.oride.send_http11_requests;
-  params->oride.send_100_continue_response = INT_TO_BOOL(m_master.oride.send_100_continue_response);
   params->oride.doc_in_cache_skip_dns = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
   params->oride.default_buffer_size_index = m_master.oride.default_buffer_size_index;
   params->oride.default_buffer_water_mark = m_master.oride.default_buffer_water_mark;

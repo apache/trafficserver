@@ -412,7 +412,6 @@ struct OverridableHttpConfigParams {
       anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
       proxy_response_server_enabled(1), proxy_response_hsts_max_age(-1), proxy_response_hsts_include_subdomains(0),
       insert_squid_x_forwarded_for(1), send_http11_requests(1),
-      send_100_continue_response(0),
       cache_http(1), cache_cluster_cache_local(0), cache_ignore_client_no_cache(1), cache_ignore_client_cc_max_age(0),
       cache_ims_on_client_no_cache(1), cache_ignore_server_no_cache(0), cache_responses_to_cookies(1),
       cache_ignore_auth(0), cache_urls_that_look_dynamic(1), cache_required_headers(2), cache_range_lookup(1),
@@ -491,8 +490,6 @@ struct OverridableHttpConfigParams {
   //  Version Hell    //
   //////////////////////
   MgmtByte send_http11_requests;
-
-  MgmtByte send_100_continue_response;
 
   ///////////////////
   // cache control //
