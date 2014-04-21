@@ -14,28 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- collapsed_connection \
- custom_redirect \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- remap_stats \
- rfc5861 \
- s3_auth \
- spdy \
- ts_lua \
- url_sig \
- xdebug
+if BUILD_COLLAPSED_CONNECTION_PLUGIN
+
+pkglib_LTLIBRARIES = collapsed_connection.la
+collapsed_connection_la_SOURCES = collapsed_connection.cc MurmurHash3.cc
+collapsed_connection_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 endif
