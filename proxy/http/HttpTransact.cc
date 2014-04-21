@@ -4127,9 +4127,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
   bool cacheable = false;
 
   cacheable = is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response);
-  if (cacheable) {
-    DebugTxn("http_trans", "[hcoofsr] response cacheable");
-  }
+  DebugTxn("http_trans", "[hcoofsr] response %s cacheable", cacheable ? "is" : "is not");
+
   // set the correct next action, cache action, response code, and base response
 
   server_response_code = s->hdr_info.server_response.status_get();
