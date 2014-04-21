@@ -103,7 +103,8 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size,
   ink_assert(!(alignment & (alignment - 1)));
   f->alignment = alignment;
   f->chunk_size = chunk_size;
-  f->type_size = type_size;
+  // Make sure we align *all* the objects in the allocation, not just the first one
+  f->type_size = (type_size + (alignment - 1)) & ~(alignment - 1);
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 
   f->used = 0;
