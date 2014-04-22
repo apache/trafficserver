@@ -232,9 +232,9 @@ ink_freelist_new(InkFreeList * f)
   void *newp = NULL;
 
   if (f->alignment)
-    newp = ats_memalign(f->alignment, f->chunk_size * f->type_size);
+    newp = ats_memalign(f->alignment, f->type_size);
   else
-    newp = ats_malloc(f->chunk_size * f->type_size);
+    newp = ats_malloc(f->type_size);
   return newp;
 #endif
 }
