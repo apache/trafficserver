@@ -5832,11 +5832,10 @@ HttpTransact::initialize_state_variables_from_response(State* s, HTTPHdr* incomi
     while (enc_value) {
       const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
 
-      //   FIX ME: What is chunked appears more than once?  Old
-      //     code didn't deal with this so I don't either
       if (wks_value == HTTP_VALUE_CHUNKED) {
-        if (!s->cop_test_page)
+        if (!s->cop_test_page) {
           DebugTxn("http_hdrs", "[init_state_vars_from_resp] transfer encoding: chunked!");
+        }
         s->current.server->transfer_encoding = CHUNKED_ENCODING;
 
         s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
@@ -5853,7 +5852,8 @@ HttpTransact::initialize_state_variables_from_response(State* s, HTTPHdr* incomi
         // Loop over the all the values in existing Trans-enc header and
         //   copy the ones that aren't our chunked value to a new field
         while (new_enc_val) {
-          if (new_enc_val != enc_value) {
+          const char *new_wks_value = hdrtoken_string_to_wks(new_enc_val, new_enc_len);
+          if (new_wks_value != wks_value) {
             if (new_enc_field) {
               new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime, new_enc_val, new_enc_len, true);
             } else {
