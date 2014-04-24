@@ -102,6 +102,9 @@ RecordElement RecordsConfig[] = {
   // The maximum number of chunks to allocate with mmap. Setting this to zero disables all use of mmap. (Unix only)
   {RECT_CONFIG, "proxy.config.system.mmap_max", RECD_INT, "2097152", RECU_RESTART_TS, RR_NULL, RECC_INT, NULL, RECA_READ_ONLY}
   ,
+  // The percent of the /proc/sys/fs/file-max value to set the RLIMIT_NOFILE cur/max to
+  {RECT_CONFIG, "proxy.config.system.file_max_pct", RECD_FLOAT, "0.9", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_READ_ONLY}
+  ,
   // Traffic Server Execution threads configuration
   // By default Traffic Server set number of execution threads equal to total CPUs
   {RECT_CONFIG, "proxy.config.exec_thread.autoconfig", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-65535]", RECA_READ_ONLY}

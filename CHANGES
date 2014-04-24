@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2736] Add config option to set the max open files limit for the traffic_server
+    process to some percentage of the fs.file-max proc value on Linux. The default is 90%.
+
   *) [TS-2741] Add a server intercept example plugins and documentation.
 
   *) [TS-2616] Sanitize duplicate Transfer-Encoding: chunked headers.

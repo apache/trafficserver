@@ -311,6 +311,30 @@ set_process_limits(int fds_throttle)
   ink_max_out_rlimit(RLIMIT_RSS, true, true);
 #endif
 
+#if defined(linux)
+  float file_max_pct = 0.9;
+  FILE *fd;
+
+  if ((fd = fopen("/proc/sys/fs/file-max","r"))) {
+    fscanf(fd, "%lu", &lim.rlim_max);
+    fclose(fd);
+    REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
+    lim.rlim_cur = lim.rlim_max = lim.rlim_max * file_max_pct;
+    if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
+      fds_limit = (int) lim.rlim_cur;
+#ifdef MGMT_USE_SYSLOG
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+    } else {
+      syslog(LOG_NOTICE, "NOTE: Unable to set RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+#endif
+    }
+#ifdef MGMT_USE_SYSLOG
+  } else {
+    syslog(LOG_NOTICE, "NOTE: Unable to open /proc/sys/fs/file-max");
+#endif
+  }
+#endif // linux
+
   if (!getrlimit(RLIMIT_NOFILE, &lim)) {
     if (fds_throttle > (int) (lim.rlim_cur + FD_THROTTLE_HEADROOM)) {
       lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);

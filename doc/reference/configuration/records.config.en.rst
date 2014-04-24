@@ -257,6 +257,10 @@ Value Effect
 
    This option only has an affect when Traffic Server has been compiled with ``--enable-hwloc``.
 
+.. ts:cv:: CONFIG proxy.config.system.file_max_pct FLOAT 0.9
+
+   Set the maximum number of file handles for the traffic_server process as a percentage of the the fs.file-max proc value in Linux. The default is 90%.
+
 Network
 =======
 

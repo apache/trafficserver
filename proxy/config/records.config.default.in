@@ -28,6 +28,7 @@ CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 CONFIG proxy.config.output.logfile STRING traffic.out
 CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.system.mmap_max INT 2097152
+CONFIG proxy.config.system.file_max_pct FLOAT 0.9
 ##############################################################################
 #
 # Main threads configuration (worker threads). Also see configurations for

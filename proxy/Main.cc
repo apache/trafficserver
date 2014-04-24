@@ -796,11 +796,28 @@ adjust_sys_settings(void)
   struct rlimit lim;
   int mmap_max = -1;
   int fds_throttle = -1;
+  float file_max_pct = 0.9;
+  FILE *fd;
 
   // TODO: I think we might be able to get rid of this?
   REC_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
   if (mmap_max >= 0)
     ats_mallopt(ATS_MMAP_MAX, mmap_max);
+
+  if ((fd = fopen("/proc/sys/fs/file-max","r"))) {
+    fscanf(fd, "%lu", &lim.rlim_max);
+    fclose(fd);
+    REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
+    lim.rlim_cur = lim.rlim_max = lim.rlim_max * file_max_pct;
+    if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
+      fds_limit = (int) lim.rlim_cur;
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+    } else {
+      syslog(LOG_NOTICE, "NOTE: Unable to set RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+    }
+  } else {
+    syslog(LOG_NOTICE, "NOTE: Unable to open /proc/sys/fs/file-max");
+  }
 
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
 
@@ -809,7 +826,7 @@ adjust_sys_settings(void)
       lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);
       if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
         fds_limit = (int) lim.rlim_cur;
-	syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
       }
     }
   }
