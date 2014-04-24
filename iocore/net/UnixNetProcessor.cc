@@ -86,7 +86,7 @@ Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const& opt)
 {
   EventType upgraded_etype = opt.etype; // setEtype requires non-const ref.
-  AcceptCont *acceptCont = static_cast<AcceptCont *>(cont);
+  SessionAccept *acceptCont = static_cast<SessionAccept *>(cont);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   int accept_threads = opt.accept_threads; // might be changed.

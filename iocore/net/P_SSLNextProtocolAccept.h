@@ -31,7 +31,7 @@
 #include "P_SSLNextProtocolSet.h"
 #include "I_IOBuffer.h"
 
-class SSLNextProtocolAccept: public AcceptCont
+class SSLNextProtocolAccept: public SessionAccept
 {
 public:
   SSLNextProtocolAccept(Continuation *);

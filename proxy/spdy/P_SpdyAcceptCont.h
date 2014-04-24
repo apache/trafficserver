@@ -29,7 +29,7 @@
 #include "P_UnixNet.h"
 #include "I_IOBuffer.h"
 
-class SpdyAcceptCont: public AcceptCont
+class SpdyAcceptCont: public SessionAccept
 {
 public:
   SpdyAcceptCont(Continuation *ep);

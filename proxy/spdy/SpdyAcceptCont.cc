@@ -27,7 +27,7 @@
 #endif
 
 SpdyAcceptCont::SpdyAcceptCont(Continuation *ep)
-    : AcceptCont(new_ProxyMutex()), endpoint(ep)
+    : SessionAccept(new_ProxyMutex()), endpoint(ep)
 {
 #if TS_HAS_SPDY
   spdy_config_load();

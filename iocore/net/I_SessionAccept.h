@@ -1,6 +1,6 @@
 /** @file
 
-  AcceptCont
+  SessionAccept
 
   @section license License
 
@@ -21,21 +21,29 @@
   limitations under the License.
  */
 
-#include "I_AcceptCont.h"
-#include "P_Net.h"
+#ifndef I_SessionAccept_H_
+#define I_SessionAccept_H_
 
-AcceptCont::AcceptCont(ProxyMutex *amutex)
-    : Continuation(amutex)
-{
-  SET_HANDLER(&AcceptCont::mainEvent);
-}
+#include "I_Net.h"
+#include "I_VConnection.h"
 
-AcceptCont::~AcceptCont()
+class SessionAccept: public Continuation
 {
-}
+public:
+  SessionAccept(ProxyMutex *amutex);
+  ~SessionAccept();
 
-void *
-AcceptCont::createNetAccept()
-{
-    return (NEW(new NetAccept));
-}
+  //
+  // Virtual function allows creation of an SSLNetAccept
+  // or NetAccept transparent to NetProcessor.
+  //
+  // This function should return a pointer
+  // of NetAccept or its subclass.
+  //
+  virtual void *createNetAccept();
+
+private:
+  virtual int mainEvent(int event, void * netvc) = 0;
+};
+
+#endif /* I_SessionAccept_H_ */

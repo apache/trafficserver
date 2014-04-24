@@ -52,8 +52,8 @@ libinknet_a_SOURCES = \
   I_UDPNet.h \
   I_UDPPacket.h \
   Inline.cc \
-  I_AcceptCont.h \
-  AcceptCont.cc \
+  I_SessionAccept.h \
+  SessionAccept.cc \
   Net.cc \
   NetVConnection.cc \
   P_CompletionUtil.h \

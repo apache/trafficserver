@@ -160,7 +160,7 @@ namespace detail {
    from the top level configuration to the HTTP session.
 */
 
-class HttpAcceptCont: public AcceptCont, private detail::HttpAcceptContOptions
+class HttpAcceptCont: public SessionAccept, private detail::HttpAcceptContOptions
 {
 private:
   typedef HttpAcceptCont self; ///< Self reference type.
@@ -176,7 +176,7 @@ public:
       from the config file and a static is initialized long before that point.
   */
   HttpAcceptCont(Options const& opt = Options())
-    : AcceptCont(NULL)
+    : SessionAccept(NULL)
     , detail::HttpAcceptContOptions(opt) // copy these.
   {
     SET_HANDLER(&HttpAcceptCont::mainEvent);

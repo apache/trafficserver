@@ -24,12 +24,12 @@
 #ifndef P_ProtocolAcceptCont_H_
 #define P_ProtocolAcceptCont_H_
 
-#include "I_AcceptCont.h"
+#include "I_SessionAccept.h"
 
-class ProtocolAcceptCont: public AcceptCont
+class ProtocolAcceptCont: public SessionAccept
 {
 public:
-  ProtocolAcceptCont(): AcceptCont(NULL)
+  ProtocolAcceptCont(): SessionAccept(NULL)
   {
     memset(endpoint, 0, sizeof(endpoint));
     SET_HANDLER(&ProtocolAcceptCont::mainEvent);
