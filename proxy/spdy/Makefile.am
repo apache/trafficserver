@@ -34,8 +34,8 @@ AM_CPPFLAGS = \
 noinst_LIBRARIES = libspdy.a
 
 libspdy_a_SOURCES = \
-  P_SpdyAcceptCont.h \
-  SpdyAcceptCont.cc
+  P_SpdySessionAccept.h \
+  SpdySessionAccept.cc
 
 if BUILD_SPDY
   libspdy_a_SOURCES += \

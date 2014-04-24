@@ -1,6 +1,6 @@
 /** @file
 
-  SpdyAcceptCont
+  SpdySessionAccept
 
   @section license License
 
@@ -21,26 +21,26 @@
   limitations under the License.
  */
 
-#ifndef P_SpdyAcceptCont_H_
-#define P_SpdyAcceptCont_H_
+#ifndef P_SpdySessionAccept_H_
+#define P_SpdySessionAccept_H_
 
 #include "P_Net.h"
 #include "P_EventSystem.h"
 #include "P_UnixNet.h"
 #include "I_IOBuffer.h"
 
-class SpdyAcceptCont: public SessionAccept
+class SpdySessionAccept: public SessionAccept
 {
 public:
-  SpdyAcceptCont(Continuation *ep);
-  ~SpdyAcceptCont() {}
+  SpdySessionAccept(Continuation *ep);
+  ~SpdySessionAccept() {}
 
 private:
   int mainEvent(int event, void *netvc);
-  SpdyAcceptCont(const SpdyAcceptCont &); // disabled
-  SpdyAcceptCont& operator =(const SpdyAcceptCont&); // disabled
+  SpdySessionAccept(const SpdySessionAccept &); // disabled
+  SpdySessionAccept& operator =(const SpdySessionAccept&); // disabled
 
   Continuation *endpoint;
 };
 
-#endif /* P_SpdyAcceptCont_H_ */
+#endif /* P_SpdySessionAccept_H_ */

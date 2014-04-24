@@ -21,22 +21,22 @@
   limitations under the License.
  */
 
-#include "P_SpdyAcceptCont.h"
+#include "P_SpdySessionAccept.h"
 #if TS_HAS_SPDY
 #include "P_SpdySM.h"
 #endif
 
-SpdyAcceptCont::SpdyAcceptCont(Continuation *ep)
+SpdySessionAccept::SpdySessionAccept(Continuation *ep)
     : SessionAccept(new_ProxyMutex()), endpoint(ep)
 {
 #if TS_HAS_SPDY
   spdy_config_load();
 #endif
-  SET_HANDLER(&SpdyAcceptCont::mainEvent);
+  SET_HANDLER(&SpdySessionAccept::mainEvent);
 }
 
 int
-SpdyAcceptCont::mainEvent(int /* event */, void *netvc)
+SpdySessionAccept::mainEvent(int /* event */, void *netvc)
 {
 #if TS_HAS_SPDY
   spdy_sm_create((TSCont)netvc);

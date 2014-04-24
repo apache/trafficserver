@@ -36,7 +36,7 @@
 #include "Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_ProtocolAcceptCont.h"
-#include "P_SpdyAcceptCont.h"
+#include "P_SpdySessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept = NULL;
 HttpSessionAccept *plugin_http_transparent_accept = 0;
@@ -164,7 +164,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   }
 
   HttpSessionAccept *http = NEW(new HttpSessionAccept(accept_opt));
-  SpdyAcceptCont *spdy = NEW(new SpdyAcceptCont(http));
+  SpdySessionAccept *spdy = NEW(new SpdySessionAccept(http));
   SSLNextProtocolAccept *ssl = NEW(new SSLNextProtocolAccept(http));
   ProtocolAcceptCont *proto = NEW(new ProtocolAcceptCont());
 
