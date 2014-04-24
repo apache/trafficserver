@@ -1,6 +1,6 @@
 /** @file
 
-  ProtocolAcceptCont
+  ProtocolProbeSessionAccept
 
   @section license License
 
@@ -21,26 +21,26 @@
   limitations under the License.
  */
 
-#include "P_ProtocolAcceptCont.h"
+#include "P_ProtocolProbeSessionAccept.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_Net.h"
 #include "I_Machine.h"
 #include "Error.h"
 
 void *
-ProtocolAcceptCont::createNetAccept()
+ProtocolProbeSessionAccept::createNetAccept()
 {
   return ((NetAccept *) NEW(new ProtocolNetAccept));
 }
 
 void
-ProtocolAcceptCont::registerEndpoint(TSProtoType type, Continuation *ep)
+ProtocolProbeSessionAccept::registerEndpoint(TSProtoType type, Continuation *ep)
 {
   endpoint[type] = ep;
 }
 
 int
-ProtocolAcceptCont::mainEvent(int event, void *netvc)
+ProtocolProbeSessionAccept::mainEvent(int event, void *netvc)
 {
   ink_release_assert(event == NET_EVENT_ACCEPT || event == EVENT_ERROR);
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (netvc!= 0) : (1));

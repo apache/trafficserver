@@ -35,7 +35,7 @@
 #include "HttpTunnel.h"
 #include "Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
-#include "P_ProtocolAcceptCont.h"
+#include "P_ProtocolProbeSessionAccept.h"
 #include "P_SpdySessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept = NULL;
@@ -166,7 +166,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   HttpSessionAccept *http = NEW(new HttpSessionAccept(accept_opt));
   SpdySessionAccept *spdy = NEW(new SpdySessionAccept(http));
   SSLNextProtocolAccept *ssl = NEW(new SSLNextProtocolAccept(http));
-  ProtocolAcceptCont *proto = NEW(new ProtocolAcceptCont());
+  ProtocolProbeSessionAccept *proto = NEW(new ProtocolProbeSessionAccept());
 
   proto->registerEndpoint(TS_PROTO_TLS, ssl);
   proto->registerEndpoint(TS_PROTO_HTTP, http);

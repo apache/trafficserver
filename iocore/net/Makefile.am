@@ -64,7 +64,7 @@ libinknet_a_SOURCES = \
   P_NetAccept.h \
   P_NetVConnection.h \
   P_ProtocolNetAccept.h \
-  P_ProtocolAcceptCont.h \
+  P_ProtocolProbeSessionAccept.h \
   P_Socks.h \
   P_SSLCertLookup.h \
   P_SSLConfig.h \
@@ -87,7 +87,7 @@ libinknet_a_SOURCES = \
   P_UnixPollDescriptor.h \
   P_UnixUDPConnection.h \
   ProtocolNetAccept.cc \
-  ProtocolAcceptCont.cc \
+  ProtocolProbeSessionAccept.cc \
   Socks.cc \
   SSLCertLookup.cc \
   SSLConfig.cc \

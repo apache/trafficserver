@@ -1,6 +1,6 @@
 /** @file
 
-  ProtocolAcceptCont
+  ProtocolProbeSessionAccept
 
   @section license License
 
@@ -21,30 +21,30 @@
   limitations under the License.
  */
 
-#ifndef P_ProtocolAcceptCont_H_
-#define P_ProtocolAcceptCont_H_
+#ifndef P_ProtocolProbeSessionAccept_H_
+#define P_ProtocolProbeSessionAccept_H_
 
 #include "I_SessionAccept.h"
 
-class ProtocolAcceptCont: public SessionAccept
+class ProtocolProbeSessionAccept: public SessionAccept
 {
 public:
-  ProtocolAcceptCont(): SessionAccept(NULL)
+  ProtocolProbeSessionAccept(): SessionAccept(NULL)
   {
     memset(endpoint, 0, sizeof(endpoint));
-    SET_HANDLER(&ProtocolAcceptCont::mainEvent);
+    SET_HANDLER(&ProtocolProbeSessionAccept::mainEvent);
   }
-  ~ProtocolAcceptCont() {}
+  ~ProtocolProbeSessionAccept() {}
 
   void *createNetAccept();
   void registerEndpoint(TSProtoType type, Continuation *ep);
 
 private:
   int mainEvent(int event, void * netvc);
-  ProtocolAcceptCont(const ProtocolAcceptCont &); // disabled
-  ProtocolAcceptCont& operator =(const ProtocolAcceptCont&); // disabled
+  ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &); // disabled
+  ProtocolProbeSessionAccept& operator =(const ProtocolProbeSessionAccept&); // disabled
 
   Continuation *endpoint[sizeof(TSClientProtoStack) * CHAR_BIT];
 };
 
-#endif /* P_ProtocolAcceptCont_H_ */
+#endif /* P_ProtocolProbeSessionAccept_H_ */
