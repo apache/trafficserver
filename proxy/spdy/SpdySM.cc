@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_SpdySM.h"
+#include "SpdySM.h"
 #include "I_Net.h"
 
 ClassAllocator<SpdySM> spdySMAllocator("SpdySMAllocator");

@@ -36,7 +36,7 @@
 #include "Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "P_ProtocolProbeSessionAccept.h"
-#include "P_SpdySessionAccept.h"
+#include "SpdySessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept = NULL;
 HttpSessionAccept *plugin_http_transparent_accept = 0;

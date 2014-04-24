@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "P_SpdyCallbacks.h"
-#include "P_SpdySM.h"
+#include "SpdyCallbacks.h"
+#include "SpdySM.h"
 #include <arpa/inet.h>
 
 void

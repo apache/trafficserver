@@ -1,6 +1,6 @@
 /** @file
 
-  P_SpdySM.h
+  SpdySM.h
 
   @section license License
 
@@ -24,8 +24,8 @@
 #ifndef __P_SPDY_SM_H__
 #define __P_SPDY_SM_H__
 
-#include "P_SpdyCommon.h"
-#include "P_SpdyCallbacks.h"
+#include "SpdyCommon.h"
+#include "SpdyCallbacks.h"
 #include <openssl/md5.h>
 
 class SpdySM;

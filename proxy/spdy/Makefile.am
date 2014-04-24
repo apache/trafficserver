@@ -34,14 +34,14 @@ AM_CPPFLAGS = \
 noinst_LIBRARIES = libspdy.a
 
 libspdy_a_SOURCES = \
-  P_SpdySessionAccept.h \
+  SpdySessionAccept.h \
   SpdySessionAccept.cc
 
 if BUILD_SPDY
   libspdy_a_SOURCES += \
-  P_SpdyCallbacks.h \
-  P_SpdyCommon.h \
-  P_SpdySM.h \
+  SpdyCallbacks.h \
+  SpdyCommon.h \
+  SpdySM.h \
   SpdyCallbacks.cc \
   SpdyCommon.cc \
   SpdySM.cc

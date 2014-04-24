@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#ifndef P_SpdySessionAccept_H_
-#define P_SpdySessionAccept_H_
+#ifndef SpdySessionAccept_H_
+#define SpdySessionAccept_H_
 
 #include "P_Net.h"
 #include "P_EventSystem.h"
@@ -43,4 +43,4 @@ private:
   Continuation *endpoint;
 };
 
-#endif /* P_SpdySessionAccept_H_ */
+#endif /* SpdySessionAccept_H_ */

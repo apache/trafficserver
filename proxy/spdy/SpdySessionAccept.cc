@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "P_SpdySessionAccept.h"
+#include "SpdySessionAccept.h"
 #if TS_HAS_SPDY
-#include "P_SpdySM.h"
+#include "SpdySM.h"
 #endif
 
 SpdySessionAccept::SpdySessionAccept(Continuation *ep)

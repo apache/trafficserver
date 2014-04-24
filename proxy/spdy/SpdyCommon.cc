@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "P_SpdyCommon.h"
-#include "P_SpdyCallbacks.h"
+#include "SpdyCommon.h"
+#include "SpdyCallbacks.h"
 
 Config SPDY_CFG;
 

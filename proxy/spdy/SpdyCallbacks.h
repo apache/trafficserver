@@ -1,6 +1,6 @@
 /** @file
 
-  P_SpdyCallbacks.h
+  SpdyCallbacks.h
 
   @section license License
 

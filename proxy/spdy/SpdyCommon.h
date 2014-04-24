@@ -1,6 +1,6 @@
 /** @file
 
-  P_SpdyCommon.h
+  SpdyCommon.h
 
   @section license License
 
