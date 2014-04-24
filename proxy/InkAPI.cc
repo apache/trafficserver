@@ -51,7 +51,7 @@
 #include "PluginVC.h"
 #include "api/ts/experimental.h"
 #include "ICP.h"
-#include "HttpAcceptCont.h"
+#include "HttpSessionAccept.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
 #include "HttpDebugNames.h"
@@ -6084,8 +6084,8 @@ TSClientProtoStackCreate(TSProtoType ptype, ...)
   ink_release_assert(0);
 }
 
-extern HttpAcceptCont *plugin_http_accept;
-extern HttpAcceptCont *plugin_http_transparent_accept;
+extern HttpSessionAccept *plugin_http_accept;
+extern HttpSessionAccept *plugin_http_transparent_accept;
 
 TSVConn
 TSHttpConnect(sockaddr const* addr)

@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#if !defined (_HttpAcceptCont_h_)
-#define _HttpAcceptCont_h_
+#if !defined (_HttpSessionAccept_h_)
+#define _HttpSessionAccept_h_
 
 #include "libts.h"
 #include "P_EventSystem.h"
@@ -31,16 +31,16 @@
 #include "I_Net.h"
 
 namespace detail {
-  /** Options for @c HttpAcceptCont.
+  /** Options for @c HttpSessionAccept.
 
       @internal This is done as a separate class for two reasons.
 
       The first is that in current usage many instances are created
       with the same options so (for the client) this is easier and
       more efficient than passing options directly to the @c
-      HttpAcceptCont or calling setters.
+      HttpSessionAccept or calling setters.
 
-      The second is that @c HttpAcceptCont is not provided with any thread
+      The second is that @c HttpSessionAccept is not provided with any thread
       safety because it is intended as an immutable object. Putting
       the setters here and not there makes that clearer.
 
@@ -48,11 +48,11 @@ namespace detail {
       inherit the data members rather than duplicate the declarations
       and initializations.
    */
-  class HttpAcceptContOptions {
+  class HttpSessionAcceptOptions {
   private:
-    typedef HttpAcceptContOptions self; ///< Self reference type.
+    typedef HttpSessionAcceptOptions self; ///< Self reference type.
   public:
-    HttpAcceptContOptions();
+    HttpSessionAcceptOptions();
 
     // Connection type (HttpProxyPort::TransportType)
     int transport_type;
@@ -88,7 +88,7 @@ namespace detail {
     self& setHostResPreference(HostResPreferenceOrder const);
   };
 
-  inline HttpAcceptContOptions::HttpAcceptContOptions()
+  inline HttpSessionAcceptOptions::HttpSessionAcceptOptions()
     : transport_type(0)
     , outbound_port(0)
     , f_outbound_transparent(false)
@@ -98,52 +98,52 @@ namespace detail {
     memcpy(host_res_preference, host_res_default_preference_order, sizeof(host_res_preference));
   }
 
-  inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setTransportType(int type) {
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setTransportType(int type) {
     transport_type =  type;
     return *this;
   }
 
-  inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setOutboundIp(IpAddr& ip) {
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setOutboundIp(IpAddr& ip) {
     if (ip.isIp4()) outbound_ip4 = ip;
     else if (ip.isIp6()) outbound_ip6 = ip;
     return *this;
   }
 
-  inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setOutboundIp(IpEndpoint* ip) {
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setOutboundIp(IpEndpoint* ip) {
     if (ip->isIp4()) outbound_ip4 = *ip;
     else if (ip->isIp6()) outbound_ip6 = *ip;
     return *this;
   }
 
-  inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setOutboundPort(uint16_t port) {
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setOutboundPort(uint16_t port) {
     outbound_port = port;
     return *this;
   }
 
-  inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setOutboundTransparent(bool flag) {
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setOutboundTransparent(bool flag) {
     f_outbound_transparent = flag;
     return *this;
   }
 
-  inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setTransparentPassthrough(bool flag) {
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setTransparentPassthrough(bool flag) {
     f_transparent_passthrough = flag;
     return *this;
   }
 
- inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setBackdoor(bool flag) {
+ inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setBackdoor(bool flag) {
     backdoor = flag;
     return *this;
   }
 
-  inline HttpAcceptContOptions&
-  HttpAcceptContOptions::setHostResPreference(HostResPreferenceOrder const order) {
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setHostResPreference(HostResPreferenceOrder const order) {
     memcpy(host_res_preference, order, sizeof(host_res_preference));
     return *this;
   }
@@ -160,30 +160,30 @@ namespace detail {
    from the top level configuration to the HTTP session.
 */
 
-class HttpAcceptCont: public SessionAccept, private detail::HttpAcceptContOptions
+class HttpSessionAccept: public SessionAccept, private detail::HttpSessionAcceptOptions
 {
 private:
-  typedef HttpAcceptCont self; ///< Self reference type.
+  typedef HttpSessionAccept self; ///< Self reference type.
 public:
   /** Construction options.
       Provide an easier to remember typedef for clients.
   */
-  typedef detail::HttpAcceptContOptions Options;
+  typedef detail::HttpSessionAcceptOptions Options;
 
   /** Default constructor.
       @internal We don't use a static default options object because of
       initialization order issues. It is important to pick up data that is read
       from the config file and a static is initialized long before that point.
   */
-  HttpAcceptCont(Options const& opt = Options())
+  HttpSessionAccept(Options const& opt = Options())
     : SessionAccept(NULL)
-    , detail::HttpAcceptContOptions(opt) // copy these.
+    , detail::HttpSessionAcceptOptions(opt) // copy these.
   {
-    SET_HANDLER(&HttpAcceptCont::mainEvent);
+    SET_HANDLER(&HttpSessionAccept::mainEvent);
     return;
   }
 
-  ~HttpAcceptCont()
+  ~HttpSessionAccept()
   {
     return;
   }
@@ -191,8 +191,8 @@ public:
   int mainEvent(int event, void *netvc);
 
 private:
-    HttpAcceptCont(const HttpAcceptCont &);
-    HttpAcceptCont & operator =(const HttpAcceptCont &);
+    HttpSessionAccept(const HttpSessionAccept &);
+    HttpSessionAccept & operator =(const HttpSessionAccept &);
 };
 
 #endif
