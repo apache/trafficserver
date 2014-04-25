@@ -26,9 +26,6 @@ processing pipeline. The TCP information is retrieved by the
 This is only supported on systems that support the ``TCP_INFO``
 option, currently Linux and BSD.
 
-Log rolling is enabled automatically, based on the
-:ts:cv:`proxy.config.log.rolling_size_mb` configuration variable.
-
 Plugin Options
 --------------
 

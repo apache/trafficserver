@@ -389,10 +389,6 @@ init:
 
   TSTextLogObjectHeaderSet(config->log, tcpi_headers[config->log_level - 1]);
 
-  // Enable log rolling. Unless we specify an explicit rolling period, the log will
-  // be rolled based on the size specified in proxy.config.log.rolling_size_mb.
-  TSTextLogObjectRollingEnabledSet(config->log, 1 /* rolling_enabled */);
-
   cont = TSContCreate(tcp_info_hook, NULL);
   TSContDataSet(cont, config);
 
