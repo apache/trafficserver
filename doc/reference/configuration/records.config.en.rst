@@ -1643,7 +1643,7 @@ Logging Configuration
 
 .. note::
 
-   When max_space_mb_for_orphan_logs is take as the maximum allowedlog space in the logging system, the same rule apply
+   When max_space_mb_for_orphan_logs is take as the maximum allowed log space in the logging system, the same rule apply
    to proxy.config.log.max_space_mb_for_logs also apply to proxy.config.log.max_space_mb_for_orphan_logs, ie: All files
    in the logging directory contribute to the space used, even if they are not log files. you may need to consider this
    when you enable full remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
