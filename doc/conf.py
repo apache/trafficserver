@@ -258,6 +258,7 @@ man_pages = [
    ('reference/api/TSHttpHookAdd.en', 'TSHttpHookAdd', u'Intercept Traffic Server events', None, u'3ts'),
    ('reference/api/TSHttpParserCreate.en', 'TSHttpParserCreate', u'Parse HTTP headers from memory buffers', None, u'3ts'),
    ('reference/api/TSHttpTxnMilestoneGet.en', 'TSHttpTxnMilestoneGet', u'Get a specified milestone timer value for the current transaction', None, u'3ts'),
+   ('reference/api/TSHttpTxnServerIntercept.en', 'TSHttpTxnServerIntercept', u'Intercept origin server requests', None, u'3ts'),
    ('reference/api/TSIOBufferCreate.en', 'TSIOBufferCreate', u'Traffic Server IO buffer API', None, u'3ts'),
    ('reference/api/TSInstallDirGet.en', 'TSInstallDirGet', u'Return Traffic Server installation directories', None, u'3ts'),
    ('reference/api/TSMBufferCreate.en', 'TSMBufferCreate', u'Traffic Server marshall buffer API', None, u'3ts'),
