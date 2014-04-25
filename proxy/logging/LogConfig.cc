@@ -411,7 +411,7 @@ LogConfig::read_configuration_variables()
   rolling_offset_hr = (int) REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
   rolling_size_mb = (int) REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
 
-  val = (int) REC_ConfigReadInteger("proxy.config.log." "auto_delete_rolled_files");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
 
   // CUSTOM LOGGING
