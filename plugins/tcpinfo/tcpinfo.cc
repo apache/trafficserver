@@ -209,6 +209,11 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
     ssnp = TSHttpTxnSsnGet(txnp);
     event_name = "txn_start";
     break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    txnp = (TSHttpTxn)edata;
+    ssnp = TSHttpTxnSsnGet(txnp);
+    event_name = "txn_close";
+    break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     txnp = (TSHttpTxn)edata;
     ssnp = TSHttpTxnSsnGet(txnp);
@@ -217,6 +222,7 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SSN_CLOSE:
     ssnp = (TSHttpSsn)edata;
     event_name = "ssn_close";
+    break;
   default:
     return 0;
   }
@@ -399,7 +405,7 @@ init:
 
   if (hooks & TCPI_HOOK_TXN_START) {
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, cont);
-    TSDebug("tcpinfo", "added hook to the close of the transaction");
+    TSDebug("tcpinfo", "added hook to the start of the transaction");
   }
 
   if (hooks & TCPI_HOOK_SEND_RESPONSE) {
