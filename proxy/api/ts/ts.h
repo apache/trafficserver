@@ -2106,8 +2106,10 @@ extern "C"
   /**
       Enable/disable rolling.
 
+      @param rolling_enabled a valid proxy.config.log.rolling_enabled value.
+
    */
-  tsapi void TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled);
+  tsapi TSReturnCode TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled);
 
   /**
       Set the rolling interval.

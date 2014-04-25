@@ -35,6 +35,7 @@ API Reference
   TSMimeHdrFieldValueStringGet.en
   TSPluginInit.en
   TSRemap.en
+  TSTextLogObjectCreate.en
   TSTrafficServerVersionGet.en
   TSTypes.en
   TSUrlCreate.en
