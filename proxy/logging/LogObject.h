@@ -99,7 +99,7 @@ public:
 
   LogObject(const LogFormat *format, const char *log_dir, const char *basename,
                  LogFileFormat file_format, const char *header,
-                 int rolling_enabled, int flush_threads,
+                 Log::RollingEnabledValues rolling_enabled, int flush_threads,
                  int rolling_interval_sec = 0, int rolling_offset_hr = 0,
                  int rolling_size_mb = 0, bool auto_created = false)
     TS_NONNULL(2 /* format is required */);
@@ -160,7 +160,7 @@ public:
 
   void set_log_file_header(const char *header) { m_logFile->change_header(header); }
 
-  void set_rolling_enabled(int rolling_enabled)
+  void set_rolling_enabled(Log::RollingEnabledValues rolling_enabled)
   {
     _setup_rolling(rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
@@ -221,7 +221,7 @@ private:
   unsigned int m_flags;         // diverse object flags (see above)
   uint64_t m_signature;         // INK_MD5 signature for object
 
-  int m_rolling_enabled;
+  Log::RollingEnabledValues m_rolling_enabled;
   int m_flush_threads;          // number of flush threads
   int m_rolling_interval_sec;   // time interval between rolls
   // 0 means no rolling
@@ -237,7 +237,7 @@ private:
   LogBufferManager *m_buffer_manager;
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
-  void _setup_rolling(int rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb);
+  void _setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb);
   int _roll_files(long interval_start, long interval_end);
 
   LogBuffer *_checkout_write(size_t * write_offset, size_t write_size);
@@ -257,7 +257,8 @@ class TextLogObject:public LogObject
 public:
   inkcoreapi TextLogObject(const char *name, const char *log_dir,
                            bool timestamps, const char *header,
-                           int rolling_enabled, int flush_threads,
+                           Log::RollingEnabledValues rolling_enabled,
+                           int flush_threads,
                            int rolling_interval_sec,
                            int rolling_offset_hr,
                            int rolling_size_mb);

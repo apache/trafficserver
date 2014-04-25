@@ -384,6 +384,32 @@ public:
     LOGCAT = 4
   };
 
+  enum CollationMode
+  {
+    NO_COLLATION = 0,
+    COLLATION_HOST,
+    SEND_STD_FMTS,
+    SEND_NON_XML_CUSTOM_FMTS,
+    SEND_STD_AND_NON_XML_CUSTOM_FMTS,
+    N_COLLATION_MODES
+  };
+
+  enum RollingEnabledValues
+  {
+    NO_ROLLING = 0,
+    ROLL_ON_TIME_ONLY,
+    ROLL_ON_SIZE_ONLY,
+    ROLL_ON_TIME_OR_SIZE,
+    ROLL_ON_TIME_AND_SIZE,
+    INVALID_ROLLING_VALUE
+  };
+
+  enum
+  {
+    // 5 minute minimum rolling interval
+    MIN_ROLLING_INTERVAL_SEC = 300
+  };
+
   // main interface
   static void init(int configFlags = 0);
   static void init_fields();
@@ -449,5 +475,12 @@ private:
   Log(const Log & rhs);
   Log & operator=(const Log & rhs);
 };
+
+
+static inline bool
+LogRollingEnabledIsValid(int enabled)
+{
+  return (enabled >= Log::NO_ROLLING || enabled < Log::INVALID_ROLLING_VALUE);
+}
 
 #endif

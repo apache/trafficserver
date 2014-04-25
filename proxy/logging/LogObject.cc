@@ -39,6 +39,16 @@
 #include "Log.h"
 #include "ts/TestBox.h"
 
+static bool
+should_roll_on_time(Log::RollingEnabledValues roll) {
+  return roll == Log::ROLL_ON_TIME_ONLY || roll == Log::ROLL_ON_TIME_OR_SIZE;
+}
+
+static bool
+should_roll_on_size(Log::RollingEnabledValues roll) {
+  return roll == Log::ROLL_ON_SIZE_ONLY || roll == Log::ROLL_ON_TIME_OR_SIZE;
+}
+
 size_t
 LogBufferManager::preproc_buffers(LogBufferSink *sink) {
   SList(LogBuffer, write_link) q(write_list.popall()), new_q;
@@ -77,7 +87,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink) {
 
 LogObject::LogObject(const LogFormat *format, const char *log_dir,
                      const char *basename, LogFileFormat file_format,
-                     const char *header, int rolling_enabled,
+                     const char *header, Log::RollingEnabledValues rolling_enabled,
                      int flush_threads, int rolling_interval_sec,
                      int rolling_offset_hr, int rolling_size_mb,
                      bool auto_created):
@@ -643,28 +653,28 @@ LogObject::log(LogAccess * lad, const char *text_entry)
 
 
 void
-LogObject::_setup_rolling(int rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
+LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
 {
-  if (rolling_enabled <= LogConfig::NO_ROLLING || rolling_enabled >= LogConfig::INVALID_ROLLING_VALUE) {
-    m_rolling_enabled = LogConfig::NO_ROLLING;
+  if (!LogRollingEnabledIsValid((int)rolling_enabled)) {
+    m_rolling_enabled = Log::NO_ROLLING;
     m_rolling_interval_sec = 0;
     m_rolling_offset_hr = 0;
     m_rolling_size_mb = 0;
-    if (rolling_enabled != LogConfig::NO_ROLLING) {
+    if (rolling_enabled != Log::NO_ROLLING) {
       Warning("Valid rolling_enabled values are %d to %d, invalid value "
               "(%d) specified for %s, rolling will be disabled for this file.",
-              LogConfig::NO_ROLLING, LogConfig::INVALID_ROLLING_VALUE - 1, rolling_enabled, m_filename);
+              Log::NO_ROLLING, Log::INVALID_ROLLING_VALUE - 1, rolling_enabled, m_filename);
     } else {
       Status("Rolling disabled for %s", m_filename);
     }
   } else {
     // do checks for rolling based on time
     //
-    if (rolling_enabled == LogConfig::ROLL_ON_TIME_ONLY ||
-        rolling_enabled == LogConfig::ROLL_ON_TIME_OR_SIZE || rolling_enabled == LogConfig::ROLL_ON_TIME_AND_SIZE) {
-      if (rolling_interval_sec < LogConfig::MIN_ROLLING_INTERVAL_SEC) {
+    if (rolling_enabled == Log::ROLL_ON_TIME_ONLY ||
+        rolling_enabled == Log::ROLL_ON_TIME_OR_SIZE || rolling_enabled == Log::ROLL_ON_TIME_AND_SIZE) {
+      if (rolling_interval_sec < Log::MIN_ROLLING_INTERVAL_SEC) {
         // check minimum
-        m_rolling_interval_sec = LogConfig::MIN_ROLLING_INTERVAL_SEC;
+        m_rolling_interval_sec = Log::MIN_ROLLING_INTERVAL_SEC;
       } else if (rolling_interval_sec > 86400) {
         // 1 day maximum
         m_rolling_interval_sec = 86400;
@@ -692,8 +702,8 @@ LogObject::_setup_rolling(int rolling_enabled, int rolling_interval_sec, int rol
                              // it will be updated later
     }
 
-    if (rolling_enabled == LogConfig::ROLL_ON_SIZE_ONLY ||
-        rolling_enabled == LogConfig::ROLL_ON_TIME_OR_SIZE || rolling_enabled == LogConfig::ROLL_ON_TIME_AND_SIZE) {
+    if (rolling_enabled == Log::ROLL_ON_SIZE_ONLY ||
+        rolling_enabled == Log::ROLL_ON_TIME_OR_SIZE || rolling_enabled == Log::ROLL_ON_TIME_AND_SIZE) {
       if (rolling_size_mb < 10) {
         m_rolling_size_mb = 10;
         Note("Rolling size invalid(%d) for %s, setting it to 10 MB", rolling_size_mb, m_filename);
@@ -720,7 +730,7 @@ LogObject::roll_files(long time_now)
   if (!time_now)
     time_now = LogUtils::timestamp();
 
-  if (m_rolling_enabled != LogConfig::ROLL_ON_SIZE_ONLY) {
+  if (m_rolling_enabled != Log::ROLL_ON_SIZE_ONLY) {
     if (m_rolling_interval_sec > 0) {
       // We make no assumptions about the current time not having
       // changed underneath us. This could happen during daylight
@@ -751,7 +761,7 @@ LogObject::roll_files(long time_now)
     }
   }
 
-  if (m_rolling_enabled != LogConfig::ROLL_ON_TIME_ONLY) {
+  if (m_rolling_enabled != Log::ROLL_ON_TIME_ONLY) {
     if (m_rolling_size_mb) {
       // Get file size and check if the file size if greater than the
       // configured file size for rolling
@@ -759,12 +769,9 @@ LogObject::roll_files(long time_now)
     }
   }
 
-  if ((roll_on_time && (m_rolling_enabled == LogConfig::ROLL_ON_TIME_ONLY ||
-                        m_rolling_enabled == LogConfig::ROLL_ON_TIME_OR_SIZE))
-      ||
-      (roll_on_size && (m_rolling_enabled == LogConfig::ROLL_ON_SIZE_ONLY ||
-                        m_rolling_enabled == LogConfig::ROLL_ON_TIME_OR_SIZE))
-      || (roll_on_time && roll_on_size && m_rolling_enabled == LogConfig::ROLL_ON_TIME_AND_SIZE)) {
+  if ((roll_on_time && should_roll_on_time(m_rolling_enabled)) ||
+      (roll_on_size && should_roll_on_size(m_rolling_enabled)) ||
+      (roll_on_time && roll_on_size && m_rolling_enabled == Log::ROLL_ON_TIME_AND_SIZE)) {
     num_rolled = _roll_files(m_last_roll_time, time_now ? time_now : LogUtils::timestamp());
   }
 
@@ -824,7 +831,7 @@ LogObject::do_filesystem_checks()
   -------------------------------------------------------------------------*/
 TextLogObject::TextLogObject(const char *name, const char *log_dir,
                              bool timestamps, const char *header,
-                             int rolling_enabled, int flush_threads,
+                             Log::RollingEnabledValues rolling_enabled, int flush_threads,
                              int rolling_interval_sec, int rolling_offset_hr,
                              int rolling_size_mb)
   : LogObject(MakeTextLogFormat(), log_dir, name, LOG_FILE_ASCII, header,
@@ -1445,7 +1452,7 @@ MakeTestLogObject(const char * name)
 
   return NEW(new LogObject(&format, tmpdir, name,
                  LOG_FILE_ASCII /* file_format */, name /* header */,
-                 1 /* rolling_enabled */, 1 /* flush_threads */));
+                 Log::ROLL_ON_TIME_ONLY /* rolling_enabled */, 1 /* flush_threads */));
 }
 
 REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest * t, int /* atype ATS_UNUSED */, int * pstatus)

@@ -221,7 +221,7 @@ Log::periodic_tasks(long time_now)
     // so that log objects are flushed
     //
     change_configuration();
-  } else if (logging_mode > LOG_MODE_NONE || config->collation_mode == LogConfig::COLLATION_HOST ||
+  } else if (logging_mode > LOG_MODE_NONE || config->collation_mode == Log::COLLATION_HOST ||
              config->has_api_objects()) {
     Debug("log-periodic", "Performing periodic tasks");
 
@@ -962,7 +962,7 @@ Log::init(int flags)
         "init status = %d", logging_mode, init_status);
     init_when_enabled();
     if (config_flags & STANDALONE_COLLATOR) {
-      config->collation_mode = LogConfig::COLLATION_HOST;
+      config->collation_mode = Log::COLLATION_HOST;
     }
     config->init();
   }
@@ -1478,7 +1478,7 @@ Log::match_logobject(LogBufferHeader * header)
 
       obj = NEW(new LogObject(fmt, Log::config->logfile_dir,
                               header->log_filename(), file_format, NULL,
-                              Log::config->rolling_enabled,
+                              (Log::RollingEnabledValues)Log::config->rolling_enabled,
                               Log::config->collation_preproc_threads,
                               Log::config->rolling_interval_sec,
                               Log::config->rolling_offset_hr,

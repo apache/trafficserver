@@ -6893,7 +6893,7 @@ TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
-  ((TextLogObject *) the_object)->set_rolling_enabled(rolling_enabled);
+  ((TextLogObject *) the_object)->set_rolling_enabled((Log::RollingEnabledValues)rolling_enabled);
 }
 
 void

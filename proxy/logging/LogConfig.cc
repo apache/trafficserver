@@ -35,6 +35,7 @@
 #include "List.h"
 #include "InkXml.h"
 
+#include "Log.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
@@ -44,7 +45,6 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogUtils.h"
-#include "Log.h"
 #include "SimpleTokenizer.h"
 
 #include "LogCollationAccept.h"
@@ -108,7 +108,7 @@ LogConfig::setup_default_values()
   extended2_log_name = ats_strdup("extended2");
   extended2_log_header = NULL;
 
-  collation_mode = NO_COLLATION;
+  collation_mode = Log::NO_COLLATION;
   collation_host = ats_strdup("none");
   collation_port = 0;
   collation_host_tagged = false;
@@ -117,7 +117,7 @@ LogConfig::setup_default_values()
   collation_retry_sec = 0;
   collation_max_send_buffers = 0;
 
-  rolling_enabled = NO_ROLLING;
+  rolling_enabled = Log::NO_ROLLING;
   rolling_interval_sec = 86400; // 24 hours
   rolling_offset_hr = 0;
   rolling_size_mb = 10;
@@ -406,10 +406,17 @@ LogConfig::read_configuration_variables()
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
-  rolling_enabled = (int) REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
   rolling_interval_sec = (int) REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
   rolling_offset_hr = (int) REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
   rolling_size_mb = (int) REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
+
+  val = (int) REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
+  if (LogRollingEnabledIsValid(val)) {
+    rolling_enabled = (Log::RollingEnabledValues)val;
+  } else {
+    Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.rolling_enabled");
+    rolling_enabled = Log::NO_ROLLING;
+  }
 
   val = (int) REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
@@ -583,11 +590,11 @@ LogConfig::setup_collation(LogConfig * prev_config)
   // Set-up the collation status, but only if collation is enabled and
   // there are valid entries for the collation host and port.
   //
-  if (collation_mode<NO_COLLATION || collation_mode>= N_COLLATION_MODES) {
+  if (collation_mode < Log::NO_COLLATION || collation_mode >= Log::N_COLLATION_MODES) {
     Note("Invalid value %d for proxy.local.log.collation_mode"
          " configuration variable (valid range is from %d to %d)\n"
-         "Log collation disabled", collation_mode, NO_COLLATION, N_COLLATION_MODES - 1);
-  } else if (collation_mode == NO_COLLATION) {
+         "Log collation disabled", collation_mode, Log::NO_COLLATION, Log::N_COLLATION_MODES - 1);
+  } else if (collation_mode == Log::NO_COLLATION) {
     // if the previous configuration had a collation accept, delete it
     //
     if (prev_config && prev_config->m_log_collation_accept) {
@@ -597,10 +604,10 @@ LogConfig::setup_collation(LogConfig * prev_config)
   } else {
     if (!collation_port) {
       Note("Cannot activate log collation, %d is an invalid collation port", collation_port);
-    } else if (collation_mode > COLLATION_HOST && strcmp(collation_host, "none") == 0) {
+    } else if (collation_mode > Log::COLLATION_HOST && strcmp(collation_host, "none") == 0) {
       Note("Cannot activate log collation, \"%s\" is an invalid collation host", collation_host);
     } else {
-      if (collation_mode == COLLATION_HOST) {
+      if (collation_mode == Log::COLLATION_HOST) {
 
         ink_assert(m_log_collation_accept == 0);
 
@@ -833,12 +840,12 @@ LogConfig::create_predefined_object(const PreDefinedFormatInfo * pdi, size_t num
   //
   LogObject *obj;
   obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
-                          pdi->filefmt, pdi->header, rolling_enabled,
+                          pdi->filefmt, pdi->header, (Log::RollingEnabledValues)rolling_enabled,
                           collation_preproc_threads, rolling_interval_sec,
                           rolling_offset_hr, rolling_size_mb));
 
   if (pdi->collatable) {
-    if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
+    if (collation_mode == Log::SEND_STD_FMTS || collation_mode == Log::SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
 
       LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
                                          obj->get_signature()));
@@ -2081,13 +2088,17 @@ LogConfig::read_xml_log_config(int from_memory)
       char *rollingSizeMb_str = rollingSizeMb.dequeue();
       int obj_rolling_size_mb = rollingSizeMb_str ? ink_atoui(rollingSizeMb_str) : rolling_size_mb;
 
+      if (!LogRollingEnabledIsValid(obj_rolling_enabled)) {
+        Warning("Invalid log rolling value '%d' in log object %s", obj_rolling_enabled, xobj->object_name());
+      }
+
       // create the new object
       //
       LogObject *obj = NEW(new LogObject(fmt, logfile_dir,
                                          filename.dequeue(),
                                          file_type,
                                          header.dequeue(),
-                                         obj_rolling_enabled,
+                                         (Log::RollingEnabledValues)obj_rolling_enabled,
                                          collation_preproc_threads,
                                          obj_rolling_interval_sec,
                                          obj_rolling_offset_hr,
