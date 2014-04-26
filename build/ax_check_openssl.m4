@@ -37,6 +37,7 @@
 AU_ALIAS([CHECK_SSL], [AX_CHECK_OPENSSL])
 AC_DEFUN([AX_CHECK_OPENSSL], [
     found=false
+    overriden=false
     AC_ARG_WITH([openssl],
         [AS_HELP_STRING([--with-openssl=DIR],
             [root of the OpenSSL directory])],
@@ -46,6 +47,7 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
             AC_MSG_ERROR([Invalid --with-openssl value])
               ;;
             *) ssldirs="$withval"
+               overriden=true
               ;;
             esac
         ], [
@@ -79,9 +81,13 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
             if test -f "$ssldir/include/openssl/ssl.h"; then
                 OPENSSL_INCLUDES="-I$ssldir/include"
                 if test -d "$ssldir/lib64"; then
-                  OPENSSL_LDFLAGS="-L$ssldir/lib64"
+                  lib_path="$ssldir/lib64"
                 else
-                  OPENSSL_LDFLAGS="-L$ssldir/lib"
+                  lib_path="$ssldir/lib"
+                fi
+                OPENSSL_LDFLAGS="-L$lib_path"
+                if test "$overriden"; then
+                  OPENSSL_LDFLAGS="${OPENSSL_LDFLAGS} -R$lib_path"
                 fi
                 OPENSSL_LIBS="-lssl -lcrypto"
                 found=true
