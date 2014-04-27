@@ -700,6 +700,23 @@ extern "C"
   tsapi void TSFetchDestroy(TSFetchSM fetch_sm);
 
   /*
+   * Set client protocol stack in FetchSM
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   * @param proto_stack: client protocol stack.
+   */
+  tsapi void TSFetchClientProtoStackSet(TSFetchSM fetch_sm, TSClientProtoStack proto_stack);
+
+  /*
+   * Get client protocol stack in FetchSM
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   *
+   * return the client protocol stack of fetch_sm.
+   */
+  tsapi TSClientProtoStack TSFetchClientProtoStackGet(TSFetchSM fetch_sm);
+
+  /*
    * Set user-defined data in FetchSM
    */
   tsapi void TSFetchUserDataSet(TSFetchSM fetch_sm, void *data);

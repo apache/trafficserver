@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2760] Add TSFetchClientProtoStackSet/Get() API in experimental.h.
+
   *) [TS-2743] Ignore invalid HTTP headers in SpdyNV carefully.
 
   *) [TS-2742] TSFetchCreate should accept both IPv4 and IPv6.

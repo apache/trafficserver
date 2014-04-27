@@ -7352,6 +7352,22 @@ TSFetchUserDataSet(TSFetchSM fetch_sm, void *data)
   ((FetchSM*)fetch_sm)->ext_set_user_data(data);
 }
 
+void
+TSFetchClientProtoStackSet(TSFetchSM fetch_sm, TSClientProtoStack proto_stack)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  ((FetchSM*)fetch_sm)->ext_set_proto_stack(proto_stack);
+}
+
+TSClientProtoStack
+TSFetchClientProtoStackGet(TSFetchSM fetch_sm)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+
+  return ((FetchSM*)fetch_sm)->ext_get_proto_stack();
+}
+
 void*
 TSFetchUserDataGet(TSFetchSM fetch_sm)
 {
