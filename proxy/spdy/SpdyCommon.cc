@@ -124,13 +124,20 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
     if (!strncasecmp(name, "Transfer-Encoding", name_len))
       goto next;
 
+    value = TSMimeHdrFieldValueStringGet(bufp, loc, field_loc, -1, &value_len);
+
+    //
+    // Any HTTP headers with empty value are invalid,
+    // we should ignore them.
+    //
+    if (!value || !value_len)
+      goto next;
+
     strncpy(p, name, name_len);
     nv[i++] = p;
     p += name_len;
     *p++ = '\0';
 
-    value = TSMimeHdrFieldValueStringGet(bufp, loc, field_loc, -1, &value_len);
-    TSReleaseAssert(value && value_len);
     strncpy(p, value, value_len);
     nv[i++] = p;
     p += value_len;
