@@ -188,6 +188,12 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
   TSFetchUserDataSet(req->fetch_sm, req);
 
   //
+  // Set client protocol stack in FetchSM that needed by logging module
+  //
+  NetVConnection *netvc = (NetVConnection *)sm->net_vc;
+  TSFetchClientProtoStackSet(req->fetch_sm, netvc->proto_stack);
+
+  //
   // Set header list
   //
   for (size_t i = 0; i < req->headers.size(); i++) {

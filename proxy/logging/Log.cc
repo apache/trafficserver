@@ -366,7 +366,7 @@ Log::init_fields()
   ink_hash_table_insert (field_symbol_hash, "caun", field);
 
   Ptr<LogFieldAliasTable> proto_type_map = make_ptr(NEW(new LogFieldAliasTable));
-  proto_type_map->init(4,
+  proto_type_map->init(7,
                        // Transport protocols
                        TS_PROTO_UDP, "UDP",
                        TS_PROTO_TCP, "TCP",
