@@ -7292,7 +7292,7 @@ TSFetchCreate(TSCont contp, TSFetchMethod method,
               struct sockaddr const* client_addr, int flags)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-  sdk_assert(ats_is_ip4(client_addr));
+  sdk_assert(ats_is_ip(client_addr));
 
   FetchSM *fetch_sm = FetchSMAllocator.alloc();
 
