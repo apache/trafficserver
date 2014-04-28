@@ -302,7 +302,7 @@ HttpClientSession::do_io_close(int alerrno)
 
     // We want the client to know that that we're finished
     //  writing.  The write shutdown accomplishes this.  Unfortuantely,
-    //  the IO Core symnatics don't stop us from getting events
+    //  the IO Core semantics don't stop us from getting events
     //  on the write side of the connection like timeouts so we
     //  need to zero out the write of the continuation with
     //  the do_io_write() call (INKqa05309)
