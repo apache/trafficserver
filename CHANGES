@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2746] Rename session accept layer with a standard convention.
+
   *) [TS-2754] Emit a tcpinfo log on TS_EVENT_HTTP_TXN_CLOSE.
 
   *) [TS-2760] Add TSFetchClientProtoStackSet/Get() API in experimental.h.
