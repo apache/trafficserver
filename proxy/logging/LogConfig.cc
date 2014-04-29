@@ -190,7 +190,7 @@ LogConfig::read_configuration_variables()
     max_space_mb_for_logs = val;
   }
 
-  val = (int) REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_" "orphan_logs");
+  val = (int) REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_orphan_logs");
   if (val > 0) {
     max_space_mb_for_orphan_logs = val;
   }
@@ -789,7 +789,7 @@ LogConfig::add_filters_to_search_log_object(const char *format_name)
     LogFilter *f;
     f = global_filter_list.find_by_name(filter_name);
     if (!f) {
-      Warning("Filter %s not in the global filter list; " "cannot add to this LogObject", filter_name);
+      Warning("Filter %s not in the global filter list; cannot add to this LogObject", filter_name);
     } else {
       obj->add_filter(f);
     }
@@ -1384,7 +1384,7 @@ LogConfig::update_space_used()
 
   ld =::opendir(logfile_dir);
   if (ld == NULL) {
-    const char *msg = "Error opening logging directory %s to perform a space " "check: %s.";
+    const char *msg = "Error opening logging directory %s to perform a space check: %s.";
     Error(msg, logfile_dir, strerror(errno));
     LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, logfile_dir, strerror(errno));
     m_log_directory_inaccessible = true;
@@ -1560,12 +1560,12 @@ LogConfig::update_space_used()
 
     logging_space_exhausted = false;
     if (m_disk_full || m_partition_full) {
-      Note("Logging disk is no longer full; " "access logging to local log directory resumed.");
+      Note("Logging disk is no longer full; access logging to local log directory resumed.");
       m_disk_full = false;
       m_partition_full = false;
     }
     if (m_disk_low || m_partition_low) {
-      Note("Logging disk is no longer low; " "access logging to local log directory resumed.");
+      Note("Logging disk is no longer low; access logging to local log directory resumed.");
       m_disk_low = false;
       m_partition_low = false;
     }
@@ -1730,10 +1730,10 @@ LogConfig::read_xml_log_config(int from_memory)
         continue;
       }
       if (name.count() > 1) {
-        Note("Multiple values for 'Name' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Name' attribute in %s; using the first one", xobj->object_name());
       }
       if (format.count() > 1) {
-        Note("Multiple values for 'Format' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Format' attribute in %s; using the first one", xobj->object_name());
       }
 
       char *format_str = format.dequeue();
@@ -1749,13 +1749,13 @@ LogConfig::read_xml_log_config(int from_memory)
                " %s that contains aggregate operators: %s", name_str, format_str);
           continue;
         } else if (interval.count() > 1) {
-          Note("Multiple values for 'Interval' attribute in %s; " "using the first one", xobj->object_name());
+          Note("Multiple values for 'Interval' attribute in %s; using the first one", xobj->object_name());
         }
         // interval
         //
         interval_num = ink_atoui(interval.dequeue());
       } else if (interval.count() > 0) {
-        Note("Format %s has no aggregates, ignoring 'Interval'" " attribute.", name_str);
+        Note("Format %s has no aggregates, ignoring 'Interval' attribute.", name_str);
       }
       // create new format object and place onto global list
       //
@@ -1766,11 +1766,11 @@ LogConfig::read_xml_log_config(int from_memory)
         global_format_list.add(fmt, false);
 
         if (is_debug_tag_set("xml")) {
-          printf("The following format was added to the global " "format list\n");
+          printf("The following format was added to the global format list\n");
           fmt->displayAsXML(stdout);
         }
       } else {
-        Note("Format named \"%s\" will not be active;" " not a valid format", fmt->name()? fmt->name() : "");
+        Note("Format named \"%s\" will not be active; not a valid format", fmt->name()? fmt->name() : "");
         delete fmt;
       }
     }
@@ -1814,13 +1814,13 @@ LogConfig::read_xml_log_config(int from_memory)
         continue;
       }
       if (name.count() > 1) {
-        Note("Multiple values for 'Name' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Name' attribute in %s; using the first one", xobj->object_name());
       }
       if (action.count() > 1) {
-        Note("Multiple values for 'Action' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Action' attribute in %s; using the first one", xobj->object_name());
       }
       if (condition.count() > 1) {
-        Note("Multiple values for 'Condition' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Condition' attribute in %s; using the first one", xobj->object_name());
       }
 
       char *filter_name = name.dequeue();
@@ -1837,7 +1837,7 @@ LogConfig::read_xml_log_config(int from_memory)
       }
 
       if (i == LogFilter::N_ACTIONS) {
-        Warning("%s is not a valid filter action value; " "cannot create filter %s.", action_str, filter_name);
+        Warning("%s is not a valid filter action value; cannot create filter %s.", action_str, filter_name);
         continue;
       }
       // parse condition string and validate its fields
@@ -1847,7 +1847,7 @@ LogConfig::read_xml_log_config(int from_memory)
       SimpleTokenizer tok(cond_str);
 
       if (tok.getNumTokensRemaining() < 3) {
-        Warning("Invalid condition syntax \"%s\"; " "cannot create filter %s.", cond_str, filter_name);
+        Warning("Invalid condition syntax \"%s\"; cannot create filter %s.", cond_str, filter_name);
         continue;
       }
 
@@ -1880,21 +1880,21 @@ LogConfig::read_xml_log_config(int from_memory)
             Note("Found Container Field: Name = %s, symbol = %s", fname, cname);
             LogField::Container container = LogField::valid_container_name(cname);
             if (container == LogField::NO_CONTAINER) {
-              Warning("%s is not a valid container; " "cannot create filter %s.", cname, filter_name);
+              Warning("%s is not a valid container; cannot create filter %s.", cname, filter_name);
               continue;
             } else {
               logfield = new LogField(fname, container);
               ink_assert(logfield != NULL);
             }
           } else {
-            Warning("Invalid container field specification: no trailing " "'}' in %s" "cannot create filter %s.", field_str, filter_name);
+            Warning("Invalid container field specification: no trailing '}' in %s cannot create filter %s.", field_str, filter_name);
             continue;
           }
         }
       }
 
       if (!logfield) {
-        Warning("%s is not a valid field; " "cannot create filter %s.", field_str, filter_name);
+        Warning("%s is not a valid field; cannot create filter %s.", field_str, filter_name);
         continue;
       }
       // convert the operator string to an enum value and validate it
@@ -1908,7 +1908,7 @@ LogConfig::read_xml_log_config(int from_memory)
       }
 
       if (i == LogFilter::N_OPERATORS) {
-        Warning("%s is not a valid operator; " "cannot create filter %s.", oper_str, filter_name);
+        Warning("%s is not a valid operator; cannot create filter %s.", oper_str, filter_name);
         continue;
       }
       // now create the correct LogFilter
@@ -1925,7 +1925,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
       case LogField::dINT:
 
-        Warning("Internal error: invalid field type (double int); " "cannot create filter %s.", filter_name);
+        Warning("Internal error: invalid field type (double int); cannot create filter %s.", filter_name);
         continue;
 
       case LogField::STRING:
@@ -1934,12 +1934,12 @@ LogConfig::read_xml_log_config(int from_memory)
         break;
 
       case LogField::IP:
-        Warning("Internal error: IP filters not yet supported " "cannot create filter %s.", filter_name);
+        Warning("Internal error: IP filters not yet supported cannot create filter %s.", filter_name);
         continue;
 
       default:
 
-        Warning("Internal error: unknown field type %d; " "cannot create filter %s.", field_type, filter_name);
+        Warning("Internal error: unknown field type %d; cannot create filter %s.", field_type, filter_name);
         continue;
       }
 
@@ -1947,7 +1947,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
       if (filter->get_num_values() == 0) {
 
-        Warning("\"%s\" does not specify any valid values; " "cannot create filter %s.", val_str, filter_name);
+        Warning("\"%s\" does not specify any valid values; cannot create filter %s.", val_str, filter_name);
         delete filter;
 
       } else {
@@ -1957,7 +1957,7 @@ LogConfig::read_xml_log_config(int from_memory)
         global_filter_list.add(filter, false);
 
         if (is_debug_tag_set("xml")) {
-          printf("The following filter was added to " "the global filter list\n");
+          printf("The following filter was added to the global filter list\n");
           filter->display_as_XML();
         }
       }
@@ -2021,40 +2021,40 @@ LogConfig::read_xml_log_config(int from_memory)
       }
 
       if (format.count() > 1) {
-        Note("Multiple values for 'Format' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Format' attribute in %s; using the first one", xobj->object_name());
       }
       if (filename.count() > 1) {
-        Note("Multiple values for 'Filename' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Filename' attribute in %s; using the first one", xobj->object_name());
       }
       if (mode.count() > 1) {
-        Note("Multiple values for 'Mode' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Mode' attribute in %s; using the first one", xobj->object_name());
       }
       if (filters.count() > 1) {
-        Note("Multiple values for 'Filters' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Filters' attribute in %s; using the first one", xobj->object_name());
       }
       if (protocols.count() > 1) {
-        Note("Multiple values for 'Protocols' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Protocols' attribute in %s; using the first one", xobj->object_name());
       }
       if (serverHosts.count() > 1) {
-        Note("Multiple values for 'ServerHosts' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'ServerHosts' attribute in %s; using the first one", xobj->object_name());
       }
       if (collationHosts.count() > 1) {
-        Note("Multiple values for 'CollationHosts' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'CollationHosts' attribute in %s; using the first one", xobj->object_name());
       }
       if (header.count() > 1) {
-        Note("Multiple values for 'Header' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'Header' attribute in %s; using the first one", xobj->object_name());
       }
       if (rollingEnabled.count() > 1) {
-        Note("Multiple values for 'RollingEnabled' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'RollingEnabled' attribute in %s; using the first one", xobj->object_name());
       }
       if (rollingIntervalSec.count() > 1) {
-        Note("Multiple values for 'RollingIntervalSec' attribute " "in %s; using the first one", xobj->object_name());
+        Note("Multiple values for 'RollingIntervalSec' attribute in %s; using the first one", xobj->object_name());
       }
       if (rollingOffsetHr.count() > 1) {
-        Note("Multiple values for 'RollingOffsetHr' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'RollingOffsetHr' attribute in %s; using the first one", xobj->object_name());
       }
       if (rollingSizeMb.count() > 1) {
-        Note("Multiple values for 'RollingSizeMb' attribute in %s; " "using the first one", xobj->object_name());
+        Note("Multiple values for 'RollingSizeMb' attribute in %s; using the first one", xobj->object_name());
       }
       // create new LogObject and start adding to it
       //
@@ -2062,7 +2062,7 @@ LogConfig::read_xml_log_config(int from_memory)
       char *fmt_name = format.dequeue();
       LogFormat *fmt = global_format_list.find_by_name(fmt_name);
       if (!fmt) {
-        Warning("Format %s not in the global format list; " "cannot create LogObject", fmt_name);
+        Warning("Format %s not in the global format list; cannot create LogObject", fmt_name);
         continue;
       }
       // file format
@@ -2114,7 +2114,7 @@ LogConfig::read_xml_log_config(int from_memory)
           LogFilter *f;
           f = global_filter_list.find_by_name(filter_name);
           if (!f) {
-            Warning("Filter %s not in the global filter list; " "cannot add to this LogObject", filter_name);
+            Warning("Filter %s not in the global filter list; cannot add to this LogObject", filter_name);
           } else {
             obj->add_filter(f);
           }
@@ -2145,7 +2145,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
           if (numValid == 0) {
             Warning("No valid protocol value(s) (%s) for Protocol "
-                    "field in definition of XML LogObject.\n" "Object will log all protocols.", protocols_str);
+                    "field in definition of XML LogObject.\nObject will log all protocols.", protocols_str);
           } else {
             if (numValid < n) {
               Warning("There are invalid protocol values (%s) in"
@@ -2159,7 +2159,7 @@ LogConfig::read_xml_log_config(int from_memory)
           }
           delete[] val_array;
         } else {
-          Warning("No value(s) in Protocol field of XML object, " "object will log all protocols.");
+          Warning("No value(s) in Protocol field of XML object, object will log all protocols.");
         }
       }
       // server hosts
@@ -2175,7 +2175,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
         if (server_host_filter.get_num_values() == 0) {
           Warning("No valid server host value(s) (%s) for Protocol "
-                  "field in definition of XML LogObject.\n" "Object will log all servers.", serverHosts_str);
+                  "field in definition of XML LogObject.\nObject will log all servers.", serverHosts_str);
         } else {
           obj->add_filter(&server_host_filter);
         }
@@ -2239,7 +2239,7 @@ LogConfig::read_log_hosts_file(size_t * num_hosts)
   size_t nhosts = 0;
   int fd = open(config_path, O_RDONLY);
   if (fd < 0) {
-    Warning("Traffic Server can't open %s for reading log hosts " "for splitting: %s.", (const char *)config_path, strerror(errno));
+    Warning("Traffic Server can't open %s for reading log hosts for splitting: %s.", (const char *)config_path, strerror(errno));
   } else {
     //
     // First, count the number of hosts in the file
