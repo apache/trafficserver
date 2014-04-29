@@ -2602,8 +2602,8 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:1792
 msgid ""
-"The log file rolling interval, in seconds. The minimum value is ``300`` (5 "
-"minutes). The maximum, and default, value is 86400 seconds (one day)."
+"The log file rolling interval, in seconds. The minimum value is ``60`` (1 "
+"minute). The maximum, and default, value is 86400 seconds (one day)."
 msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:1794

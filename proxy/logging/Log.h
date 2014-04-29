@@ -406,8 +406,8 @@ public:
 
   enum
   {
-    // 5 minute minimum rolling interval
-    MIN_ROLLING_INTERVAL_SEC = 300
+    MIN_ROLLING_INTERVAL_SEC = 60,   // 5 minute minimum rolling interval
+    MAX_ROLLING_INTERVAL_SEC = 86400  // 24 hrs rolling interval max
   };
 
   // main interface

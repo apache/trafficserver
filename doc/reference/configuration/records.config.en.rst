@@ -1854,7 +1854,7 @@ server, refer to `logs_xml.config <logs_xml.config>`_.
 .. ts:cv:: CONFIG proxy.config.log.rolling_interval_sec INT 86400
    :reloadable:
 
-   The log file rolling interval, in seconds. The minimum value is ``300`` (5 minutes). The maximum, and default, value is 86400 seconds (one day).
+   The log file rolling interval, in seconds. The minimum value is ``60`` (1 minute). The maximum, and default, value is 86400 seconds (one day).
 
    .. note:: If you start Traffic Server within a few minutes of the next rolling time, then rolling might not occur until the next rolling time.
 

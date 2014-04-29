@@ -675,16 +675,16 @@ LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling
       if (rolling_interval_sec < Log::MIN_ROLLING_INTERVAL_SEC) {
         // check minimum
         m_rolling_interval_sec = Log::MIN_ROLLING_INTERVAL_SEC;
-      } else if (rolling_interval_sec > 86400) {
+      } else if (rolling_interval_sec > Log::MAX_ROLLING_INTERVAL_SEC) {
         // 1 day maximum
-        m_rolling_interval_sec = 86400;
-      } else if (86400 % rolling_interval_sec == 0) {
+        m_rolling_interval_sec = Log::MAX_ROLLING_INTERVAL_SEC;
+      } else if (Log::MAX_ROLLING_INTERVAL_SEC % rolling_interval_sec == 0) {
         // OK, divides day evenly
         m_rolling_interval_sec = rolling_interval_sec;
       } else {
         m_rolling_interval_sec = rolling_interval_sec;
         // increase so it divides day evenly
-        while (86400 % ++m_rolling_interval_sec);
+        while (Log::MAX_ROLLING_INTERVAL_SEC % ++m_rolling_interval_sec);
       }
 
       if (m_rolling_interval_sec != rolling_interval_sec) {

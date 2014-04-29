@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2770] Allow proxy.config.log.rolling_interval_sec to be as low as 60sec.
+
   *) [TS-2763] Remove the unused proxy.config.log.xuid_logging_enabled config setting.
 
   *) [TS-2762] Core dump when benchmarking SPDY
