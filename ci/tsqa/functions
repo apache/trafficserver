@@ -175,6 +175,12 @@ startup() {
 
 # Shut down Traffic Server.
 shutdown() {
+
+  # Quick'n'dirty cleanup of background jobs.
+  jobs -p | while read pid ; do
+    kill $pid
+  done
+
   local pid=$(pidof cop)
   if [[ -z "$pid" ]] ; then
     return

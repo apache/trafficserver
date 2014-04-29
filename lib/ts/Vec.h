@@ -106,7 +106,7 @@ class Vec {
   C &first() const { return v[0]; }
   C &last() const { return v[n-1]; }
   Vec<C,A,S>& operator=(Vec<C,A,S> &v) { this->copy(v); return *this; }
-  int length () const { return n; }
+  unsigned length () const { return n; }
   // vector::size() intentionally not implemented because it should mean "bytes" not count of elements
   int write(int fd);
   int read(int fd);

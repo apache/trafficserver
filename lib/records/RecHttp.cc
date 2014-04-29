@@ -157,7 +157,7 @@ HttpProxyPort::loadDefaultIfEmpty(Group& ports) {
 
 bool
 HttpProxyPort::loadValue(Vec<self>& ports, char const* text) {
-  int n_elts = ports.length(); // remember this.
+  unsigned n_elts = ports.length(); // remember this.
   if (text && *text) {
     Tokenizer tokens(", ");
     int n_ports = tokens.Initialize(text);

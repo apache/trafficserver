@@ -6801,7 +6801,7 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
   sdk_assert(sdk_sanity_check_null_ptr((void*)filename) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)new_object) == TS_SUCCESS);
 
-  if (mode<0 || mode>= TS_LOG_MODE_INVALID_FLAG) {
+  if (mode <0 || mode >= TS_LOG_MODE_INVALID_FLAG) {
     *new_object = NULL;
     return TS_ERROR;
   }
@@ -6814,21 +6814,21 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
                                               Log::config->rolling_interval_sec,
                                               Log::config->rolling_offset_hr,
                                               Log::config->rolling_size_mb));
-  if (tlog) {
-    int err = (mode & TS_LOG_MODE_DO_NOT_RENAME ?
-               Log::config->log_object_manager.manage_api_object(tlog, 0) :
-               Log::config->log_object_manager.manage_api_object(tlog));
-    if (err != LogObjectManager::NO_FILENAME_CONFLICTS) {
-      delete tlog;
-      *new_object = NULL;
-      return TS_ERROR;
-    }
-  } else {
+  if (tlog == NULL) {
     *new_object = NULL;
     return TS_ERROR;
   }
-  *new_object = (TSTextLogObject) tlog;
 
+  int err = (mode & TS_LOG_MODE_DO_NOT_RENAME ?
+             Log::config->log_object_manager.manage_api_object(tlog, 0) :
+             Log::config->log_object_manager.manage_api_object(tlog));
+  if (err != LogObjectManager::NO_FILENAME_CONFLICTS) {
+    delete tlog;
+    *new_object = NULL;
+    return TS_ERROR;
+  }
+
+  *new_object = (TSTextLogObject) tlog;
   return TS_SUCCESS;
 }
 

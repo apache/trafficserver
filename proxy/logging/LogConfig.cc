@@ -1310,6 +1310,11 @@ bool LogConfig::space_to_write(int64_t bytes_to_write)
 
   space = ((logical_space_used<config_space) && (physical_space_left> partition_headroom));
 
+  Debug("logspace", "logical space used %" PRId64 ", configured space %" PRId64
+      ", physical space left %" PRId64 ", partition headroom %" PRId64 ", space %s available",
+      logical_space_used, config_space, physical_space_left, partition_headroom,
+      space ? "is" : "is not");
+
   return space;
 }
 
