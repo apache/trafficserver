@@ -169,7 +169,6 @@ public:
   int max_space_mb_headroom;
   int logfile_perm;
   bool squid_log_enabled;
-  bool xuid_logging_enabled;
   bool squid_log_is_ascii;
   bool common_log_enabled;
   bool common_log_is_ascii;

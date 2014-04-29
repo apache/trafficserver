@@ -88,7 +88,6 @@ LogConfig::setup_default_values()
   separate_host_logs = false;
 
   squid_log_enabled = true;
-  xuid_logging_enabled = true;
   squid_log_is_ascii = true;
   squid_log_name = ats_strdup("squid");
   squid_log_header = NULL;
@@ -269,10 +268,6 @@ LogConfig::read_configuration_variables()
   // SQUID
   val = (int) REC_ConfigReadInteger("proxy.config.log.squid_log_enabled");
   squid_log_enabled = (val > 0);
-
-  // X-UID logging enabled.
-  val = (int) REC_ConfigReadInteger("proxy.config.log.xuid_logging_enabled");
-  xuid_logging_enabled = (val > 0);
 
   val = (int) REC_ConfigReadInteger("proxy.config.log.squid_log_is_ascii");
   squid_log_is_ascii = (val > 0);
@@ -725,7 +720,6 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   xml_config_file = %s\n", xml_config_file);
   fprintf(fd, "   hosts_config_file = %s\n", hosts_config_file);
   fprintf(fd, "   squid_log_enabled = %d\n", squid_log_enabled);
-  fprintf(fd, "   xuid_logging_enabled = %d\n", xuid_logging_enabled);
   fprintf(fd, "   squid_log_is_ascii = %d\n", squid_log_is_ascii);
   fprintf(fd, "   squid_log_name = %s\n", squid_log_name);
   fprintf(fd, "   squid_log_header = %s\n", squid_log_header ? squid_log_header : "<no header defined>");
@@ -1136,7 +1130,6 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.hostname",
     "proxy.config.log.logfile_dir",
     "proxy.config.log.squid_log_enabled",
-    "proxy.config.log.xuid_logging_enabled",
     "proxy.config.log.squid_log_is_ascii",
     "proxy.config.log.squid_log_name",
     "proxy.config.log.squid_log_header",
