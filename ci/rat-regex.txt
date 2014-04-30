@@ -17,6 +17,7 @@ blib
 .*\.default\.in$
 .*\.config$
 .gitignore
+.gitmodules
 .indent.pro
 .vimrc
 CHANGES
