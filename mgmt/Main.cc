@@ -316,7 +316,7 @@ set_process_limits(int fds_throttle)
   FILE *fd;
 
   if ((fd = fopen("/proc/sys/fs/file-max","r"))) {
-    fscanf(fd, "%lu", &lim.rlim_max);
+    ATS_UNUSED_RETURN(fscanf(fd, "%lu", &lim.rlim_max));
     fclose(fd);
     REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
     lim.rlim_cur = lim.rlim_max = lim.rlim_max * file_max_pct;
