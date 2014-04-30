@@ -38,3 +38,6 @@ test_AIO.sample
 stale_while_revalidate.conf
 stats\.memo
 port\.h
+luajit
+diags.log
+pm_to_blib
