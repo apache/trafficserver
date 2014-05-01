@@ -26,7 +26,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/mgmt \
-
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/shared \

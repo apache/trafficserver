@@ -319,7 +319,7 @@ set_process_limits(int fds_throttle)
     ATS_UNUSED_RETURN(fscanf(fd, "%lu", &lim.rlim_max));
     fclose(fd);
     REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
-    lim.rlim_cur = lim.rlim_max = lim.rlim_max * file_max_pct;
+    lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(lim.rlim_max * file_max_pct);
     if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
       fds_limit = (int) lim.rlim_cur;
 #ifdef MGMT_USE_SYSLOG

@@ -15,6 +15,9 @@
 
 .dirstamp
 
+.project
+.cproject
+
 !doc/Doxyfile.in
 
 /aclocal.m4

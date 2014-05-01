@@ -808,7 +808,7 @@ adjust_sys_settings(void)
     ATS_UNUSED_RETURN(fscanf(fd, "%lu", &lim.rlim_max));
     fclose(fd);
     REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
-    lim.rlim_cur = lim.rlim_max = lim.rlim_max * file_max_pct;
+    lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(lim.rlim_max * file_max_pct);
     if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
       fds_limit = (int) lim.rlim_cur;
       syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);

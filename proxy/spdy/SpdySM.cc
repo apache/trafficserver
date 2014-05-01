@@ -44,7 +44,14 @@ SpdyRequest::clear()
   if (fetch_sm)
     TSFetchDestroy(fetch_sm);
 
-  headers.clear();
+  vector<pair<string, string> >().swap(headers);
+
+  std::string().swap(url);
+  std::string().swap(host);
+  std::string().swap(path);
+  std::string().swap(scheme);
+  std::string().swap(method);
+  std::string().swap(version);
 
   Debug("spdy", "****Delete Request[%" PRIu64 ":%d]", spdy_sm->sm_id, stream_id);
 }

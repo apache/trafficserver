@@ -3,6 +3,10 @@ autom4te.cache
 build
 build-aux
 body_factory
+config.log
+config.nice
+config.status
+libtool
 blib
 .*\.txt$
 .*\.cfg$
@@ -20,6 +24,7 @@ blib
 .gitmodules
 .indent.pro
 .vimrc
+Doxyfile.*
 CHANGES
 LAYOUT
 README.*$
