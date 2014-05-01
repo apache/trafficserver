@@ -132,18 +132,22 @@ SSLNextProtocolSet::unregisterEndpoint(const char * proto, Continuation * ep)
 }
 
 Continuation *
-SSLNextProtocolSet::findEndpoint(const unsigned char * proto, unsigned len,
-                                 TSClientProtoStack *proto_stack,
-                                 const char **selected_protocol) const
+SSLNextProtocolSet::findEndpoint(
+  const unsigned char * proto, unsigned len,
+  TSClientProtoStack *proto_stack, const char **selected_protocol) const
 {
   for (const NextProtocolEndpoint * ep = this->endpoints.head;
         ep != NULL; ep = this->endpoints.next(ep)) {
     size_t sz = strlen(ep->protocol);
     if (sz == len && memcmp(ep->protocol, proto, len) == 0) {
-      if (proto_stack)
+      if (proto_stack) {
         *proto_stack = ep->proto_stack;
-      if (selected_protocol)
+      }
+
+      if (selected_protocol) {
         *selected_protocol = ep->protocol;
+      }
+
       return ep->endpoint;
     }
   }
@@ -191,7 +195,7 @@ SSLNextProtocolSet::NextProtocolEndpoint::NextProtocolEndpoint(
              proto == TS_NPN_PROTOCOL_SPDY_1) {
     proto_stack = ((1u << TS_PROTO_TLS) | (1u << TS_PROTO_SPDY));
   } else {
-    ink_release_assert(!"Unsupported protocol");
+    proto_stack = (1u << TS_PROTO_TLS);
   }
 }
 

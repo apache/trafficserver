@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2744] Remove TSNetAcceptNamedProtocol assertion for unknown protocols.
+
   *) [TS-898] Stop the esi plugin referencing invalidated strings.
 
   *) [TS-2778] Websockets remap doesn't properly handle the implicit port for wss.
