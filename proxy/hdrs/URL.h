@@ -80,6 +80,7 @@ struct URLImpl:public HdrHeapObjImpl
   int marshal(MarshalXlate *str_xlate, int num_xlate);
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap *new_heap);
+  size_t strings_length();
 
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);

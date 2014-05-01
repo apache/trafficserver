@@ -359,6 +359,21 @@ URLImpl::move_strings(HdrStrHeap * new_heap)
 //    HDR_MOVE_STR(m_ptr_printed_string, m_len_printed_string);
 }
 
+size_t
+URLImpl::strings_length() {
+  size_t ret = 0;
+  ret += m_len_scheme;
+  ret += m_len_user;
+  ret += m_len_password;
+  ret += m_len_host;
+  ret += m_len_port;
+  ret += m_len_path;
+  ret += m_len_params;
+  ret += m_len_query;
+  ret += m_len_fragment;
+  return ret;
+}
+
 void
 URLImpl::check_strings(HeapCheck * heaps, int num_heaps)
 {

@@ -51,11 +51,10 @@
 //  heaps are hand unrolled in the code.  Chaning
 //  this value requires a full pass through HdrBuf.cc
 //  to fix the unrolled operations
-#define HDR_BUF_RONLY_HEAPS   3
+#define HDR_BUF_RONLY_HEAPS   6
 
-// Changed these so they for sure fit one normal TCP packet full of headers.
 #define HDR_HEAP_DEFAULT_SIZE   2048
-#define HDR_STR_HEAP_DEFAULT_SIZE   2048
+#define HDR_STR_HEAP_DEFAULT_SIZE   4096
 
 #define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
 #define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
@@ -262,6 +261,7 @@ public:
   int demote_rw_str_heap();
   void coalesce_str_heaps(int incoming_size = 0);
   void evacuate_from_str_heaps(HdrStrHeap * new_heap);
+  size_t required_space_for_evacuation();
   int attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int *index);
 
   /** Struct to prevent garbage collection on heaps.
