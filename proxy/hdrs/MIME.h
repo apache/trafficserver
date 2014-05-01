@@ -170,6 +170,7 @@ struct MIMEFieldBlockImpl:public HdrHeapObjImpl
   int marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_xlate, int num_str);
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap * new_heap);
+  size_t strings_length();
 
   // Sanity Check Functions
   void check_strings(HeapCheck * heaps, int num_heaps);
@@ -242,6 +243,7 @@ struct MIMEHdrImpl:public HdrHeapObjImpl
   int marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_xlate, int num_str);
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap * new_heap);
+  size_t strings_length();
 
   // Sanity Check Functions
   void check_strings(HeapCheck * heaps, int num_heaps);

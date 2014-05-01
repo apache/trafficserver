@@ -3594,6 +3594,22 @@ MIMEFieldBlockImpl::move_strings(HdrStrHeap *new_heap)
   }
 }
 
+size_t
+MIMEFieldBlockImpl::strings_length()
+{
+  size_t ret = 0;
+  for (uint32_t index = 0; index < m_freetop; index++) {
+    MIMEField *field = &(m_field_slots[index]);
+
+    if (field->m_readiness == MIME_FIELD_SLOT_READINESS_LIVE ||
+        field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED) {
+      ret += field->m_len_name;
+      ret += field->m_len_value;
+    }
+  }
+  return ret;
+}
+
 void
 MIMEFieldBlockImpl::check_strings(HeapCheck *heaps, int num_heaps)
 {
@@ -3627,6 +3643,11 @@ void
 MIMEHdrImpl::move_strings(HdrStrHeap *new_heap)
 {
   m_first_fblock.move_strings(new_heap);
+}
+
+size_t
+MIMEHdrImpl::strings_length() {
+  return m_first_fblock.strings_length();
 }
 
 void
