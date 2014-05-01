@@ -33,7 +33,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/api \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir) \
   -I$(top_srcdir)/proxy/api/ts \

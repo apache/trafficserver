@@ -25,7 +25,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils
 
 TESTS = $(check_PROGRAMS)

@@ -43,7 +43,6 @@ AM_CPPFLAGS = \
   -I$(srcdir)/hdrs \
   -I$(srcdir)/shared \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/lib
@@ -199,7 +198,6 @@ traffic_server_LDADD = \
   shared/libdiagsconfig.a  \
   shared/libsignals.a \
   shared/libxml.a \
-  $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \

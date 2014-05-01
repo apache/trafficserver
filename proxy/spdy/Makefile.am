@@ -27,7 +27,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/proxy/spdy \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/preparse \
+
   -I$(top_srcdir)/mgmt/utils \
   @SPDYLAY_CFLAGS@
 
