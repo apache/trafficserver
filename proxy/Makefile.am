@@ -303,7 +303,6 @@ traffic_sac_LDADD = \
   shared/liberror.a \
   shared/libsignals.a \
   shared/libxml.a \
-  $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
