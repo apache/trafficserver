@@ -294,7 +294,7 @@ size_t TransformationPlugin::produce(const std::string &data) {
 }
 
 size_t TransformationPlugin::setOutputComplete() {
-  if (state_->type_ = REQUEST_TRANSFORMATION) {
+  if (state_->type_ == REQUEST_TRANSFORMATION) {
     doProduce(state_->request_xform_output_);
   }
 
