@@ -360,8 +360,10 @@ URLImpl::move_strings(HdrStrHeap * new_heap)
 }
 
 size_t
-URLImpl::strings_length() {
+URLImpl::strings_length()
+{
   size_t ret = 0;
+
   ret += m_len_scheme;
   ret += m_len_user;
   ret += m_len_password;
