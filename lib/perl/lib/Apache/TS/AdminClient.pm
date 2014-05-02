@@ -208,24 +208,25 @@ sub get_stat {
     $self->{_socket}->print(pack("sla*", TS_RECORD_GET, length($stat)), $stat);
     $res = $self->_do_read();
 
-    my @resp = unpack("sls", $res);
-    return undef unless (scalar(@resp) == 3);
+    my @resp = unpack("slls", $res);
+    return undef unless (scalar(@resp) == 4);
 
     if ($resp[0] == TS_ERR_OKAY) {
-        if ($resp[2] < TS_REC_FLOAT) {
-            @resp = unpack("slsq", $res);
-            return undef unless (scalar(@resp) == 4);
-            return int($resp[3]);
+        if ($resp[3] < TS_REC_FLOAT) {
+            @resp = unpack("sllsq", $res);
+            return undef unless (scalar(@resp) == 5);
+            return int($resp[4]);
         }
-        elsif ($resp[2] == TS_REC_FLOAT) {
-            @resp = unpack("slsf", $res);
-            return undef unless (scalar(@resp) == 4);
-            return $resp[3];
+        elsif ($resp[3] == TS_REC_FLOAT) {
+            @resp = unpack("sllsf", $res);
+            return undef unless (scalar(@resp) == 5);
+            return $resp[4];
         }
-        elsif ($resp[2] == TS_REC_STRING) {
-            @resp = unpack("slsa*", $res);
-            return undef unless (scalar(@resp) == 4);
-            return $resp[3];
+        elsif ($resp[3] == TS_REC_STRING) {
+            @resp = unpack("sllsa*", $res);
+            return undef unless (scalar(@resp) == 5);
+	    my @result = split($stat, $resp[4]);
+            return $result[0];
         }
     }
 
