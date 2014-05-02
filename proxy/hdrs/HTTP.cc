@@ -1688,8 +1688,10 @@ HTTPHdrImpl::move_strings(HdrStrHeap *new_heap)
 }
 
 size_t
-HTTPHdrImpl::strings_length() {
+HTTPHdrImpl::strings_length()
+{
   size_t ret = 0;
+
   if (m_polarity == HTTP_TYPE_REQUEST) {
    ret += u.req.m_len_method;
   } else if (m_polarity == HTTP_TYPE_RESPONSE) {

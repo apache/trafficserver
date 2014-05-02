@@ -3608,6 +3608,7 @@ size_t
 MIMEFieldBlockImpl::strings_length()
 {
   size_t ret = 0;
+
   for (uint32_t index = 0; index < m_freetop; index++) {
     MIMEField *field = &(m_field_slots[index]);
 
@@ -3657,7 +3658,8 @@ MIMEHdrImpl::move_strings(HdrStrHeap *new_heap)
 }
 
 size_t
-MIMEHdrImpl::strings_length() {
+MIMEHdrImpl::strings_length()
+{
   return m_first_fblock.strings_length();
 }
 
