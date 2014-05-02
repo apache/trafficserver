@@ -123,26 +123,6 @@ InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type
   else {
     TSHttpTxnIntercept(cont, txn);
   }
-  Headers &request_headers = transaction.getClientRequest().getHeaders();
-  string content_length_str = request_headers.value("Content-Length");
-  if (!content_length_str.empty()) {
-    const char *start_ptr = content_length_str.data();
-    char *end_ptr;
-    int content_length = strtol(start_ptr, &end_ptr, 10 /* base */);
-    if ((errno != ERANGE) && (end_ptr != start_ptr) && (*end_ptr == '\0')) {
-      LOG_DEBUG("Got content length: %d", content_length);
-      state_->expected_body_size_ = content_length;
-    }
-    else {
-      LOG_ERROR("Invalid content length header [%s]; Assuming no content", content_length_str.c_str());
-    }
-  }
-  if (request_headers.value("Transfer-Encoding") == "chunked") {
-    // implementing a "dechunker" is non-trivial and in the real
-    // world, most browsers don't send chunked requests
-    LOG_ERROR("Support for chunked request not implemented! Assuming no body");
-  }
-  LOG_DEBUG("Expecting %d bytes of request body", state_->expected_body_size_);
 }
 
 InterceptPlugin::~InterceptPlugin() {
@@ -223,6 +203,25 @@ bool InterceptPlugin::doRead() {
         if (TSHttpHdrParseReq(state_->http_parser_, state_->hdr_buf_, state_->hdr_loc_, &data,
                               endptr) == TS_PARSE_DONE) {
           LOG_DEBUG("Parsed header");
+          string content_length_str = state_->request_headers_.value("Content-Length");
+          if (!content_length_str.empty()) {
+            const char *start_ptr = content_length_str.data();
+            char *end_ptr;
+            int content_length = strtol(start_ptr, &end_ptr, 10 /* base */);
+            if ((errno != ERANGE) && (end_ptr != start_ptr) && (*end_ptr == '\0')) {
+              LOG_DEBUG("Got content length: %d", content_length);
+              state_->expected_body_size_ = content_length;
+            }
+            else {
+              LOG_ERROR("Invalid content length header [%s]; Assuming no content", content_length_str.c_str());
+            }
+          }
+          if (state_->request_headers_.value("Transfer-Encoding") == "chunked") {
+            // implementing a "dechunker" is non-trivial and in the real
+            // world, most browsers don't send chunked requests
+            LOG_ERROR("Support for chunked request not implemented! Assuming no body");
+          }
+          LOG_DEBUG("Expecting %d bytes of request body", state_->expected_body_size_);
           state_->hdr_parsed_ = true;
           // remaining data in this block is body; 'data' will be pointing to first byte of the body
           num_body_bytes_in_block = endptr - data;
