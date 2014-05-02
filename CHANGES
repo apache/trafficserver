@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.2
 
 
+  *) [TS-2778] Websockets remap doesn't properly handle the implicit port for wss.
+
 Changes with Apache Traffic Server 4.2.1
 
   *) [TS-2624] Force CPU affinity to 0 to mimic previous behavior in 4.x branch

@@ -396,9 +396,9 @@ url_scheme_set(HdrHeap * heap, URLImpl * url, const char *scheme_str, int scheme
   else
     scheme_wks = NULL;
 
-  if (scheme_wks == URL_SCHEME_HTTP)
+  if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS)
     url->m_url_type = URL_TYPE_HTTP;
-  else if (scheme_wks == URL_SCHEME_HTTPS)
+  else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS)
     url->m_url_type = URL_TYPE_HTTPS;
   else
     url->m_url_type = URL_TYPE_HTTP;
