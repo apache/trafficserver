@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2774] TS::AdminClient.pm's get_stat API broken in 5.0
+
   *) [TS-2766] HdrHeap::coalesce_str_heaps doesn't properly calculate new heap size
 
   *) [TS-2767] ATS Memory Leak related to SPDY
