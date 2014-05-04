@@ -118,5 +118,5 @@ msgstr "そして表示されたエラーや警告を解決してください。
 #: ../../reference/plugins/mysql_remap.en.rst:81
 msgid "To debug errors, start trafficserver manually using::"
 msgstr ""
-"エラーをデバッグするために、Traffic Server を手動で次のように開始してくだ"
-"さい::"
+"エラーをデバッグするために、Traffic Server を手動で次のように開始してくださ"
+"い::"
