@@ -196,4 +196,4 @@ msgid ""
 msgstr ""
 "Traffic Server ``bin`` ディレクトリが path に無い場合は、``./`` を "
 "Traffic Line コマンドの前に付けてください "
-"( 例: :option:`traffic_line -r` ``variable``) 。
+"( 例: :option:`traffic_line -r` ``variable``) 。"
