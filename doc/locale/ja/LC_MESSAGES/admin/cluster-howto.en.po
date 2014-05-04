@@ -263,7 +263,7 @@ msgstr "クラスターからのノードの削除"
 #: ../../admin/cluster-howto.en.rst:131
 msgid ""
 "To delete a node from the Traffic Server cluster, just roll back :ts:cv:"
-"`proxy.local.cluster.type` to the default value 3 and reload."
+"`proxy.config.cluster.type` to the default value 3 and reload."
 msgstr ""
 "Traffic Server クラスターからノードを削除するためには、単に :ts:cv:`proxy."
 "config.cluster.type` をデフォルト値の 3 に戻して再読み込みを行ってください。"
