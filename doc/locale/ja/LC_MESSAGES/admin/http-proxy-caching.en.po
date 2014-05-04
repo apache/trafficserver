@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -1579,14 +1578,6 @@ msgstr ""
 "low water マークは high water マークと常に同じか少ないことに注意してくださ"
 "い。一方だけを設定すると、もう一方は同じ値に設定されます。"
 
-#: ../../admin/http-proxy-caching.en.rst:777
-msgid ""
-"If using c:func:`TSHttpTxnConfigIntSet`, it must be called no later than "
-"`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
-msgstr ""
-"c:func:`TSHttpTxnConfigIntSet` を使う場合、`TS_HTTP_READ_RESPONSE_HDR_HOOK` "
-"のすぐ後ろで呼ばれなければなりません。"
-
 #: ../../admin/http-proxy-caching.en.rst:782
 msgid "Reducing Origin Server Requests (Avoiding the Thundering Herd)"
 msgstr "オリジンサーバーへのリクエストの削減(Thundering Herd 問題を避ける)"
@@ -1883,3 +1874,16 @@ msgstr ""
 "デフォルトはこの機能が無効化されていて、全てのコネクションはオリジンにすぐに"
 "行くことを許可されていることを意味します。有効化した場合、"
 "open_read_retry_time タイムアウト毎に max_open_read_retries 回試すでしょう。"
+
+#: ../../admin/http-proxy-caching.en.rst:777
+msgid ""
+"If using :c:func:`TSHttpTxnConfigIntSet`, it must be called no later than "
+"`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
+msgstr ""
+
+#~ msgid ""
+#~ "If using c:func:`TSHttpTxnConfigIntSet`, it must be called no later than "
+#~ "`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
+#~ msgstr ""
+#~ "c:func:`TSHttpTxnConfigIntSet` を使う場合、"
+#~ "`TS_HTTP_READ_RESPONSE_HDR_HOOK` のすぐ後ろで呼ばれなければなりません。"

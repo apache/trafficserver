@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -82,25 +81,17 @@ msgid "The configuration functions are:"
 msgstr ""
 
 #: ../../sdk/plugin-configurations.en.rst:108
-msgid ""
-"```TSConfigDataGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#aed2a6f9d350935ac890f75fdd80605db>`__"
+msgid ":c:func:`TSConfigDataGet`"
 msgstr ""
 
 #: ../../sdk/plugin-configurations.en.rst:110
-msgid ""
-"```TSConfigGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a478189d6ad87c6b873d8676cb51508c5>`__"
+msgid ":c:func:`TSConfigGet`"
 msgstr ""
 
 #: ../../sdk/plugin-configurations.en.rst:112
-msgid ""
-"```TSConfigRelease`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a06711d4a0e70f1ff27f9b5ca34bb649c>`__"
+msgid ":c:func:`TSConfigRelease`"
 msgstr ""
 
 #: ../../sdk/plugin-configurations.en.rst:114
-msgid ""
-"```TSConfigSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a8bba9468fdca478e68035a9776f6e9ca>`__"
+msgid ":c:func:`TSConfigSet`"
 msgstr ""

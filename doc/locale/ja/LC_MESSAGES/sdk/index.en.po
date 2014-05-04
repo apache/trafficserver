@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -57,14 +56,16 @@ msgid ""
 "exists."
 msgstr ""
 
-#: ../../sdk/index.en.rst:41
+#: ../../sdk/index.en.rst:46
+msgid "Contents:"
+msgstr ""
+
+#: ../../sdk/index.en.rst:39
 msgid ""
 "If you find any such issues, you may want to submit a `bug or a patch "
 "<https://issues.apache.org/jira/secure/CreateIssue!default.jspa?"
-"pid=12310963>`__. Or find out how to `find bugs <>`__, `create useful bug "
-"reports <>`__ or `patches <>`__."
-msgstr ""
-
-#: ../../sdk/index.en.rst:46
-msgid "Contents:"
+"pid=12310963>`__. We also have a Wiki page explaining how to `create useful "
+"bug reports <https://cwiki.apache.org/confluence/display/TS/Filing+useful"
+"+bug+reports>`__. We encourage everyone to file tickets, early and often. "
+"Looking for existing, duplicate bugs is encouraged, but not required."
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -37,7 +36,5 @@ msgid ""
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/initiate-http-connection.en.rst:24
-msgid ""
-"```TSHttpConnect`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a2b45aa63ac1353b4c52123110197b61e>`__"
+msgid ":c:func:`TSHttpConnect`"
 msgstr ""

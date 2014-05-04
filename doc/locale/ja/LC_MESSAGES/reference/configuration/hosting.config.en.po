@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,49 +29,35 @@ msgstr ""
 msgid "hosting.config"
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:24
-msgid ""
-"The :file:`hosting.config` file enables you to assign cache partitions to "
-"specific origin servers and/or domains so that you can manage cache space "
-"efficiently and restrict disk usage. For step-by-step instructions on "
-"partitioning the cache according to origin servers and/or domains, refer to "
-"`Partitioning the Cache <../configuring-cache#PartitoningCache>`_. Before "
-"you can assign cache partitions to specific origin servers and/or domains, "
-"you must first partition your cache according to size and protocol in the :"
-"file:`volume.config` file. For step-by-step instructions about partitioning "
-"your cache, refer to `Partitioning the Cache <../configuring-"
-"cache#PartitioningCache>`_."
-msgstr ""
-
-#: ../../reference/configuration/hosting.config.en.rst:35
+#: ../../reference/configuration/hosting.config.en.rst:36
 msgid ""
 "After you modify hosting.config, navigate to the Traffic Server bin "
 "directory and run :option:`traffic_ctl config reload` to apply your changes."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:38
+#: ../../reference/configuration/hosting.config.en.rst:39
 msgid ""
 "When you apply the changes to a node in a cluster, Traffic Server "
 "automatically applies the changes to all other nodes in the cluster."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:43
+#: ../../reference/configuration/hosting.config.en.rst:44
 msgid ""
 "The :file:`volume.config` configuration must be the same on all nodes in a "
 "cluster."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:46
+#: ../../reference/configuration/hosting.config.en.rst:47
 msgid "Format"
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:48
+#: ../../reference/configuration/hosting.config.en.rst:49
 msgid ""
 "Each line in the :file:`hosting.config` file must have one of the following "
 "formats::"
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:54
+#: ../../reference/configuration/hosting.config.en.rst:55
 msgid ""
 "where ``HOST`` is the fully-qualified hostname of the origin server whose "
 "content you want to store on a particular partition (for example, ``www."
@@ -83,7 +68,7 @@ msgid ""
 "numbers must be valid numbers listed in the file:`volume.config`."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:63
+#: ../../reference/configuration/hosting.config.en.rst:64
 msgid ""
 "**Note:** To allocate more than one partition to an origin server or "
 "domain, you must enter the partitions in a comma-separated list on one "
@@ -91,11 +76,11 @@ msgid ""
 "cannot contain multiple entries for the same origin server or domain."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:70
+#: ../../reference/configuration/hosting.config.en.rst:71
 msgid "Generic Partition"
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:72
+#: ../../reference/configuration/hosting.config.en.rst:73
 msgid ""
 "When configuring the :file:`hosting.config` file, you must assign a generic "
 "partition to use for content that does not belong to any of the origin "
@@ -104,22 +89,39 @@ msgid ""
 "content for that origin server."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:78
+#: ../../reference/configuration/hosting.config.en.rst:79
 msgid "The generic partition must have the following format::"
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:82
+#: ../../reference/configuration/hosting.config.en.rst:83
 msgid "where ``NUMBERS`` is a comma-separated list of generic partitions."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:86
+#: ../../reference/configuration/hosting.config.en.rst:87
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:88
+#: ../../reference/configuration/hosting.config.en.rst:89
 msgid ""
 "The following example configures Traffic Server to store content from the "
 "domain ``mydomain.com`` in partition 1 and content from ``www.myhost.com`` "
 "in partition 2. Traffic Server stores content from all other origin servers "
 "in partitions 3 and 4."
+msgstr ""
+
+#: ../../reference/configuration/hosting.config.en.rst:24
+msgid ""
+"The :file:`hosting.config` file (by default, located in ``/opt/"
+"trafficserver/etc/trafficserver/``) you to assign cache partitions to "
+"specific origin servers and/or domains so that you can manage cache space "
+"efficiently and restrict disk usage. For step-by-step instructions on "
+"partitioning the cache according to origin servers and/or domains, refer to "
+"`Partitioning the Cache <../configuring-cache#PartitoningCache>`_."
+msgstr ""
+
+#: ../../reference/configuration/hosting.config.en.rst:31
+msgid ""
+"Before you can assign cache partitions to specific origin servers and/or "
+"domains, you must first partition your cache according to size and protocol "
+"in the :file:`volume.config` file."
 msgstr ""

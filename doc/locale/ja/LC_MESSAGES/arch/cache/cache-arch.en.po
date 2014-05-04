@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -83,21 +82,6 @@ msgstr ""
 #: ../../arch/cache/cache-arch.en.rst:71
 msgid "then the actual layout would look like"
 msgstr "実際のレイアウトはこのようになるでしょう。"
-
-#: ../../arch/cache/cache-arch.en.rst:83
-msgid ""
-"The layout and structure of the cache spans, the cache volumes, and the "
-"cache stripes that compose them are derived entirely from the :file:"
-"`storage.config` and :file:`cache.config` and is recomputed from scratch "
-"when the :process:`traffic_server` is started. Therefore any change to "
-"those files can (and almost always will) invalidate the existing cache in "
-"its entirety."
-msgstr ""
-"キャッシュスパン、キャッシュボリューム、そしてそれらを構成するキャッシュスト"
-"ライプのレイアウトと構造は、全て :file:`storage.config` と:file:`cache."
-"config` から取得され、 :process:`traffic_server` が開始された時にはじめから"
-"再計算されます。従って、これらのファイルへの任意の変更は(ほとんど常に)それら"
-"全ての既存のキャッシュを無効化します。"
 
 #: ../../arch/cache/cache-arch.en.rst:89
 msgid "Stripe Structure"
@@ -763,10 +747,6 @@ msgstr "phase"
 msgid "unsigned int:1"
 msgstr "unsigned int:1"
 
-#: ../../arch/cache/cache-arch.en.rst:405
-msgid "Unknown"
-msgstr "不明"
-
 #: ../../arch/cache/cache-arch.en.rst:406
 msgid "head"
 msgstr "head"
@@ -841,23 +821,6 @@ msgstr ""
 "て分割された 40 ビット長です。キャッシュボリュームの各ストレージユニット毎に"
 "ディレクトリは存在するため、この値はボリュームに接続されたストレージユニット"
 "の一部分へのオフセットであることに注意してください。"
-
-#: ../../arch/cache/cache-arch.en.rst:419
-msgid ""
-"The *size* and *big* values are used to calculate the approximate size of "
-"the span which contains the object. This value is used as the number of "
-"bytes to read from storage at the offset value. The exact size is contained "
-"in the object metadata in :cpp:class:`Doc` which is consulted once the read "
-"has completed. For this reason the approximate size needs to be at least as "
-"large as the actual size but can be larger, at the cost of reading the "
-"extraneous bytes."
-msgstr ""
-"*size* と *big* 値はオブジェクトを持つスパンの大まかなサイズを計算する為に使"
-"用されます。この値はストレージのオフセット値から読込み処理を行うためのバイト"
-"数として使用されます。正確なサイズは一旦読込みが完了した後に、参照される :"
-"cpp:class:`Doc` のオブジェクトメタデータに含まれます。この理由は、大まかなサ"
-"イズは少なくとも実サイズと同じかそれより大きくする必要があるものの、無関係な"
-"バイト列の読込みをするためコストが大きくなることにあります。"
 
 #: ../../arch/cache/cache-arch.en.rst:421
 msgid ""
@@ -1390,15 +1353,6 @@ msgstr ""
 msgid "Read while write"
 msgstr ""
 
-#: ../../arch/cache/cache-arch.en.rst:592
-msgid ""
-"There is provision in the code to support \"read while write\", that is "
-"serving an object from cache in one transaction while it is being written "
-"in another. It is unclear to me if this actually works. It must "
-"specifically enabled in :file:`records.config` and if not, a cache read "
-"will fail if the object is currently be written or updated."
-msgstr ""
-
 #: ../../arch/cache/cache-arch.en.rst:594
 msgid ""
 "At this point an alternate for the object is selected. This is done by "
@@ -1416,14 +1370,6 @@ msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:598
 msgid "Most of this work is done in::"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:602
-msgid ""
-"First the TTL (time to live) value which can be set in:file:`cache.config` "
-"is checked if the request matches the configuration file line. This is done "
-"based on when the object was placed in cache, not on any data in the "
-"headers."
 msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:604
@@ -1483,19 +1429,6 @@ msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:632
 msgid "Cache Write"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:634
-msgid ""
-"Writing to cache is handled by an instance of the class :cpp:class:"
-"`CacheVC`. This is a virtual connection which receives data and writes it "
-"to cache, acting as a sink. For a standard transaction data transfers "
-"between virtual connections (*VConns*) are handled by :cpp:class:"
-"HttpTunnel. Writing to cache is done by attaching a ``CacheVC`` instance as "
-"a tunnel consumer. It therefore operates in parallel with the virtual "
-"connection that transfers data to the client. The data does not flow to the "
-"cache and then to the client, it is split and goes both directions in "
-"parallel. This avoids any data synchronization issues between the two."
 msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:0
@@ -1587,21 +1520,6 @@ msgstr ""
 msgid "Aggregation Buffer"
 msgstr ""
 
-#: ../../arch/cache/cache-arch.en.rst:686
-msgid ""
-"Disk writes to cache are handled through an *aggregation buffer*. There is "
-"one for each :cpp:class:`Vol` instance. To minimize the number of system "
-"calls data is written to disk in units of roughly :ref:`target fragment "
-"size <target-fragment-size>` bytes. The algorithm used is simple - data is "
-"piled up in the aggregation buffer until no more will fit without going "
-"over the targer fragment size, at which point the buffer is written to disk "
-"and the volume directory entries for objects with data in the buffer are "
-"updated with the actual disk locations for those objects (which are "
-"determined by the write to disk action). After the buffer is written it is "
-"cleared and process repeats. There is a special lookup table for the "
-"aggregation buffer so that object lookup can find cache data in that memory."
-msgstr ""
-
 #: ../../arch/cache/cache-arch.en.rst:694
 msgid ""
 "Because data in the aggregation buffer is visible to other parts of the "
@@ -1639,26 +1557,6 @@ msgid ""
 "instance)."
 msgstr ""
 
-#: ../../arch/cache/cache-arch.en.rst:713
-msgid ""
-"Evacuation data structures are defined by dividing up the volume content in "
-"to a disjoint and contiguous set of regions of ``EVACUATION_BUCKET_SIZE`` "
-"bytes. The :cpp:member:`Vol::evacuate` member is an array with an element "
-"for each evacuation region. Each element is a doubly linked list of :cpp:"
-"class:`EvacuationBlock` instances. Each instance contains a :cpp:class:"
-"`Dir` that specifies the fragment to evacuate. It is assumed that an "
-"evacuation block is placed in the evacuation bucket (array element) that "
-"corresponds to the evacuation region in which the fragment is located "
-"although no ordering per bucket is enforced in the linked list (this "
-"sorting is handled during evacuation). Objects are evacuated by specifying "
-"the first or earliest fragment in the evactuation block. The evactuation "
-"operation will then continue the evacuation for subsequent fragments in the "
-"object by adding those fragments in evacuation blocks. Note that the actual "
-"evacuation of those fragments is delayed until the write cursor reaches the "
-"fragments, it is not ncessarily done at the time the first / earliest "
-"fragment is evacuated."
-msgstr ""
-
 #: ../../arch/cache/cache-arch.en.rst:724
 msgid ""
 "There are two types of evacuations, reader based and forced. The "
@@ -1682,20 +1580,6 @@ msgid ""
 "are trying to write to the stripe. Some of these may be evacuation virtual "
 "connections. If so then the completion callback for that virtual connection "
 "is called as the data is put in to the aggregation buffer."
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:737
-msgid ""
-"When no more cache virtual connections can be processed (due to an empty "
-"queue or the aggregation buffer filling) then :cpp:member:`Vol::evac_range` "
-"is called to clear the range to be overwritten plus an additional :ts:const:"
-"`EVACUATION_SIZE` range. The buckets covering that range are checked. If "
-"there are any items in the buckets a new cache virtual connection (a \"doc "
-"evacuator\") is created and used to read the evacuation item closest to the "
-"write cursor (i.e. with the smallest offset in the stripe) instead of the "
-"aggregation write proceeding. When the read completes it is checked for "
-"validity and if valid, the cache virtual connection for it is placed at the "
-"front of the write queue for the stripe and the write aggregation resumed."
 msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:745
@@ -1795,12 +1679,6 @@ msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:795
 msgid "Raw device"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:804
-msgid ""
-"After configuration initialization the cache processor is started by "
-"calling :ccp:func:`CacheProcessor::start()`. This does a number of things."
 msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:838
@@ -2103,3 +1981,148 @@ msgid ""
 "While this procedure is determinstic it is sensitive to initial conditions, "
 "including the size of each stripe."
 msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:83
+msgid ""
+"The layout and structure of the cache spans, the cache volumes, and the "
+"cache stripes that compose them are derived entirely from the :file:"
+"`storage.config` and :file:`cache.config` and is recomputed from scratch "
+"when the :program:`traffic_server` is started. Therefore any change to "
+"those files can (and almost always will) invalidate the existing cache in "
+"its entirety."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:405
+msgid "Phase of the ``Doc`` (for dir valid check)"
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:419
+msgid ""
+"The *size* and *big* values are used to calculate the approximate size of "
+"the fragment which contains the object. This value is used as the number of "
+"bytes to read from storage at the offset value. The exact size is contained "
+"in the object metadata in :cpp:class:`Doc` which is consulted once the read "
+"has completed. For this reason the approximate size needs to be at least as "
+"large as the actual size but can be larger, at the cost of reading the "
+"extraneous bytes."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:592
+msgid ""
+"There is provision in the code to support \"read while write\", that is "
+"serving an object from cache in one transaction while it is being written "
+"in another. Several settings are needed for it to be used. See :ref:"
+"`reducing-origin-server-requests-avoiding-the-thundering-herd`. It must "
+"specifically enabled in :file:`records.config` and if not, a cache read "
+"will fail if the object is currently be written or updated."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:602
+msgid ""
+"First the TTL (time to live) value which can be set in :file:`cache.config` "
+"is checked if the request matches the configuration file line. This is done "
+"based on when the object was placed in cache, not on any data in the "
+"headers."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:634
+msgid ""
+"Writing to cache is handled by an instance of the class :cpp:class:"
+"`CacheVC`. This is a virtual connection which receives data and writes it "
+"to cache, acting as a sink. For a standard transaction data transfers "
+"between virtual connections (*VConns*) are handled by :cpp:class:"
+"`HttpTunnel`. Writing to cache is done by attaching a ``CacheVC`` instance "
+"as a tunnel consumer. It therefore operates in parallel with the virtual "
+"connection that transfers data to the client. The data does not flow to the "
+"cache and then to the client, it is split and goes both directions in "
+"parallel. This avoids any data synchronization issues between the two."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:686
+msgid ""
+"Disk writes to cache are handled through an *aggregation buffer*. There is "
+"one for each :cpp:class:`Vol` instance. To minimize the number of system "
+"calls data is written to disk in units of roughly :ref:`target fragment "
+"size <target-fragment-size>` bytes. The algorithm used is simple - data is "
+"piled up in the aggregation buffer until no more will fit without going "
+"over the target fragment size, at which point the buffer is written to disk "
+"and the volume directory entries for objects with data in the buffer are "
+"updated with the actual disk locations for those objects (which are "
+"determined by the write to disk action). After the buffer is written it is "
+"cleared and process repeats. There is a special lookup table for the "
+"aggregation buffer so that object lookup can find cache data in that memory."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:713
+msgid ""
+"Evacuation data structures are defined by dividing up the volume content in "
+"to a disjoint and contiguous set of regions of ``EVACUATION_BUCKET_SIZE`` "
+"bytes. The :cpp:member:`Vol::evacuate` member is an array with an element "
+"for each evacuation region. Each element is a doubly linked list of :cpp:"
+"class:`EvacuationBlock` instances. Each instance contains a :cpp:class:"
+"`Dir` that specifies the fragment to evacuate. It is assumed that an "
+"evacuation block is placed in the evacuation bucket (array element) that "
+"corresponds to the evacuation region in which the fragment is located "
+"although no ordering per bucket is enforced in the linked list (this "
+"sorting is handled during evacuation). Objects are evacuated by specifying "
+"the first or earliest fragment in the evactuation block. The evactuation "
+"operation will then continue the evacuation for subsequent fragments in the "
+"object by adding those fragments in evacuation blocks. Note that the actual "
+"evacuation of those fragments is delayed until the write cursor reaches the "
+"fragments, it is not necessarily done at the time the first / earliest "
+"fragment is evacuated."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:737
+msgid ""
+"When no more cache virtual connections can be processed (due to an empty "
+"queue or the aggregation buffer filling) then :cpp:member:`Vol::evac_range` "
+"is called to clear the range to be overwritten plus an additional :const:"
+"`EVACUATION_SIZE` range. The buckets covering that range are checked. If "
+"there are any items in the buckets a new cache virtual connection (a \"doc "
+"evacuator\") is created and used to read the evacuation item closest to the "
+"write cursor (i.e. with the smallest offset in the stripe) instead of the "
+"aggregation write proceeding. When the read completes it is checked for "
+"validity and if valid, the cache virtual connection for it is placed at the "
+"front of the write queue for the stripe and the write aggregation resumed."
+msgstr ""
+
+#: ../../arch/cache/cache-arch.en.rst:804
+msgid ""
+"After configuration initialization the cache processor is started by "
+"calling :cpp:func:`CacheProcessor::start()`. This does a number of things."
+msgstr ""
+
+#~ msgid ""
+#~ "The layout and structure of the cache spans, the cache volumes, and the "
+#~ "cache stripes that compose them are derived entirely from the :file:"
+#~ "`storage.config` and :file:`cache.config` and is recomputed from scratch "
+#~ "when the :process:`traffic_server` is started. Therefore any change to "
+#~ "those files can (and almost always will) invalidate the existing cache "
+#~ "in its entirety."
+#~ msgstr ""
+#~ "キャッシュスパン、キャッシュボリューム、そしてそれらを構成するキャッシュ"
+#~ "ストライプのレイアウトと構造は、全て :file:`storage.config` と:file:"
+#~ "`cache.config` から取得され、 :process:`traffic_server` が開始された時に"
+#~ "はじめから再計算されます。従って、これらのファイルへの任意の変更は(ほとん"
+#~ "ど常に)それら全ての既存のキャッシュを無効化します。"
+
+#~ msgid "Unknown"
+#~ msgstr "不明"
+
+#~ msgid ""
+#~ "The *size* and *big* values are used to calculate the approximate size "
+#~ "of the span which contains the object. This value is used as the number "
+#~ "of bytes to read from storage at the offset value. The exact size is "
+#~ "contained in the object metadata in :cpp:class:`Doc` which is consulted "
+#~ "once the read has completed. For this reason the approximate size needs "
+#~ "to be at least as large as the actual size but can be larger, at the "
+#~ "cost of reading the extraneous bytes."
+#~ msgstr ""
+#~ "*size* と *big* 値はオブジェクトを持つスパンの大まかなサイズを計算する為"
+#~ "に使用されます。この値はストレージのオフセット値から読込み処理を行うため"
+#~ "のバイト数として使用されます。正確なサイズは一旦読込みが完了した後に、参"
+#~ "照される :cpp:class:`Doc` のオブジェクトメタデータに含まれます。この理由"
+#~ "は、大まかなサイズは少なくとも実サイズと同じかそれより大きくする必要があ"
+#~ "るものの、無関係なバイト列の読込みをするためコストが大きくなることにあり"
+#~ "ます。"

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -251,49 +250,33 @@ msgid "The vconnection functions are listed below:"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:185
-msgid ""
-"```TSVConnAbort`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a08444a9b2fee637672e177ede78b6218>`__"
+msgid ":c:func:`TSVConnAbort`"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:186
-msgid ""
-"```TSVConnClose`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a69344c2c6e57ece0990a5cee73b75215>`__"
+msgid ":c:func:`TSVConnClose`"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:187
-msgid ""
-"```TSVConnClosedGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a441d74cd77bf5d5564048682ca83b6ec>`__"
+msgid ":c:func:`TSVConnClosedGet`"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:188
-msgid ""
-"```TSVConnRead`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a29674799a8deffdde3d6ae3231aba1dc>`__"
+msgid ":c:func:`TSVConnRead`"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:189
-msgid ""
-"```TSVConnReadVIOGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#aa6f8788f062737f211c788ad5fcd2813>`__"
+msgid ":c:func:`TSVConnReadVIOGet`"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:190
-msgid ""
-"```TSVConnShutdown`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a5935b6c762b65fe87057adf94b1b00b4>`__"
+msgid ":c:func:`TSVConnShutdown`"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:191
-msgid ""
-"```TSVConnWrite`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#acea65496d1fcaf01924b0210f3129e6b>`__"
+msgid ":c:func:`TSVConnWrite`"
 msgstr ""
 
 #: ../../sdk/io-guide.en.rst:192
-msgid ""
-"```TSVConnWriteVIOGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#ae9a38dbd4866c59131a1f3b806a18aab>`__"
+msgid ":c:func:`TSVConnWriteVIOGet`"
 msgstr ""

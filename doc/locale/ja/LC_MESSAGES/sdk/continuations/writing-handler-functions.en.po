@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,7 +29,7 @@ msgstr ""
 msgid "Writing Handler Functions"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:21
+#: ../../sdk/continuations/writing-handler-functions.en.rst:23
 msgid ""
 "The handler function is the key component of a continuation. It is supposed "
 "to examine the event and event data, and then do something appropriate. The "
@@ -38,54 +37,67 @@ msgid ""
 "received, to open up a connection to a server, or simply to destroy itself."
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:27
+#: ../../sdk/continuations/writing-handler-functions.en.rst:70
+msgid "Event"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:70
+msgid "Event Sender"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:70
+msgid "Data Type"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:90
+#: ../../sdk/continuations/writing-handler-functions.en.rst:92
+msgid "Cache VC"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:91
+#: ../../sdk/continuations/writing-handler-functions.en.rst:93
+#: ../../sdk/continuations/writing-handler-functions.en.rst:95
+msgid "TS_CACHE_ERROR code"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:117
+msgid "The continuation functions are listed below:"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:29
 msgid ""
-"The continuation's handler function is a function of type ``TSEventFunc``. "
-"Its arguments are a continuation, an event, and a pointer to some data "
-"(this data is passed to the continuation by the caller - do not confuse "
-"this data with the continuation's own data, associated by "
-"``TSContDataSet``). When the continuation is called back, the continuation "
+"The continuation's handler function is a function of type :type:"
+"`TSEventFunc`. Its arguments are a continuation, an event, and a pointer to "
+"some data (this data is passed to the continuation by the caller - do not "
+"confuse this data with the continuation's own data, associated by :func:"
+"`TSContDataSet`). When the continuation is called back, the continuation "
 "and an event are passed to the handler function. The continuation is a "
 "handle to the same continuation that is invoked. The handler function "
 "typically has a switch statement to handle the events it receives:"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:59
+#: ../../sdk/continuations/writing-handler-functions.en.rst:61
 msgid ""
 "You might notice that a continuation cannot determine if more events are "
-"\"in flight\" toward it. Do not use ``TSContDestroy`` to delete a "
+"\"in flight\" toward it. Do not use :func:`TSContDestroy` to delete a "
 "continuation before you make sure that all incoming events, such as those "
-"sent because of ``TSHttpTxnHookAdd``, have been handled."
+"sent because of :func:`TSHttpTxnHookAdd`, have been handled."
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:64
+#: ../../sdk/continuations/writing-handler-functions.en.rst:66
 msgid ""
-"The following table lists events and the corresponding type of ``void* "
-"data`` passed to handler functions:"
+"The following table lists events and the corresponding type of `void* data` "
+"passed to handler functions:"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:68
-msgid "Event"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:72
+msgid ":data:`TS_EVENT_HTTP_READ_REQUEST_HDR`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:68
-msgid "Event Sender"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:72
+msgid ":data:`TS_HTTP_READ_REQUEST_HDR_HOOK`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:68
-msgid "Data Type"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:70
-msgid "``TS_EVENT_HTTP_READ_REQUEST_HDR``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:70
-msgid "``TS_HTTP_READ_REQUEST_HDR_HOOK``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:70
-#: ../../sdk/continuations/writing-handler-functions.en.rst:71
 #: ../../sdk/continuations/writing-handler-functions.en.rst:72
 #: ../../sdk/continuations/writing-handler-functions.en.rst:73
 #: ../../sdk/continuations/writing-handler-functions.en.rst:74
@@ -93,311 +105,303 @@ msgstr ""
 #: ../../sdk/continuations/writing-handler-functions.en.rst:76
 #: ../../sdk/continuations/writing-handler-functions.en.rst:77
 #: ../../sdk/continuations/writing-handler-functions.en.rst:78
-#: ../../sdk/continuations/writing-handler-functions.en.rst:82
-msgid "``TSHttpTxn``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:71
-msgid "``TS_EVENT_HTTP_OS_DNS``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:71
-msgid "``TS_HTTP_OS_DNS_HOOK``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:72
-msgid "``TS_EVENT_HTTP_SEND_REQUEST_HDR``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:72
-msgid "``TS_HTTP_SEND_REQUEST_HDR_HOOK``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:79
+#: ../../sdk/continuations/writing-handler-functions.en.rst:80
+#: ../../sdk/continuations/writing-handler-functions.en.rst:84
+msgid ":type:`TSHttpTxn`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:73
-msgid "``TS_EVENT_HTTP_READ_CACHE_HDR``"
+msgid ":data:`TS_EVENT_HTTP_OS_DNS`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:73
-msgid "``TS_HTTP_READ_CACHE_HDR_HOOK``"
+msgid ":data:`TS_HTTP_OS_DNS_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:74
-msgid "``TS_EVENT_HTTP_READ_RESPONSE_HDR``"
+msgid ":data:`TS_EVENT_HTTP_SEND_REQUEST_HDR`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:74
-msgid "``TS_HTTP_READ_RESPONSE_HDR_HOOK``"
+msgid ":data:`TS_HTTP_SEND_REQUEST_HDR_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:75
-msgid "``TS_EVENT_HTTP_SEND_RESPONSE_HDR``"
+msgid ":data:`TS_EVENT_HTTP_READ_CACHE_HDR`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:75
-msgid "``TS_HTTP_SEND_RESPONSE_HDR_HOOK``"
+msgid ":data:`TS_HTTP_READ_CACHE_HDR_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:76
-msgid "``TS_EVENT_HTTP_SELECT_ALT``"
+msgid ":data:`TS_EVENT_HTTP_READ_RESPONSE_HDR`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:76
-msgid "``TS_HTTP_SELECT_ALT_HOOK``"
+msgid ":data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:77
-msgid "``TS_EVENT_HTTP_TXN_START``"
+msgid ":data:`TS_EVENT_HTTP_SEND_RESPONSE_HDR`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:77
-msgid "``TS_HTTP_TXN_START_HOOK``"
+msgid ":data:`TS_HTTP_SEND_RESPONSE_HDR_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:78
-msgid "``TS_EVENT_HTTP_TXN_CLOSE``"
+msgid ":data:`TS_EVENT_HTTP_SELECT_ALT`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:78
-msgid "``TS_HTTP_TXN_CLOSE_HOOK``"
+msgid ":data:`TS_HTTP_SELECT_ALT_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:79
-msgid "``TS_EVENT_HTTP_SSN_START``"
+msgid ":data:`TS_EVENT_HTTP_TXN_START`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:79
-msgid "``TS_HTTP_SSN_START_HOOK``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:79
-#: ../../sdk/continuations/writing-handler-functions.en.rst:80
-msgid "``TSHttpSsn``"
+msgid ":data:`TS_HTTP_TXN_START_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:80
-msgid "``TS_EVENT_HTTP_SSN_CLOSE``"
+msgid ":data:`TS_EVENT_HTTP_TXN_CLOSE`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:80
-msgid "``TS_HTTP_SSN_CLOSE_HOOK``"
+msgid ":data:`TS_HTTP_TXN_CLOSE_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:81
-msgid "``TS_EVENT_NONE``"
+msgid ":data:`TS_EVENT_HTTP_SSN_START`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:81
+msgid ":data:`TS_HTTP_SSN_START_HOOK`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:81
+#: ../../sdk/continuations/writing-handler-functions.en.rst:82
+msgid ":type:`TSHttpSsn`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:82
-msgid "``TS_EVENT_CACHE_LOOKUP_COMPLETE``"
+msgid ":data:`TS_EVENT_HTTP_SSN_CLOSE`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:82
-msgid "``TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK``"
+msgid ":data:`TS_HTTP_SSN_CLOSE_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:83
-#: ../../sdk/continuations/writing-handler-functions.en.rst:86
-#: ../../sdk/continuations/writing-handler-functions.en.rst:87
-msgid "``TS_EVENT_IMMEDIATE``"
+msgid ":data:`TS_EVENT_NONE`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:83
-msgid "``TSVConnClose`` ``TSVIOReenable`` ``TSContSchedule``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:84
+msgid ":data:`TS_EVENT_CACHE_LOOKUP_COMPLETE`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:86
-msgid "``TS_HTTP_REQUEST_TRANSFORM_HOOK``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:84
+msgid ":data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:87
-msgid "``TS_HTTP_RESPONSE_TRANSFORM_HOOK``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:85
+#: ../../sdk/continuations/writing-handler-functions.en.rst:88
+#: ../../sdk/continuations/writing-handler-functions.en.rst:89
+msgid ":data:`TS_EVENT_IMMEDIATE`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:85
+msgid ":func:`TSVConnClose` :func:`TSVIOReenable` :func:`TSContSchedule`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:88
-msgid "``TS_EVENT_CACHE_OPEN_READ``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:88
-#: ../../sdk/continuations/writing-handler-functions.en.rst:89
-msgid "``TSCacheRead``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:88
-#: ../../sdk/continuations/writing-handler-functions.en.rst:90
-msgid "Cache VC"
+msgid ":data:`TS_HTTP_REQUEST_TRANSFORM_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:89
-msgid "``TS_EVENT_CACHE_OPEN_READ_FAILED``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:89
-#: ../../sdk/continuations/writing-handler-functions.en.rst:91
-#: ../../sdk/continuations/writing-handler-functions.en.rst:93
-msgid "TS_CACHE_ERROR code"
+msgid ":data:`TS_HTTP_RESPONSE_TRANSFORM_HOOK`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:90
-msgid "``TS_EVENT_CACHE_OPEN_WRITE``"
+msgid ":data:`TS_EVENT_CACHE_OPEN_READ`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:90
 #: ../../sdk/continuations/writing-handler-functions.en.rst:91
-msgid "``TSCacheWrite``"
+msgid ":func:`TSCacheRead`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:91
-msgid "``TS_EVENT_CACHE_OPEN_WRITE_FAILED``"
+msgid ":data:`TS_EVENT_CACHE_OPEN_READ_FAILED`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:92
-msgid "``TS_EVENT_CACHE_REMOVE``"
+msgid ":data:`TS_EVENT_CACHE_OPEN_WRITE`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:92
 #: ../../sdk/continuations/writing-handler-functions.en.rst:93
-msgid "``TSCacheRemove``"
+msgid ":func:`TSCacheWrite`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:93
-msgid "``TS_EVENT_CACHE_REMOVE_FAILED``"
+msgid ":data:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:94
-msgid "``TS_EVENT_NET_ACCEPT``"
+msgid ":data:`TS_EVENT_CACHE_REMOVE`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:94
-#: ../../sdk/continuations/writing-handler-functions.en.rst:97
-msgid "``TSNetAccept`` ``TSHttpTxnServerIntercept`` ``TSHttpTxnIntercept``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:95
+msgid ":func:`TSCacheRemove`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:94
-msgid "``NetVConnection``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:95
+msgid ":data:`TS_EVENT_CACHE_REMOVE_FAILED`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:97
-msgid "``TS_EVENT_NET_ACCEPT_FAILED``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:96
+msgid ":data:`TS_EVENT_NET_ACCEPT`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:100
-msgid "``TS_EVENT_HOST_LOOKUP``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:96
+#: ../../sdk/continuations/writing-handler-functions.en.rst:99
+msgid ""
+":func:`TSNetAccept` :func:`TSHttpTxnServerIntercept` :func:"
+"`TSHttpTxnIntercept`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:100
-msgid "``TSHostLookup``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:96
+msgid ":type:`TSNetVConnection`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:100
-msgid "``TSHostLookupResult``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:101
-msgid "``TS_EVENT_TIMEOUT``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:101
-#: ../../sdk/continuations/writing-handler-functions.en.rst:123
-msgid "``TSContSchedule``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:99
+msgid ":data:`TS_EVENT_NET_ACCEPT_FAILED`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:102
-msgid "``TS_EVENT_ERROR``"
+msgid ":data:`TS_EVENT_HOST_LOOKUP`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:102
+msgid ":func:`TSHostLookup`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:102
+msgid ":type:`TSHostLookupResult`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:103
-msgid "``TS_EVENT_VCONN_READ_READY``"
+msgid ":data:`TS_EVENT_TIMEOUT`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:103
+#: ../../sdk/continuations/writing-handler-functions.en.rst:125
+msgid ":func:`TSContSchedule`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:104
+msgid ":data:`TS_EVENT_ERROR`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:105
+msgid ":data:`TS_EVENT_VCONN_READ_READY`"
+msgstr ""
+
 #: ../../sdk/continuations/writing-handler-functions.en.rst:105
 #: ../../sdk/continuations/writing-handler-functions.en.rst:107
-msgid "``TSVConnRead``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:109
+msgid ":func:`TSVConnRead`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:103
-#: ../../sdk/continuations/writing-handler-functions.en.rst:104
 #: ../../sdk/continuations/writing-handler-functions.en.rst:105
 #: ../../sdk/continuations/writing-handler-functions.en.rst:106
 #: ../../sdk/continuations/writing-handler-functions.en.rst:107
 #: ../../sdk/continuations/writing-handler-functions.en.rst:108
 #: ../../sdk/continuations/writing-handler-functions.en.rst:109
-msgid "``TSVConn``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:104
-msgid "``TS_EVENT_VCONN_WRITE_READY``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:104
-#: ../../sdk/continuations/writing-handler-functions.en.rst:106
-msgid "``TSVConnWrite``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:105
-msgid "``TS_EVENT_VCONN_READ_COMPLETE``"
+msgid ":type:`TSVIO`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:106
-msgid "``TS_EVENT_VCONN_WRITE_COMPLETE``"
+msgid ":data:`TS_EVENT_VCONN_WRITE_READY`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:106
+#: ../../sdk/continuations/writing-handler-functions.en.rst:108
+msgid ":func:`TSVConnWrite`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:107
-msgid "``TS_EVENT_VCONN_EOS``"
+msgid ":data:`TS_EVENT_VCONN_READ_COMPLETE`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:108
-msgid "``TS_EVENT_NET_CONNECT``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:108
-#: ../../sdk/continuations/writing-handler-functions.en.rst:109
-msgid "``TSNetConnect``"
+msgid ":data:`TS_EVENT_VCONN_WRITE_COMPLETE`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:109
-msgid "``TS_EVENT_NET_CONNECT_FAILED``"
+msgid ":data:`TS_EVENT_VCONN_EOS`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:110
-msgid "``TS_EVENT_HTTP_CONTINUE``"
+msgid ":data:`TS_EVENT_NET_CONNECT`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:110
+#: ../../sdk/continuations/writing-handler-functions.en.rst:111
+msgid ":func:`TSNetConnect`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:110
+#: ../../sdk/continuations/writing-handler-functions.en.rst:111
+msgid ":type:`TSVConn`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:111
-msgid "``TS_EVENT_HTTP_ERROR``"
+msgid ":data:`TS_EVENT_NET_CONNECT_FAILED`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:112
-msgid "``TS_EVENT_MGMT_UPDATE``"
+msgid ":data:`TS_EVENT_HTTP_CONTINUE`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:112
-msgid "``TSMgmtUpdateRegister``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:113
+msgid ":data:`TS_EVENT_HTTP_ERROR`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:115
-msgid "The continuation functions are listed below:"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:114
+msgid ":data:`TS_EVENT_MGMT_UPDATE`"
 msgstr ""
 
-#: ../../sdk/continuations/writing-handler-functions.en.rst:117
-msgid "``TSContCall``"
-msgstr ""
-
-#: ../../sdk/continuations/writing-handler-functions.en.rst:118
-msgid "``TSContCreate``"
+#: ../../sdk/continuations/writing-handler-functions.en.rst:114
+msgid ":func:`TSMgmtUpdateRegister`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:119
-msgid "``TSContDataGet``"
+msgid ":func:`TSContCall`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:120
-msgid "``TSContDataSet``"
+msgid ":func:`TSContCreate`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:121
-msgid "``TSContDestroy``"
+msgid ":func:`TSContDataGet`"
 msgstr ""
 
 #: ../../sdk/continuations/writing-handler-functions.en.rst:122
-msgid "``TSContMutexGet``"
+msgid ":func:`TSContDataSet`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:123
+msgid ":func:`TSContDestroy`"
+msgstr ""
+
+#: ../../sdk/continuations/writing-handler-functions.en.rst:124
+msgid ":func:`TSContMutexGet`"
 msgstr ""

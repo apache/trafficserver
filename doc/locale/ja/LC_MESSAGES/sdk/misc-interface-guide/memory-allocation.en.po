@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -53,31 +52,21 @@ msgid "The memory allocation functions are:"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:36
-msgid ""
-"```TSfree`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#afe7f18beddf31a80436a03a5ab7e759f>`__"
+msgid ":c:func:`TSfree`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:38
-msgid ""
-"```TSmalloc`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#af030092823148cbbc5525c4fcde9bb37>`__"
+msgid ":c:func:`TSmalloc`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:40
-msgid ""
-"```TSrealloc`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a3abaf3d50d82377dccd1c16bc7b631ab>`__"
+msgid ":c:func:`TSrealloc`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:42
-msgid ""
-"```TSstrdup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a92c01584655c52e46a58986435e17c86>`__"
+msgid ":c:func:`TSstrdup`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:44
-msgid ""
-"```TSstrndup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a11072c11fa6d8470ace2963615229146>`__"
+msgid ":c:func:`TSstrndup`"
 msgstr ""

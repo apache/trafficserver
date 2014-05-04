@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -65,7 +64,7 @@ msgstr ""
 msgid "The following options are available:"
 msgstr "次のオプションが使用可能です。"
 
-#: ../../reference/commands/traffic_cop.en.rst:43
+#: ../../reference/commands/traffic_cop.en.rst:53
 msgid ""
 "Kill children using ``SIGSTOP`` instead of ``SIGKILL``. This option is "
 "primarily for debugging."
@@ -73,28 +72,38 @@ msgstr ""
 "``SIGKILL`` の代わりに ``SIGSTOP`` を使用して子プロセスをキルします。このオ"
 "プションは主にデバッグ用です。"
 
-#: ../../reference/commands/traffic_cop.en.rst:48
+#: ../../reference/commands/traffic_cop.en.rst:58
 msgid "Print version information and exit."
 msgstr "バージョン情報を表示して終了します。"
 
-#: ../../reference/commands/traffic_cop.en.rst:50
-msgid ""
-":program:`traffic_cop` ordinarily logs to syslog, however for debugging "
-"purposes, the ``--enable-cop-debug`` build option causes it to log trace "
-"messages to :file:`/tmp/traffic_cop.trace`."
-msgstr ""
-":program:`traffic_cop` は通常 syslog にログを取りますが、デバッグを目的とし"
-"て ``--enable-cop-debug`` ビルドオプションを使用することで :file:`/tmp/"
-"traffic_cop.trace` にトレースメッセージを記録するようになります。"
-
-#: ../../reference/commands/traffic_cop.en.rst:56
+#: ../../reference/commands/traffic_cop.en.rst:61
 msgid "See also"
 msgstr "参照"
 
-#: ../../reference/commands/traffic_cop.en.rst:58
+#: ../../reference/commands/traffic_cop.en.rst:63
 msgid ""
 ":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
 "`traffic_server(8)`"
 msgstr ""
 ":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
 "`traffic_server(8)`"
+
+#: ../../reference/commands/traffic_cop.en.rst:43
+msgid "Emit debugging messages."
+msgstr ""
+
+#: ../../reference/commands/traffic_cop.en.rst:47
+msgid ""
+":program:`traffic_cop` ordinarily logs to syslog, however for debugging "
+"purposes, this option causes it to print messages to standard output "
+"instead."
+msgstr ""
+
+#~ msgid ""
+#~ ":program:`traffic_cop` ordinarily logs to syslog, however for debugging "
+#~ "purposes, the ``--enable-cop-debug`` build option causes it to log trace "
+#~ "messages to :file:`/tmp/traffic_cop.trace`."
+#~ msgstr ""
+#~ ":program:`traffic_cop` は通常 syslog にログを取りますが、デバッグを目的と"
+#~ "して ``--enable-cop-debug`` ビルドオプションを使用することで :file:`/tmp/"
+#~ "traffic_cop.trace` にトレースメッセージを記録するようになります。"

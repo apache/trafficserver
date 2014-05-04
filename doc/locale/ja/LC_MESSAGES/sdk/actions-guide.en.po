@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -107,13 +106,9 @@ msgid "The action functions are:"
 msgstr ""
 
 #: ../../sdk/actions-guide.en.rst:178
-msgid ""
-"```TSActionCancel`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a5d49a6addcc9dbdc7f339ee6b73ac0b6>`__"
+msgid ":c:func:`TSActionCancel`"
 msgstr ""
 
 #: ../../sdk/actions-guide.en.rst:179
-msgid ""
-"```TSActionDone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#abe189274ad59911f2a57d345d11bfecb>`__"
+msgid ":c:func:`TSActionDone`"
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -67,26 +66,6 @@ msgstr ""
 msgid "The HTTP transaction functions are:"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:161
-msgid ""
-"```TSHttpTxnCacheLookupStatusGet`` <http://people.apache.org/~amc/ats/doc/"
-"html/InkAPI_8cc.html#ad26c77fa4ba251fb8ccbbd1505a74687>`__"
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:163
-msgid ""
-"```TSHttpTxnCachedReqGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a889b626142157077f4f3cfe479e8b8e2>`__ - Note that it is an "
-"error to modify cached headers."
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:166
-msgid ""
-"```TSHttpTxnCachedRespGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#ae8f24b8dabb5008ad11620a11682ffd6>`__ - Note that it is an "
-"error to modify cached headers."
-msgstr ""
-
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:169
 msgid "`TSHttpTxnClientIncomingPortGet <link/to/doxygen>`__"
 msgstr ""
@@ -99,87 +78,76 @@ msgstr ""
 msgid "`TSHttpTxnClientRemotePortGet <link/to/doxygen>`__"
 msgstr ""
 
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:161
+msgid ":c:func:`TSHttpTxnCacheLookupStatusGet`"
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:163
+msgid ""
+":c:func:`TSHttpTxnCachedReqGet` - Note that it is an error to modify cached "
+"headers."
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:166
+msgid ""
+":c:func:`TSHttpTxnCachedRespGet` - Note that it is an error to modify "
+"cached headers."
+msgstr ""
+
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:175
 msgid ""
-"```TSHttpTxnClientReqGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#acca66f22d0f87bf8f08478ed926006a5>`__ - Plugins that must "
-"read client request headers use this call to retrieve the HTTP header."
+":c:func:`TSHttpTxnClientReqGet` - Plugins that must read client request "
+"headers use this call to retrieve the HTTP header."
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:179
-msgid ""
-"```TSHttpTxnClientRespGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a92349c8363f72b1f6dfed3ae80901fff>`__"
+msgid ":c:func:`TSHttpTxnClientRespGet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:181
-msgid ""
-"```TSHttpTxnErrorBodySet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#ad7efc431279dc97de4b50a58d4ed33c1>`__"
+msgid ":c:func:`TSHttpTxnErrorBodySet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:183
-msgid ""
-"```TSHttpTxnHookAdd`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a10382b88145bbfba0fa9d8ed6402f4b1>`__"
+msgid ":c:func:`TSHttpTxnHookAdd`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:185
-msgid ""
-"```TSHttpTxnNextHopAddrGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#aa0118beabfefe35d2642f007ac7afa97>`__"
+msgid ":c:func:`TSHttpTxnNextHopAddrGet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:187
-msgid ""
-"```TSHttpTxnParentProxySet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#a2a1260b900b665d38a262544446b886c>`__"
+msgid ":c:func:`TSHttpTxnParentProxySet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:189
-msgid ""
-"```TSHttpTxnReenable`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ac367347e02709ac809994dfb21d3288a>`__"
+msgid ":c:func:`TSHttpTxnReenable`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:191
-msgid ""
-"```TSHttpTxnServerAddrGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#a63917ec11275c4f1ed559362865cd65f>`__"
+msgid ":c:func:`TSHttpTxnServerAddrGet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:193
-msgid ""
-"```TSHttpTxnServerReqGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#aac2343a8b47bf9150f3ff7cd4e692d57>`__"
+msgid ":c:func:`TSHttpTxnServerReqGet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:195
-msgid ""
-"```TSHttpTxnServerRespGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#a39e8bfb199eadabb54c067ff25a9a400>`__"
+msgid ":c:func:`TSHttpTxnServerRespGet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:197
-msgid ""
-"```TSHttpTxnSsnGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a8c5190bd2e940ef2d1969a5be65f0edd>`__"
+msgid ":c:func:`TSHttpTxnSsnGet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:199
-msgid ""
-"```TSHttpTxnTransformedRespCache`` <http://people.apache.org/~amc/ats/doc/"
-"html/InkAPI_8cc.html#a213b584cd04001e8f8ad509d187a4103>`__"
+msgid ":c:func:`TSHttpTxnTransformedRespCache`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:201
-msgid ""
-"```TSHttpTxnTransformRespGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#a4fc46502733adcff09587a436e300114>`__"
+msgid ":c:func:`TSHttpTxnTransformRespGet`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:203
-msgid ""
-"```TSHttpTxnUntransformedRespCache`` <http://people.apache.org/~amc/ats/doc/"
-"html/InkAPI_8cc.html#a8b9c0e61cbcb251417df0d06ae6c4408>`__"
+msgid ":c:func:`TSHttpTxnUntransformedRespCache`"
 msgstr ""

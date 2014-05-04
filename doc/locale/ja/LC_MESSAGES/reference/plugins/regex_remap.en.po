@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -141,16 +140,16 @@ msgstr ""
 "remap.config を設定するのと同じようにオプションを提供することもできます。次"
 "のオプションが利用可能です。 ::"
 
-#: ../../reference/plugins/regex_remap.en.rst:127
+#: ../../reference/plugins/regex_remap.en.rst:133
 msgid ""
 "This can be useful to force a particular response for some URLs, e.g. ::"
 msgstr "これはいくつかの URL に特定のレスポンスを強制するのに便利です。 ::"
 
-#: ../../reference/plugins/regex_remap.en.rst:131
+#: ../../reference/plugins/regex_remap.en.rst:137
 msgid "Or, to force a 302 redirect ::"
 msgstr "もしくは 302 リダイレクトを強制することもできます。 ::"
 
-#: ../../reference/plugins/regex_remap.en.rst:135
+#: ../../reference/plugins/regex_remap.en.rst:141
 msgid ""
 "Setting the status to 301 or 302 will force the new URL to be used as a "
 "redirect (Location:)."

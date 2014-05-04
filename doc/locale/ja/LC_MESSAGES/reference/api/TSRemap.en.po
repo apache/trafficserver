@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -33,10 +32,6 @@ msgstr "TSRemapInit"
 #: ../../reference/api/TSRemap.en.rst:24
 msgid "Synopsis"
 msgstr "概要"
-
-#: ../../reference/api/TSRemap.en.rst:26
-msgid "`#include <ts/ts.h>` `#include <ts/remap.h>`"
-msgstr "`#include <ts/ts.h>` `#include <ts/remap.h>`"
 
 #: ../../reference/api/TSRemap.en.rst:37
 msgid "Description"
@@ -143,3 +138,14 @@ msgstr ""
 "を書くことは成り立っています。複数の remap プラグインが一つの remap ルールに"
 "指定されることもあり、HTTP トランザクションを検査する機会が各プラグインに与"
 "えられる remap プラグインチェーンとなります。"
+
+#: ../../reference/api/TSRemap.en.rst:26
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSRemap.en.rst:27
+msgid "`#include <ts/remap.h>`"
+msgstr ""
+
+#~ msgid "`#include <ts/ts.h>` `#include <ts/remap.h>`"
+#~ msgstr "`#include <ts/ts.h>` `#include <ts/remap.h>`"

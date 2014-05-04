@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -56,39 +55,29 @@ msgid ""
 "the `Traffic Server Administrator's Guide <../../admin/>`__."
 msgstr ""
 
-#: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:40
-msgid ""
-"Depending on the result type, you'll use ``TSMgmtIntGet``, "
-"``TSMgmtCounterGet``, ``TSMgmtFloatGet``, or ``TSMgmtStringGet`` to obtain "
-"the variable value (see the example for ```TSMgmtIntGet`` <http://people."
-"apache.org/~amc/ats/doc/html/ts_8h."
-"html#a097aaecda41d04b522796ae25eea9a3d>`__."
-msgstr ""
-
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:45
 msgid "The ``TSMgmt*Get`` functions are:"
 msgstr ""
 
-#: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:47
+#: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:40
 msgid ""
-"```TSMgmtCounterGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a583e21e614b70256f68658fc6c455ea6>`__"
+"Depending on the result type, you'll use ``TSMgmtIntGet``, "
+"``TSMgmtCounterGet``, ``TSMgmtFloatGet``, or ``TSMgmtStringGet`` to obtain "
+"the variable value (see the example for :c:func:`TSMgmtIntGet`."
+msgstr ""
+
+#: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:47
+msgid ":c:func:`TSMgmtCounterGet`"
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:49
-msgid ""
-"```TSMgmtFloatGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a2ace94b52c71656304b53824d3fa7080>`__"
+msgid ":c:func:`TSMgmtFloatGet`"
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:51
-msgid ""
-"```TSMgmtIntGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a097aaecda41d04b522796ae25eea9a3d>`__"
+msgid ":c:func:`TSMgmtIntGet`"
 msgstr ""
 
 #: ../../sdk/plugin-management/reading-trafficserver-settings-and-statistics.en.rst:53
-msgid ""
-"```TSMgmtStringGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a14167888ed89d5b30df5bdcdcfdf1c30>`__"
+msgid ":c:func:`TSMgmtStringGet`"
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -107,11 +106,11 @@ msgstr ""
 msgid "ssl_ca_name=FILENAME"
 msgstr "ssl_ca_name=FILENAME"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:98
+#: ../../reference/configuration/ssl_multicert.config.en.rst:116
 msgid "Certificate Selection"
 msgstr "証明書の選択"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:100
+#: ../../reference/configuration/ssl_multicert.config.en.rst:118
 msgid ""
 "Traffic Server attempts two certificate selections during SSL connection "
 "setup. An initial selection is made when a TCP connection is accepted. This "
@@ -138,7 +137,7 @@ msgstr ""
 "敗すると、ワイルドカードによる証明書のマッチが試されます。いずれにもマッチし"
 "ない場合、初回の証明書の選択がそのまま有効となります。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:114
+#: ../../reference/configuration/ssl_multicert.config.en.rst:132
 msgid ""
 "In all cases, Traffic Server attempts to select the most specific match. An "
 "address specification that contains a port number will take precedence over "
@@ -149,11 +148,11 @@ msgstr ""
 "を含むアドレス指定は、ポート番号を含まない指定に先立って行われます。具体的な"
 "証明サブジェクトはワイルドカードによる証明に先立って使用されます。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:121
+#: ../../reference/configuration/ssl_multicert.config.en.rst:139
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:123
+#: ../../reference/configuration/ssl_multicert.config.en.rst:141
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1 and the SSL "
@@ -169,7 +168,7 @@ msgstr ""
 "ミネートされます。秘密鍵は証明書に含まれているので、秘密鍵の名前は指定されて"
 "いません。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:137
+#: ../../reference/configuration/ssl_multicert.config.en.rst:155
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and the private key ``serverKey.pem`` for all requests to "
@@ -270,7 +269,7 @@ msgstr ""
 "ていない場合、内部セッションチケットキーが生成されます。キーは Traffic "
 "Server が起動されるたびに毎回異なります。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:146
+#: ../../reference/configuration/ssl_multicert.config.en.rst:164
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1. Session "
@@ -280,12 +279,63 @@ msgstr ""
 "111.11.11.1 へのすべてのリクエストに使用するように設定しています。セッション"
 "チケットは恒久的なチケットキーで有効化されています。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:155
+#: ../../reference/configuration/ssl_multicert.config.en.rst:113
+msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\""
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:98
+msgid ""
+"Method used to provide a pass phrase for encrypted private keys.  If the "
+"pass phrase is incorrect, SSL negotiation for this dest_ip will fail for "
+"clients who attempt to connect. Two options are supported: builtin and exec:"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:105
+msgid "``builtin`` - Requests pass phrase via stdin/stdout. User will be"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:104
+msgid ""
+"provided the ssl_cert_name and be prompted for the pass phrase. Useful for "
+"debugging."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:113
+msgid "``exec:`` - Executes program /path/to/program and passes args, if"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:108
+msgid ""
+"specified, to the program and reads the output from stdout for the pass "
+"phrase.  If args are provided then the entire exec: string must be quoted "
+"with \"\" (see examples).  Arguments with white space are supported by "
+"single quoting (').  The intent is that this program runs a security check "
+"to ensure that the system is not compromised by an attacker before "
+"providing the pass phrase."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:173
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
-"``server.pem`` and disable sessiont ticket for all requests to the IP "
+"``server.pem`` and disable session tickets for all requests to the IP "
 "address 111.11.11.1."
 msgstr ""
-"次の例は Traffice Server が IP アドレス 111.11.11.1 へのすべてのリクエスト"
-"で SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化するように"
-"設定しています。"
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:181
+msgid ""
+"The following examples configure Traffic Server to use the SSL certificate "
+"``server.pem`` which includes an encrypted private key. The external "
+"program /usr/bin/mypass will be called on startup with one parameter (foo) "
+"in the first example, and with two parameters (foo) and (ba r) in the "
+"second example, the program (mypass) will return the pass phrase to decrypt "
+"the keys."
+msgstr ""
+
+#~ msgid ""
+#~ "The following example configures Traffic Server to use the SSL "
+#~ "certificate ``server.pem`` and disable sessiont ticket for all requests "
+#~ "to the IP address 111.11.11.1."
+#~ msgstr ""
+#~ "次の例は Traffice Server が IP アドレス 111.11.11.1 へのすべてのリクエス"
+#~ "トで SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化する"
+#~ "ように設定しています。"

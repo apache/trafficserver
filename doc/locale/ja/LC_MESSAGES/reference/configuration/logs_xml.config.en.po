@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -89,181 +88,173 @@ msgid ""
 "default for this tag."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:78
+#: ../../reference/configuration/logs_xml.config.en.rst:86
 msgid "``<Format = \"valid_format_specification\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:62
-msgid ""
-"Required A valid format specification is a printf-style string describing "
-"each log entry when formatted for ASCII output. Use ``%<`` ``field`` ``>`` "
-"as a placeholder for valid field names. For more information, refer to :ref:"
-"`custom-logging-fields`."
-msgstr ""
-
-#: ../../reference/configuration/logs_xml.config.en.rst:68
+#: ../../reference/configuration/logs_xml.config.en.rst:76
 msgid "The specified field can be one of the following types:"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:70
+#: ../../reference/configuration/logs_xml.config.en.rst:78
 msgid ""
 "Simple. For example: ``%<cqu>`` A field within a container, such as an HTTP "
 "header or a statistic. Fields of this type have the syntax: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:76
+#: ../../reference/configuration/logs_xml.config.en.rst:84
 msgid ""
 "Aggregates, such as ``COUNT``, ``SUM``, ``AVG``, ``FIRST``, ``LAST``. "
 "Fields of this type have the syntax: ``%<operator (`` ``field`` ``)>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:82
+#: ../../reference/configuration/logs_xml.config.en.rst:90
 msgid ""
 "You cannot create a format specification that contains both aggregate "
 "operators and regular fields."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:96
+#: ../../reference/configuration/logs_xml.config.en.rst:104
 msgid "``<Interval = \"aggregate_interval_secs\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:85
+#: ../../reference/configuration/logs_xml.config.en.rst:93
 msgid ""
 "Optional Use this tag when the format contains aggregate operators. The "
 "value \"``aggregate_interval_secs``\\\" represents the number of seconds "
 "between individual aggregate values being produced."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:90
+#: ../../reference/configuration/logs_xml.config.en.rst:98
 msgid "The valid set of aggregate operators are:"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:92
+#: ../../reference/configuration/logs_xml.config.en.rst:100
 msgid "COUNT"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:93
+#: ../../reference/configuration/logs_xml.config.en.rst:101
 msgid "SUM"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:94
+#: ../../reference/configuration/logs_xml.config.en.rst:102
 msgid "AVG"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:95
+#: ../../reference/configuration/logs_xml.config.en.rst:103
 msgid "FIRST"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:96
+#: ../../reference/configuration/logs_xml.config.en.rst:104
 msgid "LAST"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:101
+#: ../../reference/configuration/logs_xml.config.en.rst:109
 msgid "LogFilters"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:103
+#: ../../reference/configuration/logs_xml.config.en.rst:111
 msgid "The following list shows the ``LogFilter`` specifications."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:107
+#: ../../reference/configuration/logs_xml.config.en.rst:115
 msgid "``<Name = \"valid_filter_name\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:106
+#: ../../reference/configuration/logs_xml.config.en.rst:114
 msgid "Required All filters must be uniquely named."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:131
+#: ../../reference/configuration/logs_xml.config.en.rst:139
 msgid ""
 "``<Condition = \"valid_log_field valid_operator valid_comparison_value\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:110
+#: ../../reference/configuration/logs_xml.config.en.rst:118
 msgid "Required This field contains the following elements:"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:113
+#: ../../reference/configuration/logs_xml.config.en.rst:121
 msgid ""
 "``valid_log_field`` - the field that will be compared against the given "
 "value. For more information, refer to :ref:`logging-format-cross-reference`."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:116
+#: ../../reference/configuration/logs_xml.config.en.rst:124
 msgid ""
 "``valid_operator_field`` - any one of the following: ``MATCH``, "
 "``CASE_INSENSITIVE_MATCH``, ``CONTAIN``, ``CASE_INSENSITIVE_CONTAIN``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:120
+#: ../../reference/configuration/logs_xml.config.en.rst:128
 msgid ""
 "``MATCH`` is true if the field and value are identical (case-sensitive)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:122
+#: ../../reference/configuration/logs_xml.config.en.rst:130
 msgid ""
 "``CASE_INSENSITIVE_MATCH`` is similar to ``MATCH``, except that it is case-"
 "insensitive."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:124
+#: ../../reference/configuration/logs_xml.config.en.rst:132
 msgid ""
 "``CONTAIN`` is true if the field contains the value (the value is a "
 "substring of the field)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:126
+#: ../../reference/configuration/logs_xml.config.en.rst:134
 msgid ""
 "``CASE_INSENSITIVE_CONTAIN`` is a case-insensitive version of ``CONTAIN``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:129
+#: ../../reference/configuration/logs_xml.config.en.rst:137
 msgid ""
 "``valid_comparison_value`` - any string or integer matching the field type. "
 "For integer values, all of the operators are equivalent and mean that the "
 "field must be equal to the specified value."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:135
+#: ../../reference/configuration/logs_xml.config.en.rst:143
 msgid ""
 "There are no negative comparison operators. If you want to specify a "
 "negative condition, then use the ``Action`` field to ``REJECT`` the record."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:142
+#: ../../reference/configuration/logs_xml.config.en.rst:150
 msgid "``<Action = \"valid_action_field\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:140
+#: ../../reference/configuration/logs_xml.config.en.rst:148
 msgid ""
 "Required: ``ACCEPT`` or ``REJECT`` . This instructs Traffic Server to "
 "either accept or reject records that satisfy the filter condition."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:147
+#: ../../reference/configuration/logs_xml.config.en.rst:155
 msgid "LogObject"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:149
+#: ../../reference/configuration/logs_xml.config.en.rst:157
 msgid "The following list shows the ``LogObject`` specifications."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:156
+#: ../../reference/configuration/logs_xml.config.en.rst:164
 msgid "``<Format = \"valid_format_name\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:152
+#: ../../reference/configuration/logs_xml.config.en.rst:160
 msgid ""
 "Required Valid format names include the predefined logging formats: "
 "``squid``, ``common``, ``extended``, and ``extended2``, as well as any "
 "previously-defined custom log formats. There is no default for this tag."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:171
+#: ../../reference/configuration/logs_xml.config.en.rst:179
 msgid "``<Filename = \"file_name\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:159
+#: ../../reference/configuration/logs_xml.config.en.rst:167
 msgid ""
 "Required The filename to which the given log file is written on the local "
 "file system or on a remote collation server. No local log file will be "
@@ -271,29 +262,29 @@ msgid ""
 "default logging directory."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:170
+#: ../../reference/configuration/logs_xml.config.en.rst:178
 msgid ""
 "If you do not want an extension to be added, then end the filename with a "
 "single (.) dot (for example: ``squid.`` )."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:199
+#: ../../reference/configuration/logs_xml.config.en.rst:207
 msgid "``<Mode = \"valid_logging_mode\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:176
+#: ../../reference/configuration/logs_xml.config.en.rst:184
 msgid ""
 "Optional Valid logging modes include ``ascii`` , ``binary`` , and "
 "``ascii_pipe`` . The default is ``ascii`` ."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:180
+#: ../../reference/configuration/logs_xml.config.en.rst:188
 msgid ""
 "Use ``ascii`` to create event log files in human-readable form (plain "
 "ASCII)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:182
+#: ../../reference/configuration/logs_xml.config.en.rst:190
 msgid ""
 "Use ``binary`` to create event log files in binary format. Binary log files "
 "generate lower system overhead and occupy less space on the disk (depending "
@@ -302,7 +293,7 @@ msgid ""
 "before you can read them."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:187
+#: ../../reference/configuration/logs_xml.config.en.rst:195
 msgid ""
 "Use ``ascii_pipe`` to write log entries to a UNIX named pipe (a buffer in "
 "memory). Other processes can then read the data using standard I/O "
@@ -312,7 +303,7 @@ msgid ""
 "exhausted because the pipe does not use disk space."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:195
+#: ../../reference/configuration/logs_xml.config.en.rst:203
 msgid ""
 "If you are using a collation server, then the log is written to a pipe on "
 "the collation server. A local pipe is created even before a transaction is "
@@ -320,52 +311,52 @@ msgid ""
 "on a collation server, however, *are* created when Traffic Server starts."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:205
+#: ../../reference/configuration/logs_xml.config.en.rst:213
 msgid "``<Filters = \"list_of_valid_filter_names\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:202
+#: ../../reference/configuration/logs_xml.config.en.rst:210
 msgid ""
 "Optional A comma-separated list of names of any previously-defined log "
 "filters. If more than one filter is specified, then all filters must accept "
 "a record for the record to be logged."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:211
+#: ../../reference/configuration/logs_xml.config.en.rst:219
 msgid "``<Protocols = \"list_of_valid_protocols\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:208
+#: ../../reference/configuration/logs_xml.config.en.rst:216
 msgid ""
 "Optional A comma-separated list of the protocols this object should log. "
 "Valid protocol names for this release are ``HTTP`` (FTP is deprecated)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:216
+#: ../../reference/configuration/logs_xml.config.en.rst:224
 msgid "``<ServerHosts = \"list_of_valid_servers\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:214
+#: ../../reference/configuration/logs_xml.config.en.rst:222
 msgid ""
 "Optional A comma-separated list of valid hostnames.This tag indicates that "
 "only entries from the named servers will be included in the file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:237
+#: ../../reference/configuration/logs_xml.config.en.rst:245
 msgid "``<Header = \"header\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:234
+#: ../../reference/configuration/logs_xml.config.en.rst:242
 msgid ""
 "Optional The header text you want the log files to contain. The header text "
 "appears at the beginning of the log file, just before the first record."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:257
+#: ../../reference/configuration/logs_xml.config.en.rst:265
 msgid "``<RollingEnabled = \"truth value\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:240
+#: ../../reference/configuration/logs_xml.config.en.rst:248
 msgid ""
 "Optional Enables or disables log file rolling for the ``LogObject``. This "
 "setting overrides the value for the :ts:cv:`proxy.config.log."
@@ -373,58 +364,58 @@ msgid ""
 "value* to one of the following values:"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:247
+#: ../../reference/configuration/logs_xml.config.en.rst:255
 msgid "``0`` to disable rolling for this particular ``LogObject``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:248
+#: ../../reference/configuration/logs_xml.config.en.rst:256
 msgid ""
 "``1`` to roll log files at specific intervals during the day (you specify "
 "time intervals with the ``RollingIntervalSec`` and ``RollingOffsetHr`` "
 "fields)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:251
+#: ../../reference/configuration/logs_xml.config.en.rst:259
 msgid ""
 "``2`` to roll log files when they reach a certain size (you specify the "
 "size with the ``RollingSizeMb`` field)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:253
+#: ../../reference/configuration/logs_xml.config.en.rst:261
 msgid ""
 "``3`` to roll log files at specific intervals during the day or when they "
 "reach a certain size (whichever occurs first)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:255
+#: ../../reference/configuration/logs_xml.config.en.rst:263
 msgid ""
 "``4`` to roll log files at specific intervals during the day when log files "
 "reach a specific size (at a specified time if the file is of the specified "
 "size)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:269
+#: ../../reference/configuration/logs_xml.config.en.rst:277
 msgid "``<RollingIntervalSec = \"seconds\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:262
+#: ../../reference/configuration/logs_xml.config.en.rst:270
 msgid ""
 "Optional The seconds between log file rolling for the ``LogObject``; "
 "enables you to specify different rolling intervals for different "
 "``LogObjects``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:267
+#: ../../reference/configuration/logs_xml.config.en.rst:275
 msgid ""
 "This setting overrides the value for :ts:cv:`proxy.config.log."
 "rolling_interval_sec` in the :file:`records.config` file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:279
+#: ../../reference/configuration/logs_xml.config.en.rst:287
 msgid "``<RollingOffsetHr = \"hour\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:272
+#: ../../reference/configuration/logs_xml.config.en.rst:280
 msgid ""
 "Optional Specifies an hour (from 0 to 23) at which rolling is guaranteed to "
 "align. Rolling might start before then, but a rolled file will be produced "
@@ -434,51 +425,51 @@ msgid ""
 "the :file:`records.config` file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:283
+#: ../../reference/configuration/logs_xml.config.en.rst:291
 msgid "``<RollingSizeMb = \"size_in_MB\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:282
+#: ../../reference/configuration/logs_xml.config.en.rst:290
 msgid "Optional The size at which log files are rolled."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:286
+#: ../../reference/configuration/logs_xml.config.en.rst:294
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:288
+#: ../../reference/configuration/logs_xml.config.en.rst:296
 msgid ""
 "The following is an example of a ``LogFormat`` specification that collects "
 "information using three common fields: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:296
+#: ../../reference/configuration/logs_xml.config.en.rst:304
 msgid ""
 "The following is an example of a ``LogFormat`` specification that uses "
 "aggregate operators: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:305
+#: ../../reference/configuration/logs_xml.config.en.rst:313
 msgid ""
 "The following is an example of a ``LogFilter`` that will cause only "
 "``REFRESH_HIT`` entries to be logged: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:316
+#: ../../reference/configuration/logs_xml.config.en.rst:324
 msgid ""
 "When specifying the field in the filter condition, you can omit the ``"
 "%<>``. This means that the filter below is equivalent to the example "
 "directly above: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:326
+#: ../../reference/configuration/logs_xml.config.en.rst:334
 msgid ""
 "The following is an example of a ``LogObject`` specification that creates a "
 "local log file for the minimal format defined earlier. The log filename "
 "will be ``minimal.log`` because this is an ASCII log file (the default).::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:336
+#: ../../reference/configuration/logs_xml.config.en.rst:344
 msgid ""
 "The following is an example of a ``LogObject`` specification that includes "
 "only HTTP requests served by hosts in the domain ``company.com`` or by the "
@@ -487,11 +478,11 @@ msgid ""
 "collation host ``209.131.52.129.`` ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:353
+#: ../../reference/configuration/logs_xml.config.en.rst:361
 msgid "WELF"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:355
+#: ../../reference/configuration/logs_xml.config.en.rst:363
 msgid ""
 "Traffic Server supports WELF (WebTrends Enhanced Log Format) so you can "
 "analyze Traffic Server log files with WebTrends reporting tools. A "
@@ -500,12 +491,12 @@ msgid ""
 "file, create a ``<LogObject>`` that uses this predefined format. ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:231
+#: ../../reference/configuration/logs_xml.config.en.rst:239
 msgid ""
 "``<CollationHosts = \"list_of_valid_hostnames:port|failover hosts\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:221
+#: ../../reference/configuration/logs_xml.config.en.rst:229
 msgid ""
 "Optional A comma-separated list of collation servers (with pipe delimited "
 "failover servers) to which all log entries (for this object) are forwarded. "
@@ -518,10 +509,38 @@ msgid ""
 "failhostA comes back. Logs would also be sent to host2."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:165
+#: ../../reference/configuration/logs_xml.config.en.rst:173
 msgid ""
 "If the name does not contain an extension (for example, ``squid``), then "
 "the extension ``.log`` is automatically appended to it for ASCII logs and "
 "``.blog`` for binary logs (refer to :ref:`Mode = \"valid_logging_mode\" "
 "<LogObject-Mode>`)."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:62
+msgid ""
+"Required A valid format specification is a printf-style string describing "
+"each log entry when formatted for ASCII output."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:66
+msgid "The printf-style could accept Oct/Hex escape representation:"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:68
+msgid ""
+"``\\abc`` is Oct escape sequence, a,b,c should be one of [0-9], and (a*8^2 "
+"+ b*8 + c) should be greater than 0 and less than 255."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:70
+msgid ""
+"``\\xab`` is Hex escape sequence, a,b should be one of [0-9, a-f, A-F], and "
+"(a*16 + b) should be greater than 0 and less than 255."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:73
+msgid ""
+"Use ``%<`` ``field`` ``>`` as a placeholder for valid field names. For more "
+"information, refer to :ref:`custom-logging-fields`."
 msgstr ""
