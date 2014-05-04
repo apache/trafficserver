@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -38,10 +37,6 @@ msgstr ""
 msgid "About HTTP Headers"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:35
-msgid "An ***HTTP message*** consists of the following:"
-msgstr ""
-
 #: ../../sdk/http-headers.en.rst:37
 msgid "HTTP header"
 msgstr ""
@@ -52,10 +47,6 @@ msgstr ""
 
 #: ../../sdk/http-headers.en.rst:39
 msgid "trailer"
-msgstr ""
-
-#: ../../sdk/http-headers.en.rst:41
-msgid "The ***HTTP header*** consists of:"
 msgstr ""
 
 #: ../../sdk/http-headers.en.rst:43
@@ -74,47 +65,33 @@ msgstr ""
 msgid "A MIME header"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:51
-msgid ""
-"A **MIME header** is comprised of zero or more MIME fields. A **MIME "
-"field** is composed of a field name, a colon, and (zero or more) field "
-"values. The values in a field are separated by commas. An HTTP header "
-"containing a request line is usually referred to as a **request**. The "
-"following example shows a typical request header."
-msgstr ""
-
-#: ../../sdk/http-headers.en.rst:69
-msgid ""
-"The **response header** for the above request might look like the following:"
-msgstr ""
-
-#: ../../sdk/http-headers.en.rst:85
+#: ../../sdk/http-headers.en.rst:80
 msgid ""
 "The following figure illustrates an HTTP message with an expanded HTTP "
 "header."
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:88
+#: ../../sdk/http-headers.en.rst:83
 msgid "**Figure 10.1. HTTP Request/Response and Header Structure**"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:93
+#: ../../sdk/http-headers.en.rst:88
 msgid "HTTP Request/Response and Header Structure"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:95
+#: ../../sdk/http-headers.en.rst:90
 msgid "The figure below shows example HTTP request and response headers."
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:97
+#: ../../sdk/http-headers.en.rst:92
 msgid "**Figure 10.2. Examples of HTTP Request and Response Headers**"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:102
+#: ../../sdk/http-headers.en.rst:97
 msgid "Examples of HTTP Request and Response Headers"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:104
+#: ../../sdk/http-headers.en.rst:99
 msgid ""
 "The marshal buffer or ``TSMBuffer`` is a heap data structure that stores "
 "parsed URLs, MIME headers, and HTTP headers. You can allocate new objects "
@@ -124,45 +101,45 @@ msgid ""
 "(``TSMBuffer``)."
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:111
+#: ../../sdk/http-headers.en.rst:106
 msgid "**Figure 10.3. Marshal Buffers and Header Locations**"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:116
+#: ../../sdk/http-headers.en.rst:111
 msgid "Marshal Buffers and Header Locations"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:118
+#: ../../sdk/http-headers.en.rst:113
 msgid "The figure above shows the following:"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:120
+#: ../../sdk/http-headers.en.rst:115
 msgid "The marshal buffer containing the HTTP request, ``reqest_bufp``"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:122
+#: ../../sdk/http-headers.en.rst:117
 msgid "``TSMLoc`` location pointer for the HTTP header (``http_hdr_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:124
+#: ../../sdk/http-headers.en.rst:119
 msgid "``TSMLoc`` location pointer for the request URL (``url_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:126
+#: ../../sdk/http-headers.en.rst:121
 msgid "``TSMLoc`` location pointers for the MIME header (``mime_hdr_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:128
+#: ../../sdk/http-headers.en.rst:123
 msgid "``TSMLoc`` location pointers for MIME fields (``fieldi_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:130
+#: ../../sdk/http-headers.en.rst:125
 msgid ""
 "``TSMLoc`` location pointer for the next duplicate MIME field "
 "(``next_dup_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:133
+#: ../../sdk/http-headers.en.rst:128
 msgid ""
 "The diagram also shows that an HTTP header contains pointers to the URL "
 "location and the MIME header location. You can obtain the URL location from "
@@ -171,4 +148,27 @@ msgid ""
 "location to MIME header functions . If you pass an HTTP header to a MIME "
 "header function, then the system locates the associated MIME header and "
 "executes the MIME header function on the MIME header location."
+msgstr ""
+
+#: ../../sdk/http-headers.en.rst:35
+msgid "An **HTTP message** consists of the following:"
+msgstr ""
+
+#: ../../sdk/http-headers.en.rst:41
+msgid "The **HTTP header** consists of:"
+msgstr ""
+
+#: ../../sdk/http-headers.en.rst:51
+msgid ""
+"A **MIME header** is comprised of zero or more MIME fields. A **MIME "
+"field** is composed of a field name, a colon, and (zero or more) field "
+"values. The values in a field are separated by commas. An HTTP header "
+"containing a request line is usually referred to as a **request**. The "
+"following example shows a typical request header::"
+msgstr ""
+
+#: ../../sdk/http-headers.en.rst:66
+msgid ""
+"The **response header** for the above request might look like the "
+"following::"
 msgstr ""

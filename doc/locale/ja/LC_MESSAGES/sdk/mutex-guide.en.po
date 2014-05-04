@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -109,44 +108,8 @@ msgstr ""
 msgid "Locking Global Data"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:76
-msgid ""
-"The ``blacklist-1.c`` sample plugin implements a mutex that locks global "
-"data. The blacklist plugin reads its blacklisted sites from a configuration "
-"file; file read operations are protected by a mutex created in "
-"``TSPluginInit``. The ``blacklist-1.c`` code uses ``TSMutexLockTry`` "
-"instead of ``InkMutexLock``. For more detailed information, see the "
-"```blacklist-1.c`` <../sample-source-code#Sample_blacklist-1.c>`__ code; "
-"start by looking at the ```TSPluginInit`` <http://people.apache.org/~amc/"
-"ats/doc/html/ts_8h.html#a9a0b0ac9cbce9d6644f66bbe93098313>`__ function."
-msgstr ""
-
 #: ../../sdk/mutex-guide.en.rst:87
 msgid "General guidelines for locking shared data are as follows:"
-msgstr ""
-
-#: ../../sdk/mutex-guide.en.rst:89
-msgid ""
-"Create a mutex for the shared data with ```TSMutexCreate`` <http://people."
-"apache.org/~amc/ats/doc/html/ts_8h."
-"html#aa4300d8888c6962a44c9e827d633e433>`__."
-msgstr ""
-
-#: ../../sdk/mutex-guide.en.rst:92
-msgid ""
-"Whenever you need to read or modify this data, first lock it by calling "
-"```TSMutexLockTry`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ac9c08451aa529851b9474e3c035f44bb>`__; then read or modify the data."
-msgstr ""
-
-#: ../../sdk/mutex-guide.en.rst:97
-msgid ""
-"When you are done with the data, unlock it with ```TSMutexUnlock`` <http://"
-"people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#afbb474c217fd5b927f1f8487c45646dd>`__. If you are unlocking data "
-"accessed during the processing of an HTTP transaction, then you must unlock "
-"it before calling ```TSHttpTxnReenable`` <http://people.apache.org/~amc/ats/"
-"doc/html/ts_8h.html#ac367347e02709ac809994dfb21d3288a>`__."
 msgstr ""
 
 #: ../../sdk/mutex-guide.en.rst:104
@@ -302,20 +265,43 @@ msgstr ""
 msgid "The mutex functions are listed below:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:408
+#: ../../sdk/mutex-guide.en.rst:76
 msgid ""
-"```TSMutexCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#aa4300d8888c6962a44c9e827d633e433>`__"
+"The ``blacklist-1.c`` sample plugin implements a mutex that locks global "
+"data. The blacklist plugin reads its blacklisted sites from a configuration "
+"file; file read operations are protected by a mutex created in "
+"``TSPluginInit``. The ``blacklist-1.c`` code uses ``TSMutexLockTry`` "
+"instead of ``InkMutexLock``. For more detailed information, see the "
+"```blacklist-1.c`` <../sample-source-code#Sample_blacklist-1.c>`__ code; "
+"start by looking at the :c:func:`TSPluginInit` function."
+msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:89
+msgid "Create a mutex for the shared data with :c:func:`TSMutexCreate`."
+msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:92
+msgid ""
+"Whenever you need to read or modify this data, first lock it by calling :c:"
+"func:`TSMutexLockTry`; then read or modify the data."
+msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:97
+msgid ""
+"When you are done with the data, unlock it with :c:func:`TSMutexUnlock`. If "
+"you are unlocking data accessed during the processing of an HTTP "
+"transaction, then you must unlock it before calling :c:func:"
+"`TSHttpTxnReenable`."
+msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:408
+msgid ":c:func:`TSMutexCreate`"
 msgstr ""
 
 #: ../../sdk/mutex-guide.en.rst:409
-msgid ""
-"```TSMutexLock`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkIOCoreAPI_8cc.html#a306f9923bc9d3c0f417c185919531934>`__"
+msgid ":c:func:`TSMutexLock`"
 msgstr ""
 
 #: ../../sdk/mutex-guide.en.rst:410
-msgid ""
-"```TSMutexLockTry`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ac9c08451aa529851b9474e3c035f44bb>`__"
+msgid ":c:func:`TSMutexLockTry`"
 msgstr ""

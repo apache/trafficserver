@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -38,11 +37,11 @@ msgstr "概要"
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSDebug.en.rst:39
+#: ../../reference/api/TSDebug.en.rst:42
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSDebug.en.rst:41
+#: ../../reference/api/TSDebug.en.rst:44
 msgid ""
 ":func:`TSError` is similar to :func:`printf` except that instead of writing "
 "the output to the C standard output, it writes output to the Traffic Server "
@@ -51,7 +50,7 @@ msgstr ""
 ":func:`TSError` は C 標準出力に書き込む代わりに Traffic Server のエラーログ"
 "に書き込むことを除けば :func:`printf` に似ています。"
 
-#: ../../reference/api/TSDebug.en.rst:45
+#: ../../reference/api/TSDebug.en.rst:48
 msgid ""
 ":func:`TSDebug` is the same as :func:`TSError` except that it only logs the "
 "debug message if the given debug tag is enabled. It writes output to the "
@@ -60,14 +59,14 @@ msgstr ""
 ":func:`TSDebug` は与えられたデバッグタグが有効化されている場合にのみログメッ"
 "セージを出力する点を除いて :func:`TSError` と同じです。"
 
-#: ../../reference/api/TSDebug.en.rst:49
+#: ../../reference/api/TSDebug.en.rst:52
 msgid ""
 ":func:`TSIsDebugTagSet` returns non-zero if the given debug tag is enabled."
 msgstr ""
 ":func:`TSIsDebugTagSet` は与えられたデバッグタグが有効化されている場合に非ゼ"
 "ロを返します。"
 
-#: ../../reference/api/TSDebug.en.rst:52
+#: ../../reference/api/TSDebug.en.rst:55
 msgid ""
 "In debug mode, :macro:`TSAssert` Traffic Server to prints the file name, "
 "line number and expression, and then aborts. In release mode, the "
@@ -81,11 +80,11 @@ msgstr ""
 "`TSReleaseAssert` はリリースモードとデバッグモードのどちらでもエラーメッセー"
 "ジの出力と処理の中断を行います。"
 
-#: ../../reference/api/TSDebug.en.rst:65
+#: ../../reference/api/TSDebug.en.rst:73
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSDebug.en.rst:67
+#: ../../reference/api/TSDebug.en.rst:75
 msgid ""
 "This example uses :func:`TSDebugSpecific` to log a message when a specific "
 "debugging flag is enabled::"
@@ -93,15 +92,15 @@ msgstr ""
 "この例は特定のデバッグフラグが有効になっている場合にメッセージをログに出力す"
 "るために :func:`TSDebugSpecific` を使用しています。"
 
-#: ../../reference/api/TSDebug.en.rst:78
+#: ../../reference/api/TSDebug.en.rst:90
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSDebug.en.rst:79
+#: ../../reference/api/TSDebug.en.rst:91
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
 msgstr ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
 
-#: ../../reference/api/TSDebug.en.rst:58
+#: ../../reference/api/TSDebug.en.rst:61
 msgid ""
 ":func:`TSDebugSpecific` emits a debug line even if the debug tag is turned "
 "off, as long as debug flag is enabled. This can be used in conjunction "
@@ -115,3 +114,11 @@ msgstr ""
 "`TSHttpTxnDebugSet` 、:func:`TSHttpSsnDebugSet` 、:func:"
 "`TSHttpTxnDebugGet` 、:func:`TSHttpSsnDebugGet` と組み合わせて使用されること"
 "があります。"
+
+#: ../../reference/api/TSDebug.en.rst:67
+msgid ""
+":func:`TSHttpServerStateNameLookup`, :func:`TSHttpHookNameLookup` and :func:"
+"`TSHttpEventNameLookup` converts the respective internal state to a string "
+"representation. This can be useful in debugging (:func:`TSDebug`), logging "
+"and other types notifications."
+msgstr ""

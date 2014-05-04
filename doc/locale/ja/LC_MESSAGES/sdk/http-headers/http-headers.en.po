@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -332,146 +331,8 @@ msgstr ""
 msgid "The **HTTP Header Functions** are listed below:"
 msgstr ""
 
-#: ../../sdk/http-headers/http-headers.en.rst:162
-msgid ""
-"```TSHttpHdrClone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#abd410a18e8bc73298302c4ff3ee9b0c6>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:163
-msgid ""
-"```TSHttpHdrCopy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a5ff26f3836a74e885113423dfd4d9ed6>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:164
-msgid ""
-"```TSHttpHdrCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a8bbd8c2aaf70fb579af4520053fd5e10>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:165
-msgid ""
-"```TSHttpHdrDestroy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a500ac4aae8f369221cf3ac2e3ce0d2a0>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:166
-msgid ""
-"```TSHttpHdrLengthGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a3afc557e4e99565ab81bf6437b65181b>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:167
-msgid ""
-"```TSHttpHdrMethodGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a358627e05506baa5c8270891652ac4d2>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:168
-msgid ""
-"```TSHttpHdrMethodSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a32bbcacacbef997e89c04cc3898b0ca4>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:169
-msgid ""
-"```TSHttpHdrPrint`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a7c88f30d6325a461fb038e6a117b3731>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:170
-msgid ""
-"```TSHttpHdrReasonGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a8b1609e9c8a8a52ebe7762b6109d3bef>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:171
-msgid ""
-"```TSHttpHdrReasonLookup`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#ab49fded8874b8e3e17cf4395c9832378>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:172
-msgid ""
-"```TSHttpHdrReasonSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ab86e5f5e7c0af2092c77327d2e0d3b23>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:173
-msgid ""
-"```TSHttpHdrStatusGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ac29d5acc357a0c82c83874f42b1e487b>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:174
-msgid ""
-"```TSHttpHdrStatusSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#af34459170ed7f3b002ddd597ae38af12>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:175
-msgid ""
-"```TSHttpHdrTypeGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#afc1c6f0a3258c4bc6567805df1db1ca3>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:176
-msgid ""
-"```TSHttpHdrTypeSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a86058d8590a665dbf43a529714202d3f>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:177
-msgid ""
-"```TSHttpHdrUrlGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#af149d7b5c1b8902363afc0ad658c494e>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:178
-msgid ""
-"```TSHttpHdrUrlSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ad935635a3918575fa6cca6843c474cfe>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:179
-msgid ""
-"```TSHttpHdrVersionGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a90cc8783f5d0bc159f226079aa0104e4>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:180
-msgid ""
-"```TSHttpHdrVersionSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#aa2a2c03399cdc8dc39b8756f13e7f189>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:181
-msgid ""
-"```TSHttpParserClear`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a7cb1b53b4464dc71287351616d6e7509>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:182
-msgid ""
-"```TSHttpParserCreate`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a6075fb4e8fc41eb75d640f258722115b>`__"
-msgstr ""
-
 #: ../../sdk/http-headers/http-headers.en.rst:183
 msgid "`TSHttpParserDestroy <link/to/doxyge>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:184
-msgid ""
-"```TSHttpHdrParseReq`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a64193b3c9ddff8bc434c1cc9332004cc>`__"
-msgstr ""
-
-#: ../../sdk/http-headers/http-headers.en.rst:185
-msgid ""
-"```TSHttpHdrParseResp`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a03c8a14b6ab2b7896ef0e4005222ecff>`__"
 msgstr ""
 
 #: ../../sdk/http-headers/http-headers.en.rst:81
@@ -480,4 +341,96 @@ msgstr ""
 
 #: ../../sdk/http-headers/http-headers.en.rst:81
 msgid "\"PUSH\""
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:162
+msgid ":c:func:`TSHttpHdrClone`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:163
+msgid ":c:func:`TSHttpHdrCopy`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:164
+msgid ":c:func:`TSHttpHdrCreate`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:165
+msgid ":c:func:`TSHttpHdrDestroy`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:166
+msgid ":c:func:`TSHttpHdrLengthGet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:167
+msgid ":c:func:`TSHttpHdrMethodGet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:168
+msgid ":c:func:`TSHttpHdrMethodSet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:169
+msgid ":c:func:`TSHttpHdrPrint`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:170
+msgid ":c:func:`TSHttpHdrReasonGet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:171
+msgid ":c:func:`TSHttpHdrReasonLookup`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:172
+msgid ":c:func:`TSHttpHdrReasonSet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:173
+msgid ":c:func:`TSHttpHdrStatusGet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:174
+msgid ":c:func:`TSHttpHdrStatusSet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:175
+msgid ":c:func:`TSHttpHdrTypeGet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:176
+msgid ":c:func:`TSHttpHdrTypeSet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:177
+msgid ":c:func:`TSHttpHdrUrlGet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:178
+msgid ":c:func:`TSHttpHdrUrlSet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:179
+msgid ":c:func:`TSHttpHdrVersionGet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:180
+msgid ":c:func:`TSHttpHdrVersionSet`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:181
+msgid ":c:func:`TSHttpParserClear`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:182
+msgid ":c:func:`TSHttpParserCreate`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:184
+msgid ":c:func:`TSHttpHdrParseReq`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:185
+msgid ":c:func:`TSHttpHdrParseResp`"
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,26 +29,15 @@ msgstr ""
 msgid "storage.config"
 msgstr ""
 
-#: ../../reference/configuration/storage.config.en.rst:24
-msgid ""
-"The :file:`storage.config` file lists all the files, directories, and/or "
-"hard disk partitions that make up the Traffic Server cache. After you "
-"modify the :file:`storage.config` file, you must restart Traffic Server."
-msgstr ""
-":file:`storage.config` ファイルは、Traffic Serverのキャッシュとして構成する"
-"全てのファイル、ディレクトリやハードディスクパーティションを列挙します。:"
-"file:`storage.config` ファイル修正後は、Traffic Server を再起動しなければい"
-"けません。"
-
-#: ../../reference/configuration/storage.config.en.rst:29
+#: ../../reference/configuration/storage.config.en.rst:30
 msgid "Format"
 msgstr "フォーマット"
 
-#: ../../reference/configuration/storage.config.en.rst:31
+#: ../../reference/configuration/storage.config.en.rst:32
 msgid "The format of the :file:`storage.config` file is::"
 msgstr ":file:`storage.config` ファイルのフォーマットは::"
 
-#: ../../reference/configuration/storage.config.en.rst:35
+#: ../../reference/configuration/storage.config.en.rst:36
 msgid ""
 "where :arg:`pathname` is the name of a partition, directory or file, :arg:"
 "`size` is the size of the named partition, directory or file (in bytes), "
@@ -64,25 +52,25 @@ msgstr ""
 "リやファイルはサイズを指定しなければいけません。ローパーティションについては"
 "任意です。:arg:`volume` は任意です。"
 
-#: ../../reference/configuration/storage.config.en.rst:41
+#: ../../reference/configuration/storage.config.en.rst:42
 msgid "You can use any partition of any size. For best performance:"
 msgstr ""
 "どんなサイズのどんなパーティションでも使用する事が出来ます。最適な性能のため"
 "には以下のようにします:"
 
-#: ../../reference/configuration/storage.config.en.rst:43
+#: ../../reference/configuration/storage.config.en.rst:44
 msgid "Use raw disk partitions."
 msgstr "ローディスクパーティションを使用する"
 
-#: ../../reference/configuration/storage.config.en.rst:44
+#: ../../reference/configuration/storage.config.en.rst:45
 msgid "For each disk, make all partitions the same size."
 msgstr "各ディスクで、全パーティションを同じサイズになるように作成する"
 
-#: ../../reference/configuration/storage.config.en.rst:45
+#: ../../reference/configuration/storage.config.en.rst:46
 msgid "For each node, use the same number of partitions on all disks."
 msgstr "各ノードで、全ディスクのパーティションを数が同じになるように作成する"
 
-#: ../../reference/configuration/storage.config.en.rst:46
+#: ../../reference/configuration/storage.config.en.rst:47
 msgid ""
 "Group similar kinds of storage into different volumes. For example split "
 "out SSD's or RAM drives into their own volume."
@@ -90,7 +78,7 @@ msgstr ""
 "似たような種類のストレージを、別ボリュームにグループ化する例えば、SSDやRAMド"
 "ライブは独自のボリュームに分割する"
 
-#: ../../reference/configuration/storage.config.en.rst:49
+#: ../../reference/configuration/storage.config.en.rst:50
 msgid ""
 "Specify pathnames according to your operating system requirements. See the "
 "following examples. In the :file:`storage.config` file, a formatted or raw "
@@ -100,7 +88,7 @@ msgstr ""
 "確認してください。:file:`storage.config` ファイルには、フォーマット済みもし"
 "くはローディスクを、少なくとも 128MB 指定しなければなりません。"
 
-#: ../../reference/configuration/storage.config.en.rst:53
+#: ../../reference/configuration/storage.config.en.rst:54
 msgid ""
 "When using raw disk or partitions, you should make sure the :ts:cv:`Traffic "
 "Server user <proxy.config.admin.user_id>` used by the Traffic Server "
@@ -118,7 +106,7 @@ msgstr ""
 "とを確認することです。しかしながら、幾つかのオペレーティングシステムではより"
 "強い要求があります。更なる情報については、以下の例を確認してください。"
 
-#: ../../reference/configuration/storage.config.en.rst:61
+#: ../../reference/configuration/storage.config.en.rst:62
 msgid ""
 "As with standard ``records.config`` integers, human readable prefixes are "
 "also supported. They include"
@@ -126,23 +114,23 @@ msgstr ""
 "標準的な ``records.config`` の数値と同様、ヒューマンリーダブルなプレフィック"
 "スもサポートされています。これらには以下のものを含みます。"
 
-#: ../../reference/configuration/storage.config.en.rst:64
+#: ../../reference/configuration/storage.config.en.rst:65
 msgid "``K`` Kilobytes (1024 bytes)"
 msgstr "``K`` キロバイト (1024 バイト)"
 
-#: ../../reference/configuration/storage.config.en.rst:65
+#: ../../reference/configuration/storage.config.en.rst:66
 msgid "``M`` Megabytes (1024^2 or 1,048,576 bytes)"
 msgstr "``M`` メガバイト (1024^2 または 1,048,576 バイト)"
 
-#: ../../reference/configuration/storage.config.en.rst:67
+#: ../../reference/configuration/storage.config.en.rst:68
 msgid "``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)"
 msgstr "``T`` テラバイト (1024^4 または 1,099,511,627,776 バイト)"
 
-#: ../../reference/configuration/storage.config.en.rst:71
+#: ../../reference/configuration/storage.config.en.rst:72
 msgid "Examples"
 msgstr "設定例"
 
-#: ../../reference/configuration/storage.config.en.rst:73
+#: ../../reference/configuration/storage.config.en.rst:74
 msgid ""
 "The following basic example shows 128 MB of cache storage in the ``/"
 "big_dir`` directory::"
@@ -150,7 +138,7 @@ msgstr ""
 "以下に、キャッシュストレージとして ``/big_dir`` ディレクトリで、128MB 使用す"
 "る例を示します。::"
 
-#: ../../reference/configuration/storage.config.en.rst:78
+#: ../../reference/configuration/storage.config.en.rst:79
 msgid ""
 "You can use the ``.`` symbol for the current directory. Here is an example "
 "for 64 MB of cache storage in the current directory::"
@@ -158,7 +146,7 @@ msgstr ""
 "``.`` シンボルを使用してカレントディレクトリを用いることもできます。以下に、"
 "カレントディレクトリで 64MB キャッシュストレージを構築する例を示します。::"
 
-#: ../../reference/configuration/storage.config.en.rst:83
+#: ../../reference/configuration/storage.config.en.rst:84
 msgid ""
 "As an alternative, using the human readable prefixes, you can express a "
 "64GB cache file with::"
@@ -166,7 +154,7 @@ msgstr ""
 "代わりとして、ヒューマンリーダブルなプレフィックスを使用し、 64GB ファイル"
 "キャッシュを表現できます::"
 
-#: ../../reference/configuration/storage.config.en.rst:90
+#: ../../reference/configuration/storage.config.en.rst:91
 msgid ""
 "When using on-filesystem cache disk storage, you can only have one such "
 "directory specified. This will be address in a future version."
@@ -174,25 +162,25 @@ msgstr ""
 "ファイルシステム上のキャッシュディスクストレージを使用する際、指定されたディ"
 "レクトリを一つのみ持てます。これは将来のバージョンで対応される予定です。 "
 
-#: ../../reference/configuration/storage.config.en.rst:95
+#: ../../reference/configuration/storage.config.en.rst:96
 msgid "Solaris Example"
 msgstr "Solaris の例"
 
-#: ../../reference/configuration/storage.config.en.rst:97
+#: ../../reference/configuration/storage.config.en.rst:98
 msgid "The following example is for the Solaris operating system::"
 msgstr "以下の例は、Solaris オペレーティングシステム用のものです。::"
 
-#: ../../reference/configuration/storage.config.en.rst:102
+#: ../../reference/configuration/storage.config.en.rst:103
 msgid "Size is optional. If not specified, the entire partition is used."
 msgstr ""
 "サイズはオプションです。指定されなかった場合、パーティション全体が使用されま"
 "す。"
 
-#: ../../reference/configuration/storage.config.en.rst:105
+#: ../../reference/configuration/storage.config.en.rst:106
 msgid "Linux Example"
 msgstr "Linux の例"
 
-#: ../../reference/configuration/storage.config.en.rst:107
+#: ../../reference/configuration/storage.config.en.rst:108
 msgid ""
 "The following example will use an entire raw disk in the Linux operating "
 "system::"
@@ -200,7 +188,7 @@ msgstr ""
 "以下の例では、Linux オペレーティングシステムにおいてローディスクを使用しま"
 "す。::"
 
-#: ../../reference/configuration/storage.config.en.rst:113
+#: ../../reference/configuration/storage.config.en.rst:114
 msgid ""
 "In order to make sure :program:`traffic_server` will have access to this "
 "disk you can use :manpage:`udev(7)` to persistently set the right "
@@ -212,11 +200,11 @@ msgstr ""
 "できます。以下のルールはUbuntuをターゲットにされており、 ``/etc/udev/rules."
 "d/51-cache-disk.rules`` に保存されます::"
 
-#: ../../reference/configuration/storage.config.en.rst:128
+#: ../../reference/configuration/storage.config.en.rst:129
 msgid "FreeBSD Example"
 msgstr "FreeBSD の例"
 
-#: ../../reference/configuration/storage.config.en.rst:130
+#: ../../reference/configuration/storage.config.en.rst:131
 msgid ""
 "Starting with 5.1 FreeBSD dropped support for explicit raw devices. All "
 "devices on FreeBSD can be accessed raw now."
@@ -224,7 +212,7 @@ msgstr ""
 "5.1 FreeBSD から、明示的なローデバイスのサポートは終了しました。FreeBSDにお"
 "いて全デバイスは、現在、生でアクセス可能です。"
 
-#: ../../reference/configuration/storage.config.en.rst:133
+#: ../../reference/configuration/storage.config.en.rst:134
 msgid ""
 "The following example will use an entire raw disk in the FreeBSD operating "
 "system::"
@@ -232,7 +220,7 @@ msgstr ""
 "以下の例では、FreeBSD オペレーティングシステムでローディスク全体を使用しま"
 "す。::"
 
-#: ../../reference/configuration/storage.config.en.rst:139
+#: ../../reference/configuration/storage.config.en.rst:140
 msgid ""
 "In order to make sure :program:`traffic_server` will have access to this "
 "disk you can use :manpage:`devfs(8)` to persistently set the right "
@@ -242,14 +230,32 @@ msgstr ""
 "に、:manpage:`devfs(8)` を使って永続的に適切なパーミッションを設定することが"
 "できます。以下のルールは、 :manpage:`devfs.conf(5)` に保存されます。 ::"
 
-#: ../../reference/configuration/storage.config.en.rst:66
+#: ../../reference/configuration/storage.config.en.rst:67
 msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)"
 msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
 
-#: ../../reference/configuration/storage.config.en.rst:122
+#: ../../reference/configuration/storage.config.en.rst:123
 msgid ""
 "In order to apply these settings, trigger a reload with :manpage:"
 "`udevadm(8)`:::"
 msgstr ""
 "これらの設定を適用するには、:manpage:`udevadm(8)` で再読み込みを行ってくださ"
 "い::"
+
+#: ../../reference/configuration/storage.config.en.rst:24
+msgid ""
+"The :file:`storage.config` file (by default, located in ``/opt/"
+"trafficserver/etc/trafficserver/``) lists all the files, directories, and/"
+"or hard disk partitions that make up the Traffic Server cache. After you "
+"modify the :file:`storage.config` file, you must restart Traffic Server."
+msgstr ""
+
+#~ msgid ""
+#~ "The :file:`storage.config` file lists all the files, directories, and/or "
+#~ "hard disk partitions that make up the Traffic Server cache. After you "
+#~ "modify the :file:`storage.config` file, you must restart Traffic Server."
+#~ msgstr ""
+#~ ":file:`storage.config` ファイルは、Traffic Serverのキャッシュとして構成す"
+#~ "る全てのファイル、ディレクトリやハードディスクパーティションを列挙しま"
+#~ "す。:file:`storage.config` ファイル修正後は、Traffic Server を再起動しな"
+#~ "ければいけません。"

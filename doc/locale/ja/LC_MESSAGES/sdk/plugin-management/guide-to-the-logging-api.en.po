@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -41,62 +40,6 @@ msgstr ""
 
 #: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:27
 msgid "The logging API enables you to:"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:29
-msgid ""
-"Establish a custom text log for your plugin: see ```TSTextLogObjectCreate`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#ae75e85e476efeaa16ded185da7a3081b>`__"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:32
-msgid ""
-"Set the log header for your custom text log: see "
-"```TSTextLogObjectHeaderSet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a7c10f89fe8bcb6b733f4a83b5a73b71c>`__"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:35
-msgid ""
-"Enable or disable rolling your custom text log: see "
-"```TSTextLogObjectRollingEnabledSet`` <http://people.apache.org/~amc/ats/"
-"doc/html/InkAPI_8cc.html#aec1e883f0735ee40c8b56d90cf27acd1>`__"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:38
-msgid ""
-"Set the rolling interval (in seconds) for your custom text log: see "
-"```TSTextLogObjectRollingIntervalSecSet`` <http://people.apache.org/~amc/"
-"ats/doc/html/InkAPI_8cc.html#aac0be2e81694db0363c5321e8a2019ce>`__"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:41
-msgid ""
-"Set the rolling offset for your custom text log: see "
-"```TSTextLogObjectRollingOffsetHrSet`` <http://people.apache.org/~amc/ats/"
-"doc/html/ts_8h.html#a9d90885b975947c241f74c33550180b4>`__"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:44
-msgid ""
-"Write text entries to the custom text log: see ```TSTextLogObjectWrite`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a34de01e5603ea639d7ce6c7bf9613254>`__"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:47
-msgid ""
-"Flush the contents of the custom text log's write buffer to disk: see "
-"```TSTextLogObjectFlush`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#ad746b22f992c2adb5f0271e5136a6ca1>`__"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:50
-msgid ""
-"Destroy custom text logs when you are done with them: see "
-"```TSTextLogObjectDestroy`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#af6521931ada7bbc38194e79e60081d54>`__"
 msgstr ""
 
 #: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:53
@@ -154,4 +97,52 @@ msgstr ""
 msgid ""
 ":::text blacklisting site: sites[i] The log is not flushed or destroyed in "
 "the ``blacklist-1`` plugin - it lives for the life of the plugin."
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:29
+msgid ""
+"Establish a custom text log for your plugin: see :c:func:"
+"`TSTextLogObjectCreate`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:32
+msgid ""
+"Set the log header for your custom text log: see :c:func:"
+"`TSTextLogObjectHeaderSet`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:35
+msgid ""
+"Enable or disable rolling your custom text log: see :c:func:"
+"`TSTextLogObjectRollingEnabledSet`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:38
+msgid ""
+"Set the rolling interval (in seconds) for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingIntervalSecSet`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:41
+msgid ""
+"Set the rolling offset for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingOffsetHrSet`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:44
+msgid ""
+"Write text entries to the custom text log: see :c:func:"
+"`TSTextLogObjectWrite`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:47
+msgid ""
+"Flush the contents of the custom text log's write buffer to disk: see :c:"
+"func:`TSTextLogObjectFlush`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:50
+msgid ""
+"Destroy custom text logs when you are done with them: see :c:func:"
+"`TSTextLogObjectDestroy`"
 msgstr ""

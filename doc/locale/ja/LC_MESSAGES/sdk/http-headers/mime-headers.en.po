@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -82,18 +81,6 @@ msgid ""
 "the value of the content type field and the field does not exist, then it "
 "returns ``TS_NULL_MLOC``. In such a case, you wouldn't need to deallocate "
 "the handle with a call to ``TSHandleMLocRelease``."
-msgstr ""
-
-#: ../../sdk/http-headers/mime-headers.en.rst:71
-msgid ""
-"The location (``TSMLoc``) in the `MIME header functions "
-"<#MimeHeaderFxns>`__ can be either an HTTP header location or a MIME header "
-"location. If an HTTP header location is passed to these functions, then the "
-"system locates the MIME header associated with that HTTP header and "
-"executes the corresponding MIME header operations specified by the "
-"functions (see the example in the description of ```TSMimeHdrCopy`` <http://"
-"people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a6e0a392b2e072db8e7f1d795151203b4>`__)."
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:79
@@ -706,243 +693,173 @@ msgstr ""
 msgid "The MIME header functions are listed below:"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:396
+#: ../../sdk/http-headers/mime-headers.en.rst:71
 msgid ""
-"```TSMimeHdrFieldAppend`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ae36c9bab9147a30b259d8e0223d697f2>`__"
+"The location (``TSMLoc``) in the `MIME header functions "
+"<#MimeHeaderFxns>`__ can be either an HTTP header location or a MIME header "
+"location. If an HTTP header location is passed to these functions, then the "
+"system locates the MIME header associated with that HTTP header and "
+"executes the corresponding MIME header operations specified by the "
+"functions (see the example in the description of :c:func:`TSMimeHdrCopy`)."
+msgstr ""
+
+#: ../../sdk/http-headers/mime-headers.en.rst:396
+msgid ":c:func:`TSMimeHdrFieldAppend`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:397
-msgid ""
-"```TSMimeHdrFieldClone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ade66cd69ddff40d14b015a9e2cd7b46f>`__"
+msgid ":c:func:`TSMimeHdrFieldClone`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:398
-msgid ""
-"```TSMimeHdrFieldCopy`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a612ebefde403abc216af99f9150dd66f>`__"
+msgid ":c:func:`TSMimeHdrFieldCopy`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:399
-msgid ""
-"```TSMimeHdrFieldCopyValues`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#a5e4b2f68392a26643620641e50e5045b>`__"
+msgid ":c:func:`TSMimeHdrFieldCopyValues`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:400
-msgid ""
-"```TSMimeHdrFieldCreate`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a7f79c0bea2ce14ced3b017eac08f8916>`__"
+msgid ":c:func:`TSMimeHdrFieldCreate`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:401
-msgid ""
-"```TSMimeHdrFieldDestroy`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a6bf2d8e95e6f3ef351f63dbe8bc54020>`__"
+msgid ":c:func:`TSMimeHdrFieldDestroy`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:402
-msgid ""
-"```TSMimeHdrFieldLengthGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a8a906f22ccf7a4a04fac817dc57a785f>`__"
+msgid ":c:func:`TSMimeHdrFieldLengthGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:403
-msgid ""
-"```TSMimeHdrFieldNameGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#ad68f51073e4630ad6a0433efbfeef2ea>`__"
+msgid ":c:func:`TSMimeHdrFieldNameGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:404
-msgid ""
-"```TSMimeHdrFieldNameSet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a6856f6069fa4ee67d1a788bd642d59f0>`__"
+msgid ":c:func:`TSMimeHdrFieldNameSet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:405
-msgid ""
-"```TSMimeHdrFieldNext`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#aaf3a205e8a4e7128f3fa3de70991df80>`__"
+msgid ":c:func:`TSMimeHdrFieldNext`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:406
-msgid ""
-"```TSMimeHdrFieldNextDup`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#af2d776615afe959ed7c3639830a7061f>`__"
+msgid ":c:func:`TSMimeHdrFieldNextDup`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:407
 #: ../../sdk/http-headers/mime-headers.en.rst:408
-msgid ""
-"```TSMimeHdrFieldValueAppend`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#ad1d4d1dda95311e3389245fd9fa961b5>`__"
+msgid ":c:func:`TSMimeHdrFieldValueAppend`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:409
-msgid ""
-"```TSMimeHdrFieldValueDateGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#ad74a60f0da93397ee015d82f30021d15>`__"
+msgid ":c:func:`TSMimeHdrFieldValueDateGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:410
-msgid ""
-"```TSMimeHdrFieldValueDateInsert`` <http://people.apache.org/~amc/ats/doc/"
-"html/InkAPI_8cc.html#a0520a29de96736b04f14e9d790ec8e9c>`__"
+msgid ":c:func:`TSMimeHdrFieldValueDateInsert`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:411
-msgid ""
-"```TSMimeHdrFieldValueDateSet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#abf85e014cb316977dedca38c341d4369>`__"
+msgid ":c:func:`TSMimeHdrFieldValueDateSet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:412
-msgid ""
-"```TSMimeHdrFieldValueIntGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#ace1fac92d2be75ff7cbd8eb7725d3fac>`__"
+msgid ":c:func:`TSMimeHdrFieldValueIntGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:413
-msgid ""
-"```TSMimeHdrFieldValueIntSet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#aec96c5629a750cdaec709228c4bd8a76>`__"
+msgid ":c:func:`TSMimeHdrFieldValueIntSet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:414
-msgid ""
-"```TSMimeHdrFieldValueStringGet`` <http://people.apache.org/~amc/ats/doc/"
-"html/InkAPI_8cc.html#a4aa55cd4eeb9e6d0a5151c02f0c18c28>`__"
+msgid ":c:func:`TSMimeHdrFieldValueStringGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:415
-msgid ""
-"```TSMimeHdrFieldValueStringInsert`` <http://people.apache.org/~amc/ats/doc/"
-"html/InkAPI_8cc.html#a979d1591becf1c59de830af117d54923>`__"
+msgid ":c:func:`TSMimeHdrFieldValueStringInsert`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:416
-msgid ""
-"```TSMimeHdrFieldValueStringSet`` <http://people.apache.org/~amc/ats/doc/"
-"html/ts_8h.html#ac21e44e84b25c23e52ba7bea7bd09ed6>`__"
+msgid ":c:func:`TSMimeHdrFieldValueStringSet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:417
-msgid ""
-"```TSMimeHdrFieldValueUintGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a116b4c9144ad6eda66213adb0167706a>`__"
+msgid ":c:func:`TSMimeHdrFieldValueUintGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:418
-msgid ""
-"```TSMimeHdrFieldValueUintInsert`` <http://people.apache.org/~amc/ats/doc/"
-"html/InkAPI_8cc.html#a88db3a90d3ac7766e55c734c89dfe86f>`__"
+msgid ":c:func:`TSMimeHdrFieldValueUintInsert`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:419
-msgid ""
-"```TSMimeHdrFieldValueUintSet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a63b0a686b4a6ec6b8a4f1b796009c3cd>`__"
+msgid ":c:func:`TSMimeHdrFieldValueUintSet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:420
-msgid ""
-"```TSMimeHdrFieldValuesClear`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#a8fd3afaf88f6c76793fdb635bbd22113>`__"
+msgid ":c:func:`TSMimeHdrFieldValuesClear`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:421
-msgid ""
-"```TSMimeHdrFieldValuesCount`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#a326283521986acf9b8a9ec00f3d6d164>`__"
+msgid ":c:func:`TSMimeHdrFieldValuesCount`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:422
-msgid ""
-"```TSMimeHdrClone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#aa8ab95bda93c3e16e6d134fe35acd1b6>`__"
+msgid ":c:func:`TSMimeHdrClone`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:423
-msgid ""
-"```TSMimeHdrCopy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a6e0a392b2e072db8e7f1d795151203b4>`__"
+msgid ":c:func:`TSMimeHdrCopy`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:424
-msgid ""
-"```TSMimeHdrCreate`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a3427dfbd6b79c531fcba4e8c8b4e217d>`__"
+msgid ":c:func:`TSMimeHdrCreate`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:425
-msgid ""
-"```TSMimeHdrDestroy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a60ad7f4f4f9e2559dcc2ff28ebe8d96c>`__"
+msgid ":c:func:`TSMimeHdrDestroy`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:426
-msgid ""
-"```TSMimeHdrFieldFind`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a30e4ce224761b273a119dcd57f5a352b>`__"
+msgid ":c:func:`TSMimeHdrFieldFind`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:427
-msgid ""
-"```TSMimeHdrFieldGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a31c0c307010a5d19d027ffb3a2656745>`__"
+msgid ":c:func:`TSMimeHdrFieldGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:428
-msgid ""
-"```TSMimeHdrFieldRemove`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a96d9a50d0687456e6e67eb2e9a9c2d72>`__"
+msgid ":c:func:`TSMimeHdrFieldRemove`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:429
-msgid ""
-"```TSMimeHdrFieldsClear`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a65d7539e48c9f5c26075344dee6c6ae2>`__"
+msgid ":c:func:`TSMimeHdrFieldsClear`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:430
-msgid ""
-"```TSMimeHdrFieldsCount`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ab02f7d0cba75cf0146c6a9b507c79fcf>`__"
+msgid ":c:func:`TSMimeHdrFieldsCount`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:431
-msgid ""
-"```TSMimeHdrLengthGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a001cd786282f5c9d04189ddf7c96e269>`__"
+msgid ":c:func:`TSMimeHdrLengthGet`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:432
-msgid ""
-"```TSMimeHdrParse`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a4a6042bcd5b5b0a21267c03cf102e90d>`__"
+msgid ":c:func:`TSMimeHdrParse`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:433
-msgid ""
-"```TSMimeParserClear`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#ac173b595659d1909aae5410ecd1ce028>`__"
+msgid ":c:func:`TSMimeParserClear`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:434
-msgid ""
-"```TSMimeParserCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a518072dc5a90b753df7726878119506b>`__"
+msgid ":c:func:`TSMimeParserCreate`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:435
-msgid ""
-"```TSMimeParserDestroy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a5f287f5016d931842c0a5012c3d227b7>`__"
+msgid ":c:func:`TSMimeParserDestroy`"
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:436
-msgid ""
-"```TSMimeHdrPrint`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#adfca8722edc6469df4410b8050406bb0>`__"
+msgid ":c:func:`TSMimeHdrPrint`"
 msgstr ""

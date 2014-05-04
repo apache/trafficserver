@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,15 +29,7 @@ msgstr ""
 msgid "remap.config"
 msgstr "remap.config"
 
-#: ../../reference/configuration/remap.config.en.rst:28
-msgid ""
-"The :file:`remap.config` file contains mapping rules that Traffic Server "
-"uses to perform the following actions:"
-msgstr ""
-":file:`remap.config` ファイルは Traffic Server が以下のアクションを行う際に"
-"利用するマッピングルールを含んでいます。"
-
-#: ../../reference/configuration/remap.config.en.rst:31
+#: ../../reference/configuration/remap.config.en.rst:32
 msgid ""
 "Map URL requests for a specific origin server to the appropriate location "
 "on Traffic Server when Traffic Server acts as a reverse proxy for that "
@@ -48,7 +39,7 @@ msgstr ""
 "うときに、そのオリジンサーバーへの URL リクエストを Traffic Server 上で適切"
 "な場所に対応づける"
 
-#: ../../reference/configuration/remap.config.en.rst:34
+#: ../../reference/configuration/remap.config.en.rst:35
 msgid ""
 "Reverse-map server location headers so that when origin servers respond to "
 "a request with a location header that redirects the client to another "
@@ -58,7 +49,7 @@ msgstr ""
 "ダーでリクエストに応えるときに、そのクライアントが Traffic Server をバイパス"
 "しないようにロケーションヘッダーを対応づける"
 
-#: ../../reference/configuration/remap.config.en.rst:37
+#: ../../reference/configuration/remap.config.en.rst:38
 msgid ""
 "Redirect HTTP requests permanently or temporarily without Traffic Server "
 "having to contact any origin servers"
@@ -66,7 +57,7 @@ msgstr ""
 "Traffic Server がオリジンサーバーにコンタクトすることなく恒久的または一時的"
 "に HTTP リクエストをリダイレクトする"
 
-#: ../../reference/configuration/remap.config.en.rst:40
+#: ../../reference/configuration/remap.config.en.rst:41
 msgid ""
 "Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about "
 "redirecting HTTP requests and using reverse proxy."
@@ -74,7 +65,7 @@ msgstr ""
 "HTTP リクエストのリダイレクトとリバースプロキシーの使用については :ref:"
 "`reverse-proxy-and-http-redirects` を参照してください。"
 
-#: ../../reference/configuration/remap.config.en.rst:43
+#: ../../reference/configuration/remap.config.en.rst:44
 msgid ""
 "After you modify the :file:`remap.config` run the :option:`traffic_ctl config reload` "
 "to apply the changes. When you apply the changes to one node in a cluster, "
@@ -86,11 +77,11 @@ msgstr ""
 "Traffic Server は自動的にクラスター内の他のすべてのノードに変更を適用しま"
 "す。"
 
-#: ../../reference/configuration/remap.config.en.rst:49
+#: ../../reference/configuration/remap.config.en.rst:50
 msgid "Format"
 msgstr "フォーマット"
 
-#: ../../reference/configuration/remap.config.en.rst:51
+#: ../../reference/configuration/remap.config.en.rst:52
 msgid ""
 "Each line in the :file:`remap.config` file must contain a mapping rule. "
 "Empty lines, or lines starting with ``#`` are ignored. Each line can be "
@@ -101,7 +92,7 @@ msgstr ""
 "ん。空行や ``#`` で始まる行は無視されます。各行は読みやすさのために ``\\`` "
 "を継続マーカーとして使用して複数行に分割することができます。"
 
-#: ../../reference/configuration/remap.config.en.rst:55
+#: ../../reference/configuration/remap.config.en.rst:56
 msgid ""
 "Traffic Server recognizes three space-delimited fields: ``type``, "
 "``target``, and ``replacement``. The following list describes the format of "
@@ -111,15 +102,15 @@ msgstr ""
 "という 3 つのフィールドを認識します。 次のリストは各フィールドのフォーマット"
 "について説明します。"
 
-#: ../../reference/configuration/remap.config.en.rst:89
+#: ../../reference/configuration/remap.config.en.rst:90
 msgid "``type``"
 msgstr "``type``"
 
-#: ../../reference/configuration/remap.config.en.rst:61
+#: ../../reference/configuration/remap.config.en.rst:62
 msgid "Enter one of the following:"
 msgstr "次のうち一つを入力してください"
 
-#: ../../reference/configuration/remap.config.en.rst:63
+#: ../../reference/configuration/remap.config.en.rst:64
 msgid ""
 "``map`` --translates an incoming request URL to the appropriate origin "
 "server URL."
@@ -127,7 +118,7 @@ msgstr ""
 "``map`` -- 届いたリクエスト URL を適切なオリジンサーバーの URL に変換しま"
 "す。"
 
-#: ../../reference/configuration/remap.config.en.rst:76
+#: ../../reference/configuration/remap.config.en.rst:77
 msgid ""
 "``reverse_map`` --translates the URL in origin server redirect responses to "
 "point to the Traffic Server."
@@ -135,7 +126,7 @@ msgstr ""
 "``reverse_map`` -- オリジンサーバーのリダイレクトレスポンス内の URL を "
 "Traffic Server を向くように変換します。"
 
-#: ../../reference/configuration/remap.config.en.rst:79
+#: ../../reference/configuration/remap.config.en.rst:80
 msgid ""
 "``redirect`` --redirects HTTP requests permanently without having to "
 "contact the origin server. Permanent redirects notify the browser of the "
@@ -147,7 +138,7 @@ msgstr ""
 "の URL を更新できるようにするために(HTTP ステータスコード 301 を返すことで) "
 "URL の変更をブラウザーに通知します。"
 
-#: ../../reference/configuration/remap.config.en.rst:84
+#: ../../reference/configuration/remap.config.en.rst:85
 msgid ""
 "``redirect_temporary`` --redirects HTTP requests temporarily without having "
 "to contact the origin server. Temporary redirects notify the browser of the "
@@ -159,61 +150,47 @@ msgstr ""
 "のリクエストに限ったものであることを(HTTP ステータスコード 307 を返すことで)"
 "ブラウザーに通知します。"
 
-#: ../../reference/configuration/remap.config.en.rst:98
+#: ../../reference/configuration/remap.config.en.rst:99
 msgid "``target``"
 msgstr "``target``"
 
-#: ../../reference/configuration/remap.config.en.rst:94
-#: ../../reference/configuration/remap.config.en.rst:103
+#: ../../reference/configuration/remap.config.en.rst:95
+#: ../../reference/configuration/remap.config.en.rst:104
 msgid ""
 "Enter the origin (\"from\") URL. You can enter up to four components: ::"
 msgstr ""
 "オリジン(\"from\")の URL を入力してください。4 つの構成要素を入力できま"
 "す。 ::"
 
-#: ../../reference/configuration/remap.config.en.rst:98
+#: ../../reference/configuration/remap.config.en.rst:99
 msgid "where ``scheme`` is ``http``."
 msgstr "``scheme`` の部分は ``http`` です。"
 
-#: ../../reference/configuration/remap.config.en.rst:108
+#: ../../reference/configuration/remap.config.en.rst:109
 msgid "``replacement``"
 msgstr "``replacement``"
 
-#: ../../reference/configuration/remap.config.en.rst:107
+#: ../../reference/configuration/remap.config.en.rst:108
 msgid "where ``scheme`` can be ``http`` or ``https``."
 msgstr "``scheme`` の部分は ``http`` か ``https`` にできます。"
 
-#: ../../reference/configuration/remap.config.en.rst:113
+#: ../../reference/configuration/remap.config.en.rst:114
 msgid "Precedence"
 msgstr "優先順位"
 
-#: ../../reference/configuration/remap.config.en.rst:115
-msgid ""
-"Remap rules are not processed top-down, but based on an internal priority"
-msgstr ""
-"リマップルールは上から順にではなく、内部の優先順位をもとに処理されます。"
-
-#: ../../reference/configuration/remap.config.en.rst:119
-msgid "``map`` and ``reverse_map``"
-msgstr "``map`` と ``reverse_map``"
-
-#: ../../reference/configuration/remap.config.en.rst:120
-msgid "``regex_map``"
-msgstr "``regex_map``"
-
-#: ../../reference/configuration/remap.config.en.rst:121
+#: ../../reference/configuration/remap.config.en.rst:122
 msgid "``redirect`` and ``redirect_temporary``"
 msgstr "``redirect`` と ``redirect_temporary``"
 
-#: ../../reference/configuration/remap.config.en.rst:122
+#: ../../reference/configuration/remap.config.en.rst:123
 msgid "``regex_redirect`` and ``regex_redirect_temporary``"
 msgstr "``regex_redirect`` と ``regex_redirect_temporary``"
 
-#: ../../reference/configuration/remap.config.en.rst:126
+#: ../../reference/configuration/remap.config.en.rst:127
 msgid "Match-All"
 msgstr "全一致"
 
-#: ../../reference/configuration/remap.config.en.rst:128
+#: ../../reference/configuration/remap.config.en.rst:129
 msgid ""
 "A map rule with a single ``/`` acts as a wildcard, it will match any "
 "request. This should be use with care, and certainly only once at the end "
@@ -223,25 +200,25 @@ msgstr ""
 "にマッチします。これは気を付けて使用すべきであり、使用は remap.config ファイ"
 "ルの最後で一度だけであるべきです。"
 
-#: ../../reference/configuration/remap.config.en.rst:137
-#: ../../reference/configuration/remap.config.en.rst:277
-#: ../../reference/configuration/remap.config.en.rst:363
-#: ../../reference/configuration/remap.config.en.rst:388
-#: ../../reference/configuration/remap.config.en.rst:433
+#: ../../reference/configuration/remap.config.en.rst:138
+#: ../../reference/configuration/remap.config.en.rst:278
+#: ../../reference/configuration/remap.config.en.rst:364
+#: ../../reference/configuration/remap.config.en.rst:389
+#: ../../reference/configuration/remap.config.en.rst:434
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/configuration/remap.config.en.rst:139
+#: ../../reference/configuration/remap.config.en.rst:140
 msgid ""
 "The following section shows example mapping rules in the :file:`remap."
 "config` file."
 msgstr "次の章では :file:`remap.config` のマッピングルールの例を紹介します。"
 
-#: ../../reference/configuration/remap.config.en.rst:143
+#: ../../reference/configuration/remap.config.en.rst:144
 msgid "Reverse Proxy Mapping Rules"
 msgstr "リバースプロキシーマッピングルール"
 
-#: ../../reference/configuration/remap.config.en.rst:145
+#: ../../reference/configuration/remap.config.en.rst:146
 msgid ""
 "The following example shows a map rule that does not specify a path prefix "
 "in the target or replacement: ::"
@@ -249,45 +226,45 @@ msgstr ""
 "次の例ではターゲットや置換えでパスプレフィックスを指定しないマップルールを紹"
 "介します。"
 
-#: ../../reference/configuration/remap.config.en.rst:151
+#: ../../reference/configuration/remap.config.en.rst:152
 msgid "This rule results in the following translations:"
 msgstr "このルールの変換結果は次のとおりです"
 
-#: ../../reference/configuration/remap.config.en.rst:154
-#: ../../reference/configuration/remap.config.en.rst:175
-#: ../../reference/configuration/remap.config.en.rst:192
-#: ../../reference/configuration/remap.config.en.rst:211
-#: ../../reference/configuration/remap.config.en.rst:225
-#: ../../reference/configuration/remap.config.en.rst:233
+#: ../../reference/configuration/remap.config.en.rst:155
+#: ../../reference/configuration/remap.config.en.rst:176
+#: ../../reference/configuration/remap.config.en.rst:193
+#: ../../reference/configuration/remap.config.en.rst:212
+#: ../../reference/configuration/remap.config.en.rst:226
+#: ../../reference/configuration/remap.config.en.rst:234
 msgid "Client Request"
 msgstr "クライアントリクエスト"
 
-#: ../../reference/configuration/remap.config.en.rst:154
-#: ../../reference/configuration/remap.config.en.rst:175
-#: ../../reference/configuration/remap.config.en.rst:192
-#: ../../reference/configuration/remap.config.en.rst:211
-#: ../../reference/configuration/remap.config.en.rst:225
-#: ../../reference/configuration/remap.config.en.rst:233
+#: ../../reference/configuration/remap.config.en.rst:155
+#: ../../reference/configuration/remap.config.en.rst:176
+#: ../../reference/configuration/remap.config.en.rst:193
+#: ../../reference/configuration/remap.config.en.rst:212
+#: ../../reference/configuration/remap.config.en.rst:226
+#: ../../reference/configuration/remap.config.en.rst:234
 msgid "Translated Request"
 msgstr "変換されたリクエスト"
 
-#: ../../reference/configuration/remap.config.en.rst:156
+#: ../../reference/configuration/remap.config.en.rst:157
 msgid "``http://www.x.com/Widgets/index.html``"
 msgstr "``http://www.x.com/Widgets/index.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:156
+#: ../../reference/configuration/remap.config.en.rst:157
 msgid "``http://server.hoster.com/Widgets/index.html``"
 msgstr "``http://server.hoster.com/Widgets/index.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:157
+#: ../../reference/configuration/remap.config.en.rst:158
 msgid "``http://www.x.com/cgi/form/submit.sh?arg=true``"
 msgstr "``http://www.x.com/cgi/form/submit.sh?arg=true``"
 
-#: ../../reference/configuration/remap.config.en.rst:157
+#: ../../reference/configuration/remap.config.en.rst:158
 msgid "``http://server.hoster.com/cgi/form/submit.sh?arg=true``"
 msgstr "``http://server.hoster.com/cgi/form/submit.sh?arg=true``"
 
-#: ../../reference/configuration/remap.config.en.rst:160
+#: ../../reference/configuration/remap.config.en.rst:161
 msgid ""
 "The following example shows a map rule with path prefixes specified in the "
 "target: ::"
@@ -295,51 +272,51 @@ msgstr ""
 "次の例ではターゲットでパスプレフィックスを指定したマップルールを紹介しま"
 "す。 ::"
 
-#: ../../reference/configuration/remap.config.en.rst:172
+#: ../../reference/configuration/remap.config.en.rst:173
 msgid "These rules result in the following translations:"
 msgstr "これらのルールの変換結果は次のとおりです。"
 
-#: ../../reference/configuration/remap.config.en.rst:177
+#: ../../reference/configuration/remap.config.en.rst:178
 msgid "``http://www.y.com/marketing/projects/manhattan/specs.html``"
 msgstr "``http://www.y.com/marketing/projects/manhattan/specs.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:177
+#: ../../reference/configuration/remap.config.en.rst:178
 msgid "``http://marketing.y.com/projects/manhattan/specs.html``"
 msgstr "``http://marketing.y.com/projects/manhattan/specs.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:178
+#: ../../reference/configuration/remap.config.en.rst:179
 msgid "``http://www.y.com/stuff/marketing/projects/boston/specs.html``"
 msgstr "``http://www.y.com/stuff/marketing/projects/boston/specs.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:178
+#: ../../reference/configuration/remap.config.en.rst:179
 msgid "``http://info.y.com/marketing/projects/boston/specs.html``"
 msgstr "``http://info.y.com/marketing/projects/boston/specs.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:179
+#: ../../reference/configuration/remap.config.en.rst:180
 msgid "``http://www.y.com/engineering/marketing/requirements.html``"
 msgstr "``http://www.y.com/engineering/marketing/requirements.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:179
+#: ../../reference/configuration/remap.config.en.rst:180
 msgid "``http://engineering.y.com/marketing/requirements.html``"
 msgstr "``http://engineering.y.com/marketing/requirements.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:182
+#: ../../reference/configuration/remap.config.en.rst:183
 msgid "The following example shows that the order of the rules matters: ::"
 msgstr "次の例ではルールの順番について紹介します。"
 
-#: ../../reference/configuration/remap.config.en.rst:189
+#: ../../reference/configuration/remap.config.en.rst:190
 msgid "These rules result in the following translation."
 msgstr "これらのルールの変換結果は次のとおりです。"
 
-#: ../../reference/configuration/remap.config.en.rst:194
+#: ../../reference/configuration/remap.config.en.rst:195
 msgid "``http://www.g.com/stuff/a.gif``"
 msgstr "``http://www.g.com/stuff/a.gif``"
 
-#: ../../reference/configuration/remap.config.en.rst:194
+#: ../../reference/configuration/remap.config.en.rst:195
 msgid "``http://external.g.com/stuff/a.gif``"
 msgstr "``http://external.g.com/stuff/a.gif``"
 
-#: ../../reference/configuration/remap.config.en.rst:197
+#: ../../reference/configuration/remap.config.en.rst:198
 msgid ""
 "In the above examples, the second rule is never applied because all URLs "
 "that match the second rule also match the first rule. The first rule takes "
@@ -349,7 +326,7 @@ msgstr ""
 "2番目のルールが適用されることはありません。最初のルールは :file:`remap."
 "config` の中で先に出てくるので優先されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:202
+#: ../../reference/configuration/remap.config.en.rst:203
 msgid ""
 "The following example shows a mapping with a path prefix specified in the "
 "target and replacement::"
@@ -357,56 +334,56 @@ msgstr ""
 "次の例ではターゲットと置換えでパスプレフィックスを指定するマップルールを紹介"
 "します。"
 
-#: ../../reference/configuration/remap.config.en.rst:208
+#: ../../reference/configuration/remap.config.en.rst:209
 msgid "This rule results in the following translation."
 msgstr "このルールの変換結果は次のとおりです"
 
-#: ../../reference/configuration/remap.config.en.rst:213
+#: ../../reference/configuration/remap.config.en.rst:214
 msgid "``http://www.h.com/a/b/c/d/doc.html``"
 msgstr "``http://www.h.com/a/b/c/d/doc.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:213
+#: ../../reference/configuration/remap.config.en.rst:214
 msgid "``http://server.h.com/customers/x/y/c/d/doc.html``"
 msgstr "``http://server.h.com/customers/x/y/c/d/doc.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:214
+#: ../../reference/configuration/remap.config.en.rst:215
 msgid "``http://www.h.com/a/index.html``"
 msgstr "``http://www.h.com/a/index.html``"
 
-#: ../../reference/configuration/remap.config.en.rst:214
+#: ../../reference/configuration/remap.config.en.rst:215
 msgid "``Translation fails``"
 msgstr "``変換失敗``"
 
-#: ../../reference/configuration/remap.config.en.rst:217
+#: ../../reference/configuration/remap.config.en.rst:218
 msgid "The following example shows reverse-map rules::"
 msgstr "次の例ではリバースマップルールを紹介します。"
 
-#: ../../reference/configuration/remap.config.en.rst:222
+#: ../../reference/configuration/remap.config.en.rst:223
 msgid "These rules result in the following translations."
 msgstr "これらのルールの変換結果は次のとおりです。"
 
-#: ../../reference/configuration/remap.config.en.rst:227
-#: ../../reference/configuration/remap.config.en.rst:235
+#: ../../reference/configuration/remap.config.en.rst:228
+#: ../../reference/configuration/remap.config.en.rst:236
 msgid "``http://www.x.com/Widgets``"
 msgstr "``http://www.x.com/Widgets``"
 
-#: ../../reference/configuration/remap.config.en.rst:227
+#: ../../reference/configuration/remap.config.en.rst:228
 msgid "``http://server.hoster.com/x/Widgets``"
 msgstr "``http://server.hoster.com/x/Widgets``"
 
-#: ../../reference/configuration/remap.config.en.rst:233
+#: ../../reference/configuration/remap.config.en.rst:234
 msgid "Origin Server Header"
 msgstr "オリジンサーバーヘッダー"
 
-#: ../../reference/configuration/remap.config.en.rst:235
+#: ../../reference/configuration/remap.config.en.rst:236
 msgid "``http://server.hoster.com/x/Widgets/``"
 msgstr "``http://server.hoster.com/x/Widgets/``"
 
-#: ../../reference/configuration/remap.config.en.rst:235
+#: ../../reference/configuration/remap.config.en.rst:236
 msgid "``http://www.x.com/Widgets/``"
 msgstr "``http://www.x.com/Widgets/``"
 
-#: ../../reference/configuration/remap.config.en.rst:238
+#: ../../reference/configuration/remap.config.en.rst:239
 msgid ""
 "When acting as a reverse proxy for multiple servers, Traffic Server is "
 "unable to route to URLs from older browsers that do not send the ``Host:`` "
@@ -420,11 +397,11 @@ msgstr ""
 "を :file:`records.config` の :ts:cv:`proxy.config.header.parse."
 "no_host_url_redirect` 変数に設定してください。"
 
-#: ../../reference/configuration/remap.config.en.rst:245
+#: ../../reference/configuration/remap.config.en.rst:246
 msgid "Redirect Mapping Rules"
 msgstr "リダイレクトマッピングルール"
 
-#: ../../reference/configuration/remap.config.en.rst:247
+#: ../../reference/configuration/remap.config.en.rst:248
 msgid ""
 "The following rule permanently redirects all HTTP requests for ``www."
 "company.com`` to ``www.company2.com``: ::"
@@ -432,7 +409,7 @@ msgstr ""
 "次のルールは ``www.company.com`` へのすべての HTTP リクエストを恒久的に "
 "``www.company2.com`` へリダイレクトします ::"
 
-#: ../../reference/configuration/remap.config.en.rst:252
+#: ../../reference/configuration/remap.config.en.rst:253
 msgid ""
 "The following rule *temporarily* redirects all HTTP requests for ``www."
 "company1.com`` to ``www.company2.com``: ::"
@@ -440,18 +417,18 @@ msgstr ""
 "次のルールは ``www.company.com`` へのすべての HTTP リクエストを *一時的に* "
 "``www.company2.com`` へリダイレクトします ::"
 
-#: ../../reference/configuration/remap.config.en.rst:260
+#: ../../reference/configuration/remap.config.en.rst:261
 msgid "Regular Expression (regex) Remap Support"
 msgstr "正規表現 (regex) リマップサポート"
 
-#: ../../reference/configuration/remap.config.en.rst:262
+#: ../../reference/configuration/remap.config.en.rst:263
 msgid ""
 "Regular expressions can be specified in remapping rules, with the "
 "limitations below:"
 msgstr ""
 "以下の制限のもとに、リマッピングルールに正規表現を指定することができます"
 
-#: ../../reference/configuration/remap.config.en.rst:265
+#: ../../reference/configuration/remap.config.en.rst:266
 msgid ""
 "Only the ``host`` field can contain a regex; the ``scheme``, ``port``, and "
 "other fields cannot. For path manipulation via regexes, use the "
@@ -461,7 +438,7 @@ msgstr ""
 "のフィールドには含められません。パスを regex で操作するには ``regex_remap`` "
 "プラグインを使用してください。"
 
-#: ../../reference/configuration/remap.config.en.rst:268
+#: ../../reference/configuration/remap.config.en.rst:269
 msgid ""
 "The number of capturing subpatterns is limited to 9. This means that ``$0`` "
 "through ``$9`` can be used as subtraction placeholders (``$0`` will be the "
@@ -471,11 +448,11 @@ msgstr ""
 "までが置換えプレースホルダーとして使えることを意味します(``$0`` は入力文字列"
 "全体になります)。"
 
-#: ../../reference/configuration/remap.config.en.rst:271
+#: ../../reference/configuration/remap.config.en.rst:272
 msgid "The number of substitutions in the expansion string is limited to 10."
 msgstr "展開文字列内の置換え数は 10 個に制限されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:272
+#: ../../reference/configuration/remap.config.en.rst:273
 msgid ""
 "There is no ``regex_`` equivalent to ``reverse_remap``, so when using "
 "``regex_remap`` you should make sure the reverse path is clear by setting (:"
@@ -485,11 +462,11 @@ msgstr ""
 "使用するときは設定により逆のパスが明確であることを確かにしておくべきです。(:"
 "ts:cv:`proxy.config.url_remap.pristine_host_hdr`)"
 
-#: ../../reference/configuration/remap.config.en.rst:356
+#: ../../reference/configuration/remap.config.en.rst:357
 msgid "Plugin Chaining"
 msgstr "プラグインの連鎖"
 
-#: ../../reference/configuration/remap.config.en.rst:358
+#: ../../reference/configuration/remap.config.en.rst:359
 msgid ""
 "Plugins can be configured to be evaluated in a specific order, passing the "
 "results from one in to the next (unless a plugin returns 0, then the \"chain"
@@ -498,21 +475,21 @@ msgstr ""
 "プラグインは指定した順番で、結果を次へと渡しながら評価するように設定できま"
 "す。(プラグインが 0 を返さない限り続き、返されると \"連鎖\"は切れます。)"
 
-#: ../../reference/configuration/remap.config.en.rst:371
+#: ../../reference/configuration/remap.config.en.rst:372
 msgid "will pass \"1\" and \"2\" to plugin1.so and \"3\" to plugin2.so."
 msgstr ""
 "これは \"1\" と \"2\" を plugin1.so に \"3\" を plugin2.so に渡します。"
 
-#: ../../reference/configuration/remap.config.en.rst:373
+#: ../../reference/configuration/remap.config.en.rst:374
 msgid "This will pass \"1\" and \"2\" to plugin1.so and \"3\" to plugin2.so"
 msgstr ""
 "これは \"1\" と \"2\" を plugin1.so に \"3\" を plugin2.so に渡します。"
 
-#: ../../reference/configuration/remap.config.en.rst:378
+#: ../../reference/configuration/remap.config.en.rst:379
 msgid "Named Filters"
 msgstr "名前付きフィルター"
 
-#: ../../reference/configuration/remap.config.en.rst:380
+#: ../../reference/configuration/remap.config.en.rst:381
 msgid ""
 "Named filters can be created and applied to blocks of mappings using the ``."
 "definefilter``, ``.activatefilter``, and ``.deactivatefilter`` directives. "
@@ -527,7 +504,7 @@ msgstr ""
 "ルターが有効化し ``.deactivatefilter`` で無効化されるまでのすべてのマッピン"
 "グで使用できます。"
 
-#: ../../reference/configuration/remap.config.en.rst:405
+#: ../../reference/configuration/remap.config.en.rst:406
 msgid ""
 "The filter `disable_delete_purge` will be applied to all of the mapping "
 "rules. (It is activated before any mappings and is never deactivated.) The "
@@ -537,7 +514,7 @@ msgstr ""
 "(これはあらゆるマッピングの前に有効化され無効化されることはありませ"
 "ん。)`internal_only` フィルターは 2番目のマッピングのみに適用されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:66
+#: ../../reference/configuration/remap.config.en.rst:67
 msgid ""
 "``map_with_recv_port`` --exactly like 'map' except that it uses the port at "
 "which the request was received to perform the mapping instead of the port "
@@ -553,7 +530,7 @@ msgstr ""
 "のがある場合、\"通常\" の順マッピングルールを評価することなくそれが選ばれま"
 "す。"
 
-#: ../../reference/configuration/remap.config.en.rst:72
+#: ../../reference/configuration/remap.config.en.rst:73
 msgid ""
 "``map_with_referer`` -- extended version of 'map', which can be used to "
 "activate \"deep linking protection\", where target URLs are only accessible "
@@ -564,19 +541,15 @@ msgstr ""
 "トへのリンクを許された URL にセットされている場合にのみターゲット URL にアク"
 "セス可能な \"直リンク禁止機能\" を動作させるために使用されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:118
-msgid "``map_with_recv_port``"
-msgstr "``map_with_recv_port``"
-
-#: ../../reference/configuration/remap.config.en.rst:287
+#: ../../reference/configuration/remap.config.en.rst:288
 msgid "map_with_referer"
 msgstr "map_with_referer"
 
-#: ../../reference/configuration/remap.config.en.rst:289
+#: ../../reference/configuration/remap.config.en.rst:290
 msgid "the format of is the following::"
 msgstr "フォーマットは次のとおりです。"
 
-#: ../../reference/configuration/remap.config.en.rst:293
+#: ../../reference/configuration/remap.config.en.rst:294
 msgid ""
 "'redirect-URL' is a redirection URL specified according to RFC 2616 and can "
 "contain special formatting instructions for run-time modifications of the "
@@ -593,7 +566,7 @@ msgstr ""
 "を持っていないかリファラーの正規表現にマッチしない場合、HTTP リクエストは "
 "'redirect-URL' にリダイレクトされます。"
 
-#: ../../reference/configuration/remap.config.en.rst:301
+#: ../../reference/configuration/remap.config.en.rst:302
 msgid ""
 "At least one regular expressions must be specified in order to activate "
 "'deep linking protection'.  There are limitations for the number of referer "
@@ -605,12 +578,12 @@ msgstr ""
 "Traffic Server で '直リンク禁止機能' を有効化するためには records.config の"
 "次の変数を設定してください。"
 
-#: ../../reference/configuration/remap.config.en.rst:308
+#: ../../reference/configuration/remap.config.en.rst:309
 msgid "In order to enable run-time formatting for redirect URL, configure::"
 msgstr ""
 "実行時のリダイレクト先 URL の整形を有効化するには次の設定を行ってください。"
 
-#: ../../reference/configuration/remap.config.en.rst:312
+#: ../../reference/configuration/remap.config.en.rst:313
 msgid ""
 "When run-time formatting for redirect-URL was enabled the following format "
 "symbols can be used::"
@@ -618,7 +591,7 @@ msgstr ""
 "実行時の redirect-URL の整形が有効化された場合は次の整形シンボルが使用できま"
 "す。"
 
-#: ../../reference/configuration/remap.config.en.rst:321
+#: ../../reference/configuration/remap.config.en.rst:322
 msgid ""
 "Note: There is a special referer type \"~*\" that can be used in order to "
 "specify that the Referer header is optional in the request.  If \"~*\" "
@@ -641,11 +614,11 @@ msgstr ""
 "合、すべてのリファラーが許可されます。リファラー一覧内の様々な \"*\" と \"~"
 "\" の組み合わせは異なったフィルタリングルールを作るために使用されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:332
+#: ../../reference/configuration/remap.config.en.rst:333
 msgid "map_with_referer Examples"
 msgstr "map_with_referer の例"
 
-#: ../../reference/configuration/remap.config.en.rst:338
+#: ../../reference/configuration/remap.config.en.rst:339
 msgid ""
 "Explanation: Referer header must be in the request, only \".*\\.bar\\.com\" "
 "and \"www.bar-friends.com\" are allowed."
@@ -653,7 +626,7 @@ msgstr ""
 "説明: Referer ヘッダーがリクエストに含まれていなければならず、\".*\\.bar\\."
 "com\" と \"www.bar-friends.com\" のみが許可されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:344
+#: ../../reference/configuration/remap.config.en.rst:345
 msgid ""
 "Explanation: Referer header must be in the request but all referers are "
 "allowed except \".*\\.evil\\.com\"."
@@ -661,7 +634,7 @@ msgstr ""
 "説明: Referer ヘッダーがリクエストに含まれていなければなりませんが、\".*\\."
 "evil\\.com\" を除くすべてのリファラーが許可されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:350
+#: ../../reference/configuration/remap.config.en.rst:351
 msgid ""
 "Explanation: Referer header is optional. However, if Referer header exists, "
 "only request from \".*\\.evil\\.com\" will be redirected to redirect-URL."
@@ -670,11 +643,11 @@ msgstr ""
 "合、\".*\\.evil\\.com\" からのリクエストだけは redirect-URL にリダイレクトさ"
 "れます。"
 
-#: ../../reference/configuration/remap.config.en.rst:411
+#: ../../reference/configuration/remap.config.en.rst:412
 msgid "Including Additional Remap Files"
 msgstr "追加のリマップファイルの取り込み"
 
-#: ../../reference/configuration/remap.config.en.rst:413
+#: ../../reference/configuration/remap.config.en.rst:414
 msgid ""
 "The ``.include`` directive allows mapping rules to be spread across "
 "multiple files. The argument to the ``.include`` directive is a list of "
@@ -687,7 +660,7 @@ msgstr ""
 "にパースされるファイル名のリストです。ファイル名が絶対パスでない場合は "
 "Traffic Server の設定ディレクトリからの相対で解決されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:419
+#: ../../reference/configuration/remap.config.en.rst:420
 msgid ""
 "The effect of the ``.include`` directive is as if the contents of the "
 "listed files is included in the parent and parsing restarted at the point "
@@ -699,7 +672,7 @@ msgstr ""
 "名前の付けられたフィルターはスコープ内でグローバルであり、さらなる ``."
 "include`` ディレクティブも許されることを意味します。"
 
-#: ../../reference/configuration/remap.config.en.rst:427
+#: ../../reference/configuration/remap.config.en.rst:428
 msgid ""
 "Included remap files are not currently tracked by the configuration "
 "subsystem. Changes to included remap files will not be noticed by online "
@@ -711,7 +684,7 @@ msgstr ""
 "限りは :option:`traffic_ctl config reload` で適用されるオンラインでの設定の変更によっ"
 "て通知されません。"
 
-#: ../../reference/configuration/remap.config.en.rst:435
+#: ../../reference/configuration/remap.config.en.rst:436
 msgid ""
 "In this example, a top-level :file:`remap.config` file simply references "
 "additional mapping rules files ::"
@@ -719,14 +692,57 @@ msgstr ""
 "この例では、トップレベルの :file:`remap.config` ファイルが単純に追加のマッピ"
 "ングルールファイルを参照しています。"
 
-#: ../../reference/configuration/remap.config.en.rst:441
+#: ../../reference/configuration/remap.config.en.rst:442
 msgid "The file `filters.config` contains ::"
 msgstr "`filters.config` は次のルールを含んでいます。"
 
-#: ../../reference/configuration/remap.config.en.rst:446
+#: ../../reference/configuration/remap.config.en.rst:447
 msgid "The file `one.example.com.config` contains::"
 msgstr "`one.example.com.config` は次のルールを含んでいます。"
 
-#: ../../reference/configuration/remap.config.en.rst:452
+#: ../../reference/configuration/remap.config.en.rst:453
 msgid "The file `two.example.com.config` contains::"
 msgstr "`two.example.com.config` は次のルールを含んでいます。"
+
+#: ../../reference/configuration/remap.config.en.rst:28
+msgid ""
+"The :file:`remap.config` file (by default, located in ``/opt/trafficserver/"
+"etc/trafficserver/``) contains mapping rules that Traffic Server uses to "
+"perform the following actions:"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:116
+msgid ""
+"Remap rules are not processed top-down, but based on an internal priority. "
+"Once these rules are executed we pick the lowest line number as the match "
+"(which replicates first-match-wins)."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:120
+msgid "``map_with_recv_port`` and ```regex_map_with_recv_port```"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:121
+msgid "``map`` and ``regex_map`` and ``reverse_map``"
+msgstr ""
+
+#~ msgid ""
+#~ "The :file:`remap.config` file contains mapping rules that Traffic Server "
+#~ "uses to perform the following actions:"
+#~ msgstr ""
+#~ ":file:`remap.config` ファイルは Traffic Server が以下のアクションを行う際"
+#~ "に利用するマッピングルールを含んでいます。"
+
+#~ msgid ""
+#~ "Remap rules are not processed top-down, but based on an internal priority"
+#~ msgstr ""
+#~ "リマップルールは上から順にではなく、内部の優先順位をもとに処理されます。"
+
+#~ msgid "``map`` and ``reverse_map``"
+#~ msgstr "``map`` と ``reverse_map``"
+
+#~ msgid "``regex_map``"
+#~ msgstr "``regex_map``"
+
+#~ msgid "``map_with_recv_port``"
+#~ msgstr "``map_with_recv_port``"

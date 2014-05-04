@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -51,16 +50,6 @@ msgid ""
 "plugin/accessing-the-transaction-being-processed>`__"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:35
-msgid ""
-"**Transformation hooks** Transformation hooks are a special case of "
-"transaction hooks. See ```TSVConnCacheObjectSizeGet`` <http://people.apache."
-"org/~amc/ats/doc/html/ts_8h.html#af5ca2c5b00e4859d2fa5dec466dfd058>`__ for "
-"more information about transformation hooks. You add a transformation hook "
-"using ``TSHttpTxnHookAdd``, as described in `HTTP Transactions "
-"<HTTP_Transactions.html>`__."
-msgstr ""
-
 #: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:42
 msgid ""
 "**Session hooks** An HTTP session starts when a client opens a connection "
@@ -80,18 +69,6 @@ msgid ""
 "when alternate selection is taking place. See `HTTP Alternate Selection "
 "<HTTPAlternateSelection.html>`__ for information on the alternate selection "
 "mechanism."
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:57
-msgid ""
-"All of the hook addition functions (```TSHttpHookAdd`` <http://people."
-"apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a19a663edd3ec439f66256fbbb26cc1db>`__, ```TSHttpSsnHookAdd`` "
-"<HTTPSessionFunctions.html#TSHttpSsnHookAdd>`__, ```TSHttpSsnReenable`` "
-"<HTTPSessionFunctions.html#TSHttpSsnReenable>`__) take ``TSHttpHookID`` "
-"(identifies the hook to add on to) and ``TSCont`` (the basic callback "
-"mechanism in Traffic Server). A single ``TSCont`` can be added to any "
-"number of hooks at a time."
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:65
@@ -251,13 +228,6 @@ msgid ""
 "alive has new data available."
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:152
-msgid ""
-"The function you use to add a global HTTP hook is ```TSHttpHookAdd`` "
-"<http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a19a663edd3ec439f66256fbbb26cc1db>`__."
-msgstr ""
-
 #: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:85
 msgid "``TS_HTTP_POST_REMAP_HOOK``"
 msgstr ""
@@ -277,4 +247,27 @@ msgid ""
 "Called after the request header is read from the client, before any "
 "remapping of the headers occurs. Corresponds to the event "
 "``TS_EVENT_HTTP_PRE_REMAP``."
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:35
+msgid ""
+"**Transformation hooks** Transformation hooks are a special case of "
+"transaction hooks. See :c:func:`TSVConnCacheObjectSizeGet` for more "
+"information about transformation hooks. You add a transformation hook using "
+"``TSHttpTxnHookAdd``, as described in `HTTP Transactions <HTTP_Transactions."
+"html>`__."
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:57
+msgid ""
+"All of the hook addition functions (:c:func:`TSHttpHookAdd`, :c:func:"
+"`TSHttpSsnHookAdd`, :c:func:`TSHttpSsnReenable`) take ``TSHttpHookID`` "
+"(identifies the hook to add on to) and ``TSCont`` (the basic callback "
+"mechanism in Traffic Server). A single ``TSCont`` can be added to any "
+"number of hooks at a time."
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/adding-hooks.en.rst:152
+msgid ""
+"The function you use to add a global HTTP hook is :c:func:`TSHttpHookAdd`."
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -81,26 +80,26 @@ msgid ""
 "could use the following commands to build a shared library"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:54
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:56
 msgid "This shared library will be your plugin. In order to install it, run"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:60
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:62
 msgid "or the equivalent to ``sudo`` on your platform."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:63
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:65
 msgid "Update the ``plugin.config`` File"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:65
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:67
 msgid ""
 "Your next step is to tell Traffic Server about the plugin by adding the "
 "following line to the ``plugin.config`` file. Since our simple plugin does "
 "not require any arguments, the following ``plugin.config`` will work:"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:75
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:77
 msgid ""
 "Traffic Server can accommodate multiple plugins. If several plugin "
 "functions are triggered by the same event, then Traffic Server invokes each "
@@ -108,11 +107,11 @@ msgid ""
 "file."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:83
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:85
 msgid "Specify the Plugin's Location"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:85
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:87
 msgid ""
 "All plugins must be located in the directory specified by the configuration "
 "variable ``proxy.config.plugin.plugin_dir``, which is located in the :file:"
@@ -120,7 +119,7 @@ msgid ""
 "relative path."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:90
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:92
 msgid ""
 "If a relative path is used, then the starting directory will be the Traffic "
 "Server installation directory as specified in ``/etc/traffic_server``. The "
@@ -130,21 +129,25 @@ msgid ""
 "the directory you've configured."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:98
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:100
 msgid "Restart Traffic Server"
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:100
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:102
 msgid ""
 "The last step is to start/restart Traffic Server. Shown below is the output "
 "displayed after you've created and loaded your ``hello-world`` plugin."
 msgstr ""
 
-#: ../../sdk/getting-started/a-simple-plugin.en.rst:116
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:118
 msgid ""
 "**Note:** in the example above, Traffic Server notes are directed to the "
 "console by specifying ``E`` for ``proxy.config.diags.output.note`` in :file:"
 "`records.config`. The second note shows Traffic Server attempting to load "
 "the ``hello-world`` plugin. The third line of Traffic Server output is from "
 "your plugin."
+msgstr ""
+
+#: ../../sdk/getting-started/a-simple-plugin.en.rst:54
+msgid "tsxs can be found in ``trafficserver-dev`` package."
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -45,25 +44,17 @@ msgid "The thread functions are listed below:"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/thread-functions.en.rst:30
-msgid ""
-"```TSThreadCreate`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkIOCoreAPI_8cc.html#ad087d67be30b68b6d608a5094fceed2a>`__"
+msgid ":c:func:`TSThreadCreate`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/thread-functions.en.rst:31
-msgid ""
-"```TSThreadDestroy`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkIOCoreAPI_8cc.html#a600e8ad830081bdcf6caabc07b54c9e4>`__"
+msgid ":c:func:`TSThreadDestroy`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/thread-functions.en.rst:32
-msgid ""
-"```TSThreadInit`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkIOCoreAPI_8cc.html#a11088d9aaba362827841687864e55242>`__"
+msgid ":c:func:`TSThreadInit`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/thread-functions.en.rst:33
-msgid ""
-"```TSThreadSelf`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkIOCoreAPI_8cc.html#a5cc33c5182755e3d62b4aa55277425d9>`__"
+msgid ":c:func:`TSThreadSelf`"
 msgstr ""

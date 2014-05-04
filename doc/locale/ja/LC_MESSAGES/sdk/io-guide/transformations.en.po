@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -214,9 +213,6 @@ msgstr ""
 
 #: ../../sdk/io-guide/transformations.en.rst:179
 msgid ""
-"The transformation functions are: \\* ```TSTransformCreate`` <http://people."
-"apache.org/~amc/ats/doc/html/ts_8h."
-"html#a54c4902bb537d3d40763bd947ed753b9>`__ \\* "
-"```TSTransformOutputVConnGet`` <http://people.apache.org/~amc/ats/doc/html/"
-"ts_8h.html#ac6832718a2d9f2658409ad231811e1e3>`__"
+"The transformation functions are: \\* :c:func:`TSTransformCreate` \\* :c:"
+"func:`TSTransformOutputVConnGet`"
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -349,25 +348,7 @@ msgstr ""
 msgid "HTML Messages Sent to Clients"
 msgstr "クライアントに送信される HTML メッセージ"
 
-#: ../../admin/traffic-server-error-messages.en.rst:142
-msgid ""
-"Traffic Server returns detailed error messages to browser clients when "
-"there are problems with the HTTP transactions requested by the browser. "
-"These Traffic Server response messages correspond to standard HTTP response "
-"codes, but provide more information. A list of the more frequently-"
-"encountered HTTP response codes is provided in :ref:`standard-http-response-"
-"messages`. You can customize the Traffic Server response messages, if "
-"desired."
-msgstr ""
-"Traffic Server は ブラウザからリクエストされた HTTP トランザクションに問題が"
-"ある場合に、クライアントに詳細なエラーメッセージを返します。これらの "
-"Traffice Server のレスポンスメッセージは標準的な HTTP レスポンスコードに対応"
-"しますが、より多くの情報を提供します。より頻繁に遭遇する HTTP レスポンスコー"
-"ドの一覧は :ref:`standard-http-response-messages` で提供されています。もし望"
-"むなら Traffic Server のレスポンスメッセージをカスタマイズすることができま"
-"す。"
-
-#: ../../admin/traffic-server-error-messages.en.rst:149
+#: ../../admin/traffic-server-error-messages.en.rst:151
 msgid ""
 "The following table lists the hard-coded Traffic Server HTTP messages, with "
 "corresponding HTTP response codes and customizable files."
@@ -376,11 +357,11 @@ msgstr ""
 "HTTP レスポンスコードとカスタマイズ可能なファイルとともに一覧表示していま"
 "す。"
 
-#: ../../admin/traffic-server-error-messages.en.rst:155
+#: ../../admin/traffic-server-error-messages.en.rst:157
 msgid "``Access Denied``"
 msgstr "``Access Denied``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:153
+#: ../../admin/traffic-server-error-messages.en.rst:155
 msgid ""
 "``403`` You are not allowed to access the document at location ``URL``. "
 "``access#denied``"
@@ -389,22 +370,22 @@ msgstr ""
 "なたは ``URL`` にあるドキュメントへのアクセスが許されていません。) "
 "``access#denied``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:160
+#: ../../admin/traffic-server-error-messages.en.rst:162
 msgid "``Cache Read Error``"
 msgstr "``Cache Read Error``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:158
+#: ../../admin/traffic-server-error-messages.en.rst:160
 msgid ""
 "``500`` Error reading from cache; please retry request. ``cache#read_error``"
 msgstr ""
 "``500`` Error reading from cache; please retry request. (キャッシュ読み込み"
 "中のエラーです。リクエストをリトライしてください。) ``cache#read_error``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:165
+#: ../../admin/traffic-server-error-messages.en.rst:167
 msgid "``Connection Timed Out``"
 msgstr "``Connection Timed Out``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:163
+#: ../../admin/traffic-server-error-messages.en.rst:165
 msgid ""
 "``504`` Too much time has elapsed since the server has sent data. "
 "``timeout#inactivity``"
@@ -412,11 +393,11 @@ msgstr ""
 "``504`` Too much time has elapsed since the server has sent data. (サーバー"
 "がデータを送信してから時間が経過しすぎました。) ``timeout#inactivity``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:170
+#: ../../admin/traffic-server-error-messages.en.rst:172
 msgid "``Content Length Required``"
 msgstr "``Content Length Required``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:168
+#: ../../admin/traffic-server-error-messages.en.rst:170
 msgid ""
 "``400`` Could not process this request because ``Content-Length`` was not "
 "specified. ``request#no_content_length``"
@@ -425,11 +406,11 @@ msgstr ""
 "specified. (``Content-Length`` が指定されなかったためリクエストを処理できま"
 "せんでした。) ``request#no_content_length``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:175
+#: ../../admin/traffic-server-error-messages.en.rst:177
 msgid "``Cycle Detected``"
 msgstr "``Cycle Detected``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:173
+#: ../../admin/traffic-server-error-messages.en.rst:175
 msgid ""
 "``400`` Your request is prohibited because it would cause an HTTP proxy "
 "cycle. ``request#cycle_detected``"
@@ -438,11 +419,11 @@ msgstr ""
 "cycle. (リクエストが HTTP プロキシー循環を引き起こすのでリクエストは禁止され"
 "ました。) ``request#cycle_detected``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:180
+#: ../../admin/traffic-server-error-messages.en.rst:182
 msgid "``Forbidden``"
 msgstr "``Forbidden``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:178
+#: ../../admin/traffic-server-error-messages.en.rst:180
 msgid ""
 "``403`` ``<port number>`` is not an allowed port for SSL connections (you "
 "have made a request for a secure SSL connection to a forbidden port  "
@@ -453,12 +434,12 @@ msgstr ""
 "number). ``<ポート番号>`` が SSL 接続で許可されていないポートです (禁じられ"
 "たポートに SSL 接続のリクエストを行いました) 。``access#ssl_forbidden``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:190
-#: ../../admin/traffic-server-error-messages.en.rst:198
+#: ../../admin/traffic-server-error-messages.en.rst:192
+#: ../../admin/traffic-server-error-messages.en.rst:200
 msgid "``Host Header Required``"
 msgstr "``Host Header Required``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:183
+#: ../../admin/traffic-server-error-messages.en.rst:185
 msgid ""
 "``400`` An attempt was made to transparently proxy your request, but this "
 "attempt failed because your browser did not send an HTTP ``Host`` header. "
@@ -477,7 +458,7 @@ msgstr ""
 "が ``Host`` ヘッダーをサポートするブラウザーにアップグレードすることもできま"
 "す。) ``interception#no_host``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:193
+#: ../../admin/traffic-server-error-messages.en.rst:195
 msgid ""
 "``400`` Because your browser did not send a ``Host`` HTTP header field, the "
 "virtual host being requested could not be determined. To access the website "
@@ -492,11 +473,11 @@ msgstr ""
 "クセスするためには HTTP ``Host`` ヘッダーをサポートしているブラウザーにアッ"
 "プグレードしなくてはなりません。) ``request#no_host``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:204
+#: ../../admin/traffic-server-error-messages.en.rst:206
 msgid "``HTTP Version Not Supported``"
 msgstr "``HTTP Version Not Supported``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:201
+#: ../../admin/traffic-server-error-messages.en.rst:203
 msgid ""
 "``505`` The origin server ``<server name>`` is using an unsupported version "
 "of the HTTP protocol. ``response#bad_version``"
@@ -505,11 +486,11 @@ msgstr ""
 "of the HTTP protocol. (オリジンサーバー ``<サーバー名>`` はサポートされてい"
 "ないバージョンの HTTP プロトコルを使用しています。) ``response#bad_version``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:209
+#: ../../admin/traffic-server-error-messages.en.rst:217
 msgid "``Invalid HTTP Request``"
 msgstr "``Invalid HTTP Request``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:207
+#: ../../admin/traffic-server-error-messages.en.rst:215
 msgid ""
 "``400`` Could not process this ``<client request>`` HTTP method request for "
 "``URL``. ``request#syntax_error``"
@@ -518,14 +499,14 @@ msgstr ""
 "``URL``. (``URL`` への ``クライアントがリクエストしたメソッド`` HTTP メソッ"
 "ドを処理できませんでした。) ``request#syntax_error``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:214
+#: ../../admin/traffic-server-error-messages.en.rst:222
 msgid "``Invalid HTTP Response``"
 msgstr "``Invalid HTTP Response``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:212
-#: ../../admin/traffic-server-error-messages.en.rst:217
-#: ../../admin/traffic-server-error-messages.en.rst:222
-#: ../../admin/traffic-server-error-messages.en.rst:232
+#: ../../admin/traffic-server-error-messages.en.rst:220
+#: ../../admin/traffic-server-error-messages.en.rst:225
+#: ../../admin/traffic-server-error-messages.en.rst:230
+#: ../../admin/traffic-server-error-messages.en.rst:240
 msgid ""
 "``502`` The host ``<server name>`` did not return the document ``URL`` "
 "correctly. ``response#bad_response``"
@@ -534,19 +515,19 @@ msgstr ""
 "correctly. (``<サーバー名>`` というホストは ``URL`` のドキュメントを正しく返"
 "しませんでした。) ``response#bad_response``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:219
+#: ../../admin/traffic-server-error-messages.en.rst:227
 msgid "``Malformed Server Response``"
 msgstr "``Malformed Server Response``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:224
+#: ../../admin/traffic-server-error-messages.en.rst:232
 msgid "``Malformed Server Response Status``"
 msgstr "``Malformed Server Response Status``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:229
+#: ../../admin/traffic-server-error-messages.en.rst:237
 msgid "``Maximum Transaction Time exceeded``"
 msgstr "``Maximum Transaction Time exceeded``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:227
+#: ../../admin/traffic-server-error-messages.en.rst:235
 msgid ""
 "``504`` Too much time has elapsed while transmitting document ``URL``. "
 "``timeout#activity``"
@@ -555,15 +536,15 @@ msgstr ""
 "(``URL`` のドキュメントの転送に時間が経過し過ぎました。) "
 "``timeout#activity``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:234
+#: ../../admin/traffic-server-error-messages.en.rst:242
 msgid "``No Response Header From Server``"
 msgstr "``No Response Header From Server``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:240
+#: ../../admin/traffic-server-error-messages.en.rst:248
 msgid "``Not Cached``"
 msgstr "``Not Cached``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:237
+#: ../../admin/traffic-server-error-messages.en.rst:245
 msgid ""
 "``504`` This document was not available in the cache, and you (the client) "
 "only accept cached copies. ``cache#not_in_cache``"
@@ -573,11 +554,11 @@ msgstr ""
 "なた (クライアント) はキャッシュのコピーのみを受け入れます。) "
 "``cache#not_in_cache``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:246
+#: ../../admin/traffic-server-error-messages.en.rst:254
 msgid "``Not Found on Accelerator``"
 msgstr "``Not Found on Accelerator``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:243
+#: ../../admin/traffic-server-error-messages.en.rst:251
 msgid ""
 "``404`` The request for ``URL`` on host ``<server name>`` was not found. "
 "Check the location and try again. ``urlrouting#no_mapping``"
@@ -587,12 +568,12 @@ msgstr ""
 "トは見つかりませんでした。位置を確認してもう一度試してください。) "
 "``urlrouting#no_mapping``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:251
+#: ../../admin/traffic-server-error-messages.en.rst:259
 msgid "``NULL``"
 msgstr "``NULL``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:249
-#: ../../admin/traffic-server-error-messages.en.rst:279
+#: ../../admin/traffic-server-error-messages.en.rst:257
+#: ../../admin/traffic-server-error-messages.en.rst:287
 msgid ""
 "``502`` The host ``<hostname>`` did not return the document ``URL`` "
 "correctly. ``response#bad_response``"
@@ -601,11 +582,11 @@ msgstr ""
 "correctly. (``<ホスト名>`` は ``URL`` のドキュメントを正しく返しませんでし"
 "た。) ``response#bad_response``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:256
+#: ../../admin/traffic-server-error-messages.en.rst:264
 msgid "``Proxy Authentication Required``"
 msgstr "``Proxy Authentication Required``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:254
+#: ../../admin/traffic-server-error-messages.en.rst:262
 msgid ""
 "``407`` Please log in with username and password. "
 "``access#proxy_auth_required``"
@@ -613,11 +594,11 @@ msgstr ""
 "``407`` Please log in with username and password. (ユーザー名とパスワードで"
 "ログインしてください。) ``access#proxy_auth_required``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:261
+#: ../../admin/traffic-server-error-messages.en.rst:269
 msgid "``Server Hangup``"
 msgstr "``Server Hangup``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:259
+#: ../../admin/traffic-server-error-messages.en.rst:267
 msgid ""
 "``502`` The server ``<hostname>`` closed the connection before the "
 "transaction was completed. ``connect#hangup``"
@@ -626,11 +607,11 @@ msgstr ""
 "transaction was completed. (サーバー ``<ホスト名>`` はトランザクションが完了"
 "する前に接続を閉じました。) ``connect#hangup``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:266
+#: ../../admin/traffic-server-error-messages.en.rst:274
 msgid "``Temporarily Moved``"
 msgstr "``Temporarily Moved``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:264
+#: ../../admin/traffic-server-error-messages.en.rst:272
 msgid ""
 "``302`` The document you requested, ``URL``, has moved to a new location. "
 "The new location is ``<new URL>``. ``redirect#moved_temporarily``"
@@ -640,11 +621,11 @@ msgstr ""
 "しい場所に移動しました。新しい場所は ``<新しいURL>`` です。) "
 "``redirect#moved_temporarily``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:271
+#: ../../admin/traffic-server-error-messages.en.rst:279
 msgid "``Transcoding Not Available``"
 msgstr "``Transcoding Not Available``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:269
+#: ../../admin/traffic-server-error-messages.en.rst:277
 msgid ""
 "``406`` Unable to provide the document ``URL`` in the format requested by "
 "your browser. ``transcoding#unsupported``"
@@ -653,11 +634,11 @@ msgstr ""
 "your browser. (``URL`` のドキュメントをブラウザーが要求した形式で提供するこ"
 "とができませんでした。) ``transcoding#unsupported``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:276
+#: ../../admin/traffic-server-error-messages.en.rst:284
 msgid "``Tunnel Connection Failed``"
 msgstr "``Tunnel Connection Failed``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:274
+#: ../../admin/traffic-server-error-messages.en.rst:282
 msgid ""
 "``502`` Could not connect to the server ``<hostname>``. "
 "``connect#failed_connect``"
@@ -665,15 +646,15 @@ msgstr ""
 "``502`` Could not connect to the server ``<hostname>``. (サーバー ``<ホスト"
 "名>`` に接続できませんでした。) ``connect#failed_connect``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:281
+#: ../../admin/traffic-server-error-messages.en.rst:289
 msgid "``Unknown Error``"
 msgstr "``Unknown Error``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:289
+#: ../../admin/traffic-server-error-messages.en.rst:297
 msgid "``Unknown Host``"
 msgstr "``Unknown Host``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:284
+#: ../../admin/traffic-server-error-messages.en.rst:292
 msgid ""
 "``500`` Unable to locate the server named ``<hostname>``; the server does "
 "not have a DNS entry. Perhaps there is a misspelling in the server name or "
@@ -688,11 +669,11 @@ msgstr ""
 "在していません。名前をダブルチェックしてもう一度試してください。) "
 "``connect#dns_failed``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:296
+#: ../../admin/traffic-server-error-messages.en.rst:304
 msgid "``Unsupported URL Scheme``"
 msgstr "``Unsupported URL Scheme``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:292
+#: ../../admin/traffic-server-error-messages.en.rst:300
 msgid ""
 "``400`` Cannot perform your request for the document ``URL`` because the "
 "protocol scheme is unknown. ``request#scheme_unsupported``"
@@ -701,172 +682,211 @@ msgstr ""
 "protocol scheme is unknown. (プロトコルスキームが不明なため、ドキュメント "
 "``URL`` へのリクエストを行えません。) ``request#scheme_unsupported``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:301
+#: ../../admin/traffic-server-error-messages.en.rst:309
 msgid "Standard HTTP Response Messages"
 msgstr "標準的な HTTP レスポンスメッセージ"
 
-#: ../../admin/traffic-server-error-messages.en.rst:303
+#: ../../admin/traffic-server-error-messages.en.rst:311
 msgid ""
 "The following standard HTTP response messages are provided for your "
 "information."
 msgstr "次の標準的な HTTP レスポンスメッセージが参考情報として提供されます。"
 
-#: ../../admin/traffic-server-error-messages.en.rst:307
+#: ../../admin/traffic-server-error-messages.en.rst:315
 msgid "``200``"
 msgstr "``200``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:307
+#: ../../admin/traffic-server-error-messages.en.rst:315
 msgid "OK"
 msgstr "OK"
 
-#: ../../admin/traffic-server-error-messages.en.rst:310
+#: ../../admin/traffic-server-error-messages.en.rst:318
 msgid "``202``"
 msgstr "``202``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:310
+#: ../../admin/traffic-server-error-messages.en.rst:318
 msgid "Accepted"
 msgstr "Accepted"
 
-#: ../../admin/traffic-server-error-messages.en.rst:313
+#: ../../admin/traffic-server-error-messages.en.rst:321
 msgid "``204``"
 msgstr "``204``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:313
+#: ../../admin/traffic-server-error-messages.en.rst:321
 msgid "No Content"
 msgstr "No Content"
 
-#: ../../admin/traffic-server-error-messages.en.rst:316
+#: ../../admin/traffic-server-error-messages.en.rst:324
 msgid "``206``"
 msgstr "``206``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:316
+#: ../../admin/traffic-server-error-messages.en.rst:324
 msgid "Partial Content"
 msgstr "Partial Content"
 
-#: ../../admin/traffic-server-error-messages.en.rst:319
+#: ../../admin/traffic-server-error-messages.en.rst:327
 msgid "``300``"
 msgstr "``300``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:319
+#: ../../admin/traffic-server-error-messages.en.rst:327
 msgid "Multiple Choices"
 msgstr "Multiple Choices"
 
-#: ../../admin/traffic-server-error-messages.en.rst:322
+#: ../../admin/traffic-server-error-messages.en.rst:330
 msgid "``301``"
 msgstr "``301``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:322
+#: ../../admin/traffic-server-error-messages.en.rst:330
 msgid "Moved Permanently"
 msgstr "Moved Permanently"
 
-#: ../../admin/traffic-server-error-messages.en.rst:325
+#: ../../admin/traffic-server-error-messages.en.rst:333
 msgid "``302``"
 msgstr "``302``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:325
+#: ../../admin/traffic-server-error-messages.en.rst:333
 msgid "Found"
 msgstr "Found"
 
-#: ../../admin/traffic-server-error-messages.en.rst:328
+#: ../../admin/traffic-server-error-messages.en.rst:336
 msgid "``303``"
 msgstr "``303``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:328
+#: ../../admin/traffic-server-error-messages.en.rst:336
 msgid "See Other"
 msgstr "See Other"
 
-#: ../../admin/traffic-server-error-messages.en.rst:331
+#: ../../admin/traffic-server-error-messages.en.rst:339
 msgid "``304``"
 msgstr "``304``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:331
+#: ../../admin/traffic-server-error-messages.en.rst:339
 msgid "Not Modified"
 msgstr "Not Modified"
 
-#: ../../admin/traffic-server-error-messages.en.rst:334
+#: ../../admin/traffic-server-error-messages.en.rst:342
 msgid "``400``"
 msgstr "``400``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:334
+#: ../../admin/traffic-server-error-messages.en.rst:342
 msgid "Bad Request"
 msgstr "Bad Request"
 
-#: ../../admin/traffic-server-error-messages.en.rst:337
+#: ../../admin/traffic-server-error-messages.en.rst:345
 msgid "``401``"
 msgstr "``401``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:337
+#: ../../admin/traffic-server-error-messages.en.rst:345
 msgid "Unauthorized; retry"
 msgstr "Unauthorized; retry"
 
-#: ../../admin/traffic-server-error-messages.en.rst:340
+#: ../../admin/traffic-server-error-messages.en.rst:348
 msgid "``403``"
 msgstr "``403``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:340
+#: ../../admin/traffic-server-error-messages.en.rst:348
 msgid "Forbidden"
 msgstr "Forbidden"
 
-#: ../../admin/traffic-server-error-messages.en.rst:343
+#: ../../admin/traffic-server-error-messages.en.rst:351
 msgid "``404``"
 msgstr "``404``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:343
+#: ../../admin/traffic-server-error-messages.en.rst:351
 msgid "Not Found"
 msgstr "Not Found"
 
-#: ../../admin/traffic-server-error-messages.en.rst:346
+#: ../../admin/traffic-server-error-messages.en.rst:354
 msgid "``405``"
 msgstr "``405``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:346
+#: ../../admin/traffic-server-error-messages.en.rst:354
 msgid "Method Not Allowed"
 msgstr "Method Not Allowed"
 
-#: ../../admin/traffic-server-error-messages.en.rst:349
+#: ../../admin/traffic-server-error-messages.en.rst:357
 msgid "``406``"
 msgstr "``406``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:349
+#: ../../admin/traffic-server-error-messages.en.rst:357
 msgid "Not acceptable"
 msgstr "Not acceptable"
 
-#: ../../admin/traffic-server-error-messages.en.rst:352
+#: ../../admin/traffic-server-error-messages.en.rst:360
 msgid "``408``"
 msgstr "``408``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:352
+#: ../../admin/traffic-server-error-messages.en.rst:360
 msgid "Request Timeout"
 msgstr "Request Timeout"
 
-#: ../../admin/traffic-server-error-messages.en.rst:355
+#: ../../admin/traffic-server-error-messages.en.rst:363
 msgid "``500``"
 msgstr "``500``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:355
+#: ../../admin/traffic-server-error-messages.en.rst:363
 msgid "Internal server error"
 msgstr "Internal server error"
 
-#: ../../admin/traffic-server-error-messages.en.rst:358
+#: ../../admin/traffic-server-error-messages.en.rst:366
 msgid "``501``"
 msgstr "``501``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:358
+#: ../../admin/traffic-server-error-messages.en.rst:366
 msgid "Not Implemented"
 msgstr "Not Implemented"
 
-#: ../../admin/traffic-server-error-messages.en.rst:361
+#: ../../admin/traffic-server-error-messages.en.rst:369
 msgid "``502``"
 msgstr "``502``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:361
+#: ../../admin/traffic-server-error-messages.en.rst:369
 msgid "Bad Gateway"
 msgstr "Bad Gateway"
 
-#: ../../admin/traffic-server-error-messages.en.rst:364
+#: ../../admin/traffic-server-error-messages.en.rst:372
 msgid "``504``"
 msgstr "``504``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:364
+#: ../../admin/traffic-server-error-messages.en.rst:372
 msgid "Gateway Timeout"
 msgstr "Gateway Timeout"
+
+#: ../../admin/traffic-server-error-messages.en.rst:142
+msgid ""
+"Traffic Server returns detailed error messages to browser clients when "
+"there are problems with the HTTP transactions requested by the browser. "
+"These Traffic Server response messages correspond to standard HTTP response "
+"codes, but provide more information. A list of the more frequently-"
+"encountered HTTP response codes is provided in :ref:`standard-http-response-"
+"messages`. You can customize the Traffic Server response messages "
+"(typically in proxy/config/body_factory/default/, but set by :ts:cv:`proxy."
+"config.body_factory.template_sets_dir`)."
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:212
+msgid "``Invalid Content Length``"
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:209
+msgid ""
+"``400`` Could not process this request because the specified ``Content-"
+"Length`` was invalid (less than 0).. ``request#invalid_content_length``"
+msgstr ""
+
+#~ msgid ""
+#~ "Traffic Server returns detailed error messages to browser clients when "
+#~ "there are problems with the HTTP transactions requested by the browser. "
+#~ "These Traffic Server response messages correspond to standard HTTP "
+#~ "response codes, but provide more information. A list of the more "
+#~ "frequently-encountered HTTP response codes is provided in :ref:`standard-"
+#~ "http-response-messages`. You can customize the Traffic Server response "
+#~ "messages, if desired."
+#~ msgstr ""
+#~ "Traffic Server は ブラウザからリクエストされた HTTP トランザクションに問"
+#~ "題がある場合に、クライアントに詳細なエラーメッセージを返します。これらの "
+#~ "Traffice Server のレスポンスメッセージは標準的な HTTP レスポンスコードに"
+#~ "対応しますが、より多くの情報を提供します。より頻繁に遭遇する HTTP レスポ"
+#~ "ンスコードの一覧は :ref:`standard-http-response-messages` で提供されてい"
+#~ "ます。もし望むなら Traffic Server のレスポンスメッセージをカスタマイズす"
+#~ "ることができます。"

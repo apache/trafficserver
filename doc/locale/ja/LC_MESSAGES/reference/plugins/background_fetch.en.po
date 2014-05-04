@@ -1,0 +1,97 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 5.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-05-05 02:14+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/plugins/background_fetch.en.rst:4
+msgid "Background Fetch Plugin"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:24
+msgid ""
+"This is a plugin for Apache Traffic Server that allows you to proactively "
+"fetch content from Origin in a way that it will fill the object into cache. "
+"This is particularly useful when all (or most) of your client requests are "
+"of the byte-Range type. The underlying problem being that Traffic Server is "
+"not able to cache request / responses with byte ranges."
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:31
+msgid "Using the plugin"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:33
+msgid ""
+"This plugin currently only functions as a global plugin, and it takes not "
+"arguments or parameters. In :file:`plugin.config`, simply add::"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:40
+msgid "Functionality"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:42
+msgid ""
+"Examining the responses from origin, we decide to trigger a background "
+"fetch of the original (Client) request under these conditions:"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:45
+msgid "The request is a ``GET`` request (we only support these right now)"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:46
+msgid "The response is a ``206`` response"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:47
+msgid ""
+"The original client request, and the Origin server response, is clearly "
+"indicating that the response is cacheable. This uses the new API c:func:"
+"`TSHttpTxnIsCacheable()`, which also implies honoring current Traffic "
+"Server configurations."
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:53
+msgid ""
+"Once deemed a good candidate to performance a background fetch, we'll "
+"replay the original client request through the Traffic Server proxy again, "
+"except this time eliminating the ``Range`` header. This is transparent to "
+"the original client request, which continues as normal."
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:58
+msgid ""
+"Only one background fetch per URL is ever performed, making sure we do not "
+"accidentally put pressure on the origin servers."
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:64
+msgid "Future additions"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:66
+msgid ""
+"The infrastructure is in place for providing global and per-remap "
+"configurations. This could include:"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:69
+msgid "Limiting the background fetches to certain Content-Types"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:70
+msgid "Limiting the background fetches to content of certain sizes"
+msgstr ""
+
+#: ../../reference/plugins/background_fetch.en.rst:73
+msgid "None of this is currently not implemented."
+msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -78,13 +77,9 @@ msgid "The session hook functions are listed below:"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-sessions.en.rst:50
-msgid ""
-"```TSHttpSsnHookAdd`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a268d493d94fa5461c8200883a9b8d20b>`__"
+msgid ":c:func:`TSHttpSsnHookAdd`"
 msgstr ""
 
 #: ../../sdk/http-hooks-and-transactions/http-sessions.en.rst:51
-msgid ""
-"```TSHttpSsnReenable`` <http://people.apache.org/~amc/ats/doc/html/"
-"InkAPI_8cc.html#a3bbe42bf4757625bdb8bb65e7ac6f52d>`__"
+msgid ":c:func:`TSHttpSsnReenable`"
 msgstr ""

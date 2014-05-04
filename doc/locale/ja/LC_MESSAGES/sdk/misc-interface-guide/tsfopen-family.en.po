@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -58,37 +57,25 @@ msgid ""
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/tsfopen-family.en.rst:42
-msgid ""
-"```TSfclose`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a2efebe7583752668e6136de0b47bee4f>`__"
+msgid ":c:func:`TSfclose`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/tsfopen-family.en.rst:44
-msgid ""
-"```TSfflush`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc."
-"html#a3cb0cb348ed189a98577f84e0629ca9a>`__"
+msgid ":c:func:`TSfflush`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/tsfopen-family.en.rst:46
-msgid ""
-"```TSfgets`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a6dcc724a432a287836352b31984e0de8>`__"
+msgid ":c:func:`TSfgets`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/tsfopen-family.en.rst:48
-msgid ""
-"```TSfopen`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a53b0430d5b0c042bdb3d06689cf244f3>`__"
+msgid ":c:func:`TSfopen`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/tsfopen-family.en.rst:50
-msgid ""
-"```TSfread`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a29f83c50b52e4fcabfe2b829de5742e2>`__"
+msgid ":c:func:`TSfread`"
 msgstr ""
 
 #: ../../sdk/misc-interface-guide/tsfopen-family.en.rst:52
-msgid ""
-"```TSfwrite`` <http://people.apache.org/~amc/ats/doc/html/ts_8h."
-"html#a596a5562db5180ea8818f7bb87336a15>`__"
+msgid ":c:func:`TSfwrite`"
 msgstr ""
