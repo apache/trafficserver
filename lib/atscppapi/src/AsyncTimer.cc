@@ -45,7 +45,7 @@ int handleTimerEvent(TSCont cont, TSEvent event, void *edata) {
   AsyncTimerState *state = static_cast<AsyncTimerState *>(TSContDataGet(cont));
   if (state->initial_timer_action_) {
     LOG_DEBUG("Received initial timer event.");
-    state->initial_timer_action_ = NULL; // mark it so that it won't be canceled in the destructor
+    state->initial_timer_action_ = NULL; // mark it so that it won't be canceled later on
     if (state->type_ == AsyncTimer::TYPE_PERIODIC) {
       LOG_DEBUG("Scheduling periodic event now");
       state->periodic_timer_action_ = TSContScheduleEvery(state->cont_, state->period_in_ms_,
@@ -91,6 +91,10 @@ void AsyncTimer::run() {
 }
 
 void AsyncTimer::cancel() {
+  if (!state_->cont_) {
+    LOG_DEBUG("Already canceled");
+    return;
+  }
   TSMutexLock(TSContMutexGet(state_->cont_)); // mutex will be unlocked in destroy
   if (state_->initial_timer_action_) {
     LOG_DEBUG("Canceling initial timer action");
@@ -102,6 +106,7 @@ void AsyncTimer::cancel() {
   }
   LOG_DEBUG("Destroying cont");
   TSContDestroy(state_->cont_);
+  state_->cont_ = NULL;
 }
 
 AsyncTimer::~AsyncTimer() {
