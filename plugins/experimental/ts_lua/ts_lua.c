@@ -150,7 +150,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 }
 
 static int 
-transactionStartHookHandler(TSCont contp, TSEvent event, void *edata) {
+transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata) {
   TSHttpTxn txnp = (TSHttpTxn) edata;
 
   int64_t req_id;
