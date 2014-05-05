@@ -28,10 +28,9 @@
 static volatile int32_t ts_lua_http_next_id = 0;
 static volatile int32_t ts_lua_g_http_next_id = 0;
 
-ts_lua_main_ctx         *ts_lua_main_ctx_array;
-ts_lua_main_ctx         *ts_lua_g_main_ctx_array;
+static ts_lua_main_ctx         *ts_lua_main_ctx_array;
+static ts_lua_main_ctx         *ts_lua_g_main_ctx_array;
 
-TSCont global_contp;
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char * errbuf ATS_UNUSED , int errbuf_size ATS_UNUSED )
@@ -149,43 +148,9 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     return ret;
 }
 
-static int 
-transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata) {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
-
-  int64_t req_id;
-  TSCont txn_contp;
-
-  ts_lua_main_ctx     *main_ctx;
-  ts_lua_http_ctx     *http_ctx;
-
-  ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
-
-  req_id = (int64_t) ts_lua_atomic_increment((&ts_lua_g_http_next_id), 1);
-  main_ctx = &ts_lua_g_main_ctx_array[req_id%TS_LUA_MAX_STATE_COUNT];
-
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);  
-  TSMutexLock(main_ctx->mutexp);
-
-  http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-  http_ctx->txnp = txnp;
-  http_ctx->remap = 0;
-
-  txn_contp = TSContCreate(ts_lua_http_cont_handler, NULL);
-  TSContDataSet(txn_contp, http_ctx);
-  http_ctx->main_contp = txn_contp;
-  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
-
-  TSContDataSet(global_contp, http_ctx);
-
-  TSMutexUnlock(main_ctx->mutexp);
-
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  return 0;
-}
-
 static int
-globalHookHandler(TSCont contp, TSEvent event, void *edata) {
+globalHookHandler(TSCont contp, TSEvent event, void *edata) 
+{
   TSHttpTxn txnp = (TSHttpTxn) edata;
 
   int ret = 0;
@@ -242,6 +207,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
 
   if (lua_type(l, -1) != LUA_TFUNCTION) {
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+      lua_pop(l, 1);
       return 0;
   }
 
@@ -256,8 +222,85 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
   return ret;
 }
 
+static int 
+transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata) 
+{
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+
+  int64_t req_id;
+  TSCont txn_contp;
+  TSCont global_contp;
+
+  ts_lua_main_ctx     *main_ctx;
+  ts_lua_http_ctx     *http_ctx;
+
+  ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
+
+  req_id = (int64_t) ts_lua_atomic_increment((&ts_lua_g_http_next_id), 1);
+  main_ctx = &ts_lua_g_main_ctx_array[req_id%TS_LUA_MAX_STATE_COUNT];
+
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);  
+  TSMutexLock(main_ctx->mutexp);
+
+  http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
+  http_ctx->txnp = txnp;
+  http_ctx->remap = 0;
+
+  txn_contp = TSContCreate(ts_lua_http_cont_handler, NULL);
+  TSContDataSet(txn_contp, http_ctx);
+  http_ctx->main_contp = txn_contp;
+  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
+
+  global_contp = TSContCreate(globalHookHandler, NULL);
+  TSContDataSet(global_contp, http_ctx);
+
+  //adding hook based on whether the lua global function exists.
+  lua_State *l = http_ctx->lua;
+  
+  lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
+  if(lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "send_request_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_RESPONSE);
+  if(lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "read_response_hdr_hook added");
+  }
+  lua_pop(l, 1);
+  
+  lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_RESPONSE);
+  if(lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "send_response_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE);
+  if(lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "cache_lookup_complete_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_REQUEST);
+  if(lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "read_request_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  TSMutexUnlock(main_ctx->mutexp);
+
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
 void
-TSPluginInit(int argc, const char *argv[]) {
+TSPluginInit(int argc, const char *argv[]) 
+{
     int ret = 0;
     ts_lua_g_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
     memset(ts_lua_g_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
@@ -303,58 +346,4 @@ TSPluginInit(int argc, const char *argv[]) {
     TSContDataSet(txn_start_contp, conf);
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, txn_start_contp);
 
-
-    global_contp = TSContCreate(globalHookHandler, NULL);
-    if (!global_contp) {
-      TSError("[%s] Could not create global continuation", __FUNCTION__);
-      return;
-    }
-
-    //adding hook based on whether the lua global function exists.
-    ts_lua_main_ctx *main_ctx = &ts_lua_g_main_ctx_array[0];
-    ts_lua_http_ctx *http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-    lua_State *l = http_ctx->lua;
-    int lua_function_exists = 0;
-
-    lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
-    if(lua_type(l, -1) == LUA_TFUNCTION) {
-      lua_function_exists = 1;
-      TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, global_contp);
-      TSDebug(TS_LUA_DEBUG_TAG, "send_request_hdr_hook added");
-    }
-    lua_pop(l, 1);
-
-    lua_getglobal(l, TS_LUA_FUNCTION_G_READ_RESPONSE);
-    if(lua_type(l, -1) == LUA_TFUNCTION) {
-      lua_function_exists = 1;
-      TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, global_contp);
-      TSDebug(TS_LUA_DEBUG_TAG, "read_response_hdr_hook added");
-    }
-    lua_pop(l, 1);
-
-    lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_RESPONSE);
-    if(lua_type(l, -1) == LUA_TFUNCTION) {
-      lua_function_exists = 1;
-      TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, global_contp);
-      TSDebug(TS_LUA_DEBUG_TAG, "send_response_hdr_hook added");
-    }
-    lua_pop(l, 1);
-
-    lua_getglobal(l, TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE);
-    if(lua_type(l, -1) == LUA_TFUNCTION) {
-      lua_function_exists = 1;
-      TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, global_contp);
-      TSDebug(TS_LUA_DEBUG_TAG, "cache_lookup_complete_hook added");
-    }
-    lua_pop(l, 1);
-
-    lua_getglobal(l, TS_LUA_FUNCTION_G_READ_REQUEST);
-    if((lua_type(l, -1) == LUA_TFUNCTION) || lua_function_exists) {
-      lua_function_exists = 1;
-      TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);
-      TSDebug(TS_LUA_DEBUG_TAG, "read_request_hdr_hook added");
-    } 
-    lua_pop(l, 1);
-    
-    ts_lua_destroy_http_ctx(http_ctx);
 }
