@@ -23,9 +23,10 @@
 #define __CONDITIONS_H__ 1
 
 #include <string>
-#include <ts/ts.h>
 #include <boost/lexical_cast.hpp>
 #include <cstring>
+
+#include "ts/ts.h"
 
 #include "condition.h"
 #include "matcher.h"

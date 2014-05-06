@@ -25,7 +25,8 @@
 
 #include <string>
 #include <vector>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
 
 #include "resources.h"
 #include "parser.h"

@@ -22,7 +22,7 @@
 #include <utility>
 #include <boost/tokenizer.hpp>
 
-#include <ts/ts.h>
+#include "ts/ts.h"
 
 #include "parser.h"
 

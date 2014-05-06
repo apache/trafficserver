@@ -20,8 +20,9 @@
 //
 //
 #include <arpa/inet.h>
-#include <ts/ts.h>
 #include <string.h>
+
+#include "ts/ts.h"
 
 #include "operators.h"
 #include "expander.h"

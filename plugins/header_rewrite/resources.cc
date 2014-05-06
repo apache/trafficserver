@@ -19,7 +19,7 @@
 // resources.cc: Implementation of the resources class.
 //
 //
-#include <ts/ts.h>
+#include "ts/ts.h"
 
 #include "resources.h"
 #include "lulu.h"
