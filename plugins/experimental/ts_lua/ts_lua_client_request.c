@@ -17,7 +17,7 @@
 */
 
 
-#include <arpa/inet.h>
+#include "ink_platform.h"
 #include "ts_lua_util.h"
 
 static void ts_lua_inject_client_request_client_addr_api(lua_State *L);
