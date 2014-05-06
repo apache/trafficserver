@@ -42,7 +42,7 @@ all-local:
 	@echo "Making all in luajit"
 	test -d "$(top_srcdir)/$(subdir)/luajit/src" || (cd "$(top_srcdir)" && git submodule update --init)
 	test -d "$(top_builddir)/$(subdir)/luajit/src" || cp -rf "$(srcdir)/luajit" "$(top_builddir)/$(subdir)/"
-	cd luajit && $(MAKE) PREFIX=$(prefix)
+	cd luajit && $(MAKE) $(AM_MAKEFLAGS) PREFIX="$(prefix)" CC="$(CC)" CFLAGS="$(CFLAGS)"
 
 clean-local:
 	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && make clean)
