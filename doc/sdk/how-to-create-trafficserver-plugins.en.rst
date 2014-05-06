@@ -224,7 +224,7 @@ Types of Hooks
 The Blacklist plugin's hook to the "origin server DNS lookup" state is a
 ****global hook****, meaning that the plugin is called *every time*
 there's an HTTP transaction with a DNS lookup event. The plugin's hook
-to the "send reply header" state is a **tr**\ ***ansaction hook***,
+to the "send reply header" state is a ****transaction hook****,
 meaning that this hook is only invoked for *specified transactions* (in
 the Blacklist example, it's only used for requests to blacklisted
 servers). Several examples of setting up hooks are provided in the code
