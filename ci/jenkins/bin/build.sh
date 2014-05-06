@@ -16,24 +16,29 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Parse debug / release
+# Check if it's a debug or release build
 enable_debug=""
 test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && enable_debug="--enable-debug"
 
-# Parse compiler, only turn on ccache with gcc (clang fails, sigh)
-enable_ccache=""
-test "${JOB_NAME#*compiler=gcc}" != "${JOB_NAME}" && enable_ccache="--enable-ccache"
+# When to turn on ccache, disabled for all clang / llvm builds
+enable_ccache="--enable-ccache"
+test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_ccache=""
+
+# When to enable -Werror, turned off for RHEL5 node (due to LuaJIT / gcc issues on RHEL5)
+enable_werror="--enable-werror"
+test "${NODE_NAME#RHEL 5}" != "${NODE_NAME}" && enable_werror=""
+
 
 # Change to the build area (this is previously setup in extract.sh)
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 
 ./configure \
     --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
-    --enable-werror \
     --enable-experimental-plugins \
     --enable-example-plugins \
     --enable-test-tools \
     ${enable_ccache} \
+    ${enable_werror} \
     ${enable_debug}
 
 make -j4 V=1
