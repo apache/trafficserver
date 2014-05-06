@@ -38,9 +38,12 @@ extern "C" void fd_reify(struct ev_loop *);
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
 // loops through the list of NetVCs and calls the timeouts
-struct InactivityCop : public Continuation {
-  InactivityCop(ProxyMutex *m):Continuation(m) {
+class InactivityCop : public Continuation {
+public:
+  InactivityCop(ProxyMutex *m):Continuation(m), default_inactivity_timeout(0) {
     SET_HANDLER(&InactivityCop::check_inactivity);
+    REC_ReadConfigInteger(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
+    Debug("inactivity_cop", "default inactivity timeout is set to: %d", default_inactivity_timeout);
   }
   int check_inactivity(int event, Event *e) {
     (void) event;
@@ -52,7 +55,7 @@ struct InactivityCop : public Continuation {
         nh->cop_list.push(vc);
     }
     while (UnixNetVConnection *vc = nh->cop_list.pop()) {
-      // If we cannot ge tthe lock don't stop just keep cleaning
+      // If we cannot get the lock don't stop just keep cleaning
       MUTEX_TRY_LOCK(lock, vc->mutex, this_ethread());
       if (!lock.lock_acquired) {
        NET_INCREMENT_DYN_STAT(inactivity_cop_lock_acquire_failure_stat);
@@ -62,12 +65,24 @@ struct InactivityCop : public Continuation {
       if (vc->closed) {
         close_UnixNetVConnection(vc, e->ethread);
         continue;
-      } 
+      }
+
+      // set a default inactivity timeout if one is not set
+      if (vc->next_inactivity_timeout_at == 0 && default_inactivity_timeout > 0) {
+        Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", vc, default_inactivity_timeout);
+        vc->set_inactivity_timeout(HRTIME_SECONDS(default_inactivity_timeout));
+      } else {
+        Debug("inactivity_cop_verbose", "vc: %p timeout at: %" PRId64 " timeout in: %" PRId64, vc, ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
+            ink_hrtime_to_sec(vc->inactivity_timeout_in));
+      }
+
       if (vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now)
         vc->handleEvent(EVENT_IMMEDIATE, e);
     }
     return 0;
   }
+private:
+  int default_inactivity_timeout;  // only used when one is not set for some bad reason
 };
 #endif
 
