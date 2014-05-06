@@ -113,8 +113,12 @@ SpdySM::clear()
   map<int, SpdyRequest*>::iterator endIter = req_map.end();
   for(; iter != endIter; ++iter) {
     SpdyRequest *req = iter->second;
-    req->clear();
-    spdyRequestAllocator.free(req);
+    if (req) {
+      req->clear();
+      spdyRequestAllocator.free(req);
+    } else {
+      Error("req null in SpdSM::clear");
+    }
   }
   req_map.clear();
 
