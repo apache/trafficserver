@@ -18,7 +18,7 @@
 
 # Do a distclean, to verify that we can actually satisfy this (common) build target
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
-make distclean
+${ATS_MAKE} distclean
 
 # Final cleanup, this removes the build and install areas
 cd "${WORKSPACE}"

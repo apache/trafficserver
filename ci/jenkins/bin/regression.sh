@@ -17,6 +17,6 @@
 #  limitations under the License.
 
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
-make test && make install
+${ATS_MAKE} test && ${ATS_MAKE} install
 
 "${WORKSPACE}/${BUILD_NUMBER}/install/bin/traffic_server" -R 1

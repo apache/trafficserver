@@ -20,7 +20,7 @@ cd "${WORKSPACE}/src"
 
 autoreconf -fi
 ./configure
-make asf-dist
+${ATS_MAKE} asf-dist
 
 cp trafficserver-*.tar.bz2 ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2.new
 mv ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2.new ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2

@@ -28,8 +28,8 @@ if test "${JOB_NAME#*type=out_of_tree}" != "${JOB_NAME}"; then
 	--enable-example-plugins \
 	--enable-test-tools
 
-    make -j8 V=1
-    make check
+    ${ATS_MAKE} -j8 V=1
+    ${ATS_MAKE} check
 
-    make distclean
+    ${ATS_MAKE} distclean
 fi

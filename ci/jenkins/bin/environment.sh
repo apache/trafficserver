@@ -19,6 +19,11 @@
 # Shouldn't have to tweak this
 export ATS_SRC_HOME="/home/jenkins/src"
 
+# Check if we need to use a different "make"
+ATS_MAKE=make
+test "${JOB_NAME#freebsd*}" != "${JOB_NAME}" && ATS_MAKE="gmake"
+export ATS_MAKE
+
 # Extract the current branch (default to master). ToDo: Can we do this better ?
 ATS_BRANCH=master
 test "${JOB_NAME#*-4.2.x}" != "${JOB_NAME}" && ATS_BRANCH=4.2.x

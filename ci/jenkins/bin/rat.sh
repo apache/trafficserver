@@ -20,8 +20,8 @@ cd "${WORKSPACE}/src"
 
 if test "${JOB_NAME#*type=RAT}" != "${JOB_NAME}"; then
     ./configure
-    make rat | tee RAT.txt
+    ${ATS_MAKE} rat | tee RAT.txt
     cp RAT.txt /home/jenkins/RAT/rat-${ATS_BRANCH}.txt
     grep 'Unknown Licenses' RAT.txt# && exit -1
-    make distclean
+    ${ATS_MAKE} distclean
 fi

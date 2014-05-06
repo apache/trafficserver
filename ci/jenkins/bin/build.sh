@@ -20,6 +20,9 @@
 enable_debug=""
 test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && enable_debug="--enable-debug"
 
+# Check if we're doing Debian style hardening
+test "${JOB_NAME#*type=hardening}" != "${JOB_NAME}" && export DEB_BUILD_HARDENING
+
 # When to turn on ccache, disabled for all clang / llvm builds
 enable_ccache="--enable-ccache"
 test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_ccache=""
@@ -41,4 +44,4 @@ cd "${WORKSPACE}/${BUILD_NUMBER}/build"
     ${enable_werror} \
     ${enable_debug}
 
-make -j4 V=1
+${ATS_MAKE} -j4 V=1
