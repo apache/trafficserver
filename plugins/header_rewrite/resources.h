@@ -23,8 +23,9 @@
 #define __RESOURCES_H__ 1
 
 #include <string>
-#include <ts/ts.h>
-#include <ts/remap.h>
+
+#include "ts/ts.h"
+#include "ts/remap.h"
 
 #include "lulu.h"
 

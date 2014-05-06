@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 4.2.2
 
 
+  *) [TS-2784] Make header_rewrite plugins compile on FBSD.
+
   *) [TS-2778] Websockets remap doesn't properly handle the implicit port for wss.
 
 Changes with Apache Traffic Server 4.2.1

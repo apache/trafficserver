@@ -23,15 +23,9 @@
 #define __EXPANDER_H__ 1
 
 #include <string>
-#include <ts/ts.h>
 
+#include "ts/ts.h"
 #include "resources.h"
-#include "statement.h"
-#include "parser.h"
-
-#include <iostream>
-#include <arpa/inet.h>
-#include <sstream>
 
 class VariableExpander {
 public:

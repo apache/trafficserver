@@ -23,7 +23,8 @@
 #define __OPERATORS_H__ 1
 
 #include <string>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
 
 #include "operator.h"
 #include "resources.h"

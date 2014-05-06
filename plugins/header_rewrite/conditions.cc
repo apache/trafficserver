@@ -19,13 +19,13 @@
 // conditions.cc: Implementation of the condition classes
 //
 //
+#include <sys/time.h>
 #include <unistd.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
 
 #include "conditions.h"
 #include "lulu.h"
-
-#include <sys/time.h>
 
 
 // ConditionStatus

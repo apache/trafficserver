@@ -22,9 +22,8 @@
 #ifndef __LULU_H__
 #define __LULU_H__ 1
 
-#include <sys/types.h>
-
 #include "ink_defs.h"
+#include "ink_platform.h"
 
 // Memory barriers on i386 / linux / gcc
 #if defined(__i386__)
