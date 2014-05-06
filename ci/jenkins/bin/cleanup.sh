@@ -21,5 +21,5 @@ cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 make distclean
 
 # Final cleanup, this removes the build and install areas
-cd "${WORKSPACE}
+cd "${WORKSPACE}"
 rm ${BUILD_NUMBER}
