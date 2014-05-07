@@ -20,9 +20,6 @@
 enable_debug=""
 test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && enable_debug="--enable-debug"
 
-# Check if we're doing Debian style hardening
-test "${JOB_NAME#*type=hardening}" != "${JOB_NAME}" && export DEB_BUILD_HARDENING
-
 # When to turn on ccache, disabled for all clang / llvm builds
 enable_ccache="--enable-ccache"
 test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_ccache=""

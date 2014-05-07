@@ -19,6 +19,9 @@
 # Shouldn't have to tweak this
 export ATS_SRC_HOME="/home/jenkins/src"
 
+# Check if we're doing Debian style hardening
+test "${JOB_NAME#*type=hardening}" != "${JOB_NAME}" && export DEB_BUILD_HARDENING=1
+
 # Check if we need to use a different "make"
 ATS_MAKE=make
 test "${JOB_NAME#freebsd*}" != "${JOB_NAME}" && ATS_MAKE="gmake"
