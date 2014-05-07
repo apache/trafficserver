@@ -1098,6 +1098,23 @@ RecConfigReadLogDir()
 }
 
 //-------------------------------------------------------------------------
+// RecConfigReadBinDir
+//-------------------------------------------------------------------------
+char *
+RecConfigReadBinDir()
+{
+  char buf[PATH_NAME_MAX + 1];
+
+  buf[0] = '\0';
+  RecGetRecordString("proxy.config.bin_path", buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative(buf);
+  } else {
+    return ats_strdup(Layout::get()->bindir);
+  }
+}
+
+//-------------------------------------------------------------------------
 // RecConfigReadSnapshotDir.
 //-------------------------------------------------------------------------
 char *

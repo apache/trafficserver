@@ -57,7 +57,6 @@ public:
     delete alarm_keeper;
     delete virt_map;
     delete ccom;
-    ats_free(bin_path);
     ats_free(absolute_proxy_binary);
     ats_free(proxy_name);
     ats_free(proxy_binary);
@@ -123,8 +122,6 @@ public:
   int process_server_timeout_secs;
   int process_server_timeout_msecs;
 
-  char pserver_path[PATH_NAME_MAX];
-  char *bin_path;
   char *absolute_proxy_binary;
   char *proxy_name;
   char *proxy_binary;

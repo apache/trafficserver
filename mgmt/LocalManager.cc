@@ -202,6 +202,7 @@ LocalManager::LocalManager(bool proxy_on)
 {
   bool found;
   xptr<char> rundir(RecConfigReadRuntimeDir());
+  xptr<char> bindir(RecConfigReadBinDir());
 
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
@@ -220,8 +221,6 @@ LocalManager::LocalManager(bool proxy_on)
     mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
     mgmt_sync_key = MGMT_SEMID_DEFAULT;
   }
-
-  ink_strlcpy(pserver_path, rundir, sizeof(pserver_path));
 
   virt_map = NULL;
 
@@ -266,30 +265,21 @@ LocalManager::LocalManager(bool proxy_on)
   }
 #endif
 
-  bin_path = REC_readString("proxy.config.bin_path", &found);
   process_server_timeout_secs = REC_readInteger("proxy.config.lm.pserver_timeout_secs", &found);
   process_server_timeout_msecs = REC_readInteger("proxy.config.lm.pserver_timeout_msecs", &found);
   proxy_name = REC_readString("proxy.config.proxy_name", &found);
   proxy_binary = REC_readString("proxy.config.proxy_binary", &found);
   proxy_options = REC_readString("proxy.config.proxy_binary_opts", &found);
   env_prep = REC_readString("proxy.config.env_prep", &found);
-  // Calculate configured bin_path from the prefix
-  char *absolute_bin_path = Layout::get()->relative(bin_path);
-  ats_free(bin_path);
-  bin_path = absolute_bin_path;
-  // Calculate proxy_binary from the absolute bin_path
-  absolute_proxy_binary = Layout::relative_to(absolute_bin_path, proxy_binary);
 
+  // Calculate proxy_binary from the absolute bin_path
+  absolute_proxy_binary = Layout::relative_to(bindir, proxy_binary);
+
+  // coverity[fs_check_call]
   if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
-    // Try 'Layout::bindir' directory
-    ats_free(absolute_proxy_binary);
-    absolute_proxy_binary = Layout::relative_to(Layout::get()->bindir, proxy_binary);
-    // coverity[fs_check_call]
-    if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
-        mgmt_elog(0, "[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n",
-                absolute_proxy_binary, errno, strerror(errno));
-        mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
-    }
+      mgmt_elog(0, "[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n",
+              absolute_proxy_binary, errno, strerror(errno));
+      mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
   }
 
   internal_ticker = 0;
@@ -316,6 +306,7 @@ LocalManager::initAlarm()
 void
 LocalManager::initCCom(int mcport, char *addr, int rsport)
 {
+  xptr<char> rundir(RecConfigReadRuntimeDir());
   bool found;
   IpEndpoint cluster_ip;    // ip addr of the cluster interface
   ip_text_buffer clusterAddrStr;         // cluster ip addr as a String
@@ -361,7 +352,7 @@ LocalManager::initCCom(int mcport, char *addr, int rsport)
   ink_strlcat(envBuf, clusterAddrStr, envBuf_size);
   ink_release_assert(putenv(envBuf) == 0);
 
-  ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, mcport, addr, rsport, pserver_path);
+  ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, mcport, addr, rsport, rundir);
   virt_map = new VMap(intrName, ats_ip4_addr_cast(&cluster_ip), &lmgmt->ccom->mutex);
   virt_map->downAddrs();        // Just to be safe
   ccom->establishChannels();
@@ -377,7 +368,8 @@ LocalManager::initCCom(int mcport, char *addr, int rsport)
 void
 LocalManager::initMgmtProcessServer()
 {
-  char fpath[1024];
+  xptr<char> rundir(RecConfigReadRuntimeDir());
+  char fpath[MAXPATHLEN];
   int servlen, one = 1;
   struct sockaddr_un serv_addr;
 
@@ -387,7 +379,8 @@ LocalManager::initMgmtProcessServer()
   }
 #endif
 
-  snprintf(fpath, sizeof(fpath), "%s/%s", pserver_path, LM_CONNECTION_SERVER);
+  ink_filepath_make(fpath, sizeof(fpath), rundir, LM_CONNECTION_SERVER);
+
   unlink(fpath);
   if ((process_server_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
     mgmt_fatal(stderr, errno, "[LocalManager::initMgmtProcessServer] Unable to open socket exiting\n");
@@ -532,7 +525,7 @@ LocalManager::pollMgmtProcessServer()
 
           if (lmgmt->run_proxy) {
             mgmt_elog(0, "[Alarms::signalAlarm] Server Process was reset\n");
-            lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED);
+            lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, NULL);
           } else {
             mgmt_log("[TrafficManager] Server process shutdown\n");
           }
@@ -565,7 +558,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   switch (mh->msg_id) {
   case MGMT_SIGNAL_PID:
     watched_process_pid = *((pid_t *) data_raw);
-    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN);
+    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN, NULL);
     proxy_running++;
     proxy_launch_pid = -1;
     proxy_launch_outstanding = false;
@@ -772,7 +765,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
             mgmt_elog(stderr, 0, "[LocalManager::pollMgmtProcessServer] " "Server Process has been terminated\n");
             if (lmgmt->run_proxy) {
               mgmt_elog(0, "[Alarms::signalAlarm] Server Process was reset\n");
-              lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED);
+              lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, NULL);
             } else {
               mgmt_log("[TrafficManager] Server process shutdown\n");
             }
@@ -927,10 +920,12 @@ LocalManager::startProxy()
       waitpid(pid, &estatus, 0);
     } else {
       int res;
-      char env_prep_bin[1024];
 
-      snprintf(env_prep_bin, sizeof(env_prep_bin), "%s/%s", bin_path, env_prep);
-      res = execl(env_prep_bin, env_prep, (char*)NULL);
+      char env_prep_bin[MAXPATHLEN];
+      xptr<char> bindir(RecConfigReadBinDir());
+
+      ink_filepath_make(env_prep_bin, sizeof(env_prep_bin), bindir, env_prep);
+      res = execl(env_prep_bin, env_prep_bin, (char*)NULL);
       _exit(res);
     }
   }

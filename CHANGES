@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2788] Make proxy.config.alarm.bin reloadable.
+
   *) [TS-2811] Error logged in regex_remap when lowercase_substitutions option is used
 
   *) [TS-2791] SPDY POST transactions failing with ERR_CLIENT_ABORT

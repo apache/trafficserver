@@ -175,14 +175,6 @@ System Variables
    installation prefix. The ``$TS_ROOT`` environment variable can
    be used alter the installation prefix at run time.
 
-.. ts:cv:: CONFIG proxy.config.alarm_email STRING
-   :reloadable:
-
-   The email address to which Traffic Server sends alarm messages.
-
-During a custom Traffic Server installation, you can specify the email address;
-otherwise, Traffic Server uses the Traffic Server user account name as the default value for this variable.
-
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
    The facility used to record system log files. Refer to :ref:`understanding-traffic-server-log-files`.
@@ -415,14 +407,34 @@ Process Manager
 Alarm Configuration
 ===================
 
-.. ts:cv:: CONFIG proxy.config.alarm.bin STRING example_alarm_bin.sh
+.. ts:cv:: CONFIG proxy.config.alarm_email STRING
+   :reloadable:
 
-   Name of the script file that can execute certain actions when an alarm is signaled. The default file is a sample script named
-   ``example_alarm_bin.sh`` located in the ``bin`` directory. You must edit the script to suit your needs.
+   The address to which the alarm script should send email.
+
+.. ts:cv:: CONFIG proxy.config.alarm.bin STRING example_alarm_bin.sh
+   :reloadable:
+
+   Name of the script file that can execute certain actions when
+   an alarm is signaled. The script is invoked with up to 4 arguments:
+
+       - the alarm message
+       - the value of :ts:cv:`proxy.config.product_name`
+       - the value of :ts:cv:`proxy.config.admin.admin_user`
+       - the value of :ts:cv:`proxy.config.alarm_email`
 
 .. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
+   :reloadable:
 
-   The full path to the script file that sends email to alert someone about Traffic Server problems.
+   The absolute path to the directory containing the alarm script.
+   If this is not set, the script will be located relative to
+   :ts:cv:`proxy.config.bin_path`.
+
+.. ts:cv:: CONFIG proxy.config.alarm.script_runtime INT 5
+   :reloadable:
+
+   The number of seconds that Traffic Server allows the alarm script
+   to run before aborting it.
 
 HTTP Engine
 ===========

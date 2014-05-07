@@ -111,7 +111,7 @@ public:
   void registerCallback(AlarmCallbackFunc func);
   bool isCurrentAlarm(alarm_t a, char *ip = NULL);
 
-  void signalAlarm(alarm_t t, const char *desc = NULL, const char *ip = NULL);
+  void signalAlarm(alarm_t t, const char * desc, const char * ip = NULL);
   void resolveAlarm(alarm_t a, char *ip = NULL);
 
   void constructAlarmMessage(char *ip, char *message, int max);
@@ -131,9 +131,6 @@ private:
 
   int cur_cb;
   ink_mutex mutex;
-
-  char *alarm_bin;
-  char *alarm_bin_path;
 
   InkHashTable *cblist;
   InkHashTable *local_alarms;

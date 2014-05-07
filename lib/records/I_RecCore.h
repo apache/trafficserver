@@ -57,6 +57,10 @@ char * RecConfigReadSnapshotDir();
 // MUST release the result with ats_free().
 char * RecConfigReadLogDir();
 
+// Return a copy of the system's bin directory, taking proxy.config.bin_path into account. The caller MUST
+// release the result with ats_free().
+char * RecConfigReadBinDir();
+
 // Return a copy of a configuration file that is relative to sysconfdir. The relative path to the configuration
 // file is specified in the configuration variable named by "file_variable". If the configuration variable has no
 // value, NULL is returned. The caller MUST release the result with ats_free().

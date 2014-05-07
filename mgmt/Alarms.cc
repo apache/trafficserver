@@ -64,26 +64,29 @@ const char *alarmText[] = {
 
 const int alarmTextNum = sizeof(alarmText) / sizeof(char *);
 
+// Return the alarm script directory. Use proxy.config.alarm.abs_path if it is
+// set, falling back to proxy.config.bin_path otherwise.
+static char *
+alarm_script_dir()
+{
+  char * path;
+
+  path = REC_readString("proxy.config.alarm.abs_path", NULL);
+  if (path && *path) {
+    return path;
+  }
+
+  return RecConfigReadBinDir();
+}
+
 Alarms::Alarms()
 {
-  bool found;
-
   cur_cb = 0;
   cblist = ink_hash_table_create(InkHashTableKeyType_String);
   local_alarms = ink_hash_table_create(InkHashTableKeyType_String);
   remote_alarms = ink_hash_table_create(InkHashTableKeyType_String);
   ink_mutex_init(&mutex, "alarms-mutex");
-  alarm_bin = REC_readString("proxy.config.alarm.bin", &found);
-  ink_assert(found);
-  alarm_bin_path = REC_readString("proxy.config.alarm.abs_path", &found);
-  ink_assert(found);
-  if (!alarm_bin_path) {
-    alarm_bin_path = REC_readString("proxy.config.bin_path", &found);
-    ink_assert(found);
-  }
   alarmOEMcount = minOEMkey;
-
-  return;
 }                               /* End Alarms::Alarms */
 
 
@@ -93,7 +96,6 @@ Alarms::~Alarms()
   ink_hash_table_destroy_and_xfree_values(local_alarms);
   ink_hash_table_destroy_and_xfree_values(remote_alarms);
   ink_mutex_destroy(&mutex);
-  return;
 }                               /* End Alarms::Alarms */
 
 
@@ -107,7 +109,6 @@ Alarms::registerCallback(AlarmCallbackFunc func)
   Debug("alarm", "[Alarms::registerCallback] Registering Alarms callback\n");
   ink_hash_table_insert(cblist, cb_buf, (void *) func);
   ink_mutex_release(&mutex);
-  return;
 }                               /* End Alarms::registerCallback */
 
 
@@ -235,19 +236,18 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   Debug("alarm", "[Alarms::signalAlarm] Sending Alarm: '%s'", desc);
 
-  if (!desc)
+  if (!desc) {
     desc = (char *) getAlarmText(a);
+  }
 
   /*
    * Exec alarm bin for priority alarms everytime, regardless if they are
    * potentially duplicates. However, only exec this for you own alarms,
    * don't want every node in the cluster reporting the same alarm.
    */
-  if (priority == 1 && alarm_bin && alarm_bin_path && !ip) {
+  if (priority == 1 && !ip) {
     execAlarmBin(desc);
   }
-
-
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
@@ -351,12 +351,12 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     Debug("alarm", "[Alarms::signalAlarm] invoke callback for %d", a);
     (*(func)) (a, ip, desc);
   }
+
   /* Priority 2 alarms get signalled if they are the first unsolved occurence. */
-  if (priority == 2 && alarm_bin && alarm_bin_path && !ip) {
+  if (priority == 2 && !ip) {
     execAlarmBin(desc);
   }
 
-  return;
 }                               /* End Alarms::signalAlarm */
 
 
@@ -495,27 +495,27 @@ Alarms::checkSystemNAlert()
 void
 Alarms::execAlarmBin(const char *desc)
 {
-  char cmd_line[1024];
-  char *alarm_email_from_name = 0;
-  char *alarm_email_from_addr = 0;
-  char *alarm_email_to_addr = 0;
-  bool found;
+  xptr<char> bindir(alarm_script_dir());
+  char cmd_line[MAXPATHLEN];
 
-  // get email info
-  alarm_email_from_name = REC_readString("proxy.config.product_name", &found);
-  if (!found)
-    alarm_email_from_name = 0;
-  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", &found);
-  if (!found)
-    alarm_email_from_addr = 0;
-  alarm_email_to_addr = REC_readString("proxy.config.alarm_email", &found);
-  if (!found)
-    alarm_email_to_addr = 0;
+  xptr<char> alarm_bin(REC_readString("proxy.config.alarm.bin", NULL));
+  xptr<char> alarm_email_from_name;
+  xptr<char> alarm_email_from_addr;
+  xptr<char> alarm_email_to_addr;
 
-  int status;
   pid_t pid;
 
-  ink_filepath_make(cmd_line, sizeof(cmd_line), alarm_bin_path, alarm_bin);
+  // If there's no alarm script configured, don't even bother.
+  if (!alarm_bin || *alarm_bin == '\0') {
+    return;
+  }
+
+  // get email info
+  alarm_email_from_name = REC_readString("proxy.config.product_name", NULL);
+  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", NULL);
+  alarm_email_to_addr = REC_readString("proxy.config.alarm_email", NULL);
+
+  ink_filepath_make(cmd_line, sizeof(cmd_line), bindir, alarm_bin);
 
 #ifdef POSIX_THREAD
   if ((pid = fork()) < 0)
@@ -525,11 +525,12 @@ Alarms::execAlarmBin(const char *desc)
   {
     mgmt_elog(stderr, errno, "[Alarms::execAlarmBin] Unable to fork1 process\n");
   } else if (pid > 0) {         /* Parent */
-    // INKqa11769
+    int status;
     bool script_done = false;
-    time_t timeout = (time_t) REC_readInteger("proxy.config.alarm.script_runtime", &found);
-    if (!found)
+    time_t timeout = (time_t) REC_readInteger("proxy.config.alarm.script_runtime", NULL);
+    if (!timeout) {
       timeout = 5;              // default time = 5 secs
+    }
     time_t time_delta = 0;
     time_t first_time = time(0);
     while (time_delta <= timeout) {
@@ -552,19 +553,12 @@ Alarms::execAlarmBin(const char *desc)
   } else {
     int res;
     if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
-      res = execl(cmd_line, alarm_bin, desc, alarm_email_from_name, alarm_email_from_addr, alarm_email_to_addr, (char*)NULL);
+      res = execl(cmd_line, (const char *)alarm_bin, desc, (const char *)alarm_email_from_name, (const char *)alarm_email_from_addr, (const char *)alarm_email_to_addr, (char*)NULL);
     } else {
-      res = execl(cmd_line, alarm_bin, desc, (char*)NULL);
+      res = execl(cmd_line, (const char *)alarm_bin, desc, (char*)NULL);
     }
     _exit(res);
   }
-
-
-
-  // free memory
-  ats_free(alarm_email_from_name);
-  ats_free(alarm_email_from_addr);
-  ats_free(alarm_email_to_addr);
 }
 
 //
