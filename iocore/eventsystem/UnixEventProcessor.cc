@@ -101,8 +101,8 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
   hwloc_obj_t obj;
   hwloc_obj_type_t obj_type;
-  int obj_count = 0, cpu_mask_len = 0;
-  char *obj_name, *cpu_mask;
+  int obj_count = 0;
+  char *obj_name;
 
   switch(affinity) {
     case 4:           // assign threads to logical processing units
@@ -141,10 +141,14 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     (void)tid;
 #if TS_USE_HWLOC
     obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
-    cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
-    cpu_mask = (char *) alloca(cpu_mask_len);
+#if HWLOC_API_VERSION >= 0x00010100
+    int cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
+    char *cpu_mask = (char *) alloca(cpu_mask_len);
     hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
     Debug("iocore_thread","EThread: %d %s: %d CPU Mask: %s\n", i, obj_name, obj->logical_index, cpu_mask);
+#else
+    Debug("iocore_thread","EThread: %d %s: %d\n", i, obj_name, obj->logical_index);
+#endif
     hwloc_set_thread_cpubind(ink_get_topology(), tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
 #endif
   }
