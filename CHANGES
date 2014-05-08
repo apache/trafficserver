@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2636] Enhance ATS custom logging to support WIPE_FIELD_VALUE filter action
+
   *) [TS-2786, TS-2784] Make Lua and header_rewrite plugins compile on FBSD.
 
   *) [TS-1375] Setting default inactivity timeout, if one is not set, to 1 day
