@@ -444,35 +444,40 @@ Log::init_fields()
   field = NEW(new LogField("client_req_url", "cqu",
                            LogField::STRING,
                            &LogAccess::marshal_client_req_url,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                           &LogAccess::set_client_req_url));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqu", field);
 
   field = NEW(new LogField("client_req_url_canonical", "cquc",
                            LogField::STRING,
                            &LogAccess::marshal_client_req_url_canon,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                           &LogAccess::set_client_req_url_canon));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquc", field);
 
   field = NEW(new LogField("client_req_unmapped_url_canonical", "cquuc",
                            LogField::STRING,
                            &LogAccess::marshal_client_req_unmapped_url_canon,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                           &LogAccess::set_client_req_unmapped_url_canon));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquuc", field);
 
   field = NEW(new LogField("client_req_unmapped_url_path", "cquup",
                            LogField::STRING,
                            &LogAccess::marshal_client_req_unmapped_url_path,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                           &LogAccess::set_client_req_unmapped_url_path));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquup", field);
 
   field = NEW(new LogField("client_req_unmapped_url_host", "cquuh",
                            LogField::STRING,
                            &LogAccess::marshal_client_req_unmapped_url_host,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                           &LogAccess::set_client_req_unmapped_url_host));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquuh", field);
 
@@ -486,7 +491,8 @@ Log::init_fields()
   field = NEW(new LogField("client_req_url_path", "cqup",
                            LogField::STRING,
                            &LogAccess::marshal_client_req_url_path,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                           &LogAccess::set_client_req_url_path));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqup", field);
 

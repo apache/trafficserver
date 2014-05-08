@@ -52,6 +52,7 @@ public:
   {
     REJECT = 0,
     ACCEPT,
+    WIPE_FIELD_VALUE,
     N_ACTIONS
   };
   static const char *ACTION_NAME[];
@@ -78,6 +79,7 @@ public:
   size_t get_num_values() const { return m_num_values; };
 
   virtual bool toss_this_entry(LogAccess * lad) = 0;
+  virtual bool wipe_this_entry(LogAccess * lad) = 0;
   virtual void display(FILE * fd = stdout) = 0;
   virtual void display_as_XML(FILE * fd = stdout) = 0;
 
@@ -116,6 +118,7 @@ public:
   bool operator==(LogFilterString & rhs);
 
   bool toss_this_entry(LogAccess * lad);
+  bool wipe_this_entry(LogAccess * lad);
   void display(FILE * fd = stdout);
   void display_as_XML(FILE * fd = stdout);
 
@@ -150,6 +153,9 @@ private:
   inline bool _checkCondition(OperatorFunction f,
                               const char *field_value, size_t field_value_length, char **val, LengthCondition lc);
 
+  inline bool _checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
+                                     LengthCondition lc);
+
   // -- member functions that are not allowed --
   LogFilterString();
   LogFilterString & operator=(LogFilterString & rhs);
@@ -171,6 +177,7 @@ public:
   bool operator==(LogFilterInt & rhs);
 
   bool toss_this_entry(LogAccess * lad);
+  bool wipe_this_entry(LogAccess * lad);
   void display(FILE * fd = stdout);
   void display_as_XML(FILE * fd = stdout);
 
@@ -200,6 +207,7 @@ public:
 
   void add(LogFilter * filter, bool copy = true);
   bool toss_this_entry(LogAccess * lad);
+  bool wipe_this_entry(LogAccess * lad);
   LogFilter *find_by_name(char *name);
   void clear();
 
@@ -295,6 +303,129 @@ LogFilterString::_checkCondition(OperatorFunction f,
       break;
     default:
       ink_assert(!"LogFilterString::checkCondition " "unknown LengthCondition");
+    }
+  }
+  return retVal;
+}
+
+/*---------------------------------------------------------------------------
+  wipeField : Given a dest buffer, wipe the first occurance of the value of the
+  field in the buffer.
+
+--------------------------------------------------------------------------*/
+static void
+wipeField(char** dest, char* field)
+{
+
+  char* buf_dest  = *dest;
+
+  if (buf_dest) {
+
+    char* query_param = strstr(buf_dest, "?");
+
+    if (!query_param) return;
+
+    char* p1 = strstr(query_param, field);
+
+    if (p1) {
+      char tmp_text[strlen(buf_dest) + 10];
+      char *temp_text = tmp_text;
+      memcpy(temp_text, buf_dest, (p1 - buf_dest));
+      temp_text += (p1 - buf_dest);
+      char* p2 = strstr(p1, "=");
+      if (p2) {
+        p2++;
+        memcpy(temp_text, p1, (p2 - p1));
+        temp_text += (p2 - p1);
+        char* p3 = strstr(p2, "&");
+        if (p3) {
+          for (int i=0; i<(p3 - p2); i++)
+            temp_text[i] = 'X';
+          temp_text += (p3 - p2);
+          memcpy(temp_text, p3, ((buf_dest+strlen(buf_dest)) - p3));
+        } else {
+          for (int i=0; i<((buf_dest+strlen(buf_dest)) - p2); i++)
+            temp_text[i] = 'X';
+        }
+      } else {
+        return;
+      }
+
+      tmp_text[strlen(buf_dest)] = '\0';
+      strcpy(*dest, tmp_text);
+    }
+  }
+}
+
+/*-------------------------------------------------------------------------
+  _checkConditionAndWipe
+
+  check all values for a matching condition and perform wipe action
+
+  the arguments to the function are:
+
+  - a function f of type OperatorFunction that determines if the
+    condition is true for a single filter value. Note that this function
+    must return 0 if the condition is true.
+  - the value of the field from the log record
+  - the length of this field
+  - the array of filter values to compare to note that we pass this as an
+    argument because it can be either m_value or m_value_uppercase
+  - a LengthCondition argument that determines if the length of the field value
+    must be equal or larger to the length of the filter value (this is to
+    compare strings only if really needed
+    ------------------------------------------------------------------------*/
+
+inline bool
+LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length,
+                                        char **val, LengthCondition lc)
+{
+  bool retVal = false;
+
+  if (m_action != WIPE_FIELD_VALUE) return false;
+
+  // make single value case a little bit faster by taking it out of loop
+  //
+  if (m_num_values == 1) {
+    switch (lc) {
+    case DATA_LENGTH_EQUAL:
+      retVal = (field_value_length == *m_length ? ((*f) (*field_value, *val) == 0 ? true : false) : false);
+      if (retVal) {
+        wipeField(field_value, *val);
+      }
+      break;
+    case DATA_LENGTH_LARGER:
+      retVal = (field_value_length > *m_length ? ((*f) (*field_value, *val) == 0 ? true : false) : false);
+      if (retVal) {
+        wipeField(field_value, *val);
+      }
+      break;
+    default:
+      ink_assert(!"LogFilterString::checkCondition " "unknown LengthCondition");
+    }
+  } else {
+    size_t i;
+    switch (lc) {
+    case DATA_LENGTH_EQUAL:
+      for (i = 0; i < m_num_values; ++i) {
+        // condition is satisfied if f returns zero
+        if (field_value_length == m_length[i] && (*f) (*field_value, val[i]) == 0) {
+          retVal = true;
+          wipeField(field_value, val[i]);
+        }
+      }
+      break;
+    case DATA_LENGTH_LARGER:
+      for (i = 0; i < m_num_values; ++i) {
+        // condition is satisfied if f returns zero
+        if (field_value_length > m_length[i] && (*f) (*field_value, val[i]) == 0) {
+          retVal = true;
+          wipeField(field_value, val[i]);
+        }
+      }
+      break;
+    default:
+      ink_assert(!"LogFilterString::checkConditionAndWipe " "unknown LengthConditionAndWipe");
     }
   }
   return retVal;

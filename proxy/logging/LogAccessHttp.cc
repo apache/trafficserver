@@ -128,6 +128,69 @@ LogAccessHttp::init()
 }
 
 /*-------------------------------------------------------------------------
+  The set routines ...
+
+  These routines are used by the WIPE_FIELD_VALUE filter to replace the original req url
+  strings with the WIPED req strings.
+  -------------------------------------------------------------------------*/
+
+void
+LogAccessHttp::set_client_req_url(char *buf, int len)
+{
+  if (buf) {
+    m_client_req_url_len = len;
+    ink_strlcpy(m_client_req_url_str, buf, m_client_req_url_len + 1);
+  }
+}
+
+void
+LogAccessHttp::set_client_req_url_canon(char *buf, int len)
+{
+  if (buf) {
+    m_client_req_url_canon_len = len;
+    ink_strlcpy(m_client_req_url_canon_str, buf, m_client_req_url_canon_len + 1);
+  }
+}
+
+void
+LogAccessHttp::set_client_req_unmapped_url_canon(char *buf, int len)
+{
+  if (buf) {
+    m_client_req_unmapped_url_canon_len = len;
+    ink_strlcpy(m_client_req_unmapped_url_canon_str, buf, m_client_req_unmapped_url_canon_len + 1);
+  }
+}
+
+void
+LogAccessHttp::set_client_req_unmapped_url_path(char *buf, int len)
+{
+  if (buf) {
+    m_client_req_unmapped_url_path_len = len;
+    ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_unmapped_url_path_len + 1);
+  }
+}
+
+void
+LogAccessHttp::set_client_req_unmapped_url_host(char *buf, int len)
+{
+  if (buf) {
+    m_client_req_unmapped_url_host_len = len;
+    ink_strlcpy(m_client_req_unmapped_url_host_str, buf, m_client_req_unmapped_url_host_len + 1);
+  }
+}
+
+void
+LogAccessHttp::set_client_req_url_path(char *buf, int len)
+{
+  //?? use m_client_req_unmapped_url_path_str for now..may need to enhance later..
+  if (buf) {
+    m_client_req_url_path_len = len;
+    ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_url_path_len + 1);
+  }
+}
+
+
+/*-------------------------------------------------------------------------
   The marshalling routines ...
 
   We know that m_http_sm is a valid pointer (we assert so in the ctor), but

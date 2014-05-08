@@ -228,6 +228,13 @@ public:
   inkcoreapi virtual int marshal_cache_resp_http_version(char *); // INT
 
 
+  inkcoreapi virtual void set_client_req_url(char *, int) {};        // STR
+  inkcoreapi virtual void set_client_req_url_canon(char *, int) {};  // STR
+  inkcoreapi virtual void set_client_req_unmapped_url_canon(char *, int) {}; // STR
+  inkcoreapi virtual void set_client_req_unmapped_url_path(char *, int) {};  // STR
+  inkcoreapi virtual void set_client_req_unmapped_url_host(char *, int) {};  // STR
+  inkcoreapi virtual void set_client_req_url_path(char *, int) {};   // STR
+
   //
   // congestion control -- client_retry_after_time
   //

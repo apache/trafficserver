@@ -135,6 +135,13 @@ public:
   virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);
   virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
 
+  virtual void set_client_req_url(char *, int);        // STR
+  virtual void set_client_req_url_canon(char *, int);  // STR
+  virtual void set_client_req_unmapped_url_canon(char *, int); // STR
+  virtual void set_client_req_unmapped_url_path(char *, int);  // STR
+  virtual void set_client_req_unmapped_url_host(char *, int);  // STR
+  virtual void set_client_req_url_path(char *, int);   // STR
+
 private:
   HttpSM * m_http_sm;
 
