@@ -701,7 +701,6 @@ UDPQueue::SendPackets()
 
 sendPackets:
   sentOne = false;
-  send_threshold_time = now + SLOT_TIME;
   bytesThisPipe = (int32_t)bytesThisSlot;
 
   while ((bytesThisPipe > 0) && (pipeInfo.firstPacket(send_threshold_time))) {
