@@ -16,12 +16,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-cd "${WORKSPACE}/src"
+cd "${WORKSPACE}/src_rat"
 
 if test "${JOB_NAME#*type=RAT}" != "${JOB_NAME}"; then
-    ./configure
+    # Just use the configure from the snapshot.sh
     ${ATS_MAKE} rat | tee RAT.txt
-    cp RAT.txt /home/jenkins/RAT/rat-${ATS_BRANCH}.txt
-    grep 'Unknown Licenses' RAT.txt# && exit -1
-    ${ATS_MAKE} distclean
+
+    mv RAT.txt /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new
+    mv /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new /home/jenkins/RAT/rat-${ATS_BRANCH}.txt
+
+    grep 'Unknown Licenses' /home/jenkins/RAT/rat-${ATS_BRANCH}.txt #&& exit -1
 fi

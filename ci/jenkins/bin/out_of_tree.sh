@@ -16,9 +16,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-cd "${WORKSPACE}/src"
+cd "${WORKSPACE}/src_out-of-tree"
 
 if test "${JOB_NAME#*type=out_of_tree}" != "${JOB_NAME}"; then
+    # This runs its own configure, so don't use the one from snapshot.sh
+    ${ATS_MAKE} distclean
     mkdir -p BUILDS && cd BUILDS
     ../configure \
 	--enable-ccache \
@@ -28,8 +30,8 @@ if test "${JOB_NAME#*type=out_of_tree}" != "${JOB_NAME}"; then
 	--enable-example-plugins \
 	--enable-test-tools
 
-    ${ATS_MAKE} -j8 V=1
+    ${ATS_MAKE} -j4
     ${ATS_MAKE} check
 
-    ${ATS_MAKE} distclean
+    ${ATS_MAKE} clean
 fi

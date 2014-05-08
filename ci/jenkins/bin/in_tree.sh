@@ -16,19 +16,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-cd "${WORKSPACE}/src"
+cd "${WORKSPACE}/src_in-tree"
 
 if test "${JOB_NAME#*type=in_tree}" != "${JOB_NAME}"; then
-    ./configure \
-	--enable-ccache \
-	--enable-debug \
-	--enable-werror \
-	--enable-experimental-plugins \
-	--enable-example-plugins \
-	--enable-test-tools
-
-    ${ATS_MAKE} -j8 V=1
+    # Just use the configure from the snapshot.sh
+    ${ATS_MAKE} -j4
     ${ATS_MAKE} check
 
-    ${ATS_MAKE} distclean
+    ${ATS_MAKE} clean
 fi
