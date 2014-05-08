@@ -131,8 +131,8 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
       obj_name = (char *) "Machine";
   }
 
-    obj_count = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
-    Debug("iocore_thread", "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
+  obj_count = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
+  Debug("iocore_thread", "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
 
 #endif
   for (i = first_thread; i < n_ethreads; i++) {
@@ -140,17 +140,19 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     ink_thread tid = all_ethreads[i]->start(thr_name, stacksize);
     (void)tid;
 #if TS_USE_HWLOC
-    obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
+    if (obj_count > 0) {
+      obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
 #if HWLOC_API_VERSION >= 0x00010100
-    int cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
-    char *cpu_mask = (char *) alloca(cpu_mask_len);
-    hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
-    Debug("iocore_thread","EThread: %d %s: %d CPU Mask: %s\n", i, obj_name, obj->logical_index, cpu_mask);
+      int cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
+      char *cpu_mask = (char *) alloca(cpu_mask_len);
+      hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
+      Debug("iocore_thread","EThread: %d %s: %d CPU Mask: %s\n", i, obj_name, obj->logical_index, cpu_mask);
 #else
-    Debug("iocore_thread","EThread: %d %s: %d\n", i, obj_name, obj->logical_index);
-#endif
-    hwloc_set_thread_cpubind(ink_get_topology(), tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
-#endif
+      Debug("iocore_thread","EThread: %d %s: %d\n", i, obj_name, obj->logical_index);
+#endif // HWLOC_API_VERSION
+      hwloc_set_thread_cpubind(ink_get_topology(), tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
+    }
+#endif // TS_USE_HWLOC
   }
 
   Debug("iocore_thread", "Created event thread group id %d with %d threads", ET_CALL, n_event_threads);
