@@ -82,4 +82,5 @@ library_include_HEADERS = $(base_include_folder)/GlobalPlugin.h \
 			  $(base_include_folder)/GzipDeflateTransformation.h \
 			  $(base_include_folder)/GzipInflateTransformation.h \
 			  $(base_include_folder)/AsyncTimer.h \
-			  $(base_include_folder)/InterceptPlugin.h
+			  $(base_include_folder)/InterceptPlugin.h \
+			  $(top_srcdir)/lib/ts/ink_autoconf.h
