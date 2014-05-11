@@ -18,7 +18,7 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: 2014-05-02 19:26+0900\n"
+"PO-Revision-Date: 2014-05-11 18:10+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -3440,6 +3440,14 @@ msgid ""
 "the changes. When you apply changes to one node in a cluster, Traffic "
 "Server automatically applies the changes to all other nodes in the cluster."
 msgstr ""
+":file:`records.config` ファイル ( デフォルトでは ``/opt/trafficserver/etc/"
+"trafficserver/`` に置かれます ) は Traffic Server で使用される設定変数の一覧"
+"です。 :file:`records.config` ファイル内の多くの変数は Traffic Line や "
+"Traffic Shell でオプションの調整を行うと自動的に設定されます。:file:"
+"`records.config` ファイルに変更を加えた後は、:option:`traffic_line -x` を実"
+"行して変更を適用します。クラスター内の一つのノードに変更を適用すると "
+"Traffic Server は自動的にクラスター内の他のすべてのノードに変更を適用しま"
+"す。<"
 
 #: ../../reference/configuration/records.config.en.rst:198
 msgid ""
@@ -3454,19 +3462,20 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:249
 msgid "assign threads to machine"
-msgstr ""
+msgstr "マシーンにスレッドを割り当てます"
 
 #: ../../reference/configuration/records.config.en.rst:250
 msgid "assign threads to NUMA nodes"
-msgstr ""
+msgstr "NUMA ノードにスレッドを割り当てます"
 
 #: ../../reference/configuration/records.config.en.rst:252
 msgid "assign threads to cores"
-msgstr ""
+msgstr "コアにスレッドを割り当てます"
 
 #: ../../reference/configuration/records.config.en.rst:253
+#, fuzzy
 msgid "assign threads to processing units"
-msgstr ""
+msgstr "プロセッシングユニットにスレッドを割り当てます"
 
 #: ../../reference/configuration/records.config.en.rst:262
 msgid ""
@@ -3589,6 +3598,10 @@ msgid ""
 "way up to ts:cv:`proxy.config.net.connections_throttle` connections, which "
 "in turn can starve incoming requests from available connections."
 msgstr ""
+"この値はアクティブなオリジンセッションをいつ取り除くかを決定するために使用さ"
+"れます。この値を設定しないとオリジンへの接続は ts:cv:`proxy.config.net."
+"connections_throttle` の接続数まで消費され、有効な接続から入ってくるリクエス"
+"トを次々とタイムアウトさせます。<"
 
 #: ../../reference/configuration/records.config.en.rst:948
 msgid ""
@@ -3596,6 +3609,9 @@ msgid ""
 "for the following HTTP response codes, regardless of the value specified "
 "for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable."
 msgstr ""
+"次の HTTP レスポンスコードは :ts:cv:`proxy.config.http."
+"negative_caching_enabled` 変数に指定された値を無視して、キャッシュを禁止して"
+"いるサーバーからの ``Cache-Control`` ディレクティブは無視されます。<"
 
 #: ../../reference/configuration/records.config.en.rst:1162
 msgid ""
@@ -3660,53 +3676,3 @@ msgid ""
 "subsytem tag. This configuration contains a regular expression that filters "
 "the messages based on the tag. Some commonly used debug tags are:"
 msgstr ""
-
-#~ msgid ""
-#~ "The :file:`records.config` file is a list of configurable variables used "
-#~ "by the Traffic Server software. Many of the variables in the :file:"
-#~ "`records.config` file are set automatically when you set configuration "
-#~ "options in Traffic Line or Traffic Shell. After you modify the :file:"
-#~ "`records.config` file, run the command :option:`traffic_line -x` to "
-#~ "apply the changes. When you apply changes to one node in a cluster, "
-#~ "Traffic Server automatically applies the changes to all other nodes in "
-#~ "the cluster."
-#~ msgstr ""
-#~ ":file:`records.config` ファイルは Traffic Server で使用される設定変数の一"
-#~ "覧です。 :file:`records.config` ファイル内の多くの変数は Traffic Line や "
-#~ "Traffic Shell でオプションの調整を行うと自動的に設定されます。:file:"
-#~ "`records.config` ファイルに変更を加えた後は、:option:`traffic_line -x` を"
-#~ "実行して変更を適用します。クラスター内の一つのノードに変更を適用すると "
-#~ "Traffic Server は自動的にクラスター内の他のすべてのノードに変更を適用しま"
-#~ "す。"
-
-#~ msgid "assign threads to real cores"
-#~ msgstr "スレッドを実コアに割り当てます"
-
-#~ msgid "assign threads to logical cores"
-#~ msgstr "スレッドを論理コアに割り当てます"
-
-#~ msgid "don't assign threads to any cores"
-#~ msgstr "スレッドをコアに割り当てません"
-
-#~ msgid "Bind threads to specific CPUs or CPU cores."
-#~ msgstr "スレッドを特定の CPU または CPU コアに割り当てます。"
-
-#~ msgid ""
-#~ "This value is used in determining when and if to prune active origin "
-#~ "sessions. Without this value set connections to origins can consume all "
-#~ "the way up to ``proxy.config.net.connections_throttle`` connections, "
-#~ "which in turn can starve incoming requests from available connections."
-#~ msgstr ""
-#~ "この値はアクティブなオリジンセッションをいつ取り除くかを決定するために使"
-#~ "用されます。この値を設定しないとオリジンへの接続は ``proxy.config.net."
-#~ "connections_throttle`` の接続数まで消費され、有効な接続から入ってくるリク"
-#~ "エストを次々とタイムアウトさせます。"
-
-#~ msgid ""
-#~ "``Cache-Control`` directives from the server forbidding ache are ignored "
-#~ "for the following HTTP response codes, regardless of the value specified "
-#~ "for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable."
-#~ msgstr ""
-#~ "次の HTTP レスポンスコードは :ts:cv:`proxy.config.http."
-#~ "negative_caching_enabled` 変数に指定された値を無視して、キャッシュを禁止"
-#~ "しているサーバーからの ``Cache-Control`` ディレクティブは無視されます。"
