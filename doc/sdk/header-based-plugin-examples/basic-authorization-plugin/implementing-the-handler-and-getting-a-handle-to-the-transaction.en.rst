@@ -21,9 +21,8 @@ Implementing the Handler and Getting a Handle to the Transaction
 The handler function for the plugin's parent continuation is implemented
 as follows:
 
-::
+.. code-block:: c
 
-    :::c
     static int
     auth_plugin (TSCont contp, TSEvent event, void *edata)
     {

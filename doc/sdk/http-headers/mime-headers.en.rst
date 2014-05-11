@@ -32,7 +32,6 @@ first MIME field value, and ``car`` is the second MIME field value.
 
 ::
 
-      :::text
       Foo: bar, car
 
 The following example is an augmented **Backus-Naur Form** (BNF) for the
@@ -47,7 +46,6 @@ are all equivalent.
 
 ::
 
-        :::text
     MIME-header = *MIME-field
     MIME-field = field-name ":" #field-value
     field-name = *token
@@ -68,8 +66,8 @@ field and the field does not exist, then it returns ``TS_NULL_MLOC``. In
 such a case, you wouldn't need to deallocate the handle with a call to
 ``TSHandleMLocRelease``.
 
-The location (``TSMLoc``) in the `MIME header
-functions <#MimeHeaderFxns>`__ can be either an HTTP header location or
+The location (``TSMLoc``) in the :ref:`MIME header
+functions <MimeHeaderFxns>` can be either an HTTP header location or
 a MIME header location. If an HTTP header location is passed to these
 functions, then the system locates the MIME header associated with that
 HTTP header and executes the corresponding MIME header operations
@@ -390,6 +388,8 @@ to a client, it can be printed to Traffic Server logs by defining a
 custom log configuration file that explicitly logs such fields. This
 provides a useful mechanism for plugins to store information about an
 object in one of the MIME headers associated with the object.
+
+.. _MimeHeaderFxns:
 
 The MIME header functions are listed below:
 

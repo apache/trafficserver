@@ -36,31 +36,27 @@ every deprecated *``TSMimeField``* function, there is a new, preferred
 
 Instead of:
 
-::
+.. code-block:: c
 
-        :::c
     TSMLoc TSMimeFieldCreate (TSMBuffer bufp)
 
 You should use:
 
-::
+.. code-block:: c
 
-        :::c
     TSMLoc TSMimeHdrFieldCreate (TSMBuffer bufp, TSMLoc hdr)
 
 Instead of:
 
-::
+.. code-block:: c
 
-        :::c
     void TSMimeFieldCopyValues (TSMBuffer dest_bufp, TSMLoc dest_offset,
        TSMBuffer src_bufp, TSMLoc src_offset)
 
 You should use:
 
-::
+.. code-block:: c
 
-        :::c
     void TSMimeHdrFieldCopyValues (TSMBuffer dest_bufp, TSMLoc dest_hdr,
        TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc
        src_field)

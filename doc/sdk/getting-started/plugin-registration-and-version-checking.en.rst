@@ -29,9 +29,8 @@ Use the following interfaces:
 The following version of ``hello-world`` registers the plugin and
 ensures it's running with a compatible version of Traffic Server.
 
-::
+.. code-block:: c
 
-        :::c
     #include <stdio.h>
     #include <ts/ts.h>
     int

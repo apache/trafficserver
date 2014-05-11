@@ -31,8 +31,8 @@ and changing global configuration information within a plugin.
 
 The functions discussed in this section do not examine or modify Traffic
 Server configuration variables. To examine Traffic Server configuration
-and statistics variables, see `"Reading Traffic Server Settings and
-Statistics" <../plugin-management/reading-trafficserver-settings-and-statistics>`__
+and statistics variables, see :doc:`"Reading Traffic Server Settings and
+Statistics" <plugin-management/reading-trafficserver-settings-and-statistics.en>`.
 
 The ``TSConfig`` family of functions is designed to provide a fast and
 efficient mechanism for accessing and changing global configuration
@@ -55,9 +55,8 @@ global data updates.
 
 Here's how the interface works:
 
-::
+.. code-block:: c
 
-        ::::c
     /* Assume that you have previously defined a plugin configuration
      * data structure named ConfigData, along with its constructor
      * plugin_config_allocator () and its destructor 

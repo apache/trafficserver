@@ -26,9 +26,8 @@ actual size of the document (``content_length``). Then, issue
 ``TSVConnRead`` to read the document with the total data length required
 as ``content_length``. Assume the following data:
 
-::
+.. code-block:: c
 
-            ::::c
         TSIOBuffer       cache_bufp = TSIOBufferCreate ();
         TSIOBufferReader cache_readerp = TSIOBufferReaderAlloc (out_bufp);
         TSVConn          cache_vconnp = NULL;
@@ -37,18 +36,16 @@ as ``content_length``. Assume the following data:
 
 In the ``TS_CACHE_OPEN_READ`` handler:
 
-::
+.. code-block:: c
 
-        ::::c
     cache_vconnp = (TSVConn) data;
         TSVConnCachedObjectSizeGet (cache_vconnp, &content_length);
         cache_vio = TSVConnRead (cache_vconn, contp, cache_bufp, content_length);
 
 In the ``TS_EVENT_VCONN_READ_READY`` handler:
 
-::
+.. code-block:: c
 
-        ::::c
     (usual VCONN_READ_READY handler logic)
     int nbytes = TSVIONBytesGet (cache_vio);
     int ntodo  = TSVIONTodoGet (cache_vio);

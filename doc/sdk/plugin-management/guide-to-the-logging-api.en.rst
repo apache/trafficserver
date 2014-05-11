@@ -56,16 +56,14 @@ The steps below show how the logging API is used in the
 
 1. A new log file is defined as a global variable.
 
-   ::
+   .. code-block:: c
 
-         ::::c
          static TSTextLogObject log;
 
 2. In ``TSPluginInit``, a new log object is allocated:
 
-   ::
+   .. code-block:: c
 
-           ::::c
            log = TSTextLogObjectCreate("blacklist", TS_LOG_MODE_ADD_TIMESTAMP, NULL, &error);
 
    The new log is named ``blacklist.log``. Each entry written to the log
@@ -77,9 +75,8 @@ The steps below show how the logging API is used in the
 3. After creating the log, the plugin makes sure that the log was
    created successfully:
 
-   ::
+   .. code-block:: c
 
-       ::::c
        if (!log) {
            printf("Blacklist plugin: error %d while creating log\n", error);
        }
@@ -88,15 +85,27 @@ The steps below show how the logging API is used in the
    each client request) with a list of blacklisted sites (stored in the
    array ``sites[``]):
 
-   ::::c for (i = 0; i < nsites; i++) { if (strncmp (host, sites[i],
-   host\_length) == 0) { If the host matches one of the blacklisted
+   .. code-block:: c
+
+       for (i = 0; i < nsites; i++) { if (strncmp (host, sites[i],
+       host\_length) == 0) {
+
+   If the host matches one of the blacklisted
    sites (such as ``sites[i]``), then the plugin writes a blacklist
    entry to ``blacklist.log``:
 
-   ::::c if (log) { TSTextLogObjectWrite(log, "blacklisting site: %s",
-   sites[i]); The format of the log entry is as follows:
+   .. code-block:: c
 
-   :::text blacklisting site: sites[i] The log is not flushed or
+       if (log) { TSTextLogObjectWrite(log, "blacklisting site: %s",
+       sites[i]);
+
+   The format of the log entry is as follows:
+
+   ::
+
+       blacklisting site: sites[i]
+
+   The log is not flushed or
    destroyed in the ``blacklist-1`` plugin - it lives for the life of
    the plugin.
 

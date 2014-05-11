@@ -32,9 +32,8 @@ reference back to the HTTP session that created it.
 The sample code below illustrates how to register locally to a
 transaction and associate data to the transaction.
 
-::
+.. code-block:: c
 
-    :::c
     /*
     * Simple plugin that illustrates:
     * - how to register locally to a transaction
@@ -149,11 +148,10 @@ transaction and associate data to the transaction.
        TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
     }
 
-See `Adding Hooks <adding-hooks>`__ for background about HTTP
-transactions and HTTP hooks, as well as `HTTP Hooks and
-Transactions <../http-hooks-and-transactions>`__ Also see the [HTTP
-Transaction State Diagram
-](HTTPHooksAndTransactions.html(../http-hooks-and-transactions#HHTTPTxStateDiag)
+See :doc:`Adding Hooks <adding-hooks.en>` for background about HTTP
+transactions and HTTP hooks, as well as :doc:`HTTP Hooks and
+Transactions <../http-hooks-and-transactions.en>` Also see the :ref:`HTTP
+Transaction State Diagram <http-txn-state-diagram>`
 for an illustration of the steps involved in a typical HTTP transaction.
 
 The HTTP transaction functions are:
@@ -166,11 +164,11 @@ The HTTP transaction functions are:
 -  :c:func:`TSHttpTxnCachedRespGet`
    - Note that it is an error to modify cached headers.
 
--  `TSHttpTxnClientIncomingPortGet <link/to/doxygen>`__
+-  :c:func:`TSHttpTxnClientIncomingPortGet`
 
--  `TSHttpTxnClientIPGet <link/to/doxygen>`__
+-  :c:func:`TSHttpTxnClientIPGet`
 
--  `TSHttpTxnClientRemotePortGet <link/to/doxygen>`__
+-  :c:func:`TSHttpTxnClientRemotePortGet`
 
 -  :c:func:`TSHttpTxnClientReqGet`
    - Plugins that must read client request headers use this call to

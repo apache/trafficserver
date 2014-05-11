@@ -360,9 +360,8 @@ To create a summary log file format, we
    :file:`logs_xml.config` as
    follows:
 
-   ::
+   .. code-block:: xml
 
-       :::xml
        <LogFormat>
          <Name = "summary"/>
          <Format = "%<operator(field)> : %<operator(field)>"/>

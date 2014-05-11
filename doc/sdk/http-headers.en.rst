@@ -52,7 +52,9 @@ A **MIME header** is comprised of zero or more MIME fields. A **MIME
 field** is composed of a field name, a colon, and (zero or more) field
 values. The values in a field are separated by commas. An HTTP header
 containing a request line is usually referred to as a **request**. The
-following example shows a typical request header::
+following example shows a typical request header:
+
+.. code-block:: http
 
    GET http://www.tiggerwigger.com/ HTTP/1.0
    Proxy-Connection: Keep-Alive
@@ -64,7 +66,9 @@ following example shows a typical request header::
    Accept-Charset: iso-8859-1, *, utf-8
 
 The **response header** for the above request might look like the
-following::
+following:
+
+.. code-block:: http
 
    HTTP/1.0 200 OK
    Date: Fri, 13 Nov 2009 06:57:43 GMT

@@ -180,7 +180,7 @@ The **HTTP Header Functions** are listed below:
 -  :c:func:`TSHttpHdrVersionSet`
 -  :c:func:`TSHttpParserClear`
 -  :c:func:`TSHttpParserCreate`
--  `TSHttpParserDestroy <link/to/doxyge>`__
+-  :c:func:`TSHttpParserDestroy`
 -  :c:func:`TSHttpHdrParseReq`
 -  :c:func:`TSHttpHdrParseResp`
 

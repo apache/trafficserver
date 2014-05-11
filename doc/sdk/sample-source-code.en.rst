@@ -24,6 +24,8 @@ the previous chapters. The following sample plugins are provided:
 
 -  `blacklist-1.c`_
 
+.. _blacklist-1.c:
+
 blacklist-1.c
 -------------
 
@@ -43,9 +45,8 @@ This plugin illustrates:
 
 -  How to use the plugin configuration management interface
 
-.. raw:: html
+.. code-block:: c
 
-   <pre>
        /* blacklist-1.c:  An example program that denies client access
         *                 to blacklisted sites. This plugin illustrates
         *                 how to use configuration information from the
@@ -303,7 +304,5 @@ This plugin illustrates:
 
            TSMgmtUpdateRegister (contp, "Super Blacklist Plugin", "blacklist.cgi");
        }
-
-   </pre>
 
 

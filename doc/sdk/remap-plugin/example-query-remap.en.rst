@@ -56,9 +56,8 @@ parameters. The ihandle, an opaque pointer that can be used to pass
 per-instance data, is set to this struct pointer and will be passed to
 the ``tsremap_remap`` function when it is triggered for a request.
 
-::
+.. code-block:: c
 
-    :::c
     typedef struct _query_remap_info {
       char *param_name;
       size_t param_len;
@@ -101,9 +100,8 @@ struct contains input and output members for the remap operation.
 parameter. If the parameter is found, the plugin sets a ``new_host`` to
 modify the request host:
 
-::
+.. code-block:: c
 
-    :::c
     int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
     {
       int hostidx = -1;

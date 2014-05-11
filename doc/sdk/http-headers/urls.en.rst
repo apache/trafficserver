@@ -27,7 +27,6 @@ The general form of an Internet URL is:
 
 ::
 
-       :::text
        scheme://user:password@host:port/stuff
 
 The URL data structure includes support for two specific types of
@@ -35,7 +34,6 @@ internet URLs. HTTP URLs have the form:
 
 ::
 
-       :::text
        http://user:password@host:port/path;params?query#fragment
 
 The URL port is stored as integer. All remaining parts of the URL
