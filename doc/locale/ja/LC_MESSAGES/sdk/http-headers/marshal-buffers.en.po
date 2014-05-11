@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:2
 msgid "Marshal Buffers"
-msgstr ""
+msgstr "マーシャルバッファー"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:21
 msgid ""
@@ -39,12 +39,20 @@ msgid ""
 "object (``TSMLoc``) and the marshal buffer containing the object "
 "(``TSMBuffer``)."
 msgstr ""
+"**マーシャルバッファー**\\ 、もしくは ``TSMBuffer`` はパース済みの URL 、"
+"MIME ヘッダー、HTTP ヘッダーを格納しているヒープデータ構造です。マーシャル"
+"バッファーの外に新しいオブジェクトを割り当て、マーシャルバッファー内の値を"
+"変更することができます。オブジェクトを操作するときはいつでも、そのオブジェクト"
+"のハンドル (``TSMLoc``) とそのオブジェクトを含んだマーシャルバッファー "
+"(``TSMBuffer``) が必要となります。"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:28
 msgid ""
 "Routines exist for manipulating the object based on these two pieces of "
 "information. For example, see one of the following:"
 msgstr ""
+"操作するためのルーチンはこれらの二つの情報をもとにしています。"
+"具体例は以下のいずれかを参照してください。"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:35
 msgid ""
@@ -52,6 +60,9 @@ msgid ""
 "Server's marshal buffers, which are the data structures that hold parsed "
 "URLs, MIME headers, and HTTP headers."
 msgstr ""
+"**マーシャルバッファー関数**\\ は、パース済みの URL 、MIME ヘッダー、"
+"HTTP ヘッダーを持っているデータ構造である Traffic Server のマーシャルバッファー"
+"の作成と破棄を行えるようにします。"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:40
 msgid ""
@@ -59,57 +70,74 @@ msgid ""
 "of the system. Be careful not to destroy these shared transaction marshal "
 "buffers in functions such as those below:"
 msgstr ""
+"``TSHttpTxn*Get`` で取得されるすべてのマーシャルバッファーはシステムの他の"
+"場所で使用されます。これらの共有されたトランザクションマーシャルバッファーを"
+"以下のような関数で破壊しないように気をつけてください。"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:44
 msgid ""
 "`TSHttpTxnCachedReqGet <http://people.apache.org/~amc/ats/doc/html/"
 "InkAPI_8cc.html#a889b626142157077f4f3cfe479e8b8e2>`_"
 msgstr ""
+"`TSHttpTxnCachedReqGet <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a889b626142157077f4f3cfe479e8b8e2>`_"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:45
 msgid ""
 "`TSHttpTxnCachedRespGet <http://people.apache.org/~amc/ats/doc/html/"
 "InkAPI_8cc.html#ae8f24b8dabb5008ad11620a11682ffd6>`_"
 msgstr ""
+"`TSHttpTxnCachedRespGet <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#ae8f24b8dabb5008ad11620a11682ffd6>`_"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:46
 msgid ""
 "`TSHttpTxnClientReqGet <http://people.apache.org/~amc/ats/doc/html/"
 "InkAPI_8cc.html#acca66f22d0f87bf8f08478ed926006a5>`_"
 msgstr ""
+"`TSHttpTxnClientReqGet <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#acca66f22d0f87bf8f08478ed926006a5>`_"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:47
 msgid ""
 "`TSHttpTxnClientRespGet <http://people.apache.org/~amc/ats/doc/html/"
 "InkAPI_8cc.html#a92349c8363f72b1f6dfed3ae80901fff>`_"
 msgstr ""
+"`TSHttpTxnClientRespGet <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a92349c8363f72b1f6dfed3ae80901fff>`_"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:48
 msgid ""
 "`TSHttpTxnServerReqGet <http://people.apache.org/~amc/ats/doc/html/ts_8h."
 "html#aac2343a8b47bf9150f3ff7cd4e692d57>`_"
 msgstr ""
+"`TSHttpTxnServerReqGet <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#aac2343a8b47bf9150f3ff7cd4e692d57>`_"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:49
 msgid ""
 "`TSHttpTxnServerRespGet <http://people.apache.org/~amc/ats/doc/html/ts_8h."
 "html#a39e8bfb199eadabb54c067ff25a9a400>`_"
 msgstr ""
+"`TSHttpTxnServerRespGet <http://people.apache.org/~amc/ats/doc/html/ts_8h."
+"html#a39e8bfb199eadabb54c067ff25a9a400>`_"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:50
 msgid ""
 "`TSHttpTxnTransformRespGet <http://people.apache.org/~amc/ats/doc/html/"
 "InkAPI_8cc.html#a20367f5469e8b7e73621c1316091d578>`_"
 msgstr ""
+"`TSHttpTxnTransformRespGet <http://people.apache.org/~amc/ats/doc/html/"
+"InkAPI_8cc.html#a20367f5469e8b7e73621c1316091d578>`_"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:31
 msgid ":doc:`http-headers.en`"
-msgstr ""
+msgstr ":doc:`http-headers.en`"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:32
 msgid ":doc:`urls.en`"
-msgstr ""
+msgstr ":doc:`urls.en`"
 
 #: ../../sdk/http-headers/marshal-buffers.en.rst:33
 msgid ":doc:`mime-headers.en`"
-msgstr ""
+msgstr ":doc:`mime-headers.en`"
