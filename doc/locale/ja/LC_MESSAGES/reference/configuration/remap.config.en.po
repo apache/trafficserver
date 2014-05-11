@@ -18,7 +18,7 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2014-05-19 22:07+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -710,39 +710,25 @@ msgid ""
 "etc/trafficserver/``) contains mapping rules that Traffic Server uses to "
 "perform the following actions:"
 msgstr ""
+":file:`remap.config` ファイル ( デフォルトでは ``/opt/trafficserver/etc/"
+"trafficserver/`` に置かれます ) は Traffic Server が以下のアクションを行う際"
+"に利用するマッピングルールを含んでいます。"
 
 #: ../../reference/configuration/remap.config.en.rst:116
+#, fuzzy
 msgid ""
 "Remap rules are not processed top-down, but based on an internal priority. "
 "Once these rules are executed we pick the lowest line number as the match "
 "(which replicates first-match-wins)."
 msgstr ""
+"リマップルールは上から順にではなく、内部の優先順位をもとに処理されます。一度"
+"これらのルールが実行され、もっとも低い行番号を一致として選びます。( 前方一致"
+"を再現します )"
 
 #: ../../reference/configuration/remap.config.en.rst:120
 msgid "``map_with_recv_port`` and ```regex_map_with_recv_port```"
-msgstr ""
+msgstr "``map_with_recv_port`` と ```regex_map_with_recv_port```"
 
 #: ../../reference/configuration/remap.config.en.rst:121
 msgid "``map`` and ``regex_map`` and ``reverse_map``"
-msgstr ""
-
-#~ msgid ""
-#~ "The :file:`remap.config` file contains mapping rules that Traffic Server "
-#~ "uses to perform the following actions:"
-#~ msgstr ""
-#~ ":file:`remap.config` ファイルは Traffic Server が以下のアクションを行う際"
-#~ "に利用するマッピングルールを含んでいます。"
-
-#~ msgid ""
-#~ "Remap rules are not processed top-down, but based on an internal priority"
-#~ msgstr ""
-#~ "リマップルールは上から順にではなく、内部の優先順位をもとに処理されます。"
-
-#~ msgid "``map`` and ``reverse_map``"
-#~ msgstr "``map`` と ``reverse_map``"
-
-#~ msgid "``regex_map``"
-#~ msgstr "``regex_map``"
-
-#~ msgid "``map_with_recv_port``"
-#~ msgstr "``map_with_recv_port``"
+msgstr "``map`` と ``regex_map`` と ``reverse_map``"

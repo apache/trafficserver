@@ -18,7 +18,7 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2014-05-21 23:57+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -281,7 +281,7 @@ msgstr ""
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:113
 msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\""
-msgstr ""
+msgstr "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\""
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:98
 msgid ""
@@ -289,20 +289,26 @@ msgid ""
 "pass phrase is incorrect, SSL negotiation for this dest_ip will fail for "
 "clients who attempt to connect. Two options are supported: builtin and exec:"
 msgstr ""
+"秘密鍵を暗号化したパスフレーズを渡すのに使われる手段です。パスフレーズが間"
+"違っている場合、接続を試みたクライアントからこの dest_ip への SSL ネゴシエー"
+"ションは失敗するでしょう。builtin と exec: の 2 つのオプションがサポートされ"
+"ています。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:105
 msgid "``builtin`` - Requests pass phrase via stdin/stdout. User will be"
-msgstr ""
+msgstr "``builtin``"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:104
 msgid ""
 "provided the ssl_cert_name and be prompted for the pass phrase. Useful for "
 "debugging."
 msgstr ""
+"stdin/stdout によるパスフレーズを要求します。ユーザーは ssl_cert_name を提示"
+"され、パスフレーズの入力を促されます。デバッグに便利です。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:113
 msgid "``exec:`` - Executes program /path/to/program and passes args, if"
-msgstr ""
+msgstr "``exec:``"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:108
 msgid ""
@@ -313,6 +319,13 @@ msgid ""
 "to ensure that the system is not compromised by an attacker before "
 "providing the pass phrase."
 msgstr ""
+"記述された場合、プログラム /path/to/program を実行し、プログラムに引数を渡"
+"し、パスフレーズを得るために stdout からの出力を読みます。引数が渡された場"
+"合、exec: 文字列全体は \"\" で囲まれていなければなりません。( 例を参照してく"
+"ださい ) ホワイトスペースを含む引数はシングルクォート (') によってサポートさ"
+"れています。この意図はこのプログラムがセキュリティチェックを実行し、パスフ"
+"レーズを渡す前にシステムが攻撃者によって汚染されていないことを確かめることで"
+"す。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:173
 msgid ""
@@ -320,6 +333,9 @@ msgid ""
 "``server.pem`` and disable session tickets for all requests to the IP "
 "address 111.11.11.1."
 msgstr ""
+"次の例は Traffice Server が IP アドレス 111.11.11.1 へのすべてのリクエスト"
+"で SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化するように"
+"設定しています。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:181
 msgid ""
@@ -330,12 +346,8 @@ msgid ""
 "second example, the program (mypass) will return the pass phrase to decrypt "
 "the keys."
 msgstr ""
-
-#~ msgid ""
-#~ "The following example configures Traffic Server to use the SSL "
-#~ "certificate ``server.pem`` and disable sessiont ticket for all requests "
-#~ "to the IP address 111.11.11.1."
-#~ msgstr ""
-#~ "次の例は Traffice Server が IP アドレス 111.11.11.1 へのすべてのリクエス"
-#~ "トで SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化する"
-#~ "ように設定しています。"
+"次の例は Traffice Server が暗号化された秘密鍵を含む SSL 証明書 ``server."
+"pem`` を 使用するように設定しています。起動時に外部プログラム /usr/bin/"
+"mypass は最初の例では 1 つ引数 (foo) と共に呼ばれ、２つ目の例では 2 つの引"
+"数 (foo) と (ba r) と共に呼ばれ、プログラム (mypass) は鍵を復号化するための"
+"パスフレーズを返すでしょう。"
