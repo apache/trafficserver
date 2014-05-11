@@ -25,7 +25,6 @@ the core files in the :file:`records.config` file to -1 as follows:
 
 ::
 
-    :::c
     CONFIG proxy.config.core_limit INT -1
 
 This is the equivalent of setting ``ulimit -c unlimited``

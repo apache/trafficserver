@@ -44,8 +44,8 @@ Using the Protocol plugin, Traffic Server can accept these requests,
 parse them, and act as a proxy cache (i.e., request the file from the
 origin server on the client's behalf and store copies of response
 messages in cache). The Protocol plugin is a state machine that flows
-through the states illustrated in the `Sample Protocol State
-Diagram <#SampleProtocolStDiag>`_. This figure illustrates the steps
+through the states illustrated in the :ref:`Sample Protocol State
+Diagram <SampleProtocolStDiag>`. This figure illustrates the steps
 that Traffic Server and the Protocol plugin go through in order to
 support the sample protocol.
 
@@ -70,7 +70,9 @@ In more specific terms, Traffic Server and the Protocol plugin must:
 
 -  Cache the response and send it on to the client
 
-**Sample Protocol State Diagram** {#SampleProtocolStDiag}
+**Sample Protocol State Diagram**
+
+.. _SampleProtocolStDiag:
 
 .. figure:: ../static/images/sdk/Protocol_state_diagram.jpg
    :alt: Sample Protocol State Diagram
@@ -84,9 +86,9 @@ To see how the Protocol plugin works, you need to understand some
 broader concepts. This section assumes you're familiar with the concepts
 of :term:`continuation`, Traffic Server's **asynchronous event model**, and
 basic Traffic Server **plugin structure**. If you are not familiar with
-these concepts, then reference `Getting
-Started <../getting-started#GettingStarted>`_ and `How to Create
-Traffic Server Plugins <../how-to-create-trafficserver-plugins>`_
+these concepts, then reference :ref:`Getting
+Started <sdk-getting-started>` and :doc:`How to Create
+Traffic Server Plugins <how-to-create-trafficserver-plugins.en>`
 
 Continuations in the Protocol Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,10 +104,12 @@ request and Traffic Server's response). Each transaction state machine
 lives until the transaction completes; then it is destroyed. If the
 client's request for content is a cache miss, then a transaction state
 machine might need to open a connection to the origin server. This is
-illustrated in the `Protocol Plugin
-Overview <#ProtocolPluginOverview>`__ diagram below.
+illustrated in the :ref:`Protocol Plugin
+Overview <ProtocolPluginOverview>` diagram below.
 
 **Protocol Plugin Overview**
+
+.. _ProtocolPluginOverview:
 
 .. figure:: ../static/images/sdk/protocol_sm_big.jpg
    :alt: Protocol Plugin Overview
@@ -160,13 +164,15 @@ Processor.
 
 **Protocol Plugin Flow of Events**
 
+.. _ProtocolPluginFlow:
+
 .. figure:: ../static/images/sdk/protocol_evt.jpg
    :alt: Protocol Plugin Flow of Events
 
    Protocol Plugin Flow of Events
 
-The flow of events is illustrated in the `Protocol Plugin Flow of
-Events <#ProtocolPluginFlow>`_ diagram above. The thin straight lines
+The flow of events is illustrated in the :ref:`Protocol Plugin Flow of
+Events <ProtocolPluginFlow>` diagram above. The thin straight lines
 show Net Processor event flow, the thin dashed lines represent Host
 Database event flow, and the thick dashed lines show Cache event flow.
 
@@ -216,9 +222,9 @@ plugin does this are provided in the next section.
    ``main_handler`` calls the state handler functions to handle each
    state.
 
-The steps below describe the flow of execution illustrated in `"How
+The steps below describe the flow of execution illustrated in :ref:`"How
 Transaction State Machines are Implemented in the Protocol
-Plugin" <#ImplementTransStMachine>`__.
+Plugin" <ImplementTransStMachine>`.
 
 1. The handler for the TSM, (called **``main_handler``** in the Protocol
    plugin) receives events from the TSM.
@@ -228,12 +234,12 @@ Plugin" <#ImplementTransStMachine>`__.
 
 3. **``main_handler``** calls the **``current_handler``** (which is one
    of the state handler functions), and then passes the current event to
-   **``current_handler``**. In `the image
-   below <#ImplementTransStMachine>`__ below, the current handler is
+   **``current_handler``**. In :ref:`the image
+   below <ImplementTransStMachine>` below, the current handler is
    called **``state2_handler``**.
 
 4. The **``current_handler``** handles the event and updates the data.
-   In `the image below <#ImplementTransStMachine>`__ below, the state is
+   In :ref:`the image below <ImplementTransStMachine>` below, the state is
    changed from **``state2``** to **``state3``** (and the current
    handler is changed from **``state2_handler``** to
    **``state3_handler``**). The next time **``main_handler``** receives
@@ -246,7 +252,9 @@ Plugin" <#ImplementTransStMachine>`__.
    arrive from Traffic Server.
 
 **How Transaction State Machines are Implemented in the Protocol
-Plugin** {#ImplementTransStMachine}
+Plugin**
+
+.. _ImplementTransStMachine:
 
 .. figure:: ../static/images/sdk/txn_sm.jpg
    :alt: How Transaction State Machines are Implemented in the Protocol Plugin

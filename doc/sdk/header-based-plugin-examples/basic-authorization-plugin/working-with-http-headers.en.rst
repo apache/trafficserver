@@ -25,9 +25,8 @@ check the ``Proxy-Authorization`` field. The ``handle_dns`` routine uses
 ``TSHttpTxnClientReqGet`` and ``TSMimeHdrFieldFind`` to obtain the
 ``Proxy-Authorization`` field:
 
-::
+.. code-block:: c
 
-    :::c
     {
         TSMBuffer bufp;
         TSMLoc hdr_loc;
@@ -47,9 +46,8 @@ If the ``Proxy-Authorization`` field is present, then the plugin checks
 that the authentication type is "Basic", and the user name and password
 are present and valid:
 
-::
+.. code-block:: c
 
-    :::c
     val = TSMimeHdrFieldValueStringGet (bufp, hdr_loc, field_loc, -1, &authval_length);
     if (!val) {
         TSError ("no value in Proxy-Authorization field\n");

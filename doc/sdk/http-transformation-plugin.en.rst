@@ -42,6 +42,8 @@ examples are discussed in detail:
    http-transformation-plugin/append-transform-plugin.en
    http-transformation-plugin/sample-buffered-null-transformation-plugin.en
 
+.. _WritingContentTransformPlugin:
+
 Writing Content Transform Plugins
 ---------------------------------
 
@@ -109,6 +111,8 @@ data stream and must be able to handle the events that the upstream and
 downstream ``VConnection``\ s send to it. The *user's side* refers to
 how to use a ``VConnection`` to read or write data. At the very least,
 transformations output (write) data.
+
+.. _transformations:
 
 Transformations
 ~~~~~~~~~~~~~~~

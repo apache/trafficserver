@@ -23,7 +23,7 @@ and identify threads within Traffic Server. Multithreading enables a
 single program to have more than one stream of execution and to process
 more than one transaction at a time. Threads serialize their access to
 shared resources and data using the ``TSMutex`` type, as described in
-`Mutexes <../mutex-guide/#Mutexes>`__.
+:ref:`Mutexes`.
 
 The thread functions are listed below:
 

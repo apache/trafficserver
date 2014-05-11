@@ -92,9 +92,8 @@ reexamine it to see if it can make further progress.
 The null transform plugin provides an example of how this is done. Below
 is a prototype for ``TSVConnWrite``:
 
-::
+.. code-block:: c
 
-     ::::c
      TSVIO TSVConnWrite (TSVConn connp, TSCont contp, TSIOBufferReader readerp, int nbytes)
 
 The ``connp`` is the vconnection the user is writing to and ``contp`` is
@@ -103,9 +102,8 @@ has emptied its buffer and is ready for more data.
 
 The call made in the null transform plugin is:
 
-::
+.. code-block:: c
 
-      :::c
       TSVConnWrite (output_conn, contp, data->output_reader, TSVIONBytesGet (input_vio));
 
 In the example above, ``contp`` is the transformation vconnection that
@@ -177,8 +175,8 @@ write portion of a connection, then the ``TS_EVENT_VCONN_WRITE_READY``
 or ``TS_EVENT_VCONN_WRITE_COMPLETE`` events will not be produced. In the
 null transform plugin, the write operation is shut down with a call to
 ``TSVConnShutdown``. To learn how vconnections are used in
-transformation plugins, see `Writing Content Transform
-Plugins <../http-transformation-plugin#WritingContentTransformPlugins>`__.
+transformation plugins, see :ref:`Writing Content Transform
+Plugins <WritingContentTransformPlugin>`.
 
 The vconnection functions are listed below:
 

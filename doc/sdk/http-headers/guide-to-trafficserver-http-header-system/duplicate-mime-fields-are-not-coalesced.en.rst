@@ -28,4 +28,4 @@ duplicate fields.
 
 Properly-behaving plugins should check for the presence of duplicate
 fields and then iterate over the duplicate fields via
-:ref:``TSMimeHdrFieldNextDup <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af2d776615afe959ed7c3639830a7061f>``.
+:c:func:`TSMimeHdrFieldNextDup`.

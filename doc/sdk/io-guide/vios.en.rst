@@ -30,9 +30,8 @@ made.
 The ``TSVIO`` data structure itself is opaque, but it could be defined
 as follows:
 
-::
+.. code-block:: c
 
-        ::::c
     typedef struct {
         TSCont continuation;
         TSVConn vconnection;

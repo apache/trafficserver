@@ -29,13 +29,13 @@ statistics are stored in ``PROCESS`` variables.
    Not all ``CONFIG`` and ``PROCESS`` variables in :file:`records.config` are
    relevant to Traffic Server's configuration and statistics. Therefore,
    retrieve only the :file:`records.config` variables that are documented in
-   the `Traffic Server Administrator's Guide <../../admin/>`__.
+   the :doc:`Traffic Server Administrator's Guide <../../admin/index.en>`.
 
 To retrieve a variable, you need to know its type (``int``, ``counter``,
 ``float``, or ``string``). Plugins store the :file:`records.config` values
 as an ``TSMgmtInt``, ``TSMgmtCounter``, ``TSMgmtFloat``, or
 ``TSMgmtString``. You can look up :file:`records.config` variable types in
-the `Traffic Server Administrator's Guide <../../admin/>`__.
+the :doc:`Traffic Server Administrator's Guide <../../admin/index.en>`.
 
 Depending on the result type, you'll use ``TSMgmtIntGet``,
 ``TSMgmtCounterGet``, ``TSMgmtFloatGet``, or ``TSMgmtStringGet`` to
