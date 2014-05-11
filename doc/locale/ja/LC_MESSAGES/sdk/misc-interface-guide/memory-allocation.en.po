@@ -27,7 +27,7 @@ msgstr ""
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:2
 msgid "Memory Allocation"
-msgstr ""
+msgstr "メモリー割り当て"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:21
 msgid ""
@@ -35,6 +35,10 @@ msgid ""
 "These routines correspond to similar routines in the C library. For "
 "example, ``TSrealloc`` behaves like the C library routine ``realloc``."
 msgstr ""
+"Traffic Server はメモリーの割り当てと解放のための5つのルーチンを提供して"
+"います。これらのルーチンは C ライブラリの同様のルーチンと一致します。"
+"例えば、``TSrealloc`` は C ライブラリルーチンの ``realloc`` のように振る舞い"
+"ます。"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:25
 msgid ""
@@ -46,27 +50,34 @@ msgid ""
 "allocations by file and line number. This tracking is very efficient, "
 "always turned on, and quite useful when tracking down memory leaks."
 msgstr ""
+"Traffic Server が提供するルーチンを使用する主な理由は二つあります。一つ目は"
+"移植性です。Traffic Server API ルーチンは Traffic Server がサポートする"
+"プラットフォームすべてにおいて同じ振る舞いをします。例えば、いくつかの"
+"プラットフォームでは ``realloc`` が ``NULL`` の引数を受け付けません。"
+"二つ目の理由は Traffic Server ルーチンが実はメモリー割り当てをファイルと"
+"行番号で追跡していることです。この追跡はとても効率的で、常に有効化されて"
+"おり、メモリーリークを探し出すときになかなか便利です。"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:34
 msgid "The memory allocation functions are:"
-msgstr ""
+msgstr "メモリー割り当て関数には以下のものがあります。"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:36
 msgid ":c:func:`TSfree`"
-msgstr ""
+msgstr ":c:func:`TSfree`"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:38
 msgid ":c:func:`TSmalloc`"
-msgstr ""
+msgstr ":c:func:`TSmalloc`"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:40
 msgid ":c:func:`TSrealloc`"
-msgstr ""
+msgstr ":c:func:`TSrealloc`"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:42
 msgid ":c:func:`TSstrdup`"
-msgstr ""
+msgstr ":c:func:`TSstrdup`"
 
 #: ../../sdk/misc-interface-guide/memory-allocation.en.rst:44
 msgid ":c:func:`TSstrndup`"
-msgstr ""
+msgstr ":c:func:`TSstrndup`"
