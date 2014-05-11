@@ -24,7 +24,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-static inline int ts_lua_atomic_increment(volatile int32_t *mem, int value) { return __sync_fetch_and_add(mem, value); }
+static inline int
+ts_lua_atomic_increment(volatile int32_t * mem, int value)
+{
+  return __sync_fetch_and_add(mem, value);
+}
 
 #endif
-

@@ -25,4 +25,3 @@
 int ts_lua_transform_entry(TSCont contp, TSEvent event, void *edata);
 
 #endif
-

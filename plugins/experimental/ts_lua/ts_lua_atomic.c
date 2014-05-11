@@ -39,60 +39,58 @@ static inline int64_t ts_lua_atomic_cas64(volatile int64_t * mem, int64_t old, i
 void
 ts_lua_atomiclist_init(ts_lua_atomiclist * l, const char *name, uint32_t offset_to_next)
 {
-    l->name = name;
-    l->offset = offset_to_next;
+  l->name = name;
+  l->offset = offset_to_next;
 
-    SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(0), 0);
+  SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(0), 0);
 }
 
 void *
 ts_lua_atomiclist_push(ts_lua_atomiclist * l, void *item)
 {
-    int64_t         head;
-    int64_t         item_pair;
-    int             result = 0;
-    volatile void   *h = NULL;
+  int64_t head;
+  int64_t item_pair;
+  int result = 0;
+  volatile void *h = NULL;
 
-    volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(item, l->offset);
+  volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(item, l->offset);
 
-    do {
-        INK_QUEUE_LD64(head, l->head);
-        h = FREELIST_POINTER(head);
-        *adr_of_next = h;
-        SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
-        INK_MEMORY_BARRIER;
+  do {
+    INK_QUEUE_LD64(head, l->head);
+    h = FREELIST_POINTER(head);
+    *adr_of_next = h;
+    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
+    INK_MEMORY_BARRIER;
 
-        result = ts_lua_atomic_cas64((int64_t *) & l->head, head, item_pair);
-    } while (result == 0);
+    result = ts_lua_atomic_cas64((int64_t *) & l->head, head, item_pair);
+  } while (result == 0);
 
-    return TO_PTR(h);
+  return TO_PTR(h);
 }
 
 void *
 ts_lua_atomiclist_popall(ts_lua_atomiclist * l)
 {
-    int64_t     item, next;
-    void        *ret;
-    int         result = 0;
+  int64_t item, next;
+  void *ret;
+  int result = 0;
 
-    do {
-        INK_QUEUE_LD64(item, l->head);
-        if (TO_PTR(FREELIST_POINTER(item)) == NULL)
-            return NULL;
+  do {
+    INK_QUEUE_LD64(item, l->head);
+    if (TO_PTR(FREELIST_POINTER(item)) == NULL)
+      return NULL;
 
-        SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
-        result = ts_lua_atomic_cas64((int64_t *) & l->head, item, next);
-    } while (result == 0);
+    SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
+    result = ts_lua_atomic_cas64((int64_t *) & l->head, item, next);
+  } while (result == 0);
 
-    ret = TO_PTR(FREELIST_POINTER(item)); 
+  ret = TO_PTR(FREELIST_POINTER(item));
 
-    return ret;
+  return ret;
 }
 
 static inline int64_t
 ts_lua_atomic_cas64(volatile int64_t * mem, int64_t old, int64_t new_value)
 {
-    return __sync_bool_compare_and_swap(mem, old, new_value);
+  return __sync_bool_compare_and_swap(mem, old, new_value);
 }
-
-

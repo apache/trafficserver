@@ -53,78 +53,84 @@
 #define TS_LUA_DEBUG_TAG                    "ts_lua"
 
 
-typedef struct {
-    char    script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
+typedef struct
+{
+  char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
 } ts_lua_instance_conf;
 
 
-typedef struct {
-    lua_State   *lua;
-    TSMutex     mutexp;
-    int         gref;
+typedef struct
+{
+  lua_State *lua;
+  TSMutex mutexp;
+  int gref;
 } ts_lua_main_ctx;
 
 
-typedef struct {
-    lua_State   *lua;
-    TSHttpTxn   txnp;
-    TSCont      main_contp;
+typedef struct
+{
+  lua_State *lua;
+  TSHttpTxn txnp;
+  TSCont main_contp;
 
-    TSMBuffer   client_request_bufp;
-    TSMLoc      client_request_hdrp;
-    TSMLoc      client_request_url;
+  TSMBuffer client_request_bufp;
+  TSMLoc client_request_hdrp;
+  TSMLoc client_request_url;
 
-    TSMBuffer   server_request_bufp;
-    TSMLoc      server_request_hdrp;
+  TSMBuffer server_request_bufp;
+  TSMLoc server_request_hdrp;
 
-    TSMBuffer   server_response_bufp;
-    TSMLoc      server_response_hdrp;
+  TSMBuffer server_response_bufp;
+  TSMLoc server_response_hdrp;
 
-    TSMBuffer   client_response_bufp;
-    TSMLoc      client_response_hdrp;
+  TSMBuffer client_response_bufp;
+  TSMLoc client_response_hdrp;
 
-    TSMBuffer   cached_response_bufp;
-    TSMLoc      cached_response_hdrp;
+  TSMBuffer cached_response_bufp;
+  TSMLoc cached_response_hdrp;
 
-    ts_lua_main_ctx   *mctx;
+  ts_lua_main_ctx *mctx;
 
-    int         intercept_type;
-    int         ref;
+  int intercept_type;
+  int ref;
 
-    int         remap;
+  int remap;
 
 } ts_lua_http_ctx;
 
 
-typedef struct {
-    TSVIO               vio;
-    TSIOBuffer          buffer;
-    TSIOBufferReader    reader;
+typedef struct
+{
+  TSVIO vio;
+  TSIOBuffer buffer;
+  TSIOBufferReader reader;
 } ts_lua_io_handle;
 
-typedef struct {
-    TSVIO               output_vio;
-    TSIOBuffer          output_buffer;
-    TSIOBufferReader    output_reader;
+typedef struct
+{
+  TSVIO output_vio;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader output_reader;
 
-    int64_t             total;
-    ts_lua_http_ctx     *hctx;
-    int                 eos;
+  int64_t total;
+  ts_lua_http_ctx *hctx;
+  int eos;
 
 } ts_lua_transform_ctx;
 
 
-typedef struct {
-    lua_State           *lua;
-    TSCont              contp;
-    ts_lua_io_handle    input;
-    ts_lua_io_handle    output;
-    TSVConn             net_vc;
+typedef struct
+{
+  lua_State *lua;
+  TSCont contp;
+  ts_lua_io_handle input;
+  ts_lua_io_handle output;
+  TSVConn net_vc;
 
-    ts_lua_http_ctx     *hctx;
-    int                 ref;
-    char                recv_complete;
-    char                send_complete;
+  ts_lua_http_ctx *hctx;
+  int ref;
+  char recv_complete;
+  char send_complete;
 } ts_lua_http_intercept_ctx;
 
 #define TS_LUA_RELEASE_IO_HANDLE(ih) do {   \
@@ -139,4 +145,3 @@ typedef struct {
 } while (0)
 
 #endif
-
