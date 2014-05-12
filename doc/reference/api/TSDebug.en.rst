@@ -20,6 +20,8 @@
 TSDebug
 =======
 
+Traffic Server Debugging APIs.
+
 Synopsis
 ========
 `#include <ts/ts.h>`

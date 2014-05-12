@@ -21,6 +21,8 @@
 TSTextLogObjectCreate
 =====================
 
+Traffic Server text logging API.
+
 Synopsis
 ========
 

@@ -21,6 +21,8 @@
 TSInstallDirGet
 ===============
 
+Return Traffic Server installation directories.
+
 Synopsis
 ========
 

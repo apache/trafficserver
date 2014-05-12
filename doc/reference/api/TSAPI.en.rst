@@ -20,6 +20,8 @@
 TSAPI
 =====
 
+Introduction to the Apache Traffic Server API.
+
 Synopsis
 ========
 | `#include <ts/ts.h>`

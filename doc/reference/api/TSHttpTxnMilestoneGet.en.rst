@@ -21,6 +21,8 @@
 TSHttpTxnMilestoneGet
 =====================
 
+Get a specified milestone timer value for the current transaction.
+
 Synopsis
 ========
 

@@ -21,6 +21,8 @@
 TSHttpParserCreate
 ===================
 
+Parse HTTP headers from memory buffers.
+
 Synopsis
 ========
 

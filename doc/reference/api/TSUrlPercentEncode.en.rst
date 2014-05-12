@@ -21,6 +21,8 @@
 TSUrlPercentEncode
 ==================
 
+Traffic Server URL percent encoding API.
+
 Synopsis
 ========
 

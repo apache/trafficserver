@@ -20,6 +20,8 @@
 TSRemapInit
 ===========
 
+Traffic Server remap plugin entry points.
+
 Synopsis
 ========
 

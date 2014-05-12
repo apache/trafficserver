@@ -20,6 +20,8 @@
 TSMBufferCreate
 ===============
 
+Traffic Server marshall buffer API.
+
 Synopsis
 ========
 
