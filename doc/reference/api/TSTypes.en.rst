@@ -35,13 +35,18 @@ function group, but others are used more widely. Those are described on this pag
 
    An opaque type that represents a Traffic Server :term:`continuation`.
 
-.. type:: TSHttpHookID
+.. type:: TSEvent
 
-   An enumeration that identifies a specific type of hook for HTTP transactions.
+   :type:`TSEvents` are sent to continuations when they are called
+   back.
 
-.. type:: TSHttpSsn
+   The :type:`TSEvent` provides the continuation's handler function
+   with information about the callback.  Based on the event it
+   receives, the handler function can decide what to do.
 
-   An opaque type that represents a Traffic Server :term:`session`.
+.. type:: TSEventFunc
+
+.. type:: TSHostLookupResult
 
 .. type:: TSHRTime
 
@@ -49,29 +54,86 @@ function group, but others are used more widely. Those are described on this pag
 
    A 64 bit time value, measured in nanoseconds.
 
+.. type:: TSHttpHookID
+
+   An enumeration that identifies a specific type of hook for HTTP transactions.
+
+.. type:: TSHttpParser
+
+.. type:: TSHttpSsn
+
+   An opaque type that represents a Traffic Server :term:`session`.
+
 .. type:: TSHttpTxn
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
+
+.. type:: TSIOBuffer
+
+.. type:: TSIOBufferReader
+
+.. type:: TSIOBufferSizeIndex
 
 .. type:: TSLifecycleHookID
 
    An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-add>`.
 
-.. type:: TSReturnCode
+.. type:: TSMBuffer
 
-   An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
-   indicates a failure and is specific to the API call.
+.. type:: TSMgmtFloat
 
-.. type:: TSRecordDataType
-
-   An enumeration that specifies the type of a value in an internal data structure that is accessible via the API.
+   The type used internally for a floating point value. This corresponds to the value :const:`TS_RECORDDATATYPE_FLOAT` for
+   :type:`TSRecordDataType`.
 
 .. type:: TSMgmtInt
 
    The type used internally for an integer. This corresponds to the value :const:`TS_RECORDDATATYPE_INT` for
    :type:`TSRecordDataType`.
 
-.. type:: TSMgmtFloat
+.. type:: TSMLoc
 
-   The type used internally for a floating point value. This corresponds to the value :const:`TS_RECORDDATATYPE_FLOAT` for
-   :type:`TSRecordDataType`.
+.. type:: TSMutex
+
+.. type:: TSParseResult
+
+   This set of enums are possible values returned by
+   :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp`.
+
+.. type:: TSPluginRegistrationInfo
+
+   The following struct is used by :func:`TSPluginRegister`.
+
+   It stores registration information about the plugin.
+
+.. type:: TSRecordDataType
+
+   An enumeration that specifies the type of a value in an internal data structure that is accessible via the API.
+
+.. type:: TSRemapInterface
+
+.. type:: TSRemapRequestInfo
+
+.. type:: TSRemapStatus
+
+.. type:: TSReturnCode
+
+   An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
+   indicates a failure and is specific to the API call.
+
+.. type:: TSSDKVersion
+
+   Starting 2.0, SDK now follows same versioning as Traffic Server.
+
+.. type:: TSServerState
+
+.. type:: TSTextLogObject
+
+   This type represents a custom log file that you create with
+   :func:`TSTextLogObjectCreate`.
+
+   Your plugin writes entries into this log file using
+   :func:`TSTextLogObjectWrite`.
+
+.. type:: TSVConn
+
+.. type:: TSVIO
