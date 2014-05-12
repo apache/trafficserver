@@ -38,6 +38,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
   -I$(srcdir)/http \
+  -I$(srcdir)/spdy \
   -I$(srcdir)/logging \
   -I$(srcdir)/http/remap  \
   -I$(srcdir)/hdrs \
@@ -141,21 +142,21 @@ traffic_server_SOURCES = \
   CoreUtils.h \
   DynamicStats.h \
   EventName.cc \
+  FetchSM.cc \
   HttpTransStats.h \
   ICP.cc \
   ICP.h \
   ICPConfig.cc \
-  ICPevents.h \
-  ICPlog.h \
   ICPProcessor.cc \
   ICPProcessor.h \
   ICPStats.cc \
-  InkAPI.cc \
-  FetchSM.cc \
-  InkAPIInternal.h \
-  InkIOCoreAPI.cc \
+  ICPevents.h \
+  ICPlog.h \
   IPAllow.cc \
   IPAllow.h \
+  InkAPI.cc \
+  InkAPIInternal.h \
+  InkIOCoreAPI.cc \
   Main.cc \
   Main.h \
   ParentSelection.cc \
@@ -166,6 +167,8 @@ traffic_server_SOURCES = \
   PluginVC.h \
   Prefetch.cc \
   Prefetch.h \
+  ProtocolProbeSessionAccept.cc \
+  ProtocolProbeSessionAccept.h \
   ReverseProxy.cc \
   ReverseProxy.h \
   SocksProxy.cc \
@@ -284,6 +287,8 @@ traffic_sac_SOURCES = \
   AbstractBuffer.cc \
   Transform.cc \
   Prefetch.cc \
+  ProtocolProbeSessionAccept.cc \
+  ProtocolProbeSessionAccept.h \
   Update.cc \
   Plugin.cc \
   InkAPI.cc \

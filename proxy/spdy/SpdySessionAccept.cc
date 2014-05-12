@@ -22,6 +22,8 @@
  */
 
 #include "SpdySessionAccept.h"
+#include "Error.h"
+
 #if TS_HAS_SPDY
 #include "SpdySM.h"
 #endif
@@ -36,12 +38,29 @@ SpdySessionAccept::SpdySessionAccept(Continuation *ep)
 }
 
 int
-SpdySessionAccept::mainEvent(int /* event */, void *netvc)
+SpdySessionAccept::mainEvent(int event, void * edata)
+{
+  if (event == NET_EVENT_ACCEPT) {
+    NetVConnection * netvc =static_cast<NetVConnection *>(edata);
+
+#if TS_HAS_SPDY
+    spdy_sm_create(netvc, NULL, NULL);
+#else
+    Error("accepted a SPDY session, but SPDY support is not available");
+    netvc->do_io_close();
+#endif
+
+    return EVENT_CONT;
+  }
+
+  MachineFatal("SPDY accept received fatal error: errno = %d", -((int)(intptr_t)edata));
+  return EVENT_CONT;
+}
+
+void
+SpdySessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
 {
 #if TS_HAS_SPDY
-  spdy_sm_create((TSCont)netvc);
-#else
-  (void)(netvc);
+  spdy_sm_create(netvc, iobuf, reader);
 #endif
-  return 0;
 }

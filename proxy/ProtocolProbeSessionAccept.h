@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#ifndef P_ProtocolProbeSessionAccept_H_
-#define P_ProtocolProbeSessionAccept_H_
+#ifndef ProtocolProbeSessionAccept_H_
+#define ProtocolProbeSessionAccept_H_
 
 #include "I_SessionAccept.h"
 
@@ -36,15 +36,18 @@ public:
   }
   ~ProtocolProbeSessionAccept() {}
 
-  void *createNetAccept();
-  void registerEndpoint(TSProtoType type, Continuation *ep);
+  void registerEndpoint(TSProtoType proto_type, SessionAccept * ap);
+
+  void accept(NetVConnection *, MIOBuffer *, IOBufferReader*);
 
 private:
   int mainEvent(int event, void * netvc);
   ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &); // disabled
   ProtocolProbeSessionAccept& operator =(const ProtocolProbeSessionAccept&); // disabled
 
-  Continuation *endpoint[sizeof(TSClientProtoStack) * CHAR_BIT];
+  SessionAccept * endpoint[sizeof(TSClientProtoStack) * CHAR_BIT];
+
+friend struct ProtocolProbeTrampoline;
 };
 
-#endif /* P_ProtocolProbeSessionAccept_H_ */
+#endif /* ProtocolProbeSessionAccept_H_ */

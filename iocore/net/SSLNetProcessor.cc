@@ -92,22 +92,20 @@ SSLNetProcessor::upgradeEtype(EventType & etype)
   }
 }
 
-// Functions all THREAD_FREE and THREAD_ALLOC to be performed
-// for both SSL and regular NetVConnection transparent to
-// netProcessor connect functions. Yes it looks goofy to
-// have them in both places, but it saves a bunch of
-// connect code from being duplicated.
-UnixNetVConnection *
-SSLNetProcessor::allocateThread(EThread *t)
+NetVConnection *
+SSLNetProcessor::allocate_vc(EThread *t)
 {
-  return ((UnixNetVConnection *) THREAD_ALLOC(sslNetVCAllocator, t));
-}
+  SSLNetVConnection *vc;
 
-void
-SSLNetProcessor::freeThread(UnixNetVConnection *vc, EThread *t)
-{
-  ink_assert(!vc->from_accept_thread);
-  THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
+  if (t) {
+    vc = THREAD_ALLOC(sslNetVCAllocator, t);
+  } else {
+    if (likely(vc = sslNetVCAllocator.alloc())) {
+      vc->from_accept_thread = true;
+    }
+  }
+
+  return vc;
 }
 
 SSLNetProcessor::SSLNetProcessor()

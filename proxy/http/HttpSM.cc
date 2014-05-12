@@ -5531,7 +5531,7 @@ HttpSM::setup_server_send_request()
 
   // Send the request header
   server_entry->vc_handler = &HttpSM::state_send_server_request_header;
-  server_entry->write_buffer = new_MIOBuffer(buffer_size_to_index(HTTP_HEADER_BUFFER_SIZE));
+  server_entry->write_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
 
   if (t_state.api_server_request_body_set) {
     msg_len = t_state.internal_msg_buffer_size;
@@ -5637,7 +5637,7 @@ HttpSM::setup_cache_read_transfer()
   ink_assert(cache_sm.cache_read_vc != NULL);
 
   doc_size = t_state.cache_info.object_read->object_size_get();
-  alloc_index = buffer_size_to_index(doc_size + HTTP_HEADER_BUFFER_SIZE);
+  alloc_index = buffer_size_to_index(doc_size + index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX));
 
 #ifndef USE_NEW_EMPTY_MIOBUFFER
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
@@ -5735,9 +5735,7 @@ HttpSM::setup_cache_write_transfer(HttpCacheSM * c_sm,
 void
 HttpSM::setup_100_continue_transfer()
 {
-  int64_t buf_size = HTTP_HEADER_BUFFER_SIZE;
-
-  MIOBuffer *buf = new_MIOBuffer(buffer_size_to_index(buf_size));
+  MIOBuffer *buf = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // First write the client response header into the buffer
@@ -5837,7 +5835,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 
   t_state.source = HttpTransact::SOURCE_INTERNAL;
 
-  int64_t buf_size = HTTP_HEADER_BUFFER_SIZE + (is_msg_buf_present ? t_state.internal_msg_buffer_size : 0);
+  int64_t buf_size = index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + (is_msg_buf_present ? t_state.internal_msg_buffer_size : 0);
 
   MIOBuffer *buf = new_MIOBuffer(buffer_size_to_index(buf_size));
   IOBufferReader *buf_start = buf->alloc_reader();
@@ -5907,7 +5905,7 @@ HttpSM::find_http_resp_buffer_size(int64_t content_length)
 #ifdef WRITE_AND_TRANSFER
     buf_size = HTTP_HEADER_BUFFER_SIZE + content_length - index_to_buffer_size(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
 #else
-    buf_size = HTTP_HEADER_BUFFER_SIZE + content_length;
+    buf_size = index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + content_length;
 #endif
     alloc_index = buffer_size_to_index(buf_size);
   }

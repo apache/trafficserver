@@ -58,12 +58,8 @@ public:
   // nothing for NetProcessor
   virtual void upgradeEtype(EventType & /* etype ATS_UNUSED */) { };
 
-  // Functions all THREAD_FREE and THREAD_ALLOC to be performed
-  // for both SSL and regular NetVConnection transparent to
-  // netProcessor connect functions.
-  virtual UnixNetVConnection *allocateThread(EThread * t);
-  virtual void freeThread(UnixNetVConnection * vc, EThread * t);
   virtual NetAccept *createNetAccept();
+  virtual NetVConnection * allocate_vc(EThread *t);
 
   virtual int start(int number_of_net_threads, size_t stacksize);
 

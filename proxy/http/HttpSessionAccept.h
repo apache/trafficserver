@@ -188,6 +188,7 @@ public:
     return;
   }
 
+  void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
   int mainEvent(int event, void *netvc);
 
 private:

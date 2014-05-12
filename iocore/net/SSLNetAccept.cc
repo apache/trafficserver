@@ -28,32 +28,15 @@ typedef int (SSLNetAccept::*SSLNetAcceptHandler) (int, void *);
 // etype to be used in NetAccept functions (ET_SSL
 // or ET_NET).
 EventType
-SSLNetAccept::getEtype()
+SSLNetAccept::getEtype() const
 {
   return SSLNetProcessor::ET_SSL;
 }
 
-// Functions all THREAD_FREE and THREAD_ALLOC to be performed
-// for both SSL and regular NetVConnection transparent to
-// accept functions.
-UnixNetVConnection *
-SSLNetAccept::allocateThread(EThread *t)
+NetProcessor *
+SSLNetAccept::getNetProcessor() const
 {
-  return ((UnixNetVConnection *) THREAD_ALLOC(sslNetVCAllocator, t));
-}
-
-void
-SSLNetAccept::freeThread(UnixNetVConnection *vc, EThread *t)
-{
-  ink_assert(!vc->from_accept_thread);
-  THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
-}
-
-// This allocates directly on the class allocator, used for accept threads.
-UnixNetVConnection *
-SSLNetAccept::allocateGlobal()
-{
-  return (UnixNetVConnection *)sslNetVCAllocator.alloc();
+  return &sslNetProcessor;
 }
 
 void
@@ -85,7 +68,7 @@ SSLNetAccept::init_accept_per_thread()
 }
 
 NetAccept *
-SSLNetAccept::clone()
+SSLNetAccept::clone() const
 {
   NetAccept *na;
   na = NEW(new SSLNetAccept);

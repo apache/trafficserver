@@ -56,38 +56,24 @@ SpdyRequest::clear()
   Debug("spdy", "****Delete Request[%" PRIu64 ":%d]", spdy_sm->sm_id, stream_id);
 }
 
-SpdySM::SpdySM():
-  net_vc(NULL), contp(NULL),
-  req_buffer(NULL), req_reader(NULL),
-  resp_buffer(NULL), resp_reader(NULL),
-  read_vio(NULL), write_vio(NULL), session(NULL)
-{}
-
-SpdySM::SpdySM(TSVConn conn):
-  net_vc(NULL), contp(NULL),
-  req_buffer(NULL), req_reader(NULL),
-  resp_buffer(NULL), resp_reader(NULL),
-  read_vio(NULL), write_vio(NULL), session(NULL)
-
-{
-  init(conn);
-}
-
 void
-SpdySM::init(TSVConn conn)
+SpdySM::init(NetVConnection * netvc)
 {
   int version, r;
-  UnixNetVConnection *vc;
 
-  net_vc = conn;
-  req_map.clear();
-  vc = (UnixNetVConnection *)(conn);
+  atomic_inc(g_sm_cnt);
 
-  if (vc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3_1)
+  this->vc = netvc;
+  this->req_map.clear();
+
+  // XXX this has to die ... TS-2793
+  UnixNetVConnection * unixvc = reinterpret_cast<UnixNetVConnection *>(netvc);
+
+  if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3_1)
     version = SPDYLAY_PROTO_SPDY3_1;
-  else if (vc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3)
+  else if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3)
     version = SPDYLAY_PROTO_SPDY3;
-  else if (vc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_2)
+  else if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_2)
     version = SPDYLAY_PROTO_SPDY2;
   else
     version = SPDYLAY_PROTO_SPDY3;
@@ -98,6 +84,13 @@ SpdySM::init(TSVConn conn)
   sm_id = atomic_inc(g_sm_id);
   total_size = 0;
   start_time = TShrtime();
+
+  ink_assert(this->contp == NULL);
+  this->contp = TSContCreate(spdy_main_handler, TSMutexCreate());
+  TSContDataSet(this->contp, this);
+
+  this->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.accept_no_activity_timeout));
+  this->current_handler = &spdy_start_handler;
 }
 
 void
@@ -122,9 +115,9 @@ SpdySM::clear()
   }
   req_map.clear();
 
-  if (net_vc) {
-    TSVConnClose(net_vc);
-    net_vc = NULL;
+  if (vc) {
+    TSVConnClose(reinterpret_cast<TSVConn>(vc));
+    vc = NULL;
   }
 
   if (contp) {
@@ -163,21 +156,19 @@ SpdySM::clear()
 }
 
 void
-spdy_sm_create(TSVConn cont)
+spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
 {
   SpdySM  *sm;
-  NetVConnection *netvc = (NetVConnection *)cont;
 
   sm = spdySMAllocator.alloc();
-  sm->init(cont);
-  atomic_inc(g_sm_cnt);
+  sm->init(netvc);
 
-  sm->contp = TSContCreate(spdy_main_handler, TSMutexCreate());
-  TSContDataSet(sm->contp, sm);
+  sm->req_buffer = iobuf ? reinterpret_cast<TSIOBuffer>(iobuf) : TSIOBufferCreate();
+  sm->req_reader = reader ? reinterpret_cast<TSIOBufferReader>(reader) : TSIOBufferReaderAlloc(sm->req_buffer);
 
-  netvc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.accept_no_activity_timeout));
+  sm->resp_buffer = TSIOBufferCreate();
+  sm->resp_reader = TSIOBufferReaderAlloc(sm->resp_buffer);
 
-  sm->current_handler = &spdy_start_handler;
   TSContSchedule(sm->contp, 0, TS_THREAD_POOL_DEFAULT);       // schedule now
 }
 
@@ -201,14 +192,12 @@ spdy_start_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
 
   SpdySM  *sm = (SpdySM*)TSContDataGet(contp);
 
-  sm->req_buffer = TSIOBufferCreate();
-  sm->req_reader = TSIOBufferReaderAlloc(sm->req_buffer);
+  if (TSIOBufferReaderAvail(sm->req_reader) > 0) {
+    spdy_process_read(TS_EVENT_VCONN_WRITE_READY, sm);
+  }
 
-  sm->resp_buffer = TSIOBufferCreate();
-  sm->resp_reader = TSIOBufferReaderAlloc(sm->resp_buffer);
-
-  sm->read_vio = TSVConnRead(sm->net_vc, contp, sm->req_buffer, INT64_MAX);
-  sm->write_vio = TSVConnWrite(sm->net_vc, contp, sm->resp_reader, INT64_MAX);
+  sm->read_vio = (TSVIO)sm->vc->do_io_read(reinterpret_cast<Continuation *>(contp), INT64_MAX, reinterpret_cast<MIOBuffer *>(sm->req_buffer));
+  sm->write_vio = (TSVIO)sm->vc->do_io_write(reinterpret_cast<Continuation *>(contp), INT64_MAX, reinterpret_cast<IOBufferReader *>(sm->resp_reader));
 
   sm->current_handler = &spdy_default_handler;
 
@@ -229,10 +218,8 @@ spdy_default_handler(TSCont contp, TSEvent event, void *edata)
 {
   int ret = 0;
   bool from_fetch = false;
-  NetVConnection *netvc;
   SpdySM  *sm = (SpdySM*)TSContDataGet(contp);
   sm->event = event;
-  netvc = (NetVConnection *)sm->net_vc;
 
   if (edata == sm->read_vio) {
     Debug("spdy", "++++[READ EVENT]");
@@ -262,7 +249,7 @@ out:
     sm->clear();
     spdySMAllocator.free(sm);
   } else if (!from_fetch) {
-    netvc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.no_activity_timeout_in));
+    sm->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.no_activity_timeout_in));
   }
 
   return 0;
@@ -382,7 +369,7 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
 
   already = TSFetchReadData(req->fetch_sm, buf, length);
 
-  Debug("spdy", "    stream_id:%d, call:%d, length:%ld, already:%ld",
+  Debug("spdy", "    stream_id:%d, call:%d, length:%ld, already:%" PRId64,
         stream_id, g_call_cnt, length, already);
   if (SPDY_CFG.spdy.verbose)
     MD5_Update(&req->recv_md5, buf, already);

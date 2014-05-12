@@ -35,7 +35,7 @@
 #include "HttpTunnel.h"
 #include "Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
-#include "P_ProtocolProbeSessionAccept.h"
+#include "ProtocolProbeSessionAccept.h"
 #include "SpdySessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept = NULL;
@@ -140,7 +140,6 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   HttpSessionAccept::Options         accept_opt;
 
   net_opt = make_net_accept_options(port, nthreads);
-  net_opt.create_default_NetAccept = false;
   REC_ReadConfigInteger(net_opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
   REC_ReadConfigInteger(net_opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
   REC_ReadConfigInteger(net_opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
@@ -163,17 +162,26 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
     accept_opt.outbound_ip6 = HttpConfig::m_master.outbound_ip6;
   }
 
-  HttpSessionAccept *http = NEW(new HttpSessionAccept(accept_opt));
-  SpdySessionAccept *spdy = NEW(new SpdySessionAccept(http));
-  SSLNextProtocolAccept *ssl = NEW(new SSLNextProtocolAccept(http));
-  ProtocolProbeSessionAccept *proto = NEW(new ProtocolProbeSessionAccept());
+  // OK the way this works is that the fallback for each port is a protocol
+  // probe acceptor. For SSL ports, we can stack a NPN+ALPN acceptor in front
+  // of that, and these ports will fall back to the probe if no NPN+ALPN endpoint
+  // was negotiated.
 
-  proto->registerEndpoint(TS_PROTO_TLS, ssl);
-  proto->registerEndpoint(TS_PROTO_HTTP, http);
-  proto->registerEndpoint(TS_PROTO_SPDY, spdy);
+  // XXX the protocol probe should be a configuration option.
+
+  ProtocolProbeSessionAccept *probe = NEW(new ProtocolProbeSessionAccept());
+  HttpSessionAccept *http = NEW(new HttpSessionAccept(accept_opt));
+
+#if TS_HAS_SPDY
+  SpdySessionAccept *spdy = NEW(new SpdySessionAccept(http));
+  probe->registerEndpoint(TS_PROTO_SPDY, spdy);
+#endif
+
+  probe->registerEndpoint(TS_PROTO_HTTP, http);
 
   if (port.isSSL()) {
-    //
+    SSLNextProtocolAccept *ssl = NEW(new SSLNextProtocolAccept(probe));
+
     // ALPN selects the first server-offered protocol,
     // so make sure that we offer the newest protocol first.
     // But since registerEndpoint prepends you want to
@@ -193,8 +201,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
 
     ink_scoped_mutex lock(ssl_plugin_mutex);
     ssl_plugin_acceptors.push(ssl);
+
+    acceptor._accept = ssl;
+  } else {
+    acceptor._accept = probe;
   }
-  acceptor._accept = proto;
 }
 
 /** Set up all the accepts and sockets.

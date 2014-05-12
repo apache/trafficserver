@@ -78,18 +78,23 @@ struct SSLNextProtocolTrampoline : public Continuation
     Continuation * plugin;
     SSLNetVConnection * netvc;
 
+    vio = static_cast<VIO *>(edata);
+    netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
+    ink_assert(netvc != NULL);
+
     switch (event) {
-    case VC_EVENT_INACTIVITY_TIMEOUT:
-    case VC_EVENT_READ_COMPLETE:
+    case VC_EVENT_EOS:
     case VC_EVENT_ERROR:
-      vio = static_cast<VIO *>(edata);
+    case VC_EVENT_ACTIVE_TIMEOUT:
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      netvc->do_io(VIO::CLOSE);
+      delete this;
+      return EVENT_CONT;
+    case VC_EVENT_READ_COMPLETE:
       break;
     default:
       return EVENT_ERROR;
     }
-
-    netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
-    ink_assert(netvc != NULL);
 
     plugin = netvc->endpoint();
     if (plugin) {
@@ -130,6 +135,12 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
     netvc->do_io(VIO::CLOSE);
     return EVENT_DONE;
   }
+}
+
+void
+SSLNextProtocolAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader* read)
+{
+  ink_release_assert(0);
 }
 
 bool

@@ -103,23 +103,21 @@ class SpdySM
 
 public:
 
-  SpdySM();
-  SpdySM(TSVConn conn);
-  ~SpdySM()
-  {
+  SpdySM() {
+  }
+
+  ~SpdySM() {
     clear();
   }
 
-  void init(TSVConn conn);
+  void init(NetVConnection * netvc);
   void clear();
-
-public:
 
   int64_t sm_id;
   uint64_t total_size;
   TSHRTime start_time;
 
-  TSVConn net_vc;
+  NetVConnection * vc;
   TSCont  contp;
 
   TSIOBuffer req_buffer;
@@ -139,7 +137,7 @@ public:
   map<int32_t, SpdyRequest*> req_map;
 };
 
-void spdy_sm_create(TSVConn cont);
+void spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader);
 
 extern ClassAllocator<SpdySM> spdySMAllocator;
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;

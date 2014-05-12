@@ -37,6 +37,8 @@ public:
   SSLNextProtocolAccept(Continuation *);
   ~SSLNextProtocolAccept();
 
+  void accept(NetVConnection *, MIOBuffer *, IOBufferReader*);
+
   // Register handler as an endpoint for the specified protocol. Neither
   // handler nor protocol are copied, so the caller must guarantee their
   // lifetime is at least as long as that of the acceptor.

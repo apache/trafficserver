@@ -104,7 +104,6 @@ do { \
 #include "P_NetVCTest.h"
 #include "P_LibBulkIO.h"
 
-#include "P_ProtocolNetAccept.h"
 #include "P_SSLNetVConnection.h"
 #include "P_SSLNetProcessor.h"
 #include "P_SSLNetAccept.h"
@@ -123,5 +122,8 @@ do { \
 #define NetDebug Debug
 #endif
 
+/// Default amount of buffer space to use for the initial read on an incoming connection.
+/// This is an IOBufferBlock index, not the size in bytes.
+static size_t const CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX = BUFFER_SIZE_INDEX_4K;
 
 #endif

@@ -27,6 +27,50 @@
 #include "I_Machine.h"
 #include "Error.h"
 
+void
+HttpSessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
+{
+  sockaddr const* client_ip = netvc->get_remote_addr();
+  uint32_t acl_method_mask = 0;
+  ip_port_text_buffer ipb;
+  IpAllow::scoped_config ipallow;
+
+  // The backdoor port is now only bound to "localhost", so no
+  // reason to check for if it's incoming from "localhost" or not.
+  if (backdoor) {
+    acl_method_mask = IpAllow::AllMethodMask();
+  } else if (ipallow && ((acl_method_mask = ipallow->match(client_ip)) == 0)) {
+    ////////////////////////////////////////////////////
+    // if client address forbidden, close immediately //
+    ////////////////////////////////////////////////////
+    Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+    netvc->do_io_close();
+
+    return;
+  }
+
+  netvc->attributes = transport_type;
+
+  if (is_debug_tag_set("http_seq")) {
+    Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc, ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+  }
+
+  HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, this_ethread());
+
+  // copy over session related data.
+  new_session->f_outbound_transparent = f_outbound_transparent;
+  new_session->f_transparent_passthrough = f_transparent_passthrough;
+  new_session->outbound_ip4 = outbound_ip4;
+  new_session->outbound_ip6 = outbound_ip6;
+  new_session->outbound_port = outbound_port;
+  new_session->host_res_style = ats_host_res_from(client_ip->sa_family, host_res_preference);
+  new_session->acl_method_mask = acl_method_mask;
+
+  new_session->new_connection(netvc, backdoor, iobuf, reader);
+
+  return;
+}
+
 int
 HttpSessionAccept::mainEvent(int event, void *data)
 {
@@ -34,44 +78,7 @@ HttpSessionAccept::mainEvent(int event, void *data)
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != 0) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    ////////////////////////////////////////////////////
-    // if client address forbidden, close immediately //
-    ////////////////////////////////////////////////////
-    NetVConnection *netvc = static_cast<NetVConnection *>(data);
-    sockaddr const* client_ip = netvc->get_remote_addr();
-    uint32_t acl_method_mask = 0;
-    ip_port_text_buffer ipb;
-    IpAllow::scoped_config ipallow;
-
-    // The backdoor port is now only bound to "localhost", so no
-    // reason to check for if it's incoming from "localhost" or not.
-    if (backdoor) {
-      acl_method_mask = IpAllow::AllMethodMask();
-    } else if (ipallow && ((acl_method_mask = ipallow->match(client_ip)) == 0)) {
-      Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-      netvc->do_io_close();
-
-      return VC_EVENT_CONT;
-    }
-
-    netvc->attributes = transport_type;
-
-    if (is_debug_tag_set("http_seq"))
-      Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc, ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
-
-    HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, this_ethread());
-
-   // copy over session related data.
-    new_session->f_outbound_transparent = f_outbound_transparent;
-    new_session->f_transparent_passthrough = f_transparent_passthrough;
-    new_session->outbound_ip4 = outbound_ip4;
-    new_session->outbound_ip6 = outbound_ip6;
-    new_session->outbound_port = outbound_port;
-    new_session->host_res_style = ats_host_res_from(client_ip->sa_family, host_res_preference);
-    new_session->acl_method_mask = acl_method_mask;
-
-    new_session->new_connection(netvc, backdoor);
-
+    this->accept(static_cast<NetVConnection *>(data), NULL, NULL);
     return EVENT_CONT;
   }
 

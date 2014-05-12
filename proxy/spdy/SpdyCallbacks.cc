@@ -173,7 +173,7 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
   SpdySM *sm = req->spdy_sm;
 
   url = req->scheme + "://" + req->host + req->path;
-  client_addr = TSNetVConnRemoteAddrGet(sm->net_vc);
+  client_addr = TSNetVConnRemoteAddrGet(reinterpret_cast<TSVConn>(sm->vc));
 
   req->url = url;
   Debug("spdy", "++++Request[%" PRIu64 ":%d] %s", sm->sm_id, req->stream_id, req->url.c_str());
@@ -190,7 +190,7 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
   //
   // Set client protocol stack in FetchSM that needed by logging module
   //
-  NetVConnection *netvc = (NetVConnection *)sm->net_vc;
+  NetVConnection *netvc = (NetVConnection *)sm->vc;
   TSFetchClientProtoStackSet(req->fetch_sm, netvc->proto_stack);
 
   //
@@ -256,7 +256,12 @@ spdy_recv_callback(spdylay_session * /*session*/, uint8_t *buf, size_t length,
   }
 
   TSIOBufferReaderConsume(sm->req_reader, already);
-  TSVIOReenable(sm->read_vio);
+
+  // This is a bit of a hack. If we are reading out of the buffer the protocol probe acceptor gave us, then we have not
+  // kicked off our own I/O yet. After consuming this data we will come back and do that.
+  if (sm->read_vio) {
+    TSVIOReenable(sm->read_vio);
+  }
 
   if (!already)
     return SPDYLAY_ERR_WOULDBLOCK;

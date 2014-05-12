@@ -62,15 +62,14 @@
 
 // The default size for http header buffers when we don't
 //   need to include extra space for the document
-#define HTTP_HEADER_BUFFER_SIZE       2048
-#define HTTP_HEADER_BUFFER_SIZE_INDEX BUFFER_SIZE_INDEX_4K      //changed by YTS Team, yamsat for BUGID-59651
+static size_t const HTTP_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
 // We want to use a larger buffer size when reading response
 //   headers from the origin server since we want to get
 //   as much of the document as possible on the first read
 //   Marco benchmarked about 3% ops/second improvement using
 //   the larger buffer size
-#define HTTP_SERVER_RESP_HDR_BUFFER_INDEX BUFFER_SIZE_INDEX_8K
+static size_t const HTTP_SERVER_RESP_HDR_BUFFER_INDEX = BUFFER_SIZE_INDEX_8K;
 
 class HttpServerSession;
 class AuthHttpAdapter;

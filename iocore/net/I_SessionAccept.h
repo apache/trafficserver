@@ -33,7 +33,8 @@ public:
   SessionAccept(ProxyMutex *amutex);
   ~SessionAccept();
 
-  //
+  virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
+
   // Virtual function allows creation of an SSLNetAccept
   // or NetAccept transparent to NetProcessor.
   //

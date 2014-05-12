@@ -110,13 +110,6 @@ HttpClientSession::destroy()
   THREAD_FREE(this, httpClientSessionAllocator, this_thread());
 }
 
-HttpClientSession *
-HttpClientSession::allocate()
-{
-  ink_assert(0);
-  return NULL;
-}
-
 void
 HttpClientSession::ssn_hook_append(TSHttpHookID id, INKContInternal * cont)
 {
@@ -173,7 +166,7 @@ HttpClientSession::do_api_callout(TSHttpHookID id)
 }
 
 void
-HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
+HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor, MIOBuffer * iobuf, IOBufferReader * reader)
 {
 
   ink_assert(new_vc != NULL);
@@ -223,8 +216,8 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
 
   DebugSsn("http_cs", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
-  read_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
-  sm_reader = read_buffer->alloc_reader();
+  read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+  sm_reader = reader ? reader : read_buffer->alloc_reader();
 
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may

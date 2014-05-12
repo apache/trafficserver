@@ -35,6 +35,8 @@ public:
   SpdySessionAccept(Continuation *ep);
   ~SpdySessionAccept() {}
 
+  void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
+
 private:
   int mainEvent(int event, void *netvc);
   SpdySessionAccept(const SpdySessionAccept &); // disabled

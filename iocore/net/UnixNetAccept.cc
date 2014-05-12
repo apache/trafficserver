@@ -32,7 +32,7 @@ typedef int (NetAccept::*NetAcceptHandler) (int, void *);
 volatile int dummy_volatile = 0;
 int accept_till_done = 1;
 
-void
+static void
 safe_delay(int msec)
 {
   socketManager.poll(0, 0, msec);
@@ -43,7 +43,7 @@ safe_delay(int msec)
 // Send the throttling message to up to THROTTLE_AT_ONCE connections,
 // delaying to let some of the current connections complete
 //
-int
+static int
 send_throttle_message(NetAccept * na)
 {
   struct pollfd afd;
@@ -95,7 +95,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
   do {
     vc = (UnixNetVConnection *) na->alloc_cache;
     if (!vc) {
-      vc = na->allocateThread(e->ethread);
+      vc = (UnixNetVConnection *)na->getNetProcessor()->allocate_vc(e->ethread);
       NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
       vc->id = net_next_connection_number();
       na->alloc_cache = vc;
@@ -136,36 +136,6 @@ Ldone:
     MUTEX_UNTAKE_LOCK(na->action_->mutex, e->ethread);
   return count;
 }
-
-
-UnixNetVConnection *
-NetAccept::allocateThread(EThread * t)
-{
-  return ((UnixNetVConnection *)THREAD_ALLOC(netVCAllocator, t));
-}
-
-void
-NetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
-{
-  ink_assert(!vc->from_accept_thread);
-  THREAD_FREE(vc, netVCAllocator, t);
-}
-
-// This allocates directly on the class allocator, used for accept threads.
-UnixNetVConnection *
-NetAccept::allocateGlobal()
-{
-  return (UnixNetVConnection *)netVCAllocator.alloc();
-}
-
-// Virtual function allows the correct
-// etype to be used in NetAccept functions (ET_SSL
-// or ET_NET).
-EventType NetAccept::getEtype()
-{
-  return etype;
-}
-
 
 //
 // Initialize the NetAccept for execution in its own thread.
@@ -236,15 +206,6 @@ NetAccept::init_accept_per_thread()
   }
 }
 
-NetAccept *
-NetAccept::clone()
-{
-  NetAccept *na;
-  na = NEW(new NetAccept);
-  *na = *this;
-  return na;
-}
-
 int
 NetAccept::do_listen(bool non_blocking, bool transparent)
 {
@@ -269,21 +230,6 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
     mutex = NULL;
   }
   return res;
-}
-
-UnixNetVConnection *
-NetAccept::createSuitableVC(EThread *t, Connection &con)
-{
-  UnixNetVConnection *vc;
-
-  if (t)
-    vc = allocateThread(t);
-  else
-    vc = allocateGlobal();
-
-  vc->con = con;
-
-  return vc;
 }
 
 int
@@ -330,11 +276,12 @@ NetAccept::do_blocking_accept(EThread * t)
     }
 
     // Use 'NULL' to Bypass thread allocator
-    vc = createSuitableVC(NULL, con);
+    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(NULL);
     if (!vc) {
       con.close();
       return -1;
     }
+    vc->con = con;
     vc->from_accept_thread = true;
     vc->id = net_next_connection_number();
     alloc_cache = NULL;
@@ -468,11 +415,13 @@ NetAccept::acceptFastEvent(int event, void *ep)
         res = safe_nonblocking(fd);
       } while (res < 0 && (errno == EAGAIN || errno == EINTR));
 
-      vc = createSuitableVC(e->ethread, con);
+      vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
       if (!vc) {
         con.close();
         goto Ldone;
       }
+
+      vc->con = con;
 
     } else {
       res = fd;
@@ -534,7 +483,7 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  freeThread(vc, e->ethread);
+  vc->free(e->ethread);
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
   delete this;
   return EVENT_DONE;
@@ -588,4 +537,27 @@ NetAccept::cancel()
 {
   action_->cancel();
   server.close();
+}
+
+NetAccept *
+NetAccept::clone() const
+{
+  NetAccept *na;
+  na = NEW(new NetAccept);
+  *na = *this;
+  return na;
+}
+
+// Virtual function allows the correct
+// etype to be used in NetAccept functions (ET_SSL
+// or ET_NET).
+EventType NetAccept::getEtype() const
+{
+  return etype;
+}
+
+NetProcessor *
+NetAccept::getNetProcessor() const
+{
+  return &netProcessor;
 }

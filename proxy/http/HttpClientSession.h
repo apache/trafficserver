@@ -52,9 +52,7 @@ public:
   void cleanup();
   virtual void destroy();
 
-  static HttpClientSession *allocate();
-
-  void new_connection(NetVConnection * new_vc, bool backdoor = false);
+  void new_connection(NetVConnection * new_vc, bool backdoor, MIOBuffer * iobuf, IOBufferReader * reader);
 
   virtual VIO *do_io_read(Continuation * c, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
   virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
