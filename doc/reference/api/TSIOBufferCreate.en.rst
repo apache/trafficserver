@@ -21,6 +21,8 @@
 TSIOBufferCreate
 ================
 
+Traffic Server IO buffer API.
+
 Synopsis
 ========
 `#include <ts/ts.h>`

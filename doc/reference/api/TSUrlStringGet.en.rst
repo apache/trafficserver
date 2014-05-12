@@ -21,6 +21,8 @@
 TSUrlStringGet
 ==============
 
+Traffic Server URL string representations API.
+
 Synopsis
 ========
 

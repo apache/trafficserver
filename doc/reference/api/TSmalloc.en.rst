@@ -21,6 +21,8 @@
 TSmalloc
 ========
 
+Traffic Server memory allocation API.
+
 Synopsis
 ========
 

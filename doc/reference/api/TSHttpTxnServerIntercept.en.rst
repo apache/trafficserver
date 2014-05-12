@@ -21,6 +21,8 @@
 TSHttpTxnServerIntercept
 ========================
 
+Intercept origin server requests.
+
 Synopsis
 ========
 

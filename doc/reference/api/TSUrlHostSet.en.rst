@@ -21,6 +21,8 @@
 TSUrlHostSet
 ============
 
+Traffic Server URL component manipulation API.
+
 Synopsis
 ========
 

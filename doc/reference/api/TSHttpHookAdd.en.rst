@@ -21,6 +21,8 @@
 TSHttpHookAdd
 =============
 
+Intercept Traffic Server events.
+
 Synopsis
 ========
 `#include <ts/ts.h>`
