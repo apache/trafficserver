@@ -163,11 +163,14 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
   TSMLoc hdr_loc;
   TSMLoc url_loc;
 
-  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
-    http_ctx->client_request_bufp = bufp;
-    http_ctx->client_request_hdrp = hdr_loc;
-    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
-      http_ctx->client_request_url = url_loc;
+  if(!http_ctx->client_request_bufp) {
+    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+      http_ctx->client_request_bufp = bufp;
+      http_ctx->client_request_hdrp = hdr_loc;
+
+      if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
+        http_ctx->client_request_url = url_loc;
+      }
     }
   }
 
