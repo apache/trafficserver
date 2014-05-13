@@ -27,7 +27,7 @@ Synopsis
 ========
 `#include <ts/ts.h>`
 
-.. doxygen:function:: TSLifecycleHookAdd
+.. doxygen:group:: Plugin Lifecycle Hooks
 
 Description
 ===========

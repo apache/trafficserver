@@ -27,10 +27,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. doxygen:function:: TSTrafficServerVersionGet
-.. doxygen:function:: TSTrafficServerVersionGetMajor
-.. doxygen:function:: TSTrafficServerVersionGetMinor
-.. doxygen:function:: TSTrafficServerVersionGetPatch
+.. doxygen:group:: Traffic Server Version
 
 Description
 ===========

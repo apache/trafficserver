@@ -37,8 +37,12 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-  /* --------------------------------------------------------------------------
-     Memory */
+
+  /** @name Memory
+
+   */
+  /** @{ */
+
 #define TSmalloc(s)      _TSmalloc ((s), TS_RES_MEM_PATH)
 #define TSrealloc(p,s)   _TSrealloc ((p), (s), TS_RES_MEM_PATH)
 #define TSstrdup(p)      _TSstrdup ((p), -1, TS_RES_MEM_PATH)
@@ -54,8 +58,14 @@ extern "C"
   tsapi size_t _TSstrlcat(char *dst, const char *str, size_t siz);
   tsapi void _TSfree(void* ptr);
 
-  /* --------------------------------------------------------------------------
-     Component object handles */
+  /** @} */
+
+
+  /** @name Component Object Handles
+
+   */
+  /** @{ */
+
   /**
       Releases the TSMLoc mloc created from the TSMLoc parent.
       If there is no parent TSMLoc, use TS_NULL_MLOC.
@@ -69,8 +79,14 @@ extern "C"
    */
   tsapi TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc);
 
-  /* --------------------------------------------------------------------------
-     Install and plugin locations */
+  /** @} */
+
+
+  /** @name Install and Plugin Locations
+
+   */
+  /** @{ */
+
   /**
       Gets the path of the directory in which Traffic Server is installed.
       Use this function to specify the location of files that the
@@ -104,8 +120,14 @@ extern "C"
    */
   tsapi const char* TSPluginDirGet(void);
 
-  /* --------------------------------------------------------------------------
-     Traffic Server Version */
+  /** @} */
+
+
+  /** @name Traffic Server Version
+
+   */
+  /** @{ */
+
   /**
       Gets the version of Traffic Server currently running. Use this
       function to make sure that the plugin version and Traffic Server
@@ -140,8 +162,13 @@ extern "C"
    */
   int TSTrafficServerVersionGetPatch(void);
 
-  /* --------------------------------------------------------------------------
-     Plugin registration */
+  /** @} */
+
+
+  /** @name Plugin Registration
+
+   */
+  /** @{ */
 
   /**
       This function registers your plugin with a particular version
@@ -158,8 +185,14 @@ extern "C"
    */
   tsapi TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo* plugin_info);
 
-  /* --------------------------------------------------------------------------
-     Files */
+  /** @} */
+
+
+  /** @name Files
+
+   */
+  /** @{ */
+
   /**
       Opens a file for reading or writing and returns a descriptor for
       accessing the file. The current implementation cannot open a file
@@ -242,8 +275,14 @@ extern "C"
    */
   tsapi char* TSfgets(TSFile filep, char* buf, size_t length);
 
-  /* --------------------------------------------------------------------------
-     Error logging */
+  /** @} */
+
+
+  /** @name Error Logging
+
+   */
+  /** @{ */
+
   /**
       Writes printf-style error messages to the Traffic Server error
       log. One advantage of TSError over printf is that each call is
@@ -257,8 +296,14 @@ extern "C"
   */
   tsapi void TSError(const char* fmt, ...) TS_PRINTFLIKE(1, 2);
 
-  /* --------------------------------------------------------------------------
-     Assertions */
+  /** @} */
+
+
+  /** @name Assertions
+
+   */
+  /** @{ */
+
   tsapi void _TSReleaseAssert(const char* txt, const char* f, int l) TS_NORETURN;
   tsapi int _TSAssert(const char* txt, const char* f, int l);
 
@@ -268,8 +313,14 @@ extern "C"
 #define TSAssert(EX) \
             (void)((EX) || (_TSAssert(#EX, __FILE__, __LINE__)))
 
-  /* --------------------------------------------------------------------------
-     Marshal buffers */
+  /** @} */
+
+
+  /** @name Marshal Buffers
+
+   */
+  /** @{ */
+
   /**
       Creates a new marshal buffer and initializes the reference count
       to 1.
@@ -287,8 +338,14 @@ extern "C"
    */
   tsapi TSReturnCode TSMBufferDestroy(TSMBuffer bufp);
 
-  /* --------------------------------------------------------------------------
-     URLs */
+  /** @} */
+
+
+  /** @name URLs
+
+   */
+  /** @{ */
+
   /**
       Creates a new URL within the marshal buffer bufp. Returns a
       location for the URL within the marshal buffer.
@@ -435,8 +492,14 @@ extern "C"
    */
   tsapi TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
-  /* --------------------------------------------------------------------------
-     Internet specific URLs */
+  /** @} */
+
+
+  /** @name Internet Specific URLs
+
+   */
+  /** @{ */
+
   /**
       Retrieves the user portion of the URL located at url_loc
       within bufp. Note: the returned string is not guaranteed to
@@ -544,8 +607,14 @@ extern "C"
    */
   tsapi TSReturnCode TSUrlPortSet(TSMBuffer bufp, TSMLoc offset, int port);
 
-  /* --------------------------------------------------------------------------
-     HTTP specific URLs */
+  /** @} */
+
+
+  /** @name HTTP Specific URLs
+
+   */
+  /** @{ */
+
   /**
       Retrieves the path portion of the URL located at url_loc within
       bufp. TSUrlPathGet() places the length of the returned string in
@@ -575,8 +644,14 @@ extern "C"
    */
   tsapi TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
-  /* --------------------------------------------------------------------------
-     FTP specific URLs */
+  /** @} */
+
+
+  /** @name FTP Specific URLs
+
+   */
+  /** @{ */
+
   /**
       Retrieves the FTP type of the URL located at url_loc within bufp.
 
@@ -598,8 +673,14 @@ extern "C"
    */
   tsapi TSReturnCode TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc offset, int type);
 
-  /* --------------------------------------------------------------------------
-     HTTP specific URLs */
+  /** @} */
+
+
+  /** @name HTTP Specific URLs
+
+   */
+  /** @{ */
+
   /**
       Retrieves the HTTP params portion of the URL located at url_loc
       within bufp. The length of the returned string is in the length
@@ -732,10 +813,13 @@ extern "C"
   */
   tsapi TSReturnCode TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
 
+  /** @} */
 
 
-  /* --------------------------------------------------------------------------
-     MIME headers */
+  /** @name MIME Headers
+
+   */
+  /** @{ */
 
   /**
       Creates a MIME parser. The parser's data structure contains
@@ -1024,8 +1108,14 @@ extern "C"
 
   tsapi TSReturnCode TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
 
-  /* --------------------------------------------------------------------------
-     HTTP headers */
+  /** @} */
+
+
+  /** @name HTTP Headers
+
+   */
+  /** @{ */
+
   tsapi TSHttpParser TSHttpParserCreate(void);
   tsapi void TSHttpParserClear(TSHttpParser parser);
   tsapi void TSHttpParserDestroy(TSHttpParser parser);
@@ -1117,23 +1207,41 @@ extern "C"
   tsapi TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
   tsapi const char* TSHttpHdrReasonLookup(TSHttpStatus status);
 
-  /* --------------------------------------------------------------------------
-     Threads */
+  /** @} */
+
+
+  /** @name Threads
+
+   */
+  /** @{ */
+
   tsapi TSThread TSThreadCreate(TSThreadFunc func, void* data);
   tsapi TSThread TSThreadInit(void);
   tsapi void TSThreadDestroy(TSThread thread);
   tsapi TSThread TSThreadSelf(void);
 
-  /* --------------------------------------------------------------------------
-     Mutexes */
+  /** @} */
+
+
+  /** @name Mutexes
+
+   */
+  /** @{ */
+
   tsapi TSMutex TSMutexCreate(void);
   tsapi void TSMutexLock(TSMutex mutexp);
   tsapi TSReturnCode TSMutexLockTry(TSMutex mutexp);
 
   tsapi void TSMutexUnlock(TSMutex mutexp);
 
-  /* --------------------------------------------------------------------------
-     cachekey */
+  /** @} */
+
+
+  /** @name Cache Key
+
+   */
+  /** @{ */
+
   /**
       Creates (allocates memory for) a new cache key.
    */
@@ -1177,27 +1285,51 @@ extern "C"
    */
   tsapi TSReturnCode TSCacheKeyDestroy(TSCacheKey key);
 
-  /* --------------------------------------------------------------------------
-     cache url */
+  /** @} */
+
+
+  /** @name Cache URL
+
+   */
+  /** @{ */
+
   tsapi TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, const char* url, int length);
 
-  /* --------------------------------------------------------------------------
-     Configuration */
+  /** @} */
+
+
+  /** @name Configuration
+
+   */
+  /** @{ */
+
   tsapi unsigned int TSConfigSet(unsigned int id, void* data, TSConfigDestroyFunc funcp);
   tsapi TSConfig TSConfigGet(unsigned int id);
   tsapi void TSConfigRelease(unsigned int id, TSConfig configp);
   tsapi void* TSConfigDataGet(TSConfig configp);
 
-  /* --------------------------------------------------------------------------
-     Management */
+  /** @} */
+
+
+  /** @name Management
+
+   */
+  /** @{ */
+
   tsapi void TSMgmtUpdateRegister(TSCont contp, const char *plugin_name);
   tsapi TSReturnCode TSMgmtIntGet(const char* var_name, TSMgmtInt* result);
   tsapi TSReturnCode TSMgmtCounterGet(const char* var_name, TSMgmtCounter* result);
   tsapi TSReturnCode TSMgmtFloatGet(const char* var_name, TSMgmtFloat* result);
   tsapi TSReturnCode TSMgmtStringGet(const char* var_name, TSMgmtString* result);
 
-  /* --------------------------------------------------------------------------
-     Continuations */
+  /** @} */
+
+
+  /** @name Continuations
+
+   */
+  /** @{ */
+
   tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
   tsapi void TSContDestroy(TSCont contp);
   tsapi void TSContDataSet(TSCont contp, void* data);
@@ -1208,21 +1340,46 @@ extern "C"
   tsapi int TSContCall(TSCont contp, TSEvent event, void* edata);
   tsapi TSMutex TSContMutexGet(TSCont contp);
 
-  /* --------------------------------------------------------------------------
-     Plugin lifecycle  hooks */
+  /** @} */
+
+
+  /** @name Plugin Lifecycle Hooks
+
+   */
+  /** @{ */
+
   tsapi void TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp);
-  /* --------------------------------------------------------------------------
-     HTTP hooks */
+
+  /** @} */
+
+
+  /** @name HTTP Hooks
+
+   */
+  /** @{ */
+
   tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
 
-  /* --------------------------------------------------------------------------
-     HTTP sessions */
+  /** @} */
+
+
+  /** @name HTTP Sessions
+
+   */
+  /** @{ */
+
   tsapi void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
   tsapi void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
   tsapi int TSHttpSsnTransactionCount(TSHttpSsn ssnp);
 
-  /* --------------------------------------------------------------------------
-     HTTP transactions */
+  /** @} */
+
+
+  /** @name HTTP Transactions
+
+   */
+  /** @{ */
+
   tsapi void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
   tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);
 
@@ -1480,8 +1637,13 @@ extern "C"
 
   tsapi TSServerState TSHttpTxnServerStateGet(TSHttpTxn txnp);
 
-  /* --------------------------------------------------------------------------
-     Transaction specific debugging control  */
+  /** @} */
+
+
+  /** @name Transaction Specific Debugging Control
+
+   */
+  /** @{ */
 
   /**
          Set the transaction specific debugging flag for this transaction.
@@ -1516,8 +1678,13 @@ extern "C"
   */
   tsapi int TSHttpSsnDebugGet(TSHttpSsn ssnp, int *on);
 
-  /* --------------------------------------------------------------------------
-     Intercepting Http Transactions */
+  /** @} */
+
+
+  /** @name Intercepting HTTP Transactions
+
+   */
+  /** @{ */
 
   /**
       Allows a plugin take over the servicing of the request as though
@@ -1575,8 +1742,13 @@ extern "C"
    */
   tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
 
-  /* --------------------------------------------------------------------------
-     Initiate Http Connection */
+  /** @} */
+
+
+  /** @name Initiate HTTP Connection
+
+   */
+  /** @{ */
 
   tsapi TSClientProtoStack TSClientProtoStackCreate(TSProtoType, ...);
 
@@ -1602,8 +1774,14 @@ extern "C"
   tsapi TSVConn TSHttpConnectWithProtoStack(struct sockaddr const* addr,
                                             TSClientProtoStack proto_stack);
 
-    /* --------------------------------------------------------------------------
-     Initiate Transparent Http Connection */
+  /** @} */
+
+
+  /** @name Initiate Transparent HTTP Connection
+
+   */
+  /** @{ */
+
   /**
       Allows the plugin to initiate a transparent http connection. This operates
       identically to TSHttpConnect except that it is treated as an intercepted
@@ -1624,20 +1802,38 @@ extern "C"
   /* Check if HTTP State machine is internal or not */
   tsapi TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
 
-  /* --------------------------------------------------------------------------
-     HTTP alternate selection */
+  /** @} */
+
+
+  /** @name HTTP Alternate Selection
+
+   */
+  /** @{ */
+
   tsapi TSReturnCode TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer* bufp, TSMLoc* offset);
   tsapi TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer* bufp, TSMLoc* offset);
   tsapi TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer* bufp, TSMLoc* offset);
   tsapi void TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
 
-  /* --------------------------------------------------------------------------
-     Actions */
+  /** @} */
+
+
+  /** @name Actions
+
+   */
+  /** @{ */
+
   tsapi void TSActionCancel(TSAction actionp);
   tsapi int TSActionDone(TSAction actionp);
 
-  /* --------------------------------------------------------------------------
-     VConnections */
+  /** @} */
+
+
+  /** @name VConnections
+
+   */
+  /** @{ */
+
   tsapi TSVIO TSVConnReadVIOGet(TSVConn connp);
   tsapi TSVIO TSVConnWriteVIOGet(TSVConn connp);
   tsapi int TSVConnClosedGet(TSVConn connp);
@@ -1648,17 +1844,34 @@ extern "C"
   tsapi void TSVConnAbort(TSVConn connp, int error);
   tsapi void TSVConnShutdown(TSVConn connp, int read, int write);
 
-  /* --------------------------------------------------------------------------
-     Cache VConnections */
+  /** @} */
+
+
+  /** @name Cache VConnections
+
+   */
+  /** @{ */
+
   tsapi int64_t TSVConnCacheObjectSizeGet(TSVConn connp);
 
-  /* --------------------------------------------------------------------------
-     Transformations */
+  /** @} */
+
+
+  /** @name Transformations
+
+   */
+  /** @{ */
+
   tsapi TSVConn TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp);
   tsapi TSVConn TSTransformOutputVConnGet(TSVConn connp);
 
-  /* --------------------------------------------------------------------------
-     Net VConnections */
+  /** @} */
+
+
+  /** @name Net VConnections
+
+   */
+  /** @{ */
 
   tsapi struct sockaddr const* TSNetVConnRemoteAddrGet(TSVConn vc);
 
@@ -1726,8 +1939,14 @@ extern "C"
    */
   tsapi TSReturnCode TSPortDescriptorAccept(TSPortDescriptor, TSCont);
 
-  /* --------------------------------------------------------------------------
-     DNS Lookups */
+  /** @} */
+
+
+  /** @name DNS Lookups
+
+   */
+  /** @{ */
+
   tsapi TSAction TSHostLookup(TSCont contp, const char* hostname, size_t namelen);
   tsapi struct sockaddr const* TSHostLookupResultAddrGet(TSHostLookupResult lookup_result);
   /* TODO: Eventually, we might want something like this as well, but it requires
@@ -1735,8 +1954,14 @@ extern "C"
      tsapi void TSHostLookupResultSet(TSHttpTxn txnp, TSHostLookupResult result);
   */
 
-  /* --------------------------------------------------------------------------
-     Cache VConnections */
+  /** @} */
+
+
+  /** @name Cache VConnections
+
+   */
+  /** @{ */
+
   /**
       Asks the Traffic Server cache if the object corresponding to key
       exists in the cache and can be read. If the object can be read,
@@ -1814,8 +2039,14 @@ extern "C"
   tsapi TSReturnCode TSCacheReady(int* is_ready);
   tsapi TSAction TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second);
 
-  /* --------------------------------------------------------------------------
-     VIOs */
+  /** @} */
+
+
+  /** @name VIOs
+
+   */
+  /** @{ */
+
   tsapi void TSVIOReenable(TSVIO viop);
   tsapi TSIOBuffer TSVIOBufferGet(TSVIO viop);
   tsapi TSIOBufferReader TSVIOReaderGet(TSVIO viop);
@@ -1828,8 +2059,14 @@ extern "C"
   tsapi TSCont TSVIOContGet(TSVIO viop);
   tsapi TSVConn TSVIOVConnGet(TSVIO viop);
 
-  /* --------------------------------------------------------------------------
-     Buffers */
+  /** @} */
+
+
+  /** @name Buffers
+
+   */
+  /** @{ */
+
   tsapi TSIOBuffer TSIOBufferCreate(void);
 
   /**
@@ -1951,8 +2188,13 @@ extern "C"
 
   tsapi TSReturnCode TSStatFindName(const char* name, int* idp);
 
-  /* --------------------------------------------------------------------------
-     tracing api */
+  /** @} */
+
+
+  /** @name Tracing API
+
+   */
+  /** @{ */
 
   tsapi int TSIsDebugTagSet(const char* t);
   tsapi void TSDebug(const char* tag, const char* format_str, ...) TS_PRINTFLIKE(2, 3);
@@ -1974,8 +2216,13 @@ extern "C"
   extern int diags_on_for_plugins;
 #define TSDEBUG if (diags_on_for_plugins) TSDebug
 
-  /* --------------------------------------------------------------------------
-     logging api */
+  /** @} */
+
+
+  /** @name Logging API
+
+   */
+  /** @{ */
 
   /**
       The following enum values are flags, so they should be powers
@@ -2123,6 +2370,9 @@ extern "C"
 
    */
   tsapi void TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr);
+
+  /** @} */
+
 
   /**
       Async disk IO read
