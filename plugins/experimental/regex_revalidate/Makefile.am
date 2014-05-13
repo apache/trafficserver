@@ -14,27 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- custom_redirect \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- regex_revalidate \
- remap_stats \
- s3_auth \
- stale_while_revalidate \
- ts_lua \
- url_sig \
- xdebug
-
-endif
+pkglib_LTLIBRARIES = regex_revalidate.la
+regex_revalidate_la_SOURCES = regex_revalidate.c
+regex_revalidate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

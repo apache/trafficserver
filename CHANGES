@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2804] Add regex_revalidate plugin to explerimental plugins directory.
+
   *) [TS-2528] Use <stdbool.h> in the public mgmtapi.h interface. This follows
    the C99 standard, and we should move other public APIs to it.
 
