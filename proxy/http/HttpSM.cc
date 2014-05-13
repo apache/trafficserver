@@ -4940,16 +4940,18 @@ HttpSM::handle_post_failure()
   // have the full post and it's deallocating the post buffers here
   enable_redirection = false;
   tunnel.deallocate_redirect_postdata_buffers();
-  tunnel.reset();
 
   // Don't even think about doing keep-alive after this debacle
   t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
   t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
 
   if (server_buffer_reader->read_avail() > 0) {
+    tunnel.reset();
     // There's data from the server so try to read the header
     setup_server_read_response_header();
   } else {
+    tunnel.deallocate_buffers();
+    tunnel.reset();
     // Server died
     vc_table.cleanup_entry(server_entry);
     server_entry = NULL;
