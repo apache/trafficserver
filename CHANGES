@@ -3,39 +3,48 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2797] Build all manual pages in the doc/reference/api directory
 
+  *) [TS-2733] Do not build the old SPDY plugin.
+
   *) [TS-2716] Fix indentation for ts_lua plugin.
 
-  *) [TS-2789] Typo in HttpSessionManger would cause ATS reuse wrong session to origin server.
+  *) [TS-2789] Typo in HttpSessionManger would cause ATS reuse wrong session
+   to origin server.
 
-  *) [TS-2636] Enhance ATS custom logging to support WIPE_FIELD_VALUE filter action
+  *) [TS-2636] Enhance ATS custom logging to support WIPE_FIELD_VALUE filter
+   action.
 
   *) [TS-2786, TS-2784] Make Lua and header_rewrite plugins compile on FBSD.
 
-  *) [TS-1375] Setting default inactivity timeout, if one is not set, to 1 day
+  *) [TS-1375] Setting default inactivity timeout, if one is not set, to 1
+   day.
 
-  *) [TS-2780] Core dump in SpdyRequest::clear() in production testing of SPDY
+  *) [TS-2780] Core dump in SpdyRequest::clear() in production testing of
+   SPDY.
 
-  *) [TS-2744] Remove TSNetAcceptNamedProtocol assertion for unknown protocols.
+  *) [TS-2744] Remove TSNetAcceptNamedProtocol assertion for unknown
+   protocols.
 
   *) [TS-898] Stop the esi plugin referencing invalidated strings.
 
-  *) [TS-2778] Websockets remap doesn't properly handle the implicit port for wss.
+  *) [TS-2778] Websockets remap doesn't properly handle the implicit port for
+   wss.
 
-  *) [TS-2774] TS::AdminClient.pm's get_stat API broken in 5.0
+  *) [TS-2774] TS::AdminClient.pm's get_stat API broken in 5.0.
 
-  *) [TS-2766] HdrHeap::coalesce_str_heaps doesn't properly calculate new heap size
+  *) [TS-2766] HdrHeap::coalesce_str_heaps doesn't properly calculate new heap
+   size.
 
-  *) [TS-2767] ATS Memory Leak related to SPDY
+  *) [TS-2767] ATS Memory Leak related to SPDY.
 
   *) [TS-2757] Fix logging crashes on reconfiguration.
 
   *) [TS-2770] Allow proxy.config.log.rolling_interval_sec to be as low as 60sec.
   
-  *) [TS-2772] Clean up mgmt/preparse code
+  *) [TS-2772] Clean up mgmt/preparse code.
 
   *) [TS-2763] Remove the unused proxy.config.log.xuid_logging_enabled config setting.
 
-  *) [TS-2762] Core dump when benchmarking SPDY
+  *) [TS-2762] Core dump when benchmarking SPDY.
 
   *) [TS-2755] Document TSTextLogObjectRollingEnabledSet.
 
@@ -49,8 +58,9 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2742] TSFetchCreate should accept both IPv4 and IPv6.
 
-  *) [TS-2736] Add config option to set the max open files limit for the traffic_server
-    process to some percentage of the fs.file-max proc value on Linux. The default is 90%.
+  *) [TS-2736] Add config option to set the max open files limit for the
+    traffic_server process to some percentage of the fs.file-max proc value on
+    Linux. The default is 90%.
 
   *) [TS-2741] Add a server intercept example plugins and documentation.
 
@@ -69,13 +79,15 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-2732] Add url_sign (Signed URL's) plugin.
    Author: Jan van Doorn <jvd@knutsel.com>
 
-  *) [TS-2650] Redirect handling enhancements in ATS
+  *) [TS-2650] Redirect handling enhancements in ATS.
 
   *) [TS-2548] Add client IP to SSLError() calls in SSLNetVConnection
 
-  *) [TS-2710] ATS serves the wrong cert because it matches wildcard certs incorrectly
+  *) [TS-2710] ATS serves the wrong cert because it matches wildcard certs
+   incorrectly.
 
-  *) [TS-2704] Core dump in state_raw_http_server_open getting EVENT_INTERVAL event
+  *) [TS-2704] Core dump in state_raw_http_server_open getting EVENT_INTERVAL
+   event.
 
   *) [TS-2720] Fix bug with request transformations in C++ api 
 

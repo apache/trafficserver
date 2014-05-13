@@ -32,7 +32,6 @@ SUBDIRS = \
  remap_stats \
  rfc5861 \
  s3_auth \
- spdy \
  ts_lua \
  url_sig \
  xdebug
