@@ -18,13 +18,18 @@
 TSHttpHdrLengthGet
 ==================
 
+.. doxygen:briefdescription:: TSHttpHdrLengthGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSHttpHdrLengthGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrLengthGet

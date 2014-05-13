@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2803] Use documentation strings extracted from source files
+   in project documentation
+
   *) [TS-2797] Build all manual pages in the doc/reference/api directory
 
   *) [TS-2733] Do not build the old SPDY plugin.

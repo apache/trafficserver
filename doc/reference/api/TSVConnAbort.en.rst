@@ -18,13 +18,18 @@
 TSVConnAbort
 ============
 
+.. doxygen:briefdescription:: TSVConnAbort
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSVConnAbort(TSVConn connp, int error)
+.. doxygen:function:: TSVConnAbort
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVConnAbort

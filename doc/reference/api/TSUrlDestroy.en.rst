@@ -18,7 +18,7 @@
 TSUrlDestroy
 ============
 
-Destroys the URL located at url_loc within the marshal buffer bufp.
+.. doxygen:briefdescription:: TSUrlDestroy
 
 
 Synopsis
@@ -26,18 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSUrlDestroy(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSUrlDestroy
 
 
 Description
 -----------
 
-Do not forget to release the :c:type:`TSMLoc` url_loc with a call to
-:c:func:`TSHandleMLocRelease`.
-
-.. admonition:: Deprecated
-
-   There is no reason to destroy the URL, just release the marshal
-   buffers.
-
-Should be removed for v5.0.0
+.. doxygen:detaileddescription:: TSUrlDestroy

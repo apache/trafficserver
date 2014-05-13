@@ -18,13 +18,18 @@
 TSContDataSet
 =============
 
+.. doxygen:briefdescription:: TSContDataSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSContDataSet(TSCont contp, void *data)
+.. doxygen:function:: TSContDataSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSContDataSet

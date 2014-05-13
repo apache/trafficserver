@@ -18,13 +18,18 @@
 TSHttpHdrMethodSet
 ==================
 
+.. doxygen:briefdescription:: TSHttpHdrMethodSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length)
+.. doxygen:function:: TSHttpHdrMethodSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrMethodSet

@@ -18,13 +18,18 @@
 TSActionDone
 ============
 
+.. doxygen:briefdescription:: TSActionDone
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSActionDone(TSAction actionp)
+.. doxygen:function:: TSActionDone
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSActionDone

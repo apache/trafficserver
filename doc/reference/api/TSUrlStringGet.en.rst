@@ -28,9 +28,9 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: char* TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset)
-.. function:: void TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
+.. doxygen:function:: TSUrlStringGet
+.. doxygen:function:: TSUrlLengthGet
+.. doxygen:function:: TSUrlPrint
 
 
 Description

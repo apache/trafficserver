@@ -18,13 +18,18 @@
 TSMimeHdrFieldCopy
 ==================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldCopy
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field)
+.. doxygen:function:: TSMimeHdrFieldCopy
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldCopy

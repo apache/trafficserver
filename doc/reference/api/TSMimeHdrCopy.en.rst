@@ -18,8 +18,7 @@
 TSMimeHdrCopy
 =============
 
-Copies the contents of the MIME header located at src_loc within
-src_bufp to the MIME header located at dest_loc within dest_bufp.
+.. doxygen:briefdescription:: TSMimeHdrCopy
 
 
 Synopsis
@@ -27,16 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer src_bufp, TSMLoc src_offset)
+.. doxygen:function:: TSMimeHdrCopy
 
 
 Description
 -----------
 
-:c:func:`TSMimeHdrCopy` works correctly even if src_bufp and dest_bufp
-point to different marshal buffers.
-
-.. important::
-
-   you must create the destination MIME header before copying into
-   it--use :c:func:`TSMimeHdrCreate`.
+.. doxygen:detaileddescription:: TSMimeHdrCopy

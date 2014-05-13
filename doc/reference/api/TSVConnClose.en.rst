@@ -18,13 +18,18 @@
 TSVConnClose
 ============
 
+.. doxygen:briefdescription:: TSVConnClose
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSVConnClose(TSVConn connp)
+.. doxygen:function:: TSVConnClose
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVConnClose

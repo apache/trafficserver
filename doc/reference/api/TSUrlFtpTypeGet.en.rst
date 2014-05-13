@@ -18,7 +18,7 @@
 TSUrlFtpTypeGet
 ===============
 
-Retrieves the FTP type of the URL located at url_loc within bufp.
+.. doxygen:briefdescription:: TSUrlFtpTypeGet
 
 
 Synopsis
@@ -26,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSUrlFtpTypeGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSUrlFtpTypeGet

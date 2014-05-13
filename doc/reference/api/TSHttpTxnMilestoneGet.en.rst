@@ -28,7 +28,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, TSHRTime* time)
+.. doxygen:function:: TSHttpTxnMilestoneGet
 
 Description
 ===========
@@ -37,7 +37,7 @@ Description
 calculated during the lifetime of a transaction and are measured in nanoseconds from the beginning of the transaction.
 :arg:`time` is used a pointer to storage to update if the call is successful.
 
-.. type:: TSMilestonesType
+.. doxygen:type:: TSMilestonesType
 
 =============================================== ==========
 Value                                           Milestone

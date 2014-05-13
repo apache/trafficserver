@@ -18,13 +18,18 @@
 TSContCreate
 ============
 
+.. doxygen:briefdescription:: TSContCreate
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp)
+.. doxygen:function:: TSContCreate
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSContCreate

@@ -18,7 +18,7 @@
 TSHttpTxnParentProxySet
 =======================
 
-Sets the parent proxy name and port.
+.. doxygen:briefdescription:: TSHttpTxnParentProxySet
 
 
 Synopsis
@@ -26,12 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpTxnParentProxySet(TSHttpTxn txnp, char *hostname, int port)
+.. doxygen:function:: TSHttpTxnParentProxySet
 
 
 Description
 -----------
 
-The string hostname is copied into the :c:type:`TSHttpTxn`; you can
-modify or delete the string after calling
-:c:func:`TSHttpTxnParentProxySet`.
+.. doxygen:detaileddescription:: TSHttpTxnParentProxySet

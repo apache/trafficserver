@@ -18,13 +18,18 @@
 TSMimeHdrFieldClone
 ===================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldClone
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field, TSMLoc *locp)
+.. doxygen:function:: TSMimeHdrFieldClone
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldClone

@@ -18,13 +18,18 @@
 TSHttpHdrReasonLookup
 =====================
 
+.. doxygen:briefdescription:: TSHttpHdrReasonLookup
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: const char* TSHttpHdrReasonLookup(TSHttpStatus status)
+.. doxygen:function:: TSHttpHdrReasonLookup
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrReasonLookup

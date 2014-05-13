@@ -28,9 +28,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: const char * TSInstallDirGet(void)
-.. function:: const char * TSConfigDirGet(void)
-.. function:: const char * TSPluginDirGet(void)
+.. doxygen:group:: Install and Plugin Locations
 
 Description
 ===========

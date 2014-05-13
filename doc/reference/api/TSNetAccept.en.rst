@@ -18,13 +18,18 @@
 TSNetAccept
 ===========
 
+.. doxygen:briefdescription:: TSNetAccept
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
+.. doxygen:function:: TSNetAccept
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSNetAccept

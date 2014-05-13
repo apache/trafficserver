@@ -18,8 +18,7 @@
 TSCacheRead
 ===========
 
-Asks the Traffic Server cache if the object corresponding to key
-exists in the cache and can be read.
+.. doxygen:briefdescription:: TSCacheRead
 
 
 Synopsis
@@ -27,20 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSAction TSCacheRead(TSCont contp, TSCacheKey key)
+.. doxygen:function:: TSCacheRead
 
 
 Description
 -----------
 
-If the object can be read, the Traffic Server cache calls the
-continuation contp back with the event
-:c:data:`TS_EVENT_CACHE_OPEN_READ`.  In this case, the cache also
-passes contp a cache vconnection and contp can then initiate a read
-operation on that vconnection using :c:type:`TSVConnRead`.
-
-If the object cannot be read, the cache calls contp back with the
-event :c:data:`TS_EVENT_CACHE_OPEN_READ_FAILED`.  The user (contp) has
-the option to cancel the action returned by :c:type:`TSCacheRead`.
-Note that reentrant calls are possible, i.e. the cache can call back
-the user (contp) in the same call.
+.. doxygen:detaileddescription:: TSCacheRead

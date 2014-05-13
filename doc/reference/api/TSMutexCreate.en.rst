@@ -18,13 +18,18 @@
 TSMutexCreate
 =============
 
+.. doxygen:briefdescription:: TSMutexCreate
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMutex TSMutexCreate(void)
+.. doxygen:function:: TSMutexCreate
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMutexCreate

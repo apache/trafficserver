@@ -18,13 +18,18 @@
 TSVConnShutdown
 ===============
 
+.. doxygen:briefdescription:: TSVConnShutdown
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSVConnShutdown(TSVConn connp, int read, int write)
+.. doxygen:function:: TSVConnShutdown
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVConnShutdown

@@ -18,13 +18,18 @@
 TSMimeHdrFieldValueDateInsert
 =============================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldValueDateInsert
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value)
+.. doxygen:function:: TSMimeHdrFieldValueDateInsert
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldValueDateInsert

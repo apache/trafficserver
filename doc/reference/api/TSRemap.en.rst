@@ -28,12 +28,12 @@ Synopsis
 | `#include <ts/ts.h>`
 | `#include <ts/remap.h>`
 
-.. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char* errbuf, int errbuf_size)
-.. function:: void TSRemapDone(void)
-.. function:: TSRemapStatus TSRemapDoRemap(void * ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
-.. function:: TSReturnCode TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errbuf_size)
-.. function:: void TSRemapDeleteInstance(void * )
-.. function:: void TSRemapOSResponse(void * ih, TSHttpTxn rh, int os_response_type)
+.. doxygen:function:: TSRemapInit
+.. doxygen:function:: TSRemapDone
+.. doxygen:function:: TSRemapDoRemap
+.. doxygen:function:: TSRemapNewInstance
+.. doxygen:function:: TSRemapDeleteInstance
+.. doxygen:function:: TSRemapOSResponse
 
 Description
 ===========

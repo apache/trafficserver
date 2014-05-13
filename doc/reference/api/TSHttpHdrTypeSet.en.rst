@@ -18,13 +18,18 @@
 TSHttpHdrTypeSet
 ================
 
+.. doxygen:briefdescription:: TSHttpHdrTypeSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc offset, TSHttpType type)
+.. doxygen:function:: TSHttpHdrTypeSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrTypeSet
