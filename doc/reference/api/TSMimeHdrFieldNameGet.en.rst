@@ -18,13 +18,18 @@
 TSMimeHdrFieldNameGet
 =====================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldNameGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: const char* TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
+.. doxygen:function:: TSMimeHdrFieldNameGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldNameGet

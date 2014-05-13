@@ -28,10 +28,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc* locp)
-.. function:: TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc* locp)
-.. function:: TSReturnCode TSUrlCopy(TSMBuffer dest_bufp, TSMLoc dest_url, TSMBuffer src_bufp, TSMLoc src_url)
-.. function:: TSParseResult TSUrlParse(TSMBuffer bufp, TSMLoc offset, const char ** start, const char* end)
+.. doxygen:function:: TSUrlCreate
+.. doxygen:function:: TSUrlClone
+.. doxygen:function:: TSUrlCopy
+.. doxygen:function:: TSUrlParse
 
 Description
 ===========

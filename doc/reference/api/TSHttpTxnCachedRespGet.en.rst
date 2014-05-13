@@ -18,13 +18,18 @@
 TSHttpTxnCachedRespGet
 ======================
 
+.. doxygen:briefdescription:: TSHttpTxnCachedRespGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset)
+.. doxygen:function:: TSHttpTxnCachedRespGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpTxnCachedRespGet

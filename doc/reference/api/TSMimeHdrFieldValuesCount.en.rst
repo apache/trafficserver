@@ -18,13 +18,18 @@
 TSMimeHdrFieldValuesCount
 =========================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldValuesCount
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSMimeHdrFieldValuesCount(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldValuesCount
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldValuesCount

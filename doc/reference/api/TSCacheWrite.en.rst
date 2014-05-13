@@ -18,8 +18,7 @@
 TSCacheWrite
 ============
 
-Asks the Traffic Server cache if contp can start writing the object
-(corresponding to key) to the cache.
+.. doxygen:briefdescription:: TSCacheWrite
 
 
 Synopsis
@@ -27,26 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSAction TSCacheWrite(TSCont contp, TSCacheKey key)
+.. doxygen:function:: TSCacheWrite
 
 
 Description
 -----------
 
-If the object can be written, the cache calls contp back with the
-event :c:data:`TS_EVENT_CACHE_OPEN_WRITE`.  In this case, the cache
-also passes contp a cache vconnection and contp can then initiate a
-write operation on that vconnection using :c:type:`TSVConnWrite`.  The
-object is not committed to the cache until the vconnection is closed.
-When all data has been transferred, the user (contp) must do an
-:c:type:`TSVConnClose`.  In case of any errors, the user MUST do an
-``TSVConnAbort(contp, 0)``.
-
-If the object cannot be written, the cache calls contp back with the
-event :c:data:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`.  This can happen,
-for example, if there is another object with the same key being
-written to the cache.  The user (contp) has the option to cancel the
-action returned by :c:type:`TSCacheWrite`.
-
-Note that reentrant calls are possible, i.e. the cache can call back
-the user (contp) in the same call.
+.. doxygen:detaileddescription:: TSCacheWrite

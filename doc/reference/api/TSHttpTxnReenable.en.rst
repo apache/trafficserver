@@ -18,8 +18,7 @@
 TSHttpTxnReenable
 =================
 
-Notifies the HTTP transaction txnp that the plugin is finished
-processing the current hook.
+.. doxygen:briefdescription:: TSHttpTxnReenable
 
 
 Synopsis
@@ -27,16 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
+.. doxygen:function:: TSHttpTxnReenable
 
 
 Description
 -----------
 
-The plugin tells the transaction to either continue
-(:c:data:`TS_EVENT_HTTP_CONTINUE`) or stop
-(:c:data:`TS_EVENT_HTTP_ERROR`).
-
-You must always reenable the HTTP transaction after the processing of
-each transaction event.  However, never reenable twice.  Reenabling
-twice is a serious error.
+.. doxygen:detaileddescription:: TSHttpTxnReenable

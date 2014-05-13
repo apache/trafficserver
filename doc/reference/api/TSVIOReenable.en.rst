@@ -18,13 +18,18 @@
 TSVIOReenable
 =============
 
+.. doxygen:briefdescription:: TSVIOReenable
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSVIOReenable(TSVIO viop)
+.. doxygen:function:: TSVIOReenable
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVIOReenable

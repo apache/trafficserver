@@ -18,7 +18,7 @@
 TSCacheRemove
 =============
 
-Removes the object corresponding to key from the cache.
+.. doxygen:briefdescription:: TSCacheRemove
 
 
 Synopsis
@@ -26,18 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSAction TSCacheRemove(TSCont contp, TSCacheKey key)
+.. doxygen:function:: TSCacheRemove
 
 
 Description
 -----------
 
-If the object was removed successfully, the cache calls contp back
-with the event :c:data:`TS_EVENT_CACHE_REMOVE`.  If the object was not
-found in the cache, the cache calls contp back with the event
-:c:data:`TS_EVENT_CACHE_REMOVE_FAILED`.
-
-In both of these callbacks, the user (contp) does not have to do
-anything.  The user does not get any vconnection from the cache, since
-no data needs to be transferred.  When the cache calls contp back with
-:c:data:`TS_EVENT_CACHE_REMOVE`, the remove has already been commited.
+.. doxygen:detaileddescription:: TSCacheRemove

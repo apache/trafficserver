@@ -18,13 +18,18 @@
 TSHttpHdrPrint
 ==============
 
+.. doxygen:briefdescription:: TSHttpHdrPrint
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
+.. doxygen:function:: TSHttpHdrPrint
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrPrint

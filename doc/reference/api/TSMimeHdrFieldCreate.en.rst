@@ -18,13 +18,18 @@
 TSMimeHdrFieldCreate
 ====================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldCreate
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc *locp)
+.. doxygen:function:: TSMimeHdrFieldCreate
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldCreate

@@ -18,7 +18,7 @@
 TSMimeHdrParse
 ==============
 
-Parses a MIME header.
+.. doxygen:briefdescription:: TSMimeHdrParse
 
 
 Synopsis
@@ -26,14 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSParseResult TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc offset, const char **start, const char *end)
+.. doxygen:function:: TSMimeHdrParse
 
 
 Description
 -----------
 
-The MIME header must have already been allocated and both bufp and
-hdr_loc must point within that header.  It is possible to parse a MIME
-header a single byte at a time using repeated calls to
-:c:func:`TSMimeHdrParse`.  As long as an error does not occur,
-:c:func:`TSMimeHdrParse` consumes each single byte and asks for more.
+.. doxygen:detaileddescription:: TSMimeHdrParse

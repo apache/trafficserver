@@ -28,13 +28,13 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: void * TSmalloc(size_t size , const char * path)
-.. function:: void * TSrealloc(void * ptr , size_t size , const char * path)
-.. function:: char * TSstrdup(const char * str)
-.. function:: char * TSstrndup(const char * str, size_t size)
-.. function:: size_t TSstrlcpy(char * dst , const char * src , size_t size)
-.. function:: size_t TSstrlcat(char * dst , const char * src , size_t size)
-.. function:: void TSfree(void * ptr)
+.. doxygen:function:: TSmalloc
+.. doxygen:function:: TSrealloc
+.. doxygen:function:: TSstrdup
+.. doxygen:function:: TSstrndup
+.. doxygen:function:: TSstrlcpy
+.. doxygen:function:: TSstrlcat
+.. doxygen:function:: TSfree
 
 Description
 ===========

@@ -18,13 +18,18 @@
 TSTransformOutputVConnGet
 =========================
 
+.. doxygen:briefdescription:: TSTransformOutputVConnGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSVConn TSTransformOutputVConnGet(TSVConn connp)
+.. doxygen:function:: TSTransformOutputVConnGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSTransformOutputVConnGet

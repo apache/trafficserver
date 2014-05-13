@@ -18,13 +18,18 @@
 TSContDestroy
 =============
 
+.. doxygen:briefdescription:: TSContDestroy
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSContDestroy(TSCont contp)
+.. doxygen:function:: TSContDestroy
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSContDestroy

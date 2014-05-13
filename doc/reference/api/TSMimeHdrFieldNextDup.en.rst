@@ -18,13 +18,18 @@
 TSMimeHdrFieldNextDup
 =====================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldNextDup
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMLoc TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldNextDup
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldNextDup

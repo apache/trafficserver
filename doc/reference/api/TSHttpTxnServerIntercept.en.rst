@@ -28,7 +28,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
+.. doxygen:function:: TSHttpTxnServerIntercept
 
 Description
 ===========

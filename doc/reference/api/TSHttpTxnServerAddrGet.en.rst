@@ -18,7 +18,7 @@
 TSHttpTxnServerAddrGet
 ======================
 
-Get the origin server address.
+.. doxygen:briefdescription:: TSHttpTxnServerAddrGet
 
 
 Synopsis
@@ -26,14 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: sockaddr const* TSHttpTxnServerAddrGet(TSHttpTxn txnp)
+.. doxygen:function:: TSHttpTxnServerAddrGet
 
 
 Description
 -----------
 
-.. note::
-
-   The pointer is valid only for the current callback.  Clients that
-   need to keep the value across callbacks must maintain their own
-   storage.
+.. doxygen:detaileddescription:: TSHttpTxnServerAddrGet

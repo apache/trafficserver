@@ -18,7 +18,7 @@
 TSMimeParserCreate
 ==================
 
-Creates a MIME parser.
+.. doxygen:briefdescription:: TSMimeParserCreate
 
 
 Synopsis
@@ -26,13 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMimeParser TSMimeParserCreate(void)
+.. doxygen:function:: TSMimeParserCreate
 
 
 Description
 -----------
 
-The parser's data structure contains information about the header
-being parsed.  A single MIME parser can be used multiple times, though
-not simultaneously.  Before being used again, the parser must be
-cleared by calling :c:func:`TSMimeParserClear`.
+.. doxygen:detaileddescription:: TSMimeParserCreate

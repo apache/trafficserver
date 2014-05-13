@@ -18,13 +18,18 @@
 TSMgmtStringGet
 ===============
 
+.. doxygen:briefdescription:: TSMgmtStringGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result)
+.. doxygen:function:: TSMgmtStringGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMgmtStringGet

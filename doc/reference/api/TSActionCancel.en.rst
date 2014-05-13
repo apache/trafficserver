@@ -18,13 +18,18 @@
 TSActionCancel
 ==============
 
+.. doxygen:briefdescription:: TSActionCancel
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSActionCancel(TSAction actionp)
+.. doxygen:function:: TSActionCancel
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSActionCancel

@@ -18,13 +18,18 @@
 TSMutexUnlock
 =============
 
+.. doxygen:briefdescription:: TSMutexUnlock
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSMutexUnlock(TSMutex mutexp)
+.. doxygen:function:: TSMutexUnlock
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMutexUnlock

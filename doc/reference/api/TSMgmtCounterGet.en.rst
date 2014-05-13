@@ -18,13 +18,18 @@
 TSMgmtCounterGet
 ================
 
+.. doxygen:briefdescription:: TSMgmtCounterGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
+.. doxygen:function:: TSMgmtCounterGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMgmtCounterGet

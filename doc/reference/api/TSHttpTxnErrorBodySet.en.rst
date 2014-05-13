@@ -18,7 +18,7 @@
 TSHttpTxnErrorBodySet
 =====================
 
-Sets an error type body to a transaction.
+.. doxygen:briefdescription:: TSHttpTxnErrorBodySet
 
 
 Synopsis
@@ -26,14 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetype)
+.. doxygen:function:: TSHttpTxnErrorBodySet
 
 
 Description
 -----------
 
-Note that both string arguments must be allocated with
-:c:func:`TSmalloc` or :c:func:`TSstrdup`.  The mimetype argument is
-optional, if not provided it defaults to "text/html".  Sending an
-emptry string would prevent setting a content type header
-(but that is not adviced).
+.. doxygen:detaileddescription:: TSHttpTxnErrorBodySet

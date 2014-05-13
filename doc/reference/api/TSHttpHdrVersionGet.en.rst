@@ -18,13 +18,18 @@
 TSHttpHdrVersionGet
 ===================
 
+.. doxygen:briefdescription:: TSHttpHdrVersionGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSHttpHdrVersionGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrVersionGet

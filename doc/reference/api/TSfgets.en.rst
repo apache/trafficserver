@@ -18,7 +18,7 @@
 TSfgets
 =======
 
-Reads a line from the file pointed to by filep into the buffer buf.
+.. doxygen:briefdescription:: TSfgets
 
 
 Synopsis
@@ -26,13 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: char* TSfgets(TSFile filep, char *buf, size_t length)
+.. doxygen:function:: TSfgets
 
 
 Description
 -----------
 
-Lines are terminated by a line feed character, ' '.  The line placed
-in the buffer includes the line feed character and is terminated with
-a NULL.  If the line is longer than length bytes then only the first
-length-minus-1 bytes are placed in buf.
+.. doxygen:detaileddescription:: TSfgets

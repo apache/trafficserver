@@ -18,13 +18,18 @@
 TSMimeHdrFieldValueUintInsert
 =============================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldValueUintInsert
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value)
+.. doxygen:function:: TSMimeHdrFieldValueUintInsert
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeHdrFieldValueUintInsert

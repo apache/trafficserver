@@ -18,13 +18,18 @@
 TSHttpHdrReasonGet
 ==================
 
+.. doxygen:briefdescription:: TSHttpHdrReasonGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: const char* TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc offset, int *length)
+.. doxygen:function:: TSHttpHdrReasonGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrReasonGet

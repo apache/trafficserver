@@ -18,13 +18,18 @@
 TSContSchedule
 ==============
 
+.. doxygen:briefdescription:: TSContSchedule
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSAction TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
+.. doxygen:function:: TSContSchedule
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSContSchedule
