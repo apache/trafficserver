@@ -18,7 +18,7 @@
 TSHttpConnect
 =============
 
-Allows the plugin to initiate an http connection.
+.. doxygen:briefdescription:: TSHttpConnect
 
 
 Synopsis
@@ -26,17 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSVConn TSHttpConnect(sockaddr const *addr)
+.. doxygen:function:: TSHttpConnect
 
 
 Description
 -----------
 
-The :c:type:`TSVConn` the plugin receives as the result of successful
-operates identically to one created through :c:type:`TSNetConnect`.
-Aside from allowing the plugin to set the client ip and port for
-logging, the functionality of :c:func:`TSHttpConnect` is identical to
-connecting to localhost on the proxy port with :c:func:`TSNetConnect`.
-:c:func:`TSHttpConnect` is more efficient than :c:func:`TSNetConnect`
-to localhost since it avoids the overhead of passing the data through
-the operating system.
+.. doxygen:detaileddescription::

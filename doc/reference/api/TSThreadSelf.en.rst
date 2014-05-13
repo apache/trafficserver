@@ -18,13 +18,18 @@
 TSThreadSelf
 ============
 
+.. doxygen:briefdescription:: TSThreadSelf
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSThread TSThreadSelf(void)
+.. doxygen:function:: TSThreadSelf
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

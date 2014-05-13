@@ -18,13 +18,18 @@
 TSConfigSet
 ===========
 
+.. doxygen:briefdescription:: TSConfigSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: unsigned int TSConfigSet(unsigned int id, void *data, TSConfigDestroyFunc funcp)
+.. doxygen:function:: TSConfigSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

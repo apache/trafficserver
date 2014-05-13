@@ -18,13 +18,18 @@
 TSThreadCreate
 ==============
 
+.. doxygen:briefdescription:: TSThreadCreate
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSThread TSThreadCreate(TSThreadFunc func, void *data)
+.. doxygen:function:: TSThreadCreate
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

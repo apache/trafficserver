@@ -18,13 +18,18 @@
 TSContDataGet
 =============
 
+.. doxygen:briefdescription:: TSContDataGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void* TSContDataGet(TSCont contp)
+.. doxygen:function:: TSContDataGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

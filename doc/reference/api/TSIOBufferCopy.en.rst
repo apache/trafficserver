@@ -18,13 +18,18 @@
 TSIOBufferCopy
 ==============
 
+.. doxygen:briefdescription:: TSIOBufferCopy
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int64_t TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_t offset)
+.. doxygen:function:: TSIOBufferCopy
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

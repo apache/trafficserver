@@ -27,7 +27,7 @@ Synopsis
 ========
 `#include <ts/ts.h>`
 
-.. function:: void TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
+.. doxygen:function:: TSLifecycleHookAdd
 
 Description
 ===========

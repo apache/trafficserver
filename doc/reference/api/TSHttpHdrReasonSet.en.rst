@@ -18,13 +18,18 @@
 TSHttpHdrReasonSet
 ==================
 
+.. doxygen:briefdescription:: TSHttpHdrReasonSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length)
+.. doxygen:function:: TSHttpHdrReasonSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

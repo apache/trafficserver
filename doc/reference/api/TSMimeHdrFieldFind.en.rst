@@ -18,8 +18,7 @@
 TSMimeHdrFieldFind
 ==================
 
-Retrieves the :c:type:`TSMLoc` location of a specified MIME field from
-within the MIME header located at hdr.
+.. doxygen:briefdescription:: TSMimeHdrFieldFind
 
 
 Synopsis
@@ -27,15 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length)
+.. doxygen:function:: TSMimeHdrFieldFind
 
 
 Description
 -----------
 
-The name and length parameters specify which field to retrieve.  For
-each MIME field in the MIME header, a case insensitive string
-comparison is done between the field name and name.  If
-:c:func:`TSMimeHdrFieldFind` cannot find the requested field, it
-returns :c:data:`TS_NULL_MLOC`.  Release the returned :c:type:`TSMLoc`
-handle with a call to :c:func:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

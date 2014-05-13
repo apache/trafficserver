@@ -18,13 +18,18 @@
 TSVConnClosedGet
 ================
 
+.. doxygen:briefdescription:: TSVConnClosedGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSVConnClosedGet(TSVConn connp)
+.. doxygen:function:: TSVConnClosedGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

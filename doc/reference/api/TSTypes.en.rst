@@ -31,109 +31,127 @@ Description
 The Apache Traffic Server API provides large number of types. Many of them are specific to a particular API function or
 function group, but others are used more widely. Those are described on this page.
 
-.. type:: TSCont
+.. doxygen:type:: TSCont
 
    An opaque type that represents a Traffic Server :term:`continuation`.
 
-.. type:: TSEvent
+.. doxygen:type:: TSEvent
 
-   :type:`TSEvents` are sent to continuations when they are called
-   back.
+   .. doxygen:description::
 
-   The :type:`TSEvent` provides the continuation's handler function
-   with information about the callback.  Based on the event it
-   receives, the handler function can decide what to do.
+.. doxygen:type:: TSEventFunc
 
-.. type:: TSEventFunc
+   .. doxygen:description::
 
-.. type:: TSHostLookupResult
+.. doxygen:type:: TSHostLookupResult
 
-.. type:: TSHRTime
+   .. doxygen:description::
+
+.. doxygen:type:: TSHRTime
 
    "High Resolution Time"
 
    A 64 bit time value, measured in nanoseconds.
 
-.. type:: TSHttpHookID
+.. doxygen:type:: TSHttpHookID
 
    An enumeration that identifies a specific type of hook for HTTP transactions.
 
-.. type:: TSHttpParser
+.. doxygen:type:: TSHttpParser
 
-.. type:: TSHttpSsn
+   .. doxygen:description::
+
+.. doxygen:type:: TSHttpSsn
 
    An opaque type that represents a Traffic Server :term:`session`.
 
-.. type:: TSHttpTxn
+.. doxygen:type:: TSHttpTxn
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
 
-.. type:: TSIOBuffer
+.. doxygen:type:: TSIOBuffer
 
-.. type:: TSIOBufferReader
+   .. doxygen:description::
 
-.. type:: TSIOBufferSizeIndex
+.. doxygen:type:: TSIOBufferReader
 
-.. type:: TSLifecycleHookID
+   .. doxygen:description::
+
+.. doxygen:type:: TSIOBufferSizeIndex
+
+   .. doxygen:description::
+
+.. doxygen:type:: TSLifecycleHookID
 
    An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-add>`.
 
-.. type:: TSMBuffer
+.. doxygen:type:: TSMBuffer
 
-.. type:: TSMgmtFloat
+   .. doxygen:description::
+
+.. doxygen:type:: TSMgmtFloat
 
    The type used internally for a floating point value. This corresponds to the value :const:`TS_RECORDDATATYPE_FLOAT` for
    :type:`TSRecordDataType`.
 
-.. type:: TSMgmtInt
+.. doxygen:type:: TSMgmtInt
 
    The type used internally for an integer. This corresponds to the value :const:`TS_RECORDDATATYPE_INT` for
    :type:`TSRecordDataType`.
 
-.. type:: TSMLoc
+.. doxygen:type:: TSMLoc
 
-.. type:: TSMutex
+   .. doxygen:description::
 
-.. type:: TSParseResult
+.. doxygen:type:: TSMutex
 
-   This set of enums are possible values returned by
-   :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp`.
+   .. doxygen:description::
 
-.. type:: TSPluginRegistrationInfo
+.. doxygen:type:: TSParseResult
 
-   The following struct is used by :func:`TSPluginRegister`.
+   .. doxygen:description::
 
-   It stores registration information about the plugin.
+.. doxygen:type:: TSPluginRegistrationInfo
 
-.. type:: TSRecordDataType
+   .. doxygen:description::
+
+.. doxygen:type:: TSRecordDataType
 
    An enumeration that specifies the type of a value in an internal data structure that is accessible via the API.
 
-.. type:: TSRemapInterface
+.. doxygen:type:: TSRemapInterface
 
-.. type:: TSRemapRequestInfo
+   .. doxygen:description::
 
-.. type:: TSRemapStatus
+.. doxygen:type:: TSRemapRequestInfo
 
-.. type:: TSReturnCode
+   .. doxygen:description::
+
+.. doxygen:type:: TSRemapStatus
+
+   .. doxygen:description::
+
+.. doxygen:type:: TSReturnCode
 
    An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
    indicates a failure and is specific to the API call.
 
-.. type:: TSSDKVersion
+.. doxygen:type:: TSSDKVersion
 
-   Starting 2.0, SDK now follows same versioning as Traffic Server.
+   .. doxygen:description::
 
-.. type:: TSServerState
+.. doxygen:type:: TSServerState
 
-.. type:: TSTextLogObject
+   .. doxygen:description::
 
-   This type represents a custom log file that you create with
-   :func:`TSTextLogObjectCreate`.
+.. doxygen:type:: TSTextLogObject
 
-   Your plugin writes entries into this log file using
-   :func:`TSTextLogObjectWrite`.
+   .. doxygen:description::
 
-.. type:: TSVConn
+.. doxygen:type:: TSVConn
 
-.. type:: TSVIO
+   .. doxygen:description::
+
+.. doxygen:type:: TSVIO
+
+   .. doxygen:description::

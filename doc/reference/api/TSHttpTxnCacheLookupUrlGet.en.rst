@@ -18,13 +18,18 @@
 TSHttpTxnCacheLookupUrlGet
 ==========================
 
+.. doxygen:briefdescription:: TSHttpTxnCacheLookupUrlGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSHttpTxnCacheLookupUrlGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

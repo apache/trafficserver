@@ -18,13 +18,18 @@
 TSHttpHdrClone
 ==============
 
+.. doxygen:briefdescription:: TSHttpHdrClone
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp)
+.. doxygen:function:: TSHttpHdrClone
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

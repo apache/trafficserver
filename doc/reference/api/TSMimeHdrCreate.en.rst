@@ -18,7 +18,7 @@
 TSMimeHdrCreate
 ===============
 
-Creates a new MIME header within bufp.
+.. doxygen:briefdescription:: TSMimeHdrCreate
 
 
 Synopsis
@@ -26,10 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp)
+.. doxygen:function:: TSMimeHdrCreate
 
 
 Description
 -----------
 
-Release with a call to :c:func:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

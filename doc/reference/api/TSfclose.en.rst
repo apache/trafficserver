@@ -18,8 +18,7 @@
 TSfclose
 ========
 
-Closes the file to which filep points and frees the data structures
-and buffers associated with it.
+.. doxygen:briefdescription:: TSfclose
 
 
 Synopsis
@@ -27,10 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSfclose(TSFile filep)
+.. doxygen:function:: TSfclose
 
 
 Description
 -----------
 
-If the file was opened for writing, any pending data is flushed.
+.. doxygen:detaileddescription::

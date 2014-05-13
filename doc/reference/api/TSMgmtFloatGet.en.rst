@@ -18,13 +18,18 @@
 TSMgmtFloatGet
 ==============
 
+.. doxygen:briefdescription:: TSMgmtFloatGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
+.. doxygen:function:: TSMgmtFloatGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

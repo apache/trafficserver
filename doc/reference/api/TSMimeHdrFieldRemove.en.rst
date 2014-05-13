@@ -18,8 +18,7 @@
 TSMimeHdrFieldRemove
 ====================
 
-Removes the MIME field located at field within bufp from the header
-located at hdr within bufp.
+.. doxygen:briefdescription:: TSMimeHdrFieldRemove
 
 
 Synopsis
@@ -27,20 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldRemove(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldRemove
 
 
 Description
 -----------
 
-If the specified field cannot be found in the list of fields
-associated with the header then nothing is done.
-
-.. note::
-
-   removing the field does not destroy the field, it only detaches the
-   field, hiding it from the printed output.  The field can be
-   reattached with a call to :c:func:`TSMimeHdrFieldAppend`.  If you
-   do not use the detached field you should destroy it with a call to
-   :c:func:`TSMimeHdrFieldDestroy` and release the handle field with a
-   call to :c:func:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

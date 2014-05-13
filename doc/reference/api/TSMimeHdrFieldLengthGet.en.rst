@@ -18,13 +18,18 @@
 TSMimeHdrFieldLengthGet
 =======================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldLengthGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldLengthGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

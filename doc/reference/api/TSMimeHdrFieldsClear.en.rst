@@ -18,8 +18,7 @@
 TSMimeHdrFieldsClear
 ====================
 
-Removes and destroys all the MIME fields within the MIME header
-located at hdr_loc within the marshal buffer bufp.
+.. doxygen:briefdescription:: TSMimeHdrFieldsClear
 
 
 Synopsis
@@ -27,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSMimeHdrFieldsClear
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

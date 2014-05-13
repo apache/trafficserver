@@ -18,13 +18,18 @@
 TSNetConnect
 ============
 
+.. doxygen:briefdescription:: TSNetConnect
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSAction TSNetConnect(TSCont contp, sockaddr const *addr)
+.. doxygen:function:: TSNetConnect
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

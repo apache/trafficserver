@@ -18,8 +18,7 @@
 TSNetAcceptNamedProtocol
 ========================
 
-Listen on all SSL ports for connections for the specified protocol
-name.
+.. doxygen:briefdescription:: TSNetAcceptNamedProtocol
 
 
 Synopsis
@@ -27,28 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
+.. doxygen:function:: TSNetAcceptNamedProtocol
 
 
 Description
 -----------
 
-:c:type:`TSNetAcceptNamedProtocol` registers the specified protocol
-for all statically configured TLS ports.  When a client using the TLS
-Next Protocol Negotiation extension negotiates the requested protocol,
-:c:type:`TrafficServer` will route the request to the given handler.
-Note that the protocol is not registered on ports opened by other
-plugins.
-
-The event and data provided to the handler are the same as for
-:c:func:`TSNetAccept`.  If a connection is successfully accepted, the
-event code will be :c:data:`TS_EVENT_NET_ACCEPT` and the event data
-will be a valid :c:type:`TSVConn` bound to the accepted connection.
-
-Neither contp nor protocol are copied.  They must remain valid for the
-lifetime of the plugin.
-
-:c:type:`TSNetAcceptNamedProtocol` fails if the requested protocol
-cannot be registered on all of the configured TLS ports.  If it fails,
-the protocol will not be registered on any ports
-(ie..  no partial failure).
+.. doxygen:detaileddescription::

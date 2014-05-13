@@ -26,19 +26,19 @@ Synopsis
 ========
 `#include <ts/ts.h>`
 
-.. function:: void TSDebug(const char * tag, const char * format, ...)
-.. function:: void TSError(const char * tag, const char * format, ...)
-.. function:: int TSIsDebugTagSet(const char * tag)
-.. function:: void TSDebugSpecific(int debug_flag, const char * tag, const char * format, ...)
-.. function:: void TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
-.. function:: void TSHttpSsnDebugSet(TSHttpSsn ssn, int on)
-.. function:: int TSHttpTxnDebugGet(TSHttpTxn txnp)
-.. function:: int TSHttpSsnDebugGet(TSHttpSsn ssn)
-.. function:: const char* TSHttpServerStateNameLookup(TSServerState state)
-.. function:: const char* TSHttpHookNameLookup(TSHttpHookID hook)
-.. function:: const char* TSHttpEventNameLookup(TSEvent event)
-.. macro:: void TSAssert(expression)
-.. macro:: void TSReleaseAssert(expression)
+.. doxygen:function:: TSDebug
+.. doxygen:function:: TSError
+.. doxygen:function:: TSIsDebugTagSet
+.. doxygen:function:: TSDebugSpecific
+.. doxygen:function:: TSHttpTxnDebugSet
+.. doxygen:function:: TSHttpSsnDebugSet
+.. doxygen:function:: TSHttpTxnDebugGet
+.. doxygen:function:: TSHttpSsnDebugGet
+.. doxygen:function:: TSHttpServerStateNameLookup
+.. doxygen:function:: TSHttpHookNameLookup
+.. doxygen:function:: TSHttpEventNameLookup
+.. doxygen:macro:: TSAssert
+.. doxygen:macro:: TSReleaseAssert
 
 Description
 ===========

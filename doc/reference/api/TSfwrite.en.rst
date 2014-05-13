@@ -18,8 +18,7 @@
 TSfwrite
 ========
 
-Attempts to write length bytes of data from the buffer buf to the file
-filep.
+.. doxygen:briefdescription:: TSfwrite
 
 
 Synopsis
@@ -27,13 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: size_t TSfwrite(TSFile filep, const void *buf, size_t length)
+.. doxygen:function:: TSfwrite
 
 
 Description
 -----------
 
-Make sure that filep is open for writing.  You might want to check the
-number of bytes written (:c:func:`TSfwrite` returns this value)
-against the value of length.  If it is less, there might be
-insufficient space on disk, for example.
+.. doxygen:detaileddescription::

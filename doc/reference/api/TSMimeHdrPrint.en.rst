@@ -18,8 +18,7 @@
 TSMimeHdrPrint
 ==============
 
-Formats the MIME header located at hdr_loc within bufp into the
-:c:type:`TSIOBuffer` iobufp.
+.. doxygen:briefdescription:: TSMimeHdrPrint
 
 
 Synopsis
@@ -27,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSMimeHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
+.. doxygen:function:: TSMimeHdrPrint
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

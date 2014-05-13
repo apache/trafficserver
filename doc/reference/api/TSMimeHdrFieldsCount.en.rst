@@ -18,8 +18,7 @@
 TSMimeHdrFieldsCount
 ====================
 
-Returns a count of the number of MIME fields within the MIME header
-located at hdr_loc within the marshal buffer bufp.
+.. doxygen:briefdescription:: TSMimeHdrFieldsCount
 
 
 Synopsis
@@ -27,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSMimeHdrFieldsCount
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

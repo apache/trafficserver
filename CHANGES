@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2803] Use documentation strings extracted from source files
+   in project documentation.
+
   *) [TS-2342] Problem with cache.cache_responses_to_cookies value 0.
    Author: Paul Marquess <Paul.Marquess@owmobility.com>
 

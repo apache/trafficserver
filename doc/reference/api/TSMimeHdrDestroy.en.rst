@@ -18,7 +18,7 @@
 TSMimeHdrDestroy
 ================
 
-Destroys the MIME header located at hdr_loc within bufp.
+.. doxygen:briefdescription:: TSMimeHdrDestroy
 
 
 Synopsis
@@ -26,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSMimeHdrDestroy
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

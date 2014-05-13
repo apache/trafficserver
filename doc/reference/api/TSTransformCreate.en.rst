@@ -18,13 +18,18 @@
 TSTransformCreate
 =================
 
+.. doxygen:briefdescription:: TSTransformCreate
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSVConn TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp)
+.. doxygen:function:: TSTransformCreate
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

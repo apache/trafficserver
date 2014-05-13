@@ -18,13 +18,18 @@
 TSConfigRelease
 ===============
 
+.. doxygen:briefdescription:: TSConfigRelease
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSConfigRelease(unsigned int id, TSConfig configp)
+.. doxygen:function:: TSConfigRelease
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

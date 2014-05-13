@@ -18,13 +18,18 @@
 TSVIOContGet
 ============
 
+.. doxygen:briefdescription:: TSVIOContGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSCont TSVIOContGet(TSVIO viop)
+.. doxygen:function:: TSVIOContGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

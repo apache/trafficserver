@@ -27,15 +27,15 @@ Synopsis
 ========
 `#include <ts/ts.h>`
 
-.. type:: TSOverridableConfigKey
+.. doxygen:type:: TSOverridableConfigKey
 
-.. function:: TSReturnCode TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtInt value)
-.. function:: TSReturnCode TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtInt* value)
-.. function:: TSReturnCode TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtFloat value)
-.. function:: TSReturnCode TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtFloat* value)
-.. function:: TSReturnCode TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey key, const char* value, int length)
-.. function:: TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey key, const char** value, int* length)
-.. function:: TSReturnCode TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey* key, TSRecordDataType* type)
+.. doxygen:function:: TSHttpTxnConfigIntSet
+.. doxygen:function:: TSHttpTxnConfigIntGet
+.. doxygen:function:: TSHttpTxnConfigFloatSet
+.. doxygen:function:: TSHttpTxnConfigFloatGet
+.. doxygen:function:: TSHttpTxnConfigStringSet
+.. doxygen:function:: TSHttpTxnConfigStringGet
+.. doxygen:function:: TSHttpTxnConfigFind
 
 Description
 ===========

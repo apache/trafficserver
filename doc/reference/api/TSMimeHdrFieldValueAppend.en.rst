@@ -18,13 +18,18 @@
 TSMimeHdrFieldValueAppend
 =========================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldValueAppend
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
+.. doxygen:function:: TSMimeHdrFieldValueAppend
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

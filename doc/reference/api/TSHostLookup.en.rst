@@ -18,13 +18,18 @@
 TSHostLookup
 ============
 
+.. doxygen:briefdescription:: TSHostLookup
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSAction TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
+.. doxygen:function:: TSHostLookup
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

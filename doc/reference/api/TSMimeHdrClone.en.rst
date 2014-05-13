@@ -18,9 +18,7 @@
 TSMimeHdrClone
 ==============
 
-Copies a specified MIME header to a specified marshal buffer, and
-returns the location of the copied MIME header within the destination
-marshal buffer.
+.. doxygen:briefdescription:: TSMimeHdrClone
 
 
 Synopsis
@@ -28,12 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp)
+.. doxygen:function:: TSMimeHdrClone
 
 
 Description
 -----------
 
-Unlike :c:func:`TSMimeHdrCopy`, you do not have to create the
-destination MIME header before cloning.  Release the returned
-:c:type:`TSMLoc` handle with a call to :c:func:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

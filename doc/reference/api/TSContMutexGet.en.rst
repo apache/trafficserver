@@ -18,13 +18,18 @@
 TSContMutexGet
 ==============
 
+.. doxygen:briefdescription:: TSContMutexGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMutex TSContMutexGet(TSCont contp)
+.. doxygen:function:: TSContMutexGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

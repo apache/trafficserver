@@ -18,8 +18,7 @@
 TSMimeHdrFieldAppend
 ====================
 
-Returns the :c:type:`TSMLoc` location of a specified MIME field from
-within the MIME header located at hdr.
+.. doxygen:briefdescription:: TSMimeHdrFieldAppend
 
 
 Synopsis
@@ -27,17 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldAppend
 
 
 Description
 -----------
 
-The retrieved_str parameter specifies which field to retrieve.  For
-each MIME field in the MIME header, a pointer comparison is done
-between the field name and retrieved_str.  This is a much quicker
-retrieval function than :c:func:`TSMimeHdrFieldFind` since it obviates
-the need for a string comparison.  However, retrieved_str must be one
-of the predefined field names of the form :c:data:`TS_MIME_FIELD_XXX`
-for the call to succeed.  Release the returned :c:type:`TSMLoc` handle
-with a call to :c:func:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

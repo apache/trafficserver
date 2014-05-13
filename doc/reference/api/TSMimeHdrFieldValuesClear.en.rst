@@ -18,13 +18,18 @@
 TSMimeHdrFieldValuesClear
 =========================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldValuesClear
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldValuesClear
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::
