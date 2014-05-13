@@ -228,9 +228,9 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
     if (pstate->config_file[0] != '/')
     {
-        path_len = strlen(TSPluginDirGet()) + strlen(pstate->config_file) + 2;
+        path_len = strlen(TSConfigDirGet()) + strlen(pstate->config_file) + 2;
         path = alloca(path_len);
-        snprintf(path, path_len, "%s/%s", TSPluginDirGet(), pstate->config_file);
+        snprintf(path, path_len, "%s/%s", TSConfigDirGet(), pstate->config_file);
     }
     else
         path = pstate->config_file;
