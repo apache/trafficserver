@@ -27,13 +27,13 @@ Synopsis
 ========
 `#include <ts/ts.h>`
 
-.. function:: TSIOBuffer TSIOBufferCreate(void)
-.. function:: TSIOBuffer TSIOBufferSizedCreate(TSIOBufferSizeIndex index)
-.. function:: void TSIOBufferDestroy(TSIOBuffer bufp)
-.. function:: int64_t TSIOBufferWrite(TSIOBuffer bufp, const void * buf, int64_t length)
-.. function:: void TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes)
-.. function:: int64_t TSIOBufferWaterMarkGet(TSIOBuffer bufp)
-.. function:: void TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark)
+.. doxygen:function:: TSIOBufferCreate
+.. doxygen:function:: TSIOBufferSizedCreate
+.. doxygen:function:: TSIOBufferDestroy
+.. doxygen:function:: TSIOBufferWrite
+.. doxygen:function:: TSIOBufferProduce
+.. doxygen:function:: TSIOBufferWaterMarkGet
+.. doxygen:function:: TSIOBufferWaterMarkSet
 
 Description
 ===========

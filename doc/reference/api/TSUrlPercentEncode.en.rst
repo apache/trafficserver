@@ -28,9 +28,9 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char* dst, size_t dst_size, size_t* length, const unsigned char* map)
-.. function:: TSReturnCode TSStringPercentEncode(const char* str, int str_len, char* dst, size_t dst_size, size_t* length, const unsigned char* map)
-.. function:: TSReturnCode TSStringPercentDecode(const char* str, size_t str_len, char* dst, size_t dst_size, size_t* length)
+.. doxygen:function:: TSUrlPercentEncode
+.. doxygen:function:: TSStringPercentEncode
+.. doxygen:function:: TSStringPercentDecode
 
 Description
 ===========

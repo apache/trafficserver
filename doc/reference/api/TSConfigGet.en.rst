@@ -18,13 +18,18 @@
 TSConfigGet
 ===========
 
+.. doxygen:briefdescription:: TSConfigGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSConfig TSConfigGet(unsigned int id)
+.. doxygen:function:: TSConfigGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSConfigGet

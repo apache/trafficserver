@@ -18,13 +18,18 @@
 TSHostLookupResultAddrGet
 =========================
 
+.. doxygen:briefdescription:: TSHostLookupResultAddrGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: sockaddr const* TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
+.. doxygen:function:: TSHostLookupResultAddrGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHostLookupResultAddrGet

@@ -18,13 +18,18 @@
 TSVIOMutexGet
 =============
 
+.. doxygen:briefdescription:: TSVIOMutexGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMutex TSVIOMutexGet(TSVIO viop)
+.. doxygen:function:: TSVIOMutexGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVIOMutexGet

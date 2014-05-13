@@ -18,13 +18,18 @@
 TSMutexLock
 ===========
 
+.. doxygen:briefdescription:: TSMutexLock
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSMutexLock(TSMutex mutexp)
+.. doxygen:function:: TSMutexLock
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMutexLock

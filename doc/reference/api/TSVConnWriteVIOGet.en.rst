@@ -18,13 +18,18 @@
 TSVConnWriteVIOGet
 ==================
 
+.. doxygen:briefdescription:: TSVConnWriteVIOGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSVIO TSVConnWriteVIOGet(TSVConn connp)
+.. doxygen:function:: TSVConnWriteVIOGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVConnWriteVIOGet

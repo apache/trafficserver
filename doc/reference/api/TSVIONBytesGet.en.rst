@@ -18,13 +18,18 @@
 TSVIONBytesGet
 ==============
 
+.. doxygen:briefdescription:: TSVIONBytesGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int64_t TSVIONBytesGet(TSVIO viop)
+.. doxygen:function:: TSVIONBytesGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVIONBytesGet

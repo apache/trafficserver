@@ -18,13 +18,18 @@
 TSVIOVConnGet
 =============
 
+.. doxygen:briefdescription:: TSVIOVConnGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSVConn TSVIOVConnGet(TSVIO viop)
+.. doxygen:function:: TSVIOVConnGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVIOVConnGet

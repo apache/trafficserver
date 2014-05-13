@@ -18,13 +18,18 @@
 TSVConnReadVIOGet
 =================
 
+.. doxygen:briefdescription:: TSVConnReadVIOGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSVIO TSVConnReadVIOGet(TSVConn connp)
+.. doxygen:function:: TSVConnReadVIOGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVConnReadVIOGet

@@ -18,13 +18,18 @@
 TSHttpHdrVersionSet
 ===================
 
+.. doxygen:briefdescription:: TSHttpHdrVersionSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc offset, int ver)
+.. doxygen:function:: TSHttpHdrVersionSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrVersionSet

@@ -18,7 +18,7 @@
 TSHttpTxnNextHopAddrGet
 =======================
 
-Get the next hop address.
+.. doxygen:briefdescription:: TSHttpTxnNextHopAddrGet
 
 
 Synopsis
@@ -26,14 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: sockaddr const* TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
+.. doxygen:function:: TSHttpTxnNextHopAddrGet
 
 
 Description
 -----------
 
-.. note::
-
-   The pointer is valid only for the current callback.  Clients that
-   need to keep the value across callbacks must maintain their own
-   storage.
+.. doxygen:detaileddescription:: TSHttpTxnNextHopAddrGet

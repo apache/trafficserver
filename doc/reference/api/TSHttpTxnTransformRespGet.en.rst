@@ -18,13 +18,18 @@
 TSHttpTxnTransformRespGet
 =========================
 
+.. doxygen:briefdescription:: TSHttpTxnTransformRespGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset)
+.. doxygen:function:: TSHttpTxnTransformRespGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpTxnTransformRespGet

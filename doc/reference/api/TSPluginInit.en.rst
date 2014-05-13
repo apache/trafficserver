@@ -27,8 +27,8 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: void TSPluginInit(int argc, const char* argv[])
-.. function:: TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo* plugin_info)
+.. doxygen:function:: TSPluginInit
+.. doxygen:function:: TSPluginRegister
 
 Description
 ===========

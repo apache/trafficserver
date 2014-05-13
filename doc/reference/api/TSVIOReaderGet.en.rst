@@ -18,13 +18,18 @@
 TSVIOReaderGet
 ==============
 
+.. doxygen:briefdescription:: TSVIOReaderGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSIOBufferReader TSVIOReaderGet(TSVIO viop)
+.. doxygen:function:: TSVIOReaderGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSVIOReaderGet

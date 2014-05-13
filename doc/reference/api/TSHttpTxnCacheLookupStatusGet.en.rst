@@ -18,13 +18,18 @@
 TSHttpTxnCacheLookupStatusGet
 =============================
 
+.. doxygen:briefdescription:: TSHttpTxnCacheLookupStatusGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status)
+.. doxygen:function:: TSHttpTxnCacheLookupStatusGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpTxnCacheLookupStatusGet

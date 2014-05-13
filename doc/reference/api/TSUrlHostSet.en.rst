@@ -28,15 +28,15 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
-.. function:: TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
-.. function:: TSReturnCode TSUrlUserSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
-.. function:: TSReturnCode TSUrlPasswordSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
-.. function:: TSReturnCode TSUrlPortSet(TSMBuffer bufp, TSMLoc offset, int port)
-.. function:: TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
-.. function:: TSReturnCode TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
-.. function:: TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
-.. function:: TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length)
+.. doxygen:function:: TSUrlHostSet
+.. doxygen:function:: TSUrlSchemeSet
+.. doxygen:function:: TSUrlUserSet
+.. doxygen:function:: TSUrlPasswordSet
+.. doxygen:function:: TSUrlPortSet
+.. doxygen:function:: TSUrlPathSet
+.. doxygen:function:: TSUrlHttpQuerySet
+.. doxygen:function:: TSUrlHttpParamsSet
+.. doxygen:function:: TSUrlHttpFragmentSet
 
 Description
 ===========

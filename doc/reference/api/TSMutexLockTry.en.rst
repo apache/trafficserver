@@ -18,13 +18,18 @@
 TSMutexLockTry
 ==============
 
+.. doxygen:briefdescription:: TSMutexLockTry
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMutexLockTry(TSMutex mutexp)
+.. doxygen:function:: TSMutexLockTry
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMutexLockTry

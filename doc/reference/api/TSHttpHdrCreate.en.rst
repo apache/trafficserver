@@ -18,13 +18,18 @@
 TSHttpHdrCreate
 ===============
 
+.. doxygen:briefdescription:: TSHttpHdrCreate
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMLoc TSHttpHdrCreate(TSMBuffer bufp)
+.. doxygen:function:: TSHttpHdrCreate
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrCreate

@@ -18,7 +18,7 @@
 TSMimeParserClear
 =================
 
-Clears the specified MIME parser so that it can be used again.
+.. doxygen:briefdescription:: TSMimeParserClear
 
 
 Synopsis
@@ -26,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSMimeParserClear(TSMimeParser parser)
+.. doxygen:function:: TSMimeParserClear
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSMimeParserClear

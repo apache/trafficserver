@@ -28,11 +28,11 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function::  const char* TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int* value_len_ptr)
-.. function::  int TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
-.. function::  int64_t TSMimeHdrFieldValueInt64Get(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
-.. function::  unsigned int TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
-.. function::  time_t TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldValueStringGet
+.. doxygen:function:: TSMimeHdrFieldValueIntGet
+.. doxygen:function:: TSMimeHdrFieldValueInt64Get
+.. doxygen:function:: TSMimeHdrFieldValueUintGet
+.. doxygen:function:: TSMimeHdrFieldValueDateGet
 
 
 Description

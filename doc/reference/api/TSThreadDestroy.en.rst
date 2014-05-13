@@ -18,13 +18,18 @@
 TSThreadDestroy
 ===============
 
+.. doxygen:briefdescription:: TSThreadDestroy
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSThreadDestroy(TSThread thread)
+.. doxygen:function:: TSThreadDestroy
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSThreadDestroy

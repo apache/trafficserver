@@ -18,13 +18,18 @@
 TSHttpTxnTransformedRespCache
 =============================
 
+.. doxygen:briefdescription:: TSHttpTxnTransformedRespCache
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on)
+.. doxygen:function:: TSHttpTxnTransformedRespCache
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpTxnTransformedRespCache

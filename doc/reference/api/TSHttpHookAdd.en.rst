@@ -27,9 +27,9 @@ Synopsis
 ========
 `#include <ts/ts.h>`
 
-.. function:: void TSHttpHookAdd(TSHttpHookID id, TSCont contp)
-.. function:: void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
-.. function:: void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
+.. doxygen:function:: TSHttpHookAdd
+.. doxygen:function:: TSHttpSsnHookAdd
+.. doxygen:function:: TSHttpTxnHookAdd
 
 Description
 ===========

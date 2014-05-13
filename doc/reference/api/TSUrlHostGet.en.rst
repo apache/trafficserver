@@ -28,15 +28,15 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: const char* TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: const char* TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: const char* TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: const char* TSUrlPasswordGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: int TSUrlPortGet(TSMBuffer bufp, TSMLoc offset)
-.. function:: const char* TSUrlPathGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: const char* TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: const char* TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int* length)
-.. function:: const char* TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc offset, int* length)
+.. doxygen:function:: TSUrlHostGet
+.. doxygen:function:: TSUrlSchemeGet
+.. doxygen:function:: TSUrlUserGet
+.. doxygen:function:: TSUrlPasswordGet
+.. doxygen:function:: TSUrlPortGet
+.. doxygen:function:: TSUrlPathGet
+.. doxygen:function:: TSUrlHttpQueryGet
+.. doxygen:function:: TSUrlHttpParamsGet
+.. doxygen:function:: TSUrlHttpFragmentGet
 
 Description
 ===========

@@ -18,13 +18,18 @@
 TSHttpHdrUrlGet
 ===============
 
+.. doxygen:briefdescription:: TSHttpHdrUrlGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc *locp)
+.. doxygen:function:: TSHttpHdrUrlGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription:: TSHttpHdrUrlGet
