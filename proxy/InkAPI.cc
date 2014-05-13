@@ -7494,7 +7494,7 @@ TSAIOThreadNumSet(int thread_num)
 }
 
 void
-TSRecordDump(TSRecordType rec_type, TSRecordDumpCb callback, void *edata)
+TSRecordDump(int rec_type, TSRecordDumpCb callback, void *edata)
 {
   RecDumpRecords((RecT)rec_type, (RecDumpEntryCb)callback, edata);
 }
