@@ -238,7 +238,7 @@ public:
   int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
   int mainEvent(int event, Event *e);
-  virtual int connectUp(EThread *t);
+  virtual int connectUp(EThread *t, int fd);
   virtual void free(EThread *t);
 
   virtual ink_hrtime get_inactivity_timeout();

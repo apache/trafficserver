@@ -6228,6 +6228,56 @@ TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
   return reinterpret_cast<TSVConn>(i);
 }
 
+struct ActionSink : public Continuation
+{
+  ActionSink() : Continuation(NULL) {
+    SET_HANDLER(&ActionSink::mainEvent);
+  }
+
+  int mainEvent(int event, void * edata) {
+    // Just sink the event ...
+    Debug("iocore_net", "sinking event=%d (%s), edata=%p",
+        event, HttpDebugNames::get_event_name(event), edata);
+    return EVENT_CONT;
+  }
+};
+
+static ActionSink a;
+
+TSVConn
+TSVConnFdCreate(int fd)
+{
+  UnixNetVConnection * vc;
+
+  if (unlikely(fd == NO_FD)) {
+    return NULL;
+  }
+
+  vc = (UnixNetVConnection *)netProcessor.allocate_vc(this_ethread());
+  if (vc == NULL) {
+    return NULL;
+  }
+
+  // We need to set an Action to handle NET_EVENT_OPEN* events. Since we have a
+  // socket already, we don't need to do anything in those events, so we can just
+  // sink them. It's better to sink them here, than to make the NetVC code more
+  // complex.
+  vc->action_ = &a;
+
+  vc->id = net_next_connection_number();
+  vc->submit_time = ink_get_hrtime();
+  vc->set_is_transparent(false);
+  vc->mutex = new_ProxyMutex();
+
+  if (vc->connectUp(this_ethread(), fd) != CONNECT_SUCCESS) {
+    vc->free(this_ethread());
+    return NULL;
+  }
+
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+  return reinterpret_cast<TSVConn>(vc);
+}
+
 TSVIO
 TSVConnReadVIOGet(TSVConn connp)
 {

@@ -2195,6 +2195,8 @@ extern "C"
   */
   tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
 
+  tsapi TSVConn TSVConnFdCreate(int fd);
+
   /* api functions to access stats */
   /* ClientResp APIs exist as well and are exposed in PrivateFrozen  */
   tsapi int TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp);

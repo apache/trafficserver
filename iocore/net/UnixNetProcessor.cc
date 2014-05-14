@@ -250,7 +250,7 @@ UnixNetProcessor::connect_re_internal(
       MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
       if (lock2) {
         int ret;
-        ret = vc->connectUp(t);
+        ret = vc->connectUp(t, NO_FD);
         if ((using_socks) && (ret == CONNECT_SUCCESS))
           return &socksEntry->action_;
         else

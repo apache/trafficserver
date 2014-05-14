@@ -27,6 +27,7 @@
 
 #include <ts/ts.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <string.h>
 #include <netinet/in.h>
@@ -36,7 +37,7 @@
 //
 // This plugin primarily demonstrates the use of server interceptions to allow a
 // plugin to act as an origin server. It also demonstrates how to use
-// TSNetConnect to make a TCP connection to another server, and the how to use
+// TSVConnFdCreate to wrap a TCP connection to another server, and the how to use
 // the TSVConn APIs to transfer data between virtual connections.
 //
 // This plugin intercepts all cache misses and proxies them to a separate server
@@ -44,7 +45,6 @@
 // processing at all, it simply shuffles data until the client closes the
 // request. The TSQA test test-server-intercept exercises this plugin. You can
 // enable extensive logging with the "intercept" diagnostic tag.
-
 
 #define PLUGIN "intercept"
 #define PORT 60000
@@ -285,14 +285,11 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void * edata)
     // Set up the server intercept. We have the original
     // TSHttpTxn from the continuation. We need to connect to the
     // real origin and get ready to shuffle data around.
-    TSAction    action;
     char        buf[INET_ADDRSTRLEN];
     socket_type addr;
     argument_type     cdata(TSContDataGet(contp));
     InterceptState *  istate = new InterceptState();
-
-    istate->txn = cdata.txn;
-    istate->client.vc = arg.vc;
+    int fd = -1;
 
     // This event is delivered by the continuation that we
     // attached in InterceptTxnHook, so the continuation data is
@@ -306,8 +303,30 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void * edata)
     addr.sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  // XXX config option
     addr.sin.sin_port = htons(PORT);                    // XXX config option
 
+    // Normally, we would use TSNetConnect to connect to a secondary service, but to demonstrate
+    // the use of TSVConnFdCreate, we do a blocking connect inline. This it not recommended for
+    // production plugins, since it might block an event thread for an arbitrary time.
+    fd = ::socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    TSReleaseAssert(fd != -1);
+
+    if (::connect(fd, &addr.sa, sizeof(addr.sin)) == -1) {
+      // We failed to connect to the intercepted origin. Abort the
+      // server intercept since we cannot handle it.
+      VDEBUG("connect failed with %s (%d)", strerror(errno), errno);
+      TSVConnAbort(arg.vc, TS_VC_CLOSE_ABORT);
+
+      delete istate;
+      TSContDestroy(contp);
+
+      return TS_EVENT_NONE;
+    }
+
     VDEBUG("binding client vc=%p to %s:%u",
         istate->client.vc, inet_ntop(AF_INET, &addr.sin.sin_addr, buf, sizeof(buf)), (unsigned)ntohs(addr.sin.sin_port));
+
+    istate->txn = cdata.txn;
+    istate->client.vc = arg.vc;
+    istate->server.vc = TSVConnFdCreate(fd);
 
     // Reset the continuation data to be our intercept state
     // block. We will need this so that we can access both of the
@@ -315,10 +334,21 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void * edata)
     // TSNetConnect so that we can handle the failure case.
     TSContDataSet(contp, istate);
 
-    action = TSNetConnect(contp, &addr.sa);
-    if (TSActionDone(action)) {
-      VDEBUG("origin connection was done inline");
-    }
+    // Start reading the request from the server intercept VC.
+    istate->client.readio.read(istate->client.vc, contp);
+    VIODEBUG(istate->client.readio.vio, "started %s read", InterceptProxySide(istate, &istate->client));
+
+    // Start reading the response from the intercepted origin server VC.
+    istate->server.readio.read(istate->server.vc, contp);
+    VIODEBUG(istate->server.readio.vio, "started %s read", InterceptProxySide(istate, &istate->server));
+
+    // Start writing the response to the server intercept VC.
+    istate->client.writeio.write(istate->client.vc, contp);
+    VIODEBUG(istate->client.writeio.vio, "started %s write", InterceptProxySide(istate, &istate->client));
+
+    // Start writing the request to the intercepted origin server VC.
+    istate->server.writeio.write(istate->server.vc, contp);
+    VIODEBUG(istate->server.writeio.vio, "started %s write", InterceptProxySide(istate, &istate->server));
 
     // We should not do anything after the TSNetConnect call. The
     // NET_CONNECT events take care of everything and we don't
@@ -340,59 +370,6 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void * edata)
     VDEBUG("cancelling server intercept request for txn=%p", cdata.txn);
 
     TSContDestroy(contp);
-    return TS_EVENT_NONE;
-  }
-
-  case TS_EVENT_NET_CONNECT: {
-    // TSNetConnect is asynchronous, so all we know right now is
-    // that the connect was scheduled. We need to kick off some
-    // I/O in order to start proxying data between the Traffic
-    // Server core and our intercepted origin server. The server
-    // intercept will begin the process by sending a read
-    // request.
-    argument_type cdata(TSContDataGet(contp));
-
-    VDEBUG("connected to intercepted origin server, binding server vc=%p to istate=%p", arg.vc, cdata.istate);
-
-    TSReleaseAssert(cdata.istate->client.vc != NULL);
-    cdata.istate->server.vc = arg.vc;
-
-    // Start reading the request from the server intercept VC.
-    cdata.istate->client.readio.read(cdata.istate->client.vc, contp);
-    VIODEBUG(cdata.istate->client.readio.vio, "started %s read", InterceptProxySide(cdata.istate, &cdata.istate->client));
-
-    // Start reading the response from the intercepted origin server VC.
-    cdata.istate->server.readio.read(cdata.istate->server.vc, contp);
-    VIODEBUG(cdata.istate->server.readio.vio, "started %s read", InterceptProxySide(cdata.istate, &cdata.istate->server));
-
-    // Start writing the response to the server intercept VC.
-    cdata.istate->client.writeio.write(cdata.istate->client.vc, contp);
-    VIODEBUG(cdata.istate->client.writeio.vio, "started %s write", InterceptProxySide(cdata.istate, &cdata.istate->client));
-
-    // Start writing the request to the intercepted origin server VC.
-    cdata.istate->server.writeio.write(cdata.istate->server.vc, contp);
-    VIODEBUG(cdata.istate->server.writeio.vio, "started %s write", InterceptProxySide(cdata.istate, &cdata.istate->server));
-
-    return TS_EVENT_NONE;
-  }
-
-  case TS_EVENT_NET_CONNECT_FAILED: {
-    // Connecting to the intercepted origin failed. We should
-    // pass the error on up to the server intercept.
-    argument_type cdata(TSContDataGet(contp));
-
-    VDEBUG("origin connection for txn=%p failed with error code %ld", cdata.istate->txn, arg.ecode);
-
-    TSReleaseAssert(cdata.istate->client.vc != NULL);
-    TSReleaseAssert(cdata.istate->server.vc == NULL);
-
-    // We failed to connect to the intercepted origin. Abort the
-    // server intercept since we cannot handle it.
-    TSVConnAbort(cdata.istate->client.vc, arg.ecode);
-
-    delete cdata.istate;
-    TSContDestroy(contp);
-
     return TS_EVENT_NONE;
   }
 
