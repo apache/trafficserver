@@ -176,16 +176,19 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
     //
     // ALPN selects the first server-offered protocol,
     // so make sure that we offer the newest protocol first.
-    //
+    // But since registerEndpoint prepends you want to
+    // register them backwards, so you'd want to register
+    // the least important protocol first:
+    // http/1.0, http/1.1, spdy/3, spdy/3.1
 
     // HTTP
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
     ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
+    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
 
     // SPDY
 #if TS_HAS_SPDY
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, spdy);
     ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, spdy);
+    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, spdy);
 #endif
 
     ink_scoped_mutex lock(ssl_plugin_mutex);
