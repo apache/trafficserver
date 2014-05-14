@@ -63,6 +63,7 @@ create_npn_advertisement(
   }
 
   for (ep = endpoints.head; ep != NULL; ep = endpoints.next(ep)) {
+    Debug("ssl", "advertising protocol %s", ep->protocol);
     advertised = append_protocol(ep->protocol, advertised);
   }
 
@@ -85,7 +86,6 @@ SSLNextProtocolSet::advertiseProtocols(const unsigned char ** out, unsigned * le
   if (npn && npnsz) {
     *out = npn;
     *len = npnsz;
-    Debug("ssl", "advertised NPN set %.*s", (int)npnsz, npn);
     return true;
   }
 
