@@ -56,14 +56,14 @@ typedef int8_t RecByte;
 
 enum RecT
 {
-  RECT_NULL = 0,
-  RECT_CONFIG = 1,
-  RECT_PROCESS = 2,
-  RECT_NODE = 4,
-  RECT_CLUSTER = 8,
-  RECT_LOCAL = 16,
-  RECT_PLUGIN = 32,
-  RECT_ALL = 63
+  RECT_NULL     = 0x00,
+  RECT_CONFIG   = 0x01,
+  RECT_PROCESS  = 0x02,
+  RECT_NODE     = 0x04,
+  RECT_CLUSTER  = 0x08,
+  RECT_LOCAL    = 0x10,
+  RECT_PLUGIN   = 0x20,
+  RECT_ALL      = 0x3F
 };
 
 enum RecDataT

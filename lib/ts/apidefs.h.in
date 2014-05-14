@@ -601,14 +601,14 @@ extern "C"
   /* The values of this enum must match enum RecT in I_RecDefs.h */
   typedef enum
     {
-      TS_RECORDTYPE_NULL = 0,
-      TS_RECORDTYPE_CONFIG = 1,
-      TS_RECORDTYPE_PROCESS = 2,
-      TS_RECORDTYPE_NODE = 4,
-      TS_RECORDTYPE_CLUSTER = 8,
-      TS_RECORDTYPE_LOCAL = 16,
-      TS_RECORDTYPE_PLUGIN = 32,
-      TS_RECORDTYPE_ALL = 63
+      TS_RECORDTYPE_NULL        = 0x00,
+      TS_RECORDTYPE_CONFIG      = 0x01,
+      TS_RECORDTYPE_PROCESS     = 0x02,
+      TS_RECORDTYPE_NODE        = 0x04,
+      TS_RECORDTYPE_CLUSTER     = 0x08,
+      TS_RECORDTYPE_LOCAL       = 0x10,
+      TS_RECORDTYPE_PLUGIN      = 0x20,
+      TS_RECORDTYPE_ALL         = 0x3F
     } TSRecordType;
 
   /* The values of this enum must match enum RecDataT in I_RecDefs.h */

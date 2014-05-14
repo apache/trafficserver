@@ -2005,7 +2005,7 @@ extern "C"
 
   typedef void (*TSRecordDumpCb) (TSRecordType rec_type, void* edata, int registered, const char* name, TSRecordDataType data_type, TSRecordData* datum);
 
-  tsapi void TSRecordDump(TSRecordType rec_type, TSRecordDumpCb callback, void* edata);
+  tsapi void TSRecordDump(int rec_type, TSRecordDumpCb callback, void* edata);
 
   /**
 
