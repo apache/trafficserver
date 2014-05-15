@@ -285,9 +285,7 @@ RemapRegex::initialize(const std::string& reg, const std::string& sub, const std
       // All other options have a required value
       TSError("Malformed options: %s", opt.c_str());
       break;
-    }
-
-    if (opt.compare(start, 6, "status") == 0) {
+    } else if (opt.compare(start, 6, "status") == 0) {
       _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), NULL, 10));
     } else if (opt.compare(start, 14, "active_timeout") == 0) {
       _active_timeout = strtol(opt_val.c_str(), NULL, 10);
