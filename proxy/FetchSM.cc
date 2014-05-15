@@ -522,7 +522,11 @@ FetchSM::ext_lanuch()
 void
 FetchSM::ext_write_data(const void *data, size_t len)
 {
-  if (header_done && (fetch_flags & TS_FETCH_FLAGS_NEWLOCK)) {
+  bool writeReady = (header_done ||
+		    (req_method == TS_FETCH_METHOD_POST) ||
+		    (req_method == TS_FETCH_METHOD_PUT));
+
+  if (writeReady && (fetch_flags & TS_FETCH_FLAGS_NEWLOCK)) {
     MUTEX_TAKE_LOCK(mutex, this_ethread());
   }
 
@@ -532,10 +536,13 @@ FetchSM::ext_write_data(const void *data, size_t len)
   // Before header_done, FetchSM may not
   // be initialized.
   //
-  if (header_done)
+  if (writeReady) {
+    Debug(DEBUG_TAG, "[%s] re-enabling write_vio, header_done %u, req_method %u", __FUNCTION__, header_done, req_method);
     write_vio->reenable();
+    fetch_handler(TS_EVENT_VCONN_WRITE_READY, write_vio);
+  }
 
-  if (header_done && (fetch_flags & TS_FETCH_FLAGS_NEWLOCK)) {
+  if (writeReady && (fetch_flags & TS_FETCH_FLAGS_NEWLOCK)) {
     MUTEX_UNTAKE_LOCK(mutex, this_ethread());
   }
 }
