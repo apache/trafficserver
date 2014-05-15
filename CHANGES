@@ -48,7 +48,8 @@ Changes with Apache Traffic Server 5.0.0
   
   *) [TS-2772] Clean up mgmt/preparse code.
 
-  *) [TS-2763] Remove the unused proxy.config.log.xuid_logging_enabled config setting.
+  *) [TS-2763] Remove the unused proxy.config.log.xuid_logging_enabled config
+   setting.
 
   *) [TS-2762] Core dump when benchmarking SPDY.
 
