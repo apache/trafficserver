@@ -1,13 +1,13 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
-  *) [TS-2805] Client connections are connecting with SPDY 3 instead of 3.1
+  *) [TS-2805] Client connections are connecting with SPDY 3 instead of 3.1.
   
-  *) [TS-2619] Changed TSRecordDump declaration from TSRecordType to int to accomodate
-   bitmasks. Also changed TSRecordType enums to hexidecimal, as this is easier to read
-   for bit arguments.
+  *) [TS-2619] Changed TSRecordDump declaration from TSRecordType to int to
+   accommodate bit-masks. Also changed TSRecordType enums to hexidecimal, as
+   this is easier to read for bit arguments.
 
-  *) [TS-2797] Build all manual pages in the doc/reference/api directory
+  *) [TS-2797] Build all manual pages in the doc/reference/api directory.
 
   *) [TS-2733] Do not build the old SPDY plugin.
 
