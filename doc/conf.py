@@ -34,6 +34,9 @@ import sys, os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('ext'))
+sys.path.insert(0, os.path.abspath('.'))
+
+from manpages import man_pages
 
 # -- General configuration -----------------------------------------------------
 
@@ -249,44 +252,7 @@ latex_documents = [
 
 # -- Options for manual page output --------------------------------------------
 
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [
-
-  # Add all files in the reference/api directory to the list of manual
-  # pages
-  ('reference/api/' + filename[:-4], filename.split('.', 1)[0], '', None, '3ts') for filename in os.listdir('reference/api') if filename != 'index.en.rst' and filename.endswith('.rst')] + [
-
-  ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
-  ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
-  ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),
-  ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'Traffic Server analyzer', None, '8'),
-  ('reference/commands/traffic_manager.en', 'traffic_manager', u'Traffic Server process manager', None, '8'),
-  ('reference/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
-  ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
-
-  ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
-  ('reference/commands/traffic_top.en','traffic_top', u'Display Traffic Server statistics', None, '1'),
-  ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
-
-  ('reference/configuration/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),
-  ('reference/configuration/congestion.config.en', 'congestion.config', u'Traffic Server congestion control configuration file', None, '5'),
-  ('reference/configuration/hosting.config.en', 'hosting.config', u'Traffic Server domain hosting configuration file', None, '5'),
-  ('reference/configuration/icp.config.en', 'icp.config', u'Traffic Server ICP configuration file', None, '5'),
-  ('reference/configuration/ip_allow.config.en', 'ip_allow.config', u'Traffic Server IP access control configuration file', None, '5'),
-  ('reference/configuration/log_hosts.config.en', 'log_hosts.config', u'Traffic Server log host configuration file', None, '5'),
-  ('reference/configuration/logs_xml.config.en', 'logs_xml.config', u'Traffic Server log format configuration file', None, '5'),
-  ('reference/configuration/parent.config.en', 'parent.config', u'Traffic Server parent cache configuration file', None, '5'),
-  ('reference/configuration/plugin.config.en', 'plugin.config', u'Traffic Server global plugin configuration file', None, '5'),
-  ('reference/configuration/records.config.en', 'records.config', u'Traffic Server configuration file', None, '5'),
-  ('reference/configuration/remap.config.en', 'remap.config', u'Traffic Server remap rules configuration file', None, '5'),
-  ('reference/configuration/splitdns.config.en', 'splitdns.config', u'Traffic Server split DNS configuration file', None, '5'),
-  ('reference/configuration/ssl_multicert.config.en', 'ssl_multicert.config', u'Traffic Server SSL certificate configuration file', None, '5'),
-  ('reference/configuration/storage.config.en', 'storage.config', u'Traffic Server cache storage configuration file', None, '5'),
-  ('reference/configuration/update.config.en', 'update.config', u'Traffic Server automated update configuration file', None, '5'),
-  ('reference/configuration/volume.config.en', 'volume.config', u'Traffic Server cache volume configuration file', None, '5'),
-
-]
+# The global "man_pages" is imported from ts/manpages.py
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
@@ -403,35 +369,3 @@ epub_copyright = u'2013, dev@trafficserver.apache.org'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
-
-if __name__ == '__main__':
-  # Use optparse instead of argparse because this needs to work on old Python versions.
-  import optparse
-
-  parser = optparse.OptionParser(description='Traffic Server Sphinx docs configuration')
-  parser.add_option('--check-version', action='store_true', dest='checkvers')
-  parser.add_option('--man-pages', action='store_true', dest='manpages')
-  parser.add_option('--section', type=int, default=0, dest='section')
-
-  (options, args) = parser.parse_args()
-
-  # Print the names of the man pages for the requested manual section.
-  if options.manpages:
-    for page in man_pages:
-      if options.section == 0 or options.section == int(page[4][0]):
-        print page[1] + '.' + page[4]
-
-  # Check whether we have a recent version of sphinx. EPEL and CentOS are completely crazy and I don't understand their
-  # packaging at all. The test below works on Ubuntu and places where sphinx is installed sanely AFAICT.
-  if options.checkvers:
-    print 'checking for sphinx version >= 1.1... ',
-    try:
-      import sphinx
-      version = sphinx.__version__
-      (major, minor, micro) = version.split('.')
-      if (int(major) > 1) or (int(major) == 1 and int(minor) >= 1):
-        print 'found ' + sphinx.__version__
-      sys.exit(0)
-    except Exception as e:
-      print e
-      sys.exit(1)
