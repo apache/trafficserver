@@ -402,10 +402,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr* request, HTTPHdr* response
   if ((CookiesConfig) cookies_conf == COOKIES_CACHE_ALL) {
     return false;
   }
-  // Do not cache if cookies option is COOKIES_CACHE_NONE
-  if ((CookiesConfig) cookies_conf == COOKIES_CACHE_NONE) {
-    return true;
-  }
+
   // It is considered that Set-Cookie headers can be safely ignored
   // for non text content types if Cache-Control private is not set.
   // This enables a bigger hit rate, which currently outweighs the risk of
@@ -422,6 +419,12 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr* request, HTTPHdr* response
       !request->presence(MIME_PRESENCE_COOKIE) && (cached_request == NULL
                                                    || !cached_request->presence(MIME_PRESENCE_COOKIE))) {
     return false;
+  }
+
+  // Do not cache if cookies option is COOKIES_CACHE_NONE
+  // and a Cookie is detected
+  if ((CookiesConfig) cookies_conf == COOKIES_CACHE_NONE) {
+    return true;
   }
   // All other options depend on the Content-Type
   content_type = response->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &str_len);

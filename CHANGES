@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2342] Problem with cache.cache_responses_to_cookies value 0.
+   Author: Paul Marquess <Paul.Marquess@owmobility.com>
+
   *) [TS-2751] Remove the ProtocolNetAccept layer.
 
   *) [TS-2815] SSL orgin server connection hangs if ssl handshake is slow
