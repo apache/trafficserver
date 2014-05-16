@@ -549,12 +549,9 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 int
 SSLNetVConnection::sslServerHandShakeEvent(int &err)
 {
-  int ret;
-  int ssl_error;
+  int ret = SSL_accept(ssl);
+  int ssl_error = SSL_get_error(ssl, ret);
 
-  ret = SSL_accept(ssl);
-
-  ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
     SSLDebugVC(this,"SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
@@ -647,6 +644,10 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       X509 * cert = SSL_get_peer_certificate(ssl);
 
       Debug("ssl", "SSL client handshake completed successfully");
+      // if the handshake is complete and write is enabled reschedule the write
+      Debug("ssl", "write.enabled: %d", write.enabled);
+      if (write.enabled)
+        writeReschedule(nh);
       if (cert) {
         debug_certificate_name("server certificate subject CN is", X509_get_subject_name(cert));
         debug_certificate_name("server certificate issuer CN is", X509_get_issuer_name(cert));

@@ -466,9 +466,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       nh->read_ready_list.remove(vc);
       vc->write.triggered = 0;
       nh->write_ready_list.remove(vc);
-      if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT)
-        read_reschedule(nh, vc);
-      else
+      if (!(ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT))
         write_reschedule(nh, vc);
     } else if (ret == EVENT_DONE) {
       vc->write.triggered = 1;
