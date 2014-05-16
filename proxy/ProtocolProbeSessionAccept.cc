@@ -128,7 +128,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
 }
 
 void
-ProtocolProbeSessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader* read)
+ProtocolProbeSessionAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader *)
 {
   ink_release_assert(0);
 }

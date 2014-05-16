@@ -62,5 +62,10 @@ SpdySessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferRea
 {
 #if TS_HAS_SPDY
   spdy_sm_create(netvc, iobuf, reader);
+#else
+  (void)netvc;
+  (void)iobuf;
+  (void)reader;
+  ink_release_assert(0);
 #endif
 }

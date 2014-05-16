@@ -138,7 +138,7 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
 }
 
 void
-SSLNextProtocolAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader* read)
+SSLNextProtocolAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader *)
 {
   ink_release_assert(0);
 }

@@ -338,7 +338,7 @@ ink_freelists_dump_baselinerel(FILE * f)
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST
-  // TODO?
+  (void)f;
 #endif
 }
 
@@ -361,7 +361,7 @@ ink_freelists_dump(FILE * f)
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST
-  // TODO?
+  (void)f;
 #endif
 }
 
