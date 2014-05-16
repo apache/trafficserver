@@ -96,7 +96,6 @@ The following options may be specified in :file:`plugin.config`:
   ==============    ==================================================
 
 --sample-rate=COUNT
-
   This is the number of times per 1000 requests that the data will
   be logged.  A pseudo-random number generator is used to determine if a
   request will be logged.  The default value is 1000 and this option is
