@@ -27,9 +27,6 @@
 static ClassAllocator<SpdyClientSession> spdyClientSessionAllocator("spdyClientSessionAllocator");
 ClassAllocator<SpdyRequest> spdyRequestAllocator("spdyRequestAllocator");
 
-static int spdy_main_handler(TSCont contp, TSEvent event, void *edata);
-static int spdy_start_handler(TSCont contp, TSEvent event, void *edata);
-static int spdy_default_handler(TSCont contp, TSEvent event, void *edata);
 static int spdy_process_read(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_write(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata);
@@ -63,6 +60,7 @@ SpdyClientSession::init(NetVConnection * netvc)
 
   atomic_inc(g_sm_cnt);
 
+  this->mutex = new_ProxyMutex();
   this->vc = netvc;
   this->req_map.clear();
 
@@ -85,12 +83,9 @@ SpdyClientSession::init(NetVConnection * netvc)
   total_size = 0;
   start_time = TShrtime();
 
-  ink_assert(this->contp == NULL);
-  this->contp = TSContCreate(spdy_main_handler, TSMutexCreate());
-  TSContDataSet(this->contp, this);
-
   this->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.accept_no_activity_timeout));
-  this->current_handler = &spdy_start_handler;
+  SET_HANDLER(&SpdyClientSession::state_session_start);
+
 }
 
 void
@@ -115,15 +110,13 @@ SpdyClientSession::clear()
   }
   req_map.clear();
 
+  this->mutex = NULL;
+
   if (vc) {
     TSVConnClose(reinterpret_cast<TSVConn>(vc));
     vc = NULL;
   }
 
-  if (contp) {
-    TSContDestroy(contp);
-    contp = NULL;
-  }
 
   if (req_reader) {
     TSIOBufferReaderFree(req_reader);
@@ -169,90 +162,76 @@ spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reade
   sm->resp_buffer = TSIOBufferCreate();
   sm->resp_reader = TSIOBufferReaderAlloc(sm->resp_buffer);
 
-  TSContSchedule(sm->contp, 0, TS_THREAD_POOL_DEFAULT);       // schedule now
+  eventProcessor.schedule_imm(sm, ET_NET);
 }
 
-static int
-spdy_main_handler(TSCont contp, TSEvent event, void *edata)
-{
-  SpdyClientSession          *sm;
-  SpdyClientSessionHandler   spdy_current_handler;
-
-  sm = (SpdyClientSession*)TSContDataGet(contp);
-  spdy_current_handler = sm->current_handler;
-
-  return (*spdy_current_handler) (contp, event, edata);
-}
-
-static int
-spdy_start_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
+int
+SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 {
   int     r;
   spdylay_settings_entry entry;
 
-  SpdyClientSession  *sm = (SpdyClientSession*)TSContDataGet(contp);
-
-  if (TSIOBufferReaderAvail(sm->req_reader) > 0) {
-    spdy_process_read(TS_EVENT_VCONN_WRITE_READY, sm);
+  if (TSIOBufferReaderAvail(this->req_reader) > 0) {
+    spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
   }
 
-  sm->read_vio = (TSVIO)sm->vc->do_io_read(reinterpret_cast<Continuation *>(contp), INT64_MAX, reinterpret_cast<MIOBuffer *>(sm->req_buffer));
-  sm->write_vio = (TSVIO)sm->vc->do_io_write(reinterpret_cast<Continuation *>(contp), INT64_MAX, reinterpret_cast<IOBufferReader *>(sm->resp_reader));
+  this->read_vio = (TSVIO)this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
+  this->write_vio = (TSVIO)this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
 
-  sm->current_handler = &spdy_default_handler;
+  SET_HANDLER(&SpdyClientSession::state_session_readwrite);
 
   /* send initial settings frame */
   entry.settings_id = SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS;
   entry.value = SPDY_CFG.spdy.max_concurrent_streams;
   entry.flags = SPDYLAY_ID_FLAG_SETTINGS_NONE;
 
-  r = spdylay_submit_settings(sm->session, SPDYLAY_FLAG_SETTINGS_NONE, &entry, 1);
+  r = spdylay_submit_settings(this->session, SPDYLAY_FLAG_SETTINGS_NONE, &entry, 1);
   TSAssert(r == 0);
 
-  TSVIOReenable(sm->write_vio);
-  return 0;
+  TSVIOReenable(this->write_vio);
+  return EVENT_CONT;
 }
 
-static int
-spdy_default_handler(TSCont contp, TSEvent event, void *edata)
+int
+SpdyClientSession::state_session_readwrite(int event, void * edata)
 {
   int ret = 0;
   bool from_fetch = false;
-  SpdyClientSession  *sm = (SpdyClientSession*)TSContDataGet(contp);
-  sm->event = event;
 
-  if (edata == sm->read_vio) {
+  this->event = event;
+
+  if (edata == this->read_vio) {
     Debug("spdy", "++++[READ EVENT]");
     if (event != TS_EVENT_VCONN_READ_READY &&
         event != TS_EVENT_VCONN_READ_COMPLETE) {
       ret = -1;
       goto out;
     }
-    ret = spdy_process_read(event, sm);
-  } else if (edata == sm->write_vio) {
+    ret = spdy_process_read((TSEvent)event, this);
+  } else if (edata == this->write_vio) {
     Debug("spdy", "----[WRITE EVENT]");
     if (event != TS_EVENT_VCONN_WRITE_READY &&
         event != TS_EVENT_VCONN_WRITE_COMPLETE) {
       ret = -1;
       goto out;
     }
-    ret = spdy_process_write(event, sm);
+    ret = spdy_process_write((TSEvent)event, this);
   } else {
     from_fetch = true;
-    ret = spdy_process_fetch(event, sm, edata);
+    ret = spdy_process_fetch((TSEvent)event, this, edata);
   }
 
   Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d, nr_pending:%" PRIu64,
-        sm->sm_id, event, ret, g_sm_cnt);
+        this->sm_id, event, ret, g_sm_cnt);
 out:
   if (ret) {
-    sm->clear();
-    spdyClientSessionAllocator.free(sm);
+    this->clear();
+    spdyClientSessionAllocator.free(this);
   } else if (!from_fetch) {
-    sm->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.no_activity_timeout_in));
+    this->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.no_activity_timeout_in));
   }
 
-  return 0;
+  return EVENT_CONT;
 }
 
 static int

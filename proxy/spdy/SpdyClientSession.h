@@ -98,12 +98,12 @@ public:
   MD5_CTX recv_md5;
 };
 
-class SpdyClientSession
+class SpdyClientSession : public Continuation
 {
 
 public:
 
-  SpdyClientSession() {
+  SpdyClientSession() : Continuation(NULL) {
   }
 
   ~SpdyClientSession() {
@@ -118,7 +118,6 @@ public:
   TSHRTime start_time;
 
   NetVConnection * vc;
-  TSCont  contp;
 
   TSIOBuffer req_buffer;
   TSIOBufferReader req_reader;
@@ -129,12 +128,14 @@ public:
   TSVIO   read_vio;
   TSVIO   write_vio;
 
-  SpdyClientSessionHandler current_handler;
-
   int event;
   spdylay_session *session;
 
   map<int32_t, SpdyRequest*> req_map;
+
+private:
+  int state_session_start(int event, void * edata);
+  int state_session_readwrite(int event, void * edata);
 };
 
 void spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader);

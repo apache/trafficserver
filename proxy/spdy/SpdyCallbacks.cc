@@ -182,7 +182,7 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
   // HTTP content should be dechunked before packed into SPDY.
   //
   fetch_flags = TS_FETCH_FLAGS_DECHUNK;
-  req->fetch_sm = TSFetchCreate(sm->contp, method,
+  req->fetch_sm = TSFetchCreate((TSCont)sm, method,
                                 url.c_str(), req->version.c_str(),
                                 client_addr, fetch_flags);
   TSFetchUserDataSet(req->fetch_sm, req);
