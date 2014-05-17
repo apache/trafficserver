@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../sdk/continuations/how-to-activate-continuations.en.rst:2
 msgid "How to Activate Continuations"
-msgstr ""
+msgstr "継続のアクティベート方法"
 
 #: ../../sdk/continuations/how-to-activate-continuations.en.rst:21
 msgid ""
@@ -36,16 +36,21 @@ msgid ""
 "``TSContSchedule`` (which schedules a continuation to receive an event). "
 "Continuations might receive an event because:"
 msgstr ""
+"継続は、イベントを受け取った際か ``TSContSchedule`` （イベントを受け取るため"
+"継続をスケジュールする関数）によってアクティベートされます。下記の理由により"
+"継続がイベントを受け取る可能性があります。 :"
 
 #: ../../sdk/continuations/how-to-activate-continuations.en.rst:25
 msgid "Your plugin calls ``TSContCall``"
-msgstr ""
+msgstr "プラグインが ``TSContCall`` を呼び出す。"
 
 #: ../../sdk/continuations/how-to-activate-continuations.en.rst:27
 msgid ""
 "The Traffic Server HTTP state machine sends an event corresponding to a "
 "particular HTTP hook"
 msgstr ""
+"Traffic Server HTTP ステートマシンが特定の HTTP フックに関連するイベントを"
+"送信する。"
 
 #: ../../sdk/continuations/how-to-activate-continuations.en.rst:30
 msgid ""
@@ -54,3 +59,7 @@ msgid ""
 "to read or write. These callbacks are a result of using functions such "
 "``TSVConnRead``/``Write`` or ``TSCacheRead``/``Write``"
 msgstr ""
+"Traffic Server IO プロセッサー（キャッシュプロセッサーやネットプロセッサー"
+"など）が継続に読込みや書込みが可能な（キャッシュまたはネットワーク）データが"
+"あることを知らせる。これらのコールバックは ``TSVConnRead``/``Write`` や "
+"``TSCacheRead``/``Write`` のような関数を使用した結果です。"
