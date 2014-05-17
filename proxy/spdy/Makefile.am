@@ -37,11 +37,11 @@ libspdy_a_SOURCES = \
   SpdySessionAccept.cc
 
 if BUILD_SPDY
-  libspdy_a_SOURCES += \
-  SpdyCallbacks.h \
-  SpdyCommon.h \
-  SpdySM.h \
+libspdy_a_SOURCES += \
   SpdyCallbacks.cc \
+  SpdyCallbacks.h \
+  SpdyClientSession.cc \
+  SpdyClientSession.h \
   SpdyCommon.cc \
-  SpdySM.cc
+  SpdyCommon.h
 endif

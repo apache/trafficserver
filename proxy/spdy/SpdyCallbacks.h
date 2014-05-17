@@ -25,10 +25,10 @@
 #define __P_SPDY_CALLBACKS_H__
 
 #include <spdylay/spdylay.h>
-class SpdySM;
+class SpdyClientSession;
 
 void spdy_callbacks_init(spdylay_session_callbacks *callbacks);
-void spdy_prepare_status_response(SpdySM *sm, int stream_id, const char *status);
+void spdy_prepare_status_response(SpdyClientSession *sm, int stream_id, const char *status);
 
 /**
  * @functypedef

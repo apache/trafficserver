@@ -25,7 +25,7 @@
 #include "Error.h"
 
 #if TS_HAS_SPDY
-#include "SpdySM.h"
+#include "SpdyClientSession.h"
 #endif
 
 SpdySessionAccept::SpdySessionAccept(Continuation *ep)

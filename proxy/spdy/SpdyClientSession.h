@@ -1,6 +1,6 @@
 /** @file
 
-  SpdySM.h
+  SpdyClientSession.h
 
   @section license License
 
@@ -28,8 +28,8 @@
 #include "SpdyCallbacks.h"
 #include <openssl/md5.h>
 
-class SpdySM;
-typedef int (*SpdySMHandler) (TSCont contp, TSEvent event, void *data);
+class SpdyClientSession;
+typedef int (*SpdyClientSessionHandler) (TSCont contp, TSEvent event, void *data);
 
 class SpdyRequest
 {
@@ -42,7 +42,7 @@ public:
   {
   }
 
-  SpdyRequest(SpdySM *sm, int id):
+  SpdyRequest(SpdyClientSession *sm, int id):
     spdy_sm(NULL), stream_id(-1), fetch_sm(NULL),
     has_submitted_data(false), need_resume_data(false),
     fetch_data_len(0), delta_window_size(0),
@@ -56,7 +56,7 @@ public:
     clear();
   }
 
-  void init(SpdySM *sm, int id)
+  void init(SpdyClientSession *sm, int id)
   {
     spdy_sm = sm;
     stream_id = id;
@@ -77,7 +77,7 @@ public:
 
 public:
   int event;
-  SpdySM *spdy_sm;
+  SpdyClientSession *spdy_sm;
   int stream_id;
   TSHRTime start_time;
   TSFetchSM fetch_sm;
@@ -98,15 +98,15 @@ public:
   MD5_CTX recv_md5;
 };
 
-class SpdySM
+class SpdyClientSession
 {
 
 public:
 
-  SpdySM() {
+  SpdyClientSession() {
   }
 
-  ~SpdySM() {
+  ~SpdyClientSession() {
     clear();
   }
 
@@ -129,7 +129,7 @@ public:
   TSVIO   read_vio;
   TSVIO   write_vio;
 
-  SpdySMHandler current_handler;
+  SpdyClientSessionHandler current_handler;
 
   int event;
   spdylay_session *session;
@@ -139,7 +139,6 @@ public:
 
 void spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader);
 
-extern ClassAllocator<SpdySM> spdySMAllocator;
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 
 #endif
