@@ -18,13 +18,18 @@
 TSMimeHdrFieldNext
 ==================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldNext
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMLoc TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldNext
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

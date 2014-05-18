@@ -18,13 +18,18 @@
 TSHttpHdrStatusSet
 ==================
 
+.. doxygen:briefdescription:: TSHttpHdrStatusSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status)
+.. doxygen:function:: TSHttpHdrStatusSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

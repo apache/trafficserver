@@ -18,13 +18,18 @@
 TSVConnWrite
 ============
 
+.. doxygen:briefdescription:: TSVConnWrite
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSVIO TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes)
+.. doxygen:function:: TSVConnWrite
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

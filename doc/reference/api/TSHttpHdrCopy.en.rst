@@ -18,8 +18,7 @@
 TSHttpHdrCopy
 =============
 
-Copies the contents of the HTTP header located at src_loc within
-src_bufp to the HTTP header located at dest_loc within dest_bufp.
+.. doxygen:briefdescription:: TSHttpHdrCopy
 
 
 Synopsis
@@ -27,19 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer src_bufp, TSMLoc src_offset)
+.. doxygen:function:: TSHttpHdrCopy
 
 
 Description
 -----------
 
-:c:func:`TSHttpHdrCopy` works correctly even if src_bufp and dest_bufp
-point to different marshal buffers.  Make sure that you create the
-destination HTTP header before copying into it.
-
-.. note::
-
-   :c:func:`TSHttpHdrCopy` appends the port number to the domain of
-   the URL portion of the header.  For example, a copy of
-   http://www.example.com appears as http://www.example.com:80 in the
-   destination buffer.
+.. doxygen:detaileddescription::

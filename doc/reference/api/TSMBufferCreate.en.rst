@@ -27,9 +27,9 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSMBuffer TSMBufferCreate(void)
-.. function:: TSReturnCode TSMBufferDestroy(TSMBuffer bufp)
-.. function:: TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
+.. doxygen:function:: TSMBufferCreate
+.. doxygen:function:: TSMBufferDestroy
+.. doxygen:function:: TSHandleMLocRelease
 
 Description
 ===========

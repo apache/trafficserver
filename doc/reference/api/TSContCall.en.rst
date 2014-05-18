@@ -18,13 +18,18 @@
 TSContCall
 ==========
 
+.. doxygen:briefdescription:: TSContCall
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSContCall(TSCont contp, TSEvent event, void *edata)
+.. doxygen:function:: TSContCall
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

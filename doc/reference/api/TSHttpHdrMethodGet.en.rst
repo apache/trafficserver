@@ -18,13 +18,18 @@
 TSHttpHdrMethodGet
 ==================
 
+.. doxygen:briefdescription:: TSHttpHdrMethodGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: const char* TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc offset, int *length)
+.. doxygen:function:: TSHttpHdrMethodGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

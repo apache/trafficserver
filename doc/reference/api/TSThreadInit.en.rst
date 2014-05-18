@@ -18,13 +18,18 @@
 TSThreadInit
 ============
 
+.. doxygen:briefdescription:: TSThreadInit
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSThread TSThreadInit(void)
+.. doxygen:function:: TSThreadInit
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

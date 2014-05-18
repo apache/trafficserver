@@ -18,13 +18,18 @@
 TSVConnCacheObjectSizeGet
 =========================
 
+.. doxygen:briefdescription:: TSVConnCacheObjectSizeGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: int64_t TSVConnCacheObjectSizeGet(TSVConn connp)
+.. doxygen:function:: TSVConnCacheObjectSizeGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

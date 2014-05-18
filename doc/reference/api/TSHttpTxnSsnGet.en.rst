@@ -18,13 +18,18 @@
 TSHttpTxnSsnGet
 ===============
 
+.. doxygen:briefdescription:: TSHttpTxnSsnGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp)
+.. doxygen:function:: TSHttpTxnSsnGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

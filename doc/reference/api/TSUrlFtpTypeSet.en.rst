@@ -18,8 +18,7 @@
 TSUrlFtpTypeSet
 ===============
 
-Sets the FTP type portion of the URL located at url_loc within bufp to
-the value type.
+.. doxygen:briefdescription:: TSUrlFtpTypeSet
 
 
 Synopsis
@@ -27,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc offset, int type)
+.. doxygen:function:: TSUrlFtpTypeSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

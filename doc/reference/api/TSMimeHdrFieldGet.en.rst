@@ -18,8 +18,7 @@
 TSMimeHdrFieldGet
 =================
 
-Retrieves the location of a specified MIME field within the MIME
-header located at hdr_loc within bufp.
+.. doxygen:briefdescription:: TSMimeHdrFieldGet
 
 
 Synopsis
@@ -27,14 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSMLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr, int idx)
+.. doxygen:function:: TSMimeHdrFieldGet
 
 
 Description
 -----------
 
-The idx parameter specifies which field to retrieve.  The fields are
-numbered from 0 to ``TSMimeHdrFieldsCount(bufp, hdr_loc)`` - 1.  If
-idx does not lie within that range then :c:type:`TSMimeHdrFieldGet`
-returns 0.  Release the returned handle with a call to
-:c:type:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

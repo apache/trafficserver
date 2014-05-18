@@ -18,8 +18,7 @@
 TSMimeHdrLengthGet
 ==================
 
-Calculates the length of the MIME header located at hdr_loc if it were
-returned as a string.
+.. doxygen:briefdescription:: TSMimeHdrLengthGet
 
 
 Synopsis
@@ -27,10 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: int TSMimeHdrLengthGet(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSMimeHdrLengthGet
 
 
 Description
 -----------
 
-This the length of the MIME header in its unparsed form.
+.. doxygen:detaileddescription::

@@ -18,8 +18,7 @@
 TSHttpHdrDestroy
 ================
 
-Destroys the HTTP header located at hdr_loc within the marshal buffer
-bufp.
+.. doxygen:briefdescription:: TSHttpHdrDestroy
 
 
 Synopsis
@@ -27,11 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSHttpHdrDestroy
 
 
 Description
 -----------
 
-Do not forget to release the handle hdr_loc with a call to
-:c:func:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

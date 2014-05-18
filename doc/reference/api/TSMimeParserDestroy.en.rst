@@ -18,7 +18,7 @@
 TSMimeParserDestroy
 ===================
 
-Destroys the specified MIME parser and frees the associated memory.
+.. doxygen:briefdescription:: TSMimeParserDestroy
 
 
 Synopsis
@@ -26,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSMimeParserDestroy(TSMimeParser parser)
+.. doxygen:function:: TSMimeParserDestroy
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

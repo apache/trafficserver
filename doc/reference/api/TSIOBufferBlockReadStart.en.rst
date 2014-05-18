@@ -18,13 +18,18 @@
 TSIOBufferBlockReadStart
 ========================
 
+.. doxygen:briefdescription:: TSIOBufferBlockReadStart
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: const char* TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail)
+.. doxygen:function:: TSIOBufferBlockReadStart
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

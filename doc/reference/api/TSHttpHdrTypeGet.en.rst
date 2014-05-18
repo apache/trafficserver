@@ -18,13 +18,18 @@
 TSHttpHdrTypeGet
 ================
 
+.. doxygen:briefdescription:: TSHttpHdrTypeGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSHttpType TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc offset)
+.. doxygen:function:: TSHttpHdrTypeGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

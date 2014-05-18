@@ -18,13 +18,18 @@
 TSConfigDataGet
 ===============
 
+.. doxygen:briefdescription:: TSConfigDataGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void* TSConfigDataGet(TSConfig configp)
+.. doxygen:function:: TSConfigDataGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

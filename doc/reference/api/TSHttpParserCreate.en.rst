@@ -28,11 +28,11 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSHttpParser TSHttpParserCreate(void)
-.. function:: void TSHttpParserClear(TSHttpParser parser)
-.. function:: void TSHttpParserDestroy(TSHttpParser parser)
-.. function:: TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char ** start, const char * end)
-.. function:: TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char ** start, const char * end)
+.. doxygen:function:: TSHttpParserCreate
+.. doxygen:function:: TSHttpParserClear
+.. doxygen:function:: TSHttpParserDestroy
+.. doxygen:function:: TSHttpHdrParseReq
+.. doxygen:function:: TSHttpHdrParseResp
 
 Description
 ===========

@@ -18,7 +18,7 @@
 TSMimeHdrFieldDestroy
 =====================
 
-Destroys the MIME field located at field within bufp.
+.. doxygen:briefdescription:: TSMimeHdrFieldDestroy
 
 
 Synopsis
@@ -26,11 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
+.. doxygen:function:: TSMimeHdrFieldDestroy
 
 
 Description
 -----------
 
-You must release the :c:type:`TSMLoc` field with a call to
-:c:func:`TSHandleMLocRelease`.
+.. doxygen:detaileddescription::

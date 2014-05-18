@@ -18,8 +18,7 @@
 TSfopen
 =======
 
-Opens a file for reading or writing and returns a descriptor for
-accessing the file.
+.. doxygen:briefdescription:: TSfopen
 
 
 Synopsis
@@ -27,11 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSFile TSfopen(const char *filename, const char *mode)
+.. doxygen:function:: TSfopen
 
 
 Description
 -----------
 
-The current implementation cannot open a file for both reading or
-writing.  See the SDK Programmer's Guide for sample code.
+.. doxygen:detaileddescription::

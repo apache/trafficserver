@@ -18,13 +18,18 @@
 TSHttpSsnReenable
 =================
 
+.. doxygen:briefdescription:: TSHttpSsnReenable
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
+.. doxygen:function:: TSHttpSsnReenable
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

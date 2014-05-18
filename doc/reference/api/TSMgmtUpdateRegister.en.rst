@@ -18,13 +18,18 @@
 TSMgmtUpdateRegister
 ====================
 
+.. doxygen:briefdescription:: TSMgmtUpdateRegister
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSMgmtUpdateRegister(TSCont contp, const char *plugin_name)
+.. doxygen:function:: TSMgmtUpdateRegister
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

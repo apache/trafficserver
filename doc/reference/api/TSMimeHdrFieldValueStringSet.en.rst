@@ -18,13 +18,18 @@
 TSMimeHdrFieldValueStringSet
 ============================
 
+.. doxygen:briefdescription:: TSMimeHdrFieldValueStringSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length)
+.. doxygen:function:: TSMimeHdrFieldValueStringSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

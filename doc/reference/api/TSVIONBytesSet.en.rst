@@ -18,13 +18,18 @@
 TSVIONBytesSet
 ==============
 
+.. doxygen:briefdescription:: TSVIONBytesSet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSVIONBytesSet(TSVIO viop, int64_t nbytes)
+.. doxygen:function:: TSVIONBytesSet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

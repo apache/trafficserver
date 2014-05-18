@@ -18,8 +18,7 @@
 TSfflush
 ========
 
-Flushes pending data that has been buffered up in memory from previous
-calls to :c:func:`TSfwrite`.
+.. doxygen:briefdescription:: TSfflush
 
 
 Synopsis
@@ -27,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSfflush(TSFile filep)
+.. doxygen:function:: TSfflush
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

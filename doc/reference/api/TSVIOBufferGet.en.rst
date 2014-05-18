@@ -18,13 +18,18 @@
 TSVIOBufferGet
 ==============
 
+.. doxygen:briefdescription:: TSVIOBufferGet
+
+
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSIOBuffer TSVIOBufferGet(TSVIO viop)
+.. doxygen:function:: TSVIOBufferGet
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::

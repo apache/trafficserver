@@ -18,8 +18,7 @@
 TSfread
 =======
 
-Attempts to read length bytes of data from the file pointed to by
-filep into the buffer buf.
+.. doxygen:briefdescription:: TSfread
 
 
 Synopsis
@@ -27,8 +26,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: size_t TSfread(TSFile filep, void *buf, size_t length)
+.. doxygen:function:: TSfread
 
 
 Description
 -----------
+
+.. doxygen:detaileddescription::
