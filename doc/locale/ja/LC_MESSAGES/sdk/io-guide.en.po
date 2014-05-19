@@ -18,7 +18,7 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 4.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-08 17:57+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2014-11-16 18:52+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -27,19 +27,19 @@ msgstr ""
 
 #: ../../sdk/io-guide.en.rst:2
 msgid "IO Guide"
-msgstr ""
+msgstr "IO Guide"
 
 #: ../../sdk/io-guide.en.rst:21
 msgid "This chapter contains the following sections:"
-msgstr ""
+msgstr "この章には次の節があります。"
 
 #: ../../sdk/io-guide.en.rst:34
 msgid "Vconnections"
-msgstr ""
+msgstr "Vconnections"
 
 #: ../../sdk/io-guide.en.rst:37
 msgid "Vconnections: a User's Perspective"
-msgstr ""
+msgstr "Vconnections: ユーザーの観点"
 
 #: ../../sdk/io-guide.en.rst:39
 msgid ""
@@ -50,6 +50,13 @@ msgid ""
 "vconnection viav ``TSTransformCreate`` and then accesses the output "
 "vconnection using ``TSTransformOutputVConnGet``."
 msgstr ""
+"vconnection を使用するには、ユーザーは最初に vconnection のハンドルを得なけ"
+"ればなりません。これは通常、ユーザーに渡されることによって達成されます。ま"
+"た、ユーザーは単に ( ``TSNetConnect`` のような ) vconnection を生成する呼び"
+"出しを発行することも可能です。Transform プラグインの場合は "
+"``TSTransformCreate`` で transformation vconnection を作り、"
+"``TSTransformOutputVConnGet`` を使用して output vconnection にアクセスしま"
+"す。"
 
 #: ../../sdk/io-guide.en.rst:46
 msgid ""
@@ -59,6 +66,12 @@ msgid ""
 "vconnection about whether it can perform a read or write operation. That "
 "ability should be obvious from context."
 msgstr ""
+"vconnection へのハンドルを得た後、ユーザーは read や write 呼び出しを発行す"
+"ることができます。全ての vconnections が reading と writing の両方をサポート"
+"しているとは限らないことに注意しなければなりません。いまのところ "
+"vconnection が read や write オペレーションを実行できるかどうか、"
+"vconnection に問い合わせることは必要とされませんでした。その能力は文脈から明"
+"らかであるべきです。"
 
 #: ../../sdk/io-guide.en.rst:52
 msgid ""
@@ -68,6 +81,11 @@ msgid ""
 "made. Transform plugins initiate output to the downstream vconnection by "
 "calling ``TSVConnWrite``."
 msgstr ""
+"read や write オペレーションを発行するには、ユーザーは ``TSVConnRead`` や "
+"``TSVConnWrite`` を呼び出して下さい。これらの 2 つのオペレーションは ``VIO "
+"(TSVIO)`` を返します。VIO は実行されているオペレーションやどれくらい進捗が"
+"あったかを説明します。Transform プラグインは ``TSVConnWrite`` を呼ぶことで "
+"downstream vconnection へのアウトプットを始めます。"
 
 #: ../../sdk/io-guide.en.rst:58
 msgid ""
@@ -83,6 +101,16 @@ msgid ""
 "implementation of vconnections on UNIX still does issue those calls to "
 "``read(2)``, but the interface does not expose that detail)."
 msgstr ""
+"vconnection read や write オペレーションは通常の UNIX ``read(2)`` や "
+"``write(2)`` オペレーションとは異なります。特に、vconnection オペレーション"
+"はオペレーション用に確保されたバッファーに存在するものよりも多くのデータを読"
+"み取られたり、書き込まれたりします。例えば、ネットワークコネクションからスト"
+"リームの終わりに達するまで全てのデータを読むために ``INT64_MAX`` ( 9 クイン"
+"テリオン ) バイトを network vconnection から読む場合に顕著です。これは 通常"
+"の UNIX 形式の ``read(2)`` を最終的にストリームの終わりに達したことを示す "
+"``0`` を返すまで繰り返し呼び出すことと対象的です。( 実際は、UNIX 上の "
+"vconnections の実装の下はこのような ``read(2)`` の呼び出しを行っています。し"
+"かしインターフェースはその詳細を隠蔽してます )"
 
 #: ../../sdk/io-guide.en.rst:70
 msgid ""
@@ -95,6 +123,13 @@ msgid ""
 "at the same time; the restriction is for more than one operation of the "
 "same type."
 msgstr ""
+"多くの場合、与えられた vconnection は 1 つの write オペレーションを実行しな"
+"がら、1 つの read オペレーションを持ちます。これは設計と常識の両方から制限さ"
+"れています。もし 2 つの write オペレーションが 1 つの vconnection で実行され"
+"ているとすると、ユーザーはどちらが先に実行されるべきか指定するとができず、出"
+"力が混ざった形式になる可能性があります。read オペレーションと write オペレー"
+"ションの両方は 1 つの vconnection で同時に起きることに注意してください。同じ"
+"タイプに対して 1 つよりも多いオペレーションが制限されています。"
 
 #: ../../sdk/io-guide.en.rst:79
 msgid ""
@@ -110,12 +145,26 @@ msgid ""
 "specifies that the buffer for the operation has been modified and that the "
 "vconnection should reexamine it to see if it can make further progress."
 msgstr ""
+"明らかな問題は ``TSVConnRead`` と ``TSVConnWrite`` を通過したバッファーは十"
+"分大きくないかもしれないことです。``INT64_MAX`` ( 9 クィントリオン ) バイト"
+"を持つことができるバッファーを作る理にかなった方法はありません！ 秘密は "
+"vconnecntions プロトコルで約束しています。秘密は vconnections がユーザーへ渡"
+"されたバッファーを空にして、次のデータのための準備ができているシグナルを "
+"( ``TSVConnRead`` と ``TSVConnWrite`` を通過した継続を通じて ) 送るというプ"
+"ロトコルを約束していることです。これが起きた場合、バッファーに次のデータを追"
+"加して、 ( もしくは次のデータが追加されるのを待つ ) ``TSVIOReenable`` の呼び"
+"出しによって vconnection をオペレーションを表す VIO で 起こすことはユーザー"
+"次第です。``TSVIOReenable`` はオペレーション用のバッファーが変更されたこと"
+"と vconnections がより進めるられるのであれば、再評価するべきであることを示し"
+"ます。"
 
 #: ../../sdk/io-guide.en.rst:92
 msgid ""
 "The null transform plugin provides an example of how this is done. Below is "
 "a prototype for ``TSVConnWrite``:"
 msgstr ""
+"null transform プラグインはこれがどう行われるのかを表します。以下は "
+"``TSVConnWrite`` のプロトタイプです。"
 
 #: ../../sdk/io-guide.en.rst:100
 msgid ""
@@ -123,10 +172,13 @@ msgid ""
 "the \"user\" - i.e., the continuation that ``connp`` calls back when it has "
 "emptied its buffer and is ready for more data."
 msgstr ""
+"``connp`` はユーザーが書き込んでいる vconnections で、``contp`` は \"ユー"
+"ザー\" です。すなわち、バッファーを空にし終わって、次のデータの準備ができた"
+"ときに ``connp`` がコールバックする継続です。"
 
 #: ../../sdk/io-guide.en.rst:104
 msgid "The call made in the null transform plugin is:"
-msgstr ""
+msgstr "null transform plugin で作られた呼び出しは"
 
 #: ../../sdk/io-guide.en.rst:111
 msgid ""
@@ -134,6 +186,9 @@ msgid ""
 "writing to the output vconnection. The number of bytes to be written is "
 "obtained from ``input_vio`` by ``TSVIONBytesGet``."
 msgstr ""
+"上の例では ``contp`` は output vconnection に書き込む transformation "
+"vconnection です。書き込まれるバイト数は ``TSVIONBytesGet`` によって "
+"``input_vio`` から入手されます。"
 
 #: ../../sdk/io-guide.en.rst:115
 msgid ""
@@ -142,10 +197,14 @@ msgid ""
 "``TSContCall``. It passes the ``TSVIO`` describing the operation as the "
 "data parameter, and one of the values below as the event parameter."
 msgstr ""
+"vconnection がより多くのデータを欲していることをそのユーザーに示すためにコー"
+"ルバックするとき、(もしくは他のなにかしらの状態が起きたとき) ``TSContCall`` "
+"呼び出しを発行します。それはデータパラメーターとしてオペレーションを述べる "
+"``TSVIO`` とそれより下の値の 1 つをイベントパラメーターとして渡します。"
 
 #: ../../sdk/io-guide.en.rst:123
 msgid "``TS_EVENT_ERROR``"
-msgstr ""
+msgstr "``TS_EVENT_ERROR``"
 
 #: ../../sdk/io-guide.en.rst:121
 msgid ""
@@ -153,10 +212,13 @@ msgid ""
 "network IO if the underlying ``read(2)`` or ``write(2)`` call returns an "
 "error."
 msgstr ""
+"vconnection でエラーが発生したことを表します。これは下層の ``read(2)`` や "
+"``write(2)`` 呼び出しがエラーを返した際にネットワーク IO で発生するかもしれ"
+"ません。"
 
 #: ../../sdk/io-guide.en.rst:130
 msgid "``TS_EVENT_VCONN_READ_READY``"
-msgstr ""
+msgstr "``TS_EVENT_VCONN_READ_READY``"
 
 #: ../../sdk/io-guide.en.rst:126
 msgid ""
@@ -165,10 +227,14 @@ msgid ""
 "the user consumes the data from the buffer, this should re-enable the VIO "
 "so it indicates to the vconnection that the buffer has been modified."
 msgstr ""
+"vconnection がバッファー内のデータを ``TSVConnRead`` オペレーションに送り終"
+"わり、より多くの IO を実行したいが、バッファーがいっぱいです。ユーザーがバッ"
+"ファーからデータを読み出したとき、vconnection にバッファーが変更されたことを"
+"示すために VIO を re-enable するべきです。"
 
 #: ../../sdk/io-guide.en.rst:137
 msgid "``TS_EVENT_VCONN_WRITE_READY``"
-msgstr ""
+msgstr "``TS_EVENT_VCONN_WRITE_READY``"
 
 #: ../../sdk/io-guide.en.rst:133
 msgid ""
@@ -178,30 +244,40 @@ msgid ""
 "user should re-enable the VIO so it indicates to the vconnection that the "
 "buffer has been modified."
 msgstr ""
+"vconnection は ``TSVConnWrite`` オペレーションに渡されたバッファーからデータ"
+"が削除され、より多くの IO を実行したいが、buffer に十分なデータありません。"
+"バッファーにより多くのデータを置くとき、vconnection にバッファーが変更された"
+"ことを示すためにユーザーは VIO を re-enable するべきです。"
 
 #: ../../sdk/io-guide.en.rst:142
 msgid "``TS_EVENT_VCONN_READ_COMPLETE``"
-msgstr ""
+msgstr "``TS_EVENT_VCONN_READ_COMPLETE``"
 
 #: ../../sdk/io-guide.en.rst:140
 msgid ""
 "The vconnection has read all the bytes specified by an ``TSVConnRead`` "
 "operation. The vconnection can now be used to initiate a new IO operation."
 msgstr ""
+"vconnection は ``TSVConnRead`` オペレーションによって指定された全てのバイト"
+"を読み終わりました。いまや vconnection は新しい IO オペレーションを始めるた"
+"めに使われることができます。"
 
 #: ../../sdk/io-guide.en.rst:147
 msgid "``TS_EVENT_VCONN_WRITE_COMPLETE``"
-msgstr ""
+msgstr "``TS_EVENT_VCONN_WRITE_COMPLETE``"
 
 #: ../../sdk/io-guide.en.rst:145
 msgid ""
 "The vconnection has written all the bytes specified by an ``TSVConnWrite`` "
 "operation and can now be used to initiate a new IO operation."
 msgstr ""
+"vconnection は ``TSVConnWrite`` オペレーションによって指定された全てのバイト"
+"を書き込み終わり、いまや新しい IO オペレーションを始めるために使われることが"
+"できます。"
 
 #: ../../sdk/io-guide.en.rst:156
 msgid "``TS_EVENT_VCONN_EOS``"
-msgstr ""
+msgstr "``TS_EVENT_VCONN_EOS``"
 
 #: ../../sdk/io-guide.en.rst:150
 msgid ""
@@ -212,6 +288,12 @@ msgid ""
 "to ``TSVConnRead``. A common case where this occurs is when the user "
 "specifies that ``INT64_MAX`` bytes are to be read from a network connection."
 msgstr ""
+"``TSVConnRead`` オペレーションをハンドリングしている間の過ぎ去ったバイトのス"
+"トリームの最後を読もうとする試みが実施された。vconnection から読むことのでき"
+"るバイト数がユーザー ``TSVConnRead`` の呼び出しで vconnection から読むべきだ"
+"と指定したバイト数よりも少ないときにこのイベントは起きます。これが発生する一"
+"般的な場合はユーザーが指定した ``INT64_MAX`` バイトがネットワークコネクショ"
+"ンから読まれる場合です。"
 
 #: ../../sdk/io-guide.en.rst:158
 msgid ""
@@ -219,6 +301,10 @@ msgid ""
 "``TS_EVENT_VCONN_WRITE_READY`` and ``TS_EVENT_VCONN_WRITE_COMPLETE`` events "
 "from the downstream vconnection as a result of the call to ``TSVConnWrite``."
 msgstr ""
+"例えば、null transform plugin のトランスフォーメーションが ``TSVConnWrite`` "
+"の呼び出しの結果として downstream vconnecntion から "
+"``TS_EVENT_VCONN_WRITE_READY`` と ``TS_EVENT_VCONN_WRITE_COMPLETE`` イベント"
+"を受け取ります。"
 
 #: ../../sdk/io-guide.en.rst:163
 msgid ""
@@ -228,6 +314,12 @@ msgid ""
 "being closed abnormally. After a call to ``TSVConnClose`` or "
 "``TSVConnAbort``, the user will not be called back by the vconnection again."
 msgstr ""
+"vconnection を使用した後、ユーザーは ``TSVConnClose`` か ``TSVConnAbort`` を"
+"呼び出さなければなりません。両方の呼び出しは vconnection が自信で廃棄できる"
+"ことを示します。コネクションが異常に閉じられようとしているときに "
+"``TSVConnAbort`` は使われるべきです。``TSVConnClose`` や ``TSVConnAbort`` の"
+"呼び出しの後、ユーザーは vconnection によって再び呼び出されることはないで"
+"しょう。"
 
 #: ../../sdk/io-guide.en.rst:170
 msgid ""
@@ -244,39 +336,51 @@ msgid ""
 "plugins, see `Writing Content Transform Plugins <../http-transformation-"
 "plugin#WritingContentTransformPlugins>`__."
 msgstr ""
+"ときどき read portion をオープンにしたままでコネクションの write portion を"
+"単にクローズすることが好ましいことがあります。これは ``TSVConnShutdown`` 関"
+"数によって実現できます。これはコネクションの read portion もしくは write "
+"portion をシャットダウンします。*シャットダウン* は vconnection はシャットダ"
+"ウンされたコネクションの portion のイベントをもはやユーザーにコールバックし"
+"ないことを意味します。例えば、ユーザーがコネクションの write portion を"
+"シャットダウンした場合、``TS_EVENT_VCONN_WRITE_READY`` や "
+"``TS_EVENT_VCONN_WRITE_COMPLETE`` イベントは起きません。null transform "
+"plugin では write オペレーションは ``TSVConnShutdown`` の呼び出しでシャット"
+"ダウンされます。vconnection がどのように transformation プラグインで使われる"
+"かを学ぶには `Writing Content Transform Plugins <../http-transformation-"
+"plugin#WritingContentTransformPlugins>`__ を参照してください。"
 
 #: ../../sdk/io-guide.en.rst:183
 msgid "The vconnection functions are listed below:"
-msgstr ""
+msgstr "vconnection 関数は次に列挙されています。"
 
 #: ../../sdk/io-guide.en.rst:185
 msgid ":c:func:`TSVConnAbort`"
-msgstr ""
+msgstr ":c:func:`TSVConnAbort`"
 
 #: ../../sdk/io-guide.en.rst:186
 msgid ":c:func:`TSVConnClose`"
-msgstr ""
+msgstr ":c:func:`TSVConnClose`"
 
 #: ../../sdk/io-guide.en.rst:187
 msgid ":c:func:`TSVConnClosedGet`"
-msgstr ""
+msgstr ":c:func:`TSVConnClosedGet`"
 
 #: ../../sdk/io-guide.en.rst:188
 msgid ":c:func:`TSVConnRead`"
-msgstr ""
+msgstr ":c:func:`TSVConnRead`"
 
 #: ../../sdk/io-guide.en.rst:189
 msgid ":c:func:`TSVConnReadVIOGet`"
-msgstr ""
+msgstr ":c:func:`TSVConnReadVIOGet`"
 
 #: ../../sdk/io-guide.en.rst:190
 msgid ":c:func:`TSVConnShutdown`"
-msgstr ""
+msgstr ":c:func:`TSVConnShutdown`"
 
 #: ../../sdk/io-guide.en.rst:191
 msgid ":c:func:`TSVConnWrite`"
-msgstr ""
+msgstr ":c:func:`TSVConnWrite`"
 
 #: ../../sdk/io-guide.en.rst:192
 msgid ":c:func:`TSVConnWriteVIOGet`"
-msgstr ""
+msgstr ":c:func:`TSVConnWriteVIOGet`"
