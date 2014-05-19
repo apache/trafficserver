@@ -477,7 +477,7 @@ ipv6
 tr-in
    Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides :ts:cv:`proxy.local.incoming_ip_to_bind` for this port.
 
-   Not compatible with: ``ip-in``, ``ssl``, ``blind``
+   Not compatible with: ``ip-in``, ``blind``
 
 tr-out
    Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides :ts:cv:`proxy.local.outgoing_ip_to_bind` for this port.
@@ -507,12 +507,12 @@ ip-out
 ip-resolve
    Set the :ts:cv:`host resolution style <proxy.config.hostdb.ip_resolve>` for transactions on this proxy port.
 
-   Not compatible with: ``tr-out``.
+   Not compatible with: ``tr-out`` - this option requires a value of ``client;none`` which is forced and should not be explicitly specified.
 
 ssl
    Require SSL termination for inbound connections. SSL :ref:`must be configured <configuring-ssl-termination>` for this option to provide a functional server port.
 
-   Not compatible with: ``tr-in``, ``blind``.
+   Not compatible with: ``blind``.
 
 blind
    Accept only ``CONNECT`` transactions on this port.

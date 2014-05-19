@@ -331,12 +331,6 @@ HttpProxyPort::processOptions(char const* opts) {
     m_host_res_preference[1] = HOST_RES_PREFER_NONE;
   }
 
-  // Can't be inbound transparent and SSL.
-  if (TRANSPORT_SSL == m_type && m_inbound_transparent_p) {
-    Warning("SSL and inbound transparency on the same port is not supported - transparency disabled:  '%s'", opts);
-    m_inbound_transparent_p = false;
-  }
-
   // Transparent pass-through requires tr-in
   if (m_transparent_passthrough && !m_inbound_transparent_p) {
     Warning("Port descriptor '%s' has transparent pass-through enabled without inbound transparency, this will be ignored.", opts);
