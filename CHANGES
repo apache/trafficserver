@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2029] Eliminate CacheHttpHdr argument from Cache::generate_key().
+
   *) [TS-2821] Added configuration for max concurrent streams for SPDY.
 
   *) [TS-2558] Remove check for inbound transparency vs. SSL.

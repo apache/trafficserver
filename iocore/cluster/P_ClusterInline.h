@@ -88,7 +88,7 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
       int url_hlen;
       INK_MD5 url_only_md5;
 
-      Cache::generate_key(&url_only_md5, url, 0);
+      Cache::generate_key(&url_only_md5, url);
       url_hostname = url->host_get(&url_hlen);
 
       len += request->m_heap->marshal_length();

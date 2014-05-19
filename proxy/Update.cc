@@ -1427,8 +1427,8 @@ UpdateSM::HandleSMEvent(int event, Event * /* e ATS_UNUSED */)
         }
 
         INK_MD5 url_md5;
-        Cache::generate_key(&url_md5, &_EN->_URLhandle, (_EN->_num_request_headers ? _EN->_http_hdr : NULL));
-        Cache::generate_key(&url_md5, &_EN->_URLhandle, _EN->_http_hdr);
+
+        Cache::generate_key(&url_md5, &_EN->_URLhandle);
         ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
         if (m) {
           // URL hashed to remote node, do nothing.
@@ -1672,11 +1672,9 @@ RecursiveHttpGet::RecursiveHttpGetEvent(int event, Event * d)
             ue = NULL;
             continue;
           }
-          // I think we're generating the cache key just to get
-          //   a hash of the URL.  Used to use Cache::generate_key
-          //   that no longer works with vary_on_user_agent
-          //   isn't turned on
-//              Cache::generate_key(&ue->_url_md5, &ue->_URLhandle, _http_hdr);
+          // I think we're generating the cache key just to get a hash of the URL.
+          // Used to use Cache::generate_key that no longer works with vary_on_user_agent
+          // isn't turned on. ToDo.
           ue->_URLhandle.MD5_get(&ue->_url_md5);
 
           if (_CL->HashAdd(ue)) {

@@ -3449,13 +3449,13 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     INK_MD5 url_md5;
-    Cache::generate_key(&url_md5, url, request);
+    Cache::generate_key(&url_md5, url);
     ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
 
     if (m) {
       // Do remote open_write()
       INK_MD5 url_only_md5;
-      Cache::generate_key(&url_only_md5, url, 0);
+      Cache::generate_key(&url_only_md5, url);
       return Cluster_write(cont, expected_size, (MIOBuffer *) 0, m,
                            &url_only_md5, type,
                            false, pin_in_cache, CACHE_OPEN_WRITE_LONG,
