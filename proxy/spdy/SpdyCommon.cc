@@ -49,7 +49,8 @@ spdy_config_load()
   // http server, unless '--port' is given.
   //
   SPDY_CFG.spdy.serv_port = -1;
-  SPDY_CFG.spdy.max_concurrent_streams = 1000;
+//  SPDY_CFG.spdy.max_concurrent_streams = 1000;
+  REC_EstablishStaticConfigInt32(SPDY_CFG.spdy.max_concurrent_streams, "proxy.config.spdy.max_concurrent_streams");
   SPDY_CFG.spdy.initial_window_size = (64 << 10);
 
   spdy_callbacks_init(&SPDY_CFG.spdy.callbacks);

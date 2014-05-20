@@ -1929,6 +1929,13 @@ RecordElement RecordsConfig[] = {
   {RECT_LOCAL, "proxy.local.http.parent_proxy.disable_connect_tunneling", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
+  //############
+  //#
+  //# SPDY global configuration.
+  //#
+  //############
+  {RECT_CONFIG, "proxy.config.spdy.max_concurrent_streams", RECD_INT, "1000", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL},
+
   //# Add LOCAL Records Here
   {RECT_LOCAL, "proxy.local.incoming_ip_to_bind", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

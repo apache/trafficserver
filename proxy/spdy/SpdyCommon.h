@@ -60,7 +60,7 @@ struct SpdyConfig {
   bool enable_tls;
   bool keep_host_port;
   int serv_port;
-  int max_concurrent_streams;
+  int32_t max_concurrent_streams;
   int initial_window_size;
   spdylay_session_callbacks callbacks;
 };

@@ -2224,6 +2224,14 @@ ICP Configuration
 
    Specifies the timeout used for ICP queries.
 
+SPDY Configuration
+==================
+
+.. ts:cv:: CONFIG proxy.config.spdy.max_concurrent_streams INT 1000
+   :reloadable:
+
+   Set the maximum number of concurrent streams per client SPDY connection.
+
 Scheduled Update Configuration
 ==============================
 
