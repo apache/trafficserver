@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+source /home/jenkins/bin/environment.sh
+
 # Check if it's a debug or release build
 enable_debug=""
 test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && enable_debug="--enable-debug"
@@ -32,7 +34,8 @@ test "${NODE_NAME#RHEL 5}" != "${NODE_NAME}" && enable_werror=""
 # Change to the build area (this is previously setup in extract.sh)
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 
-./configure \
+mkdir BUILDS && cd BUILDS
+../configure \
     --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
     --enable-experimental-plugins \
     --enable-example-plugins \

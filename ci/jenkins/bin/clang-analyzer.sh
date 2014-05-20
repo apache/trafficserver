@@ -16,8 +16,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+source /home/jenkins/bin/environment.sh
 cd "${WORKSPACE}/src"
 
 autoreconf -fi
 ./configure --enable-experimental-plugins
-scan-build -o /home/jenkins/clang-analyzer --html-title="ATS master branch"  make -j6
+scan-build -o /home/jenkins/clang-analyzer --html-title="ATS master branch"  ${ATS_MAKE} -j6
+
+${ATS_MAKE} distclean

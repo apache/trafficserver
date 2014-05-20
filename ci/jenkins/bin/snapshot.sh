@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+source /home/jenkins/bin/environment.sh
 cd "${WORKSPACE}/src"
 
 autoreconf -fi
@@ -37,6 +38,5 @@ mv ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2.new ${ATS_SRC_HOME}/traff
 # Duplicate the current source tree, such that we can run verifications on this
 # tree in parallel on the jenkins master.
 cd "${WORKSPACE}"
-rsync --exclude '*.tar.bz2' -av src/ src_in-tree
-rsync --exclude '*.tar.bz2' -av src/ src_out-of-tree
-rsync --exclude '*.tar.bz2' -av src/ src_rat
+rsync --delete --exclude '*.tar.bz2' -av src/ src_in-tree
+rsync --delete --exclude '*.tar.bz2' -av src/ src_out-of-tree

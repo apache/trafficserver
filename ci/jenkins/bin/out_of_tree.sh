@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+source /home/jenkins/bin/environment.sh
 cd "${WORKSPACE}/src_out-of-tree"
 
 if test "${JOB_NAME#*type=out_of_tree}" != "${JOB_NAME}"; then

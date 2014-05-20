@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+source /home/jenkins/bin/environment.sh
+
 # Setup the build and install area for this build
 mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/build"
 mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/install"
