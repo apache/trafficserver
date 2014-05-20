@@ -91,7 +91,13 @@ LogAccessHttp::init()
 
   if (hdr->client_request.valid()) {
     m_client_request = &(hdr->client_request);
-    m_client_req_url_str = m_client_request->url_string_get_ref(&m_client_req_url_len);
+
+    // make a copy of the incoming url into the arena
+    const char *url_string_ref = m_client_request->url_string_get_ref(&m_client_req_url_len);
+    m_client_req_url_str = m_arena.str_alloc(m_client_req_url_len + 1);
+    memcpy(m_client_req_url_str, url_string_ref, m_client_req_url_len);
+    m_client_req_url_str[m_client_req_url_len] = '\0';
+
     m_client_req_url_canon_str = LogUtils::escapify_url(&m_arena, m_client_req_url_str, m_client_req_url_len,
                                                         &m_client_req_url_canon_len);
     m_client_req_url_path_str = m_client_request->path_get(&m_client_req_url_path_len);
