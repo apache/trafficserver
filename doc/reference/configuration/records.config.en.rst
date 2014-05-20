@@ -420,7 +420,7 @@ Alarm Configuration
 
        - the alarm message
        - the value of :ts:cv:`proxy.config.product_name`
-       - the value of :ts:cv:`proxy.config.admin.admin_user`
+       - the value of :ts:cv:`proxy.config.admin.user_id`
        - the value of :ts:cv:`proxy.config.alarm_email`
 
 .. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL

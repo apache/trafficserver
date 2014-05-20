@@ -165,6 +165,43 @@ is handled in a generic way, as described in the next section, or in a :ref:`mor
 needed if the variable is marked as dynamically updateable (|RECU_DYNAMIC|_) although HTTP configuration variables
 should be dynamic if possible.
 
+--------------------------
+Documentation and Defaults
+--------------------------
+
+A configuration variable should be documented in :file:`records.config`. There are many examples  in the file already that can be used for guidance. The general format is to use the tag ::
+
+   .. ts:cv::
+
+The arguments to this are the same as for the configuration file. The documentation generator will pick out key bits and use them to decorate the entry. In particular if a value is present it will be removed and used as the default value. You can attach some additional options to the variable. These are
+
+reloadable
+   The variable can be reloaded via command line on a running Traffic Server.
+
+metric
+   Specify the units for the value. This is critical for variables that use unexpected or non-obvious metrics, such as minutes instead of seconds, or disk sectors instead of bytes.
+
+deprecated
+   Mark a variable as deprecated.
+
+.. topic:: Example
+
+   ::
+
+      :reloadable:
+      :metric: minutes
+      :deprecated:
+
+If you need to refer to another configuration variable in the documentation, you can use the form ::
+
+   :ts:cv:`the.full.name.of.the.variable`
+
+This will display the name as a link to the definition.
+
+In general a new configuration variable should be present in the default :file:`records.config`. Although users should peruse this documentation that is not as frequent an occurence as we would like. It is much more common to read through :file:`records.config` for values that can be tuned.
+
+Such defaults should be added to the file ``proxy/config/records.config.default.in``. This is used to generate the default :file:`records.config`. Just add the variable to the file in an appropriate place with a proper default as this will now override whatever default you put in the code for new installs.
+
 ------------------------------
 Handling Updates
 ------------------------------
