@@ -72,9 +72,9 @@ CallbackTable *remote_event_callbacks;
 void *
 event_poll_thread_main(void *arg)
 {
-  TSError err;
+  TSMgmtError err;
   int sock_fd;
-  TSEvent *event_notice = NULL;
+  TSMgmtEvent *event_notice = NULL;
 
   sock_fd = *((int *) arg);     // should be same as event_socket_fd
 
@@ -85,7 +85,7 @@ event_poll_thread_main(void *arg)
       break;
     }
 
-    // read the entire message, so create TSEvent for the callback
+    // read the entire message, so create TSMgmtEvent for the callback
     event_notice = TSEventCreate();
     err = parse_event_notification(sock_fd, event_notice);
     if (err == TS_ERR_NET_READ || err == TS_ERR_NET_EOF) {
@@ -109,18 +109,18 @@ event_poll_thread_main(void *arg)
  *
  * purpose: Given an event, determines and calls the registered cb functions
  *          in the CallbackTable for remote events
- * input: arg - should be an TSEvent with the event info sent from TM msg
+ * input: arg - should be an TSMgmtEvent with the event info sent from TM msg
  * output: returns when done calling all the callbacks
  * notes: None
  **********************************************************************/
 void *
 event_callback_thread(void *arg)
 {
-  TSEvent *event_notice;
+  TSMgmtEvent *event_notice;
   EventCallbackT *event_cb;
   int index;
 
-  event_notice = (TSEvent *) arg;
+  event_notice = (TSMgmtEvent *) arg;
   index = (int) event_notice->id;
   LLQ *func_q;                  // list of callback functions need to call
 

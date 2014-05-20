@@ -27,41 +27,41 @@
 #define RECORD_SET 1
 
 // Get a records.config variable by name
-TSError Cli_RecordGet(const char *rec_name, TSRecordEle * rec_val);
+TSMgmtError Cli_RecordGet(const char *rec_name, TSRecordEle * rec_val);
 
 // Get an integer type records.config variable
-TSError Cli_RecordGetInt(const char *rec_name, TSInt * int_val);
+TSMgmtError Cli_RecordGetInt(const char *rec_name, TSInt * int_val);
 
 // Get an counter type records.config variable
-TSError Cli_RecordGetCounter(const char *rec_name, TSCounter * ctr_val);
+TSMgmtError Cli_RecordGetCounter(const char *rec_name, TSCounter * ctr_val);
 
 // Get a float type records.config variable
-TSError Cli_RecordGetFloat(const char *rec_name, TSFloat * float_val);
+TSMgmtError Cli_RecordGetFloat(const char *rec_name, TSFloat * float_val);
 
 // Get a string type records.config variable
-TSError Cli_RecordGetString(const char *rec_name, char **string_val);
+TSMgmtError Cli_RecordGetString(const char *rec_name, char **string_val);
 
 // Use a string to set a records.config variable
-TSError Cli_RecordSet(const char *rec_name, const char *rec_value, TSActionNeedT * action_need);
+TSMgmtError Cli_RecordSet(const char *rec_name, const char *rec_value, TSActionNeedT * action_need);
 
 // Set an integer type records.config variable
-TSError Cli_RecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need);
+TSMgmtError Cli_RecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need);
 
 //Set a float type records.config variable
-TSError Cli_RecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need);
+TSMgmtError Cli_RecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need);
 
 // Set a string type records.config variable
-TSError Cli_RecordSetString(const char *rec_name, TSString str_val, TSActionNeedT * action_need);
+TSMgmtError Cli_RecordSetString(const char *rec_name, TSString str_val, TSActionNeedT * action_need);
 
 // Retrieve and display contents of a rules file
-TSError Cli_DisplayRules(TSFileNameT fname);
+TSMgmtError Cli_DisplayRules(TSFileNameT fname);
 
 // Retrieve and use config file from remote URL
-TSError Cli_SetConfigFileFromUrl(TSFileNameT file, const char *url);
+TSMgmtError Cli_SetConfigFileFromUrl(TSFileNameT file, const char *url);
 
 // enable recent configuration changes by performing the action specified
 // by the action_need value
-TSError Cli_ConfigEnactChanges(TSActionNeedT action_need);
+TSMgmtError Cli_ConfigEnactChanges(TSActionNeedT action_need);
 
 // evaluate "stringval" and return 1 if "on", otherwise 0
 int Cli_EvalOnOffString(char *stringval);

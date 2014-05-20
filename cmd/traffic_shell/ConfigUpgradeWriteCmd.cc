@@ -54,7 +54,7 @@ CIFCWriteEntry::~CIFCWriteEntry()
 }
 
 // check IFCVERSION IFCPATH and IFCFILENAME setup
-TSError
+TSMgmtError
 CIFCWriteEntry::ConfigWriteCheckIFCEnv()
 {
   char *pathPtr;
@@ -73,7 +73,7 @@ CIFCWriteEntry::ConfigWriteCheckIFCEnv()
   return TS_ERR_OKAY;
 }
 
-TSError
+TSMgmtError
 CIFCWriteEntry::Cli_NewIFCFile()
 {
   FILE *Fptr;

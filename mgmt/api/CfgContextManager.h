@@ -48,9 +48,9 @@
  * of the rules in the queue
  */
 CfgContext *CfgContextCreate(TSFileNameT filetype);
-TSError CfgContextDestroy(CfgContext * ctx);
-TSError CfgContextCommit(CfgContext * ctx, LLQ * errRules = NULL);
-TSError CfgContextGet(CfgContext * ctx);
+TSMgmtError CfgContextDestroy(CfgContext * ctx);
+TSMgmtError CfgContextCommit(CfgContext * ctx, LLQ * errRules = NULL);
+TSMgmtError CfgContextGet(CfgContext * ctx);
 
 
 /***************************************************************************
@@ -66,12 +66,12 @@ CfgEleObj *CfgContextGetObjAt(CfgContext * ctx, int index);
 TSCfgEle *CfgContextGetFirst(CfgContext * ctx, TSCfgIterState * state);
 TSCfgEle *CfgContextGetNext(CfgContext * ctx, TSCfgIterState * state);
 
-TSError CfgContextMoveEleUp(CfgContext * ctx, int index);
-TSError CfgContextMoveEleDown(CfgContext * ctx, int index);
+TSMgmtError CfgContextMoveEleUp(CfgContext * ctx, int index);
+TSMgmtError CfgContextMoveEleDown(CfgContext * ctx, int index);
 
-TSError CfgContextAppendEle(CfgContext * ctx, TSCfgEle * ele);
-TSError CfgContextInsertEleAt(CfgContext * ctx, TSCfgEle * ele, int index);
-TSError CfgContextRemoveEleAt(CfgContext * ctx, int index);
-TSError CfgContextRemoveAll(CfgContext * ctx);
+TSMgmtError CfgContextAppendEle(CfgContext * ctx, TSCfgEle * ele);
+TSMgmtError CfgContextInsertEleAt(CfgContext * ctx, TSCfgEle * ele, int index);
+TSMgmtError CfgContextRemoveEleAt(CfgContext * ctx, int index);
+TSMgmtError CfgContextRemoveAll(CfgContext * ctx);
 
 #endif

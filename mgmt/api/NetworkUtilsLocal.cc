@@ -47,7 +47,7 @@
  * flushes the socket by reading the entire message out of the socket
  * and then gets rid of the msg
  **************************************************************************/
-TSError
+TSMgmtError
 socket_flush(struct SocketInfo sock_info)
 {
   int ret, byte_read = 0;
@@ -91,7 +91,7 @@ socket_flush(struct SocketInfo sock_info)
  * output:  number of bytes read
  * note:    socket_read is implemented in WebUtils.cc
  *************************************************************************/
-TSError
+TSMgmtError
 socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
 {
   int ret, byte_read = 0;
@@ -133,7 +133,7 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
  * output:  TS_ERR_xx (depends on num bytes written)
  * note:    socket_read is implemented in WebUtils.cc
  *************************************************************************/
-TSError
+TSMgmtError
 socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
 {
   int ret, byte_wrote = 0;
@@ -179,10 +179,10 @@ socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
  * notes: Since preprocess_msg already removes the OpType and msg_len, this part o
  *        the message is not dealt with by the other parsing functions
  **********************************************************************/
-TSError
+TSMgmtError
 preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
 {
-  TSError ret;
+  TSMgmtError ret;
   int req_len;
   int16_t op;
 
@@ -256,7 +256,7 @@ Lerror:
  * output: TS_ERR_xx
  * notes: request format = <TSFileNameT>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_file_read_request(char *req, TSFileNameT * file)
 {
   int16_t file_t;
@@ -283,7 +283,7 @@ parse_file_read_request(char *req, TSFileNameT * file)
  * output: TS_ERR_xx
  * notes: request format = <TSFileNameT> <version> <size> <text>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_file_write_request(char *req, TSFileNameT * file, int *ver, int *size, char **text)
 {
   int16_t file_t, f_ver;
@@ -323,7 +323,7 @@ parse_file_write_request(char *req, TSFileNameT * file, int *ver, int *size, cha
  * output: TS_ERR_xx
  * notes: format= <name_len> <val_len> <name> <val>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_request_name_value(char *req, char **name_1, char **val_1)
 {
   int32_t name_len, val_len;
@@ -363,7 +363,7 @@ parse_request_name_value(char *req, char **name_1, char **val_1)
  * output: TS_ERR_xx
  * notes: request format = <TSDiagsT> <diag_msg_len> <diag_msg>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_diags_request(char *req, TSDiagsT * mode, char **diag_msg)
 {
   int16_t diag_t;
@@ -397,7 +397,7 @@ parse_diags_request(char *req, TSDiagsT * mode, char **diag_msg)
  * output: TS_ERR_xx
  * notes: request format = <TSProxyStateT> <TSCacheClearT>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_proxy_state_request(char *req, TSProxyStateT * state, TSCacheClearT * clear)
 {
   int16_t state_t, cache_t;
@@ -435,10 +435,10 @@ parse_proxy_state_request(char *req, TSProxyStateT * state, TSCacheClearT * clea
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
  **********************************************************************/
-TSError
-send_reply(struct SocketInfo sock_info, TSError retval)
+TSMgmtError
+send_reply(struct SocketInfo sock_info, TSMgmtError retval)
 {
-  TSError ret;
+  TSMgmtError ret;
   char msg[SIZE_ERR_T];
   int16_t ret_val;
 
@@ -458,16 +458,16 @@ send_reply(struct SocketInfo sock_info, TSError retval)
  * purpose: sends the reply in response to a request to get list of string
  *          tokens (delimited by REMOTE_DELIM_STR)
  * input: sock_info -
- *        retval - TSError return type for the CoreAPI call
+ *        retval - TSMgmtError return type for the CoreAPI call
  *        list - string delimited list of string tokens
  * output: TS_ERR_*
  * notes:
- * format: <TSError> <string_list_len> <delimited_string_list>
+ * format: <TSMgmtError> <string_list_len> <delimited_string_list>
  **********************************************************************/
-TSError
-send_reply_list(struct SocketInfo sock_info, TSError retval, char *list)
+TSMgmtError
+send_reply_list(struct SocketInfo sock_info, TSMgmtError retval, char *list)
 {
-  TSError ret;
+  TSMgmtError ret;
   int msg_pos = 0, total_len;
   char *msg;
   int16_t ret_val;
@@ -513,13 +513,13 @@ send_reply_list(struct SocketInfo sock_info, TSError retval, char *list)
  * output: TS_ERR_*
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
- *        format = <TSError> <rec_val_len> <name_size> <rec_type> <rec_val> <rec_name>
+ *        format = <TSMgmtError> <rec_val_len> <name_size> <rec_type> <rec_val> <rec_name>
  **********************************************************************/
-TSError
-send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, int val_size,
+TSMgmtError
+send_record_get_reply(struct SocketInfo sock_info, TSMgmtError retval, void *val, int val_size,
     TSRecordT rec_type, const char *rec_name)
 {
-  TSError ret;
+  TSMgmtError ret;
   int msg_pos = 0, total_len;
   char *msg;
   int16_t record_t, ret_val;
@@ -576,10 +576,10 @@ send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, in
  *        so no cleaning up is done.
  *        format =
  **********************************************************************/
-TSError
-send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT action_need)
+TSMgmtError
+send_record_set_reply(struct SocketInfo sock_info, TSMgmtError retval, TSActionNeedT action_need)
 {
-  TSError ret;
+  TSMgmtError ret;
   int total_len;
   char *msg;
   int16_t action_t, ret_val;
@@ -613,12 +613,12 @@ send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT
  * output: TS_ERR_*
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
- *        reply format = <TSError> <file_ver> <file_size> <file_text>
+ *        reply format = <TSMgmtError> <file_ver> <file_size> <file_text>
  **********************************************************************/
-TSError
-send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int size, char *text)
+TSMgmtError
+send_file_read_reply(struct SocketInfo sock_info, TSMgmtError retval, int ver, int size, char *text)
 {
-  TSError ret;
+  TSMgmtError ret;
   int msg_pos = 0, msg_len;
   char *msg;
   int16_t ret_val, f_ver;
@@ -664,13 +664,13 @@ send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int s
  * input:
  *        int fd - socket fd to use.
  * output: TS_ERR_*
- * notes: this function DOES NOT HAVE IT"S OWN TSError TO SEND!!!!
+ * notes: this function DOES NOT HAVE IT"S OWN TSMgmtError TO SEND!!!!
  *        reply format = <TSProxyStateT>
  **********************************************************************/
-TSError
+TSMgmtError
 send_proxy_state_get_reply(struct SocketInfo sock_info, TSProxyStateT state)
 {
-  TSError ret;
+  TSMgmtError ret;
   char msg[SIZE_PROXY_T];
   int16_t state_t;
 
@@ -690,16 +690,16 @@ send_proxy_state_get_reply(struct SocketInfo sock_info, TSProxyStateT state)
  *
  * purpose: sends the reply in response to a request check if event is active
  * input: sock_info -
- *        retval - TSError return type for the EventIsActive core call
+ *        retval - TSMgmtError return type for the EventIsActive core call
  *        active - is the requested event active or not?
  * output: TS_ERR_*
  * notes:
- * format: <TSError> <bool>
+ * format: <TSMgmtError> <bool>
  **********************************************************************/
-TSError
-send_event_active_reply(struct SocketInfo sock_info, TSError retval, bool active)
+TSMgmtError
+send_event_active_reply(struct SocketInfo sock_info, TSMgmtError retval, bool active)
 {
-  TSError ret;
+  TSMgmtError ret;
   int total_len;
   char *msg;
   int16_t is_active, ret_val;
@@ -732,10 +732,10 @@ send_event_active_reply(struct SocketInfo sock_info, TSError retval, bool active
  * output: TS_ERR_xx
  * note: format: <OpType> <event_name_len> <event_name> <desc_len> <desc>
  **********************************************************************/
-TSError
-send_event_notification(struct SocketInfo sock_info, TSEvent * event)
+TSMgmtError
+send_event_notification(struct SocketInfo sock_info, TSMgmtEvent * event)
 {
-  TSError ret;
+  TSMgmtError ret;
   int total_len, name_len, desc_len;
   char *msg;
   int16_t op_t;

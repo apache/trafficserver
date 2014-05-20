@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2823] Change the Mgmt API names TSEvent and TSError to avoid name
+     collisions with the plugin API.
+
   *) [TS-2029] Eliminate CacheHttpHdr argument from Cache::generate_key().
 
   *) [TS-2821] Added configuration for max concurrent streams for SPDY.

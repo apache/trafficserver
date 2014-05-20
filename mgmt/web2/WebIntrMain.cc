@@ -32,6 +32,7 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "LocalManager.h"
+#include "Alarms.h"
 #include "WebHttp.h"
 #include "WebGlobals.h"
 #include "MgmtUtils.h"

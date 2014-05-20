@@ -2557,14 +2557,14 @@ CfgContext::~CfgContext()
   }
 }
 
-TSError CfgContext::addEle(CfgEleObj * ele)
+TSMgmtError CfgContext::addEle(CfgEleObj * ele)
 {
   ink_assert(ele != NULL);
   m_eles.enqueue(ele);          // enqueue CfgEleObj at end of Queue
   return TS_ERR_OKAY;
 }
 
-TSError CfgContext::removeEle(CfgEleObj * ele)
+TSMgmtError CfgContext::removeEle(CfgEleObj * ele)
 {
   ink_assert(ele != NULL);
   m_eles.remove(ele);
@@ -2574,7 +2574,7 @@ TSError CfgContext::removeEle(CfgEleObj * ele)
   return TS_ERR_OKAY;
 }
 
-TSError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
+TSMgmtError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
 {
   ink_assert(ele != NULL && after_ele != NULL);
   m_eles.insert(ele, after_ele);
@@ -2583,7 +2583,7 @@ TSError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
 }
 
 // insert Ele at front of the Queue
-TSError CfgContext::pushEle(CfgEleObj * ele)
+TSMgmtError CfgContext::pushEle(CfgEleObj * ele)
 {
   ink_assert(ele != NULL);
   m_eles.push(ele);

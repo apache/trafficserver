@@ -114,7 +114,7 @@ remove_event_client(EventClientT * client, InkHashTable * table)
  * output: TS_ERR_xx
  * note: None
  *********************************************************************/
-TSError
+TSMgmtError
 init_mgmt_events()
 {
   int ret;
@@ -166,8 +166,8 @@ delete_mgmt_events()
 /*********************************************************************
  * delete_event_queue
  *
- * purpose: frees queue where the elements are of type TSEvent* 's
- * input: LLQ * q - a queue with entries of TSEvent*'s
+ * purpose: frees queue where the elements are of type TSMgmtEvent* 's
+ * input: LLQ * q - a queue with entries of TSMgmtEvent*'s
  * output: None
  * note: None
  *********************************************************************/
@@ -178,10 +178,10 @@ delete_event_queue(LLQ * q)
     return;
 
   // now for every element, dequeue and free
-  TSEvent *ele;
+  TSMgmtEvent *ele;
 
   while (!queue_is_empty(q)) {
-    ele = (TSEvent *) dequeue(q);
+    ele = (TSMgmtEvent *) dequeue(q);
     ats_free(ele);
   }
 
@@ -202,9 +202,9 @@ delete_event_queue(LLQ * q)
 void
 apiEventCallback(alarm_t newAlarm, const char * /* ip ATS_UNUSED */, const char *desc)
 {
-  // create an TSEvent
+  // create an TSMgmtEvent
   // addEvent(new_alarm, ip, desc) // adds event to mgmt_events
-  TSEvent *newEvent;
+  TSMgmtEvent *newEvent;
 
   newEvent = TSEventCreate();
   newEvent->id = newAlarm;
@@ -381,7 +381,7 @@ event_callback_main(void *arg)
     // events_registered queue for each client connection to see if that client
     // has a callback registered for that event_id
 
-    TSEvent *event;
+    TSMgmtEvent *event;
 
     if (!mgmt_events || queue_is_empty(mgmt_events)) {  //no events to process
       //fprintf(stderr, "[event_callback_main] NO EVENTS TO PROCESS\n");
@@ -391,7 +391,7 @@ event_callback_main(void *arg)
     // iterate through each event in mgmt_events
     while (!queue_is_empty(mgmt_events)) {
       ink_mutex_acquire(&mgmt_events_lock);     //acquire lock
-      event = (TSEvent *) dequeue(mgmt_events);        // get what we want
+      event = (TSMgmtEvent *) dequeue(mgmt_events);        // get what we want
       ink_mutex_release(&mgmt_events_lock);     // release lock
 
       if (!event)
@@ -454,7 +454,7 @@ event_callback_main(void *arg)
  * output: TS_ERR_xx
  * note: the req should be the event name; does not send a reply to client
  *************************************************************************/
-TSError
+TSMgmtError
 handle_event_reg_callback(EventClientT * client, char *req)
 {
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list
@@ -482,7 +482,7 @@ handle_event_reg_callback(EventClientT * client, char *req)
  * output: TS_ERR_xx
  * note: the req should be the event name; does not send reply to client
  *************************************************************************/
-TSError
+TSMgmtError
 handle_event_unreg_callback(EventClientT * client, char *req)
 {
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list

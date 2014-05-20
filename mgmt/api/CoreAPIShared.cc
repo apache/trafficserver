@@ -39,12 +39,12 @@ static int poll_read(int fd, int timeout);
  *         hdr_size -- size of the header
  *         body     -- pointer to the head of the body
  *         bdy_size -- size of the body
- * OUTPUT: TSError -- error status
+ * OUTPUT: TSMgmtError -- error status
  */
-TSError
+TSMgmtError
 parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size)
 {
-  TSError err = TS_ERR_OKAY;
+  TSMgmtError err = TS_ERR_OKAY;
   char *buf;
 
   // locate HTTP divider
@@ -77,7 +77,7 @@ END:
  *         bufsize -- the size allocated for the buffer
  * OUTPUT: bool -- true if everything went well. false otherwise
  */
-TSError
+TSMgmtError
 readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
 {
   int64_t err, idx;
@@ -131,7 +131,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
  * OUTPUT: bool -- true if everything went well. false otherwise (and sock is
  *                 closed)
  */
-TSError
+TSMgmtError
 sendHTTPRequest(int sock, char *req, uint64_t timeout)
 {
   char request[BUFSIZ];

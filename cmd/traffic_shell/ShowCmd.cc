@@ -1062,7 +1062,7 @@ ShowStatus()
 int
 ShowVersion()
 {
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
   TSString ts_version = NULL;
   TSString tm_version = NULL;
 
@@ -1139,7 +1139,7 @@ ShowSecurity()
 {
   Cli_Printf("\n");
   Cli_Printf("Traffic Server Access\n" "-------------------\n");
-  TSError status = Cli_DisplayRules(TS_FNAME_IP_ALLOW);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_IP_ALLOW);
 
   return status;
 }
@@ -1273,7 +1273,7 @@ ShowIcpPeer()
   // display rules from icp.config
   Cli_Printf("\n");
   Cli_Printf("icp.config Rules\n" "-------------------\n");
-  TSError status = Cli_DisplayRules(TS_FNAME_ICP_PEER);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_ICP_PEER);
   Cli_Printf("\n");
 
   return status;
@@ -1428,7 +1428,7 @@ ShowCacheRules()
   Cli_Printf("\n");
 
   Cli_Printf("cache.config rules\n" "-------------------\n");
-  TSError status = Cli_DisplayRules(TS_FNAME_CACHE_OBJ);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_CACHE_OBJ);
 
   Cli_Printf("\n");
 
@@ -1442,7 +1442,7 @@ ShowCacheStorage()
   // display rules from storage.config
   Cli_Printf("storage.config rules\n");
 
-  TSError status = Cli_DisplayRules(TS_FNAME_STORAGE);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_STORAGE);
 
   return status;
 }
@@ -1742,7 +1742,7 @@ ShowSsl()
 int
 ShowParents()
 {
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
   TSInt parent_enabled = -1;
   TSString parent_cache = NULL;
 
@@ -1764,7 +1764,7 @@ ShowParentRules()
   Cli_Printf("\n");
 
   Cli_Printf("parent.config rules\n" "-------------------\n");
-  TSError status = Cli_DisplayRules(TS_FNAME_PARENT_PROXY);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_PARENT_PROXY);
   Cli_Printf("\n");
 
   return status;
@@ -1778,7 +1778,7 @@ ShowRemap()
   Cli_Printf("\n");
 
   Cli_Printf("remap.config rules\n" "-------------------\n");
-  TSError status = Cli_DisplayRules(TS_FNAME_REMAP);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_REMAP);
   Cli_Printf("\n");
 
   return status;
@@ -1823,7 +1823,7 @@ ShowSocksRules()
   Cli_Printf("\n");
 
   Cli_Printf("socks.config rules\n" "-------------------\n");
-  TSError status = Cli_DisplayRules(TS_FNAME_SOCKS);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_SOCKS);
   Cli_Printf("\n");
 
   return status;
@@ -1874,7 +1874,7 @@ ShowScheduledUpdateRules()
   Cli_Printf("\n");
 
   Cli_Printf("update.config rules\n" "-------------------\n");
-  TSError status = Cli_DisplayRules(TS_FNAME_UPDATE_URL);
+  TSMgmtError status = Cli_DisplayRules(TS_FNAME_UPDATE_URL);
   Cli_Printf("\n");
 
   return status;
@@ -2295,7 +2295,7 @@ ShowAlarms()
   char *name;
 
   events = TSListCreate();
-  TSError status = TSActiveEventGetMlt(events);
+  TSMgmtError status = TSActiveEventGetMlt(events);
   if (status != TS_ERR_OKAY) {
     if (events) {
       TSListDestroy(events);

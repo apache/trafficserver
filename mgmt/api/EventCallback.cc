@@ -180,7 +180,7 @@ get_events_with_callbacks(CallbackTable * cb_table)
  * output: TS_ERR_xx
  * notes:
  **********************************************************************/
-TSError
+TSMgmtError
 cb_table_register(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func, void *data, bool * first_cb)
 {
   bool first_time = 0;
@@ -249,7 +249,7 @@ cb_table_register(CallbackTable * cb_table, char *event_name, TSEventSignalFunc 
  * output: TS_ERR_xx
  * notes:
  **********************************************************************/
-TSError
+TSMgmtError
 cb_table_unregister(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func)
 {
   TSEventSignalFunc cb_fun;

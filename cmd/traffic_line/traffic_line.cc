@@ -53,7 +53,7 @@ static int ShowStatus;
 static char ClearAlarms[1024];
 static int VersionFlag;
 
-static TSError
+static TSMgmtError
 handleArgInvocation()
 {
   if (ReRead == 1) {
@@ -75,7 +75,7 @@ handleArgInvocation()
   } else if (ClearNode == 1) {
     return TSStatsReset(false);
   } else if (*ZeroNode != '\0' || *ZeroCluster != '\0') {
-    TSError err;
+    TSMgmtError err;
     TSRecordEle *rec_ele = TSRecordEleCreate();
     char *name = *ZeroNode ? ZeroNode : ZeroCluster;
 
@@ -178,7 +178,7 @@ handleArgInvocation()
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
       return TS_ERR_FAIL;
     } else {
-      TSError err;
+      TSMgmtError err;
       TSRecordEle *rec_ele = TSRecordEleCreate();
 
       if ((err = TSRecordGet(ReadVar, rec_ele)) != TS_ERR_OKAY) {
@@ -211,7 +211,7 @@ handleArgInvocation()
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
       return TS_ERR_FAIL;
     } else {
-      TSError err;
+      TSMgmtError err;
       TSList list = TSListCreate();
 
       if ((err = TSRecordGetMatchMlt(MatchVar, list)) != TS_ERR_OKAY) {
@@ -251,7 +251,7 @@ handleArgInvocation()
       fprintf(stderr, "%s: Set requires a -v argument\n", programName);
       return TS_ERR_FAIL;
     } else {
-      TSError err;
+      TSMgmtError err;
       TSActionNeedT action;
 
       if ((err = TSRecordSet(SetVar, VarValue, &action)) != TS_ERR_OKAY) {
@@ -290,7 +290,7 @@ int
 main(int /* argc ATS_UNUSED */, char **argv)
 {
   AppVersionInfo appVersionInfo;
-  TSError status;
+  TSMgmtError status;
 
   programName = argv[0];
 

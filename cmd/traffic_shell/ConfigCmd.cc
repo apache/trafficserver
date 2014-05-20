@@ -2157,7 +2157,7 @@ ConfigGet(const char *rec_name)
 {
   Cli_Debug("ConfigGet: rec_name %s\n", rec_name);
 
-  TSError status;
+  TSMgmtError status;
   TSRecordEle rec_val;
 
   status = Cli_RecordGet(rec_name, &rec_val);
@@ -2196,7 +2196,7 @@ ConfigSet(const char *rec_name, const char *value)
 {
   Cli_Debug("ConfigSet: rec_name %s value %s\n", rec_name, value);
 
-  TSError status;
+  TSMgmtError status;
   TSActionNeedT action_need;
 
   status = Cli_RecordSet(rec_name, value, &action_need);
@@ -2213,7 +2213,7 @@ ConfigSet(const char *rec_name, const char *value)
 int
 ConfigName(const char *proxy_name)
 {
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
   TSString str_val = NULL;
   TSActionNeedT action_need;
 
@@ -2265,7 +2265,7 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
     Cli_Debug("ConfigPortsSet: arg_ref %d value %d\n", arg_ref, *(TSInt *) valuePtr);
   }
 
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
 
   Cli_Debug("ConfigPorts: set\n");
@@ -2307,7 +2307,7 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
 int
 ConfigPortsGet(int arg_ref)
 {
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
   TSInt int_val = -1;
   TSString str_val = NULL;
 
@@ -2463,7 +2463,7 @@ ConfigHttpProxy(int arg_ref, int setvar)
   TSInt rmp_val = 0;
   TSInt rev_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -2551,7 +2551,7 @@ ConfigIcpMode(int arg_ref, int setvar)
     }
 
     TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-    TSError status = Cli_RecordSetInt("proxy.config.icp.enabled",
+    TSMgmtError status = Cli_RecordSetInt("proxy.config.icp.enabled",
                                        mode_num, &action_need);
     if (status) {
       return status;
@@ -2561,7 +2561,7 @@ ConfigIcpMode(int arg_ref, int setvar)
 
   } else {
     TSInt value_in = -1;
-    TSError status = Cli_RecordGetInt("proxy.config.icp.enabled", &value_in);
+    TSMgmtError status = Cli_RecordGetInt("proxy.config.icp.enabled", &value_in);
 
     if (status) {
       return status;
@@ -2596,7 +2596,7 @@ ConfigCacheFreshnessVerify(int arg_ref, int setvar)
 
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -2660,7 +2660,7 @@ ConfigCacheFreshnessMinimum(int arg_ref, int setvar)
 
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -2719,7 +2719,7 @@ ConfigCacheFreshnessNoExpireLimit(TSInt min, TSInt max, int setvar)
   TSInt min_val = 0;
   TSInt max_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -2760,7 +2760,7 @@ ConfigCacheVary(int arg_ref, char *field, int setvar)
   Cli_Debug(" field: %s\n", field);
   TSString str_val = NULL;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -2829,7 +2829,7 @@ ConfigCacheCookies(int arg_ref, int setvar)
 
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -2900,7 +2900,7 @@ ConfigCacheClear()
   Cli_Debug("ConfigCacheClear");
 
   TSProxyStateT state;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   state = TSProxyStateGet();
   switch (state) {
@@ -2933,7 +2933,7 @@ ConfigHostdbClear()
   Cli_Debug("ConfigHostDBClear\n");
 
   TSProxyStateT state = TS_PROXY_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   state = TSProxyStateGet();
   Cli_Debug("Proxy State %d\n", state);
@@ -2998,7 +2998,7 @@ ConfigVirtualipAdd(char *ip, char *device, int subinterface, int setvar)
   Cli_Debug("ConfigVirtualipAdd: %s %s %d set? %d\n", ip, device, subinterface, setvar);
 
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
   TSCfgContext VipCtx;
   int size;
   TSVirtIpAddrEle *VipElePtr;
@@ -3052,7 +3052,7 @@ ConfigVirtualipDelete(int ip_no, int setvar)
   Cli_Debug("ConfigVirtualipDelete: %d set? %d\n", ip_no, setvar);
 
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
   TSCfgContext VipCtx;
   int EleCount;
 
@@ -3242,7 +3242,7 @@ ConfigLoggingEvent(int arg_ref, int setvar)
 
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3310,7 +3310,7 @@ ConfigLoggingCollationStatus(int arg_ref, int setvar)
 
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3385,7 +3385,7 @@ ConfigLoggingCollation(TSString secret, int arg_ref, TSInt orphan, int setvar)
   TSString str_val = NULL;
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3464,7 +3464,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
   TSString str_val = NULL;
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3812,7 +3812,7 @@ ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
 
   TSInt int_val;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3888,7 +3888,7 @@ ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar)
 
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3942,7 +3942,7 @@ ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling,
 
   TSInt int_val = 0;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-  TSError status = TS_ERR_OKAY;
+  TSMgmtError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4030,7 +4030,7 @@ int
 ConfigAlarmResolveName(char *name)
 {
   bool active;
-  TSError status;
+  TSMgmtError status;
 
   // determine if the event is active
   status = TSEventIsActive(name, &active);
@@ -4060,7 +4060,7 @@ int
 ConfigAlarmResolveNumber(int number)
 {
   TSList events;
-  TSError status;
+  TSMgmtError status;
   int count, i;
   char *name = 0;
 
@@ -4094,7 +4094,7 @@ int
 ConfigAlarmResolveAll()
 {
   TSList events;
-  TSError status;
+  TSMgmtError status;
   int count, i;
   char *name;
 

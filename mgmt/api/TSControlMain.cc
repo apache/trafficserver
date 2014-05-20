@@ -345,8 +345,8 @@ ts_ctrl_main(void *arg)
  * with only the error return value in the msg!!! It's important that if
  * an error does occur, the "send_reply" function is used; otherwise the socket
  * will get written with too much extraneous stuff; the remote side will
- * only read the TSError type since that's all it expects to be in the message
- * (for an TSError != TS_ERR_OKAY).
+ * only read the TSMgmtError type since that's all it expects to be in the message
+ * (for an TSMgmtError != TS_ERR_OKAY).
  */
 
 /**************************************************************************
@@ -359,10 +359,10 @@ ts_ctrl_main(void *arg)
  * output: SUCC or ERR
  * note:
  *************************************************************************/
-TSError
+TSMgmtError
 handle_record_get(struct SocketInfo sock_info, char *req)
 {
-  TSError ret;
+  TSMgmtError ret;
   TSRecordEle *ele;
 
   // parse msg - don't really need since the request itself is the record name
@@ -408,7 +408,7 @@ handle_record_get(struct SocketInfo sock_info, char *req)
 }
 
 struct record_match_state {
-  TSError     err;
+  TSMgmtError     err;
   SocketInfo  sock;
   DFA         regex;
 };
@@ -447,10 +447,10 @@ send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const 
   }
 }
 
-TSError
+TSMgmtError
 handle_record_match(struct SocketInfo sock_info, char *req)
 {
-  TSError ret;
+  TSMgmtError ret;
   record_match_state match;
 
   // parse msg - don't really need since the request itself is the regex itself
@@ -485,11 +485,11 @@ handle_record_match(struct SocketInfo sock_info, char *req)
  * output: SUCC or ERR
  * note: request format = <record name>DELIMITER<record_value>
  *************************************************************************/
-TSError
+TSMgmtError
 handle_record_set(struct SocketInfo sock_info, char *req)
 {
   char *name, *val;
-  TSError ret;
+  TSMgmtError ret;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
 
   if (!req) {
@@ -526,10 +526,10 @@ handle_record_set(struct SocketInfo sock_info, char *req)
  * output: SUCC or ERR
  * note: None
  *************************************************************************/
-TSError
+TSMgmtError
 handle_file_read(struct SocketInfo sock_info, char *req)
 {
-  TSError ret;
+  TSMgmtError ret;
   int size, version;
   TSFileNameT file;
   char *text;
@@ -568,10 +568,10 @@ handle_file_read(struct SocketInfo sock_info, char *req)
  * output: SUCC or ERR
  * note: None
  *************************************************************************/
-TSError
+TSMgmtError
 handle_file_write(struct SocketInfo sock_info, char *req)
 {
-  TSError ret;
+  TSMgmtError ret;
   int size, version;
   TSFileNameT file;
   char *text;
@@ -603,11 +603,11 @@ handle_file_write(struct SocketInfo sock_info, char *req)
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSError
+TSMgmtError
 handle_proxy_state_get(struct SocketInfo sock_info)
 {
   TSProxyStateT state;
-  TSError ret;
+  TSMgmtError ret;
 
   // make coreAPI call on local side
   state = ProxyStateGet();
@@ -628,12 +628,12 @@ handle_proxy_state_get(struct SocketInfo sock_info)
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSError
+TSMgmtError
 handle_proxy_state_set(struct SocketInfo sock_info, char *req)
 {
   TSProxyStateT state;
   TSCacheClearT clear;
-  TSError ret;
+  TSMgmtError ret;
 
   if (!req) {
     ret = TS_ERR_FAIL;
@@ -660,10 +660,10 @@ END:
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSError
+TSMgmtError
 handle_reconfigure(struct SocketInfo sock_info)
 {
-  TSError ret;
+  TSMgmtError ret;
 
   // make local side coreAPI call
   ret = Reconfigure();
@@ -682,11 +682,11 @@ handle_reconfigure(struct SocketInfo sock_info)
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSError
+TSMgmtError
 handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
 {
   int16_t cluster;
-  TSError ret;
+  TSMgmtError ret;
 
   if (!req) {
     ret = send_reply(sock_info, TS_ERR_PARAMS);
@@ -713,10 +713,10 @@ handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSError
+TSMgmtError
 handle_storage_device_cmd_offline(struct SocketInfo sock_info, char *req)
 {
-  TSError ret = TS_ERR_OKAY;
+  TSMgmtError ret = TS_ERR_OKAY;
 
   if (!req) {
     ret = send_reply(sock_info, TS_ERR_PARAMS);
@@ -736,10 +736,10 @@ handle_storage_device_cmd_offline(struct SocketInfo sock_info, char *req)
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSError
+TSMgmtError
 handle_event_resolve(struct SocketInfo sock_info, char *req)
 {
-  TSError ret;
+  TSMgmtError ret;
 
   // parse msg - don't really need since the request itself is the record name
   if (!req) {
@@ -761,10 +761,10 @@ handle_event_resolve(struct SocketInfo sock_info, char *req)
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSError
+TSMgmtError
 handle_event_get_mlt(struct SocketInfo sock_info)
 {
-  TSError ret;
+  TSMgmtError ret;
   LLQ *event_list;
   char buf[MAX_BUF_SIZE];
   char *event_name;
@@ -805,10 +805,10 @@ handle_event_get_mlt(struct SocketInfo sock_info)
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSError
+TSMgmtError
 handle_event_active(struct SocketInfo sock_info, char *req)
 {
-  TSError ret;
+  TSMgmtError ret;
   bool active;
 
   // parse msg - don't really need since the request itself is the record name
@@ -838,10 +838,10 @@ handle_event_active(struct SocketInfo sock_info, char *req)
  *        op  - SNAPSHOT_TAKE, SNAPSHOT_REMOVE, or SNAPSHOT_RESTORE
  * output: TS_ERR_xx
  *************************************************************************/
-TSError
+TSMgmtError
 handle_snapshot(struct SocketInfo sock_info, char *req, OpType op)
 {
-  TSError ret;
+  TSMgmtError ret;
 
   if (!req) {
     ret = send_reply(sock_info, TS_ERR_PARAMS);
@@ -875,10 +875,10 @@ handle_snapshot(struct SocketInfo sock_info, char *req, OpType op)
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSError
+TSMgmtError
 handle_snapshot_get_mlt(struct SocketInfo sock_info)
 {
-  TSError ret;
+  TSMgmtError ret;
   LLQ *snap_list;
   char buf[MAX_BUF_SIZE];
   char *snap_name;
@@ -920,10 +920,10 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
  *        req - the diag message (already formatted with arguments)
  * output: TS_ERR_xx
  *************************************************************************/
-TSError
+TSMgmtError
 handle_diags(struct SocketInfo /* sock_info ATS_UNUSED */, char *req)
 {
-  TSError ret;
+  TSMgmtError ret;
   TSDiagsT mode;
   char *diag_msg = NULL;
   DiagsLevel level;
@@ -988,10 +988,10 @@ Lerror:
  *        op - reset type (cluster or node)
  * output: TS_ERR_xx
  *************************************************************************/
-TSError
+TSMgmtError
 handle_stats_reset(struct SocketInfo sock_info, char *req, OpType op)
 {
-  TSError ret;
+  TSMgmtError ret;
 
   ret = StatsReset(op == STATS_RESET_CLUSTER, req);
   ret = send_reply(sock_info, ret);

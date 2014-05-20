@@ -26,6 +26,7 @@
 
 #include <ts/ink_inet.h>
 #include <ts/ink_resolver.h>
+#include <ts/apidefs.h>
 #include <ts/Vec.h>
 
 /// Load default inbound IP addresses from the configuration file.

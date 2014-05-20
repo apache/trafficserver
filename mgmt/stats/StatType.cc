@@ -34,6 +34,7 @@
 #include "StatType.h"
 #include "MgmtUtils.h"
 #include "ink_hrtime.h"
+#include "WebOverview.h"
 
 bool StatError = false;         // global error flag
 bool StatDebug = false;         // global debug flag

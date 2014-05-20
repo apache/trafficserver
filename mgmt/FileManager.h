@@ -35,6 +35,7 @@
 
 #include "ink_hash_table.h"
 #include "List.h"
+#include "Rollback.h"
 #include "WebGlobals.h"
 #include "MultiFile.h"
 #include "WebHttpMessage.h"

@@ -51,7 +51,7 @@ CIFCReadEntry::~CIFCReadEntry()
 }
 
 // check IFCVERSION IFCPATH and IFCFILENAME setup
-TSError
+TSMgmtError
 CIFCReadEntry::ConfigReadCheckIFCEnv()
 {
   char *pathPtr;

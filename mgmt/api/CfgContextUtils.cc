@@ -976,7 +976,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
  * <pd_type>#<pd_value>#<sspecs> --> TSPdSsFormat
  * NOTE that the entire data line, including the action type is being passed in
  */
-TSError
+TSMgmtError
 string_to_pdss_format(const char *str, TSPdSsFormat * pdss)
 {
   Tokenizer tokens(DELIMITER_STR);
@@ -1088,7 +1088,7 @@ hms_time_to_string(TSHmsTime time)
  * Returns TS_ERR_FAIL if invalid hms format, eg. if there are invalid
  * characters, eg. "10xh", "10h15m30s34", or repeated values, eg. "10h15h"
  */
-TSError
+TSMgmtError
 string_to_hms_time(const char *str, TSHmsTime * time)
 {
   int i, pos = 0;
@@ -1161,7 +1161,7 @@ Lerror:
  *  } time
  * Returns TS_ERR_FAIL if invalid time string.
  */
-TSError
+TSMgmtError
 string_to_time_struct(const char *str, TSSspec * sspec)
 {
   Tokenizer time_tokens(":-");

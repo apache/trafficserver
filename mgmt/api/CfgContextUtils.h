@@ -86,14 +86,14 @@ char *domain_list_to_string(TSDomainList list, const char *delimiter);
 /* pd, pd_val, TSSspec ==> <pd_type>#<pd_value>#<sspecs> */
 char *pdest_sspec_to_string(TSPrimeDestT pd, char *prim_dest_val, TSSspec * sspec);
 /* <pd_type>#<pd_value>#<sspecs> ==> TSPdSsFormat */
-TSError string_to_pdss_format(const char *str, TSPdSsFormat * pdss);
+TSMgmtError string_to_pdss_format(const char *str, TSPdSsFormat * pdss);
 
 /* ?h?m?s <==> TSHmsTime */
 char *hms_time_to_string(TSHmsTime time);
-TSError string_to_hms_time(const char *str, TSHmsTime * time);
+TSMgmtError string_to_hms_time(const char *str, TSHmsTime * time);
 
 /* string ==> time struct */
-TSError string_to_time_struct(const char *str, TSSspec * sspec);
+TSMgmtError string_to_time_struct(const char *str, TSSspec * sspec);
 
 /* string ==> TSHdrT */
 TSHdrT string_to_header_type(const char *str);

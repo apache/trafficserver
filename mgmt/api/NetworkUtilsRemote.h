@@ -59,48 +59,48 @@ int socket_test(int fd);
  * the client connection information stored in the variables in
  * NetworkUtilsRemote.cc
  */
-TSError ts_connect(); /* TODO: update documenation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
-TSError disconnect();
-TSError reconnect();
-TSError reconnect_loop(int num_attempts);
-TSError connect_and_send(const char *msg, int msg_len);
+TSMgmtError ts_connect(); /* TODO: update documenation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
+TSMgmtError disconnect();
+TSMgmtError reconnect();
+TSMgmtError reconnect_loop(int num_attempts);
+TSMgmtError connect_and_send(const char *msg, int msg_len);
 void *socket_test_thread(void *arg);
 
 /*****************************************************************************
  * Marshalling (create requests)
  *****************************************************************************/
-TSError send_request(int fd, OpType op);
-TSError send_request_name(int fd, OpType op, const char *name);
-TSError send_request_name_value(int fd, OpType op, const char *name, const char *value);
-TSError send_request_bool(int fd, OpType op, bool flag);
+TSMgmtError send_request(int fd, OpType op);
+TSMgmtError send_request_name(int fd, OpType op, const char *name);
+TSMgmtError send_request_name_value(int fd, OpType op, const char *name, const char *value);
+TSMgmtError send_request_bool(int fd, OpType op, bool flag);
 
-TSError send_file_read_request(int fd, TSFileNameT file);
-TSError send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text);
-TSError send_record_get_request(int fd, const char *rec_name);
-TSError send_record_match_request(int fd, const char *rec_regex);
+TSMgmtError send_file_read_request(int fd, TSFileNameT file);
+TSMgmtError send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text);
+TSMgmtError send_record_get_request(int fd, const char *rec_name);
+TSMgmtError send_record_match_request(int fd, const char *rec_regex);
 
-TSError send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear);
+TSMgmtError send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear);
 
-TSError send_register_all_callbacks(int fd, CallbackTable * cb_table);
-TSError send_unregister_all_callbacks(int fd, CallbackTable * cb_table);
+TSMgmtError send_register_all_callbacks(int fd, CallbackTable * cb_table);
+TSMgmtError send_unregister_all_callbacks(int fd, CallbackTable * cb_table);
 
-TSError send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg);
+TSMgmtError send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg);
 
 /*****************************************************************************
  * Un-marshalling (parse responses)
  *****************************************************************************/
-TSError parse_reply(int fd);
-TSError parse_reply_list(int fd, char **list);
+TSMgmtError parse_reply(int fd);
+TSMgmtError parse_reply_list(int fd, char **list);
 
-TSError parse_file_read_reply(int fd, int *version, int *size, char **text);
+TSMgmtError parse_file_read_reply(int fd, int *version, int *size, char **text);
 
-TSError parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_name);
-TSError parse_record_set_reply(int fd, TSActionNeedT * action_need);
+TSMgmtError parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_name);
+TSMgmtError parse_record_set_reply(int fd, TSActionNeedT * action_need);
 
-TSError parse_proxy_state_get_reply(int fd, TSProxyStateT * state);
+TSMgmtError parse_proxy_state_get_reply(int fd, TSProxyStateT * state);
 
-TSError parse_event_active_reply(int fd, bool * is_active);
-TSError parse_event_notification(int fd, TSEvent * event);
+TSMgmtError parse_event_active_reply(int fd, bool * is_active);
+TSMgmtError parse_event_notification(int fd, TSMgmtEvent * event);
 
 #ifdef __cplusplus
 }

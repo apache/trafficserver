@@ -126,10 +126,10 @@
 /* ------------------------------------------------------------------------
  * print_err
  * ------------------------------------------------------------------------
- * used to print the error description associated with the TSError err
+ * used to print the error description associated with the TSMgmtError err
  */
 void
-print_err(const char *module, TSError err)
+print_err(const char *module, TSMgmtError err)
 {
   char *err_msg;
 
@@ -878,7 +878,7 @@ print_proxy_state()
 void
 start_TS(char *tsArgs)
 {
-  TSError ret;
+  TSMgmtError ret;
   TSCacheClearT clear = TS_CACHE_CLEAR_OFF;
 
   char *args = strtok(tsArgs, ":");
@@ -902,7 +902,7 @@ start_TS(char *tsArgs)
 void
 stop_TS()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("STOPPING PROXY\n");
   if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
@@ -914,7 +914,7 @@ stop_TS()
 void
 restart()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("RESTART - Cluster wide\n");
   if ((ret = TSRestart(true)) != TS_ERR_OKAY)
@@ -927,7 +927,7 @@ restart()
 void
 reconfigure()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("RECONFIGURE\n");
   if ((ret = TSReconfigure()) != TS_ERR_OKAY)
@@ -962,7 +962,7 @@ test_action_need(void)
 void
 bounce()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("BOUNCER - Cluster wide\n");
   if ((ret = TSBounce(true)) != TS_ERR_OKAY)
@@ -986,7 +986,7 @@ test_error_records()
 {
   TSInt port1, new_port = 8080;
   TSActionNeedT action;
-  TSError ret;
+  TSMgmtError ret;
   TSFloat flt1;
   TSCounter ctr1;
 
@@ -1035,7 +1035,7 @@ test_records()
   TSInt port1, port2, new_port = 52432;
   TSFloat flt1, flt2, new_flt = 1.444;
   TSCounter ctr1, ctr2, new_ctr = 6666;
-  TSError err;
+  TSMgmtError err;
 
   /********************* START TEST SECTION *****************/
   printf("\n\n");
@@ -1182,7 +1182,7 @@ void
 test_rec_get(char *rec_name)
 {
   TSRecordEle *rec_ele;
-  TSError ret;
+  TSMgmtError ret;
   char *name;
 
   name = ats_strdup(rec_name);
@@ -1233,7 +1233,7 @@ test_record_get_mlt(void)
   TSList rec_list;
   int i, num;
   char *v1, *v2, *v3, *v6, *v7, *v8;
-  TSError ret;
+  TSMgmtError ret;
 
   name_list = TSStringListCreate();
   rec_list = TSListCreate();
@@ -1320,7 +1320,7 @@ test_record_set_mlt(void)
   TSList list;
   TSRecordEle *ele1, *ele2, *ele3, *ele4, *ele5;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
-  TSError err;
+  TSMgmtError err;
 
   list = TSListCreate();
 
@@ -1382,7 +1382,7 @@ test_read_url(bool valid)
   int headerSize;
   char *body = NULL;
   int bodySize;
-  TSError err;
+  TSMgmtError err;
 
   if (!valid) {
     // first try
@@ -1582,7 +1582,7 @@ test_cfg_context_move(char *args)
   TSCfgContext ctx;
   TSFileNameT file;
   int i;
-  TSError err;
+  TSMgmtError err;
 
   char *filename = strtok(args, ":");
   filename = strtok(NULL, ":");
@@ -1666,7 +1666,7 @@ test_cfg_context_ops()
   // Not used here.
   //TSCfgIterState iter_state;
   //TSCfgEle *cfg_ele;
-  TSError err;
+  TSMgmtError err;
   TSCfgContext ctx;
   TSVirtIpAddrEle *ele;
   int rm_index = 0, i;
@@ -1919,7 +1919,7 @@ void
 print_active_events()
 {
   TSList events;
-  TSError ret;
+  TSMgmtError ret;
   int count, i;
   char *name;
 
@@ -1954,7 +1954,7 @@ bool
 check_active(char *event_name)
 {
   bool active;
-  TSError ret;
+  TSMgmtError ret;
 
   ret = TSEventIsActive(event_name, &active);
   print_err("TSEventIsActive", ret);
@@ -1981,7 +1981,7 @@ check_active(char *event_name)
 void
 try_resolve(char *event_name)
 {
-  TSError ret;
+  TSMgmtError ret;
   char *name;
 
   name = TSstrdup(event_name);
@@ -2018,7 +2018,7 @@ eventCallbackFn(char *name, char *msg, int /* pri ATS_UNUSED */, void * /* data 
 void
 register_event_callback(void)
 {
-  TSError err;
+  TSMgmtError err;
 
   printf("\n[register_event_callback] \n");
   err = TSEventSignalCbRegister(NULL, eventCallbackFn, NULL);
@@ -2035,7 +2035,7 @@ register_event_callback(void)
 void
 unregister_event_callback(void)
 {
-  TSError err;
+  TSMgmtError err;
 
   printf("\n[unregister_event_callback]\n");
   err = TSEventSignalCbUnregister(NULL, eventCallbackFn);
@@ -2050,7 +2050,7 @@ void
 print_snapshots()
 {
   TSStringList list;
-  TSError err;
+  TSMgmtError err;
   char *name;
 
   list = TSStringListCreate();
@@ -2080,7 +2080,7 @@ add_snapshot(char *args)
   fprintf(stderr, "add snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
 
-  TSError err = TSSnapshotTake(name);
+  TSMgmtError err = TSSnapshotTake(name);
   print_err("TSSnapshotTake", err);
 
   TSfree(name);
@@ -2094,7 +2094,7 @@ remove_snapshot(char *args)
   fprintf(stderr, "remove snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
 
-  TSError err = TSSnapshotRemove(name);
+  TSMgmtError err = TSSnapshotRemove(name);
   print_err("TSSnapshotRemove", err);
 
   TSfree(name);
@@ -2108,7 +2108,7 @@ restore_snapshot(char *args)
   fprintf(stderr, "resotre snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
 
-  TSError err = TSSnapshotRestore(name);
+  TSMgmtError err = TSSnapshotRestore(name);
   print_err("TSSnapshotRestore", err);
 
   TSfree(name);
@@ -2277,7 +2277,7 @@ print_stats()
 void
 reset_stats()
 {
-  TSError err = TSStatsReset(false);
+  TSMgmtError err = TSStatsReset(false);
   print_err("TSStatsReset", err);
   return;
 }
@@ -2300,7 +2300,7 @@ sync_test()
   else
     printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
 
-  TSError ret;
+  TSMgmtError ret;
   if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
     printf("[TSProxyStateSet] turn off FAILED\n");
   print_err("stop_TS", ret);
@@ -2427,7 +2427,7 @@ runInteractive()
 int
 main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
 {
-  TSError ret;
+  TSMgmtError ret;
 
   if ((ret = TSInit(NULL, TS_MGMT_OPT_DEFAULTS)) == TS_ERR_OKAY) {
     runInteractive();

@@ -32,13 +32,13 @@
 #include "ConfigCmd.h"
 
 
-void Cli_DisplayMgmtAPI_Error(TSError status);
+void Cli_DisplayMgmtAPI_Error(TSMgmtError status);
 
 // Get a records.config variable by name
-TSError
+TSMgmtError
 Cli_RecordGet(const char *rec_name, TSRecordEle * rec_val)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordGet((char *) rec_name, rec_val))) {
     Cli_Debug(ERR_RECORD_GET, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
@@ -47,10 +47,10 @@ Cli_RecordGet(const char *rec_name, TSRecordEle * rec_val)
 }
 
 // Get an integer type records.config variable
-TSError
+TSMgmtError
 Cli_RecordGetInt(const char *rec_name, TSInt * int_val)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordGetInt(rec_name, int_val))) {
     Cli_Debug(ERR_RECORD_GET_INT, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
@@ -59,10 +59,10 @@ Cli_RecordGetInt(const char *rec_name, TSInt * int_val)
 }
 
 // Get an counter type records.config variable
-TSError
+TSMgmtError
 Cli_RecordGetCounter(const char *rec_name, TSCounter * ctr_val)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordGetCounter(rec_name, ctr_val))) {
     Cli_Debug(ERR_RECORD_GET_COUNTER, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
@@ -71,10 +71,10 @@ Cli_RecordGetCounter(const char *rec_name, TSCounter * ctr_val)
 }
 
 // Get a float type records.config variable
-TSError
+TSMgmtError
 Cli_RecordGetFloat(const char *rec_name, TSFloat * float_val)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordGetFloat(rec_name, float_val))) {
     Cli_Debug(ERR_RECORD_GET_FLOAT, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
@@ -83,10 +83,10 @@ Cli_RecordGetFloat(const char *rec_name, TSFloat * float_val)
 }
 
 // Get a string type records.config variable
-TSError
+TSMgmtError
 Cli_RecordGetString(const char *rec_name, char **string_val)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordGetString(rec_name, string_val))) {
     Cli_Debug(ERR_RECORD_GET_STRING, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
@@ -95,10 +95,10 @@ Cli_RecordGetString(const char *rec_name, char **string_val)
 }
 
 // Use a string to set a records.config variable
-TSError
+TSMgmtError
 Cli_RecordSet(const char *rec_name, const char *rec_value, TSActionNeedT * action_need)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordSet((char *) rec_name, (TSString) rec_value, action_need))) {
     Cli_Debug(ERR_RECORD_SET, rec_name, rec_value);
     Cli_DisplayMgmtAPI_Error(status);
@@ -107,10 +107,10 @@ Cli_RecordSet(const char *rec_name, const char *rec_value, TSActionNeedT * actio
 }
 
 // Set an integer type records.config variable
-TSError
+TSMgmtError
 Cli_RecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordSetInt(rec_name, int_val, action_need))) {
     Cli_Debug(ERR_RECORD_SET_INT, rec_name, int_val);
     Cli_DisplayMgmtAPI_Error(status);
@@ -119,10 +119,10 @@ Cli_RecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_nee
 }
 
 // Set a float type records.config variable
-TSError
+TSMgmtError
 Cli_RecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordSetFloat(rec_name, float_val, action_need))) {
     Cli_Debug(ERR_RECORD_SET_FLOAT, rec_name, float_val);
     Cli_DisplayMgmtAPI_Error(status);
@@ -132,10 +132,10 @@ Cli_RecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * acti
 
 
 // Set a string type records.config variable
-TSError
+TSMgmtError
 Cli_RecordSetString(const char *rec_name, TSString str_val, TSActionNeedT * action_need)
 {
-  TSError status;
+  TSMgmtError status;
   if ((status = TSRecordSetString(rec_name, str_val, action_need))) {
     Cli_Debug(ERR_RECORD_SET_STRING, rec_name, str_val);
     Cli_DisplayMgmtAPI_Error(status);
@@ -144,7 +144,7 @@ Cli_RecordSetString(const char *rec_name, TSString str_val, TSActionNeedT * acti
 }
 
 void
-Cli_DisplayMgmtAPI_Error(TSError status)
+Cli_DisplayMgmtAPI_Error(TSMgmtError status)
 {
   switch (status) {
   case TS_ERR_OKAY:           // do nothing
@@ -197,10 +197,10 @@ Cli_DisplayMgmtAPI_Error(TSError status)
 }
 
 // Retrieve and display contents of a rules file
-TSError
+TSMgmtError
 Cli_DisplayRules(TSFileNameT fname)
 {
-  TSError status;
+  TSMgmtError status;
   char *text;
   int size = 0, version = 0;
 
@@ -222,13 +222,13 @@ Cli_DisplayRules(TSFileNameT fname)
 }
 
 // Retrieve and use config file from remote URL
-TSError
+TSMgmtError
 Cli_SetConfigFileFromUrl(TSFileNameT file, const char *url)
 {
   char *buf;
   int size = 0;
   int version = -1;
-  TSError status;
+  TSMgmtError status;
 
   Cli_Debug("Cli_SetConfigFileFromUrl: file %d url %s\n", file, url);
 
@@ -262,10 +262,10 @@ Cli_SetConfigFileFromUrl(TSFileNameT file, const char *url)
 
 // enable recent configuration changes by performing the action specified
 // by the action_need value
-TSError
+TSMgmtError
 Cli_ConfigEnactChanges(TSActionNeedT action_need)
 {
-  TSError status;
+  TSMgmtError status;
 
   Cli_Debug("Cli_ConfigEnactChanges: action_need %d\n", action_need);
 
@@ -336,7 +336,7 @@ int
 Cli_RecordOnOff_Action(int action, const char *record, const char *on_off)
 {
   TSActionNeedT action_need;
-  TSError status;
+  TSMgmtError status;
   TSInt int_val;
 
   switch (action) {
@@ -388,7 +388,7 @@ Cli_RecordInt_Action(int action, const char *record, int value)
   case RECORD_SET:
     {
       TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-      TSError status = Cli_RecordSetInt(record, value, &action_need);
+      TSMgmtError status = Cli_RecordSetInt(record, value, &action_need);
 
       if (status) {
         return status;
@@ -398,7 +398,7 @@ Cli_RecordInt_Action(int action, const char *record, int value)
   case RECORD_GET:
     {
       TSInt value_in = -1;
-      TSError status = Cli_RecordGetInt(record, &value_in);
+      TSMgmtError status = Cli_RecordGetInt(record, &value_in);
 
       if (status) {
         return status;
@@ -426,7 +426,7 @@ Cli_RecordInt_Action(int action, const char *record, int value)
 int
 Cli_RecordHostname_Action(int action, char *record, char *hostname)
 {
-  TSError status;
+  TSMgmtError status;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
   TSString str_val = NULL;
 
@@ -472,7 +472,7 @@ Cli_RecordHostname_Action(int action, char *record, char *hostname)
 int
 Cli_RecordString_Action(int action, const char *record, char *string_val)
 {
-  TSError status;
+  TSMgmtError status;
   TSActionNeedT action_need = TS_ACTION_UNDEFINED;
   TSString str_val = NULL;
 
@@ -513,7 +513,7 @@ Cli_RecordString_Action(int action, const char *record, char *string_val)
 int
 Cli_ConfigFileURL_Action(TSFileNameT file, const char *filename, const char *url)
 {
-  TSError status;
+  TSMgmtError status;
   // Retrieve  file from url
 
   if (url == NULL) {

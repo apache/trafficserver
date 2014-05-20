@@ -64,7 +64,7 @@ CfgContextCreate(TSFileNameT file)
  * ---------------------------------------------------------------
  * frees all memory allocated for the CfgContext
  */
-TSError
+TSMgmtError
 CfgContextDestroy(CfgContext * ctx)
 {
   if (!ctx)
@@ -83,7 +83,7 @@ CfgContextDestroy(CfgContext * ctx)
  * errRules is an optional argument - if specified, then a
  * list of the indices of the invalid rules will be stored in it
  */
-TSError
+TSMgmtError
 CfgContextCommit(CfgContext * ctx, LLQ * errRules)
 {
   int ret;
@@ -92,7 +92,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
   CfgEleObj *ele;
   int ver, size = 0, index;
   int *iPtr;
-  TSError err = TS_ERR_OKAY;
+  TSMgmtError err = TS_ERR_OKAY;
   int max_file_size = MAX_FILE_SIZE;
   int len = 0;
 
@@ -150,10 +150,10 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
  * ctx should also store the version number of the file being read.
  * If invalid rule, it is skipped and not added to the CfgContext.
  */
-TSError
+TSMgmtError
 CfgContextGet(CfgContext * ctx)
 {
-  TSError ret;
+  TSMgmtError ret;
   int size, ver;
   char *old_text = NULL;
   RuleList *rule_list = NULL;
@@ -384,13 +384,13 @@ CfgContextGetNext(CfgContext * ctx, TSCfgIterState * state)
  * first), and insert the copy at the position of index-1.
  * THIS IS REALLY INEFFICIENT!!!
  */
-TSError
+TSMgmtError
 CfgContextMoveEleUp(CfgContext * ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
   TSCfgEle *ele_copy = 0;      /* lv: just to make gcc happy */
   int count = 0;                // start counting from 0
-  TSError ret;
+  TSMgmtError ret;
 
   ink_assert(ctx && index >= 0);
   if (!ctx || index < 0)
@@ -436,13 +436,13 @@ CfgContextMoveEleUp(CfgContext * ctx, int index)
  * Make a copy of the ele stored in the EleObj before deleting it and
  * reinserts the new EleObj in the index+1 position.
  */
-TSError
+TSMgmtError
 CfgContextMoveEleDown(CfgContext * ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
   TSCfgEle *ele_copy = 0;      /* lv: just to make gcc happy */
   int count = 0;                // start counting from 0
-  TSError ret;
+  TSMgmtError ret;
   int tot_ele;
 
   ink_assert(ctx);
@@ -492,7 +492,7 @@ CfgContextMoveEleDown(CfgContext * ctx, int index)
  * Appends the ele to the end of the CfgContext. First must
  * wrap the ele in an CfgEleObj class before can append to CfgContext
  */
-TSError
+TSMgmtError
 CfgContextAppendEle(CfgContext * ctx, TSCfgEle * ele)
 {
   CfgEleObj *ele_obj;
@@ -516,12 +516,12 @@ CfgContextAppendEle(CfgContext * ctx, TSCfgEle * ele)
  * comments before the first non-comment CfgEleObj, then insert the
  * new EleObj right after the last comment
  */
-TSError
+TSMgmtError
 CfgContextInsertEleAt(CfgContext * ctx, TSCfgEle * ele, int index)
 {
   CfgEleObj *ele_obj, *curr_ele_obj, *last_comment = NULL;
   int count = 0;
-  TSError err = TS_ERR_OKAY;
+  TSMgmtError err = TS_ERR_OKAY;
   bool has_comment = false;
 
   // need to convert the ele into appropriate Ele object type
@@ -568,7 +568,7 @@ CfgContextInsertEleAt(CfgContext * ctx, TSCfgEle * ele, int index)
  * non-comment ele's from 0, eg. if index = 3, that means remove the
  * fourth non-comment ELe in the CfgContext
  */
-TSError
+TSMgmtError
 CfgContextRemoveEleAt(CfgContext * ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
@@ -600,7 +600,7 @@ CfgContextRemoveEleAt(CfgContext * ctx, int index)
  * Removes all the Ele rules from Cfg Context leaving all the
  * comments behind
  */
-TSError
+TSMgmtError
 CfgContextRemoveAll(CfgContext * ctx)
 {
   CfgEleObj *curr_ele_obj, *ele_obj_ptr;

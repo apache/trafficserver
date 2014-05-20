@@ -138,7 +138,7 @@ socket_test(int fd)
  *        otherwise traffic server will assume mgmt stopped request and
  *        goes back to just sitting and listening for connection.
  ***************************************************************************/
-TSError
+TSMgmtError
 ts_connect()
 {
   struct sockaddr_un client_sock;
@@ -214,7 +214,7 @@ ERROR:
  * output: TS_ERR_FAIL, TS_ERR_OKAY
  * notes: doesn't do clean up - all cleanup should be done before here
  ***************************************************************************/
-TSError
+TSMgmtError
 disconnect()
 {
   int ret;
@@ -248,10 +248,10 @@ disconnect()
  * 2) relaunch event_poll_thread_main with new socket_fd
  * 3) re-notify TM of all the client's registered callbacks by send msg
  ***************************************************************************/
-TSError
+TSMgmtError
 reconnect()
 {
-  TSError err;
+  TSMgmtError err;
 
   err = disconnect();
   if (err != TS_ERR_OKAY)      // problem disconnecting
@@ -290,11 +290,11 @@ reconnect()
  *         TS_ERR_xx - the reason the reconnection failed
  * notes:
  ***************************************************************************/
-TSError
+TSMgmtError
 reconnect_loop(int num_attempts)
 {
   int numTries = 0;
-  TSError err = TS_ERR_FAIL;
+  TSMgmtError err = TS_ERR_FAIL;
 
   while (numTries < num_attempts) {
     numTries++;
@@ -334,10 +334,10 @@ reconnect_loop(int num_attempts)
  * which is not open; which will by default terminate the process;
  * client needs to "ignore" the SIGPIPE signal
  **************************************************************************/
-TSError
+TSMgmtError
 connect_and_send(const char *msg, int msg_len)
 {
-  TSError err;
+  TSMgmtError err;
   int total_wrote = 0, ret;
 
   // connects to TM and does all necessary event updates required
@@ -381,7 +381,7 @@ connect_and_send(const char *msg, int msg_len)
   return TS_ERR_OKAY;
 }
 
-static TSError
+static TSMgmtError
 socket_read_conn(int fd, uint8_t * buf, size_t needed)
 {
   size_t consumed = 0;
@@ -426,7 +426,7 @@ socket_read_conn(int fd, uint8_t * buf, size_t needed)
  * 1) if the write returns EPIPE error, then call connect_and_send()
  * 2) return the value returned from EPIPE
  *************************************************************************/
-static TSError
+static TSMgmtError
 socket_write_conn(int fd, const char *msg_buf, int bytes)
 {
   int ret, byte_wrote = 0;
@@ -522,13 +522,13 @@ socket_test_thread(void *)
  *         parameters
  * format: <OpType> <msg_len=0>
  **********************************************************************/
-TSError
+TSMgmtError
 send_request(int fd, OpType op)
 {
   int16_t op_t;
   int32_t msg_len;
   char msg_buf[SIZE_OP_T + SIZE_LEN];
-  TSError err;
+  TSMgmtError err;
 
   // fill in op type
   op_t = (int16_t) op;
@@ -552,14 +552,14 @@ send_request(int fd, OpType op)
  * output: TS_ERR_xx
  * note: format: <OpType> <str_len> <string>
  **********************************************************************/
-TSError
+TSMgmtError
 send_request_name(int fd, OpType op, const char *name)
 {
   char *msg_buf;
   int16_t op_t;
   int32_t msg_len;
   int total_len;
-  TSError err;
+  TSMgmtError err;
 
   if (name == NULL) {           //reg callback for all events when op==EVENT_REG_CALLBACK
     msg_len = 0;
@@ -597,14 +597,14 @@ send_request_name(int fd, OpType op, const char *name)
  * output: TS_ERR_xx
  * note: format: <OpType> <name-len> <val-len> <name> <val>
  **********************************************************************/
-TSError
+TSMgmtError
 send_request_name_value(int fd, OpType op, const char *name, const char *value)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
   int32_t msg_len, name_len, val_size;    // these are written to msg
   int16_t op_t;
-  TSError err;
+  TSMgmtError err;
 
   if (!name || !value)
     return TS_ERR_PARAMS;
@@ -654,7 +654,7 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
  *        flag    - boolean flag
  * output: TS_ERR_xx
  **********************************************************************/
-TSError
+TSMgmtError
 send_request_bool(int fd, OpType op, bool flag)
 {
   char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_BOOL];
@@ -686,7 +686,7 @@ send_request_bool(int fd, OpType op, bool flag)
  * notes:   first must create the message and then send it across network
  *          msg format = <OpType> <msg_len> <TSFileNameT>
  **********************************************************************/
-TSError
+TSMgmtError
 send_file_read_request(int fd, TSFileNameT file)
 {
   char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_FILE_T];
@@ -723,14 +723,14 @@ send_file_read_request(int fd, TSFileNameT file)
  * output: TS_ERR_xx
  * notes: format - FILE_WRITE <msg_len> <file_type> <file_ver> <file_size> <text>
  **********************************************************************/
-TSError
+TSMgmtError
 send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
   int32_t msg_len, f_size;        //marshalled values
   int16_t op, file_t, f_ver;
-  TSError err;
+  TSMgmtError err;
 
   if (!text)
     return TS_ERR_PARAMS;
@@ -772,14 +772,14 @@ send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text)
   return err;
 }
 
-static TSError
+static TSMgmtError
 send_record_get_x_request(OpType optype, int fd, const char *rec_name)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
   int16_t op = (int16_t)optype;
   int32_t msg_len;
-  TSError err;
+  TSMgmtError err;
 
   ink_assert(op == RECORD_GET || op == RECORD_MATCH_GET);
 
@@ -817,7 +817,7 @@ send_record_get_x_request(OpType optype, int fd, const char *rec_name)
  * output: TS_ERR_xx
  * format: RECORD_GET <msg_len> <rec_name>
  **********************************************************************/
-TSError
+TSMgmtError
 send_record_get_request(int fd, const char *rec_name)
 {
   return send_record_get_x_request(RECORD_GET, fd, rec_name);
@@ -832,7 +832,7 @@ send_record_get_request(int fd, const char *rec_name)
  * output: TS_ERR_xx
  * format: sequence of RECORD_GET <msg_len> <rec_name>
  **********************************************************************/
-TSError
+TSMgmtError
 send_record_match_request(int fd, const char *rec_regex)
 {
   return send_record_get_x_request(RECORD_MATCH_GET, fd, rec_regex);
@@ -847,10 +847,10 @@ send_record_match_request(int fd, const char *rec_regex)
  * output: TS_ERR_xx
  * note: format: PROXY_STATE_GET 0(=msg_len)
  **********************************************************************/
-TSError
+TSMgmtError
 send_proxy_state_get_request(int fd)
 {
-  TSError err;
+  TSMgmtError err;
 
   err = send_request(fd, PROXY_STATE_GET);
   return err;
@@ -865,7 +865,7 @@ send_proxy_state_get_request(int fd)
  * output: TS_ERR_xx
  * note: format: PROXY_STATE_SET  <msg_len> <TSProxyStateT> <TSCacheClearT>
  **********************************************************************/
-TSError
+TSMgmtError
 send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear)
 {
   char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T];
@@ -909,11 +909,11 @@ send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear)
  * 1) get list of all events with callbacks
  * 2) for each event, call send_request_name
  **********************************************************************/
-TSError
+TSMgmtError
 send_register_all_callbacks(int fd, CallbackTable * cb_table)
 {
   LLQ *events_with_cb;
-  TSError err, send_err = TS_ERR_FAIL;
+  TSMgmtError err, send_err = TS_ERR_FAIL;
   bool no_errors = true;        // set to false if one send is not okay
 
   events_with_cb = get_events_with_callbacks(cb_table);
@@ -963,14 +963,14 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
  * unregister; but actually just reuse the function
  * send_request_name(EVENT_UNREG_CALLBACK) and call it for each event
  **********************************************************************/
-TSError
+TSMgmtError
 send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
 {
   char *event_name;
   int event_id;
   LLQ *events_with_cb;          // list of events with at least one callback
   int reg_callback[NUM_EVENTS];
-  TSError err, send_err = TS_ERR_FAIL;
+  TSMgmtError err, send_err = TS_ERR_FAIL;
   bool no_errors = true;        // set to false if at least one send fails
 
   // init array so that all events don't have any callbacks
@@ -1022,14 +1022,14 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
  * output: TS_ERR_xx
  * note: format: <OpType> <msg_len> <TSDiagsT> <diag_msg_len> <diag_msg>
  **********************************************************************/
-TSError
+TSMgmtError
 send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg)
 {
   char *msg_buf;
   int16_t op_t, diag_t;
   int32_t msg_len, diag_msg_len;
   int total_len;
-  TSError err;
+  TSMgmtError err;
 
   if (!diag_msg)
     return TS_ERR_PARAMS;
@@ -1088,12 +1088,12 @@ send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg)
  * input: fd
  * output: errors on error or fill up class with response &
  *         return TS_ERR_xx
- * notes: only returns an TSError
+ * notes: only returns an TSMgmtError
  **********************************************************************/
-TSError
+TSMgmtError
 parse_reply(int fd)
 {
-  TSError ret;
+  TSMgmtError ret;
   int16_t ret_val;
 
   // check to see if anything to read; wait for specified time = 1 sec
@@ -1106,7 +1106,7 @@ parse_reply(int fd)
     return ret;
   }
 
-  return (TSError) ret_val;
+  return (TSMgmtError) ret_val;
 }
 
 /**********************************************************************
@@ -1117,14 +1117,14 @@ parse_reply(int fd)
  *        list - will contain delimited string list of tokens
  * output: TS_ERR_xx
  * notes:
- * format: <TSError> <string_list_len> <delimited_string_list>
+ * format: <TSMgmtError> <string_list_len> <delimited_string_list>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_reply_list(int fd, char **list)
 {
   int16_t ret_val;
   int32_t list_size;
-  TSError err_t;
+  TSMgmtError err_t;
 
   if (!list) {
     return TS_ERR_PARAMS;
@@ -1135,14 +1135,14 @@ parse_reply_list(int fd, char **list)
     return TS_ERR_NET_TIMEOUT;
   }
 
-  // get the return value (TSError type)
+  // get the return value (TSMgmtError type)
   err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
   if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
 
   // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSError) ret_val;
+  err_t = (TSMgmtError) ret_val;
   if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
@@ -1178,14 +1178,14 @@ parse_reply_list(int fd, char **list)
  *        text -
  * output: errors on error or fill up class with response &
  *         return TS_ERR_xx
- * notes: reply format = <TSError> <file_version> <file_size> <text>
+ * notes: reply format = <TSMgmtError> <file_version> <file_size> <text>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_file_read_reply(int fd, int *ver, int *size, char **text)
 {
   int32_t f_size;
   int16_t ret_val, f_ver;
-  TSError err_t;
+  TSMgmtError err_t;
 
   if (!ver || !size || !text)
     return TS_ERR_PARAMS;
@@ -1202,7 +1202,7 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
   }
 
   // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSError) ret_val;
+  err_t = (TSMgmtError) ret_val;
   if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
@@ -1252,18 +1252,18 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
  *        rec_value - the value of the record in string format
  * output: errors on error or fill up class with response &
  *         return SUCC
- * notes: reply format = <TSError> <val_size> <name_size> <rec_type> <record_value> <record_name>
+ * notes: reply format = <TSMgmtError> <val_size> <name_size> <rec_type> <record_value> <record_name>
  * Zero-length values and names are supported. If the size field is 0, the corresponding
  * value field is not transmitted.
  * It's the responsibility of the calling function to conver the rec_value
  * based on the rec_type!!
  **********************************************************************/
-TSError
+TSMgmtError
 parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_name)
 {
   int16_t ret_val, rec_t;
   int32_t val_size, name_size;
-  TSError err_t;
+  TSMgmtError err_t;
 
   if (!rec_type || !rec_val) {
     return TS_ERR_PARAMS;
@@ -1277,14 +1277,14 @@ parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_
     return TS_ERR_NET_TIMEOUT;
   }
 
-  // get the return value (TSError type)
+  // get the return value (TSMgmtError type)
   err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
   if (err_t != TS_ERR_OKAY) {
     goto fail;
   }
 
   // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSError) ret_val;
+  err_t = (TSMgmtError) ret_val;
   if (err_t != TS_ERR_OKAY) {
     goto fail;
   }
@@ -1356,15 +1356,15 @@ fail:
  * input: fd
  *        action_need - will contain the type of action needed from the set
  * output: TS_ERR_xx
- * notes: reply format = <TSError> <val_size> <rec_type> <record_value>
+ * notes: reply format = <TSMgmtError> <val_size> <rec_type> <record_value>
  * It's the responsibility of the calling function to conver the rec_value
  * based on the rec_type!!
  **********************************************************************/
-TSError
+TSMgmtError
 parse_record_set_reply(int fd, TSActionNeedT * action_need)
 {
   int16_t ret_val, action_t;
-  TSError err_t;
+  TSMgmtError err_t;
 
   if (!action_need)
     return TS_ERR_PARAMS;
@@ -1374,14 +1374,14 @@ parse_record_set_reply(int fd, TSActionNeedT * action_need)
     return TS_ERR_NET_TIMEOUT;
   }
 
-  // get the return value (TSError type)
+  // get the return value (TSMgmtError type)
   err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
   if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
 
   // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSError) ret_val;
+  err_t = (TSMgmtError) ret_val;
   if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
@@ -1404,13 +1404,13 @@ parse_record_set_reply(int fd, TSActionNeedT * action_need)
  * input: fd
  *        state - will contain the state of the proxy
  * output: TS_ERR_xx
- * notes: function is DIFFERENT becuase it has NO TSError at head of msg
+ * notes: function is DIFFERENT becuase it has NO TSMgmtError at head of msg
  * format: <TSProxyStateT>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_proxy_state_get_reply(int fd, TSProxyStateT * state)
 {
-  TSError err_t;
+  TSMgmtError err_t;
   int16_t state_t;
 
   if (!state)
@@ -1441,13 +1441,13 @@ parse_proxy_state_get_reply(int fd, TSProxyStateT * state)
  *        is_active - set to true if event is active; false otherwise
  * output: TS_ERR_xx
  * notes:
- * format: reply format = <TSError> <bool>
+ * format: reply format = <TSMgmtError> <bool>
  **********************************************************************/
-TSError
+TSMgmtError
 parse_event_active_reply(int fd, bool * is_active)
 {
   int16_t ret_val, active;
-  TSError err_t;
+  TSMgmtError err_t;
 
   if (!is_active)
     return TS_ERR_PARAMS;
@@ -1457,14 +1457,14 @@ parse_event_active_reply(int fd, bool * is_active)
     return TS_ERR_NET_TIMEOUT;
   }
 
-  // get the return value (TSError type)
+  // get the return value (TSMgmtError type)
   err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
   if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
 
   // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSError) ret_val;
+  err_t = (TSMgmtError) ret_val;
   if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
@@ -1483,21 +1483,21 @@ parse_event_active_reply(int fd, bool * is_active)
  * parse_event_notification
  *
  * purpose: parses the event notification message from TM when an event
- *          is signalled; stores the event info in the TSEvent
+ *          is signalled; stores the event info in the TSMgmtEvent
  * input: fd - socket to read
  *        event - where the event info from msg is stored
  * output:TS_ERR_OKAY, TS_ERR_NET_READ, TS_ERR_NET_EOF, TS_ERR_PARAMS
  * notes:
  * format: <OpType> <event_name_len> <event_name> <desc_len> <desc>
  **********************************************************************/
-TSError
-parse_event_notification(int fd, TSEvent * event)
+TSMgmtError
+parse_event_notification(int fd, TSMgmtEvent * event)
 {
   OpType msg_type;
   int16_t type_op;
   int32_t msg_len;
   char *event_name = NULL, *desc = NULL;
-  TSError err_t;
+  TSMgmtError err_t;
 
   if (!event)
     return TS_ERR_PARAMS;

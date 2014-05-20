@@ -25,7 +25,6 @@
 #define _MAIN_H_
 
 #include "FileManager.h"
-#include "WebOverview.h"
 #include "I_Version.h"
 
 // TODO: consolidate location of these defaults
@@ -40,7 +39,7 @@ void runAsUser(char *userName);
 void printUsage(void);
 
 extern FileManager *configFiles;
-extern overviewPage *overviewGenerator;
+//extern overviewPage *overviewGenerator;
 extern AppVersionInfo appVersionInfo;
 
 // Global strings

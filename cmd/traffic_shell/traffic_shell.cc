@@ -50,7 +50,7 @@ int version_flag = 0;
 int
 main(int argc, char *argv[])
 {
-  TSError status;
+  TSMgmtError status;
 
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME,"traffic_shell", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");

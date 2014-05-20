@@ -1,6 +1,10 @@
 /** @file
 
-  A brief file description
+  Definitions for internal management API.
+
+  Purpose: This file contains all API wrapper functions in one class. In
+  order to eliminate the interdependencies of other library calls, new
+  types and structs will be defined and used in the wrapper function calls.
 
   @section license License
 
@@ -20,15 +24,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/*****************************************************************************
- * Filename: mgmtapi.h
- * Purpose: This file contains all API wrapper functions in one class. In
- * order to eliminate the interdependencies of other library calls, new
- * types and structs will be defined and used in the wrapper function calls.
- *
- *
- ***************************************************************************/
 
 #ifndef __TS_MGMT_API_H__
 #define __TS_MGMT_API_H__
@@ -101,7 +96,7 @@ extern "C"
     TS_ERR_PARAMS,             /* Invalid parameters for a fn */
 
     TS_ERR_FAIL
-  } TSError;
+  } TSMgmtError;
 
 /***************************************************************************
  * Constants
@@ -473,16 +468,11 @@ extern "C"
 
   typedef struct
   {
-    /*TSEventTypeT type; *//* Predefined or Conditional event */
     int id;
     char *name;                 /* pre-set, immutable for PREDEFINED events */
     char *description;          /* predefined events have default */
-    /*char *condition; *//* pre-set, immutable for PREDEFINED events */
     TSEventPriorityT priority; /* WARNING, ERROR, FATAL */
-    /*bool local; */
-    /*unsigned long inet_address; *//* for remote peer events */
-    /*bool seen; *//* for remote peer events */
-  } TSEvent;
+  } TSMgmtEvent;
 
 /* Will not be used until new Cougar Event Processor */
   typedef struct
@@ -558,7 +548,7 @@ extern "C"
   typedef struct
   {
     TSRuleTypeT type;
-    TSError error;
+    TSMgmtError error;
   } TSCfgEle;
 
 /* cache.config */
@@ -802,7 +792,7 @@ extern "C"
 /*--- TSList operations --------------------------------------------------*/
   tsapi TSList TSListCreate();
   tsapi void TSListDestroy(TSList l);        /* list must be empty */
-  tsapi TSError TSListEnqueue(TSList l, void *data);
+  tsapi TSMgmtError TSListEnqueue(TSList l, void *data);
   tsapi void *TSListDequeue(TSList l);
   tsapi bool TSListIsEmpty(TSList l);
   tsapi int TSListLen(TSList l);     /* returns -1 if list is invalid */
@@ -811,7 +801,7 @@ extern "C"
 /*--- TSIpAddrList operations --------------------------------------------*/
   tsapi TSIpAddrList TSIpAddrListCreate();
   tsapi void TSIpAddrListDestroy(TSIpAddrList ip_addrl);
-  tsapi TSError TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle * ip_addr);
+  tsapi TSMgmtError TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle * ip_addr);
   tsapi TSIpAddrEle *TSIpAddrListDequeue(TSIpAddrList ip_addrl);
   tsapi int TSIpAddrListLen(TSIpAddrList ip_addrl);
   tsapi bool TSIpAddrListIsEmpty(TSIpAddrList ip_addrl);
@@ -821,7 +811,7 @@ extern "C"
 /*--- TSPortList operations ----------------------------------------------*/
   tsapi TSPortList TSPortListCreate();
   tsapi void TSPortListDestroy(TSPortList portl);
-  tsapi TSError TSPortListEnqueue(TSPortList portl, TSPortEle * port);
+  tsapi TSMgmtError TSPortListEnqueue(TSPortList portl, TSPortEle * port);
   tsapi TSPortEle *TSPortListDequeue(TSPortList portl);
   tsapi bool TSPortListIsEmpty(TSPortList portl);
   tsapi int TSPortListLen(TSPortList portl);
@@ -830,7 +820,7 @@ extern "C"
 /*--- TSStringList operations --------------------------------------------*/
   tsapi TSStringList TSStringListCreate();
   tsapi void TSStringListDestroy(TSStringList strl);
-  tsapi TSError TSStringListEnqueue(TSStringList strl, char *str);
+  tsapi TSMgmtError TSStringListEnqueue(TSStringList strl, char *str);
   tsapi char *TSStringListDequeue(TSStringList strl);
   tsapi bool TSStringListIsEmpty(TSStringList strl);
   tsapi int TSStringListLen(TSStringList strl);
@@ -839,7 +829,7 @@ extern "C"
 /*--- TSIntList operations --------------------------------------------*/
   tsapi TSIntList TSIntListCreate();
   tsapi void TSIntListDestroy(TSIntList intl);
-  tsapi TSError TSIntListEnqueue(TSIntList intl, int *str);
+  tsapi TSMgmtError TSIntListEnqueue(TSIntList intl, int *str);
   tsapi int *TSIntListDequeue(TSIntList intl);
   tsapi bool TSIntListIsEmpty(TSIntList intl);
   tsapi int TSIntListLen(TSIntList intl);
@@ -848,7 +838,7 @@ extern "C"
 /*--- TSDomainList operations --------------------------------------------*/
   tsapi TSDomainList TSDomainListCreate();
   tsapi void TSDomainListDestroy(TSDomainList domainl);
-  tsapi TSError TSDomainListEnqueue(TSDomainList domainl, TSDomain * domain);
+  tsapi TSMgmtError TSDomainListEnqueue(TSDomainList domainl, TSDomain * domain);
   tsapi TSDomain *TSDomainListDequeue(TSDomainList domainl);
   tsapi bool TSDomainListIsEmpty(TSDomainList domainl);
   tsapi int TSDomainListLen(TSDomainList domainl);
@@ -874,8 +864,8 @@ extern "C"
  * specify the TSRuleTypeT when he/she creates the Ele.
  */
 
-  tsapi TSEvent *TSEventCreate();
-  tsapi void TSEventDestroy(TSEvent * event);
+  tsapi TSMgmtEvent *TSEventCreate();
+  tsapi void TSEventDestroy(TSMgmtEvent * event);
   tsapi TSRecordEle *TSRecordEleCreate();
   tsapi void TSRecordEleDestroy(TSRecordEle * ele);
   tsapi TSIpAddrEle *TSIpAddrEleCreate();
@@ -945,13 +935,13 @@ extern "C"
  *       even if not successful connection (eg. client program is started
  *       before TM) then can still make API calls and will try connecting then
  */
-  tsapi TSError TSInit(const char *socket_path, TSInitOptionT options);
+  tsapi TSMgmtError TSInit(const char *socket_path, TSInitOptionT options);
 
 /* TSTerminate: does clean up for API clients
  * Input: <none>
  * Output: <none>
  */
-  tsapi TSError TSTerminate();
+  tsapi TSMgmtError TSTerminate();
 
 /*--- plugin initialization -----------------------------------------------*/
 /* TSPluginInit: called by traffic_manager to initialize the plugin
@@ -973,10 +963,10 @@ extern "C"
 
 /*--- network operations --------------------------------------------------*/
 /* UNIMPLEMENTED: used for remote clients on a different machine */
-  tsapi TSError TSConnect(TSIpAddr ip_addr, int port);
-  tsapi TSError TSDisconnectCbRegister(TSDisconnectFunc * func, void *data);
-  tsapi TSError TSDisconnectRetrySet(int retries, int retry_sleep_msec);
-  tsapi TSError TSDisconnect();
+  tsapi TSMgmtError TSConnect(TSIpAddr ip_addr, int port);
+  tsapi TSMgmtError TSDisconnectCbRegister(TSDisconnectFunc * func, void *data);
+  tsapi TSMgmtError TSDisconnectRetrySet(int retries, int retry_sleep_msec);
+  tsapi TSMgmtError TSDisconnect();
 
 
 /*--- control operations --------------------------------------------------*/
@@ -991,39 +981,39 @@ extern "C"
  *         clear - specifies if want to start TS with clear_cache or
  *                 clear_cache_hostdb option, or just run TS with no options;
  *                  only applies when turning proxy on
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear);
+  tsapi TSMgmtError TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear);
 
 /* TSReconfigure: tell traffic_server to re-read its configuration files
  * Input:  <none>
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSReconfigure();
+  tsapi TSMgmtError TSReconfigure();
 
 /* TSRestart: restarts Traffic Manager and Traffic Server
  * Input:  cluster - local or cluster-wide
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSRestart(bool cluster);
+  tsapi TSMgmtError TSRestart(bool cluster);
 
 /* TSActionDo: based on TSActionNeedT, will take appropriate action
  * Input: action - action that needs to be taken
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSActionDo(TSActionNeedT action);
+  tsapi TSMgmtError TSActionDo(TSActionNeedT action);
 
 /* TSBounce: restart the traffic_server process(es).
  * Input: cluster - local or cluster-wide
- * Output TSError
+ * Output TSMgmtError
  */
-  tsapi TSError TSBounce(bool cluster);
+  tsapi TSMgmtError TSBounce(bool cluster);
 
 /* TSStorageDeviceOp: Request an operation on a storage device.
  * @arg dev Target device, specified by path to device.
  * @return Success.
  */
-  tsapi TSError TSStorageDeviceCmdOffline(char const* dev);
+  tsapi TSMgmtError TSStorageDeviceCmdOffline(char const* dev);
 
 /*--- diags output operations ---------------------------------------------*/
 /* TSDiags: enables users to manipulate run-time diagnostics, and print
@@ -1035,26 +1025,26 @@ extern "C"
   tsapi void TSDiags(TSDiagsT mode, const char *fmt, ...);
 
 /* TSGetErrorMessage: convert error id to error message
- * Input:  error id (defined in TSError)
+ * Input:  error id (defined in TSMgmtError)
  * Output: corresponding error message (allocated memory)
  */
-  char *TSGetErrorMessage(TSError error_id);
+  char *TSGetErrorMessage(TSMgmtError error_id);
 
 /*--- password operations -------------------------------------------------*/
 /* TSEncryptPassword: encrypts a password
  * Input: passwd - a password string to encrypt (can be NULL)
  * Output: e_passwd - an encrypted passwd (ats_malloc's memory)
  */
-  tsapi TSError TSEncryptPassword(char *passwd, char **e_passwd);
+  tsapi TSMgmtError TSEncryptPassword(char *passwd, char **e_passwd);
 
 /*--- direct file operations ----------------------------------------------*/
 /* TSConfigFileRead: reads a config file into a buffer
  * Input:  file - the config file to read
  *         text - a buffer is allocated on the text char* pointer
  *         size - the size of the buffer is returned
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version);
+  tsapi TSMgmtError TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version);
 
 /* TSConfigFileWrite: writes a config file into a buffer
  * Input:  file - the config file to write
@@ -1063,9 +1053,9 @@ extern "C"
  *         version - the current version level; new file will have the
  *                  version number above this one  (if version < 0, then
  *                  just uses the next version number in the sequence)
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSConfigFileWrite(TSFileNameT file, char *text, int size, int version);
+  tsapi TSMgmtError TSConfigFileWrite(TSFileNameT file, char *text, int size, int version);
 
 /* TSReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
@@ -1073,8 +1063,8 @@ extern "C"
  *         headerSize - the size of the header buffer is returned
  *         body       - a buffer is allocated on the body char* pointer
  *         bodySize   - the size of the body buffer is returned
- * Output: TSError   - TS_ERR_OKAY if succeed, TS_ERR_FAIL otherwise
- * Obsolete:  tsapi TSError TSReadFromUrl (char *url, char **text, int *size);
+ * Output: TSMgmtError   - TS_ERR_OKAY if succeed, TS_ERR_FAIL otherwise
+ * Obsolete:  tsapi TSMgmtError TSReadFromUrl (char *url, char **text, int *size);
  * NOTE: The URL can be expressed in the following forms:
  *       - http://www.example.com:80/products/network/index.html
  *       - http://www.example.com/products/network/index.html
@@ -1084,7 +1074,7 @@ extern "C"
  *       - www.example.com
  * NOTE: header and headerSize can be NULL
  */
-  tsapi TSError TSReadFromUrl(char *url, char **header, int *headerSize, char **body, int *bodySize);
+  tsapi TSMgmtError TSReadFromUrl(char *url, char **header, int *headerSize, char **body, int *bodySize);
 
 /* TSReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
@@ -1093,7 +1083,7 @@ extern "C"
  *         body       - a buffer is allocated on the body char* pointer
  *         bodySize   - the size of the body buffer is returned
  *         timeout    - the max. connection timeout value before aborting.
- * Output: TSError   - TS_ERR_OKAY if succeed, TS_ERR_FAIL otherwise
+ * Output: TSMgmtError   - TS_ERR_OKAY if succeed, TS_ERR_FAIL otherwise
  * NOTE: The URL can be expressed in the following forms:
  *       - http://www.example.com:80/products/network/index.html
  *       - http://www.example.com/products/network/index.html
@@ -1103,32 +1093,32 @@ extern "C"
  *       - www.example.com
  * NOTE: header and headerSize can be NULL
  */
-  tsapi TSError TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
+  tsapi TSMgmtError TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
 
 /*--- snapshot operations -------------------------------------------------*/
 /* TSSnapshotTake: takes snapshot of configuration at that instant in time
  * Input:  snapshot_name - name to call new snapshot
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSSnapshotTake(char *snapshot_name);
+  tsapi TSMgmtError TSSnapshotTake(char *snapshot_name);
 
 /* TSSnapshotRestore: restores configuration to when the snapshot was taken
  * Input:  snapshot_name - name of snapshot to restore
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSSnapshotRestore(char *snapshot_name);
+  tsapi TSMgmtError TSSnapshotRestore(char *snapshot_name);
 
 /* TSSnapshotRemove: removes the snapshot
  * Input:  snapshot_name - name of snapshot to remove
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSSnapshotRemove(char *snapshot_name);
+  tsapi TSMgmtError TSSnapshotRemove(char *snapshot_name);
 
 /* TSSnapshotsGet: restores configuration to when the snapshot was taken
  * Input:  snapshots - the list which will store all snapshot names currently taken
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSSnapshotGetMlt(TSStringList snapshots);
+  tsapi TSMgmtError TSSnapshotGetMlt(TSStringList snapshots);
 
 
 /*--- statistics operations -----------------------------------------------*/
@@ -1136,63 +1126,63 @@ extern "C"
  * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
-  tsapi TSError TSStatsReset(bool cluster, const char *name = NULL);
+  tsapi TSMgmtError TSStatsReset(bool cluster, const char *name = NULL);
 
 
 /*--- variable operations -------------------------------------------------*/
 /* TSRecordGet: gets a record
  * Input:  rec_name - the name of the record (proxy.config.record_name)
  *         rec_val  - allocated TSRecordEle structure, value stored inside
- * Output: TSError (if the rec_name does not exist, returns TS_ERR_FAIL)
+ * Output: TSMgmtError (if the rec_name does not exist, returns TS_ERR_FAIL)
  */
-  tsapi TSError TSRecordGet(char *rec_name, TSRecordEle * rec_val);
+  tsapi TSMgmtError TSRecordGet(char *rec_name, TSRecordEle * rec_val);
 
 /* TSRecordGet*: gets a record w/ a known type
  * Input:  rec_name - the name of the record (proxy.config.record_name)
  *         *_val    - allocated TSRecordEle structure, value stored inside
- * Output: TSError
+ * Output: TSMgmtError
  * Note: For TSRecordGetString, the function will allocate memory for the
  *       *string_val, so the caller must free (*string_val);
  */
-  tsapi TSError TSRecordGetInt(const char *rec_name, TSInt * int_val);
-  tsapi TSError TSRecordGetCounter(const char *rec_name, TSCounter * counter_val);
-  tsapi TSError TSRecordGetFloat(const char *rec_name, TSFloat * float_val);
-  tsapi TSError TSRecordGetString(const char *rec_name, TSString * string_val);
+  tsapi TSMgmtError TSRecordGetInt(const char *rec_name, TSInt * int_val);
+  tsapi TSMgmtError TSRecordGetCounter(const char *rec_name, TSCounter * counter_val);
+  tsapi TSMgmtError TSRecordGetFloat(const char *rec_name, TSFloat * float_val);
+  tsapi TSMgmtError TSRecordGetString(const char *rec_name, TSString * string_val);
 
 /* TSRecordGetMlt: gets a set of records
  * Input:  rec_list - list of record names the user wants to retrieve;
  *                    resulting gets will be stored in the same list;
  *                    if one get fails, transaction will be aborted
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSRecordGetMlt(TSStringList rec_names, TSList rec_vals);
+  tsapi TSMgmtError TSRecordGetMlt(TSStringList rec_names, TSList rec_vals);
 
 /* TSRecordGetMatchMlt: gets a set of records
  * Input:  rec_regex - regular expression to match against record names
- * Output: TSError, TSList of TSRecordEle
+ * Output: TSMgmtError, TSList of TSRecordEle
  */
-  tsapi TSError TSRecordGetMatchMlt(const char *rec_regex, TSList list);
+  tsapi TSMgmtError TSRecordGetMatchMlt(const char *rec_regex, TSList list);
 
 /* TSRecordSet*: sets a record w/ a known type
  * Input:  rec_name     - the name of the record (proxy.config.record_name)
  *         *_val        - the value to set the record to
  *         *action_need - indicates which operation required by user for changes to take effect
- * Output: TSError
+ * Output: TSMgmtError
  */
 
-  tsapi TSError TSRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need);
-  tsapi TSError TSRecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need);
-  tsapi TSError TSRecordSetCounter(const char *rec_name, TSCounter counter_val, TSActionNeedT * action_need);
-  tsapi TSError TSRecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need);
-  tsapi TSError TSRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need);
+  tsapi TSMgmtError TSRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need);
+  tsapi TSMgmtError TSRecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need);
+  tsapi TSMgmtError TSRecordSetCounter(const char *rec_name, TSCounter counter_val, TSActionNeedT * action_need);
+  tsapi TSMgmtError TSRecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need);
+  tsapi TSMgmtError TSRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need);
 
 /* TSRecordSetMlt: sets a set of records
  * Input:  rec_list     - list of record names the user wants to set;
  *                        if one set fails, transaction will be aborted
  *         *action_need - indicates which operation required by user for changes to take effect
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSRecordSetMlt(TSList rec_list, TSActionNeedT * action_need);
+  tsapi TSMgmtError TSRecordSetMlt(TSList rec_list, TSActionNeedT * action_need);
 
 /*--- events --------------------------------------------------------------*/
 /* Only a set of statically defined events exist. An event is either
@@ -1206,33 +1196,33 @@ extern "C"
  * Input:  event_name - "MGMT_ALARM_ADD_ALARM"
  *         ...        - variable argument list of parameters that go
  *                       go into event description when it is signalled
- * Output: TSError
+ * Output: TSMgmtError
  */
-/*tsapi TSError               TSEventSignal (char *event_name, ...); */
+/*tsapi TSMgmtError               TSEventSignal (char *event_name, ...); */
 
 
 /* TSEventResolve: enables the user to resolve an event
  * Input:  event_name - event to resolve
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSEventResolve(char *event_name);
+  tsapi TSMgmtError TSEventResolve(char *event_name);
 
 /* TSActiveEventGetMlt: query for a list of all the currently active events
  * Input:  active_events - an empty TSList; if function call is successful,
  *                         active_events will contain names of the currently
  *                         active events
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSActiveEventGetMlt(TSList active_events);
+  tsapi TSMgmtError TSActiveEventGetMlt(TSList active_events);
 
 /* TSEventIsActive: check if the specified event is active
  * Input:  event_name - name of event to check if active; must be one of
  *                      the predefined names
  *         is_current - when function completes, if true, then the event is
  *                      active
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSEventIsActive(char *event_name, bool * is_current);
+  tsapi TSMgmtError TSEventIsActive(char *event_name, bool * is_current);
 
 /* TSEventSignalCbRegister: register a callback for a specific event or
  *                           for any event
@@ -1240,18 +1230,18 @@ extern "C"
  *                      if NULL, the callback is registered for all events
  *         func       - callback function
  *         data       - data to pass to callback
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSEventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data);
+  tsapi TSMgmtError TSEventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data);
 
 /* TSEventSignalCbUnregister: unregister a callback for a specific event
  *                             or for any event
  * Input: event_name - the name of event to unregister callback for;
  *                     if NULL, the callback is unregistered for all events
  *         func       - callback function
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
+  tsapi TSMgmtError TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
 
 
 /*--- abstracted file operations ------------------------------------------*/
@@ -1267,28 +1257,28 @@ extern "C"
 
 /* TSCfgContextDestroy: deallocates all memory for the TSCfgContext
  * Input:  ctx - the TSCfgContext to destroy
- * Output: TSError
+ * Output: TSMgmtError
  */
-  tsapi TSError TSCfgContextDestroy(TSCfgContext ctx);
+  tsapi TSMgmtError TSCfgContextDestroy(TSCfgContext ctx);
 
 /* TSCfgContextCommit: write new file copy based on ele's listed in ctx
  * Input:  ctx - where all the file's eles are stored
  *         *action_need - indicates which operation required by user for changes to take effect
- * Output: TSError
+ * Output: TSMgmtError
  * Note: If you do not call TSCfgContextGet before calling TSCfgContextCommit, then
  * you could possibly overwrite all the old rules in the config file!!
  */
-  tsapi TSError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * action_need, TSIntList errRules);
+  tsapi TSMgmtError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * action_need, TSIntList errRules);
 
 
 /* TSCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
  *                puts them into ctx; note that the ele's in the TSCfgContext don't
  *                all have to be of the same ele type
  * Input: ctx - where all the most currfile's eles are stored
- * Output: TSError
+ * Output: TSMgmtError
  *
  */
-  tsapi TSError TSCfgContextGet(TSCfgContext ctx);
+  tsapi TSMgmtError TSCfgContextGet(TSCfgContext ctx);
 
 
 /*--- TSCfgContext Operations --------------------------------------------*/
@@ -1330,53 +1320,53 @@ extern "C"
  *                         does nothing if Ele is at first position in the TSCfgContext
  * Input:  ctx   - the TSCfgContext
  *         index - the position of the Ele that needs to be shifted up
- * Output: TSError
+ * Output: TSMgmtError
  */
-  TSError TSCfgContextMoveEleUp(TSCfgContext ctx, int index);
+  TSMgmtError TSCfgContextMoveEleUp(TSCfgContext ctx, int index);
 
 /* TSCfgContextMoveEleDown: shifts the Ele at the specified index one position down;
  *                           does nothing if Ele is last in the TSCfgContext
  * Input:  ctx   - the TSCfgContext
  *         index - the position of the Ele that needs to be shifted down
- * Output: TSError
+ * Output: TSMgmtError
  */
-  TSError TSCfgContextMoveEleDown(TSCfgContext ctx, int index);
+  TSMgmtError TSCfgContextMoveEleDown(TSCfgContext ctx, int index);
 
 /* TSCfgContextAppendEle: appends the ele to the end of the TSCfgContext
  * Input:  ctx   - the TSCfgContext
  *         ele - the Ele (typecasted as an TSCfgEle) to append to ctx
- * Output: TSError
+ * Output: TSMgmtError
  * Note: When appending the ele to the TSCfgContext, this function does NOT
  *       make a copy of the ele passed in; it uses the same memory! So you probably
  *       do not want to append the ele and then free the memory for the ele
  *       without first removing the ele from the TSCfgContext
  */
-  TSError TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle * ele);
+  TSMgmtError TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle * ele);
 
 /* TSCfgContextInsertEleAt: inserts the ele at the specified index
  * Input:  ctx   - the TSCfgContext
  *         ele   - the Ele (typecasted as an TSCfgEle) to insert into ctx
  *         index - the position in ctx to insert the Ele
- * Output: TSError
+ * Output: TSMgmtError
  * Note: When inserting the ele into the TSCfgContext, this function does NOT
  *       make a copy of the ele passed in; it uses the same memory! So you probably
  *       do not want to insert the ele and then free the memory for the ele
  *       without first removing the ele from the TSCfgContext
  */
-  TSError TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle * ele, int index);
+  TSMgmtError TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle * ele, int index);
 
 /* TSCfgContextRemoveEleAt: removes the Ele at the specified index from the TSCfgContext
  * Input:  ctx   - the TSCfgContext
  *         index - the position of the Ele in the ctx to remove
- * Output: TSError
+ * Output: TSMgmtError
  */
-  TSError TSCfgContextRemoveEleAt(TSCfgContext ctx, int index);
+  TSMgmtError TSCfgContextRemoveEleAt(TSCfgContext ctx, int index);
 
   /* TSCfgContextRemoveAll: removes all Eles from the TSCfgContext
    * Input:  ctx   - the TSCfgContext
-   * Output: TSError
+   * Output: TSMgmtError
    */
-  TSError TSCfgContextRemoveAll(TSCfgContext ctx);
+  TSMgmtError TSCfgContextRemoveAll(TSCfgContext ctx);
 
 /*--- TS Cache Inspector Operations --------------------------------------------*/
 
@@ -1385,14 +1375,14 @@ extern "C"
  *   lookups cache information of the url and saves the
  *   cache info to the info buffer
  */
-  tsapi TSError TSLookupFromCacheUrl(TSString url, TSString * info);
+  tsapi TSMgmtError TSLookupFromCacheUrl(TSString url, TSString * info);
 
 /* TSLookupFromCacheUrlRegex
  *   Function takes a string in a regex form and returns
  *   a list of urls that match the regex
  ********************************************************/
 
-  tsapi TSError TSLookupFromCacheUrlRegex(TSString url_regex, TSString * list);
+  tsapi TSMgmtError TSLookupFromCacheUrlRegex(TSString url_regex, TSString * list);
 
 /* TSDeleteFromCacheUrl
  *   Function takes an url and an 'info' buffer as input,
@@ -1400,21 +1390,21 @@ extern "C"
  *   returns the status of deletion
  ********************************************************/
 
-  tsapi TSError TSDeleteFromCacheUrl(TSString url, TSString * info);
+  tsapi TSMgmtError TSDeleteFromCacheUrl(TSString url, TSString * info);
 
 /* TSDeleteFromCacheUrlRegex
  *   Function takes a string in a regex form and returns
  *   a list of urls deleted from cache
  ********************************************************/
 
-  tsapi TSError TSDeleteFromCacheUrlRegex(TSString url_regex, TSString * list);
+  tsapi TSMgmtError TSDeleteFromCacheUrlRegex(TSString url_regex, TSString * list);
 
 /* TSInvalidateFromCacheUrlRegex
  *   Function takes a string in a regex form and returns
  *   a list of urls invalidated from cache
  ********************************************************/
 
-  tsapi TSError TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString * list);
+  tsapi TSMgmtError TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString * list);
 
 #ifdef __cplusplus
 }
