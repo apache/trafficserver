@@ -7008,9 +7008,7 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
   }
 
   // Check pre-conditions for keep-alive
-  if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
-    ka_action = KA_DISABLED;
-  } else if (HTTP_MAJOR(ver.m_version) == 0) {  /* No K-A for 0.9 apps */
+  if (HTTP_MAJOR(ver.m_version) == 0) {  /* No K-A for 0.9 apps */
     ka_action = KA_DISABLED;
   }
   else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
@@ -7059,10 +7057,13 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
       heads->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
     }
 
-    // If we cannot trust the content length, we will close the connection
+    // Close the connection if client_info is not keep-alive.
+    // Otherwise, if we cannot trust the content length, we will close the connection
     // unless we are going to use chunked encoding or the client issued
     // a PUSH request
-    if (s->hdr_info.trust_response_cl == false &&
+    if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
+       ka_action = KA_DISABLED;
+    } else if (s->hdr_info.trust_response_cl == false &&
         !(s->client_info.receive_chunked_response == true ||
           (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
       ka_action = KA_CLOSE;
