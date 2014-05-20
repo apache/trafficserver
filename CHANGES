@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2739] ATS doesn't send back Transfer-Encoding when client keep-alive
+     is turned off
+
   *) [TS-2253] PluginVC::process_close Segmentation fault
 
   *) [TS-2823] Change the Mgmt API names TSEvent and TSError to avoid name
