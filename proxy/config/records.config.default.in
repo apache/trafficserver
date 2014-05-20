@@ -541,6 +541,12 @@ CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
 CONFIG proxy.config.ssl.client.CA.cert.path STRING @rel_sysconfdir@
 ##############################################################################
 #
+# SPDY Configuration.
+#
+##############################################################################
+CONFIG proxy.config.spdy.client.max_concurrent_streams INT 1000
+##############################################################################
+#
 # ICP Configuration.
 #
 ##############################################################################

@@ -2227,10 +2227,10 @@ ICP Configuration
 SPDY Configuration
 ==================
 
-.. ts:cv:: CONFIG proxy.config.spdy.max_concurrent_streams INT 1000
+.. ts:cv:: CONFIG proxy.config.spdy.client.max_concurrent_streams INT 1000
    :reloadable:
 
-   Set the maximum number of concurrent streams per client SPDY connection.
+   Set the maximum number of concurrent streams per client connection.
 
 Scheduled Update Configuration
 ==============================
