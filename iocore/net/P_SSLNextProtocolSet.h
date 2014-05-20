@@ -39,8 +39,7 @@ public:
   bool unregisterEndpoint(const char *, Continuation *);
   bool advertiseProtocols(const unsigned char ** out, unsigned * len) const;
 
-  Continuation * findEndpoint(const char *) const;
-  Continuation * findEndpoint(const unsigned char *, unsigned, const char **) const;
+  Continuation * findEndpoint(const unsigned char *, unsigned) const;
 
   struct NextProtocolEndpoint
   {

@@ -800,8 +800,7 @@ UnixNetVConnection::UnixNetVConnection()
 #endif
     active_timeout(NULL), nh(NULL),
     id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0),
-    from_accept_thread(false),
-    selected_next_protocol(NULL)
+    from_accept_thread(false)
 {
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);

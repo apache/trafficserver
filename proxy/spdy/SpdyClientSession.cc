@@ -54,9 +54,9 @@ SpdyRequest::clear()
 }
 
 void
-SpdyClientSession::init(NetVConnection * netvc)
+SpdyClientSession::init(NetVConnection * netvc, spdylay_proto_version vers)
 {
-  int version, r;
+  int r;
 
   atomic_inc(g_sm_cnt);
 
@@ -64,19 +64,7 @@ SpdyClientSession::init(NetVConnection * netvc)
   this->vc = netvc;
   this->req_map.clear();
 
-  // XXX this has to die ... TS-2793
-  UnixNetVConnection * unixvc = reinterpret_cast<UnixNetVConnection *>(netvc);
-
-  if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3_1)
-    version = SPDYLAY_PROTO_SPDY3_1;
-  else if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3)
-    version = SPDYLAY_PROTO_SPDY3;
-  else if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_2)
-    version = SPDYLAY_PROTO_SPDY2;
-  else
-    version = SPDYLAY_PROTO_SPDY3;
-
-  r = spdylay_session_server_new(&session, version,
+  r = spdylay_session_server_new(&session, vers,
                                  &SPDY_CFG.spdy.callbacks, this);
   ink_release_assert(r == 0);
   sm_id = atomic_inc(g_sm_id);
@@ -149,12 +137,12 @@ SpdyClientSession::clear()
 }
 
 void
-spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
+spdy_sm_create(NetVConnection * netvc, spdylay_proto_version vers, MIOBuffer * iobuf, IOBufferReader * reader)
 {
   SpdyClientSession  *sm;
 
   sm = spdyClientSessionAllocator.alloc();
-  sm->init(netvc);
+  sm->init(netvc, vers);
 
   sm->req_buffer = iobuf ? reinterpret_cast<TSIOBuffer>(iobuf) : TSIOBufferCreate();
   sm->req_reader = reader ? reinterpret_cast<TSIOBufferReader>(reader) : TSIOBufferReaderAlloc(sm->req_buffer);

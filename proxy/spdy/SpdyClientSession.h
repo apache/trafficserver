@@ -110,7 +110,7 @@ public:
     clear();
   }
 
-  void init(NetVConnection * netvc);
+  void init(NetVConnection * netvc, spdylay_proto_version vers);
   void clear();
 
   int64_t sm_id;
@@ -138,7 +138,7 @@ private:
   int state_session_readwrite(int event, void * edata);
 };
 
-void spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader);
+void spdy_sm_create(NetVConnection * netvc, spdylay_proto_version vers, MIOBuffer * iobuf, IOBufferReader * reader);
 
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 

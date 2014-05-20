@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2793] Remove UnixNetVConnection::selected_next_protocol.
+
   *) [TS-2831] Add SPDY stream count statistic.
 
   *) [TS-1665] Remove the old traffic_shell (R.I.P.).

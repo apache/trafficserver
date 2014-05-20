@@ -26,11 +26,21 @@
 
 #if TS_HAS_SPDY
 #include "SpdyClientSession.h"
+
+static const spdylay_proto_version versmap[] = {
+  SPDYLAY_PROTO_SPDY2,    // SPDY_VERSION_2
+  SPDYLAY_PROTO_SPDY3,    // SPDY_VERSION_3
+  SPDYLAY_PROTO_SPDY3_1,  // SPDY_VERSION_3_1
+};
+
 #endif
 
-SpdySessionAccept::SpdySessionAccept(Continuation *ep)
-    : SessionAccept(new_ProxyMutex()), endpoint(ep)
+SpdySessionAccept::SpdySessionAccept(unsigned vers)
+    : SessionAccept(new_ProxyMutex()), version(vers)
 {
+#if TS_HAS_SPDY
+  ink_release_assert(vers < countof(versmap));
+#endif
   SET_HANDLER(&SpdySessionAccept::mainEvent);
 }
 
@@ -41,7 +51,7 @@ SpdySessionAccept::mainEvent(int event, void * edata)
     NetVConnection * netvc =static_cast<NetVConnection *>(edata);
 
 #if TS_HAS_SPDY
-    spdy_sm_create(netvc, NULL, NULL);
+    spdy_sm_create(netvc, versmap[this->version], NULL, NULL);
     SpdyStatIncrCount(Config::STAT_TOTAL_STREAMS, this);
 #else
     Error("accepted a SPDY session, but SPDY support is not available");
@@ -59,7 +69,7 @@ void
 SpdySessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
 {
 #if TS_HAS_SPDY
-  spdy_sm_create(netvc, iobuf, reader);
+  spdy_sm_create(netvc, versmap[this->version], iobuf, reader);
 #else
   (void)netvc;
   (void)iobuf;

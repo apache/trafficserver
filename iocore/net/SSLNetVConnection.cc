@@ -595,11 +595,15 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         // If there's no NPN set, we should not have done this negotiation.
         ink_assert(this->npnSet != NULL);
 
-        this->npnEndpoint = this->npnSet->findEndpoint(proto, len, &this->selected_next_protocol);
+        this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
         this->npnSet = NULL;
 
-        ink_assert(this->npnEndpoint != NULL);
-        Debug("ssl", "client selected next protocol %.*s", len, proto);
+        if (this->npnEndpoint == NULL) {
+          Error("failed to find registered SSL endpoint for '%.*s'", (int)len, (const char *)proto);
+          return EVENT_ERROR;
+        }
+
+        Debug("ssl", "client selected next protocol '%.*s'", len, proto);
       } else {
         Debug("ssl", "client did not select a next protocol");
       }

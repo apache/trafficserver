@@ -32,7 +32,14 @@
 class SpdySessionAccept: public SessionAccept
 {
 public:
-  SpdySessionAccept(Continuation *ep);
+
+  enum {
+    SPDY_VERSION_2 = 0,
+    SPDY_VERSION_3,
+    SPDY_VERSION_3_1,
+  };
+
+  explicit SpdySessionAccept(unsigned vers);
   ~SpdySessionAccept() {}
 
   void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
@@ -42,7 +49,7 @@ private:
   SpdySessionAccept(const SpdySessionAccept &); // disabled
   SpdySessionAccept& operator =(const SpdySessionAccept&); // disabled
 
-  Continuation *endpoint;
+  unsigned version;
 };
 
 #endif /* SpdySessionAccept_H_ */
