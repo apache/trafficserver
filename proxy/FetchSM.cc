@@ -36,6 +36,8 @@ static const char *http_method[] = {
   "HEAD",
   "PURGE",
   "PUT",
+  "OPTIONS",
+  "TRACE",
   "LAST",
 };
 
