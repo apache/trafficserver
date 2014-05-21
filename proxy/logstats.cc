@@ -1730,7 +1730,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
-      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing).", second_read_size, first_read_size);
+      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing), errno=%d.", second_read_size, first_read_size, errno);
       return 1;
     }
 
@@ -1746,11 +1746,30 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       return 1;
     }
 
-    nread = read(in_fd, &buffer[sizeof(LogBufferHeader)], buffer_bytes);
-    if (!nread || EOF == nread) {
-      Debug("logstats", "Failed to read buffer payload [%d bytes]", buffer_bytes);
-      return 1;
-    }
+    const int MAX_READ_TRIES = 5;
+    int total_read = 0;
+    int read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
+    nread = 0;
+    do {
+      nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
+      if (EOF == nread || !nread) { // just bail on error
+        Debug("logstats", "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d", buffer_bytes - total_read, nread, errno);
+        return 1;
+      } else {
+        total_read += nread;
+      }
+
+      if (total_read < buffer_bytes) {
+        if (--read_tries_remaining <= 0) {
+          Debug("logstats_failed_retries", "Unable to read after %d tries, total_read=%d, buffer_bytes=%d", MAX_READ_TRIES, total_read, buffer_bytes);
+          return 1;
+        }
+        // let's wait until we get more data on this file descriptor
+        Debug("logstats_partial_read", "Failed to read buffer payload [%d bytes], total_read=%d, buffer_bytes=%d, tries_remaining=%d",
+            buffer_bytes - total_read, total_read, buffer_bytes, read_tries_remaining);
+        usleep(50*1000); // wait 50ms
+      }
+    } while (total_read < buffer_bytes);
 
     // Possibly skip too old entries (the entire buffer is skipped)
     if (header->high_timestamp >= max_age) {
