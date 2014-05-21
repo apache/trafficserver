@@ -131,6 +131,8 @@ SSLConfigParams::initialize()
   char *ssl_client_private_key_path = NULL;
   char *clientCACertRelativePath = NULL;
   char *multicert_config_file = NULL;
+  char *ssl_server_ca_cert_filename = NULL;
+  char *ssl_client_ca_cert_filename = NULL;
 
   cleanup();
 
@@ -210,9 +212,10 @@ SSLConfigParams::initialize()
   set_paths_helper(ssl_server_private_key_path, NULL, &serverKeyPathOnly, NULL);
   ats_free(ssl_server_private_key_path);
 
-  REC_ReadConfigStringAlloc(serverCACertFilename, "proxy.config.ssl.CA.cert.filename");
+  REC_ReadConfigStringAlloc(ssl_server_ca_cert_filename, "proxy.config.ssl.CA.cert.filename");
   REC_ReadConfigStringAlloc(CACertRelativePath, "proxy.config.ssl.CA.cert.path");
-  set_paths_helper(CACertRelativePath, serverCACertFilename, &serverCACertPath, &serverCACertFilename);
+  set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
+  ats_free(ssl_server_ca_cert_filename);
   ats_free(CACertRelativePath);
 
   // SSL session cache configurations
@@ -241,10 +244,11 @@ SSLConfigParams::initialize()
   ats_free_null(ssl_client_private_key_filename);
   ats_free_null(ssl_client_private_key_path);
 
-  REC_ReadConfigStringAlloc(clientCACertFilename, "proxy.config.ssl.client.CA.cert.filename");
+  REC_ReadConfigStringAlloc(ssl_client_ca_cert_filename, "proxy.config.ssl.client.CA.cert.filename");
   REC_ReadConfigStringAlloc(clientCACertRelativePath, "proxy.config.ssl.client.CA.cert.path");
-  set_paths_helper(clientCACertRelativePath, clientCACertFilename, &clientCACertPath, &clientCACertFilename);
+  set_paths_helper(clientCACertRelativePath, ssl_client_ca_cert_filename, &clientCACertPath, &clientCACertFilename);
   ats_free(clientCACertRelativePath);
+  ats_free(ssl_client_ca_cert_filename);
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 }
