@@ -173,7 +173,7 @@ Run the command :option:`traffic_line -x` to apply the configuration changes.
    * :ts:cv:`proxy.config.icp.multicast_enabled`
    * :ts:cv:`proxy.config.icp.query_timeout`
 
-.. Edit `icp.config` file located in the Traffic Server `config` directory: 
+.. Edit :file:`icp.config` file located in the Traffic Server `config` directory: 
    For each ICP peer you want to identify, enter a separate rule in the :file:`icp.config` file.
 
 .. Run the command :option:`traffic_line -x` to apply the configuration changes.

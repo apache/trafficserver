@@ -2285,7 +2285,7 @@ Plug-in Configuration
 Sockets
 =======
 
-.. ts:cv:: CONFIG proxy.config.net.defer_accept INT `1`
+.. ts:cv:: CONFIG proxy.config.net.defer_accept INT 1
 
    default: ``1`` meaning ``on`` all Platforms except Linux: ``45`` seconds
 
