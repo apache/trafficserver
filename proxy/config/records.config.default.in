@@ -31,7 +31,6 @@ CONFIG proxy.config.http.server_ports STRING 8080
 CONFIG proxy.config.http.insert_request_via_str INT 1
 CONFIG proxy.config.http.insert_response_via_str INT 0
 
-
 ##############################################################################
 # Parent proxy configuration, in addition to these settings also see parent.config. Docs:
 #    http://docs.trafficserver.apache.org/records.config#parent-proxy-configuration
@@ -114,7 +113,6 @@ CONFIG proxy.config.http.cache.heuristic_lm_factor FLOAT 0.10
 #    http://docs.trafficserver.apache.org/records.config#network
 ##############################################################################
 CONFIG proxy.config.net.connections_throttle INT 30000
-
 
 ##############################################################################
 # RAM and disk cache configurations. Docs:
