@@ -261,21 +261,34 @@ Description
 ===========
 
 This module embeds Lua, into Apache Traffic Server. This module acts as remap plugin of Traffic Server. In this case we
-should provide **'do_remap'** function in each lua script. We can write this in remap.config:::
+should provide **'do_remap'** function in each lua script. We can write this in remap.config::
 
-     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so
-@pparam=/etc/trafficserver/script/test_hdr.lua
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so \
+       @pparam=/etc/trafficserver/script/test_hdr.lua
 
 Sometimes we want to receive parameters and process them in the script, we should realize **'\__init__'** function in
-the lua script(sethost.lua is a reference), and we can write this in remap.config:::
+the lua script(sethost.lua is a reference), and we can write this in remap.config::
 
-     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so
-@pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
+     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/usr/lib64/trafficserver/plugins/tslua.so \
+       @pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn
 
-This module can also act as a global plugin of Traffic Server. In this case we should provide one of these functions
-(**'do_global_read_request'**, **'do_global_send_request'**, **'do_global_read_response'**,
-**'do_global_send_response'**, **'do_global_cache_lookup_complete'**) in each lua script. We can write this in
-plugin.config:::
+This module can also act as a global plugin of Traffic Server. In this case we should provide one of these functions in
+each lua script:
+
+- **'do_global_txn_start'**
+- **'do_global_txn_close'**
+- **'do_global_os_dns'**
+- **'do_global_pre_remap'**
+- **'do_global_post_remap'**
+- **'do_global_read_request'**
+- **'do_global_send_request'**
+- **'do_global_read_response'**
+- **'do_global_send_response'**
+- **'do_global_cache_lookup_complete'**
+- **'do_global_read_cache'**
+- **'do_global_select_alt'**
+
+We can write this in plugin.config::
 
      tslua.so /etc/trafficserver/script/test_global_hdr.lua
 
@@ -350,12 +363,19 @@ Hook point constants
 --------------------
 **context**: do_remap/do_global_*/later
 
-    TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE
-    TS_LUA_HOOK_SEND_REQUEST_HDR
-    TS_LUA_HOOK_READ_RESPONSE_HDR
-    TS_LUA_HOOK_SEND_RESPONSE_HDR
-    TS_LUA_REQUEST_TRANSFORM
-    TS_LUA_RESPONSE_TRANSFORM
+- TS_LUA_HOOK_OS_DNS
+- TS_LUA_HOOK_PRE_REMAP
+- TS_LUA_HOOK_POST_REMAP
+- TS_LUA_HOOK_READ_CACHE_HDR
+- TS_LUA_HOOK_SELECT_ALT
+- TS_LUA_HOOK_TXN_CLOSE
+- TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE
+- TS_LUA_HOOK_READ_REQUEST_HDR
+- TS_LUA_HOOK_SEND_REQUEST_HDR
+- TS_LUA_HOOK_READ_RESPONSE_HDR
+- TS_LUA_HOOK_SEND_RESPONSE_HDR
+- TS_LUA_REQUEST_TRANSFORM
+- TS_LUA_RESPONSE_TRANSFORM
     
 These constants are usually used in ts.hook method call.
 
@@ -417,10 +437,10 @@ Http cache lookup status constants
 ----------------------------------
 **context**: global
 
-    TS_LUA_CACHE_LOOKUP_MISS (0)
-    TS_LUA_CACHE_LOOKUP_HIT_STALE (1)
-    TS_LUA_CACHE_LOOKUP_HIT_FRESH (2)
-    TS_LUA_CACHE_LOOKUP_SKIPPED (3)
+- TS_LUA_CACHE_LOOKUP_MISS (0)
+- TS_LUA_CACHE_LOOKUP_HIT_STALE (1)
+- TS_LUA_CACHE_LOOKUP_HIT_FRESH (2)
+- TS_LUA_CACHE_LOOKUP_SKIPPED (3)
 
 
 ts.http.set_cache_url

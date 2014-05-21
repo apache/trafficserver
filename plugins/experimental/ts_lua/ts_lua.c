@@ -202,6 +202,34 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
     lua_getglobal(l, TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE);
     break;
 
+  case TS_EVENT_HTTP_TXN_START:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_START);
+    break;
+
+  case TS_EVENT_HTTP_PRE_REMAP:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_PRE_REMAP);
+    break;
+
+  case TS_EVENT_HTTP_POST_REMAP:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_POST_REMAP);
+    break;
+
+  case TS_EVENT_HTTP_SELECT_ALT:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_SELECT_ALT);
+    break;
+
+  case TS_EVENT_HTTP_OS_DNS:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_OS_DNS);
+    break;
+
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_READ_CACHE);
+    break;
+
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_CLOSE);
+    break;
+
   default:
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
@@ -252,7 +280,6 @@ transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   txn_contp = TSContCreate(ts_lua_http_cont_handler, NULL);
   TSContDataSet(txn_contp, http_ctx);
   http_ctx->main_contp = txn_contp;
-  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
 
   global_contp = TSContCreate(globalHookHandler, NULL);
   TSContDataSet(global_contp, http_ctx);
@@ -294,6 +321,58 @@ transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
     TSDebug(TS_LUA_DEBUG_TAG, "read_request_hdr_hook added");
   }
   lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_START);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_START_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "txn_start_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_PRE_REMAP);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_PRE_REMAP_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "pre_remap_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_POST_REMAP);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_POST_REMAP_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "post_remap_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_SELECT_ALT);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SELECT_ALT_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "select_alt_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_OS_DNS);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_OS_DNS_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "os_dns_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_CACHE);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_CACHE_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "read_cache_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_CLOSE);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "txn_close_hook added");
+  }
+  lua_pop(l, 1);
+
+  // add a hook to release resources for context
+  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
 
   TSMutexUnlock(main_ctx->mutexp);
 

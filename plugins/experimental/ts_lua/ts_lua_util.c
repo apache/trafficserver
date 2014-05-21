@@ -444,7 +444,91 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent event, void *edata)
 
     break;
 
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+
+    lua_getglobal(l, TS_LUA_FUNCTION_READ_REQUEST);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
+    break;
+
+  case TS_EVENT_HTTP_TXN_START:
+
+    lua_getglobal(l, TS_LUA_FUNCTION_TXN_START);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
+    break;
+
+  case TS_EVENT_HTTP_PRE_REMAP:
+
+    lua_getglobal(l, TS_LUA_FUNCTION_PRE_REMAP);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
+    break;
+
+  case TS_EVENT_HTTP_POST_REMAP:
+
+    lua_getglobal(l, TS_LUA_FUNCTION_POST_REMAP);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
+    break;
+
+  case TS_EVENT_HTTP_OS_DNS:
+
+    lua_getglobal(l, TS_LUA_FUNCTION_OS_DNS);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
+    break;
+
+  case TS_EVENT_HTTP_SELECT_ALT:
+
+    lua_getglobal(l, TS_LUA_FUNCTION_SELECT_ALT);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
+    break;
+
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
+
+    lua_getglobal(l, TS_LUA_FUNCTION_READ_CACHE);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
+    break;
+
   case TS_EVENT_HTTP_TXN_CLOSE:
+    lua_getglobal(l, TS_LUA_FUNCTION_TXN_CLOSE);
+    if (lua_type(l, -1) == LUA_TFUNCTION) {
+      if (lua_pcall(l, 0, 1, 0)) {
+        fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+      }
+    }
+
     ts_lua_destroy_http_ctx(http_ctx);
     TSContDestroy(contp);
     break;

@@ -29,6 +29,14 @@ typedef enum
   TS_LUA_HOOK_SEND_REQUEST_HDR,
   TS_LUA_HOOK_READ_RESPONSE_HDR,
   TS_LUA_HOOK_SEND_RESPONSE_HDR,
+  TS_LUA_HOOK_READ_REQUEST_HDR,
+  TS_LUA_HOOK_TXN_START,
+  TS_LUA_HOOK_PRE_REMAP,
+  TS_LUA_HOOK_POST_REMAP,
+  TS_LUA_HOOK_OS_DNS,
+  TS_LUA_HOOK_SELECT_ALT,
+  TS_LUA_HOOK_READ_CACHE_HDR,
+  TS_LUA_HOOK_TXN_CLOSE,
   TS_LUA_REQUEST_TRANSFORM,
   TS_LUA_RESPONSE_TRANSFORM,
   TS_LUA_HOOK_LAST
@@ -41,6 +49,14 @@ char *ts_lua_hook_id_string[] = {
   "TS_LUA_HOOK_SEND_REQUEST_HDR",
   "TS_LUA_HOOK_READ_RESPONSE_HDR",
   "TS_LUA_HOOK_SEND_RESPONSE_HDR",
+  "TS_LUA_HOOK_READ_REQUEST_HDR",
+  "TS_LUA_HOOK_TXN_START",
+  "TS_LUA_HOOK_PRE_REMAP",
+  "TS_LUA_HOOK_POST_REMAP",
+  "TS_LUA_HOOK_OS_DNS",
+  "TS_LUA_HOOK_SELECT_ALT",
+  "TS_LUA_HOOK_READ_CACHE_HDR",
+  "TS_LUA_HOOK_TXN_CLOSE",
   "TS_LUA_REQUEST_TRANSFORM",
   "TS_LUA_RESPONSE_TRANSFORM",
   "TS_LUA_HOOK_LAST"
@@ -113,6 +129,54 @@ ts_lua_add_hook(lua_State * L)
     TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, http_ctx->main_contp);
     lua_pushvalue(L, 2);
     lua_setglobal(L, TS_LUA_FUNCTION_SEND_RESPONSE);
+    break;
+
+  case TS_LUA_HOOK_READ_REQUEST_HDR:
+    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, http_ctx->main_contp);
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_READ_REQUEST);
+    break;
+
+  case TS_LUA_HOOK_TXN_START:
+    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_TXN_START_HOOK, http_ctx->main_contp);
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_TXN_START);
+    break;
+
+  case TS_LUA_HOOK_PRE_REMAP:
+    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_PRE_REMAP_HOOK, http_ctx->main_contp);
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_PRE_REMAP);
+    break;
+
+  case TS_LUA_HOOK_POST_REMAP:
+    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_POST_REMAP_HOOK, http_ctx->main_contp);
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_POST_REMAP);
+    break;
+
+  case TS_LUA_HOOK_OS_DNS:
+    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_OS_DNS_HOOK, http_ctx->main_contp);
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_OS_DNS);
+    break;
+
+  case TS_LUA_HOOK_SELECT_ALT:
+    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SELECT_ALT_HOOK, http_ctx->main_contp);
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_SELECT_ALT);
+    break;
+
+  case TS_LUA_HOOK_READ_CACHE_HDR:
+    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_CACHE_HDR_HOOK, http_ctx->main_contp);
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_READ_CACHE);
+    break;
+
+  case TS_LUA_HOOK_TXN_CLOSE:
+    // we don't need to add a hook because we already have added one by default
+    lua_pushvalue(L, 2);
+    lua_setglobal(L, TS_LUA_FUNCTION_TXN_CLOSE);
     break;
 
   case TS_LUA_REQUEST_TRANSFORM:
