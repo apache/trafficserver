@@ -86,9 +86,9 @@ type:``RecT``
       Plugin created statistic.
 
    In general ``RECT_CONFIG`` should be used unless it is required that the value not be shared among members of a
-   cluster in which case ``RECT_LOCAL`` should be used.
+   cluster in which case ``RECT_LOCAL`` should be used. If you use ``RECT_LOCAL`` you must also start the line with ``LOCAL`` instead of ``CONFIG`` and the name should use ``.local.`` instead of ``.config.``.
 
-name:string
+name:``char const*``
    The fully qualified name of the configuration variable. Although there appears to be a hierarchial naming scheme,
    that's just a convention, it is not actually used by the code. Nonetheless new variables should adhere to the
    hierarchial scheme.
@@ -96,7 +96,7 @@ name:string
 value_type:``RecDataT``
    The data type of the value. It should be one of ``RECD_INT``, ``RECD_STRING``, ``RECD_FLOAT`` as appropriate.
 
-default:string
+default:``char const*``
    The default value for the variable. This is always a string regardless of the *value_type*.
 
 update:``RecUpdateT``
@@ -111,13 +111,13 @@ update:``RecUpdateT``
       This can be updated via command line tools.
 
    ``RECD_RESTART_TS``
-      The :program:`traffic_server` process must be restarted for a new value to take effect.
+      The :ref:`traffic_server` process must be restarted for a new value to take effect.
 
    ``RECD_RESTART_TM``
-      The :program:`traffic_manager`` process must be restarted for a new value to take effect.
+      The :ref:`traffic_manager` process must be restarted for a new value to take effect.
 
    ``RECD_RESTART_TC``
-      The :program:`traffic_cop`` process must be restarted for a new value to take effect.
+      The :ref:`traffic_cop` process must be restarted for a new value to take effect.
 
 required:``RecordRequiredType``
    Effectively a boolean that specifies if the record is required to be present, with ``RR_NULL`` meaning not required
@@ -139,7 +139,7 @@ check:``RecCheckT``
    ``RECC_IP``
       Verify the value is an IP address. Unknown if this checks for IPv6.
 
-pattern:regular expression
+pattern:``char const*``
    Even more validity checking. This provides a regular expressions (PCRE format) for validating the value. This can be
    ``NULL`` if there is no regular expression to use.
 
@@ -159,7 +159,7 @@ access:``RecAccessT``
 Variable Infrastructure
 =====================================
 
-The primary effort in defining a configuration variable is handling updates, generally via :program:`traffic_line`. This
+The primary effort in defining a configuration variable is handling updates, generally via :option:`traffic_line -x`. This
 is handled in a generic way, as described in the next section, or in a :ref:`more specialized way
 <http-config-var-impl>` (built on top of the generic mechanism) for HTTP related configuration variables. This is only
 needed if the variable is marked as dynamically updateable (|RECU_DYNAMIC|_) although HTTP configuration variables
@@ -198,9 +198,7 @@ If you need to refer to another configuration variable in the documentation, you
 
 This will display the name as a link to the definition.
 
-In general a new configuration variable should be present in the default :file:`records.config`. Although users should peruse this documentation that is not as frequent an occurence as we would like. It is much more common to read through :file:`records.config` for values that can be tuned.
-
-Such defaults should be added to the file ``proxy/config/records.config.default.in``. This is used to generate the default :file:`records.config`. Just add the variable to the file in an appropriate place with a proper default as this will now override whatever default you put in the code for new installs.
+In general a new configuration variable should not be present in the default :file:`records.config`. If it is added, such defaults should be added to the file ``proxy/config/records.config.default.in``. This is used to generate the default :file:`records.config`. Just add the variable to the file in an appropriate place with a proper default as this will now override whatever default you put in the code for new installs.
 
 ------------------------------
 Handling Updates
@@ -208,7 +206,7 @@ Handling Updates
 
 The simplest mechanism for handling updates is the ``REC_EstablishStaticConfigXXX`` family of functions. This mechanism
 will cause the value in the indicated instance to be updated in place when an update to :file:`records.config` occurs.
-This is done asynchronously using atomic operations. Use of these variables must keep that in mind.
+This is done asynchronously using atomic operations. Use of these variables must keep that in mind. Adding ``volatile`` to the declaration is likely to be a good idea.
 
 If a variable requires additional handling when updated a callback can be registered which is called when the variable
 is updated. This is what the ``REC_EstablishStaticConfigXXX`` calls do internally with a callback that simply reads the
@@ -227,9 +225,9 @@ To register a configuration variable callback, call ``RecRegisterConfigUpdateCb`
    ``REC_ERR_OKAY``.
 
 ``void*`` *cookie*
-   A value passed to the *callback*.
+   A value passed to the *callback*. This is only for the callback, the internals simply store it and pass it on.
 
-The *callback* is called under lock so it should be quick and not block. If that is necessary a continuation should be
+*callback* is called under lock so it should be quick and not block. If that is necessary a continuation should be
 scheduled to handle the required action.
 
 .. note::
