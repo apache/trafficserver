@@ -1752,7 +1752,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     nread = 0;
     do {
       nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
-      if (EOF == nread) { // just bail on error
+      if (EOF == nread || !nread) { // just bail on error
         Debug("logstats", "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d", buffer_bytes - total_read, nread, errno);
         return 1;
       } else {
