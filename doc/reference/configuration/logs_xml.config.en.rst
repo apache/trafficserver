@@ -145,9 +145,15 @@ The following list shows the ``LogFilter`` specifications.
     ``REJECT`` the record.
 
 ``<Action = "valid_action_field"/>``
-    Required: ``ACCEPT`` or ``REJECT`` .
-    This instructs Traffic Server to either accept or reject records
-    that satisfy the filter condition.
+    Required: ``ACCEPT`` or ``REJECT`` or ``WIPE_FIELD_VALUE``.
+    ACCEPT or REJECT instructs Traffic Server to either accept or reject records
+    that satisfy the filter condition. WIPE_FIELD_VALUE wipes out
+    the values of the query params in the url fields specified in the Condition.
+
+NOTES: 1. WIPE_FIELD_VALUE action is only applied to the parameters in the query part.
+       2. Multiple parameters can be listed in a single WIPE_FIELD_VALUE filter
+       3. If the same parameter appears more than once in the query part , only
+          the value of the first occurance is wiped
 
 .. _LogObject:
 
@@ -330,6 +336,15 @@ The following is an example of a ``LogFilter`` that will cause only
              <Action = "ACCEPT"/>
              <Condition = "pssc MATCH REFRESH_HIT"/>
          </LogFilter>
+
+The following is an example of a ``LogFilter`` that will cause the value of
+passwd field be wiped in cquc
+
+<LogFilter>
+    <Name = "wipe_password"/>
+    <Condition = "cquc CONTAIN passwd"/>
+    <Action = "WIPE_FIELD_VALUE"/>
+</LogFilter>
 
 The following is an example of a ``LogObject`` specification that
 creates a local log file for the minimal format defined earlier. The log
