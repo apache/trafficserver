@@ -5396,7 +5396,7 @@ REGRESSION_TEST(SDK_API_TSMgmtGet) (RegressionTest * test, int /* atype ATS_UNUS
   int CONFIG_PARAM_COUNTER_VALUE = 0;
 
   const char *CONFIG_PARAM_FLOAT_NAME = "proxy.config.http.background_fill_completed_threshold";
-  float CONFIG_PARAM_FLOAT_VALUE = 0.5;
+  float CONFIG_PARAM_FLOAT_VALUE = 0.0;
 
   const char *CONFIG_PARAM_INT_NAME = "proxy.config.http.cache.http";
   int CONFIG_PARAM_INT_VALUE = 1;
