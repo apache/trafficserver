@@ -33,7 +33,8 @@ AM_CPPFLAGS = $(ink_with_modules_local) \
   -I$(top_srcdir)/mgmt/stats \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/web2 \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
@@ -54,7 +55,8 @@ libmgmt_p_a_CPPFLAGS = \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib
 
 libmgmt_p_a_SOURCES = \
   BaseManager.cc \

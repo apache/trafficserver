@@ -40,7 +40,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/http \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/logging \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib
 
 liberror_a_SOURCES = \
   Error.cc
