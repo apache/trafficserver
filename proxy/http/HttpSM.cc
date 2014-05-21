@@ -91,6 +91,9 @@ static int scat_count = 0;
 static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
 static const int boundary_size = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
+static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
+static const int len_100_continue_response = strlen(str_100_continue_response);
+
 /**
  * Takes two milestones and returns the difference.
  * @param start The start time
@@ -1886,6 +1889,21 @@ HttpSM::state_send_server_request_header(int event, void *data)
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
+        if (t_state.http_config_param->send_100_continue_response) {
+          int len = 0;
+          const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
+          // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
+          // imediately, before receive the real response from original server.
+          if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+            int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
+            ua_entry->write_buffer = new_MIOBuffer(alloc_index);
+            IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
+
+            DebugSM("http_seq", "send 100 Continue response to client");
+            int64_t nbytes = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
+            ua_session->do_io_write(ua_session->get_netvc(), nbytes, buf_start);
+          }
+        }
         do_setup_post_tunnel(HTTP_SERVER_VC);
       }
     } else {
@@ -3265,6 +3283,14 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
+    // We have completed reading POST data from client here.
+    // It's time to free MIOBuffer of 100 Continue's response now,
+    // althought this is a little late.
+    if (t_state.http_config_param->send_100_continue_response) {
+      free_MIOBuffer(ua_entry->write_buffer);
+      ua_entry->write_buffer = NULL;
+    }
+
     // Completed successfully
     if (t_state.txn_conf->keep_alive_post_out == 0) {
       // don't share the session if keep-alive for post is not on

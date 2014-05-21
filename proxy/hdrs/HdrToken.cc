@@ -188,7 +188,8 @@ static const char *_hdrtoken_strs[] = {
   "X-ID",
   "X-Forwarded-For",
   "TE",
-  "Strict-Transport-Security"
+  "Strict-Transport-Security",
+  "100-continue"
 };
 
 static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
@@ -527,7 +528,8 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "X-ID",
   "X-Forwarded-For",
   "TE",
-  "Strict-Transport-Security"
+  "Strict-Transport-Security",
+  "100-continue"
 };
 
 /*-------------------------------------------------------------------------

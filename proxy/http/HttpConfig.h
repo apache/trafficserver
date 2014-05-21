@@ -792,6 +792,8 @@ public:
   MgmtByte ignore_accept_encoding_mismatch;
   MgmtByte ignore_accept_charset_mismatch;
 
+  MgmtByte send_100_continue_response;
+
   OverridableHttpConfigParams oride;
 
 private:
@@ -939,7 +941,8 @@ HttpConfigParams::HttpConfigParams()
     ignore_accept_mismatch(0),
     ignore_accept_language_mismatch(0),
     ignore_accept_encoding_mismatch(0),
-    ignore_accept_charset_mismatch(0)
+    ignore_accept_charset_mismatch(0),
+    send_100_continue_response(0)
 {
 }
 

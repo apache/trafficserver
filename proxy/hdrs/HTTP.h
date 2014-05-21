@@ -403,6 +403,7 @@ extern const char *HTTP_VALUE_PROXY_REVALIDATE;
 extern const char *HTTP_VALUE_PUBLIC;
 extern const char *HTTP_VALUE_S_MAXAGE;
 extern const char *HTTP_VALUE_NEED_REVALIDATE_ONCE;
+extern const char *HTTP_VALUE_100_CONTINUE;
 
 extern int HTTP_LEN_BYTES;
 extern int HTTP_LEN_CHUNKED;
@@ -426,6 +427,7 @@ extern int HTTP_LEN_PROXY_REVALIDATE;
 extern int HTTP_LEN_PUBLIC;
 extern int HTTP_LEN_S_MAXAGE;
 extern int HTTP_LEN_NEED_REVALIDATE_ONCE;
+extern int HTTP_LEN_100_CONTINUE;
 
 /* Private */
 void http_hdr_adjust(HTTPHdrImpl *hdrp, int32_t offset, int32_t length, int32_t delta);
