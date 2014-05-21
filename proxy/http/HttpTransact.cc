@@ -1853,8 +1853,7 @@ HttpTransact::OSDNSLookup(State* s)
       StartAccessControl(s);    // If skip_dns is enabled and no ip based rules in cache.config and parent.config
       // Access Control is called after DNS response
     } else {
-      if ((s->cache_info.action == CACHE_DO_NO_ACTION) &&
-          (s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED)) {
+      if ((s->cache_info.action == CACHE_DO_NO_ACTION) && s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
       } else if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_SKIPPED) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, LookupSkipOpenServer);
@@ -3091,7 +3090,7 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
   // We must, however, not cache the responses to these requests.
   if (does_method_require_cache_copy_deletion(s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
-  } else if (s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED) {
+  } else if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else {
     s->cache_info.action = CACHE_PREPARE_TO_WRITE;
@@ -6098,7 +6097,7 @@ HttpTransact::is_request_cache_lookupable(State* s)
     }
   }
 
-  // Don't cache if it's a RANGE request but the cache is not enabled for RANGE.
+  // Don't look in cache if it's a RANGE request but the cache is not enabled for RANGE.
   if (!s->txn_conf->cache_range_lookup && s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_HEADER_FIELD);
     return false;
@@ -7773,7 +7772,9 @@ HttpTransact::handle_server_died(State* s)
 bool
 HttpTransact::is_request_likely_cacheable(State* s, HTTPHdr* request)
 {
-  if ((s->method == HTTP_WKSIDX_GET || s->api_req_cacheable == true) && !request->presence(MIME_PRESENCE_AUTHORIZATION)) {
+  if ((s->method == HTTP_WKSIDX_GET || s->api_req_cacheable == true) &&
+      !request->presence(MIME_PRESENCE_AUTHORIZATION) &&
+      (!request->presence(MIME_PRESENCE_RANGE) || s->txn_conf->cache_range_write)) {
     return true;
   }
   return false;

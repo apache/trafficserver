@@ -7855,7 +7855,6 @@ _conf_to_memberp(TSOverridableConfigKey conf,
     ret = &overridableHttpConfig->proxy_response_hsts_max_age;
     break;
   case TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS:
-    typ = OVERRIDABLE_TYPE_BYTE;
     ret = &overridableHttpConfig->proxy_response_hsts_include_subdomains;
     break;
   case TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME:
@@ -7865,6 +7864,9 @@ _conf_to_memberp(TSOverridableConfigKey conf,
   case TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->max_cache_open_read_retries;
+    break;
+  case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
+    ret = &overridableHttpConfig->cache_range_write;
     break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
@@ -8109,8 +8111,16 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 35:
-    if (!strncmp(name, "proxy.config.http.normalize_ae_gzip", length))
-      cnf = TS_CONFIG_HTTP_NORMALIZE_AE_GZIP;
+    switch (name[length-1]) {
+    case 'e':
+      if (!strncmp(name, "proxy.config.http.cache.range.write", length))
+        cnf = TS_CONFIG_HTTP_CACHE_RANGE_WRITE;
+      break;
+    case 'p':
+      if (!strncmp(name, "proxy.config.http.normalize_ae_gzip", length))
+        cnf = TS_CONFIG_HTTP_NORMALIZE_AE_GZIP;
+      break;
+    }
     break;
 
   case 36:

@@ -551,7 +551,15 @@ The checks that are done are
       In addition if a TTL is set for rule that matches in :file:`cache.config` then this check is not done.
 
    Range Request
-      Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in :file:`records.config` is non-zero. This does not mean the range request can be cached, only that it might be satisfiable from the cache.
+      Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in
+      :file:`records.config` is non-zero. This does not mean the range request
+	    can be cached, only that it might be satisfiable from the
+	    cache. In addition, :ts:cv:`proxy.config.http.cache.range.write`
+	    can be set to try to force a write on a range request. This
+	    probably has little value at the moment, but if for example the
+	    origin server ignores the ``Range:`` header, this option can allow
+	    for the response to be cached. It is disabled by default, for
+	    best performance.
 
 A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request to be viewed as cache valid.
 

@@ -414,7 +414,8 @@ struct OverridableHttpConfigParams {
       insert_squid_x_forwarded_for(1), send_http11_requests(1),
       cache_http(1), cache_cluster_cache_local(0), cache_ignore_client_no_cache(1), cache_ignore_client_cc_max_age(0),
       cache_ims_on_client_no_cache(1), cache_ignore_server_no_cache(0), cache_responses_to_cookies(1),
-      cache_ignore_auth(0), cache_urls_that_look_dynamic(1), cache_required_headers(2), cache_range_lookup(1),
+      cache_ignore_auth(0), cache_urls_that_look_dynamic(1), cache_required_headers(2),
+      cache_range_lookup(1), cache_range_write(0),
       insert_request_via_string(1), insert_response_via_string(0), doc_in_cache_skip_dns(1),
       flow_control_enabled(0), accept_encoding_filter_enabled(0), normalize_ae_gzip(0),
       negative_caching_lifetime(1800), negative_revalidating_lifetime(1800),
@@ -505,6 +506,7 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_urls_that_look_dynamic;
   MgmtByte cache_required_headers;
   MgmtByte cache_range_lookup;
+  MgmtByte cache_range_write;
 
   MgmtByte insert_request_via_string;
   MgmtByte insert_response_via_string;

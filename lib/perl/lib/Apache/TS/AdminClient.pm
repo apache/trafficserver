@@ -465,6 +465,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.max_stale_age
  proxy.config.http.cache.open_read_retry_time
  proxy.config.http.cache.range.lookup
+ proxy.config.http.cache.range.write
  proxy.config.http.cache.required_headers
  proxy.config.http.cache.vary_default_images
  proxy.config.http.cache.vary_default_other

@@ -1168,6 +1168,14 @@ Cache Control
 
    When enabled (``1``), Traffic Server looks up range requests in the cache.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.range.write INT 0
+
+   When enabled (``1``), Traffic Server will attempt to write (lock) the URL
+   to cache. This is rarely useful (at the moment), since it'll only be able
+   to write to cache if the origin has ignored the ``Range:` header. For a use
+   case where you know the origin will respond with a full (``200``) response,
+   you can turn this on to allow it to be cached.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 2
    :reloadable:
 
