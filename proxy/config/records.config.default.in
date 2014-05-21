@@ -95,8 +95,8 @@ CONFIG proxy.config.http.push_method_enabled INT 0
 #    http://docs.trafficserver.apache.org/records.config#cache-control
 #    http://docs.trafficserver.apache.org/en/latest/reference/configuration/cache.config.en.html
 ##############################################################################
-CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 0
-CONFIG proxy.config.http.normalize_ae_gzip INT 0
+CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
+CONFIG proxy.config.http.normalize_ae_gzip INT 1
 CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
 CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1
     # http://docs.trafficserver.apache.org/records.config#proxy-config-http-cache-when-to-revalidate
@@ -154,7 +154,7 @@ CONFIG proxy.config.log.auto_delete_rolled_files INT 1
 ##############################################################################
 CONFIG proxy.config.url_remap.remap_required INT 1
     # http://docs.trafficserver.apache.org/records.config#proxy-config-url-remap-pristine-host-hdr
-CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
+CONFIG proxy.config.url_remap.pristine_host_hdr INT 0
 
 ##############################################################################
 # SSL Termination. Docs:
