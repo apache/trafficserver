@@ -1215,7 +1215,7 @@ public:
     {
       if (internal_msg_buffer) {
         if (internal_msg_buffer_fast_allocator_size >= 0) {
-          THREAD_FREE(internal_msg_buffer, ioBufAllocator[internal_msg_buffer_fast_allocator_size], this_thread());
+          ioBufAllocator[internal_msg_buffer_fast_allocator_size].free_void(internal_msg_buffer);
         } else {
           ats_free(internal_msg_buffer);
         }
