@@ -2943,11 +2943,10 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
 {
   ink_assert(c->vc_type == HT_HTTP_CLIENT);
 
-  // There must be another consumer for it to worthwhile to
-  //  set up a background fill
-  if (((c->producer->num_consumers > 1 && c->producer->vc_type == HT_HTTP_SERVER) ||
-       (c->producer->num_consumers > 1 && c->producer->vc_type == HT_TRANSFORM)) &&
-      c->producer->alive == true) {
+  if (c->producer->alive && // something there to read
+      server_entry && server_entry->vc && // from an origin server
+      c->producer->num_consumers > 1  // with someone else reading it
+    ) {
 
     // If threshold is 0.0 or negative then do background
     //   fill regardless of the content length.  Since this
