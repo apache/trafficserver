@@ -22,6 +22,7 @@ Changes with Apache Traffic Server 5.0.0
       - proxy.config.http.connect_ports -> 443
       - proxy.config.log.custom_logs_enabled -> 1
       - proxy.config.spdy.client.max_concurrent_streams -> 100
+      - proxy.config.env_prep -> NULL
 
   *) [TS-2824] Revert TS-2592.
 
