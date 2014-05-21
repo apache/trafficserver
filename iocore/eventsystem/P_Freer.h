@@ -107,14 +107,18 @@ new_Freer(void *ap, ink_hrtime t)
 template<class C> struct DereferContinuation: public Continuation
 {
   C *p;
-  int dieEvent(int event, Event * e)
+
+  int dieEvent(int, Event *)
   {
-    (void) event;
-    (void) e;
     p->refcount_dec();
+    if (REF_COUNT_OBJ_REFCOUNT_DEC(p) == 0) {
+      delete p;
+    }
+
     delete this;
-      return EVENT_DONE;
+    return EVENT_DONE;
   }
+
   DereferContinuation(C * ap):Continuation(NULL), p(ap)
   {
     SET_HANDLER(&DereferContinuation::dieEvent);
