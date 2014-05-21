@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2632] Do not lock the object in cache (by default) on Range
+   requests. This adds proxy.config.http.cache.range.write.
+
   *) [TS-2822] Crash in LogBufferIterator::next
 
   *) [TS-2705] Make the background fill check more robust.
