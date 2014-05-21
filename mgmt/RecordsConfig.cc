@@ -88,7 +88,7 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.output.logfile", RECD_STRING, "traffic.out", RECU_RESTART_TC, RR_REQUIRED, RECC_NULL, NULL,
    RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.snapshot_dir", RECD_STRING, "snapshot", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.snapshot_dir", RECD_STRING, "snapshots", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net_snapshot_filename", RECD_STRING, "net.config.xml", RECU_NULL, RR_NULL, RECC_NULL, NULL,
    RECA_NULL}
@@ -465,7 +465,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.http.referer_format_redirect", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.referer_default_redirect", RECD_STRING, "http://www.apache.org", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.referer_default_redirect", RECD_STRING, "http://www.example.com/", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //        ##############################
@@ -901,6 +901,8 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.algorithm", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.use_seen_filter", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.compress", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.compress_percent", RECD_INT, "90", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -1120,7 +1122,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.log.common_log_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.log.common_log_is_ascii", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.log.common_log_is_ascii", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.common_log_name", RECD_STRING, "common", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
@@ -1202,7 +1204,7 @@ RecordElement RecordsConfig[] = {
   //# Reverse Proxy
   //#
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.reverse_proxy.enabled", RECD_INT, "<accel_enable>", RECU_DYNAMIC, RR_REQUIRED, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.reverse_proxy.enabled", RECD_INT, "1", RECU_DYNAMIC, RR_REQUIRED, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.url_remap.default_to_server_pac", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1259,11 +1261,11 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.multicert.filename", RECD_STRING, "ssl_multicert.config", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.server.private_key.path", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.server.private_key.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.CA.cert.filename", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.CA.cert.path", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.CA.cert.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.verify.server", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
@@ -1273,11 +1275,11 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.private_key.filename", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.client.private_key.path", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.client.private_key.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.CA.cert.filename", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.client.CA.cert.path", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.client.CA.cert.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.session_cache", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

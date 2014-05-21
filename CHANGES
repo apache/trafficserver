@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2274] Minimize the default records.config, and also fix a number of
+   inconsistencies and missing configs in RecordsConfig.cc. This is as per
+   discussions on IRC etc. I have verified that traffic_line -m reports the
+   same internal values for all configs before and after this change.
+
   *) [TS-2824] Revert TS-2592.
 
   *) [TS-2632] Do not lock the object in cache (by default) on Range
