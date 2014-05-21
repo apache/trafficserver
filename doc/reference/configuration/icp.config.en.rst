@@ -21,10 +21,6 @@ icp.config
 
 .. configfile:: icp.config
 
-.. warning::
-
-  The Traffic Server ICP  feature is not functional in this release.
-
 The :file:`icp.config` file defines ICP peers (parent and sibling caches).
 
 .. important::
