@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2822] Crash in LogBufferIterator::next
+
   *) [TS-2705] Make the background fill check more robust.
 
   *) [TS-1411] Seg fault when using %<cquuc>
