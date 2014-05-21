@@ -763,18 +763,18 @@ The buffer size calculations include all elements in the transaction, including 
 
 Transaction buffering control can be enabled globally by using configuration variables or by :c:func:`TSHttpTxnConfigIntSet` in a plugin.
 
-================= ================================================== ========================================
-Value             Variable                                           `TSHttpTxnConfigIntSet` key
-================= ================================================== ========================================
-Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    `TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
-Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` `TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`
-Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  `TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`
-================= ================================================== ========================================
+================= ================================================== ================================================
+Value             Variable                                           :c:func:`TSHttpTxnConfigIntSet` key
+================= ================================================== ================================================
+Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
+Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`
+Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`
+================= ================================================== ================================================
 
 Be careful to always have the low water mark equal or less than the high water mark. If you set only one, the other will
 be set to the same value.
 
-If using :c:func:`TSHttpTxnConfigIntSet`, it must be called no later than `TS_HTTP_READ_RESPONSE_HDR_HOOK`.
+If using :c:func:`TSHttpTxnConfigIntSet`, it must be called no later than :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`.
 
 .. _reducing-origin-server-requests-avoiding-the-thundering-herd:
 

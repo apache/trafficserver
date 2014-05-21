@@ -83,7 +83,7 @@ Options
 
 .. option:: -s VAR, --set_var VAR
 
-    Set the configuration variable named `VAR`. The value of the configuration
+    Set the configuration variable named *VAR*. The value of the configuration
     variable is given by the :option:`traffic_line -v` option.
     Refer to the :file:`records.config` documentation for a list
     of the configuration variables you can specify.

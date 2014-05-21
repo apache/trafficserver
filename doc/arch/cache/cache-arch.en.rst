@@ -482,7 +482,7 @@ probe.
 
 Given an ID, the top half (64 bits) is used as a :ref:`segment <dir-segment>` index, taken modulo the number of segments in
 the directory. The bottom half is used as a :ref:`bucket <dir-bucket>` index, taken modulo the number of buckets per
-segment. The :arg:`last_collision` value is used to mark the last matching entry returned by `dir_probe`.
+segment. The :arg:`last_collision` value is used to mark the last matching entry returned by :cpp:func:`dir_probe`.
 
 After computing the appropriate bucket, the entries in that bucket are searched to find a match. In this case a match is
 detected by comparison of the bottom 12 bits of the cache ID (the *cache tag*). The search starts at the base entry for
@@ -802,7 +802,7 @@ basically four types,
 * Disk
 * Raw device
 
-After creating all the `Span` instances they are grouped by device id to internal linked lists attached to the
+After creating all the :cpp:class:`Span` instances they are grouped by device id to internal linked lists attached to the
 :cpp:member:`Store::disk` array [#]_. Spans that refer to the same directory, disk, or raw device are coalesced in to a
 single span. Spans that refer to the same file with overlapping offsets are also coalesced [#]_. This is all done in
 :c:func:`ink_cache_init()` called during startup.
