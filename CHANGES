@@ -4,7 +4,22 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-2274] Minimize the default records.config, and also fix a number of
    inconsistencies and missing configs in RecordsConfig.cc. This is as per
    discussions on IRC etc. I have verified that traffic_line -m reports the
-   same internal values for all configs before and after this change.
+   same internal values for all configs before and after this change. In
+   addition, the following defaults are changing:
+
+      - proxy.config.url_remap.pristine_host_hdr -> 0
+      - proxy.config.http.normalize_ae_gzip -> 1
+      - proxy.config.http.cache.ignore_client_cc_max_age -> 1
+      - proxy.config.http.background_fill_active_timeout -> 0
+      - proxy.config.http.background_fill_completed_threshold -> 0.0
+      - proxy.config.cache.enable_read_while_writer -> 1
+      - proxy.config.net.sock_send_buffer_size_in -> 0
+      - proxy.config.cache.permit.pinning -> 1
+      - proxy.config.diags.show_location -> 1
+      - proxy.config.dns.round_robin_nameservers -> 1
+      - proxy.config.http.connect_ports -> 443
+      - proxy.config.log.custom_logs_enabled -> 1
+      - proxy.config.spdy.client.max_concurrent_streams -> 100
 
   *) [TS-2824] Revert TS-2592.
 
