@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-1125] POST's with Expect: 100-continue are slowed by delayed 100
+  response
+
   *) [TS-2826] SPDY implementation does not support OPTIONS and TRACE methods
 
   *) [TS-2274] Minimize the default records.config, and also fix a number of
