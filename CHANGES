@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2723] add new features to ts_lua plugin.
+   Author: Quehan <quehan@taobao.com>
+
   *) [TS-2816] Bump the minor cache version for ATS 5.0 release
 
   *) [TS-2764] Remove when_to_add_no_cache_to_msie_requests configuration.

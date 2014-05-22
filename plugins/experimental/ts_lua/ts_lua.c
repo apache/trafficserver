@@ -23,22 +23,27 @@
 
 #include "ts_lua_util.h"
 
-#define TS_LUA_MAX_STATE_COUNT                  2048
+#define TS_LUA_MAX_STATE_COUNT                  512
 
-static volatile int32_t ts_lua_http_next_id = 0;
-static volatile int32_t ts_lua_g_http_next_id = 0;
+static uint64_t ts_lua_http_next_id = 0;
+static uint64_t ts_lua_g_http_next_id = 0;
 
 static ts_lua_main_ctx *ts_lua_main_ctx_array;
 static ts_lua_main_ctx *ts_lua_g_main_ctx_array;
 
 
 TSReturnCode
-TSRemapInit(TSRemapInterface * api_info, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
+TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
 {
   int ret;
 
-  if (!api_info || api_info->size < sizeof(TSRemapInterface))
+  if (!api_info || api_info->size < sizeof(TSRemapInterface)) {
+    strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
     return TS_ERROR;
+  }
+
+  if (ts_lua_main_ctx_array != NULL)
+    return TS_SUCCESS;
 
   ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
   memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
@@ -55,30 +60,45 @@ TSRemapInit(TSRemapInterface * api_info, char *errbuf ATS_UNUSED, int errbuf_siz
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  int ret = 0;
+  int fn;
+  int ret;
 
   if (argc < 3) {
-    fprintf(stderr, "[%s] lua script file required !!", __FUNCTION__);
+    strncpy(errbuf, "[TSRemapNewInstance] - lua script file or string is required !!", errbuf_size - 1);
     return TS_ERROR;
   }
 
-  if (strlen(argv[2]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16)
+  fn = 1;
+
+  if (argv[2][0] != '/') {
+    fn = 0;
+  } else if (strlen(argv[2]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
     return TS_ERROR;
+  }
 
   ts_lua_instance_conf *conf = TSmalloc(sizeof(ts_lua_instance_conf));
   if (!conf) {
-    fprintf(stderr, "[%s] TSmalloc failed !!", __FUNCTION__);
+    fprintf(stderr, "[%s] TSmalloc failed !!\n", __FUNCTION__);
     return TS_ERROR;
   }
 
-  sprintf(conf->script, "%s", argv[2]);
+  memset(conf, 0, sizeof(ts_lua_instance_conf));
+
+  if (fn) {
+    sprintf(conf->script, "%s", argv[2]);
+
+  } else {
+    conf->content = argv[2];
+  }
+
+  ts_lua_init_instance(conf);
 
   ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 2, &argv[2]);
 
   if (ret != 0) {
-    fprintf(stderr, "[%s] ts_lua_add_module failed", __FUNCTION__);
+    fprintf(stderr, "[%s] ts_lua_add_module failed\n", __FUNCTION__);
     return TS_ERROR;
   }
 
@@ -90,6 +110,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
 void
 TSRemapDeleteInstance(void *ih)
 {
+  ts_lua_del_module((ts_lua_instance_conf *) ih, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
+  ts_lua_del_instance(ih);
   TSfree(ih);
   return;
 }
@@ -98,7 +120,7 @@ TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
 {
   int ret;
-  int64_t req_id;
+  uint64_t req_id;
 
   TSCont contp;
   lua_State *l;
@@ -109,7 +131,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
   ts_lua_instance_conf *instance_conf;
 
   instance_conf = (ts_lua_instance_conf *) ih;
-  req_id = (int64_t) ts_lua_atomic_increment((&ts_lua_http_next_id), 1);
+  req_id = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
+
 
   main_ctx = &ts_lua_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
 
@@ -163,7 +186,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
   TSMLoc hdr_loc;
   TSMLoc url_loc;
 
-  if(!http_ctx->client_request_bufp) {
+  if (!http_ctx->client_request_bufp) {
     if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
       http_ctx->client_request_bufp = bufp;
       http_ctx->client_request_hdrp = hdr_loc;
@@ -258,7 +281,7 @@ transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
 
-  int64_t req_id;
+  uint64_t req_id;
   TSCont txn_contp;
   TSCont global_contp;
 
@@ -267,7 +290,8 @@ transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   ts_lua_instance_conf *conf = (ts_lua_instance_conf *) TSContDataGet(contp);
 
-  req_id = (int64_t) ts_lua_atomic_increment((&ts_lua_g_http_next_id), 1);
+  req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
+
   main_ctx = &ts_lua_g_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
 
   TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);

@@ -39,6 +39,12 @@ tslua_la_SOURCES = \
   ts_lua_server_response.c \
   ts_lua_transform.c \
   ts_lua_util.c \
-  ts_lua_remap.c
+  ts_lua_remap.c \
+  ts_lua_http_cntl.c \
+  ts_lua_http_config.c \
+  ts_lua_mgmt.c \
+  ts_lua_package.c \
+  ts_lua_string.c \
+  ts_lua_crypto.c
 
 tslua_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

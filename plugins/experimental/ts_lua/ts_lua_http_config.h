@@ -17,17 +17,11 @@
 */
 
 
-#ifndef _TS_LUA_ATOMIC_H
-#define _TS_LUA_ATOMIC_H
+#ifndef _TS_LUA_HTTP_CONFIG_H
+#define _TS_LUA_HTTP_CONFIG_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include "ts_lua_common.h"
 
-static inline int
-ts_lua_atomic_increment(volatile int32_t * mem, int value)
-{
-  return __sync_fetch_and_add(mem, value);
-}
+void ts_lua_inject_http_config_api(lua_State * L);
 
 #endif

@@ -63,18 +63,45 @@
 #define TS_LUA_FUNCTION_G_TXN_CLOSE "do_global_txn_close"
 
 
-#define TS_LUA_MAX_SCRIPT_FNAME_LENGTH      1024
-#define TS_LUA_MAX_URL_LENGTH               2048
+#define TS_LUA_DEBUG_TAG                        "ts_lua"
 
-#define TS_LUA_DEBUG_TAG                    "ts_lua"
+#define TS_LUA_MAX_SCRIPT_FNAME_LENGTH          1024
+#define TS_LUA_MAX_CONFIG_VARS_COUNT            256
+#define TS_LUA_MAX_SHARED_DICT_NAME_LENGTH      128
+#define TS_LUA_MAX_SHARED_DICT_COUNT            32
+#define TS_LUA_MAX_URL_LENGTH                   2048
+#define TS_LUA_MAX_OVEC_SIZE                    (3 * 32)
+#define TS_LUA_MAX_RESIDENT_PCRE                64
 
+#define TS_LUA_MIN_ALIGN                        sizeof(void*)
+#define TS_LUA_MEM_ALIGN(size)                  (((size) + ((TS_LUA_MIN_ALIGN) - 1)) & ~((TS_LUA_MIN_ALIGN) - 1))
+#define TS_LUA_ALIGN_COUNT(size)                (size / TS_LUA_MIN_ALIGN)
+
+#define TS_LUA_MAKE_VAR_ITEM(X)                 {X, #X}
+
+#define ee(...)     fprintf(stderr, "Lua *** %s: ", __func__); \
+                            fprintf(stderr, __VA_ARGS__);   \
+                            fprintf(stderr, " @ %s line %d.\n", __FILE__, __LINE__)
+
+/* for http config or cntl var */
+typedef struct
+{
+  int nvar;
+  char *svar;
+} ts_lua_var_item;
 
 typedef struct
 {
+  char *content;
   char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
+  void *conf_vars[TS_LUA_MAX_CONFIG_VARS_COUNT];
+
+  int _first:1;                 // create current instance for 1st ts_lua_main_ctx
+  int _last:1;                  // create current instance for the last ts_lua_main_ctx
 } ts_lua_instance_conf;
 
 
+/* global lua state struct */
 typedef struct
 {
   lua_State *lua;
@@ -82,7 +109,7 @@ typedef struct
   int gref;
 } ts_lua_main_ctx;
 
-
+/* lua state for http request */
 typedef struct
 {
   lua_State *lua;
@@ -95,6 +122,8 @@ typedef struct
 
   TSMBuffer server_request_bufp;
   TSMLoc server_request_hdrp;
+  TSMLoc server_request_url;
+
 
   TSMBuffer server_response_bufp;
   TSMLoc server_response_hdrp;
@@ -106,6 +135,8 @@ typedef struct
   TSMLoc cached_response_hdrp;
 
   ts_lua_main_ctx *mctx;
+
+  ts_lua_instance_conf *instance_conf;
 
   int intercept_type;
   int ref;
@@ -134,8 +165,23 @@ typedef struct
 
 } ts_lua_transform_ctx;
 
+/* for intercept */
+struct ict_item;
+struct ict_ctx;
+typedef int (*ict_clean) (struct ict_item * item);
 
-typedef struct
+typedef struct ict_item
+{
+  struct ict_item *next;
+  struct ict_ctx *ictx;
+
+  TSCont contp;
+  ict_clean cleanup;
+  void *data;
+  int deleted:1;
+} ts_lua_http_intercept_item;
+
+typedef struct ict_ctx
 {
   lua_State *lua;
   TSCont contp;
@@ -143,10 +189,17 @@ typedef struct
   ts_lua_io_handle output;
   TSVConn net_vc;
 
+  ts_lua_main_ctx *mctx;
   ts_lua_http_ctx *hctx;
+
+  struct ict_item *ict_chain;
+
+  int64_t to_flush;
   int ref;
-  char recv_complete;
-  char send_complete;
+
+  int recv_complete:1;
+  int send_complete:1;
+  int all_ready:1;
 } ts_lua_http_intercept_ctx;
 
 #define TS_LUA_RELEASE_IO_HANDLE(ih) do {   \
@@ -159,5 +212,14 @@ typedef struct
         ih->buffer = NULL;                  \
     }                                       \
 } while (0)
+
+#define TS_LUA_ADD_INTERCEPT_ITEM(ictx, item, contp, func, d)   \
+            {   item->cleanup = func;  \
+                item->data = d;  \
+                item->ictx = ictx;  \
+                item->contp = contp;  \
+                item->deleted = 0;  \
+                item->next = ictx->ict_chain;   \
+                ictx->ict_chain = item;}
 
 #endif

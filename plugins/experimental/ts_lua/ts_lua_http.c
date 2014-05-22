@@ -19,6 +19,8 @@
 
 #include "ts_lua_util.h"
 #include "ts_lua_http_intercept.h"
+#include "ts_lua_http_config.h"
+#include "ts_lua_http_cntl.h"
 
 typedef enum
 {
@@ -38,6 +40,7 @@ char *ts_lua_cache_lookup_result_string[] = {
 static void ts_lua_inject_http_retset_api(lua_State * L);
 static void ts_lua_inject_http_cache_api(lua_State * L);
 static void ts_lua_inject_http_transform_api(lua_State * L);
+static void ts_lua_inject_http_misc_api(lua_State * L);
 
 static int ts_lua_http_set_retstatus(lua_State * L);
 static int ts_lua_http_set_retbody(lua_State * L);
@@ -45,10 +48,14 @@ static int ts_lua_http_set_resp(lua_State * L);
 
 static int ts_lua_http_get_cache_lookup_status(lua_State * L);
 static int ts_lua_http_set_cache_url(lua_State * L);
+
 static void ts_lua_inject_cache_lookup_result_variables(lua_State * L);
 
 static int ts_lua_http_resp_cache_transformed(lua_State * L);
 static int ts_lua_http_resp_cache_untransformed(lua_State * L);
+
+static int ts_lua_http_is_internal_request(lua_State * L);
+
 
 void
 ts_lua_inject_http_api(lua_State * L)
@@ -59,6 +66,9 @@ ts_lua_inject_http_api(lua_State * L)
   ts_lua_inject_http_cache_api(L);
   ts_lua_inject_http_transform_api(L);
   ts_lua_inject_http_intercept_api(L);
+  ts_lua_inject_http_config_api(L);
+  ts_lua_inject_http_cntl_api(L);
+  ts_lua_inject_http_misc_api(L);
 
   lua_setfield(L, -2, "http");
 }
@@ -99,9 +109,16 @@ ts_lua_inject_http_transform_api(lua_State * L)
 }
 
 static void
+ts_lua_inject_http_misc_api(lua_State * L)
+{
+  lua_pushcfunction(L, ts_lua_http_is_internal_request);
+  lua_setfield(L, -2, "is_internal_request");
+}
+
+static void
 ts_lua_inject_cache_lookup_result_variables(lua_State * L)
 {
-  unsigned int i;
+  int i;
 
   for (i = 0; i < sizeof(ts_lua_cache_lookup_result_string) / sizeof(char *); i++) {
     lua_pushinteger(L, i);
@@ -224,4 +241,24 @@ ts_lua_http_resp_cache_untransformed(lua_State * L)
   TSHttpTxnUntransformedRespCache(http_ctx->txnp, action);
 
   return 0;
+}
+
+static int
+ts_lua_http_is_internal_request(lua_State * L)
+{
+  TSReturnCode ret;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  ret = TSHttpIsInternalRequest(http_ctx->txnp);
+
+  if (ret == TS_SUCCESS) {
+    lua_pushnumber(L, 1);
+
+  } else {
+    lua_pushnumber(L, 0);
+  }
+
+  return 1;
 }
