@@ -70,7 +70,9 @@ struct Config {
   // Statistics
   /// This is the stat slot index for each statistic.
   enum StatIndex {
-    STAT_TOTAL_STREAMS,
+    STAT_ACTIVE_SESSION_COUNT, ///< Current # of active SPDY sessions.
+    STAT_ACTIVE_STREAM_COUNT, ///< Current # of active SPDY streams.
+    STAT_TOTAL_STREAM_COUNT, ///< Total number of streams created.
     N_STATS ///< Terminal counter, NOT A STAT INDEX.
   };
   RecRawStatBlock* rsb; ///< Container for statistics.
@@ -104,4 +106,10 @@ inline void
 SpdyStatIncrCount(Config::StatIndex idx, Continuation* contp) {
   RecIncrRawStatCount(SPDY_CFG.rsb, contp->mutex->thread_holding, idx, 1);
 }
+
+inline void
+SpdyStatDecrCount(Config::StatIndex idx, Continuation* contp) {
+  RecIncrRawStatCount(SPDY_CFG.rsb, contp->mutex->thread_holding, idx, -1);
+}
+
 #endif

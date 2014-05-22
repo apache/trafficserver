@@ -56,16 +56,7 @@ public:
     clear();
   }
 
-  void init(SpdyClientSession *sm, int id)
-  {
-    spdy_sm = sm;
-    stream_id = id;
-    headers.clear();
-
-    MD5_Init(&recv_md5);
-    start_time = TShrtime();
-  }
-
+  void init(SpdyClientSession *sm, int id);
   void clear();
 
   void append_nv(char **nv)

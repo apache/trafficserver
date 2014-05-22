@@ -32,12 +32,27 @@ static int spdy_process_write(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata);
 static int spdy_process_fetch_header(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm);
 static int spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm);
-static uint64_t g_sm_id;
-static uint64_t g_sm_cnt;
+static uint64_t g_sm_id = 1;
+
+void
+SpdyRequest::init(SpdyClientSession *sm, int id)
+{
+  spdy_sm = sm;
+  stream_id = id;
+  headers.clear();
+
+  MD5_Init(&recv_md5);
+  start_time = TShrtime();
+
+  SpdyStatIncrCount(Config::STAT_ACTIVE_STREAM_COUNT, sm);
+  SpdyStatIncrCount(Config::STAT_TOTAL_STREAM_COUNT, sm);
+}
 
 void
 SpdyRequest::clear()
 {
+  SpdyStatDecrCount(Config::STAT_ACTIVE_STREAM_COUNT, spdy_sm);
+
   if (fetch_sm)
     TSFetchDestroy(fetch_sm);
 
@@ -58,14 +73,18 @@ SpdyClientSession::init(NetVConnection * netvc, spdylay_proto_version vers)
 {
   int r;
 
-  atomic_inc(g_sm_cnt);
-
   this->mutex = new_ProxyMutex();
   this->vc = netvc;
   this->req_map.clear();
 
-  r = spdylay_session_server_new(&session, vers,
-                                 &SPDY_CFG.spdy.callbacks, this);
+  r = spdylay_session_server_new(&session, vers, &SPDY_CFG.spdy.callbacks, this);
+
+  // A bit ugly but we need a thread and I don't want to wait until the
+  // session start event in case of a time out generating a decrement
+  // with no increment. It seems a lesser thing to have the thread counts
+  // a little off but globally consistent.
+  SpdyStatIncrCount(Config::STAT_ACTIVE_SESSION_COUNT, netvc);
+
   ink_release_assert(r == 0);
   sm_id = atomic_inc(g_sm_id);
   total_size = 0;
@@ -79,8 +98,10 @@ SpdyClientSession::init(NetVConnection * netvc, spdylay_proto_version vers)
 void
 SpdyClientSession::clear()
 {
-  uint64_t nr_pending;
   int last_event = event;
+
+  SpdyStatDecrCount(Config::STAT_ACTIVE_SESSION_COUNT, this);
+
   //
   // SpdyRequest depends on SpdyClientSession,
   // we should delete it firstly to avoid race.
@@ -131,9 +152,8 @@ SpdyClientSession::clear()
     session = NULL;
   }
 
-  nr_pending = atomic_dec(g_sm_cnt);
-  Debug("spdy-free", "****Delete SpdyClientSession[%" PRIu64 "], last event:%d, nr_pending:%" PRIu64,
-        sm_id, last_event, --nr_pending);
+  Debug("spdy-free", "****Delete SpdyClientSession[%" PRIu64 "], last event:%d" PRIu64,
+        sm_id, last_event);
 }
 
 void
@@ -209,8 +229,8 @@ SpdyClientSession::state_session_readwrite(int event, void * edata)
     ret = spdy_process_fetch((TSEvent)event, this, edata);
   }
 
-  Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d, nr_pending:%" PRIu64,
-        this->sm_id, event, ret, g_sm_cnt);
+  Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d",
+        this->sm_id, event, ret);
 out:
   if (ret) {
     this->clear();
