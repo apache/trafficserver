@@ -176,7 +176,7 @@ ts_lua_cached_response_header_get(lua_State * L)
 }
 
 static int
-ts_lua_cached_response_header_set(lua_State * L)
+ts_lua_cached_response_header_set(lua_State * L ATS_UNUSED)
 {
   return 0;
 }
