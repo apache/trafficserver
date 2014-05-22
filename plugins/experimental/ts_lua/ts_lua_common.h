@@ -33,8 +33,6 @@
 #include <ts/remap.h>
 #include "ink_defs.h"
 
-#include "ts_lua_atomic.h"
-
 #define TS_LUA_FUNCTION_REMAP                   "do_remap"
 #define TS_LUA_FUNCTION_CACHE_LOOKUP_COMPLETE   "do_cache_lookup_complete"
 #define TS_LUA_FUNCTION_SEND_REQUEST            "do_send_request"
