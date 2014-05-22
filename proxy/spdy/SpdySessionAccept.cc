@@ -31,9 +31,6 @@
 SpdySessionAccept::SpdySessionAccept(Continuation *ep)
     : SessionAccept(new_ProxyMutex()), endpoint(ep)
 {
-#if TS_HAS_SPDY
-  spdy_config_load();
-#endif
   SET_HANDLER(&SpdySessionAccept::mainEvent);
 }
 
