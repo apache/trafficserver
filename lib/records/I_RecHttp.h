@@ -45,7 +45,10 @@ class SessionProtocolSet {
   /// Storage for the set - a bit vector.
   uint32_t m_bits;
 public:
-  static int const MAX = sizeof(m_bits) * CHAR_BIT;
+  // The right way.
+  //  static int const MAX = sizeof(m_bits) * CHAR_BIT;
+  // The RHEL5/gcc 4.1.2 way
+  static int const MAX = sizeof(uint32_t) * 8;
   /// Default constructor.
   /// Constructs and empty set.
   SessionProtocolSet() : m_bits(0) { }
