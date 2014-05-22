@@ -975,9 +975,6 @@ if test "x${GCC}" = "xyes"; then
       i?86* | k[5-8]* | pentium* | athlon)
         cpu_architecture="-march=i586"
       ;;
-      *sparc*)
-        cpu_architecture="-mv8"
-      ;;
     esac
   else
     case "$host_cpu" in
@@ -985,13 +982,8 @@ if test "x${GCC}" = "xyes"; then
         # XXX: Any need for 64-bit arch flags?
         # cpu_architecture="-march=native"
       ;;
-      *sparc*)
-        cpu_architecture="-march=ultrasparc"
-      ;;
     esac
   fi
-  # TODO: Add support for other compilers
-  #
 fi
 
 # Overrride detected architecture with the user suplied one

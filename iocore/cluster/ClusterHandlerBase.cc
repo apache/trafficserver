@@ -260,10 +260,6 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   char *addr = (char *) align_pointer_forward(iob_iov->data(), pagesize);
 
-#if defined(__sparc)
-  if (mprotect(addr, pagesize, PROT_NONE))
-    perror("ClusterState mprotect0 failed");
-#endif
   iov = (IOVec *) (addr + pagesize);
 
   ///////////////////////////////////////////////////
@@ -276,10 +272,6 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 
   addr = (char *) align_pointer_forward(msg.iob_descriptor_block->data->data(), pagesize);
 
-#if defined(__sparc)
-  if (mprotect(addr, pagesize, PROT_NONE))
-    perror("ClusterState mprotect failed");
-#endif
   addr = addr + pagesize;
   memset(addr, 0, size - (2 * pagesize));
   msg.descriptor = (Descriptor *) (addr + sizeof(ClusterMsgHeader));
@@ -290,24 +282,11 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 ClusterState::~ClusterState()
 {
   mutex = 0;
-#if defined(__sparc)
-  int pagesize = ats_pagesize();
-#endif
   if (iov) {
-#if defined(__sparc)
-    iov = (IOVec *) ((char *) iov - pagesize);
-    if (mprotect((char *) iov, pagesize, (PROT_READ | PROT_WRITE)))
-      perror("~ClusterState mprotect0 failed");
-#endif
     iob_iov = 0;                // Free memory
   }
 
   if (msg.descriptor) {
-#if defined(__sparc)
-    char *a = (char *) msg.descriptor - (sizeof(ClusterMsgHeader) + pagesize);
-    if (mprotect(a, pagesize, (PROT_READ | PROT_WRITE)))
-      perror("~ClusterState mprotect failed");
-#endif
     msg.iob_descriptor_block = 0;       // Free memory
   }
   // Deallocate IO Core structures

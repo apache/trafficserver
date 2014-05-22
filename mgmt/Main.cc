@@ -1129,9 +1129,6 @@ runAsUser(char *userName)
       _exit(1);
     }
 
-// this is behaving weird.  refer to getpwnam(3C) sparc -jcoates
-// this looks like the POSIX getpwnam_r
-
     struct passwd passwdInfo;
     struct passwd *ppasswd = NULL;
     result = NULL;
