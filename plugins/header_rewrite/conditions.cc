@@ -21,12 +21,12 @@
 //
 #include <sys/time.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "ts/ts.h"
 
 #include "conditions.h"
 #include "lulu.h"
-
 
 // ConditionStatus
 void
@@ -444,4 +444,51 @@ bool ConditionCookie::eval(const Resources& res)
   bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
   TSDebug(PLUGIN_NAME, "Evaluating COOKIE(%s): %s: rval: %d", _qualifier.c_str(), s.c_str(), rval);
   return rval;
+}
+
+bool ConditionInternalTransaction::eval(const Resources& res)
+{
+  return TSHttpIsInternalRequest(res.txnp) == TS_SUCCESS;
+}
+
+void ConditionClientIp::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  Matchers<std::string>* match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+
+  _matcher = match;
+}
+
+bool ConditionClientIp::eval(const Resources &res)
+{
+  std::string s;
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+  return rval;
+}
+
+void ConditionClientIp::append_value(std::string &s, const Resources &res)
+{
+  const sockaddr *sockaddress = TSHttpTxnClientAddrGet(res.txnp);
+  if (sockaddress == NULL) {
+    return;
+  }
+
+  char buf[INET6_ADDRSTRLEN] = { 0 };
+
+  if (sockaddress->sa_family == AF_INET)
+  {
+    inet_ntop(AF_INET, &(((struct sockaddr_in *) sockaddress)->sin_addr), buf, INET_ADDRSTRLEN);
+  }
+  else if (sockaddress->sa_family == AF_INET6)
+  {
+    inet_ntop(AF_INET6, &(((struct sockaddr_in6 *) sockaddress)->sin6_addr), buf, INET6_ADDRSTRLEN);
+  }
+  else
+  {
+    return;
+  }
+  s.append(buf);
 }
