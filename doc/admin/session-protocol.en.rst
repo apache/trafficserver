@@ -22,12 +22,12 @@ Session Protocol
 
 Traffic Server supports some session level protocols in place or on
 top of HTTP. These can be provided by a plugin
-(`see<new-protocol-plugins>`) or be one that is supported
+(:ref:`see <new-protocol-plugins>`) or be one that is supported
 directly by Traffic Server. Currently the
-`SPDY<http://www.chromium.org/spdy>`_ protocol is the only one current
+`SPDY <http://www.chromium.org/spdy>`_ protocol is the only one current
 supported but it is planned to support HTTP 2 when that is finalized.
 
-Session protocols are specified by explicit names, based on the `NPN<https://technotes.googlecode.com/git/nextprotoneg.html>`_ names. The core supported names are
+Session protocols are specified by explicit names, based on the `NPN <https://technotes.googlecode.com/git/nextprotoneg.html>`_ names. The core supported names are
 
 *  ``http/0.9``
 *  ``http/1.0``
@@ -46,8 +46,8 @@ The session protocols supported on a proxy port are a subset of these values. Fo
 *  ``spdy`` means ``spdy/3`` and ``spdy/3.1``.
 *  ``http2`` means ``http/2``
 
-Each proxy port :ref:`can be
-configured<proxy.config.http.server_ports>` to support a subset of
+Each proxy port can be
+configured in :ts:cv:`proxy.config.http.server_ports` to support a subset of
 these session protocols. For TLS enabled connections this
 configuration controls which protocols are offered by NPN. For non-TLS
 proxy ports protocol sniffing is used to determine which protocol is
