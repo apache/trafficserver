@@ -647,7 +647,7 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        CacheDisk *disk = NEW(new CacheDisk());
+        CacheDisk *disk = new CacheDisk();
         Debug("cache_hosting", "interim Disk: %d, blocks: %d", gn_interim_disks, blocks);
         int sector_size = sd->hw_sector_size;
         if (sector_size < cache_config_force_sector_size)
@@ -731,7 +731,7 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        gdisks[gndisks] = NEW(new CacheDisk());
+        gdisks[gndisks] = new CacheDisk();
         gdisks[gndisks]->forced_volume_num = sd->vol_num;
         Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
         int sector_size = sd->hw_sector_size;
@@ -745,7 +745,7 @@ CacheProcessor::start_internal(int flags)
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
         blocks = blocks - (skip >> STORE_BLOCK_SHIFT);
 #if AIO_MODE == AIO_MODE_NATIVE
-        eventProcessor.schedule_imm(NEW(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear)));
+        eventProcessor.schedule_imm(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear));
 #else
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
 #endif
@@ -853,19 +853,19 @@ CacheProcessor::diskInitialized()
       d->sync();
     }
     if (config_volumes.num_volumes == 0) {
-      theCache = NEW(new Cache());
+      theCache = new Cache();
       theCache->scheme = CACHE_HTTP_TYPE;
       theCache->open(clear, fix);
       return;
     }
     if (config_volumes.num_http_volumes != 0) {
-      theCache = NEW(new Cache());
+      theCache = new Cache();
       theCache->scheme = CACHE_HTTP_TYPE;
       theCache->open(clear, fix);
     }
 
     if (config_volumes.num_stream_volumes != 0) {
-      theStreamCache = NEW(new Cache());
+      theStreamCache = new Cache();
       theStreamCache->scheme = CACHE_RTSP_TYPE;
       theStreamCache->open(clear, fix);
     }
@@ -2241,7 +2241,7 @@ Cache::open_done() {
     return 0;
   }
 
-  hosttable = NEW(new CacheHostTable(this, scheme));
+  hosttable = new CacheHostTable(this, scheme);
   hosttable->register_config_callback(&hosttable);
 
   if (hosttable->gen_host_rec.num_cachevols == 0)
@@ -2275,7 +2275,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */) {
         if (cp->disk_vols[i] && !DISK_BAD(cp->disk_vols[i]->disk)) {
           DiskVolBlockQueue *q = cp->disk_vols[i]->dpb_queue.head;
           for (; q; q = q->link.next) {
-            cp->vols[vol_no] = NEW(new Vol());
+            cp->vols[vol_no] = new Vol();
             CacheDisk *d = cp->disk_vols[i]->disk;
             cp->vols[vol_no]->disk = d;
             cp->vols[vol_no]->fd = d->fd;
@@ -2285,7 +2285,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */) {
 
             bool vol_clear = clear || d->cleared || q->new_block;
 #if AIO_MODE == AIO_MODE_NATIVE
-            eventProcessor.schedule_imm(NEW(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear)));
+            eventProcessor.schedule_imm(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear));
 #else
             cp->vols[vol_no]->init(d->path, blocks, q->b->offset, vol_clear);
 #endif
@@ -2820,7 +2820,7 @@ cplist_init()
       if (!p) {
         // did not find a volume in the cache vol list...create
         // a new one
-        CacheVol *new_p = NEW(new CacheVol());
+        CacheVol *new_p = new CacheVol();
         new_p->vol_number = dp[j]->vol_number;
         new_p->num_vols = dp[j]->num_volblocks;
         new_p->size = dp[j]->size;
@@ -2940,7 +2940,7 @@ cplist_reconfigure()
   gnvol = 0;
   if (config_volumes.num_volumes == 0) {
     /* only the http cache */
-    CacheVol *cp = NEW(new CacheVol());
+    CacheVol *cp = new CacheVol();
     cp->vol_number = 0;
     cp->scheme = CACHE_HTTP_TYPE;
     cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
@@ -3046,7 +3046,7 @@ cplist_reconfigure()
       if (!config_vol->cachep) {
         // we did not find a corresponding entry in cache vol...creat one
 
-        CacheVol *new_cp = NEW(new CacheVol());
+        CacheVol *new_cp = new CacheVol();
         new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
         if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp))

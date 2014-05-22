@@ -195,7 +195,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
   //
   if (store)
     delete store;
-  store = NEW(new Store);
+  store = new Store;
   astore->spread_alloc(*store, blocks, true);
   unsigned int got = store->total_blocks();
 
@@ -213,7 +213,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
 
   if (lowest_level_data)
     delete[]lowest_level_data;
-  lowest_level_data = NEW(new char[lowest_level_data_size()]);
+  lowest_level_data = new char[lowest_level_data_size()];
   ink_assert(lowest_level_data);
   memset(lowest_level_data, 0xFF, lowest_level_data_size());
 
@@ -1192,9 +1192,9 @@ MultiCacheBase::sync_partitions(Continuation *cont)
   // don't try to sync if we were not correctly initialized
   if (data && mapped_header) {
     if (heap_used[heap_halfspace] > halfspace_size() * MULTI_CACHE_HEAP_HIGH_WATER)
-      eventProcessor.schedule_imm(NEW(new MultiCacheHeapGC(cont, this)), ET_CALL);
+      eventProcessor.schedule_imm(new MultiCacheHeapGC(cont, this), ET_CALL);
     else
-      eventProcessor.schedule_imm(NEW(new MultiCacheSync(cont, this)), ET_CALL);
+      eventProcessor.schedule_imm(new MultiCacheSync(cont, this), ET_CALL);
   }
 }
 
@@ -1264,7 +1264,7 @@ UnsunkPtrRegistry::alloc(int *poffset, int base)
       return alloc(poffset, base);
     }
     if (!next) {
-      next = NEW(new UnsunkPtrRegistry);
+      next = new UnsunkPtrRegistry;
       next->mc = mc;
     }
     int s = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(mc->totalelements);

@@ -528,7 +528,7 @@ start_SocksProxy(int port)
   Debug("SocksProxy", "Accepting SocksProxy connections on port %d\n", port);
   NetProcessor::AcceptOptions opt;
   opt.local_port = port;
-  netProcessor.main_accept(NEW(new SocksAccepter), NO_FD, opt);
+  netProcessor.main_accept(new SocksAccepter(), NO_FD, opt);
 
   socksproxy_stat_block = RecAllocateRawStatBlock(socksproxy_stat_count);
 

@@ -1321,7 +1321,7 @@ ConfigUpdateCbTable::invoke(const char *name)
 void
 ConfigUpdateCbTable::invoke(INKContInternal *contp)
 {
-  eventProcessor.schedule_imm(NEW(new ConfigUpdateCallback(contp)), ET_TASK);
+  eventProcessor.schedule_imm(new ConfigUpdateCallback(contp), ET_TASK);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -1588,9 +1588,9 @@ api_init()
     TS_HTTP_LEN_PUBLIC = HTTP_LEN_PUBLIC;
     TS_HTTP_LEN_S_MAXAGE = HTTP_LEN_S_MAXAGE;
 
-    http_global_hooks = NEW(new HttpAPIHooks);
-    lifecycle_hooks = NEW(new LifecycleAPIHooks);
-    global_config_cbs = NEW(new ConfigUpdateCbTable);
+    http_global_hooks = new HttpAPIHooks;
+    lifecycle_hooks = new LifecycleAPIHooks;
+    global_config_cbs = new ConfigUpdateCbTable;
 
     if (TS_MAX_API_STATS > 0) {
       api_rsb = RecAllocateRawStatBlock(TS_MAX_API_STATS);
@@ -1804,7 +1804,7 @@ TSfopen(const char *filename, const char *mode)
 {
   FileImpl *file;
 
-  file = NEW(new FileImpl);
+  file = new FileImpl;
   if (!file->fopen(filename, mode)) {
     delete file;
     return NULL;
@@ -1899,7 +1899,7 @@ TSMBuffer
 TSMBufferCreate(void)
 {
   TSMBuffer bufp;
-  HdrHeapSDKHandle *new_heap = NEW(new HdrHeapSDKHandle);
+  HdrHeapSDKHandle *new_heap = new HdrHeapSDKHandle;
 
   new_heap->m_heap = new_HdrHeap();
   bufp = (TSMBuffer)new_heap;
@@ -3901,7 +3901,7 @@ sdk_sanity_check_cachekey(TSCacheKey key)
 TSCacheKey
 TSCacheKeyCreate(void)
 {
-  TSCacheKey key = (TSCacheKey)NEW(new CacheInfo());
+  TSCacheKey key = (TSCacheKey)new CacheInfo();
 
   // TODO: Probably remove this when we can be use "NEW" can't fail.
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
@@ -4008,7 +4008,7 @@ TSCacheKeyDestroy(TSCacheKey key)
 TSCacheHttpInfo
 TSCacheHttpInfoCopy(TSCacheHttpInfo infop)
 {
-  CacheHTTPInfo *new_info = NEW(new CacheHTTPInfo);
+  CacheHTTPInfo *new_info = new CacheHTTPInfo;
 
   new_info->copy((CacheHTTPInfo *) infop);
   return reinterpret_cast<TSCacheHttpInfo>(new_info);
@@ -4123,7 +4123,7 @@ TSCacheHttpInfoCreate(void)
 unsigned int
 TSConfigSet(unsigned int id, void *data, TSConfigDestroyFunc funcp)
 {
-  INKConfigImpl *config = NEW(new INKConfigImpl);
+  INKConfigImpl *config = new INKConfigImpl;
   config->mdata = data;
   config->m_destroy_func = funcp;
   return configProcessor.set(id, config);
@@ -4467,11 +4467,11 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
   // which is DEDICATED, the continuation needs to be called back on a
   // REGULAR thread.
   if (eth->tt != REGULAR) {
-    eventProcessor.schedule_imm(NEW(new TSHttpSsnCallback(cs, event)), ET_NET);
+    eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, event), ET_NET);
   } else {
     MUTEX_TRY_LOCK(trylock, cs->mutex, eth);
     if (!trylock) {
-      eventProcessor.schedule_imm(NEW(new TSHttpSsnCallback(cs, event)), ET_NET);
+      eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, event), ET_NET);
     } else {
       cs->handleEvent((int) event, 0);
     }
@@ -5534,11 +5534,11 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   // which is DEDICATED, the continuation needs to be called back on a
   // REGULAR thread.
   if (eth == NULL || eth->tt != REGULAR) {
-    eventProcessor.schedule_imm(NEW(new TSHttpSMCallback(sm, event)), ET_NET);
+    eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
   } else {
     MUTEX_TRY_LOCK(trylock, sm->mutex, eth);
     if (!trylock) {
-      eventProcessor.schedule_imm(NEW(new TSHttpSMCallback(sm, event)), ET_NET);
+      eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
     } else {
       sm->state_api_callback((int) event, 0);
     }
@@ -6806,14 +6806,14 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
     return TS_ERROR;
   }
 
-  TextLogObject *tlog = NEW(new TextLogObject(filename, Log::config->logfile_dir,
-                                              (bool) mode & TS_LOG_MODE_ADD_TIMESTAMP,
-                                              NULL,
-                                              Log::config->rolling_enabled,
-                                              Log::config->collation_preproc_threads,
-                                              Log::config->rolling_interval_sec,
-                                              Log::config->rolling_offset_hr,
-                                              Log::config->rolling_size_mb));
+  TextLogObject *tlog = new TextLogObject(filename, Log::config->logfile_dir,
+                                          (bool) mode & TS_LOG_MODE_ADD_TIMESTAMP,
+                                          NULL,
+                                          Log::config->rolling_enabled,
+                                          Log::config->collation_preproc_threads,
+                                          Log::config->rolling_interval_sec,
+                                          Log::config->rolling_offset_hr,
+                                          Log::config->rolling_size_mb);
   if (tlog == NULL) {
     *new_object = NULL;
     return TS_ERROR;
@@ -8501,7 +8501,7 @@ TSHttpTxnCloseAfterResponse (TSHttpTxn txnp, int should_close)
 TSPortDescriptor
 TSPortDescriptorParse(const char * descriptor)
 {
-  HttpProxyPort * port = NEW(new HttpProxyPort());
+  HttpProxyPort * port = new HttpProxyPort();
 
   if (descriptor && port->processOptions(descriptor)) {
     return (TSPortDescriptor)port;

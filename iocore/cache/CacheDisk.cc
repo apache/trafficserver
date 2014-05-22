@@ -243,7 +243,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     dpb->len -= size_in_blocks;
     dpb->offset += ((off_t) size_in_blocks * STORE_BLOCK_SIZE);
 
-    DiskVolBlockQueue *new_q = NEW(new DiskVolBlockQueue());
+    DiskVolBlockQueue *new_q = new DiskVolBlockQueue();
     new_q->b = dpb;
     free_blocks->dpb_queue.enqueue(new_q);
     free_blocks->size += dpb->len;
@@ -269,7 +269,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     }
   }
   if (i == header->num_volumes) {
-    disk_vols[i] = NEW(new DiskVol());
+    disk_vols[i] = new DiskVol();
     disk_vols[i]->num_volblocks = 1;
     disk_vols[i]->vol_number = number;
     disk_vols[i]->disk = this;
@@ -328,7 +328,7 @@ CacheDisk::update_header()
     }
     delete free_blocks;
   }
-  free_blocks = NEW(new DiskVol());
+  free_blocks = new DiskVol();
   free_blocks->vol_number = -1;
   free_blocks->disk = this;
   free_blocks->num_volblocks = 0;
@@ -336,7 +336,7 @@ CacheDisk::update_header()
   free_space = 0;
 
   for (i = 0; i < header->num_diskvol_blks; i++) {
-    DiskVolBlockQueue *dpbq = NEW(new DiskVolBlockQueue());
+    DiskVolBlockQueue *dpbq = new DiskVolBlockQueue();
     bool dpbq_referenced = false;
     dpbq->b = &header->vol_info[i];
     if (header->vol_info[i].free) {
@@ -360,7 +360,7 @@ CacheDisk::update_header()
     if (j == n) {
       // did not find a matching volume number. create a new
       // one
-      disk_vols[j] = NEW(new DiskVol());
+      disk_vols[j] = new DiskVol();
       disk_vols[j]->vol_number = vol_number;
       disk_vols[j]->disk = this;
       disk_vols[j]->num_volblocks = 1;

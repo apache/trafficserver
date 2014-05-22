@@ -83,7 +83,7 @@ InkXmlObject::add_tag(const char *tag, const char *value)
   ink_assert(tag != NULL);
   ink_assert(value != NULL);
 
-  InkXmlAttr *attr = NEW(new InkXmlAttr(tag, value));
+  InkXmlAttr *attr = new InkXmlAttr(tag, value);
   return add_attr(attr);
 }
 
@@ -305,7 +305,7 @@ InkXmlConfigFile::scan_object(int fd, char token)
   }
 
   ident[ident_len] = 0;
-  InkXmlObject *obj = NEW(new InkXmlObject(ident));
+  InkXmlObject *obj = new InkXmlObject(ident);
   ink_assert(obj != NULL);
 
   InkXmlAttr *attr;
@@ -412,7 +412,7 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
       if (next != '>')
         return BAD_ATTR;
       write_to[write_len] = 0;
-      attr = NEW(new InkXmlAttr(name, value));
+      attr = new InkXmlAttr(name, value);
       ink_assert(attr != NULL);
       return attr;
 

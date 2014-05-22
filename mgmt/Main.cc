@@ -546,7 +546,7 @@ main(int argc, char **argv)
 
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
-  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, false));
+  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
   diags = diagsConfig->diags;
   diags->prefix_str = "Manager ";
 
@@ -592,12 +592,12 @@ main(int argc, char **argv)
     // diagsConfig->reconfigure_diags(); INKqa11968
     /*
        delete diags;
-       diags = NEW (new Diags(debug_tags,action_tags));
+       diags = new Diags(debug_tags,action_tags);
      */
   }
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
-  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, true));
+  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
   diags = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Manager ";
@@ -729,7 +729,7 @@ main(int argc, char **argv)
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 
-  statProcessor = NEW(new StatProcessor());
+  statProcessor = new StatProcessor();
 
   for (;;) {
     lmgmt->processEventQueue();

@@ -146,8 +146,8 @@ ClusterAccept::ClusterAcceptMachine(NetVConnection * NetVC)
   }
 
   Debug(CL_NOTE, "Accepting machine %u.%u.%u.%u", DOT_SEPARATED(remote_ip));
-  ClusterHandler *ch = NEW(new ClusterHandler);
-  ch->machine = NEW(new ClusterMachine(NULL, remote_ip));
+  ClusterHandler *ch = new ClusterHandler;
+  ch->machine = new ClusterMachine(NULL, remote_ip);
   ch->ip = remote_ip;
   ch->net_vc = NetVC;
   eventProcessor.schedule_imm_signal(ch, ET_CLUSTER);
@@ -282,7 +282,7 @@ free_configuration(ClusterConfiguration * c, ClusterConfiguration * prev)
   // chosen is to simply delete the object after some (very long)
   // time after it has ceased to be accessible.
   //
-  eventProcessor.schedule_in(NEW(new ConfigurationContinuation(c, prev)), CLUSTER_CONFIGURATION_TIMEOUT, ET_CALL);
+  eventProcessor.schedule_in(new ConfigurationContinuation(c, prev), CLUSTER_CONFIGURATION_TIMEOUT, ET_CALL);
 }
 
 ClusterConfiguration *
@@ -294,7 +294,7 @@ configuration_add_machine(ClusterConfiguration * c, ClusterMachine * m)
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   int i = 0;
-  ClusterConfiguration *cc = NEW(new ClusterConfiguration(*c));
+  ClusterConfiguration *cc = new ClusterConfiguration(*c);
 
   // Find the place to insert this new machine
   //
@@ -334,7 +334,7 @@ configuration_remove_machine(ClusterConfiguration * c, ClusterMachine * m)
   //
   // Build a new cluster configuration without a machine
   //
-  ClusterConfiguration *cc = NEW(new ClusterConfiguration(*c));
+  ClusterConfiguration *cc = new ClusterConfiguration(*c);
   //
   // remove m and move others down
   //

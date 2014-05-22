@@ -78,8 +78,6 @@ libtsutil_la_SOURCES = \
   Regex.h \
   Regression.cc \
   Regression.h \
-  Resource.cc \
-  Resource.h \
   SimpleTokenizer.h \
   TestBox.h \
   TextBuffer.cc \

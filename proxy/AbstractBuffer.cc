@@ -190,7 +190,7 @@ AbstractBuffer::initialize()
   ink_assert(vs.s.reader_count == 0);
 
   if (!unaligned_buffer) {
-    unaligned_buffer = NEW(new char[size + 511]);
+    unaligned_buffer = new char[size + 511];
     buffer = (char *) align_pointer_forward(unaligned_buffer, 512);
   }
 

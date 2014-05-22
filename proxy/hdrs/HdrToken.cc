@@ -597,7 +597,7 @@ hdrtoken_init()
   if (!inited) {
     inited = 1;
 
-    hdrtoken_strs_dfa = NEW(new DFA);
+    hdrtoken_strs_dfa = new DFA;
     hdrtoken_strs_dfa->compile(_hdrtoken_strs, SIZEOF(_hdrtoken_strs), (REFlags) (RE_CASE_INSENSITIVE));
 
     // all the tokenized hdrtoken strings are placed in a special heap,

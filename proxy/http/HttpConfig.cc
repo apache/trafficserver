@@ -1216,7 +1216,7 @@ HttpConfig::startup()
 
   HttpConfigParams &c = m_master;
 
-  http_config_cont = NEW(new HttpConfigCont);
+  http_config_cont = new HttpConfigCont;
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_hostname, "proxy.config.proxy_name");
   c.proxy_hostname_len = -1;
@@ -1479,7 +1479,7 @@ HttpConfig::reconfigure()
 
   HttpConfigParams *params;
 
-  params = NEW(new HttpConfigParams);
+  params = new HttpConfigParams;
 
   params->inbound_ip4 = m_master.inbound_ip4;
   params->inbound_ip6 = m_master.inbound_ip6;
@@ -1746,7 +1746,7 @@ HttpConfig::parse_ports_list(char *ports_string)
     return (0);
 
   if (strchr(ports_string, '*')) {
-    ports_list = NEW(new HttpConfigPortRange);
+    ports_list = new HttpConfigPortRange;
     ports_list->low = -1;
     ports_list->high = -1;
     ports_list->next = NULL;
@@ -1773,7 +1773,7 @@ HttpConfig::parse_ports_list(char *ports_string)
       if (start == end)
         break;
 
-      pr = NEW(new HttpConfigPortRange);
+      pr = new HttpConfigPortRange;
       pr->low = atoi(start);
       pr->high = pr->low;
       pr->next = NULL;

@@ -399,8 +399,8 @@ HostDBCache::start(int flags)
     Warning("Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir'");
   }
 
-  hostDBStore = NEW(new Store);
-  hostDBSpan = NEW(new Span);
+  hostDBStore = new Store;
+  hostDBSpan = new Span;
   hostDBSpan->init(storage_path, storage_size);
   hostDBStore->add(hostDBSpan);
 
@@ -415,8 +415,8 @@ HostDBCache::start(int flags)
       Debug("hostdb", "unable to unlink %s", (const char *)config);
 
     delete hostDBStore;
-    hostDBStore = NEW(new Store);
-    hostDBSpan = NEW(new Span);
+    hostDBStore = new Store;
+    hostDBSpan = new Span;
     hostDBSpan->init(storage_path, storage_size);
     hostDBStore->add(hostDBSpan);
 
@@ -486,7 +486,7 @@ HostDBProcessor::start(int, size_t)
   // Sync HostDB, if we've asked for it.
   //
   if (hostdb_sync_frequency > 0)
-    eventProcessor.schedule_imm(NEW(new HostDBSyncer));
+    eventProcessor.schedule_imm(new HostDBSyncer);
   return 0;
 }
 

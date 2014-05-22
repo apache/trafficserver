@@ -1225,7 +1225,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
   URLScheme scheme;
 
   if (!fieldlist) {
-    fieldlist = NEW(new LogFieldList);
+    fieldlist = new LogFieldList;
     ink_assert(fieldlist != NULL);
     bool agg = false;
     LogFormat::parse_symbol_string(buf_header->fmt_fieldlist(), fieldlist, &agg);
@@ -2303,7 +2303,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   memset(&totals, 0, sizeof(totals));
   init_elapsed(&totals);
 
-  origin_set = NEW(new OriginSet);
+  origin_set = new OriginSet;
   parse_errors = 0;
 
   // Command line parsing
@@ -2375,7 +2375,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 
   // Should we calculate per URL data;
   if (cl.urls != 0) {
-    urls = NEW(new UrlLru(cl.urls, cl.show_urls));
+    urls = new UrlLru(cl.urls, cl.show_urls);
     if (cl.as_object)
       std::cout << "{" << std::endl;
     else

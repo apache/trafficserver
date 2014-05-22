@@ -358,7 +358,7 @@ remap_validate_filter_args(acl_filter_rule ** rule_pp, const char ** argv, int a
   }
 
   if ((rule = *rule_pp) == NULL) {
-    rule = NEW(new acl_filter_rule());
+    rule = new acl_filter_rule();
     if (unlikely((*rule_pp = rule) == NULL)) {
       Debug("url_rewrite", "[validate_filter_args] Memory allocation error");
       return (const char *) "Memory allocation Error";
@@ -656,7 +656,7 @@ remap_load_plugin(const char ** argv, int argc, url_mapping *mp, char *errbuf, i
   Debug("remap_plugin", "using path %s for plugin", c);
 
   if (!remap_pi_list || (pi = remap_pi_list->find_by_path(c)) == 0) {
-    pi = NEW(new remap_plugin_info(c));
+    pi = new remap_plugin_info(c);
     if (!remap_pi_list) {
       remap_pi_list = pi;
     } else {
@@ -1015,7 +1015,7 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
       goto MAP_ERROR;
     }
 
-    new_mapping = NEW(new url_mapping(cln));  // use line # for rank for now
+    new_mapping = new url_mapping(cln);  // use line # for rank for now
 
     // apply filter rules if we have to
     if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
@@ -1113,8 +1113,8 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
             char refinfo_error_buf[1024];
             bool refinfo_error = false;
 
-            ri = NEW(new referer_info((char *) bti->paramv[j - 1], &refinfo_error, refinfo_error_buf,
-                                      sizeof(refinfo_error_buf)));
+            ri = new referer_info((char *)bti->paramv[j - 1], &refinfo_error, refinfo_error_buf,
+                                      sizeof(refinfo_error_buf));
             if (refinfo_error) {
               snprintf(errBuf, sizeof(errBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s",
                            modulePrefix, bti->paramv[j - 1], cln + 1, refinfo_error_buf);
@@ -1188,7 +1188,7 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
 
     reg_map = NULL;
     if (is_cur_mapping_regex) {
-      reg_map = NEW(new UrlRewrite::RegexMapping());
+      reg_map = new UrlRewrite::RegexMapping();
       if (!process_regex_mapping_config(fromHost_lower, new_mapping, reg_map)) {
         errStr = "Could not process regex mapping config line";
         goto MAP_ERROR;
@@ -1214,7 +1214,7 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
             url_mapping *u_mapping;
 
             ats_ip_ntop(ai_spot->ai_addr, ipb, sizeof ipb);
-            u_mapping = NEW(new url_mapping);
+            u_mapping = new url_mapping;
             u_mapping->fromURL.create(NULL);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
             u_mapping->fromURL.host_set(ipb, strlen(ipb));

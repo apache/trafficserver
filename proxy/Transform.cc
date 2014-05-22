@@ -92,7 +92,7 @@ VConnection *
 TransformProcessor::open(Continuation *cont, APIHook *hooks)
 {
   if (hooks) {
-    return NEW(new TransformVConnection(cont, hooks));
+    return new TransformVConnection(cont, hooks);
   } else {
     return NULL;
   }
@@ -104,7 +104,7 @@ TransformProcessor::open(Continuation *cont, APIHook *hooks)
 INKVConnInternal *
 TransformProcessor::null_transform(ProxyMutex *mutex)
 {
-  return NEW(new NullTransform(mutex));
+  return new NullTransform(mutex);
 }
 
 
@@ -114,7 +114,7 @@ TransformProcessor::null_transform(ProxyMutex *mutex)
 INKVConnInternal *
 TransformProcessor::range_transform(ProxyMutex *mut, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length)
 {
-  RangeTransform *range_transform = NEW(new RangeTransform(mut, ranges, num_fields, transform_resp, content_type, content_type_len, content_length));
+  RangeTransform *range_transform = new RangeTransform(mut, ranges, num_fields, transform_resp, content_type, content_type_len, content_length);
   return range_transform;
 }
 
@@ -728,7 +728,7 @@ void
 TransformTest::run()
 {
   if (is_action_tag_set("transform_test")) {
-    eventProcessor.schedule_imm(NEW(new TransformControl()), ET_NET);
+    eventProcessor.schedule_imm(new TransformControl(), ET_NET);
   }
 }
 #endif

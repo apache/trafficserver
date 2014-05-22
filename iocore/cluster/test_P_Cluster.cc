@@ -116,7 +116,7 @@ init_diags(char *bdt, char *bat)
     }
   }
 
-  diags = NEW(new Diags(bdt, bat, diags_log_fp));
+  diags = new Diags(bdt, bat, diags_log_fp);
 
   if (diags_log_fp == NULL) {
     SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);

@@ -77,7 +77,7 @@ ShowCacheInternal *theshowcacheInternal = NULL;
 Action *
 register_ShowCacheInternal(Continuation * c, HTTPHdr * h)
 {
-  theshowcacheInternal = NEW(new ShowCacheInternal(c, h));
+  theshowcacheInternal = new ShowCacheInternal(c, h);
   URL *u = h->url_get();
 
   int path_len;

@@ -64,7 +64,7 @@ IpAllow::startup()
 
   ALL_METHOD_MASK = ~0;
 
-  ipAllowUpdate = NEW(new ConfigUpdateHandler<IpAllow>());
+  ipAllowUpdate = new ConfigUpdateHandler<IpAllow>();
   ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
 
   reconfigure();
@@ -77,7 +77,7 @@ IpAllow::reconfigure()
 
   Note("ip_allow.config updated, reloading");
 
-  new_table = NEW(new self("proxy.config.cache.ip_allow.filename", "IpAllow", "ip_allow"));
+  new_table = new self("proxy.config.cache.ip_allow.filename", "IpAllow", "ip_allow");
   new_table->BuildTable();
 
   configid = configProcessor.set(configid, new_table);

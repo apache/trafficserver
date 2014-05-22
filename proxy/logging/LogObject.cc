@@ -120,12 +120,12 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir,
     // by default, create a LogFile for this object, if a loghost is
     // later specified, then we will delete the LogFile object
     //
-    m_logFile = NEW(new LogFile (m_filename, header, file_format,
-                                 m_signature,
-                                 Log::config->ascii_buffer_size,
-                                 Log::config->max_line_size));
+    m_logFile = new LogFile(m_filename, header, file_format,
+                            m_signature,
+                            Log::config->ascii_buffer_size,
+                            Log::config->max_line_size);
 
-    LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
+    LogBuffer *b = new LogBuffer (this, Log::config->log_buffer_size);
     ink_assert(b);
     SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
@@ -149,7 +149,7 @@ LogObject::LogObject(LogObject& rhs)
     m_buffer_manager = new LogBufferManager[m_flush_threads];
 
     if (rhs.m_logFile) {
-        m_logFile = NEW (new LogFile(*(rhs.m_logFile)));
+        m_logFile = new LogFile(*(rhs.m_logFile));
     } else {
         m_logFile = NULL;
     }
@@ -168,7 +168,7 @@ LogObject::LogObject(LogObject& rhs)
 
     // copy gets a fresh log buffer
     //
-    LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
+    LogBuffer *b = new LogBuffer (this, Log::config->log_buffer_size);
     ink_assert(b);
     SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
@@ -430,7 +430,7 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
     case LogBuffer::LB_FULL_ACTIVE_WRITERS:
     case LogBuffer::LB_FULL_NO_WRITERS:
       // no more room in current buffer, create a new one
-      new_buffer = NEW (new LogBuffer(this, Log::config->log_buffer_size));
+      new_buffer = new LogBuffer(this, Log::config->log_buffer_size);
 
       // swap the new buffer for the old one
       INK_WRITE_MEMORY_BARRIER;
@@ -888,7 +888,7 @@ TextLogObject::va_write(const char *format, va_list ap)
 
 LogObjectManager::LogObjectManager()
 {
-  _APImutex = NEW(new ink_mutex);
+  _APImutex = new ink_mutex;
   ink_mutex_init(_APImutex, "_APImutex");
 }
 
@@ -1408,9 +1408,9 @@ MakeTestLogObject(const char * name)
     tmpdir = "/tmp";
   }
 
-  return NEW(new LogObject(&format, tmpdir, name,
-                 LOG_FILE_ASCII /* file_format */, name /* header */,
-                 Log::ROLL_ON_TIME_ONLY /* rolling_enabled */, 1 /* flush_threads */));
+  return new LogObject(&format, tmpdir, name,
+                       LOG_FILE_ASCII /* file_format */, name /* header */,
+                       Log::ROLL_ON_TIME_ONLY /* rolling_enabled */, 1 /* flush_threads */);
 }
 
 REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest * t, int /* atype ATS_UNUSED */, int * pstatus)

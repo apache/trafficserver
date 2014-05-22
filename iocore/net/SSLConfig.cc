@@ -263,7 +263,7 @@ void
 SSLConfig::reconfigure()
 {
   SSLConfigParams *params;
-  params = NEW(new SSLConfigParams);
+  params = new SSLConfigParams;
   params->initialize();         // re-read configuration
   configid = configProcessor.set(configid, params);
 }
@@ -283,7 +283,7 @@ SSLConfig::release(SSLConfigParams * params)
 void
 SSLCertificateConfig::startup()
 {
-  sslCertUpdate = NEW(new ConfigUpdateHandler<SSLCertificateConfig>());
+  sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
   sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
@@ -296,7 +296,7 @@ void
 SSLCertificateConfig::reconfigure()
 {
   SSLConfig::scoped_config params;
-  SSLCertLookup * lookup = NEW(new SSLCertLookup());
+  SSLCertLookup * lookup = new SSLCertLookup();
 
   // Test SSL certificate loading startup. With large numbers of certificates, reloading can take time, so delay
   // twice the healthcheck period to simulate a loading a large certificate set.

@@ -200,7 +200,7 @@ BitMap::BitMap(int bitmap_maxsize)
     _bitmap_byte_size = STATIC_BITMAP_BYTE_SIZE;
   } else {
     _bitmap_byte_size = (bitmap_maxsize + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE;
-    _bitmap = NEW(new char[_bitmap_byte_size]);
+    _bitmap = new char[_bitmap_byte_size];
     _bitmap_size = bitmap_maxsize;
   }
   memset((void *) _bitmap, 0, _bitmap_byte_size);
@@ -380,8 +380,8 @@ ICPConfiguration::ICPConfiguration():_icp_config_callouts(0)
   //*********************************************************
   // Allocate working and current ICPConfigData structures
   //*********************************************************
-  _icp_cdata = NEW(new ICPConfigData());
-  _icp_cdata_current = NEW(new ICPConfigData());
+  _icp_cdata = new ICPConfigData();
+  _icp_cdata_current = new ICPConfigData();
 
   //********************************************************************
   // Read ICP config and setup update callbacks for "icp_cdata_current"
@@ -402,8 +402,8 @@ ICPConfiguration::ICPConfiguration():_icp_config_callouts(0)
   // Allocate working and current PeerConfigData structures
   //**********************************************************
   for (int n = 0; n <= MAX_DEFINED_PEERS; ++n) {
-    _peer_cdata[n] = NEW(new PeerConfigData);
-    _peer_cdata_current[n] = NEW(new PeerConfigData);
+    _peer_cdata[n] = new PeerConfigData;
+    _peer_cdata_current[n] = new PeerConfigData;
   }
 
   //*********************************************************
@@ -494,7 +494,7 @@ ICPConfiguration::mgr_icp_config_change_callback(const char * /* name ATS_UNUSED
 
   // Map this manager configuration callout onto ET_ICP
 
-  ICPConfigUpdateCont *rh = NEW(new ICPConfigUpdateCont(cookie, data.rec_string));
+  ICPConfigUpdateCont *rh = new ICPConfigUpdateCont(cookie, data.rec_string);
   SET_CONTINUATION_HANDLER(rh, (ICPCfgContHandler) & ICPConfigUpdateCont::RetryICPconfigUpdate);
   eventProcessor.schedule_imm(rh, ET_ICP);
   return EVENT_DONE;
@@ -527,7 +527,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   if (!startup && !ICPconfig->Lock()) {
     // Build retry continuation
-    ICPConfigUpdateCont *rh = NEW(new ICPConfigUpdateCont(data, value));
+    ICPConfigUpdateCont *rh = new ICPConfigUpdateCont(data, value);
     SET_CONTINUATION_HANDLER(rh, (ICPCfgContHandler) & ICPConfigUpdateCont::RetryICPconfigUpdate);
     eventProcessor.schedule_in(rh, HRTIME_MSECONDS(ICPConfigUpdateCont::RETRY_INTERVAL), ET_ICP);
     return EVENT_DONE;
@@ -538,7 +538,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   // Allocate working buffer for PeerConfigData[]
   //
-  PeerConfigData *P = NEW(new PeerConfigData[MAX_DEFINED_PEERS + 1]);
+  PeerConfigData *P = new PeerConfigData[MAX_DEFINED_PEERS + 1];
 
   //
   // Build pathname to "icp.config" and open file
@@ -1208,7 +1208,7 @@ ICPPeriodicCont::PeriodicEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     //
     // We have a configuration change, create worker continuation.
     //
-    ICPPeriodicCont *rc = NEW(new ICPPeriodicCont(_ICPpr));
+    ICPPeriodicCont *rc = new ICPPeriodicCont(_ICPpr);
     SET_CONTINUATION_HANDLER(rc, (ICPPeriodicContHandler) & ICPPeriodicCont::DoReconfigAction);
     eventProcessor.schedule_imm(rc);
   }

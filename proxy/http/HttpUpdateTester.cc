@@ -121,6 +121,6 @@ init_http_update_test()
     return;
   }
 
-  UpTest *u = NEW(new UpTest(f, new_ProxyMutex()));
+  UpTest *u = new UpTest(f, new_ProxyMutex());
   eventProcessor.schedule_imm(u);
 }

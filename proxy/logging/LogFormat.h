@@ -126,8 +126,9 @@ private:
 // entire entry as a string without any field substitutions.  To
 // indicate this, the format_str will be NULL.
 static inline LogFormat *
-MakeTextLogFormat(const char * name = "text") {
-  return NEW(new LogFormat(name, NULL /* format_str */));
+MakeTextLogFormat(const char * name = "text")
+{
+  return new LogFormat(name, NULL /* format_str */);
 }
 
 /*-------------------------------------------------------------------------

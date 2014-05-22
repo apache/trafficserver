@@ -415,7 +415,7 @@ template<class C> struct MultiCache: public MultiCacheBase
 
   MultiCacheBase *dup()
   {
-    return NEW(new MultiCache<C>);
+    return new MultiCache<C>;
   }
 
   void rebuild_element(int buck, char *elem, RebuildMC & r);

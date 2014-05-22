@@ -71,7 +71,7 @@ NetAccept *
 SSLNetAccept::clone() const
 {
   NetAccept *na;
-  na = NEW(new SSLNetAccept);
+  na = new SSLNetAccept;
   *na = *this;
   return na;
 }

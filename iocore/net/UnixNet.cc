@@ -87,14 +87,14 @@ private:
 #endif
 
 PollCont::PollCont(ProxyMutex *m, int pt):Continuation(m), net_handler(NULL), nextPollDescriptor(NULL), poll_timeout(pt) {
-  pollDescriptor = NEW(new PollDescriptor);
+  pollDescriptor = new PollDescriptor;
   pollDescriptor->init();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
 PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt):Continuation(m), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
 {
-  pollDescriptor = NEW(new PollDescriptor);
+  pollDescriptor = new PollDescriptor;
   pollDescriptor->init();
   SET_HANDLER(&PollCont::pollEvent);
 }
@@ -219,7 +219,7 @@ initialize_thread_for_net(EThread *thread)
   thread->schedule_imm(get_NetHandler(thread));
 
 #ifndef INACTIVITY_TIMEOUT
-  InactivityCop *inactivityCop = NEW(new InactivityCop(get_NetHandler(thread)->mutex));
+  InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(1));
 #endif
 

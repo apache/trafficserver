@@ -35,6 +35,7 @@
  ****************************************************************************/
 
 #include "ink_platform.h"
+#include "ink_memory.h"
 #include "ink_defs.h"
 #include "ink_error.h"
 #include "ink_assert.h"
@@ -416,7 +417,7 @@ Diags::activate_taglist(const char *taglist, DiagsTagType mode)
     if (activated_tags[mode]) {
       delete activated_tags[mode];
     }
-    activated_tags[mode] = NEW(new DFA);
+    activated_tags[mode] = new DFA;
     activated_tags[mode]->compile(taglist);
     unlock();
   }

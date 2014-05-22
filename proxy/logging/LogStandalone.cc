@@ -110,7 +110,7 @@ initialize_process_manager()
 
   //
   // Start up manager
-  pmgmt = NEW(new ProcessManager(remote_management_flag));
+  pmgmt = new ProcessManager(remote_management_flag);
 
   pmgmt->start();
 
@@ -216,7 +216,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   init_system(true);
   initialize_process_manager();
-  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags));
+  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags);
   diags = diagsConfig->diags;
   diags_init = 1;
 }
@@ -245,7 +245,7 @@ init_log_standalone_basic(const char *pgm_name)
 
   init_system(false);
   const bool use_records = false;
-  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags, use_records));
+  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags, use_records);
   diags = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //

@@ -254,7 +254,7 @@ main(int argc, char **argv)
       log_fp = NULL;
     }
   }
-  diags = NEW(new Diags("rec", NULL, log_fp));
+  diags = new Diags("rec", NULL, log_fp);
   diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
   diags->print(NULL, DTA(DL_Note), "Starting '%s'", argv[0]);
 

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2547] Remove Resource.c/h, and NEW as well.
+
   *) [TS-1588] slow log should include client addr
 
   *) [TS-2728] The lib/perl Makefile.am does not properly detect in-source

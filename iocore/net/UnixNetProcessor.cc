@@ -129,7 +129,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   if (should_filter_int > 0 && opt.etype == ET_NET)
     na->server.http_accept_filter = true;
 
-  na->action_ = NEW(new NetAcceptAction());
+  na->action_ = new NetAcceptAction();
   *na->action_ = cont;
   na->action_->server = &na->server;
   na->callback_on_open = opt.f_callback_on_open;
@@ -381,7 +381,7 @@ NetProcessor::connect_s(Continuation * cont, sockaddr const* target,
                         int timeout, NetVCOptions * opt)
 {
   Debug("iocore_net_connect", "NetProcessor::connect_s called");
-  CheckConnect *c = NEW(new CheckConnect(cont->mutex));
+  CheckConnect *c = new CheckConnect(cont->mutex);
   return c->connect_s(cont, target, timeout, opt);
 }
 
@@ -416,7 +416,7 @@ UnixNetProcessor::start(int, size_t)
 
   // Socks
   if (!netProcessor.socks_conf_stuff) {
-    socks_conf_stuff = NEW(new socks_conf_struct);
+    socks_conf_stuff = new socks_conf_struct;
     loadSocksConfiguration(socks_conf_stuff);
     if (!socks_conf_stuff->socks_needed && socks_conf_stuff->accept_enabled) {
       Warning("We can not have accept_enabled and socks_needed turned off" " disabling Socks accept\n");
@@ -450,7 +450,7 @@ UnixNetProcessor::start(int, size_t)
 NetAccept *
 UnixNetProcessor::createNetAccept()
 {
-  return (NEW(new NetAccept));
+  return new NetAccept;
 }
 
 NetVConnection *

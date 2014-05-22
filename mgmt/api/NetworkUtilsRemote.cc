@@ -36,6 +36,7 @@
 #include "ink_defs.h"
 #include "ink_sock.h"
 #include "ink_string.h"
+#include "ink_memory.h"
 #include "I_Layout.h"
 #include "NetworkUtilsRemote.h"
 #include "CoreAPI.h"

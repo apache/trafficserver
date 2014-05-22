@@ -48,7 +48,7 @@ m_max_connections(max_connects + 1)
   //
   // allocate space for the connection table.
   //
-  ct = NEW(new ConnectTable[m_max_connections]);
+  ct = new ConnectTable[m_max_connections];
   ink_assert(ct != NULL);
   for (int i = 0; i < m_max_connections; ++i) {
     init_cid(i, NULL, 0, -1, LogSock::LS_STATE_UNUSED);
@@ -549,7 +549,7 @@ LogSock::read_alloc(int cid, int *size)
     return NULL;
   }
 
-  data = NEW(new char[header.msg_bytes]);
+  data = new char[header.msg_bytes];
   ink_assert(data != NULL);
 
   if ((*size = read_body(ct[cid].sd, data, header.msg_bytes)) < 0) {
@@ -689,7 +689,7 @@ LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
 
   if (host != NULL) {
     const size_t host_size = strlen(host) + 1;
-    ct[cid].host = NEW(new char[host_size]);
+    ct[cid].host = new char[host_size];
     ink_strlcpy(ct[cid].host, host, host_size);
   } else {
     ct[cid].host = NULL;

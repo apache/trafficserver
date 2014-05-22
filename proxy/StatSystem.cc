@@ -384,9 +384,9 @@ struct SnapCont: public Continuation
 void
 start_stats_snap()
 {
-  eventProcessor.schedule_every(NEW(new SnapCont(rusage_snap_mutex)), SNAP_USAGE_PERIOD, ET_CALL);
+  eventProcessor.schedule_every(new SnapCont(rusage_snap_mutex), SNAP_USAGE_PERIOD, ET_CALL);
   if (snap_stats_every)
-    eventProcessor.schedule_every(NEW(new SnapStatsContinuation()), HRTIME_SECONDS(snap_stats_every), ET_CALL);
+    eventProcessor.schedule_every(new SnapStatsContinuation(), HRTIME_SECONDS(snap_stats_every), ET_CALL);
   else
     Warning("disabling statistics snap");
 }

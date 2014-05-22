@@ -112,7 +112,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
 
     VIO * vio;
     NetVConnection * netvc = static_cast<NetVConnection*>(data);
-    ProtocolProbeTrampoline * probe = NEW(new ProtocolProbeTrampoline(this, netvc->mutex));
+    ProtocolProbeTrampoline * probe = new ProtocolProbeTrampoline(this, netvc->mutex);
 
     // XXX we need to apply accept inactivity timeout here ...
 

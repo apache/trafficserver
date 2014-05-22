@@ -49,7 +49,7 @@ public:                        // Needed by WinNT compiler (compiler bug)
 template<class C> TS_INLINE void
 new_Deleter(C * ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(NEW(new DeleterContinuation<C> (ap)), t, ET_CALL);
+  eventProcessor.schedule_in(new DeleterContinuation<C> (ap), t, ET_CALL);
 }
 
 template<class C> struct FreeCallContinuation: public Continuation
@@ -73,7 +73,7 @@ public:                        // Needed by WinNT compiler (compiler bug)
 template<class C> TS_INLINE void
 new_FreeCaller(C * ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(NEW(new FreeCallContinuation<C> (ap)), t, ET_CALL);
+  eventProcessor.schedule_in(new FreeCallContinuation<C> (ap), t, ET_CALL);
 }
 
 struct FreerContinuation;
@@ -101,7 +101,7 @@ struct FreerContinuation: public Continuation
 TS_INLINE void
 new_Freer(void *ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(NEW(new FreerContinuation(ap)), t, ET_CALL);
+  eventProcessor.schedule_in(new FreerContinuation(ap), t, ET_CALL);
 }
 
 template<class C> struct DereferContinuation: public Continuation
@@ -128,7 +128,7 @@ template<class C> struct DereferContinuation: public Continuation
 template<class C> TS_INLINE void
 new_Derefer(C * ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(NEW(new DereferContinuation<C> (ap)), t, ET_CALL);
+  eventProcessor.schedule_in(new DereferContinuation<C> (ap), t, ET_CALL);
 }
 
 #endif /* _Freer_h_ */

@@ -363,7 +363,7 @@ initCongestionControl()
 // register the stats variables
   register_congest_stats();
 
-  CongestionControlUpdate = NEW(new ConfigUpdateHandler<CongestionMatcherTable>());
+  CongestionControlUpdate = new ConfigUpdateHandler<CongestionMatcherTable>();
 
 // register config variables
   REC_EstablishStaticConfigInt32(congestionControlEnabled, "proxy.config.http.congestion_control.enabled");
@@ -402,7 +402,7 @@ void
 CongestionMatcherTable::reconfigure()
 {
   Note("congestion control config changed, reloading");
-  CongestionMatcher = NEW(new CongestionMatcherTable("proxy.config.http.congestion_control.filename", congestPrefix, &congest_dest_tags));
+  CongestionMatcher = new CongestionMatcherTable("proxy.config.http.congestion_control.filename", congestPrefix, &congest_dest_tags);
 
 #ifdef DEBUG_CONGESTION_MATCHER
   CongestionMatcher->Print();

@@ -461,7 +461,7 @@ http_pages_callback(Continuation * cont, HTTPHdr * header)
 {
   HttpPagesHandler *handler;
 
-  handler = NEW(new HttpPagesHandler(cont, header));
+  handler = new HttpPagesHandler(cont, header);
   eventProcessor.schedule_imm(handler, ET_CALL);
 
   return &handler->action;

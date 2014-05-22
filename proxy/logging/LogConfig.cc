@@ -616,7 +616,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
 
         if (!m_log_collation_accept) {
           Log::collation_port = collation_port;
-          m_log_collation_accept = NEW(new LogCollationAccept(collation_port));
+          m_log_collation_accept = new LogCollationAccept(collation_port);
         }
         Debug("log", "I am a collation host listening on port %d.", collation_port);
       } else {
@@ -833,16 +833,15 @@ LogConfig::create_predefined_object(const PreDefinedFormatInfo * pdi, size_t num
   // create object with filters
   //
   LogObject *obj;
-  obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
-                          pdi->filefmt, pdi->header, (Log::RollingEnabledValues)rolling_enabled,
-                          collation_preproc_threads, rolling_interval_sec,
-                          rolling_offset_hr, rolling_size_mb));
+  obj = new LogObject(pdi->format, logfile_dir, obj_fname,
+                      pdi->filefmt, pdi->header, (Log::RollingEnabledValues)rolling_enabled,
+                      collation_preproc_threads, rolling_interval_sec,
+                      rolling_offset_hr, rolling_size_mb);
 
   if (pdi->collatable) {
     if (collation_mode == Log::SEND_STD_FMTS || collation_mode == Log::SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
 
-      LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
-                                         obj->get_signature()));
+      LogHost *loghost = new LogHost(obj->get_full_filename(), obj->get_signature());
       ink_assert(loghost != NULL);
 
       loghost->set_name_port(collation_host, collation_port);
@@ -914,7 +913,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatList & predef)
     if (separate_icp_logs == 1) {
       LogFilter * filter[1];
 
-      filter[0] = NEW(new LogFilterInt(filter_name[icp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[icp]));
+      filter[0] = new LogFilterInt(filter_name[icp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[icp]);
       create_predefined_objects_with_filter(predef, countof(filter), filter, name[icp]);
       delete filter[0];
     }
@@ -930,11 +929,9 @@ LogConfig::split_by_protocol(const PreDefinedFormatList & predef)
   //
 
   if (n > 0) {
-    return (NEW(new LogFilterInt("__reject_protocols__", etype_field,
-                                 LogFilter::REJECT, LogFilter::MATCH, n, filter_val)));
-  } else {
-    return NULL;
+    return new LogFilterInt("__reject_protocols__", etype_field, LogFilter::REJECT, LogFilter::MATCH, n, filter_val);
   }
+  return NULL;
 }
 
 size_t
@@ -960,9 +957,8 @@ LogConfig::split_by_hostname(const PreDefinedFormatList & predef, LogFilter * re
       //
       char filter_name[LOG_MAX_FORMAT_LINE + 12];
       snprintf(filter_name, LOG_MAX_FORMAT_LINE, "__accept_%s__", host[i]);
-      rp_ah[num_filt] =
-        NEW(new LogFilterString(filter_name,
-                                shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]));
+      rp_ah[num_filt] = new LogFilterString(filter_name, shn_field, LogFilter::ACCEPT,
+                                            LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]);
 
       create_predefined_objects_with_filter(predef, num_filt + 1, rp_ah, host[i], true);
       delete rp_ah[num_filt];
@@ -976,9 +972,8 @@ LogConfig::split_by_hostname(const PreDefinedFormatList & predef, LogFilter * re
       rp_rh[num_filt++] = reject_protocol_filter;
     }
 
-    rp_rh[num_filt] =
-      NEW(new LogFilterString("__reject_hosts__",
-                              shn_field, LogFilter::REJECT, LogFilter::CASE_INSENSITIVE_CONTAIN, n_hosts, host));
+    rp_rh[num_filt] = new LogFilterString("__reject_hosts__", shn_field, LogFilter::REJECT,
+                                          LogFilter::CASE_INSENSITIVE_CONTAIN, n_hosts, host);
 
     // create the "catch-all" object that contains logs for all
     // hosts other than those specified in the hosts file and for
@@ -1757,8 +1752,8 @@ LogConfig::read_xml_log_config(int from_memory)
       }
       // create new format object and place onto global list
       //
-      LogFormat *fmt = NEW(new LogFormat(name_str, format_str,
-                                         interval_num));
+      LogFormat *fmt = new LogFormat(name_str, format_str, interval_num);
+
       ink_assert(fmt != NULL);
       if (fmt->valid()) {
         global_format_list.add(fmt, false);
@@ -1918,7 +1913,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
       case LogField::sINT:
 
-        filter = NEW(new LogFilterInt(filter_name, logfield, act, oper, val_str));
+        filter = new LogFilterInt(filter_name, logfield, act, oper, val_str);
         break;
 
       case LogField::dINT:
@@ -1928,7 +1923,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
       case LogField::STRING:
 
-        filter = NEW(new LogFilterString(filter_name, logfield, act, oper, val_str));
+        filter = new LogFilterString(filter_name, logfield, act, oper, val_str);
         break;
 
       case LogField::IP:
@@ -2092,15 +2087,15 @@ LogConfig::read_xml_log_config(int from_memory)
 
       // create the new object
       //
-      LogObject *obj = NEW(new LogObject(fmt, logfile_dir,
-                                         filename.dequeue(),
-                                         file_type,
-                                         header.dequeue(),
-                                         (Log::RollingEnabledValues)obj_rolling_enabled,
-                                         collation_preproc_threads,
-                                         obj_rolling_interval_sec,
-                                         obj_rolling_offset_hr,
-                                         obj_rolling_size_mb));
+      LogObject *obj = new LogObject(fmt, logfile_dir,
+                                     filename.dequeue(),
+                                     file_type,
+                                     header.dequeue(),
+                                     (Log::RollingEnabledValues)obj_rolling_enabled,
+                                     collation_preproc_threads,
+                                     obj_rolling_interval_sec,
+                                     obj_rolling_offset_hr,
+                                     obj_rolling_size_mb);
 
       // filters
       //
@@ -2130,7 +2125,7 @@ LogConfig::read_xml_log_config(int from_memory)
         size_t n = tok.getNumTokensRemaining();
 
         if (n) {
-          int64_t *val_array = NEW(new int64_t[n]);
+          int64_t *val_array = new int64_t[n];
           size_t numValid = 0;
           char *t;
           while (t = tok.getNext(), t != NULL) {
@@ -2191,7 +2186,7 @@ LogConfig::read_xml_log_config(int from_memory)
           SimpleTokenizer failover_tok(host, '|'); // split failover hosts
 
           while (failover_str = failover_tok.getNext(), failover_str != 0) {
-            LogHost *lh = NEW(new LogHost(obj->get_full_filename(), obj->get_signature()));
+            LogHost *lh = new LogHost(obj->get_full_filename(), obj->get_signature());
 
             if (lh->set_name_or_ipstr(failover_str)) {
               Warning("Could not set \"%s\" as collation host", host);
@@ -2259,7 +2254,7 @@ LogConfig::read_log_hosts_file(size_t * num_hosts)
         Warning("lseek failed on file %s: %s", (const char *)config_path, strerror(errno));
         nhosts = 0;
       } else {
-        hosts = NEW(new char *[nhosts]);
+        hosts = new char *[nhosts];
         ink_assert(hosts != NULL);
 
         size_t i = 0;

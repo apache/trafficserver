@@ -125,7 +125,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
 {
   INKThreadInternal *thread;
 
-  thread = NEW(new INKThreadInternal);
+  thread = new INKThreadInternal;
 
   ink_assert(thread->event_types == 0);
 
@@ -144,7 +144,7 @@ TSThreadInit()
 {
   INKThreadInternal *thread;
 
-  thread = NEW(new INKThreadInternal);
+  thread = new INKThreadInternal;
 
 #ifdef DEBUG
   if (thread == NULL)

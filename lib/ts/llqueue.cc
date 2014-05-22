@@ -22,6 +22,7 @@
  */
 
 #include "ink_config.h"
+#include "ink_memory.h"
 
 #include <stdio.h>
 #include <stdlib.h>

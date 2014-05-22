@@ -710,13 +710,9 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
             if (!icp_reply_port) {
               icp_reply_port = ntohs(ats_ip_port_cast(&s->_peer->fromaddr));
             }
-            PeerConfigData *Pcfg = NEW(new PeerConfigData(
-                PeerConfigData::CTYPE_SIBLING,
-                IpAddr(s->_peer->fromaddr),
-                0,
-                icp_reply_port
-            ));
-            ParentSiblingPeer *P = NEW(new ParentSiblingPeer(PEER_SIBLING, Pcfg, _ICPpr, true));
+            PeerConfigData *Pcfg = new PeerConfigData(PeerConfigData::CTYPE_SIBLING, IpAddr(s->_peer->fromaddr), 0,
+                                                      icp_reply_port);
+            ParentSiblingPeer *P = new ParentSiblingPeer(PEER_SIBLING, Pcfg, _ICPpr, true);
             status = _ICPpr->AddPeer(P);
             ink_release_assert(status);
             status = _ICPpr->AddPeerToSendList(P);
@@ -1316,7 +1312,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
           if (a != ACTION_IO_ERROR) {
             if (a != ACTION_RESULT_DONE) {
               if (!pendingActions) {
-                pendingActions = NEW(new DynArray<Action *>(&default_action));
+                pendingActions = new DynArray<Action *>(&default_action);
               }
               (*pendingActions) (npending_actions) = a;
             }
@@ -1881,7 +1877,7 @@ ICPProcessor::start()
   // Setup ICPProcessor lock, required since ICPProcessor is instantiated
   //  as static object.
   //
-  _l = NEW(new AtomicLock());
+  _l = new AtomicLock();
 
   //
   // Setup custom allocators
@@ -1897,9 +1893,9 @@ ICPProcessor::start()
   //
   // Create ICP configuration objects
   //
-  _ICPConfig = NEW(new ICPConfiguration());
+  _ICPConfig = new ICPConfiguration();
 
-  _mcastCB_handler = NEW(new ICPHandlerCont(this));
+  _mcastCB_handler = new ICPHandlerCont(this);
   SET_CONTINUATION_HANDLER(_mcastCB_handler, (ICPHandlerContHandler) & ICPHandlerCont::TossEvent);
 
 
@@ -1918,14 +1914,14 @@ ICPProcessor::start()
   //
   // Start ICP configuration monitor (periodic continuation)
   //
-  _ICPPeriodic = NEW(new ICPPeriodicCont(this));
+  _ICPPeriodic = new ICPPeriodicCont(this);
   SET_CONTINUATION_HANDLER(_ICPPeriodic, (ICPPeriodicContHandler) & ICPPeriodicCont::PeriodicEvent);
   _PeriodicEvent = eventProcessor.schedule_every(_ICPPeriodic, HRTIME_MSECONDS(ICPPeriodicCont::PERIODIC_INTERVAL), ET_ICP);
 
   //
   // Start ICP receive handler continuation
   //
-  _ICPHandler = NEW(new ICPHandlerCont(this));
+  _ICPHandler = new ICPHandlerCont(this);
   SET_CONTINUATION_HANDLER(_ICPHandler, (ICPHandlerContHandler) & ICPHandlerCont::PeriodicEvent);
   _ICPHandlerEvent = eventProcessor.schedule_every(_ICPHandler,
                                                    HRTIME_MSECONDS(ICPHandlerCont::ICP_HANDLER_INTERVAL), ET_ICP);
@@ -2028,7 +2024,7 @@ ICPProcessor::BuildPeerList()
   // Descriptor for local host, add to PeerList and
   // RecvPeerList
   //***************************************************
-  P = NEW(new ParentSiblingPeer(PEER_LOCAL, Pcfg, this));
+  P = new ParentSiblingPeer(PEER_LOCAL, Pcfg, this);
   status = AddPeer(P);
   ink_release_assert(status);
   status = AddPeerToRecvList(P);
@@ -2055,7 +2051,7 @@ ICPProcessor::BuildPeerList()
           //*********************************
           // Create multicast peer structure
           //*********************************
-          mcP = NEW(new MultiCastPeer(Pcfg->GetMultiCastIPAddr(), Pcfg->GetICPPort(), Pcfg->GetMultiCastTTL(), this));
+          mcP = new MultiCastPeer(Pcfg->GetMultiCastIPAddr(), Pcfg->GetICPPort(), Pcfg->GetMultiCastTTL(), this);
           status = AddPeer(mcP);
           ink_assert(status);
           status = AddPeerToSendList(mcP);
@@ -2066,7 +2062,7 @@ ICPProcessor::BuildPeerList()
         //*****************************
         // Add child to MultiCast peer
         //*****************************
-        P = NEW(new ParentSiblingPeer(type, Pcfg, this));
+        P = new ParentSiblingPeer(type, Pcfg, this);
         status = AddPeer(P);
         ink_assert(status);
         status = ((MultiCastPeer *) mcP)->AddMultiCastChild(P);
@@ -2076,7 +2072,7 @@ ICPProcessor::BuildPeerList()
         //*****************************
         // Add parent/sibling peer
         //*****************************
-        P = NEW(new ParentSiblingPeer(type, Pcfg, this));
+        P = new ParentSiblingPeer(type, Pcfg, this);
         status = AddPeer(P);
         ink_assert(status);
         status = AddPeerToSendList(P);

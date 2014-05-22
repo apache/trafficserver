@@ -376,7 +376,7 @@ struct sync_cont: public Continuation
     : Continuation(m)
   {
     SET_HANDLER(&sync_cont::sync);
-    m_tb = NEW(new textBuffer(65536));
+    m_tb = new textBuffer(65536);
   }
 
    ~sync_cont()
@@ -484,15 +484,15 @@ RecProcessStart(void)
   }
 
   Debug("statsproc", "Starting sync continuations:");
-  raw_stat_sync_cont *rssc = NEW(new raw_stat_sync_cont(new_ProxyMutex()));
+  raw_stat_sync_cont *rssc = new raw_stat_sync_cont(new_ProxyMutex());
   Debug("statsproc", "\traw-stat syncer");
   raw_stat_sync_cont_event = eventProcessor.schedule_every(rssc, HRTIME_MSECONDS(g_rec_raw_stat_sync_interval_ms), ET_TASK);
 
-  config_update_cont *cuc = NEW(new config_update_cont(new_ProxyMutex()));
+  config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
   Debug("statsproc", "\tconfig syncer");
   config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
 
-  sync_cont *sc = NEW(new sync_cont(new_ProxyMutex()));
+  sync_cont *sc = new sync_cont(new_ProxyMutex());
   Debug("statsproc", "\tremote syncer");
   sync_cont_event = eventProcessor.schedule_every(sc, HRTIME_MSECONDS(g_rec_remote_sync_interval_ms), ET_TASK);
 

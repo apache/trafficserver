@@ -108,13 +108,13 @@ init_diags(char *bdt, char *bat)
     }
   }
 
-  diags = NEW(new Diags(bdt, bat, diags_log_fp));
+  diags = new Diags(bdt, bat, diags_log_fp);
 
   if (diags_log_fp == NULL) {
     SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
 
-    diags->print(NULL, DL_Warning, NULL, &loc,
-                 "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    diags->print(NULL, DL_Warning, NULL, &loc, "couldn't open diags log file '%s', " "will not log to this file",
+                 diags_logpath);
   }
 
   diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);

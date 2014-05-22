@@ -299,7 +299,7 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
     goto fail;
   }
 
-  ticket_key = NEW(new ssl_ticket_key_t());
+  ticket_key = new ssl_ticket_key_t();
   memcpy(ticket_key->key_name, (const char *)ticket_key_data, 16);
   memcpy(ticket_key->hmac_secret, (const char *)ticket_key_data + 16, 16);
   memcpy(ticket_key->aes_key, (const char *)ticket_key_data + 32, 16);

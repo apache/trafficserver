@@ -92,7 +92,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     _exit(0);
   }
 
-  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false));
+  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
   diags = diagsConfig->diags;
   diags->prefix_str = "Collector ";
 

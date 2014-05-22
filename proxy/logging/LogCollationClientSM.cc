@@ -84,7 +84,7 @@ LogCollationClientSM::LogCollationClientSM(LogHost * log_host)
 
   // allocate send_list before we do anything
   // we can accept logs to send before we're fully initialized
-  m_buffer_send_list = NEW(new LogBufferList());
+  m_buffer_send_list = new LogBufferList();
   ink_assert(m_buffer_send_list != NULL);
 
   SET_HANDLER((LogCollationClientSMHandler) & LogCollationClientSM::client_handler);

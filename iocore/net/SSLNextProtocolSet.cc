@@ -110,7 +110,7 @@ SSLNextProtocolSet::registerEndpoint(const char * proto, Continuation * ep)
   }
 
   if (!findEndpoint((const unsigned char *)proto, len)) {
-    this->endpoints.push(NEW(new NextProtocolEndpoint(proto, ep)));
+    this->endpoints.push(new NextProtocolEndpoint(proto, ep));
     return true;
   }
 

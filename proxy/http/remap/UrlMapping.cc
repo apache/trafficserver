@@ -157,7 +157,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
           }
         }
       }
-      r = NEW(new redirect_tag_str());
+      r = new redirect_tag_str();
       if (likely(r)) {
         if ((r->type = type) == 's') {
           char svd = *c;

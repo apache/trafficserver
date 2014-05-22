@@ -681,7 +681,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
     return ACTION_RESULT_DONE;
   }
   if (written > 0 && written < len) {
-    u->oob_ptr = NEW(new OOB_callback(mutex, this, cont, buf + written, len - written));
+    u->oob_ptr = new OOB_callback(mutex, this, cont, buf + written, len - written);
     u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
     return u->oob_ptr->trigger;
   } else {
@@ -689,7 +689,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
     // expensive for this
     written = -errno;
     ink_assert(written == -EAGAIN || written == -ENOTCONN);
-    u->oob_ptr = NEW(new OOB_callback(mutex, this, cont, buf, len));
+    u->oob_ptr = new OOB_callback(mutex, this, cont, buf, len);
     u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
     return u->oob_ptr->trigger;
   }

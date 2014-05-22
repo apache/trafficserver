@@ -92,7 +92,7 @@ template<class Data, class Result> HostMatcher<Data, Result>::HostMatcher(const 
     matcher_name(name),
     file_name(filename)
 {
-  host_lookup = NEW(new HostLookup(name));
+  host_lookup = new HostLookup(name);
 }
 
 template<class Data, class Result> HostMatcher<Data, Result>::~HostMatcher()
@@ -137,7 +137,7 @@ template<class Data, class Result> void HostMatcher<Data, Result>::AllocateSpace
 
   host_lookup->AllocateSpace(num_entries);
 
-  data_array = NEW(new Data[num_entries]);
+  data_array = new Data[num_entries];
 
   array_len = num_entries;
   num_el = 0;
@@ -274,9 +274,9 @@ template<class Data, class Result> void UrlMatcher<Data, Result>::AllocateSpace(
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  data_array = NEW(new Data[num_entries]);
-  url_value = NEW(new int [num_entries]);
-  url_str = NEW(new char *[num_entries]);
+  data_array = new Data[num_entries];
+  url_value = new int [num_entries];
+  url_str = new char *[num_entries];
   memset(url_str, 0, sizeof(char *) * num_entries);
   array_len = num_entries;
   num_el = 0;
@@ -415,9 +415,9 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::AllocateSpac
   re_array = (pcre**)ats_malloc(sizeof(pcre*) * num_entries);
   memset(re_array, 0, sizeof(pcre*) * num_entries);
 
-  data_array = NEW(new Data[num_entries]);
+  data_array = new Data[num_entries];
 
-  re_str = NEW(new char *[num_entries]);
+  re_str = new char *[num_entries];
   memset(re_str, 0, sizeof(char *) * num_entries);
 
   array_len = num_entries;
@@ -598,7 +598,7 @@ template<class Data, class Result> void IpMatcher<Data, Result>::AllocateSpace(i
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  data_array = NEW(new Data[num_entries]);
+  data_array = new Data[num_entries];
 
   array_len = num_entries;
   num_el = 0;
@@ -887,27 +887,27 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
   }
   // Now allocate space for the record pointers
   if ((flags & ALLOW_REGEX_TABLE) && regex > 0) {
-    reMatch = NEW((new RegexMatcher<Data, Result> (matcher_name, config_file_path)));
+    reMatch = new RegexMatcher<Data, Result> (matcher_name, config_file_path);
     reMatch->AllocateSpace(regex);
   }
 
   if ((flags & ALLOW_URL_TABLE) && url > 0) {
-    urlMatch = NEW((new UrlMatcher<Data, Result> (matcher_name, config_file_path)));
+    urlMatch = new UrlMatcher<Data, Result> (matcher_name, config_file_path);
     urlMatch->AllocateSpace(url);
   }
 
   if ((flags & ALLOW_HOST_TABLE) && hostDomain > 0) {
-    hostMatch = NEW((new HostMatcher<Data, Result> (matcher_name, config_file_path)));
+    hostMatch = new HostMatcher<Data, Result> (matcher_name, config_file_path);
     hostMatch->AllocateSpace(hostDomain);
   }
 
   if ((flags & ALLOW_IP_TABLE) && ip > 0) {
-    ipMatch = NEW((new IpMatcher<Data, Result> (matcher_name, config_file_path)));
+    ipMatch = new IpMatcher<Data, Result> (matcher_name, config_file_path);
     ipMatch->AllocateSpace(ip);
   }
 
   if ((flags & ALLOW_HOST_REGEX_TABLE) && hostregex > 0) {
-    hrMatch = NEW((new HostRegexMatcher<Data, Result> (matcher_name, config_file_path)));
+    hrMatch = new HostRegexMatcher<Data, Result> (matcher_name, config_file_path);
     hrMatch->AllocateSpace(hostregex);
   }
   // Traverse the list and build the records table

@@ -203,7 +203,7 @@ struct HostDBCache: public MultiCache<HostDBInfo>
   int start(int flags = 0);
   MultiCacheBase *dup()
   {
-    return NEW(new HostDBCache);
+    return new HostDBCache;
   }
 
   // This accounts for an average of 2 HostDBInfo per DNS cache (for round-robin etc.)

@@ -91,7 +91,6 @@
 #include "Ptr.h"
 #include "RawHashTable.h"
 #include "Regex.h"
-#include "Resource.h"
 #include "SimpleTokenizer.h"
 #include "TextBuffer.h"
 #include "Tokenizer.h"

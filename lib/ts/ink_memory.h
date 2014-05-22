@@ -24,6 +24,7 @@
 #define	_ink_memory_h_
 
 #include <ctype.h>
+#include <string.h>
 #include <strings.h>
 
 #include "ink_config.h"

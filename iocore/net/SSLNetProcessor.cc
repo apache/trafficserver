@@ -79,7 +79,7 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
 NetAccept *
 SSLNetProcessor::createNetAccept()
 {
-  return ((NetAccept *) NEW(new SSLNetAccept));
+  return (NetAccept *) new SSLNetAccept;
 }
 
 // Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does

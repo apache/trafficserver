@@ -39,7 +39,7 @@ void
 Layout::create(const char *prefix)
 {
   if (layout == NULL) {
-    layout = NEW(new Layout(prefix));
+    layout = new Layout(prefix);
   }
 }
 

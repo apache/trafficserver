@@ -319,7 +319,7 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
         // buffer already converted to host order) and add it to the
         // object's flush queue
         //
-        log_buffer = NEW(new LogBuffer(log_object, log_buffer_header));
+        log_buffer = new LogBuffer(log_object, log_buffer_header);
 
 	RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_received_from_network_stat,
                        log_buffer_header->entry_count);

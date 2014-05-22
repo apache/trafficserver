@@ -4052,7 +4052,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
   if (n_values <= 0 || ptr_len_ncmp(value, value_len, "bytes=", 6))
     return;
 
-  ranges = NEW(new RangeRecord[n_values]);
+  ranges = new RangeRecord[n_values];
   value += 6; // skip leading 'bytes='
   value_len -= 6;
 

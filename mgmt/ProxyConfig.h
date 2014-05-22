@@ -108,7 +108,7 @@ struct ConfigUpdateContinuation : public Continuation
 
 template <typename UpdateClass> int
 ConfigScheduleUpdate(ProxyMutex * mutex) {
-  eventProcessor.schedule_imm(NEW(new ConfigUpdateContinuation<UpdateClass>(mutex)), ET_CALL);
+  eventProcessor.schedule_imm(new ConfigUpdateContinuation<UpdateClass>(mutex), ET_CALL);
   return 0;
 }
 

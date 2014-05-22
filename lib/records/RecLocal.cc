@@ -97,7 +97,7 @@ sync_thr(void *data)
 static void *
 sync_thr(void *data)
 {
-  textBuffer *tb = NEW(new textBuffer(65536));
+  textBuffer *tb = new textBuffer(65536);
   Rollback *rb;
   bool inc_version;
   bool written;

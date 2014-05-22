@@ -797,7 +797,7 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     //
     MachineList *cc = the_cluster_config();
     if (!machine)
-      machine = NEW(new ClusterMachine(hostname, ip, port));
+      machine = new ClusterMachine(hostname, ip, port);
 #ifdef LOCAL_CLUSTER_TEST_MODE
     if (!(cc && cc->find(ip, port))) {
 #else
@@ -1135,8 +1135,8 @@ failed:
              DOT_SEPARATED(ip), id, clusteringVersion._major, clusteringVersion._minor);
 #endif
 
-        read_vcs = NEW((new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS]));
-        write_vcs = NEW((new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link>[CLUSTER_BUCKETS]));
+        read_vcs = new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS];
+        write_vcs = new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link>[CLUSTER_BUCKETS];
         SET_HANDLER((ClusterContHandler) & ClusterHandler::beginClusterEvent);
 
         // enable schedule_imm() on i/o completion (optimization)
@@ -1151,7 +1151,7 @@ failed:
         int procs_online = ink_number_of_processors();
         int total_callbacks = min(procs_online, MAX_COMPLETION_CALLBACK_EVENTS);
         for (int n = 0; n < total_callbacks; ++n) {
-          callout_cont[n] = NEW(new ClusterCalloutContinuation(this));
+          callout_cont[n] = new ClusterCalloutContinuation(this);
           callout_events[n] = eventProcessor.schedule_every(callout_cont[n], COMPLETION_CALLBACK_PERIOD, ET_NET);
         }
 

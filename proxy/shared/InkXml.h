@@ -182,8 +182,7 @@ private:
     LINK(ListElem, link);
 
     ListElem(char *name):m_name(name)
-    {
-    }
+    { }
   };
 
 public:
@@ -195,14 +194,17 @@ public:
 
   void enqueue(char *name)
   {
-    ListElem *e = NEW(new ListElem(name));
+    ListElem *e = new ListElem(name);
+
     m_list.enqueue(e);
     m_count++;
   }
+
   char *dequeue()
   {
     char *ret = NULL;
     ListElem *e = m_list.dequeue();
+
     if (e) {
       ret = e->m_name;
       delete e;
@@ -210,14 +212,17 @@ public:
     }
     return ret;
   }
+
   void clear()
   {
     ListElem *e;
+
     while ((e = m_list.dequeue()) != NULL) {
       delete e;
     }
     m_count = 0;
   }
+
   unsigned count()
   {
     return m_count;

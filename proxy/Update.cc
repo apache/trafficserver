@@ -407,7 +407,7 @@ UpdateEntry::BuildHttpRequest()
   } else {
     snprintf(request, sizeof(request), "%s%s%s%s", GET_METHOD, _url, HTTP_VERSION, REQUEST_TERMINATOR);
   }
-  _http_hdr = NEW(new HTTPHdr);
+  _http_hdr = new HTTPHdr;
   http_parser_init(&_http_parser);
   _http_hdr->create(HTTP_TYPE_REQUEST);
   int err;
@@ -605,7 +605,7 @@ UpdateConfigList::HashAdd(UpdateEntry * e)
   if (!_hash_table) {
     // One time initialization
 
-    _hash_table = NEW(new UpdateEntry *[HASH_TABLE_SIZE]);
+    _hash_table = new UpdateEntry *[HASH_TABLE_SIZE];
     memset((char *) _hash_table, 0, (sizeof(UpdateEntry *) * HASH_TABLE_SIZE));
   }
   // Add to hash table only if unique
@@ -686,10 +686,10 @@ UpdateManager::start()
   init_proto_schemes();
   init_supported_proto_schemes();
 
-  _CM = NEW(new UpdateConfigManager);
+  _CM = new UpdateConfigManager;
   _CM->init();
 
-  _SCH = NEW(new UpdateScheduler(_CM));
+  _SCH = new UpdateScheduler(_CM);
   _SCH->Init();
 
   return 0;
@@ -718,7 +718,7 @@ UpdateConfigManager::init()
 {
   update_rsb = RecAllocateRawStatBlock((int) update_stat_count);
 
-  _CP_actual = NEW(new UpdateConfigParams);
+  _CP_actual = new UpdateConfigParams;
 
   // Setup update handlers for each global configuration parameter
 
@@ -773,7 +773,7 @@ UpdateConfigManager::init()
 
   // Make working and actual global config copies equal
 
-  _CP = NEW(new UpdateConfigParams(*_CP_actual));
+  _CP = new UpdateConfigParams(*_CP_actual);
 
   // Setup "update.config" update handler
 
@@ -853,7 +853,7 @@ UpdateConfigManager::ProcessUpdate(int event, Event * e)
     // EVENT_INTERVAL  -- Global configuration update check
     ////////////////////////////////////////////////////////////////////
 
-    UpdateConfigParams *p = NEW(new UpdateConfigParams(*_CP_actual));
+    UpdateConfigParams *p = new UpdateConfigParams(*_CP_actual);
 
     if (!(*_CP == *p)) {
       _CP = p;
@@ -965,7 +965,7 @@ UpdateConfigManager::ParseConfigFile(int f)
   int i;
 
   UpdateEntry *e = NULL;
-  UpdateConfigList *ul = NEW(new UpdateConfigList);
+  UpdateConfigList *ul = new UpdateConfigList;
 
   while (GetDataLine(f, sizeof(line) - 1, line, F_ITEMS, '\\') > 0) {
     ++ln;
@@ -996,7 +996,7 @@ UpdateConfigManager::ParseConfigFile(int f)
     }
     // Validate data fields
 
-    e = NEW(new UpdateEntry);
+    e = new UpdateEntry;
 
     ////////////////////////////////////
     // Validate URL
@@ -1144,7 +1144,7 @@ UpdateScheduler::ScheduleEvent(int event, void *e)
             // Instantiate UpdateScheduler to process this URL list.
             //////////////////////////////////////////////////////////
             Debug("update", "Starting UpdateScheduler for id: %d [%s]", ue->_id, ue->_url);
-            UpdateScheduler *us = NEW(new UpdateScheduler());
+            UpdateScheduler *us = new UpdateScheduler();
             us->Init(this, ue, _CP);
             update_complete = 0;
 
@@ -1364,7 +1364,7 @@ UpdateScheduler::Schedule(UpdateEntry * e)
     if (ue) {
       ++_update_state_machines;
       UPDATE_INCREMENT_DYN_STAT(update_state_machines_stat);
-      usm = NEW(new UpdateSM(this, _CP, ue));
+      usm = new UpdateSM(this, _CP, ue);
       usm->Start();
 
       Debug("update", "%s %s start update id: %d [%s]",
@@ -1527,8 +1527,8 @@ UpdateSM::http_scheme(UpdateSM * sm)
     // Recursive Update
     ////////////////////////////////////
     Debug("update", "Start recursive HTTP GET id: %d [%s]", sm->_EN->_id, sm->_EN->_url);
-    sm->_EN->_indirect_list = NEW(new UpdateConfigList);
-    RecursiveHttpGet *RHttpGet = NEW(new RecursiveHttpGet);
+    sm->_EN->_indirect_list = new UpdateConfigList;
+    RecursiveHttpGet *RHttpGet = new RecursiveHttpGet;
 
     RHttpGet->Init(sm, sm->_EN->_url, sm->_EN->_request_headers,
                    &sm->_EN->_URLhandle, sm->_EN->_http_hdr,
@@ -1649,7 +1649,7 @@ RecursiveHttpGet::RecursiveHttpGetEvent(int event, Event * d)
       while ((status = html_parser.ParseHtml(r, &url, &url_end))) {
         // Validate given URL.
 
-        ue = NEW(new UpdateEntry);
+        ue = new UpdateEntry;
         if (ue->ValidURL(url, url_end + 1 /* Point to null */ )) {
           delete ue;
           ue = NULL;
@@ -1746,7 +1746,7 @@ RecursiveHttpGet::RecursiveHttpGetEvent(int event, Event * d)
         Debug("update", "(R) start non-terminal HTTP GET rid: %d id: %d [%s]", _id, ue->_id, ue->_url);
 
         _active_child_state_machines++;
-        RecursiveHttpGet *RHttpGet = NEW(new RecursiveHttpGet());
+        RecursiveHttpGet *RHttpGet = new RecursiveHttpGet();
         RHttpGet->Init(this, ue->_url, _request_headers,
                        _url_data, _http_hdr, (_recursion_depth - 1), _CL, &update_allowable_html_tags[0]);
         return EVENT_CONT;
@@ -2369,7 +2369,7 @@ HtmlParser::MakeURL(char *url, char *sub, int subsize, int relative_url)
   int i, n;
   int skip_slashslash;
 
-  DynArray<char>*result = NEW(new DynArray<char>(&default_zero_char, 128));
+  DynArray<char>*result = new DynArray<char>(&default_zero_char, 128);
 
   if (relative_url) {
     if (*sub != '/') {
@@ -2443,7 +2443,7 @@ HtmlParser::PrependString(const char *pre, int presize, char *sub, int subsize)
 {
   int n;
 
-  DynArray<char>*result = NEW(new DynArray<char>(&default_zero_char, 128));
+  DynArray<char>*result = new DynArray<char>(&default_zero_char, 128);
 
   for (n = 0; n < presize; ++n) {
     (*result) (result->length()) = pre[n];
