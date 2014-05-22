@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2728] The lib/perl Makefile.am does not properly detect in-source
+   builds, generating errors.
+
   *) [TS-2723] add new features to ts_lua plugin.
    Author: Quehan <quehan@taobao.com>
 
