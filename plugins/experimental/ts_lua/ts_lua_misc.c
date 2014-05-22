@@ -155,7 +155,7 @@ ts_lua_flush(lua_State * L)
 }
 
 static int
-ts_lua_sleep_handler(TSCont contp, TSEvent event, void *edata)
+ts_lua_sleep_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 {
   ts_lua_http_intercept_item *item = TSContDataGet(contp);
 
@@ -218,7 +218,7 @@ ts_lua_flush_cleanup(struct ict_item *item)
 }
 
 static int
-ts_lua_flush_handler(TSCont contp, TSEvent event, void *edata)
+ts_lua_flush_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 {
   ts_lua_http_intercept_item *item = TSContDataGet(contp);
 

@@ -235,13 +235,13 @@ ts_lua_del_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n)
 }
 
 int
-ts_lua_init_instance(ts_lua_instance_conf * conf)
+ts_lua_init_instance(ts_lua_instance_conf * conf ATS_UNUSED)
 {
   return 0;
 }
 
 int
-ts_lua_del_instance(ts_lua_instance_conf * conf)
+ts_lua_del_instance(ts_lua_instance_conf * conf ATS_UNUSED)
 {
   return 0;
 }
