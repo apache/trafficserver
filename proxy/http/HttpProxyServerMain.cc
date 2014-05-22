@@ -149,6 +149,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   accept_opt.transport_type = port.m_type;
   accept_opt.setHostResPreference(port.m_host_res_preference);
   accept_opt.setTransparentPassthrough(port.m_transparent_passthrough);
+  accept_opt.setSessionProtocolPreference(port.m_session_protocol_preference);
 
   if (port.m_outbound_ip4.isValid()) {
     accept_opt.outbound_ip4 = port.m_outbound_ip4;
@@ -171,13 +172,15 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
 
   ProtocolProbeSessionAccept *probe = NEW(new ProtocolProbeSessionAccept());
   HttpSessionAccept *http = NEW(new HttpSessionAccept(accept_opt));
+  if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET))
+    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
 
 #if TS_HAS_SPDY
   SpdySessionAccept *spdy = NEW(new SpdySessionAccept(http));
-  probe->registerEndpoint(TS_PROTO_SPDY, spdy);
+  if (port.m_session_protocol_preference.intersects(SPDY_PROTOCOL_SET))
+    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_SPDY, spdy);
 #endif
 
-  probe->registerEndpoint(TS_PROTO_HTTP, http);
 
   if (port.isSSL()) {
     SSLNextProtocolAccept *ssl = NEW(new SSLNextProtocolAccept(probe));
@@ -190,13 +193,17 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
     // http/1.0, http/1.1, spdy/3, spdy/3.1
 
     // HTTP
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_0))
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_1))
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
 
     // SPDY
 #if TS_HAS_SPDY
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, spdy);
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, spdy);
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3))
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, spdy);
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3_1))
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, spdy);
 #endif
 
     ink_scoped_mutex lock(ssl_plugin_mutex);

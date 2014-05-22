@@ -579,7 +579,7 @@ ink_res_init(
 }
 
 void
-parse_host_res_preferences(char const* value, HostResPreferenceOrder order) {
+parse_host_res_preference(char const* value, HostResPreferenceOrder order) {
   Tokenizer tokens(";/|");
   // preference from the config string.
   int np = 0; // index in to @a m_host_res_preference

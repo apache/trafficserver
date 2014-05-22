@@ -303,7 +303,7 @@ static int next_sm_id = 0;
 
 
 HttpSM::HttpSM()
-  : Continuation(NULL), proto_stack(1u << TS_PROTO_HTTP), sm_id(-1), magic(HTTP_SM_MAGIC_DEAD),
+  : Continuation(NULL), sm_id(-1), magic(HTTP_SM_MAGIC_DEAD),
     //YTS Team, yamsat Plugin
     enable_redirection(false), redirect_url(NULL), redirect_url_len(0), redirection_tries(0),
     transfered_bytes(0), post_failed(false), debug_on(false),

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2830] Make SPDY configurable.
+
   *) [TS-2684] Add a text-log format to background_fetch plugin.
 
   *) [TS-2577] Tracing on e.g. -T http_hdrs does not show Proxy Request

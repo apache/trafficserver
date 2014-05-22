@@ -451,28 +451,53 @@ Quick reference chart.
 Name        Note            Definition
 =========== =============== ========================================
 *number*    **Required**    The local port.
+blind                       Blind (``CONNECT``) port.
+compress    **N/I**         Compressed. Not implemented.
 ipv4        **Default**     Bind to IPv4 address family.
 ipv6                        Bind to IPv6 address family.
-tr-in                       Inbound transparent.
-tr-out                      Outbound transparent.
-tr-full                     Fully transparent (inbound and outbound)
-tr-pass                     Pass through enabled.
-ssl                         SSL terminated.
 ip-in       **Value**       Local inbound IP address.
 ip-out      **Value**       Local outbound IP address.
 ip-resolve  **Value**       IP address resolution style.
-blind                       Blind (``CONNECT``) port.
-compress    **N/I**         Compressed. Not implemented.
+proto       **Value**       List of supported session protocols.
+ssl                         SSL terminated.
+tr-full                     Fully transparent (inbound and outbound)
+tr-in                       Inbound transparent.
+tr-out                      Outbound transparent.
+tr-pass                     Pass through enabled.
 =========== =============== ========================================
 
 *number*
    Local IP port to bind. This is the port to which ATS clients will connect.
+
+blind
+   Accept only the ``CONNECT`` method on this port.
+
+   Not compatible with: ``tr-in``, ``ssl``.
+
+compress
+   Compress the connection. Retained only by inertia, should be considered "not implemented".
 
 ipv4
    Use IPv4. This is the default and is included primarily for completeness. This forced if the ``ip-in`` option is used with an IPv4 address.
 
 ipv6
    Use IPv6. This is forced if the ``ip-in`` option is used with an IPv6 address.
+
+ssl
+   Require SSL termination for inbound connections. SSL :ref:`must be configured <configuring-ssl-termination>` for this option to provide a functional server port.
+
+   Not compatible with: ``blind``.
+
+proto
+   Speficy the :ref:`session level protocols<session-protocol>` supported. These should be
+   separated by semi-colons. For TLS proxy ports the default value is
+   all available protocols. For non-TLS proxy ports the default is HTTP
+   only. SPDY can be enabled on non-TLS proxy ports but that must be done explicitly.
+
+tr-full
+   Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
+
+   Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``.
 
 tr-in
    Inbound transparent. The proxy port will accept connections to any IP address on the port. To have IPv6 inbound transparent you must use this and the ``ipv6`` option. This overrides :ts:cv:`proxy.local.incoming_ip_to_bind` for this port.
@@ -483,11 +508,6 @@ tr-out
    Outbound transparent. If ATS connects to an origin server for a transaction on this port, it will use the client's address as its local address. This overrides :ts:cv:`proxy.local.outgoing_ip_to_bind` for this port.
 
    Not compatible with: ``ip-out``, ``ip-resolve``
-
-tr-full
-   Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
-
-   Not compatible with: Any option not compatible with ``tr-in`` or ``tr-out``.
 
 tr-pass
    Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables :ts:cv:`proxy.config.http.use_client_target_addr` for the transaction as there is no other place to obtain the origin server address.
@@ -509,19 +529,6 @@ ip-resolve
 
    Not compatible with: ``tr-out`` - this option requires a value of ``client;none`` which is forced and should not be explicitly specified.
 
-ssl
-   Require SSL termination for inbound connections. SSL :ref:`must be configured <configuring-ssl-termination>` for this option to provide a functional server port.
-
-   Not compatible with: ``blind``.
-
-blind
-   Accept only ``CONNECT`` transactions on this port.
-
-   Not compatible with: ``tr-in``, ``ssl``.
-
-compress
-   Compress the connection. Retained only by inertia, should be considered "not implemented".
-
 .. topic:: Example
 
    Listen on port 80 on any address for IPv4 and IPv6.::
@@ -541,6 +548,12 @@ compress
    Listen on port 8080 for IPv6, fully transparent. Set up an SSL port on 443. These ports will use the IP address from :ts:cv:`proxy.local.incoming_ip_to_bind`.  Listen on IP address ``192.168.17.1``, port 80, IPv4, and connect to origin servers using the local address ``10.10.10.1`` for IPv4 and ``fc01:10:10:1::1`` for IPv6.::
 
       8080:ipv6:tr-full 443:ssl ip-in=192.168.17.1:80:ip-out=[fc01:10:10:1::1]:ip-out=10.10.10.1
+
+.. topic:: Example
+
+   Listen on port 9090 for TSL enabled SPDY or HTTP connections.::
+
+      9090:proto=spdy;http:ssl
 
 .. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443 563
 
@@ -2235,10 +2248,32 @@ ICP Configuration
 SPDY Configuration
 ==================
 
-.. ts:cv:: CONFIG proxy.config.spdy.client.max_concurrent_streams INT 1000
+.. ts:cv:: CONFIG proxy.config.spdy.accept_no_activity_timeout INT 65536
    :reloadable:
 
-   Set the maximum number of concurrent streams per client connection.
+   How long a SPDY connection will be kept open after an accept without any streams created.
+
+.. ts:cv:: CONFIG proxy.config.spdy.no_activity_timeout_in INT 65536
+   :reloadable:
+
+   How long a stream is kept open without activity.
+
+.. ts:cv:: CONFIG proxy.config.spdy.initial_window_size_in INT 65536
+   :reloadable:
+
+   The initial window size for inbound connections.
+
+.. ts:cv:: CONFIG proxy.config.spdy.max_concurrent_streams_in INT 1000
+   :reloadable:
+
+   The maximum number of concurrent streams per inbound connection.
+
+   .. note:: Reloading this value affects only new SPDY connections, not existing connects.
+
+.. ts:cv:: CONFIG proxy.config.spdy.verbose_in INT 65536
+   :reloadable:
+
+   Set the verbose flag for SPDY streams on inbound connections.
 
 Scheduled Update Configuration
 ==============================

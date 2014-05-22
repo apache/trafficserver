@@ -1940,7 +1940,11 @@ RecordElement RecordsConfig[] = {
   //# SPDY global configuration.
   //#
   //############
-  {RECT_CONFIG, "proxy.config.spdy.client.max_concurrent_streams", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL},
+  {RECT_CONFIG, "proxy.config.spdy.max_concurrent_streams_in", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL},
+  {RECT_CONFIG, "proxy.config.spdy.no_activity_timeout_in", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL},
+  {RECT_CONFIG, "proxy.config.spdy.initial_window_size_in", RECD_INT, "65536", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL},
+  {RECT_CONFIG, "proxy.config.spdy.verbose_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL},
+  {RECT_CONFIG, "proxy.config.spdy.accept_no_activity_timeout", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL},
 
   //# Add LOCAL Records Here
   {RECT_LOCAL, "proxy.local.incoming_ip_to_bind", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}

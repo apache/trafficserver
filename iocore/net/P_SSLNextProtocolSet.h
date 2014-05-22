@@ -40,7 +40,7 @@ public:
   bool advertiseProtocols(const unsigned char ** out, unsigned * len) const;
 
   Continuation * findEndpoint(const char *) const;
-  Continuation * findEndpoint(const unsigned char *, unsigned, TSClientProtoStack *, const char **) const;
+  Continuation * findEndpoint(const unsigned char *, unsigned, const char **) const;
 
   struct NextProtocolEndpoint
   {
@@ -50,7 +50,6 @@ public:
     ~NextProtocolEndpoint();
 
     const char * protocol;
-    TSClientProtoStack proto_stack;
     Continuation * endpoint;
     LINK(NextProtocolEndpoint, link);
 

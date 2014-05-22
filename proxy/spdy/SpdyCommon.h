@@ -57,19 +57,15 @@ using namespace std;
 
 struct SpdyConfig {
   bool verbose;
-  bool enable_tls;
-  bool keep_host_port;
-  int serv_port;
   int32_t max_concurrent_streams;
-  int initial_window_size;
+  int32_t initial_window_size;
   spdylay_session_callbacks callbacks;
 };
 
 struct Config {
   SpdyConfig spdy;
-  int nr_accept_threads;
-  int accept_no_activity_timeout;
-  int no_activity_timeout_in;
+  int32_t accept_no_activity_timeout;
+  int32_t no_activity_timeout_in;
 };
 
 // Spdy Name/Value pairs

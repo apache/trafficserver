@@ -206,7 +206,7 @@ LogAccessHttp::set_client_req_url_path(char *buf, int len)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
+# if 0
 int
 LogAccessHttp::marshal_client_protocol_stack(char *buf)
 {
@@ -215,7 +215,7 @@ LogAccessHttp::marshal_client_protocol_stack(char *buf)
   }
   return INK_MIN_ALIGN;
 }
-
+# endif
 int
 LogAccessHttp::marshal_client_host_ip(char *buf)
 {

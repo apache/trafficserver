@@ -85,6 +85,9 @@
 volatile int top_stat = 0;
 RecRawStatBlock *api_rsb;
 
+// Library init functions needed for API.
+extern void ts_session_protocol_well_known_name_indices_init();
+
 // Globals for the Sessions/Transaction index registry
 volatile int next_argv_index = 0;
 
@@ -355,15 +358,6 @@ tsapi int TS_HTTP_LEN_PURGE;
 tsapi int TS_HTTP_LEN_PUT;
 tsapi int TS_HTTP_LEN_TRACE;
 tsapi int TS_HTTP_LEN_PUSH;
-
-/* TLS Next Protocol well-known protocol names. */
-
-tsapi const char * TS_NPN_PROTOCOL_HTTP_1_0 = "http/1.0";
-tsapi const char * TS_NPN_PROTOCOL_HTTP_1_1 = "http/1.1";
-tsapi const char * TS_NPN_PROTOCOL_SPDY_1   = "spdy/1";   // obsolete
-tsapi const char * TS_NPN_PROTOCOL_SPDY_2   = "spdy/2";
-tsapi const char * TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";
-tsapi const char * TS_NPN_PROTOCOL_SPDY_3_1 = "spdy/3.1";
 
 /* MLoc Constants */
 tsapi const TSMLoc TS_NULL_MLOC = (TSMLoc)NULL;
@@ -1618,7 +1612,6 @@ api_init()
     if (sscanf(traffic_server_version, "%d.%d.%d", &ts_major_version, &ts_minor_version, &ts_patch_version) != 3) {
       Warning("Unable to parse traffic server version string '%s'\n", traffic_server_version);
     }
-
   }
 }
 
@@ -6048,6 +6041,7 @@ TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
   info->m_qvalue = quality;
 }
 
+# if 0
 TSClientProtoStack
 TSClientProtoStackCreate(TSProtoType ptype, ...)
 {
@@ -6083,19 +6077,13 @@ TSClientProtoStackCreate(TSProtoType ptype, ...)
   // We can't get here.
   ink_release_assert(0);
 }
+# endif
 
 extern HttpSessionAccept *plugin_http_accept;
 extern HttpSessionAccept *plugin_http_transparent_accept;
 
 TSVConn
 TSHttpConnect(sockaddr const* addr)
-{
-  return TSHttpConnectWithProtoStack(addr, (1u << TS_PROTO_HTTP));
-}
-
-TSVConn
-TSHttpConnectWithProtoStack(sockaddr const* addr,
-                            TSClientProtoStack proto_stack)
 {
   sdk_assert(addr);
 
@@ -6107,9 +6095,6 @@ TSHttpConnectWithProtoStack(sockaddr const* addr,
 
     new_pvc->set_active_addr(addr);
     new_pvc->set_accept_cont(plugin_http_accept);
-
-    new_pvc->active_vc.proto_stack = proto_stack;
-    new_pvc->passive_vc.proto_stack = proto_stack;
 
     PluginVC *return_vc = new_pvc->connect();
 
@@ -6126,6 +6111,7 @@ TSHttpConnectWithProtoStack(sockaddr const* addr,
 
   return NULL;
 }
+
 
 TSVConn
 TSHttpConnectTransparent(sockaddr const* client_addr, sockaddr const* server_addr)
@@ -7407,6 +7393,7 @@ TSFetchUserDataSet(TSFetchSM fetch_sm, void *data)
   ((FetchSM*)fetch_sm)->ext_set_user_data(data);
 }
 
+# if 0
 void
 TSFetchClientProtoStackSet(TSFetchSM fetch_sm, TSClientProtoStack proto_stack)
 {
@@ -7422,6 +7409,7 @@ TSFetchClientProtoStackGet(TSFetchSM fetch_sm)
 
   return ((FetchSM*)fetch_sm)->ext_get_proto_stack();
 }
+# endif
 
 void*
 TSFetchUserDataGet(TSFetchSM fetch_sm)

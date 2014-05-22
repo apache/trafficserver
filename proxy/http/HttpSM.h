@@ -264,7 +264,6 @@ public:
   bool is_private();
   bool is_redirect_required();
 
-  TSClientProtoStack proto_stack;
   int64_t sm_id;
   unsigned int magic;
 

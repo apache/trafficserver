@@ -27,6 +27,7 @@
 #include "P_RecFile.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
+#include "P_RecCore.h"
 #include "I_Layout.h"
 
 static bool g_message_initialized = false;

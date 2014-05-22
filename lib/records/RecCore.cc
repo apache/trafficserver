@@ -267,6 +267,15 @@ RecLinkConfigByte(const char *name, RecByte * rec_byte)
   return RecRegisterConfigUpdateCb(name, link_byte, (void *) rec_byte);
 }
 
+int
+RecLinkConfigBool(const char *name, RecBool * rec_bool)
+{
+  if (RecGetRecordBool(name, rec_bool) == REC_ERR_FAIL) {
+    return REC_ERR_FAIL;
+  }
+  return RecRegisterConfigUpdateCb(name, link_byte, (void *) rec_bool);
+}
+
 
 //-------------------------------------------------------------------------
 // RecRegisterConfigUpdateCb
@@ -404,6 +413,15 @@ RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
   return err;
 }
 
+int
+RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
+{
+  int err;
+  RecData data;
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY)
+    *rec_bool = 0 != data.rec_int;
+  return err;
+}
 
 //-------------------------------------------------------------------------
 // RecGetRec Attributes

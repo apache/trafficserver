@@ -582,6 +582,7 @@ main(int argc, char **argv)
   Init_Errata_Logging();
 #endif
   ts_host_res_global_init();
+  ts_session_protocol_well_known_name_indices_init();
   lmgmt = new LocalManager(proxy_on);
   RecLocalInitMessage();
   lmgmt->initAlarm();

@@ -22,6 +22,7 @@
  */
 
 #include "libts.h"
+#include "Rollback.h"
 #include "ParseRules.h"
 #include "P_RecCore.h"
 #include "P_RecLocal.h"

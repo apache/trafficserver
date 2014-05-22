@@ -1311,6 +1311,7 @@ LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFi
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "UNKNOWN_CACHE_WRITE_CODE"));
 }
 
+# if 0
 int
 LogAccess::unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
 {
@@ -1345,6 +1346,7 @@ LogAccess::unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<
 
   return (len - left_len);
 }
+# endif
 
 int
 LogAccess::unmarshal_record(char **buf, char *dest, int len)

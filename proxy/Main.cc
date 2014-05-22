@@ -1428,6 +1428,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   REC_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
   init_http_header();
+  ts_session_protocol_well_known_name_indices_init();
 
   // Sanity checks
   check_fd_limit();

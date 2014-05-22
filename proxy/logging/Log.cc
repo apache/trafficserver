@@ -365,6 +365,7 @@ Log::init_fields()
   global_field_list.add (field, false);
   ink_hash_table_insert (field_symbol_hash, "caun", field);
 
+# if 0
   Ptr<LogFieldAliasTable> proto_type_map = make_ptr(NEW(new LogFieldAliasTable));
   proto_type_map->init(7,
                        // Transport protocols
@@ -384,6 +385,7 @@ Log::init_fields()
                            (Ptr<LogFieldAliasMap>) proto_type_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cps", field);
+# endif
 
   field = NEW(new LogField("client_req_timestamp_sec", "cqts",
                            LogField::sINT,

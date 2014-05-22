@@ -53,6 +53,7 @@ typedef char *RecString;
 typedef const char *RecStringConst;
 typedef int64_t RecCounter;
 typedef int8_t RecByte;
+typedef bool RecBool;
 
 enum RecT
 {

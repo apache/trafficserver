@@ -29,6 +29,7 @@
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "I_Net.h"
+#include <records/I_RecHttp.h>
 
 namespace detail {
   /** Options for @c HttpSessionAccept.
@@ -86,6 +87,10 @@ namespace detail {
     HostResPreferenceOrder host_res_preference;
     /// Set the host query preference.
     self& setHostResPreference(HostResPreferenceOrder const);
+    /// Acceptable session protocols.
+    SessionProtocolSet session_protocol_preference;
+    /// Set the session protocol preference.
+    self& setSessionProtocolPreference(SessionProtocolSet const&);
   };
 
   inline HttpSessionAcceptOptions::HttpSessionAcceptOptions()
@@ -145,6 +150,12 @@ namespace detail {
   inline HttpSessionAcceptOptions&
   HttpSessionAcceptOptions::setHostResPreference(HostResPreferenceOrder const order) {
     memcpy(host_res_preference, order, sizeof(host_res_preference));
+    return *this;
+  }
+
+  inline HttpSessionAcceptOptions&
+  HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const& sp_set) {
+    session_protocol_preference = sp_set;
     return *this;
   }
 }

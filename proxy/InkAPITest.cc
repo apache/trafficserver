@@ -7667,6 +7667,7 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS) (RegressionTest * test, int /* atype
 }
 
 
+# if 0
 ////////////////////////////////////////////////
 // SDK_API_PROTO_STACK_CREATE
 //
@@ -7691,5 +7692,4 @@ REGRESSION_TEST(SDK_API_TSClientProtoStackCreate)(RegressionTest * t, int /* aty
  CHECK(TSClientProtoStackCreate(TS_PROTO_UDP, TS_PROTO_TCP, TS_PROTO_NULL), 3);
 
 }
-
-
+# endif
