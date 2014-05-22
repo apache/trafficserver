@@ -171,20 +171,18 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   // XXX the protocol probe should be a configuration option.
 
   ProtocolProbeSessionAccept *probe = NEW(new ProtocolProbeSessionAccept());
-  HttpSessionAccept *http = NEW(new HttpSessionAccept(accept_opt));
+  HttpSessionAccept *http = 0; // don't allocate this unless it will be used.
 
   if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
+    http = NEW(new HttpSessionAccept(accept_opt));
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
   }
 
 #if TS_HAS_SPDY
   if (port.m_session_protocol_preference.intersects(SPDY_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_SPDY, NEW(new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3_1));
+    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_SPDY, NEW(new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3_1)));
   }
-
-  probe->registerEndpoint(TS_PROTO_SPDY, spdy31);
 #endif
-
 
   if (port.isSSL()) {
     SSLNextProtocolAccept *ssl = NEW(new SSLNextProtocolAccept(probe));
@@ -208,11 +206,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
     // SPDY
 #if TS_HAS_SPDY
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, NEW(new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3));
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, NEW(new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3)));
     }
 
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3_1)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, NEW(new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3_1));
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, NEW(new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3_1)));
     }
 #endif
 
