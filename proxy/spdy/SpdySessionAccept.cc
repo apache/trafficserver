@@ -42,6 +42,7 @@ SpdySessionAccept::mainEvent(int event, void * edata)
 
 #if TS_HAS_SPDY
     spdy_sm_create(netvc, NULL, NULL);
+    SpdyStatIncrCount(Config::STAT_TOTAL_STREAMS, this);
 #else
     Error("accepted a SPDY session, but SPDY support is not available");
     netvc->do_io_close();

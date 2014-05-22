@@ -26,6 +26,10 @@
 
 Config SPDY_CFG;
 
+// statistic names
+// Total # of streams created.
+static char const * const SPDY_STAT_TOTAL_STREAMS_NAME = "proxy.process.spdy.total_streams";
+
 string
 http_date(time_t t)
 {
@@ -45,6 +49,10 @@ spdy_config_load()
   REC_EstablishStaticConfigInt32(SPDY_CFG.spdy.initial_window_size, "proxy.config.spdy.initial_window_size_in");
 
   spdy_callbacks_init(&SPDY_CFG.spdy.callbacks);
+
+  // Get our statistics up
+  SPDY_CFG.rsb = RecAllocateRawStatBlock(static_cast<int>(Config::N_STATS));
+  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_TOTAL_STREAMS_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_TOTAL_STREAMS), RecRawStatSyncCount);
 
   return 0;
 }

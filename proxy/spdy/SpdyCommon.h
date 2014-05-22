@@ -66,6 +66,14 @@ struct Config {
   SpdyConfig spdy;
   int32_t accept_no_activity_timeout;
   int32_t no_activity_timeout_in;
+
+  // Statistics
+  /// This is the stat slot index for each statistic.
+  enum StatIndex {
+    STAT_TOTAL_STREAMS,
+    N_STATS ///< Terminal counter, NOT A STAT INDEX.
+  };
+  RecRawStatBlock* rsb; ///< Container for statistics.
 };
 
 // Spdy Name/Value pairs
@@ -89,4 +97,11 @@ string http_date(time_t t);
 int spdy_config_load();
 
 extern Config SPDY_CFG;
+
+// Stat helper functions
+
+inline void
+SpdyStatIncrCount(Config::StatIndex idx, Continuation* contp) {
+  RecIncrRawStatCount(SPDY_CFG.rsb, contp->mutex->thread_holding, idx, 1);
+}
 #endif
