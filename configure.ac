@@ -790,9 +790,9 @@ AX_PROG_PERL_MODULES([ExtUtils::MakeMaker], AM_CONDITIONAL([BUILD_PERL_LIB], [tr
                                             AM_CONDITIONAL([BUILD_PERL_LIB], [false])
 )
 
-# Check for GNU-style -On and for Solaris Studio style -xOn.
+# Check for GNU-style -On optimization flags
 AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
-has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-x?O.?/{print "no"}'`
+has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-O.?/{print "no"}'`
 AS_IF([test "x${has_optimizer_flags}" = "xno"],
 	[
 		optimizing_flags='-O3'
@@ -898,19 +898,6 @@ case $host_os_def in
     ;; # freebsd|kfreebsd)
 
   solaris)
-    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xsun"], [
-      # XXX: Solaris Studio support is going away: https://issues.apache.org/jira/browse/TS-1486
-      common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
-      debug_opt="-g $common_opt"
-      release_opt="-g $common_opt $optimizing_flags"
-      cxx_opt="-library=stlport4"
-      cxx_dbg="+w2"
-      cxx_rel="-erroff"
-
-      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS], 1, [posix thread semantics])
-      AS_IF([test "x$solaris_use_stlport4" != "xyes"], [postdeps_CXX="-library=Crun"])
-    ])
-
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
