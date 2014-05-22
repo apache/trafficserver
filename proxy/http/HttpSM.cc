@@ -5562,6 +5562,7 @@ HttpSM::setup_server_send_request()
     msg_len = t_state.internal_msg_buffer_size;
     t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
+  DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), t_state.state_machine_id, "Proxy's Request after hooks");
   // We need a reader so bytes don't fall off the end of
   //  the buffer
   IOBufferReader *buf_start = server_entry->write_buffer->alloc_reader();

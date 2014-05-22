@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2577] Tracing on e.g. -T http_hdrs does not show Proxy Request
+   headers accurately. Author: Masakazu Kitajo <m4sk17@gmail.com>
+
   *) [TS-1486] Drop support for Sun Studio compilers.
 
   *) [TS-2765] Memory Leak in SSLConfig initialization
