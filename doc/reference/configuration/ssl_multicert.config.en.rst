@@ -47,7 +47,7 @@ Each :file:`ssl_multicert.config` line consists of a sequence of
 particular SSL certificate.
 
 ssl_cert_name=FILENAME[,FILENAME ...]
-  The name of the file containing the TLS certificate. `FILENAME`
+  The name of the file containing the TLS certificate. *FILENAME*
   is located relative to the directory specified by the
   :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
   It may also include the intermediate CA certificates, sorted from
@@ -70,7 +70,7 @@ ssl_cert_name=FILENAME[,FILENAME ...]
 dest_ip=ADDRESS (optional)
   The IP (v4 or v6) address that the certificate should be presented
   on. This is now only used as a fallback in the case that the TLS
-  SubjectNameIndication extension is not supported. If `ADDRESS` is
+  SubjectNameIndication extension is not supported. If *ADDRESS* is
   `*`, the corresponding certificate will be used as the global
   default fallback if no other match can be made. The address may
   contain a port specifier, in which case the corresponding certificate
@@ -81,13 +81,13 @@ dest_ip=ADDRESS (optional)
 ssl_key_name=FILENAME (optional)
   The name of the file containing the private key for this certificate.
   If the key is contained in the certificate file, this field can
-  be omitted, otherwise `FILENAME` is resolved relative to the
+  be omitted, otherwise *FILENAME* is resolved relative to the
   :ts:cv:`proxy.config.ssl.server.private_key.path` configuration variable.
 
 ssl_ca_name=FILENAME (optional)
   If the certificate is issued by an authority that is not in the
   system CA bundle, additional certificates may be needed to validate
-  the certificate chain. `FILENAME` is resolved relative to the
+  the certificate chain. *FILENAME* is resolved relative to the
   :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
 
 ssl_ticket_enabled=1|0 (optional)
@@ -97,7 +97,7 @@ ssl_ticket_enabled=1|0 (optional)
 
 ticket_key_name=FILENAME (optional)
   The name of session ticket key file which contains a secret for
-  encrypting and decrypting TLS session tickets. If `FILENAME` is
+  encrypting and decrypting TLS session tickets. If *FILENAME* is
   not an absolute path, it is resolved relative to the
   :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
   This option has no effect if session tickets are disabled by the
