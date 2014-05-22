@@ -14,13 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+PLUGIN=stale_while_revalidate
 TSXS?=tsxs
 
-all:	rfc5861.c
-	$(TSXS) -v -o rfc5861.so $? 
+all:	${PLUGIN}.c
+	$(TSXS) -v -o ${PLUGIN}.so $? 
 
 install:
-	$(TSXS) -i -o rfc5861.so
+	$(TSXS) -i -o ${PLUGIN}.so
 
 clean:
 	rm -f *.lo *.so

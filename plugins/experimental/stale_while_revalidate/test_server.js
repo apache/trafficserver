@@ -2,7 +2,7 @@
 
 /** @file
 
-  Implements Simple HTTP test server for the rfc5861 plugin
+  Implements Simple HTTP test server for the stale_while_revalidate plugin
 
   @section license License
 

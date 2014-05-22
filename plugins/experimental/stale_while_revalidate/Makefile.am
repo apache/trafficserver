@@ -16,6 +16,6 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-pkglib_LTLIBRARIES = rfc5861.la
-rfc5861_la_SOURCES = rfc5861.c
-rfc5861_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+pkglib_LTLIBRARIES = stale_while_revalidate.la
+stale_while_revalidate_la_SOURCES = stale_while_revalidate.c
+stale_while_revalidate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

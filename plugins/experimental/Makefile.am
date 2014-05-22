@@ -30,8 +30,8 @@ SUBDIRS = \
  hipes \
  metalink \
  remap_stats \
- rfc5861 \
  s3_auth \
+ stale_while_revalidate \
  ts_lua \
  url_sig \
  xdebug

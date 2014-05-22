@@ -1919,8 +1919,8 @@ AC_CONFIG_FILES([
   plugins/experimental/hipes/Makefile
   plugins/experimental/metalink/Makefile
   plugins/experimental/remap_stats/Makefile
-  plugins/experimental/rfc5861/Makefile
   plugins/experimental/s3_auth/Makefile
+  plugins/experimental/stale_while_revalidate/Makefile
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/url_sig/Makefile
   plugins/experimental/xdebug/Makefile

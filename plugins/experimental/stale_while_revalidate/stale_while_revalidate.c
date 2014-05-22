@@ -34,7 +34,7 @@
 #include "ts/ts.h"
 #include "ts/experimental.h"
 
-#define PLUGIN_NAME "rfc5861"
+#define PLUGIN_NAME "stale_while_revalidate"
 
 static const char HTTP_VALUE_STALE_WHILE_REVALIDATE[] = "stale-while-revalidate";
 static const char HTTP_VALUE_STALE_IF_ERROR[] = "stale-if-error";
@@ -470,7 +470,7 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
         TSHandleMLocRelease(state->req_info->buf, state->req_info->http_hdr_loc, connection_hdr_loc);
 
         /*
-        TSDebug(PLUGIN_NAME, "Creating @RFC5861 header");
+        TSDebug(PLUGIN_NAME, "Creating @stale_while_revalidate header");
         TSMimeHdrFieldCreateNamed(state->req_info->buf, state->req_info->http_hdr_loc, TS_MIME_FIELD_CONNECTION, TS_MIME_LEN_CONNECTION, &connection_hdr_loc);
         TSMimeHdrFieldValueStringInsert(state->req_info->buf, state->req_info->http_hdr_loc, connection_hdr_loc, -1, TS_HTTP_VALUE_CLOSE, TS_HTTP_LEN_CLOSE);
         TSMimeHdrFieldAppend(state->req_info->buf, state->req_info->http_hdr_loc, connection_hdr_loc);
@@ -500,7 +500,7 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 }
 
 static int
-rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
+main_plugin(TSCont cont, TSEvent event, void *edata)
 {
     TSHttpTxn txn = (TSHttpTxn) edata;
     int status, lookup_count;
@@ -736,7 +736,7 @@ TSPluginInit (int argc, const char *argv[])
 
     // proxy.config.http.insert_age_in_response
     TSHttpArgIndexReserve(PLUGIN_NAME, "txn state info", &(plugin_config->txn_slot));
-    main_cont = TSContCreate(rfc5861_plugin, NULL);
+    main_cont = TSContCreate(main_plugin, NULL);
     TSContDataSet(main_cont, (void *) plugin_config);
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);
 
