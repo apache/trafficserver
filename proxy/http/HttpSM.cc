@@ -6634,8 +6634,10 @@ HttpSM::update_stats()
     if (t_state.hdr_info.client_response.valid()) {
       status = t_state.hdr_info.client_response.status_get();
     }
-
+    char client_ip[INET6_ADDRSTRLEN];
+    ats_ip_ntop(&t_state.client_info.addr, client_ip, sizeof(client_ip));
     Error("[%" PRId64 "] Slow Request: "
+          "client_ip: %s:%u "
           "url: %s "
           "status: %d "
           "unique id: %s "
@@ -6656,6 +6658,8 @@ HttpSM::update_stats()
           "ua_close: %.3f "
           "sm_finish: %.3f",
           sm_id,
+          client_ip,
+          ats_ip_port_host_order(&t_state.client_info.addr),
           url_string,
           status,
           unique_id_string,
