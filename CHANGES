@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2684] Add a text-log format to background_fetch plugin.
+
   *) [TS-2577] Tracing on e.g. -T http_hdrs does not show Proxy Request
    headers accurately. Author: Masakazu Kitajo <m4sk17@gmail.com>
 
@@ -204,8 +206,6 @@ Changes with Apache Traffic Server 5.0.0
    TSHttpTxnRedirectRetries().
 
   *) [TS-2707] Migrate TSRedirectUrlSet/Get to TSHttpTxnRedirectUrlSet/Get.
-
-  *) [TS-2703] Add a text log format to escalate plugin.
 
   *) [TS-2690] Fixes and improvements for the escalate plugin.
 
