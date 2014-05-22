@@ -1339,13 +1339,6 @@ HttpTransact::HandleRequest(State* s)
   }
 
   // this needs to be called after initializing state variables from request
-  // it tries to handle the problem that MSIE only adds no-cache
-  // headers to reload requests when there is an explicit proxy --- the
-  // reload button does nothing in the case of transparent proxies.
-  if (s->http_config_param->cache_when_to_add_no_cache_to_msie_requests >= 0)
-    handle_msie_reload_badness(s, &s->hdr_info.client_request);
-
-  // this needs to be called after initializing state variables from request
   // it adds the client-ip to the incoming client request.
 
   if (!s->cop_test_page)
@@ -5114,113 +5107,6 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
 
   return;
 }
-
-//////////////////////////////////////////////////////////////////////////
-//
-// void HttpTransact::handle_msie_reload_badness(...)
-//
-// Microsoft Internet Explorer has a design flaw that is exposed with
-// transparent proxies.  The reload button only generates no-cache
-// headers when there is an explicit proxy.  When going to a reverse
-// proxy or when being transparently intercepted, no no-cache header is
-// added.  This means state content cannot be reloaded with MSIE.
-//
-// This routine attempts to provide some knobs to improve the situation
-// by explicitly adding no-cache to requests in certain scenarios.  In
-// the future we might want to adjust freshness lifetimes for MSIE
-// browsers.  Hopefully Microsoft will fix this in future versions of
-// their browser, and then we can conditionally test version numbers.
-//
-// Here are the options available:
-//   0: never add no-cache headers to MSIE requests
-//   1: add no-cache headers to IMS MSIE requests
-//   2: add no-cache headers to all MSIE requests
-//
-//////////////////////////////////////////////////////////////////////////
-
-void
-HttpTransact::handle_msie_reload_badness(State* s, HTTPHdr* client_request)
-{
-  int user_agent_value_len;
-  int has_ua_msie, has_no_cache, has_ims;
-  const char *user_agent_value, *c, *e;
-
-  //////////////////////////////////////////////
-  // figure out if User-Agent contains "MSIE" //
-  //////////////////////////////////////////////
-
-  has_ua_msie = 0;
-  user_agent_value = client_request->value_get(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT, &user_agent_value_len);
-  if (user_agent_value && user_agent_value_len >= 4) {
-    c = user_agent_value;
-    e = c + user_agent_value_len - 4;
-    while (1) {
-      c = (const char *) memchr(c, 'M', e - c);
-      if (c == NULL)
-        break;
-      if ((c[1] == 'S') && (c[2] == 'I') && (c[3] == 'E')) {
-        has_ua_msie = 1;
-        break;
-      }
-      c++;
-    }
-  }
-  ///////////////////////////////////////
-  // figure out if no-cache and/or IMS //
-  ///////////////////////////////////////
-
-  has_no_cache = (client_request->is_pragma_no_cache_set() || (client_request->is_cache_control_set(HTTP_VALUE_NO_CACHE)));
-  has_ims = (client_request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE) != 0);
-
-  /////////////////////////////////////////////////////////
-  // increment some stats based on these three variables //
-  /////////////////////////////////////////////////////////
-
-  switch ((has_ims ? 4 : 0) + (has_no_cache ? 2 : 0) + (has_ua_msie ? 1 : 0)) {
-  case 0:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i0_n0_m0_stat);
-    break;
-  case 1:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i0_n0_m1_stat);
-    break;
-  case 2:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i0_n1_m0_stat);
-    break;
-  case 3:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i0_n1_m1_stat);
-    break;
-  case 4:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i1_n0_m0_stat);
-    break;
-  case 5:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i1_n0_m1_stat);
-    break;
-  case 6:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i1_n1_m0_stat);
-    break;
-  case 7:
-    HTTP_INCREMENT_TRANS_STAT(http_request_taxonomy_i1_n1_m1_stat);
-    break;
-  }
-
-  //////////////////////////////////////////////////////////////////
-  // if MSIE no-cache addition is disabled, or this isn't an      //
-  //  MSIE browser, or if no-cache is already set, get outta here //
-  //////////////////////////////////////////////////////////////////
-
-  if ((s->http_config_param->cache_when_to_add_no_cache_to_msie_requests == 0) || (!has_ua_msie) || has_no_cache) {
-    return;
-  }
-  //////////////////////////////////////////////////////
-  // add a no-cache if mode and circumstances warrant //
-  //////////////////////////////////////////////////////
-
-  if ((s->http_config_param->cache_when_to_add_no_cache_to_msie_requests == 2) ||
-      ((s->http_config_param->cache_when_to_add_no_cache_to_msie_requests == 1) && has_ims)) {
-    client_request->value_append(MIME_FIELD_PRAGMA, MIME_LEN_PRAGMA, "no-cache", 8, true);
-  }
-}
-
 
 void
 HttpTransact::add_client_ip_to_outgoing_request(State* s, HTTPHdr* request)

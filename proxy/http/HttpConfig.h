@@ -149,15 +149,6 @@ enum
   http_tunnels_stat,
   http_throttled_proxy_only_stat,
 
-  // HTTP requests classified by IMS/no-cache/MSIE
-  http_request_taxonomy_i0_n0_m0_stat,
-  http_request_taxonomy_i1_n0_m0_stat,
-  http_request_taxonomy_i0_n1_m0_stat,
-  http_request_taxonomy_i1_n1_m0_stat,
-  http_request_taxonomy_i0_n0_m1_stat,
-  http_request_taxonomy_i1_n0_m1_stat,
-  http_request_taxonomy_i0_n1_m1_stat,
-  http_request_taxonomy_i1_n1_m1_stat,
   http_icp_suggested_lookups_stat,
 
   // document size stats
@@ -719,7 +710,6 @@ public:
   // cache control //
   ///////////////////
   MgmtByte cache_enable_default_vary_headers;
-  MgmtByte cache_when_to_add_no_cache_to_msie_requests;
 
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
@@ -921,7 +911,6 @@ HttpConfigParams::HttpConfigParams()
     cache_vary_default_other(NULL),
     max_cache_open_write_retries(1),
     cache_enable_default_vary_headers(0),
-    cache_when_to_add_no_cache_to_msie_requests(-1),
     connect_ports_string(NULL),
     connect_ports(NULL),
     push_method_enabled(0),

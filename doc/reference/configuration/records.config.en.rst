@@ -1155,13 +1155,7 @@ Cache Control
    client's ``If-Modified-Since`` header for the proxy request.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.when_to_add_no_cache_to_msie_requests INT 0
-   :reloadable:
-
-   Specifies when to add ``no-cache`` directives to Microsoft Internet Explorer requests. You can specify the following:
-
-   -  ``0`` = ``no-cache`` is *not* added to MSIE requests
-   -  ``1`` = ``no-cache`` is added to IMS MSIE requests
-   -  ``2`` = ``no-cache`` is added to all MSIE requests
+   :deprecated:
 
 .. ts:cv:: CONFIG proxy.config.http.cache.required_headers INT 0
    :reloadable:
