@@ -6043,44 +6043,6 @@ TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
   info->m_qvalue = quality;
 }
 
-# if 0
-TSClientProtoStack
-TSClientProtoStackCreate(TSProtoType ptype, ...)
-{
-  unsigned  pstack = 0;
-  va_list   args;
-  const int pmax = (sizeof(TSClientProtoStack) * CHAR_BIT) - 1;
-
-  if (ptype == TS_PROTO_NULL || ptype > pmax) {
-    return 0;
-  }
-
-  pstack |= (1u << ptype);
-
-  va_start(args, ptype);
-  for (;;) {
-    ptype = (TSProtoType)va_arg(args, int);
-
-    // TS_PROTO_NULL ends the list.
-    if (ptype == TS_PROTO_NULL) {
-      va_end(args);
-      return pstack;
-    }
-
-    // Protocol stack value is out of range.
-    if (ptype > pmax) {
-      va_end(args);
-      return 0;
-    }
-
-    pstack |= (1u << ptype);
-  }
-
-  // We can't get here.
-  ink_release_assert(0);
-}
-# endif
-
 extern HttpSessionAccept *plugin_http_accept;
 extern HttpSessionAccept *plugin_http_transparent_accept;
 
