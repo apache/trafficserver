@@ -851,7 +851,6 @@ HttpTransact::EndRemapRequest(State* s)
       build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily",
                            "\"<em>%s</em>\".<p>", s->remap_redirect);
     }
-    s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, s->remap_redirect, strlen(s->remap_redirect));
     ats_free(s->remap_redirect);
     s->reverse_proxy = false;
     goto done;
@@ -886,6 +885,15 @@ HttpTransact::EndRemapRequest(State* s)
   ///////////////////////////////////////////////////////////////
 
   if (!s->url_remap_success) {
+    /**
+     * It's better to test redirect rules just after url_remap failed
+     * Or those successfully remapped rules might be redirected
+     **/
+    if (handleIfRedirect(s)) {
+      DebugTxn("http_trans", "END HttpTransact::RemapRequest");
+      TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
+    }
+
     /////////////////////////////////////////////////////////
     // check for: (1) reverse proxy is on, and no URL host //
     /////////////////////////////////////////////////////////
@@ -945,16 +953,6 @@ HttpTransact::EndRemapRequest(State* s)
   s->server_info.is_transparent = s->state_machine->ua_session ? s->state_machine->ua_session->f_outbound_transparent : false;
 
 done:
-  /**
-   * Since we don't want to return 404 Not Found error if there's
-   * redirect rule, the function to do redirect is moved before
-   * sending the 404 error.
-   **/
-  if (handleIfRedirect(s)) {
-    DebugTxn("http_trans", "END HttpTransact::RemapRequest");
-    TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
-  }
-
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
     DebugTxn("http_trans", "After Remapping:");
     obj_describe(s->hdr_info.client_request.m_http, 1);
@@ -1247,9 +1245,9 @@ HttpTransact::handleIfRedirect(State *s)
   answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url);
   if ((answer == PERMANENT_REDIRECT) || (answer == TEMPORARY_REDIRECT)) {
     int remap_redirect_len;
-    char *remap_redirect;
 
-    remap_redirect = redirect_url.string_get_ref(&remap_redirect_len);
+    s->remap_redirect = redirect_url.string_get(&s->arena, &remap_redirect_len);
+    redirect_url.destroy();
     if (answer == TEMPORARY_REDIRECT) {
       if ((s->client_info).http_version.m_version == HTTP_VERSION(1, 1)) {
         build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT,
@@ -1257,7 +1255,7 @@ HttpTransact::handleIfRedirect(State *s)
                              "Redirect", "redirect#moved_temporarily",
                              "%s <a href=\"%s\">%s</a>. %s",
                              "The document you requested is now",
-                             remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
+                             s->remap_redirect, s->remap_redirect, "Please update your documents and bookmarks accordingly");
       } else {
         build_error_response(s,
                              HTTP_STATUS_MOVED_TEMPORARILY,
@@ -1265,7 +1263,7 @@ HttpTransact::handleIfRedirect(State *s)
                              "redirect#moved_temporarily",
                              "%s <a href=\"%s\">%s</a>. %s",
                              "The document you requested is now",
-                             remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
+                             s->remap_redirect, s->remap_redirect, "Please update your documents and bookmarks accordingly");
       }
     } else {
       build_error_response(s,
@@ -1274,10 +1272,10 @@ HttpTransact::handleIfRedirect(State *s)
                            "redirect#moved_permanently",
                            "%s <a href=\"%s\">%s</a>. %s",
                            "The document you requested is now",
-                           remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
+                           s->remap_redirect, s->remap_redirect, "Please update your documents and bookmarks accordingly");
     }
-    s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, remap_redirect, remap_redirect_len);
-    redirect_url.destroy();
+    ats_free(s->remap_redirect);
+    s->remap_redirect = NULL;
     return true;
   }
 
@@ -8101,6 +8099,13 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->hdr_info.client_response.field_delete(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
   s->hdr_info.client_response.field_delete(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
 
+  if ((status_code == HTTP_STATUS_TEMPORARY_REDIRECT ||
+       status_code == HTTP_STATUS_MOVED_TEMPORARILY ||
+       status_code == HTTP_STATUS_MOVED_PERMANENTLY) &&
+      s->remap_redirect) {
+    s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, s->remap_redirect, strlen(s->remap_redirect));
+  }
+
 
 
   ////////////////////////////////////////////////////////////////////
@@ -8145,7 +8150,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     reason_phrase = reason_buffer;
   }
 
-  if (s->http_config_param->errors_log_error_pages) {
+  if (s->http_config_param->errors_log_error_pages && status_code >= HTTP_STATUS_BAD_REQUEST) {
     char ip_string[INET6_ADDRSTRLEN];
 
     Log::error("RESPONSE: sent %s status %d (%s) for '%s'", 
