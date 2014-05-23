@@ -435,16 +435,16 @@ mgmt_record_get_reply(TSRecordEle * rec_ele)
   if (val) {
     switch (rec_ele->rec_type) {
     case TS_REC_INT:
-      rec_ele->int_val = *(TSInt *) val;
+      rec_ele->valueT.int_val = *(TSInt *) val;
       break;
     case TS_REC_COUNTER:
-      rec_ele->counter_val = *(TSCounter *) val;
+      rec_ele->valueT.counter_val = *(TSCounter *) val;
       break;
     case TS_REC_FLOAT:
-      rec_ele->float_val = *(TSFloat *) val;
+      rec_ele->valueT.float_val = *(TSFloat *) val;
       break;
     case TS_REC_STRING:
-      rec_ele->string_val = ats_strdup((char *) val);
+      rec_ele->valueT.string_val = ats_strdup((char *) val);
       break;
     default:
       ; // nothing ... shut up compiler!

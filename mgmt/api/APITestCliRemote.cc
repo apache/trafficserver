@@ -1195,16 +1195,16 @@ test_rec_get(char *rec_name)
   else {
     switch (rec_ele->rec_type) {
     case TS_REC_INT:
-      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->int_val);
+      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->valueT.int_val);
       break;
     case TS_REC_COUNTER:
-      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->counter_val);
+      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->valueT.counter_val);
       break;
     case TS_REC_FLOAT:
-      printf("[TSRecordGet] %s=%f\n", name, rec_ele->float_val);
+      printf("[TSRecordGet] %s=%f\n", name, rec_ele->valueT.float_val);
       break;
     case TS_REC_STRING:
-      printf("[TSRecordGet] %s=%s\n", name, rec_ele->string_val);
+      printf("[TSRecordGet] %s=%s\n", name, rec_ele->valueT.string_val);
       break;
     default:
       // Handled here:
@@ -1284,16 +1284,16 @@ test_record_get_mlt(void)
     printf("Record: %s = ", rec_ele->rec_name);
     switch (rec_ele->rec_type) {
     case TS_REC_INT:
-      printf("%" PRId64 "\n", rec_ele->int_val);
+      printf("%" PRId64 "\n", rec_ele->valueT.int_val);
       break;
     case TS_REC_COUNTER:
-      printf("%" PRId64 "\n", rec_ele->counter_val);
+      printf("%" PRId64 "\n", rec_ele->valueT.counter_val);
       break;
     case TS_REC_FLOAT:
-      printf("%f\n", rec_ele->float_val);
+      printf("%f\n", rec_ele->valueT.float_val);
       break;
     case TS_REC_STRING:
-      printf("%s\n", rec_ele->string_val);
+      printf("%s\n", rec_ele->valueT.string_val);
       break;
     default:
       // Handled here:
@@ -1327,27 +1327,27 @@ test_record_set_mlt(void)
   ele1 = TSRecordEleCreate();  // TS_TYPE_UNDEFINED action
   ele1->rec_name = TSstrdup("proxy.config.cli_binary");
   ele1->rec_type = TS_REC_STRING;
-  ele1->string_val = TSstrdup(ele1->rec_name);
+  ele1->valueT.string_val = TSstrdup(ele1->rec_name);
 
   ele2 = TSRecordEleCreate();  // reread action
   ele2->rec_name = TSstrdup("proxy.config.http.cache.fuzz.probability");
   ele2->rec_type = TS_REC_FLOAT;
-  ele2->float_val = 0.1234;
+  ele2->valueT.float_val = 0.1234;
 
   ele3 = TSRecordEleCreate();  // undefined action
   ele3->rec_name = TSstrdup("proxy.config.cop.core_signal");
   ele3->rec_type = TS_REC_INT;
-  ele3->int_val = -4;
+  ele3->valueT.int_val = -4;
 
   ele4 = TSRecordEleCreate();  //restart TM
   ele4->rec_name = (char *) TSstrdup("proxy.local.cluster.type");
   ele4->rec_type = TS_REC_INT;
-  ele4->int_val = 2;
+  ele4->valueT.int_val = 2;
 
   ele5 = TSRecordEleCreate();  // reread action
   ele5->rec_name = (char *) TSstrdup("proxy.config.cluster.mc_ttl");
   ele5->rec_type = TS_REC_INT;
-  ele5->int_val = 555;
+  ele5->valueT.int_val = 555;
 
 
   TSListEnqueue(list, ele4);
@@ -2277,7 +2277,7 @@ print_stats()
 void
 reset_stats()
 {
-  TSMgmtError err = TSStatsReset(false);
+  TSMgmtError err = TSStatsReset(false, NULL);
   print_err("TSStatsReset", err);
   return;
 }

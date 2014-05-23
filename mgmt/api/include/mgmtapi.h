@@ -455,7 +455,7 @@ extern "C"
       TSCounter counter_val;
       TSFloat float_val;
       TSString string_val;
-    };
+    } valueT;
   } TSRecordEle;
 
 /*--- events --------------------------------------------------------------*/
@@ -1126,7 +1126,7 @@ extern "C"
  * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
-  tsapi TSMgmtError TSStatsReset(bool cluster, const char *name = NULL);
+  tsapi TSMgmtError TSStatsReset(bool cluster, const char *name);
 
 
 /*--- variable operations -------------------------------------------------*/

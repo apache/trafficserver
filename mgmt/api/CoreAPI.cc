@@ -323,26 +323,27 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     rec_ele->rec_type = TS_REC_COUNTER;
     if (!varCounterFromName(rec_name, &(counter_val)))
       return TS_ERR_FAIL;
-    rec_ele->counter_val = (TSCounter) counter_val;
+    rec_ele->valueT.counter_val = (TSCounter) counter_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64"\n", rec_ele->rec_name, rec_ele->counter_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64"\n", rec_ele->rec_name,
+          rec_ele->valueT.counter_val);
     break;
 
   case RECD_INT:
     rec_ele->rec_type = TS_REC_INT;
     if (!varIntFromName(rec_name, &(int_val)))
       return TS_ERR_FAIL;
-    rec_ele->int_val = (TSInt) int_val;
+    rec_ele->valueT.int_val = (TSInt) int_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64"\n", rec_ele->rec_name, rec_ele->int_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64"\n", rec_ele->rec_name, rec_ele->valueT.int_val);
     break;
 
   case RECD_FLOAT:
     rec_ele->rec_type = TS_REC_FLOAT;
-    if (!varFloatFromName(rec_name, &(rec_ele->float_val)))
+    if (!varFloatFromName(rec_name, &(rec_ele->valueT.float_val)))
       return TS_ERR_FAIL;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Float Var %s = %f\n", rec_ele->rec_name, rec_ele->float_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Float Var %s = %f\n", rec_ele->rec_name, rec_ele->valueT.float_val);
     break;
 
   case RECD_STRING:
@@ -358,8 +359,8 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     }
 
     rec_ele->rec_type = TS_REC_STRING;
-    rec_ele->string_val = str_val;
-    Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s\n", rec_ele->rec_name, rec_ele->string_val);
+    rec_ele->valueT.string_val = str_val;
+    Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s\n", rec_ele->rec_name, rec_ele->valueT.string_val);
     break;
 
   default:                     // UNKOWN TYPE

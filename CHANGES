@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2527] mgmtapi.h should be C style. This is slightly ugly in the core
+   now, but that public struct/union has to be named to be C99 compliant.
+
   *) [TS-2838] Add logging fields for plugins to TS connect API. Use for SPDY.
 
   *) [TS-2833] Remove REC_BUILD_STAND_ALONE, REC_BUILD_MGMT and

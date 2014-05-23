@@ -381,16 +381,18 @@ handle_record_get(struct SocketInfo sock_info, char *req)
   // create and send reply back to client
   switch (ele->rec_type) {
   case TS_REC_INT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->int_val), sizeof(TSInt), ele->rec_type, ele->rec_name);
+    ret = send_record_get_reply(sock_info, ret, &(ele->valueT.int_val), sizeof(TSInt), ele->rec_type, ele->rec_name);
     break;
   case TS_REC_COUNTER:
-    ret = send_record_get_reply(sock_info, ret, &(ele->counter_val), sizeof(TSCounter), ele->rec_type, ele->rec_name);
+    ret = send_record_get_reply(sock_info, ret, &(ele->valueT.counter_val), sizeof(TSCounter),
+                                ele->rec_type, ele->rec_name);
     break;
   case TS_REC_FLOAT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->float_val), sizeof(TSFloat), ele->rec_type, ele->rec_name);
+    ret = send_record_get_reply(sock_info, ret, &(ele->valueT.float_val), sizeof(TSFloat), ele->rec_type, ele->rec_name);
     break;
   case TS_REC_STRING:
-    ret = send_record_get_reply(sock_info, ret, ele->string_val, strlen(ele->string_val), ele->rec_type, ele->rec_name);
+    ret = send_record_get_reply(sock_info, ret, ele->valueT.string_val, strlen(ele->valueT.string_val),
+                                ele->rec_type, ele->rec_name);
     break;
   default:                     // invalid record type
     ret = send_reply(sock_info, TS_ERR_FAIL);
