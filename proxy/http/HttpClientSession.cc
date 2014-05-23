@@ -191,6 +191,10 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor, MIOBuf
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
   conn_decrease = true;
   HTTP_INCREMENT_DYN_STAT(http_total_client_connections_stat);
+  if (static_cast<HttpProxyPort::TransportType>(new_vc->attributes) == HttpProxyPort::TRANSPORT_SSL) {
+    HTTP_INCREMENT_DYN_STAT(https_connection_count_stat);
+  }
+
   /* inbound requests stat should be incremented here, not after the
    * header has been read */
   HTTP_INCREMENT_DYN_STAT(http_total_incoming_connections_stat);

@@ -73,6 +73,9 @@ struct Config {
     STAT_ACTIVE_SESSION_COUNT, ///< Current # of active SPDY sessions.
     STAT_ACTIVE_STREAM_COUNT, ///< Current # of active SPDY streams.
     STAT_TOTAL_STREAM_COUNT, ///< Total number of streams created.
+    STAT_TOTAL_STREAM_TIME,  //< Total stream time
+    STAT_TOTAL_CONNECTION_COUNT, //< Total connections running spdy
+
     N_STATS ///< Terminal counter, NOT A STAT INDEX.
   };
   RecRawStatBlock* rsb; ///< Container for statistics.
@@ -110,6 +113,11 @@ SpdyStatIncrCount(Config::StatIndex idx, Continuation* contp) {
 inline void
 SpdyStatDecrCount(Config::StatIndex idx, Continuation* contp) {
   RecIncrRawStatCount(SPDY_CFG.rsb, contp->mutex->thread_holding, idx, -1);
+}
+
+inline void
+SpdyStatIncr(Config::StatIndex idx, Continuation* contp, const int64_t incr) {
+  RecIncrRawStat(SPDY_CFG.rsb, contp->mutex->thread_holding, idx, incr);
 }
 
 #endif

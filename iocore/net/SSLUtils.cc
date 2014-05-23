@@ -634,6 +634,14 @@ SSLInitializeStatistics()
                      RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_unknown_ca_stat,
                      RecRawStatSyncSum);
 
+  // SSL handshake time
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_handshake_time_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_success_handshake_count_stat,
+                     RecRawStatSyncCount);
+
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across

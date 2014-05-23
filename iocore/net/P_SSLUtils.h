@@ -62,6 +62,8 @@ enum SSL_Stats
   ssl_user_agent_session_hit_stat,
   ssl_user_agent_session_miss_stat,
   ssl_user_agent_session_timeout_stat,
+  ssl_total_handshake_time_stat,
+  ssl_total_success_handshake_count_stat,
 
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end = 300,
@@ -75,6 +77,7 @@ extern RecRawStatBlock *ssl_rsb;
 #define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int) x, 1)
 #define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int) x, -1)
 #define SSL_SET_COUNT_DYN_STAT(x,count) RecSetRawStatCount(ssl_rsb, x, count)
+#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, NULL, (int) x, y)
 #define SSL_CLEAR_DYN_STAT(x) \
   do { \
     RecSetRawStatSum(ssl_rsb, (x), 0); \

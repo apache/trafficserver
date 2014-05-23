@@ -101,6 +101,7 @@ SpdyClientSession::init(NetVConnection * netvc, spdy::SessionVersion vers)
   // with no increment. It seems a lesser thing to have the thread counts
   // a little off but globally consistent.
   SpdyStatIncrCount(Config::STAT_ACTIVE_SESSION_COUNT, netvc);
+  SpdyStatIncrCount(Config::STAT_TOTAL_CONNECTION_COUNT, netvc);
 
   ink_release_assert(r == 0);
   sm_id = atomic_inc(g_sm_id);
@@ -398,6 +399,7 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
   if (already < (int64_t)length) {
     if (req->event == TS_FETCH_EVENT_EXT_BODY_DONE) {
       TSHRTime end_time = TShrtime();
+      SpdyStatIncr(Config::STAT_TOTAL_STREAM_TIME, sm, end_time - req->start_time);
       Debug("spdy", "----Request[%" PRIu64 ":%d] %s %lld %d", sm->sm_id, req->stream_id,
             req->url.c_str(), (end_time - req->start_time)/TS_HRTIME_MSECOND,
             req->fetch_data_len);

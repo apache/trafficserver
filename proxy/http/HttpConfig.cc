@@ -1198,6 +1198,12 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_PERSISTENT,
                      (int) http_total_x_redirect_stat, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.incoming_requests",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_incoming_requests_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.connection_count",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_connection_count_stat, RecRawStatSyncCount);
 }
 
 
