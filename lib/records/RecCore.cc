@@ -1183,8 +1183,6 @@ RecConfigReadPersistentStatsPath()
 //-------------------------------------------------------------------------
 // REC_SignalManager (TS)
 //-------------------------------------------------------------------------
-#if defined (REC_BUILD_MGMT)
-
 #if defined(LOCAL_MANAGER)
 
 #include "LocalManager.h"
@@ -1218,19 +1216,3 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
 }
 
 #endif // LOCAL_MANAGER
-
-#else
-
-void
-RecSignalManager(int /* id ATS_UNUSED */, const char *msg)
-{
-  RecLog(DL_Warning, msg);
-}
-
-int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
-{
-  return -1;
-}
-
-#endif // REC_BUILD_MGMT

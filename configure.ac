@@ -215,7 +215,6 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
-AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT"])
 AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
 AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
 
