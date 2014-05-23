@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2308] includedir in config.layout is not used
+
   *) [TS-2527] mgmtapi.h should be C style. This is slightly ugly in the core
    now, but that public struct/union has to be named to be C99 compliant.
 
