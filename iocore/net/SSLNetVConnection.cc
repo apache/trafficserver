@@ -656,8 +656,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
       Debug("ssl", "SSL client handshake completed successfully");
       // if the handshake is complete and write is enabled reschedule the write
-      Debug("ssl", "write.enabled: %d", write.enabled);
-      if (write.enabled)
+      if (closed == 0 && write.enabled)
         writeReschedule(nh);
       if (cert) {
         debug_certificate_name("server certificate subject CN is", X509_get_subject_name(cert));
