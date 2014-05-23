@@ -90,7 +90,7 @@ msgstr ""
 
 #: ../../reference/commands/traffic_cop.en.rst:43
 msgid "Emit debugging messages."
-msgstr ""
+msgstr "デバッグメッセージの発行。"
 
 #: ../../reference/commands/traffic_cop.en.rst:47
 msgid ""
@@ -98,12 +98,6 @@ msgid ""
 "purposes, this option causes it to print messages to standard output "
 "instead."
 msgstr ""
-
-#~ msgid ""
-#~ ":program:`traffic_cop` ordinarily logs to syslog, however for debugging "
-#~ "purposes, the ``--enable-cop-debug`` build option causes it to log trace "
-#~ "messages to :file:`/tmp/traffic_cop.trace`."
-#~ msgstr ""
-#~ ":program:`traffic_cop` は通常 syslog にログを取りますが、デバッグを目的と"
-#~ "して ``--enable-cop-debug`` ビルドオプションを使用することで :file:`/tmp/"
-#~ "traffic_cop.trace` にトレースメッセージを記録するようになります。"
+":program:`traffic_cop` は通常 syslog にログを取りますが、デバッグを目的と"
+"してこのオプションを使用することで代わりに標準出力にメッセージを出力する"
+"ようになります。"
