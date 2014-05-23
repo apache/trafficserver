@@ -141,11 +141,8 @@ msgstr ""
 
 #: ../../reference/api/TSRemap.en.rst:26
 msgid "`#include <ts/ts.h>`"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../reference/api/TSRemap.en.rst:27
 msgid "`#include <ts/remap.h>`"
-msgstr ""
-
-#~ msgid "`#include <ts/ts.h>` `#include <ts/remap.h>`"
-#~ msgstr "`#include <ts/ts.h>` `#include <ts/remap.h>`"
+msgstr "`#include <ts/remap.h>`"
