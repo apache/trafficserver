@@ -1274,7 +1274,7 @@ HttpTransact::handleIfRedirect(State *s)
                            "The document you requested is now",
                            s->remap_redirect, s->remap_redirect, "Please update your documents and bookmarks accordingly");
     }
-    ats_free(s->remap_redirect);
+    s->arena.str_free(s->remap_redirect);
     s->remap_redirect = NULL;
     return true;
   }
