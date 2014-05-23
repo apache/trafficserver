@@ -6047,7 +6047,7 @@ extern HttpSessionAccept *plugin_http_accept;
 extern HttpSessionAccept *plugin_http_transparent_accept;
 
 TSVConn
-TSHttpConnect(sockaddr const* addr)
+TSHttpConnectWithPluginId(sockaddr const* addr, char const* tag, int64_t id)
 {
   sdk_assert(addr);
 
@@ -6058,6 +6058,8 @@ TSHttpConnect(sockaddr const* addr)
     PluginVCCore *new_pvc = PluginVCCore::alloc();
 
     new_pvc->set_active_addr(addr);
+    new_pvc->set_plugin_id(id);
+    new_pvc->set_plugin_tag(tag);
     new_pvc->set_accept_cont(plugin_http_accept);
 
     PluginVC *return_vc = new_pvc->connect();
@@ -6076,6 +6078,11 @@ TSHttpConnect(sockaddr const* addr)
   return NULL;
 }
 
+TSVConn
+TSHttpConnect(sockaddr const* addr)
+{
+  return TSHttpConnectWithPluginId(addr, "plugin", 0);
+}
 
 TSVConn
 TSHttpConnectTransparent(sockaddr const* client_addr, sockaddr const* server_addr)

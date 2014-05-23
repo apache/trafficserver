@@ -206,16 +206,27 @@ LogAccessHttp::set_client_req_url_path(char *buf, int len)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-# if 0
 int
-LogAccessHttp::marshal_client_protocol_stack(char *buf)
+LogAccessHttp::marshal_plugin_identity_id(char *buf)
 {
-  if (buf) {
-    marshal_int(buf, m_http_sm->proto_stack);
-  }
+  if (buf) marshal_int(buf, m_http_sm->plugin_id);
   return INK_MIN_ALIGN;
 }
-# endif
+
+int
+LogAccessHttp::marshal_plugin_identity_tag(char *buf)
+{
+  int len = INK_MIN_ALIGN;
+  char const* tag = m_http_sm->plugin_tag;
+
+  if (!tag) tag = "*";
+  else len = LogAccess::strlen(tag);
+
+  if (buf) marshal_str(buf, tag, len);
+
+  return len;
+}
+
 int
 LogAccessHttp::marshal_client_host_ip(char *buf)
 {

@@ -1051,7 +1051,6 @@ void
 PluginVCCore::set_accept_cont(Continuation * c)
 {
   connect_to = c;
-
   // FIX ME - must return action
 }
 
@@ -1202,6 +1201,17 @@ PluginVCCore::set_transparent(bool passive_side, bool active_side)
   active_vc.set_is_transparent(active_side);
 }
 
+void
+PluginVCCore::set_plugin_id(int64_t id)
+{
+  passive_vc.plugin_id = active_vc.plugin_id = id;
+}
+
+void
+PluginVCCore::set_plugin_tag(char const* tag)
+{
+  passive_vc.plugin_tag = active_vc.plugin_tag = tag;
+}
 
 /*************************************************************
  *

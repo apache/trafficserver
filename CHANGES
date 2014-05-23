@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2838] Add logging fields for plugins to TS connect API. Use for SPDY.
+
   *) [TS-2833] Remove REC_BUILD_STAND_ALONE, REC_BUILD_MGMT and
    REC_BUILD_STUB. Dead code.
 

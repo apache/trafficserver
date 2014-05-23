@@ -27,6 +27,22 @@
 static ClassAllocator<SpdyClientSession> spdyClientSessionAllocator("spdyClientSessionAllocator");
 ClassAllocator<SpdyRequest> spdyRequestAllocator("spdyRequestAllocator");
 
+#if TS_HAS_SPDY
+#include "SpdyClientSession.h"
+
+static const spdylay_proto_version versmap[] = {
+  SPDYLAY_PROTO_SPDY2,    // SPDY_VERSION_2
+  SPDYLAY_PROTO_SPDY3,    // SPDY_VERSION_3
+  SPDYLAY_PROTO_SPDY3_1,  // SPDY_VERSION_3_1
+};
+
+static char const* const  npnmap[] = {
+  TS_NPN_PROTOCOL_SPDY_2,
+  TS_NPN_PROTOCOL_SPDY_3,
+  TS_NPN_PROTOCOL_SPDY_3_1
+};
+
+#endif
 static int spdy_process_read(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_write(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata);
@@ -69,15 +85,16 @@ SpdyRequest::clear()
 }
 
 void
-SpdyClientSession::init(NetVConnection * netvc, spdylay_proto_version vers)
+SpdyClientSession::init(NetVConnection * netvc, spdy::SessionVersion vers)
 {
   int r;
 
   this->mutex = new_ProxyMutex();
   this->vc = netvc;
   this->req_map.clear();
+  this->version = vers;
 
-  r = spdylay_session_server_new(&session, vers, &SPDY_CFG.spdy.callbacks, this);
+  r = spdylay_session_server_new(&session, versmap[vers], &SPDY_CFG.spdy.callbacks, this);
 
   // A bit ugly but we need a thread and I don't want to wait until the
   // session start event in case of a time out generating a decrement
@@ -157,7 +174,7 @@ SpdyClientSession::clear()
 }
 
 void
-spdy_sm_create(NetVConnection * netvc, spdylay_proto_version vers, MIOBuffer * iobuf, IOBufferReader * reader)
+spdy_sm_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * iobuf, IOBufferReader * reader)
 {
   SpdyClientSession  *sm;
 
@@ -241,6 +258,19 @@ out:
 
   return EVENT_CONT;
 }
+
+int64_t
+SpdyClientSession::getPluginId() const
+{
+  return sm_id;
+}
+
+char const*
+SpdyClientSession::getPluginTag() const
+{
+  return npnmap[this->version];
+}
+
 
 static int
 spdy_process_read(TSEvent /* event ATS_UNUSED */, SpdyClientSession *sm)

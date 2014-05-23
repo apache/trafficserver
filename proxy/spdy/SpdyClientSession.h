@@ -24,9 +24,11 @@
 #ifndef __P_SPDY_SM_H__
 #define __P_SPDY_SM_H__
 
+#include "SpdyDefs.h"
 #include "SpdyCommon.h"
 #include "SpdyCallbacks.h"
 #include <openssl/md5.h>
+#include "Plugin.h"
 
 class SpdyClientSession;
 typedef int (*SpdyClientSessionHandler) (TSCont contp, TSEvent event, void *data);
@@ -89,7 +91,7 @@ public:
   MD5_CTX recv_md5;
 };
 
-class SpdyClientSession : public Continuation
+class SpdyClientSession : public Continuation, public PluginIdentity
 {
 
 public:
@@ -101,10 +103,11 @@ public:
     clear();
   }
 
-  void init(NetVConnection * netvc, spdylay_proto_version vers);
+  void init(NetVConnection * netvc, spdy::SessionVersion vers);
   void clear();
 
   int64_t sm_id;
+  spdy::SessionVersion version;
   uint64_t total_size;
   TSHRTime start_time;
 
@@ -124,12 +127,15 @@ public:
 
   map<int32_t, SpdyRequest*> req_map;
 
+  virtual char const* getPluginTag() const;
+  virtual int64_t getPluginId() const;
+
 private:
   int state_session_start(int event, void * edata);
   int state_session_readwrite(int event, void * edata);
 };
 
-void spdy_sm_create(NetVConnection * netvc, spdylay_proto_version vers, MIOBuffer * iobuf, IOBufferReader * reader);
+void spdy_sm_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * iobuf, IOBufferReader * reader);
 
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 

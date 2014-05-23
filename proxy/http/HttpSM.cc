@@ -325,6 +325,7 @@ HttpSM::HttpSM()
     client_response_hdr_bytes(0), client_response_body_bytes(0),
     cache_response_hdr_bytes(0), cache_response_body_bytes(0),
     pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
+    plugin_tag(0), plugin_id(0),
     hooks_set(0), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
     cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false)
 {

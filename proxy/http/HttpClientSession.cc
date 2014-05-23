@@ -36,6 +36,7 @@
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 #include "HttpServerSession.h"
+#include "Plugin.h"
 
 #define DebugSsn(tag, ...) DebugSpecific(debug_on, tag, __VA_ARGS__)
 #define STATE_ENTER(state_name, event, vio) { \
@@ -137,6 +138,7 @@ void
 HttpClientSession::new_transaction()
 {
   ink_assert(current_reader == NULL);
+  PluginIdentity* pi = dynamic_cast<PluginIdentity*>(client_vc);
 
   read_state = HCS_ACTIVE_READER;
   current_reader = HttpSM::allocate();
@@ -145,6 +147,12 @@ HttpClientSession::new_transaction()
   DebugSsn("http_cs", "[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", con_id, transact_count, current_reader->sm_id);
 
   current_reader->attach_client_session(this, sm_reader);
+  if (pi) {
+    // it's a plugin VC of some sort with identify information.
+    // copy it to the SM.
+    current_reader->plugin_tag = pi->getPluginTag();
+    current_reader->plugin_id = pi->getPluginId();
+  }
 }
 
 inline void

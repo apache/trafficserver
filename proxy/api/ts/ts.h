@@ -1588,12 +1588,16 @@ extern "C"
       than TSNetConnect() to localhost since it avoids the overhead of
       passing the data through the operating system.
 
-      @param log_ip ip address (in network byte order) that connection
-        will be logged as coming from.
-      @param log_port port (in network byte order) that connection will
-        be logged as coming from.
-      @param vc will be set to point to the new TSVConn on success.
+      This returns a VConn that connected to the transaction.
 
+      @param addr Target address of the origin server.
+      @param tag A logging tag that can be accessed via the pitag field. May be @c NULL.
+      @param id A logging id that can be access via the piid field.
+   */
+  tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const* addr, char const* tag, int64_t id);
+
+  /** Backwards compatible version.
+      This provides a @a tag of "plugin" and an @a id of 0.
    */
   tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
 

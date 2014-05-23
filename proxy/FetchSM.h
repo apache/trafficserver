@@ -35,6 +35,8 @@
 #include "HttpSM.h"
 #include "HttpTunnel.h"
 
+class PluginVC;
+
 class FetchSM: public Continuation
 {
 public:
@@ -139,7 +141,7 @@ private:
   int dechunk_body();
 
   int recursion;
-  TSVConn http_vc;
+  PluginVC* http_vc;
   VIO *read_vio;
   VIO *write_vio;
   MIOBuffer *req_buffer;

@@ -180,8 +180,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
 
 #if TS_HAS_SPDY
   if (port.m_session_protocol_preference.intersects(SPDY_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_SPDY,
-                            new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3_1));
+    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_SPDY, new SpdySessionAccept(spdy::SESSION_VERSION_3_1));
   }
 #endif
 
@@ -207,11 +206,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
     // SPDY
 #if TS_HAS_SPDY
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3));
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, new SpdySessionAccept(spdy::SESSION_VERSION_3));
     }
 
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3_1)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, new SpdySessionAccept(SpdySessionAccept::SPDY_VERSION_3_1));
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, new SpdySessionAccept(spdy::SESSION_VERSION_3_1));
     }
 #endif
 
@@ -316,7 +315,7 @@ start_HttpProxyServerBackDoor(int port, int accept_threads)
   opt.localhost_only = true;
   ha_opt.backdoor = true;
   opt.backdoor = true;
-  
+
   // The backdoor only binds the loopback interface
   netProcessor.main_accept(new HttpSessionAccept(ha_opt), NO_FD, opt);
 }
