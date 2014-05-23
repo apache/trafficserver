@@ -2165,35 +2165,7 @@ extern "C"
   */
   tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp);
 
-  /*
-    The reason is even if VConn is created using this API, it is
-    still useless. For example, if we do TSVConnRead(), the read
-    operation returns read_vio. If we do TSVIOReenable(read_vio),
-    it actually calls:
-
-    @code
-    void VIO::reenable() {
-    if (vc_server) vc_server->reenable(this);
-    }
-    @endcode
-
-    vc_server->reenable calls:
-
-    @code
-    VConnection::reenable(VIO);
-    @endcode
-
-    This function is virtual in VConnection.h. It is defined separately for
-    UnixNet, NTNet and CacheVConnection.
-
-    Thus, unless VConn is either NetVConnection or CacheVConnection, it can't
-    be instantiated for functions like reenable.
-
-    In addition, this function has never been used.
-
-  */
   tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
-
   tsapi TSVConn TSVConnFdCreate(int fd);
 
   /* api functions to access stats */

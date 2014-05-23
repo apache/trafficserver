@@ -6148,26 +6148,6 @@ TSActionDone(TSAction actionp)
 
 /* Connections */
 
-/* Deprectated.
-   Do not use this API.
-   The reason is even if VConn is created using this API, it is still useless.
-   For example, if we do TSVConnRead, the read operation returns read_vio, if
-   we do TSVIOReenable (read_vio), it actually calls:
-   void VIO::reenable()
-   {
-       if (vc_server) vc_server->reenable(this);
-   }
-   vc_server->reenable calls:
-   VConnection::reenable(VIO)
-
-   this function is virtual in VConnection.h. It is defined separately for
-   UnixNet, NTNet and CacheVConnection.
-
-   Thus, unless VConn is either NetVConnection or CacheVConnection, it can't
-   be instantiated for functions like reenable.
-
-   Meanwhile, this function has never been used.
-   */
 TSVConn
 TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
 {
