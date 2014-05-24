@@ -1022,10 +1022,12 @@ msgstr "クライアントのホストマシンのポート番号。"
 
 #: ../../admin/event-logging-formats.en.rst:80
 msgid "``cps``"
-msgstr ""
+msgstr "``cps``"
 
 #: ../../admin/event-logging-formats.en.rst:79
 msgid ""
 "Client Protocol Stack, the output would be the conjunction of protocol "
 "names in the stack spliced with '+', such as \"TLS+SPDY\"."
 msgstr ""
+"クライアントのプロトコルスタック。出力はスタックのプロトコル名 '+' でつなぎ"
+"合わせたもので、\"TLS+SPDY\" のようになります。"

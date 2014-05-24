@@ -226,52 +226,58 @@ msgid ""
 "Setup the same cluster name, with :ts:cv:`proxy.config.proxy_name`, e.g. "
 "MyCluster."
 msgstr ""
+":ts:cv:`proxy.config.proxy_name` に同じクラスター名をセットアップする。"
+"例 MyCluster"
+
 
 #: ../../admin/cluster-howto.en.rst:101
 msgid ""
 "Set :ts:cv:`proxy.local.cluster.type` to ``1``, to enable cluster mode. The "
 "following values of this configuration are valid"
 msgstr ""
+"クラスターモードを有効化するために :ts:cv:`proxy.local.cluster.type`を "
+"``1`` に設定する。次の設定値が使用できます。"
+
 
 #: ../../admin/cluster-howto.en.rst:105
 msgid "Value"
-msgstr ""
+msgstr "値"
 
 #: ../../admin/cluster-howto.en.rst:105
 msgid "Description"
-msgstr ""
+msgstr "概要"
 
 #: ../../admin/cluster-howto.en.rst:107
 msgid "1"
-msgstr ""
+msgstr "1"
 
 #: ../../admin/cluster-howto.en.rst:107
 msgid "full-clustering mode"
-msgstr ""
+msgstr "完全クラスタリングモード"
 
 #: ../../admin/cluster-howto.en.rst:108
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../../admin/cluster-howto.en.rst:108
 msgid "management-only mode"
-msgstr ""
+msgstr "管理専用モード"
 
 #: ../../admin/cluster-howto.en.rst:109
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../../admin/cluster-howto.en.rst:109
 msgid "no clustering (*default*)"
-msgstr ""
+msgstr "クラスタリングなし ( *デフォルト* )"
 
 #: ../../admin/cluster-howto.en.rst:116
 msgid "Enable configuration changes::"
-msgstr ""
+msgstr "設定の変更を有効化する::"
 
 #: ../../admin/cluster-howto.en.rst:120
 msgid "Restart traffic server::"
-msgstr ""
+msgstr "traffic server を再起動::"
 
 #: ../../admin/cluster-howto.en.rst:128
 msgid ""
@@ -282,6 +288,11 @@ msgid ""
 "edited. It contains a list of the machines that are currently members of "
 "the cluster, for example::"
 msgstr ""
+"Traffic Server は約 10 秒でクラスターに加わり、クラスター内のホストを確認"
+"したり、設定ディレクトリ内の ``cluster.config`` を確認するために :"
+"option:`traffic_line -r` `proxy.process.cluster.nodes` を実行することがで"
+"きます。この設定はシステムによって生成され、編集されるべきではありません。"
+"これは現在のクラスターのメンバーであるマシンの一覧を含んでいます。例::"
 
 #: ../../admin/cluster-howto.en.rst:140
 msgid ""
@@ -290,12 +301,19 @@ msgid ""
 "you can make changes on any cluster node member, and they are automatically "
 "distributed to all members."
 msgstr ""
+"クラスターへの参加が成功した後、どのノード上であってもグローバル設定のあ"
+"らゆる変更は\\ *すべて*\\ のノードに影響します。これはどのクラスターメンバー"
+"上でも変更を行うことができ、自動的にすべてのメンバーに配布されることを意味して"
+"います。"
 
 #: ../../admin/cluster-howto.en.rst:148
 msgid ""
 "To delete a node from the Traffic Server cluster, just roll back :ts:cv:"
 "`proxy.local.cluster.type` to the default value 3 and reload."
 msgstr ""
+"Traffic Server クラスターからノードを削除するためには、単に :ts:cv:"
+"`proxy.local.cluster.type` をデフォルト値の 3 に戻して再読み込みを行って"
+"ください。"
 
 #: ../../admin/cluster-howto.en.rst:154
 msgid ""
@@ -303,10 +321,13 @@ msgid ""
 "cluster connections, and we can tweak the number of Cluster threads. Each "
 "of the thread will keep one connection to all of peering cluster machines."
 msgstr ""
+"v3.2.0 から、Apache Traffic Server は複数の内部クラスター接続を扱えるよう"
+"になり、クラスタースレッドの数を調整できるようになりました。"
+"各スレッドは全クラスターマシンに対して一つの接続を維持します。"
 
 #: ../../admin/cluster-howto.en.rst:159
 msgid "Increasing Cluster threads"
-msgstr ""
+msgstr "クラスタースレッドの増加"
 
 #: ../../admin/cluster-howto.en.rst:161
 msgid ""
@@ -317,80 +338,8 @@ msgid ""
 "you can set the number of cluster threads by modifying :ts:cv:`proxy.config."
 "cluster.threads` to ``10``.  E.g.::"
 msgstr ""
-
-#~ msgid ""
-#~ "setup the same cluster name, with :ts:cv:`proxy.config.proxy_name`, e.g. "
-#~ "MyCluster."
-#~ msgstr ""
-#~ ":ts:cv:`proxy.config.proxy_name` に同じクラスター名をセットアップする。"
-#~ "例 MyCluster"
-
-#~ msgid ""
-#~ "Set :ts:cv:`proxy.local.cluster.type` to ``1``, to enable cluster mode."
-#~ msgstr ""
-#~ "クラスターモードを有効化するために :ts:cv:`proxy.local.cluster.type`を "
-#~ "``1`` に設定する。"
-
-#~ msgid "enable: ::"
-#~ msgstr "有効化 ::"
-
-#~ msgid "restart: ::"
-#~ msgstr "リスタート ::"
-
-#~ msgid ""
-#~ "Traffic Server will join the cluster in about 10 seconds, and you can "
-#~ "run :option:`traffic_line -r` `proxy.process.cluster.nodes` to check the "
-#~ "hosts in the cluster, or check out the :file:`cluster.config` in the "
-#~ "configuration directory."
-#~ msgstr ""
-#~ "Traffic Server は約 10 秒でクラスターに加わり、クラスター内のホストを確認"
-#~ "したり、設定ディレクトリ内の :file:`cluster.config` を確認するために :"
-#~ "option:`traffic_line -r` `proxy.process.cluster.nodes` を実行することがで"
-#~ "きます。"
-
-#~ msgid ""
-#~ "After a successful join of the cluster, all changes of global "
-#~ "configurations on any node, will take effect on **all** nodes."
-#~ msgstr ""
-#~ "クラスターへの参加が成功した後、どのノード上であってもグローバル設定のあ"
-#~ "らゆる変更は\\ *すべて*\\ のノードに影響します。"
-
-#~ msgid ""
-#~ "To delete a node from the Traffic Server cluster, just roll back :ts:cv:"
-#~ "`proxy.config.cluster.type` to the default value 3 and reload."
-#~ msgstr ""
-#~ "Traffic Server クラスターからノードを削除するためには、単に :ts:cv:"
-#~ "`proxy.config.cluster.type` をデフォルト値の 3 に戻して再読み込みを行って"
-#~ "ください。"
-
-#~ msgid ""
-#~ "Starting from v3.2.0, Apache Traffic Server can handle multiple internal "
-#~ "cluster connections, and we can tweak for the Cluster threads and each "
-#~ "of the thread will keep one connection to all of the cluster machines:"
-#~ msgstr ""
-#~ "v3.2.0 から、Apache Traffic Server は複数の内部クラスター接続を扱えるよう"
-#~ "になり、クラスタースレッドと各スレッドが全クラスターマシンに対して一つの"
-#~ "接続を維持するよう調整できるようになりました。"
-
-#~ msgid "Increasing Cluster threads:"
-#~ msgstr "クラスタースレッドの増加:"
-
-#~ msgid ""
-#~ "In the cluster env, the current performance of the Cluster threads will "
-#~ "consume the same cpu usage as net threads, so you may adapt the ET_NET & "
-#~ "ET_CLUSTER at about 1:1. For example, on a 24 cores system, set ET_NET "
-#~ "threads & ET_CLUSTER threads to 10, by setting :ts:cv:`proxy.config."
-#~ "cluster.threads` to ``10``."
-#~ msgstr ""
-#~ "クラスター環境では、現在のクラスタースレッドのパフォーマンスはネットス"
-#~ "レッドと同じだけ CPU を使用するので、ET_NET と ET_CLUSTER を約 1:1 に調整"
-#~ "してもよいでしょう。例えば、24 コアのシステム上では、:ts:cv:`proxy."
-#~ "config.cluster.threads` を ``10`` に設定することで ET_NET スレッドと "
-#~ "ET_CLUSTER スレッドを 10 に設定します。"
-
-#~ msgid ""
-#~ "with these tweaks, we can archive about 10gbps traffic for the internal "
-#~ "cluster transfer speed."
-#~ msgstr ""
-#~ "これらの調整により、内部クラスター転送速度 10gbps を達成することができま"
-#~ "す。"
+"クラスター環境では、現在のクラスタースレッドのパフォーマンスは通常のネット"
+"ワークスレッドと同じだけ CPU を使用します。クラスタースレッドとネットワーク"
+"スレッドの数をだいたい同じにするとよいです。例えば、システムを 10 のネット"
+"ワーク処理スレッドで動かしている場合、:ts:cv:`proxy.config.cluster.threads` を"
+"変更してクラスタースレッドの数を ``10`` に設定することができます。例::"
