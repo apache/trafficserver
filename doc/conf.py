@@ -369,3 +369,4 @@ epub_copyright = u'2013, dev@trafficserver.apache.org'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
+mathjax_path = 'https://docs.trafficserver.apache.org/__RTD/MathJax.js'
