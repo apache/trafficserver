@@ -24,8 +24,12 @@
 #if !defined(_P_Freer_h_)
 #define _P_Freer_h_
 
-
 #include "libts.h"
+#include "I_Tasks.h"
+
+// Note that these should not be used for memory that wishes to retain
+// NUMA socket affinity. We'll potentially return these on an arbitarily
+// selected processor/socket.
 
 template<class C> struct DeleterContinuation: public Continuation
 {
@@ -49,7 +53,7 @@ public:                        // Needed by WinNT compiler (compiler bug)
 template<class C> TS_INLINE void
 new_Deleter(C * ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(new DeleterContinuation<C> (ap), t, ET_CALL);
+  eventProcessor.schedule_in(new DeleterContinuation<C> (ap), t, ET_TASK);
 }
 
 template<class C> struct FreeCallContinuation: public Continuation
@@ -73,7 +77,7 @@ public:                        // Needed by WinNT compiler (compiler bug)
 template<class C> TS_INLINE void
 new_FreeCaller(C * ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(new FreeCallContinuation<C> (ap), t, ET_CALL);
+  eventProcessor.schedule_in(new FreeCallContinuation<C> (ap), t, ET_TASK);
 }
 
 struct FreerContinuation;
@@ -101,7 +105,7 @@ struct FreerContinuation: public Continuation
 TS_INLINE void
 new_Freer(void *ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(new FreerContinuation(ap), t, ET_CALL);
+  eventProcessor.schedule_in(new FreerContinuation(ap), t, ET_TASK);
 }
 
 template<class C> struct DereferContinuation: public Continuation
@@ -128,7 +132,7 @@ template<class C> struct DereferContinuation: public Continuation
 template<class C> TS_INLINE void
 new_Derefer(C * ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(new DereferContinuation<C> (ap), t, ET_CALL);
+  eventProcessor.schedule_in(new DereferContinuation<C> (ap), t, ET_TASK);
 }
 
 #endif /* _Freer_h_ */

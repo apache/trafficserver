@@ -1,10 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
-  *) [TS-2344] 404 error was logged while url redirect request was processed
-   corrctly
+  *) [TS-2428] Move P_Freer.h continuations to run on ET_TASK (if available).
 
-  *) [TS-2753] Add more SPDY and HTTPS statistics
+  *) [TS-2344] 404 error was logged while url redirect request was processed
+   correctly.
+
+  *) [TS-2753] Add more SPDY and HTTPS statistics.
 
   *) [TS-2677] Don't apply path / scheme URL changes in remap when method is
    CONNECT.

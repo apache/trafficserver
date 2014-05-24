@@ -2404,12 +2404,14 @@ Sockets
        CONFIG proxy.config.cache.threads_per_disk INT 8
 
 
-Undocumented
-============
+.. ts:cv:: CONFIG proxy.config.task_threads INT 2
 
-These are referenced but not documented. Please contribute a definition.
+   Specifies the number of task threads to run. These threads are used for
+   various tasks that should be off-loaded from the normal network threads.
 
-
-.. ts:cv:: CONFIG proxy.config.task_threads INT 0
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
+
+   Turn on or off support for HTTP proxying. This is rarely used, the one
+   exception being if you run Traffic Server with a protocol plugin, and would
+   like for it to not support HTTP requests at all.
