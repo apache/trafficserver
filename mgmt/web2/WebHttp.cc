@@ -46,13 +46,6 @@
 #include "MgmtUtils.h"
 #include "CfgContextUtils.h"
 
-// Ugly hack - define HEAP_H and STACK_H to prevent stuff from the
-// template library from being included which SUNPRO CC does not not
-// like.
-#define HEAP_H
-#define STACK_H
-
-
 //-------------------------------------------------------------------------
 // defines
 //-------------------------------------------------------------------------

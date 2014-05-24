@@ -39,13 +39,6 @@
 
 #include "openssl/ssl.h"
 
-/* Ugly hack - define HEAP_H and STACK_H to prevent stuff
- *   from the template library from being included which
- *   SUNPRO CC does not not like.
- */
-#define HEAP_H
-#define STACK_H
-
 ssize_t
 socket_write(SocketInfo socketD, const char *buf, size_t nbyte)
 {

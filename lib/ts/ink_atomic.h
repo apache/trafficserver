@@ -62,81 +62,8 @@ typedef vuint64 *pvuint64;
 typedef vlong *pvlong;
 typedef vvoidp *pvvoidp;
 
-// Sun/Solaris and the SunPRO compiler
-#if defined(__SUNPRO_CC)
-typedef volatile uint8_t vuint8;
-typedef volatile uint16_t vuint16;
-typedef volatile uint32_t vuint32;
-#if __WORDSIZE == 64
-typedef unsigned long uint64_s;
-#else
-typedef uint64_t uint64_s;
-#endif
-typedef volatile uint64_s vuint64_s;
-typedef vuint8 *pvuint8;
-typedef vuint16 *pvuint16;
-typedef vuint32 *pvuint32;
-typedef vuint64_s *pvuint64_s;
-
-#include <atomic.h>
-
-/* see http://docs.oracle.com/cd/E19082-01/819-2243/6n4i098m6/index.html */
-
-// ink_atomic_swap(ptr, value)
-// Writes @value into @ptr, returning the previous value.
-template <typename T> inline T *
-ink_atomic_swap(volatile T * mem, T value) {
-  return (T *)atomic_swap_ptr((volatile void *)mem, value);
-}
-
-// ink_atomic_cas(mem, prev, next)
-// Atomically store the value @next into the pointer @mem, but only if the current value at @mem is @prev.
-// Returns true if @next was successfully stored.
-template <typename T> inline bool
-ink_atomic_cas(volatile T * mem, T prev, T next) {
-  return prev == (T)atomic_cas_ptr((volatile void *)mem, (void *)prev, (void *)next);
-}
-
-template <> inline bool
-ink_atomic_cas<uint8_t>(volatile uint8_t * mem, uint8_t prev, uint8_t next) {
-  return prev == atomic_cas_8((volatile uint8_t *)mem, prev, next);
-}
-
-
-// ink_atomic_increment(ptr, count)
-// Increment @ptr by @count, returning the previous value.
-template <typename Type, typename Amount> inline Type
-ink_atomic_increment(volatile Type * mem, Amount count);
-
-template <> inline uint8_t
-ink_atomic_increment<uint8_t, int>(volatile uint8_t * mem, int count) {
-  return atomic_add_8_nv(mem, (int8_t)count) - count;
-}
-
-static inline int8_t  ink_atomic_swap(pvint8 mem, int8_t value) { return (int8_t)atomic_swap_8((pvuint8)mem, (uint8_t)value); }
-static inline int16_t ink_atomic_swap(pvint16 mem, int16_t value) { return (int16_t)atomic_swap_16((pvuint16)mem, (uint16_t)value); }
-static inline int32_t ink_atomic_swap(pvint32 mem, int32_t value) { return (int32_t)atomic_swap_32((pvuint32)mem, (uint32_t)value); }
-static inline int64_t ink_atomic_swap(pvint64 mem, int64_t value) { return (int64_t)atomic_swap_64((pvuint64_s)mem, (uint64_s)value); }
-static inline void *  ink_atomic_swap(vvoidp mem, void *value) { return atomic_swap_ptr((vvoidp)mem, value); }
-
-static inline bool ink_atomic_cas(pvint32 mem, int old, int new_value) { return atomic_cas_32((pvuint32)mem, (uint32_t)old, (uint32_t)new_value) == old; }
-static inline bool ink_atomic_cas(pvint64 mem, int64_t old, int64_t new_value) { return atomic_cas_64((pvuint64_s)mem, (uint64_s)old, (uint64_s)new_value) == old; }
-static inline bool ink_atomic_cas(pvvoidp mem, void* old, void* new_value) { return atomic_cas_ptr((vvoidp)mem, old, new_value) == old; }
-
-static inline int     ink_atomic_increment(pvint32 mem, int value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
-static inline int     ink_atomic_increment(pvint32 mem, unsigned value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
-static inline int     ink_atomic_increment(pvint32 mem, long value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
-static inline int64_t ink_atomic_increment(pvint64 mem, int64_t value) { return ((uint64_s)atomic_add_64_nv((pvuint64_s)mem, (uint64_s)value)) - value; }
-static inline int64_t ink_atomic_increment(pvint64 mem, int value) { return ((uint64_s)atomic_add_64_nv((pvuint64_s)mem, (uint64_s)value)) - value; }
-static inline void *  ink_atomic_increment(pvvoidp mem, intptr_t value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - value); }
-static inline void *  ink_atomic_increment(pvvoidp mem, void* value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - (ssize_t)value); }
-
-/* not used for Intel Processors or Sparc which are mostly sequentally consistent */
-#define INK_WRITE_MEMORY_BARRIER
-#define INK_MEMORY_BARRIER
-
 /* GCC compiler >= 4.1 */
-#elif defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
+#if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
 
 /* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
 
