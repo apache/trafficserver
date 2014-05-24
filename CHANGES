@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2528] Use <stdbool.h> in the public mgmtapi.h interface. This follows
+   the C99 standard, and we should move other public APIs to it.
+
   *) [TS-2428] Move P_Freer.h continuations to run on ET_TASK (if available).
 
   *) [TS-2344] 404 error was logged while url redirect request was processed
