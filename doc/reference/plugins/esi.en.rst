@@ -65,8 +65,8 @@ This plugin is only built if the configure option ::
 
     --enable-experimental-plugins
 
-is given at build time. Note that this plugin is built and installed in combination with the ESI module, since they
-share common code.
+is given at build time. Note that this plugin is built and installed in combination with the combo handler module, since
+they share common code.
 
 Enabling ESI
 ============
@@ -95,7 +95,7 @@ Enabling ESI
 
     map http://abc.com/esi.php http://xyz.com/esi.php
 
-4. Your response should contain ESI markup and a response header of .X-Esi: 1'. e.g. using PHP,
+4. Your response should contain ESI markup and a response header of 'X-Esi: 1'. e.g. using PHP,
 
 ::
 
@@ -132,9 +132,9 @@ Useful Note
 ===========
 
 1. You can provide proper cache control header and the ESI response and ESI include response can be cached separately.
-It is extremely useful for rendering page with multiple modules. The page layout can be a ESI response with multiple ESI
-include, each for different module. The page layour ESI response can be cached and each individual ESI include can also
-be cached with different duration. 
+   It is extremely useful for rendering page with multiple modules. The page layout can be a ESI response with multiple
+   ESI include include, each for different module. The page layour ESI response can be cached and each individual ESI
+   include can also be cached with different duration. 
 
 2. You might want to compile the code without using ESI_PACKED_NODE_SUPPORT because it may not work in some corner cases
 
