@@ -60,11 +60,12 @@ ts_lua_http_intercept(lua_State * L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  http_ctx->has_hook = 1;
 
   type = lua_type(L, 1);
 
   if (type != LUA_TFUNCTION) {
-    fprintf(stderr, "[%s] param in ts.http.intercept should be a function\n", __FUNCTION__);
+    TSError("[%s] param in ts.http.intercept should be a function", __FUNCTION__);
     return 0;
   }
 
@@ -88,11 +89,12 @@ ts_lua_http_server_intercept(lua_State * L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  http_ctx->has_hook = 1;
 
   type = lua_type(L, 1);
 
   if (type != LUA_TFUNCTION) {
-    fprintf(stderr, "[%s] param in ts.http.server_intercept should be a function\n", __FUNCTION__);
+    TSError("[%s] param in ts.http.server_intercept should be a function", __FUNCTION__);
     return 0;
   }
 
@@ -260,7 +262,7 @@ ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx * ictx, int n)
     break;
 
   default:                     // error
-    fprintf(stderr, "lua_resume failed: %s\n", lua_tostring(L, -1));
+    TSError("lua_resume failed: %s", lua_tostring(L, -1));
     return -1;
   }
 

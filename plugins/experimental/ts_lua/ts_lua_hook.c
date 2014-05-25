@@ -108,95 +108,169 @@ ts_lua_add_hook(lua_State * L)
   switch (entry) {
 
   case TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_CACHE_LOOKUP_COMPLETE);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_CACHE_LOOKUP_COMPLETE);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE);
+    }
     break;
 
   case TS_LUA_HOOK_SEND_REQUEST_HDR:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_SEND_REQUEST);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_SEND_REQUEST);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_SEND_REQUEST);
+    }
     break;
 
   case TS_LUA_HOOK_READ_RESPONSE_HDR:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_READ_RESPONSE);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_READ_RESPONSE);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_READ_RESPONSE);
+    }
     break;
 
   case TS_LUA_HOOK_SEND_RESPONSE_HDR:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_SEND_RESPONSE);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_SEND_RESPONSE);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_SEND_RESPONSE);
+    }
     break;
 
   case TS_LUA_HOOK_READ_REQUEST_HDR:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_READ_REQUEST);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_READ_REQUEST);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_READ_REQUEST);
+    }
     break;
 
   case TS_LUA_HOOK_TXN_START:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_TXN_START_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_TXN_START);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_TXN_START_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_TXN_START);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_TXN_START);
+    }
     break;
 
   case TS_LUA_HOOK_PRE_REMAP:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_PRE_REMAP_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_PRE_REMAP);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_PRE_REMAP_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_PRE_REMAP);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_PRE_REMAP);
+    }
     break;
 
   case TS_LUA_HOOK_POST_REMAP:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_POST_REMAP_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_POST_REMAP);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_POST_REMAP_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_POST_REMAP);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_POST_REMAP);
+    }    
     break;
 
   case TS_LUA_HOOK_OS_DNS:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_OS_DNS_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_OS_DNS);
+    if (http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_OS_DNS_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_OS_DNS);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_OS_DNS);
+    }
     break;
 
   case TS_LUA_HOOK_SELECT_ALT:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SELECT_ALT_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_SELECT_ALT);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SELECT_ALT_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_SELECT_ALT);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_SELECT_ALT);
+    }
     break;
 
   case TS_LUA_HOOK_READ_CACHE_HDR:
-    TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_CACHE_HDR_HOOK, http_ctx->main_contp);
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_READ_CACHE);
+    if(http_ctx) {
+      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_READ_CACHE_HDR_HOOK, http_ctx->main_contp);
+      http_ctx->has_hook = 1;
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_READ_CACHE);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_READ_CACHE);
+    }
     break;
 
   case TS_LUA_HOOK_TXN_CLOSE:
-    // we don't need to add a hook because we already have added one by default
-    lua_pushvalue(L, 2);
-    lua_setglobal(L, TS_LUA_FUNCTION_TXN_CLOSE);
+    if(http_ctx) {
+      // we don't need to add a hook because we already have added one by default
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_TXN_CLOSE);
+    } else {
+      lua_pushvalue(L, 2);
+      lua_setglobal(L, TS_LUA_FUNCTION_G_TXN_CLOSE);
+    }
     break;
 
   case TS_LUA_REQUEST_TRANSFORM:
   case TS_LUA_RESPONSE_TRANSFORM:
-    transform_ctx = (ts_lua_transform_ctx *) TSmalloc(sizeof(ts_lua_transform_ctx));
-    memset(transform_ctx, 0, sizeof(ts_lua_transform_ctx));
-    transform_ctx->hctx = http_ctx;
+    if(http_ctx) {
+      http_ctx->has_hook = 1;
+      transform_ctx = (ts_lua_transform_ctx *) TSmalloc(sizeof(ts_lua_transform_ctx));
+      memset(transform_ctx, 0, sizeof(ts_lua_transform_ctx));
+      transform_ctx->hctx = http_ctx;
 
-    connp = TSTransformCreate(ts_lua_transform_entry, http_ctx->txnp);
-    TSContDataSet(connp, transform_ctx);
+      connp = TSTransformCreate(ts_lua_transform_entry, http_ctx->txnp);
+      TSContDataSet(connp, transform_ctx);
 
-    if (entry == TS_LUA_REQUEST_TRANSFORM) {
-      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_REQUEST_TRANSFORM_HOOK, connp);
-    } else {
-      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+      if (entry == TS_LUA_REQUEST_TRANSFORM) {
+        TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_REQUEST_TRANSFORM_HOOK, connp);
+      } else {
+        TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+      }
+
+      lua_pushlightuserdata(L, transform_ctx);
+      lua_pushvalue(L, 2);
+      lua_rawset(L, LUA_GLOBALSINDEX);
     }
-
-    lua_pushlightuserdata(L, transform_ctx);
-    lua_pushvalue(L, 2);
-    lua_rawset(L, LUA_GLOBALSINDEX);
     break;
 
   default:

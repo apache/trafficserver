@@ -55,7 +55,7 @@ static int ts_lua_http_resp_cache_transformed(lua_State * L);
 static int ts_lua_http_resp_cache_untransformed(lua_State * L);
 
 static int ts_lua_http_is_internal_request(lua_State * L);
-
+static int ts_lua_http_skip_remapping_set(lua_State * L);
 
 void
 ts_lua_inject_http_api(lua_State * L)
@@ -113,6 +113,9 @@ ts_lua_inject_http_misc_api(lua_State * L)
 {
   lua_pushcfunction(L, ts_lua_http_is_internal_request);
   lua_setfield(L, -2, "is_internal_request");
+
+  lua_pushcfunction(L, ts_lua_http_skip_remapping_set);
+  lua_setfield(L, -2, "skip_remapping_set");
 }
 
 static void
@@ -262,3 +265,19 @@ ts_lua_http_is_internal_request(lua_State * L)
 
   return 1;
 }
+
+static int
+ts_lua_http_skip_remapping_set(lua_State * L)
+{
+  int action;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  action = luaL_checkinteger(L, 1);
+
+  TSSkipRemappingSet(http_ctx->txnp, action);
+
+  return 0;
+}
+

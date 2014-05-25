@@ -81,14 +81,14 @@ write this in remap.config:
 
 ::
 
-    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/libtslua.so @pparam=/XXX/test_hdr.lua
+    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=/XXX/test_hdr.lua
 
 Sometimes we want to receive parameters and process them in the script, we should realize '__init__' function in the lua
 script, and we can write this in remap.config:
 
 ::
 
-    map http://a.x.cn/ http://b.x.cn/ @plugin=/X/libtslua.so @pparam=/X/sethost.lua @pparam=a.st.cn
+    map http://a.x.cn/ http://b.x.cn/ @plugin=/X/tslua.so @pparam=/X/sethost.lua @pparam=a.st.cn
 
 This module can also act as a global plugin of Traffic Server. In this case we should provide one of these functions in
 each lua script:
@@ -184,10 +184,10 @@ ts.hook
 -------
 **syntax:** *ts.hook(HOOK_POINT, FUNCTION)*
 
-**context:** do_remap or do_global_* or later
+**context:** global or do_remap or do_global_* or later
 
 **description**: Hooks are points in http transaction processing where we can step in and do some work. FUNCTION will be
-called called when the http transaction steps in to HOOK_POINT.
+called when the http transaction steps in to HOOK_POINT.
 
 Here is an example
 
@@ -212,6 +212,30 @@ Then the client will get the response like this:
     Connection: Keep-Alive
     ...
 
+You can create global hook as well
+
+::
+
+    function do_some_work()
+       ts.debug('do_some_work')
+       return 0  
+    end
+
+    ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, do_some_work)
+
+Or you can do it this way
+
+    ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, 
+        function()
+            ts.debug('do_some_work')
+            return 0
+        end
+    )
+
+Also the return value of the function will control how the transaction will be re-enabled. Return value of 0 will cause
+the transaction to be re-enabled normally (TS_EVENT_HTTP_CONTINUE). Return value of 1 will be using TS_EVENT_HTTP_ERROR
+instead.
+
 `TOP <#ts-lua-plugin>`_
 
 Hook point constants
@@ -234,7 +258,7 @@ Hook point constants
     TS_LUA_REQUEST_TRANSFORM
     TS_LUA_RESPONSE_TRANSFORM
 
-These constants are usually used in [ts.hook](#tshook) method call.
+These constants are usually used in ts.hook method call.
 
 `TOP <#ts-lua-plugin>`_
 
@@ -1402,6 +1426,43 @@ This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM.
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.set_remapping_set
+-------------------------
+**syntax:** *ts.http.set_remapping_set(BOOL)*
+
+**context:** do_global_read_request
+
+**description**: This function can be used to tell trafficserver to skip doing remapping
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ts.http.set_remapping_set(0);
+        ts.client_request.header['Host'] = 'www.yahoo.com'
+        return 0
+    end
+
+This function is usually called in do_global_read_request function
+
+ts.http.is_internal_request
+---------------------------
+**syntax:** *ts.http.is_internal_request()*
+
+** context:** do_remap or do_global_* or later
+
+** description**: This function can be used to tell is a request is internal or not
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local internal = ts.http.is_internal_request()
+        ts.debug(internal)
+        return 0
+    end
 
 ts.add_package_path
 -------------------
@@ -1706,7 +1767,8 @@ ts.server_intercept
 
 **description:** Intercepts the server request and acts as the origin server.
 
-We should construct the response for the server request, so the request will be processed within FUNCTION in case of miss for the cache lookup.
+We should construct the response for the server request, so the request will be processed within FUNCTION in case of
+miss for the cache lookup.
 
 Here is an example:
 
@@ -2003,6 +2065,13 @@ Todo
 * ts.fetch
 * ts.cache_xxx
 * `support lua-5.2 <https://github.com/portl4t/ts-lua/wiki/support-Lua-5.2>`_
+
+Currently when we use ts_lua as a global plugin, each global hook is using a separate lua state for the same
+transaction. This can be wasteful. Also the state cannot be reused for the same transaction across the global hooks. The
+alternative will be to use a TXN_START hook to create a lua state first and then add each global hook in the lua script
+as transaction hook instead. But this will have problem down the road when we need to have multiple plugins to work
+together in some proper orderings. In the future, we should consider different approach, such as creating and
+maintaining the lua state in the ATS core. 
 
 `TOP <#ts-lua-plugin>`_
 

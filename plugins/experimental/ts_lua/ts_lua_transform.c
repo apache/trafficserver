@@ -131,7 +131,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx * transform_ctx)
     }
 
     if (lua_pcall(L, 2, 2, 0)) {
-      fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(L, -1));
+      TSError("lua_pcall failed: %s", lua_tostring(L, -1));
     }
 
     ret = lua_tointeger(L, -1); /* 0 is not finished, 1 is finished */

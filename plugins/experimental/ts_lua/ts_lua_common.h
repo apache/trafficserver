@@ -77,10 +77,6 @@
 
 #define TS_LUA_MAKE_VAR_ITEM(X)                 {X, #X}
 
-#define ee(...)     fprintf(stderr, "Lua *** %s: ", __func__); \
-                            fprintf(stderr, __VA_ARGS__);   \
-                            fprintf(stderr, " @ %s line %d.\n", __FILE__, __LINE__)
-
 /* for http config or cntl var */
 typedef struct
 {
@@ -140,6 +136,7 @@ typedef struct
   int ref;
 
   int remap;
+  int has_hook;
 
 } ts_lua_http_ctx;
 
