@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2839] tsxs does not work on OSX (Darwin).
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
   *) [TS-2820] Add check to Transformations in C++ api to prevent closing
       connections twice.
 
