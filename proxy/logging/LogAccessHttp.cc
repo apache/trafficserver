@@ -658,10 +658,7 @@ int
 LogAccessHttp::marshal_proxy_resp_header_len(char *buf)
 {
   if (buf) {
-    int64_t val = 0;
-    if (m_proxy_response) {
-      val = m_proxy_response->length_get();
-    }
+    int64_t val = m_http_sm->client_response_hdr_bytes;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
