@@ -497,7 +497,7 @@ public:
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
   //  do_api_callout_internal()
-  int hooks_set;
+  bool hooks_set;
 
 protected:
   TSHttpHookID cur_hook_id;

@@ -108,7 +108,6 @@ extern WebInterFaceGlobals wGlobals;
 extern WebContext autoconfContext;
 
 #define MAX_SERVICE_THREADS 100
-#define FILE_NAME_MAX       255
 
 //-------------------------------------------------------------------------
 // web2 items

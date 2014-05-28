@@ -17,7 +17,7 @@
 #  limitations under the License.
 
 # Note that hdrs is targeted from ../Makefile.am
-SUBDIRS = congest http spdy logging config
+SUBDIRS = congest http http2 spdy logging config
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -170,6 +170,8 @@ traffic_server_SOURCES = \
   Prefetch.h \
   ProtocolProbeSessionAccept.cc \
   ProtocolProbeSessionAccept.h \
+  ProxyClientSession.cc \
+  ProxyClientSession.h \
   ReverseProxy.cc \
   ReverseProxy.h \
   SocksProxy.cc \
@@ -192,6 +194,7 @@ endif
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_server_LDADD = \
   http/libhttp.a \
+  http2/libhttp2.a \
   spdy/libspdy.a \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
@@ -292,6 +295,8 @@ traffic_sac_SOURCES = \
   Prefetch.cc \
   ProtocolProbeSessionAccept.cc \
   ProtocolProbeSessionAccept.h \
+  ProxyClientSession.cc \
+  ProxyClientSession.h \
   Update.cc \
   Plugin.cc \
   InkAPI.cc \
@@ -301,6 +306,7 @@ traffic_sac_SOURCES = \
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_sac_LDADD = \
   http/libhttp.a \
+  http2/libhttp2.a \
   spdy/libspdy.a \
   shared/libdiagsconfig.a \
   http/remap/libhttp_remap.a \

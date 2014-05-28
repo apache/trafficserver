@@ -36,7 +36,7 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 const char * const TS_NPN_PROTOCOL_HTTP_0_9 = "http/0.9";
 const char * const TS_NPN_PROTOCOL_HTTP_1_0 = "http/1.0";
 const char * const TS_NPN_PROTOCOL_HTTP_1_1 = "http/1.1";
-const char * const TS_NPN_PROTOCOL_HTTP_2   = "http/2";
+const char * const TS_NPN_PROTOCOL_HTTP_2_0 = "h2-12";    // draft-ietf-httpbis-http2-12
 const char * const TS_NPN_PROTOCOL_SPDY_1   = "spdy/1";   // obsolete
 const char * const TS_NPN_PROTOCOL_SPDY_2   = "spdy/2";
 const char * const TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";
@@ -50,7 +50,7 @@ const char * const TS_NPN_PROTOCOL_GROUP_SPDY = "spdy";
 int TS_NPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
-int TS_NPN_PROTOCOL_INDEX_HTTP_2 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_SPDY_1 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_SPDY_2 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_SPDY_3 = SessionProtocolNameRegistry::INVALID;
@@ -582,7 +582,7 @@ ts_session_protocol_well_known_name_indices_init()
   TS_NPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_0_9);
   TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_0);
   TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_1);
-  TS_NPN_PROTOCOL_INDEX_HTTP_2 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_2);
+  TS_NPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_2_0);
   TS_NPN_PROTOCOL_INDEX_SPDY_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_1);
   TS_NPN_PROTOCOL_INDEX_SPDY_2 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_2);
   TS_NPN_PROTOCOL_INDEX_SPDY_3 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_3);
@@ -592,7 +592,7 @@ ts_session_protocol_well_known_name_indices_init()
   HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_0_9);
   HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_1_0);
   HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_1_1);
-  HTTP2_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_2);
+  HTTP2_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_2_0);
   SPDY_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_SPDY_3);
   SPDY_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_SPDY_3_1);
 

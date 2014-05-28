@@ -37,6 +37,10 @@
 #include <sys/types.h>
 #endif
 
+#if HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
 #if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
@@ -120,6 +124,21 @@ char *_xstrdup(const char *str, int length, const char *path);
 #endif
 
 #ifdef __cplusplus
+
+template <typename PtrType, typename SizeType>
+static inline IOVec
+make_iovec(PtrType ptr, SizeType sz) {
+  IOVec iov = { ptr, static_cast<size_t>(sz) };
+  return iov;
+}
+
+template <typename PtrType, unsigned N>
+static inline IOVec
+make_iovec(PtrType (&array)[N]) {
+  IOVec iov = { &array[0], static_cast<size_t>(sizeof(array)) };
+  return iov;
+}
+
 /** Set data to zero.
 
     Calls @c memset on @a t with a value of zero and a length of @c

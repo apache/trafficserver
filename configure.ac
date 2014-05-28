@@ -1431,8 +1431,10 @@ fi
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
-TS_FLAG_HEADERS([sys/types.h sys/mman.h])
-TS_FLAG_HEADERS([sys/epoll.h \
+TS_FLAG_HEADERS([sys/types.h \
+                  sys/uio.h \
+                  sys/mman.h \
+                  sys/epoll.h \
                   sys/event.h \
                   sys/param.h \
                   sys/pset.h \
@@ -1910,6 +1912,7 @@ AC_CONFIG_FILES([
   proxy/hdrs/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
+  proxy/http2/Makefile
   proxy/logging/Makefile
   proxy/shared/Makefile
   proxy/spdy/Makefile

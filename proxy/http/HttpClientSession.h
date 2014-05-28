@@ -38,6 +38,7 @@
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "IPAllow.h"
+#include "ProxyClientSession.h"
 
 extern ink_mutex debug_cs_list_mutex;
 
@@ -46,21 +47,29 @@ class HttpServerSession;
 
 class SecurityContext;
 
-class HttpClientSession: public VConnection
+class HttpClientSession: public ProxyClientSession
 {
 public:
   HttpClientSession();
-  void cleanup();
+
+  // Implement ProxyClientSession interface.
   virtual void destroy();
 
-  void new_connection(NetVConnection * new_vc, bool backdoor, MIOBuffer * iobuf, IOBufferReader * reader);
+  virtual void start() {
+    new_transaction();
+  }
 
+  void new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IOBufferReader * reader, bool backdoor);
+
+  // Implement VConnection interface.
   virtual VIO *do_io_read(Continuation * c, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
   virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
   virtual void reenable(VIO * vio);
+
+  void new_transaction();
 
   void set_half_close_flag() { half_close = true; };
   virtual void release(IOBufferReader * r);
@@ -75,16 +84,8 @@ public:
   // Functions for manipulating api hooks
   void ssn_hook_append(TSHttpHookID id, INKContInternal * cont);
   void ssn_hook_prepend(TSHttpHookID id, INKContInternal * cont);
-  APIHook *ssn_hook_get(TSHttpHookID id);
-
-  // Used to verify we are recording the current
-  //   client transaction stat properly
-  int64_t con_id;
 
   int get_transact_count() const { return  transact_count; }
-
-  void* get_user_arg(int ix) const { return user_args[ix]; }
-  void set_user_arg(int ix, void* arg) { user_args[ix] = arg; }
 
 private:
   HttpClientSession(HttpClientSession &);
@@ -93,12 +94,6 @@ private:
   int state_slave_keep_alive(int event, void *data);
   int state_wait_for_close(int event, void *data);
   void set_tcp_init_cwnd();
-
-  void handle_api_return(int event);
-  int state_api_callout(int event, void *data);
-  void do_api_callout(TSHttpHookID id);
-
-  virtual void new_transaction();
 
   enum C_Read_State
   {
@@ -109,13 +104,13 @@ private:
     HCS_CLOSED
   };
 
+  int64_t con_id;
   NetVConnection *client_vc;
   int magic;
-  bool tcp_init_cwnd_set;
   int transact_count;
+  bool tcp_init_cwnd_set;
   bool half_close;
   bool conn_decrease;
-  void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
 
   HttpServerSession *bound_ss;
 
@@ -129,18 +124,7 @@ private:
 
   Link<HttpClientSession> debug_link;
 
-  TSHttpHookID cur_hook_id;
-  APIHook *cur_hook;
-  int cur_hooks;
-
-  // api_hooks must not be changed directly
-  //  Use ssn_hook_{ap,pre}pend so hooks_set is
-  //  updated
-  HttpAPIHooks api_hooks;
-
 public:
-  bool backdoor_connect;
-  int hooks_set;
   /// Local address for outbound connection.
   IpAddr outbound_ip4;
   /// Local address for outbound connection.
@@ -161,15 +145,7 @@ public:
   // be active until the transaction goes through or the client
   // aborts.
   bool m_active;
-  // Session specific debug flag
-  bool debug_on;
 };
-
-inline APIHook *
-HttpClientSession::ssn_hook_get(TSHttpHookID id)
-{
-  return api_hooks.get(id);
-}
 
 extern ClassAllocator<HttpClientSession> httpClientSessionAllocator;
 

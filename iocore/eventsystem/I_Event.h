@@ -73,6 +73,7 @@
 #define TRANSFORM_EVENTS_START                    2000
 #define STAT_PAGES_EVENTS_START                   2100
 #define HTTP_SESSION_EVENTS_START                 2200
+#define HTTP2_SESSION_EVENTS_START                2250
 #define HTTP_TUNNEL_EVENTS_START                  2300
 #define HTTP_SCH_UPDATE_EVENTS_START              2400
 #define NT_ASYNC_CONNECT_EVENT_EVENTS_START       3000

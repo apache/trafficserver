@@ -1248,7 +1248,7 @@ APIHooks::append(INKContInternal *cont)
 }
 
 APIHook *
-APIHooks::get()
+APIHooks::get() const
 {
   return m_hooks.head;
 }
@@ -5736,17 +5736,19 @@ TSHttpTxnDebugGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   return ((HttpSM *)txnp)->debug_on;
 }
+
 void
 TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ((HttpClientSession *)ssnp)->debug_on = on;
 }
+
 int
 TSHttpSsnDebugGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  return ((HttpClientSession *)ssnp)->debug_on;
+  return ((HttpClientSession *)ssnp)->debug();
 }
 
 int

@@ -37,6 +37,9 @@
 #include "P_Cache.h"
 #include "I_Tasks.h"
 
+/* Some defines that might be candidates for configurable settings later.
+ */
+#define HTTP_SSN_TXN_MAX_USER_ARG         16   /* max number of user arguments for Transactions and Sessions */
 
 typedef enum
   {
@@ -124,6 +127,13 @@ struct HttpAltInfo
   float m_qvalue;
 };
 
+enum APIHookScope
+{
+  API_HOOK_SCOPE_NONE,
+  API_HOOK_SCOPE_GLOBAL,
+  API_HOOK_SCOPE_LOCAL
+};
+
 /// A single API hook that can be invoked.
 class APIHook
 {
@@ -140,7 +150,7 @@ class APIHooks
 public:
   void prepend(INKContInternal * cont);
   void append(INKContInternal * cont);
-  APIHook *get();
+  APIHook *get() const;
   void clear();
   bool is_empty() const;
   void invoke(int event, void* data);
@@ -187,7 +197,7 @@ public:
   /// Add the hook @a cont to the end of the hooks for @a id.
   void append(ID id, INKContInternal * cont);
   /// Get the list of hooks for @a id.
-  APIHook *get(ID id);
+  APIHook *get(ID id) const;
   /// @return @c true if @a id is a valid id, @c false otherwise.
   static bool is_valid(ID id);
 
@@ -250,7 +260,7 @@ FeatureAPIHooks<ID,N>::append(ID id, INKContInternal *cont)
 
 template < typename ID, ID N >
 APIHook *
-FeatureAPIHooks<ID,N>::get(ID id)
+FeatureAPIHooks<ID,N>::get(ID id) const
 {
   return m_hooks[id].get();
 }

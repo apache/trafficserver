@@ -32,14 +32,18 @@
  *
  ****************************************************************************/
 
-//#include "libts.h"
-#include "WebGlobals.h"
-
 class ExpandingArray;
 class textBuffer;
 
+#if defined(NAME_MAX)
+#define FILE_NAME_MAX       NAME_MAX
+#else
+#define FILE_NAME_MAX       255
+#endif
+
 struct fileEntry
 {
+  // XXX Remove this arbitrary filename length limit.
   char name[FILE_NAME_MAX];
   time_t c_time;
 };
