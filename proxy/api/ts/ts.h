@@ -1623,6 +1623,7 @@ extern "C"
 
   /* Check if HTTP State machine is internal or not */
   tsapi TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
+  tsapi TSReturnCode TSHttpIsInternalSession(TSHttpSsn ssnp);
 
   /* --------------------------------------------------------------------------
      HTTP alternate selection */

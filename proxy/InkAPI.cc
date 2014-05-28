@@ -7387,20 +7387,26 @@ TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
 }
 
 TSReturnCode
+TSHttpIsInternalSession(TSHttpSsn ssnp)
+{
+  HttpClientSession *cs = (HttpClientSession *) ssnp;
+  if (!cs) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = cs->get_netvc();
+  if (!vc) {
+    return TS_ERROR;
+  }
+
+  return vc->get_is_internal_request() ? TS_SUCCESS : TS_ERROR;
+}
+
+TSReturnCode
 TSHttpIsInternalRequest(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
-  HttpClientSession *cs = (HttpClientSession *) ssnp;
-  if (!cs)
-    return TS_ERROR;
-
-  NetVConnection *vc = cs->get_netvc();
-  if (!vc)
-    return TS_ERROR;
-
-  return vc->get_is_internal_request() ? TS_SUCCESS : TS_ERROR;
+  return TSHttpIsInternalSession(TSHttpTxnSsnGet(txnp));
 }
 
 
