@@ -8,6 +8,7 @@ config.nice
 config.status
 libtool
 blib
+stamp-h1
 .*\.txt$
 .*\.cfg$
 .*\.in$
