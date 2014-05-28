@@ -530,10 +530,9 @@ IOBufferBlock::realloc_xmalloc(int64_t buf_size)
 TS_INLINE void
 IOBufferBlock::realloc(int64_t i)
 {
-  if (i == data->_size_index)
+  if ((i == data->_size_index) || (i >= (int64_t)countof(ioBufAllocator))) {
     return;
-  if (i >= (int64_t) sizeof(ioBufAllocator))
-    return;
+  }
 
   ink_release_assert(i > data->_size_index && i != BUFFER_SIZE_NOT_ALLOCATED);
   void *b = ioBufAllocator[i].alloc_void();
