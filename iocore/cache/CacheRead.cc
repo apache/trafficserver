@@ -161,8 +161,9 @@ uint32_t
 CacheVC::load_http_info(CacheHTTPInfoVector* info, Doc* doc, RefCountObj * block_ptr)
 {
   uint32_t zret = info->get_handles(doc->hdr(), doc->hlen, block_ptr);
-  if (cache_config_compatibility_4_2_0_fixup &&
-      vol->header->version.ink_major == 23 && vol->header->version.ink_minor == 0
+  if (cache_config_compatibility_4_2_0_fixup && // manual override not engaged
+      ! this->f.doc_from_ram_cache && // it's already been done for ram cache objects
+      vol->header->version.ink_major == 23 && vol->header->version.ink_minor == 0 // 4.2.0 version
     ) {
     for ( int i = info->xcount - 1 ; i >= 0 ; --i ) {
       info->data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
