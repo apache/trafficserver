@@ -490,19 +490,19 @@ class HTTPVersion
 {
 public:
   HTTPVersion();
-  HTTPVersion(int32_t version);
+  explicit HTTPVersion(int32_t version);
   HTTPVersion(int ver_major, int ver_minor);
 
   void set(HTTPVersion ver);
   void set(int ver_major, int ver_minor);
 
   HTTPVersion & operator =(const HTTPVersion & hv);
-  int operator ==(const HTTPVersion & hv);
-  int operator !=(const HTTPVersion & hv);
-  int operator >(const HTTPVersion & hv);
-  int operator <(const HTTPVersion & hv);
-  int operator >=(const HTTPVersion & hv);
-  int operator <=(const HTTPVersion & hv);
+  int operator ==(const HTTPVersion & hv) const;
+  int operator !=(const HTTPVersion & hv) const;
+  int operator >(const HTTPVersion & hv) const;
+  int operator <(const HTTPVersion & hv) const;
+  int operator >=(const HTTPVersion & hv) const;
+  int operator <=(const HTTPVersion & hv) const;
 
 public:
     int32_t m_version;
@@ -741,7 +741,7 @@ HTTPVersion::operator =(const HTTPVersion & hv)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPVersion::operator ==(const HTTPVersion & hv)
+HTTPVersion::operator ==(const HTTPVersion & hv) const
 {
   return (m_version == hv.m_version);
 }
@@ -750,7 +750,7 @@ HTTPVersion::operator ==(const HTTPVersion & hv)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPVersion::operator !=(const HTTPVersion & hv)
+HTTPVersion::operator !=(const HTTPVersion & hv) const
 {
   return (m_version != hv.m_version);
 }
@@ -759,7 +759,7 @@ HTTPVersion::operator !=(const HTTPVersion & hv)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPVersion::operator >(const HTTPVersion & hv)
+HTTPVersion::operator >(const HTTPVersion & hv) const
 {
   return (m_version > hv.m_version);
 }
@@ -768,7 +768,7 @@ HTTPVersion::operator >(const HTTPVersion & hv)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPVersion::operator <(const HTTPVersion & hv)
+HTTPVersion::operator <(const HTTPVersion & hv) const
 {
   return (m_version < hv.m_version);
 }
@@ -777,7 +777,7 @@ HTTPVersion::operator <(const HTTPVersion & hv)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPVersion::operator >=(const HTTPVersion & hv)
+HTTPVersion::operator >=(const HTTPVersion & hv) const
 {
   return (m_version >= hv.m_version);
 }
@@ -786,7 +786,7 @@ HTTPVersion::operator >=(const HTTPVersion & hv)
   -------------------------------------------------------------------------*/
 
 inline int
-HTTPVersion::operator <=(const HTTPVersion & hv)
+HTTPVersion::operator <=(const HTTPVersion & hv) const
 {
   return (m_version <= hv.m_version);
 }
