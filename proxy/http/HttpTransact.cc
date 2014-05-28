@@ -1408,8 +1408,7 @@ HttpTransact::HandleRequest(State* s)
   if (s->dns_info.lookup_name[0] <= '9' &&
       s->dns_info.lookup_name[0] >= '0' &&
       (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
-     // (s->state_machine->authAdapter.needs_rev_dns() ||
-      ( host_rule_in_CacheControlTable() || s->parent_params->ParentTable->hostMatch)) {
+      s->parent_params->ParentTable->hostMatch) {
     s->force_dns = 1;
   }
   //YTS Team, yamsat Plugin
@@ -1834,8 +1833,7 @@ HttpTransact::OSDNSLookup(State* s)
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
   } else if (s->dns_info.lookup_name[0] <= '9' &&
              s->dns_info.lookup_name[0] >= '0' &&
-             //(s->state_machine->authAdapter.needs_rev_dns() ||
-             (host_rule_in_CacheControlTable() || s->parent_params->ParentTable->hostMatch) &&
+             s->parent_params->ParentTable->hostMatch &&
              !s->http_config_param->no_dns_forward_to_parent) {
     // note, broken logic: ACC fudges the OR stmt to always be true,
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
