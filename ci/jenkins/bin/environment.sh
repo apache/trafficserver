@@ -27,6 +27,9 @@ ATS_MAKE=make
 test "${JOB_NAME#freebsd*}" != "${JOB_NAME}" && ATS_MAKE="gmake"
 export ATS_MAKE
 
+# Useful for timestamps etc. for daily runs
+export TODAY=$(/bin/date +'%m%d%Y')
+
 # Extract the current branch (default to master). ToDo: Can we do this better ?
 ATS_BRANCH=master
 test "${JOB_NAME#*-4.2.x}" != "${JOB_NAME}" && ATS_BRANCH=4.2.x

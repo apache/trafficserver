@@ -20,7 +20,7 @@ source /home/jenkins/bin/environment.sh
 cd "${WORKSPACE}/src"
 
 autoreconf -fi
-./configure --enable-experimental-plugins
-scan-build -o /home/jenkins/clang-analyzer --html-title="ATS master branch"  ${ATS_MAKE} -j6
+./configure --enable-experimental-plugins --enable-cppapi
+scan-build -o /home/jenkins/clang-analyzer --html-title="ATS master branch"  ${ATS_MAKE} -j4
 
 ${ATS_MAKE} distclean

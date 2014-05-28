@@ -17,9 +17,10 @@
 #  limitations under the License.
 
 source /home/jenkins/bin/environment.sh
-cd "${WORKSPACE}/src_in-tree"
 
 if test "${JOB_NAME#*type=in_tree}" != "${JOB_NAME}"; then
+    cd "${WORKSPACE}/src_in-tree"
+
     # Just use the configure from the snapshot.sh
     ${ATS_MAKE} -j4
     ${ATS_MAKE} check

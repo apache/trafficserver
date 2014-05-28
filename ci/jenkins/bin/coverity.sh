@@ -17,23 +17,25 @@
 #  limitations under the License.
 
 source /home/jenkins/bin/environment.sh
+cd "${WORKSPACE}/src"
 
-if test "${JOB_NAME#*type=out_of_tree}" != "${JOB_NAME}"; then
-    cd "${WORKSPACE}/src_out-of-tree"
+# Get the Coverity tools into our path
+export PATH=/home/coverity/bin:${PATH}
 
-    # This runs its own configure, so don't use the one from snapshot.sh
-    ${ATS_MAKE} -i distclean
-    mkdir -p BUILDS && cd BUILDS
-    ../configure \
-	--enable-ccache \
-	--enable-debug \
-	--enable-werror \
-	--enable-experimental-plugins \
-	--enable-example-plugins \
-	--enable-test-tools
+COV_TARBALL=/tmp/trafficserver-${TODAY}.tgz
+COV_VERSION=$(git rev-parse --short HEAD)
 
-    ${ATS_MAKE} -j4
-    ${ATS_MAKE} check
+autoreconf -fi
+./configure --enable-experimental-plugins --enable-cppapi
 
-    ${ATS_MAKE} clean
-fi
+cov-build --dir cov-int ${ATS_MAKE} -j4
+tar czvf ${COV_TARBALL} cov-int
+
+# Now submit this artifact
+/home/admin/bin/cov-submit.sh ${COV_TARBALL} ${COV_VERSION}
+
+# Cleanup
+rm -rf cov-int
+rm ${COV_TARBALL}
+
+${ATS_MAKE} distclean
