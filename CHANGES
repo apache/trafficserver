@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2837] Dangling pointer in URLImpl which may cause core dump
+
   *) [TS-2842] Can't set SPDY inactivity timeout with traffic_line
 
   *) [TS-2618] IOBufferBlock::realloc()'s bounds check is wrong.
