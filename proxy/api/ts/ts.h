@@ -1015,6 +1015,7 @@ extern "C"
 
   tsapi TSReturnCode TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
                                                   const char* value, int length);
+  /* These Insert() APIs should be considered. Use the corresponding Set() API instead */
   tsapi TSReturnCode TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
                                                         const char* value, int length);
   tsapi TSReturnCode TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value);
