@@ -20,6 +20,7 @@
  */
 
 #include "ink_defs.h"
+#include "ink_platform.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,7 +28,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <getopt.h>
-#include <alloca.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
