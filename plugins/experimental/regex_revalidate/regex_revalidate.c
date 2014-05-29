@@ -32,8 +32,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <pcre.h>
 #include <ts/ts.h>
+
+#ifdef HAVE_PCRE_PCRE_H
+#  include <pcre/pcre.h>
+#else
+#  include <pcre.h>
+#endif
 
 #define LOG_PREFIX        "regex_revalidate"
 #define CONFIG_TMOUT      60000

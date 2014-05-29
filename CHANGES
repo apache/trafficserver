@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2858] Build failures on OmniOS. Also add some LuaJIT flags as per
+   Theo's and Daniel's recommendations.
+
   *) [TS-2857] Cleanup SPDY and SSL stat names
 
   *) [TS-2856] Remove proxy.config.spdy.verbose_in and use diags instead

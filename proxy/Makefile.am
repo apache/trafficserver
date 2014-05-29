@@ -235,7 +235,7 @@ traffic_server_LDADD = \
 
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
-traffic_server_LDFLAGS += @LUA_LUAJIT_LDFLAGS@
+traffic_server_LDFLAGS += @TS_LUAJIT_LDFLAGS@
 
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@

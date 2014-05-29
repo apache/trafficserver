@@ -652,6 +652,7 @@ case $host_os in
       *amd64*)
         TS_ADDTO(CFLAGS, -m64)
         TS_ADDTO(CXXFLAGS, -m64)
+        TS_ADDTO(LUA_LDFLAGS, -m64)
         ;;
     esac
     ;;
@@ -1399,11 +1400,12 @@ AX_LIB_READLINE
 # http://luajit.org/install.html.
 case $host_os_def in
   darwin)
-    LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
+    TS_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     ;;
 esac
 
-AC_SUBST(LUA_LUAJIT_LDFLAGS)
+AC_SUBST(TS_LUAJIT_LDFLAGS)
+AC_SUBST(LUA_LDFLAGS)
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
