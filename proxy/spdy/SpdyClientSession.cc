@@ -399,7 +399,7 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
   if (already < (int64_t)length) {
     if (req->event == TS_FETCH_EVENT_EXT_BODY_DONE) {
       TSHRTime end_time = TShrtime();
-      SpdyStatIncr(Config::STAT_TOTAL_STREAM_TIME, sm, end_time - req->start_time);
+      SpdyStatIncr(Config::STAT_TOTAL_TRANSACTIONS_TIME, sm, end_time - req->start_time);
       Debug("spdy", "----Request[%" PRIu64 ":%d] %s %lld %d", sm->sm_id, req->stream_id,
             req->url.c_str(), (end_time - req->start_time)/TS_HRTIME_MSECOND,
             req->fetch_data_len);
