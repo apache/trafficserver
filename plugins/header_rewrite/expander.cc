@@ -29,34 +29,6 @@
 #include "parser.h"
 #include "expander.h"
 
-// Helper function to cleanly get the IP as a string.
-std::string
-getIP(sockaddr const* s_sockaddr)
-{
-  if (s_sockaddr == NULL)
-    return "";
-
-  char res[INET6_ADDRSTRLEN] = { '\0' };
-
-  switch (s_sockaddr->sa_family) {
-  case AF_INET:
-    {
-      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);
-      inet_ntop(AF_INET, &s_sockaddr_in->sin_addr, res, INET_ADDRSTRLEN);
-    }
-    break;
-  case AF_INET6:
-    {
-      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(s_sockaddr);
-      inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, res, INET6_ADDRSTRLEN);
-    }
-    break;
-  }
-
-  return res;
-}
-
-
 // Main expander method
 std::string
 VariableExpander::expand(const Resources& res)

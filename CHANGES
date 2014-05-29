@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2834] header_rewrite: Add Internal transaction and client-IP
+   conditions.
+
   *) [TS-2855] Add the TSHttpIsInternalSession API.
 
   *) [TS-2859] Remove DBG macros to not generate warnings from GCC 4.9.

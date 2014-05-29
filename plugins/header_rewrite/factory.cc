@@ -109,7 +109,7 @@ condition_factory(const std::string& cond)
     c = new ConditionDBM();
   } else if (c_name == "INTERNAL-TRANSACTION") {
     c = new ConditionInternalTransaction();
-  } else if (c_name == "%<chi>") {
+  } else if (c_name == "CLIENT-IP") {
     c = new ConditionClientIp();
   } else {
     TSError("%s: unknown condition: %s", PLUGIN_NAME, c_name.c_str());

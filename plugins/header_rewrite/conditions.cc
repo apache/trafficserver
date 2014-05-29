@@ -384,7 +384,8 @@ ConditionDBM::eval(const Resources& res)
 
 
 // ConditionCookie: request or response header
-void ConditionCookie::initialize(Parser& p)
+void
+ConditionCookie::initialize(Parser& p)
 {
   Condition::initialize(p);
 
@@ -396,7 +397,8 @@ void ConditionCookie::initialize(Parser& p)
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
 }
 
-void ConditionCookie::append_value(std::string& s, const Resources& res)
+void
+ConditionCookie::append_value(std::string& s, const Resources& res)
 {
   TSMBuffer bufp = res.client_bufp;
   TSMLoc hdr_loc = res.client_hdr_loc;
@@ -436,7 +438,8 @@ out_release_field:
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 }
 
-bool ConditionCookie::eval(const Resources& res)
+bool
+ConditionCookie::eval(const Resources& res)
 {
   std::string s;
 
@@ -446,12 +449,14 @@ bool ConditionCookie::eval(const Resources& res)
   return rval;
 }
 
-bool ConditionInternalTransaction::eval(const Resources& res)
+bool
+ConditionInternalTransaction::eval(const Resources& res)
 {
   return TSHttpIsInternalRequest(res.txnp) == TS_SUCCESS;
 }
 
-void ConditionClientIp::initialize(Parser &p)
+void
+ConditionClientIp::initialize(Parser &p)
 {
   Condition::initialize(p);
 
@@ -461,34 +466,23 @@ void ConditionClientIp::initialize(Parser &p)
   _matcher = match;
 }
 
-bool ConditionClientIp::eval(const Resources &res)
+bool
+ConditionClientIp::eval(const Resources &res)
 {
   std::string s;
+
   append_value(s, res);
   bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+  TSDebug(PLUGIN_NAME, "Evaluating CLIENT-IP(): %s: rval: %d", s.c_str(), rval);
   return rval;
 }
 
-void ConditionClientIp::append_value(std::string &s, const Resources &res)
+void
+ConditionClientIp::append_value(std::string &s, const Resources &res)
 {
-  const sockaddr *sockaddress = TSHttpTxnClientAddrGet(res.txnp);
-  if (sockaddress == NULL) {
-    return;
-  }
+  char ip[INET6_ADDRSTRLEN];
 
-  char buf[INET6_ADDRSTRLEN] = { 0 };
-
-  if (sockaddress->sa_family == AF_INET)
-  {
-    inet_ntop(AF_INET, &(((struct sockaddr_in *) sockaddress)->sin_addr), buf, INET_ADDRSTRLEN);
+  if (getIP(TSHttpTxnClientAddrGet(res.txnp), ip)) {
+    s.append(ip);
   }
-  else if (sockaddress->sa_family == AF_INET6)
-  {
-    inet_ntop(AF_INET6, &(((struct sockaddr_in6 *) sockaddress)->sin6_addr), buf, INET6_ADDRSTRLEN);
-  }
-  else
-  {
-    return;
-  }
-  s.append(buf);
 }
