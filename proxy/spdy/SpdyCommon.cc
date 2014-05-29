@@ -27,11 +27,11 @@
 Config SPDY_CFG;
 
 // statistic names
-static char const * const SPDY_STAT_ACTIVE_SESSION_NAME = "proxy.process.spdy.active_sessions";
-static char const * const SPDY_STAT_ACTIVE_STREAM_NAME = "proxy.process.spdy.active_streams";
-static char const * const SPDY_STAT_TOTAL_STREAM_NAME = "proxy.process.spdy.total_streams";
+static char const * const SPDY_STAT_CURRENT_CLIENT_SESSION_NAME = "proxy.process.spdy.current_client_sessions";
+static char const * const SPDY_STAT_CURRENT_CLIENT_STREAM_NAME = "proxy.process.spdy.current_client_streams";
+static char const * const SPDY_STAT_TOTAL_CLIENT_STREAM_NAME = "proxy.process.spdy.total_client_streams";
 static char const * const SPDY_STAT_TOTAL_TIME_NAME = "proxy.process.spdy.total_time";
-static char const * const SPDY_STAT_TOTAL_CONNECTION_NAME = "proxy.process.spdy.connection_count";
+static char const * const SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.spdy.total_client_connections";
 
 string
 http_date(time_t t)
@@ -54,11 +54,11 @@ spdy_config_load()
 
   // Get our statistics up
   SPDY_CFG.rsb = RecAllocateRawStatBlock(static_cast<int>(Config::N_STATS));
-  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_ACTIVE_SESSION_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_ACTIVE_SESSION_COUNT), RecRawStatSyncCount);
-  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_ACTIVE_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_ACTIVE_STREAM_COUNT), RecRawStatSyncCount);
-  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_TOTAL_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_TOTAL_STREAM_COUNT), RecRawStatSyncCount);
+  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_CURRENT_CLIENT_SESSION_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncCount);
+  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncCount);
+  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_TOTAL_CLIENT_STREAM_COUNT), RecRawStatSyncCount);
   RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_TOTAL_TIME_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_TOTAL_STREAM_TIME), RecRawStatSyncSum);
-  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_TOTAL_CONNECTION_COUNT), RecRawStatSyncCount);
+  RecRegisterRawStat(SPDY_CFG.rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT, static_cast<int>(Config::STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncCount);
 
   return 0;
 }

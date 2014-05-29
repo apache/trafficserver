@@ -338,7 +338,7 @@ enum
   http_response_status_5xx_count_stat,
 
   https_incoming_requests_stat,
-  https_connection_count_stat,
+  https_total_client_connections_stat,
 
   http_stat_count
 };

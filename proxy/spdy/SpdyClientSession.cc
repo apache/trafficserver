@@ -60,14 +60,14 @@ SpdyRequest::init(SpdyClientSession *sm, int id)
   MD5_Init(&recv_md5);
   start_time = TShrtime();
 
-  SpdyStatIncrCount(Config::STAT_ACTIVE_STREAM_COUNT, sm);
-  SpdyStatIncrCount(Config::STAT_TOTAL_STREAM_COUNT, sm);
+  SpdyStatIncrCount(Config::STAT_CURRENT_CLIENT_STREAM_COUNT, sm);
+  SpdyStatIncrCount(Config::STAT_TOTAL_CLIENT_STREAM_COUNT, sm);
 }
 
 void
 SpdyRequest::clear()
 {
-  SpdyStatDecrCount(Config::STAT_ACTIVE_STREAM_COUNT, spdy_sm);
+  SpdyStatDecrCount(Config::STAT_CURRENT_CLIENT_STREAM_COUNT, spdy_sm);
 
   if (fetch_sm)
     TSFetchDestroy(fetch_sm);
@@ -100,8 +100,8 @@ SpdyClientSession::init(NetVConnection * netvc, spdy::SessionVersion vers)
   // session start event in case of a time out generating a decrement
   // with no increment. It seems a lesser thing to have the thread counts
   // a little off but globally consistent.
-  SpdyStatIncrCount(Config::STAT_ACTIVE_SESSION_COUNT, netvc);
-  SpdyStatIncrCount(Config::STAT_TOTAL_CONNECTION_COUNT, netvc);
+  SpdyStatIncrCount(Config::STAT_CURRENT_CLIENT_SESSION_COUNT, netvc);
+  SpdyStatIncrCount(Config::STAT_TOTAL_CLIENT_CONNECTION_COUNT, netvc);
 
   ink_release_assert(r == 0);
   sm_id = atomic_inc(g_sm_id);
@@ -118,7 +118,7 @@ SpdyClientSession::clear()
 {
   int last_event = event;
 
-  SpdyStatDecrCount(Config::STAT_ACTIVE_SESSION_COUNT, this);
+  SpdyStatDecrCount(Config::STAT_CURRENT_CLIENT_SESSION_COUNT, this);
 
   //
   // SpdyRequest depends on SpdyClientSession,

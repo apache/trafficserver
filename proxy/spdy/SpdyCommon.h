@@ -69,11 +69,11 @@ struct Config {
   // Statistics
   /// This is the stat slot index for each statistic.
   enum StatIndex {
-    STAT_ACTIVE_SESSION_COUNT, ///< Current # of active SPDY sessions.
-    STAT_ACTIVE_STREAM_COUNT, ///< Current # of active SPDY streams.
-    STAT_TOTAL_STREAM_COUNT, ///< Total number of streams created.
+    STAT_CURRENT_CLIENT_SESSION_COUNT, ///< Current # of active SPDY sessions.
+    STAT_CURRENT_CLIENT_STREAM_COUNT, ///< Current # of active SPDY streams.
+    STAT_TOTAL_CLIENT_STREAM_COUNT, ///< Total number of streams created.
     STAT_TOTAL_STREAM_TIME,  //< Total stream time
-    STAT_TOTAL_CONNECTION_COUNT, //< Total connections running spdy
+    STAT_TOTAL_CLIENT_CONNECTION_COUNT, //< Total connections running spdy
 
     N_STATS ///< Terminal counter, NOT A STAT INDEX.
   };
