@@ -563,9 +563,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           return EVENT_DONE;
         }
       }
-#if !defined(__GNUC__)
-    _end_case_read_active:     // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case READ_DATA:
@@ -615,9 +612,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           return EVENT_DONE;
         }
       }
-#if !defined(__GNUC__)
-    _end_case_read_data:       // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case READ_DATA_DONE:
@@ -644,9 +638,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;
         }
       }
-#if !defined(__GNUC__)
-    _end_case_read_data_done:  // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case PROCESS_READ_DATA:
@@ -786,9 +777,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;                // move to next_state
         }
       }
-#if !defined(__GNUC__)
-    _end_case_process_data_read:       // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case AWAITING_CACHE_LOOKUP_RESPONSE:
@@ -835,9 +823,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;
         }
       }
-#if !defined(__GNUC__)
-    _end_case_awaiting_cache_lookup_response:  // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case SEND_REPLY:
@@ -873,9 +858,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           return EVENT_DONE;
         }
       }
-#if !defined(__GNUC__)
-    _end_case_send_reply:      // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case WRITE_DONE:
@@ -904,9 +886,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;                // move to next_state
         }
       }
-#if !defined(__GNUC__)
-    _end_case_write_done:      // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case GET_ICP_REQUEST:
@@ -933,9 +912,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
         RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE);
         break;                  // move to next_state
       }
-#if !defined(__GNUC__)
-    _end_case_get_icp_request: // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case GET_ICP_REQUEST_MUTEX:
@@ -989,9 +965,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
         s->_next_state = READ_NOT_ACTIVE;
         break;                  // move to next_state
       }
-#if !defined(__GNUC__)
-    _end_case_get_icp_request_mutex:   // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case READ_NOT_ACTIVE:
@@ -1018,9 +991,6 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;                // restart
         }
       }
-#if !defined(__GNUC__)
-    _end_case_read_not_active: // fix DEC warnings
-#endif
       ink_release_assert(0);    // Should never happen
 
     case READ_PROCESSING_COMPLETE:
@@ -1165,9 +1135,6 @@ ICPRequestCont::ICPRequestEvent(int event, Event * e)
         break;
       }
     }
-#if !defined(__GNUC__)
-  _end_case:                   // fix DEC warnings
-#endif
     ink_release_assert(0);      // should never happen
 
   case ICP_DONE:
@@ -1254,9 +1221,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
           break;                // move to next_state
         }
       }
-#if !defined(__GNUC__)
-    _end_case_icp_start:       // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
 
     case ICP_OFF_TERMINATE:
@@ -1275,9 +1239,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_DONE;
         return EVENT_DONE;
       }
-#if !defined(__GNUC__)
-    _end_case_icp_off_terminate:       // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
 
     case ICP_QUEUE_REQUEST:
@@ -1352,9 +1313,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_AWAITING_RESPONSE;
         return EVENT_DONE;
       }
-#if !defined(__GNUC__)
-    _end_case_icp_queue_request:       // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
 
     case ICP_AWAITING_RESPONSE:
@@ -1384,9 +1342,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
           return EVENT_DONE;
         }
       }
-#if !defined(__GNUC__)
-    _end_case_icp_awaiting_response:   // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
 
     case ICP_DEQUEUE_REQUEST:
@@ -1399,9 +1354,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_POST_COMPLETION;
         break;                  // move to next_state
       }
-#if !defined(__GNUC__)
-    _end_case_icp_dequeue_request:     // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
 
     case ICP_POST_COMPLETION:
@@ -1421,9 +1373,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_WAIT_SEND_COMPLETE;
         break;                  // move to next_state
       }
-#if !defined(__GNUC__)
-    _end_case_icp_post_completion:     // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
     case ICP_WAIT_SEND_COMPLETE:
       {
@@ -1437,9 +1386,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         }
       }
       break;
-#if !defined(__GNUC__)
-    _end_case_icp_wait_send_complete:  // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
     case ICP_REQUEST_NOT_ACTIVE:
       {
@@ -1455,9 +1401,6 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_DONE;
         return EVENT_DONE;
       }
-#if !defined(__GNUC__)
-    _end_case_icp_request_not_active:  // fix DEC warnings
-#endif
       ink_release_assert(0);    // should never happen
 
     case ICP_DONE:
@@ -2364,9 +2307,6 @@ ICPProcessor::ReconfigState_t
     }                           // End of switch
 
   }                             // End of while
-#if !defined(__GNUC__)
-_exit_while:                   // fix DEC warnings
-#endif
   return RC_DONE;
 }
 
