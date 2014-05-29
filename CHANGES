@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.2
 
+  *) [TS-2859] Remove DBG macros to not generate warnings from GCC 4.9.
+
   *) [TS-2560] regex_remap lowercase substitutions is not being initialized in
    the construtor
 
