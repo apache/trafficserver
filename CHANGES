@@ -1,8 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
-  *) [TS-2095] autoconf warnings related to unordered_map
-
   *) [TS-2834] header_rewrite: Add Internal transaction and client-IP
    conditions.
 
