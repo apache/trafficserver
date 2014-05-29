@@ -46,7 +46,6 @@ int
 spdy_config_load()
 {
   REC_EstablishStaticConfigInt32(SPDY_CFG.spdy.max_concurrent_streams, "proxy.config.spdy.max_concurrent_streams_in");
-  REC_EstablishStaticConfigBool(SPDY_CFG.spdy.verbose, "proxy.config.spdy.verbose_in");
   REC_EstablishStaticConfigInt32(SPDY_CFG.no_activity_timeout_in, "proxy.config.spdy.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32(SPDY_CFG.accept_no_activity_timeout, "proxy.config.spdy.accept_no_activity_timeout");
   REC_EstablishStaticConfigInt32(SPDY_CFG.spdy.initial_window_size, "proxy.config.spdy.initial_window_size_in");

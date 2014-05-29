@@ -2264,11 +2264,6 @@ SPDY Configuration
 
    .. note:: Reloading this value affects only new SPDY connections, not existing connects.
 
-.. ts:cv:: CONFIG proxy.config.spdy.verbose_in INT 0
-   :reloadable:
-
-   Set the verbose flag for SPDY streams on inbound connections. ``0`` means disable, any other value is enable.
-
 Scheduled Update Configuration
 ==============================
 

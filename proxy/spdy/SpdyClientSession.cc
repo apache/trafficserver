@@ -389,7 +389,7 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
 
   Debug("spdy", "    stream_id:%d, call:%d, length:%ld, already:%" PRId64,
         stream_id, g_call_cnt, length, already);
-  if (SPDY_CFG.spdy.verbose)
+  if (is_debug_tag_set("spdy"))
     MD5_Update(&req->recv_md5, buf, already);
 
   TSVIOReenable(sm->write_vio);
@@ -404,7 +404,7 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
             req->url.c_str(), (end_time - req->start_time)/TS_HRTIME_MSECOND,
             req->fetch_data_len);
       unsigned char digest[MD5_DIGEST_LENGTH];
-      if (SPDY_CFG.spdy.verbose ) {
+      if (is_debug_tag_set("spdy")) {
         MD5_Final(digest, &req->recv_md5);
         Debug("spdy", "----recv md5sum: ");
         for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {

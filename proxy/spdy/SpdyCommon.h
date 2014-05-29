@@ -56,7 +56,6 @@ using namespace std;
 #define atomic_dec(a)   atomic_fetch_and_sub(a, 1)
 
 struct SpdyConfig {
-  bool verbose;
   int32_t max_concurrent_streams;
   int32_t initial_window_size;
   spdylay_session_callbacks callbacks;
