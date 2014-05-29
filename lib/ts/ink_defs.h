@@ -131,28 +131,6 @@ countof(const T (&)[N]) {
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
 #endif
 
-/* Debugging
-*/
-#ifdef NDEBUG
-
-#define FDBG
-#define DBG(s)
-#define DBG1(s,a)
-#define DBG2(s,a1,a2)
-#define DBG3(s,a1,a2,a3)
-#define DBG4(s,a1,a2,a3,a4)
-
-#else
-
-#define FDBG                if (debug_level==1) printf("debug "__FILE__":%d %s : entered\n" ,__LINE__,__FUNCTION__)
-#define DBG(s)              if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__)
-#define DBG1(s,a)           if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a)
-#define DBG2(s,a1,a2)       if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a1,a2)
-#define DBG3(s,a1,a2,a3)    if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a1,a2,a3)
-#define DBG4(s,a1,a2,a3,a4) if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a1,a2,a3,a4)
-
-#endif
-
 /* Types
 */
 typedef void *(*VPVP_PFN) (void *);
