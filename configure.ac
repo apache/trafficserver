@@ -334,11 +334,11 @@ AC_ARG_ENABLE([tproxy],
   [AS_HELP_STRING([--enable-tproxy[[=ARG]]],
                   [Use TPROXY to enable connection transparency.
                    'auto' or omitted for local system default,
-		   'no' to disable,
-		   'force' to use built in default,
-		   number to use as IP_TRANSPARENT sockopt.
-		   [default=auto]
-		  ])
+                   'no' to disable,
+                   'force' to use built in default,
+                   number to use as IP_TRANSPARENT sockopt.
+                   [default=auto]
+                  ])
   ],
   [],
   [enable_tproxy="auto"]
@@ -369,10 +369,10 @@ AC_SUBST(use_freelist)
 if test "x${enable_freelist}" = "xyes"; then
   AC_MSG_CHECKING([whether to enable reclaimable freelist])
   AC_ARG_ENABLE([reclaimable-freelist],
-		[AS_HELP_STRING([--enable-reclaimable-freelist],
-				[enable reclaimable freelist support (effective only when freelist is enabled)])],
-		[],
-		[enable_reclaimable_freelist="no"])
+                [AS_HELP_STRING([--enable-reclaimable-freelist],
+                                [enable reclaimable freelist support (effective only when freelist is enabled)])],
+                [],
+                [enable_reclaimable_freelist="no"])
   AC_MSG_RESULT([$enable_reclaimable_freelist])
 else
   enable_reclaimable_freelist="no"
@@ -385,9 +385,9 @@ AC_SUBST(use_reclaimable_freelist)
 #
 AC_MSG_CHECKING([whether to enable spdy])
 AC_ARG_ENABLE([spdy],
-	[AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
-	[],
-	[enable_spdy="no"])
+        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
+        [],
+        [enable_spdy="no"])
 AC_MSG_RESULT([$enable_spdy])
 TS_ARG_ENABLE_VAR([has], [spdy])
 AC_SUBST(has_spdy)
@@ -728,10 +728,10 @@ AS_IF([test -n "$YACC"],
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
           [ YACC=''
-	    AS_IF([test -z "$bison_version_check"],
-	      [bison_version_check='no version data']
-	    )
-	  ]
+            AS_IF([test -z "$bison_version_check"],
+              [bison_version_check='no version data']
+            )
+          ]
         )
       ],
       [ YACC=''
@@ -752,10 +752,10 @@ AS_IF([test -n "$LEX"],
         `
         AS_IF([test "x$flex_version_check" != "xyes"],
           [ LEX=''
-	    AS_IF([test -z "$flex_version_check"],
-	      [flex_version_check='no version data']
-	    )
-	  ]
+            AS_IF([test -z "$flex_version_check"],
+              [flex_version_check='no version data']
+            )
+          ]
         )
       ],
       [ LEX=''
@@ -794,15 +794,15 @@ AX_PROG_PERL_MODULES([ExtUtils::MakeMaker], AM_CONDITIONAL([BUILD_PERL_LIB], [tr
 AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
 has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-O.?/{print "no"}'`
 AS_IF([test "x${has_optimizer_flags}" = "xno"],
-	[
-		optimizing_flags='-O3'
-		AC_MSG_RESULT([yes ${optimizing_flags}])
-	],
-	[
-		has_optimizer_flags='yes'
-		optimizing_flags=''
-		AC_MSG_RESULT([no])
-	]
+        [
+                optimizing_flags='-O3'
+                AC_MSG_RESULT([yes ${optimizing_flags}])
+        ],
+        [
+                has_optimizer_flags='yes'
+                optimizing_flags=''
+                AC_MSG_RESULT([no])
+        ]
 )
 
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
@@ -1050,8 +1050,8 @@ AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host
 if test "x$enable_ccache" = "xyes"; then
     AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
     if test "x${CCACHE}" = "xccache"; then
-	CC="$CCACHE $CC"
-	CXX="$CCACHE $CXX"
+        CC="$CCACHE $CC"
+        CXX="$CCACHE $CXX"
     fi
 fi
 
@@ -1458,8 +1458,8 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   stdbool.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
-		  readline/readline.h \
-		  editline/readline.h ])
+                  readline/readline.h \
+                  editline/readline.h ])
 
 AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
@@ -1632,17 +1632,17 @@ AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>
 
 if test "x${ac_cv_member_struct_sockaddr_sa_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
-	    [Whether struct sockaddr_in has the sa_len member])
+            [Whether struct sockaddr_in has the sa_len member])
 fi
 
 if test "x${ac_cv_member_struct_sockaddr_in_sin_len}" = xyes ; then
 AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN_SIN_LEN, 1,
-	    [Whether struct sockaddr_in has the sin_len member])
+            [Whether struct sockaddr_in has the sin_len member])
 fi
 
 if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN, 1,
-	    [Whether struct sockaddr_in6 has the sin6_len member])
+            [Whether struct sockaddr_in6 has the sin6_len member])
 fi
 
 if test "x${with_profiler}" = "xyes"; then
@@ -1702,43 +1702,43 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
     AC_MSG_CHECKING([for TPROXY sockopt IP_TRANSPARENT])
     case "$enable_tproxy" in
       [[0-9][0-9]*])
-	ip_transparent=$enable_tproxy
-	use_tproxy=1
-	AC_MSG_RESULT([forced to $ip_transparent])
-	;;
+        ip_transparent=$enable_tproxy
+        use_tproxy=1
+        AC_MSG_RESULT([forced to $ip_transparent])
+        ;;
       force)
-	ip_transparent=19
-	use_tproxy=1
-	AC_MSG_RESULT([forced to $ip_transparent])
-	;;
+        ip_transparent=19
+        use_tproxy=1
+        AC_MSG_RESULT([forced to $ip_transparent])
+        ;;
       yes|auto)
         AS_IF([test -r $tproxy_header], [
-	  ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
-	  AS_IF([test "x$ip_transparent" != "x"], [
-	    use_tproxy=1
-	    AC_MSG_RESULT([set to $ip_transparent])
-	  ],[
-	    ip_transparent=0
-	    AS_IF([test "x$enable_tproxy" = xauto], [
-	     AC_MSG_RESULT([no])
-	    ],[
-	      AC_MSG_RESULT([failed])
-	      AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
-	    ])
-	  ])
-	],[
-	  AS_IF([test "x$enable_tproxy" = xauto], [
-	    AC_MSG_RESULT([no])
-	  ],[
-	    AC_MSG_RESULT([failed])
-	    AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
-	  ])
-	])
-	;;
+          ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
+          AS_IF([test "x$ip_transparent" != "x"], [
+            use_tproxy=1
+            AC_MSG_RESULT([set to $ip_transparent])
+          ],[
+            ip_transparent=0
+            AS_IF([test "x$enable_tproxy" = xauto], [
+             AC_MSG_RESULT([no])
+            ],[
+              AC_MSG_RESULT([failed])
+              AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+            ])
+          ])
+        ],[
+          AS_IF([test "x$enable_tproxy" = xauto], [
+            AC_MSG_RESULT([no])
+          ],[
+            AC_MSG_RESULT([failed])
+            AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+          ])
+        ])
+        ;;
       *)
-	AC_MSG_RESULT([failed])
-	AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
-	;;
+        AC_MSG_RESULT([failed])
+        AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
+        ;;
       esac
   ])
 ])
