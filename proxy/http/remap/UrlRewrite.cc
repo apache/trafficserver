@@ -427,43 +427,41 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
   if (map->filter) {
     int i, res, method;
     i = (method = s->hdr_info.client_request.method_get_wksidx()) - HTTP_WKSIDX_CONNECT;
-    if (likely(i >= 0 && i < ACL_FILTER_MAX_METHODS)) {
-      bool client_enabled_flag = true;
-      ink_release_assert(ats_is_ip(&s->client_info.addr));
-      for (acl_filter_rule * rp = map->filter; rp; rp = rp->next) {
-        bool match = true;
-        if (rp->method_valid) {
-          if (rp->method_idx[i] != method)
+    bool client_enabled_flag = true;
+    ink_release_assert(ats_is_ip(&s->client_info.addr));
+    for (acl_filter_rule * rp = map->filter; rp && client_enabled_flag; rp = rp->next) { // stop as soon as a filter denies
+      bool match = true;
+      if (rp->method_valid) {
+        if (likely(i >= 0 && i < ACL_FILTER_MAX_METHODS)) {
+            match = rp->method_idx[i] == method;
+        }
+        else {
             match = false;
         }
-        if (match && rp->src_ip_valid) {
-          match = false;
-          for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
-            res = rp->src_ip_array[j].contains(s->client_info.addr) ? 1 : 0;
-            if (rp->src_ip_array[j].invert) {
-              if (res != 1)
-                match = true;
-            } else {
-              if (res == 1)
-                match = true;
-            }
-          }
-        }
-        if (match && client_enabled_flag) {     //make sure that a previous filter did not DENY
-          Debug("url_rewrite", "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
-          client_enabled_flag = rp->allow_flag ? true : false;
-        } else {
-          if (!client_enabled_flag) {
-            Debug("url_rewrite", "Previous ACL filter rule denied request, continuing to deny it");
+      }
+      if (match && rp->src_ip_valid) {
+        match = false;
+        for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
+          res = rp->src_ip_array[j].contains(s->client_info.addr) ? 1 : 0;
+          if (rp->src_ip_array[j].invert) {
+            if (res != 1)
+              match = true;
           } else {
-            Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
-              client_enabled_flag = rp->allow_flag ? false : true;
+            if (res == 1)
+              match = true;
           }
         }
+      }
+      if (match) {
+        Debug("url_rewrite", "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
+        client_enabled_flag = rp->allow_flag ? true : false;
+      } else {
+        Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
+        client_enabled_flag = rp->allow_flag ? false : true;
+      }
 
-      }                         /* end of for(rp = map->filter;rp;rp = rp->next) */
-      s->client_connection_enabled = client_enabled_flag;
-    }
+    }                         /* end of for(rp = map->filter;rp;rp = rp->next) */
+    s->client_connection_enabled = client_enabled_flag;
   }
 }
 
