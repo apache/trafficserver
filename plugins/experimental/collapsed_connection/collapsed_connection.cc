@@ -30,6 +30,7 @@
 #include <ts/remap.h>
 #include <ts/experimental.h>
 #include "MurmurHash3.h"
+#include <inttypes.h>
 
 #include "P_collapsed_connection.h"
 
@@ -436,7 +437,7 @@ insertNewHashEntry(CcTxnData * txn_data)
     size = getCurrentHashEntries(active_hash_map);
     TSMutexUnlock(plugin_data->mutex);
     if (false != map_ret.second) {
-      TSDebug(PLUGIN_NAME, "[%zu] hash_key inserted, active_hash_map.size = %zd", txn_data->seq_id, size);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hash_key inserted, active_hash_map.size = %zd", txn_data->seq_id, size);
       ret = CC_INSERT;
     } else if (CC_PASS == map_ret.first->second) {
       TSDebug(PLUGIN_NAME, "hash value = %d, previous request mark it non-cacheable", map_ret.first->second);
@@ -446,7 +447,7 @@ insertNewHashEntry(CcTxnData * txn_data)
       ret = CC_LOCKED;
     }
   } else {
-    TSDebug(PLUGIN_NAME, "[%zu] Unable to get mutex", txn_data->seq_id);
+    TSDebug(PLUGIN_NAME, "[%" PRIu64 "] Unable to get mutex", txn_data->seq_id);
   }
 
   if (CC_INSERT != ret && CC_PASS != ret) {
@@ -503,19 +504,19 @@ updateOrRemoveHashEntry(CcTxnData * txn_data)
       size = getCurrentHashEntries(active_hash_map);
       TSMutexUnlock(plugin_data->mutex);
 
-      TSDebug(PLUGIN_NAME, "[%zu] hashEntry updated, active_hash_map.size = %zd", txn_data->seq_id, size);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hashEntry updated, active_hash_map.size = %zd", txn_data->seq_id, size);
       txn_data->cc_state = CC_PASSED;
     } else {
       addOrCheckKeepPassRecords(0, 0);
       size = getCurrentHashEntries(active_hash_map);
       TSMutexUnlock(plugin_data->mutex);
 
-      TSDebug(PLUGIN_NAME, "[%zu] hashEntry removed, active_hash_map.size = %zd", txn_data->seq_id, size);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hashEntry removed, active_hash_map.size = %zd", txn_data->seq_id, size);
       txn_data->cc_state = CC_DONE;
     }
     ret = TS_SUCCESS;
   } else {
-    TSDebug(PLUGIN_NAME, "[%zu] Unable to get mutex", txn_data->seq_id);
+    TSDebug(PLUGIN_NAME, "[%" PRIu64 "] Unable to get mutex", txn_data->seq_id);
   }
 
   return ret;
@@ -623,7 +624,7 @@ static int
 retryCacheUrlLock(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   TryLockData *data = reinterpret_cast < TryLockData * >(TSContDataGet(contp));
-  TSDebug(PLUGIN_NAME, "[%zu] event = %d retry", data->txn_data->seq_id, data->event);
+  TSDebug(PLUGIN_NAME, "[%" PRIu64 "] event = %d retry", data->txn_data->seq_id, data->event);
   collapsedConnectionMainHandler(NULL, data->event, data->txn_data->txnp);
   TSfree(data);
   TSContDataSet(contp, NULL);
@@ -712,7 +713,7 @@ freeCcTxnData(CcTxnData * txn_data)
     TSHttpTxnArgSet(txn_data->txnp, plugin_data->txn_slot, NULL);
     TSHttpTxnReenable(txn_data->txnp, TS_EVENT_HTTP_CONTINUE);
   }
-  TSDebug(PLUGIN_NAME, "[%zu] txn_data released", txn_data->seq_id);
+  TSDebug(PLUGIN_NAME, "[%" PRIu64 "] txn_data released", txn_data->seq_id);
   TSfree(txn_data);
 }
 
@@ -831,12 +832,12 @@ testResponseCacheable(CcTxnData * txn_data)
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
 
   if (TS_HTTP_STATUS_OK != resp_status) {
-    TSDebug(PLUGIN_NAME, "[%zu] response status is not 200 OK, ignore it", txn_data->seq_id);
+    TSDebug(PLUGIN_NAME, "[%" PRIu64 "] response status is not 200 OK, ignore it", txn_data->seq_id);
     txn_data->cc_state = CC_REMOVE;
   } else {
     CcPluginData *plugin_data = getCcPlugin();
     if (!isResponseCacheable(bufp, hdr_loc)) {
-      TSDebug(PLUGIN_NAME, "[%zu] response is not public cacheable, let all requests pass", txn_data->seq_id);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] response is not public cacheable, let all requests pass", txn_data->seq_id);
 
       txn_data->cc_state = CC_PASS;
       TSStatIntIncrement(plugin_data->tol_non_cacheable_reqs, 1);
@@ -876,10 +877,10 @@ testCacheLookupResult(CcTxnData * txn_data)
 
   if (TS_CACHE_LOOKUP_HIT_FRESH == status || TS_CACHE_LOOKUP_SKIPPED == status) {
     if (TS_CACHE_LOOKUP_HIT_FRESH == status) {
-      TSDebug(PLUGIN_NAME, "[%zu] cache lookup hit fresh", txn_data->seq_id);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] cache lookup hit fresh", txn_data->seq_id);
     } else if (TS_CACHE_LOOKUP_SKIPPED == status) {
       // client request is not lookupable(no-cache) or in proxy mode only
-      TSDebug(PLUGIN_NAME, "[%zu] cache lookup skipped", txn_data->seq_id);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] cache lookup skipped", txn_data->seq_id);
     }
     txn_data->cc_state = CC_REMOVE;
     // whether success or not, we'll remove it at TXN_CLOSE stage anyway
@@ -906,7 +907,7 @@ collapsedConnectionMainHandler(TSCont /* contp ATS_UNUSED */, TSEvent event, voi
 
   if (NULL != txn_data) {
     TSDebug(PLUGIN_NAME,
-            "[%zu], event = %d, txn_data-> hash_key = %u, cc_state = %d",
+            "[%" PRIu64 "], event = %d, txn_data-> hash_key = %u, cc_state = %d",
             txn_data->seq_id, event, txn_data->hash_key, txn_data->cc_state);
 
     switch (event) {
