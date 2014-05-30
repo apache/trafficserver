@@ -470,7 +470,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.vary_default_images
  proxy.config.http.cache.vary_default_other
  proxy.config.http.cache.vary_default_text
- proxy.config.http.cache.when_to_add_no_cache_to_msie_requests
  proxy.config.http.cache.when_to_revalidate
  proxy.config.http.chunking_enabled
  proxy.config.http.congestion_control.default.client_wait_interval

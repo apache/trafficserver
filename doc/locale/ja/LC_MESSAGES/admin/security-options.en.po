@@ -456,10 +456,6 @@ msgstr ""
 ":file:`records.config`: の :ref:`records-config-ssl-termination` の章にある"
 "次の変数を編集してください。"
 
-#: ../../admin/security-options.en.rst:216
-msgid ":ts:cv:`proxy.config.ssl.auth.enabled`"
-msgstr ":ts:cv:`proxy.config.ssl.auth.enabled`"
-
 #: ../../admin/security-options.en.rst:218
 msgid ":ts:cv:`proxy.config.ssl.client.verify.server`"
 msgstr ":ts:cv:`proxy.config.ssl.client.verify.server`"
