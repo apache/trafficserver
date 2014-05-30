@@ -59,8 +59,6 @@ IpAllow::startup()
   // Should not have been initialized before
   ink_assert(IpAllow::configid == 0);
 
-  ALL_METHOD_MASK = ~0;
-
   ipAllowUpdate = new ConfigUpdateHandler<IpAllow>();
   ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
 
