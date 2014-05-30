@@ -68,7 +68,7 @@ HttpClientSession::HttpClientSession()
     cur_hooks(0), backdoor_connect(false),
     hooks_set(0),
     outbound_port(0), f_outbound_transparent(false),
-    host_res_style(HOST_RES_IPV4), acl_method_mask(0),
+    host_res_style(HOST_RES_IPV4), acl_record(NULL),
     m_active(false), debug_on(false)
 {
   memset(user_args, 0, sizeof(user_args));

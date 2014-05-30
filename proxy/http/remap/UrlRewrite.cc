@@ -425,18 +425,21 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
   s->acl_filtering_performed = true;    // small protection against reverse mapping
 
   if (map->filter) {
-    int i, res, method;
-    i = (method = s->hdr_info.client_request.method_get_wksidx()) - HTTP_WKSIDX_CONNECT;
+    int res;
+    int method = s->hdr_info.client_request.method_get_wksidx();
+    int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
     bool client_enabled_flag = true;
     ink_release_assert(ats_is_ip(&s->client_info.addr));
-    for (acl_filter_rule * rp = map->filter; rp && client_enabled_flag; rp = rp->next) { // stop as soon as a filter denies
+    for (acl_filter_rule * rp = map->filter; rp; rp = rp->next) {
       bool match = true;
-      if (rp->method_valid) {
-        if (likely(i >= 0 && i < ACL_FILTER_MAX_METHODS)) {
-            match = rp->method_idx[i] == method;
+      if (rp->method_restriction_enabled) {
+        if (method_wksidx != -1) {
+          match = rp->standard_method_lookup[method_wksidx];
         }
-        else {
-            match = false;
+        else if (!rp->nonstandard_methods.empty()) {
+          int method_str_len;
+          const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
+          match = rp->nonstandard_methods.count(std::string(method_str, method_str_len));
         }
       }
       if (match && rp->src_ip_valid) {
@@ -452,14 +455,18 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
           }
         }
       }
-      if (match) {
+      if (match && client_enabled_flag) {     //make sure that a previous filter did not DENY
         Debug("url_rewrite", "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
         client_enabled_flag = rp->allow_flag ? true : false;
       } else {
-        Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
-        client_enabled_flag = rp->allow_flag ? false : true;
+        if (!client_enabled_flag) {
+          Debug("url_rewrite", "Previous ACL filter rule denied request, continuing to deny it");
+        } else {
+          Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
+          client_enabled_flag = rp->allow_flag ? false : true;
+        }
       }
-
+      
     }                         /* end of for(rp = map->filter;rp;rp = rp->next) */
     s->client_connection_enabled = client_enabled_flag;
   }
