@@ -1426,9 +1426,9 @@ This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM.
 
 `TOP <#ts-lua-plugin>`_
 
-ts.http.set_remapping_set
+ts.http.skip_remapping_set
 -------------------------
-**syntax:** *ts.http.set_remapping_set(BOOL)*
+**syntax:** *ts.http.skip_remapping_set(BOOL)*
 
 **context:** do_global_read_request
 
@@ -1439,7 +1439,7 @@ Here is an example:
 ::
 
     function do_global_read_request()
-        ts.http.set_remapping_set(0);
+        ts.http.skip_remapping_set(1);
         ts.client_request.header['Host'] = 'www.yahoo.com'
         return 0
     end
