@@ -155,7 +155,7 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          Debug(ssl, "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
