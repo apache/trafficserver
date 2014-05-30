@@ -1760,7 +1760,7 @@ Logging Configuration
    Enables (``1``) or disables (``0``) the `Netscape extended log file format
    <../working-log-files/log-formats#NetscapeFormats>`_. 
 
-.. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 1
+.. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
 
    The `Netscape extended log <../working-log-files/log-formats#NetscapeFormats>`_ file type:
 
