@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,9 +43,12 @@ access the Traffic Server proxy cache, and ``ip_deny`` denies the
 specified client(s) to access the Traffic Server proxy cache. Multiple
 method keywords can be specified (method=GET method=HEAD), or multiple
 methods can be separated by an '\|' (method=GET\|HEAD). The method
-keyword is optional and it is defaulted to ALL. Available methods: ALL,
-GET, CONNECT, DELETE, HEAD, ICP_QUERY, OPTIONS, POST, PURGE, PUT,
-TRACE, PUSH
+keyword is optional and it is defaulted to ALL. This supports ANY string
+as the HTTP method, meaning no validation is done to check wether it
+is a valid HTTP method. This allows you to create filters for any method
+that your origin may require, this is especially useful if you use newer
+methods that aren't know to trafficserver (such as PROPFIND) or if your
+origin uses an http-ish protocol.
 
 By default, the :file:`ip_allow.config` file contains the following lines,
 which allows all methods to localhost to access the Traffic Server proxy
