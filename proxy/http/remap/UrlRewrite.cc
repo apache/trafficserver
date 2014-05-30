@@ -299,7 +299,6 @@ url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *req
   int toHostLen;
   int toSchemeLen;
 
-  requestPath = request_url->path_get(&requestPathLen);
   map_from->path_get(&fromPathLen);
 
   toHost = map_to->host_get(&toHostLen);
@@ -311,6 +310,8 @@ url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *req
   request_url->host_set(toHost, toHostLen);
   request_url->port_set(map_to->port_get_raw());
   request_url->scheme_set(toScheme, toSchemeLen);
+
+  requestPath = request_url->path_get(&requestPathLen);
 
   // Should be +3, little extra padding won't hurt. Use the stack allocation
   // for better performance (bummer that arrays of variable length is not supported

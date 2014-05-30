@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2792] Large request header causes unexpected remap.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
   *) [TS-2834] header_rewrite: Add Internal transaction and client-IP
    conditions.
 
