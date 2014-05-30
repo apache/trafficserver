@@ -5,9 +5,6 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2783] Update documentation defaults, and fix RecordsConfig.cc.
 
-  *) [TS-1981] Url remap method filtering is broken with invalid method.
-   Author: Thach Tran <tranngocthachs@gmail.com>
-
   *) [TS-2792] Large request header causes unexpected remap.
    Author: Masakazu Kitajo <m4sk17@gmail.com>
 
