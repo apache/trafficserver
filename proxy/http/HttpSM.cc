@@ -2792,7 +2792,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
       break;
     case VC_EVENT_EOS:
       t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
-      t_state.squid_codes.log_code = SQUID_LOG_ERR_READ_ERROR;
       break;
     }
 
@@ -2805,6 +2804,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
       t_state.current.server->abort = HttpTransact::ABORTED;
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+      t_state.squid_codes.log_code = SQUID_LOG_ERR_READ_ERROR;
     } else {
       DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] finishing HTTP tunnel", sm_id);
       p->read_success = true;
