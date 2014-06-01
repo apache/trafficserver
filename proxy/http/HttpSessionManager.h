@@ -36,6 +36,7 @@
 
 #include "P_EventSystem.h"
 #include "HttpServerSession.h"
+#include <ts/Map.h>
 
 class HttpClientSession;
 class HttpSM;
@@ -43,16 +44,77 @@ class HttpSM;
 void
 initialize_thread_for_http_sessions(EThread *thread, int thread_index);
 
-#define  HSM_LEVEL1_BUCKETS   127
-#define  HSM_LEVEL2_BUCKETS   63
+/** A pool of server sessions.
 
-class SessionBucket: public Continuation
+    This is a continuation so that it can get callbacks from the server sessions.
+    This is used to track remote closes on the sessions so they can be cleaned up.
+
+    @internal Cleanup is the real reason we will always need an IP address mapping for the
+    sessions. The I/O callback will have only the NetVC and thence the remote IP address for the
+    closed session and we need to be able find it based on that.
+*/
+class ServerSessionPool: public Continuation
 {
 public:
-  SessionBucket();
-  int session_handler(int event, void *data);
-  Que(HttpServerSession, lru_link) lru_list;
-  DList(HttpServerSession, hash_link) l2_hash[HSM_LEVEL2_BUCKETS];
+  /// Default constructor.
+  /// Constructs an empty pool.
+  ServerSessionPool();
+  /// Handle events from server sessions.
+  int eventHandler(int event, void *data);
+ protected:
+  /// Interface class for IP map.
+  struct IPHashing
+  {
+    typedef uint32_t ID;
+    typedef sockaddr const* Key;
+    typedef HttpServerSession Value;
+    typedef DList(HttpServerSession, ip_hash_link) ListHead;
+
+    static ID hash(Key key) { return ats_ip_hash(key); }
+    static Key key(Value const* value) { return &value->server_ip.sa; }
+    static bool equal(Key lhs, Key rhs) { return ats_ip_addr_port_eq(lhs, rhs); }
+  };
+
+  /// Interface class for FQDN map.
+  struct HostHashing
+  {
+    typedef uint64_t ID;
+    typedef INK_MD5 const& Key;
+    typedef HttpServerSession Value;
+    typedef DList(HttpServerSession, host_hash_link) ListHead;
+
+    static ID hash(Key key) { return key.fold(); }
+    static Key key(Value const* value) { return value->hostname_hash; } 
+    static bool equal(Key lhs, Key rhs) { return lhs == rhs; }
+  };
+
+  typedef TSHashTable<IPHashing> IPHashTable; ///< Sessions by IP address.
+  typedef TSHashTable<HostHashing> HostHashTable; ///< Sessions by host name.
+
+public:
+  /** Check if a session matches address and host name.
+   */
+  static bool match(HttpServerSession* ss, sockaddr const* addr, INK_MD5 const& host_hash, TSServerSessionSharingMatchType match_style);
+
+  /** Get a session from the pool.
+
+      The session is selected based on @a match_style equivalently to @a match. If found the session
+      is removed from the pool.
+
+      @return A pointer to the session or @c NULL if not matching session was found.
+  */
+  HttpServerSession* acquireSession(sockaddr const* addr, INK_MD5 const& host_hash, TSServerSessionSharingMatchType match_style);
+  /** Release a session to to pool.
+   */
+  void releaseSession(HttpServerSession* ss);
+
+  /// Close all sessions and then clear the table.
+  void purge();
+
+  // Pools of server sessions.
+  // Note that each server session is stored in both pools.
+  IPHashTable m_ip_pool;
+  HostHashTable m_host_pool;
 };
 
 enum HSMresult_t
@@ -65,7 +127,7 @@ enum HSMresult_t
 class HttpSessionManager
 {
 public:
-  HttpSessionManager()
+  HttpSessionManager() : m_g_pool(NULL)
   { }
 
   ~HttpSessionManager()
@@ -78,26 +140,10 @@ public:
   void init();
   int main_handler(int event, void *data);
 
-  /// Check if a session is a valid match.
-  static bool match(
-		    HttpServerSession* s, ///< Session to check for match.
-		    sockaddr const* addr, ///< IP address.
-		    INK_MD5 const& hostname_hash, ///< Hash of hostname of origin server.
-		    HttpSM* sm ///< State machine (for configuration data).
-		    );
-
-  /// Check if a session is a valid match.
-  static bool match(
-		    HttpServerSession* s, ///< Session to check for match.
-		    sockaddr const* addr, ///< IP address.
-		    char const* hostname, ///< Hostname of origin server.
-		    HttpSM* sm ///< State machine (for configuration data).
-		    );
-
-
 private:
-  //    Global l1 hash, used when there is no per-thread buckets
-  SessionBucket g_l1_hash[HSM_LEVEL1_BUCKETS];
+  /// Global pool, used if not per thread pools.
+  /// @internal We delay creating this because the session manager is created during global statics init.
+  ServerSessionPool* m_g_pool;
 };
 
 extern HttpSessionManager httpSessionManager;

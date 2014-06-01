@@ -24,8 +24,10 @@
 #include <string.h>
 #include <stdio.h>
 #include "ink_code.h"
+#include "INK_MD5.h"
 #include "ink_assert.h"
 
+INK_MD5 const INK_MD5::ZERO; // default constructed is correct.
 
 /**
   @brief Wrapper around MD5_Init
@@ -57,7 +59,7 @@ ink_code_incr_md5_final(char *sixteen_byte_hash_pointer, INK_DIGEST_CTX * contex
   @return always returns 0, maybe some error checking should be done
 */
 int
-ink_code_md5(unsigned char *input, int input_length, unsigned char *sixteen_byte_hash_pointer)
+ink_code_md5(unsigned char const* input, int input_length, unsigned char *sixteen_byte_hash_pointer)
 {
   MD5_CTX context;
 

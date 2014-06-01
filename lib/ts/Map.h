@@ -1385,7 +1385,7 @@ template < typename H > void
 TSHashTable<H>::clear() {
   Bucket null_bucket;
   // Remove the values but not the actual buckets.
-  for ( int i = 0 ; i < m_array.n ; ++i ) {
+  for ( size_t i = 0 ; i < m_array.n ; ++i ) {
     m_array[i] = null_bucket;
   }
   // Clear container data.

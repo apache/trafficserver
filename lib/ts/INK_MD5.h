@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  MD5 support class.
 
   @section license License
 
@@ -48,7 +48,7 @@ struct INK_MD5
   {
     u64[0] = md5.u64[0];
     u64[1] = md5.u64[1];
-    return md5;
+    return *this;
   }
   uint32_t word(int i)
   {
@@ -58,18 +58,18 @@ struct INK_MD5
   {
     return u8[i];
   }
-  INK_MD5 & loadFromBuffer(char *md5_buf) {
+  INK_MD5 & loadFromBuffer(char const* md5_buf) {
     memcpy((void *) u8, (void *) md5_buf, 16);
     return (*this);
   }
-  INK_MD5 & storeToBuffer(char *md5_buf) {
+  INK_MD5 & storeToBuffer(char const* md5_buf) {
     memcpy((void *) md5_buf, (void *) u8, 16);
     return (*this);
   }
-  INK_MD5 & operator =(char *md5) {
+  INK_MD5 & operator =(char const* md5) {
     return (loadFromBuffer(md5));
   }
-  INK_MD5 & operator =(unsigned char *md5) {
+  INK_MD5 & operator =(unsigned char const* md5) {
     return (loadFromBuffer((char *) md5));
   }
 
@@ -77,13 +77,13 @@ struct INK_MD5
   {
     return (char *) memcpy((void *) md5_str, (void *) u8, 16);
   }
-  void encodeBuffer(unsigned char *buffer, int len)
+  void encodeBuffer(unsigned char const* buffer, int len)
   {
     ink_code_md5(buffer, len, u8);
   }
   void encodeBuffer(const char *buffer, int len)
   {
-    encodeBuffer((unsigned char *) buffer, len);
+    encodeBuffer(reinterpret_cast<unsigned char const*>(buffer), len);
   }
   char *str()
   {
@@ -132,10 +132,15 @@ struct INK_MD5
   {
     return u64[i];
   }
-  bool operator==(INK_MD5 const& md5)
+  bool operator==(INK_MD5 const& md5) const
   {
     return u64[0] == md5.u64[0] && u64[1] == md5.u64[1];
   }
+  bool operator != (INK_MD5 const& that) const
+  {
+    return !(*this == that);
+  }
+
   INK_MD5() {
     u64[0] = 0;
     u64[1] = 0;
@@ -144,6 +149,9 @@ struct INK_MD5
     u64[0] = a1;
     u64[1] = a2;
   }
+
+  /// Static default constructed instance.
+  static INK_MD5 const ZERO;
 };
 
 #endif

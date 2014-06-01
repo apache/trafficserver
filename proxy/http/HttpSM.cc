@@ -4527,11 +4527,10 @@ HttpSM::do_http_server_open(bool raw)
 
     if (existing_ss) {
       // [amc] Not sure if this is the best option, but we don't get here unless session sharing is disabled
-      // so there's point in further checking on the match or pool values. But why check anything? The
+      // so there's no point in further checking on the match or pool values. But why check anything? The
       // client has already exchanged a request with this specific origin server and has sent another one
       // shouldn't we just automatically keep the association?
-      if (ats_ip_addr_eq(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa) &&
-          ats_ip_port_cast(&existing_ss->server_ip) == ats_ip_port_cast(&t_state.current.server->addr)) {
+      if (ats_ip_addr_port_eq(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa)) {
         ua_session->attach_server_session(NULL);
         existing_ss->state = HSS_ACTIVE;
         this->attach_server_session(existing_ss);
@@ -4911,7 +4910,8 @@ HttpSM::release_server_session(bool serve_from_cache)
     return;
   }
 
-  if (t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
+  if (TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
+      t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
       t_state.hdr_info.server_response.valid() &&
       (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD

@@ -206,7 +206,7 @@ Handling Updates
 
 The simplest mechanism for handling updates is the ``REC_EstablishStaticConfigXXX`` family of functions. This mechanism
 will cause the value in the indicated instance to be updated in place when an update to :file:`records.config` occurs.
-This is done asynchronously using atomic operations. Use of these variables must keep that in mind. Adding ``volatile`` to the declaration is likely to be a good idea.
+This is done asynchronously using atomic operations. Use of these variables must keep that in mind.
 
 If a variable requires additional handling when updated a callback can be registered which is called when the variable
 is updated. This is what the ``REC_EstablishStaticConfigXXX`` calls do internally with a callback that simply reads the

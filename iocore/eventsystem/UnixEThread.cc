@@ -60,7 +60,7 @@ EThread::EThread(ThreadType att, int anid)
     event_types(0),
     signal_hook(0),
     tt(att),
-    l1_hash(NULL)
+    server_session_pool(NULL)
 {
   ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
   memset((char *) ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));

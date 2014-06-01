@@ -44,7 +44,7 @@
 struct DiskHandler;
 struct EventIO;
 
-class SessionBucket;
+class ServerSessionPool;
 class Event;
 class Continuation;
 
@@ -322,7 +322,7 @@ public:
   ThreadType tt;
   Event *oneevent;              // For dedicated event thread
 
-  SessionBucket* l1_hash;
+  ServerSessionPool* server_session_pool;
 };
 
 /**
