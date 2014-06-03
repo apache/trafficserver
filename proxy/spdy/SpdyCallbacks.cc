@@ -128,7 +128,7 @@ spdy_show_ctl_frame(const char *head_str, spdylay_session * /*session*/, spdylay
     break;
   case SPDYLAY_WINDOW_UPDATE: {
     spdylay_window_update *f = (spdylay_window_update *)frame;
-    Debug("spdy", "%s WINDOW_UPDATE (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, delta_window_size:%d)",
+    Debug("spdy", "%s WINDOW_UPDATE (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, delta_window_size:%u)",
           head_str, sm->sm_id, f->stream_id, f->hd.flags, f->delta_window_size);
   }
     break;
@@ -403,11 +403,11 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
 
   req->delta_window_size += length;
 
-  Debug("spdy", "----sm_id:%" PRId64 ", stream_id:%d, delta_window_size:%d",
+  Debug("spdy", "----sm_id:%" PRId64 ", stream_id:%d, delta_window_size:%u",
         sm->sm_id, stream_id, req->delta_window_size);
 
   if (req->delta_window_size >= spdy_initial_window_size/2) {
-    Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%d",
+    Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%u",
           req->delta_window_size);
 
     //

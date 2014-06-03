@@ -59,8 +59,8 @@ using namespace std;
 extern spdylay_session_callbacks spdy_callbacks;
 
 // Configurations
-extern int32_t spdy_max_concurrent_streams;
-extern int32_t spdy_initial_window_size;
+extern uint32_t spdy_max_concurrent_streams;
+extern uint32_t spdy_initial_window_size;
 extern int32_t spdy_accept_no_activity_timeout;
 extern int32_t spdy_no_activity_timeout_in;
 

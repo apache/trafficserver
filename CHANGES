@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2872] Can't set "Send Window" for SPDY/3.1 > 64k. Code mostly
+   provided by our SPDY brainiac, Geffon.
+
   *) [TS-2873] Cleanup SPDY metrics and configs, also make it use the common
    pattern for stats increments/decrements (even though it's ugly, sorry amc).
 

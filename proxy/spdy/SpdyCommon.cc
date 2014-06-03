@@ -37,8 +37,8 @@ static char const * const SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.proces
 static char const * const SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.spdy.total_client_connections";
 
 // Configurations
-int32_t spdy_max_concurrent_streams = 100;
-int32_t spdy_initial_window_size = 65536;
+uint32_t spdy_max_concurrent_streams = 100;
+uint32_t spdy_initial_window_size = 65536;
 int32_t spdy_accept_no_activity_timeout = 120;
 int32_t spdy_no_activity_timeout_in = 115;
 
@@ -54,10 +54,10 @@ http_date(time_t t)
 int
 spdy_config_load()
 {
-  REC_EstablishStaticConfigInt32(spdy_max_concurrent_streams, "proxy.config.spdy.max_concurrent_streams_in");
+  REC_EstablishStaticConfigInt32U(spdy_max_concurrent_streams, "proxy.config.spdy.max_concurrent_streams_in");
+  REC_EstablishStaticConfigInt32U(spdy_initial_window_size, "proxy.config.spdy.initial_window_size_in");
   REC_EstablishStaticConfigInt32(spdy_no_activity_timeout_in, "proxy.config.spdy.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32(spdy_accept_no_activity_timeout, "proxy.config.spdy.accept_no_activity_timeout");
-  REC_EstablishStaticConfigInt32(spdy_initial_window_size, "proxy.config.spdy.initial_window_size_in");
 
   spdy_callbacks_init(&spdy_callbacks);
 

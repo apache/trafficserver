@@ -194,8 +194,11 @@ spdy_sm_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * io
 int
 SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 {
-  int     r;
-  spdylay_settings_entry entry;
+  const spdylay_settings_entry entries[] = {
+    { SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_max_concurrent_streams },
+    { SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size }
+  };
+  int r;
 
   if (TSIOBufferReaderAvail(this->req_reader) > 0) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
@@ -206,13 +209,15 @@ SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 
   SET_HANDLER(&SpdyClientSession::state_session_readwrite);
 
-  /* send initial settings frame */
-  entry.settings_id = SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS;
-  entry.value = spdy_max_concurrent_streams;
-  entry.flags = SPDYLAY_ID_FLAG_SETTINGS_NONE;
+  r = spdylay_submit_settings(this->session, SPDYLAY_FLAG_SETTINGS_NONE, entries, countof(entries));
+  ink_assert(r == 0);
 
-  r = spdylay_submit_settings(this->session, SPDYLAY_FLAG_SETTINGS_NONE, &entry, 1);
-  TSAssert(r == 0);
+  if (this->version >= spdy::SESSION_VERSION_3_1 && spdy_initial_window_size > (1 << 16)) {
+    int32_t delta = (spdy_initial_window_size - SPDYLAY_INITIAL_WINDOW_SIZE);
+
+    r = spdylay_submit_window_update(this->session, 0, delta);
+    ink_assert(r == 0);
+  }
 
   TSVIOReenable(this->write_vio);
   return EVENT_CONT;
