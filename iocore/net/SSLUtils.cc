@@ -441,7 +441,10 @@ SSLInitServerContext(
   }
 
 #ifdef SSL_MODE_RELEASE_BUFFERS
-  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+  if (OPENSSL_VERSION_NUMBER > 0x1000107fL) {
+    Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
+    SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+  }
 #endif
   SSL_CTX_set_quiet_shutdown(ctx, 1);
 
