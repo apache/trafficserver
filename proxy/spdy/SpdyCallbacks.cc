@@ -406,7 +406,7 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
   Debug("spdy", "----sm_id:%" PRId64 ", stream_id:%d, delta_window_size:%d",
         sm->sm_id, stream_id, req->delta_window_size);
 
-  if (req->delta_window_size >= SPDY_CFG.spdy.initial_window_size/2) {
+  if (req->delta_window_size >= spdy_initial_window_size/2) {
     Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%d",
           req->delta_window_size);
 

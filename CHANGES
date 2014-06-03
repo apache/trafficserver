@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2873] Cleanup SPDY metrics and configs, also make it use the common
+   pattern for stats increments/decrements (even though it's ugly, sorry amc).
+
   *) [TS-2870] Update SPDY defaults to better match our other defaults.
 
   *) [TS-2868] Error setting HSTS max age with traffic_line
