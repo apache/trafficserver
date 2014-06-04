@@ -1337,7 +1337,7 @@ AC_SUBST(use_linux_native_aio)
 use_hwloc=0
 AS_IF([test "x$enable_hwloc" = "xyes"], [
   # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
-  PKG_CHECK_MODULES([hwloc], [hwloc], [
+  PKG_CHECK_MODULES([HWLOC], [hwloc], [
     SAVE_LIBS="$LIBS"
     LIBS="-lhwloc"
     AC_LANG_PUSH([C++])
@@ -1345,8 +1345,8 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
     AC_LINK_IFELSE([
       AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
       use_hwloc=1
-      AC_SUBST([hwloc_CFLAGS])
-      AC_SUBST([hwloc_LIBS])
+      AC_SUBST([HWLOC_CFLAGS])
+      AC_SUBST([HWLOC_LIBS])
       AC_MSG_RESULT([yes])
       # Old versions of libhwloc don't have HWLOC_OBJ_PU.
       AC_CHECK_DECL(HWLOC_OBJ_PU,
@@ -1356,15 +1356,15 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
     ], [
       AC_MSG_RESULT([no])
       AC_MSG_WARN([hwloc not linkable, try --disable-hwloc])
-      AC_SUBST([hwloc_CFLAGS],[""])
-      AC_SUBST([hwloc_LIBS],[""])
+      AC_SUBST([HWLOC_CFLAGS],[""])
+      AC_SUBST([HWLOC_LIBS],[""])
     ])
     AC_LANG_POP()
     LIBS="$SAVE_LIBS"
   ], [
     AC_MSG_WARN([hwloc not found, try --disable-hwloc])
-    AC_SUBST([hwloc_CFLAGS],[""])
-    AC_SUBST([hwloc_LIBS],[""])
+    AC_SUBST([HWLOC_CFLAGS],[""])
+    AC_SUBST([HWLOC_LIBS],[""])
   ])
 ])
 
