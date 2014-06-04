@@ -60,14 +60,13 @@ SpdyRequest::init(SpdyClientSession *sm, int id)
   MD5_Init(&recv_md5);
   start_time = TShrtime();
 
-  SpdyStatIncrCount(Config::STAT_CURRENT_CLIENT_STREAM_COUNT, sm);
-  SpdyStatIncrCount(Config::STAT_TOTAL_CLIENT_STREAM_COUNT, sm);
+  SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, sm->mutex->thread_holding);
 }
 
 void
 SpdyRequest::clear()
 {
-  SpdyStatDecrCount(Config::STAT_CURRENT_CLIENT_STREAM_COUNT, spdy_sm);
+  SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, spdy_sm->mutex->thread_holding);
 
   if (fetch_sm)
     TSFetchDestroy(fetch_sm);
@@ -94,21 +93,21 @@ SpdyClientSession::init(NetVConnection * netvc, spdy::SessionVersion vers)
   this->req_map.clear();
   this->version = vers;
 
-  r = spdylay_session_server_new(&session, versmap[vers], &SPDY_CFG.spdy.callbacks, this);
+  r = spdylay_session_server_new(&session, versmap[vers], &spdy_callbacks, this);
 
   // A bit ugly but we need a thread and I don't want to wait until the
   // session start event in case of a time out generating a decrement
   // with no increment. It seems a lesser thing to have the thread counts
   // a little off but globally consistent.
-  SpdyStatIncrCount(Config::STAT_CURRENT_CLIENT_SESSION_COUNT, netvc);
-  SpdyStatIncrCount(Config::STAT_TOTAL_CLIENT_CONNECTION_COUNT, netvc);
+  SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT, netvc->mutex->thread_holding);
+  SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_TOTAL_CLIENT_CONNECTION_COUNT, netvc->mutex->thread_holding);
 
   ink_release_assert(r == 0);
   sm_id = atomic_inc(g_sm_id);
   total_size = 0;
   start_time = TShrtime();
 
-  this->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.accept_no_activity_timeout));
+  this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_accept_no_activity_timeout));
   SET_HANDLER(&SpdyClientSession::state_session_start);
 
 }
@@ -118,7 +117,7 @@ SpdyClientSession::clear()
 {
   int last_event = event;
 
-  SpdyStatDecrCount(Config::STAT_CURRENT_CLIENT_SESSION_COUNT, this);
+  SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
 
   //
   // SpdyRequest depends on SpdyClientSession,
@@ -194,8 +193,11 @@ spdy_sm_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * io
 int
 SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 {
-  int     r;
-  spdylay_settings_entry entry;
+  const spdylay_settings_entry entries[] = {
+    { SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_max_concurrent_streams },
+    { SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size }
+  };
+  int r;
 
   if (TSIOBufferReaderAvail(this->req_reader) > 0) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
@@ -206,13 +208,15 @@ SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 
   SET_HANDLER(&SpdyClientSession::state_session_readwrite);
 
-  /* send initial settings frame */
-  entry.settings_id = SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS;
-  entry.value = SPDY_CFG.spdy.max_concurrent_streams;
-  entry.flags = SPDYLAY_ID_FLAG_SETTINGS_NONE;
+  r = spdylay_submit_settings(this->session, SPDYLAY_FLAG_SETTINGS_NONE, entries, countof(entries));
+  ink_assert(r == 0);
 
-  r = spdylay_submit_settings(this->session, SPDYLAY_FLAG_SETTINGS_NONE, &entry, 1);
-  TSAssert(r == 0);
+  if (this->version >= spdy::SESSION_VERSION_3_1 && spdy_initial_window_size > (1 << 16)) {
+    int32_t delta = (spdy_initial_window_size - SPDYLAY_INITIAL_WINDOW_SIZE);
+
+    r = spdylay_submit_window_update(this->session, 0, delta);
+    ink_assert(r == 0);
+  }
 
   TSVIOReenable(this->write_vio);
   return EVENT_CONT;
@@ -254,7 +258,7 @@ out:
     this->clear();
     spdyClientSessionAllocator.free(this);
   } else if (!from_fetch) {
-    this->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.no_activity_timeout_in));
+    this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_no_activity_timeout_in));
   }
 
   return EVENT_CONT;
@@ -399,7 +403,7 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
   if (already < (int64_t)length) {
     if (req->event == TS_FETCH_EVENT_EXT_BODY_DONE) {
       TSHRTime end_time = TShrtime();
-      SpdyStatIncr(Config::STAT_TOTAL_TRANSACTIONS_TIME, sm, end_time - req->start_time);
+      SPDY_SUM_THREAD_DYN_STAT(SPDY_STAT_TOTAL_TRANSACTIONS_TIME, sm->mutex->thread_holding, end_time - req->start_time);
       Debug("spdy", "----Request[%" PRIu64 ":%d] %s %lld %d", sm->sm_id, req->stream_id,
             req->url.c_str(), (end_time - req->start_time)/TS_HRTIME_MSECOND,
             req->fetch_data_len);

@@ -30,7 +30,7 @@ lib_LTLIBRARIES = libtsutil.la
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = \
-  @hwloc_LIBS@ \
+  @HWLOC_LIBS@ \
   @LIBOBJS@ \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \

@@ -1,6 +1,17 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2875] Change hwloc library env variables from hwloc_ to HWLOC_.
+
+  *) [TS-2874] Make some of the SPDY metrics persistent, and also fix how we
+   measure transaction time / total streams.
+
+  *) [TS-2872] Can't set "Send Window" for SPDY/3.1 > 64k. Code mostly
+   provided by our SPDY brainiac, Geffon.
+
+  *) [TS-2873] Cleanup SPDY metrics and configs, also make it use the common
+   pattern for stats increments/decrements (even though it's ugly, sorry amc).
+
   *) [TS-2870] Update SPDY defaults to better match our other defaults.
 
   *) [TS-2868] Error setting HSTS max age with traffic_line

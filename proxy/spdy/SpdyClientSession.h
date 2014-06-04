@@ -77,7 +77,7 @@ public:
   bool has_submitted_data;
   bool need_resume_data;
   int fetch_data_len;
-  int delta_window_size;
+  unsigned delta_window_size;
   bool fetch_body_completed;
   vector<pair<string, string> > headers;
 
