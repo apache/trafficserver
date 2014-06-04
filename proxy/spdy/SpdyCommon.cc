@@ -67,11 +67,11 @@ spdy_config_load()
                      static_cast<int>(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
   RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(SPDY_STAT_TOTAL_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
-  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_NON_PERSISTENT,
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(SPDY_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncCount);
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(SPDY_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncSum);
-  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(SPDY_STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
 
   return 0;

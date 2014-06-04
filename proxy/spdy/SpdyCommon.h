@@ -70,8 +70,7 @@ extern RecRawStatBlock* spdy_rsb;
 enum {
   SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT, ///< Current # of active SPDY sessions.
   SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, ///< Current # of active SPDY streams.
-  SPDY_STAT_TOTAL_CLIENT_STREAM_COUNT, ///< Total number of streams created.
-  SPDY_STAT_TOTAL_TRANSACTIONS_TIME,  //< Total stream time
+  SPDY_STAT_TOTAL_TRANSACTIONS_TIME,  //< Total stream time and streams
   SPDY_STAT_TOTAL_CLIENT_CONNECTION_COUNT, //< Total connections running spdy
 
   SPDY_N_STATS ///< Terminal counter, NOT A STAT INDEX.

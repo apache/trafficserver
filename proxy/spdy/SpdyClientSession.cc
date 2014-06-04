@@ -61,7 +61,6 @@ SpdyRequest::init(SpdyClientSession *sm, int id)
   start_time = TShrtime();
 
   SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, sm->mutex->thread_holding);
-  SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_TOTAL_CLIENT_STREAM_COUNT, sm->mutex->thread_holding);
 }
 
 void
