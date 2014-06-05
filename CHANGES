@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2236] Remove trailing null in response body set by fabricate_with_old_api.
+   Author: Thach Tran <tranngocthachs@gmail.com>
+
   *) [TS-2877] http_load waits until timeout when response body is zero.
    Author: Masaori Koshiba <mkoshiba@yahoo-corp.jp>
 
