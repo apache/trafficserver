@@ -220,6 +220,16 @@ The following list describes Traffic Server custom logging fields.
 ``phr``
     The proxy hierarchy route; the route Traffic Server used to retrieve
     the object.
+    
+.. _piid:
+    
+``piid``
+   The plugin ID for the transaction. This is set for plugin driven transactions via :c:func:`TSHttpConnectWithPluginId`.
+
+.. _pitag:
+
+``pitag``
+   The plugin tag for the transaction. This is set for plugin driven transactions via :c:func:`TSHttpConnectWithPluginId`.
 
 ``pqbl``
     The proxy request transfer length; the body length in Traffic
