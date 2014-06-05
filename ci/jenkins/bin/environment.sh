@@ -34,6 +34,9 @@ export TODAY=$(/bin/date +'%m%d%Y')
 ATS_BRANCH=master
 test "${JOB_NAME#*-4.2.x}" != "${JOB_NAME}" && ATS_BRANCH=4.2.x
 test "${JOB_NAME#*-5.0.x}" != "${JOB_NAME}" && ATS_BRANCH=5.0.x
+test "${JOB_NAME#*-5.1.x}" != "${JOB_NAME}" && ATS_BRANCH=5.1.x
+test "${JOB_NAME#*-5.2.x}" != "${JOB_NAME}" && ATS_BRANCH=5.2.x
+test "${JOB_NAME#*-5.3.x}" != "${JOB_NAME}" && ATS_BRANCH=5.3.x
 export ATS_BRANCH
 
 # Decide on compilers, gcc is the default
