@@ -198,12 +198,16 @@ class TrafficServerDomain(Domain):
             yield var, var, 'cv', doc, var, 1
 
 # These types are ignored as missing references for the C++ domain.
+# We really need to do better with this. Editing this file for each of
+# these is already getting silly.
 EXTERNAL_TYPES = set((
     'int', 'uint',
     'uint8_t', 'uint16_t', 'uint24_t', 'uint32_t', 'uint64_t',
     'int8_t', 'int16_t', 'int24_t', 'int32_t', 'int64_t',
+    'unsigned', 'unsigned int',
     'off_t', 'size_t', 'time_t',
     'Event', 'INK_MD5', 'DLL<EvacuationBlock>',
+    'sockaddr'
     ))
 
 # Clean up specific references that we know will never be defined but are implicitly used by
@@ -212,7 +216,7 @@ def xref_cleanup(app, env, node, contnode):
     rdomain = node['refdomain']
     rtype = node['reftype']
     rtarget = node['reftarget']
-    if 'cpp' == rdomain:
+    if ('cpp' == rdomain) or ('c' == rdomain):
         if 'type' == rtype:
             # one of the predefined type, or a pointer or reference to it.
             if (rtarget in EXTERNAL_TYPES) or (('*' == rtarget[-1] or '&' == rtarget[-1]) and rtarget[:-1] in EXTERNAL_TYPES):

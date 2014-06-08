@@ -35,22 +35,26 @@ Description
 This call attempts to create an HTTP state machine and a virtual connection to that state machine. This is more efficient than using :c:func:`TSNetConnect` because it avoids using the operating system stack via the loopback interface.
 
 *addr*
-   This is the network address of the target of the connection. This includes the port which should be stored in the :c:type:`sockaddr` structure.
+   This is the network address of the target of the connection. This includes the port which should be stored in the :c:type:`sockaddr` structure pointed at by :arg:`addr`.
 
 *tag*
-   This is a tag that is passed through to the HTTP state machine. It must be a persistent string that has a lifetime longer than the connection. It is accessible via the log field :ref:`pitag <pitag>`. This is intended as a class or type identifier that is consistent across all connections for this plugin. In effect, the name of the plugin. This can be ``NULL``.
+   This is a tag that is passed through to the HTTP state machine. It must be a persistent string that has a lifetime longer than the connection. It is accessible via the log field :ref:`pitag <pitag>`. This is intended as a class or type identifier that is consistent across all connections for this plugin. In effect, the name of the plugin. This can be :literal:`NULL`.
 
 *id*
-   This is a numeric identifier that is passed through to the HTTP state machine. It is accessible via the log field :ref:`piid <piid>`. This is intended as a connection identifier and should be distinct for every call to ``TSHttpConnectWithPluginID``. The easiest mechanism is to define a plugin global value and increment it for each connection. The value ``0`` is reserved to mean "not set" and can be used as a default if this functionality is not needed.
+   This is a numeric identifier that is passed through to the HTTP state machine. It is accessible via the log field :ref:`piid <piid>`. This is intended as a connection identifier and should be distinct for every call to :c:func:`TSHttpConnectWithPluginId`. The easiest mechanism is to define a plugin global value and increment it for each connection. The value :literal:`0` is reserved to mean "not set" and can be used as a default if this functionality is not needed.
 
-The virtual connection returned as the ``TSCVonn`` is API equivalent to a network virtual connection both to the plugin and to internal mechanisms. Data is read and written to the connection (and thence to the target system) by reading and writing on this virtual connection.
+The virtual connection returned as the :c:type:`TSCVonn` is API equivalent to a network virtual connection both to the plugin and to internal mechanisms. Data is read and written to the connection (and thence to the target system) by reading and writing on this virtual connection.
 
 .. note:: This function only opens the connection - to drive the transaction an actual HTTP request must be sent and the HTTP response handled. The transaction is handled as a standard HTTP transaction and all of the standard configuration options and plugins will operate on it.
 
 The combination of tag and id is intended to enable correlation in log post processing. The tag identifies the connection as related to the plugin and the id can be used in conjuction with plugin generated logs to correlate the log records.
 
-This should also be useful for debugging by tagging not just the HTTP state machine but also the plugin's virtual connections (which are of type ``PluginVC``) with data that be correlated with the source plugin.
-
 .. topic:: Example
 
-   The SPDY plugin uses this to correlate client sessions with SPDY streams. Each client connection is assigned a distinct numeric identifier. This is passed as the *id* to ``TSHttpConnectWithPluginId``. The *tag* is selected to be the NPN string for the client session protocol, e.g. "spdy/3" or "spdy/3.1". Log post processing can then count the number of connections for the various supported protocols and the number of SPDY virtual streams for each real client connection to Traffic Server.
+   The SPDY implementation uses this to correlate client sessions with SPDY streams. Each client connection is assigned a distinct numeric identifier. This is passed as the :arg:`id` to :c:func:`TSHttpConnectWithPluginId`. The :arg:`tag` is selected to be the NPN string for the client session protocol, e.g. "spdy/3" or "spdy/3.1". Log post processing can then count the number of connections for the various supported protocols and the number of SPDY virtual streams for each real client connection to Traffic Server.
+
+See also
+========
+:manpage:`TSHttpConnect(3ts)`,
+:manpage:`TSNetConnect(3ts)`,
+:manpage:`TSAPI(3ts)`
