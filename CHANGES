@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2881] Redirection handling broken
+
   *) [TS-2875] Change hwloc library env variables from hwloc_ to HWLOC_.
 
   *) [TS-2874] Make some of the SPDY metrics persistent, and also fix how we
