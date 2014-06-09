@@ -7588,6 +7588,8 @@ HttpSM::is_redirect_required()
 {
   bool redirect_required = (enable_redirection && (redirection_tries <= HttpConfig::m_master.number_of_redirections));
 
+  DebugSM("http_redirect", "is_redirect_required %u", redirect_required);
+
   if (redirect_required == true) {
     HTTPStatus status = t_state.hdr_info.client_response.status_get();
     // check to see if the response from the orgin was a 301, 302, or 303
@@ -7609,8 +7611,6 @@ HttpSM::is_redirect_required()
     // if redirect_url is set by an user's plugin, ats will redirect to this url anyway.
     if (redirect_url != NULL) {
       redirect_required = true;
-    } else {
-      redirect_required = false;
     }
   }
   return redirect_required;
