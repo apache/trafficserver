@@ -266,7 +266,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       }
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
       total_read += rattempted;
-    } while (r == rattempted && total_read < toread);
+    } while (rattempted && r == rattempted && total_read < toread);
 
     // if we have already moved some bytes successfully, summarize in r
     if (total_read != rattempted) {
