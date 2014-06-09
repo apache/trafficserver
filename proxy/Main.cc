@@ -1523,7 +1523,10 @@ main(int /* argc ATS_UNUSED */, char **argv)
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
 
+    uid_t curr_euid = geteuid();
+    seteuid(0); // need to be root to read SSL certs
     sslNetProcessor.start(getNumSSLThreads(), stacksize);
+    seteuid(curr_euid);
 
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
