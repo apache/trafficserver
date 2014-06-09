@@ -1848,7 +1848,9 @@ HttpTransact::OSDNSLookup(State* s)
       StartAccessControl(s);    // If skip_dns is enabled and no ip based rules in cache.config and parent.config
       // Access Control is called after DNS response
     } else {
-      if ((s->cache_info.action == CACHE_DO_NO_ACTION) && s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+      if ((s->cache_info.action == CACHE_DO_NO_ACTION) &&
+          (((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
+            s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED))) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
       } else if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_SKIPPED) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, LookupSkipOpenServer);
@@ -3085,7 +3087,8 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
   // We must, however, not cache the responses to these requests.
   if (does_method_require_cache_copy_deletion(s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
-  } else if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+  } else if ((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
+             s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else {
     s->cache_info.action = CACHE_PREPARE_TO_WRITE;

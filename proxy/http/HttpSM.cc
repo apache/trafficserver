@@ -4037,6 +4037,8 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
 
   if (content_length <= 0)
     return;
+
+  // ToDo: Can this really happen?
   if (content_length == INT64_MAX) {
     t_state.range_setup = HttpTransact::RANGE_NOT_HANDLED;
     return;
