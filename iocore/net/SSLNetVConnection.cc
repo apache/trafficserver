@@ -386,7 +386,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     }
 
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64" , total=%" PRId64"", r, total_wrote);
-    NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_stat, 1);
+    NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (r == l && total_wrote < towrite && b);
 
   if (r > 0) {

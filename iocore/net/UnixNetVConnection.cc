@@ -264,7 +264,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       } else {
         r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
       }
-      NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_stat, 1);
+      NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
       total_read += rattempted;
     } while (r == rattempted && total_read < toread);
 
@@ -279,7 +279,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     if (r <= 0) {
 
       if (r == -EAGAIN || r == -ENOTCONN) {
-        NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_nodata_stat, 1);
+        NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
         vc->read.triggered = 0;
         nh->read_ready_list.remove(vc);
         return;
@@ -345,8 +345,8 @@ write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   ProxyMutex *mutex = thread->mutex;
 
-  NET_DEBUG_COUNT_DYN_STAT(net_calls_to_writetonet_stat, 1);
-  NET_DEBUG_COUNT_DYN_STAT(net_calls_to_writetonet_afterpoll_stat, 1);
+  NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_stat);
+  NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_afterpoll_stat);
 
   write_to_net_io(nh, vc, thread);
 }
@@ -454,7 +454,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // check for errors
   if (r <= 0) {                 // if the socket was not ready,add to WaitList
     if (r == -EAGAIN || r == -ENOTCONN) {
-      NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_nodata_stat, 1);
+      NET_INCREMENT_DYN_STAT(net_calls_to_write_nodata_stat);
       if((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
         vc->write.triggered = 0;
         nh->write_ready_list.remove(vc);
@@ -882,7 +882,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
     else
       r = socketManager.writev(con.fd, &tiovec[0], niov);
     ProxyMutex *mutex = thread->mutex;
-    NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_stat, 1);
+    NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (r == wattempted && total_wrote < towrite);
 
   needs |= EVENTIO_WRITE;

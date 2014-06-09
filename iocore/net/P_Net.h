@@ -61,9 +61,6 @@ extern RecRawStatBlock *net_rsb;
 #define SSL_HANDSHAKE_WANT_ACCEPT 8
 #define SSL_HANDSHAKE_WANT_CONNECT 9
 
-#define NET_DEBUG_COUNT_DYN_STAT(_x, _y) \
-RecIncrRawStatCount(net_rsb, mutex->thread_holding, (int)_x, _y)
-
 #define NET_INCREMENT_DYN_STAT(_x)  \
 RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, 1)
 
