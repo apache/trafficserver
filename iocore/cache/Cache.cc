@@ -240,6 +240,7 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     int64_t used, total =0;
     float percent_full;
+
     used =  cache_bytes_used(volume);
     RecSetGlobalRawStatSum(rsb, id, used);
     RecRawStatSyncSum(name, data_type, data, rsb, id);
@@ -2533,13 +2534,15 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ink_assert(vol->mutex->thread_holding == this_ethread());
 #if TS_USE_INTERIM_CACHE == 1
   uint64_t o = dir_get_offset(&dir);
-  if(f.read_from_interim && mts && mts->rewrite)
+  if (f.read_from_interim && mts && mts->rewrite) {
     goto LinterimRead;
+  }
 #else
   int64_t o = dir_offset(&dir);
 #endif
-  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o))
+  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o)) {
     goto LramHit;
+  }
 
   // check if it was read in the last open_read call
 #if TS_USE_INTERIM_CACHE == 1
@@ -2853,18 +2856,20 @@ cplist_update()
           /* delete this volume from all the disks */
           int d_no;
           int clearCV = 1;
+
           for (d_no = 0; d_no < gndisks; d_no++) {
-              if (cp->disk_vols[d_no]) {
-                 if(cp->disk_vols[d_no]->disk->forced_volume_num == cp->vol_number) {
-                    clearCV = 0;
-                    config_vol->cachep = cp;
-                 } else {
-                    cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
-                 }
-             }
+            if (cp->disk_vols[d_no]) {
+              if (cp->disk_vols[d_no]->disk->forced_volume_num == cp->vol_number) {
+                clearCV = 0;
+                config_vol->cachep = cp;
+              } else {
+                cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
+              }
+            }
           }
-          if (clearCV)
-              config_vol = NULL;
+          if (clearCV) {
+            config_vol = NULL;
+          }
         }
         break;
       }
@@ -2889,27 +2894,31 @@ cplist_update()
   }
 }
 
-static int fillExclusiveDisks(CacheVol *cp) {
+static int
+fillExclusiveDisks(CacheVol *cp)
+{
   int diskCount = 0;
   int volume_number = cp->vol_number;
+
   Debug("cache_init", "volume %d", volume_number);
+  for (int i = 0; i < gndisks; i++) {
+    if (gdisks[i]->forced_volume_num != volume_number) {
+      continue;
+    }
+    /* The user had created several volumes before - clear the disk
+       and create one volume for http */
+    for(int j = 0; j < (int)gdisks[i]->header->num_volumes; j++) {
+      if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
+        Note("Clearing Disk: %s", gdisks[i]->path);
+        gdisks[i]->delete_all_volumes();
+        break;
+      }
+    }
+    diskCount++;
 
-   for (int i = 0; i < gndisks; i++) {
-     if(gdisks[i]->forced_volume_num != volume_number)
-       continue;
-     /* The user had created several volumes before - clear the disk
-        and create one volume for http */
-     for(int j = 0; j < (int)gdisks[i]->header->num_volumes; j++) {
-       if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
-         Note("Clearing Disk: %s", gdisks[i]->path);
-         gdisks[i]->delete_all_volumes();
-         break;
-       }
-     }
+    int64_t size_diff = gdisks[i]->num_usable_blocks;
+    DiskVolBlock *dpb;
 
-     diskCount++;
-     int64_t size_diff = gdisks[i]->num_usable_blocks;
-     DiskVolBlock *dpb;
      do {
        dpb = gdisks[i]->create_volume(volume_number, size_diff, cp->scheme);
        if (dpb) {
@@ -3038,7 +3047,7 @@ cplist_reconfigure()
 
       size_in_blocks = ((off_t) size * 1024 * 1024) / STORE_BLOCK_SIZE;
 
-      if(config_vol->cachep && config_vol->cachep->num_vols > 0) {
+      if (config_vol->cachep && config_vol->cachep->num_vols > 0) {
         gnvol += config_vol->cachep->num_vols;
         continue;
       }
@@ -3156,7 +3165,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
 
   cp->vol_number = volume_number;
   cp->scheme = scheme;
-  if(fillExclusiveDisks(cp)) {
+  if (fillExclusiveDisks(cp)) {
     Debug("cache_init", "volume successfully filled from forced disks: volume_number=%d", volume_number);
     return 0;
   }

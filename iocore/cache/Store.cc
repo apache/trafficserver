@@ -40,12 +40,21 @@
 // Global
 Store theStore;
 
-int Store::getVolume(char* line) {
+int
+Store::getVolume(char* line)
+{
+  if (!line) {
+    return 0;
+  }
+
   int v = 0;
-  if(!line) return 0;
   char* str = strstr(line, vol_str);
   char* vol_start = str;
-  if(!str) return 0;
+
+  if (!str) {
+    return 0;
+  }
+
   while (*str && !ParseRules::is_digit(*str))
     str++;
   v = ink_atoi(str);
@@ -60,7 +69,10 @@ int Store::getVolume(char* line) {
   *vol_start = 0;
   Debug("cache_init", "returning %d and '%s'", v, line);
 
-  if(v < 0) return 0;
+  if (v < 0) {
+    return 0;
+  }
+
   return v;
 }
 
