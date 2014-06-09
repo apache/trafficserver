@@ -1797,8 +1797,10 @@ mime_field_value_get_comma_list(MIMEField *field, StrList *list)
   // if field doesn't support commas, don't rip apart.
   if (!field->supports_commas())
     list->append_string(str, len);
-  else
-    HttpCompat::parse_tok_list(list, 1, str, len, ',');
+  else {
+	  // we don't need to trim quotes at this point
+	  HttpCompat::parse_tok_list(list, 0, str, len, ',');
+  }
 
   return list->count;
 }
