@@ -27,10 +27,13 @@
 #include "Main.h"
 //#include "YAddr.h"
 
+#include <string>
+#include <set>
+#include <vector>
+
 // ===============================================================================
 // ACL like filtering defs (per one remap rule)
 
-static int const ACL_FILTER_MAX_METHODS = 16;
 static int const ACL_FILTER_MAX_SRC_IP = 128;
 static int const ACL_FILTER_MAX_ARGV = 512;
 
@@ -64,7 +67,6 @@ public:
   int filter_name_size;         // size of optional filter name
   char *filter_name;            // optional filter name
   unsigned int allow_flag:1,    // action allow deny
-    method_valid:1,             // method valid for verification
     src_ip_valid:1,             // src_ip range valid
     active_queue_flag:1;        // filter is in active state (used by .useflt directive)
 
@@ -72,10 +74,12 @@ public:
   int argc;                     // argument counter (only for filter defs)
   char *argv[ACL_FILTER_MAX_ARGV];      // argument strings (only for filter defs)
 
-  // method
-  int method_cnt;               // how many valid methods we have
-  int method_array[ACL_FILTER_MAX_METHODS];     // any HTTP method (actually only WKSIDX from HTTP.cc)
-  int method_idx[ACL_FILTER_MAX_METHODS];       // HTTP method index (actually method flag)
+  // methods
+  bool method_restriction_enabled;
+  std::vector<bool> standard_method_lookup;
+
+  typedef std::set<std::string> MethodMap;
+  MethodMap nonstandard_methods;
 
   // src_ip
   int src_ip_cnt;               // how many valid src_ip rules we have

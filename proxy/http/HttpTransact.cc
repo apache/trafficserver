@@ -6561,12 +6561,25 @@ HttpTransact::process_quick_http_filter(State* s, int method)
     return;
   }
 
-  if (s->state_machine->ua_session && (!IpAllow::CheckMask(s->state_machine->ua_session->acl_method_mask, method))) {
-    if (is_debug_tag_set("ip-allow")) {
-      ip_text_buffer ipb;
-      Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.addr.sa, ipb, sizeof(ipb)), hdrtoken_index_to_wks(method), s->state_machine->ua_session->acl_method_mask);
+  if (s->state_machine->ua_session) {
+    const AclRecord *acl_record = s->state_machine->ua_session->acl_record;
+    bool deny_request = (acl_record == NULL);
+    if (acl_record && (acl_record->_method_mask != AclRecord::ALL_METHOD_MASK)) {
+      if (method != -1) {
+        deny_request = !acl_record->isMethodAllowed(method);
+      } else {
+        int method_str_len;
+        const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
+        deny_request = !acl_record->isNonstandardMethodAllowed(std::string(method_str, method_str_len));
+      }
     }
-    s->client_connection_enabled = false;
+    if (deny_request) {
+      if (is_debug_tag_set("ip-allow")) {
+        ip_text_buffer ipb;
+        Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.addr.sa, ipb, sizeof(ipb)), hdrtoken_index_to_wks(method), acl_record->_method_mask);
+      }
+      s->client_connection_enabled = false;
+    }
   }
 }
 

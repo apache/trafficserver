@@ -24,6 +24,7 @@
 #include "AclFiltering.h"
 #include "Main.h"
 #include "Error.h"
+#include "HTTP.h"
 
 // ===============================================================================
 //                              acl_filter_rule
@@ -36,11 +37,11 @@ acl_filter_rule::reset(void)
   for (i = (argc = 0); i < ACL_FILTER_MAX_ARGV; i++) {
     argv[i] = (char *)ats_free_null(argv[i]);
   }
-  for (i = (method_cnt = 0); i < ACL_FILTER_MAX_METHODS; i++) {
-    method_array[i] = 0;
-    method_idx[i] = 0;
+  method_restriction_enabled = false;
+  for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
+    standard_method_lookup[i] = false;
   }
-  method_valid = 0;
+  nonstandard_methods.clear();
   for (i = (src_ip_cnt = 0); i < ACL_FILTER_MAX_SRC_IP; i++) {
     src_ip_array[i].reset();
   }
@@ -48,8 +49,9 @@ acl_filter_rule::reset(void)
 }
 
 acl_filter_rule::acl_filter_rule():next(NULL), filter_name_size(0), filter_name(NULL), allow_flag(1),
-method_valid(0), src_ip_valid(0), active_queue_flag(0), argc(0)
+src_ip_valid(0), active_queue_flag(0), argc(0)
 {
+  standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
   ink_zero(argv);
   reset();
 }
@@ -91,12 +93,19 @@ acl_filter_rule::print(void)
 {
   int i;
   printf("-----------------------------------------------------------------------------------------\n");
-  printf("Filter \"%s\" status: allow_flag=%d, method_valid=%d, src_ip_valid=%d, active_queue_flag=%d\n",
-         filter_name ? filter_name : "<NONAME>", (int) allow_flag, (int) method_valid,
+  printf("Filter \"%s\" status: allow_flag=%d, src_ip_valid=%d, active_queue_flag=%d\n",
+         filter_name ? filter_name : "<NONAME>", (int) allow_flag,
          (int) src_ip_valid, (int) active_queue_flag);
-  printf("method_cnt=%d %s", method_cnt, method_cnt > 0 ? ": " : "");
-  for (i = 0; i < method_cnt; i++)
-    printf("0x%X ", method_array[i]);
+  printf("standard methods=");
+  for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
+    if (standard_method_lookup[i]) {
+      printf("0x%x ", HTTP_WKSIDX_CONNECT + i);
+    }
+  }
+  printf("nonstandard methods=");
+  for (MethodMap::iterator iter = nonstandard_methods.begin(), end = nonstandard_methods.end(); iter != end; ++iter) {
+    printf("%s ", iter->c_str());
+  }
   printf("\n");
   printf("src_ip_cnt=%d\n", src_ip_cnt);
   for (i = 0; i < src_ip_cnt; i++) {
