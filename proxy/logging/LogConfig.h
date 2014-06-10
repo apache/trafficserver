@@ -26,6 +26,9 @@
 #ifndef LOG_CONFIG_H
 #define LOG_CONFIG_H
 
+#include <string>
+#include <vector>
+
 #include "libts.h"
 #include "P_RecProcess.h"
 #include "ProxyConfig.h"
@@ -69,6 +72,7 @@ enum
   log_stat_log_files_open_stat,
   log_stat_log_files_space_used_stat,
 
+  log_stat_params_masked_url_count,
   log_stat_count
 };
 
@@ -250,6 +254,9 @@ public:
   char *xml_config_file;
   char *hosts_config_file;
 
+  const std::vector<std::string> &get_query_parameters_to_hide() const {
+    return query_parameters_to_hide;
+  }
 private:
 
   void read_xml_log_config(int from_memory);
@@ -286,6 +293,7 @@ private:
   // -- member functions not allowed --
   LogConfig(const LogConfig &);
   LogConfig & operator=(const LogConfig &);
+  std::vector<std::string> query_parameters_to_hide;
 };
 
 /*-------------------------------------------------------------------------

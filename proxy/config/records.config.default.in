@@ -467,6 +467,15 @@ CONFIG proxy.config.log.auto_delete_rolled_files INT 1
 CONFIG proxy.config.log.sampling_frequency INT 1
 ##############################################################################
 #
+# This config can be used to hide values of certain query parameters. This 
+# config is specified as a space-separated list of substrings. Any query 
+# containing a specified substring will have it's value filled with asterisks.
+# Example: "login password"
+#
+##############################################################################
+CONFIG proxy.config.log.hide_query_parameters STRING NULL
+##############################################################################
+#
 # Reverse Proxy
 #
 ##############################################################################

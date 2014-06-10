@@ -16,6 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+check_PROGRAMS = test_QueryParamsEscaper
+TESTS = $(check_PROGRAMS)
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
@@ -70,7 +73,9 @@ liblogging_a_SOURCES = \
   LogSock.cc \
   LogSock.h \
   LogUtils.cc \
-  LogUtils.h
+  LogUtils.h \
+  QueryParamsEscaper.h \
+  QueryParamsEscaper.cc
 
 liblogcollation_a_SOURCES = \
   LogCollationAccept.cc \
@@ -84,3 +89,7 @@ liblogcollation_a_SOURCES = \
 #test_UNUSED_SOURCES = \
 #  LogAccessTest.cc \
 #  LogAccessTest.h
+
+test_QueryParamsEscaper_SOURCES = test_QueryParamsEscaper.cc
+test_QueryParamsEscaper_LDADD = liblogging.a
+test_QueryParamsEscaper_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
