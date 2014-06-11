@@ -373,6 +373,7 @@ URLImpl::strings_length()
   ret += m_len_params;
   ret += m_len_query;
   ret += m_len_fragment;
+  ret += m_len_printed_string;
   return ret;
 }
 
