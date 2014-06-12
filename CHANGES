@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2885] Change LuaJIT to build statically, and add --disable-luajit. This
+   is an option that will eventually be removed as we make LuaJIT mandatory.
+
   *) [TS-2886] Fix regression where body factory is not used.
 
   *) [TS-2881] Redirection handling broken

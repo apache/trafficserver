@@ -217,7 +217,6 @@ traffic_server_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(which_libts) \
-  $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%) \
   @HWLOC_LIBS@ \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
@@ -232,6 +231,9 @@ traffic_server_LDADD = \
   @SPDYLAY_LIBS@ \
   -lm
 
+if ENABLE_LUAJIT
+  traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
+endif
 
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.

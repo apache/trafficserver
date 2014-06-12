@@ -26,3 +26,9 @@ SUBDIRS = \
   stats_over_http \
   tcpinfo \
   experimental
+
+if BUILD_EXPERIMENTAL_PLUGINS
+
+SUBDIRS += experimental
+
+endif
