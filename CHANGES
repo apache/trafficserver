@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2885] Change LuaJIT to build statically, and add --disable-luajit. This
+   is an option that will eventually be removed as we make LuaJIT mandatory.
+
   *) [TS-2879] Remap errors and redirects should honor keep-alive
 
   *) [TS-2236] Remove trailing null in response body set by fabricate_with_old_api.

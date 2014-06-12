@@ -486,6 +486,21 @@ AC_MSG_RESULT([$enable_cppapi])
 AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
 
 #
+# Disable LuaJIT? This is a interrim option, when Lua becomes part of the core
+# requirements, we will remove this option.
+#
+AC_MSG_CHECKING([whether to disable LuaJIT])
+AC_ARG_ENABLE([luajit],
+  [AS_HELP_STRING([--disable-luajit],[turn off LuaJIT])],
+  [],
+  [enable_luajit="yes"]
+)
+AC_MSG_RESULT([$enable_luajit])
+TS_ARG_ENABLE_VAR([use], [luajit])
+AC_SUBST(use_luajit)
+AM_CONDITIONAL([ENABLE_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
+
+#
 # Installation directories
 # For each var the following is evaluated
 # foo      Standard variable  eg. ${prefix}/foo
@@ -1862,29 +1877,6 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/atscppapi/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/boom/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/intercept/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/src/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
@@ -1909,27 +1901,6 @@ AC_CONFIG_FILES([
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
   plugins/tcpinfo/Makefile
-  plugins/experimental/Makefile
-  plugins/experimental/authproxy/Makefile
-  plugins/experimental/background_fetch/Makefile
-  plugins/experimental/balancer/Makefile
-  plugins/experimental/buffer_upload/Makefile
-  plugins/experimental/channel_stats/Makefile
-  plugins/experimental/collapsed_connection/Makefile
-  plugins/experimental/custom_redirect/Makefile
-  plugins/experimental/escalate/Makefile
-  plugins/experimental/esi/Makefile
-  plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/healthchecks/Makefile
-  plugins/experimental/hipes/Makefile
-  plugins/experimental/metalink/Makefile
-  plugins/experimental/remap_stats/Makefile
-  plugins/experimental/regex_revalidate/Makefile
-  plugins/experimental/s3_auth/Makefile
-  plugins/experimental/stale_while_revalidate/Makefile
-  plugins/experimental/ts_lua/Makefile
-  plugins/experimental/url_sig/Makefile
-  plugins/experimental/xdebug/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile
@@ -1952,6 +1923,59 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/tsxs
 ])
+
+AS_IF([test "x$enable_experimental_plugins" = xyes], [
+  AC_CONFIG_FILES([
+    plugins/experimental/Makefile
+    plugins/experimental/authproxy/Makefile
+    plugins/experimental/background_fetch/Makefile
+    plugins/experimental/balancer/Makefile
+    plugins/experimental/buffer_upload/Makefile
+    plugins/experimental/channel_stats/Makefile
+    plugins/experimental/collapsed_connection/Makefile
+    plugins/experimental/custom_redirect/Makefile
+    plugins/experimental/escalate/Makefile
+    plugins/experimental/esi/Makefile
+    plugins/experimental/geoip_acl/Makefile
+    plugins/experimental/healthchecks/Makefile
+    plugins/experimental/hipes/Makefile
+    plugins/experimental/metalink/Makefile
+    plugins/experimental/remap_stats/Makefile
+    plugins/experimental/regex_revalidate/Makefile
+    plugins/experimental/s3_auth/Makefile
+    plugins/experimental/stale_while_revalidate/Makefile
+    plugins/experimental/ts_lua/Makefile
+    plugins/experimental/url_sig/Makefile
+    plugins/experimental/xdebug/Makefile
+])])
+
+AS_IF([test "x$enable_cppapi" = xyes], [
+  AC_CONFIG_FILES([
+  lib/atscppapi/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/examples/async_http_fetch/Makefile
+  lib/atscppapi/examples/async_timer/Makefile
+  lib/atscppapi/examples/clientredirect/Makefile
+  lib/atscppapi/examples/clientrequest/Makefile
+  lib/atscppapi/examples/customresponse/Makefile
+  lib/atscppapi/examples/boom/Makefile
+  lib/atscppapi/examples/globalhook/Makefile
+  lib/atscppapi/examples/gzip_transformation/Makefile
+  lib/atscppapi/examples/helloworld/Makefile
+  lib/atscppapi/examples/intercept/Makefile
+  lib/atscppapi/examples/internal_transaction_handling/Makefile
+  lib/atscppapi/examples/logger_example/Makefile
+  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
+  lib/atscppapi/examples/null_transformation_plugin/Makefile
+  lib/atscppapi/examples/post_buffer/Makefile
+  lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/serverresponse/Makefile
+  lib/atscppapi/examples/stat_example/Makefile
+  lib/atscppapi/examples/timeout_example/Makefile
+  lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/src/Makefile
+])])
+
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
