@@ -39,7 +39,7 @@ endif
 # Note: The LUA_LDFLAGS is a bit of a hack, since LuaJIT on OmniOS needs
 #       the -m64 flag. See configure.ac.
 #
-if ENABLE_LUAJIT
+if BUILD_LUAJIT
 LUA_CFLAGS=$(CFLAGS) -DLUA_COMPAT_ALL -DLUA_USE_POSIX -DLUA_USE_DLOPEN
 
 all-local:

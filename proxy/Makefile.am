@@ -231,7 +231,7 @@ traffic_server_LDADD = \
   @SPDYLAY_LIBS@ \
   -lm
 
-if ENABLE_LUAJIT
+if BUILD_LUAJIT
   traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
 endif
 

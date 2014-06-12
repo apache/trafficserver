@@ -496,9 +496,7 @@ AC_ARG_ENABLE([luajit],
   [enable_luajit="yes"]
 )
 AC_MSG_RESULT([$enable_luajit])
-TS_ARG_ENABLE_VAR([use], [luajit])
-AC_SUBST(use_luajit)
-AM_CONDITIONAL([ENABLE_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
+AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
 
 #
 # Installation directories
