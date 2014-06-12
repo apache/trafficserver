@@ -35,6 +35,6 @@ SUBDIRS = \
  url_sig \
  xdebug
 
-if ENABLE_LUAJIT
+if BUILD_LUAJIT
   SUBDIRS += ts_lua
 endif
