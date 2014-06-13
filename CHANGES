@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.0.0
 
+  *) [TS-2886] Fix regression where body factory is not used.
+
   *) [TS-2881] Redirection handling broken
 
   *) [TS-2875] Change hwloc library env variables from hwloc_ to HWLOC_.
