@@ -48,7 +48,6 @@
 #include "I_Machine.h"
 #include "IPAllow.h"
 
-static const char *URL_MSG = "Unable to process requested URL.\n";
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 #define RANGE_NUMBERS_LENGTH 60
 
@@ -589,7 +588,7 @@ HttpTransact::BadRequest(State* s)
 {
   DebugTxn("http_trans", "[BadRequest]" "parser marked request bad");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error", "Bad request syntax", "");
+  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error", NULL);
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
 }
 
@@ -652,7 +651,7 @@ HttpTransact::HandleBlindTunnel(State* s)
     // The error message we send back will be suppressed so
     //  the only important thing in selecting the error is what
     //  status code it gets logged as
-    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Port Forwarding Error", "default", "");
+    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Port Forwarding Error", "default", NULL);
 
     int host_len;
     const char *host = s->hdr_info.client_request.url_get()->host_get(&host_len);
@@ -845,11 +844,9 @@ HttpTransact::EndRemapRequest(State* s)
   if (s->remap_redirect != NULL) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     if (s->http_return_code == HTTP_STATUS_MOVED_PERMANENTLY) {
-      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently",
-                           "\"<em>%s</em>\".<p>", s->remap_redirect);
+      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently", NULL);
     } else {
-      build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily",
-                           "\"<em>%s</em>\".<p>", s->remap_redirect);
+      build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily", NULL);
     }
     ats_free(s->remap_redirect);
     s->reverse_proxy = false;
@@ -863,8 +860,7 @@ HttpTransact::EndRemapRequest(State* s)
   // We must close this connection if client_connection_enabled == false //
   /////////////////////////////////////////////////////////////////////////
   if (!s->client_connection_enabled) {
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied",
-                         "You are not allowed to access the document.");
+    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", NULL);
     s->reverse_proxy = false;
     goto done;
   }
@@ -872,7 +868,8 @@ HttpTransact::EndRemapRequest(State* s)
   // Check if remap plugin set HTTP return code and return body  //
   /////////////////////////////////////////////////////////////////
   if (s->http_return_code != HTTP_STATUS_NONE) {
-    build_error_response(s, s->http_return_code, NULL, NULL, s->internal_msg_buffer_size ? s->internal_msg_buffer : NULL);
+    build_error_response(s, s->http_return_code, NULL, NULL,
+                         s->internal_msg_buffer_size ? s->internal_msg_buffer : NULL);
     s->reverse_proxy = false;
     goto done;
   }
@@ -914,19 +911,13 @@ HttpTransact::EndRemapRequest(State* s)
 
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (redirect_url) {       /* there is a redirect url */
-        build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect For Explanation", "request#no_host",
-                             "\"<em>%s</em>\".<p>", redirect_url);
+        build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect For Explanation", "request#no_host", NULL);
         s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, redirect_url, redirect_url_len);
       // socket when there is no host. Need to handle DNS failure elsewhere.
       } else if (host == NULL) {    /* no host */
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host",
-                             ("Your browser did not send a \"Host:\" HTTP header, "
-                              "so the virtual host being requested could not be "
-                              "determined.  To access this site you will need "
-                              "to upgrade to a modern browser that supports the HTTP " "\"Host:\" header field."));
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host", NULL);
       } else {
-        build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found on Accelerator", "urlrouting#no_mapping",
-                             "Your requested URL was not found.");
+        build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found on Accelerator", "urlrouting#no_mapping", NULL);
       }
       s->reverse_proxy = false;
       goto done;
@@ -938,8 +929,7 @@ HttpTransact::EndRemapRequest(State* s)
       ///////////////////////////////////////////////////////
 
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found", "urlrouting#no_mapping",
-                           "Your requested URL was not found.");
+      build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found", "urlrouting#no_mapping", NULL);
 
       s->reverse_proxy = false;
       goto done;
@@ -1067,8 +1057,7 @@ bool HttpTransact::handle_upgrade_request(State *s) {
     DebugTxn("http_trans_upgrade", "Transaction requested upgrade for unknown protocol: %s", upgrade_hdr_val);
   }
 
-  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error",
-                       "Invalid Upgrade Request");
+  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error", NULL);
 
   // we want our modify_request method to just return while we fail out from here.
   // this seems like the preferred option because the user wanted to do an upgrade but sent a bad protocol.
@@ -1096,8 +1085,7 @@ HttpTransact::handle_websocket_upgrade_pre_remap(State *s) {
     url->scheme_set(URL_SCHEME_WSS, URL_LEN_WSS);
   } else {
     DebugTxn("http_trans_websocket_upgrade_pre_remap", "Invalid scheme for websocket upgrade");
-    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error",
-                          "Invalid Upgrade Request");
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error", NULL);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   }
 
@@ -1252,29 +1240,12 @@ HttpTransact::handleIfRedirect(State *s)
     redirect_url.destroy();
     if (answer == TEMPORARY_REDIRECT) {
       if ((s->client_info).http_version.m_version == HTTP_VERSION(1, 1)) {
-        build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT,
-                             /* which is HTTP/1.1 for HTTP_STATUS_MOVED_TEMPORARILY */
-                             "Redirect", "redirect#moved_temporarily",
-                             "%s <a href=\"%s\">%s</a>. %s",
-                             "The document you requested is now",
-                             s->remap_redirect, s->remap_redirect, "Please update your documents and bookmarks accordingly");
+        build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT, "Redirect", "redirect#moved_temporarily", NULL);
       } else {
-        build_error_response(s,
-                             HTTP_STATUS_MOVED_TEMPORARILY,
-                             "Redirect",
-                             "redirect#moved_temporarily",
-                             "%s <a href=\"%s\">%s</a>. %s",
-                             "The document you requested is now",
-                             s->remap_redirect, s->remap_redirect, "Please update your documents and bookmarks accordingly");
+        build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily", NULL);
       }
     } else {
-      build_error_response(s,
-                           HTTP_STATUS_MOVED_PERMANENTLY,
-                           "Redirect",
-                           "redirect#moved_permanently",
-                           "%s <a href=\"%s\">%s</a>. %s",
-                           "The document you requested is now",
-                           s->remap_redirect, s->remap_redirect, "Please update your documents and bookmarks accordingly");
+      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently", NULL);
     }
     s->arena.str_free(s->remap_redirect);
     s->remap_redirect = NULL;
@@ -1397,8 +1368,7 @@ HttpTransact::HandleRequest(State* s)
       StartAccessControl(s);
       return;
     } else if (s->http_config_param->no_origin_server_dns) {
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect",
-                           "Next Hop Connection Failed");
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect", NULL);
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
     }
@@ -1626,20 +1596,7 @@ HttpTransact::ReDNSRoundRobin(State* s)
     s->next_action = how_to_open_connection(s);
   } else {
     // Our ReDNS failed so output the DNS failure error message
-    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed",
-                         // The following is all one long string
-                         //("Unable to locate the server named \"<em>%s</em>\" --- "
-                         //"the server does not have a DNS entry.  Perhaps there is "
-                         //"a misspelling in the server name, or the server no "
-                         //"longer exists.  Double-check the name and try again."),
-                         ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">"
-                          "<HTML><HEAD><TITLE>Unknown Host</TITLE></HEAD><BODY BGCOLOR=\"white\" FGCOLOR=\"black\">"
-                          "<H1>Unknown Host</H1><HR>"
-                          "<FONT FACE=\"Helvetica,Arial\"><B>"
-                          "Description: Unable to locate the server named \"<EM>%s</EM>\" --- "
-                          "the server does not have a DNS entry.  Perhaps there is a misspelling "
-                          "in the server name, or the server no longer exists.  Double-check the "
-                          "name and try again.</B></FONT><HR></BODY></HTML>"), s->server_info.name);
+    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed", NULL);
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
@@ -1732,21 +1689,7 @@ HttpTransact::OSDNSLookup(State* s)
         }
         // output the DNS failure error message
         SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-        build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed",
-                             // The following is all one long string
-                             //("Unable to locate the server named \"<em>%s</em>\" --- "
-                             //"the server does not have a DNS entry.  Perhaps there is "
-                             //"a misspelling in the server name, or the server no "
-                             //"longer exists.  Double-check the name and try again."),
-                             ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">"
-                              "<HTML><HEAD><TITLE>Unknown Host</TITLE></HEAD><BODY BGCOLOR=\"white\" FGCOLOR=\"black\">"
-                              "<H1>Unknown Host</H1><HR>"
-                              "<FONT FACE=\"Helvetica,Arial\"><B>"
-                              "Description: Unable to locate the server named \"<EM>%s (%d)</EM>\" --- "
-                              "the server does not have a DNS entry.  Perhaps there is a misspelling "
-                              "in the server name, or the server no longer exists.  Double-check the "
-                              "name and try again.</B></FONT><HR></BODY></HTML>")
-                             , s->server_info.name, host_name_expansion);
+        build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed", NULL);
         // s->cache_info.action = CACHE_DO_NO_ACTION;
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
       }
@@ -1865,7 +1808,7 @@ HttpTransact::OSDNSLookup(State* s)
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
         //DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
       } else {
-        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default", "");
+        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default", NULL);
         Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->cache_lookup_result);
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
       }
@@ -1919,8 +1862,7 @@ HttpTransact::HandleFiltering(State* s)
 
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     // adding a comment so that cvs recognizes that I added a space in the text below
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied",
-                         "You are not allowed to access the document at the URL location");
+    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", NULL);
     // s->cache_info.action = CACHE_DO_NO_ACTION;
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   }
@@ -2898,7 +2840,7 @@ HttpTransact::build_response_from_cache(State* s, HTTPWarningCode warning_code)
       if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE)) {
         s->state_machine->do_range_setup_if_necessary();
         if (s->range_setup == RANGE_NOT_SATISFIABLE) {
-          build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable","","");
+          build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable", "default", NULL);
           s->cache_info.action = CACHE_DO_NO_ACTION;
           s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
           break;
@@ -2937,7 +2879,7 @@ HttpTransact::build_response_from_cache(State* s, HTTPWarningCode warning_code)
       // and server is not reacheable: 502
       //
       DebugTxn("http_trans", "[build_response_from_cache] No match! Connection failed.");
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", "Connection Failed");
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", NULL);
       s->cache_info.action = CACHE_DO_NO_ACTION;
       s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
       warning_code = HTTP_WARNING_CODE_NONE;
@@ -3138,8 +3080,7 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
 
     s->next_action = how_to_open_connection(s);
   } else {                      // miss, but only-if-cached is set
-    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache", "%s",
-                         "This document was not available in the cache, but the client only accepts cached copies.");
+    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache", NULL);
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
   }
 
@@ -4255,7 +4196,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
       /* Downgrade the request level and retry */
       if (!HttpTransactHeaders::downgrade_request(&keep_alive, &s->hdr_info.server_request)) {
         build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported",
-                             "response#bad_version", "");
+                             "response#bad_version", NULL);
         s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
         s->already_downgraded = true;
       } else {
@@ -4621,7 +4562,8 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State* s)
     /* Downgrade the request level and retry */
     if (!HttpTransactHeaders::downgrade_request(&keep_alive, &s->hdr_info.server_request)) {
       s->already_downgraded = true;
-      build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported", "response#bad_version", "");
+      build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported", "response#bad_version",
+                           NULL);
       s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     } else {
       s->already_downgraded = true;
@@ -6279,7 +6221,7 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     DebugTxn("http_trans", "[is_request_valid]" "failed proxy authorization");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED, "Proxy Authentication Required",
-                         "access#proxy_auth_required", "");
+                         "access#proxy_auth_required", NULL);
     return false;
   case NON_EXISTANT_REQUEST_HEADER:
     /* fall through */
@@ -6287,8 +6229,7 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     {
       DebugTxn("http_trans", "[is_request_valid]" "non-existant/bad header");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error",
-                           const_cast < char *>(URL_MSG));
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error", NULL);
       return false;
     }
 
@@ -6312,19 +6253,10 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     DebugTxn("http_trans", "[is_request_valid] missing host field");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     if (s->http_config_param->reverse_proxy_enabled) {   // host header missing and reverse proxy on
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host",
-                           // This is all one long string
-                           "Your browser did not send \"Host:\" HTTP header field, "
-                           "and therefore the virtual host being requested could "
-                           "not be determined.  To access this site you will need "
-                           "to upgrade to a browser that supports the HTTP " "\"Host:\" header field.");
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host", NULL);
     } else {
       // host header missing and reverse proxy off
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Required In Request", "request#no_host",
-                           // This too is all one long string
-                           "Your browser did not send a hostname as part of "
-                           "the requested url. The configuration of this proxy "
-                           "requires a hostname to be send as part of the url");
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Required In Request", "request#no_host", NULL);
     }
 
     return false;
@@ -6333,8 +6265,7 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     {
       DebugTxn("http_trans", "[is_request_valid] unsupported " "or missing request scheme");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported URL Scheme", "request#scheme_unsupported",
-                           const_cast < char *>(URL_MSG));
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported URL Scheme", "request#scheme_unsupported", NULL);
       return false;
     }
     /* fall through */
@@ -6347,31 +6278,27 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     port = url ? url->port_get() : 0;
     DebugTxn("http_trans", "[is_request_valid]" "%d is an invalid connect port", port);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Tunnel Forbidden", "access#connect_forbidden",
-                         "%d is not an allowed port for Tunnel connections", port);
+    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Tunnel Forbidden", "access#connect_forbidden", NULL);
     return false;
   case NO_POST_CONTENT_LENGTH:
     {
       DebugTxn("http_trans", "[is_request_valid] post request without content length");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Content Length Required", "request#no_content_length",
-                           const_cast < char *>(URL_MSG));
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Content Length Required", "request#no_content_length", NULL);
       return false;
     }
   case UNACCEPTABLE_TE_REQUIRED:
     {
       DebugTxn("http_trans", "[is_request_valid] TE required is unacceptable.");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported",
-                           const_cast < char *>(URL_MSG));
+      build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported", NULL);
       return false;
     }
   case INVALID_POST_CONTENT_LENGTH :
     {
       DebugTxn("http_trans", "[is_request_valid] post request with negative content length value");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length",
-                           const_cast < char *>(URL_MSG));
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length", NULL);
       return false;
     }
   default:
@@ -6606,8 +6533,7 @@ HttpTransact::will_this_request_self_loop(State* s)
                 "unknown's ip and port same as local ip and port - bailing");
           break;
         }
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected",
-                             "Your request is prohibited because it would cause a cycle.");
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected", NULL);
         return true;
       }
     }
@@ -6627,8 +6553,7 @@ HttpTransact::will_this_request_self_loop(State* s)
         if (via_string && ptr_len_str(via_string, via_len, Machine::instance()->ip_hex_string)) {
           DebugTxn("http_transact", "[will_this_request_self_loop] Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string,
                 s->http_config_param->proxy_hostname, Machine::instance()->ip_hex_string, s->http_config_param->proxy_request_via_string);
-          build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected",
-                               "request#cycle_detected", "Your request is prohibited because it would cause a cycle.");
+          build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected", NULL);
           return true;
         }
 
@@ -7525,8 +7450,7 @@ HttpTransact::handle_parent_died(State* s)
 {
   ink_assert(s->parent_result.r == PARENT_FAIL);
 
-  build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect",
-                       "Next Hop Connection Failed");
+  build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect", NULL);
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
 }
 
@@ -7665,7 +7589,7 @@ HttpTransact::handle_server_died(State* s)
     body_type = "connect#failed_connect";
   }
 
-  build_error_response(s, status, reason, body_type, reason);
+  build_error_response(s, status, reason, body_type, NULL);
 
   return;
 }
