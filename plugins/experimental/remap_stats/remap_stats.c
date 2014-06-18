@@ -162,7 +162,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;
     void *txnd;
-    TSHttpStatus status_code = 0;
+    int status_code = 0;
     TSMBuffer buf;
     TSMLoc hdr_loc;
     uint64_t out_bytes, in_bytes;
@@ -201,7 +201,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 
             if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS)
             {
-                status_code = TSHttpHdrStatusGet(buf, hdr_loc);
+                status_code = (int)TSHttpHdrStatusGet(buf, hdr_loc);
                 TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
                 if (status_code < 200)
