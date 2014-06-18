@@ -204,13 +204,15 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
                 status_code = TSHttpHdrStatusGet(buf, hdr_loc);
                 TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
-                if ((status_code >= 200) && (status_code <= 299))
+                if (status_code < 200)
+                    CREATE_STAT_NAME(stat_name, remap, "status_other")
+                else if (status_code <= 299)
                     CREATE_STAT_NAME(stat_name, remap, "status_2xx")
-                else if ((status_code >= 300) && (status_code <= 399))
+                else if (status_code <= 399)
                     CREATE_STAT_NAME(stat_name, remap, "status_3xx")
-                else if ((status_code >= 400) && (status_code <= 499))
+                else if (status_code <= 499)
                     CREATE_STAT_NAME(stat_name, remap, "status_4xx")
-                else if ((status_code >= 500) && ((int)status_code <= 599))
+                else if (status_code <= 599)
                     CREATE_STAT_NAME(stat_name, remap, "status_5xx")
                 else
                     CREATE_STAT_NAME(stat_name, remap, "status_other")
