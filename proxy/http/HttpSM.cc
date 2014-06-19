@@ -3295,6 +3295,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     // Completed successfully
     if (t_state.txn_conf->keep_alive_post_out == 0) {
       // don't share the session if keep-alive for post is not on
+      DebugSM("http_ss", "Setting server session to private because of keep-alive post out");
       set_server_session_private(true);
     }
 
@@ -5536,6 +5537,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   }
 
   if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
+    DebugSM("http_ss", "Setting server session to private");
     server_session->private_session = true;
   }
 }
@@ -5582,6 +5584,7 @@ HttpSM::setup_server_send_request()
   if (t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION
 					       | MIME_PRESENCE_WWW_AUTHENTICATE)) {
       server_session->private_session = true;
+      DebugSM("http_ss", "Setting server session to private for authorization header");
   }
   milestones.server_begin_write = ink_get_hrtime();
   server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
