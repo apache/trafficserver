@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2689] Remove extraneous TSfree that caused segfault.
+
   *) [TS-2892] Keep alive post out enabled by default
 
   *) [TS-2889] Crash in FetchSM related to spdy FetchSM changes in 5.0.x
