@@ -66,9 +66,6 @@
 
 #define PARTITION_HEADROOM_MB 	10
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-
 void
 LogConfig::setup_default_values()
 {
@@ -513,18 +510,6 @@ LogConfig::read_configuration_variables()
   val = (int) REC_ConfigReadInteger("proxy.config.log.search_rolling_interval_sec");
   if (val > 0) {
     search_rolling_interval_sec = val;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.hide_query_parameters");
-  if (ptr != NULL) {
-    std::vector<std::string> raw_params;
-    std::string paramsStr(ptr);
-    boost::split(raw_params, paramsStr, boost::is_any_of(" "));
-    for (size_t i = 0; i < raw_params.size(); ++i) {
-      if (raw_params[i].size()) {
-        query_parameters_to_hide.push_back(raw_params[i]);
-      }
-    }
   }
 }
 
@@ -1288,9 +1273,6 @@ LogConfig::register_stat_callbacks()
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
                      "proxy.process.log.log_files_space_used",
                      RECD_INT, RECP_NON_PERSISTENT, (int) log_stat_log_files_space_used_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log.params_masked_url_count",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_params_masked_url_count, RecRawStatSyncCount);
 }
 
 /*-------------------------------------------------------------------------

@@ -127,8 +127,7 @@ PluginVC::main_handler(int event, void *data)
     read_mutex_held = MUTEX_TAKE_TRY_LOCK(read_side_mutex, my_ethread);
 
     if (!read_mutex_held) {
-      if (call_event != inactive_event)
-        call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      call_event->schedule_in(PVC_LOCK_RETRY_TIME);
       return 0;
     }
 
@@ -136,8 +135,7 @@ PluginVC::main_handler(int event, void *data)
       // It's possible some swapped the mutex on us before
       //  we were able to grab it
       Mutex_unlock(read_side_mutex, my_ethread);
-      if (call_event != inactive_event)
-        call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      call_event->schedule_in(PVC_LOCK_RETRY_TIME);
       return 0;
     }
   }
@@ -149,8 +147,7 @@ PluginVC::main_handler(int event, void *data)
       if (read_mutex_held) {
         Mutex_unlock(read_side_mutex, my_ethread);
       }
-      if (call_event != inactive_event)
-        call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      call_event->schedule_in(PVC_LOCK_RETRY_TIME);
       return 0;
     }
 
@@ -161,8 +158,7 @@ PluginVC::main_handler(int event, void *data)
       if (read_mutex_held) {
         Mutex_unlock(read_side_mutex, my_ethread);
       }
-      if (call_event != inactive_event)
-        call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      call_event->schedule_in(PVC_LOCK_RETRY_TIME);
       return 0;
     }
   }

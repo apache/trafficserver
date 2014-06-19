@@ -369,7 +369,15 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
   ink_assert(incoming_size >= 0);
   ink_assert(m_writeable);
 
-  new_heap_size += required_space_for_evacuation();
+  if (m_read_write_heap) {
+    new_heap_size += m_read_write_heap->m_heap_size;
+  }
+
+  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
+    if (m_ronly_heap[i].m_heap_start != NULL) {
+      new_heap_size += m_ronly_heap[i].m_heap_len;
+    }
+  }
 
   HdrStrHeap *new_heap = new_HdrStrHeap(new_heap_size);
   evacuate_from_str_heaps(new_heap);
@@ -438,44 +446,6 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap * new_heap)
     h = h->m_next;
 
   }
-}
-
-size_t
-HdrHeap::required_space_for_evacuation()
-{
-  size_t ret = 0;
-  HdrHeap *h = this;
-  while (h) {
-    char *data = h->m_data_start;
-
-    while (data < h->m_free_start) {
-      HdrHeapObjImpl *obj = (HdrHeapObjImpl *) data;
-
-      switch (obj->m_type) {
-      case HDR_HEAP_OBJ_URL:
-        ret += ((URLImpl *) obj)->strings_length();
-        break;
-      case HDR_HEAP_OBJ_HTTP_HEADER:
-        ret += ((HTTPHdrImpl *) obj)->strings_length();
-        break;
-      case HDR_HEAP_OBJ_MIME_HEADER:
-        ret += ((MIMEHdrImpl *) obj)->strings_length();
-        break;
-      case HDR_HEAP_OBJ_FIELD_BLOCK:
-        ret += ((MIMEFieldBlockImpl *) obj)->strings_length();
-        break;
-      case HDR_HEAP_OBJ_EMPTY:
-      case HDR_HEAP_OBJ_RAW:
-        // Nothing to do
-        break;
-      default:
-        ink_release_assert(0);
-      }
-      data = data + obj->m_length;
-    }
-    h = h->m_next;
-  }
-  return ret;
 }
 
 void

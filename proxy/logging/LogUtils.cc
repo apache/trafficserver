@@ -49,11 +49,6 @@
 
 #include "LogUtils.h"
 #include "LogLimits.h"
-#include "LogFormat.h"
-#include "LogObject.h"
-#include "LogConfig.h"
-#include "Log.h"
-#include "QueryParamsEscaper.h"
 
 
 /*-------------------------------------------------------------------------
@@ -310,9 +305,8 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     return NULL;
   }
 
-  if (!map) {
+  if (!map)
     map = codes_to_escape;
-  }
 
   // Count specials in the url, assuming that there won't be any.
   //
@@ -328,39 +322,25 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     ++p;
   }
 
-  QueryParamsEscaper params_escaper(Log::config->get_query_parameters_to_hide());
-
   if (!count) {
     // The common case, no escapes, so just return the source string.
+    //
     *len_out = len_in;
-    bool params_escaping_required = params_escaper.is_escaping_required_for_url(url, len_in);
-    if (params_escaping_required && !dst) {
-      dst = (char *) arena->str_alloc(len_in);
-    }
-    if (dst) {
-      memcpy(dst, url, len_in);
-      if (params_escaping_required) {
-        params_escaper.escape_url(dst);
-        RecIncrRawStat(log_rsb, this_ethread(), (int) log_stat_params_masked_url_count, 1);
-        url = dst;
-      }
-    }
+    if (dst)
+      ink_strlcpy(dst, url, dst_size);
     return url;
   }
 
-  size_t out_len = len_in; // default
-  if (count) {
-    // For each special char found, we'll need an escape string, which is
-    // three characters long.  Count this and allocate the string required.
-    //
-    // make sure we take into account the characters we are substituting
-    // for when we calculate out_len !!! in other words,
-    // out_len = len_in + 3*count - count
-    //
-    out_len = len_in + 2 * count;
-  }
+  // For each special char found, we'll need an escape string, which is
+  // three characters long.  Count this and allocate the string required.
+  //
+  // make sure we take into account the characters we are substituting
+  // for when we calculate out_len !!! in other words,
+  // out_len = len_in + 3*count - count
+  //
+  size_t out_len = len_in + 2 * count;
 
-  if (dst && (dst_size < out_len + 1)) {
+  if (dst && out_len > dst_size) {
     *len_out = 0;
     return NULL;
   }
@@ -376,33 +356,23 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
   else
     new_url = (char *) arena->str_alloc(out_len + 1);
 
-  if (count) {
-    char *from = url;
-    char *to = new_url;
-    
-    while (from < in_url_end) {
-      register unsigned char c = *from;
-      if (map[c / 8] & (1 << (7 - c % 8))) {
-        *to++ = '%';
-        *to++ = hex_digit[c / 16];
-        *to++ = hex_digit[c % 16];
-      } else {
-        *to++ = *from;
-      }
-      from++;
+  char *from = url;
+  char *to = new_url;
+
+  while (from < in_url_end) {
+    unsigned char c = *from;
+    if (map[c / 8] & (1 << (7 - c % 8))) {
+      *to++ = '%';
+      *to++ = hex_digit[c / 16];
+      *to++ = hex_digit[c % 16];
+    } else {
+      *to++ = *from;
     }
-  } else {
-    memcpy(new_url, url, len_in);
+    from++;
   }
+  *to = '\0';                      // null terminate string
 
-  new_url[out_len] = '\0';                      // null terminate string
   *len_out = out_len;
-
-  if (params_escaper.is_escaping_required_for_url(new_url, out_len)) {
-    params_escaper.escape_url(new_url);
-    RecIncrRawStat(log_rsb, this_ethread(), (int) log_stat_params_masked_url_count, 1);
-  }
-
   return new_url;
 }
 

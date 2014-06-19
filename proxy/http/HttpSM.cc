@@ -3143,19 +3143,10 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   if (close_connection) {
     // If the client could be pipelining or is doing a POST, we need to
     //   set the ua_session into half close mode
-
-	  // only external POSTs should be subject to this logic; ruling out internal POSTs here
-	  bool is_eligible_post_request = (t_state.method == HTTP_WKSIDX_POST);
-	  if (is_eligible_post_request) {
-	   NetVConnection *vc = ua_session->get_netvc();
-	   if (vc) {
-		  is_eligible_post_request = vc->get_is_internal_request() ? false : true;
-	   }
-	  }
-	  if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) &&
-			  event == VC_EVENT_WRITE_COMPLETE) {
-		  ua_session->set_half_close_flag();
-	  }
+    if ((t_state.method == HTTP_WKSIDX_POST || t_state.client_info.pipeline_possible == true)
+        && event == VC_EVENT_WRITE_COMPLETE) {
+      ua_session->set_half_close_flag();
+    }
 
     ua_session->do_io_close();
     ua_session = NULL;
@@ -4986,18 +4977,16 @@ HttpSM::handle_post_failure()
   // have the full post and it's deallocating the post buffers here
   enable_redirection = false;
   tunnel.deallocate_redirect_postdata_buffers();
+  tunnel.reset();
 
   // Don't even think about doing keep-alive after this debacle
   t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
   t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
 
   if (server_buffer_reader->read_avail() > 0) {
-    tunnel.reset();
     // There's data from the server so try to read the header
     setup_server_read_response_header();
   } else {
-    tunnel.deallocate_buffers();
-    tunnel.reset();
     // Server died
     vc_table.cleanup_entry(server_entry);
     server_entry = NULL;

@@ -190,7 +190,6 @@ enum ViaString_t
   VIA_ERROR_SERVER = 'S',
   VIA_ERROR_TIMEOUT = 'T',
   VIA_ERROR_CACHE_READ = 'R',
-  VIA_ERROR_MOVED_TEMPORARILY = 'M',
   //
   // Now the detailed stuff
   //

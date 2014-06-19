@@ -44,7 +44,10 @@ enum AclOp {
   ACL_OP_DENY, ///< Deny access.
 };
 
-const AclRecord IpAllow::ALL_METHOD_ACL(AclRecord::ALL_METHOD_MASK);
+// Mask for all methods.
+// This can't be computed properly at process start, so it's delayed
+// until the instance is initialized.
+uint32_t IpAllow::ALL_METHOD_MASK;
 
 int IpAllow::configid = 0;
 
@@ -58,6 +61,8 @@ IpAllow::startup()
 {
   // Should not have been initialized before
   ink_assert(IpAllow::configid == 0);
+
+  ALL_METHOD_MASK = ~0;
 
   ipAllowUpdate = NEW(new ConfigUpdateHandler<IpAllow>());
   ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
@@ -133,8 +138,8 @@ IpAllow::Print() {
       s << " - " << ats_ip_ntop(spot->max(), text, sizeof text);
     }
     s << " method=";
-    uint32_t mask = AclRecord::ALL_METHOD_MASK & ar->_method_mask;
-    if (AclRecord::ALL_METHOD_MASK == mask) {
+    uint32_t mask = ALL_METHOD_MASK & ar->_method_mask;
+    if (ALL_METHOD_MASK == mask) {
       s << "ALL";
     } else if (0 == mask) {
       s << "NONE";
@@ -148,18 +153,6 @@ IpAllow::Print() {
           s << hdrtoken_index_to_wks(i + HTTP_WKSIDX_CONNECT);
           leader = true;
         }
-      }
-    }
-    if (!ar->_nonstandard_methods.empty()) {
-      s << " nonstandard method=";
-      bool leader = false; // need leading vbar?
-      for (AclRecord::MethodSet::iterator iter = ar->_nonstandard_methods.begin(),
-             end = ar->_nonstandard_methods.end(); iter != end; ++iter) {
-        if (leader) {
-          s << '|';
-        }
-        s << *iter;
-        leader = true;
       }
     }
   }
@@ -223,8 +216,6 @@ IpAllow::BuildTable()
           // Search for "action=ip_allow method=PURGE method=GET ..." or "action=ip_deny method=PURGE method=GET ...".
           char *label, *val;
           uint32_t acl_method_mask = 0;
-          AclRecord::MethodSet nonstandard_methods;
-          bool deny_nonstandard_methods = false;
           AclOp op = ACL_OP_DENY; // "shut up", I explained to the compiler.
           bool op_found = false, method_found = false;
           for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
@@ -257,35 +248,30 @@ IpAllow::BuildTable()
                     method_found = false;  // in case someone does method=GET|ALL
                     break;
                   } else {
-                    int method_name_len = strlen(method_name);
-                    int method_idx = hdrtoken_tokenize(method_name, method_name_len);
+                    int method_idx = hdrtoken_tokenize(method_name, strlen(method_name));
                     if (method_idx < HTTP_WKSIDX_CONNECT || method_idx >= HTTP_WKSIDX_CONNECT + HTTP_WKSIDX_METHODS_CNT) {
-                      nonstandard_methods.insert(method_name);
-                      Debug("ip-allow", "Found nonstandard method [%s] on line %d", method_name, line_num);
+                      Warning("Method name '%s' on line %d is not valid. Ignoring.", method_name, line_num);
                     } else { // valid method.
-                      acl_method_mask |= AclRecord::MethodIdxToMask(method_idx);
+                      method_found = true;
+                      acl_method_mask |= MethodIdxToMask(method_idx);
                     }
-                    method_found = true;
                   }
                 }
               }
             }
             // If method not specified, default to ALL
             if (!method_found) {
-              method_found = true;
-              acl_method_mask = AclRecord::ALL_METHOD_MASK;
-              nonstandard_methods.clear();
+              method_found = true, acl_method_mask = ALL_METHOD_MASK;
             }
             // When deny, use bitwise complement.  (Make the rule 'allow for all
             // methods except those specified')
             if (op == ACL_OP_DENY) {
-              acl_method_mask = AclRecord::ALL_METHOD_MASK & ~acl_method_mask;
-              deny_nonstandard_methods = true;
+              acl_method_mask = ALL_METHOD_MASK & ~acl_method_mask;
             }
           }
 
           if (method_found) {
-            _acls.push_back(AclRecord(acl_method_mask, line_num, nonstandard_methods, deny_nonstandard_methods));
+            _acls.push_back(AclRecord(acl_method_mask, line_num));
             // Color with index because at this point the address
             // is volatile.
             _map.fill(

@@ -39,15 +39,15 @@ HttpAccept::mainEvent(int event, void *data)
     ////////////////////////////////////////////////////
     NetVConnection *netvc = static_cast<NetVConnection *>(data);
     sockaddr const* client_ip = netvc->get_remote_addr();
-    const AclRecord *acl_record = NULL;
+    uint32_t acl_method_mask = 0;
     ip_port_text_buffer ipb;
     IpAllow::scoped_config ipallow;
 
     // The backdoor port is now only bound to "localhost", so no
     // reason to check for if it's incoming from "localhost" or not.
     if (backdoor) {
-      acl_record = IpAllow::AllMethodAcl();
-    } else if (ipallow && (((acl_record = ipallow->match(client_ip)) == NULL) || (acl_record->isEmpty()))) {
+      acl_method_mask = IpAllow::AllMethodMask();
+    } else if (ipallow && ((acl_method_mask = ipallow->match(client_ip)) == 0)) {
       Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
       netvc->do_io_close();
 
@@ -68,7 +68,7 @@ HttpAccept::mainEvent(int event, void *data)
     new_session->outbound_ip6 = outbound_ip6;
     new_session->outbound_port = outbound_port;
     new_session->host_res_style = ats_host_res_from(client_ip->sa_family, host_res_preference);
-    new_session->acl_record = acl_record;
+    new_session->acl_method_mask = acl_method_mask;
 
     new_session->new_connection(netvc, backdoor);
 

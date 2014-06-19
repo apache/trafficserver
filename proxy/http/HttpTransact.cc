@@ -964,8 +964,6 @@ done:
     otherwise, 502/404 the request right now. /eric
   */
   if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
-    // TS-2879: Let's initialize the state variables so the connection can be kept alive.
-    initialize_state_variables_from_request(s, &s->hdr_info.client_request);
     DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
     HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
@@ -6563,25 +6561,12 @@ HttpTransact::process_quick_http_filter(State* s, int method)
     return;
   }
 
-  if (s->state_machine->ua_session) {
-    const AclRecord *acl_record = s->state_machine->ua_session->acl_record;
-    bool deny_request = (acl_record == NULL);
-    if (acl_record && (acl_record->_method_mask != AclRecord::ALL_METHOD_MASK)) {
-      if (method != -1) {
-        deny_request = !acl_record->isMethodAllowed(method);
-      } else {
-        int method_str_len;
-        const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
-        deny_request = !acl_record->isNonstandardMethodAllowed(std::string(method_str, method_str_len));
-      }
+  if (s->state_machine->ua_session && (!IpAllow::CheckMask(s->state_machine->ua_session->acl_method_mask, method))) {
+    if (is_debug_tag_set("ip-allow")) {
+      ip_text_buffer ipb;
+      Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.addr.sa, ipb, sizeof(ipb)), hdrtoken_index_to_wks(method), s->state_machine->ua_session->acl_method_mask);
     }
-    if (deny_request) {
-      if (is_debug_tag_set("ip-allow")) {
-        ip_text_buffer ipb;
-        Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.addr.sa, ipb, sizeof(ipb)), hdrtoken_index_to_wks(method), acl_record->_method_mask);
-      }
-      s->client_connection_enabled = false;
-    }
+    s->client_connection_enabled = false;
   }
 }
 
@@ -8102,7 +8087,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_DNS_FAILURE);
     break;
   case HTTP_STATUS_MOVED_TEMPORARILY:
-    SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_MOVED_TEMPORARILY);
+    SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_SERVER);
     break;
   case HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED:
     SET_VIA_STRING(VIA_CLIENT_REQUEST, VIA_CLIENT_ERROR);
