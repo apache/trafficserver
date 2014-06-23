@@ -1112,8 +1112,10 @@ getNumSSLThreads(void)
 
     REC_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
 
-    if (config_num_ssl_threads != 0) {
+    if (config_num_ssl_threads > 0) {
       num_of_ssl_threads = config_num_ssl_threads;
+    } else if (config_num_ssl_threads == -1) {
+      return -1; // This will disable ET_SSL threads entirely
     } else {
       float autoconfig_scale = 1.5;
 
