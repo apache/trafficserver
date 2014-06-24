@@ -50,9 +50,7 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
   SSLInitializeLibrary();
   SSLConfig::startup();
 
-  if (HttpProxyPort::hasSSL()) {
-    SSLCertificateConfig::startup();
-  }
+  SSLCertificateConfig::startup();
 
   // Acquire a SSLConfigParams instance *after* we start SSL up.
   SSLConfig::scoped_config params;

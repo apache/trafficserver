@@ -1101,7 +1101,7 @@ chdir_root()
 static int
 getNumSSLThreads(void)
 {
-  int num_of_ssl_threads = 0;
+  int num_of_ssl_threads = -1;
 
   // Set number of ssl threads equal to num of processors if
   // SSL is enabled so it will scale properly. If SSL is not
