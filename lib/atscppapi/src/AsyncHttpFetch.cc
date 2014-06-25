@@ -74,24 +74,30 @@ static int handleFetchEvents(TSCont cont, TSEvent event, void *edata) {
     TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
     int data_len;
     const char *data_start = TSFetchRespGet(txn, &data_len);
-    const char *data_end = data_start + data_len;
-    
-    TSHttpParser parser = TSHttpParserCreate();
-    state->hdr_buf_ = TSMBufferCreate();
-    state->hdr_loc_ = TSHttpHdrCreate(state->hdr_buf_);
-    TSHttpHdrTypeSet(state->hdr_buf_, state->hdr_loc_, TS_HTTP_TYPE_RESPONSE);
-    if (TSHttpHdrParseResp(parser, state->hdr_buf_, state->hdr_loc_, &data_start, data_end) == TS_PARSE_DONE) {
-      TSHttpStatus status = TSHttpHdrStatusGet(state->hdr_buf_, state->hdr_loc_);
-      state->body_ = data_start; // data_start will now be pointing to body
-      state->body_size_ = data_end - data_start;
-      utils::internal::initResponse(state->response_, state->hdr_buf_, state->hdr_loc_);
-      LOG_DEBUG("Fetch result had a status code of %d with a body length of %ld", status, state->body_size_);
-    } else {
-      LOG_ERROR("Unable to parse response; Request URL [%s]; transaction %p",
-                state->request_.getUrl().getUrlString().c_str(), txn);
+    if (data_start && (data_len > 0)) {
+      const char *data_end = data_start + data_len;
+      
+      TSHttpParser parser = TSHttpParserCreate();
+      state->hdr_buf_ = TSMBufferCreate();
+      state->hdr_loc_ = TSHttpHdrCreate(state->hdr_buf_);
+      TSHttpHdrTypeSet(state->hdr_buf_, state->hdr_loc_, TS_HTTP_TYPE_RESPONSE);
+      if (TSHttpHdrParseResp(parser, state->hdr_buf_, state->hdr_loc_, &data_start, data_end) == TS_PARSE_DONE) {
+        TSHttpStatus status = TSHttpHdrStatusGet(state->hdr_buf_, state->hdr_loc_);
+        state->body_ = data_start; // data_start will now be pointing to body
+        state->body_size_ = data_end - data_start;
+        utils::internal::initResponse(state->response_, state->hdr_buf_, state->hdr_loc_);
+        LOG_DEBUG("Fetch result had a status code of %d with a body length of %ld", status, state->body_size_);
+      } else {
+        LOG_ERROR("Unable to parse response; Request URL [%s]; transaction %p",
+                  state->request_.getUrl().getUrlString().c_str(), txn);
+        event = static_cast<TSEvent>(AsyncHttpFetch::RESULT_FAILURE);
+      }
+      TSHttpParserDestroy(parser);
+    }
+    else {
+      LOG_ERROR("Successful fetch did not result in any content. Assuming failure");
       event = static_cast<TSEvent>(AsyncHttpFetch::RESULT_FAILURE);
     }
-    TSHttpParserDestroy(parser);
   }
   state->result_ = static_cast<AsyncHttpFetch::Result>(event);
   if (!state->dispatch_controller_->dispatch()) {
