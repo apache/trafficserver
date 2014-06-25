@@ -100,7 +100,7 @@ int ParentConfig::m_id = 0;
 void
 ParentConfig::startup()
 {
-  parentConfigUpdate = NEW(new ConfigUpdateHandler<ParentConfig>());
+  parentConfigUpdate = new ConfigUpdateHandler<ParentConfig>();
 
   // Load the initial configuration
   reconfigure();
@@ -132,10 +132,10 @@ ParentConfig::reconfigure()
   int dns_parent_only;
 
   ParentConfigParams *params;
-  params = NEW(new ParentConfigParams);
+  params = new ParentConfigParams;
 
   // Allocate parent table
-  params->ParentTable = NEW(new P_table(file_var, modulePrefix, &http_dest_tags));
+  params->ParentTable = new P_table(file_var, modulePrefix, &http_dest_tags);
 
   // Handle default parent
   PARENT_ReadConfigStringAlloc(default_val, default_var);
@@ -863,7 +863,7 @@ createDefaultParent(char *val)
     return NULL;
   }
 
-  newRec = NEW(new ParentRecord);
+  newRec = new ParentRecord;
   if (newRec->DefaultInit(val) == true) {
     return newRec;
   } else {
@@ -923,11 +923,11 @@ SocksServerConfig::reconfigure()
   int fail_threshold;
 
   ParentConfigParams *params;
-  params = NEW(new ParentConfigParams);
+  params = new ParentConfigParams;
 
   // Allocate parent table
-  params->ParentTable = NEW(new P_table("proxy.config.socks.socks_config_file", "[Socks Server Selection]",
-                                        &socks_server_tags));
+  params->ParentTable = new P_table("proxy.config.socks.socks_config_file", "[Socks Server Selection]",
+                                    &socks_server_tags);
 
   // Handle default parent
   PARENT_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
@@ -997,7 +997,7 @@ request_to_data(HttpRequestData * req, sockaddr const* srcip, sockaddr const* ds
   ink_zero(req->dest_ip);
   ats_ip_copy(&req->dest_ip.sa, dstip);
 
-  req->hdr = NEW(new HTTPHdr);
+  req->hdr = new HTTPHdr;
 
   http_parser_init(&parser);
 

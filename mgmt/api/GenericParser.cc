@@ -238,7 +238,7 @@ Rule::arm_securityParse(char *rule)
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
   Token *token = (Token *) NULL;
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   // ASSUMPTIONS:
   //   every token starts with a non-digit character is a "name"
@@ -255,7 +255,7 @@ Rule::arm_securityParse(char *rule)
         m_tokenList->enqueue(token);
       }
 
-      token = NEW(new Token()); // Create a new token
+      token = new Token(); // Create a new token
       token->setName(tokenStr); // Set token Name
     } else if (token != (Token *) NULL) {
       // it is a value or part of a value
@@ -307,7 +307,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
     return NULL;
   }
 
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
 
@@ -323,7 +323,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
         return NULL;
       }
 
-      token = NEW(new Token());
+      token = new Token();
       /* set the name */
       token->setName(subtoken);
 
@@ -405,7 +405,7 @@ Rule::icpParse(char *rule, unsigned short minNumToken, unsigned short maxNumToke
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
   Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   // Sanity Check -- number of token
   if (numRuleTok < minNumToken) {
@@ -420,7 +420,7 @@ Rule::icpParse(char *rule, unsigned short minNumToken, unsigned short maxNumToke
 
 
   for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = NEW(new Token());
+    token = new Token();
     token->setName(tokenStr);
     m_tokenList->enqueue(token);
   }
@@ -462,8 +462,8 @@ Rule::log_hostsParse(char *rule)
     return NULL;
   }
 
-  Token *token = NEW(new Token());
-  TokenList *m_tokenList = NEW(new TokenList());
+  Token *token = new Token();
+  TokenList *m_tokenList = new TokenList();
   token->setName(rule);
   m_tokenList->enqueue(token);
 
@@ -512,10 +512,10 @@ Rule::pluginParse(char *rule)
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
   Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = NEW(new Token());
+    token = new Token();
     token->setName(tokenStr);
     m_tokenList->enqueue(token);
   }
@@ -541,14 +541,14 @@ Rule::remapParse(char *rule)
   }
 
   Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
-  token = NEW(new Token());
+  token = new Token();
   token->setName(tokenStr);
   m_tokenList->enqueue(token);
   tokenStr = ruleTok.iterNext(&ruleTok_state);
 
-  token = NEW(new Token());
+  token = new Token();
   token->setName(tokenStr);
   tokenStr = ruleTok.iterNext(&ruleTok_state);
   token->setValue(tokenStr);
@@ -557,7 +557,7 @@ Rule::remapParse(char *rule)
   // Just to make sure that there are no left overs
   tokenStr = ruleTok.iterNext(&ruleTok_state);
   if (tokenStr) {
-    token = NEW(new Token());
+    token = new Token();
     token->setName(tokenStr);
     m_tokenList->enqueue(token);
     ruleTok.iterNext(&ruleTok_state);
@@ -586,12 +586,12 @@ Rule::socksParse(char *rule)
     return NULL;
   }
 
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   /* check which rule type it is */
   if (strcmp(tokenStr, "no_socks") == 0) {      /* TS_SOCKS_BYPASS rule type */
     /* the token name = "no socks", the value = "list of ip addresses" */
-    token = NEW(new Token());
+    token = new Token();
     token->setName(tokenStr);
 
     for (; (tokenStr = ruleTok.iterNext(&ruleTok_state));) {
@@ -602,7 +602,7 @@ Rule::socksParse(char *rule)
     /* first token:  name = "auth", value = "u"
        second token: name = <username>
        third token:  name = <password> */
-    token = NEW(new Token());
+    token = new Token();
     token->setName(tokenStr);
     tokenStr = ruleTok.iterNext(&ruleTok_state);
     token->setValue(tokenStr);  /* should be "u" authoriziation type */
@@ -610,7 +610,7 @@ Rule::socksParse(char *rule)
 
     /* create tokens for username and password */
     for (; (tokenStr = ruleTok.iterNext(&ruleTok_state));) {
-      token = NEW(new Token());
+      token = new Token();
       token->setName(tokenStr);
       m_tokenList->enqueue(token);
     }
@@ -630,7 +630,7 @@ Rule::socksParse(char *rule)
           return NULL;
         }
 
-        token = NEW(new Token());
+        token = new Token();
         /* set the name */
         token->setName(subtoken);
 
@@ -713,7 +713,7 @@ Rule::splitdnsParse(char *rule)
     return NULL;
   }
 
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
 
@@ -729,7 +729,7 @@ Rule::splitdnsParse(char *rule)
         return NULL;
       }
 
-      token = NEW(new Token());
+      token = new Token();
       token->setName(subtoken);
       subtoken = subruleTok.iterNext(&subruleTok_state);
 
@@ -786,10 +786,10 @@ Rule::updateParse(char *rule)
   }
 
   Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = NEW(new Token());
+    token = new Token();
     token->setName(tokenStr);
     m_tokenList->enqueue(token);
   }
@@ -812,10 +812,10 @@ Rule::vaddrsParse(char *rule)
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
   Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = NEW(new Token());
+    token = new Token();
     token->setName(tokenStr);
     m_tokenList->enqueue(token);
   }
@@ -844,10 +844,10 @@ Rule::storageParse(char *rule)
   }
 
   Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
+  TokenList *m_tokenList = new TokenList();
 
   // at least one token, anyways
-  token = NEW(new Token());
+  token = new Token();
   token->setName(tokenStr);
   if (numRuleTok > 1) {         // numRulTok == 2
     tokenStr = ruleTok.iterNext(&ruleTok_state);
@@ -990,7 +990,7 @@ RuleList::parse(char *fileBuf, TSFileNameT filetype)
   lineTok.Initialize(fileBuf);
   line = lineTok.iterFirst(&lineTok_state);
   while (line) {
-    Rule *rule = NEW(new Rule());
+    Rule *rule = new Rule();
 
     if (line[0] == '#') {       // is this comment
       rule->setComment(line);

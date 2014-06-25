@@ -267,7 +267,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       }
       NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_stat, 1);
       total_read += rattempted;
-    } while (r == rattempted && total_read < toread);
+    } while (rattempted && r == rattempted && total_read < toread);
 
     // if we have already moved some bytes successfully, summarize in r
     if (total_read != rattempted) {
@@ -681,7 +681,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
     return ACTION_RESULT_DONE;
   }
   if (written > 0 && written < len) {
-    u->oob_ptr = NEW(new OOB_callback(mutex, this, cont, buf + written, len - written));
+    u->oob_ptr = new OOB_callback(mutex, this, cont, buf + written, len - written);
     u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
     return u->oob_ptr->trigger;
   } else {
@@ -689,7 +689,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
     // expensive for this
     written = -errno;
     ink_assert(written == -EAGAIN || written == -ENOTCONN);
-    u->oob_ptr = NEW(new OOB_callback(mutex, this, cont, buf, len));
+    u->oob_ptr = new OOB_callback(mutex, this, cont, buf, len);
     u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
     return u->oob_ptr->trigger;
   }
@@ -800,8 +800,7 @@ UnixNetVConnection::UnixNetVConnection()
 #endif
     active_timeout(NULL), nh(NULL),
     id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0),
-    from_accept_thread(false),
-    selected_next_protocol(NULL)
+    from_accept_thread(false)
 {
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);

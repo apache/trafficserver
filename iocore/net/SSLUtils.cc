@@ -299,7 +299,7 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
     goto fail;
   }
 
-  ticket_key = NEW(new ssl_ticket_key_t());
+  ticket_key = new ssl_ticket_key_t();
   memcpy(ticket_key->key_name, (const char *)ticket_key_data, 16);
   memcpy(ticket_key->hmac_secret, (const char *)ticket_key_data + 16, 16);
   memcpy(ticket_key->aes_key, (const char *)ticket_key_data + 32, 16);
@@ -634,6 +634,14 @@ SSLInitializeStatistics()
                      RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_unknown_ca_stat,
                      RecRawStatSyncSum);
 
+  // SSL handshake time
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_handshake_time_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_success_handshake_count_stat,
+                     RecRawStatSyncCount);
+
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
@@ -895,7 +903,10 @@ SSLInitServerContext(
   }
 
 #ifdef SSL_MODE_RELEASE_BUFFERS
-  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+  if (OPENSSL_VERSION_NUMBER > 0x1000107fL) {
+    Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
+    SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+  }
 #endif
   SSL_CTX_set_quiet_shutdown(ctx, 1);
 

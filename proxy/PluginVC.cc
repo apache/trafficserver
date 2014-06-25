@@ -984,7 +984,7 @@ PluginVCCore::~PluginVCCore()
 PluginVCCore *
 PluginVCCore::alloc()
 {
-  PluginVCCore *pvc = NEW(new PluginVCCore);
+  PluginVCCore *pvc = new PluginVCCore;
   pvc->init();
   return pvc;
 }
@@ -1051,7 +1051,6 @@ void
 PluginVCCore::set_accept_cont(Continuation * c)
 {
   connect_to = c;
-
   // FIX ME - must return action
 }
 
@@ -1202,6 +1201,17 @@ PluginVCCore::set_transparent(bool passive_side, bool active_side)
   active_vc.set_is_transparent(active_side);
 }
 
+void
+PluginVCCore::set_plugin_id(int64_t id)
+{
+  passive_vc.plugin_id = active_vc.plugin_id = id;
+}
+
+void
+PluginVCCore::set_plugin_tag(char const* tag)
+{
+  passive_vc.plugin_tag = active_vc.plugin_tag = tag;
+}
 
 /*************************************************************
  *
@@ -1271,8 +1281,8 @@ PVCTestDriver::run_next_test()
 
   Debug("pvc_test", "Starting test %s", netvc_tests_def[a_index].test_name);
 
-  NetVCTest *p = NEW(new NetVCTest);
-  NetVCTest *a = NEW(new NetVCTest);
+  NetVCTest *p = new NetVCTest;
+  NetVCTest *a = new NetVCTest;
   PluginVCCore *core = PluginVCCore::alloc();
   core->set_accept_cont(p);
 
@@ -1296,7 +1306,7 @@ PVCTestDriver::main_handler(int /* event ATS_UNUSED */, void * /* data ATS_UNUSE
 
 EXCLUSIVE_REGRESSION_TEST(PVC) (RegressionTest * t, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  PVCTestDriver *driver = NEW(new PVCTestDriver);
+  PVCTestDriver *driver = new PVCTestDriver;
   driver->start_tests(t, pstatus);
 }
 #endif

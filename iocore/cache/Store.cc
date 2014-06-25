@@ -40,12 +40,21 @@
 // Global
 Store theStore;
 
-int Store::getVolume(char* line) {
+int
+Store::getVolume(char* line)
+{
+  if (!line) {
+    return 0;
+  }
+
   int v = 0;
-  if(!line) return 0;
   char* str = strstr(line, vol_str);
   char* vol_start = str;
-  if(!str) return 0;
+
+  if (!str) {
+    return 0;
+  }
+
   while (*str && !ParseRules::is_digit(*str))
     str++;
   v = ink_atoi(str);
@@ -60,7 +69,10 @@ int Store::getVolume(char* line) {
   *vol_start = 0;
   Debug("cache_init", "returning %d and '%s'", v, line);
 
-  if(v < 0) return 0;
+  if (v < 0) {
+    return 0;
+  }
+
   return v;
 }
 
@@ -343,9 +355,9 @@ Store::read_config(int fd)
 
     n[len] = 0;
     char *pp = Layout::get()->relative(n);
-    ns = NEW(new Span);
+    ns = new Span;
     ns->vol_num = volume_id;
-    Debug("cache_init", "Store::read_config - ns = NEW (new Span); ns->init(\"%s\",%" PRId64 "), ns->vol_num=%d",
+    Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), ns->vol_num=%d",
       pp, size, ns->vol_num);
     if ((err = ns->init(pp, size))) {
       char buf[4096];
@@ -409,7 +421,7 @@ Store::read_interim_config() {
     char *e = strpbrk(n, " \t\n");
     len = e ? e - n : strlen(n);
     n[len] = '\0';
-    ns = NEW(new Span);
+    ns = new Span;
     if ((err = ns->init(n, -1))) {
       char buf[4096];
       snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", n,
@@ -850,7 +862,7 @@ try_alloc(Store & target, Span * source, unsigned int start_blocks, bool one_onl
         a = source->blocks;
       else
         a = blocks;
-      Span *d = NEW(new Span(*source));
+      Span *d = new Span(*source);
 
       d->pathname = ats_strdup(source->pathname);
       d->blocks = a;
@@ -926,7 +938,7 @@ Store::try_realloc(Store & s, Store & diff)
                 d->offset += sd->blocks;
                 goto Lfound;
               } else {
-                Span *x = NEW(new Span(*d));
+                Span *x = new Span(*d);
                 x->pathname = ats_strdup(x->pathname);
                 // d will be the first vol
                 d->blocks = sd->offset - d->offset;
@@ -1125,7 +1137,7 @@ Store::read(int fd, char *aname)
     Span *sd = NULL;
     while (n--) {
       Span *last = sd;
-      sd = NEW(new Span);
+      sd = new Span;
 
       if (!last)
         disk[i] = sd;
@@ -1147,7 +1159,7 @@ Lbail:
 Span *
 Span::dup()
 {
-  Span *ds = NEW(new Span(*this));
+  Span *ds = new Span(*this);
   ds->pathname = ats_strdup(pathname);
   if (ds->link.next)
     ds->link.next = ds->link.next->dup();

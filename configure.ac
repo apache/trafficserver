@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[5.0.0])
-m4_define([TS_VERSION_N],[5000000])
+m4_define([TS_VERSION_S],[5.1.0])
+m4_define([TS_VERSION_N],[5001000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -215,7 +215,6 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
-AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT"])
 AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
 AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
 
@@ -335,11 +334,11 @@ AC_ARG_ENABLE([tproxy],
   [AS_HELP_STRING([--enable-tproxy[[=ARG]]],
                   [Use TPROXY to enable connection transparency.
                    'auto' or omitted for local system default,
-		   'no' to disable,
-		   'force' to use built in default,
-		   number to use as IP_TRANSPARENT sockopt.
-		   [default=auto]
-		  ])
+                   'no' to disable,
+                   'force' to use built in default,
+                   number to use as IP_TRANSPARENT sockopt.
+                   [default=auto]
+                  ])
   ],
   [],
   [enable_tproxy="auto"]
@@ -370,10 +369,10 @@ AC_SUBST(use_freelist)
 if test "x${enable_freelist}" = "xyes"; then
   AC_MSG_CHECKING([whether to enable reclaimable freelist])
   AC_ARG_ENABLE([reclaimable-freelist],
-		[AS_HELP_STRING([--enable-reclaimable-freelist],
-				[enable reclaimable freelist support (effective only when freelist is enabled)])],
-		[],
-		[enable_reclaimable_freelist="no"])
+                [AS_HELP_STRING([--enable-reclaimable-freelist],
+                                [enable reclaimable freelist support (effective only when freelist is enabled)])],
+                [],
+                [enable_reclaimable_freelist="no"])
   AC_MSG_RESULT([$enable_reclaimable_freelist])
 else
   enable_reclaimable_freelist="no"
@@ -386,9 +385,9 @@ AC_SUBST(use_reclaimable_freelist)
 #
 AC_MSG_CHECKING([whether to enable spdy])
 AC_ARG_ENABLE([spdy],
-	[AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
-	[],
-	[enable_spdy="no"])
+        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
+        [],
+        [enable_spdy="no"])
 AC_MSG_RESULT([$enable_spdy])
 TS_ARG_ENABLE_VAR([has], [spdy])
 AC_SUBST(has_spdy)
@@ -485,6 +484,19 @@ AC_ARG_ENABLE([cppapi],
 )
 AC_MSG_RESULT([$enable_cppapi])
 AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
+
+#
+# Disable LuaJIT? This is a interrim option, when Lua becomes part of the core
+# requirements, we will remove this option.
+#
+AC_MSG_CHECKING([whether to disable LuaJIT])
+AC_ARG_ENABLE([luajit],
+  [AS_HELP_STRING([--disable-luajit],[turn off LuaJIT])],
+  [],
+  [enable_luajit="yes"]
+)
+AC_MSG_RESULT([$enable_luajit])
+AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
 
 #
 # Installation directories
@@ -653,6 +665,7 @@ case $host_os in
       *amd64*)
         TS_ADDTO(CFLAGS, -m64)
         TS_ADDTO(CXXFLAGS, -m64)
+        TS_ADDTO(LUA_LDFLAGS, -m64)
         ;;
     esac
     ;;
@@ -728,10 +741,10 @@ AS_IF([test -n "$YACC"],
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
           [ YACC=''
-	    AS_IF([test -z "$bison_version_check"],
-	      [bison_version_check='no version data']
-	    )
-	  ]
+            AS_IF([test -z "$bison_version_check"],
+              [bison_version_check='no version data']
+            )
+          ]
         )
       ],
       [ YACC=''
@@ -752,10 +765,10 @@ AS_IF([test -n "$LEX"],
         `
         AS_IF([test "x$flex_version_check" != "xyes"],
           [ LEX=''
-	    AS_IF([test -z "$flex_version_check"],
-	      [flex_version_check='no version data']
-	    )
-	  ]
+            AS_IF([test -z "$flex_version_check"],
+              [flex_version_check='no version data']
+            )
+          ]
         )
       ],
       [ LEX=''
@@ -790,19 +803,19 @@ AX_PROG_PERL_MODULES([ExtUtils::MakeMaker], AM_CONDITIONAL([BUILD_PERL_LIB], [tr
                                             AM_CONDITIONAL([BUILD_PERL_LIB], [false])
 )
 
-# Check for GNU-style -On and for Solaris Studio style -xOn.
+# Check for GNU-style -On optimization flags
 AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
-has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-x?O.?/{print "no"}'`
+has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-O.?/{print "no"}'`
 AS_IF([test "x${has_optimizer_flags}" = "xno"],
-	[
-		optimizing_flags='-O3'
-		AC_MSG_RESULT([yes ${optimizing_flags}])
-	],
-	[
-		has_optimizer_flags='yes'
-		optimizing_flags=''
-		AC_MSG_RESULT([no])
-	]
+        [
+                optimizing_flags='-O3'
+                AC_MSG_RESULT([yes ${optimizing_flags}])
+        ],
+        [
+                has_optimizer_flags='yes'
+                optimizing_flags=''
+                AC_MSG_RESULT([no])
+        ]
 )
 
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
@@ -898,19 +911,6 @@ case $host_os_def in
     ;; # freebsd|kfreebsd)
 
   solaris)
-    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xsun"], [
-      # XXX: Solaris Studio support is going away: https://issues.apache.org/jira/browse/TS-1486
-      common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
-      debug_opt="-g $common_opt"
-      release_opt="-g $common_opt $optimizing_flags"
-      cxx_opt="-library=stlport4"
-      cxx_dbg="+w2"
-      cxx_rel="-erroff"
-
-      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS], 1, [posix thread semantics])
-      AS_IF([test "x$solaris_use_stlport4" != "xyes"], [postdeps_CXX="-library=Crun"])
-    ])
-
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
@@ -988,9 +988,6 @@ if test "x${GCC}" = "xyes"; then
       i?86* | k[5-8]* | pentium* | athlon)
         cpu_architecture="-march=i586"
       ;;
-      *sparc*)
-        cpu_architecture="-mv8"
-      ;;
     esac
   else
     case "$host_cpu" in
@@ -998,13 +995,8 @@ if test "x${GCC}" = "xyes"; then
         # XXX: Any need for 64-bit arch flags?
         # cpu_architecture="-march=native"
       ;;
-      *sparc*)
-        cpu_architecture="-march=ultrasparc"
-      ;;
     esac
   fi
-  # TODO: Add support for other compilers
-  #
 fi
 
 # Overrride detected architecture with the user suplied one
@@ -1071,8 +1063,8 @@ AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host
 if test "x$enable_ccache" = "xyes"; then
     AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
     if test "x${CCACHE}" = "xccache"; then
-	CC="$CCACHE $CC"
-	CXX="$CCACHE $CXX"
+        CC="$CCACHE $CC"
+        CXX="$CCACHE $CXX"
     fi
 fi
 
@@ -1358,7 +1350,7 @@ AC_SUBST(use_linux_native_aio)
 use_hwloc=0
 AS_IF([test "x$enable_hwloc" = "xyes"], [
   # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
-  PKG_CHECK_MODULES([hwloc], [hwloc], [
+  PKG_CHECK_MODULES([HWLOC], [hwloc], [
     SAVE_LIBS="$LIBS"
     LIBS="-lhwloc"
     AC_LANG_PUSH([C++])
@@ -1366,8 +1358,8 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
     AC_LINK_IFELSE([
       AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
       use_hwloc=1
-      AC_SUBST([hwloc_CFLAGS])
-      AC_SUBST([hwloc_LIBS])
+      AC_SUBST([HWLOC_CFLAGS])
+      AC_SUBST([HWLOC_LIBS])
       AC_MSG_RESULT([yes])
       # Old versions of libhwloc don't have HWLOC_OBJ_PU.
       AC_CHECK_DECL(HWLOC_OBJ_PU,
@@ -1377,15 +1369,15 @@ AS_IF([test "x$enable_hwloc" = "xyes"], [
     ], [
       AC_MSG_RESULT([no])
       AC_MSG_WARN([hwloc not linkable, try --disable-hwloc])
-      AC_SUBST([hwloc_CFLAGS],[""])
-      AC_SUBST([hwloc_LIBS],[""])
+      AC_SUBST([HWLOC_CFLAGS],[""])
+      AC_SUBST([HWLOC_LIBS],[""])
     ])
     AC_LANG_POP()
     LIBS="$SAVE_LIBS"
   ], [
     AC_MSG_WARN([hwloc not found, try --disable-hwloc])
-    AC_SUBST([hwloc_CFLAGS],[""])
-    AC_SUBST([hwloc_LIBS],[""])
+    AC_SUBST([HWLOC_CFLAGS],[""])
+    AC_SUBST([HWLOC_LIBS],[""])
   ])
 ])
 
@@ -1421,11 +1413,12 @@ AX_LIB_READLINE
 # http://luajit.org/install.html.
 case $host_os_def in
   darwin)
-    LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
+    TS_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     ;;
 esac
 
-AC_SUBST(LUA_LUAJIT_LDFLAGS)
+AC_SUBST(TS_LUAJIT_LDFLAGS)
+AC_SUBST(LUA_LDFLAGS)
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
@@ -1478,8 +1471,8 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   stdbool.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
-		  readline/readline.h \
-		  editline/readline.h ])
+                  readline/readline.h \
+                  editline/readline.h ])
 
 AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
@@ -1652,17 +1645,17 @@ AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>
 
 if test "x${ac_cv_member_struct_sockaddr_sa_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
-	    [Whether struct sockaddr_in has the sa_len member])
+            [Whether struct sockaddr_in has the sa_len member])
 fi
 
 if test "x${ac_cv_member_struct_sockaddr_in_sin_len}" = xyes ; then
 AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN_SIN_LEN, 1,
-	    [Whether struct sockaddr_in has the sin_len member])
+            [Whether struct sockaddr_in has the sin_len member])
 fi
 
 if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN, 1,
-	    [Whether struct sockaddr_in6 has the sin6_len member])
+            [Whether struct sockaddr_in6 has the sin6_len member])
 fi
 
 if test "x${with_profiler}" = "xyes"; then
@@ -1722,43 +1715,43 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
     AC_MSG_CHECKING([for TPROXY sockopt IP_TRANSPARENT])
     case "$enable_tproxy" in
       [[0-9][0-9]*])
-	ip_transparent=$enable_tproxy
-	use_tproxy=1
-	AC_MSG_RESULT([forced to $ip_transparent])
-	;;
+        ip_transparent=$enable_tproxy
+        use_tproxy=1
+        AC_MSG_RESULT([forced to $ip_transparent])
+        ;;
       force)
-	ip_transparent=19
-	use_tproxy=1
-	AC_MSG_RESULT([forced to $ip_transparent])
-	;;
+        ip_transparent=19
+        use_tproxy=1
+        AC_MSG_RESULT([forced to $ip_transparent])
+        ;;
       yes|auto)
         AS_IF([test -r $tproxy_header], [
-	  ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
-	  AS_IF([test "x$ip_transparent" != "x"], [
-	    use_tproxy=1
-	    AC_MSG_RESULT([set to $ip_transparent])
-	  ],[
-	    ip_transparent=0
-	    AS_IF([test "x$enable_tproxy" = xauto], [
-	     AC_MSG_RESULT([no])
-	    ],[
-	      AC_MSG_RESULT([failed])
-	      AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
-	    ])
-	  ])
-	],[
-	  AS_IF([test "x$enable_tproxy" = xauto], [
-	    AC_MSG_RESULT([no])
-	  ],[
-	    AC_MSG_RESULT([failed])
-	    AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
-	  ])
-	])
-	;;
+          ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
+          AS_IF([test "x$ip_transparent" != "x"], [
+            use_tproxy=1
+            AC_MSG_RESULT([set to $ip_transparent])
+          ],[
+            ip_transparent=0
+            AS_IF([test "x$enable_tproxy" = xauto], [
+             AC_MSG_RESULT([no])
+            ],[
+              AC_MSG_RESULT([failed])
+              AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+            ])
+          ])
+        ],[
+          AS_IF([test "x$enable_tproxy" = xauto], [
+            AC_MSG_RESULT([no])
+          ],[
+            AC_MSG_RESULT([failed])
+            AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+          ])
+        ])
+        ;;
       *)
-	AC_MSG_RESULT([failed])
-	AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
-	;;
+        AC_MSG_RESULT([failed])
+        AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
+        ;;
       esac
   ])
 ])
@@ -1822,6 +1815,9 @@ AS_IF([test "x$enable_experimental_plugins" = xyes],
 AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
   [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
+AM_CONDITIONAL([BUILD_COLLAPSED_CONNECTION_PLUGIN],
+  [ test "x$enable_experimental_plugins" = "xyes" -a "x${enable_collapsed_connection_plugin}" != "xno" ])
+
 #
 # use modular IOCORE
 #
@@ -1865,7 +1861,6 @@ AC_CONFIG_FILES([
   cmd/Makefile
   cmd/traffic_cop/Makefile
   cmd/traffic_line/Makefile
-  cmd/traffic_shell/Makefile
   cmd/traffic_top/Makefile
   doc/Doxyfile
   doc/Makefile
@@ -1880,29 +1875,6 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/atscppapi/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/boom/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/intercept/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/src/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
@@ -1927,25 +1899,6 @@ AC_CONFIG_FILES([
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
   plugins/tcpinfo/Makefile
-  plugins/experimental/Makefile
-  plugins/experimental/authproxy/Makefile
-  plugins/experimental/background_fetch/Makefile
-  plugins/experimental/balancer/Makefile
-  plugins/experimental/buffer_upload/Makefile
-  plugins/experimental/channel_stats/Makefile
-  plugins/experimental/custom_redirect/Makefile
-  plugins/experimental/escalate/Makefile
-  plugins/experimental/esi/Makefile
-  plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/healthchecks/Makefile
-  plugins/experimental/hipes/Makefile
-  plugins/experimental/metalink/Makefile
-  plugins/experimental/remap_stats/Makefile
-  plugins/experimental/rfc5861/Makefile
-  plugins/experimental/s3_auth/Makefile
-  plugins/experimental/ts_lua/Makefile
-  plugins/experimental/url_sig/Makefile
-  plugins/experimental/xdebug/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile
@@ -1968,6 +1921,59 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/tsxs
 ])
+
+AS_IF([test "x$enable_experimental_plugins" = xyes], [
+  AC_CONFIG_FILES([
+    plugins/experimental/Makefile
+    plugins/experimental/authproxy/Makefile
+    plugins/experimental/background_fetch/Makefile
+    plugins/experimental/balancer/Makefile
+    plugins/experimental/buffer_upload/Makefile
+    plugins/experimental/channel_stats/Makefile
+    plugins/experimental/collapsed_connection/Makefile
+    plugins/experimental/custom_redirect/Makefile
+    plugins/experimental/escalate/Makefile
+    plugins/experimental/esi/Makefile
+    plugins/experimental/geoip_acl/Makefile
+    plugins/experimental/healthchecks/Makefile
+    plugins/experimental/hipes/Makefile
+    plugins/experimental/metalink/Makefile
+    plugins/experimental/remap_stats/Makefile
+    plugins/experimental/regex_revalidate/Makefile
+    plugins/experimental/s3_auth/Makefile
+    plugins/experimental/stale_while_revalidate/Makefile
+    plugins/experimental/ts_lua/Makefile
+    plugins/experimental/url_sig/Makefile
+    plugins/experimental/xdebug/Makefile
+])])
+
+AS_IF([test "x$enable_cppapi" = xyes], [
+  AC_CONFIG_FILES([
+  lib/atscppapi/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/examples/async_http_fetch/Makefile
+  lib/atscppapi/examples/async_timer/Makefile
+  lib/atscppapi/examples/clientredirect/Makefile
+  lib/atscppapi/examples/clientrequest/Makefile
+  lib/atscppapi/examples/customresponse/Makefile
+  lib/atscppapi/examples/boom/Makefile
+  lib/atscppapi/examples/globalhook/Makefile
+  lib/atscppapi/examples/gzip_transformation/Makefile
+  lib/atscppapi/examples/helloworld/Makefile
+  lib/atscppapi/examples/intercept/Makefile
+  lib/atscppapi/examples/internal_transaction_handling/Makefile
+  lib/atscppapi/examples/logger_example/Makefile
+  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
+  lib/atscppapi/examples/null_transformation_plugin/Makefile
+  lib/atscppapi/examples/post_buffer/Makefile
+  lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/serverresponse/Makefile
+  lib/atscppapi/examples/stat_example/Makefile
+  lib/atscppapi/examples/timeout_example/Makefile
+  lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/src/Makefile
+])])
+
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES

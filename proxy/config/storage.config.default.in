@@ -40,7 +40,8 @@
 # Note that when using these raw devices in O_DIRECT mode, you
 # do not need to specify the partition size. It's automatically
 # detected. For more examples and a complete documentation see
-# http://trafficserver.apache.org/docs/trunk/admin/configuration-files/storage.config
+#
+#   https://trafficserver.apache.org/docs/trunk/admin/configuration-files/storage.config
 #
 #
 # A small default cache (256MB). This is set to allow for the regression test to succeed

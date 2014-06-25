@@ -28,7 +28,6 @@
  ***************************************************************************/
 #include "libts.h"
 
-#include "Resource.h"
 #include "Error.h"
 
 #include "LogUtils.h"
@@ -191,7 +190,7 @@ bool LogHost::connect()
   disconnect();                 // make sure connection members are initialized
 
   if (m_sock == NULL) {
-    m_sock = NEW(new LogSock());
+    m_sock = new LogSock();
     ink_assert(m_sock != NULL);
   }
   m_sock_fd = m_sock->connect(&target.sa);
@@ -241,7 +240,7 @@ LogHost::create_orphan_LogFile_object()
 
   // should check for conflicts with orphan filename
   //
-  m_orphan_file = NEW(new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature));
+  m_orphan_file = new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature);
   ink_assert(m_orphan_file != NULL);
   ats_free(name_buf);
 }
@@ -272,7 +271,7 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
 
   // create a new collation client if necessary
   if (m_log_collation_client_sm == NULL) {
-    m_log_collation_client_sm = NEW(new LogCollationClientSM(this));
+    m_log_collation_client_sm = new LogCollationClientSM(this);
     ink_assert(m_log_collation_client_sm != NULL);
   }
 
@@ -379,7 +378,7 @@ LogHostList::add(LogHost * object, bool copy)
 {
   ink_assert(object != NULL);
   if (copy) {
-    m_host_list.enqueue(NEW(new LogHost(*object)));
+    m_host_list.enqueue(new LogHost(*object));
   } else {
     m_host_list.enqueue(object);
   }

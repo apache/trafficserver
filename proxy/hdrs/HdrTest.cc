@@ -38,7 +38,6 @@
 #include "HTTP.h"
 #include "MIME.h"
 #include "Regex.h"
-#include "Resource.h"
 #include "URL.h"
 #include "HttpCompat.h"
 
@@ -153,7 +152,7 @@ HdrTest::test_error_page_selection()
 
   // (1) build fake hash table of sets
 
-  RawHashTable *table_of_sets = NEW(new RawHashTable(RawHashTable_KeyType_String));
+  RawHashTable *table_of_sets = new RawHashTable(RawHashTable_KeyType_String);
 
   for (i = 0; i < nsets; i++) {
     HttpBodySetRawData *body_set;
@@ -1576,7 +1575,7 @@ HdrTest::test_arena()
   Arena *arena;
   int failures = 0;
 
-  arena = NEW(new Arena);
+  arena = new Arena;
 
   failures += test_arena_aux(arena, 1);
   failures += test_arena_aux(arena, 127);

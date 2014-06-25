@@ -172,7 +172,6 @@ public:
   inkcoreapi virtual int marshal_client_auth_user_name(char *); // STR
   int marshal_client_req_timestamp_sec(char *); // INT
 
-  inkcoreapi virtual int marshal_client_protocol_stack(char *); // INT
   inkcoreapi virtual int marshal_client_req_text(char *);       // STR
   inkcoreapi virtual int marshal_client_req_http_method(char *);        // STR
   inkcoreapi virtual int marshal_client_req_url(char *);        // STR
@@ -251,6 +250,8 @@ public:
   inkcoreapi virtual int marshal_transfer_time_ms(char *);      // INT
   inkcoreapi virtual int marshal_transfer_time_s(char *);       // INT
   inkcoreapi virtual int marshal_file_size(char *);     // INT
+  inkcoreapi virtual int marshal_plugin_identity_id(char *); // INT
+  inkcoreapi virtual int marshal_plugin_identity_tag(char *); // STR
   int marshal_entry_type(char *);       // INT
 
 

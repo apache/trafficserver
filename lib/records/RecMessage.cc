@@ -27,6 +27,7 @@
 #include "P_RecFile.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
+#include "P_RecCore.h"
 #include "I_Layout.h"
 
 static bool g_message_initialized = false;
@@ -35,178 +36,9 @@ static void *g_recv_cookie = NULL;
 
 //-------------------------------------------------------------------------
 //
-// REC_BUILD_STAND_ALONE IMPLEMENTATION
-//
-//-------------------------------------------------------------------------
-#if defined (REC_BUILD_STAND_ALONE)
-
-extern RecModeT g_mode_type;
-
-static LLQ *g_send_llq = NULL;
-static LLQ *g_recv_llq = NULL;
-
-//-------------------------------------------------------------------------
-// send_thr
-//-------------------------------------------------------------------------
-
-static void *
-send_thr(void *data)
-{
-  int msg_size;
-  RecMessageHdr *msg_hdr;
-  RecHandle h_pipe = (RecHandle)(intptr_t)data;
-  while (true) {
-    // dequeue will block if there's nothing in the queue
-    msg_hdr = (RecMessageHdr *) dequeue(g_send_llq);
-    msg_size = (msg_hdr->o_end - msg_hdr->o_start) + sizeof(RecMessageHdr);
-    if (RecPipeWrite(h_pipe, (char *) msg_hdr, msg_size) == REC_ERR_FAIL) {
-      ink_release_assert("Pipe write failed, message lost");
-    }
-    ats_free(msg_hdr);
-  }
-  return NULL;
-}
-
-//-------------------------------------------------------------------------
-// recv_thr
-//-------------------------------------------------------------------------
-
-static void *
-recv_thr(void *data)
-{
-  int msg_size = 0;
-  RecMessageHdr msg_hdr;
-  RecMessage *msg;
-  RecHandle h_pipe = (RecHandle)(intptr_t)data;
-  while (true) {
-    if (RecPipeRead(h_pipe, (char *) (&msg_hdr), sizeof(RecMessageHdr)) == REC_ERR_FAIL) {
-      ink_release_assert("Pipe read failed");
-    }
-    msg = (RecMessage *)ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
-    memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
-    if (RecPipeRead(h_pipe, (char *) (msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start) == REC_ERR_FAIL) {
-      ink_release_assert("Pipe read failed");
-    }
-    msg_size = msg_hdr.o_end - msg_hdr.o_start + sizeof(RecMessageHdr);
-    enqueue(g_recv_llq, msg);
-  }
-  return NULL;
-}
-
-//-------------------------------------------------------------------------
-// accept_thr
-//-------------------------------------------------------------------------
-
-static void *
-accept_thr(void *data)
-{
-  xptr<char> rundir(RecConfigReadRuntimeDir());
-  RecHandle h_pipe;
-  h_pipe = RecPipeCreate(rundir, REC_PIPE_NAME);
-  ink_thread_create(send_thr, (void *) h_pipe);
-  ink_thread_create(recv_thr, (void *) h_pipe);
-  return NULL;
-}
-
-//-------------------------------------------------------------------------
-// recv_cb_thr
-//-------------------------------------------------------------------------
-
-static void *
-recv_cb_thr(void *data)
-{
-  RecMessage *msg;
-  while (true) {
-    if (g_recv_cb) {
-      msg = (RecMessage *) dequeue(g_recv_llq);
-      RecMessageRecvThis(0, (char *) msg, 0);
-      ats_free(msg);
-    }
-  }
-  return NULL;
-}
-
-//-------------------------------------------------------------------------
-// RecMessageInit
-//-------------------------------------------------------------------------
-
-int
-RecMessageInit()
-{
-
-  RecHandle h_pipe;
-
-  if (g_message_initialized) {
-    return REC_ERR_OKAY;
-  }
-
-  /*
-   * g_mode_type should be initialized by
-   * RecLocalInit() or RecProcessInit() earlier.
-   */
-  ink_assert(g_mode_type != RECM_NULL);
-
-  g_send_llq = create_queue();
-  g_recv_llq = create_queue();
-
-  switch (g_mode_type) {
-  case RECM_CLIENT:
-    h_pipe = RecPipeConnect(Layout::get()->runtimedir, REC_PIPE_NAME);
-    if (h_pipe == REC_HANDLE_INVALID) {
-      return REC_ERR_FAIL;
-    }
-    ink_thread_create(send_thr, (void *) h_pipe);
-    ink_thread_create(recv_thr, (void *) h_pipe);
-    break;
-  case RECM_SERVER:
-    ink_thread_create(accept_thr, NULL);
-    break;
-  case RECM_NULL:
-  case RECM_STAND_ALONE:
-  default:
-    ink_assert(!"Unexpected RecModeT type");
-    break;
-  }
-
-  ink_thread_create(recv_cb_thr, NULL);
-
-  g_message_initialized = true;
-
-  return REC_ERR_OKAY;
-
-}
-
-//-------------------------------------------------------------------------
-// RecMessageSend
-//-------------------------------------------------------------------------
-
-int
-RecMessageSend(RecMessage * msg)
-{
-
-  RecMessage *msg_cpy;
-  int msg_cpy_size;
-
-  // Make a copy of the record, but truncate it to the size actually used
-  if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
-    msg_cpy_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    msg_cpy = (RecMessage *)ats_malloc(msg_cpy_size);
-    memcpy(msg_cpy, msg, msg_cpy_size);
-    msg_cpy->o_end = msg_cpy->o_write;
-    enqueue(g_send_llq, (void *) msg_cpy);
-  }
-
-  return REC_ERR_OKAY;
-
-}
-
-//-------------------------------------------------------------------------
-//
 // REC_BUILD_MGMT IMPLEMENTATION
 //
 //-------------------------------------------------------------------------
-#elif defined (REC_BUILD_MGMT)
-
 #if defined(LOCAL_MANAGER)
 #include "LocalManager.h"
 #elif defined(PROCESS_MANAGER)
@@ -268,15 +100,6 @@ RecMessageSend(RecMessage * msg)
   return REC_ERR_OKAY;
 }
 
-//-------------------------------------------------------------------------
-//
-// STUB IMPLEMENTATION
-//
-//-------------------------------------------------------------------------
-#elif defined (REC_BUILD_STUB)
-#else
-#error "Required #define not specificed; expected REC_BUILD_STAND_ALONE, REC_BUILD_MGMT, or REC_BUILD_STUB"
-#endif
 
 //-------------------------------------------------------------------------
 // RecMessageAlloc

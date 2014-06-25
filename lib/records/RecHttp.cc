@@ -27,6 +27,42 @@
 # include <ts/Tokenizer.h>
 # include <strings.h>
 
+SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
+
+/* Protocol session well-known protocol names.
+   These are also used for NPN setup.
+*/
+
+const char * const TS_NPN_PROTOCOL_HTTP_0_9 = "http/0.9";
+const char * const TS_NPN_PROTOCOL_HTTP_1_0 = "http/1.0";
+const char * const TS_NPN_PROTOCOL_HTTP_1_1 = "http/1.1";
+const char * const TS_NPN_PROTOCOL_HTTP_2   = "http/2";
+const char * const TS_NPN_PROTOCOL_SPDY_1   = "spdy/1";   // obsolete
+const char * const TS_NPN_PROTOCOL_SPDY_2   = "spdy/2";
+const char * const TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";
+const char * const TS_NPN_PROTOCOL_SPDY_3_1 = "spdy/3.1";
+
+const char * const TS_NPN_PROTOCOL_GROUP_HTTP = "http";
+const char * const TS_NPN_PROTOCOL_GROUP_HTTP2 = "http2";
+const char * const TS_NPN_PROTOCOL_GROUP_SPDY = "spdy";
+
+// Precomputed indices for ease of use.
+int TS_NPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_HTTP_2 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_SPDY_1 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_SPDY_2 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_SPDY_3 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_SPDY_3_1 = SessionProtocolNameRegistry::INVALID;
+
+// Predefined protocol sets for ease of use.
+SessionProtocolSet HTTP_PROTOCOL_SET;
+SessionProtocolSet SPDY_PROTOCOL_SET;
+SessionProtocolSet HTTP2_PROTOCOL_SET;
+SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
+SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
+
 void RecHttpLoadIp(char const* value_name, IpAddr& ip4, IpAddr& ip6)
 {
   char value[1024];
@@ -69,6 +105,7 @@ char const* const HttpProxyPort::OPT_FD_PREFIX = "fd";
 char const* const HttpProxyPort::OPT_OUTBOUND_IP_PREFIX = "ip-out";
 char const* const HttpProxyPort::OPT_INBOUND_IP_PREFIX = "ip-in";
 char const* const HttpProxyPort::OPT_HOST_RES_PREFIX = "ip-resolve";
+char const* const HttpProxyPort::OPT_PROTO_PREFIX = "proto";
 
 char const* const HttpProxyPort::OPT_IPV6 = "ipv6";
 char const* const HttpProxyPort::OPT_IPV4 = "ipv4";
@@ -88,6 +125,7 @@ namespace {
   size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_PREFIX);
   size_t const OPT_INBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
   size_t const OPT_HOST_RES_PREFIX_LEN = strlen(HttpProxyPort::OPT_HOST_RES_PREFIX);
+  size_t const OPT_PROTO_PREFIX_LEN = strlen(HttpProxyPort::OPT_PROTO_PREFIX);
 }
 
 namespace {
@@ -134,12 +172,22 @@ HttpProxyPort* HttpProxyPort::findHttp(Group const& ports, uint16_t family) {
   return zret;
 }
 
+char const*
+HttpProxyPort::checkPrefix(char const* src, char const* prefix, size_t prefix_len) {
+  char const* zret = 0;
+  if (0 == strncasecmp(prefix, src, prefix_len)) {
+    src += prefix_len;
+    if ('-' == *src || '=' == *src) ++src; // permit optional '-' or '='
+    zret = src;
+  }
+  return zret;
+}
+
 bool
 HttpProxyPort::loadConfig(Vec<self>& entries) {
   char* text;
   bool found_p;
 
-  // Do current style port configuration first.
   text = REC_readString(PORTS_CONFIG_NAME, &found_p);
   if (found_p) self::loadValue(entries, text);
   ats_free(text);
@@ -157,7 +205,7 @@ HttpProxyPort::loadDefaultIfEmpty(Group& ports) {
 
 bool
 HttpProxyPort::loadValue(Vec<self>& ports, char const* text) {
-  unsigned n_elts = ports.length(); // remember this.
+  unsigned old_port_length = ports.length(); // remember this.
   if (text && *text) {
     Tokenizer tokens(", ");
     int n_ports = tokens.Initialize(text);
@@ -166,19 +214,22 @@ HttpProxyPort::loadValue(Vec<self>& ports, char const* text) {
         char const* elt = tokens[p];
         HttpProxyPort entry;
         if (entry.processOptions(elt)) ports.push_back(entry);
-        else Warning("No port was found in port configuration element '%s'", elt);
+        else Warning("No valid definition was found in proxy port configuration element '%s'", elt);
       }
     }
   }
-  return ports.length() > n_elts; // we added at least one port.
+  return ports.length() > old_port_length; // we added at least one port.
 }
 
 bool
 HttpProxyPort::processOptions(char const* opts) {
-  bool zret = false; // no port found yet.
-  bool af_set_p = false; // AF explicitly specified.
-  bool host_res_set_p = false; // Host resolution order set explicitly.
-  bool bracket_p = false; // inside brackets during parse.
+  bool zret = false; // found a port?
+  bool af_set_p = false; // AF explicitly specified?
+  bool host_res_set_p = false; // Host resolution order set explicitly?
+  bool sp_set_p = false; // Session protocol set explicitly?
+  bool bracket_p = false; // found an open bracket in the input?
+  char const* value; // Temp holder for value of a prefix option.
+  IpAddr ip; // temp for loading IP addresses.
   Vec<char*> values; // Pointers to single option values.
 
   // Make a copy we can modify safely.
@@ -216,42 +267,32 @@ HttpProxyPort::processOptions(char const* opts) {
         // really, this shouldn't happen, since we checked for a leading digit.
         Warning("Mangled port value '%s' in port configuration '%s'", item, opts);
       } else if (port <= 0 || 65536 <= port) {
-        Warning("Port value '%s' out of range in port configuration '%s'", item, opts);
+        Warning("Port value '%s' out of range (1..65535) in port configuration '%s'", item, opts);
       } else {
         m_port = port;
         zret = true;
       }
-    } else if (0 == strncasecmp(OPT_FD_PREFIX, item, OPT_FD_PREFIX_LEN)) {
+    } else if (0 != (value = this->checkPrefix(item, OPT_FD_PREFIX, OPT_FD_PREFIX_LEN))) {
       char* ptr; // tmp for syntax check.
-      item += OPT_FD_PREFIX_LEN; // skip prefix
-      if ('-' == *item || '=' == *item) ++item; // permit optional '-' or '='
-      int fd = strtoul(item, &ptr, 10);
-      if (ptr == item) {
+      int fd = strtoul(value, &ptr, 10);
+      if (ptr == value) {
         Warning("Mangled file descriptor value '%s' in port descriptor '%s'", item, opts);
       } else {
         m_fd = fd;
         zret = true;
       }
-    } else if (0 == strncasecmp(OPT_INBOUND_IP_PREFIX, item, OPT_INBOUND_IP_PREFIX_LEN)) {
-      IpEndpoint ip;
-      item += OPT_INBOUND_IP_PREFIX_LEN; // skip prefix
-      if ('-' == *item || '=' == *item) ++item; // permit optional '-' or '='
-      if (0 == ats_ip_pton(item, &ip))
+    } else if (0 != (value = this->checkPrefix(item, OPT_INBOUND_IP_PREFIX, OPT_INBOUND_IP_PREFIX_LEN))) {
+      if (0 == ip.load(value))
         m_inbound_ip = ip;
       else
         Warning("Invalid IP address value '%s' in port descriptor '%s'",
           item, opts
         );
-    } else if (0 == strncasecmp(OPT_OUTBOUND_IP_PREFIX, item, OPT_OUTBOUND_IP_PREFIX_LEN)) {
-      IpAddr ip;
-      item += OPT_OUTBOUND_IP_PREFIX_LEN; // skip prefix
-      if ('-' == *item || '=' == *item) ++item; // permit optional '-' or '='
-      if (0 == ip.load(item))
+    } else if (0 != (value = this->checkPrefix(item, OPT_OUTBOUND_IP_PREFIX, OPT_OUTBOUND_IP_PREFIX_LEN))) {
+      if (0 == ip.load(value))
         this->outboundIp(ip.family()) = ip;
       else
-        Warning("Invalid IP address value '%s' in port descriptor '%s'",
-          item, opts
-        );
+        Warning("Invalid IP address value '%s' in port descriptor '%s'", item, opts);
     } else if (0 == strcasecmp(OPT_COMPRESSED, item)) {
       m_type = TRANSPORT_COMPRESSED;
     } else if (0 == strcasecmp(OPT_BLIND_TUNNEL, item)) {
@@ -291,14 +332,14 @@ HttpProxyPort::processOptions(char const* opts) {
 # else
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 # endif
-    } else if (0 == strncasecmp(OPT_HOST_RES_PREFIX, item, OPT_HOST_RES_PREFIX_LEN)) {
-      item += OPT_HOST_RES_PREFIX_LEN; // skip prefix
-      if ('-' == *item || '=' == *item) // permit optional '-' or '='
-        ++item;
-      this->processFamilyPreferences(item);
+    } else if (0 != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
+      this->processFamilyPreference(value);
       host_res_set_p = true;
+    } else if (0 != (value = this->checkPrefix(item, OPT_PROTO_PREFIX, OPT_PROTO_PREFIX_LEN))) {
+      this->processSessionProtocolPreference(value);
+      sp_set_p = true;
     } else {
-      Warning("Invalid option '%s' in port configuration '%s'", item, opts);
+      Warning("Invalid option '%s' in proxy port configuration '%s'", item, opts);
     }
   }
 
@@ -337,12 +378,49 @@ HttpProxyPort::processOptions(char const* opts) {
     m_transparent_passthrough = false;
   }
 
+  // Set the default session protocols.
+  if (!sp_set_p)
+    m_session_protocol_preference = this->isSSL()
+      ? DEFAULT_TLS_SESSION_PROTOCOL_SET
+      : DEFAULT_NON_TLS_SESSION_PROTOCOL_SET
+      ;
+
   return zret;
 }
 
 void
-HttpProxyPort::processFamilyPreferences(char const* value) {
-  parse_host_res_preferences(value, m_host_res_preference);
+HttpProxyPort::processFamilyPreference(char const* value) {
+  parse_host_res_preference(value, m_host_res_preference);
+}
+
+void
+HttpProxyPort::processSessionProtocolPreference(char const* value) {
+  m_session_protocol_preference.markAllOut();
+  globalSessionProtocolNameRegistry.markIn(value, m_session_protocol_preference);
+}
+
+void
+SessionProtocolNameRegistry::markIn(char const* value, SessionProtocolSet& sp_set) {
+  int n; // # of tokens
+  Tokenizer tokens(" ;|,:");
+ 
+  n = tokens.Initialize(value);
+
+  for ( int i = 0 ; i < n ; ++i ) {
+    char const* elt = tokens[i];
+    
+    /// Check special cases
+    if (0 == strcasecmp(elt, TS_NPN_PROTOCOL_GROUP_HTTP)) {
+      sp_set.markIn(HTTP_PROTOCOL_SET);
+    } else if (0 == strcasecmp(elt, TS_NPN_PROTOCOL_GROUP_SPDY)) {
+      sp_set.markIn(SPDY_PROTOCOL_SET);
+    } else if (0 == strcasecmp(elt, TS_NPN_PROTOCOL_GROUP_HTTP2)) {
+      sp_set.markIn(HTTP2_PROTOCOL_SET);
+    } else { // user defined - register and mark.
+      int idx = globalSessionProtocolNameRegistry.toIndex(elt);
+      sp_set.markIn(idx);
+    }
+  }
 }
 
 int
@@ -394,6 +472,9 @@ HttpProxyPort::print(char* out, size_t n) {
   }
   if (zret >= n) return n;
 
+  // After this point, all of these options require other options which we've already
+  // generated so all of them need a leading colon and we can stop checking for that.
+
   if (AF_INET6 == m_family)
     zret += snprintf(out+zret, n-zret, ":%s", OPT_IPV6);
   if (zret >= n) return n;
@@ -428,6 +509,53 @@ HttpProxyPort::print(char* out, size_t n) {
     zret += ts_host_res_order_to_string(m_host_res_preference, out+zret, n-zret);
   }
 
+  // session protocol options - look for condensed options first
+  // first two cases are the defaults so if those match, print nothing.
+  SessionProtocolSet sp_set = m_session_protocol_preference; // need to modify so copy.
+  need_colon_p = true; // for listing case, turned off if we do a special case.
+  if (sp_set == DEFAULT_NON_TLS_SESSION_PROTOCOL_SET && !this->isSSL()) {
+    sp_set.markOut(DEFAULT_NON_TLS_SESSION_PROTOCOL_SET);
+  } else if (sp_set == DEFAULT_TLS_SESSION_PROTOCOL_SET && this->isSSL()) {
+    sp_set.markOut(DEFAULT_TLS_SESSION_PROTOCOL_SET);
+  }
+
+  // pull out groups.
+  if (sp_set.contains(HTTP_PROTOCOL_SET)) {
+    zret += snprintf(out+zret, n-zret, ":%s=%s", OPT_PROTO_PREFIX,TS_NPN_PROTOCOL_GROUP_HTTP);
+    sp_set.markOut(HTTP_PROTOCOL_SET);
+    need_colon_p = false;
+  }
+  if (sp_set.contains(SPDY_PROTOCOL_SET)) {
+    if (need_colon_p) 
+      zret += snprintf(out+zret, n-zret, ":%s=", OPT_PROTO_PREFIX);
+    else
+      out[zret++] = ';';
+    zret += snprintf(out+zret, n-zret, TS_NPN_PROTOCOL_GROUP_SPDY);
+    sp_set.markOut(SPDY_PROTOCOL_SET);
+    need_colon_p = false;
+  }
+  if (sp_set.contains(HTTP2_PROTOCOL_SET)) {
+    if (need_colon_p)
+      zret += snprintf(out+zret, n-zret, ":%s=", OPT_PROTO_PREFIX);
+    else
+      out[zret++] = ';';
+    zret += snprintf(out+zret, n-zret, "%s", TS_NPN_PROTOCOL_GROUP_HTTP2);
+    sp_set.markOut(HTTP2_PROTOCOL_SET);
+    need_colon_p = false;
+  }
+  // now enumerate what's left.
+  if (!sp_set.isEmpty()) {
+    if (need_colon_p)
+      zret += snprintf(out+zret, n-zret, ":%s=", OPT_PROTO_PREFIX);
+    bool sep_p = !need_colon_p;
+    for ( int k = 0 ; k < SessionProtocolSet::MAX ; ++k ) {
+      if (sp_set.contains(k)) {
+        zret += snprintf(out+zret, n-zret, "%s%s", sep_p ? ";" : "", globalSessionProtocolNameRegistry.nameFor(k));
+        sep_p = true;
+      }
+    }
+  }
+
   return min(zret,n);
 }
 
@@ -441,7 +569,93 @@ ts_host_res_global_init()
 
   char* ip_resolve = REC_ConfigReadString("proxy.config.hostdb.ip_resolve");
   if (ip_resolve) {
-    parse_host_res_preferences(ip_resolve, host_res_default_preference_order);
+    parse_host_res_preference(ip_resolve, host_res_default_preference_order);
   }
   ats_free(ip_resolve);
+}
+
+// Whatever executable uses librecords must call this.
+void
+ts_session_protocol_well_known_name_indices_init()
+{
+  // register all the well known protocols and get the indices set.
+  TS_NPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_0_9);
+  TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_0);
+  TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_1);
+  TS_NPN_PROTOCOL_INDEX_HTTP_2 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_2);
+  TS_NPN_PROTOCOL_INDEX_SPDY_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_1);
+  TS_NPN_PROTOCOL_INDEX_SPDY_2 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_2);
+  TS_NPN_PROTOCOL_INDEX_SPDY_3 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_3);
+  TS_NPN_PROTOCOL_INDEX_SPDY_3_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_3_1);
+
+  // Now do the predefined protocol sets.
+  HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_0_9);
+  HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_1_0);
+  HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_1_1);
+  HTTP2_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_2);
+  SPDY_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_SPDY_3);
+  SPDY_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_SPDY_3_1);
+
+  DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
+  DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
+}
+
+SessionProtocolNameRegistry::SessionProtocolNameRegistry()
+  : m_n(0)
+{
+  memset(m_names, 0, sizeof(m_names));
+  memset(&m_flags, 0, sizeof(m_flags));
+}
+
+SessionProtocolNameRegistry::~SessionProtocolNameRegistry() {
+  for ( size_t i = 0 ; i < m_n ; ++i ) {
+    if (m_flags[i] & F_ALLOCATED)
+      ats_free(const_cast<char*>(m_names[i])); // blech - ats_free won't take a char const*
+  }
+}
+
+int
+SessionProtocolNameRegistry::toIndex(char const* name) {
+  int zret = this->indexFor(name);
+  if (INVALID == zret) {
+    if (m_n < static_cast<size_t>(MAX)) {
+      m_names[m_n] = ats_strdup(name);
+      m_flags[m_n] = F_ALLOCATED;
+      zret = m_n++;
+    } else {
+      ink_release_assert(!"Session protocol name registry overflow");
+    }
+  }
+  return zret;
+}
+
+int
+SessionProtocolNameRegistry::toIndexConst(char const* name) {
+  int zret = this->indexFor(name);
+  if (INVALID == zret) {
+    if ( m_n < static_cast<size_t>(MAX)) {
+      m_names[m_n] = name;
+      zret = m_n++;
+    } else {
+      ink_release_assert(!"Session protocol name registry overflow");
+    }
+  }
+  return zret;
+}
+
+int
+SessionProtocolNameRegistry::indexFor(char const* name) const {
+  for ( size_t i = 0 ; i < m_n ; ++i ) {
+    if (0 == strcasecmp(name, m_names[i]))
+      return i;
+  }
+  return INVALID;
+}
+
+char const*
+SessionProtocolNameRegistry::nameFor(int idx) const {
+  return 0 <= idx && idx < static_cast<int>(m_n)
+    ? m_names[idx]
+    : 0
+    ;
 }

@@ -1,5 +1,186 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 5.1.0
+
+  *) [TS-2574] Sharing server sessions per thread doesn't work when doing https to http
+
+  *) [TS-2689] Remove extraneous TSfree that caused segfault.
+
+  *) [TS-2892] Keep alive post out enabled by default
+
+  *) [TS-2889] Crash in FetchSM related to spdy FetchSM changes in 5.0.x
+ 
+  *) [TS-2891] Fix casting bug in remap_stats.
+
+  *) [TS-2879] Remap errors and redirects should honor keep-alive
+
+  *) [TS-2236] Remove trailing null in response body set by fabricate_with_old_api.
+   Author: Thach Tran <tranngocthachs@gmail.com>
+
+  *) [TS-2877] http_load waits until timeout when response body is zero.
+   Author: Masaori Koshiba <mkoshiba@yahoo-corp.jp>
+
 Changes with Apache Traffic Server 5.0.0
+
+  *) [TS-2885] Change LuaJIT to build statically, and add --disable-luajit. This
+   is an option that will eventually be removed as we make LuaJIT mandatory.
+
+  *) [TS-2886] Fix regression where body factory is not used.
+
+  *) [TS-2881] Redirection handling broken
+
+  *) [TS-2875] Change hwloc library env variables from hwloc_ to HWLOC_.
+
+  *) [TS-2874] Make some of the SPDY metrics persistent, and also fix how we
+   measure transaction time / total streams.
+
+  *) [TS-2872] Can't set "Send Window" for SPDY/3.1 > 64k. Code mostly
+   provided by our SPDY brainiac, Geffon.
+
+  *) [TS-2873] Cleanup SPDY metrics and configs, also make it use the common
+   pattern for stats increments/decrements (even though it's ugly, sorry amc).
+
+  *) [TS-2870] Update SPDY defaults to better match our other defaults.
+
+  *) [TS-2868] Error setting HSTS max age with traffic_line
+
+  *) [TS-2776] Core dump inside openssl library
+
+  *) [TS-2845] Commit e6b9cb533 causes problems with stats_over_http
+
+  *) [TS-1981] Url remap and IPAllow method filtering is broken with non-wks method
+      and add support for arbitrary methods
+
+  *) [TS-2865] Fix warnings in collapsed connection plugin
+
+  *) [TS-2580] SSL Connection reset by peer errors in 4.2.0-rc0
+
+  *) [TS-2783] Update documentation defaults, and fix RecordsConfig.cc.
+
+  *) [TS-2792] Large request header causes unexpected remap.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
+  *) [TS-2834] header_rewrite: Add Internal transaction and client-IP
+   conditions.
+
+  *) [TS-2855] Add the TSHttpIsInternalSession API.
+
+  *) [TS-2859] Remove DBG macros to not generate warnings from GCC 4.9.
+
+  *) [TS-2858] Build failures on OmniOS. Also add some LuaJIT flags as per
+   Theo's and Daniel's recommendations.
+
+  *) [TS-2857] Cleanup SPDY and SSL stat names
+
+  *) [TS-2856] Remove proxy.config.spdy.verbose_in and use diags instead
+
+  *) [TS-2391] Traffic Server tries to reverse resolve 127.0.0.1
+
+  *) [TS-2837] Dangling pointer in URLImpl which may cause core dump
+
+  *) [TS-2842] Can't set SPDY inactivity timeout with traffic_line
+
+  *) [TS-2618] IOBufferBlock::realloc()'s bounds check is wrong.
+
+  *) [TS-2850] Fix logging of response header length.
+
+  *) [TS-2839] tsxs does not work on OSX (Darwin).
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
+  *) [TS-2820] Add check to Transformations in C++ api to prevent closing
+      connections twice.
+
+  *) [TS-2804] Add regex_revalidate plugin to explerimental plugins directory.
+
+  *) [TS-2528] Use <stdbool.h> in the public mgmtapi.h interface. This follows
+   the C99 standard, and we should move other public APIs to it.
+
+  *) [TS-2428] Move P_Freer.h continuations to run on ET_TASK (if available).
+
+  *) [TS-2344] 404 error was logged while url redirect request was processed
+   correctly.
+
+  *) [TS-2753] Add more SPDY and HTTPS statistics.
+
+  *) [TS-2677] Don't apply path / scheme URL changes in remap when method is
+   CONNECT.
+
+  *) [TS-2308] includedir in config.layout is not used.
+
+  *) [TS-2527] mgmtapi.h should be C style. This is slightly ugly in the core
+   now, but that public struct/union has to be named to be C99 compliant.
+
+  *) [TS-2838] Add logging fields for plugins to TS connect API. Use for SPDY.
+
+  *) [TS-2833] Remove REC_BUILD_STAND_ALONE, REC_BUILD_MGMT and
+   REC_BUILD_STUB. Dead code.
+
+  *) [TS-2547] Remove Resource.c/h, and NEW as well.
+
+  *) [TS-1588] slow log should include client addr
+
+  *) [TS-2728] The lib/perl Makefile.am does not properly detect in-source
+   builds, generating errors.
+
+  *) [TS-2723] add new features to ts_lua plugin.
+   Author: Quehan <quehan@taobao.com>
+
+  *) [TS-2816] Bump the minor cache version for ATS 5.0 release
+
+  *) [TS-2764] Remove when_to_add_no_cache_to_msie_requests configuration.
+
+  *) [TS-2737] Rename rfc5861 plugin to stale_while_revalidate.
+
+  *) [TS-2400] Our default SSL cipher-suite advocates speed over security
+
+  *) [TS-2818] TSHttpTxnServerAddrSet() doesn't update the server port
+
+  *) [TS-2793] Remove UnixNetVConnection::selected_next_protocol.
+
+  *) [TS-2831] Add SPDY stream count statistic.
+
+  *) [TS-1665] Remove the old traffic_shell (R.I.P.).
+
+  *) [TS-2830] Make SPDY configurable.
+
+  *) [TS-2684] Add a text-log format to background_fetch plugin.
+
+  *) [TS-2577] Tracing on e.g. -T http_hdrs does not show Proxy Request
+   headers accurately. Author: Masakazu Kitajo <m4sk17@gmail.com>
+
+  *) [TS-1486] Drop support for Sun Studio compilers.
+
+  *) [TS-2765] Memory Leak in SSLConfig initialization
+
+  *) [TS-1125] POST's with Expect: 100-continue are slowed by delayed 100
+  response
+
+  *) [TS-2826] SPDY implementation does not support OPTIONS and TRACE methods
+
+  *) [TS-2274] Minimize the default records.config, and also fix a number of
+   inconsistencies and missing configs in RecordsConfig.cc. This is as per
+   discussions on IRC etc. I have verified that traffic_line -m reports the
+   same internal values for all configs before and after this change. In
+   addition, the following defaults are changing:
+
+      - proxy.config.url_remap.pristine_host_hdr -> 0
+      - proxy.config.http.normalize_ae_gzip -> 1
+      - proxy.config.http.cache.ignore_client_cc_max_age -> 1
+      - proxy.config.http.background_fill_active_timeout -> 0
+      - proxy.config.http.background_fill_completed_threshold -> 0.0
+      - proxy.config.cache.enable_read_while_writer -> 1
+      - proxy.config.net.sock_send_buffer_size_in -> 0
+      - proxy.config.cache.permit.pinning -> 1
+      - proxy.config.diags.show_location -> 1
+      - proxy.config.dns.round_robin_nameservers -> 1
+      - proxy.config.http.connect_ports -> 443
+      - proxy.config.log.custom_logs_enabled -> 1
+      - proxy.config.spdy.client.max_concurrent_streams -> 100
+      - proxy.config.env_prep -> NULL
+
+  *) [TS-2824] Revert TS-2592.
+
+  *) [TS-2632] Do not lock the object in cache (by default) on Range
+   requests. This adds proxy.config.http.cache.range.write.
 
   *) [TS-2822] Crash in LogBufferIterator::next
 
@@ -167,8 +348,6 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2707] Migrate TSRedirectUrlSet/Get to TSHttpTxnRedirectUrlSet/Get.
 
-  *) [TS-2703] Add a text log format to escalate plugin.
-
   *) [TS-2690] Fixes and improvements for the escalate plugin.
 
   *) [TS-2699] Add TSClientProtoStackCreate API.
@@ -317,8 +496,6 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2593] HTTPS to origin fails on CentOS6.x. This is a regression of
    sort from TS-2355.
-
-  *) [TS-2592] Use proxy allocator for ioBufAllocator
 
   *) [TS-2576] Add Oct/Hex escape representation into LogFormat
 

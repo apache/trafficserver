@@ -71,9 +71,9 @@ handleArgInvocation()
   } else if (Startup == 1) {
     return TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_OFF);
   } else if (ClearCluster == 1) {
-    return TSStatsReset(true);
+    return TSStatsReset(true, NULL);
   } else if (ClearNode == 1) {
-    return TSStatsReset(false);
+    return TSStatsReset(false, NULL);
   } else if (*ZeroNode != '\0' || *ZeroCluster != '\0') {
     TSMgmtError err;
     TSRecordEle *rec_ele = TSRecordEleCreate();
@@ -186,16 +186,16 @@ handleArgInvocation()
       } else {
         switch (rec_ele->rec_type) {
         case TS_REC_INT:
-          printf("%" PRId64 "\n", rec_ele->int_val);
+          printf("%" PRId64 "\n", rec_ele->valueT.int_val);
           break;
         case TS_REC_COUNTER:
-          printf("%" PRId64 "\n", rec_ele->counter_val);
+          printf("%" PRId64 "\n", rec_ele->valueT.counter_val);
           break;
         case TS_REC_FLOAT:
-          printf("%f\n", rec_ele->float_val);
+          printf("%f\n", rec_ele->valueT.float_val);
           break;
         case TS_REC_STRING:
-          printf("%s\n", rec_ele->string_val);
+          printf("%s\n", rec_ele->valueT.string_val);
           break;
         default:
           fprintf(stderr, "%s: unknown record type (%d)\n", programName, rec_ele->rec_type);
@@ -224,16 +224,16 @@ handleArgInvocation()
           rec_ele = (TSRecordEle *) TSListDequeue(list)) {
         switch (rec_ele->rec_type) {
         case TS_REC_INT:
-          printf("%s %" PRId64 "\n", rec_ele->rec_name, rec_ele->int_val);
+          printf("%s %" PRId64 "\n", rec_ele->rec_name, rec_ele->valueT.int_val);
           break;
         case TS_REC_COUNTER:
-          printf("%s %" PRId64 "\n", rec_ele->rec_name, rec_ele->counter_val);
+          printf("%s %" PRId64 "\n", rec_ele->rec_name, rec_ele->valueT.counter_val);
           break;
         case TS_REC_FLOAT:
-          printf("%s %f\n", rec_ele->rec_name, rec_ele->float_val);
+          printf("%s %f\n", rec_ele->rec_name, rec_ele->valueT.float_val);
           break;
         case TS_REC_STRING:
-          printf("%s %s\n", rec_ele->rec_name, rec_ele->string_val);
+          printf("%s %s\n", rec_ele->rec_name, rec_ele->valueT.string_val);
           break;
         default:
           // just skip it ...

@@ -23,22 +23,27 @@
 
 #include "ts_lua_util.h"
 
-#define TS_LUA_MAX_STATE_COUNT                  2048
+#define TS_LUA_MAX_STATE_COUNT                  512
 
-static volatile int32_t ts_lua_http_next_id = 0;
-static volatile int32_t ts_lua_g_http_next_id = 0;
+static uint64_t ts_lua_http_next_id = 0;
+static uint64_t ts_lua_g_http_next_id = 0;
 
 static ts_lua_main_ctx *ts_lua_main_ctx_array;
 static ts_lua_main_ctx *ts_lua_g_main_ctx_array;
 
 
 TSReturnCode
-TSRemapInit(TSRemapInterface * api_info, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
+TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
 {
   int ret;
 
-  if (!api_info || api_info->size < sizeof(TSRemapInterface))
+  if (!api_info || api_info->size < sizeof(TSRemapInterface)) {
+    strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
     return TS_ERROR;
+  }
+
+  if (ts_lua_main_ctx_array != NULL)
+    return TS_SUCCESS;
 
   ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
   memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
@@ -55,30 +60,45 @@ TSRemapInit(TSRemapInterface * api_info, char *errbuf ATS_UNUSED, int errbuf_siz
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  int ret = 0;
+  int fn;
+  int ret;
 
   if (argc < 3) {
-    fprintf(stderr, "[%s] lua script file required !!", __FUNCTION__);
+    strncpy(errbuf, "[TSRemapNewInstance] - lua script file or string is required !!", errbuf_size - 1);
     return TS_ERROR;
   }
 
-  if (strlen(argv[2]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16)
+  fn = 1;
+
+  if (argv[2][0] != '/') {
+    fn = 0;
+  } else if (strlen(argv[2]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
     return TS_ERROR;
+  }
 
   ts_lua_instance_conf *conf = TSmalloc(sizeof(ts_lua_instance_conf));
   if (!conf) {
-    fprintf(stderr, "[%s] TSmalloc failed !!", __FUNCTION__);
+    strncpy(errbuf, "[TSRemapNewInstance] TSmalloc failed!!", errbuf_size - 1);
     return TS_ERROR;
   }
 
-  sprintf(conf->script, "%s", argv[2]);
+  memset(conf, 0, sizeof(ts_lua_instance_conf));
+
+  if (fn) {
+    sprintf(conf->script, "%s", argv[2]);
+
+  } else {
+    conf->content = argv[2];
+  }
+
+  ts_lua_init_instance(conf);
 
   ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 2, &argv[2]);
 
   if (ret != 0) {
-    fprintf(stderr, "[%s] ts_lua_add_module failed", __FUNCTION__);
+    strncpy(errbuf, "[TSRemapNewInstance] ts_lua_add_module failed", errbuf_size - 1);
     return TS_ERROR;
   }
 
@@ -90,6 +110,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
 void
 TSRemapDeleteInstance(void *ih)
 {
+  ts_lua_del_module((ts_lua_instance_conf *) ih, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
+  ts_lua_del_instance(ih);
   TSfree(ih);
   return;
 }
@@ -98,7 +120,7 @@ TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
 {
   int ret;
-  int64_t req_id;
+  uint64_t req_id;
 
   TSCont contp;
   lua_State *l;
@@ -109,7 +131,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
   ts_lua_instance_conf *instance_conf;
 
   instance_conf = (ts_lua_instance_conf *) ih;
-  req_id = (int64_t) ts_lua_atomic_increment((&ts_lua_http_next_id), 1);
+  req_id = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
+
 
   main_ctx = &ts_lua_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
 
@@ -122,6 +145,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
   http_ctx->client_request_hdrp = rri->requestHdrp;
   http_ctx->client_request_url = rri->requestUrl;
   http_ctx->remap = 1;
+  http_ctx->has_hook = 0;
+
+  contp = TSContCreate(ts_lua_http_cont_handler, NULL);
+  TSContDataSet(contp, http_ctx);
+  http_ctx->main_contp = contp;
+
   l = http_ctx->lua;
 
   lua_getglobal(l, TS_LUA_FUNCTION_REMAP);
@@ -130,18 +159,21 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
     return TSREMAP_NO_REMAP;
   }
 
-  contp = TSContCreate(ts_lua_http_cont_handler, NULL);
-  TSContDataSet(contp, http_ctx);
-  http_ctx->main_contp = contp;
-
   if (lua_pcall(l, 0, 1, 0) != 0) {
-    fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+    TSError("lua_pcall failed: %s", lua_tostring(l, -1));
   }
 
   ret = lua_tointeger(l, -1);
   lua_pop(l, 1);
 
-  TSHttpTxnHookAdd(rh, TS_HTTP_TXN_CLOSE_HOOK, contp);
+  if(http_ctx->has_hook) {
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
+    TSHttpTxnHookAdd(rh, TS_HTTP_TXN_CLOSE_HOOK, contp);
+  } else {    
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] no txn hook -> release resources now", __FUNCTION__);
+    ts_lua_destroy_http_ctx(http_ctx); 
+    TSContDestroy(contp);
+  }
 
   TSMutexUnlock(main_ctx->mutexp);
 
@@ -149,21 +181,38 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
 }
 
 static int
-globalHookHandler(TSCont contp, TSEvent event, void *edata)
+globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
-
-  int ret = 0;
-
-  lua_State *l;
-
-  ts_lua_http_ctx *http_ctx = (ts_lua_http_ctx *) TSContDataGet(contp);
 
   TSMBuffer bufp;
   TSMLoc hdr_loc;
   TSMLoc url_loc;
 
-  if(!http_ctx->client_request_bufp) {
+  int ret;
+  uint64_t req_id;
+  TSCont txn_contp;
+
+  lua_State *l;
+
+  ts_lua_main_ctx *main_ctx;
+  ts_lua_http_ctx *http_ctx;
+
+  ts_lua_instance_conf *conf = (ts_lua_instance_conf *) TSContDataGet(contp);
+
+  req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
+
+  main_ctx = &ts_lua_g_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
+
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
+  TSMutexLock(main_ctx->mutexp);
+
+  http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
+  http_ctx->txnp = txnp;
+  http_ctx->remap = 0;
+  http_ctx->has_hook = 0;
+
+  if (!http_ctx->client_request_bufp) {
     if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
       http_ctx->client_request_bufp = bufp;
       http_ctx->client_request_hdrp = hdr_loc;
@@ -178,6 +227,10 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   }
+
+  txn_contp = TSContCreate(ts_lua_http_cont_handler, NULL);
+  TSContDataSet(txn_contp, http_ctx);
+  http_ctx->main_contp = txn_contp;
 
   l = http_ctx->lua;
 
@@ -243,140 +296,30 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
   }
 
   if (lua_pcall(l, 0, 1, 0) != 0) {
-    fprintf(stderr, "lua_pcall failed: %s\n", lua_tostring(l, -1));
+    TSError("lua_pcall failed: %s", lua_tostring(l, -1));
   }
 
   ret = lua_tointeger(l, -1);
   lua_pop(l, 1);
 
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  return ret;
-}
-
-static int
-transactionStartHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
-{
-  TSHttpTxn txnp = (TSHttpTxn) edata;
-
-  int64_t req_id;
-  TSCont txn_contp;
-  TSCont global_contp;
-
-  ts_lua_main_ctx *main_ctx;
-  ts_lua_http_ctx *http_ctx;
-
-  ts_lua_instance_conf *conf = (ts_lua_instance_conf *) TSContDataGet(contp);
-
-  req_id = (int64_t) ts_lua_atomic_increment((&ts_lua_g_http_next_id), 1);
-  main_ctx = &ts_lua_g_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
-
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
-  TSMutexLock(main_ctx->mutexp);
-
-  http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-  http_ctx->txnp = txnp;
-  http_ctx->remap = 0;
-
-  txn_contp = TSContCreate(ts_lua_http_cont_handler, NULL);
-  TSContDataSet(txn_contp, http_ctx);
-  http_ctx->main_contp = txn_contp;
-
-  global_contp = TSContCreate(globalHookHandler, NULL);
-  TSContDataSet(global_contp, http_ctx);
-
-  //adding hook based on whether the lua global function exists.
-  lua_State *l = http_ctx->lua;
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "send_request_hdr_hook added");
+  if(http_ctx->has_hook) {
+    // add a hook to release resources for context
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
+  } else {
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] no txn hook -> release resources now", __FUNCTION__);
+    ts_lua_destroy_http_ctx(http_ctx);
+    TSContDestroy(txn_contp);
   }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_RESPONSE);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "read_response_hdr_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_RESPONSE);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "send_response_hdr_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "cache_lookup_complete_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_REQUEST);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "read_request_hdr_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_START);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_START_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "txn_start_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_PRE_REMAP);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_PRE_REMAP_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "pre_remap_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_POST_REMAP);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_POST_REMAP_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "post_remap_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_SELECT_ALT);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_SELECT_ALT_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "select_alt_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_OS_DNS);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_OS_DNS_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "os_dns_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_CACHE);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_CACHE_HDR_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "read_cache_hdr_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_CLOSE);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "txn_close_hook added");
-  }
-  lua_pop(l, 1);
-
-  // add a hook to release resources for context
-  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
 
   TSMutexUnlock(main_ctx->mutexp);
 
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  if(ret) {
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+  } else {
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  }
+
   return 0;
 }
 
@@ -410,8 +353,11 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] TSmalloc failed !!", __FUNCTION__);
     return;
   }
+  memset(conf, 0, sizeof(ts_lua_instance_conf));
 
   sprintf(conf->script, "%s", argv[1]);
+
+  ts_lua_init_instance(conf);
 
   ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 1, (char **) &argv[1]);
 
@@ -420,12 +366,102 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  TSCont txn_start_contp = TSContCreate(transactionStartHookHandler, NULL);
-  if (!txn_start_contp) {
+  TSCont global_contp = TSContCreate(globalHookHandler, NULL);
+  if (!global_contp) {
     TSError("[%s] could not create transaction start continuation", __FUNCTION__);
     return;
   }
-  TSContDataSet(txn_start_contp, conf);
-  TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, txn_start_contp);
+  TSContDataSet(global_contp, conf);
+
+  //adding hook based on whether the lua global function exists.
+  ts_lua_main_ctx *main_ctx = &ts_lua_g_main_ctx_array[0];
+  ts_lua_http_ctx *http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
+  lua_State *l = http_ctx->lua;
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "send_request_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_RESPONSE);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "read_response_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_RESPONSE);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "send_response_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_CACHE_LOOKUP_COMPLETE);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "cache_lookup_complete_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_REQUEST);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "read_request_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_START);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "txn_start_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_PRE_REMAP);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_PRE_REMAP_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "pre_remap_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_POST_REMAP);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "post_remap_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_SELECT_ALT);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "select_alt_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_OS_DNS);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "os_dns_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_READ_CACHE);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "read_cache_hdr_hook added");
+  }
+  lua_pop(l, 1);
+
+  lua_getglobal(l, TS_LUA_FUNCTION_G_TXN_CLOSE);
+  if (lua_type(l, -1) == LUA_TFUNCTION) {
+    TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, global_contp);
+    TSDebug(TS_LUA_DEBUG_TAG, "txn_close_hook added");
+  }
+  lua_pop(l, 1);
+
+  ts_lua_destroy_http_ctx(http_ctx);
 
 }

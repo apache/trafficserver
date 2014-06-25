@@ -330,4 +330,23 @@ private:
   TSMutex _mutex;
 };
 
+class ConditionInternalTransaction : public Condition
+{
+public:
+  void append_value(std::string &/* s ATS_UNUSED */, const Resources &/* res ATS_UNUSED */) { }
+
+protected:
+  bool eval(const Resources &res);
+};
+
+class ConditionClientIp : public Condition
+{
+public:
+  void initialize(Parser& p);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+};
+
 #endif // __CONDITIONS_H

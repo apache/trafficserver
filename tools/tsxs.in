@@ -122,7 +122,7 @@ case $host in
         MODULELD="$CC -bundle -flat_namespace -undefined suppress"
         MODULELDXX="$CXX -bundle -flat_namespace -undefined suppress"
         MODULEEXT=bundle
-        RLDFLAG="-Wl,--rpath="
+        RLDFLAG="-Wl,-rpath,"
         ;;
 *-*-solaris*)
         PICFLAGS="-fpic"

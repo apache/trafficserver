@@ -356,7 +356,7 @@ URLImpl::move_strings(HdrStrHeap * new_heap)
   HDR_MOVE_STR(m_ptr_params, m_len_params);
   HDR_MOVE_STR(m_ptr_query, m_len_query);
   HDR_MOVE_STR(m_ptr_fragment, m_len_fragment);
-//    HDR_MOVE_STR(m_ptr_printed_string, m_len_printed_string);
+  HDR_MOVE_STR(m_ptr_printed_string, m_len_printed_string);
 }
 
 size_t
@@ -373,6 +373,7 @@ URLImpl::strings_length()
   ret += m_len_params;
   ret += m_len_query;
   ret += m_len_fragment;
+  ret += m_len_printed_string;
   return ret;
 }
 

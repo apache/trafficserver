@@ -22,27 +22,19 @@
 
 typedef enum
 {
-  TS_LUA_REMAP_NO_REMAP = 0,
-  TS_LUA_REMAP_DID_REMAP,
-  TS_LUA_REMAP_NO_REMAP_STOP,
-  TS_LUA_REMAP_DID_REMAP_STOP,
-  TS_LUA_REMAP_ERROR = -1,
+  TS_LUA_REMAP_NO_REMAP = TSREMAP_NO_REMAP,
+  TS_LUA_REMAP_DID_REMAP = TSREMAP_DID_REMAP,
+  TS_LUA_REMAP_NO_REMAP_STOP = TSREMAP_NO_REMAP_STOP,
+  TS_LUA_REMAP_DID_REMAP_STOP = TSREMAP_DID_REMAP_STOP,
+  TS_LUA_REMAP_ERROR = TSREMAP_ERROR
 } TSLuaRemapStatus;
 
-int ts_lua_remap_status_id[] = {
-  TS_LUA_REMAP_NO_REMAP,
-  TS_LUA_REMAP_DID_REMAP,
-  TS_LUA_REMAP_NO_REMAP_STOP,
-  TS_LUA_REMAP_DID_REMAP_STOP,
-  TS_LUA_REMAP_ERROR,
-};
-
-char *ts_lua_remap_status_string[] = {
-  "TS_LUA_REMAP_NO_REMAP",
-  "TS_LUA_REMAP_DID_REMAP",
-  "TS_LUA_REMAP_NO_REMAP_STOP",
-  "TS_LUA_REMAP_DID_REMAP_STOP",
-  "TS_LUA_REMAP_ERROR",
+ts_lua_var_item ts_lua_remap_status_vars[] = {
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_NO_REMAP),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_DID_REMAP),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_NO_REMAP_STOP),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_DID_REMAP_STOP),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_ERROR)
 };
 
 
@@ -60,8 +52,8 @@ ts_lua_inject_remap_variables(lua_State * L)
 {
   int i;
 
-  for (i = 0; i < sizeof(ts_lua_remap_status_string) / sizeof(char *); i++) {
-    lua_pushinteger(L, ts_lua_remap_status_id[i]);
-    lua_setglobal(L, ts_lua_remap_status_string[i]);
+  for (i = 0; i < sizeof(ts_lua_remap_status_vars) / sizeof(ts_lua_var_item); i++) {
+    lua_pushinteger(L, ts_lua_remap_status_vars[i].nvar);
+    lua_setglobal(L, ts_lua_remap_status_vars[i].svar);
   }
 }

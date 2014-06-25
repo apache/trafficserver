@@ -53,7 +53,7 @@ init_buffer_allocators()
     if (s < a)
       a = s;
 
-    name = NEW(new char[64]);
+    name = new char[64];
     snprintf(name, 64, "ioBufAllocator[%d]", i);
     ioBufAllocator[i].re_init(name, s, n, a);
   }

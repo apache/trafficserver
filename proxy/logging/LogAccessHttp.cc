@@ -206,14 +206,25 @@ LogAccessHttp::set_client_req_url_path(char *buf, int len)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_plugin_identity_id(char *buf)
+{
+  if (buf) marshal_int(buf, m_http_sm->plugin_id);
+  return INK_MIN_ALIGN;
+}
 
 int
-LogAccessHttp::marshal_client_protocol_stack(char *buf)
+LogAccessHttp::marshal_plugin_identity_tag(char *buf)
 {
-  if (buf) {
-    marshal_int(buf, m_http_sm->proto_stack);
-  }
-  return INK_MIN_ALIGN;
+  int len = INK_MIN_ALIGN;
+  char const* tag = m_http_sm->plugin_tag;
+
+  if (!tag) tag = "*";
+  else len = LogAccess::strlen(tag);
+
+  if (buf) marshal_str(buf, tag, len);
+
+  return len;
 }
 
 int
@@ -647,10 +658,7 @@ int
 LogAccessHttp::marshal_proxy_resp_header_len(char *buf)
 {
   if (buf) {
-    int64_t val = 0;
-    if (m_proxy_response) {
-      val = m_proxy_response->length_get();
-    }
+    int64_t val = m_http_sm->client_response_hdr_bytes;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;

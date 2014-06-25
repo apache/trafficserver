@@ -82,7 +82,7 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
 
   switch (currentTag) {
   case STAT_TAG:
-    statObject = NEW(new StatObject(++statCount));
+    statObject = new StatObject(++statCount);
     Debug(MODULE_INIT, "\nStat #: ----------------------- %d -----------------------\n", statCount);
 
     if (atts)

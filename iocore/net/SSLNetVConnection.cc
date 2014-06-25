@@ -155,7 +155,7 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          SSLErrorVC(sslvc, "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -468,6 +468,7 @@ SSLNetVConnection::SSLNetVConnection():
   npnEndpoint(NULL)
 {
   ssl = NULL;
+  sslHandshakeBeginTime = 0;
 }
 
 void
@@ -572,6 +573,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     sslHandShakeComplete = true;
 
+    if (sslHandshakeBeginTime) {
+      const ink_hrtime ssl_handshake_time = ink_get_hrtime() - sslHandshakeBeginTime;
+      Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
+      sslHandshakeBeginTime = 0;
+      SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
+      SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_stat);
+    }
+
     {
       const unsigned char * proto = NULL;
       unsigned len = 0;
@@ -595,14 +604,16 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         // If there's no NPN set, we should not have done this negotiation.
         ink_assert(this->npnSet != NULL);
 
-        this->npnEndpoint = this->npnSet->findEndpoint(proto, len, &this->proto_stack,
-                                                       &this->selected_next_protocol);
+        this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
         this->npnSet = NULL;
 
-        ink_assert(this->npnEndpoint != NULL);
-        Debug("ssl", "client selected next protocol %.*s", len, proto);
+        if (this->npnEndpoint == NULL) {
+          Error("failed to find registered SSL endpoint for '%.*s'", (int)len, (const char *)proto);
+          return EVENT_ERROR;
+        }
+
+        Debug("ssl", "client selected next protocol '%.*s'", len, proto);
       } else {
-        this->proto_stack = ((1u << TS_PROTO_TLS) | (1u << TS_PROTO_HTTP));
         Debug("ssl", "client did not select a next protocol");
       }
     }
@@ -645,8 +656,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
       Debug("ssl", "SSL client handshake completed successfully");
       // if the handshake is complete and write is enabled reschedule the write
-      Debug("ssl", "write.enabled: %d", write.enabled);
-      if (write.enabled)
+      if (closed == 0 && write.enabled)
         writeReschedule(nh);
       if (cert) {
         debug_certificate_name("server certificate subject CN is", X509_get_subject_name(cert));

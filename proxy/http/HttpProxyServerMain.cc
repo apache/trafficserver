@@ -149,6 +149,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   accept_opt.transport_type = port.m_type;
   accept_opt.setHostResPreference(port.m_host_res_preference);
   accept_opt.setTransparentPassthrough(port.m_transparent_passthrough);
+  accept_opt.setSessionProtocolPreference(port.m_session_protocol_preference);
 
   if (port.m_outbound_ip4.isValid()) {
     accept_opt.outbound_ip4 = port.m_outbound_ip4;
@@ -169,18 +170,22 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
 
   // XXX the protocol probe should be a configuration option.
 
-  ProtocolProbeSessionAccept *probe = NEW(new ProtocolProbeSessionAccept());
-  HttpSessionAccept *http = NEW(new HttpSessionAccept(accept_opt));
+  ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
+  HttpSessionAccept *http = 0; // don't allocate this unless it will be used.
+
+  if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
+    http = new HttpSessionAccept(accept_opt);
+    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
+  }
 
 #if TS_HAS_SPDY
-  SpdySessionAccept *spdy = NEW(new SpdySessionAccept(http));
-  probe->registerEndpoint(TS_PROTO_SPDY, spdy);
+  if (port.m_session_protocol_preference.intersects(SPDY_PROTOCOL_SET)) {
+    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_SPDY, new SpdySessionAccept(spdy::SESSION_VERSION_3_1));
+  }
 #endif
 
-  probe->registerEndpoint(TS_PROTO_HTTP, http);
-
   if (port.isSSL()) {
-    SSLNextProtocolAccept *ssl = NEW(new SSLNextProtocolAccept(probe));
+    SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe);
 
     // ALPN selects the first server-offered protocol,
     // so make sure that we offer the newest protocol first.
@@ -190,13 +195,23 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
     // http/1.0, http/1.1, spdy/3, spdy/3.1
 
     // HTTP
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_0)) {
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
+    }
+
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_1)) {
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
+    }
 
     // SPDY
 #if TS_HAS_SPDY
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, spdy);
-    ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, spdy);
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3)) {
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, new SpdySessionAccept(spdy::SESSION_VERSION_3));
+    }
+
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3_1)) {
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, new SpdySessionAccept(spdy::SESSION_VERSION_3_1));
+    }
 #endif
 
     ink_scoped_mutex lock(ssl_plugin_mutex);
@@ -228,14 +243,14 @@ init_HttpProxyServer(int n_accept_threads)
   //   port but without going through the operating system
   //
   if (plugin_http_accept == NULL) {
-    plugin_http_accept = NEW(new HttpSessionAccept);
+    plugin_http_accept = new HttpSessionAccept;
     plugin_http_accept->mutex = new_ProxyMutex();
   }
   // Same as plugin_http_accept except outbound transparent.
   if (! plugin_http_transparent_accept) {
     HttpSessionAccept::Options ha_opt;
     ha_opt.setOutboundTransparent(true);
-    plugin_http_transparent_accept = NEW(new HttpSessionAccept(ha_opt));
+    plugin_http_transparent_accept = new HttpSessionAccept(ha_opt);
     plugin_http_transparent_accept->mutex = new_ProxyMutex();
   }
   ink_mutex_init(&ssl_plugin_mutex, "SSL Acceptor List");
@@ -300,7 +315,7 @@ start_HttpProxyServerBackDoor(int port, int accept_threads)
   opt.localhost_only = true;
   ha_opt.backdoor = true;
   opt.backdoor = true;
-  
+
   // The backdoor only binds the loopback interface
-  netProcessor.main_accept(NEW(new HttpSessionAccept(ha_opt)), NO_FD, opt);
+  netProcessor.main_accept(new HttpSessionAccept(ha_opt), NO_FD, opt);
 }

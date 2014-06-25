@@ -43,7 +43,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char* et_name, size_t s
   new_thread_group_id = (EventType) n_thread_groups;
 
   for (i = 0; i < n_threads; i++) {
-    EThread *t = NEW(new EThread(REGULAR, n_ethreads + i));
+    EThread *t = new EThread(REGULAR, n_ethreads + i);
     all_ethreads[n_ethreads + i] = t;
     eventthread[new_thread_group_id][i] = t;
     t->set_event_type(new_thread_group_id);
@@ -83,7 +83,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   int first_thread = 1;
 
   for (i = 0; i < n_event_threads; i++) {
-    EThread *t = NEW(new EThread(REGULAR, i));
+    EThread *t = new EThread(REGULAR, i);
     if (first_thread && !i) {
       ink_thread_setspecific(Thread::thread_data_key, t);
       global_mutex = t->mutex;
@@ -173,7 +173,7 @@ EventProcessor::spawn_thread(Continuation *cont, const char* thr_name, size_t st
   Event *e = eventAllocator.alloc();
 
   e->init(cont, 0, 0);
-  all_dthreads[n_dthreads] = NEW(new EThread(DEDICATED, e, sem));
+  all_dthreads[n_dthreads] = new EThread(DEDICATED, e, sem);
   e->ethread = all_dthreads[n_dthreads];
   e->mutex = e->continuation->mutex = all_dthreads[n_dthreads]->mutex;
   n_dthreads++;

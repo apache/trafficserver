@@ -162,6 +162,7 @@ HttpServerSession::reenable(VIO *vio)
 void
 HttpServerSession::release()
 {
+  Debug("http_ss", "Releasing session, private_session=%d, sharing_match=%d", private_session, sharing_match);
   // Set our state to KA for stat issues
   state = HSS_KA_SHARED;
 

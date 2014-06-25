@@ -31,19 +31,27 @@ if ENABLE_CPPAPI
 SUBDIRS += atscppapi
 endif
 
+DIST_SUBDIRS = $(SUBDIRS)
+
 # Some special hacks around building the luajit.
 #
 #  - Copy the luajit source tree if we're doing out-of-source builds
 #  - Upon clean, remove the luajit tree from the out-of-source build tree
 #
-# ToDo: Can we do this without copying the source? I tried setting the VPATH, but
-#       it did not work. Can we make more intelligent build targets, avoiding [ test ] ?
+# Note: The LUA_LDFLAGS is a bit of a hack, since LuaJIT on OmniOS needs
+#       the -m64 flag. See configure.ac.
+#
+if BUILD_LUAJIT
+LUA_CFLAGS=$(CFLAGS) -DLUA_COMPAT_ALL -DLUA_USE_POSIX -DLUA_USE_DLOPEN
+
 all-local:
 	@echo "Making all in luajit"
 	test -d "$(top_srcdir)/$(subdir)/luajit/src" || (cd "$(top_srcdir)" && git submodule update --init)
 	test -d "$(top_builddir)/$(subdir)/luajit/src" || cp -rf "$(srcdir)/luajit" "$(top_builddir)/$(subdir)/"
-	cd luajit && $(MAKE) $(AM_MAKEFLAGS) PREFIX="$(prefix)" CC="$(CC)" CFLAGS="$(CFLAGS)"
+	cd luajit && $(MAKE) $(AM_MAKEFLAGS) BUILDMODE="static" PREFIX="$(prefix)" CC="$(CC)" \
+	                     CFLAGS="$(LUA_CFLAGS)" LDFLAGS="@LUA_LDFLAGS@"
 
 clean-local:
 	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && make clean)
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -rf "$(top_builddir)/$(subdir)/luajit"
+endif

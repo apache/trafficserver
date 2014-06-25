@@ -543,7 +543,7 @@ NetAccept *
 NetAccept::clone() const
 {
   NetAccept *na;
-  na = NEW(new NetAccept);
+  na = new NetAccept;
   *na = *this;
   return na;
 }

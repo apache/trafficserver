@@ -18,7 +18,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-VERSION=1.4.30
+VERSION=1.4.35
 
 all: mod_generator.so
 

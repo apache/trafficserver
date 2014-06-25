@@ -25,7 +25,7 @@
 #include "P_Net.h"
 
 SessionAccept::SessionAccept(ProxyMutex *amutex)
-    : Continuation(amutex)
+  : Continuation(amutex)
 {
   SET_HANDLER(&SessionAccept::mainEvent);
 }
@@ -37,5 +37,5 @@ SessionAccept::~SessionAccept()
 void *
 SessionAccept::createNetAccept()
 {
-    return (NEW(new NetAccept));
+  return new NetAccept;
 }

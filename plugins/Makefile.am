@@ -24,5 +24,10 @@ SUBDIRS = \
   libloader \
   regex_remap \
   stats_over_http \
-  tcpinfo \
-  experimental
+  tcpinfo
+
+if BUILD_EXPERIMENTAL_PLUGINS
+SUBDIRS += experimental
+endif
+
+DIST_SUBDIRS = $(SUBDIRS)

@@ -95,7 +95,7 @@ private:
 };
 
 SSLCertLookup::SSLCertLookup()
-  : ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
+  : ssl_storage(new SSLContextStorage()), ssl_default(NULL)
 {
 }
 

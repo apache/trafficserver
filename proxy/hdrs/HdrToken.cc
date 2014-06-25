@@ -188,7 +188,8 @@ static const char *_hdrtoken_strs[] = {
   "X-ID",
   "X-Forwarded-For",
   "TE",
-  "Strict-Transport-Security"
+  "Strict-Transport-Security",
+  "100-continue"
 };
 
 static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
@@ -527,7 +528,8 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "X-ID",
   "X-Forwarded-For",
   "TE",
-  "Strict-Transport-Security"
+  "Strict-Transport-Security",
+  "100-continue"
 };
 
 /*-------------------------------------------------------------------------
@@ -595,7 +597,7 @@ hdrtoken_init()
   if (!inited) {
     inited = 1;
 
-    hdrtoken_strs_dfa = NEW(new DFA);
+    hdrtoken_strs_dfa = new DFA;
     hdrtoken_strs_dfa->compile(_hdrtoken_strs, SIZEOF(_hdrtoken_strs), (REFlags) (RE_CASE_INSENSITIVE));
 
     // all the tokenized hdrtoken strings are placed in a special heap,

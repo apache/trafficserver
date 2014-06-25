@@ -15,9 +15,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-includedir=$(prefix)/include/ts
 
-include_HEADERS = apidefs.h
+library_includedir=$(includedir)/ts
+
+library_include_HEADERS = apidefs.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_atomic test_freelist test_arena test_List test_Map test_Vec
@@ -29,7 +30,7 @@ lib_LTLIBRARIES = libtsutil.la
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = \
-  @hwloc_LIBS@ \
+  @HWLOC_LIBS@ \
   @LIBOBJS@ \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
@@ -78,8 +79,6 @@ libtsutil_la_SOURCES = \
   Regex.h \
   Regression.cc \
   Regression.h \
-  Resource.cc \
-  Resource.h \
   SimpleTokenizer.h \
   TestBox.h \
   TextBuffer.cc \

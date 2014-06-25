@@ -24,7 +24,23 @@
 #include "SpdyCommon.h"
 #include "SpdyCallbacks.h"
 
-Config SPDY_CFG;
+// SPDYlay callbacks
+spdylay_session_callbacks spdy_callbacks;
+
+// statistic names
+RecRawStatBlock* spdy_rsb; ///< Container for statistics.
+
+static char const * const SPDY_STAT_CURRENT_CLIENT_SESSION_NAME = "proxy.process.spdy.current_client_sessions";
+static char const * const SPDY_STAT_CURRENT_CLIENT_STREAM_NAME = "proxy.process.spdy.current_client_streams";
+static char const * const SPDY_STAT_TOTAL_CLIENT_STREAM_NAME = "proxy.process.spdy.total_client_streams";
+static char const * const SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.spdy.total_transactions_time";
+static char const * const SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.spdy.total_client_connections";
+
+// Configurations
+uint32_t spdy_max_concurrent_streams = 100;
+uint32_t spdy_initial_window_size = 65536;
+int32_t spdy_accept_no_activity_timeout = 120;
+int32_t spdy_no_activity_timeout_in = 115;
 
 string
 http_date(time_t t)
@@ -38,22 +54,25 @@ http_date(time_t t)
 int
 spdy_config_load()
 {
-  SPDY_CFG.nr_accept_threads = 1;
-  SPDY_CFG.accept_no_activity_timeout = 30;
-  SPDY_CFG.no_activity_timeout_in = 30;
-  SPDY_CFG.spdy.verbose = false;
-  SPDY_CFG.spdy.enable_tls = false;
-  SPDY_CFG.spdy.keep_host_port = false;
-  //
-  // SPDY plugin will share the same port number with
-  // http server, unless '--port' is given.
-  //
-  SPDY_CFG.spdy.serv_port = -1;
-//  SPDY_CFG.spdy.max_concurrent_streams = 1000;
-  REC_EstablishStaticConfigInt32(SPDY_CFG.spdy.max_concurrent_streams, "proxy.config.spdy.client.max_concurrent_streams");
-  SPDY_CFG.spdy.initial_window_size = (64 << 10);
+  REC_EstablishStaticConfigInt32U(spdy_max_concurrent_streams, "proxy.config.spdy.max_concurrent_streams_in");
+  REC_EstablishStaticConfigInt32U(spdy_initial_window_size, "proxy.config.spdy.initial_window_size_in");
+  REC_EstablishStaticConfigInt32(spdy_no_activity_timeout_in, "proxy.config.spdy.no_activity_timeout_in");
+  REC_EstablishStaticConfigInt32(spdy_accept_no_activity_timeout, "proxy.config.spdy.accept_no_activity_timeout");
 
-  spdy_callbacks_init(&SPDY_CFG.spdy.callbacks);
+  spdy_callbacks_init(&spdy_callbacks);
+
+  // Get our statistics up
+  spdy_rsb = RecAllocateRawStatBlock(static_cast<int>(SPDY_N_STATS));
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_CURRENT_CLIENT_SESSION_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(SPDY_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncCount);
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(SPDY_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncSum);
+  RecRegisterRawStat(spdy_rsb, RECT_PROCESS, SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(SPDY_STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
 
   return 0;
 }

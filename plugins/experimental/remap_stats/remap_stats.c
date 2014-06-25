@@ -46,7 +46,7 @@ typedef struct
 static void
 stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
-    intptr_t stat_id = -1;
+    int stat_id = -1;
     ENTRY search, *result = NULL;
     static __thread struct hsearch_data stat_cache;
     static __thread bool hash_init = false;
@@ -67,28 +67,31 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
         // so this mutex won't be much overhead and it fixes a race condition
         // in the RecCore. Hopefully this can be removed in the future.
         TSMutexLock(create_mutex);
-        if (TS_ERROR == TSStatFindName((const char *) name, (int *)&stat_id))
+        if (TS_ERROR == TSStatFindName((const char *) name, &stat_id))
         {
             stat_id = TSStatCreate((const char *) name, TS_RECORDDATATYPE_INT, persist_type, TS_STAT_SYNC_SUM);
             if (stat_id == TS_ERROR)
                 TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
             else
-                TSDebug(DEBUG_TAG, "Created stat_name: %s stat_id: %d", name, (int)stat_id);
+                TSDebug(DEBUG_TAG, "Created stat_name: %s stat_id: %d", name, stat_id);
         }
         TSMutexUnlock(create_mutex);
 
-        search.key = TSstrdup(name);
-        search.data = (void *) stat_id;
-        hsearch_r(search, ENTER, &result, &stat_cache);
-        TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, (int)stat_id);
+        if (stat_id >= 0)
+        {
+            search.key = TSstrdup(name);
+            search.data = (void *)((intptr_t)stat_id);
+            hsearch_r(search, ENTER, &result, &stat_cache);
+            TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
+        }
     }
     else
-        stat_id = (intptr_t) result->data;
+        stat_id = (int)((intptr_t)result->data);
 
     if (likely(stat_id >= 0))
-        TSStatIntIncrement((int)stat_id, amount);
+        TSStatIntIncrement(stat_id, amount);
     else
-        TSDebug(DEBUG_TAG, "stat error! stat_name: %s stat_id: %d", name, (int)stat_id);
+        TSDebug(DEBUG_TAG, "stat error! stat_name: %s stat_id: %d", name, stat_id);
 }
 
 static char *
@@ -142,7 +145,7 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
         TSHttpTxnArgSet(txn, config->txn_slot, txnd);
     else
     {
-        txnd = (void *) ((intptr_t)txnd | (intptr_t)TSHttpTxnArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
+        txnd = (void *) ((uintptr_t)txnd | (uintptr_t)TSHttpTxnArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
         TSHttpTxnArgSet(txn, config->txn_slot, txnd);
     }
 
@@ -159,7 +162,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;
     void *txnd;
-    TSHttpStatus status_code = 0;
+    int status_code = 0;
     TSMBuffer buf;
     TSMLoc hdr_loc;
     uint64_t out_bytes, in_bytes;
@@ -170,11 +173,11 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
     config = (config_t *) TSContDataGet(cont);
     txnd = TSHttpTxnArgGet(txn, config->txn_slot);
 
-    hostname = (char *) ((intptr_t)txnd & (~((intptr_t) 0x01))); // Get hostname
+    hostname = (char *) ((uintptr_t)txnd & (~((uintptr_t) 0x01))); // Get hostname
 
     if (txnd)
     {
-        if ((intptr_t) txnd & 0x01) // remap succeeded?
+        if ((uintptr_t) txnd & 0x01) // remap succeeded?
         {
             if (!config->post_remap_host)
                 remap = hostname;
@@ -198,16 +201,18 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 
             if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS)
             {
-                status_code = TSHttpHdrStatusGet(buf, hdr_loc);
+                status_code = (int)TSHttpHdrStatusGet(buf, hdr_loc);
                 TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
-                if ((status_code >= 200) && (status_code <= 299))
+                if (status_code < 200)
+                    CREATE_STAT_NAME(stat_name, remap, "status_other")
+                else if (status_code <= 299)
                     CREATE_STAT_NAME(stat_name, remap, "status_2xx")
-                else if ((status_code >= 300) && (status_code <= 399))
+                else if (status_code <= 399)
                     CREATE_STAT_NAME(stat_name, remap, "status_3xx")
-                else if ((status_code >= 400) && (status_code <= 499))
+                else if (status_code <= 499)
                     CREATE_STAT_NAME(stat_name, remap, "status_4xx")
-                else if ((status_code >= 500) && ((int)status_code <= 599))
+                else if (status_code <= 599)
                     CREATE_STAT_NAME(stat_name, remap, "status_5xx")
                 else
                     CREATE_STAT_NAME(stat_name, remap, "status_other")

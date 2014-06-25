@@ -30,6 +30,7 @@
  ***************************************************************************/
 
 #include "ink_config.h"
+#include "ink_memory.h"
 
 #include "EventCallback.h"
 #include "CoreAPIShared.h"

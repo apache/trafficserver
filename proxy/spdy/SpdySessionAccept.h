@@ -28,11 +28,13 @@
 #include "P_EventSystem.h"
 #include "P_UnixNet.h"
 #include "I_IOBuffer.h"
+#include "SpdyDefs.h"
 
 class SpdySessionAccept: public SessionAccept
 {
 public:
-  SpdySessionAccept(Continuation *ep);
+
+  explicit SpdySessionAccept(spdy::SessionVersion vers);
   ~SpdySessionAccept() {}
 
   void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
@@ -42,7 +44,7 @@ private:
   SpdySessionAccept(const SpdySessionAccept &); // disabled
   SpdySessionAccept& operator =(const SpdySessionAccept&); // disabled
 
-  Continuation *endpoint;
+  spdy::SessionVersion version;
 };
 
 #endif /* SpdySessionAccept_H_ */

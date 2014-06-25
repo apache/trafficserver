@@ -28,7 +28,6 @@
  ***************************************************************************/
 #include "libts.h"
 
-#include "Resource.h"
 #include "Error.h"
 #include "LogUtils.h"
 #include "LogFilter.h"
@@ -56,7 +55,7 @@ const char *LogFilter::ACTION_NAME[] = { "REJECT", "ACCEPT", "WIPE_FIELD_VALUE" 
 LogFilter::LogFilter(const char *name, LogField * field, LogFilter::Action action, LogFilter::Operator oper)
   : m_name(ats_strdup(name)), m_field(NULL) , m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
 {
-  m_field = NEW(new LogField(*field));
+  m_field = new LogField(*field);
   ink_assert(m_field);
 }
 
@@ -79,9 +78,9 @@ LogFilterString::_setValues(size_t n, char **value)
   m_type = STRING_FILTER;
   m_num_values = n;
   if (n) {
-    m_value = NEW(new char *[n]);
-    m_value_uppercase = NEW(new char *[n]);
-    m_length = NEW(new size_t[n]);
+    m_value = new char *[n];
+    m_value_uppercase = new char *[n];
+    m_length = new size_t[n];
     ink_assert(m_value && m_value_uppercase && m_length);
     for (size_t i = 0; i < n; ++i) {
       m_value[i] = ats_strdup(value[i]);
@@ -108,7 +107,7 @@ LogFilterString::LogFilterString(const char *name, LogField * field,
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
   if (n) {
-    val_array = NEW(new char *[n]);
+    val_array = new char *[n];
     char *t;
     while (t = tok.getNext(), t != NULL) {
       val_array[i++] = t;
@@ -389,7 +388,7 @@ LogFilterInt::_setValues(size_t n, int64_t *value)
   m_type = INT_FILTER;
   m_num_values = n;
   if (n) {
-    m_value = NEW(new int64_t[n]);
+    m_value = new int64_t[n];
     memcpy(m_value, value, n * sizeof(int64_t));
   }
 }
@@ -446,7 +445,7 @@ LogFilterInt::LogFilterInt(const char *name, LogField * field,
   size_t n = tok.getNumTokensRemaining();
 
   if (n) {
-    val_array = NEW(new int64_t[n]);
+    val_array = new int64_t[n];
     char *t;
     while (t = tok.getNext(), t != NULL) {
       int64_t ival;
@@ -723,10 +722,10 @@ LogFilterList::add(LogFilter * filter, bool copy)
   ink_assert(filter != NULL);
   if (copy) {
     if (filter->type() == LogFilter::INT_FILTER) {
-      LogFilterInt *f = NEW(new LogFilterInt(*((LogFilterInt *) filter)));
+      LogFilterInt *f = new LogFilterInt(*((LogFilterInt *) filter));
       m_filter_list.enqueue(f);
     } else {
-      LogFilterString *f = NEW(new LogFilterString(*((LogFilterString *) filter)));
+      LogFilterString *f = new LogFilterString(*((LogFilterString *) filter));
       m_filter_list.enqueue(f);
     }
   } else {

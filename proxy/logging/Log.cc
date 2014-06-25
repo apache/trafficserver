@@ -106,7 +106,7 @@ Log::change_configuration()
 
   Debug("log-config", "Changing configuration ...");
 
-  new_config = NEW(new LogConfig);
+  new_config = new LogConfig;
   ink_assert(new_config != NULL);
   new_config->read_configuration_variables();
 
@@ -337,252 +337,246 @@ Log::init_fields()
   field_symbol_hash = ink_hash_table_create(InkHashTableKeyType_String);
 
   // client -> proxy fields
-  field = NEW(new LogField("client_host_ip", "chi",
-                           LogField::IP,
-                           &LogAccess::marshal_client_host_ip,
-                           &LogAccess::unmarshal_ip_to_str));
+  field =new LogField("client_host_ip", "chi",
+                      LogField::IP,
+                      &LogAccess::marshal_client_host_ip,
+                      &LogAccess::unmarshal_ip_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chi", field);
 
-  field = NEW(new LogField("client_host_port", "chp",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_host_port,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_host_port", "chp",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_host_port,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chp", field);
 
-  field = NEW(new LogField("client_host_ip_hex", "chih",
-                           LogField::IP,
-                           &LogAccess::marshal_client_host_ip,
-                           &LogAccess::unmarshal_ip_to_hex));
+  field = new LogField("client_host_ip_hex", "chih",
+                       LogField::IP,
+                       &LogAccess::marshal_client_host_ip,
+                       &LogAccess::unmarshal_ip_to_hex);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chih", field);
 
-  field = NEW (new LogField ("client_auth_user_name", "caun",
-                             LogField::STRING,
-                             &LogAccess::marshal_client_auth_user_name,
-                             (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+  field = new LogField ("client_auth_user_name", "caun",
+                        LogField::STRING,
+                        &LogAccess::marshal_client_auth_user_name,
+                        (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add (field, false);
   ink_hash_table_insert (field_symbol_hash, "caun", field);
 
-  Ptr<LogFieldAliasTable> proto_type_map = make_ptr(NEW(new LogFieldAliasTable));
-  proto_type_map->init(7,
-                       // Transport protocols
-                       TS_PROTO_UDP, "UDP",
-                       TS_PROTO_TCP, "TCP",
-                       TS_PROTO_TLS, "TLS",
-                       // Application protocols
-                       TS_PROTO_HTTP, "HTTP",
-                       TS_PROTO_SPDY, "SPDY",
-                       TS_PROTO_RTMP, "RTMP",
-                       TS_PROTO_WS,   "WS");
-
-  field = NEW(new LogField("client_protocol_stack", "cps",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_protocol_stack,
-                           &LogAccess::unmarshal_client_protocol_stack,
-                           (Ptr<LogFieldAliasMap>) proto_type_map));
+  field = new LogField("plugin_identity_id", "piid",
+                       LogField::sINT,
+                       &LogAccess::marshal_plugin_identity_id,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_int_to_str));
   global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "cps", field);
+  ink_hash_table_insert(field_symbol_hash, "piid", field);
 
-  field = NEW(new LogField("client_req_timestamp_sec", "cqts",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_timestamp_sec,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("plugin_identity_tag", "pitag",
+                       LogField::STRING,
+                       &LogAccess::marshal_plugin_identity_tag,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "pitag", field);
+
+  field = new LogField("client_req_timestamp_sec", "cqts",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqts", field);
 
-  field = NEW(new LogField("client_req_timestamp_hex_sec", "cqth",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_timestamp_sec,
-                           &LogAccess::unmarshal_int_to_str_hex));
+  field = new LogField("client_req_timestamp_hex_sec", "cqth",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_str_hex);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqth", field);
 
-  field = NEW(new LogField("client_req_timestamp_squid", "cqtq",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_timestamp_sec,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_req_timestamp_squid", "cqtq",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtq", field);
 
-  field = NEW(new LogField("client_req_timestamp_netscape", "cqtn",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_timestamp_sec,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_req_timestamp_netscape", "cqtn",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtn", field);
 
-  field = NEW(new LogField("client_req_timestamp_date", "cqtd",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_timestamp_sec,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_req_timestamp_date", "cqtd",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtd", field);
 
-  field = NEW(new LogField("client_req_timestamp_time", "cqtt",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_timestamp_sec,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_req_timestamp_time", "cqtt",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtt", field);
 
-  field = NEW(new LogField("client_req_text", "cqtx",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_text,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_http_text));
+  field = new LogField("client_req_text", "cqtx",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_text,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_http_text);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtx", field);
 
-  field = NEW(new LogField("client_req_http_method", "cqhm",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_http_method,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+  field = new LogField("client_req_http_method", "cqhm",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_http_method,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqhm", field);
 
-  field = NEW(new LogField("client_req_url", "cqu",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_url,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
-                           &LogAccess::set_client_req_url));
+  field = new LogField("client_req_url", "cqu",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_url,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_url);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqu", field);
 
-  field = NEW(new LogField("client_req_url_canonical", "cquc",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_url_canon,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
-                           &LogAccess::set_client_req_url_canon));
+  field = new LogField("client_req_url_canonical", "cquc",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_url_canon,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_url_canon);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquc", field);
 
-  field = NEW(new LogField("client_req_unmapped_url_canonical", "cquuc",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_unmapped_url_canon,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
-                           &LogAccess::set_client_req_unmapped_url_canon));
+  field = new LogField("client_req_unmapped_url_canonical", "cquuc",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_unmapped_url_canon,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_unmapped_url_canon);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquuc", field);
 
-  field = NEW(new LogField("client_req_unmapped_url_path", "cquup",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_unmapped_url_path,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
-                           &LogAccess::set_client_req_unmapped_url_path));
+  field = new LogField("client_req_unmapped_url_path", "cquup",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_unmapped_url_path,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_unmapped_url_path);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquup", field);
 
-  field = NEW(new LogField("client_req_unmapped_url_host", "cquuh",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_unmapped_url_host,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
-                           &LogAccess::set_client_req_unmapped_url_host));
+  field = new LogField("client_req_unmapped_url_host", "cquuh",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_unmapped_url_host,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_unmapped_url_host);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquuh", field);
 
-  field = NEW(new LogField("client_req_url_scheme", "cqus",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_url_scheme,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+  field = new LogField("client_req_url_scheme", "cqus",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_url_scheme,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqus", field);
 
-  field = NEW(new LogField("client_req_url_path", "cqup",
-                           LogField::STRING,
-                           &LogAccess::marshal_client_req_url_path,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
-                           &LogAccess::set_client_req_url_path));
+  field = new LogField("client_req_url_path", "cqup",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_req_url_path,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str,
+                       &LogAccess::set_client_req_url_path);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqup", field);
 
-  field = NEW(new LogField("client_req_http_version", "cqhv",
-                           LogField::dINT,
-                           &LogAccess::marshal_client_req_http_version,
-                           &LogAccess::unmarshal_http_version));
+  field = new LogField("client_req_http_version", "cqhv",
+                       LogField::dINT,
+                       &LogAccess::marshal_client_req_http_version,
+                       &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqhv", field);
 
-  field = NEW(new LogField("client_req_header_len", "cqhl",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_header_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_req_header_len", "cqhl",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_header_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqhl", field);
 
-  field = NEW(new LogField("client_req_body_len", "cqbl",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_req_body_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_req_body_len", "cqbl",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_req_body_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqbl", field);
 
-  Ptr<LogFieldAliasTable> finish_status_map = make_ptr(NEW(new LogFieldAliasTable));
+  Ptr<LogFieldAliasTable> finish_status_map = make_ptr(new LogFieldAliasTable);
   finish_status_map->init(N_LOG_FINISH_CODE_TYPES,
                           LOG_FINISH_FIN, "FIN",
                           LOG_FINISH_INTR, "INTR",
                           LOG_FINISH_TIMEOUT, "TIMEOUT");
 
-  field = NEW(new LogField("client_finish_status_code", "cfsc",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_finish_status_code,
-                           &LogAccess::unmarshal_finish_status,
-                           (Ptr<LogFieldAliasMap>) finish_status_map));
+  field = new LogField("client_finish_status_code", "cfsc",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_finish_status_code,
+                       &LogAccess::unmarshal_finish_status,
+                       (Ptr<LogFieldAliasMap>) finish_status_map);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cfsc", field);
 
   // proxy -> client fields
-  field = NEW(new LogField("proxy_resp_content_type", "psct",
-                           LogField::STRING,
-                           &LogAccess::marshal_proxy_resp_content_type,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+  field = new LogField("proxy_resp_content_type", "psct",
+                       LogField::STRING,
+                       &LogAccess::marshal_proxy_resp_content_type,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "psct", field);
 
-  field = NEW(new LogField("proxy_resp_squid_len", "psql",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_resp_squid_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("proxy_resp_squid_len", "psql",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_resp_squid_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "psql", field);
 
-  field = NEW(new LogField("proxy_resp_content_len", "pscl",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_resp_content_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("proxy_resp_content_len", "pscl",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_resp_content_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pscl", field);
 
-  field = NEW(new LogField("proxy_resp_content_len_hex", "psch",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_resp_content_len,
-                           &LogAccess::unmarshal_int_to_str_hex));
+  field = new LogField("proxy_resp_content_len_hex", "psch",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_resp_content_len,
+                       &LogAccess::unmarshal_int_to_str_hex);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "psch", field);
 
-  field = NEW(new LogField("proxy_resp_status_code", "pssc",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_resp_status_code,
-                           &LogAccess::unmarshal_http_status));
+  field = new LogField("proxy_resp_status_code", "pssc",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_resp_status_code,
+                       &LogAccess::unmarshal_http_status);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pssc", field);
 
-  field = NEW(new LogField("proxy_resp_header_len", "pshl",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_resp_header_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("proxy_resp_header_len", "pshl",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_resp_header_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pshl", field);
 
-  field = NEW(new LogField("proxy_finish_status_code", "pfsc",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_finish_status_code,
-                           &LogAccess::unmarshal_finish_status,
-                           (Ptr<LogFieldAliasMap>) finish_status_map));
+  field = new LogField("proxy_finish_status_code", "pfsc",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_finish_status_code,
+                       &LogAccess::unmarshal_finish_status,
+                       (Ptr<LogFieldAliasMap>) finish_status_map);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
-  Ptr<LogFieldAliasTable> cache_code_map = make_ptr(NEW(new LogFieldAliasTable));
+  Ptr<LogFieldAliasTable> cache_code_map = make_ptr(new LogFieldAliasTable);
   cache_code_map->init(49,
                        SQUID_LOG_EMPTY, "UNDEFINED",
                        SQUID_LOG_TCP_HIT, "TCP_HIT",
@@ -634,44 +628,44 @@ Log::init_fields()
                        SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1",
                        SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
 
-  field = NEW(new LogField("cache_result_code", "crc",
-                           LogField::sINT,
-                           &LogAccess::marshal_cache_result_code,
-                           &LogAccess::unmarshal_cache_code,
-                           (Ptr<LogFieldAliasMap>) cache_code_map));
+  field = new LogField("cache_result_code", "crc",
+                       LogField::sINT,
+                       &LogAccess::marshal_cache_result_code,
+                       &LogAccess::unmarshal_cache_code,
+                       (Ptr<LogFieldAliasMap>) cache_code_map);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "crc", field);
 
   // proxy -> server fields
-  field = NEW(new LogField("proxy_req_header_len", "pqhl",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_req_header_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("proxy_req_header_len", "pqhl",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_req_header_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqhl", field);
 
-  field = NEW(new LogField("proxy_req_body_len", "pqbl",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_req_body_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("proxy_req_body_len", "pqbl",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_req_body_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqbl", field);
 
-  field = NEW(new LogField("proxy_req_server_name", "pqsn",
-                           LogField::STRING,
-                           &LogAccess::marshal_proxy_req_server_name,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+  field = new LogField("proxy_req_server_name", "pqsn",
+                       LogField::STRING,
+                       &LogAccess::marshal_proxy_req_server_name,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsn", field);
 
-  field = NEW(new LogField("proxy_req_server_ip", "pqsi",
-                           LogField::IP,
-                           &LogAccess::marshal_proxy_req_server_ip,
-                           &LogAccess::unmarshal_ip_to_str));
+  field = new LogField("proxy_req_server_ip", "pqsi",
+                       LogField::IP,
+                       &LogAccess::marshal_proxy_req_server_ip,
+                       &LogAccess::unmarshal_ip_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsi", field);
 
-  Ptr<LogFieldAliasTable> hierarchy_map = make_ptr(NEW(new LogFieldAliasTable));
+  Ptr<LogFieldAliasTable> hierarchy_map = make_ptr(new LogFieldAliasTable);
   hierarchy_map->init(36,
                       SQUID_HIER_EMPTY, "EMPTY",
                       SQUID_HIER_NONE, "NONE",
@@ -710,178 +704,178 @@ Log::init_fields()
                       SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS, "TIMEOUT_TIMEOUT_SSL_PARENT_MISS",
                       SQUID_HIER_INVALID_ASSIGNED_CODE, "INVALID_ASSIGNED_CODE");
 
-  field = NEW(new LogField("proxy_hierarchy_route", "phr",
-                           LogField::sINT,
-                           &LogAccess::marshal_proxy_hierarchy_route,
-                           &LogAccess::unmarshal_hierarchy,
-                           (Ptr<LogFieldAliasMap>) hierarchy_map));
+  field = new LogField("proxy_hierarchy_route", "phr",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_hierarchy_route,
+                       &LogAccess::unmarshal_hierarchy,
+                       (Ptr<LogFieldAliasMap>) hierarchy_map);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "phr", field);
 
-  field = NEW(new LogField("proxy_host_name", "phn",
-                           LogField::STRING,
-                           &LogAccess::marshal_proxy_host_name,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+  field = new LogField("proxy_host_name", "phn",
+                       LogField::STRING,
+                       &LogAccess::marshal_proxy_host_name,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "phn", field);
 
-  field = NEW(new LogField("proxy_host_ip", "phi",
-                           LogField::IP,
-                           &LogAccess::marshal_proxy_host_ip,
-                           &LogAccess::unmarshal_ip_to_str));
+  field = new LogField("proxy_host_ip", "phi",
+                       LogField::IP,
+                       &LogAccess::marshal_proxy_host_ip,
+                       &LogAccess::unmarshal_ip_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "phi", field);
 
   // server -> proxy fields
 
-  field = NEW(new LogField("server_host_ip", "shi",
-                           LogField::IP,
-                           &LogAccess::marshal_server_host_ip,
-                           &LogAccess::unmarshal_ip_to_str));
+  field = new LogField("server_host_ip", "shi",
+                       LogField::IP,
+                       &LogAccess::marshal_server_host_ip,
+                       &LogAccess::unmarshal_ip_to_str);
 
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "shi", field);
 
-  field = NEW(new LogField("server_host_name", "shn",
-                           LogField::STRING,
-                           &LogAccess::marshal_server_host_name,
-                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str));
+  field = new LogField("server_host_name", "shn",
+                       LogField::STRING,
+                       &LogAccess::marshal_server_host_name,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "shn", field);
 
-  field = NEW(new LogField("server_resp_status_code", "sssc",
-                           LogField::sINT,
-                           &LogAccess::marshal_server_resp_status_code,
-                           &LogAccess::unmarshal_http_status));
+  field = new LogField("server_resp_status_code", "sssc",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_resp_status_code,
+                       &LogAccess::unmarshal_http_status);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sssc", field);
 
-  field = NEW(new LogField("server_resp_content_len", "sscl",
-                           LogField::sINT,
-                           &LogAccess::marshal_server_resp_content_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("server_resp_content_len", "sscl",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_resp_content_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sscl", field);
 
-  field = NEW(new LogField("server_resp_header_len", "sshl",
-                           LogField::sINT,
-                           &LogAccess::marshal_server_resp_header_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("server_resp_header_len", "sshl",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_resp_header_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sshl", field);
 
-  field = NEW(new LogField("server_resp_http_version", "sshv",
-                           LogField::dINT,
-                           &LogAccess::marshal_server_resp_http_version,
-                           &LogAccess::unmarshal_http_version));
+  field = new LogField("server_resp_http_version", "sshv",
+                       LogField::dINT,
+                       &LogAccess::marshal_server_resp_http_version,
+                       &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sshv", field);
 
-  field = NEW(new LogField("cached_resp_status_code", "csssc",
-                           LogField::sINT,
-                           &LogAccess::marshal_cache_resp_status_code,
-                           &LogAccess::unmarshal_http_status));
+  field = new LogField("cached_resp_status_code", "csssc",
+                       LogField::sINT,
+                       &LogAccess::marshal_cache_resp_status_code,
+                       &LogAccess::unmarshal_http_status);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csssc", field);
 
-  field = NEW(new LogField("cached_resp_content_len", "csscl",
-                           LogField::sINT,
-                           &LogAccess::marshal_cache_resp_content_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("cached_resp_content_len", "csscl",
+                       LogField::sINT,
+                       &LogAccess::marshal_cache_resp_content_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csscl", field);
 
-  field = NEW(new LogField("cached_resp_header_len", "csshl",
-                           LogField::sINT,
-                           &LogAccess::marshal_cache_resp_header_len,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("cached_resp_header_len", "csshl",
+                       LogField::sINT,
+                       &LogAccess::marshal_cache_resp_header_len,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csshl", field);
 
-  field = NEW(new LogField("cached_resp_http_version", "csshv",
-                           LogField::dINT,
-                           &LogAccess::marshal_cache_resp_http_version,
-                           &LogAccess::unmarshal_http_version));
+  field = new LogField("cached_resp_http_version", "csshv",
+                       LogField::dINT,
+                       &LogAccess::marshal_cache_resp_http_version,
+                       &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "csshv", field);
 
-  field = NEW(new LogField("client_retry_after_time", "crat",
-                           LogField::sINT,
-                           &LogAccess::marshal_client_retry_after_time,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("client_retry_after_time", "crat",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_retry_after_time,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "crat", field);
 
   // cache write fields
 
-  Ptr<LogFieldAliasTable> cache_write_code_map = make_ptr(NEW(new LogFieldAliasTable));
+  Ptr<LogFieldAliasTable> cache_write_code_map = make_ptr(new LogFieldAliasTable);
   cache_write_code_map->init(N_LOG_CACHE_WRITE_TYPES,
                              LOG_CACHE_WRITE_NONE, "-",
                              LOG_CACHE_WRITE_LOCK_MISSED, "WL_MISS",
                              LOG_CACHE_WRITE_LOCK_ABORTED, "INTR",
                              LOG_CACHE_WRITE_ERROR, "ERR", LOG_CACHE_WRITE_COMPLETE, "FIN");
-  field = NEW(new LogField("cache_write_result", "cwr",
-                           LogField::sINT,
-                           &LogAccess::marshal_cache_write_code,
-                           &LogAccess::unmarshal_cache_write_code,
-                           (Ptr<LogFieldAliasMap>) cache_write_code_map));
+  field = new LogField("cache_write_result", "cwr",
+                       LogField::sINT,
+                       &LogAccess::marshal_cache_write_code,
+                       &LogAccess::unmarshal_cache_write_code,
+                       (Ptr<LogFieldAliasMap>) cache_write_code_map);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cwr", field);
 
-  field = NEW(new LogField("cache_write_transform_result", "cwtr",
-                           LogField::sINT,
-                           &LogAccess::marshal_cache_write_transform_code,
-                           &LogAccess::unmarshal_cache_write_code,
-                           (Ptr<LogFieldAliasMap>) cache_write_code_map));
+  field = new LogField("cache_write_transform_result", "cwtr",
+                       LogField::sINT,
+                       &LogAccess::marshal_cache_write_transform_code,
+                       &LogAccess::unmarshal_cache_write_code,
+                       (Ptr<LogFieldAliasMap>) cache_write_code_map);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cwtr", field);
 
   // other fields
 
-  field = NEW(new LogField("transfer_time_ms", "ttms",
-                           LogField::sINT,
-                           &LogAccess::marshal_transfer_time_ms,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("transfer_time_ms", "ttms",
+                       LogField::sINT,
+                       &LogAccess::marshal_transfer_time_ms,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ttms", field);
 
-  field = NEW(new LogField("transfer_time_ms_hex", "ttmh",
-                           LogField::sINT,
-                           &LogAccess::marshal_transfer_time_ms,
-                           &LogAccess::unmarshal_int_to_str_hex));
+  field = new LogField("transfer_time_ms_hex", "ttmh",
+                       LogField::sINT,
+                       &LogAccess::marshal_transfer_time_ms,
+                       &LogAccess::unmarshal_int_to_str_hex);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ttmh", field);
 
-  field = NEW(new LogField("transfer_time_ms_fractional", "ttmsf",
-                           LogField::sINT,
-                           &LogAccess::marshal_transfer_time_ms,
-                           &LogAccess::unmarshal_ttmsf));
+  field = new LogField("transfer_time_ms_fractional", "ttmsf",
+                       LogField::sINT,
+                       &LogAccess::marshal_transfer_time_ms,
+                       &LogAccess::unmarshal_ttmsf);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ttmsf", field);
 
-  field = NEW(new LogField("transfer_time_sec", "tts",
-                           LogField::sINT,
-                           &LogAccess::marshal_transfer_time_s,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("transfer_time_sec", "tts",
+                       LogField::sINT,
+                       &LogAccess::marshal_transfer_time_s,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "tts", field);
 
-  field = NEW(new LogField("file_size", "fsiz",
-                           LogField::sINT,
-                           &LogAccess::marshal_file_size,
-                           &LogAccess::unmarshal_int_to_str));
+  field = new LogField("file_size", "fsiz",
+                       LogField::sINT,
+                       &LogAccess::marshal_file_size,
+                       &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
 
-  Ptr<LogFieldAliasTable> entry_type_map = make_ptr(NEW(new LogFieldAliasTable));
+  Ptr<LogFieldAliasTable> entry_type_map = make_ptr(new LogFieldAliasTable);
   entry_type_map->init(N_LOG_ENTRY_TYPES,
                        LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP",
                        LOG_ENTRY_ICP, "LOG_ENTRY_ICP");
-  field = NEW(new LogField("log_entry_type", "etype",
-                           LogField::sINT,
-                           &LogAccess::marshal_entry_type,
-                           &LogAccess::unmarshal_entry_type,
-                           (Ptr<LogFieldAliasMap>) entry_type_map));
+  field = new LogField("log_entry_type", "etype",
+                       LogField::sINT,
+                       &LogAccess::marshal_entry_type,
+                       &LogAccess::unmarshal_entry_type,
+                       (Ptr<LogFieldAliasMap>) entry_type_map);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "etype", field);
 
@@ -913,7 +907,7 @@ Log::init(int flags)
   config_flags = flags;
 
   // create the configuration object
-  config = NEW(new LogConfig());
+  config = new LogConfig();
   ink_assert (config != NULL);
 
   log_configid = configProcessor.set(log_configid, config);
@@ -993,20 +987,19 @@ Log::init_when_enabled()
     // setup global scrap object
     //
     global_scrap_format = MakeTextLogFormat();
-    global_scrap_object =
-      NEW(new LogObject(global_scrap_format,
-                        Log::config->logfile_dir,
-                        "scrapfile.log",
-                        LOG_FILE_BINARY, NULL,
-                        Log::config->rolling_enabled,
-                        Log::config->collation_preproc_threads,
-                        Log::config->rolling_interval_sec,
-                        Log::config->rolling_offset_hr,
-                        Log::config->rolling_size_mb));
+    global_scrap_object = new LogObject(global_scrap_format,
+                                        Log::config->logfile_dir,
+                                        "scrapfile.log",
+                                        LOG_FILE_BINARY, NULL,
+                                        Log::config->rolling_enabled,
+                                        Log::config->collation_preproc_threads,
+                                        Log::config->rolling_interval_sec,
+                                        Log::config->rolling_offset_hr,
+                                        Log::config->rolling_size_mb);
 
     // create the flush thread and the collation thread
     create_threads();
-    eventProcessor.schedule_every(NEW (new PeriodicWakeup(collation_preproc_threads, 1)),
+    eventProcessor.schedule_every(new PeriodicWakeup(collation_preproc_threads, 1),
                                   HRTIME_SECOND, ET_CALL);
 
     init_status |= FULLY_INITIALIZED;
@@ -1032,7 +1025,7 @@ Log::create_threads()
   // no need for the conditional var since it will be relying on
   // on the event system.
   for (int i = 0; i < collation_preproc_threads; i++) {
-    Continuation *preproc_cont = NEW(new LoggingPreprocContinuation(i));
+    Continuation *preproc_cont = new LoggingPreprocContinuation(i);
     sprintf(desc, "[LOG_PREPROC %d]", i);
     eventProcessor.spawn_thread(preproc_cont, desc, stacksize);
   }
@@ -1046,7 +1039,7 @@ Log::create_threads()
 
   sprintf(desc, "Logging flush buffer list");
   ink_atomiclist_init(flush_data_list, desc, 0);
-  Continuation *flush_cont = NEW(new LoggingFlushContinuation(0));
+  Continuation *flush_cont = new LoggingFlushContinuation(0);
   sprintf(desc, "[LOG_FLUSH]");
   eventProcessor.spawn_thread(flush_cont, desc, stacksize);
 
@@ -1379,7 +1372,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
     // host to account for a reconfiguration.
     //
     Debug("log-sock", "collation thread starting, creating LogSock");
-    sock = NEW(new LogSock(LogSock::LS_CONST_CLUSTER_MAX_MACHINES));
+    sock = new LogSock(LogSock::LS_CONST_CLUSTER_MAX_MACHINES);
     ink_assert(sock != NULL);
 
     if (sock->listen(Log::config->collation_port) != 0) {
@@ -1476,19 +1469,19 @@ Log::match_logobject(LogBufferHeader * header)
   if (!obj) {
     // object does not exist yet, create it
     //
-    LogFormat *fmt = NEW(new LogFormat("__collation_format__", header->fmt_fieldlist(), header->fmt_printf()));
+    LogFormat *fmt = new LogFormat("__collation_format__", header->fmt_fieldlist(), header->fmt_printf());
 
     if (fmt->valid()) {
       LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ? LOG_FILE_BINARY :
         (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
 
-      obj = NEW(new LogObject(fmt, Log::config->logfile_dir,
-                              header->log_filename(), file_format, NULL,
-                              (Log::RollingEnabledValues)Log::config->rolling_enabled,
-                              Log::config->collation_preproc_threads,
-                              Log::config->rolling_interval_sec,
-                              Log::config->rolling_offset_hr,
-                              Log::config->rolling_size_mb, true));
+      obj = new LogObject(fmt, Log::config->logfile_dir,
+                          header->log_filename(), file_format, NULL,
+                          (Log::RollingEnabledValues)Log::config->rolling_enabled,
+                          Log::config->collation_preproc_threads,
+                          Log::config->rolling_interval_sec,
+                          Log::config->rolling_offset_hr,
+                          Log::config->rolling_size_mb, true);
 
       obj->set_remote_flag();
 

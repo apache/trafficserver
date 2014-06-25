@@ -951,7 +951,7 @@ dir_lookaside_remove(CacheKey *key, Vol *d)
 void
 dir_sync_init()
 {
-  cacheDirSync = NEW(new CacheSync);
+  cacheDirSync = new CacheSync;
   cacheDirSync->trigger = eventProcessor.schedule_in(cacheDirSync, HRTIME_SECONDS(cache_config_dir_sync_frequency));
 }
 

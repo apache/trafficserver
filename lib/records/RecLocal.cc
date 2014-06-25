@@ -22,6 +22,7 @@
  */
 
 #include "libts.h"
+#include "Rollback.h"
 #include "ParseRules.h"
 #include "P_RecCore.h"
 #include "P_RecLocal.h"
@@ -55,38 +56,9 @@ i_am_the_record_owner(RecT rec_type)
 
 //-------------------------------------------------------------------------
 //
-// REC_BUILD_STAND_ALONE IMPLEMENTATION
-//
-//-------------------------------------------------------------------------
-#if defined (REC_BUILD_STAND_ALONE)
-
-
-//-------------------------------------------------------------------------
-// sync_thr
-//-------------------------------------------------------------------------
-static void *
-sync_thr(void *data)
-{
-  textBuffer tb(65536);
-  while (1) {
-    send_push_message();
-    RecSyncStatsFile();
-    if (RecSyncConfigToTB(&tb) == REC_ERR_OKAY) {
-      RecWriteConfigFile(&tb);
-    }
-    usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
-  }
-  return NULL;
-}
-
-
-//-------------------------------------------------------------------------
-//
 // REC_BUILD_MGMT IMPLEMENTATION
 //
 //-------------------------------------------------------------------------
-#elif defined (REC_BUILD_MGMT)
-
 #include "Main.h"
 
 
@@ -96,7 +68,7 @@ sync_thr(void *data)
 static void *
 sync_thr(void *data)
 {
-  textBuffer *tb = NEW(new textBuffer(65536));
+  textBuffer *tb = new textBuffer(65536);
   Rollback *rb;
   bool inc_version;
   bool written;
@@ -130,8 +102,6 @@ sync_thr(void *data)
   }
   return NULL;
 }
-
-#endif
 
 
 //-------------------------------------------------------------------------

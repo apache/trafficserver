@@ -725,8 +725,8 @@ TSRecordEleDestroy(TSRecordEle * ele)
 {
   if (ele) {
     ats_free(ele->rec_name);
-    if (ele->rec_type == TS_REC_STRING && ele->string_val)
-      ats_free(ele->string_val);
+    if (ele->rec_type == TS_REC_STRING && ele->valueT.string_val)
+      ats_free(ele->valueT.string_val);
     ats_free(ele);
   }
   return;
@@ -1468,7 +1468,7 @@ TSRecordGetInt(const char *rec_name, TSInt * int_val)
   if (ret != TS_ERR_OKAY)
     goto END;
 
-  *int_val = ele->int_val;
+  *int_val = ele->valueT.int_val;
 
 END:
   TSRecordEleDestroy(ele);
@@ -1484,7 +1484,7 @@ TSRecordGetCounter(const char *rec_name, TSCounter * counter_val)
   ret = MgmtRecordGet(rec_name, ele);
   if (ret != TS_ERR_OKAY)
     goto END;
-  *counter_val = ele->counter_val;
+  *counter_val = ele->valueT.counter_val;
 
 END:
   TSRecordEleDestroy(ele);
@@ -1500,7 +1500,7 @@ TSRecordGetFloat(const char *rec_name, TSFloat * float_val)
   ret = MgmtRecordGet(rec_name, ele);
   if (ret != TS_ERR_OKAY)
     goto END;
-  *float_val = ele->float_val;
+  *float_val = ele->valueT.float_val;
 
 END:
   TSRecordEleDestroy(ele);
@@ -1517,7 +1517,7 @@ TSRecordGetString(const char *rec_name, TSString *string_val)
   if (ret != TS_ERR_OKAY)
     goto END;
 
-  *string_val = ats_strdup(ele->string_val);
+  *string_val = ats_strdup(ele->valueT.string_val);
 
 END:
   TSRecordEleDestroy(ele);
@@ -1657,16 +1657,16 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT * action_need)
     if (ele) {
       switch (ele->rec_type) {
       case TS_REC_INT:
-        ret = MgmtRecordSetInt(ele->rec_name, ele->int_val, action_need);
+        ret = MgmtRecordSetInt(ele->rec_name, ele->valueT.int_val, action_need);
         break;
       case TS_REC_COUNTER:
-        ret = MgmtRecordSetCounter(ele->rec_name, ele->counter_val, action_need);
+        ret = MgmtRecordSetCounter(ele->rec_name, ele->valueT.counter_val, action_need);
         break;
       case TS_REC_FLOAT:
-        ret = MgmtRecordSetFloat(ele->rec_name, ele->float_val, action_need);
+        ret = MgmtRecordSetFloat(ele->rec_name, ele->valueT.float_val, action_need);
         break;
       case TS_REC_STRING:
-        ret = MgmtRecordSetString(ele->rec_name, ele->string_val, action_need);
+        ret = MgmtRecordSetString(ele->rec_name, ele->valueT.string_val, action_need);
         break;
       default:
         ret = TS_ERR_FAIL;

@@ -36,6 +36,8 @@ static const char *http_method[] = {
   "HEAD",
   "PURGE",
   "PUT",
+  "OPTIONS",
+  "TRACE",
   "LAST",
 };
 
@@ -59,23 +61,22 @@ FetchSM::cleanUp()
   client_response_hdr.destroy();
   ats_free(client_response);
   cont_mutex.clear();
-
-  PluginVC *vc = (PluginVC *) http_vc;
-
-  vc->do_io_close();
+  http_vc->do_io_close();
   FetchSMAllocator.free(this);
 }
 
 void
 FetchSM::httpConnect()
 {
+  PluginIdentity* pi = dynamic_cast<PluginIdentity*>(contp);
+  char const* tag = pi ? pi->getPluginTag() : "fetchSM";
+  int64_t id = pi ? pi->getPluginId() : 0;
+
   Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
-  http_vc = TSHttpConnectWithProtoStack(&_addr.sa, proto_stack);
+  http_vc = reinterpret_cast<PluginVC*>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
 
-  PluginVC *vc = (PluginVC *) http_vc;
-
-  read_vio = vc->do_io_read(this, INT64_MAX, resp_buffer);
-  write_vio = vc->do_io_write(this, getReqLen() + req_content_length, req_reader);
+  read_vio = http_vc->do_io_read(this, INT64_MAX, resp_buffer);
+  write_vio = http_vc->do_io_write(this, getReqLen() + req_content_length, req_reader);
 }
 
 char* FetchSM::resp_get(int *length) {
@@ -152,7 +153,6 @@ FetchSM::check_chunked()
   int ret;
   StrList slist;
   HTTPHdr *hdr = &client_response_hdr;
-
   if (resp_is_chunked >= 0)
     return resp_is_chunked;
 
@@ -309,7 +309,8 @@ FetchSM::get_info_from_buffer(IOBufferReader *the_reader)
   info = (char *)ats_malloc(sizeof(char) * (read_avail+1));
   client_response = info;
 
-  if (!check_chunked()) {
+  // To maintain backwards compatability we don't allow chunking when it's not streaming.
+  if (!(fetch_flags & TS_FETCH_FLAGS_STREAM) || !check_chunked()) {
     /* Read the data out of the reader */
     while (read_avail > 0) {
       if (reader->block != NULL)
@@ -372,11 +373,26 @@ FetchSM::process_fetch_read(int event)
   Debug(DEBUG_TAG, "[%s] I am here read", __FUNCTION__);
   int64_t bytes;
   int bytes_used;
+  int64_t total_bytes_copied = 0;
 
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
     bytes = resp_reader->read_avail();
     Debug(DEBUG_TAG, "[%s] number of bytes in read ready %" PRId64, __FUNCTION__, bytes);
+
+
+    while (total_bytes_copied < bytes) {
+       int64_t actual_bytes_copied;
+       actual_bytes_copied = resp_buffer->write(resp_reader, bytes, 0);
+       Debug(DEBUG_TAG, "[%s] copied %" PRId64 " bytes", __FUNCTION__, actual_bytes_copied);
+       if (actual_bytes_copied <= 0) {
+           break;
+       }
+       total_bytes_copied += actual_bytes_copied;
+    }
+    Debug(DEBUG_TAG, "[%s] total copied %" PRId64 " bytes", __FUNCTION__, total_bytes_copied);
+    resp_reader->consume(total_bytes_copied);
+
     if (header_done == 0 && ((fetch_flags & TS_FETCH_FLAGS_STREAM) || callback_options == AFTER_HEADER)) {
       if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, 0) == PARSE_DONE) {
         header_done = 1;
@@ -388,8 +404,6 @@ FetchSM::process_fetch_read(int event)
     } else {
       if (fetch_flags & TS_FETCH_FLAGS_STREAM)
         return InvokePluginExt();
-      else
-        InvokePlugin(TS_FETCH_EVENT_EXT_BODY_READY, this);
     }
     read_vio->reenable();
     break;
@@ -626,18 +640,6 @@ void*
 FetchSM::ext_get_user_data()
 {
   return user_data;
-}
-
-void
-FetchSM::ext_set_proto_stack(TSClientProtoStack proto_stack)
-{
-  this->proto_stack = proto_stack;
-}
-
-TSClientProtoStack
-FetchSM::ext_get_proto_stack()
-{
-  return proto_stack;
 }
 
 TSMBuffer

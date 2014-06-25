@@ -27,17 +27,47 @@
 static ClassAllocator<SpdyClientSession> spdyClientSessionAllocator("spdyClientSessionAllocator");
 ClassAllocator<SpdyRequest> spdyRequestAllocator("spdyRequestAllocator");
 
+#if TS_HAS_SPDY
+#include "SpdyClientSession.h"
+
+static const spdylay_proto_version versmap[] = {
+  SPDYLAY_PROTO_SPDY2,    // SPDY_VERSION_2
+  SPDYLAY_PROTO_SPDY3,    // SPDY_VERSION_3
+  SPDYLAY_PROTO_SPDY3_1,  // SPDY_VERSION_3_1
+};
+
+static char const* const  npnmap[] = {
+  TS_NPN_PROTOCOL_SPDY_2,
+  TS_NPN_PROTOCOL_SPDY_3,
+  TS_NPN_PROTOCOL_SPDY_3_1
+};
+
+#endif
 static int spdy_process_read(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_write(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata);
 static int spdy_process_fetch_header(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm);
 static int spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm);
-static uint64_t g_sm_id;
-static uint64_t g_sm_cnt;
+static uint64_t g_sm_id = 1;
+
+void
+SpdyRequest::init(SpdyClientSession *sm, int id)
+{
+  spdy_sm = sm;
+  stream_id = id;
+  headers.clear();
+
+  MD5_Init(&recv_md5);
+  start_time = TShrtime();
+
+  SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, sm->mutex->thread_holding);
+}
 
 void
 SpdyRequest::clear()
 {
+  SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, spdy_sm->mutex->thread_holding);
+
   if (fetch_sm)
     TSFetchDestroy(fetch_sm);
 
@@ -54,36 +84,30 @@ SpdyRequest::clear()
 }
 
 void
-SpdyClientSession::init(NetVConnection * netvc)
+SpdyClientSession::init(NetVConnection * netvc, spdy::SessionVersion vers)
 {
-  int version, r;
-
-  atomic_inc(g_sm_cnt);
+  int r;
 
   this->mutex = new_ProxyMutex();
   this->vc = netvc;
   this->req_map.clear();
+  this->version = vers;
 
-  // XXX this has to die ... TS-2793
-  UnixNetVConnection * unixvc = reinterpret_cast<UnixNetVConnection *>(netvc);
+  r = spdylay_session_server_new(&session, versmap[vers], &spdy_callbacks, this);
 
-  if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3_1)
-    version = SPDYLAY_PROTO_SPDY3_1;
-  else if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_3)
-    version = SPDYLAY_PROTO_SPDY3;
-  else if (unixvc->selected_next_protocol == TS_NPN_PROTOCOL_SPDY_2)
-    version = SPDYLAY_PROTO_SPDY2;
-  else
-    version = SPDYLAY_PROTO_SPDY3;
+  // A bit ugly but we need a thread and I don't want to wait until the
+  // session start event in case of a time out generating a decrement
+  // with no increment. It seems a lesser thing to have the thread counts
+  // a little off but globally consistent.
+  SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT, netvc->mutex->thread_holding);
+  SPDY_INCREMENT_THREAD_DYN_STAT(SPDY_STAT_TOTAL_CLIENT_CONNECTION_COUNT, netvc->mutex->thread_holding);
 
-  r = spdylay_session_server_new(&session, version,
-                                 &SPDY_CFG.spdy.callbacks, this);
   ink_release_assert(r == 0);
   sm_id = atomic_inc(g_sm_id);
   total_size = 0;
   start_time = TShrtime();
 
-  this->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.accept_no_activity_timeout));
+  this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_accept_no_activity_timeout));
   SET_HANDLER(&SpdyClientSession::state_session_start);
 
 }
@@ -91,8 +115,10 @@ SpdyClientSession::init(NetVConnection * netvc)
 void
 SpdyClientSession::clear()
 {
-  uint64_t nr_pending;
   int last_event = event;
+
+  SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
+
   //
   // SpdyRequest depends on SpdyClientSession,
   // we should delete it firstly to avoid race.
@@ -143,18 +169,17 @@ SpdyClientSession::clear()
     session = NULL;
   }
 
-  nr_pending = atomic_dec(g_sm_cnt);
-  Debug("spdy-free", "****Delete SpdyClientSession[%" PRIu64 "], last event:%d, nr_pending:%" PRIu64,
-        sm_id, last_event, --nr_pending);
+  Debug("spdy-free", "****Delete SpdyClientSession[%" PRIu64 "], last event:%d" PRIu64,
+        sm_id, last_event);
 }
 
 void
-spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
+spdy_cs_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * iobuf, IOBufferReader * reader)
 {
   SpdyClientSession  *sm;
 
   sm = spdyClientSessionAllocator.alloc();
-  sm->init(netvc);
+  sm->init(netvc, vers);
 
   sm->req_buffer = iobuf ? reinterpret_cast<TSIOBuffer>(iobuf) : TSIOBufferCreate();
   sm->req_reader = reader ? reinterpret_cast<TSIOBufferReader>(reader) : TSIOBufferReaderAlloc(sm->req_buffer);
@@ -168,8 +193,11 @@ spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reade
 int
 SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 {
-  int     r;
-  spdylay_settings_entry entry;
+  const spdylay_settings_entry entries[] = {
+    { SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_max_concurrent_streams },
+    { SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size }
+  };
+  int r;
 
   if (TSIOBufferReaderAvail(this->req_reader) > 0) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
@@ -180,13 +208,15 @@ SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 
   SET_HANDLER(&SpdyClientSession::state_session_readwrite);
 
-  /* send initial settings frame */
-  entry.settings_id = SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS;
-  entry.value = SPDY_CFG.spdy.max_concurrent_streams;
-  entry.flags = SPDYLAY_ID_FLAG_SETTINGS_NONE;
+  r = spdylay_submit_settings(this->session, SPDYLAY_FLAG_SETTINGS_NONE, entries, countof(entries));
+  ink_assert(r == 0);
 
-  r = spdylay_submit_settings(this->session, SPDYLAY_FLAG_SETTINGS_NONE, &entry, 1);
-  TSAssert(r == 0);
+  if (this->version >= spdy::SESSION_VERSION_3_1 && spdy_initial_window_size > (1 << 16)) {
+    int32_t delta = (spdy_initial_window_size - SPDYLAY_INITIAL_WINDOW_SIZE);
+
+    r = spdylay_submit_window_update(this->session, 0, delta);
+    ink_assert(r == 0);
+  }
 
   TSVIOReenable(this->write_vio);
   return EVENT_CONT;
@@ -221,18 +251,31 @@ SpdyClientSession::state_session_readwrite(int event, void * edata)
     ret = spdy_process_fetch((TSEvent)event, this, edata);
   }
 
-  Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d, nr_pending:%" PRIu64,
-        this->sm_id, event, ret, g_sm_cnt);
+  Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d",
+        this->sm_id, event, ret);
 out:
   if (ret) {
     this->clear();
     spdyClientSessionAllocator.free(this);
   } else if (!from_fetch) {
-    this->vc->set_inactivity_timeout(HRTIME_SECONDS(SPDY_CFG.no_activity_timeout_in));
+    this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_no_activity_timeout_in));
   }
 
   return EVENT_CONT;
 }
+
+int64_t
+SpdyClientSession::getPluginId() const
+{
+  return sm_id;
+}
+
+char const*
+SpdyClientSession::getPluginTag() const
+{
+  return npnmap[this->version];
+}
+
 
 static int
 spdy_process_read(TSEvent /* event ATS_UNUSED */, SpdyClientSession *sm)
@@ -350,7 +393,7 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
 
   Debug("spdy", "    stream_id:%d, call:%d, length:%ld, already:%" PRId64,
         stream_id, g_call_cnt, length, already);
-  if (SPDY_CFG.spdy.verbose)
+  if (is_debug_tag_set("spdy"))
     MD5_Update(&req->recv_md5, buf, already);
 
   TSVIOReenable(sm->write_vio);
@@ -360,11 +403,12 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
   if (already < (int64_t)length) {
     if (req->event == TS_FETCH_EVENT_EXT_BODY_DONE) {
       TSHRTime end_time = TShrtime();
+      SPDY_SUM_THREAD_DYN_STAT(SPDY_STAT_TOTAL_TRANSACTIONS_TIME, sm->mutex->thread_holding, end_time - req->start_time);
       Debug("spdy", "----Request[%" PRIu64 ":%d] %s %lld %d", sm->sm_id, req->stream_id,
             req->url.c_str(), (end_time - req->start_time)/TS_HRTIME_MSECOND,
             req->fetch_data_len);
       unsigned char digest[MD5_DIGEST_LENGTH];
-      if (SPDY_CFG.spdy.verbose ) {
+      if (is_debug_tag_set("spdy")) {
         MD5_Final(digest, &req->recv_md5);
         Debug("spdy", "----recv md5sum: ");
         for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {

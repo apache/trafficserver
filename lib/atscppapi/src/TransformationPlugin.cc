@@ -158,7 +158,7 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
         if (!state->input_complete_dispatched_) {
          state->transformation_plugin_.handleInputComplete();
          state->input_complete_dispatched_ = true;
-         if (vio_cont) {
+         if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
            TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
          }
         }
@@ -171,7 +171,7 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
       if (!state->input_complete_dispatched_) {
        state->transformation_plugin_.handleInputComplete();
        state->input_complete_dispatched_ = true;
-       if (vio_cont) {
+       if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
          TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
        }
       }

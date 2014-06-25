@@ -43,7 +43,7 @@ array_len(-1),
 num_el(-1),
 type(typ)
 {
-  host_lookup = NEW(new HostLookup(name));
+  host_lookup = new HostLookup(name);
 }
 
 CacheHostMatcher::~CacheHostMatcher()
@@ -92,7 +92,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
 
   host_lookup->AllocateSpace(num_entries);
 
-  data_array = NEW(new CacheHostRecord[num_entries]);
+  data_array = new CacheHostRecord[num_entries];
 
   array_len = num_entries;
   num_el = 0;
@@ -247,7 +247,7 @@ CacheHostTable::config_callback(const char * /* name ATS_UNUSED */, RecDataT /* 
                                 RecData /* data ATS_UNUSED */, void *cookie)
 {
   CacheHostTable **ppt = (CacheHostTable **) cookie;
-  eventProcessor.schedule_imm(NEW(new CacheHostTableConfig(ppt)));
+  eventProcessor.schedule_imm(new CacheHostTableConfig(ppt));
   return 0;
 }
 
@@ -351,7 +351,7 @@ CacheHostTable::BuildTableFromString(const char * config_file_path, char *file_b
   }
 
   if (hostDomain > 0) {
-    hostMatch = NEW(new CacheHostMatcher(matcher_name, type));
+    hostMatch = new CacheHostMatcher(matcher_name, type);
     hostMatch->AllocateSpace(hostDomain);
   }
   // Traverse the list and build the records table
@@ -697,7 +697,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       if (!(*tmp) && state == DONE) {
         /* add the config */
 
-        ConfigVol *configp = NEW(new ConfigVol());
+        ConfigVol *configp = new ConfigVol();
         configp->number = volume_number;
         if (in_percent) {
           configp->percent = size;
@@ -921,7 +921,7 @@ create_config(RegressionTest * t, int num)
       for (; blocks >= STORE_BLOCKS_PER_VOL; blocks -= STORE_BLOCKS_PER_VOL) {
         if (vol_num > 255)
           break;
-        ConfigVol *cp = NEW(new ConfigVol());
+        ConfigVol *cp = new ConfigVol();
         cp->number = vol_num++;
         cp->scheme = CACHE_HTTP_TYPE;
         cp->size = 128;
@@ -962,7 +962,7 @@ create_config(RegressionTest * t, int num)
       vol_num = 1;
       rprintf(t, "Cleared  disk\n");
       for (i = 0; i < 10; i++) {
-        ConfigVol *cp = NEW(new ConfigVol());
+        ConfigVol *cp = new ConfigVol();
         cp->number = vol_num++;
         cp->scheme = CACHE_HTTP_TYPE;
         cp->size = 10;
@@ -1021,7 +1021,7 @@ create_config(RegressionTest * t, int num)
         ink_assert(blocks <= (int) total_space);
         total_space -= blocks;
 
-        ConfigVol *cp = NEW(new ConfigVol());
+        ConfigVol *cp = new ConfigVol();
 
         cp->number = vol_num++;
         cp->scheme = scheme;

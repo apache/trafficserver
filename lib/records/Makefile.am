@@ -16,8 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-DEFS += @ink_with_modules_def@
-
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
   -I$(top_srcdir)/iocore/utils \

@@ -24,9 +24,11 @@
 #ifndef __P_SPDY_SM_H__
 #define __P_SPDY_SM_H__
 
+#include "SpdyDefs.h"
 #include "SpdyCommon.h"
 #include "SpdyCallbacks.h"
 #include <openssl/md5.h>
+#include "Plugin.h"
 
 class SpdyClientSession;
 typedef int (*SpdyClientSessionHandler) (TSCont contp, TSEvent event, void *data);
@@ -56,16 +58,7 @@ public:
     clear();
   }
 
-  void init(SpdyClientSession *sm, int id)
-  {
-    spdy_sm = sm;
-    stream_id = id;
-    headers.clear();
-
-    MD5_Init(&recv_md5);
-    start_time = TShrtime();
-  }
-
+  void init(SpdyClientSession *sm, int id);
   void clear();
 
   void append_nv(char **nv)
@@ -84,7 +77,7 @@ public:
   bool has_submitted_data;
   bool need_resume_data;
   int fetch_data_len;
-  int delta_window_size;
+  unsigned delta_window_size;
   bool fetch_body_completed;
   vector<pair<string, string> > headers;
 
@@ -98,7 +91,7 @@ public:
   MD5_CTX recv_md5;
 };
 
-class SpdyClientSession : public Continuation
+class SpdyClientSession : public Continuation, public PluginIdentity
 {
 
 public:
@@ -110,10 +103,11 @@ public:
     clear();
   }
 
-  void init(NetVConnection * netvc);
+  void init(NetVConnection * netvc, spdy::SessionVersion vers);
   void clear();
 
   int64_t sm_id;
+  spdy::SessionVersion version;
   uint64_t total_size;
   TSHRTime start_time;
 
@@ -133,12 +127,15 @@ public:
 
   map<int32_t, SpdyRequest*> req_map;
 
+  virtual char const* getPluginTag() const;
+  virtual int64_t getPluginId() const;
+
 private:
   int state_session_start(int event, void * edata);
   int state_session_readwrite(int event, void * edata);
 };
 
-void spdy_sm_create(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader);
+void spdy_cs_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * iobuf, IOBufferReader * reader);
 
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 

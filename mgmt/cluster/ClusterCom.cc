@@ -1084,8 +1084,7 @@ insert_locals(textBuffer * rec_cfg_new, textBuffer * rec_cfg, MgmtHashTable * lo
   bool eof;
   InkHashTableEntry *hte;
   InkHashTableIteratorState htis;
-  MgmtHashTable *local_access_ht = NEW(new MgmtHashTable("local_access_ht", false,
-                                                         InkHashTableKeyType_String));
+  MgmtHashTable *local_access_ht = new MgmtHashTable("local_access_ht", false, InkHashTableKeyType_String);
   p = rec_cfg->bufPtr();
   for (eof = false; !eof;) {
     line = q = p;
@@ -1205,10 +1204,10 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
           if (rb->getVersion(our_ver, &our_rec_cfg) != OK_ROLLBACK) {
             file_update_failure = true;
           } else {
-            our_locals_ht = NEW(new MgmtHashTable("our_locals_ht", true, InkHashTableKeyType_String));
+            our_locals_ht = new MgmtHashTable("our_locals_ht", true, InkHashTableKeyType_String);
             our_rec_cfg_cp = ats_strdup(our_rec_cfg->bufPtr());
             extract_locals(our_locals_ht, our_rec_cfg_cp);
-            reply_new = NEW(new textBuffer(reply->spaceUsed()));
+            reply_new = new textBuffer(reply->spaceUsed());
             if (!insert_locals(reply_new, reply, our_locals_ht)) {
               file_update_failure = true;
               delete reply_new;

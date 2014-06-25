@@ -134,7 +134,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
 
   // create the buffer
   //
-  m_unaligned_buffer = NEW (new char [size + buf_align]);
+  m_unaligned_buffer = new char [size + buf_align];
   m_buffer = (char *)align_pointer_forward(m_unaligned_buffer, buf_align);
 
   // add the header
@@ -669,7 +669,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
 
   if (!fieldlist) {
     Debug("log-fieldlist", "Fieldlist for %s not found; creating ...", symbol_str);
-    fieldlist = NEW(new LogFieldList);
+    fieldlist = new LogFieldList;
     ink_assert(fieldlist != NULL);
     bool contains_aggregates = false;
     LogFormat::parse_symbol_string(symbol_str, fieldlist, &contains_aggregates);
@@ -696,7 +696,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
     }
 
     if (!bad_alt_format) {
-      alt_fieldlist = NEW(new LogFieldList);
+      alt_fieldlist = new LogFieldList;
       bool contains_aggs = false;
       int n_alt_fields2 = LogFormat::parse_symbol_string(alt_symbol_str,
                                                          alt_fieldlist, &contains_aggs);

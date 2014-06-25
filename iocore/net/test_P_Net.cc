@@ -50,7 +50,7 @@ struct NetTesterSM:public Continuation
     switch (event) {
     case VC_EVENT_READ_READY:
       r = reader->read_avail();
-      str = NEW(new char[r + 10]);
+      str = new char[r + 10];
       reader->read(str, r);
       printf("%s", str);
       fflush(stdout);
@@ -59,7 +59,7 @@ struct NetTesterSM:public Continuation
       /* FALLSTHROUGH */
     case VC_EVENT_EOS:
       r = reader->read_avail();
-      str = NEW(new char[r + 10]);
+      str = new char[r + 10];
       reader->read(str, r);
       printf("%s", str);
       fflush(stdout);
@@ -90,7 +90,7 @@ struct NetTesterAccept:public Continuation
     printf("Accepted a connection\n");
     fflush(stdout);
     NetVConnection *vc = (NetVConnection *) data;
-    NEW(new NetTesterSM(new_ProxyMutex(), vc));
+    new NetTesterSM(new_ProxyMutex(), vc);
     return EVENT_CONT;
   }
 
@@ -107,6 +107,6 @@ main()
   MIOBuffer *mbuf = new_MIOBuffer(5);
   eventProcessor.start(1);
   netProcessor.start();
-  netProcessor.accept(NEW(new NetTesterAccept(new_ProxyMutex())), 8080, true);
+  netProcessor.accept(new NetTesterAccept(new_ProxyMutex()), 8080, true);
   this_thread()->execute();
 }

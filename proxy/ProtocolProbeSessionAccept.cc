@@ -26,7 +26,7 @@
 #include "ProtocolProbeSessionAccept.h"
 #include "Error.h"
 
-struct ProtocolProbeTrampoline : public Continuation
+struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums
 {
   static const size_t minimum_read_size = 1;
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
@@ -44,7 +44,7 @@ struct ProtocolProbeTrampoline : public Continuation
     VIO *             vio;
     IOBufferReader *  reader;
     NetVConnection *  netvc;
-    TSProtoType       proto_type = TS_PROTO_NULL;
+    ProtoGroupKey  key = N_PROTO_GROUPS; // use this as an invalid value.
 
     vio = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
@@ -76,22 +76,21 @@ struct ProtocolProbeTrampoline : public Continuation
     // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
     // that no other protocol could possibly ever set this bit!
     if ((uint8_t)(*reader->start()) == 0x80u) {
-      proto_type = TS_PROTO_SPDY;
+      key = PROTO_SPDY;
     } else {
-      proto_type = TS_PROTO_HTTP;
+      key = PROTO_HTTP;
     }
 
     netvc->do_io_read(this, 0, NULL); // Disable the read IO that we started.
-    netvc->proto_stack |= (1u << proto_type);
 
-    if (probeParent->endpoint[proto_type] == NULL) {
-      Warning("Unregistered protocol type %d", proto_type);
+    if (probeParent->endpoint[key] == NULL) {
+      Warning("Unregistered protocol type %d", key);
       netvc->do_io_close();
       goto done;
     }
 
     // Directly invoke the session acceptor, letting it take ownership of the input buffer.
-    probeParent->endpoint[proto_type]->accept(netvc, this->iobuf, reader);
+    probeParent->endpoint[key]->accept(netvc, this->iobuf, reader);
     delete this;
     return EVENT_CONT;
 
@@ -113,7 +112,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
 
     VIO * vio;
     NetVConnection * netvc = static_cast<NetVConnection*>(data);
-    ProtocolProbeTrampoline * probe = NEW(new ProtocolProbeTrampoline(this, netvc->mutex));
+    ProtocolProbeTrampoline * probe = new ProtocolProbeTrampoline(this, netvc->mutex);
 
     // XXX we need to apply accept inactivity timeout here ...
 
@@ -134,8 +133,8 @@ ProtocolProbeSessionAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader
 }
 
 void
-ProtocolProbeSessionAccept::registerEndpoint(TSProtoType proto_type, SessionAccept * ap)
+ProtocolProbeSessionAccept::registerEndpoint(ProtoGroupKey key, SessionAccept * ap)
 {
-  ink_release_assert(endpoint[proto_type] == NULL);
-  this->endpoint[proto_type] = ap;
+  ink_release_assert(endpoint[key] == NULL);
+  this->endpoint[key] = ap;
 }

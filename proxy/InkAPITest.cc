@@ -5396,7 +5396,7 @@ REGRESSION_TEST(SDK_API_TSMgmtGet) (RegressionTest * test, int /* atype ATS_UNUS
   int CONFIG_PARAM_COUNTER_VALUE = 0;
 
   const char *CONFIG_PARAM_FLOAT_NAME = "proxy.config.http.background_fill_completed_threshold";
-  float CONFIG_PARAM_FLOAT_VALUE = 0.5;
+  float CONFIG_PARAM_FLOAT_VALUE = 0.0;
 
   const char *CONFIG_PARAM_INT_NAME = "proxy.config.http.cache.http";
   int CONFIG_PARAM_INT_VALUE = 1;
@@ -7418,7 +7418,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.ssl.hsts_max_age",
   "proxy.config.ssl.hsts_include_subdomains",
   "proxy.config.http.cache.open_read_retry_time",
-  "proxy.config.http.cache.max_open_read_retries"
+  "proxy.config.http.cache.max_open_read_retries",
+  "proxy.config.http.cache.range.write",
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atype ATS_UNUSED */, int *pstatus)
@@ -7664,31 +7665,3 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS) (RegressionTest * test, int /* atype
 
   return;
 }
-
-
-////////////////////////////////////////////////
-// SDK_API_PROTO_STACK_CREATE
-//
-// Unit Test for API: TSClientProtoStackCreate
-////////////////////////////////////////////////
-
-REGRESSION_TEST(SDK_API_TSClientProtoStackCreate)(RegressionTest * t, int /* atype ATS_UNUSED */, int * pstatus)
-{
-  TestBox box(t, pstatus);
-
-  box = REGRESSION_TEST_PASSED;
-
-#define CHECK(expr, expected) do {  \
-  TSClientProtoStack ps = (expr); \
-  box.check(ps == expected, "%s: received %u, expected %u", #expr, (unsigned)ps, (unsigned)expected); \
-} while(0)
-
- CHECK(TSClientProtoStackCreate(TS_PROTO_NULL), 0);
- CHECK(TSClientProtoStackCreate((TSProtoType)99, TS_PROTO_NULL), 0);
- CHECK(TSClientProtoStackCreate(TS_PROTO_SPDY, (TSProtoType)99, TS_PROTO_NULL), 0);
- CHECK(TSClientProtoStackCreate(TS_PROTO_UDP, TS_PROTO_NULL), 1);
- CHECK(TSClientProtoStackCreate(TS_PROTO_UDP, TS_PROTO_TCP, TS_PROTO_NULL), 3);
-
-}
-
-

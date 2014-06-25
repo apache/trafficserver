@@ -70,6 +70,4 @@ typedef uint32_t in_addr_t;
 
 #define NEED_HRTIME
 
-#include "Resource.h"
-
 #endif

@@ -500,38 +500,6 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_PERSISTENT, (int) http_throttled_proxy_only_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i0_n0_m0",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i0_n0_m0_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i1_n0_m0",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i1_n0_m0_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i0_n1_m0",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i0_n1_m0_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i1_n1_m0",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i1_n1_m0_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i0_n0_m1",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i0_n0_m1_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i1_n0_m1",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i1_n0_m1_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i0_n1_m1",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i0_n1_m1_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.request_taxonomy.i1_n1_m1",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_request_taxonomy_i1_n1_m1_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.icp_suggested_lookups",
                      RECD_COUNTER, RECP_PERSISTENT, (int) http_icp_suggested_lookups_stat, RecRawStatSyncCount);
 
@@ -1230,6 +1198,12 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_PERSISTENT,
                      (int) http_total_x_redirect_stat, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.incoming_requests",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_incoming_requests_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.https.total_client_connections",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) https_total_client_connections_stat, RecRawStatSyncCount);
 }
 
 
@@ -1248,7 +1222,7 @@ HttpConfig::startup()
 
   HttpConfigParams &c = m_master;
 
-  http_config_cont = NEW(new HttpConfigCont);
+  http_config_cont = new HttpConfigCont;
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_hostname, "proxy.config.proxy_name");
   c.proxy_hostname_len = -1;
@@ -1423,11 +1397,12 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.ignore_accept_encoding_mismatch, "proxy.config.http.cache.ignore_accept_encoding_mismatch");
   HttpEstablishStaticConfigByte(c.ignore_accept_charset_mismatch, "proxy.config.http.cache.ignore_accept_charset_mismatch");
 
+  HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
+
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
-  HttpEstablishStaticConfigByte(c.cache_when_to_add_no_cache_to_msie_requests,
-                                    "proxy.config.http.cache.when_to_add_no_cache_to_msie_requests");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
   HttpEstablishStaticConfigByte(c.oride.cache_range_lookup, "proxy.config.http.cache.range.lookup");
+  HttpEstablishStaticConfigByte(c.oride.cache_range_write, "proxy.config.http.cache.range.write");
 
   HttpEstablishStaticConfigStringAlloc(c.connect_ports_string, "proxy.config.http.connect_ports");
 
@@ -1510,7 +1485,7 @@ HttpConfig::reconfigure()
 
   HttpConfigParams *params;
 
-  params = NEW(new HttpConfigParams);
+  params = new HttpConfigParams;
 
   params->inbound_ip4 = m_master.inbound_ip4;
   params->inbound_ip6 = m_master.inbound_ip6;
@@ -1672,11 +1647,13 @@ HttpConfig::reconfigure()
   params->ignore_accept_encoding_mismatch = m_master.ignore_accept_encoding_mismatch;
   params->ignore_accept_charset_mismatch = m_master.ignore_accept_charset_mismatch;
 
+  params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
+
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
-  params->cache_when_to_add_no_cache_to_msie_requests = m_master.cache_when_to_add_no_cache_to_msie_requests;
 
   params->oride.cache_required_headers = m_master.oride.cache_required_headers;
   params->oride.cache_range_lookup = INT_TO_BOOL(m_master.oride.cache_range_lookup);
+  params->oride.cache_range_write = INT_TO_BOOL(m_master.oride.cache_range_write);
 
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports = parse_ports_list(params->connect_ports_string);
@@ -1775,7 +1752,7 @@ HttpConfig::parse_ports_list(char *ports_string)
     return (0);
 
   if (strchr(ports_string, '*')) {
-    ports_list = NEW(new HttpConfigPortRange);
+    ports_list = new HttpConfigPortRange;
     ports_list->low = -1;
     ports_list->high = -1;
     ports_list->next = NULL;
@@ -1802,7 +1779,7 @@ HttpConfig::parse_ports_list(char *ports_string)
       if (start == end)
         break;
 
-      pr = NEW(new HttpConfigPortRange);
+      pr = new HttpConfigPortRange;
       pr->low = atoi(start);
       pr->high = pr->low;
       pr->next = NULL;

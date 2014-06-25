@@ -234,6 +234,11 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
     goto done;
   }
 
+  // Don't try to sample internal requests. TCP metrics for loopback are not interesting.
+  if (TSHttpIsInternalSession(ssnp) == TS_SUCCESS) {
+    goto done;
+  }
+
   // no need to run rand if we are always going log (100%)
   if (config->sample < 1000) {
     random = rand() % 1000;

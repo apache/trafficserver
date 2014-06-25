@@ -30,18 +30,22 @@ test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_ccache=""
 enable_werror="--enable-werror"
 test "${NODE_NAME#RHEL 5}" != "${NODE_NAME}" && enable_werror=""
 
+# When to enable SPDY (this expects a spdylday installation in e.g. /opt/spdylay)
+enable_spdy=""
+test "${JOB_NAME#*type=spdy}" != "${JOB_NAME}" && enable_spdy="--enable-spdy"
 
 # Change to the build area (this is previously setup in extract.sh)
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 
-mkdir BUILDS && cd BUILDS
+mkdir -p BUILDS && cd BUILDS
 ../configure \
     --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
     --enable-experimental-plugins \
     --enable-example-plugins \
     --enable-test-tools \
+    ${enable_spdy} \
     ${enable_ccache} \
     ${enable_werror} \
     ${enable_debug}
 
-${ATS_MAKE} -j4 V=1
+${ATS_MAKE} -j6

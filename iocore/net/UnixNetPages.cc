@@ -213,7 +213,7 @@ ShowNet(Continuation * c, HTTPHdr * h):
 Action *
 register_ShowNet(Continuation * c, HTTPHdr * h)
 {
-  ShowNet *s = NEW(new ShowNet(c, h));
+  ShowNet *s = new ShowNet(c, h);
   int path_len;
   const char *path = h->url_get()->path_get(&path_len);
 

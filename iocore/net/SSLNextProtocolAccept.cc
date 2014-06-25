@@ -119,6 +119,7 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
 {
   SSLNetVConnection * netvc = ssl_netvc_cast(event, edata);
 
+  netvc->sslHandshakeBeginTime = ink_get_hrtime();
   Debug("ssl", "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
 
   switch (event) {
@@ -129,7 +130,7 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
     // the endpoint that there is an accept to handle until the read completes
     // and we know which protocol was negotiated.
     netvc->registerNextProtocolSet(&this->protoset);
-    netvc->do_io(VIO::READ, NEW(new SSLNextProtocolTrampoline(this, netvc->mutex)), 0, this->buffer, 0);
+    netvc->do_io(VIO::READ, new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer, 0);
     return EVENT_CONT;
   default:
     netvc->do_io(VIO::CLOSE);

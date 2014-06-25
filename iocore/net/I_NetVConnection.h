@@ -409,9 +409,6 @@ public:
   /** Returns local port. */
   uint16_t get_local_port();
 
-  /** Client protocol stack of this VC */
-  TSClientProtoStack proto_stack;
-
   /** Returns remote sockaddr storage. */
   sockaddr const* get_remote_addr();
 

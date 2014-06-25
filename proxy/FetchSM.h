@@ -35,6 +35,8 @@
 #include "HttpSM.h"
 #include "HttpTunnel.h"
 
+class PluginVC;
+
 class FetchSM: public Continuation
 {
 public:
@@ -49,7 +51,6 @@ public:
     header_done = 0;
     user_data = NULL;
     has_sent_header = false;
-    proto_stack = (1u << TS_PROTO_HTTP);
     req_method = TS_FETCH_METHOD_NONE;
     req_content_length = 0;
     resp_is_chunked = -1;
@@ -119,8 +120,6 @@ public:
   void ext_write_data(const void *data, size_t len);
   void ext_set_user_data(void *data);
   void* ext_get_user_data();
-  void ext_set_proto_stack(TSClientProtoStack proto_stack);
-  TSClientProtoStack ext_get_proto_stack();
 
 private:
   int InvokePlugin(int event, void*data);
@@ -142,7 +141,7 @@ private:
   int dechunk_body();
 
   int recursion;
-  TSVConn http_vc;
+  PluginVC* http_vc;
   VIO *read_vio;
   VIO *write_vio;
   MIOBuffer *req_buffer;
@@ -166,7 +165,6 @@ private:
   int fetch_flags;
   void *user_data;
   bool has_sent_header;
-  TSClientProtoStack proto_stack;
   TSFetchMethod req_method;
   int64_t req_content_length;
   int64_t resp_content_length;

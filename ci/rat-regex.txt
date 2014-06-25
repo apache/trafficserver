@@ -8,6 +8,7 @@ config.nice
 config.status
 libtool
 blib
+stamp-h1
 .*\.txt$
 .*\.cfg$
 .*\.in$
@@ -46,3 +47,5 @@ port\.h
 luajit
 diags.log
 pm_to_blib
+MurmurHash3.cc
+MurmurHash3.h

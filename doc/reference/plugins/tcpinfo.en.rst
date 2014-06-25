@@ -86,6 +86,7 @@ The following options may be specified in :file:`plugin.config`:
   rttvar
   last_sent
   last_recv
+  snd_cwnd
   snd_ssthresh
   rcv_ssthresh
   unacked

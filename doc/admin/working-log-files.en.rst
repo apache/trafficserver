@@ -373,7 +373,7 @@ To create a summary log file format, we
    is the logging field you want to aggregate, and ``n`` is the
    interval (in seconds) between summary log entries. You can specify
    more than one ``operator`` in the format line. For more
-   information, refer to :file`logs_xml.config`.
+   information, refer to :file:`logs_xml.config`.
 
 2. Run the command :option:`traffic_line -x` to apply configuration changes .
 

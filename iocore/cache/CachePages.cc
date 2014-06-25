@@ -111,7 +111,7 @@ struct ShowCache: public ShowCont {
         }
       }
       // initialize url array
-      show_cache_urlstrs = NEW(new char[nstrings + 1][500]);
+      show_cache_urlstrs = new char[nstrings + 1][500];
       memset(show_cache_urlstrs, '\0', (nstrings + 1) * 500 * sizeof (char));
 
       char *q, *t;
@@ -161,7 +161,7 @@ struct ShowCache: public ShowCont {
 
 Action *
 register_ShowCache(Continuation *c, HTTPHdr *h) {
-  ShowCache * theshowcache = NEW(new ShowCache(c, h));
+  ShowCache * theshowcache = new ShowCache(c, h);
   URL *u = h->url_get();
   int path_len;
   const char *path = u->path_get(&path_len);

@@ -160,7 +160,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo * info, unsigned timeout_secs)
     // The ConfigInfoReleaser now takes our refcount, but
     // someother thread might also have one ...
     ink_assert(old_info->refcount() > 0);
-    eventProcessor.schedule_in(NEW(new ConfigInfoReleaser(id, old_info)), HRTIME_SECONDS(timeout_secs));
+    eventProcessor.schedule_in(new ConfigInfoReleaser(id, old_info), HRTIME_SECONDS(timeout_secs));
   }
 
   return id;
@@ -249,7 +249,7 @@ struct RegressionConfig : public ConfigInfo
 
   template <typename CallType>
   static void defer(int count, CallType call) {
-      eventProcessor.schedule_in(NEW(new RegressionConfig::DeferredCall<CallType>(count, call)), HRTIME_MSECONDS(500));
+      eventProcessor.schedule_in(new RegressionConfig::DeferredCall<CallType>(count, call), HRTIME_MSECONDS(500));
   }
 
   RegressionConfig(RegressionTest * r, int * ps, unsigned f)

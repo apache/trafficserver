@@ -47,6 +47,8 @@ extern "C"
     TS_FETCH_METHOD_HEAD,
     TS_FETCH_METHOD_PURGE,
     TS_FETCH_METHOD_PUT,
+    TS_FETCH_METHOD_OPTIONS,
+    TS_FETCH_METHOD_TRACE,
     TS_FETCH_METHOD_LAST
   } TSFetchMethod;
 
@@ -698,23 +700,6 @@ extern "C"
    * @param fetch_sm: returned value of TSFetchCreate().
    */
   tsapi void TSFetchDestroy(TSFetchSM fetch_sm);
-
-  /*
-   * Set client protocol stack in FetchSM
-   *
-   * @param fetch_sm: returned value of TSFetchCreate().
-   * @param proto_stack: client protocol stack.
-   */
-  tsapi void TSFetchClientProtoStackSet(TSFetchSM fetch_sm, TSClientProtoStack proto_stack);
-
-  /*
-   * Get client protocol stack in FetchSM
-   *
-   * @param fetch_sm: returned value of TSFetchCreate().
-   *
-   * return the client protocol stack of fetch_sm.
-   */
-  tsapi TSClientProtoStack TSFetchClientProtoStackGet(TSFetchSM fetch_sm);
 
   /*
    * Set user-defined data in FetchSM

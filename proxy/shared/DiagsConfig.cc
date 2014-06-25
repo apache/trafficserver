@@ -289,7 +289,7 @@ DiagsConfig::DiagsConfig(const char * filename, const char * tags, const char * 
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    diags = NEW(new Diags(tags, actions, NULL));
+    diags = new Diags(tags, actions, NULL);
     config_diags_norecords();
     return;
   }
@@ -319,7 +319,7 @@ DiagsConfig::DiagsConfig(const char * filename, const char * tags, const char * 
     }
   }
 
-  diags = NEW(new Diags(tags, actions, diags_log_fp));
+  diags = new Diags(tags, actions, diags_log_fp);
   if (diags_log_fp == NULL) {
 
     diags->print(NULL, DTA(DL_Warning),

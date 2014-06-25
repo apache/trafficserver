@@ -217,8 +217,7 @@ traffic_server_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(which_libts) \
-  $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%) \
-  @hwloc_LIBS@ \
+  @HWLOC_LIBS@ \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
   @LIBTCL@ \
@@ -232,10 +231,13 @@ traffic_server_LDADD = \
   @SPDYLAY_LIBS@ \
   -lm
 
+if BUILD_LUAJIT
+  traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
+endif
 
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
-traffic_server_LDFLAGS += @LUA_LUAJIT_LDFLAGS@
+traffic_server_LDFLAGS += @TS_LUAJIT_LDFLAGS@
 
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
@@ -250,7 +252,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @hwloc_LIBS@ \
+  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = logstats.cc
@@ -266,7 +268,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @hwloc_LIBS@ \
+  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
 
 traffic_sac_SOURCES = \
@@ -322,7 +324,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @hwloc_LIBS@ \
+  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ @SPDYLAY_LIBS@ -lm
 
 if BUILD_TESTS

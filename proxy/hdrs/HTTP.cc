@@ -109,6 +109,7 @@ const char *HTTP_VALUE_PROXY_REVALIDATE;
 const char *HTTP_VALUE_PUBLIC;
 const char *HTTP_VALUE_S_MAXAGE;
 const char *HTTP_VALUE_NEED_REVALIDATE_ONCE;
+const char *HTTP_VALUE_100_CONTINUE;
 // Cache-control: extension "need-revalidate-once" is used internally by T.S.
 // to invalidate a document, and it is not returned/forwarded.
 // If a cached document has this extension set (ie, is invalidated),
@@ -143,6 +144,7 @@ int HTTP_LEN_PROXY_REVALIDATE;
 int HTTP_LEN_PUBLIC;
 int HTTP_LEN_S_MAXAGE;
 int HTTP_LEN_NEED_REVALIDATE_ONCE;
+int HTTP_LEN_100_CONTINUE;
 
 Arena* const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena*>(1);
 
@@ -257,6 +259,7 @@ http_init()
     HTTP_VALUE_PUBLIC = hdrtoken_string_to_wks("public");
     HTTP_VALUE_S_MAXAGE = hdrtoken_string_to_wks("s-maxage");
     HTTP_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
+    HTTP_VALUE_100_CONTINUE = hdrtoken_string_to_wks("100-continue");
 
     HTTP_LEN_BYTES = hdrtoken_wks_to_length(HTTP_VALUE_BYTES);
     HTTP_LEN_CHUNKED = hdrtoken_wks_to_length(HTTP_VALUE_CHUNKED);
@@ -280,6 +283,7 @@ http_init()
     HTTP_LEN_PUBLIC = hdrtoken_wks_to_length(HTTP_VALUE_PUBLIC);
     HTTP_LEN_S_MAXAGE = hdrtoken_wks_to_length(HTTP_VALUE_S_MAXAGE);
     HTTP_LEN_NEED_REVALIDATE_ONCE = hdrtoken_wks_to_length(HTTP_VALUE_NEED_REVALIDATE_ONCE);
+    HTTP_LEN_100_CONTINUE = hdrtoken_wks_to_length(HTTP_VALUE_100_CONTINUE);
 
     // TODO: We need to look into enable these CC values as WKS XXX
 #if 0

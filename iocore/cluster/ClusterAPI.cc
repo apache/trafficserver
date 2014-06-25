@@ -282,7 +282,7 @@ clusterAPI_init()
   ClusterAPI_mutex = new_ProxyMutex();
   MUTEX_TRY_LOCK(lock, ClusterAPI_mutex, this_ethread());
   ink_release_assert(lock);     // Should never fail
-  periodicSM = NEW(new ClusterAPIPeriodicSM(ClusterAPI_mutex));
+  periodicSM = new ClusterAPIPeriodicSM(ClusterAPI_mutex);
 
   // TODO: Should we do something with this return value?
   eventProcessor.schedule_every(periodicSM, HRTIME_SECONDS(1), ET_CALL);
@@ -382,7 +382,7 @@ TSEnableClusterStatusCallout(TSClusterStatusHandle_t * h)
 static void
 send_machine_online_list(TSClusterStatusHandle_t * h)
 {
-  MachineStatusSM *msm = NEW(new MachineStatusSM(*h));
+  MachineStatusSM *msm = new MachineStatusSM(*h);
 
   ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
 }
@@ -395,7 +395,7 @@ send_machine_online_list(TSClusterStatusHandle_t * h)
 static void
 directed_machine_online(int Ipaddr, TSClusterStatusHandle_t * h)
 {
-  MachineStatusSM *msm = NEW(new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_ONLINE, *h));
+  MachineStatusSM *msm = new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_ONLINE, *h);
 
   ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
 }
@@ -407,7 +407,7 @@ directed_machine_online(int Ipaddr, TSClusterStatusHandle_t * h)
 void
 machine_online_APIcallout(int Ipaddr)
 {
-  MachineStatusSM *msm = NEW(new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_ONLINE));
+  MachineStatusSM *msm = new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_ONLINE);
 
   ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
 }
@@ -418,7 +418,7 @@ machine_online_APIcallout(int Ipaddr)
 void
 machine_offline_APIcallout(int Ipaddr)
 {
-  MachineStatusSM *msm = NEW(new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_OFFLINE));
+  MachineStatusSM *msm = new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_OFFLINE);
 
   ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
 }

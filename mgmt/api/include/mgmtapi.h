@@ -28,6 +28,7 @@
 #ifndef __TS_MGMT_API_H__
 #define __TS_MGMT_API_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /***************************************************************************
@@ -35,33 +36,8 @@
  ***************************************************************************/
 
 #define tsapi
-
 #define inkexp
 #define inkimp
-
-#if !defined(linux)
-#if defined (__SUNPRO_CC) || (defined (__GNUC__) || ! defined(__cplusplus))
-#if !defined (bool)
-#if !defined(darwin) && !defined(freebsd) && !defined(solaris)
-/* XXX: What other platforms are there? */
-#define bool int
-#endif
-#endif
-
-#if !defined (true)
-#define true 1
-#endif
-
-#if !defined (false)
-#define false 0
-#endif
-
-#endif
-#endif  /* not linux */
-
-#if !defined (NULL)
-#define NULL 0
-#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -455,7 +431,7 @@ extern "C"
       TSCounter counter_val;
       TSFloat float_val;
       TSString string_val;
-    };
+    } valueT;
   } TSRecordEle;
 
 /*--- events --------------------------------------------------------------*/
@@ -1126,7 +1102,7 @@ extern "C"
  * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
-  tsapi TSMgmtError TSStatsReset(bool cluster, const char *name = NULL);
+  tsapi TSMgmtError TSStatsReset(bool cluster, const char *name);
 
 
 /*--- variable operations -------------------------------------------------*/

@@ -16,13 +16,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# This does intentionally not run the regressions, it's primarily a "build" test
+
 source /home/jenkins/bin/environment.sh
-cd "${WORKSPACE}/src_in-tree"
+cd "${WORKSPACE}/src"
 
-if test "${JOB_NAME#*type=in_tree}" != "${JOB_NAME}"; then
-    # Just use the configure from the snapshot.sh
-    ${ATS_MAKE} -j4
-    ${ATS_MAKE} check
+autoreconf -fi
+./configure \
+    --enable-ccache \
+    --enable-werror \
+    --enable-experimental-plugins \
+    --enable-cppapi \
+    --enable-example-plugins \
+    --enable-test-tools
 
-    ${ATS_MAKE} clean
-fi
+${ATS_MAKE} -j5 V=1
+${ATS_MAKE} check
+${ATS_MAKE} clean

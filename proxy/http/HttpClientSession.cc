@@ -36,6 +36,7 @@
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 #include "HttpServerSession.h"
+#include "Plugin.h"
 
 #define DebugSsn(tag, ...) DebugSpecific(debug_on, tag, __VA_ARGS__)
 #define STATE_ENTER(state_name, event, vio) { \
@@ -67,7 +68,7 @@ HttpClientSession::HttpClientSession()
     cur_hooks(0), backdoor_connect(false),
     hooks_set(0),
     outbound_port(0), f_outbound_transparent(false),
-    host_res_style(HOST_RES_IPV4), acl_method_mask(0),
+    host_res_style(HOST_RES_IPV4), acl_record(NULL),
     m_active(false), debug_on(false)
 {
   memset(user_args, 0, sizeof(user_args));
@@ -137,6 +138,7 @@ void
 HttpClientSession::new_transaction()
 {
   ink_assert(current_reader == NULL);
+  PluginIdentity* pi = dynamic_cast<PluginIdentity*>(client_vc);
 
   read_state = HCS_ACTIVE_READER;
   current_reader = HttpSM::allocate();
@@ -144,8 +146,13 @@ HttpClientSession::new_transaction()
   transact_count++;
   DebugSsn("http_cs", "[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", con_id, transact_count, current_reader->sm_id);
 
-  current_reader->proto_stack = client_vc->proto_stack;
   current_reader->attach_client_session(this, sm_reader);
+  if (pi) {
+    // it's a plugin VC of some sort with identify information.
+    // copy it to the SM.
+    current_reader->plugin_tag = pi->getPluginTag();
+    current_reader->plugin_id = pi->getPluginId();
+  }
 }
 
 inline void
@@ -184,6 +191,10 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor, MIOBuf
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
   conn_decrease = true;
   HTTP_INCREMENT_DYN_STAT(http_total_client_connections_stat);
+  if (static_cast<HttpProxyPort::TransportType>(new_vc->attributes) == HttpProxyPort::TRANSPORT_SSL) {
+    HTTP_INCREMENT_DYN_STAT(https_total_client_connections_stat);
+  }
+
   /* inbound requests stat should be incremented here, not after the
    * header has been read */
   HTTP_INCREMENT_DYN_STAT(http_total_incoming_connections_stat);

@@ -128,7 +128,7 @@ spdy_show_ctl_frame(const char *head_str, spdylay_session * /*session*/, spdylay
     break;
   case SPDYLAY_WINDOW_UPDATE: {
     spdylay_window_update *f = (spdylay_window_update *)frame;
-    Debug("spdy", "%s WINDOW_UPDATE (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, delta_window_size:%d)",
+    Debug("spdy", "%s WINDOW_UPDATE (sm_id:%" PRIu64 ", stream_id:%d, flag:%d, delta_window_size:%u)",
           head_str, sm->sm_id, f->stream_id, f->hd.flags, f->delta_window_size);
   }
     break;
@@ -186,12 +186,6 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
                                 url.c_str(), req->version.c_str(),
                                 client_addr, fetch_flags);
   TSFetchUserDataSet(req->fetch_sm, req);
-
-  //
-  // Set client protocol stack in FetchSM that needed by logging module
-  //
-  NetVConnection *netvc = (NetVConnection *)sm->vc;
-  TSFetchClientProtoStackSet(req->fetch_sm, netvc->proto_stack);
 
   //
   // Set header list
@@ -309,6 +303,10 @@ spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
     spdy_fetcher_launch(req, TS_FETCH_METHOD_CONNECT);
   else if (req->method == "DELETE")
     spdy_fetcher_launch(req, TS_FETCH_METHOD_DELETE);
+  else if (req->method == "OPTIONS")
+    spdy_fetcher_launch(req, TS_FETCH_METHOD_OPTIONS);
+  else if (req->method == "TRACE")
+    spdy_fetcher_launch(req, TS_FETCH_METHOD_TRACE);
   else if (req->method == "LAST")
     spdy_fetcher_launch(req, TS_FETCH_METHOD_LAST);
   else
@@ -405,11 +403,11 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
 
   req->delta_window_size += length;
 
-  Debug("spdy", "----sm_id:%" PRId64 ", stream_id:%d, delta_window_size:%d",
+  Debug("spdy", "----sm_id:%" PRId64 ", stream_id:%d, delta_window_size:%u",
         sm->sm_id, stream_id, req->delta_window_size);
 
-  if (req->delta_window_size >= SPDY_CFG.spdy.initial_window_size/2) {
-    Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%d",
+  if (req->delta_window_size >= spdy_initial_window_size/2) {
+    Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%u",
           req->delta_window_size);
 
     //

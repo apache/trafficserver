@@ -37,6 +37,7 @@ Contents:
    forward-proxy.en
    transparent-proxy.en
    explicit-proxy-caching.en
+   session-protocol.en
    hierachical-caching.en
    configuring-cache.en
    monitoring-traffic.en

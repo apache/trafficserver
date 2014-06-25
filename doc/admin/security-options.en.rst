@@ -213,7 +213,6 @@ In order to accomplish this, we:
 1. Edit the following variables in the :ref:`records-config-ssl-termination` section of
    :file:`records.config`:
 
-   -  :ts:cv:`proxy.config.ssl.auth.enabled`
    -  :ts:cv:`proxy.config.http.server_ports`
    -  :ts:cv:`proxy.config.ssl.client.verify.server`
    -  :ts:cv:`proxy.config.ssl.client.cert.filename`

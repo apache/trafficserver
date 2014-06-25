@@ -94,37 +94,6 @@ extern "C"
 #endif
 
   /**
-      TSClientProtoStack represents what protocols are used by
-      the client. It may be composed by several TSProtoType.
-
-      The value of TSProtoType indicates bit-offset that can
-      be mapped to TSClientProtoStack by bit shifting.
-
-      For example, TLS+SPDY can be mapped to protocol stack:
-        proto_stack = (1u << TS_PROTO_TLS) | (1u << TS_PROTO_SPDY)
-
-      For the sake of brevity, TS_PROTO_TCP is usually omitted in
-      protocol stack.
-   */
-  typedef enum {
-    /* Transport protocols (0~11) */
-    TS_PROTO_UDP = 0,
-    TS_PROTO_TCP = 1,
-    TS_PROTO_TLS = 2,   /* TLS/SSL */
-
-    /* Application protocols (12~31) */
-    TS_PROTO_HTTP = 12,
-    TS_PROTO_SPDY = 13,
-    TS_PROTO_RTMP = 14,
-    TS_PROTO_WS   = 15, /* WebSocket */
-
-    /* MAX value of TSProtoType  */
-    TS_PROTO_NULL = 32
-  } TSProtoType;
-
-  typedef uint32_t TSClientProtoStack;
-
-  /**
       The following struct is used by TSPluginRegister(). It stores
       registration information about the plugin.
 
@@ -762,6 +731,7 @@ extern "C"
     TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS,
     TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME,
     TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES,
+    TS_CONFIG_HTTP_CACHE_RANGE_WRITE,
     TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
@@ -1150,12 +1120,28 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      TLS Next Protocol well-known protocol names. */
-  extern tsapi const char * TS_NPN_PROTOCOL_HTTP_1_0;
-  extern tsapi const char * TS_NPN_PROTOCOL_HTTP_1_1;
-  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_1;
-  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_2;
-  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_3;
-  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_3_1;
+
+  extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_0_9;
+  extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_1_0;
+  extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_1_1;
+  extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_2_0;
+  extern tsapi const char * const TS_NPN_PROTOCOL_SPDY_1;
+  extern tsapi const char * const TS_NPN_PROTOCOL_SPDY_2;
+  extern tsapi const char * const TS_NPN_PROTOCOL_SPDY_3;
+  extern tsapi const char * const TS_NPN_PROTOCOL_SPDY_3_1;
+
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_0_9;
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_1_0;
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_1_1;
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_1;
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_2;
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_3;
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_3_1;
+  extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_2_0;
+
+  extern tsapi const char * const TS_NPN_PROTOCOL_GROUP_HTTP;
+  extern tsapi const char * const TS_NPN_PROTOCOL_GROUP_HTTP2;
+  extern tsapi const char * const TS_NPN_PROTOCOL_GROUP_SPDY;
 
   /* --------------------------------------------------------------------------
      MLoc Constants */

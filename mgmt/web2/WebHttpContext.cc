@@ -50,11 +50,11 @@ WebHttpContextCreate(WebHttpConInfo * whci)
   // memset to 0; note strings are zero'd too
   memset(whc, 0, sizeof(WebHttpContext));
 
-  whc->request = NEW(new httpMessage());
-  whc->response_hdr = NEW(new httpResponse());
-  whc->response_bdy = NEW(new textBuffer(8192));
-  whc->submit_warn = NEW(new textBuffer(256));
-  whc->submit_note = NEW(new textBuffer(256));
+  whc->request = new httpMessage();
+  whc->response_hdr = new httpResponse();
+  whc->response_bdy = new textBuffer(8192);
+  whc->submit_warn = new textBuffer(256);
+  whc->submit_note = new textBuffer(256);
   whc->submit_warn_ht = ink_hash_table_create(InkHashTableKeyType_String);
   whc->submit_note_ht = ink_hash_table_create(InkHashTableKeyType_String);
   whc->si.fd = whci->fd;

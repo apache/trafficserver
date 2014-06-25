@@ -53,20 +53,6 @@ extern "C"
 }
 #endif
 
-/* Ugly hack - define HEADER_MD_5 to prevent the SSLeay md5.h
- *  header file from being included since it conflicts with the
- *  md5 implememntation from ink_code.h
- *
- *  Additionally define HEAP_H and STACK_H to prevent stuff
- *   from the template library from being included which
- *   SUNPRO CC does not not like.
- */
-
-// part of ugly hack described no longer needed
-//#define HEADER_MD5_H
-#define HEAP_H
-#define STACK_H
-
 typedef int fd;
 
 #define SOCKET_TIMEOUT 10*60

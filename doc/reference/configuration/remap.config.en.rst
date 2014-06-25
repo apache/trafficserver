@@ -375,6 +375,27 @@ This will pass "1" and "2" to plugin1.so and "3" to plugin2.so
 
 .. _remap-config-named-filters:
 
+Acl Filters
+===========
+
+Acl filters can be created to control access of specific remap lines. The markup
+is very similar to that of :file:`ip_allow.config`, with slight changes to
+accomodate remap markup
+
+Examples
+--------
+
+::
+    map http://foo.example.com/neverpost  http://foo.example.com/neverpost @action=deny @method=post
+    map http://foo.example.com/onlypost  http://foo.example.com/onlypost @action=allow @method=post
+
+    map http://foo.example.com/  http://foo.example.com/ @action=deny @src_ip=1.2.3.4
+    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1
+
+    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1 @method=post @method=get @method=head
+
+Note that these Acl filters will return a 403 response if the resource is restricted.
+
 Named Filters
 =============
 

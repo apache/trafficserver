@@ -20,6 +20,10 @@ source /home/jenkins/bin/environment.sh
 cd "${WORKSPACE}/src"
 
 autoreconf -if && ./configure
+
+# WTF
+rm -f lib/ts/stamp-h1
+
 ${ATS_MAKE} rat | tee RAT.txt
 mv RAT.txt /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new
 mv /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new /home/jenkins/RAT/rat-${ATS_BRANCH}.txt

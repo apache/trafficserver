@@ -117,6 +117,8 @@ only be evaluated if the condition(s) are met::
   cond %{PATH} operand                          [condition_flags]
   cond %{PARAMS} operand                        [condition_flags]
   cond %{QUERY} operand                         [condition_flags]
+  cond %{INTERNAL-TRANSACTION}                  [condition_flags]
+  cond %{CLIENT-IP}                             [condition_flags]
 
 The difference between HEADER and CLIENT-HEADER is that HEADER adapts to the
 hook it's running in, whereas CLIENT-HEADER always applies to the client

@@ -2715,6 +2715,19 @@ handle_read(int cnum, struct timeval *nowP)
 
         }
       }
+
+      if (connections[cnum].conn_state == CNST_READING && connections[cnum].content_length == 0) {
+#ifdef DEBUG
+        fprintf(stderr, "[handle_read] content_length is 0, close connection\n");
+#endif
+        if (connections[cnum].keep_alive > 0)
+          connections[cnum].reusable = 1;
+
+        close_connection(cnum);
+
+        return;
+      }
+
       break;
 
     case CNST_READING:

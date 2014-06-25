@@ -317,7 +317,7 @@ initialize_process_manager()
   }
 
   // Start up manager
-  pmgmt = NEW(new ProcessManager(remote_management_flag));
+  pmgmt = new ProcessManager(remote_management_flag);
 
   pmgmt->start();
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
@@ -505,7 +505,7 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
     printf("\nbad cache configuration, %s failed\n", n);
     return CMD_FAILED;
   }
-  eventProcessor.schedule_every(NEW(new CmdCacheCont(true, fix)), HRTIME_SECONDS(1));
+  eventProcessor.schedule_every(new CmdCacheCont(true, fix), HRTIME_SECONDS(1));
 
   return CMD_IN_PROGRESS;
 }
@@ -580,7 +580,7 @@ cmd_clear(char *cmd)
       Note("unable to open Cache, CLEAR failed");
       return CMD_FAILED;
     }
-    eventProcessor.schedule_every(NEW(new CmdCacheCont(false)), HRTIME_SECONDS(1));
+    eventProcessor.schedule_every(new CmdCacheCont(false), HRTIME_SECONDS(1));
     return CMD_IN_PROGRESS;
   }
 
@@ -805,7 +805,7 @@ adjust_sys_settings(void)
     ats_mallopt(ATS_MMAP_MAX, mmap_max);
 
   if ((fd = fopen("/proc/sys/fs/file-max","r"))) {
-    ATS_UNUSED_RETURN(fscanf(fd, "%lu", &lim.rlim_max));
+    ATS_UNUSED_RETURN(fscanf(fd, "%" PRIu64 "", &lim.rlim_max));
     fclose(fd);
     REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(lim.rlim_max * file_max_pct);
@@ -1038,7 +1038,7 @@ static void
 run_AutoStop()
 {
   if (getenv("PROXY_AUTO_EXIT"))
-    eventProcessor.schedule_in(NEW(new AutoStopCont), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
+    eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
 }
 
 #if TS_HAS_TESTS
@@ -1077,7 +1077,7 @@ static void
 run_RegressionTest()
 {
   if (regression_level)
-    eventProcessor.schedule_every(NEW(new RegressionCont), HRTIME_SECONDS(1));
+    eventProcessor.schedule_every(new RegressionCont(), HRTIME_SECONDS(1));
 }
 #endif //TS_HAS_TESTS
 
@@ -1101,7 +1101,7 @@ chdir_root()
 static int
 getNumSSLThreads(void)
 {
-  int num_of_ssl_threads = 0;
+  int num_of_ssl_threads = -1;
 
   // Set number of ssl threads equal to num of processors if
   // SSL is enabled so it will scale properly. If SSL is not
@@ -1112,8 +1112,10 @@ getNumSSLThreads(void)
 
     REC_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
 
-    if (config_num_ssl_threads != 0) {
+    if (config_num_ssl_threads > 0) {
       num_of_ssl_threads = config_num_ssl_threads;
+    } else if (config_num_ssl_threads == -1) {
+      return -1; // This will disable ET_SSL threads entirely
     } else {
       float autoconfig_scale = 1.5;
 
@@ -1310,7 +1312,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // re-start Diag completely) because at initialize, TM only has 1 thread.
   // In TS, some threads have already created, so if we delete Diag and
   // re-start it again, TS will crash.
-  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false));
+  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
   diags = diagsConfig->diags;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
@@ -1364,7 +1366,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // This call is required for win_9xMe
   //without this this_ethread() is failing when
   //start_HttpProxyServer is called from main thread
-  Thread *main_thread = NEW(new EThread);
+  Thread *main_thread = new EThread;
   main_thread->set_specific();
 
   // Re-initialize diagsConfig based on records.config configuration
@@ -1372,7 +1374,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     RecDebugOff();
     delete(diagsConfig);
   }
-  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, true));
+  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, true);
   diags = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Server ";
@@ -1428,6 +1430,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   REC_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
   init_http_header();
+  ts_session_protocol_well_known_name_indices_init();
 
   // Sanity checks
   check_fd_limit();
@@ -1530,6 +1533,10 @@ main(int /* argc ATS_UNUSED */, char **argv)
     SplitDNSConfig::startup();
 #endif
 
+# if TS_HAS_SPDY
+    extern int spdy_config_load ();
+    spdy_config_load(); // must be before HttpProxyPort init.
+# endif
     // Load HTTP port data. getNumSSLThreads depends on this.
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
       HttpProxyPort::loadConfig();
@@ -1575,7 +1582,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     start_stats_snap();
 
     // Initialize Response Body Factory
-    body_factory = NEW(new HttpBodyFactory);
+    body_factory = new HttpBodyFactory;
 
     // Start IP to userName cache processor used
     // by RADIUS and FW1 plug-ins.
@@ -1590,7 +1597,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
     // Continuation Statistics Dump
     if (show_statistics)
-      eventProcessor.schedule_every(NEW(new ShowStats), HRTIME_SECONDS(show_statistics), ET_CALL);
+      eventProcessor.schedule_every(new ShowStats(), HRTIME_SECONDS(show_statistics), ET_CALL);
 
 
     //////////////////////////////////////

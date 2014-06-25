@@ -209,7 +209,7 @@ DNSProcessor::start(int, size_t stacksize) {
 void
 DNSProcessor::open(sockaddr const* target, int aoptions)
 {
-  DNSHandler *h = NEW(new DNSHandler);
+  DNSHandler *h = new DNSHandler;
 
   h->options = aoptions;
   h->mutex = thread->mutex;
@@ -1714,7 +1714,7 @@ static const char *dns_test_hosts[] = {
 };
 
 REGRESSION_TEST(DNS) (RegressionTest *t, int atype, int *pstatus) {
-  eventProcessor.schedule_in(NEW(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus)),
+  eventProcessor.schedule_in(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus),
                              HRTIME_SECONDS(1));
 }
 

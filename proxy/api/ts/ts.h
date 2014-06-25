@@ -1015,6 +1015,7 @@ extern "C"
 
   tsapi TSReturnCode TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
                                                   const char* value, int length);
+  /* These Insert() APIs should be considered. Use the corresponding Set() API instead */
   tsapi TSReturnCode TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
                                                         const char* value, int length);
   tsapi TSReturnCode TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value);
@@ -1578,8 +1579,6 @@ extern "C"
   /* --------------------------------------------------------------------------
      Initiate Http Connection */
 
-  tsapi TSClientProtoStack TSClientProtoStackCreate(TSProtoType, ...);
-
   /**
       Allows the plugin to initiate an http connection. The TSVConn the
       plugin receives as the result of successful operates identically to
@@ -1590,17 +1589,18 @@ extern "C"
       than TSNetConnect() to localhost since it avoids the overhead of
       passing the data through the operating system.
 
-      @param log_ip ip address (in network byte order) that connection
-        will be logged as coming from.
-      @param log_port port (in network byte order) that connection will
-        be logged as coming from.
-      @param vc will be set to point to the new TSVConn on success.
+      This returns a VConn that connected to the transaction.
 
+      @param addr Target address of the origin server.
+      @param tag A logging tag that can be accessed via the pitag field. May be @c NULL.
+      @param id A logging id that can be access via the piid field.
+   */
+  tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const* addr, char const* tag, int64_t id);
+
+  /** Backwards compatible version.
+      This provides a @a tag of "plugin" and an @a id of 0.
    */
   tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
-
-  tsapi TSVConn TSHttpConnectWithProtoStack(struct sockaddr const* addr,
-                                            TSClientProtoStack proto_stack);
 
     /* --------------------------------------------------------------------------
      Initiate Transparent Http Connection */
@@ -1623,6 +1623,7 @@ extern "C"
 
   /* Check if HTTP State machine is internal or not */
   tsapi TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
+  tsapi TSReturnCode TSHttpIsInternalSession(TSHttpSsn ssnp);
 
   /* --------------------------------------------------------------------------
      HTTP alternate selection */
@@ -2166,35 +2167,7 @@ extern "C"
   */
   tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp);
 
-  /*
-    The reason is even if VConn is created using this API, it is
-    still useless. For example, if we do TSVConnRead(), the read
-    operation returns read_vio. If we do TSVIOReenable(read_vio),
-    it actually calls:
-
-    @code
-    void VIO::reenable() {
-    if (vc_server) vc_server->reenable(this);
-    }
-    @endcode
-
-    vc_server->reenable calls:
-
-    @code
-    VConnection::reenable(VIO);
-    @endcode
-
-    This function is virtual in VConnection.h. It is defined separately for
-    UnixNet, NTNet and CacheVConnection.
-
-    Thus, unless VConn is either NetVConnection or CacheVConnection, it can't
-    be instantiated for functions like reenable.
-
-    In addition, this function has never been used.
-
-  */
   tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
-
   tsapi TSVConn TSVConnFdCreate(int fd);
 
   /* api functions to access stats */

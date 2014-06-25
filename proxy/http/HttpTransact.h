@@ -1215,7 +1215,7 @@ public:
     {
       if (internal_msg_buffer) {
         if (internal_msg_buffer_fast_allocator_size >= 0) {
-          THREAD_FREE(internal_msg_buffer, ioBufAllocator[internal_msg_buffer_fast_allocator_size], this_thread());
+          ioBufAllocator[internal_msg_buffer_fast_allocator_size].free_void(internal_msg_buffer);
         } else {
           ats_free(internal_msg_buffer);
         }
@@ -1299,7 +1299,6 @@ public:
                                        HostDBInfo* host_db_info);
   static bool service_transaction_in_proxy_only_mode(State* s);
   static void setup_plugin_request_intercept(State* s);
-  static void handle_msie_reload_badness(State* s, HTTPHdr* client_request);
   static void add_client_ip_to_outgoing_request(State* s, HTTPHdr* request);
   static RequestError_t check_request_validity(State* s, HTTPHdr* incoming_hdr);
   static ResponseError_t check_response_validity(State* s, HTTPHdr* incoming_hdr);

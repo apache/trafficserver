@@ -25,7 +25,7 @@
 
    CoreUtils.cc
 
-   Description:  Automated processing of core files on Sparc & Linux
+   Description:  Automated processing of core files on Linux
  ****************************************************************************/
 
 
@@ -92,34 +92,6 @@
 /* Document properly */
 
 #include "ink_config.h"
-
-#if defined(sparc)
-// We need procfs data strucutures and they
-//   don't support large files
-#undef _LARGEFILE_SOURCE
-#undef _FILE_OFFSET_BITS
-#define is_debug_tag_set(_t) 1
-#include <sys/types.h>
-#include <sys/core.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <math.h>
-#include "libts.h"
-#include "DynArray.h"
-#include "CoreUtils.h"
-#include "Diags.h"
-#include "http/HttpSM.h"
-#include "P_EventSystem.h"
-#include "I_Version.h"
-#include  <string.h>
-#include  <sys/elf.h>
-#include  <procfs.h>
-int lwpid;
-int moffset = (int) &(((HttpSM *) NULL)->magic);
-lwpTable default_lwpTable = { 0, 0 };
-DynArray<struct lwpTable>arrayLwp(&default_lwpTable, 0);
-#endif /* sparc */
 
 #if defined(linux)
 #include "CoreUtils.h"
@@ -319,124 +291,6 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
   return -1;
 }
 
-/* SPARC specific functions */
-
-#if defined(sparc)
-// returns the active thread id
-int
-CoreUtils::get_active_thread_Id()
-{
-  return lwpid;
-}
-
-// copies stack info for the thread's base frame to the given
-// core_stack_state pointer
-void
-CoreUtils::get_base_frame(intptr_t threadId, core_stack_state * coress)
-{
-  intptr_t framep = arrayLwp[threadId - 1].framep;
-  // finds vaddress less than framep
-  intptr_t index = find_vaddr(framep, arrayMem.length(), 0);
-  intptr_t vadd = arrayMem[index - 1].vaddr;
-  intptr_t off = arrayMem[index - 1].offset;
-  intptr_t off2 = abs(vadd - framep);
-  intptr_t size = arrayMem[index - 1].fsize;
-
-  memset(coress, 0, sizeof(*coress));
-
-  // seek to the framep offset
-  if (fseek(fp, off + off2, SEEK_SET) != -1) {
-    char *frameoff;
-
-    if ((frameoff = (char *)ats_malloc(sizeof(char) * sizeof(rwindow)))) {
-      if (fread(frameoff, sizeof(rwindow), 1, fp) == 1) {
-        // memcpy rwindow struct and print out
-        struct rwindow regs, *r;
-        r = (struct rwindow *) frameoff;
-        memcpy(&regs, r, sizeof(struct rwindow));
-        coress->regs = regs;
-        framep = regs.rw_in[6];
-        coress->framep = framep;
-      }
-      ats_free(frameoff);
-    } else {
-      printf("Failed to seek to top of the stack\n");
-    }
-    coress->stkbase = vadd + size;
-  }
-}
-
-// returns 0 if current frame is already at the top of the stack
-// or returns 1 and moves up the stack once
-int
-CoreUtils::get_next_frame(core_stack_state * coress)
-{
-  int framep = coress->framep;
-
-  if (framep >= coress->stkbase) {
-    if (is_debug_tag_set("stack")) {
-      printf("already at top of stack\n");
-    }
-    return 0;
-  } else {
-    if (is_debug_tag_set("stack")) {
-      printf("distance from end of the stack: %d\n", coress->stkbase - framep);
-    }
-
-    int index = find_vaddr(framep, arrayMem.length(), 0);
-    // finds vaddress less than framep
-    int vadd = arrayMem[index - 1].vaddr;
-    int off = arrayMem[index - 1].offset;
-    int off2 = abs(vadd - framep);
-
-    // seek to the framep offset
-    if (fseek(fp, off + off2, SEEK_SET) != -1) {
-      char *frameoff;
-      if ((frameoff = (char *)ats_malloc(sizeof(char) * sizeof(rwindow)))) {
-        if (fread(frameoff, sizeof(rwindow), 1, fp) == 1) {
-
-          // memcpy rwindow struct and print out
-          struct rwindow regs, *r;
-          r = (struct rwindow *) frameoff;
-          memcpy(&regs, r, sizeof(struct rwindow));
-          coress->regs = regs;
-          framep = regs.rw_in[6];
-          coress->framep = framep;
-        }
-      }
-      ats_free(frameoff);
-    }
-  }
-  return 1;
-}
-
-// prints the http header
-void
-CoreUtils::find_stuff(StuffTest_f f)
-{
-  core_stack_state coress;
-  int i;
-  void *test_val;
-  int id = get_active_thread_Id();
-
-  get_base_frame(id, &coress);
-
-  do {
-    // looping through all of the local and in registers
-    // all the way up the stack
-    for (int i = 0; i < 8; i++) {
-      test_val = (void *) coress.regs.rw_local[i];
-      f(test_val);
-    }
-    for (i = 0; i < 8; i++) {
-      test_val = (void *) coress.regs.rw_in[i];
-      f(test_val);
-    }
-  } while (get_next_frame(&coress) != 0);
-}
-
-#endif /* SPARC specific Stack unwinding */
-
 
 /* Linux Specific functions */
 
@@ -617,11 +471,6 @@ CoreUtils::test_HttpSM(void *arg)
 void
 CoreUtils::process_HttpSM(HttpSM * core_ptr)
 {
-
-#if defined(sparc)
-  int id = get_active_thread_Id();
-#endif
-
   // extracting the HttpSM from the core file
   if (last_seen_http_sm != core_ptr) {
     HttpSM *http_sm = (HttpSM *)ats_malloc(sizeof(HttpSM));
@@ -640,9 +489,6 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
 #if defined(linux)
         printf("\n*****match-ALIVE*****\n");
 #endif
-#if defined(sparc)
-        printf("\n*****match-ALIVE*****!! lwpid: %d\n", arrayLwp[id].lwpId);
-#endif
       }
       // I don't think this is 64-bit correct. /leif
       printf("---- Found HttpSM --- id %" PRId64 "  ------ @ 0x%p -----\n\n", http_sm->sm_id, http_sm);
@@ -659,9 +505,6 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
       if (is_debug_tag_set("magic")) {
 #if defined(linux)
         printf("\n*****match-DEAD*****\n");
-#endif
-#if defined(sparc)
-        printf("\n*****match-DEAD*****!! lwpid: %d\n", arrayLwp[id].lwpId);
 #endif
       }
     } else {
@@ -1202,181 +1045,7 @@ process_core(char *fname)
 }
 #endif
 
-#if defined(sparc)
-void
-process_core(char *fname)
-{
-  Elf32_Ehdr ehdr;
-  Elf32_Phdr phdr;
-  int phoff, phnum, phentsize, phsize;
-
-  /* Open the input file */
-  if (!(fp = fopen(fname, "r"))) {
-    printf("cannot open file\n");
-    _exit(1);
-  }
-
-  /* Obtain the .shstrtab data buffer */
-  if (fread(&ehdr, sizeof ehdr, 1, fp) != 1) {
-    printf("Unable to read ehdr\n");
-    _exit(1);
-  }
-  // program header offset
-  phoff = ehdr.e_phoff;
-  // number of program headers
-  phnum = ehdr.e_phnum;
-  // size of each program header
-  phentsize = ehdr.e_phentsize;
-  phsize = phnum * phentsize;
-  for (int i = 0; i < phnum; i++) {
-
-    if (fseek(fp, ehdr.e_phoff + i * ehdr.e_phentsize, SEEK_SET) == -1) {
-      fprintf(stderr, "Unable to seek to Phdr %d\n", i);
-      _exit(1);
-    }
-
-    if (fread(&phdr, sizeof phdr, 1, fp) != 1) {
-      fprintf(stderr, "Unable to read Phdr %d\n", i);
-      _exit(1);
-    }
-    int poffset, psize;
-    int pvaddr;
-    pvaddr = phdr.p_vaddr;
-    poffset = phdr.p_offset;
-    psize = phdr.p_filesz;
-
-    if (pvaddr != 0) {
-      CoreUtils::insert_table(pvaddr, poffset, psize);
-    }
-
-    if (is_debug_tag_set("phdr")) {
-      printf("\n******* PHDR %d *******\n", i);
-      printf("p_type = %d  ", phdr.p_type);
-      printf("p_offset = %d  ", phdr.p_offset);
-      printf("p_vaddr = %#x  ", pvaddr);
-
-      printf("p_paddr = %#x\n", phdr.p_paddr);
-      printf("p_filesz = %d  ", phdr.p_filesz);
-      printf("p_memsz = %d  ", phdr.p_memsz);
-      printf("p_flags = %d  ", phdr.p_flags);
-      printf("p_align = %d\n", phdr.p_align);
-    }
-
-    if (phdr.p_type == PT_NOTE) {
-
-      if (fseek(fp, phdr.p_offset, SEEK_SET) != -1) {
-        Elf32_Nhdr *nhdr, *thdr;
-        if ((nhdr = (Elf32_Nhdr *)ats_malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
-          if (fread(nhdr, phdr.p_filesz, 1, fp) == 1) {
-            int size = phdr.p_filesz;
-            int sum = 0;
-            thdr = nhdr;
-            while (size) {
-              int len;
-
-              len = sizeof *thdr + ((thdr->n_namesz + 3) & ~3) + ((thdr->n_descsz + 3) & ~3);
-              // making sure the offset is byte aligned
-              char *offset = (char *) (thdr + 1) + ((thdr->n_namesz + 3) & ~3);
-
-              if (len<0 || len> size) {
-                _exit(1);
-              }
-              char *name;
-              name = (char *) (thdr + 1);
-
-              pstatus_t pstat;
-              pstatus_t *ps;
-              lwpstatus_t lwpstat, *lp;
-              lwpstatus_t lwpst;
-              prgreg_t rinfo[NPRGREG];
-              int j;
-              switch (thdr->n_type) {
-
-              case NT_PSTATUS:
-                ps = (pstatus_t *) offset;
-                memcpy(&pstat, ps, sizeof(pstatus_t));
-                lwpst = pstat.pr_lwp;
-                // get the active lwp id
-                lwpid = lwpst.pr_lwpid;
-
-                if (is_debug_tag_set("note")) {
-                  printf("\n**** NT_PSTATUS ****\n");
-                  printf("number of lwps in process = %d\n", pstat.pr_nlwp);
-                  printf("base of stack = %#x\n", pstat.pr_stkbase);
-                  printf("size of process stack = %d\n", pstat.pr_stksize);
-                  printf("lwp id = %d\n", lwpid);
-                }
-                break;
-
-              case NT_LWPSTATUS:
-                lp = (lwpstatus_t *) offset;
-                memcpy(&lwpstat, lp, sizeof(lwpstatus_t));
-
-                for (j = 0; j < NPRGREG; j++) {
-                  rinfo[j] = lwpstat.pr_reg[j];
-                }
-
-                arrayLwp(lwpstat.pr_lwpid - 1);
-                arrayLwp[lwpstat.pr_lwpid - 1].lwpId = lwpstat.pr_lwpid;
-                arrayLwp[lwpstat.pr_lwpid - 1].framep = lwpstat.pr_reg[30];
-
-                if (lwpstat.pr_lwpid == lwpid) {
-
-                  if (is_debug_tag_set("note")) {
-                    printf("\n**** NT_LWPSTATUS of active lwp****\n");
-                    printf("lwp status = 0x%x\n", lwpstat.pr_flags);
-                    printf("lwp id = %d\n", lwpstat.pr_lwpid);
-                    printf("pr_why = %#x\n", lwpstat.pr_why);
-                    printf("pr_what = %#x\n", lwpstat.pr_why);
-
-                    printf("stack pointer = %#x\n", lwpstat.pr_reg[14]);
-                    printf("frame pointer = %#x\n", lwpstat.pr_reg[30]);
-                    printf("program counter if no save = %#x\n", lwpstat.pr_reg[15]);
-                  }
-                }
-                break;
-
-              default:
-                break;
-              }
-              thdr = (Elf32_Nhdr *) ((char *) thdr + len);
-              sum += len;
-              size -= len;
-            }
-          }
-          ats_free(nhdr);
-        }
-      }
-    }
-  }
-
-  if (is_debug_tag_set("core")) {
-    printf("    \tv. address\t\toffset\t\tend of region\t\tnum bytes\n");
-    printf("    \t----------\t\t------\t\t-------------\t\t---------\n");
-
-    for (unsigned int l = 0; l < arrayMem.length(); l++) {
-      printf("%4d)\t", l + 1);
-      printf("%10#x\t\t", arrayMem[l].vaddr);
-      printf("%8d\t%8d\t\t%8d\n", arrayMem[l].offset, arrayMem[l].offset + arrayMem[l].fsize, arrayMem[l].fsize);
-    }
-  }
-
-  if (is_debug_tag_set("arrayLwp")) {
-    for (unsigned int l = 0; l < arrayLwp.length(); l++) {
-      printf("%4d)\t", l + 1);
-      printf("%10d\t\t", arrayLwp[l].lwpId);
-      printf("%8d\n", arrayLwp[l].framep);
-    }
-  }
-
-  CoreUtils::find_stuff(&CoreUtils::test_HdrHeap);
-  CoreUtils::find_stuff(&CoreUtils::test_HttpSM);
-
-  fclose(fp);
-}
-#endif /* sparc */
-
-#if !defined(linux) && !defined(sparc)
+#if !defined(linux)
 void
 process_core(char *fname)
 {

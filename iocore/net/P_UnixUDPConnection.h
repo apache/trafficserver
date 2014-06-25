@@ -114,7 +114,7 @@ UDPConnection::recv(Continuation * c)
 TS_INLINE UDPConnection *
 new_UDPConnection(int fd)
 {
-  return (fd >= 0) ? NEW(new UnixUDPConnection(fd)) : 0;
+  return (fd >= 0) ? new UnixUDPConnection(fd) : 0;
 }
 
 #endif //__UNIXUDPCONNECTION_H_

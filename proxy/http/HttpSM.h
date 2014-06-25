@@ -264,7 +264,6 @@ public:
   bool is_private();
   bool is_redirect_required();
 
-  TSClientProtoStack proto_stack;
   int64_t sm_id;
   unsigned int magic;
 
@@ -489,6 +488,11 @@ public:
   int pushed_response_hdr_bytes;
   int64_t pushed_response_body_bytes;
   TransactionMilestones milestones;
+  // The next two enable plugins to tag the state machine for
+  // the purposes of logging so the instances can be correlated
+  // with the source plugin.
+  char const* plugin_tag;
+  int64_t plugin_id;
 
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
@@ -616,7 +620,7 @@ inline void
 HttpSM::add_cache_sm()
 {
   if (second_cache_sm == NULL) {
-    second_cache_sm = NEW(new HttpCacheSM);
+    second_cache_sm = new HttpCacheSM;
     second_cache_sm->init(this, mutex);
     second_cache_sm->set_lookup_url(cache_sm.get_lookup_url());
     if (t_state.cache_info.object_read != NULL) {

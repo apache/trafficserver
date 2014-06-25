@@ -240,6 +240,7 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     int64_t used, total =0;
     float percent_full;
+
     used =  cache_bytes_used(volume);
     RecSetGlobalRawStatSum(rsb, id, used);
     RecRawStatSyncSum(name, data_type, data, rsb, id);
@@ -647,7 +648,7 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        CacheDisk *disk = NEW(new CacheDisk());
+        CacheDisk *disk = new CacheDisk();
         Debug("cache_hosting", "interim Disk: %d, blocks: %d", gn_interim_disks, blocks);
         int sector_size = sd->hw_sector_size;
         if (sector_size < cache_config_force_sector_size)
@@ -731,7 +732,7 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        gdisks[gndisks] = NEW(new CacheDisk());
+        gdisks[gndisks] = new CacheDisk();
         gdisks[gndisks]->forced_volume_num = sd->vol_num;
         Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
         int sector_size = sd->hw_sector_size;
@@ -745,7 +746,7 @@ CacheProcessor::start_internal(int flags)
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
         blocks = blocks - (skip >> STORE_BLOCK_SHIFT);
 #if AIO_MODE == AIO_MODE_NATIVE
-        eventProcessor.schedule_imm(NEW(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear)));
+        eventProcessor.schedule_imm(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear));
 #else
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
 #endif
@@ -853,19 +854,19 @@ CacheProcessor::diskInitialized()
       d->sync();
     }
     if (config_volumes.num_volumes == 0) {
-      theCache = NEW(new Cache());
+      theCache = new Cache();
       theCache->scheme = CACHE_HTTP_TYPE;
       theCache->open(clear, fix);
       return;
     }
     if (config_volumes.num_http_volumes != 0) {
-      theCache = NEW(new Cache());
+      theCache = new Cache();
       theCache->scheme = CACHE_HTTP_TYPE;
       theCache->open(clear, fix);
     }
 
     if (config_volumes.num_stream_volumes != 0) {
-      theStreamCache = NEW(new Cache());
+      theStreamCache = new Cache();
       theStreamCache->scheme = CACHE_RTSP_TYPE;
       theStreamCache->open(clear, fix);
     }
@@ -2241,7 +2242,7 @@ Cache::open_done() {
     return 0;
   }
 
-  hosttable = NEW(new CacheHostTable(this, scheme));
+  hosttable = new CacheHostTable(this, scheme);
   hosttable->register_config_callback(&hosttable);
 
   if (hosttable->gen_host_rec.num_cachevols == 0)
@@ -2275,7 +2276,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */) {
         if (cp->disk_vols[i] && !DISK_BAD(cp->disk_vols[i]->disk)) {
           DiskVolBlockQueue *q = cp->disk_vols[i]->dpb_queue.head;
           for (; q; q = q->link.next) {
-            cp->vols[vol_no] = NEW(new Vol());
+            cp->vols[vol_no] = new Vol();
             CacheDisk *d = cp->disk_vols[i]->disk;
             cp->vols[vol_no]->disk = d;
             cp->vols[vol_no]->fd = d->fd;
@@ -2285,7 +2286,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */) {
 
             bool vol_clear = clear || d->cleared || q->new_block;
 #if AIO_MODE == AIO_MODE_NATIVE
-            eventProcessor.schedule_imm(NEW(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear)));
+            eventProcessor.schedule_imm(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear));
 #else
             cp->vols[vol_no]->init(d->path, blocks, q->b->offset, vol_clear);
 #endif
@@ -2533,13 +2534,15 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ink_assert(vol->mutex->thread_holding == this_ethread());
 #if TS_USE_INTERIM_CACHE == 1
   uint64_t o = dir_get_offset(&dir);
-  if(f.read_from_interim && mts && mts->rewrite)
+  if (f.read_from_interim && mts && mts->rewrite) {
     goto LinterimRead;
+  }
 #else
   int64_t o = dir_offset(&dir);
 #endif
-  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o))
+  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o)) {
     goto LramHit;
+  }
 
   // check if it was read in the last open_read call
 #if TS_USE_INTERIM_CACHE == 1
@@ -2820,7 +2823,7 @@ cplist_init()
       if (!p) {
         // did not find a volume in the cache vol list...create
         // a new one
-        CacheVol *new_p = NEW(new CacheVol());
+        CacheVol *new_p = new CacheVol();
         new_p->vol_number = dp[j]->vol_number;
         new_p->num_vols = dp[j]->num_volblocks;
         new_p->size = dp[j]->size;
@@ -2853,18 +2856,20 @@ cplist_update()
           /* delete this volume from all the disks */
           int d_no;
           int clearCV = 1;
+
           for (d_no = 0; d_no < gndisks; d_no++) {
-              if (cp->disk_vols[d_no]) {
-                 if(cp->disk_vols[d_no]->disk->forced_volume_num == cp->vol_number) {
-                    clearCV = 0;
-                    config_vol->cachep = cp;
-                 } else {
-                    cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
-                 }
-             }
+            if (cp->disk_vols[d_no]) {
+              if (cp->disk_vols[d_no]->disk->forced_volume_num == cp->vol_number) {
+                clearCV = 0;
+                config_vol->cachep = cp;
+              } else {
+                cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
+              }
+            }
           }
-          if (clearCV)
-              config_vol = NULL;
+          if (clearCV) {
+            config_vol = NULL;
+          }
         }
         break;
       }
@@ -2889,27 +2894,31 @@ cplist_update()
   }
 }
 
-static int fillExclusiveDisks(CacheVol *cp) {
+static int
+fillExclusiveDisks(CacheVol *cp)
+{
   int diskCount = 0;
   int volume_number = cp->vol_number;
+
   Debug("cache_init", "volume %d", volume_number);
+  for (int i = 0; i < gndisks; i++) {
+    if (gdisks[i]->forced_volume_num != volume_number) {
+      continue;
+    }
+    /* The user had created several volumes before - clear the disk
+       and create one volume for http */
+    for(int j = 0; j < (int)gdisks[i]->header->num_volumes; j++) {
+      if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
+        Note("Clearing Disk: %s", gdisks[i]->path);
+        gdisks[i]->delete_all_volumes();
+        break;
+      }
+    }
+    diskCount++;
 
-   for (int i = 0; i < gndisks; i++) {
-     if(gdisks[i]->forced_volume_num != volume_number)
-       continue;
-     /* The user had created several volumes before - clear the disk
-        and create one volume for http */
-     for(int j = 0; j < (int)gdisks[i]->header->num_volumes; j++) {
-       if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
-         Note("Clearing Disk: %s", gdisks[i]->path);
-         gdisks[i]->delete_all_volumes();
-         break;
-       }
-     }
+    int64_t size_diff = gdisks[i]->num_usable_blocks;
+    DiskVolBlock *dpb;
 
-     diskCount++;
-     int64_t size_diff = gdisks[i]->num_usable_blocks;
-     DiskVolBlock *dpb;
      do {
        dpb = gdisks[i]->create_volume(volume_number, size_diff, cp->scheme);
        if (dpb) {
@@ -2940,7 +2949,7 @@ cplist_reconfigure()
   gnvol = 0;
   if (config_volumes.num_volumes == 0) {
     /* only the http cache */
-    CacheVol *cp = NEW(new CacheVol());
+    CacheVol *cp = new CacheVol();
     cp->vol_number = 0;
     cp->scheme = CACHE_HTTP_TYPE;
     cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
@@ -3038,7 +3047,7 @@ cplist_reconfigure()
 
       size_in_blocks = ((off_t) size * 1024 * 1024) / STORE_BLOCK_SIZE;
 
-      if(config_vol->cachep && config_vol->cachep->num_vols > 0) {
+      if (config_vol->cachep && config_vol->cachep->num_vols > 0) {
         gnvol += config_vol->cachep->num_vols;
         continue;
       }
@@ -3046,7 +3055,7 @@ cplist_reconfigure()
       if (!config_vol->cachep) {
         // we did not find a corresponding entry in cache vol...creat one
 
-        CacheVol *new_cp = NEW(new CacheVol());
+        CacheVol *new_cp = new CacheVol();
         new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
         if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp))
@@ -3156,7 +3165,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
 
   cp->vol_number = volume_number;
   cp->scheme = scheme;
-  if(fillExclusiveDisks(cp)) {
+  if (fillExclusiveDisks(cp)) {
     Debug("cache_init", "volume successfully filled from forced disks: volume_number=%d", volume_number);
     return 0;
   }

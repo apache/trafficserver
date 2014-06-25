@@ -610,10 +610,10 @@ mime_init()
     init = 0;
     
     hdrtoken_init();
-    day_names_dfa = NEW(new DFA);
+    day_names_dfa = new DFA;
     day_names_dfa->compile(day_names, SIZEOF(day_names), RE_CASE_INSENSITIVE);
     
-    month_names_dfa = NEW(new DFA);
+    month_names_dfa = new DFA;
     month_names_dfa->compile(month_names, SIZEOF(month_names), RE_CASE_INSENSITIVE);
     
     MIME_FIELD_ACCEPT = hdrtoken_string_to_wks("Accept");

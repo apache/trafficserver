@@ -28,6 +28,7 @@
 #include <ts/ink_resolver.h>
 #include <ts/apidefs.h>
 #include <ts/Vec.h>
+#include <ts/apidefs.h>
 
 /// Load default inbound IP addresses from the configuration file.
 void RecHttpLoadIp(
@@ -35,6 +36,127 @@ void RecHttpLoadIp(
   IpAddr& ip4, ///< [out] IPv4 address.
   IpAddr& ip6  ///< [out] Ipv6 address.
 );
+
+/** A set of session protocols.
+    This depends on using @c SessionProtocolNameRegistry to get the indices.
+*/
+class SessionProtocolSet {
+  typedef SessionProtocolSet self; ///< Self reference type.
+  /// Storage for the set - a bit vector.
+  uint32_t m_bits;
+public:
+  // The right way.
+  //  static int const MAX = sizeof(m_bits) * CHAR_BIT;
+  // The RHEL5/gcc 4.1.2 way
+  static int const MAX = sizeof(uint32_t) * 8;
+  /// Default constructor.
+  /// Constructs and empty set.
+  SessionProtocolSet() : m_bits(0) { }
+
+  uint32_t indexToMask(int idx) const {
+    return 0 <= idx && idx < static_cast<int>(MAX)
+      ? static_cast<uint32_t>(1) << idx
+      : 0
+      ;
+  }
+
+  /// Mark the protocol at @a idx as present.
+  void markIn(int idx) { m_bits |= this->indexToMask(idx); }
+  /// Mark all the protocols in @a that as present in @a this.
+  void markIn(self const& that) { m_bits |= that.m_bits; }
+  /// Mark the protocol at a idx as not present.
+  void markOut(int idx) { m_bits &= ~this->indexToMask(idx); }
+  /// Mark the protocols in @a that as not in @a this.
+  void markOut(self const& that) { m_bits &= ~(that.m_bits); }
+  /// Test if a protocol is in the set.
+  bool contains(int idx) const { return 0 != (m_bits & this->indexToMask(idx)); }
+  /// Test if all the protocols in @a that are in @a this protocol set.
+  bool contains(self const& that) const { return that.m_bits == (that.m_bits & m_bits); }
+  /// Mark all possible protocols.
+  void markAllIn() { m_bits = ~static_cast<uint32_t>(0); }
+  /// Clear all protocols.
+  void markAllOut() { m_bits = 0; }
+
+  /// Check for intersection.
+  bool intersects(self const& that) { return 0 != (m_bits & that.m_bits); }
+
+  /// Check for empty set.
+  bool isEmpty() const { return m_bits == 0; }
+
+  /// Equality (identical sets).
+  bool operator == (self const& that) const { return m_bits == that.m_bits; }
+};
+
+// Predefined sets of protocols, useful for configuration.
+extern SessionProtocolSet HTTP_PROTOCOL_SET;
+extern SessionProtocolSet HTTP2_PROTOCOL_SET;
+extern SessionProtocolSet SPDY_PROTOCOL_SET;
+extern SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
+extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
+
+/** Registered session protocol names.
+
+    We do this to avoid lots of string compares. By normalizing the
+    string names we can just compare their indices in this table.
+
+    @internal To simplify the implementation we limit the maximum
+    number of strings to 32. That will be sufficient for the forseeable
+    future. We can come back to this if it ever becomes a problem.
+
+    @internal Because we have so few strings we just use a linear search.
+    If the size gets much larger we should consider doing something more
+    clever.
+*/
+class SessionProtocolNameRegistry {
+ public:
+  static int const MAX  = SessionProtocolSet::MAX; ///< Maximum # of registered names.
+  static int const INVALID = -1; ///< Normalized invalid index value.
+
+  /// Default constructor.
+  /// Creates empty registry with no names.
+  SessionProtocolNameRegistry();
+
+  /// Destructor.
+  /// Cleans up strings.
+  ~SessionProtocolNameRegistry();
+
+  /** Get the index for @a name, registering it if needed.
+      The name is copied internally.
+      @return The index for the registered @a name.
+  */
+  int toIndex(char const* name);
+
+  /** Get the index for @a name, registering it if needed.
+      The caller @b guarantees @a name is persistent and immutable.
+      @return The index for the registered @a name.
+  */
+  int toIndexConst(char const* name);
+
+  /** Convert a @a name to an index.
+      @return The index for @a name or @c INVALID if it is not registered.
+  */
+  int indexFor(char const* name) const;
+
+  /** Convert an @a index to the corresponding name.
+      @return A pointer to the name or @c NULL if the index isn't registered.
+  */
+  char const* nameFor(int index) const;
+
+  /// Mark protocols as present in @a sp_set based on the names in @a value.
+  /// The names can be separated by ;/|,: and space.
+  /// @internal This is separated out to make it easy to access from the plugin API
+  /// implementation.
+  void markIn(char const* value, SessionProtocolSet& sp_set);
+
+ protected:
+  unsigned int m_n; ///< Index of first unused slot.
+  char const* m_names[MAX]; ///< Pointers to registered names.
+  uint8_t m_flags[MAX]; ///< Flags for each name.
+
+  static uint8_t const F_ALLOCATED = 0x1; ///< Flag for allocated by this instance.
+};
+
+extern SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
 /** Description of an proxy port.
 
@@ -47,41 +169,8 @@ void RecHttpLoadIp(
     without spaces. The options are applied in left to right order. If
     options do not conflict the order is irrelevant.
 
-    Current supported options (case insensitive):
-
-    - ipv4 : Use IPv4.
-    - ipv6 : Use IPv6.
-    - ssl : SSL port.
-    - compressed : Compressed data.
-    - blind : Blind tunnel.
-    - tr-in : Inbound transparent (ignored if @c full is set).
-    - tr-out : Outbound transparent (ignored if @c full is set).
-    - tr-full : Fully transparent (inbound and outbound). Equivalent to "tr-in:tr-out".
-    - [number] : Port number.
-    - fd[number] : File descriptor.
-    - ip-in[IP addr] : Address to bind for inbound connections.
-    - ip-out[IP addr]: Address to bind for outbound connections.
-
-    For example, the string "ipv6:8080:full" means "Listen on port
-    8080 using IPv6 and full transparency". This is the same as
-    "8080:full:ipv6". The only option active by default is @c
-    ipv4. All others must be explicitly enabled. The port number
-    option is the only required option.
-
-    If @c ip-in or @c ip-out is used, the address family must agree
-    with the @c ipv4 or @c ipv6 option. If the address is IPv6, it
-    must be enclosed with brackets '[]' to distinguish its colons from
-    the value separating colons. An IPv4 may be enclosed in brackets
-    for constistency.
-
-    @note The previous notation is supported but deprecated.
-
-    @internal This is intended to replace the current bifurcated
-    processing that happens in Manager and Server. It also changes the
-    syntax so that a useful set of options can be supported and easily
-    extended as needed. Note that all options must start with a letter
-    - starting with a digit is reserved for the port value. Options
-    must not contain spaces or punctuation other than '-' and '_'.
+    IPv6 addresses must be enclosed by brackets. Unfortunate but colon is
+    so overloaded there's no other option.
  */
 struct HttpProxyPort {
 private:
@@ -101,8 +190,8 @@ public:
 
   int m_fd; ///< Pre-opened file descriptor if present.
   TransportType m_type; ///< Type of connection.
-  int m_port; ///< Port on which to listen.
-  unsigned int m_family; ///< IP address family.
+  in_port_t m_port; ///< Port on which to listen.
+  uint8_t m_family; ///< IP address family.
   /// True if inbound connects (from client) are transparent.
   bool m_inbound_transparent_p;
   /// True if outbound connections (to origin servers) are transparent.
@@ -121,6 +210,8 @@ public:
   HostResPreferenceOrder m_host_res_preference;
   /// Static preference list that is the default value.
   static HostResPreferenceOrder const DEFAULT_HOST_RES_PREFERENCE;
+  /// Enabled session transports for this port.
+  SessionProtocolSet m_session_protocol_preference;
 
   /// Default constructor.
   HttpProxyPort();
@@ -149,10 +240,8 @@ public:
 
   /** Global instance.
 
-      In general this data needs to be loaded only once. To support
-      that a global instance is provided. If accessed, it will
-      automatically load itself from the configuration data if not
-      already loaded.
+      This is provided because most of the work with this data is used as a singleton
+      and it's handy to encapsulate it here.
   */
   static Vec<self>& global();
 
@@ -267,12 +356,24 @@ public:
   static char const* const OPT_BLIND_TUNNEL; ///< Blind tunnel.
   static char const* const OPT_COMPRESSED; ///< Compressed.
   static char const* const OPT_HOST_RES_PREFIX; ///< Set DNS family preference.
+  static char const* const OPT_PROTO_PREFIX; ///< Transport layer protocols.
 
   static Vec<self>& m_global; ///< Global ("default") data.
 
 protected:
   /// Process @a value for DNS resolution family preferences.
-  void processFamilyPreferences(char const* value);
+  void processFamilyPreference(char const* value);
+  /// Process @a value for session protocol preferences.
+  void processSessionProtocolPreference(char const* value);
+
+  /** Check a prefix option and find the value.
+      @return The address of the start of the value, or @c NULL if the prefix doesn't match.
+  */
+
+  char const* checkPrefix( char const* src ///< Input text
+                         , char const* prefix ///< Keyword prefix
+                         , size_t prefix_len ///< Length of keyword prefix.
+                         );
 };
 
 inline bool HttpProxyPort::isSSL() const { return TRANSPORT_SSL == m_type; }
@@ -310,5 +411,10 @@ HttpProxyPort::hasSSL() {
 inline HttpProxyPort* HttpProxyPort::findHttp(uint16_t family) {
   return self::findHttp(m_global, family);
 }
+
+/** Session Protocol initialization.
+    This must be called before any proxy port parsing is done.
+*/
+extern void ts_session_protocol_well_known_name_indices_init();
 
 #endif // I_REC_HTTP_H

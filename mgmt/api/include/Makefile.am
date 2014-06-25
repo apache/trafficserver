@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-includedir=$(prefix)/include/ts
+library_includedir=$(includedir)/ts
 
-include_HEADERS = \
+library_include_HEADERS = \
   mgmtapi.h

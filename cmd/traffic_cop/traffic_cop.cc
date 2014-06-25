@@ -719,7 +719,7 @@ spawn_manager()
     cop_log(COP_WARNING, "rename %s to %s as it is not accessible.\n", log_file, old_log_file);
   }
   // coverity[toctou]
-  if ((log_fd = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0640)) < 0) {
+  if ((log_fd = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0644)) < 0) {
     cop_log(COP_WARNING, "unable to open log file \"%s\" [%d '%s']\n", log_file, errno, strerror(errno));
   }
 

@@ -34,9 +34,3 @@ ${ATS_MAKE} asf-dist
 # Make an "atomic" copy of the artifact (and leave it here for the archive)
 cp trafficserver-*.tar.bz2 ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2.new
 mv ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2.new ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2
-
-# Duplicate the current source tree, such that we can run verifications on this
-# tree in parallel on the jenkins master.
-cd "${WORKSPACE}"
-rsync --delete --exclude '*.tar.bz2' -av src/ src_in-tree
-rsync --delete --exclude '*.tar.bz2' -av src/ src_out-of-tree

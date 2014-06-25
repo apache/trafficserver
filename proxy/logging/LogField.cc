@@ -30,7 +30,6 @@
 #include "libts.h"
 
 #include "Error.h"
-#include "Resource.h"
 #include "LogUtils.h"
 #include "LogField.h"
 #include "LogBuffer.h"
@@ -538,7 +537,7 @@ LogFieldList::add(LogField *field, bool copy)
   ink_assert(field != NULL);
 
   if (copy) {
-    m_field_list.enqueue(NEW(new LogField(*field)));
+    m_field_list.enqueue(new LogField(*field));
   } else {
     m_field_list.enqueue(field);
   }

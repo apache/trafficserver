@@ -482,7 +482,7 @@ probe.
 
 Given an ID, the top half (64 bits) is used as a :ref:`segment <dir-segment>` index, taken modulo the number of segments in
 the directory. The bottom half is used as a :ref:`bucket <dir-bucket>` index, taken modulo the number of buckets per
-segment. The :arg:`last_collision` value is used to mark the last matching entry returned by `dir_probe`.
+segment. The :arg:`last_collision` value is used to mark the last matching entry returned by :cpp:func:`dir_probe`.
 
 After computing the appropriate bucket, the entries in that bucket are searched to find a match. In this case a match is
 detected by comparison of the bottom 12 bits of the cache ID (the *cache tag*). The search starts at the base entry for
@@ -551,7 +551,15 @@ The checks that are done are
       In addition if a TTL is set for rule that matches in :file:`cache.config` then this check is not done.
 
    Range Request
-      Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in :file:`records.config` is non-zero. This does not mean the range request can be cached, only that it might be satisfiable from the cache.
+      Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in
+      :file:`records.config` is non-zero. This does not mean the range request
+	    can be cached, only that it might be satisfiable from the
+	    cache. In addition, :ts:cv:`proxy.config.http.cache.range.write`
+	    can be set to try to force a write on a range request. This
+	    probably has little value at the moment, but if for example the
+	    origin server ignores the ``Range:`` header, this option can allow
+	    for the response to be cached. It is disabled by default, for
+	    best performance.
 
 A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request to be viewed as cache valid.
 
@@ -794,7 +802,7 @@ basically four types,
 * Disk
 * Raw device
 
-After creating all the `Span` instances they are grouped by device id to internal linked lists attached to the
+After creating all the :cpp:class:`Span` instances they are grouped by device id to internal linked lists attached to the
 :cpp:member:`Store::disk` array [#]_. Spans that refer to the same directory, disk, or raw device are coalesced in to a
 single span. Spans that refer to the same file with overlapping offsets are also coalesced [#]_. This is all done in
 :c:func:`ink_cache_init()` called during startup.

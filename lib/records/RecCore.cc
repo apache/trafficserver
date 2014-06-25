@@ -267,6 +267,15 @@ RecLinkConfigByte(const char *name, RecByte * rec_byte)
   return RecRegisterConfigUpdateCb(name, link_byte, (void *) rec_byte);
 }
 
+int
+RecLinkConfigBool(const char *name, RecBool * rec_bool)
+{
+  if (RecGetRecordBool(name, rec_bool) == REC_ERR_FAIL) {
+    return REC_ERR_FAIL;
+  }
+  return RecRegisterConfigUpdateCb(name, link_byte, (void *) rec_bool);
+}
+
 
 //-------------------------------------------------------------------------
 // RecRegisterConfigUpdateCb
@@ -404,6 +413,15 @@ RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
   return err;
 }
 
+int
+RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
+{
+  int err;
+  RecData data;
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY)
+    *rec_bool = 0 != data.rec_int;
+  return err;
+}
 
 //-------------------------------------------------------------------------
 // RecGetRec Attributes
@@ -1165,8 +1183,6 @@ RecConfigReadPersistentStatsPath()
 //-------------------------------------------------------------------------
 // REC_SignalManager (TS)
 //-------------------------------------------------------------------------
-#if defined (REC_BUILD_MGMT)
-
 #if defined(LOCAL_MANAGER)
 
 #include "LocalManager.h"
@@ -1200,19 +1216,3 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
 }
 
 #endif // LOCAL_MANAGER
-
-#else
-
-void
-RecSignalManager(int /* id ATS_UNUSED */, const char *msg)
-{
-  RecLog(DL_Warning, msg);
-}
-
-int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
-{
-  return -1;
-}
-
-#endif // REC_BUILD_MGMT
