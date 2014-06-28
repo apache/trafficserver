@@ -76,6 +76,8 @@
 extern "C" {
 #endif                          /* __cplusplus */
 
+  typedef struct iovec IOVec;
+
   void *  ats_malloc(size_t size);
   void *  ats_calloc(size_t nelem, size_t elsize);
   void *  ats_realloc(void *ptr, size_t size);

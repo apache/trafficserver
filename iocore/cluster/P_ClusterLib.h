@@ -41,7 +41,6 @@ extern void cluster_reschedule(ClusterHandler *, ClusterVConnection *, ClusterVC
 extern void cluster_disable(ClusterHandler *, ClusterVConnection *, ClusterVConnState *);
 extern void cluster_update_priority(ClusterHandler *, ClusterVConnection *, ClusterVConnState *, int64_t, int64_t);
 extern void cluster_bump(ClusterHandler *, ClusterVConnectionBase *, ClusterVConnState *, int);
-extern int iov_memcpy(IOVec *, int, int, char *);
 
 #if TEST_PARTIAL_READS
 extern int partial_readv(int, IOVec *, int, int);

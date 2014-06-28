@@ -64,27 +64,6 @@ cluster_reschedule_offset(ClusterHandler * ch, ClusterVConnection * vc, ClusterV
     ClusterVC_enqueue_write(ch->write_vcs[(ch->cur_vcs + offset) % CLUSTER_BUCKETS], vc);
   }
 }
-
-//
-//  iov_memcpy() -- struct iov based memcpy()
-//
-int
-iov_memcpy(IOVec * iov, int n_iov, int did, char *bb_arg)
-{
-  char *bb = bb_arg;
-  for (int i = 0; i < n_iov; i++) {
-    int len = iov[i].iov_len;
-    did -= len;
-    if (did < 0) {
-      // fprintf(stderr,"iov_memcpy %X %d\n",iov[i].iov_base+(len+did),-did);
-      memcpy(bb, (char *) iov[i].iov_base + (len + did), -did);
-      bb += -did;
-      did = 0;
-    }
-  }
-  return bb - bb_arg;
-}
-
 /*************************************************************************/
 // ClusterVCToken member functions (Public Class)
 /*************************************************************************/

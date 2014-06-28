@@ -31,7 +31,6 @@
 #define enable_read(_vc) (_vc)->read.enabled = 1
 #define enable_write(_vc) (_vc)->write.enabled = 1
 
-typedef struct iovec IOVec;
 #ifndef UIO_MAXIOV
 #define NET_MAX_IOV 16          // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
 #else
