@@ -45,6 +45,7 @@ public:
 
   void init_comm()
   {
+    is_internal_request = true;
     recursion = 0;
     req_finished = 0;
     resp_finished = 0;
@@ -120,6 +121,8 @@ public:
   void ext_write_data(const void *data, size_t len);
   void ext_set_user_data(void *data);
   void* ext_get_user_data();
+  bool get_internal_request() { return is_internal_request; }
+  void set_internal_request(bool val) { is_internal_request = val; }
 
 private:
   int InvokePlugin(int event, void*data);
@@ -160,6 +163,7 @@ private:
   bool req_finished;
   bool header_done;
   bool resp_finished;
+  bool is_internal_request;
   IpEndpoint _addr;
   int resp_is_chunked;
   int fetch_flags;

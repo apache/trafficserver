@@ -75,6 +75,18 @@ FetchSM::httpConnect()
   Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
   http_vc = reinterpret_cast<PluginVC*>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
 
+  /*
+   * TS-2906: We need a way to unset internal request when using FetchSM, the use case for this
+   * is SPDY when it creates outgoing requests it uses FetchSM and the outgoing requests
+   * are spawned via SPDY SYN packets which are definitely not internal requests.
+   */
+  if (!is_internal_request) {
+    PluginVC* other_side = reinterpret_cast<PluginVC*>(http_vc)->get_other_side();
+    if (other_side != NULL) {
+      other_side->set_is_internal_request(false);
+    }
+  }
+
   read_vio = http_vc->do_io_read(this, INT64_MAX, resp_buffer);
   write_vio = http_vc->do_io_write(this, getReqLen() + req_content_length, req_reader);
 }
@@ -494,6 +506,9 @@ FetchSM::ext_init(Continuation *cont, TSFetchMethod method,
   // Enable stream IO automatically.
   //
   fetch_flags = (TS_FETCH_FLAGS_STREAM | flags);
+  if (fetch_flags & TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST) {
+    set_internal_request(false);
+  }
 
   //
   // These options are not used when enable

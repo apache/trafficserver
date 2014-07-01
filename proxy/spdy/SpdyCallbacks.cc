@@ -182,6 +182,10 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
   // HTTP content should be dechunked before packed into SPDY.
   //
   fetch_flags = TS_FETCH_FLAGS_DECHUNK;
+
+  // TS-2906: FetchSM sets requests are internal requests, we need to not do that for SPDY streams.
+  fetch_flags |= TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST;
+
   req->fetch_sm = TSFetchCreate((TSCont)sm, method,
                                 url.c_str(), req->version.c_str(),
                                 client_addr, fetch_flags);

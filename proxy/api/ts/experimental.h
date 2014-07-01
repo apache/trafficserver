@@ -66,6 +66,7 @@ extern "C"
     TS_FETCH_FLAGS_STREAM = 1 << 1,    // enable stream IO
     TS_FETCH_FLAGS_DECHUNK = 1 << 2,   // dechunk body content
     TS_FETCH_FLAGS_NEWLOCK = 1 << 3,   // allocate new lock for fetch sm
+    TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4 // Allow this fetch to be created as a non-internal request.
   } TSFetchFlags;
 
   typedef struct tsapi_fetchsm* TSFetchSM;
