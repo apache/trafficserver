@@ -799,7 +799,7 @@ SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char 
       if (unlikely(diags->on())) {
         diags->log("ssl", DL_Debug, loc.file, loc.func, loc.line,
             "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
-          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "", 
+          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
           ip_buf_flag? ": peer address is " : "", ip_buf);
       }
     } else {
@@ -1447,7 +1447,7 @@ ssl_callback_session_ticket(
     RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
     HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
-    Note("create ticket for a new session");
+    Debug("ssl", "create ticket for a new session");
 
     return 0;
   } else if (enc == 0) {
@@ -1459,7 +1459,7 @@ ssl_callback_session_ticket(
     EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
     HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
 
-    Note("verify the ticket for an existing session." );
+    Debug("ssl", "verify the ticket for an existing session.");
     return 1;
   }
 
