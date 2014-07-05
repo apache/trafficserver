@@ -1512,7 +1512,7 @@ ssl_callback_session_ticket(
     return 0;
   } else if (enc == 0) {
     if (memcmp(keyname, ssl_ticket_key->key_name, 16)) {
-      Error("keyname is not consistent.");
+      Debug("ssl", "keyname is not consistent.");
       SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
       return 0;
     }
