@@ -1507,7 +1507,8 @@ ssl_callback_session_ticket(
     RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
     HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
-    Debug("ssl", "create ticket for a new session");
+
+    Debug("ssl", "create ticket for a new session.");
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
     return 0;
   } else if (enc == 0) {
