@@ -644,6 +644,21 @@ SSLInitializeStatistics()
                      RECD_INT, RECP_PERSISTENT, (int) ssl_total_success_handshake_count_stat,
                      RecRawStatSyncCount);
 
+  // TLS tickets
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_created",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_created_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_verified_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_not_found",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_not_found_stat,
+                     RecRawStatSyncCount);
+  // TODO: ticket renewal is not used right now.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_renewed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_renewed_stat,
+                     RecRawStatSyncCount);
+
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
@@ -1493,11 +1508,12 @@ ssl_callback_session_ticket(
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
     HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
     Debug("ssl", "create ticket for a new session");
-
+    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
     return 0;
   } else if (enc == 0) {
     if (memcmp(keyname, ssl_ticket_key->key_name, 16)) {
       Error("keyname is not consistent.");
+      SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
       return 0;
     }
 
@@ -1505,6 +1521,7 @@ ssl_callback_session_ticket(
     HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
 
     Debug("ssl", "verify the ticket for an existing session.");
+    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
     return 1;
   }
 

@@ -64,6 +64,10 @@ enum SSL_Stats
   ssl_user_agent_session_timeout_stat,
   ssl_total_handshake_time_stat,
   ssl_total_success_handshake_count_stat,
+  ssl_total_tickets_created_stat,
+  ssl_total_tickets_verified_stat,
+  ssl_total_tickets_not_found_stat,
+  ssl_total_tickets_renewed_stat,
 
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end = 300,
