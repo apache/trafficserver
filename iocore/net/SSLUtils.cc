@@ -59,6 +59,7 @@
 #define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
 #define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
 #define SSL_KEY_DIALOG        "ssl_key_dialog"
+#define SSL_CERT_SEPARATE_DELIM ','
 
 // openssl version must be 0.9.4 or greater
 #if (OPENSSL_VERSION_NUMBER < 0x00090400L)
@@ -88,6 +89,7 @@ struct ssl_user_config
   int session_ticket_enabled;  // ssl_ticket_enabled - session ticket enabled
   xptr<char> addr;   // dest_ip - IPv[64] address to match
   xptr<char> cert;   // ssl_cert_name - certificate
+  xptr<char> first_cert; // the first certificate name when multiple cert files are in 'ssl_cert_name'
   xptr<char> ca;     // ssl_ca_name - CA public certificate
   xptr<char> key;    // ssl_key_name - Private key
   xptr<char> ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
@@ -876,6 +878,37 @@ SSLDefaultServerContext()
   return SSL_CTX_new(meth);
 }
 
+static bool
+SSLPrivateKeyHandler(
+    SSL_CTX * ctx,
+    const SSLConfigParams * params,
+    const xptr<char>& completeServerCertPath,
+    const char * keyPath)
+{
+  if (!keyPath) {
+    // assume private key is contained in cert obtained from multicert file.
+    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
+      SSLError("failed to load server private key from %s", (const char *) completeServerCertPath);
+      return false;
+    }
+  } else if (params->serverKeyPathOnly != NULL) {
+    xptr<char> completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
+    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
+      SSLError("failed to load server private key from %s", (const char *) completeServerKeyPath);
+      return false;
+    }
+  } else {
+    SSLError("empty SSL private key path in records.config");
+  }
+
+  if (!SSL_CTX_check_private_key(ctx)) {
+    SSLError("server private key does not match the certificate public key");
+    return false;
+  }
+
+  return true;
+}
+
 SSL_CTX *
 SSLInitServerContext(
     const SSLConfigParams * params,
@@ -908,10 +941,15 @@ SSLInitServerContext(
     SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
   }
 #endif
+
+#ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
+  SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
+#endif
+
   SSL_CTX_set_quiet_shutdown(ctx, 1);
 
   // pass phrase dialog configuration
-  passphrase_cb_userdata ud(params, sslMultCertSettings.dialog, sslMultCertSettings.cert, sslMultCertSettings.key);
+  passphrase_cb_userdata ud(params, sslMultCertSettings.dialog, sslMultCertSettings.first_cert, sslMultCertSettings.key);
 
   if (sslMultCertSettings.dialog) {
     pem_password_cb * passwd_cb = NULL;
@@ -933,16 +971,33 @@ SSLInitServerContext(
     SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
   }
 
-  // if sslMultCertSettings.cert == NULL, then we are initing the default context so skip server cert init
-  if (sslMultCertSettings.cert) {
-    // XXX OpenSSL recommends that we should use SSL_CTX_use_certificate_chain_file() here. That API
-    // also loads only the first certificate, but it allows the intermediate CA certificate chain to
-    // be in the same file. SSL_CTX_use_certificate_chain_file() was added in OpenSSL 0.9.3.
-    completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.cert);
-    if (!SSL_CTX_use_certificate_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load certificate from %s", (const char *) completeServerCertPath);
-      goto fail;
+  if (!params->serverCertChainFilename && !sslMultCertSettings.ca && sslMultCertSettings.cert) {
+    SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
+    SimpleTokenizer key_tok((char *)(sslMultCertSettings.key ? sslMultCertSettings.key : ""), SSL_CERT_SEPARATE_DELIM);
+
+    if (sslMultCertSettings.key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
+        Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
+        goto fail;
     }
+
+    for (const char * certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
+      completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
+      if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) < 0) {
+        SSLError(NULL, "failed to load certificate chain from %s", (const char *) completeServerCertPath);
+        goto fail;
+      }
+
+      const char * keyPath = key_tok.getNext();
+      if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
+        goto fail;
+      }
+    }
+  } else if (sslMultCertSettings.first_cert) { // For backward compatible
+      completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
+      if (!SSL_CTX_use_certificate_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
+          SSLError("failed to load certificate from %s", (const char *) completeServerCertPath);
+          goto fail;
+      }
 
     // First, load any CA chains from the global chain file.
     if (params->serverCertChainFilename) {
@@ -962,24 +1017,7 @@ SSLInitServerContext(
       }
     }
 
-    if (!sslMultCertSettings.key) {
-      // assume private key is contained in cert obtained from multicert file.
-      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
-        SSLError("failed to load server private key from %s", (const char *) completeServerCertPath);
-        goto fail;
-      }
-    } else if (params->serverKeyPathOnly != NULL) {
-      xptr<char> completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, sslMultCertSettings.key));
-      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
-        SSLError("failed to load server private key from %s", (const char *) completeServerKeyPath);
-        goto fail;
-      }
-    } else {
-      SSLError("empty SSL private key path in records.config");
-    }
-
-    if (!SSL_CTX_check_private_key(ctx)) {
-      SSLError("server private key does not match the certificate public key");
+    if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, sslMultCertSettings.key)) {
       goto fail;
     }
   }
@@ -1031,6 +1069,7 @@ SSLInitServerContext(
 fail:
   SSL_CLEAR_PW_REFERENCES(ud,ctx)
   SSL_CTX_free(ctx);
+
   return NULL;
 }
 
@@ -1237,7 +1276,7 @@ ssl_store_ssl_context(
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
 
-  certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.cert);
+  certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
 
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings.addr) {
@@ -1331,6 +1370,12 @@ ssl_extract_certificate(
   if (!sslMultCertSettings.cert) {
     Error("missing %s tag", SSL_CERT_TAG);
     return false;
+  }
+
+  SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
+  const char * first_cert = cert_tok.getNext();
+  if (first_cert) {
+      sslMultCertSettings.first_cert = ats_strdup(first_cert);
   }
 
   return true;

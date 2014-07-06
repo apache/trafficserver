@@ -46,10 +46,25 @@ Each :file:`ssl_multicert.config` line consists of a sequence of
 `key=value` fields that specify how Traffic Server should use a
 particular SSL certificate.
 
-ssl_cert_name=FILENAME
-  The name of the file containing the TLS certificate. `FILENAME` is
-  located relative to the directory specified by the
+ssl_cert_name=FILENAME[,FILENAME ...]
+  The name of the file containing the TLS certificate. `FILENAME`
+  is located relative to the directory specified by the
   :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
+  It may also include the intermediate CA certificates, sorted from
+  leaf to root.  At a minimum, the file must include a leaf
+  certificate.
+
+  When running with OpenSSL 1.0.2 or later, this directive can be
+  used to configure the intermediate CA chain on a per-certificate
+  basis.  Multiple chain files are separated by comma character.
+  For example, it is possible able to configure a ECDSA certificate
+  chain and a RSA certificate chain and serve them simultaneously,
+  allowing OpenSSL to determine which certificate would be used
+  when the TLS session cipher suites are negotiated.  Note that the
+  leaf certs in `FILENAME1` and `FILENAME2` must have the same
+  subjects and alternate names. The first certificate is used to
+  to match the client's SNI request.
+
   This is the only field that is required to be present.
 
 dest_ip=ADDRESS (optional)
@@ -151,6 +166,24 @@ private key name is specified.
     dest_ip=111.11.11.1 ssl_cert_name=server.pem
     dest_ip=11.1.1.1 ssl_cert_name=server1.pem
     dest_ip=* ssl_cert_name=default.pem
+
+The following example configures Traffic Server to use the ECDSA
+certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem``
+for all requests.
+
+::
+
+    dest_ip=* ssl_cert_name=ecdsa.pem,rsa.pem
+
+The following example configures Traffic Server to use the ECDSA
+certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem``
+for all requests, the public key and private key are in separate PEM files.
+Note that the number of files in ssl_key_name must match the files in ssl_cert_name,
+and they should be presented in the same order.
+
+::
+
+    dest_ip=* ssl_cert_name=ecdsa_pub.pem,rsa_pub.pem ssl_key_name=ecdsa_private.pem,rsa_private.pem
 
 The following example configures Traffic Server to use the SSL
 certificate ``server.pem`` and the private key ``serverKey.pem``

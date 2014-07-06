@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2893: improved support for ECDSA certificates
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
   *) [TS-2919] Omit git contol files from tarball releases.
 
   *) [TS-2906] SPDY incorrectly marks streams as internal requests
@@ -12,7 +15,7 @@ Changes with Apache Traffic Server 5.1.0
   *) [TS-2892] Keep alive post out enabled by default
 
   *) [TS-2889] Crash in FetchSM related to spdy FetchSM changes in 5.0.x
- 
+
   *) [TS-2891] Fix casting bug in remap_stats.
 
   *) [TS-2879] Remap errors and redirects should honor keep-alive
