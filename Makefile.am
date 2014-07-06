@@ -65,7 +65,7 @@ asf-distdir:
 	@$(am__remove_distdir)
 	test -d .git && git clone . $(distdir)
 	cd $(distdir) && git submodule update --init && autoreconf -i
-	rm -rf -- $(distdir)/autom4te.cache $(distdir)/.git $(distdir)/.gitignore $(distdir)/ci
+	$(RM) -r -- $(distdir)/autom4te.cache $(distdir)/ci `find $(distdir) -name .git -o -name .gitignore -o -name .gitmodules`
 
 asf-dist-sign: asf-dist
 	md5sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
