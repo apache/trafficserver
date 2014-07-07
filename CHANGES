@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2921] Fix build failure from TS-2893.
+   Author: Ryo Okubo <rokubo@yahoo-corp.jp>
+
   *) [TS-2893: improved support for ECDSA certificates
    Author: Wei Sun <sunwei@yahoo-inc.com>
 

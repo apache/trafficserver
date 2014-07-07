@@ -973,7 +973,7 @@ SSLInitServerContext(
 
   if (!params->serverCertChainFilename && !sslMultCertSettings.ca && sslMultCertSettings.cert) {
     SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
-    SimpleTokenizer key_tok((char *)(sslMultCertSettings.key ? sslMultCertSettings.key : ""), SSL_CERT_SEPARATE_DELIM);
+    SimpleTokenizer key_tok((char *)(sslMultCertSettings.key ? (const char *)sslMultCertSettings.key : ats_strdup("")), SSL_CERT_SEPARATE_DELIM);
 
     if (sslMultCertSettings.key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
         Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
@@ -983,7 +983,7 @@ SSLInitServerContext(
     for (const char * certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
       completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
       if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) < 0) {
-        SSLError(NULL, "failed to load certificate chain from %s", (const char *) completeServerCertPath);
+        SSLError("failed to load certificate chain from %s", (const char *)completeServerCertPath);
         goto fail;
       }
 
