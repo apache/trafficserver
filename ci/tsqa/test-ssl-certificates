@@ -51,15 +51,33 @@ make_ssl_certificate() {
 
 openssl_verify_certificate() {
   local certname="$1" # Certificate CN to expect
+  local result="$TSQA_ROOT/${certname}.result"
+  local commonName=
   local status=1  # default status is FAIL
 
   shift
-  msg "checking for the $certname certificate ..."
+  msg "checking for the $certname certificate ..." | tee -a "$TSQA_ROOT/$TSQA_TESTNAME.log"
 
   # When s_client verifies the certificate, it will log a line that looks like:
   # depth=0 C = US, ST = CA, L = Norm, O = TrafficServer, OU = Test, CN = address.tsqa.trafficserver.apache.org
-  $OPENSSL s_client "$@" < /dev/null 2>&1 | tee -a "$TSQA_ROOT/$TSQA_TESTNAME.log" | \
-    grep -q "depth=0.* CN = \Q$certname\E"
+  $OPENSSL s_client "$@" < /dev/null > "$result" 2>&1
+  if [ "$?" != 0 ]; then
+    fail "openssl check for $certname failed"
+  fi
+
+  # The output of this openssl formulation is:
+  # subject=
+  #     countryName               = US
+  #     stateOrProvinceName       = CA
+  #     localityName              = Norm
+  #     organizationName          = TrafficServer
+  #     organizationalUnitName    = Test
+  #     commonName                = *.tsqa.trafficserver.apache.org
+  commonName=$(openssl x509 -in "$result" -noout -subject -nameopt multiline | awk '/commonName/{print $3}')
+
+  if [ "$commonName" != "$certname" ]; then
+    fail "received certificate CN \"$commonName\", expected \"$certname\""
+  fi
 
   if [ "$?" != 0 ]; then
     fail "certificate name $certname did not match"
