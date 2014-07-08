@@ -161,7 +161,7 @@ Http2ConnectionState::main_event_handler(int event, void * edata)
 }
 
 int
-Http2ConnectionState::state_closed(int event, void * edata)
+Http2ConnectionState::state_closed(int /* event */, void * /* edata */)
 {
   return 0;
 }

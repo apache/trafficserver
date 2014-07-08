@@ -81,7 +81,7 @@ public:
   // Once the frame has been serialized, update the length.
   void finalize(size_t nbytes) {
     if (this->ioblock) {
-      ink_assert(nbytes <= this->ioblock->write_avail());
+      ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
       this->ioblock->fill(nbytes);
 
       this->hdr.cooked.length = this->ioblock->size() - HTTP2_FRAME_HEADER_LEN;

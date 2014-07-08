@@ -50,7 +50,7 @@ proto_is_http2(IOBufferReader * reader)
     return false;
   }
 
-  ink_assert(nbytes <= HTTP2_CONNECTION_PREFACE_LEN);
+  ink_assert(nbytes <= (int64_t)HTTP2_CONNECTION_PREFACE_LEN);
   return memcmp(HTTP2_CONNECTION_PREFACE, buf, nbytes) == 0;
 }
 
