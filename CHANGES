@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2929] SPDY should allow arbitrary methods
+
   *) [TS-2921] Fix build failure from TS-2893.
    Author: Ryo Okubo <rokubo@yahoo-corp.jp>
 
