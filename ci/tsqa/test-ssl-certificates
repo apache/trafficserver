@@ -73,7 +73,7 @@ openssl_verify_certificate() {
   #     organizationName          = TrafficServer
   #     organizationalUnitName    = Test
   #     commonName                = *.tsqa.trafficserver.apache.org
-  commonName=$(openssl x509 -in "$result" -noout -subject -nameopt multiline | awk '/commonName/{print $3}')
+  commonName=$($OPENSSL x509 -in "$result" -noout -subject -nameopt multiline | awk '/commonName/{print $3}')
 
   if [ "$commonName" != "$certname" ]; then
     fail "received certificate CN \"$commonName\", expected \"$certname\""
