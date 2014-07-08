@@ -7281,7 +7281,7 @@ TSFetchUrl(const char* headers, int request_len, sockaddr const* ip , TSCont con
 }
 
 TSFetchSM
-TSFetchCreate(TSCont contp, TSFetchMethod method,
+TSFetchCreate(TSCont contp, const char *method,
               const char *url, const char *version,
               struct sockaddr const* client_addr, int flags)
 {

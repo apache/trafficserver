@@ -27,20 +27,6 @@
 #include "HTTP.h"
 #include "PluginVC.h"
 
-static const char *http_method[] = {
-  "NONE",
-  "GET",
-  "POST",
-  "CONNECT",
-  "DELETE",
-  "HEAD",
-  "PURGE",
-  "PUT",
-  "OPTIONS",
-  "TRACE",
-  "LAST",
-};
-
 #define DEBUG_TAG "FetchSM"
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 
@@ -123,9 +109,6 @@ FetchSM::has_body()
   // The following code comply with HTTP/1.1:
   // http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
   //
-
-  if (req_method == TS_FETCH_METHOD_HEAD)
-    return false;
 
   hdr = &client_response_hdr;
 
@@ -486,7 +469,7 @@ FetchSM::fetch_handler(int event, void *edata)
 }
 
 void
-FetchSM::ext_init(Continuation *cont, TSFetchMethod method,
+FetchSM::ext_init(Continuation *cont, const char *method,
                   const char *url, const char *version,
                   const sockaddr *client_addr, int flags)
 {
@@ -517,8 +500,7 @@ FetchSM::ext_init(Continuation *cont, TSFetchMethod method,
   memset(&callback_options, 0, sizeof(callback_options));
   memset(&callback_events, 0, sizeof(callback_events));
 
-  req_method = method;
-  req_buffer->write(http_method[method], strlen(http_method[method]));
+  req_buffer->write(method, strlen(method));
   req_buffer->write(" ", 1);
   req_buffer->write(url, strlen(url));
   req_buffer->write(" ", 1);
@@ -551,9 +533,7 @@ FetchSM::ext_lanuch()
 void
 FetchSM::ext_write_data(const void *data, size_t len)
 {
-  bool writeReady = (header_done ||
-		    (req_method == TS_FETCH_METHOD_POST) ||
-		    (req_method == TS_FETCH_METHOD_PUT));
+  bool writeReady = header_done;
 
   if (writeReady && (fetch_flags & TS_FETCH_FLAGS_NEWLOCK)) {
     MUTEX_TAKE_LOCK(mutex, this_ethread());
@@ -566,7 +546,7 @@ FetchSM::ext_write_data(const void *data, size_t len)
   // be initialized.
   //
   if (writeReady) {
-    Debug(DEBUG_TAG, "[%s] re-enabling write_vio, header_done %u, req_method %u", __FUNCTION__, header_done, req_method);
+    Debug(DEBUG_TAG, "[%s] re-enabling write_vio, header_done %u", __FUNCTION__, header_done);
     write_vio->reenable();
     fetch_handler(TS_EVENT_VCONN_WRITE_READY, write_vio);
   }

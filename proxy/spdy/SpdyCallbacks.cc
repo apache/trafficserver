@@ -165,7 +165,7 @@ spdy_show_ctl_frame(const char *head_str, spdylay_session * /*session*/, spdylay
 }
 
 static int
-spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
+spdy_fetcher_launch(SpdyRequest *req)
 {
   string url;
   int fetch_flags;
@@ -186,7 +186,7 @@ spdy_fetcher_launch(SpdyRequest *req, TSFetchMethod method)
   // TS-2906: FetchSM sets requests are internal requests, we need to not do that for SPDY streams.
   fetch_flags |= TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST;
 
-  req->fetch_sm = TSFetchCreate((TSCont)sm, method,
+  req->fetch_sm = TSFetchCreate((TSCont)sm, req->method.c_str(),
                                 url.c_str(), req->version.c_str(),
                                 client_addr, fetch_flags);
   TSFetchUserDataSet(req->fetch_sm, req);
@@ -293,29 +293,7 @@ spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
     return;
   }
 
-  if (req->method == "GET")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_GET);
-  else if (req->method == "POST")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_POST);
-  else if (req->method == "PURGE")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_PURGE);
-  else if (req->method == "PUT")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_PUT);
-  else if (req->method == "HEAD")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_HEAD);
-  else if (req->method == "CONNECT")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_CONNECT);
-  else if (req->method == "DELETE")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_DELETE);
-  else if (req->method == "OPTIONS")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_OPTIONS);
-  else if (req->method == "TRACE")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_TRACE);
-  else if (req->method == "LAST")
-    spdy_fetcher_launch(req, TS_FETCH_METHOD_LAST);
-  else
-    spdy_prepare_status_response(sm, req->stream_id, STATUS_405);
-
+  spdy_fetcher_launch(req);
 }
 
 void

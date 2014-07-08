@@ -52,7 +52,6 @@ public:
     header_done = 0;
     user_data = NULL;
     has_sent_header = false;
-    req_method = TS_FETCH_METHOD_NONE;
     req_content_length = 0;
     resp_is_chunked = -1;
     resp_content_length = -1;
@@ -110,7 +109,7 @@ public:
   //
   // *flags* can be bitwise OR of several TSFetchFlags
   //
-  void ext_init(Continuation *cont, TSFetchMethod method,
+  void ext_init(Continuation *cont, const char *method,
                 const char *url, const char *version,
                 const sockaddr *client_addr, int flags);
   void ext_add_header(const char *name, int name_len,
@@ -169,7 +168,6 @@ private:
   int fetch_flags;
   void *user_data;
   bool has_sent_header;
-  TSFetchMethod req_method;
   int64_t req_content_length;
   int64_t resp_content_length;
   int64_t resp_recived_body_len;

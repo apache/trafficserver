@@ -37,21 +37,6 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-  /* For Extended FetchSM APIs */
-  typedef enum {
-    TS_FETCH_METHOD_NONE,
-    TS_FETCH_METHOD_GET,
-    TS_FETCH_METHOD_POST,
-    TS_FETCH_METHOD_CONNECT,
-    TS_FETCH_METHOD_DELETE,
-    TS_FETCH_METHOD_HEAD,
-    TS_FETCH_METHOD_PURGE,
-    TS_FETCH_METHOD_PUT,
-    TS_FETCH_METHOD_OPTIONS,
-    TS_FETCH_METHOD_TRACE,
-    TS_FETCH_METHOD_LAST
-  } TSFetchMethod;
-
   typedef enum
   {
     TS_FETCH_EVENT_EXT_HEAD_READY = -1,
@@ -651,7 +636,7 @@ extern "C"
    *
    * return TSFetchSM which should be destroyed by TSFetchDestroy().
    */
-  tsapi TSFetchSM TSFetchCreate(TSCont contp, TSFetchMethod method,
+  tsapi TSFetchSM TSFetchCreate(TSCont contp, const char *method,
                                 const char *url, const char *version,
                                 struct sockaddr const* client_addr, int flags);
 
