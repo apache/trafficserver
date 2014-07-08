@@ -972,8 +972,8 @@ SSLInitServerContext(
   }
 
   if (!params->serverCertChainFilename && !sslMultCertSettings.ca && sslMultCertSettings.cert) {
-    SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
-    SimpleTokenizer key_tok((char *)(sslMultCertSettings.key ? (const char *)sslMultCertSettings.key : ats_strdup("")), SSL_CERT_SEPARATE_DELIM);
+    SimpleTokenizer cert_tok((const char *)sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
+    SimpleTokenizer key_tok((sslMultCertSettings.key ? (const char *)sslMultCertSettings.key : ""), SSL_CERT_SEPARATE_DELIM);
 
     if (sslMultCertSettings.key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
         Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");

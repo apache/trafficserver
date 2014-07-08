@@ -125,11 +125,12 @@ public:
     OVERWRITE_INPUT_STRING = 8
   };
 
-  SimpleTokenizer(char delimiter = ' ', int mode = 0, char escape = '\\')
+  SimpleTokenizer(char delimiter = ' ', unsigned mode = 0, char escape = '\\')
     : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape), _start(0), _length(0)
   {  }
 
-SimpleTokenizer(char *s, char delimiter = ' ', int mode = 0, char escape = '\\')
+  // NOTE: The input strring 's' is overwritten for mode OVERWRITE_INPUT_STRING.
+  SimpleTokenizer(const char *s, char delimiter = ' ', unsigned mode = 0, char escape = '\\')
   : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape)
   {
     setString(s);
@@ -139,13 +140,13 @@ SimpleTokenizer(char *s, char delimiter = ' ', int mode = 0, char escape = '\\')
     _clearData();
   }
 
-  void setString(char *s)
+  void setString(const char *s)
   {
     _clearData();
 
     _start = 0;
     _length = strlen(s);
-    _data = (_mode & OVERWRITE_INPUT_STRING ? s : ats_strdup(s));
+    _data = (_mode & OVERWRITE_INPUT_STRING ? const_cast<char *>(s) : ats_strdup(s));
 
     // to handle the case where there is a null field at the end of the
     // input string, we replace the null character at the end of the
@@ -186,7 +187,7 @@ private:
   char *_data;                  // a pointer to the input data itself,
   // or to a copy of it
   char _delimiter;              // the token delimiter
-  int _mode;                    // flags that determine the
+  unsigned _mode;                    // flags that determine the
   // mode of operation
   char _escape;                 // the escape character
   size_t _start;                // pointer to the start of the next
