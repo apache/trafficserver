@@ -69,7 +69,14 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   ink_strlcpy(PkgStr, pkg_name, sizeof(PkgStr));
   ink_strlcpy(AppStr, app_name, sizeof(AppStr));
   snprintf(VersionStr, sizeof(VersionStr), "%s", app_version);
-  snprintf(BldNumStr, sizeof(BldNumStr), "%d%d%d", month, day, hour);
+
+  // If the builder set a build number, use that. Otherwise take the build timestamp.
+  if (strlen(BUILD_NUMBER) == 0) {
+    snprintf(BldNumStr, sizeof(BldNumStr), "%d%d%d", month, day, hour);
+  } else {
+    snprintf(BldNumStr, sizeof(BldNumStr), "%s", BUILD_NUMBER);
+  }
+
   snprintf(BldTimeStr, sizeof(BldTimeStr), "%s", build_time);
   snprintf(BldDateStr, sizeof(BldDateStr), "%s", build_date);
   snprintf(BldMachineStr, sizeof(BldMachineStr), "%s", build_machine);

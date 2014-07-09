@@ -41,6 +41,7 @@
 #define BUILD_MACHINE                  "@build_machine@"
 #define BUILD_PERSON                   "@build_person@"
 #define BUILD_GROUP                    "@build_group@"
+#define BUILD_NUMBER                   "@build_number@"
 
 /* Libraries */
 #define TS_HAS_LIBZ                    @zlibh@

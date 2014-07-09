@@ -107,16 +107,6 @@ AC_CANONICAL_HOST
 HOST_GUESS="$host"
 AC_SUBST(HOST_GUESS)
 
-#
-# Build environment
-#
-build_person="`id -nu`"
-build_group="`id -ng`"
-build_machine="`uname -n`"
-AC_SUBST([build_machine])
-AC_SUBST([build_person])
-AC_SUBST([build_group])
-
 AC_ARG_WITH([user],
   [AS_HELP_STRING([--with-user],[specify the system user [default=nobody]])],
   [
@@ -137,6 +127,22 @@ AC_ARG_WITH([group],
 )
 AC_SUBST([pkgsysuser],[$with_user])
 AC_SUBST([pkgsysgroup],[$with_group])
+
+AC_ARG_WITH([build-version],
+  [AS_HELP_STRING([--with-build-version],[specify a version string for this build])],
+  [ build_number="$withval" ]
+)
+
+#
+# Build environment
+#
+build_person="`id -nu`"
+build_group="`id -ng`"
+build_machine="`uname -n`"
+AC_SUBST([build_machine])
+AC_SUBST([build_person])
+AC_SUBST([build_group])
+AC_SUBST([build_number])
 
 # -----------------------------------------------------------------------------
 # 2. SITE CONFIGURATION
