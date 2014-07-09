@@ -28,7 +28,7 @@
 class SpdyClientSession;
 
 void spdy_callbacks_init(spdylay_session_callbacks *callbacks);
-void spdy_prepare_status_response(SpdyClientSession *sm, int stream_id, const char *status);
+void spdy_prepare_status_response_and_clean_request(SpdyClientSession *sm, int stream_id, const char *status);
 
 /**
  * @functypedef

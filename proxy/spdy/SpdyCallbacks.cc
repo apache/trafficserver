@@ -50,7 +50,7 @@ spdy_callbacks_init(spdylay_session_callbacks *callbacks)
 }
 
 void
-spdy_prepare_status_response(SpdyClientSession *sm, int stream_id, const char *status)
+spdy_prepare_status_response_and_clean_request(SpdyClientSession *sm, int stream_id, const char *status)
 {
   SpdyRequest *req = sm->req_map[stream_id];
   string date_str = http_date(time(0));
@@ -76,6 +76,7 @@ spdy_prepare_status_response(SpdyClientSession *sm, int stream_id, const char *s
 
   TSVIOReenable(sm->write_vio);
   delete [] nv;
+  sm->cleanup_request(stream_id);
 }
 
 static void
@@ -289,7 +290,7 @@ spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
 
   if(!req->path.size()|| !req->method.size() || !req->scheme.size()
      || !req->version.size() || !req->host.size()) {
-    spdy_prepare_status_response(sm, req->stream_id, STATUS_400);
+    spdy_prepare_status_response_and_clean_request(sm, req->stream_id, STATUS_400);
     return;
   }
 
@@ -350,7 +351,7 @@ spdy_on_data_chunk_recv_callback(spdylay_session * /*session*/, uint8_t /*flags*
                                  size_t len, void *user_data)
 {
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
-  SpdyRequest *req = sm->req_map[stream_id];
+  SpdyRequest *req = sm->find_request(stream_id);
 
   //
   // SpdyRequest has been deleted on error, drop this data;
@@ -369,7 +370,7 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
                            int32_t stream_id, int32_t length, void *user_data)
 {
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
-  SpdyRequest *req = sm->req_map[stream_id];
+  SpdyRequest *req = sm->find_request(stream_id);
 
   spdy_show_data_frame("++++RECV", session, flags, stream_id, length, user_data);
 
