@@ -378,12 +378,11 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
 
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
   SpdyRequest *req = (SpdyRequest *)source->ptr;
-  map<int32_t, SpdyRequest*>::iterator iter = sm->req_map.find(stream_id);
 
   //
   // req has been deleted, ignore this data.
   //
-  if ((iter == sm->req_map.end()) || (req != iter->second)) {
+  if (req != sm->req_map[stream_id]) {
     Debug("spdy", "    stream_id:%d, call:%d, req has been deleted, return 0",
           stream_id, g_call_cnt);
     *eof = 1;

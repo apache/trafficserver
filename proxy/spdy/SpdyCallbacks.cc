@@ -350,13 +350,12 @@ spdy_on_data_chunk_recv_callback(spdylay_session * /*session*/, uint8_t /*flags*
                                  size_t len, void *user_data)
 {
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
-  SpdyRequest *req = NULL;
-  map<int32_t, SpdyRequest*>::iterator iter = sm->req_map.find(stream_id);
+  SpdyRequest *req = sm->req_map[stream_id];
 
   //
   // SpdyRequest has been deleted on error, drop this data;
   //
-  if ((iter == sm->req_map.end()) || ((req=iter->second) == NULL))
+  if (!req)
     return;
 
   Debug("spdy", "++++Fetcher Append Data, len:%zu", len);
@@ -370,8 +369,7 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
                            int32_t stream_id, int32_t length, void *user_data)
 {
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
-  SpdyRequest *req = NULL;
-  map<int32_t, SpdyRequest*>::iterator iter = sm->req_map.find(stream_id);
+  SpdyRequest *req = sm->req_map[stream_id];
 
   spdy_show_data_frame("++++RECV", session, flags, stream_id, length, user_data);
 
@@ -380,7 +378,7 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
   // client might continue to send POST data, We should reenable
   // sm->write_vio so that WINDOW_UPDATE has a chance to be sent.
   //
-  if ((iter == sm->req_map.end()) || ((req=iter->second) == NULL)) {
+  if (!req) {
     TSVIOReenable(sm->write_vio);
     return;
   }
