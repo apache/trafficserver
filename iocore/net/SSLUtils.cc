@@ -994,7 +994,7 @@ SSLInitServerContext(
     }
   } else if (sslMultCertSettings.first_cert) { // For backward compatible
       completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
-      if (!SSL_CTX_use_certificate_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
+      if (!SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath)) {
           SSLError("failed to load certificate from %s", (const char *) completeServerCertPath);
           goto fail;
       }
@@ -1102,7 +1102,7 @@ SSLInitClientContext(const SSLConfigParams * params)
   }
 
   if (params->clientCertPath != 0) {
-    if (!SSL_CTX_use_certificate_file(client_ctx, params->clientCertPath, SSL_FILETYPE_PEM)) {
+    if (!SSL_CTX_use_certificate_chain_file(client_ctx, params->clientCertPath)) {
       SSLError("failed to load client certificate from %s", params->clientCertPath);
       goto fail;
     }

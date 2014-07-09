@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2649] Use SSL certificate chain loading everywhere.
+
   *) [TS-2780] Core dump in SpdyRequest::clear() in production testing of SPDY
 
   *) [TS-2929] SPDY should allow arbitrary methods
