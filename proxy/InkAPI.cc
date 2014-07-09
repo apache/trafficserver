@@ -85,11 +85,11 @@
     _HDR.m_mime = _HDR.m_http->m_fields_impl;
 
 // Globals for new librecords stats
-volatile int top_stat = 0;
-RecRawStatBlock *api_rsb;
+static volatile int api_rsb_index = 0;
+static RecRawStatBlock * api_rsb;
 
 // Globals for the Sessions/Transaction index registry
-volatile int next_argv_index = 0;
+static volatile int next_argv_index = 0;
 
 struct _STATE_ARG_TABLE {
   char* name;
@@ -5548,7 +5548,7 @@ TSHttpArgIndexReserve(const char* name, const char* description, int *arg_idx)
 {
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
 
-  int volatile ix = ink_atomic_increment(&next_argv_index, 1);
+  int ix = ink_atomic_increment(&next_argv_index, 1);
 
   if (ix < HTTP_SSN_TXN_MAX_USER_ARG) {
     state_arg_table[ix].name = ats_strdup(name);
@@ -6638,7 +6638,7 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 int
 TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
-  int id = ink_atomic_increment(&top_stat, 1);
+  int id = ink_atomic_increment(&api_rsb_index, 1);
   RecRawStatSyncCb syncer = RecRawStatSyncCount;
 
   // TODO: This only supports "int" data types at this point, since the "Raw" stats

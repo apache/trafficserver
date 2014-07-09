@@ -831,7 +831,10 @@ RecForceInsert(RecRecord * record)
   // set the record value
   RecDataSet(r->data_type, &(r->data), &(record->data));
   RecDataSet(r->data_type, &(r->data_default), &(record->data_default));
+
   r->registered = record->registered;
+  r->rsb_id = record->rsb_id;
+
   if (REC_TYPE_IS_STAT(r->rec_type)) {
     r->stat_meta.persist_type = record->stat_meta.persist_type;
     r->stat_meta.data_raw = record->stat_meta.data_raw;

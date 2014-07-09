@@ -113,7 +113,7 @@ send_push_message()
     if (i_am_the_record_owner(r->rec_type)) {
       if (r->sync_required & REC_PEER_SYNC_REQUIRED) {
         m = RecMessageMarshal_Realloc(m, r);
-        r->sync_required = r->sync_required & ~REC_PEER_SYNC_REQUIRED;
+        r->sync_required &= ~REC_PEER_SYNC_REQUIRED;
         send_msg = true;
       }
     }
@@ -157,10 +157,10 @@ send_pull_message(RecMessageT msg_type)
       r = &(g_records[i]);
       if (i_am_the_record_owner(r->rec_type) ||
           (REC_TYPE_IS_STAT(r->rec_type) && !(r->registered)) ||
-          (REC_TYPE_IS_STAT(r->rec_type) && !(r->stat_meta.persist_type != RECP_NON_PERSISTENT))) {
+          (REC_TYPE_IS_STAT(r->rec_type) && (r->stat_meta.persist_type == RECP_NON_PERSISTENT))) {
         rec_mutex_acquire(&(r->lock));
         m = RecMessageMarshal_Realloc(m, r);
-        r->sync_required = r->sync_required & ~REC_PEER_SYNC_REQUIRED;
+        r->sync_required &= ~REC_PEER_SYNC_REQUIRED;
         rec_mutex_release(&(r->lock));
       }
     }
