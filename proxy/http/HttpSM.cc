@@ -3794,7 +3794,10 @@ HttpSM::do_remap_request(bool run_inline)
   DebugSM("http_seq", "[HttpSM::do_remap_request] Remapping request");
   DebugSM("url_rewrite", "Starting a possible remapping for request [%" PRId64 "]", sm_id);
 
-  bool ret = remapProcessor.setup_for_remap(&t_state);
+  bool ret = false;
+  if (t_state.cop_test_page == false) {
+    ret = remapProcessor.setup_for_remap(&t_state);
+  }
 
   // Preserve pristine url before remap
   // This needs to be done after the Host: header for reverse proxy is added to the url, but

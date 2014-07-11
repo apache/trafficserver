@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2934] Default remap rule will remap synthetic test
+
   *) [TS-2904] Add Via header decoder option to traffic_line.
    Author: Meera Mosale Nataraja <mechins@gmail.com>
 
