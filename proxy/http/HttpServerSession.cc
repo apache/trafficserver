@@ -138,7 +138,7 @@ HttpServerSession::do_io_close(int alerrno)
             ats_ip_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), 
             connection_count->getCount(server_ip));
     } else {
-      Error("[%" PRId64 "] number of connections should be greater then zero: %u",
+      Error("[%" PRId64 "] number of connections should be greater than zero: %u",
             con_id, connection_count->getCount(server_ip));
     }
   }
