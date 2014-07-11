@@ -108,11 +108,10 @@ public:
 
     @param cont continuation that the spawn thread will call back
       immediately.
-    @param sem Event semaphore assigned to the thread.
     @return event object representing the start of the thread.
 
   */
-  Event *spawn_thread(Continuation * cont, const char *thr_name, size_t stacksize = 0, ink_sem * sem = NULL);
+  Event *spawn_thread(Continuation * cont, const char *thr_name, size_t stacksize = 0);
 
   /**
     Spawns a group of threads for an event type. Spawns the number of

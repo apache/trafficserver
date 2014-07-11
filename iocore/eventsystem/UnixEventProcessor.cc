@@ -167,13 +167,13 @@ EventProcessor::shutdown()
 }
 
 Event *
-EventProcessor::spawn_thread(Continuation *cont, const char* thr_name, size_t stacksize, ink_sem *sem)
+EventProcessor::spawn_thread(Continuation *cont, const char* thr_name, size_t stacksize)
 {
   ink_release_assert(n_dthreads < MAX_EVENT_THREADS);
   Event *e = eventAllocator.alloc();
 
   e->init(cont, 0, 0);
-  all_dthreads[n_dthreads] = new EThread(DEDICATED, e, sem);
+  all_dthreads[n_dthreads] = new EThread(DEDICATED, e);
   e->ethread = all_dthreads[n_dthreads];
   e->mutex = e->continuation->mutex = all_dthreads[n_dthreads]->mutex;
   n_dthreads++;

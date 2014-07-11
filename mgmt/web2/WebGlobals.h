@@ -96,11 +96,7 @@ struct WebInterFaceGlobals
 {
   ink_mutex serviceThrLock;
   ink_mutex submitLock;
-#if defined(darwin)
-  ink_sem *serviceThrCount;
-#else
-  ink_sem serviceThrCount;
-#endif
+  ink_semaphore serviceThrCount;
   serviceThr_t *serviceThrArray;
 };
 

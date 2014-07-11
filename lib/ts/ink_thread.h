@@ -54,8 +54,31 @@
 
 typedef pthread_t ink_thread;
 typedef pthread_cond_t ink_cond;
-typedef sem_t ink_sem;
 typedef pthread_key_t ink_thread_key;
+
+// Darwin has a sem_init stub that returns ENOSYS. Rather than bodge around doing runtime
+// detection, just emulate on Darwin.
+#if defined(darwin)
+#define TS_EMULATE_ANON_SEMAPHORES 1
+#endif
+
+struct ink_semaphore {
+#if TS_EMULATE_ANON_SEMAPHORES
+  sem_t * sema;
+  int64_t semid;
+#else
+  sem_t sema;
+#endif
+
+  sem_t * get() {
+#if TS_EMULATE_ANON_SEMAPHORES
+    return sema;
+#else
+    return &sema;
+#endif
+  }
+};
+
 #endif /* #if defined(POSIX_THREAD) */
 
 /*******************************************************************
@@ -185,69 +208,12 @@ ink_thread_sigsetmask(int how, const sigset_t * set, sigset_t * oset)
 /*******************************************************************
  * Posix Semaphores
  ******************************************************************/
-static inline void
-ink_sem_init(ink_sem * sp, unsigned int count)
-{
-  ink_assert(!sem_init(sp, 0, count));
-}
 
-static inline void
-ink_process_sem_init(ink_sem * sp, unsigned int count)
-{
-  ink_assert(!sem_init(sp, 1, count));
-}
-
-static inline void
-ink_sem_wait(ink_sem * sp)
-{
-  int r;
-  while (EINTR == (r = sem_wait(sp)));
-  ink_assert(!r);
-}
-
-static inline int
-ink_sem_trywait(ink_sem * sp)
-{
-  int r;
-  while (EINTR == (r = sem_trywait(sp)));
-  ink_assert(!r || (r == EAGAIN));
-  return (r);
-}
-
-static inline void
-ink_sem_post(ink_sem * sp)
-{
-  ink_assert(!sem_post(sp));
-}
-
-static inline void
-ink_sem_destroy(ink_sem * sp)
-{
-  ink_assert(!sem_destroy(sp));
-}
-
-#if defined(darwin)
-static inline ink_sem *
-ink_sem_open(const char *name , int oflag, mode_t mode, unsigned int value)
-{
-  ink_sem *sptr;
-  sptr = sem_open(name, oflag, mode, value);
-  ink_assert(sptr != SEM_FAILED);
-  return sptr;
-}
-
-static inline void
-ink_sem_close(ink_sem * sp)
-{
-  ink_assert(!sem_close(sp));
-}
-
-static inline int
-ink_sem_unlink(const char *name)
-{
-  return sem_unlink(name);
-}
-#endif /* darwin */
+void ink_sem_init(ink_semaphore * sp, unsigned int count);
+void ink_sem_destroy(ink_semaphore * sp);
+void ink_sem_wait(ink_semaphore * sp);
+bool ink_sem_trywait(ink_semaphore * sp);
+void ink_sem_post(ink_semaphore * sp);
 
 /*******************************************************************
  * Posix Condition Variables

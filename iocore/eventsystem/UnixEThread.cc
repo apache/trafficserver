@@ -46,7 +46,7 @@ EThread::EThread()
    main_accept_index(-1),
    id(NO_ETHREAD_ID), event_types(0),
    signal_hook(0),
-   tt(REGULAR), eventsem(NULL)
+   tt(REGULAR)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 }
@@ -60,7 +60,6 @@ EThread::EThread(ThreadType att, int anid)
     event_types(0),
     signal_hook(0),
     tt(att),
-    eventsem(NULL),
     l1_hash(NULL)
 {
   ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
@@ -91,14 +90,14 @@ EThread::EThread(ThreadType att, int anid)
 #endif
 }
 
-EThread::EThread(ThreadType att, Event * e, ink_sem * sem)
+EThread::EThread(ThreadType att, Event * e)
  : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)),
    ethreads_to_be_signalled(NULL),
    n_ethreads_to_be_signalled(0),
    main_accept_index(-1),
    id(NO_ETHREAD_ID), event_types(0),
    signal_hook(0),
-   tt(att), oneevent(e), eventsem(sem)
+   tt(att), oneevent(e)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);
@@ -288,8 +287,6 @@ EThread::execute() {
 
     case DEDICATED: {
       // coverity[lock]
-      if (eventsem)
-        ink_sem_wait(eventsem);
       MUTEX_TAKE_LOCK_FOR(oneevent->mutex, this, oneevent->continuation);
       oneevent->continuation->handleEvent(EVENT_IMMEDIATE, oneevent);
       MUTEX_UNTAKE_LOCK(oneevent->mutex, this);

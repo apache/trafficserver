@@ -293,11 +293,7 @@ serviceThrReaper(void * /* arg ATS_UNUSED */)
     ink_mutex_release(&wGlobals.serviceThrLock);
 
     for (int j = 0; j < numJoined; j++) {
-#if defined(darwin)
-      ink_sem_post(wGlobals.serviceThrCount);
-#else
       ink_sem_post(&wGlobals.serviceThrCount);
-#endif
       ink_atomic_increment((int32_t *) & numServiceThr, -1);
     }
 
@@ -347,16 +343,7 @@ webIntr_main(void *)
   lmgmt->syslogThrInit();
 
   // Set up the threads management
-#if defined(darwin)
-  static int qnum = 0;
-  char sname[NAME_MAX];
-  qnum++;
-  snprintf(sname,NAME_MAX,"%s%d","WebInterfaceMutex",qnum);
-  ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
-  wGlobals.serviceThrCount = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, MAX_SERVICE_THREADS);
-#else /* !darwin */
   ink_sem_init(&wGlobals.serviceThrCount, MAX_SERVICE_THREADS);
-#endif /* !darwin */
   ink_mutex_init(&wGlobals.serviceThrLock, "Web Interface Mutex");
   wGlobals.serviceThrArray = new serviceThr_t[MAX_SERVICE_THREADS];
   for (i = 0; i < MAX_SERVICE_THREADS; i++) {
@@ -484,11 +471,7 @@ webIntr_main(void *)
     } else {
       ink_assert(!"[webIntrMain] Error on mgmt_select()\n");
     }
-#if defined(darwin)
-    ink_sem_wait(wGlobals.serviceThrCount);
-#else
     ink_sem_wait(&wGlobals.serviceThrCount);
-#endif
     ink_atomic_increment((int32_t *) & numServiceThr, 1);
 
     // coverity[alloc_fn]
@@ -498,11 +481,7 @@ webIntr_main(void *)
     // coverity[noescape]
     if ((clientFD = mgmt_accept(acceptFD, (sockaddr *) clientInfo, &addrLen)) < 0) {
       mgmt_log(stderr, "[WebIntrMain]: %s%s\n", "Accept on incoming connection failed: ", strerror(errno));
-#if defined(darwin)
-      ink_sem_post(wGlobals.serviceThrCount);
-#else
       ink_sem_post(&wGlobals.serviceThrCount);
-#endif
       ink_atomic_increment((int32_t *) & numServiceThr, -1);
     } else {                    // Accept succeeded
       if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
@@ -516,11 +495,7 @@ webIntr_main(void *)
       if (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 &&
           strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0) {
         mgmt_log("WARNING: connect by disallowed client %s, closing\n", inet_ntoa(clientInfo->sin_addr));
-#if defined(darwin)
-        ink_sem_post(wGlobals.serviceThrCount);
-#else
         ink_sem_post(&wGlobals.serviceThrCount);
-#endif
         ink_atomic_increment((int32_t *) & numServiceThr, -1);
         ats_free(clientInfo);
         close_socket(clientFD);
@@ -546,11 +521,7 @@ webIntr_main(void *)
               wGlobals.serviceThrArray[i].threadId = 0;
               wGlobals.serviceThrArray[i].fd = -1;
               close_socket(clientFD);
-#if defined(darwin)
-              ink_sem_post(wGlobals.serviceThrCount);
-#else
               ink_sem_post(&wGlobals.serviceThrCount);
-#endif
               ink_atomic_increment((int32_t *) & numServiceThr, -1);
             }
 
