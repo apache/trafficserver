@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2904] Add Via header decoder option to traffic_line.
+   Author: Meera Mosale Nataraja <mechins@gmail.com>
+
   *) [TS-2932] Add an option to specify the build number at configure time.
 
   *) [TS-2931] Plugin metrics fail after a crash.

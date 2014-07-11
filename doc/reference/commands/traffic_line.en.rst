@@ -139,6 +139,10 @@ Options
 
    Show the current proxy server status, indicating if we're running or not.
 
+.. option:: --decode_via VAR
+
+   Decode Via Header and provide detailed explaination of the fields. The value of Via header is given by variable VAR.
+   Via header can be given within [] or without []
 
 .. _traffic-line-performance-statistics:
 
