@@ -532,6 +532,12 @@ Diags::error_va(DiagsLevel level,
              const char *file, const char *func, const int line,
              const char *format_string, va_list ap) const
 {
+  va_list ap2;
+
+  if (DiagsLevel_IsTerminal(level)) {
+    va_copy(ap2, ap);
+  }
+
   if (show_location) {
     SrcLoc lp(file, func, line);
     print_va(NULL, level, &lp, format_string, ap);
@@ -542,6 +548,6 @@ Diags::error_va(DiagsLevel level,
   if (DiagsLevel_IsTerminal(level)) {
     if (cleanup_func)
       cleanup_func();
-    ink_fatal_va(1, format_string, ap);
+    ink_fatal_va(1, format_string, ap2);
   }
 }
