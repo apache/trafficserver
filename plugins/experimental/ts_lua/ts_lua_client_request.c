@@ -313,7 +313,7 @@ ts_lua_client_request_get_url(lua_State * L)
 
   http_ctx = ts_lua_get_http_ctx(L);
 
-  url = TSUrlStringGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &url_len);
+  url = TSHttpTxnEffectiveUrlStringGet(http_ctx->txnp, &url_len);
 
   if (url) {
     lua_pushlstring(L, url, url_len);
@@ -361,13 +361,39 @@ static int
 ts_lua_client_request_get_url_host(lua_State * L)
 {
   const char *host;
-  int len;
+  int len = 0;
 
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
 
   host = TSUrlHostGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &len);
+
+  if(len == 0) {
+    char *key = "Host";
+    char *l_key = "host";
+    int key_len = 4;
+    
+
+    TSMLoc field_loc;
+
+    field_loc = TSMimeHdrFieldFind(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, key, key_len);
+    if (field_loc) {
+      host =
+        TSMimeHdrFieldValueStringGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc, -1,
+                                     &len);
+      TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc);
+
+    } else {
+      field_loc = TSMimeHdrFieldFind(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, l_key, key_len);
+      if(field_loc) {
+        host =
+          TSMimeHdrFieldValueStringGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc, 
+                                       -1, &len);
+        TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc);
+      }
+    }
+  }
 
   lua_pushlstring(L, host, len);
 
