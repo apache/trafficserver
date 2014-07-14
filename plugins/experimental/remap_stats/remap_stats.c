@@ -59,6 +59,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     }
 
     search.key = name;
+    search.data = 0;
     hsearch_r(search, FIND, &result, &stat_cache);
 
     if (unlikely(result == NULL))
