@@ -734,12 +734,12 @@ inkcoreapi extern ClassAllocator<MIOBuffer> ioAllocator;
 TS_INLINE
 MIOBuffer::MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark)
 {
-  set(b, bufsize);
-  water_mark = aWater_mark;
-  size_index = BUFFER_SIZE_NOT_ALLOCATED;
 #ifdef TRACK_BUFFER_USER
   _location = NULL;
 #endif
+  set(b, bufsize);
+  water_mark = aWater_mark;
+  size_index = BUFFER_SIZE_NOT_ALLOCATED;
   return;
 }
 
