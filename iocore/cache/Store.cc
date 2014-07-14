@@ -909,7 +909,7 @@ Store::spread_alloc(Store & s, unsigned int blocks, bool mmapable)
 
   int disks_left = spread_over;
 
-  for (unsigned i = 0; blocks && i < n_disks; i++) {
+  for (unsigned i = 0; blocks && disks_left && i < n_disks; i++) {
     if (!(mmapable && !disk[i]->is_mmapable())) {
       unsigned int target = blocks / disks_left;
       if (blocks - target > total_blocks(i + 1))
