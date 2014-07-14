@@ -547,28 +547,25 @@ PrefetchTransform::redirect(HTTPHdr *resp)
    */
   if ((resp != NULL) && (resp->valid())) {
     response_status = resp->status_get();
+
+    /* OK, so we got the response. Now if the response is a redirect we have to check if we also
+       got a Location: header. This indicates the new location where our object is located.
+       If refirect_url was not found, letz falter back to just a recursion. Since
+       we might find the url in the body.
+     */
+    if (resp->presence(MIME_PRESENCE_LOCATION)) {
+      int redirect_url_len = 0;
+      const char *tmp_url = resp->value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redirect_url_len);
+
+      redirect_url = (char *)alloca(redirect_url_len + 1);
+      ink_strlcpy(redirect_url, tmp_url, redirect_url_len + 1);
+      Debug("PrefetchTransform", "redirect_url = %s\n", redirect_url);
+    } else {
+      response_status = -1;
+    }
   } else {
     response_status = -1;
   }
-
-  /* OK, so we got the response. Now if the response is a redirect we have to check if we also
-     got a Location: header. This indicates the new location where our object is located.
-     If refirect_url was not found, letz falter back to just a recursion. Since
-     we might find the url in the body.
-   */
-  if (resp->presence(MIME_PRESENCE_LOCATION)) {
-    int redirect_url_len = 0;
-    const char *tmp_url = resp->value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redirect_url_len);
-
-    redirect_url = (char *)alloca(redirect_url_len + 1);
-    ink_strlcpy(redirect_url, tmp_url, redirect_url_len + 1);
-    Debug("PrefetchTransform", "redirect_url = %s\n", redirect_url);
-  } else {
-    response_status = -1;
-  }
-
-
-
 
   if (IS_STATUS_REDIRECT(response_status)) {
     if (redirect_url) {
