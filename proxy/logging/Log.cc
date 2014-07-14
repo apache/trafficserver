@@ -1191,17 +1191,17 @@ Log::preproc_thread_main(void *args)
     size_t buffers_preproced = 0;
     LogConfig * current = (LogConfig *)configProcessor.get(log_configid);
 
-    if (current) {
+    if (likely(current)) {
       buffers_preproced = current->log_object_manager.preproc_buffers(idx);
+
+      // config->increment_space_used(bytes_to_disk);
+      // TODO: the bytes_to_disk should be set to Log
+
+      Debug("log-preproc","%zu buffers preprocessed from LogConfig %p (refcount=%d) this round",
+            buffers_preproced, current, current->m_refcount);
+
+      configProcessor.release(log_configid, current);
     }
-
-    // config->increment_space_used(bytes_to_disk);
-    // TODO: the bytes_to_disk should be set to Log
-
-    Debug("log-preproc","%zu buffers preprocessed from LogConfig %p (refcount=%d) this round",
-          buffers_preproced, current, current->m_refcount);
-
-    configProcessor.release(log_configid, current);
 
     // wait for more work; a spurious wake-up is ok since we'll just
     // check the queue and find there is nothing to do, then wait
