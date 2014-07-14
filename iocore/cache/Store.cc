@@ -311,7 +311,7 @@ Store::read_config(int fd)
     xptr<char> storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
 
     Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
-    fd =::open(storage_path, O_RDONLY);
+    fd = ::open(storage_path, O_RDONLY);
     if (fd < 0) {
       err = "error on open";
       goto Lfail;
@@ -399,9 +399,9 @@ Store::read_config(int fd)
     sort();
   }
 
-Lfail:;
+Lfail:
+  ::close(fd);
   return NULL;
-  return err;
 }
 
 #if TS_USE_INTERIM_CACHE == 1
