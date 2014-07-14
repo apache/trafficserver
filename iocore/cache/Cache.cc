@@ -3062,8 +3062,10 @@ cplist_reconfigure()
         CacheVol *new_cp = new CacheVol();
         new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
-        if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp))
-          return -1;
+        if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
+        	delete new_cp;
+        	return -1;
+        }
         cp_list.enqueue(new_cp);
         cp_list_len++;
         config_vol->cachep = new_cp;
