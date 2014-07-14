@@ -892,6 +892,8 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
 
   for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != NULL;) {
+    reg_map = NULL;
+    new_mapping = NULL;
     errStrBuf[0] = 0;
     bti->reset();
 
@@ -1246,6 +1248,8 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
     Warning("Could not add rule at line #%d; Aborting!", cln + 1);
     snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
+    delete reg_map;
+    delete new_mapping;
     return false;
   }                             /* end of while(cur_line != NULL) */
 
