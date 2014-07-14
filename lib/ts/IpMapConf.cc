@@ -78,8 +78,9 @@ Load_IpMap_From_File(IpMap* map, int fd, const char *key_str)
   char* zret = 0;
   FILE* f = fdopen(dup(fd), "r"); // dup so we don't close the original fd.
 
-  if (f) {
+  if (f != NULL) {
     zret = Load_IpMap_From_File(map, f, key_str);
+    fclose(f);
   } else {
     zret = (char *)ats_malloc(ERR_STRING_LEN);
     snprintf(zret, ERR_STRING_LEN, "Unable to reopen file descriptor as stream %d:%s", errno, strerror(errno));
