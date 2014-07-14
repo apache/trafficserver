@@ -376,6 +376,7 @@ print_cache_ele(TSCacheEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   char *pd_str, *time_str;
@@ -446,6 +447,7 @@ print_hosting_ele(TSHostingEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   switch (ele->pd_type) {
@@ -477,6 +479,7 @@ print_icp_ele(TSIcpEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   int peer_type;
@@ -508,6 +511,7 @@ print_ip_allow_ele(TSIpAllowEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   print_ip_addr_ele(ele->src_ip_addr);
@@ -518,6 +522,7 @@ print_parent_ele(TSParentProxyEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("parent rule type: %d\n", ele->cfg_ele.type);
@@ -533,6 +538,7 @@ print_volume_ele(TSVolumeEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("volume #: %d\n", ele->volume_num);
@@ -556,6 +562,7 @@ print_plugin_ele(TSPluginEle * ele)
 {
   if (!ele) {
     printf("can't print plugin ele\n");
+    return;
   }
 
   printf("name: %s\t\t", ele->name);
@@ -572,6 +579,7 @@ print_remap_ele(TSRemapEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   char buf[MAX_BUF_SIZE];
@@ -751,6 +759,7 @@ print_storage_ele(TSStorageEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   if (ele->pathname)
@@ -762,6 +771,7 @@ print_update_ele(TSUpdateEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("url: %s\n", ele->url);
