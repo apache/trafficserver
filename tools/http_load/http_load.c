@@ -638,7 +638,6 @@ usage(void)
 static void
 read_url_file(char *url_file)
 {
-  FILE *fp;
   char line[5000], hostname[5000];
   char *http = "http://";
   int http_len = strlen(http);
@@ -647,8 +646,8 @@ read_url_file(char *url_file)
   int proto_len, host_len;
   char *cp;
 
-  fp = fopen(url_file, "r");
-  if (fp == (FILE *) 0) {
+  FILE *fp = fopen(url_file, "r");
+  if (fp == NULL) {
     perror(url_file);
     exit(1);
   }
@@ -703,7 +702,7 @@ read_url_file(char *url_file)
       urls[num_urls].protocol = PROTO_HTTPS;
     }
     else {
-      (void) fprintf(stderr, "%s: unknown protocol - %s\n", argv0, line);
+      fprintf(stderr, "%s: unknown protocol - %s\n", argv0, line);
       exit(1);
     }
     for (cp = line + proto_len; *cp != '\0' && *cp != ':' && *cp != '/'; ++cp);
@@ -732,7 +731,7 @@ read_url_file(char *url_file)
     urls[num_urls].got_checksum = 0;
     urls[num_urls].unique_id_offset = 0;
 
-    /* Pregenereate the request string, major performance improvement. */
+    /* Pre-generate the request string, major performance improvement. */
     if (do_proxy) {
       req_bytes = snprintf(req_buf, sizeof(req_buf), "GET %s://%.500s:%d%.500s HTTP/%s\r\n",
                            urls[num_urls].protocol == PROTO_HTTPS ? "https" : "http",
@@ -762,6 +761,7 @@ read_url_file(char *url_file)
 
     ++num_urls;
   }
+  fclose(fp);
 }
 
 
