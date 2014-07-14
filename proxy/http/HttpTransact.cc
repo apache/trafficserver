@@ -1187,8 +1187,7 @@ HttpTransact::ModifyRequest(State* s)
       host_val = (const char**)(&buf);
     }
 
-    if (mimefield_value_equal(host_field, *host_val, host_val_len)) {
-
+    if (mimefield_value_equal(host_field, *host_val, host_val_len) == false) {
       if (!host_field) { // Assure we have a Host field, before setting it
         host_field = request.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
         request.field_attach(host_field);
