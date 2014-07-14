@@ -122,5 +122,6 @@ init_http_update_test()
   }
 
   UpTest *u = new UpTest(f, new_ProxyMutex());
+  fclose(f); // UpTest doesn't take ownership of f.
   eventProcessor.schedule_imm(u);
 }
