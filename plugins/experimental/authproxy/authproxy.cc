@@ -225,6 +225,7 @@ pump:
     }
 
     // If we don't have a handler, the state machine is borked.
+    TSReleaseAssert(s != NULL);
     TSReleaseAssert(s->handler != NULL);
 
     // Move to the next state. We have to set this *before* invoking the
