@@ -287,8 +287,8 @@ void
 url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *request_url)
 {
   const char *requestPath;
-  int requestPathLen;
-  int fromPathLen;
+  int requestPathLen = 0;
+  int fromPathLen = 0;
 
   URL *map_to = mapping_container.getToURL();
   URL *map_from = mapping_container.getFromURL();
@@ -327,7 +327,7 @@ url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *req
 
   // We might need to insert a trailing slash in the new portion of the path
   // if more will be added and none is present and one will be needed.
-  if (!fromPathLen && requestPathLen && toPathLen && *(newPath + newPathLen - 1) != '/') {
+  if (!fromPathLen && requestPathLen && newPathLen && toPathLen && *(newPath + newPathLen - 1) != '/') {
     *(newPath + newPathLen) = '/';
     newPathLen++;
   }
