@@ -1095,7 +1095,7 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
 
   HostDBContinuation *c = hostDBContAllocator.alloc();
   c->init(md5);
-  strncpy(c->srv_target_name, target, MAXDNAME);
+  ink_strlcpy(c->srv_target_name, target, MAXDNAME);
   c->app.allotment.application1 = app->allotment.application1;
   c->app.allotment.application2 = app->allotment.application2;
   SET_CONTINUATION_HANDLER(c,
