@@ -358,7 +358,7 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
             {
                 TSDebug(PLUGIN_NAME, "In sync path. setting fresh and re-enabling");
                 TSHttpTxnCacheLookupCountGet(state->txn, &lookup_count);
-                if ((state->resp_info->status == 500) || ((state->resp_info->status >= 502) && (state->resp_info->status <= 504)) || lookup_count > 2)
+                if (state->resp_info && ((state->resp_info->status == 500) || ((state->resp_info->status >= 502) && (state->resp_info->status <= 504)) || lookup_count > 2))
                 {
                     TSDebug(PLUGIN_NAME, "Sending stale data as fresh");
                     if (state->plugin_config->log_info.object && (state->plugin_config->log_info.all || state->plugin_config->log_info.stale_if_error))
