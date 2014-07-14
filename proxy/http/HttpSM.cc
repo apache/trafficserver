@@ -5960,6 +5960,8 @@ HttpSM::server_transfer_init(MIOBuffer * buf, int hdr_size)
   int64_t nbytes;
   int64_t to_copy = INT64_MAX;
 
+  ink_assert(t_state.current.server != NULL); // should have been set up if we're doing a transfer.
+
   if (server_entry->eos == true) {
     // The server has shutdown on us already so the only data
     //  we'll get is already in the buffer
