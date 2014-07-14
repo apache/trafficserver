@@ -119,6 +119,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     } else {
       snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum line (%d) exceeded on line %d.", MAX_KEY_LEN,
                line_no);
+      fclose(file);
       return TS_ERROR;
     }
     if (strncmp(line, "key", 3) == 0) {
@@ -175,6 +176,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     if (cfg->err_url != NULL) {
       snprintf(errbuf, errbuf_size - 1,
                "[TSRemapNewInstance] - Invalid config, err_status == 403, but err_url != NULL");
+      fclose(file);
       return TS_ERROR;
     }
     printf("[url_sig] mapping {%s -> %s} with status %d\n", argv[0], argv[1], cfg->err_status);
