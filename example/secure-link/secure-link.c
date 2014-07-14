@@ -78,16 +78,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
       } while((ptr = strtok(NULL, "&")) != NULL);
     } else {
       TSError("strtok didn't find a & in the query string");
-      /* this is just example, so set fake params to prevent plugin crash */
-      token = TSstrdup("d41d8cd98f00b204e9800998ecf8427e");
-      expire = TSstrdup("00000000");
     }
     TSfree(s);
   } else {
     TSError("TSUrlHttpQueryGet returns empty value");
-    /* this is just example, so set fake params to prevent plugin crash */
-    token = TSstrdup("d41d8cd98f00b204e9800998ecf8427e");
-    expire = TSstrdup("00000000");
   }
 
   ph = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len);
@@ -106,8 +100,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
   MD5_Init(&ctx);
   MD5_Update(&ctx, sli->secret, strlen(sli->secret));
   MD5_Update(&ctx, ip, strlen(ip));
-  MD5_Update(&ctx, path, strlen(path));
-  MD5_Update(&ctx, expire, strlen(expire));
+  if (path) 
+    MD5_Update(&ctx, path, strlen(path));
+  if (expire)
+    MD5_Update(&ctx, expire, strlen(expire));
   MD5_Final(md, &ctx);
   for(i = 0; i < MD5_DIGEST_LENGTH; i++) {
     sprintf(&hash[i * 2], "%02x", md[i]);
