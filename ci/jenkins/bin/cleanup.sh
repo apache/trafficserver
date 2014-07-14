@@ -16,8 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-source /home/jenkins/bin/environment.sh
-
 # Do a distclean, to verify that we can actually satisfy this (common) build target
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 [ -d BUILDS ] && cd BUILDS

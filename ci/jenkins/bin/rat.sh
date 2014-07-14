@@ -16,7 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-source /home/jenkins/bin/environment.sh
 cd "${WORKSPACE}/src"
 
 autoreconf -if && ./configure

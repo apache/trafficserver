@@ -16,8 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-source /home/jenkins/bin/environment.sh
-
 # Check if it's a debug or release build
 enable_debug=""
 test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && enable_debug="--enable-debug"
@@ -48,4 +46,4 @@ mkdir -p BUILDS && cd BUILDS
     ${enable_werror} \
     ${enable_debug}
 
-${ATS_MAKE} -j6
+${ATS_MAKE} -j6 V=1 Q=

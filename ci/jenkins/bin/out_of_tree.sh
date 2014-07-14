@@ -18,7 +18,6 @@
 
 # This does intentionally not run the regressions, it's primarily a "build" test
 
-source /home/jenkins/bin/environment.sh
 cd "${WORKSPACE}/src"
 
 autoreconf -fi
