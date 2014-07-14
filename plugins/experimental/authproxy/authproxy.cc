@@ -243,6 +243,7 @@ pump:
     // If there are no more states, the state machine has terminated.
     if (auth->state == NULL) {
         AuthRequestContext::destroy(auth);
+        return TS_EVENT_NONE;
     }
 
     // If the handler gave us an event, pump the it back into the current state
