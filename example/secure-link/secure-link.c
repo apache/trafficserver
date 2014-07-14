@@ -78,6 +78,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
       } while((ptr = strtok(NULL, "&")) != NULL);
     } else {
       TSError("strtok didn't find a & in the query string");
+      /* this is just example, so set fake params to prevent plugin crash */
+      token = TSstrdup("d41d8cd98f00b204e9800998ecf8427e");
+      expire = TSstrdup("00000000");
     }
     TSfree(s);
   } else {
