@@ -4522,8 +4522,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse) (RegressionTest * test, int /* atype ATS
     start = resp;
     end = resp + strlen(resp) + 1;
     if ((retval = TSHttpHdrParseResp(parser, respbufp, resp_hdr_loc, &start, end)) == TS_PARSE_ERROR) {
-      SDK_RPRINT(test, "TSHttpHdrParseReq", "TestCase1", TC_FAIL,
-                 "TSHttpHdrParseReq returns TS_PARSE_ERROR. Maybe an error with TSHttpParserClear.");
+      SDK_RPRINT(test, "TSHttpHdrParseResp", "TestCase1", TC_FAIL, "TSHttpHdrParseResp returns TS_PARSE_ERROR.");
     } else {
       if (retval == TS_PARSE_DONE) {
         test_passed_parse_resp = true;
