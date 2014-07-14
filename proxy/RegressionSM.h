@@ -69,6 +69,12 @@ struct RegressionSM :  public Continuation {
   {
     mutex = new_ProxyMutex();
   }
+  ~RegressionSM() {
+    for (intptr_t i = 0; i < children.length(); ++i) {
+      delete children[i];
+    }
+  }
+
   RegressionSM(const RegressionSM &);
 };
 
