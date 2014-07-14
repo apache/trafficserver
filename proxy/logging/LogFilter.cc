@@ -201,21 +201,17 @@ LogFilterString::wipe_this_entry(LogAccess * lad)
 
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
-  char small_buf_upper[BUFSIZE];
   char *big_buf = NULL;
-  char *big_buf_upper = NULL;
   char *buf = small_buf;
-  char *buf_upper = small_buf_upper;
   size_t marsh_len = m_field->marshal_len(lad);      // includes null termination
 
   if (marsh_len > BUFSIZE) {
-    big_buf = (char *)ats_malloc((unsigned int) marsh_len);
+    big_buf = (char *)ats_malloc(marsh_len);
     buf = big_buf;
   }
 
-  m_field->marshal(lad, buf);
-
   ink_assert(buf != NULL);
+  m_field->marshal(lad, buf);
 
   bool cond_satisfied = false;
   switch (m_operator) {
@@ -237,26 +233,18 @@ LogFilterString::wipe_this_entry(LogAccess * lad)
     cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf, marsh_len, m_value, DATA_LENGTH_LARGER);
     break;
   case CASE_INSENSITIVE_CONTAIN:
-    {
-      if (big_buf) {
-        big_buf_upper = (char *)ats_malloc((unsigned int) marsh_len);
-        buf_upper = big_buf_upper;
-      }
-      for (size_t i = 0; i < marsh_len; i++) {
-        buf_upper[i] = ParseRules::ink_toupper(buf[i]);
-      }
-      cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf_upper, marsh_len, m_value_uppercase, DATA_LENGTH_LARGER);
-      strcpy(buf, buf_upper);
-      break;
+    for (size_t i = 0; i < marsh_len; i++) {
+      buf[i] = ParseRules::ink_toupper(buf[i]);
     }
+    cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf, marsh_len, m_value_uppercase, DATA_LENGTH_LARGER);
+    break;
   default:
     ink_assert(!"INVALID FILTER OPERATOR");
   }
 
-  ats_free(big_buf);
-  ats_free(big_buf_upper);
-
   m_field->updateField(lad, buf, strlen(buf));
+
+  ats_free(big_buf);
   return cond_satisfied;
 }
 
