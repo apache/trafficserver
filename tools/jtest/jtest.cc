@@ -413,7 +413,8 @@ struct FD {
     length = 0;
     if (!urls_mode)
       response = NULL;
-    response_header[0] = 0;
+    if (response_header)
+      response_header[0] = 0;
     response_length = 0;
     response_remaining = 0;
     count = NULL;
