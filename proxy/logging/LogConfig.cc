@@ -1649,6 +1649,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
     if (pipe(filedes) != 0) {
       Note("xml parsing: Error in Opening a pipe");
+      ats_free(ptr);
       return;
     }
 
