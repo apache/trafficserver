@@ -310,6 +310,8 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
       if (big_buf) {
         big_buf_upper = (char *)ats_malloc((unsigned int) marsh_len);
         buf_upper = big_buf_upper;
+      } else {
+    	  buf = small_buf; // make clang happy
       }
       for (size_t i = 0; i < marsh_len; i++) {
         buf_upper[i] = ParseRules::ink_toupper(buf[i]);
