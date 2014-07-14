@@ -1221,6 +1221,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * /* t ATS_UNUSED */,
   }
   delete request;
   delete result;
+  delete params;
 
   printf("Tests Passed: %d\nTests Failed: %d\n", passes, fails);
   *pstatus = (!fails ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED);
