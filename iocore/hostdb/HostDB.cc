@@ -1484,7 +1484,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       r = lookup_done(md5.ip, e->ent.h_name, false, ttl_seconds, &e->srv_hosts);
     }
 
-    ink_assert(!r || (r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0));
+    // @c lookup_done should always return a valid value so @a r should be null @c NULL.
+    ink_assert(r && r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0);
 
     if (rr) {
       const int rrsize = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
