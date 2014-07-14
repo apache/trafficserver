@@ -64,7 +64,7 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
     sm->history_pos += 1; \
 }
 
-#define DebugTxn(tag, ...) DebugSpecific((s->state_machine && s->state_machine->debug_on), tag, __VA_ARGS__)
+#define DebugTxn(tag, ...) DebugSpecific((s->state_machine->debug_on), tag, __VA_ARGS__)
 
 extern HttpBodyFactory *body_factory;
 extern int cache_config_vary_on_user_agent;
