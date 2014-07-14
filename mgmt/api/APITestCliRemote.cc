@@ -785,6 +785,7 @@ print_vaddrs_ele(TSVirtIpAddrEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("ip=%s, intr=%s, sub_intr=%d\n", ele->ip_addr, ele->intr, ele->sub_intr);
