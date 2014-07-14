@@ -259,12 +259,12 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  RemapConfigs* conf = new(RemapConfigs);
-
   if (argc < 3) {
     TSError("Unable to create remap instance, need configuration file");
     return TS_ERROR;
   }
+  
+  RemapConfigs* conf = new(RemapConfigs);
 
   for (int i = 2; i < argc; ++i) {
     if (strchr(argv[i], '=') != NULL) {
