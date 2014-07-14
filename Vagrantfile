@@ -73,7 +73,7 @@ Vagrant.configure("2") do |config|
 
   # Default all VMs to 1GB.
   config.vm.provider :virtualbox do |v|
-    v.customize ["modifyvm", :id, "--memory", 2048]
+    v.customize ["modifyvm", :id, "--memory", 1024]
   end
 
   # Mount the Traffic Server source code in a fixed location everywhere. Use NFS
