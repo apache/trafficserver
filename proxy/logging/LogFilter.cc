@@ -213,6 +213,8 @@ LogFilterString::wipe_this_entry(LogAccess * lad)
   ink_assert(buf != NULL);
   m_field->marshal(lad, buf);
 
+  ink_assert(buf != NULL);
+
   bool cond_satisfied = false;
   switch (m_operator) {
   case MATCH:
