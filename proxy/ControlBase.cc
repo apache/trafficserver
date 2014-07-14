@@ -647,6 +647,8 @@ ControlBase::ProcessModifiers(matcher_line * line_info) {
     if (ME_UNKNOWN == err) {
       _mods.push_back(mod);
       --n_elts;
+    } else {
+      delete mod; // we still need to clean up because we didn't transfer ownership.
     }
   }
 
