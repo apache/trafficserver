@@ -281,6 +281,7 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc((unsigned int) marsh_len);
+    ink_assert(big_buf != NULL);
     buf = big_buf;
   }
 
