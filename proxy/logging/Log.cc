@@ -1483,6 +1483,8 @@ Log::match_logobject(LogBufferHeader * header)
                           Log::config->rolling_offset_hr,
                           Log::config->rolling_size_mb, true);
 
+      delete fmt; // This is copy constructed in LogObject.
+
       obj->set_remote_flag();
 
       if (Log::config->log_object_manager.manage_object(obj)) {
