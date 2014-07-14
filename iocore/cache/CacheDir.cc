@@ -906,6 +906,7 @@ sync_cache_dir_on_shutdown(void)
       continue;
     }
     size_t dirlen = vol_dirlen(d);
+    ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up.
     if (!d->header->dirty && !d->dir_sync_in_progress) {
       Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_id);
       continue;
