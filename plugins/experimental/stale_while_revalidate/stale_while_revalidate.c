@@ -422,6 +422,7 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
             TSMutexUnlock(state->plugin_config->troot_mutex);
             free_request_info(state->req_info);
             TSfree(state);
+            state = NULL;
         }
         // Otherwise lets do the lookup!
         else
