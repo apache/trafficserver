@@ -318,6 +318,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void * edata)
       delete istate;
       TSContDestroy(contp);
 
+      close(fd);
       return TS_EVENT_NONE;
     }
 
