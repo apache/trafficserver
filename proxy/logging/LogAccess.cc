@@ -1371,6 +1371,8 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   //
   if (!n_fields) {
     Debug("log-resolve", "No fields found; returning copy of format_str");
+    ats_free(printf_str);
+    ats_free(fields_str);
     return ats_strdup(format_str);
   }
 
