@@ -186,6 +186,7 @@ TSRemapNewInstance(int argc, char* argv[], void** instance, char* errbuf, int er
 
       if (status < 100 || status > 599) {
         snprintf(errbuf, errbuf_size, "invalid status code: %.*s", (int)std::distance(argv[i], sep), argv[i]);
+        delete info;
         goto fail;
       }
 
