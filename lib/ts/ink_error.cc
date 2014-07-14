@@ -245,15 +245,3 @@ ink_set_dprintf_level(int debug_level)
     ink_dprintf_level = 0;
   return old_ink_dprintf_level;
 }
-
-/**
-  Initiates a SEGV the old-fashioned way, it earns it.
-
-*/
-void
-ink_segv()
-{
-  char *addr = NULL;
-  *addr = 0;
-  ink_die_die_die(1); // just keep clang happy ... it thinks we return from here ...
-}
