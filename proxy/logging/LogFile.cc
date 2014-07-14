@@ -827,7 +827,7 @@ MetaInfo::_read_from_file()
 {
   _flags |= DATA_FROM_METAFILE;
   int fd = open(_filename, O_RDONLY);
-  if (fd <= 0) {
+  if (fd < 0) {
     Warning("Could not open metafile %s for reading: %s", _filename, strerror(errno));
   } else {
     _flags |= FILE_OPEN_SUCCESSFUL;
