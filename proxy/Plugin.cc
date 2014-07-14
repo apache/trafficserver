@@ -132,6 +132,7 @@ plugin_load(int argc, char *argv[])
     init = (init_func_t) dll_findsym(handle, "TSPluginInit");
     if (!init) {
       Fatal("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
+      return; // this line won't get called since Fatal brings down ats
     }
 
     init(argc, argv);
