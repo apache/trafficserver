@@ -46,7 +46,7 @@
    sides, in additional this VC's lock.  Additionally, issues like
    watermarks are very hard to deal with.  Since we try to
    to move data by IOBufferData references the efficiency penalty shouldn't
-   be too bad and if it is a big pentaly, a brave soul can reimplement
+   be too bad and if it is a big penalty, a brave soul can reimplement
    to move the data directly without the intermediate buffer.
 
    Locking is difficult issue for this multi-headed beast.  In each
@@ -54,7 +54,7 @@
    the lock from the state machine using the PluginVC.  The read side
    lock & the write side lock must be the same.  The regular net processor has
    this constraint as well.  In order to handle scheduling of retry events cleanly,
-   we have two event poitners, one for each lock.  sm_lock_retry_event can only
+   we have two event pointers, one for each lock.  sm_lock_retry_event can only
    be changed while holding the using state machine's lock and
    core_lock_retry_event can only be manipulated while holding the PluginVC's
    lock.  On entry to PluginVC::main_handler, we obtain all the locks
@@ -64,7 +64,7 @@
    exclusively in the later parts of the handler and we will
    be free from do_io or reenable calls on the PluginVC.
 
-   The assumption is made (conistant with IO Core spec) that any close,
+   The assumption is made (consistent with IO Core spec) that any close,
    shutdown, reenable, or do_io_{read,write) operation is done by the callee
    while holding the lock for that side of the operation.
 
@@ -86,9 +86,9 @@
 #define PVC_TYPE    ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
 #define PVC_ID      (core_obj? core_obj->id : (unsigned)-1)
 
-PluginVC::PluginVC():
+PluginVC::PluginVC(PluginVCCore *core_obj):
 NetVConnection(),
-magic(PLUGIN_VC_MAGIC_ALIVE), vc_type(PLUGIN_VC_UNKNOWN), core_obj(NULL),
+magic(PLUGIN_VC_MAGIC_ALIVE), vc_type(PLUGIN_VC_UNKNOWN), core_obj(core_obj),
 other_side(NULL), read_state(), write_state(),
 need_read_process(false), need_write_process(false),
 closed(false), sm_lock_retry_event(NULL), core_lock_retry_event(NULL),

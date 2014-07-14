@@ -81,7 +81,7 @@ class PluginVC:public NetVConnection, public PluginIdentity
   friend class PluginVCCore;
 public:
 
-    PluginVC();
+    PluginVC(PluginVCCore *core_obj);
    ~PluginVC();
 
   virtual VIO *do_io_read(Continuation * c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
@@ -249,8 +249,8 @@ private:
 
 inline
 PluginVCCore::PluginVCCore():
-active_vc(),
-passive_vc(),
+active_vc(this),
+passive_vc(this),
 connect_to(NULL),
 connected(false),
 p_to_a_buffer(NULL),
