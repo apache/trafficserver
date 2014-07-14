@@ -234,7 +234,7 @@ HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const cha
 
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-      if ( NULL != value || value_len ) {
+      if ( NULL != value && value_len ) {
         if (prefix) {
           if ((value_len >= exp_value_len) &&
               (strncasecmp(value, exp_value, exp_value_len) == 0)) {
