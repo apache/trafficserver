@@ -750,6 +750,7 @@ CacheProcessor::start_internal(int flags)
 #else
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
 #endif
+        fd = 0;
         gndisks++;
       }
     } else {
@@ -757,6 +758,9 @@ CacheProcessor::start_internal(int flags)
         Warning("cache unable to open '%s': It must be placed on a file system that supports direct I/O.", path);
       else
         Warning("cache unable to open '%s': %s", path, strerror(errno));
+    }
+    if(fd > 0) {
+    	close(fd);
     }
   }
 
