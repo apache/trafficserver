@@ -483,7 +483,8 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  vc->free(e->ethread);
+  if (vc)
+    vc->free(e->ethread);
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
   delete this;
   return EVENT_DONE;
