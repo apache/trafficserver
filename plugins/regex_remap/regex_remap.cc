@@ -309,8 +309,8 @@ RemapRegex::initialize(const std::string& reg, const std::string& sub, const std
           break;
         default:
           TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
+          delete cur;
           return false;
-          break;
         }
         if (cur) {
           TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
