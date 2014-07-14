@@ -138,8 +138,8 @@ regex_compile(regex_info ** buf, char *pattern, char *replacement)
   int reerroffset;              /* Offset where any pcre error occured */
 
   int tokcount;
-  int *tokens;
-  int *tokenoffset;
+  int *tokens = NULL;
+  int *tokenoffset = NULL;
 
   int status = 1;               /* Status (return value) of the function */
   regex_info *info = (regex_info *) TSmalloc(sizeof(regex_info));
@@ -192,14 +192,11 @@ regex_compile(regex_info ** buf, char *pattern, char *replacement)
     *buf = info;
   } else {
     /* Something went wrong, clean up */
-    if (info->tokens)
-      TSfree(info->tokens);
-    if (info->tokenoffset)
-      TSfree(info->tokenoffset);
+    TSfree(tokens);
+    TSfree(tokenoffset);
     if (info->re)
       pcre_free(info->re);
-    if (info)
-      TSfree(info);
+    TSfree(info);
   }
   return status;
 }
