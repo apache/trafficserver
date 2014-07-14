@@ -207,6 +207,7 @@ LogFilterString::wipe_this_entry(LogAccess * lad)
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc(marsh_len);
+    ink_assert(big_buf != NULL);
     buf = big_buf;
   }
 
