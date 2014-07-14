@@ -175,14 +175,15 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
 
 LogBuffer::~LogBuffer()
 {
+  Debug("log-logbuffer", "[%p] Deleting buffer %u at address %p",
+        this_ethread(), m_id, m_unaligned_buffer ? m_unaligned_buffer : m_buffer);
+
   if (m_unaligned_buffer) {
     delete [] m_unaligned_buffer;
   } else {
     delete [] m_buffer;
   }
 
-  Debug("log-logbuffer", "[%p] Deleted buffer %u at address %p",
-        this_ethread(), m_id, m_unaligned_buffer ? m_unaligned_buffer : m_buffer);
   m_buffer = 0;
   m_unaligned_buffer = 0;
 }
