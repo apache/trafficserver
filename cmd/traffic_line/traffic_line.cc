@@ -74,7 +74,7 @@ struct VIA
 static VIA *
 detailViaLookup(char flag)
 {
-  VIA * viaTable = new VIA();
+  VIA * viaTable = NULL;
 
   //Detailed via codes after ":"
   switch (flag) {
