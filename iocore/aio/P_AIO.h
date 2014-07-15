@@ -107,6 +107,7 @@ struct AIOCallbackInternal: public AIOCallback
   {
     const size_t to_zero = sizeof(AIOCallbackInternal)
       - (size_t) & (((AIOCallbackInternal *) 0)->aiocb);
+    // coverity[overrun-buffer-arg]
     memset((char *) &(this->aiocb), 0, to_zero);
     SET_HANDLER(&AIOCallbackInternal::io_complete);
     // we do a memset() on AIOCallback and AIOCallbackInternal, so it sets all the members to 0
