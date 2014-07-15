@@ -288,8 +288,8 @@ update_cache_config(const char * /* name ATS_UNUSED */, RecDataT /* data_type AT
 CacheVC::CacheVC():alternate_index(CACHE_ALT_INDEX_DEFAULT)
 {
   size_to_init = sizeof(CacheVC) - (size_t) & ((CacheVC *) 0)->vio;
-  void* ptr = (void *) &vio;  // attempt to silence coverity
-  memset(ptr, 0, size_to_init);
+  // coverity[overrun-buffer-arg]
+  memset((void *) &vio, 0, size_to_init);
   // the constructor does a memset() on the members that need to be initialized
   //coverity[uninit_member]
 }
