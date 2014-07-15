@@ -69,9 +69,6 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn,
 
   if (!ch || (!malloced && !((unsigned int) cluster_fn < (uint32_t) SIZE_clusterFunction))) {
     // Invalid message or node is down, free message data
-    if (malloced) {
-      ats_free(data);
-    }
     if (cmsg) {
       invoke_remote_data_args *args = (invoke_remote_data_args *)
         (((OutgoingControl *) cmsg)->data + sizeof(int32_t));
@@ -83,6 +80,9 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn,
     if (data_in_ocntl) {
       c = *((OutgoingControl **) ((char *) data - sizeof(OutgoingControl *)));
       c->freeall();
+    }
+    if (malloced) {
+      ats_free(data);
     }
     return -1;
   }
