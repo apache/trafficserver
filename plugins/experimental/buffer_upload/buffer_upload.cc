@@ -951,11 +951,14 @@ create_directory()
       }
     }
     dir = opendir(".");
+    if (dir == NULL) 
+      goto error_out;
     while ((d = readdir(dir))) {
       remove(d->d_name);
     }
     if (chdir("..") == -1) return 0;
   }
+  closedir(dir);
 
   if (chdir(cwd) == -1) return 0;
   return 1;
