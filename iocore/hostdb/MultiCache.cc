@@ -193,8 +193,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
   //
   //  Spread alloc from the store (using storage that can be mmapped)
   //
-  if (store)
-    delete store;
+  delete store;
   store = new Store;
   astore->spread_alloc(*store, blocks, true);
   unsigned int got = store->total_blocks();
@@ -221,7 +220,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
 }
 
 char *
-MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, bool private_flag, int zero_fill)
+MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t& total_length, bool private_flag, int zero_fill)
 {
   if (!blocks)
     return cur;
@@ -260,6 +259,7 @@ MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, bool private_flag, 
         ink_assert(!cur || res == cur);
         cur = res + nbytes;
         blocks -= b;
+        total_length += nbytes; // total amount mapped.
       }
       p++;
     }
@@ -298,6 +298,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
   int fds[MULTI_CACHE_MAX_FILES] = { 0 };
   int n_fds = 0;
+  size_t total_mapped = 0; // total mapped memory from storage.
 
   // open files
   //
@@ -357,11 +358,10 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     store = &tStore;
 
     char *cur = 0;
-    int fd = -1;
 
 // find a good address to start
 #if !defined(darwin)
-    fd = socketManager.open("/dev/zero", O_RDONLY, 0645);
+    xfd fd(socketManager.open("/dev/zero", O_RDONLY, 0645));
     if (fd < 0) {
       store = saved;
       Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));
@@ -381,7 +381,6 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
       Warning("unable to mmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
 #else
       Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
-      close(fd);
 #endif
       goto Labort;
     }
@@ -391,25 +390,30 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
       Warning("unable to munmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
 #else
       Warning("unable to munmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
-      close(fd);
 #endif
       goto Labort;
     }
+
+    /* We've done a mmap on a target region of the maximize size we need. Now we drop that mapping
+       and do the real one, keeping at the same address space (stored in @a data) which should work because
+       we just tested it.
+    */
+    // coverity[use_after_free]
     data = cur;
 
-    cur = mmap_region(blocks_in_level(0), fds, cur, private_flag, fd);
+    cur = mmap_region(blocks_in_level(0), fds, cur, total_mapped, private_flag, fd);
     if (!cur) {
       store = saved;
       goto Labort;
     }
     if (levels > 1)
-      cur = mmap_region(blocks_in_level(1), fds, cur, private_flag, fd);
+      cur = mmap_region(blocks_in_level(1), fds, cur, total_mapped, private_flag, fd);
     if (!cur) {
       store = saved;
       goto Labort;
     }
     if (levels > 2)
-      cur = mmap_region(blocks_in_level(2), fds, cur, private_flag, fd);
+      cur = mmap_region(blocks_in_level(2), fds, cur, total_mapped, private_flag, fd);
     if (!cur) {
       store = saved;
       goto Labort;
@@ -417,14 +421,14 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 
     if (heap_size) {
       heap = cur;
-      cur = mmap_region(bytes_to_blocks(heap_size), fds, cur, private_flag, fd);
+      cur = mmap_region(bytes_to_blocks(heap_size), fds, cur, total_mapped, private_flag, fd);
       if (!cur) {
         store = saved;
         goto Labort;
       }
     }
     mapped_header = (MultiCacheHeader *) cur;
-    if (!mmap_region(1, fds, cur, private_flag, fd)) {
+    if (!mmap_region(1, fds, cur, total_mapped, private_flag, fd)) {
       store = saved;
       goto Labort;
     }
@@ -470,6 +474,8 @@ Labort:
     if (fds[i] >= 0)
       socketManager.close(fds[i]);
   }
+  if (total_mapped > 0)
+    munmap(data, total_mapped);
 
   return -1;
 }
@@ -500,7 +506,7 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);
 
-  int fd =::open(p, O_RDONLY);
+  xfd fd(::open(p, O_RDONLY));
   if (fd < 0)
     return 0;
 
@@ -524,7 +530,6 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 
   if (s.read(fd, fn) < 0)
     return -1;
-  ::close(fd);
 
   return 1;
 }
@@ -791,7 +796,7 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
 
   // map in a chunk of space to use as scratch (check)
   // or to copy the database to.
-  int fd = socketManager.open("/dev/zero", O_RDONLY);
+  xfd fd(socketManager.open("/dev/zero", O_RDONLY));
   if (fd < 0) {
     Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));
     return -1;
@@ -804,7 +809,6 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
     Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize,errno, strerror(errno));
     return -1;
   }
-  ::close(fd);
   // if we are rebuilding get the original data
 
   if (!data) {

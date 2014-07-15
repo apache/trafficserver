@@ -270,7 +270,7 @@ struct MultiCacheBase: public MultiCacheHeader
                  int level0_elements_per_bucket = 4,
                  int level1_elements_per_bucket = 32, int level2_elements_per_bucket = 1);
   int mmap_data(bool private_flag = false, bool zero_fill = false);
-  char *mmap_region(int blocks, int *fds, char *cur, bool private_flag, int zero_fill = 0);
+  char *mmap_region(int blocks, int *fds, char *cur, size_t& total_length, bool private_flag, int zero_fill = 0);
   int blocks_in_level(int level);
 
   bool verify_header();
