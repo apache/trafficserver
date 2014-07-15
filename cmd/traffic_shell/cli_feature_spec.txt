@@ -130,10 +130,6 @@ config:parent rules <url>
 
 config:remap <url>              Update remap configuration file <url>
     
-config:clock date <mm/dd/yyyy>          
-config:clock time <hh:mm:ss>
-config:clock timezone <number from list>       
-    
 config:security <ip-allow | mgmt-allow | admin> <url-config-file>
 config:security password                 
 

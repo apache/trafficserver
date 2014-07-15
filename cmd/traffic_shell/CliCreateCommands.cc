@@ -150,11 +150,6 @@ CliCreateCommands()
   createCommand("config:remap", Cmd_ConfigRemap, NULL, CLI_COMMAND_EXTERNAL,
                 "config:remap <url>", "Update remap configuration file <url>");
 
-  createCommand("config:clock", Cmd_ConfigClock, CmdArgs_ConfigClock, CLI_COMMAND_EXTERNAL,
-                "config:clock date <mm/dd/yyyy>\n"
-                "config:clock time <hh:mm:ss>\n"
-                "config:clock timezone <number from list | list>", "Configure date, time, timezone");
-
   createCommand("config:security", Cmd_ConfigSecurity, CmdArgs_ConfigSecurity, CLI_COMMAND_EXTERNAL,
                 "config:security <ip-allow | mgmt-allow | admin> <url-config-file>\n"
                 "config:security password", "Update security configuration");

@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.2
 
+  *) [TS-2867] Remove clock functionality from traffic_shell to address temporary file
+   handling issues.
+
   *) [TS-2822] Crash in LogBufferIterator::next
 
   *) [TS-2784] Make header_rewrite plugins compile on FBSD.

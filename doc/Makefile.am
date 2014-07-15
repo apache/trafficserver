@@ -21,7 +21,6 @@ trafficshelldir = $(pkgdocdir)/trafficshell
 dist_trafficshell_DATA = \
   man/config_alarms.1 \
   man/config_cache.1 \
-  man/config_clock.1 \
   man/config_dns.1 \
   man/config_get.1 \
   man/config_hard-restart.1 \

@@ -1576,41 +1576,7 @@ config:network	Make System Network configuration changes
      Netmask ------------- 255.255.255.0
      Gateway ------------- default
 
-   traffic_shell> 
-    
-
-  date		Specify system date.
-    syntax: config:clock date <date>
-    args:   <date> = mm/dd/yyyy
-
-    ts# config:clock date 01/01/2001
-    ts# config:clock date
-    01/01/2001
-    ts#
-  
-  time		Specify system time.
-    syntax: config time <time>
-    args:   <time> = hh:mm:ss
-
-    ts# config:clock time 14:00:00
-    ts# config:clock time
-    14:00:03
-    ts#
-
-  timezone	Specify time zone.
-    syntax: config:clock timezone [zone | list]
-    args:   [zone] optional time zone from numbered list
-            if not present, display current time zones
-	    [list] display list of time zone
-
-    ts# config:clock timezone
-    Display numbered current timezones.
-
-    ts# config:clock timezone 3
-    ts#
-    
-    ts# config:clock timezone list
-    Display list of time zone. (85 in total currently)
+   traffic_shell>
 
   halt		Halt appliance.
     syntax: halt
