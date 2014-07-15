@@ -301,6 +301,7 @@ Store::read_config(int fd)
 {
   int n_dsstore = 0;
   int ln = 0;
+  int i = 0;
   const char *err = NULL;
   Span *sd = NULL, *cur = NULL;
   Span *ns;
@@ -382,26 +383,30 @@ Store::read_config(int fd)
     }
   }
 
-  ::close(fd);
   // count the number of disks
-
-  {
-    extend(n_dsstore);
-    cur = sd;
-    Span *next = cur;
-    int i = 0;
-    while (cur) {
-      next = cur->link.next;
-      cur->link.next = NULL;
-      disk[i++] = cur;
-      cur = next;
-    }
-    sort();
+  extend(n_dsstore);
+  cur = sd;
+  while (cur) {
+    Span* next = cur->link.next;
+    cur->link.next = NULL;
+    disk[i++] = cur;
+    cur = next;
   }
-
-Lfail:
+  sd = 0; // these are all used.
+  sort();
   ::close(fd);
   return NULL;
+
+Lfail:
+  // Do clean up.
+  ::close(fd);
+  while (NULL != sd) {
+    Span* next = sd->link.next;
+    delete sd;
+    sd = next;
+  }
+
+  return err;
 }
 
 #if TS_USE_INTERIM_CACHE == 1
