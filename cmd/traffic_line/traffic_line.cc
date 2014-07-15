@@ -432,7 +432,9 @@ handleArgInvocation()
       TSList list = TSListCreate();
 
       if ((err = TSRecordGetMatchMlt(MatchVar, list)) != TS_ERR_OKAY) {
-        fprintf(stderr, "%s: %s\n", programName, TSGetErrorMessage(err));
+        char* msg = TSGetErrorMessage(err);
+        fprintf(stderr, "%s: %s\n", programName, msg);
+        ats_free(msg);
       }
 
       // If the RPC call failed, the list will be empty, so we won't print anything. Otherwise,
