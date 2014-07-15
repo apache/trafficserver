@@ -100,7 +100,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
   DIR *dir;
   char *fileName;
   char *filePath;
-  char *records_config_filePath = NULL;
+  char *records_config_filePath;
   struct stat fileInfo;
   struct stat records_config_fileInfo;
   fileEntry *fileListEntry;
@@ -138,13 +138,13 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
       }
     }
     delete[]filePath;
+    delete[]records_config_filePath;
   }
 
   ats_free(dirEntry);
   closedir(dir);
 
   fileList->sortWithFunction(fileEntryCmpFunc);
-  delete[]records_config_filePath;
   return MF_OK;
 }
 
