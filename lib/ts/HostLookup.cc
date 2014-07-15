@@ -945,8 +945,7 @@ HostLookup::InsertBranch(HostBranch * insert_in, const char *level_data)
   switch (insert_in->type) {
   case HOST_TERMINAL:
     // Should not happen
-    ink_assert(0);
-    delete new_branch;
+    ink_release_assert(0);
     break;
   case HOST_HASH:
     ink_hash_table_insert((InkHashTable *) insert_in->next_level, (char *) level_data, new_branch);
