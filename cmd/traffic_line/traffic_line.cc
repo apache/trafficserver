@@ -137,8 +137,6 @@ standardViaLookup(char flag)
 {
   VIA * viaTable;
 
-  viaTable = new VIA();
-
   //Via codes before ":"
   switch (flag) {
     case 'u':
@@ -193,6 +191,7 @@ standardViaLookup(char flag)
       viaTable->viaData[(unsigned char) ' '] = "unknown";
       break;
     default:
+      viaTable = new VIA();
       fprintf(stderr, "%s: %s: %c\n", programName, "Invalid VIA header character",flag);
       break;
   }
