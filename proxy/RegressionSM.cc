@@ -247,5 +247,4 @@ REGRESSION_TEST(RegressionSM)(RegressionTest *t, int /* atype ATS_UNUSED */, int
                           r_parallel(t, 2, new ReRegressionSM(t)), NULL_PTR),
                NULL_PTR);
   top_sm->run(pstatus);
-  delete top_sm;
 }
