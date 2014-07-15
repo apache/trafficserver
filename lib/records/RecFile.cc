@@ -239,11 +239,13 @@ RecPipeConnect(const char *base_path, const char *name)
   // set so that child process doesn't inherit our fd
   if (fcntl(sockfd, F_SETFD, 1) < 0) {
     RecLog(DL_Warning, "[RecPipeConnect] fcntl error\n");
+    close(sockfd);
     return REC_HANDLE_INVALID;
   }
   // blocking connect
   if ((connect(sockfd, (struct sockaddr *) &servaddr, servaddr_len)) < 0) {
     RecLog(DL_Warning, "[RecPipeConnect] connect error\n");
+    close(sockfd);
     return REC_HANDLE_INVALID;
   }
 
