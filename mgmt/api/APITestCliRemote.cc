@@ -1094,6 +1094,7 @@ test_records()
   else
     printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
   TSfree(rec_value);
+  rec_value = NULL;
 
   // test RecordSet
   err = TSRecordSetString("proxy.config.proxy_name", (TSString) new_str, &action);
