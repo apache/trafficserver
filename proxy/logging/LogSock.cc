@@ -87,7 +87,7 @@ LogSock::listen(int accept_port, int family)
   int size = sizeof(bind_addr);
   char this_host[MAXDNAME];
   int ret;
-  SOCKET accept_sd;
+  xfd accept_sd;
 
   Debug("log-sock", "Listening ...");
 
@@ -176,6 +176,7 @@ LogSock::listen(int accept_port, int family)
   m_accept_connections = true;
   Debug("log-sock", "LogSocket established on [%s:%d]", this_host, accept_port);
 
+  accept_sd.release();
   return 0;
 }
 
@@ -228,7 +229,8 @@ LogSock::accept()
 int
 LogSock::connect(sockaddr const* ip)
 {
-  int cid, connect_sd, ret;
+  int cid, ret;
+  xfd connect_sd;
   uint16_t port;
 
   if (!ats_is_ip(ip)) {
@@ -249,7 +251,7 @@ LogSock::connect(sockaddr const* ip)
   // initialize a new socket descriptor
   connect_sd =::socket(ip->sa_family, LS_SOCKTYPE, LS_PROTOCOL);
   if (connect_sd < 0) {
-    Note("Error initializing socket for connection: %d", connect_sd);
+    Note("Error initializing socket for connection: %d", static_cast<int>(connect_sd));
     return LogSock::LS_ERROR_SOCKET;
   }
 
@@ -265,7 +267,6 @@ LogSock::connect(sockaddr const* ip)
 
   // attempt to connect
   if (::connect(connect_sd, ip, ats_ip_size(ip)) != 0) {
-    ::close(connect_sd);
     Note("Failure to connect");
     return LogSock::LS_ERROR_CONNECT;
   }
@@ -274,6 +275,7 @@ LogSock::connect(sockaddr const* ip)
 
   Debug("log-sock", "outgoing connection to [%s:%d] established, fd  = %d", ipstr, port, cid);
 
+  connect_sd.release();
   return cid;
 }
 
