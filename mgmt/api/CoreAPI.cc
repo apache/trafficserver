@@ -853,7 +853,6 @@ SnapshotRemove(char *snapshot_name)
   ats_free(snapDirFromRecordsConf);
 
   SnapResult result = configFiles->removeSnap(snapshot_name, snapDir);
-  ats_free(snapDirFromRecordsConf);
   if (result != SNAP_OK)
     return TS_ERR_FAIL;
   else
