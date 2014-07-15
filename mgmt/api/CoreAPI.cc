@@ -827,7 +827,6 @@ SnapshotRestore(char *snapshot_name)
   ats_free(snapDirFromRecordsConf);
 
   SnapResult result = configFiles->restoreSnap(snapshot_name, snapDir);
-  ats_free(snapDirFromRecordsConf);
   if (result != SNAP_OK)
     return TS_ERR_FAIL;
   else
