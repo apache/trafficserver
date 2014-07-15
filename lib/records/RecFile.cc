@@ -34,7 +34,7 @@ RecHandle
 RecFileOpenR(const char *file)
 {
   RecHandle h_file;
-  return ((h_file =::open(file, O_RDONLY)) <= 0) ? REC_HANDLE_INVALID : h_file;
+  return ((h_file =::open(file, O_RDONLY)) < 0) ? REC_HANDLE_INVALID : h_file;
 }
 
 //-------------------------------------------------------------------------
