@@ -60,7 +60,7 @@ WebFileOpenR(const char *file)
 {
 
   WebHandle h_file;
-  if ((h_file = mgmt_open(file, O_RDONLY)) <= 0) {
+  if ((h_file = mgmt_open(file, O_RDONLY)) < 0) {
     return WEB_HANDLE_INVALID;
   }
   return h_file;
