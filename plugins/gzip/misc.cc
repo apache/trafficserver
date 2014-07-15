@@ -180,6 +180,7 @@ load_dictionary(const char *preload_file)
     }
   }
   dict[i - 1] = '\0';
+  fclose(fp);
 
   /* TODO get the adler compute right */
   *adler = adler32(*adler, (const Byte *) dict, sizeof(dict));
