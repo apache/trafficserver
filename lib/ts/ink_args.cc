@@ -191,8 +191,9 @@ process_args(const ArgumentDescription * argument_descriptions, unsigned n_argum
           usage(argument_descriptions, n_argument_descriptions, usage_string);
       }
     } else {
-      if (n_file_arguments > MAX_FILE_ARGUMENTS)
-        ink_fatal(1, (char *) "too many files");
+      if (n_file_arguments >= countof(file_arguments)) {
+        ink_fatal(1, "too many files");
+      }
       file_arguments[n_file_arguments++] = *argv;
       file_arguments[n_file_arguments] = NULL;
     }
