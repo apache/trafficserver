@@ -296,6 +296,7 @@ MultiCacheBase::unmap_data()
 int
 MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
+  xfd fd;
   int fds[MULTI_CACHE_MAX_FILES] = { 0 };
   int n_fds = 0;
   size_t total_mapped = 0; // total mapped memory from storage.
@@ -361,7 +362,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 
 // find a good address to start
 #if !defined(darwin)
-    xfd fd(socketManager.open("/dev/zero", O_RDONLY, 0645));
+    fd = socketManager.open("/dev/zero", O_RDONLY, 0645);
     if (fd < 0) {
       store = saved;
       Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));

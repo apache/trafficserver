@@ -176,4 +176,8 @@ struct xfd {
   xfd& operator=(xfd const&); // disabled
 };
 
+// Add these to reduce ambiguity testing the fd.
+inline bool operator < (xfd const& lhs, int rhs) { return static_cast<int>(lhs) < rhs; }
+inline bool operator < (int lhs, xfd const& rhs) { return lhs < static_cast<int>(rhs); }
+
 #endif /*_SocketManager_h_*/
