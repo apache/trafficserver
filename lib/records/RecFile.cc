@@ -186,17 +186,20 @@ RecPipeCreate(const char *base_path, const char *name)
   servaddr_len = sizeof(servaddr.sun_family) + strlen(servaddr.sun_path);
   if ((bind(listenfd, (struct sockaddr *) &servaddr, servaddr_len)) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] bind error\n");
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
   // listen, backlog of 1 (expecting only one client)
   if ((listen(listenfd, 1)) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] listen error\n");
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
   // block until we get a connection from the other side
   cliaddr_len = sizeof(cliaddr);
   if ((acceptfd = accept(listenfd, (struct sockaddr *) &cliaddr,
                          &cliaddr_len)) < 0) {
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
 
