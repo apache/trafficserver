@@ -564,9 +564,9 @@ TSSendClusterRPC(TSNodeHandle_t * nh, TSClusterRPCMsg_t * msg)
     int len = c->len - sizeof(OutgoingControl *);
     ink_release_assert((size_t) len >= sizeof(TSClusterRPCMsg_t));
 
+    Debug("cluster_api", "TSSendClusterRPC: msg %p dlen %d [%u.%u.%u.%u] sent", msg, len, DOT_SEPARATED(ipaddr.s_addr));
     clusterProcessor.invoke_remote(m->pop_ClusterHandler(), rpch->u.internal.cluster_function,
                                    msg, len, (CLUSTER_OPT_STEAL | CLUSTER_OPT_DATA_IS_OCONTROL));
-    Debug("cluster_api", "TSSendClusterRPC: msg %p dlen %d [%u.%u.%u.%u] sent", msg, len, DOT_SEPARATED(ipaddr.s_addr));
   } else {
     Debug("cluster_api", "TSSendClusterRPC: msg %p to [%u.%u.%u.%u] dropped", msg, DOT_SEPARATED(ipaddr.s_addr));
     c->freeall();
