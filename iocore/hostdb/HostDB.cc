@@ -546,48 +546,45 @@ make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char const* pDN
 }
 
 static bool
-reply_to_cont(Continuation * cont, HostDBInfo * ar, bool is_srv = false)
+reply_to_cont(Continuation * cont, HostDBInfo * r, bool is_srv = false)
 {
-  const char *reason = "none";
-  HostDBInfo *r = ar;
-
   if (r == NULL || r->is_srv != is_srv || r->failed()) {
     cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
     return false;
   }
 
-  {
-    if (r->reverse_dns) {
-      if (!r->hostname()) {
-        reason = "missing hostname";
-        ink_assert(!"missing hostname");
-        goto Lerror;
-      }
-      Debug("hostdb", "hostname = %s", r->hostname());
+  if (r->reverse_dns) {
+    if (!r->hostname()) {
+      ink_assert(!"missing hostname");
+      cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
+      Warning("bogus entry deleted from HostDB: missing hostname");
+      hostDB.delete_block(r);
+      return false;
     }
-
-    if (!r->is_srv && r->round_robin) {
-      if (!r->rr()) {
-        reason = "missing round-robin";
-        ink_assert(!"missing round-robin");
-        goto Lerror;
-      }
-      ip_text_buffer ipb;
-      Debug("hostdb", "RR of %d with %d good, 1st IP = %s", r->rr()->rrcount, r->rr()->good, ats_ip_ntop(r->ip(), ipb, sizeof ipb));
-    }
-
-    cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, r);
-
-    if (!r->full)
-      goto Ldelete;
-    return true;
+    Debug("hostdb", "hostname = %s", r->hostname());
   }
-Lerror:
-  cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
-Ldelete:
-  Warning("bogus entry deleted from HostDB: %s", reason);
-  hostDB.delete_block(ar);
-  return false;
+
+  if (!r->is_srv && r->round_robin) {
+    if (!r->rr()) {
+      ink_assert(!"missing round-robin");
+      cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
+      Warning("bogus entry deleted from HostDB: missing round-robin");
+      hostDB.delete_block(r);
+      return false;
+    }
+    ip_text_buffer ipb;
+    Debug("hostdb", "RR of %d with %d good, 1st IP = %s", r->rr()->rrcount, r->rr()->good, ats_ip_ntop(r->ip(), ipb, sizeof ipb));
+  }
+
+  cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, r);
+
+  if (!r->full) {
+    Warning("bogus entry deleted from HostDB: none");
+    hostDB.delete_block(r);
+    return false;
+  }
+
+  return true;
 }
 
 inline HostResStyle
