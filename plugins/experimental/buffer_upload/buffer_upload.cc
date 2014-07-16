@@ -956,11 +956,14 @@ create_directory()
     while ((d = readdir(dir))) {
       remove(d->d_name);
     }
-    if (chdir("..") == -1) return 0;
+    closedir(dir);
+    if (chdir("..") == -1)
+      return 0;
   }
-  closedir(dir);
 
-  if (chdir(cwd) == -1) return 0;
+  if (chdir(cwd) == -1)
+    return 0;
+
   return 1;
 
 error_out:
@@ -968,9 +971,10 @@ error_out:
       value of chdir() and cannot be silenced
       The reason is the combination of -D_FORTIFY_SOURCE=2 -O
    */
-  if(chdir(cwd) == -1) return 0;
-  return 0;
+  if (chdir(cwd) == -1)
+    return 0;
 
+  return 0;
 }
 
 static void
