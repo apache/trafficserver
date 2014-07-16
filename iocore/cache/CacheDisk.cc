@@ -343,7 +343,6 @@ CacheDisk::update_header()
       free_blocks->num_volblocks++;
       free_blocks->size += dpbq->b->len;
       free_blocks->dpb_queue.enqueue(dpbq);
-      dpbq_referenced = true;
       free_space += dpbq->b->len;
       continue;
     }
