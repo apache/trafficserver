@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2939] Metalink: Fix crash when checking the digest of a file
+   that wasn't cacheable
+
   *) [TS-2922] Support the new ppc64le platform. Author: Breno Leitao
 
   *) [TS-2944] Remove the proxy.config.http.record_tcp_mem_hit configuration variable.
@@ -426,7 +429,7 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2679] background_fetch plugin can use uninitialized cont pointer.
 
-  *) [TS-2675] metalink: Fix crash and plug memory leaks.
+  *) [TS-2675] Metalink: Fix crash and plug memory leaks.
    Author: Jack Bates <jack@nottheoilrig.com>
 
   *) [TS-2674] Remove debug printf() from traffic_top.
@@ -1468,7 +1471,7 @@ Changes with Apache Traffic Server 3.3.3 (never released)
 
   *) [TS-1925] Remove obsolete MMH hash API.
 
-  *) [TS-1924] Add metalink plugin documentation.
+  *) [TS-1924] Add Metalink plugin documentation.
     Author: Jack Bates <jack@nottheoilrig.com>
 
   *) [TS-1913] Fix memory issue caused by resolve_logfield_string()

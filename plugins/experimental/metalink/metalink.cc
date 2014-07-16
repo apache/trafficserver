@@ -90,6 +90,7 @@ typedef struct {
   /* Digest header field value index */
   int idx;
 
+  TSVConn connp;
   TSIOBuffer cache_bufp;
 
   const char *value;
@@ -163,7 +164,7 @@ cache_open_write(TSCont contp, void *edata)
 
   TSfree(value);
 
-  /* Reuse the TSCacheWrite() continuation */
+  /* Reentrant!  Reuse the TSCacheWrite() continuation. */
   TSVConnWrite(data->connp, contp, readerp, nbytes);
 
   return 0;
@@ -377,7 +378,8 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 
     /* Determines the Content-Length header (or a chunked response) */
 
-    /* Avoid failed assert "nbytes >= 0" if the response is chunked */
+    /* Reentrant!  Avoid failed assert "nbytes >= 0" if the response
+     * is chunked. */
     int nbytes = TSVIONBytesGet(input_viop);
     transform_data->output_viop = TSVConnWrite(output_connp, contp, readerp, nbytes < 0 ? INT64_MAX : nbytes);
 
@@ -471,6 +473,7 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
     contp = TSContCreate(write_handler, NULL);
     TSContDataSet(contp, write_data);
 
+    /* Reentrant! */
     TSCacheWrite(contp, write_data->key);
   }
 
@@ -542,13 +545,12 @@ static int
 cache_open_read(TSCont contp, void *edata)
 {
   SendData *data = (SendData *) TSContDataGet(contp);
-
-  TSVConn connp = (TSVConn) edata;
+  data->connp = (TSVConn) edata;
 
   data->cache_bufp = TSIOBufferCreate();
 
-  /* Reuse the TSCacheRead() continuation */
-  TSVConnRead(connp, contp, data->cache_bufp, INT64_MAX);
+  /* Reentrant!  Reuse the TSCacheRead() continuation. */
+  TSVConnRead(data->connp, contp, data->cache_bufp, INT64_MAX);
 
   return 0;
 }
@@ -621,6 +623,8 @@ vconn_read_ready(TSCont contp, void */* edata ATS_UNUSED */)
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
 
+  TSVConnClose(data->connp);
+
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->cache_bufp);
 
   TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
@@ -668,6 +672,10 @@ vconn_read_ready(TSCont contp, void */* edata ATS_UNUSED */)
   contp = TSContCreate(rewrite_handler, NULL);
   TSContDataSet(contp, data);
 
+  /* Reentrant!  (Particularly in case of a cache miss.)
+   * rewrite_handler() will clean up the TSVConnRead() buffer so be
+   * sure to close this virtual connection or CacheVC::openReadMain()
+   * will continue operating on it! */
   TSCacheRead(contp, data->key);
 
   return 0;
@@ -735,6 +743,7 @@ location_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
     contp = TSContCreate(digest_handler, NULL);
     TSContDataSet(contp, data);
 
+    /* Reentrant! */
     TSCacheRead(contp, data->key);
 
     return 0;
@@ -857,6 +866,7 @@ http_send_response_hdr(TSCont contp, void *edata)
       contp = TSContCreate(location_handler, NULL);
       TSContDataSet(contp, data);
 
+      /* Reentrant! */
       TSCacheRead(contp, data->key);
 
       return 0;

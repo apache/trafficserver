@@ -16,8 +16,8 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-print '''1..2 location
-# The proxy rewrites the Location header if the file is already cached'''
+print '''1..1 notCacheable
+# The digest of a file that wasn't cacheable doesn't crash the proxy'''
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
@@ -37,18 +37,14 @@ class factory(http.HTTPFactory):
         ctx.client = None
         ctx.clientproto = version
 
-        if target == '/location':
+        if target == '/notCacheable':
 
-          # Satisfy every case of
-          # proxy.config.http.cache.required_headers
-          ctx.setHeader('Cache-Control', 'max-age=1')
-
-          ctx.write('location')
+          ctx.write('notCacheable')
           ctx.finish()
 
         else:
 
-          ctx.setHeader('Digest', 'SHA-256=5urqGOiF4QeIKbVt80iWvlq1FDno8LoAyxYkssVywQ4=')
+          ctx.setHeader('Digest', 'SHA-256=BSg5n9c6XBC3jySKsXViB71jhPIoRo3AbCC/gtNlt6k=')
           ctx.setHeader('Location', 'http://example.com')
           ctx.finish()
 
@@ -76,12 +72,12 @@ class factory(protocol.ClientFactory):
       else:
         print 'not ok 1 - Did the proxy crash?  (The client connection closed.)'
 
-    # Get a response with a Location and a Digest header and check
-    # that the Location header is not rewritten.  Then get the same
-    # response after caching a matching file from a different URL and
-    # check that this time the header is rewritten.
     def connectionMade(ctx):
-      ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\nGET {0}:{1}/location HTTP/1.1\r\n\r\nGET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+
+      # A cache MUST NOT store a response to any request, unless: The
+      # request method is understood by the cache and defined as being
+      # cacheable,
+      ctx.transport.write('NOTCACHEABLE {0}:{1}/notCacheable HTTP/1.1\r\n\r\nGET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
 
     def handleResponsePart(ctx, data):
       try:
@@ -96,31 +92,10 @@ class factory(protocol.ClientFactory):
         ctx.setLineMode(r)
 
     def handleStatus(ctx, version, status, message):
-      def handleHeader(k, v):
-        if k.lower() == 'location':
-          if v != 'http://example.com':
-            print 'not',
-
-          print 'ok 1 - Before'
-
-      ctx.handleHeader = handleHeader
-
       def handleStatus(version, status, message):
-        del ctx.handleHeader
+        print 'ok 1 - The proxy didn\'t crash (got a response status)'
 
-        def handleStatus(version, staus, message):
-          def handleHeader(k, v):
-            if k.lower() == 'location':
-              if v != 'http://{0}:{1}/location'.format(*origin.socket.getsockname()):
-                print 'not',
-
-              print 'ok 2 - After'
-
-              reactor.stop()
-
-          ctx.handleHeader = handleHeader
-
-        ctx.handleStatus = handleStatus
+        reactor.stop()
 
       ctx.handleStatus = handleStatus
 
