@@ -271,9 +271,9 @@ EThread::execute() {
         } else {                // Means there are no negative events
           next_time = EventQueue.earliest_timeout();
           ink_hrtime sleep_time = next_time - cur_time;
+
           if (sleep_time > THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND) {
             next_time = cur_time + THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND;
-            sleep_time = THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND;
           }
           // dequeue all the external events and put them in a local
           // queue. If there are no external events available, do a
