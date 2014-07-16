@@ -78,7 +78,8 @@ class factory(protocol.ClientFactory):
 
       reactor.callLater(1, tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect)
 
-    connectionMade = lambda ctx: ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+    def connectionMade(ctx):
+      ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
 
 tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
 

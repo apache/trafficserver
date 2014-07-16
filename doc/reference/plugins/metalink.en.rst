@@ -17,10 +17,10 @@
 .. _metalink-plugin:
 
 
-Metalink plugin
+Metalink Plugin
 ===============
 
-The `metalink` plugin implements the `Metalink`_ download description
+The `Metalink` plugin implements the Metalink_ download description
 format in order to try not to download the same file twice.  This
 improves cache efficiency and speeds up users' downloads.
 
@@ -61,7 +61,7 @@ won't download the file again.
 Installation
 ------------
 
-The `metalink` plugin is a global plugin.  Enable it by adding
+The `Metalink` plugin is a :term:`global plugin`.  Enable it by adding
 ``metalink.so`` to your :file:`plugin.config` file.  There are no
 options.
 
@@ -69,8 +69,8 @@ options.
 Implementation Status
 ---------------------
 
-The plugin implements the ``TS_HTTP_SEND_RESPONSE_HDR_HOOK`` hook to
-check and potentially rewrite the :mailheader:`Location` and
+The plugin implements the :c:data:`TS_HTTP_SEND_RESPONSE_HDR_HOOK`
+hook to check and potentially rewrite the :mailheader:`Location` and
 :mailheader:`Digest` headers after responses are cached.  It doesn't
 do it before they're cached because the contents of the cache can
 change after responses are cached.  It uses :c:func:`TSCacheRead` to
@@ -78,13 +78,13 @@ check if the URL in the :mailheader:`Location` header is already
 cached.  In future, the plugin should also check if the URL is fresh
 or not.
 
-The plugin implements the ``TS_HTTP_READ_RESPONSE_HDR_HOOK`` hook and
-`a null transformation`_ to compute the SHA-256 digest for content as
-it's added to the cache.  It uses SHA256_Init(), SHA256_Update(), and
-SHA256_Final() from OpenSSL to compute the digest, then it uses
-:c:func:`TSCacheWrite` to associate the digest with the request URL.
-This adds a new cache object where the key is the digest and the
-object is the request URL.
+The plugin implements the :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`
+hook and `a null transformation`_ to compute the SHA-256 digest for
+content as it's added to the cache.  It uses SHA256_Init(),
+SHA256_Update(), and SHA256_Final() from OpenSSL to compute the
+digest, then it uses :c:func:`TSCacheWrite` to associate the digest
+with the request URL.  This adds a new cache object where the key is
+the digest and the object is the request URL.
 
 To check if the cache already contains content that matches a digest,
 the plugin must call :c:func:`TSCacheRead` with the digest as the key,
@@ -107,7 +107,7 @@ headers.
 
 The :mailheader:`Digest: SHA-256=...` header is also more efficient
 than :mailheader:`Link: <...>; rel=duplicate` headers because it
-involves a constant number of cache lookups.  RFC 6249 requires a
+involves a constant number of cache lookups.  :rfc:`6249` requires a
 :mailheader:`Digest: SHA-256=...` header or :mailheader:`Link: <...>;
 rel=duplicate` headers MUST be ignored:
 

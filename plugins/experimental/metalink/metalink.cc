@@ -229,7 +229,9 @@ write_handler(TSCont contp, TSEvent event, void *edata)
  *
  *    1.  Check if we are "closed" before doing anything else to avoid
  *        errors.
+ *
  *    2.  Then deal with any input that's available now.
+ *
  *    3.  Check if the input is complete after dealing with any
  *        available input in case it was the last of it.  If it is
  *        complete, tell downstream, thank upstream, and finish
@@ -293,23 +295,24 @@ write_handler(TSCont contp, TSEvent event, void *edata)
  * and the transaction won't get logged.  (If there are upstream
  * transformations they won't get a chance to clean up otherwise!)
  *
- * Summary of the cases into which each event can fall:
+ * Summary of the cases each event can fall into:
  *
  *    Closed        *We* are "closed".  Clean up allocated data.
- *
- *       Start      First (and last) time the handler was called.
- *                  (This happens when the response is 304 Not Modified.)
- *
- *       Not start  (This happens when the client or origin disconnect
+ *     │
+ *     ├ Start      First (and last) time the handler was called.
+ *     │            (This happens when the response is 304 Not
+ *     │            Modified.)
+ *     │
+ *     └ Not start  (This happens when the client or origin disconnect
  *                  before the message is complete.)
  *
  *    Start         First time the handler was called.  Initialize
- *                  data here because we can't call TSVConnWrite()
- *                  before TS_HTTP_RESPONSE_TRANSFORM_HOOK.
- *
- *       Content length
- *
- *       Chunked response
+ *     │            data here because we can't call TSVConnWrite()
+ *     │            before TS_HTTP_RESPONSE_TRANSFORM_HOOK.
+ *     │
+ *     ├ Content length
+ *     │
+ *     └ Chunked response
  *
  *    Upstream closed
  *                  (This happens when the content length is zero or
@@ -319,13 +322,13 @@ write_handler(TSCont contp, TSEvent event, void *edata)
  *    Available input
  *
  *    Input complete
- *
- *       Deja vu    There might be multiple TS_EVENT_IMMEDIATE events
- *                  between the end of the input and the
- *                  TS_EVENT_VCONN_WRITE_COMPLETE event from
- *                  downstream.
- *
- *       Not deja vu
+ *     │
+ *     ├ Deja vu    There might be multiple TS_EVENT_IMMEDIATE events
+ *     │            between the end of the input and the
+ *     │            TS_EVENT_VCONN_WRITE_COMPLETE event from
+ *     │            downstream.
+ *     │
+ *     └ Not deja vu
  *                  Tell downstream and thank upstream.
  *
  *    Downstream complete
@@ -579,6 +582,8 @@ rewrite_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
   SendData *data = (SendData *) TSContDataGet(contp);
   TSContDestroy(contp);
 
+  TSCacheKeyDestroy(data->key);
+
   switch (event) {
 
   /* Yes: Rewrite the Location header and reenable the response */
@@ -598,8 +603,6 @@ rewrite_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
   }
 
   TSIOBufferDestroy(data->cache_bufp);
-
-  TSCacheKeyDestroy(data->key);
 
   TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->location_loc);
   TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->hdr_loc);
@@ -786,6 +789,7 @@ http_send_response_hdr(TSCont contp, void *edata)
   /* Assumption: We want to minimize cache reads, so check first that
    *
    *    1.  the response has a Location header and
+   *
    *    2.  the response has a Digest header.
    *
    * Then scan if the URL or digest already exist in the cache. */
