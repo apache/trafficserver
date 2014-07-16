@@ -128,8 +128,8 @@ AC_ARG_WITH([group],
 AC_SUBST([pkgsysuser],[$with_user])
 AC_SUBST([pkgsysgroup],[$with_group])
 
-AC_ARG_WITH([build-version],
-  [AS_HELP_STRING([--with-build-version],[specify a version string for this build])],
+AC_ARG_WITH([build-number],
+  [AS_HELP_STRING([--with-build-number],[specify a version string for this build])],
   [ build_number="$withval" ]
 )
 
