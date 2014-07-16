@@ -69,7 +69,8 @@ class factory(protocol.ClientFactory):
       else:
         print 'ok 1 - The client connection closed'
 
-    connectionMade = lambda ctx: ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+    def connectionMade(ctx):
+      ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
 
     def handleHeader(ctx, k, v):
       if k.lower() == 'content-length':
