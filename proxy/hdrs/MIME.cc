@@ -2523,11 +2523,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       intptr_t delta = dup - field_name_first;
 
       field_name_first += delta;
-      field_name_last += delta;
       field_value_first += delta;
-      field_value_last += delta;
-      field_line_first += delta;
-      field_line_last += delta;
     }
     ///////////////////////
     // tokenize the name //
@@ -3036,7 +3032,7 @@ mime_format_date(char *buffer, time_t value)
   buf[3] = '\0';
   buf += 3;
 
-  return 29;                    // not counting NUL
+  return buf - buffer;                    // not counting NUL
 }
 
 int32_t
