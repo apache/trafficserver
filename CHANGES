@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2915] SEGV occurs when POST request was posted without Expect: 100-continue header
+
   *) [TS-2940] Fix varargs corruption when logging fatal errors.
 
   *) [TS-2935] Clean up semaphore platform code.

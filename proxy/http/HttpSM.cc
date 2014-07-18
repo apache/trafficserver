@@ -3287,7 +3287,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     // We have completed reading POST data from client here.
     // It's time to free MIOBuffer of 100 Continue's response now,
     // althought this is a little late.
-    if (t_state.http_config_param->send_100_continue_response) {
+    if (t_state.http_config_param->send_100_continue_response &&
+       ua_entry->write_buffer) {
       free_MIOBuffer(ua_entry->write_buffer);
       ua_entry->write_buffer = NULL;
     }
