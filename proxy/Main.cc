@@ -478,7 +478,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   const char *n = fix ? "REPAIR" : "CHECK";
 
   printf("%s\n\n", n);
-  int res = 0;
 
   hostdb_current_interval = (ink_get_based_hrtime() / HRTIME_MINUTE);
 
@@ -498,7 +497,7 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
     printf("\tunable to open Host Database, %s failed\n", n);
     return CMD_OK;
   }
-  res = hd.check("hostdb.config", fix) < 0 || res;
+  hd.check("hostdb.config", fix);
   hd.reset();
 
   if (cacheProcessor.start() < 0) {
@@ -1158,12 +1157,12 @@ adjust_num_of_net_threads(int nthreads)
     REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
     num_of_threads_tmp = (int) ((float) num_of_threads_tmp * autoconfig_scale);
 
-    if (num_of_threads_tmp) {
-      nthreads = num_of_threads_tmp;
-    }
-
     if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
       num_of_threads_tmp = MAX_EVENT_THREADS;
+    }
+
+    if (num_of_threads_tmp) {
+      nthreads = num_of_threads_tmp;
     }
   }
 
