@@ -628,8 +628,7 @@ LogAccess::marshal_record(char *record, char *buf)
   }
 
   const char *record_not_found_msg = "RECORD_NOT_FOUND";
-  const unsigned int record_not_found_chars = 17;
-  ink_assert(::strlen(record_not_found_msg) + 1 == record_not_found_chars);
+  const unsigned int record_not_found_chars = ::strlen(record_not_found_msg) + 1;
 
   char ascii_buf[max_chars];
   const char *out_buf;
@@ -645,8 +644,7 @@ LogAccess::marshal_record(char *record, char *buf)
 
   if (RecGetRecordDataType(record, &stype) != REC_ERR_OKAY) {
     out_buf = "INVALID_RECORD";
-    num_chars = 15;
-    ink_assert(::strlen(out_buf) + 1 == num_chars);
+    num_chars = ::strlen(out_buf) + 1;
   } else {
     if (LOG_INTEGER == stype || LOG_COUNTER == stype) {
       // we assume MgmtInt and MgmtIntCounter are int64_t for the
@@ -694,8 +692,7 @@ LogAccess::marshal_record(char *record, char *buf)
         if (num_chars > max_chars) {
           // data does not fit, output asterisks
           out_buf = "***";
-          num_chars = 4;
-          ink_assert(::strlen(out_buf) + 1 == num_chars);
+          num_chars = ::strlen(out_buf) + 1;
         } else {
           out_buf = ascii_buf;
         }
@@ -721,8 +718,7 @@ LogAccess::marshal_record(char *record, char *buf)
           }
         } else {
           out_buf = "NULL";
-          num_chars = 5;
-          ink_assert(::strlen(out_buf) + 1 == num_chars);
+          num_chars = ::strlen(out_buf) + 1;
         }
       } else {
         out_buf = (char *) record_not_found_msg;
@@ -730,9 +726,8 @@ LogAccess::marshal_record(char *record, char *buf)
       }
     } else {
       out_buf = "INVALID_MgmtType";
-      num_chars = 17;
+      num_chars = ::strlen(out_buf) + 1;
       ink_assert(!"invalid MgmtType for requested record");
-      ink_assert(::strlen(out_buf) + 1 == num_chars);
     }
   }
 
