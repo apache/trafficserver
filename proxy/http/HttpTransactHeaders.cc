@@ -651,16 +651,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header,
         hit_miss_code, log_code, hier_code);
   squid_codes->log_code = log_code;
   squid_codes->hier_code = hier_code;
-
-  if (hit_miss_code != SQUID_MISS_NONE) {
-    squid_codes->hit_miss_code = hit_miss_code;
-  } else {
-    if (squid_codes->hit_miss_code == SQUID_MISS_NONE) {
-      squid_codes->hit_miss_code = hit_miss_code;
-    } else {
-      hit_miss_code = squid_codes->hit_miss_code;
-    }
-  }
+  squid_codes->hit_miss_code = hit_miss_code;
 }
 
 
