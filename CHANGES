@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2944] Remove the proxy.config.http.record_tcp_mem_hit configuration variable.
+
   *) [TS-2924] Configurable client's ssl protocols and cipher suite
 
   *) [TS-2915] SEGV occurs when POST request was posted without Expect: 100-continue header

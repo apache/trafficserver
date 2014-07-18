@@ -536,7 +536,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.push_method_enabled
  proxy.config.http.quick_filter.mask
  proxy.config.http.record_heartbeat
- proxy.config.http.record_tcp_mem_hit
  proxy.config.http.redirection_enabled
  proxy.config.http.referer_default_redirect
  proxy.config.http.referer_filter
