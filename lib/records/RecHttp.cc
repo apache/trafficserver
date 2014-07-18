@@ -468,7 +468,6 @@ HttpProxyPort::print(char* out, size_t n) {
   if (ts::NO_FD != m_fd) {
     if (need_colon_p) out[zret++] = ':';
     zret += snprintf(out+zret, n-zret, "fd=%d", m_fd);
-    need_colon_p = true;
   }
   if (zret >= n) return n;
 
