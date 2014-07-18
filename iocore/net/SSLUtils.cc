@@ -1109,6 +1109,16 @@ SSLInitClientContext(const SSLConfigParams * params)
     return NULL;
   }
 
+  if (params->ssl_client_ctx_protocols) {
+    SSL_CTX_set_options(client_ctx, params->ssl_client_ctx_protocols);
+  }
+  if (params->client_cipherSuite != NULL) {
+    if (!SSL_CTX_set_cipher_list(client_ctx, params->client_cipherSuite)) {
+      SSLError("invalid client cipher suite in records.config");
+      goto fail;
+    }
+  }
+
   // if no path is given for the client private key,
   // assume it is contained in the client certificate file.
   clientKeyPtr = params->clientKeyPath;
