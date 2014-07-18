@@ -250,7 +250,7 @@ ink_freelist_free(InkFreeList * f, void *item)
   volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, 0);
   head_p h;
   head_p item_pair;
-  int result;
+  int result = 0;
 
   // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
 
@@ -264,8 +264,7 @@ ink_freelist_free(InkFreeList * f, void *item)
   }
 #endif /* DEADBEEF */
 
-  result = 0;
-  do {
+  while (!result) {
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == item)
@@ -283,9 +282,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 #else
        result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
 #endif
-
   }
-  while (result == 0);
 
   ink_atomic_increment((int *) &f->used, -1);
   ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size);
