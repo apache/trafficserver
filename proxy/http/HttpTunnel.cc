@@ -215,7 +215,6 @@ ChunkedHandler::transfer_bytes()
 
   while (bytes_left > 0) {
     block_read_avail = chunked_reader->block_read_avail();
-    moved = 0;
 
     to_move = MIN(bytes_left, block_read_avail);
     if (to_move <= 0)
@@ -796,7 +795,6 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
 
   IOBufferReader *chunked_buffer_start = NULL, *dechunked_buffer_start = NULL;
   if (p->do_chunking || p->do_dechunking || p->do_chunked_passthru) {
-    producer_n = (consumer_n = INT64_MAX);
     p->chunked_handler.init(p->buffer_start, p);
 
     // Copy the header into the chunked/dechunked buffers.
@@ -1107,7 +1105,6 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && (p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_handler] [%s %s]", p->name, HttpDebugNames::get_event_name(event));
 
-    c = p->consumer_list.head;
     if ((postbuf->postdata_copy_buffer_start->read_avail() + postbuf->ua_buffer_reader->read_avail())
         > HttpConfig::m_master.post_copy_size) {
       Debug("http_redirect",
