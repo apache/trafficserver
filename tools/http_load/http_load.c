@@ -673,7 +673,7 @@ read_url_file(char *url_file)
   if (extra_headers != NULL) {
     hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "%s\r\n", extra_headers);
   }
-  hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "\r\n");
+  snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "\r\n");
 
   while (fgets(line, sizeof(line), fp) != (char *) 0) {
     char req_buf[2048];
