@@ -400,11 +400,8 @@ Store::read_config(int fd)
 Lfail:
   // Do clean up.
   ::close(fd);
-  while (NULL != sd) {
-    Span* next = sd->link.next;
+  if (sd)
     delete sd;
-    sd = next;
-  }
 
   return err;
 }
@@ -811,7 +808,6 @@ Span::init(char *filename, int64_t size)
       if (minor(devnum) == 0)
         return "The raw device control file (usually /dev/raw; major 162, minor 0) is not a valid cache location.\n";
 
-      is_disk = 1;
       is_mmapable_internal = false;     /* I -think- */
       file_pathname = 1;
       pathname = ats_strdup(filename);
