@@ -281,7 +281,7 @@ Lerror:
   return 0;
 Lfailed:
   ats_free(b);
-  e = destroy(e);
+  destroy(e);
   DDebug("ram_cache", "get %X %d %d Z_ERR", key->word(3), auxkey1, auxkey2);
   goto Lerror;
 }
