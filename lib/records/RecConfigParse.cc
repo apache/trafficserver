@@ -195,8 +195,8 @@ RecConfigFileParse(const char * path, RecConfigEntryCallback handler, bool inc_v
       RecLog(DL_Warning, "Could not parse line at '%s:%d' -- skipping line: '%s'", path, line_num, line);
       goto L_next_line;
     }
+
     // record type
-    rec_type = RECT_NULL;
     if (strcmp(rec_type_str, "CONFIG") == 0) {
       rec_type = RECT_CONFIG;
     } else if (strcmp(rec_type_str, "PROCESS") == 0) {
@@ -213,7 +213,6 @@ RecConfigFileParse(const char * path, RecConfigEntryCallback handler, bool inc_v
     }
 
     // data_type
-    data_type = RECD_NULL;
     if (strcmp(data_type_str, "INT") == 0) {
       data_type = RECD_INT;
     } else if (strcmp(data_type_str, "FLOAT") == 0) {
