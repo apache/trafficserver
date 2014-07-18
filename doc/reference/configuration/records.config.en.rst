@@ -693,7 +693,7 @@ Value Effect
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat ogging.
+   Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat logging.
 
 .. ts:cv:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 
