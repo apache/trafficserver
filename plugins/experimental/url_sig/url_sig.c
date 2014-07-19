@@ -187,7 +187,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   }
 
-  i = 0;
   for (i = 0; i < MAX_KEY_NUM; i++) {
     if (cfg->keys[i] != NULL && strlen(cfg->keys[i]) > 0)
       printf("[url_sig] shared secret key[%d] = %s\n", i, cfg->keys[i]);
