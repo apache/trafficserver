@@ -294,7 +294,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   (void) event;
   (void) e;
   EventIO *epd = NULL;
-  int poll_timeout = net_config_poll_timeout;
+  int poll_timeout;
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
 
