@@ -891,8 +891,9 @@ start_TS(char *tsArgs)
 {
   TSMgmtError ret;
   TSCacheClearT clear = TS_CACHE_CLEAR_OFF;
+  char *args;
 
-  char *args = strtok(tsArgs, ":");
+  strtok(tsArgs, ":");
   args = strtok(NULL, ":");
   if (args) {
     if (strcmp(args, "all\n") == 0)
@@ -1525,8 +1526,9 @@ test_cfg_context_get(char *args)
 {
   TSCfgContext ctx;
   TSFileNameT file;
+  char *filename;
 
-  char *filename = strtok(args, ":");
+  strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
   char *name = TSstrdup(filename);
@@ -1595,8 +1597,9 @@ test_cfg_context_move(char *args)
   TSFileNameT file;
   int i;
   TSMgmtError err;
+  char *filename;
 
-  char *filename = strtok(args, ":");
+  strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
   char *name =TSstrdup(filename);
@@ -2087,7 +2090,9 @@ print_snapshots()
 void
 add_snapshot(char *args)
 {
-  char *snap_name = strtok(args, ":");
+  char *snap_name;
+
+  strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "add snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
@@ -2101,7 +2106,9 @@ add_snapshot(char *args)
 void
 remove_snapshot(char *args)
 {
-  char *snap_name = strtok(args, ":");
+  char *snap_name;
+
+  strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "remove snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
@@ -2115,7 +2122,9 @@ remove_snapshot(char *args)
 void
 restore_snapshot(char *args)
 {
-  char *snap_name = strtok(args, ":");
+  char *snap_name;
+
+  strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "resotre snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
