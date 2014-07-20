@@ -910,6 +910,7 @@ HttpConfigParams::HttpConfigParams()
     referer_format_redirect(0),
     reverse_proxy_enabled(0),
     url_remap_required(1),
+    record_cop_page(0),
     errors_log_error_pages(1),
     enable_http_info(0),
     cluster_time_delta(0),
