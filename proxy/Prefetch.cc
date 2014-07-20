@@ -1264,7 +1264,6 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr *req_hdr,
     for (; s_cookie; s_cookie = s_cookie->m_next_dup) {
       a_raw = s_cookie->value_get(&a_raw_len);
       MIMEField *new_cookie = NULL;
-      bool new_cookie_attached = false;
       StrList a_param_list;
       Str *a_param;
       bool first_move;
@@ -1387,10 +1386,8 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr *req_hdr,
       if (domain_match == false)
         goto Lnotmatch;
 
-      if (new_cookie && !new_cookie_attached) {
-        new_cookie_attached = true;
-        if (add_cookies == false)
-          add_cookies = true;
+      if (new_cookie) {
+        add_cookies = true;
         new_cookie->name_set(request->m_heap, request->m_mime, MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
         request->field_attach(new_cookie);
       }
@@ -1398,10 +1395,8 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr *req_hdr,
 
     Lnotmatch:
       if (new_cookie) {
-        if (!new_cookie_attached) {
-          new_cookie->name_set(request->m_heap, request->m_mime, MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
-          request->field_attach(new_cookie);
-        }
+        new_cookie->name_set(request->m_heap, request->m_mime, MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
+        request->field_attach(new_cookie);
         request->field_delete(new_cookie);
         new_cookie = NULL;
       }
@@ -1649,10 +1644,10 @@ PrefetchBlaster::bufferObject(int event, void * /* data ATS_UNUSED */)
       buf->fill(PRELOAD_HEADER_LEN);
 
       int64_t ntoread = INT64_MAX;
-      int len = copy_header(buf, request, NULL);
+      copy_header(buf, request, NULL);
 
       if (cache_http_info) {
-        len += copy_header(buf, cache_http_info->response_get(), NULL);
+        copy_header(buf, cache_http_info->response_get(), NULL);
         ntoread = cache_http_info->object_size_get();
       }
       serverVC->do_io_read(this, ntoread, buf);
