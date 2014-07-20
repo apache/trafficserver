@@ -150,10 +150,10 @@ template <class C, class L = typename C::Link_link> struct DLL {
   void insert(C *e, C *after);
   bool in(C *e) { return head == e || next(e) || prev(e); }
   void clear() { head = NULL; }
-  C *&next(C *e) { return *(C**)&L::next_link(e); }
-  C *&prev(C *e) { return *(C**)&L::prev_link(e); }
-  const C *next(const C *e) const { return L::next_link(e); }
-  const C *prev(const C *e) const { return L::prev_link(e); }
+  static C *&next(C *e) { return reinterpret_cast<C*&>(L::next_link(e)); }
+  static C *&prev(C *e) { return reinterpret_cast<C*&>(L::prev_link(e)); }
+  static C const* next(const C *e) { return L::next_link(e); }
+  static C const* prev(const C *e) { return L::prev_link(e); }
 
   DLL() : head(NULL) {}
 };
