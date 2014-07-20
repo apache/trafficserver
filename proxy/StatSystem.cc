@@ -280,8 +280,10 @@ write_stats_snap()
   int version = STATS_MAJOR_VERSION;
   char *buf = NULL;
 
-  if ((fd = open_stats_snap()) < 0)
-    goto Lerror;
+  if ((fd = open_stats_snap()) < 0) {
+    Warning("unable to snap statistics");
+    return;
+  }
 
   {
     int stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
@@ -315,21 +317,17 @@ write_stats_snap()
       p += sizeof(count);
     }
     memcpy(p, (char *) &version, sizeof(version));
-    p += sizeof(version);
 
-    if (socketManager.write(fd, buf, buf_size) != buf_size)
-      goto Lerror;
+    if (socketManager.write(fd, buf, buf_size) != buf_size) {
+      Warning("unable to snap statistics");
+      ats_free(buf);
+      socketManager.close(fd);
+      return;
+    }
   }
   ats_free(buf);
-  //close(fd);
   socketManager.close(fd);
   Debug("stats", "snapped stats");
-  return;
-Lerror:
-  ats_free(buf);
-  Warning("unable to snap statistics");
-  //close(fd);
-  socketManager.close(fd);
 }
 
 struct SnapStatsContinuation: public Continuation
