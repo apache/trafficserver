@@ -43,6 +43,8 @@ void
 SSLNetAccept::init_accept_per_thread()
 {
   int i, n;
+  NetAccept *a;
+
   if (do_listen(NON_BLOCKING))
     return;
   if (accept_fn == net_accept)
@@ -50,7 +52,6 @@ SSLNetAccept::init_accept_per_thread()
   else
     SET_HANDLER((SSLNetAcceptHandler) & SSLNetAccept::acceptEvent);
   period = ACCEPT_PERIOD;
-  NetAccept *a = this;
   n = eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
   for (i = 0; i < n; i++) {
     if (i < n - 1)
