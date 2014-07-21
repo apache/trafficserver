@@ -1055,9 +1055,14 @@ char *
 hms_time_to_string(TSHmsTime time)
 {
   char buf[MAX_BUF_SIZE];
+  size_t s;
 
-  snprintf(buf, sizeof(buf), "%dd%dh%dm%ds", time.d, time.h, time.m, time.s);
-  return ats_strdup(buf);
+  s = snprintf(buf, sizeof(buf), "%dd%dh%dm%ds", time.d, time.h, time.m, time.s);
+
+  if (s < sizeof(buf))
+    return ats_strdup(buf);
+  else
+    return NULL;
 }
 
 /*----------------------------------------------------------------------------
