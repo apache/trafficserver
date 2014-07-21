@@ -1059,7 +1059,7 @@ hms_time_to_string(TSHmsTime time)
 
   s = snprintf(buf, sizeof(buf), "%dd%dh%dm%ds", time.d, time.h, time.m, time.s);
 
-  if (s < sizeof(buf))
+  if ((s > 0) && (s < sizeof(buf)))
     return ats_strdup(buf);
   else
     return NULL;
