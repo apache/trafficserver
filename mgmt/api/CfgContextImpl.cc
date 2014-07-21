@@ -398,7 +398,6 @@ CongestionObj::formatEleToRule()
       pos += psize;
   }
 
-
   if (pos < sizeof(buf) &&
       (psize =
        snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
@@ -437,15 +436,13 @@ CongestionObj::formatEleToRule()
   }
   switch (m_ele->scheme) {
   case TS_HTTP_CONGEST_PER_IP:
-    if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_ip "))> 0)
-      pos += psize;
+    snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_ip ");
     break;
   case TS_HTTP_CONGEST_PER_HOST:
-    if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_host "))> 0)
-      pos += psize;
+    snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_host ");
     break;
   default:
-    ;
+    break;
   }
 
   return ats_strdup(buf);
