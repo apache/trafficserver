@@ -556,7 +556,6 @@ send_record_get_reply(struct SocketInfo sock_info, TSMgmtError retval, void *val
   // write the record name
   if (n_size) {
     memcpy(msg + msg_pos, rec_name, n_size);
-    msg_pos += n_size;
   }
 
   // now push it to the socket
