@@ -204,7 +204,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     break;
   case MGMT_ALARM_PROXY_PROCESS_BORN:
     mgmt_log(stderr, "[Alarms::signalAlarm] Server Process born\n");
-    priority = 2;
     return;
   case MGMT_ALARM_ADD_ALARM:
     priority = 2;
@@ -474,7 +473,6 @@ Alarms::constructAlarmMessage(char *ip, char *message, int max)
       return;
     }
     ink_strlcpy(&message[n], "alarm: none\n", max - n);
-    n += strlen("alarm: none\n");
   }
   ink_mutex_release(&mutex);
   return;
