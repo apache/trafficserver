@@ -302,8 +302,6 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
         case TS_EVENT_VCONN_READ_READY:
             TSDebug(PLUGIN_NAME, "Read Ready");
 
-            avail = TSIOBufferReaderAvail(state->resp_io_buf_reader);
-
             if ((state->resp_info) && !state->resp_info->parsed)
             {
                 parse_response(state);
@@ -335,8 +333,6 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
                 }
                 TSVConnClose(state->vconn);
             }
-
-            avail = TSIOBufferReaderAvail(state->resp_io_buf_reader);
 
             if ((state->resp_info) && !state->resp_info->parsed)
             {
