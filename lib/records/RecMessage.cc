@@ -214,7 +214,6 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
     ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_cfg_chk_len);
     memcpy(p, record->config_meta.check_expr, rec_cfg_chk_len);
     r->config_meta.check_expr = (char *) ((uintptr_t) p - (uintptr_t) r);
-    p += rec_cfg_chk_len;
   }
 
   msg->entries += 1;
