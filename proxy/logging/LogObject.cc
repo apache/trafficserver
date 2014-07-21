@@ -533,7 +533,7 @@ LogObject::va_log(LogAccess * lad, const char * fmt, va_list ap)
     }
   }
 
-  len += vsnprintf(&entry[len], MAX_ENTRY - len, fmt, ap);
+  vsnprintf(&entry[len], MAX_ENTRY - len, fmt, ap);
 
   // Now that we have an entry and it's length (len), we can place it
   // into the associated logbuffer.
