@@ -144,7 +144,6 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
       ats_free(ifbuf);
     }
 
-    ifr = ifc.ifc_req;
     ifend = (struct ifreq *) (ifc.ifc_buf + ifc.ifc_len);
     // Loop through the list of interfaces
     for (ifr = ifc.ifc_req; ifr < ifend;) {
@@ -814,7 +813,6 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
       return;
     }
     ink_strlcpy(&message[n], "virt: none\n", max - n);
-    n += strlen("virt: none\n");
   }
   return;
 }                               /* End VMap::constructVMapMessage */
