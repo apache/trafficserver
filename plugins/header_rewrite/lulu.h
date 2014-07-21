@@ -53,6 +53,10 @@ char* getIP(sockaddr const* s_sockaddr, char res[INET6_ADDRSTRLEN]);
 #define mb()  __asm__ __volatile__ ( "sync" : : : "memory")
 #define rmb() __asm__ __volatile__ ( "sync" : : : "memory")
 #define wmb() __asm__ __volatile__ ( "" : : : "memory")
+#elif defined(__powerpc64__)
+#define mb()   __asm__ __volatile__ ("sync" : : : "memory")
+#define rmb()  __asm__ __volatile__ ("sync" : : : "memory")
+#define wmb()  __asm__ __volatile__ ("sync" : : : "memory")
 #else
 #error "Define barriers"
 #endif
