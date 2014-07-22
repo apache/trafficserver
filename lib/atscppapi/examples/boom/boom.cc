@@ -412,6 +412,6 @@ void TSPluginInit(int argc, const char *argv[]) {
     TS_ERROR(TAG, "Invalid number of command line arguments, using compile time defaults.");
   }
 
-  BoomGlobalPlugin *pboom = new BoomGlobalPlugin(pregistry);
+  new BoomGlobalPlugin(pregistry);
 }
 
