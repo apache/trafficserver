@@ -545,7 +545,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   ink_release_assert(filename != NULL);
 
-  xptr<char> config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
+  ats_scoped_str config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
   int fd = open(config_path, O_RDONLY);
   if (fd < 0) {
     Warning("read icp.config, open failed");

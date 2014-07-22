@@ -85,7 +85,7 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 const char *
 RecConfigOverrideFromEnvironment(const char * name, const char * value)
 {
-  xptr<char> envname(ats_strdup(name));
+  ats_scoped_str envname(ats_strdup(name));
   const char * envval = NULL;
 
   // Munge foo.bar.config into FOO_BAR_CONFIG.

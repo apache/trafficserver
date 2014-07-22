@@ -1897,7 +1897,7 @@ config_read_proto(TSPrefetchBlastData &blast, const char *str)
 int
 PrefetchConfiguration::readConfiguration()
 {
-  xptr<char> conf_path;
+  ats_scoped_str conf_path;
   int fd = -1;
 
   local_http_server_port = stuffer_port = 0;

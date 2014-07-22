@@ -192,7 +192,7 @@ CacheHostMatcher::NewEntry(matcher_line * line_info)
 
 CacheHostTable::CacheHostTable(Cache * c, CacheType typ)
 {
-  xptr<char> config_path;
+  ats_scoped_str config_path;
 
   config_tags = &CacheHosting_tags;
   ink_assert(config_tags != NULL);
@@ -625,7 +625,7 @@ CacheHostRecord::Print()
 void
 ConfigVolumes::read_config_file()
 {
-  xptr<char> config_path;
+  ats_scoped_str config_path;
   char *file_buf;
 
   config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");

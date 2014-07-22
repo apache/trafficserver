@@ -875,7 +875,7 @@ UpdateConfigList *
 UpdateConfigManager::BuildUpdateList()
 {
   // Build pathname to "update.config" and open file
-  xptr<char> config_path;
+  ats_scoped_str config_path;
 
   if (_filename) {
     config_path = Layout::get()->relative_to(Layout::get()->sysconfdir, _filename);

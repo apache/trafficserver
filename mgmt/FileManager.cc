@@ -58,7 +58,7 @@ FileManager::FileManager()
   ink_mutex_init(&accessLock, "File Manager Mutex");
   ink_mutex_init(&cbListLock, "File Changed Callback Mutex");
 
-  xptr<char> snapshotDir(RecConfigReadSnapshotDir());
+  ats_scoped_str snapshotDir(RecConfigReadSnapshotDir());
 
   // Check to see if the directory already exists, if not create it.
   if (access(snapshotDir, F_OK) == -1) {

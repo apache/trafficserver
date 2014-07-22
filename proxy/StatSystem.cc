@@ -472,7 +472,7 @@ initialize_all_global_stats()
 {
   int istat, i;
   char snap_file[PATH_NAME_MAX + 1];
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   if (access(rundir, R_OK | W_OK) == -1) {
     Warning("Unable to access() local state directory '%s': %d, %s", (const char *)rundir, errno, strerror(errno));

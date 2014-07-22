@@ -248,7 +248,7 @@ parse_include_directive(const char * directive, BUILD_TABLE_INFO * bti, char * e
     // to keep the ACL rules from the parent because ACLs must be global across the full set of config
     // files.
     BUILD_TABLE_INFO  nbti;
-    xptr<char>        path;
+    ats_scoped_str        path;
     bool              success;
 
     // The included path is relative to SYSCONFDIR, just like remap.config is.
@@ -883,7 +883,7 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
   bool is_cur_mapping_regex;
   const char *type_id_str;
 
-  xptr<char> file_buf(readIntoBuffer(path, modulePrefix, NULL));
+  ats_scoped_str file_buf(readIntoBuffer(path, modulePrefix, NULL));
   if (!file_buf) {
     Warning("can't load remapping configuration file %s", path);
     return false;

@@ -1179,7 +1179,7 @@ RecConfigReadConfigPath(const char * file_variable, const char * default_value)
 char *
 RecConfigReadPersistentStatsPath()
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   return Layout::relative_to(rundir, REC_RAW_STATS_FILE);
 }
 

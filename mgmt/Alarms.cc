@@ -493,13 +493,13 @@ Alarms::checkSystemNAlert()
 void
 Alarms::execAlarmBin(const char *desc)
 {
-  xptr<char> bindir(alarm_script_dir());
+  ats_scoped_str bindir(alarm_script_dir());
   char cmd_line[MAXPATHLEN];
 
-  xptr<char> alarm_bin(REC_readString("proxy.config.alarm.bin", NULL));
-  xptr<char> alarm_email_from_name;
-  xptr<char> alarm_email_from_addr;
-  xptr<char> alarm_email_to_addr;
+  ats_scoped_str alarm_bin(REC_readString("proxy.config.alarm.bin", NULL));
+  ats_scoped_str alarm_email_from_name;
+  ats_scoped_str alarm_email_from_addr;
+  ats_scoped_str alarm_email_to_addr;
 
   pid_t pid;
 

@@ -502,7 +502,7 @@ int
 MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, int *pi, int *pbuck)
 {
   int scratch;
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   char p[PATH_NAME_MAX + 1], buf[256];
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);
@@ -538,7 +538,7 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 int
 MultiCacheBase::write_config(const char *config_filename, int nominal_size, int abuckets)
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   char p[PATH_NAME_MAX + 1], buf[256];
   int fd, retcode = -1;
 

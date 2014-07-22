@@ -407,7 +407,7 @@ webIntr_main(void *)
   // set up socket paths;
   char api_sock_path[1024];
   char event_sock_path[1024];
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   bzero(api_sock_path, 1024);
   bzero(event_sock_path, 1024);

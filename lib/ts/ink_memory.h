@@ -171,116 +171,6 @@ ink_zero(T& t) {
   memset(&t, 0, sizeof(t));
 }
 
-/** Locally scoped holder for a chunk of memory allocated via these functions.
-    If this pointer is assigned the current memory (if any) is freed.
-    The memory is also freed when the object is destructed. This makes
-    handling temporary memory in a function more robust.
-
-    @DEPRECATED
-
-    Use @c ats_scoped_str for @c xptr<char>
-    Use @c ats_scoped_mem<T> for @c xptr<T> (uses @c ats_malloc / @c ats_free )
-    Use @c ats_scoped_obj<T> for pointers to other types using @c new and @c delete.
-
-    @internal A poor substitute for a real shared pointer copy on write
-    class but one step at a time. It's better than doing this by
-    hand every time.
-*/
-template <typename T> class xptr {
- public:
-  typedef xptr self;
-
- xptr()
-   : m_ptr(0)
-    { }
-
-  /// Construct from allocated memory.
-  /// @note @a ptr must refer to memory allocated @c ats_malloc.
-  explicit xptr(T* ptr)
-    : m_ptr(ptr)
-  { }
-
-  /// Construct and initialized with memory for @a n instances of @a T.
-  explicit xptr(size_t n)
-    : m_ptr((T *)ats_malloc(sizeof(T) * n))
-    { }
-
-  /// Destructor - free memory held by this instance.
-  ~xptr()
-    {
-      ats_free(m_ptr);
-    }
-
-  /// Assign memory.
-  /// @note @a ptr must be allocated via @c ats_malloc.
-  self& operator = (T* ptr) {
-    ats_free(m_ptr);
-    m_ptr = ptr;
-    return *this;
-  }
-
-  /// Auto convert to a raw pointer.
-  operator T* () { return m_ptr; }
-
-  /// Auto convert to raw pointer.
-  operator T const* () const { return m_ptr; }
-
-  /// Boolean operator. Returns true if we are pointing to valid memory.
-  operator bool() const { return m_ptr != 0; }
-
-  /** Release memory from control of this instance.
-
-      @note Although direct assignment is forbidden due to the
-      non-obvious semantics, a pointer can be moved (@b not copied) from
-      one instance to another using this method.
-      @code
-      new_ptr = old_ptr.release();
-      @endcode
-      This is by design so any such transfer is always explicit.
-  */
-  T* release() {
-    T* zret = m_ptr;
-    m_ptr = 0;
-    return zret;
-  }
-
- private:
-  T* m_ptr; ///< Pointer to allocated memory.
-
-  /// Copy constructor - forbidden.
-  xptr(self const& that);
-
-  /// Self assignment - forbidden.
-  self& operator = (self const& that);
-};
-
-
-// Special operators for xptr<char>
-/** Combine two strings as file paths.
-    Trailing and leading separators for @a lhs and @a rhs respectively
-    are handled to yield exactly one separator.
-    @return A newly @x ats_malloc string of the combined paths.
-*/
-inline char*
-path_join (xptr<char> const& lhs, xptr<char> const& rhs)
-{
-  size_t ln = strlen(lhs);
-  size_t rn = strlen(rhs);
-  char const* rptr = rhs; // May need to be modified.
-
-  if (ln && lhs[ln-1] == '/') --ln; // drop trailing separator.
-  if (rn && *rptr == '/') --rn, ++rptr; // drop leading separator.
-
-  char* x = static_cast<char*>(ats_malloc(ln + rn + 2));
-
-  memcpy(x, lhs, ln);
-  x[ln] = '/';
-  memcpy(x + ln + 1,  rptr, rn);
-  x[ln+rn+1] = 0; // terminate string.
-
-  return x;
-}
-
 /** Scoped resources.
 
     An instance of this class is used to hold a contingent resource. When this object goes out of scope
@@ -512,8 +402,6 @@ class ats_scoped_str : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<c
 };
 
 /** Specialization of @c ats_scoped_resource for pointers allocated with @c ats_malloc.
-
-    @note This is a drop in replacement for @c xptr<T>.
  */
 template <
   typename T ///< Underlying (not pointer) type.

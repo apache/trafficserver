@@ -534,7 +534,7 @@ RecReadStatsFile()
   RecMessage *m;
   RecMessageItr itr;
   RecPersistT persist_type = RECP_NULL;
-  xptr<char> snap_fpath(RecConfigReadPersistentStatsPath());
+  ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
@@ -591,7 +591,7 @@ RecSyncStatsFile()
   RecMessage *m;
   int i, num_records;
   bool sync_to_disk;
-  xptr<char> snap_fpath(RecConfigReadPersistentStatsPath());
+  ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
   /*
    * g_mode_type should be initialized by

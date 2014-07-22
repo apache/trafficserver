@@ -309,7 +309,7 @@ Store::read_config(int fd)
   // Get pathname if not checking file
 
   if (fd < 0) {
-    xptr<char> storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
+    ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
 
     Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
     fd = ::open(storage_path, O_RDONLY);

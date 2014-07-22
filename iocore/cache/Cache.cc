@@ -3428,7 +3428,7 @@ ink_cache_init(ModuleVersion v)
   }
 
   if (theCacheStore.n_disks == 0) {
-    xptr<char> path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
+    ats_scoped_str path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
     Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
     //exit(1);
   }

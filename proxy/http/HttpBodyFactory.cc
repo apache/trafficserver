@@ -297,7 +297,7 @@ HttpBodyFactory::reconfigure()
   all_found = all_found && (rec_err == REC_ERR_OKAY);
   Debug("body_factory", "response_suppression_mode = %d (found = %" PRId64")", response_suppression_mode, e);
 
-  xptr<char> directory_of_template_sets;
+  ats_scoped_str directory_of_template_sets;
 
   rec_err = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
   all_found = all_found && (rec_err == REC_ERR_OKAY);

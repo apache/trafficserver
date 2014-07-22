@@ -704,7 +704,7 @@ ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *n
   config_file_path[0] = '\0';
 
   if (!(flags & DONT_BUILD_TABLE)) {
-    xptr<char> config_path(RecConfigReadConfigPath(file_var));
+    ats_scoped_str config_path(RecConfigReadConfigPath(file_var));
 
     ink_release_assert(config_path);
     ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));

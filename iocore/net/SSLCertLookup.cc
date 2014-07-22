@@ -230,7 +230,7 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
     // so that we can do a longest match lookup.
     char namebuf[TS_MAX_HOST_NAME_LEN + 1];
     char * reversed;
-    xptr<SSLEntry> entry;
+    ats_scoped_obj<SSLEntry> entry;
 
     reversed = reverse_dns_name(name + 1, namebuf);
     if (!reversed) {

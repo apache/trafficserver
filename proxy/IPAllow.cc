@@ -102,7 +102,7 @@ IpAllow::IpAllow(
 ) : module_name(name),
     action(action_val)
 {
-  xptr<char> config_path(RecConfigReadConfigPath(config_var));
+  ats_scoped_str config_path(RecConfigReadConfigPath(config_var));
 
   config_file_path[0] = '\0';
   ink_release_assert(config_path);

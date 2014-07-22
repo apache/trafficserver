@@ -87,13 +87,13 @@ struct ssl_user_config
   }
 
   int session_ticket_enabled;  // ssl_ticket_enabled - session ticket enabled
-  xptr<char> addr;   // dest_ip - IPv[64] address to match
-  xptr<char> cert;   // ssl_cert_name - certificate
-  xptr<char> first_cert; // the first certificate name when multiple cert files are in 'ssl_cert_name'
-  xptr<char> ca;     // ssl_ca_name - CA public certificate
-  xptr<char> key;    // ssl_key_name - Private key
-  xptr<char> ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
-  xptr<char> dialog; // ssl_key_dialog - Private key dialog
+  ats_scoped_str addr;   // dest_ip - IPv[64] address to match
+  ats_scoped_str cert;   // ssl_cert_name - certificate
+  ats_scoped_str first_cert; // the first certificate name when multiple cert files are in 'ssl_cert_name'
+  ats_scoped_str ca;     // ssl_ca_name - CA public certificate
+  ats_scoped_str key;    // ssl_key_name - Private key
+  ats_scoped_str ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+  ats_scoped_str dialog; // ssl_key_dialog - Private key dialog
 };
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
@@ -286,7 +286,7 @@ static SSL_CTX *
 ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 {
 #if HAVE_OPENSSL_SESSION_TICKETS
-  xptr<char>          ticket_key_data;
+  ats_scoped_str          ticket_key_data;
   int                 ticket_key_len;
   ssl_ticket_key_t *  ticket_key = NULL;
 
@@ -897,7 +897,7 @@ static bool
 SSLPrivateKeyHandler(
     SSL_CTX * ctx,
     const SSLConfigParams * params,
-    const xptr<char>& completeServerCertPath,
+    const ats_scoped_str& completeServerCertPath,
     const char * keyPath)
 {
   if (!keyPath) {
@@ -907,7 +907,7 @@ SSLPrivateKeyHandler(
       return false;
     }
   } else if (params->serverKeyPathOnly != NULL) {
-    xptr<char> completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
+    ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", (const char *) completeServerKeyPath);
       return false;
@@ -931,7 +931,7 @@ SSLInitServerContext(
 {
   int         session_id_context;
   int         server_verify_client;
-  xptr<char>  completeServerCertPath;
+  ats_scoped_str  completeServerCertPath;
   SSL_CTX *   ctx = SSLDefaultServerContext();
 
   // disable selected protocols
@@ -1016,7 +1016,7 @@ SSLInitServerContext(
 
     // First, load any CA chains from the global chain file.
     if (params->serverCertChainFilename) {
-      xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
+      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load global certificate chain from %s", (const char *) completeServerCertChainPath);
         goto fail;
@@ -1025,7 +1025,7 @@ SSLInitServerContext(
 
     // Now, load any additional certificate chains specified in this entry.
     if (sslMultCertSettings.ca) {
-      xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
+      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load certificate chain from %s", (const char *) completeServerCertChainPath);
         goto fail;
@@ -1215,7 +1215,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 
       X509_NAME_ENTRY * e = X509_NAME_get_entry(subject, pos);
       ASN1_STRING * cn = X509_NAME_ENTRY_get_data(e);
-      xptr<char> name(asn1_strdup(cn));
+      ats_scoped_str name(asn1_strdup(cn));
 
       Debug("ssl", "mapping '%s' to certificate %s", (const char *) name, certfile);
       lookup->insert(ctx, name);
@@ -1232,7 +1232,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 
       name = sk_GENERAL_NAME_value(names, i);
       if (name->type == GEN_DNS) {
-        xptr<char> dns(asn1_strdup(name->d.dNSName));
+        ats_scoped_str dns(asn1_strdup(name->d.dNSName));
         Debug("ssl", "mapping '%s' to certificate %s", (const char *) dns, certfile);
         lookup->insert(ctx, dns);
       }
@@ -1283,8 +1283,8 @@ ssl_store_ssl_context(
     const ssl_user_config & sslMultCertSettings)
 {
   SSL_CTX *   ctx;
-  xptr<char>  certpath;
-  xptr<char>  session_key_path;
+  ats_scoped_str  certpath;
+  ats_scoped_str  session_key_path;
 
   ctx = ssl_context_enable_sni(SSLInitServerContext(params, sslMultCertSettings), lookup);
   if (!ctx) {
@@ -1330,7 +1330,7 @@ ssl_store_ssl_context(
 
   // Load the session ticket key if session tickets are not disabled and we have key name.
   if (sslMultCertSettings.session_ticket_enabled != 0 && sslMultCertSettings.ticket_key_filename) {
-    xptr<char> ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ticket_key_filename));
+    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ticket_key_filename));
     ssl_context_enable_tickets(ctx, ticket_key_path);
   }
 
@@ -1413,7 +1413,7 @@ SSLParseCertificateConfiguration(
 {
   char *      tok_state = NULL;
   char *      line = NULL;
-  xptr<char>  file_buf;
+  ats_scoped_str  file_buf;
   unsigned    line_num = 0;
   matcher_line line_info;
 

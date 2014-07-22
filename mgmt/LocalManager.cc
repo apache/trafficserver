@@ -144,7 +144,7 @@ LocalManager::clearStats(const char *name)
   //   that operation works even when the proxy is off
   //
   if (this->proxy_running == 0) {
-    xptr<char> statsPath(RecConfigReadPersistentStatsPath());
+    ats_scoped_str statsPath(RecConfigReadPersistentStatsPath());
     if (unlink(statsPath) < 0) {
       if (errno != ENOENT) {
         mgmt_log(stderr, "[LocalManager::clearStats] Unlink of %s failed : %s\n", (const char *)statsPath, strerror(errno));
@@ -201,8 +201,8 @@ LocalManager::LocalManager(bool proxy_on)
   : BaseManager(), run_proxy(proxy_on)
 {
   bool found;
-  xptr<char> rundir(RecConfigReadRuntimeDir());
-  xptr<char> bindir(RecConfigReadBinDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str bindir(RecConfigReadBinDir());
 
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
@@ -242,13 +242,13 @@ LocalManager::LocalManager(bool proxy_on)
 
 #if TS_HAS_WCCP
   // Bind the WCCP address if present.
-  xptr<char> wccp_addr_str(REC_readString("proxy.config.wccp.addr", &found));
+  ats_scoped_str wccp_addr_str(REC_readString("proxy.config.wccp.addr", &found));
   if (found && wccp_addr_str && *wccp_addr_str) {
     wccp_cache.setAddr(inet_addr(wccp_addr_str));
     mgmt_log("[LocalManager::LocalManager] WCCP identifying address set to %s.\n", static_cast<char*>(wccp_addr_str));
   }
 
-  xptr<char> wccp_config_str(REC_readString("proxy.config.wccp.services", &found));
+  ats_scoped_str wccp_config_str(REC_readString("proxy.config.wccp.services", &found));
   if (found && wccp_config_str && *wccp_config_str) {
     bool located = true;
     if (access(wccp_config_str, R_OK) == -1) {
@@ -306,7 +306,7 @@ LocalManager::initAlarm()
 void
 LocalManager::initCCom(int mcport, char *addr, int rsport)
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   bool found;
   IpEndpoint cluster_ip;    // ip addr of the cluster interface
   ip_text_buffer clusterAddrStr;         // cluster ip addr as a String
@@ -368,7 +368,7 @@ LocalManager::initCCom(int mcport, char *addr, int rsport)
 void
 LocalManager::initMgmtProcessServer()
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   char fpath[MAXPATHLEN];
   int servlen, one = 1;
   struct sockaddr_un serv_addr;
@@ -922,7 +922,7 @@ LocalManager::startProxy()
       int res;
 
       char env_prep_bin[MAXPATHLEN];
-      xptr<char> bindir(RecConfigReadBinDir());
+      ats_scoped_str bindir(RecConfigReadBinDir());
 
       ink_filepath_make(env_prep_bin, sizeof(env_prep_bin), bindir, env_prep);
       res = execl(env_prep_bin, env_prep_bin, (char*)NULL);

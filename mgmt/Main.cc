@@ -104,7 +104,7 @@ static void SigChldHandler(int sig);
 static void
 check_lockfile()
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   char lockfile[PATH_NAME_MAX];
   int err;
   pid_t holding_pid;
@@ -267,7 +267,7 @@ setup_coredump()
 static void
 init_dirs()
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   if (access(Layout::get()->sysconfdir, R_OK) == -1) {
     mgmt_elog(0, "unable to access() config dir '%s': %d, %s\n", Layout::get()->sysconfdir, errno, strerror(errno));

@@ -69,7 +69,7 @@ startProcessManager(void *arg)
 ProcessManager::ProcessManager(bool rlm):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0), cbtable(NULL)
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   ink_strlcpy(pserver_path, rundir, sizeof(pserver_path));
   mgmt_signal_queue = create_queue();

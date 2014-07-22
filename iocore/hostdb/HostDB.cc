@@ -386,7 +386,7 @@ HostDBCache::start(int flags)
   // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
   // a relative path, make it relative to the prefix.
   if (storage_path[0] == '\0') {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
+    ats_scoped_str rundir(RecConfigReadRuntimeDir());
     ink_strlcpy(storage_path, rundir, sizeof(storage_path));
   } else if (storage_path[0] != '/') {
     Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
@@ -406,8 +406,8 @@ HostDBCache::start(int flags)
 
   Debug("hostdb", "Opening %s, size=%d", hostdb_filename, hostdb_size);
   if (open(hostDBStore, "hostdb.config", hostdb_filename, hostdb_size, reconfigure, fix, false /* slient */ ) < 0) {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
-    xptr<char> config(Layout::relative_to(rundir, "hostdb.config"));
+    ats_scoped_str rundir(RecConfigReadRuntimeDir());
+    ats_scoped_str config(Layout::relative_to(rundir, "hostdb.config"));
 
     Note("reconfiguring host database");
 
