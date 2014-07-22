@@ -296,7 +296,7 @@ MultiCacheBase::unmap_data()
 int
 MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
-  xfd fd;
+  ats_scoped_fd fd;
   int fds[MULTI_CACHE_MAX_FILES] = { 0 };
   int n_fds = 0;
   size_t total_mapped = 0; // total mapped memory from storage.
@@ -507,7 +507,7 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);
 
-  xfd fd(::open(p, O_RDONLY));
+  ats_scoped_fd fd(::open(p, O_RDONLY));
   if (fd < 0)
     return 0;
 
@@ -797,7 +797,7 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
 
   // map in a chunk of space to use as scratch (check)
   // or to copy the database to.
-  xfd fd(socketManager.open("/dev/zero", O_RDONLY));
+  ats_scoped_fd fd(socketManager.open("/dev/zero", O_RDONLY));
   if (fd < 0) {
     Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));
     return -1;

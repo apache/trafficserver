@@ -510,7 +510,7 @@ Span::init(char *an, int64_t size)
     return "error stat of file";
   }
 
-  xfd fd(socketManager.open(n, O_RDONLY));
+  ats_scoped_fd fd(socketManager.open(n, O_RDONLY));
   if (!fd) {
     Warning("unable to open '%s': %s", n, strerror(errno));
     return "unable to open";
@@ -601,7 +601,7 @@ Span::init(char *filename, int64_t size)
   //
   is_mmapable_internal = true;
 
-  xfd fd(socketManager.open(filename, O_RDONLY));
+  ats_scoped_fd fd(socketManager.open(filename, O_RDONLY));
   if (!fd) {
     Warning("unable to open '%s': %s", filename, strerror(errno));
     return "unable to open";
@@ -686,7 +686,7 @@ Span::init(char *filename, int64_t size)
   int devnum = 0, arg = 0;
   int ret = 0, is_disk = 0;
   u_int64_t heads, sectors, cylinders, adjusted_sec;
-  xfd fd;
+  ats_scoped_fd fd;
 
   /* Fetch file type */
   struct stat stat_buf;

@@ -435,8 +435,15 @@ public:
   typedef ats_scoped_fd self; ///< Self reference type.
   typedef bool (self::*pseudo_bool)() const; ///< Bool operator type.
 
+  /// Default constructor (invalid file descriptor).
+  ats_scoped_fd()
+  { }
+  /// Construct with file descriptor.
+  explicit ats_scoped_fd(value_type v) : super(v)
+  { }
+
   /// Assign a file descriptor @a fd.
-  self& operator = (int fd) {
+  self& operator = (value_type fd) {
     super::operator=(fd);
     return *this;
   }

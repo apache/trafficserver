@@ -87,7 +87,7 @@ LogSock::listen(int accept_port, int family)
   int size = sizeof(bind_addr);
   char this_host[MAXDNAME];
   int ret;
-  xfd accept_sd;
+  ats_scoped_fd accept_sd;
 
   Debug("log-sock", "Listening ...");
 
@@ -230,7 +230,7 @@ int
 LogSock::connect(sockaddr const* ip)
 {
   int cid, ret;
-  xfd connect_sd;
+  ats_scoped_fd connect_sd;
   uint16_t port;
 
   if (!ats_is_ip(ip)) {
