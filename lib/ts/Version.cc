@@ -83,10 +83,6 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   snprintf(BldPersonStr, sizeof(BldPersonStr), "%s", build_person);
   snprintf(BldCompileFlagsStr, sizeof(BldCompileFlagsStr), "%s", build_cflags);
 
-  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr),
-           "%s - %s - %s - (build # %d%d%d on %s at %s)",
-           PkgStr, AppStr, VersionStr, month, day, hour, build_date, build_time);
-
   /////////////////////////////////////////////////////////////
   // the manager doesn't like empty strings, so prevent them //
   /////////////////////////////////////////////////////////////
@@ -110,6 +106,10 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
     ink_strlcpy(BldCompileFlagsStr, "?", sizeof(BldCompileFlagsStr));
   if (FullVersionInfoStr[0] == '\0')
     ink_strlcpy(FullVersionInfoStr, "?", sizeof(FullVersionInfoStr));
+
+  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr),
+           "%s - %s - %s - (build # %s on %s at %s)",
+           PkgStr, AppStr, VersionStr, BldNumStr, BldDateStr, BldTimeStr);
 
   defined = 1;
 }
