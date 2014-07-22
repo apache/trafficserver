@@ -52,7 +52,7 @@ LogFieldAliasTable::init(size_t numPairs, ...)
      explicitly cast, they will come through as "int" sized values.
   */
   m_min = m_max = va_arg(ap, int);
-  name = va_arg(ap, char *);    // ignore next arg. for now
+  va_arg(ap, char *);    // ignore next arg. for now
 
   for (n = 1; n < numPairs; n++) {
     IntType val = va_arg(ap, int);
@@ -61,7 +61,7 @@ LogFieldAliasTable::init(size_t numPairs, ...)
     } else if (val > m_max) {
       m_max = val;
     }
-    name = va_arg(ap, char *);  // ignore next arg. for now
+    va_arg(ap, char *);  // ignore next arg. for now
   }
 
   va_end(ap);
