@@ -550,7 +550,6 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
     ats_free(ifbuf);
   }
 
-  ifr = ifc.ifc_req;
   found = false;
   // Loop through the list of interfaces
   ifend = (struct ifreq *) (ifc.ifc_buf + ifc.ifc_len);
