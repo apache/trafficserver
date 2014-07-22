@@ -399,7 +399,6 @@ addOrCheckKeepPassRecords(uint32_t hash_key, int64_t timeout)
         getCurrentKeepPassEntries(keep_pass_list);
         TSDebug(PLUGIN_NAME,
                 "insert pass entry with timeout = %zd, hash_key = %u", passRecord.timeout, passRecord.hash_key);
-        added = true;
         break;
       }
     } else {
