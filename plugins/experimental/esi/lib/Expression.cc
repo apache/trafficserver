@@ -238,8 +238,6 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */) {
     }
   } else if (op == OP_NOT) {
     if (sep == 0) {
-      subexpr = expr + 1;
-      subexpr_len = expr_len - 1;
       retval = !_evalSimpleExpr(expr + 1, expr_len - 1);
     } else {
       _debugLog(_debug_tag, "[%s] Unary negation not preceding literal in expression [%.*s]; assuming true",
