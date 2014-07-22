@@ -1572,7 +1572,6 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.application.zip, size);
             break;
           case JAVA_AS_INT:
-            tok_len = 22;
             update_counter(totals.content.application.javascript, size);
             if (o_stats != NULL)
               update_counter(o_stats->content.application.javascript, size);
@@ -1749,7 +1748,6 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     const int MAX_READ_TRIES = 5;
     int total_read = 0;
     int read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
-    nread = 0;
     do {
       nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
       if (EOF == nread || !nread) { // just bail on error
