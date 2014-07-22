@@ -344,7 +344,6 @@ write_response(WebHttpContext * whc)
   if (whc->request->getMethod() != METHOD_HEAD) {
     buf_p = whc->response_bdy->bufPtr();
     bytes_to_write = whc->response_bdy->spaceUsed();
-    bytes_written = 0;
     while (bytes_to_write) {
       bytes_written = socket_write(whc->si, buf_p, bytes_to_write);
       if (bytes_written < 0) {
