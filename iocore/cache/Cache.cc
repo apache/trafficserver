@@ -2082,7 +2082,7 @@ build_vol_hash_table(CacheHostRecord *cp)
   // sort (rand #, vol $ pairs)
   qsort(rtable, rtable_size, sizeof(rtable_pair), cmprtable);
   unsigned int width = (1LL << 32) / VOL_HASH_TABLE_SIZE;
-  unsigned int pos = width / 2;  // target position to allocate
+  unsigned int pos;  // target position to allocate
   // select vol with closest random number for each bucket
   int i = 0;  // index moving through the random numbers
   for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
@@ -3035,7 +3035,6 @@ cplist_reconfigure()
 
     for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
       // if volume is given exclusive disks, fill here and continue
-      volume_number = config_vol->number;
       if (!config_vol->cachep) {
         continue;
       }
