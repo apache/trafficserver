@@ -14,28 +14,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- collapsed_connection \
- custom_redirect \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- regex_revalidate \
- remap_stats \
- s3_auth \
- sslheaders \
- stale_while_revalidate \
- url_sig \
- xdebug
+include $(top_srcdir)/build/plugins.mk
 
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
-endif
+AM_CPPFLAGS += -I$(top_srcdir)/lib
+
+noinst_LTLIBRARIES = libsslhdr.la
+pkglib_LTLIBRARIES = sslheaders.la
+check_PROGRAMS = test_sslheaders
+
+libsslhdr_la_SOURCES = sslheaders.h expand.cc util.cc
+
+sslheaders_la_SOURCES = sslheaders.cc sslheaders.h
+sslheaders_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+sslheaders_la_LIBADD = libsslhdr.la
+
+test_sslheaders_SOURCES = test_sslheaders.cc sslheaders.h
+test_sslheaders_LDADD = \
+  libsslhdr.la \
+  $(top_builddir)/lib/ts/libtsutil.la
+
+TESTS = $(check_PROGRAMS)

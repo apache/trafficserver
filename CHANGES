@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2957] Add new sslheaders plugin.
+
   *) [TS-2802] Add SNI support for origin server connections.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 

@@ -1944,9 +1944,10 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
     plugins/experimental/metalink/Makefile
-    plugins/experimental/remap_stats/Makefile
     plugins/experimental/regex_revalidate/Makefile
+    plugins/experimental/remap_stats/Makefile
     plugins/experimental/s3_auth/Makefile
+    plugins/experimental/sslheaders/Makefile
     plugins/experimental/stale_while_revalidate/Makefile
     plugins/experimental/ts_lua/Makefile
     plugins/experimental/url_sig/Makefile
@@ -2002,4 +2003,5 @@ AC_MSG_NOTICE([Build option summary:
     EXTRA_CXX_LDFLAGS:  $EXTRA_CXX_LDFLAGS
     LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
     API_DEFS:           $API_DEFS
+
 ])
