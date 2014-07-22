@@ -193,7 +193,7 @@ hc_thread(void *data ATS_UNUSED)
   gettimeofday(&last_free, NULL);
 
   /* Setup watchers for the directories, these are a one time setup */
-  dirs = setup_watchers(fd);
+  setup_watchers(fd); // This is a leak, but since we enter an infinite loop this is ok?
 
   while (1) {
     HCFileData *fdata = fl_head, *fdata_prev = NULL;
