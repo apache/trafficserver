@@ -389,6 +389,7 @@ BGFetchData::log(TSEvent event) const
       break;
     case TS_EVENT_ERROR:
       status = "ERROR";
+      break;
     case TS_EVENT_VCONN_READ_COMPLETE:
       status = "READ_COMP";
       break;
