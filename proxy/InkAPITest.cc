@@ -1567,7 +1567,7 @@ REGRESSION_TEST(SDK_API_TSMutexCreate) (RegressionTest * test, int /* atype ATS_
   /* This is normal because all locking is from the same thread */
   TSReturnCode lock = TS_ERROR;
 
-  lock = TSMutexLockTry(mutexp);
+  TSMutexLockTry(mutexp);
   lock = TSMutexLockTry(mutexp);
 
   if (TS_SUCCESS == lock) {
@@ -3258,7 +3258,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdr) (RegressionTest * test, int /* atype ATS_UNUS
         if ((TSHttpHdrUrlGet(bufp1, hdr_loc1, &url_loc1) != TS_SUCCESS) ||
             (TSHttpHdrUrlGet(bufp3, hdr_loc3, &url_loc2) != TS_SUCCESS)) {
           SDK_RPRINT(test, "TSHttpHdrCopy", "TestCase1", TC_FAIL, "TSHttpVersionGet returns TS_ERROR");
-          flag = false;
         } else {
           const char *scheme1;
           const char *scheme2;
@@ -3372,7 +3371,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdr) (RegressionTest * test, int /* atype ATS_UNUS
         if ((TSHttpHdrUrlGet(bufp1, hdr_loc1, &url_loc1) != TS_SUCCESS) ||
             (TSHttpHdrUrlGet(bufp4, hdr_loc4, &url_loc2) != TS_SUCCESS)) {
           SDK_RPRINT(test, "TSHttpHdrClone", "TestCase1", TC_FAIL, "TSHttpVersionGet returns TS_ERROR");
-          flag = false;
         } else {
           const char *scheme1;
           const char *scheme2;
