@@ -1290,7 +1290,6 @@ static int read_ftp_request(int sock) {
         fd[sock].req_pos = 0;
         fd[sock].response_length = strlen(fd[sock].req_header);
         poll_set(sock, NULL, write_ftp_response);
-        buffer = n+1;
         return 0;
     } else {
       if (verbose || verbose_errors) printf("ftp junk : %s\n", buffer);
@@ -3424,8 +3423,6 @@ static void ink_web_canonicalize_url(const char *base_url, const char *emb_url, 
 
   dest_url[0] = '\0';
 
-  use_base_sche = 1;
-  use_base_host = 1;
   use_base_path = 0;
   use_base_quer = 0;
   use_base_para = 0;
