@@ -18,6 +18,10 @@
 
 # This does intentionally not run the regressions, it's primarily a "build" test
 
+# Test if we should enable CPPAPI (only 5.0 and later for now)
+enable_cppapi="--enable-cppapi"
+test "${JOB_NAME#*-4.2.x}" != "${JOB_NAME}" && enable_cppapi=""
+
 cd "${WORKSPACE}/src"
 
 autoreconf -fi
@@ -25,7 +29,7 @@ autoreconf -fi
     --enable-ccache \
     --enable-werror \
     --enable-experimental-plugins \
-    --enable-cppapi \
+    ${enable_cppapi} \
     --enable-example-plugins \
     --enable-test-tools
 
