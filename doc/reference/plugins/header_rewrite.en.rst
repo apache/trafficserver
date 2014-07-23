@@ -51,17 +51,17 @@ Operators
 
 The following operators are available::
 
-  rm-header header-name                 [operator_flags]
-  add-header header <value>             [operator_flags]
-  set-header header <value>             [operator_flags]
-  set-status <status-code>              [operator_flags]
-  set-destination [qual] <value>        [operator_flags]
-  set-redirect <value>                  [operator_flags]
-  set-timeout-out <value>               [operator_flags]
-  set-status-reason <value>             [operator_flags]
-  set-config overridable-config <value> [operator_flags]
-  counter counter-name                  [operator_flags]
-  no-op                                 [operator_flags]
+  rm-header header-name                      [operator_flags]
+  add-header header <value>                  [operator_flags]
+  set-header header <value>                  [operator_flags]
+  set-status <status-code>                   [operator_flags]
+  set-destination [qual] <value>             [operator_flags]
+  set-redirect <status-code> <destination>   [operator_flags]
+  set-timeout-out <value>                    [operator_flags]
+  set-status-reason <value>                  [operator_flags]
+  set-config overridable-config <value>      [operator_flags]
+  counter counter-name                       [operator_flags]
+  no-op                                      [operator_flags]
 
 
 Where qual is one of the support URL qualifiers::
@@ -83,6 +83,7 @@ The operator flags are optional, and must not contain whitespaces inside
 the brackets. Currently, only one flag is supported::
 
   [L]   Last rule, do not continue
+  [QSA] Append query string
 
 Variable expansion
 ------------------
