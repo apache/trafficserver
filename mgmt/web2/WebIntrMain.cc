@@ -54,6 +54,7 @@ extern "C"
 #endif
 
 typedef int fd;
+static RecInt autoconf_localhost_only = 1;
 
 #define SOCKET_TIMEOUT 10*60
 
@@ -62,14 +63,14 @@ WebInterFaceGlobals wGlobals;
 
 // There are two web ports maintained
 //
-//  One is for adminstration.  This port serves
+//  One is for administration.  This port serves
 //     all the configuration and monitoring info.
 //     Most sites will have some security features
 //     (authentication and SSL) active on this
 //     port since it system administrator access
 //  The other is for things that we want to serve
 //     insecurely.  Client auto configuration falls
-//     in this catagory.  The public key for the
+//     in this category.  The public key for the
 //     administration server is another example
 //
 WebContext autoconfContext;
@@ -83,7 +84,7 @@ int aconf_port_arg = -1;
 //      directory exists and that the default file
 //      exists
 //
-//    returns 0 if everthing is OK
+//    returns 0 if everything is OK
 //    returns 1 if something is missing
 //
 int
@@ -223,7 +224,11 @@ newTcpSocket(int port)
   memset(&socketInfo, 0, sizeof(socketInfo));
   socketInfo.sin_family = AF_INET;
   socketInfo.sin_port = htons(port);
-  socketInfo.sin_addr.s_addr = htonl(INADDR_ANY);
+  if (autoconf_localhost_only == 1) {
+    socketInfo.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  } else {
+    socketInfo.sin_addr.s_addr = htonl(INADDR_ANY);
+  }
 
   // Allow for immediate re-binding to port
   if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
@@ -333,7 +338,6 @@ webIntr_main(void *)
 
   RecInt tempInt;
   bool found;
-  int autoconf_localhost_only = 0;
 
   int addrLen;
   int i;
@@ -375,8 +379,7 @@ webIntr_main(void *)
   ink_mutex_init(&wGlobals.submitLock, "Submission Mutex");
 
   // Fix for INKqa10514
-  found = (RecGetRecordInt("proxy.config.admin.autoconf.localhost_only", &tempInt) == REC_ERR_OKAY);
-  autoconf_localhost_only = (int) tempInt;
+  found = (RecGetRecordInt("proxy.config.admin.autoconf.localhost_only", &autoconf_localhost_only) == REC_ERR_OKAY);
   ink_assert(found);
 
   // Set up the client autoconfiguration context
@@ -390,7 +393,7 @@ webIntr_main(void *)
     publicPort = (int) tempInt;
     ink_assert(found);
   }
-  Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d\n", publicPort);
+  Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d", publicPort);
 
   found = (RecGetRecordString_Xmalloc("proxy.config.admin.autoconf.doc_root", &(autoconfContext.docRoot)) == REC_ERR_OKAY);
   ink_assert(found);

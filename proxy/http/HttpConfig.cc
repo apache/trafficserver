@@ -1463,6 +1463,10 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
+  // Local Manager
+  HttpEstablishStaticConfigLongLong(c.autoconf_port, "proxy.config.admin.autoconf_port");
+  HttpEstablishStaticConfigByte(c.autoconf_localhost_only, "proxy.config.admin.autoconf.localhost_only");
+
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
@@ -1706,6 +1710,10 @@ params->push_method_enabled = INT_TO_BOOL(m_master.push_method_enabled);
   params->redirection_host_no_port = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->number_of_redirections = m_master.number_of_redirections;
   params->post_copy_size = m_master.post_copy_size;
+
+  // Local Manager
+  params->autoconf_port = m_master.autoconf_port;
+  params->autoconf_localhost_only = m_master.autoconf_localhost_only;
 
   m_id = configProcessor.set(m_id, params);
 
