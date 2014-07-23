@@ -313,7 +313,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     char* tmp = (char*)TSmalloc(256);
     static int my_local_counter = 0;
 
-    size_t len = snprintf(tmp, sizeof(tmp) - 1,
+    size_t len = snprintf(tmp, 255,
                           "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
                           my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
     TSHttpTxnSetHttpRetStatus((TSHttpTxn) rh, (TSHttpStatus) ((int) TS_HTTP_STATUS_CONTINUE + my_local_counter)); 
