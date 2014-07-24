@@ -931,6 +931,7 @@ read_sip_file(char *sip_file)
     }
     ++num_sips;
   }
+  fclose(fp);
 }
 
 
