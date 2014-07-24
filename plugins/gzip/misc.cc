@@ -29,8 +29,6 @@
 #include <inttypes.h>
 #include "debug_macros.h"
 
-const int DICT_SIZE = 800000;
-
 voidpf
 gzip_alloc(voidpf /* opaque ATS_UNUSED */, uInt items, uInt size)
 {
