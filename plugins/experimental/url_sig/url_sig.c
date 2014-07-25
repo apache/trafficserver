@@ -169,8 +169,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
                "[TSRemapNewInstance] - Invalid config, err_status == 302, but err_url == NULL");
       return TS_ERROR;
     }
-    printf("[url_sig] mapping {%s -> %s} with status %d and err url %s\n", argv[0], argv[1], cfg->err_status,
-           cfg->err_url);
     break;
   case TS_HTTP_STATUS_FORBIDDEN:
     if (cfg->err_url != NULL) {
@@ -179,7 +177,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       fclose(file);
       return TS_ERROR;
     }
-    printf("[url_sig] mapping {%s -> %s} with status %d\n", argv[0], argv[1], cfg->err_status);
     break;
   default:
     snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Return code %d not supported.", cfg->err_status);
@@ -189,10 +186,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   for (i = 0; i < MAX_KEY_NUM; i++) {
     if (cfg->keys[i] != NULL && strlen(cfg->keys[i]) > 0)
-      printf("[url_sig] shared secret key[%d] = %s\n", i, cfg->keys[i]);
+      TSDebug(PLUGIN_NAME, "shared secret key[%d] = %s\n", i, cfg->keys[i]);
   }
   fclose(file);
-  printf("%s version %s initialized.\n", PLUGIN_NAME, VERSION);
   return TS_SUCCESS;
 }
 
@@ -442,8 +438,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * rri)
   }
 
   /* ********* Deny ********* */
-deny:if (url)
+deny:
+  if (url)
     TSfree(url);
+
   switch (cfg->err_status) {
   case TS_HTTP_STATUS_MOVED_TEMPORARILY:
     TSDebug(PLUGIN_NAME, "Redirecting to %s", cfg->err_url);
@@ -455,14 +453,14 @@ deny:if (url)
     }
     rri->redirect = 1;
     break;
-  case TS_HTTP_STATUS_FORBIDDEN:
   default:
-    /* set status and body to be 403 */
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_FORBIDDEN);
     TSHttpTxnErrorBodySet(txnp, TSstrdup("Authorization Denied"), strlen("Authorization Denied") - 1,
                           TSstrdup("text/plain"));
     break;
   }
+  /* Always set the return status */
+  TSHttpTxnSetHttpRetStatus(txnp, cfg->err_status);
+
   return TSREMAP_DID_REMAP;
 
   /* ********* Allow ********* */
