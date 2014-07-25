@@ -82,6 +82,8 @@ ServerSessionPool::acquireSession(sockaddr const* addr, INK_MD5 const& hostname_
   if (TS_SERVER_SESSION_SHARING_MATCH_HOST == match_style) {
     // This is broken out because only in this case do we check the host hash first.
     HostHashTable::Location loc = m_host_pool.find(hostname_hash);
+    in_port_t port = ats_ip_port_cast(addr);
+    while (loc && port != ats_ip_port_cast(loc->server_ip)) ++loc; // scan for matching port.
     if (loc) {
       zret = loc;
       m_host_pool.remove(loc);
@@ -128,7 +130,7 @@ ServerSessionPool::releaseSession(HttpServerSession* ss)
   Debug("http_ss", "[%" PRId64 "] [release session] " "session placed into shared pool", ss->con_id);
 }
 
-//   Called from the NetProcessor to left us know that a
+//   Called from the NetProcessor to let us know that a
 //    connection has closed down
 //
 int
@@ -158,7 +160,7 @@ ServerSessionPool::eventHandler(int event, void *data)
   HttpConfigParams *http_config_params = HttpConfig::acquire();
   bool found = false;
 
-  for ( ServerSessionPool::IPHashTable::Location lh = m_ip_pool.find(addr) ; lh.isValid() ; ++lh ) {
+  for ( ServerSessionPool::IPHashTable::Location lh = m_ip_pool.find(addr) ; lh ; ++lh ) {
     if ((s = lh)->get_netvc() == net_vc) {
       // if there was a timeout of some kind on a keep alive connection, and
       // keeping the connection alive will not keep us above the # of max connections
