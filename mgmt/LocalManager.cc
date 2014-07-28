@@ -51,9 +51,7 @@ LocalManager::mgmtCleanup()
   if (virt_map) {
     virt_map->rl_downAddrs();   // We are bailing done need to worry about table
   }
-#ifdef MGMT_USE_SYSLOG
   closelog();
-#endif /* MGMT_USE_SYSLOG */
   return;
 }
 
@@ -204,9 +202,7 @@ LocalManager::LocalManager(bool proxy_on)
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
   ats_scoped_str bindir(RecConfigReadBinDir());
 
-#ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
-#endif
 
   ccom = NULL;
   proxy_started_at = -1;

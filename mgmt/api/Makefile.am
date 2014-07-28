@@ -31,9 +31,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
-
 noinst_LIBRARIES = libmgmtapilocal.a
 libmgmtapilocal_a_SOURCES = \
   CfgContextDefs.h \

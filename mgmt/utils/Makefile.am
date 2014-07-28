@@ -31,9 +31,6 @@ AM_CPPFLAGS = \
   -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
-
 # header files used by other libraries
 EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
 

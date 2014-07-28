@@ -36,9 +36,6 @@ AM_CPPFLAGS = $(ink_with_modules_local) \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
-
 noinst_LIBRARIES = libmgmt_p.a
 
 bin_PROGRAMS = traffic_manager

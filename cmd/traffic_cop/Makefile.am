@@ -25,9 +25,6 @@ AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/api/include
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
-
 bin_PROGRAMS = traffic_cop
 
 traffic_cop_SOURCES = \

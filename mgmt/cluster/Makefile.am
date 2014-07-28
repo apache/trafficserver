@@ -27,9 +27,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
-
 noinst_LIBRARIES = libcluster.a
 
 libcluster_a_SOURCES = \

@@ -139,9 +139,7 @@ public:
   volatile int internal_ticker;
   volatile pid_t watched_process_pid;
 
-#ifdef MGMT_USE_SYSLOG
   int syslog_facility;
-#endif
 
 #if TS_HAS_WCCP
   wccp::Cache wccp_cache;

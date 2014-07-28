@@ -322,16 +322,12 @@ set_process_limits(int fds_throttle)
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(lim.rlim_max * file_max_pct);
     if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
       fds_limit = (int) lim.rlim_cur;
-#ifdef MGMT_USE_SYSLOG
       syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
     } else {
       syslog(LOG_NOTICE, "NOTE: Unable to set RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
-#endif
     }
-#ifdef MGMT_USE_SYSLOG
   } else {
     syslog(LOG_NOTICE, "NOTE: Unable to open /proc/sys/fs/file-max");
-#endif
   }
 #endif // linux
 
@@ -340,9 +336,7 @@ set_process_limits(int fds_throttle)
       lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);
       if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
         fds_limit = (int) lim.rlim_cur;
-#ifdef MGMT_USE_SYSLOG
 	syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
-#endif
       }
     }
   }
@@ -534,7 +528,6 @@ main(int argc, char **argv)
   }
 
 
-#ifdef MGMT_USE_SYSLOG
   // Bootstrap with LOG_DAEMON until we've read our configuration
   if (log_to_syslog) {
     openlog("traffic_manager", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
@@ -542,7 +535,6 @@ main(int argc, char **argv)
     syslog(LOG_NOTICE, "NOTE: --- Manager Starting ---");
     syslog(LOG_NOTICE, "NOTE: Manager Version: %s", appVersionInfo.FullVersionInfoStr);
   }
-#endif /* MGMT_USE_SYSLOG */
 
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
@@ -618,7 +610,6 @@ main(int argc, char **argv)
 //    RecSetRecordString("proxy.node.version.manager.build_compile_flags",
 //                       appVersionInfo.BldCompileFlagsStr);
 
-#ifdef MGMT_USE_SYSLOG
   if (log_to_syslog) {
     char sys_var[] = "proxy.config.syslog_facility";
     char *facility_str = NULL;
@@ -646,7 +637,6 @@ main(int argc, char **argv)
   } else {
     lmgmt->syslog_facility = -1;
   }
-#endif /* MGMT_USE_SYSLOG */
 
   // Find out our hostname so we can use it as part of the initialization
   setHostnameVar();
