@@ -44,9 +44,6 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
-#if defined(MGMT_API)
-#include "TSControlMain.h"
-#endif
 
 
 #include "StatProcessor.h"
@@ -560,15 +557,6 @@ main(int argc, char **argv)
   mime_init();
   http_init();
 
-#if defined(MGMT_API)
-  // initialize alarm queue
-  int ret;
-
-  ret = init_mgmt_alarm_q(mgmt_alarm_event_q);
-  if (ret < 0)
-    mgmt_alarm_event_q = NULL;
-
-#endif
 
 #if TS_HAS_WCCP
   Init_Errata_Logging();

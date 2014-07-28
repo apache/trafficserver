@@ -28,11 +28,6 @@
 #include "Alarms.h"
 #include "Diags.h"
 
-#if defined(MGMT_API)
-#include "TSControlMain.h"
-#include "Message.h"
-#include "Defs.h"
-#endif
 
 #include "P_RecCore.h"
 
@@ -313,36 +308,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   ink_strlcpy(atmp->description, desc, atmp_desc_size);
   ink_mutex_release(&mutex);
 
-#if defined(MGMT_API)
-  if (mgmt_alarm_event_q) {
-    // ADDED CODE here is where we Add to the queue of alarms one more
-    EventNoticeForm *new_alarm = (EventNoticeForm *)ats_malloc(sizeof(EventNoticeForm));
-
-    // allocated space copy over values
-    // remember AlarmID start from 0 exactly 1 off but everything else
-    // matches
-    new_alarm->alarm_t = (AlarmID) (atmp->type - 1);
-    new_alarm->priority = atmp->priority;
-    new_alarm->linger = atmp->linger;
-    new_alarm->local = atmp->local;
-    new_alarm->seen = atmp->seen;
-    if (!atmp->local)
-      new_alarm->inet_address = atmp->inet_address;
-    if (!atmp->description) {
-      new_alarm->description = NULL;
-    } else {
-      new_alarm->description = ats_strdup(atmp->description);
-    }
-
-    // new alarm is complete now add it
-    ink_mutex_acquire(&mgmt_alarm_event_q->mgmt_alarm_lock);
-
-    // enqueue
-    enqueue(mgmt_alarm_event_q->mgmt_alarm_q, new_alarm);
-
-    ink_mutex_release(&mgmt_alarm_event_q->mgmt_alarm_lock);
-  }
-#endif
 
   for (entry = ink_hash_table_iterator_first(cblist, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {
