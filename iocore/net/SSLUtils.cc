@@ -1417,9 +1417,6 @@ SSLParseCertificateConfiguration(
   unsigned    line_num = 0;
   matcher_line line_info;
 
-  bool alarmAlready = false;
-  char errBuf[1024];
-
   const matcher_tags sslCertTags = {
     NULL, NULL, NULL, NULL, NULL, NULL, false
   };
@@ -1457,9 +1454,8 @@ SSLParseCertificateConfiguration(
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
 
       if (errPtr != NULL) {
-        snprintf(errBuf, sizeof(errBuf), "%s: discarding %s entry at line %d: %s",
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s",
                      __func__, params->configFilePath, line_num, errPtr);
-        REC_SignalError(errBuf, alarmAlready);
       } else {
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
           if (!ssl_store_ssl_context(params, lookup, sslMultiCertSettings)) {
@@ -1467,9 +1463,8 @@ SSLParseCertificateConfiguration(
                 params->configFilePath, line_num);
           }
         } else {
-          snprintf(errBuf, sizeof(errBuf), "%s: discarding invalid %s entry at line %u",
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding invalid %s entry at line %u",
                        __func__, params->configFilePath, line_num);
-          REC_SignalError(errBuf, alarmAlready);
         }
       }
 

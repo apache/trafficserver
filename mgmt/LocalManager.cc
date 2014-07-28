@@ -650,7 +650,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER, data_raw);
     break;
     // Congestion Control - end
-  case INK_MGMT_SIGNAL_SAC_SERVER_DOWN:
+  case MGMT_SIGNAL_SAC_SERVER_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);
     break;
 

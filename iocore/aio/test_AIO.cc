@@ -31,7 +31,6 @@ using std::cout;
 using std::endl;
 
 Diags *diags;
-int diags_init = 0;
 #define DIAGS_LOG_FILE "diags.log"
 
 // Necessary for AIO

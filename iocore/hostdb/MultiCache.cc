@@ -732,16 +732,14 @@ Lfail:
   {
     unmap_data();
     if (!silent) {
-      char msg[PATH_NAME_MAX + 1024];
       if (reconfigure) {
-        snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: disabling database\n"
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: disabling database\n"
                      "You may need to 'reconfigure' your cache manually.  Please refer to\n"
                      "the 'Configuration' chapter in the manual.", err, config_filename, serr ? serr : "");
       } else {
-        snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: reinitializing database", err, config_filename,
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: reinitializing database", err, config_filename,
                      serr ? serr : "");
       }
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, msg);
     }
   }
   ret = -1;

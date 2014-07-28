@@ -101,9 +101,6 @@ private:
   ConfigUpdateCbTable * cbtable;
 };                              /* End class ProcessManager */
 
-#ifndef _PROCESS_MANAGER
-#define _PROCESS_MANAGER
 inkcoreapi extern ProcessManager *pmgmt;
-#endif /* _PROCESS_MANAGER */
 
 #endif /* _PROCESS_MANAGER_H */

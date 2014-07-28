@@ -36,15 +36,16 @@ EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
 
 noinst_LIBRARIES = libutils_lm.a libutils_p.a
 
-libutils_lm_a_CPPFLAGS = $(ink_with_modules_local) $(AM_CPPFLAGS)
 libutils_lm_a_SOURCES = \
   ExpandingArray.cc \
   ExpandingArray.h \
+  MgmtLocalCleanup.cc \
   MgmtUtils.cc \
   MgmtUtils.h \
   WebMgmtUtils.cc \
   WebMgmtUtils.h
 
 libutils_p_a_SOURCES = \
+  MgmtProcessCleanup.cc \
   MgmtUtils.cc \
   MgmtUtils.h

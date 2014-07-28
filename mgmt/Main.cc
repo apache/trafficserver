@@ -70,8 +70,6 @@ FileManager *configFiles;
 StatProcessor *statProcessor;   // Statistics Processors
 AppVersionInfo appVersionInfo;  // Build info for this application
 
-int diags_init = 0;
-
 static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024] = "";
 static char action_tags[1024] = "";
@@ -585,7 +583,6 @@ main(int argc, char **argv)
   if (is_debug_tag_set("diags"))
     diags->dump();
   diags->cleanup_func = mgmt_cleanup;
-  diags_init = 1;
 
   // Setup the exported manager version records.
   RecSetRecordString("proxy.node.version.manager.short", appVersionInfo.VersionStr);

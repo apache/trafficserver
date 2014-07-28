@@ -735,7 +735,7 @@ ClusterHandler::machine_down()
 #endif
   machine_offline_APIcallout(ip);
   snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
-  REC_SignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
+  RecSignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
     net_vc = 0;
@@ -1126,7 +1126,7 @@ failed:
 
         // Signal the manager
         snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
-        REC_SignalManager(REC_SIGNAL_MACHINE_UP, textbuf);
+        RecSignalManager(REC_SIGNAL_MACHINE_UP, textbuf);
 #ifdef LOCAL_CLUSTER_TEST_MODE
         Note("machine up %hhu.%hhu.%hhu.%hhu:%d, protocol version=%d.%d",
              DOT_SEPARATED(ip), port, clusteringVersion._major, clusteringVersion._minor);

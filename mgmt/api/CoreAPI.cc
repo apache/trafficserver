@@ -47,8 +47,6 @@
 #include "EventCallback.h"
 #include "I_Layout.h"
 
-extern int diags_init;          // from Main.cc
-
 // global variable
 CallbackTable *local_event_callbacks;
 
@@ -131,7 +129,7 @@ Diags(TSDiagsT mode, const char *fmt, va_list ap)
     level = DL_Diag;
   }
 
-  if (diags_init) {             // check that diags is initialized
+  if (diags) {             // check that diags is initialized
     diags->print_va("TSMgmtAPI", level, NULL, fmt, ap);
     va_end(ap);
   }

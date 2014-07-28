@@ -40,7 +40,6 @@
 #include <netdb.h>
 
 #include "P_RecProcess.h"
-#define LOG_SignalManager             REC_SignalManager
 // REC_SIGNAL_LOGGING_ERROR    is defined in I_RecSignals.h
 // REC_SIGNAL_LOGGING_WARNING  is defined in I_RecSignals.h
 
@@ -227,11 +226,11 @@ LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 
   switch (alarm_type) {
   case LogUtils::LOG_ALARM_ERROR:
-    LOG_SignalManager(REC_SIGNAL_LOGGING_ERROR, msg_buf);
+    RecSignalManager(REC_SIGNAL_LOGGING_ERROR, msg_buf);
     break;
 
   case LogUtils::LOG_ALARM_WARNING:
-    LOG_SignalManager(REC_SIGNAL_LOGGING_WARNING, msg_buf);
+    RecSignalManager(REC_SIGNAL_LOGGING_WARNING, msg_buf);
     break;
 
   default:

@@ -43,8 +43,6 @@
 
 #define TIMEOUT_SECS 1;         // the num secs for select timeout
 
-extern int diags_init;          // from Main.cc
-
 InkHashTable *accepted_con;     // a list of all accepted client connections
 
 /*********************************************************************
@@ -970,7 +968,7 @@ handle_diags(struct SocketInfo /* sock_info ATS_UNUSED */, char *req)
     level = DL_Diag;            //default value should be Diag not UNDEFINED
   }
 
-  if (diags_init) {
+  if (diags) {
     diags->print("TSMgmtAPI", DTA(level), "%s", diag_msg);
     ats_free(diag_msg);
     return TS_ERR_OKAY;

@@ -733,5 +733,3 @@ CongestionEntry::go_alive()
 
 #define SERVER_CONGESTED_SIG  REC_SIGNAL_HTTP_CONGESTED_SERVER
 #define SERVER_ALLEVIATED_SIG REC_SIGNAL_HTTP_ALLEVIATED_SERVER
-#define CC_SignalWarning(sig, msg) \
-     REC_SignalWarning(sig, msg)

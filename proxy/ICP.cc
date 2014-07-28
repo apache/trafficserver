@@ -691,8 +691,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
               return EVENT_CONT;
             }
             if (!_ICPpr->GetFreePeers() || !_ICPpr->GetFreeSendPeers()) {
-              Warning("ICP Peer limit exceeded");
-              REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP Peer limit exceeded");
+              RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP Peer limit exceeded");
               _ICPpr->GetConfig()->Unlock();
               goto invalid_message;
             }
@@ -1952,8 +1951,7 @@ ICPProcessor::BuildPeerList()
   if (!mgmt_getAddrForIntr(GetConfig()->globalConfig()->ICPinterface(), &tmp_ip.sa)) {
     Pcfg->_ip_addr._family = AF_UNSPEC;
     // No IP address for given interface
-    Warning("ICP interface [%s] has no IP address", GetConfig()->globalConfig()->ICPinterface());
-    REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP interface has no IP address");
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP interface [%s] has no IP address", GetConfig()->globalConfig()->ICPinterface());
   } else {
     Pcfg->_my_ip_addr = Pcfg->_ip_addr = tmp_ip;
   }
@@ -2088,22 +2086,19 @@ ICPProcessor::SetupListenSockets()
   // Perform some basic sanity checks on the ICP configuration.
   //
   if (!_LocalPeer) {
-    Warning("ICP setup, no defined local Peer");
-    REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP setup, no defined local Peer");
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP setup, no defined local Peer");
     return 1;                   // Failed
   }
 
   if (GetSendPeers() == 0) {
     if (!allow_null_configuration) {
-      Warning("ICP setup, no defined send Peer(s)");
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP setup, no defined send Peer(s)");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP setup, no defined send Peer(s)");
       return 1;                 // Failed
     }
   }
   if (GetRecvPeers() == 0) {
     if (!allow_null_configuration) {
-      Warning("ICP setup, no defined receive Peer(s)");
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP setup, no defined receive Peer(s)");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP setup, no defined receive Peer(s)");
       return 1;                 // Failed
     }
   }
@@ -2130,12 +2125,11 @@ ICPProcessor::SetupListenSockets()
         status = pMC->GetSendChan()->setup_mc_send(pMC->GetIP(), _LocalPeer->GetIP(), NON_BLOCKING, pMC->GetTTL(), DISABLE_MC_LOOPBACK, _mcastCB_handler);
         if (status) {
           // coverity[uninit_use_in_call]
-          Warning("ICP MC send setup failed, res=%d, ip=%s bind_ip=%s",
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP MC send setup failed, res=%d, ip=%s bind_ip=%s",
             status,
             ats_ip_nptop(pMC->GetIP(), ipb, sizeof(ipb)),
             ats_ip_nptop(_LocalPeer->GetIP(), ipb2, sizeof(ipb2))
           );
-          REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP MC send setup failed");
           return 1;             // Failed
         }
 
@@ -2144,9 +2138,8 @@ ICPProcessor::SetupListenSockets()
                                                       NON_BLOCKING, pMC->GetSendChan(), _mcastCB_handler);
         if (status) {
           // coverity[uninit_use_in_call]
-          Warning("ICP MC recv setup failed, res=%d, ip=%s",
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP MC recv setup failed, res=%d, ip=%s",
             status, ats_ip_nptop(pMC->GetIP(), ipb, sizeof(ipb)));
-          REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP MC recv setup failed");
           return 1;             // Failed
         }
       }
@@ -2167,11 +2160,10 @@ ICPProcessor::SetupListenSockets()
   status = pPS->GetChan()->open(options);
   if (status) {
     // coverity[uninit_use_in_call] ?
-    Warning("ICP bind_connect failed, res=%d, ip=%s",
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect failed, res=%d, ip=%s",
       status,
       ats_ip_nptop(pPS->GetIP(), ipb, sizeof(ipb))
     );
-    REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect for localhost failed");
     return 1;             // Failed
   }
 
@@ -2384,8 +2376,7 @@ ICPProcessor::AddPeer(Peer * P)
   if (FindPeer(P->GetIP())) {
     ip_port_text_buffer x;
     // coverity[uninit_use_in_call]
-    Warning("bad icp.config, multiple peer definitions for ip=%s", ats_ip_nptop(P->GetIP(), x, sizeof(x)));
-    REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "bad icp.config, multiple peer definitions");
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "bad icp.config, multiple peer definitions for ip=%s", ats_ip_nptop(P->GetIP(), x, sizeof(x)));
 
     return 0;                   // Not added
   } else {

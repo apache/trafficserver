@@ -30,7 +30,6 @@ AM_CPPFLAGS = \
 
 noinst_LIBRARIES = libreclocal.a librecprocess.a librec4cop.a
 
-libreclocal_a_CXXFLAGS = $(ink_with_modules_local)
 libreclocal_a_SOURCES = \
   I_RecAlarms.h \
   I_RecCore.h \
@@ -60,7 +59,6 @@ libreclocal_a_SOURCES = \
   RecDebug.cc \
   RecConfigParse.cc
 
-librecprocess_a_CXXFLAGS = $(ink_with_modules_process)
 librecprocess_a_SOURCES = \
   I_RecAlarms.h \
   I_RecCore.h \
@@ -90,8 +88,6 @@ librecprocess_a_SOURCES = \
   RecDebug.cc \
   RecConfigParse.cc
 
-
-librec4cop_a_CXXFLAGS = $(ink_with_modules_process)
 librec4cop_a_SOURCES = \
   RecConfigParse.cc \
   RecFile.cc \

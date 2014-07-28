@@ -44,7 +44,7 @@
 
 /***********************************************************************
  *
- * MODULAIZATTION: if you are adding new alarms, please ensure to add
+ * MODULARIZATTION: if you are adding new alarms, please ensure to add
  *                 the corresponding alarms in librecords/I_RecAlarms.h
  *
  *

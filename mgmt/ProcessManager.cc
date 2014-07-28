@@ -26,7 +26,6 @@
 #undef HTTP_CACHE
 #include "InkAPIInternal.h"
 #include "MgmtUtils.h"
-#define _PROCESS_MANAGER
 #include "ProcessManager.h"
 
 #include "ink_apidefs.h"

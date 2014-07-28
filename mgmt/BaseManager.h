@@ -99,7 +99,7 @@
 #define MGMT_SIGNAL_HTTP_CONGESTED_SERVER   20  /* Congestion control -- congested server */
 #define MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER  21  /* Congestion control -- alleviated server */
 
-#define INK_MGMT_SIGNAL_SAC_SERVER_DOWN			400
+#define MGMT_SIGNAL_SAC_SERVER_DOWN			400
 
 typedef struct _mgmt_message_hdr_type
 {

@@ -361,10 +361,8 @@ Store::read_config(int fd)
     Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), ns->vol_num=%d",
       pp, size, ns->vol_num);
     if ((err = ns->init(pp, size))) {
-      char buf[4096];
-      snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", pp, err);
-      REC_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, buf);
-      Debug("cache_init", "Store::read_config - %s", buf);
+      RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", pp, err);
+      Debug("cache_init", "Store::read_config - could not initialize storage \"%s\" [%s]", pp, err);
       delete ns;
       ats_free(pp);
       continue;
@@ -425,11 +423,8 @@ Store::read_interim_config() {
     n[len] = '\0';
     ns = new Span;
     if ((err = ns->init(n, -1))) {
-      char buf[4096];
-      snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", n,
-          err);
-      REC_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, buf);
-      Debug("cache_init", "Store::read_interim_config - %s", buf);
+      RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", n, err);
+      Debug("cache_init", "Store::read_interim_config - could not initialize storage \"%s\" [%s]", n, err);
       delete ns;
       continue;
     }

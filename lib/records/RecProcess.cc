@@ -33,6 +33,7 @@
 #include "P_RecFile.h"
 
 #include "mgmtapi.h"
+#include "ProcessManager.h"
 
 static bool g_initialized = false;
 static bool g_message_initialized = false;
@@ -334,7 +335,7 @@ struct raw_stat_sync_cont: public Continuation
     SET_HANDLER(&raw_stat_sync_cont::exec_callbacks);
   }
 
-  int exec_callbacks(int event, Event *e)
+  int exec_callbacks(int /* event */, Event * /* e */)
   {
     RecExecRawStatSyncCbs();
     Debug("statsproc", "raw_stat_sync_cont() processed");
@@ -355,7 +356,7 @@ struct config_update_cont: public Continuation
     SET_HANDLER(&config_update_cont::exec_callbacks);
   }
 
-  int exec_callbacks(int event, Event *e)
+  int exec_callbacks(int /* event */, Event * /* e */)
   {
     RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
     Debug("statsproc", "config_update_cont() processed");
@@ -387,7 +388,7 @@ struct sync_cont: public Continuation
     }
   }
 
-  int sync(int event, Event *e)
+  int sync(int /* event */, Event * /* e */)
   {
     send_push_message();
     RecSyncStatsFile();
@@ -887,3 +888,45 @@ RecExecRawStatSyncCbs()
 
   return REC_ERR_OKAY;
 }
+
+void
+RecSignalManager(int id, const char * msg, size_t msgsize)
+{
+  ink_assert(pmgmt);
+  pmgmt->signalManager(id, msg, msgsize);
+}
+
+int
+RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
+{
+  return pmgmt->registerMgmtCallback(_signal, _fn, _data);
+}
+
+void
+RecMessageRegister()
+{
+  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, NULL);
+}
+
+//-------------------------------------------------------------------------
+// RecMessageSend
+//-------------------------------------------------------------------------
+
+int
+RecMessageSend(RecMessage * msg)
+{
+  int msg_size;
+
+  if (!g_message_initialized)
+    return REC_ERR_OKAY;
+
+  // Make a copy of the record, but truncate it to the size actually used
+  if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
+    msg->o_end = msg->o_write;
+    msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
+    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *) msg, msg_size);
+  }
+
+  return REC_ERR_OKAY;
+}
+

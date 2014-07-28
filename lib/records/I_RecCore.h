@@ -177,8 +177,18 @@ int RecGetRecordPrefix_Xmalloc(char *prefix, char **result, int *result_len);
 //------------------------------------------------------------------------
 // Signal and Alarms
 //------------------------------------------------------------------------
-void RecSignalManager(int, const char *);
 
+// RecSignalManager always sends a management signal up to traffic_manager.
+void RecSignalManager(int id, const char * , size_t);
+
+static inline void
+RecSignalManager(int id, const char * str) {
+  RecSignalManager(id, str, strlen(str + 1));
+}
+
+// Format a message, and send it to the manager and to the Warning diagnostic.
+void RecSignalWarning(int sig, const char * fmt, ...)
+  TS_PRINTFLIKE(2, 3);
 
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
@@ -279,20 +289,6 @@ int RecResetStatRecord(RecT type = RECT_NULL, bool all = false);
 // Set RecRecord attributes
 //------------------------------------------------------------------------
 int RecSetSyncRequired(char *name, bool lock = true);
-
-
-//------------------------------------------------------------------------
-// Signal Alarm/Warning/Error
-//------------------------------------------------------------------------
-#define REC_SignalManager        RecSignalManager
-#define REC_SignalWarning(_n,_d) { Warning("%s", _d); RecSignalManager(_n,_d); }
-#define REC_SignalError(_buf, _already)  {                                \
-  if(_already == false)                                                   \
-	REC_SignalManager(REC_SIGNAL_CONFIG_ERROR, _buf);                 \
-  _already = true;                                                        \
-  Warning("%s", _buf);                                                    \
-}
-
 
 //------------------------------------------------------------------------
 // Manager Callback

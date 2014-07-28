@@ -35,19 +35,6 @@ static RecMessageRecvCb g_recv_cb = NULL;
 static void *g_recv_cookie = NULL;
 
 //-------------------------------------------------------------------------
-//
-// REC_BUILD_MGMT IMPLEMENTATION
-//
-//-------------------------------------------------------------------------
-#if defined(LOCAL_MANAGER)
-#include "LocalManager.h"
-#elif defined(PROCESS_MANAGER)
-#include "ProcessManager.h"
-#else
-#error "Required #define not specificed; expected LOCAL_MANAGER or PROCESS_MANAGER"
-#endif
-
-//-------------------------------------------------------------------------
 // RecMessageInit
 //-------------------------------------------------------------------------
 
@@ -64,42 +51,11 @@ RecMessageInit()
    */
   ink_assert(g_mode_type != RECM_NULL);
 
-#if defined (LOCAL_MANAGER)
-  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, NULL);
-#elif defined(PROCESS_MANAGER)
-  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, NULL);
-#endif
+  RecMessageRegister();
 
   g_message_initialized = true;
   return REC_ERR_OKAY;
 }
-
-//-------------------------------------------------------------------------
-// RecMessageSend
-//-------------------------------------------------------------------------
-
-int
-RecMessageSend(RecMessage * msg)
-{
-  int msg_size;
-
-  if (!g_message_initialized)
-    return REC_ERR_OKAY;
-
-  // Make a copy of the record, but truncate it to the size actually used
-  if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
-    msg->o_end = msg->o_write;
-    msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-#if defined (LOCAL_MANAGER)
-    lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, (char *) msg, msg_size);
-#elif defined(PROCESS_MANAGER)
-    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *) msg, msg_size);
-#endif
-  }
-
-  return REC_ERR_OKAY;
-}
-
 
 //-------------------------------------------------------------------------
 // RecMessageAlloc
@@ -310,7 +266,7 @@ RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie)
 //-------------------------------------------------------------------------
 
 void *
-RecMessageRecvThis(void *cookie, char *data_raw, int data_len)
+RecMessageRecvThis(void * /* cookie */, char *data_raw, int /* data_len */)
 {
   RecMessage *msg = (RecMessage *) data_raw;
   g_recv_cb(msg, msg->msg_type, g_recv_cookie);

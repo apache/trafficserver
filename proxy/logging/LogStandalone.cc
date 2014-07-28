@@ -50,7 +50,6 @@ class HttpBodyFactory;
 extern int fds_limit;
 extern int cluster_port_number;
 
-int diags_init = 0;
 int command_flag = 0;
 int http_accept_port_number = 0;
 int http_accept_file_descriptor = 0;
@@ -218,7 +217,6 @@ init_log_standalone(const char *pgm_name, bool one_copy)
   initialize_process_manager();
   diagsConfig = new DiagsConfig(logfile, error_tags, action_tags);
   diags = diagsConfig->diags;
-  diags_init = 1;
 }
 
 /*-------------------------------------------------------------------------
@@ -252,5 +250,4 @@ init_log_standalone_basic(const char *pgm_name)
   setbuf(stdin, NULL);
   setbuf(stdout, NULL);
 
-  diags_init = 1;
 }
