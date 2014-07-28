@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2974] Add a new metrics plugin to support the Epic monitoring system.
+
   *) [TS-2973] Add milestones support to the xdebug plugin.
 
   *) [TS-2957] Add new sslheaders plugin.

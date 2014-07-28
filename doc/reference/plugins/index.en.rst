@@ -68,6 +68,7 @@ directory of the Apache Traffic Server source tree. Exmperimental plugins can be
   balancer.en
   buffer_upload.en
   combo_handler.en
+  epic.en
   esi.en
   geoip_acl.en
   hipes.en
