@@ -44,9 +44,6 @@
 #include <wccp/Wccp.h>
 #endif
 
-#define ink_get_hrtime ink_get_hrtime_internal
-#define ink_get_based_hrtime ink_get_based_hrtime_internal
-
 class LocalManager: public BaseManager
 {
 public:
