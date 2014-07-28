@@ -85,6 +85,7 @@
 #include "InkPool.h"
 #include "List.h"
 #include "INK_MD5.h"
+#include "MMH.h"
 #include "Map.h"
 #include "MimeTable.h"
 #include "ParseRules.h"

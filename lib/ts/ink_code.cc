@@ -26,8 +26,23 @@
 #include "ink_code.h"
 #include "INK_MD5.h"
 #include "ink_assert.h"
+#include "INK_MD5.h"
 
-INK_MD5 const INK_MD5::ZERO; // default constructed is correct.
+ats::CryptoHash const ats::CRYPTO_HASH_ZERO; // default constructed is correct.
+
+MD5Context::MD5Context() {
+  MD5_Init(&_ctx);
+}
+
+bool
+MD5Context::update(void const* data, int length) {
+  return 0 != MD5_Update(&_ctx, data, length);
+}
+
+bool
+MD5Context::finalize(CryptoHash& hash) {
+  return 0 != MD5_Final(hash.u8, &_ctx);
+}
 
 /**
   @brief Wrapper around MD5_Init
@@ -111,7 +126,7 @@ ink_code_md5_stringify(char *dest33, const size_t destSize, const char *md5)
 */
 /* reentrant version */
 char *
-ink_code_md5_stringify_fast(char *dest33, const char *md5)
+ink_code_to_hex_str(char *dest33, uint8_t const* hash)
 {
   int i;
   char *d;
@@ -120,17 +135,17 @@ ink_code_md5_stringify_fast(char *dest33, const char *md5)
 
   d = dest33;
   for (i = 0; i < 16; i += 4) {
-    *(d + 0) = hex_digits[((unsigned char) md5[i + 0]) >> 4];
-    *(d + 1) = hex_digits[((unsigned char) md5[i + 0]) & 15];
-    *(d + 2) = hex_digits[((unsigned char) md5[i + 1]) >> 4];
-    *(d + 3) = hex_digits[((unsigned char) md5[i + 1]) & 15];
-    *(d + 4) = hex_digits[((unsigned char) md5[i + 2]) >> 4];
-    *(d + 5) = hex_digits[((unsigned char) md5[i + 2]) & 15];
-    *(d + 6) = hex_digits[((unsigned char) md5[i + 3]) >> 4];
-    *(d + 7) = hex_digits[((unsigned char) md5[i + 3]) & 15];
+    *(d + 0) = hex_digits[hash[i + 0] >> 4];
+    *(d + 1) = hex_digits[hash[i + 0] & 15];
+    *(d + 2) = hex_digits[hash[i + 1] >> 4];
+    *(d + 3) = hex_digits[hash[i + 1] & 15];
+    *(d + 4) = hex_digits[hash[i + 2] >> 4];
+    *(d + 5) = hex_digits[hash[i + 2] & 15];
+    *(d + 6) = hex_digits[hash[i + 3] >> 4];
+    *(d + 7) = hex_digits[hash[i + 3] & 15];
     d += 8;
   }
   *d = '\0';
   return (dest33);
-}                               /* End ink_code_stringify_md5_fast */
+}
 

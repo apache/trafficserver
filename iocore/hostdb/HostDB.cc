@@ -175,7 +175,8 @@ HostDBMD5::refresh() {
     memset(buff, 0, 2);
     memcpy(buff+2, ip._addr._byte, n);
     memset(buff + 2 + n , 0, 2);
-    hash.encodeBuffer(buff, n+4);
+    MD5Context().hash_immediate(hash, buff, n+4);
+//    hash.encodeBuffer(buff, n+4);
   }
 }
 

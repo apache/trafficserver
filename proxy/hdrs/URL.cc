@@ -22,6 +22,7 @@
  */
 
 #include <assert.h>
+#include <new>
 #include "libts.h"
 #include "URL.h"
 #include "MIME.h"
@@ -96,6 +97,20 @@ int url_hash_method = 0;
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
+URLHashContext::HashType URLHashContext::Setting = URLHashContext::MMH;
+
+URLHashContext::URLHashContext() {
+  switch (Setting) {
+  case UNSPECIFIED:
+  case MD5:
+    _ctx = new(_obj) MD5Context;
+    break;
+  case MMH:
+    _ctx = new(_obj) MMHContext;
+    break;
+  default: ink_assert("Invalid global URL hash context");
+  };
+}
 
 void
 url_init()
@@ -191,6 +206,10 @@ url_init()
     URL_LEN_MMS = hdrtoken_wks_to_length(URL_SCHEME_MMS);
     URL_LEN_MMSU = hdrtoken_wks_to_length(URL_SCHEME_MMSU);
     URL_LEN_MMST = hdrtoken_wks_to_length(URL_SCHEME_MMST);
+
+    ink_assert(URLHashContext::OBJ_SIZE >= sizeof(MD5Context));
+    ink_assert(URLHashContext::OBJ_SIZE >= sizeof(MMHContext));
+
   }
 }
 
@@ -1581,13 +1600,10 @@ memcpy_tolower(char *d, const char *s, int n)
 // no buffer overflow, no unescaping needed
 
 static inline void
-url_MD5_get_fast(URLImpl * url, INK_MD5 * md5)
+url_MD5_get_fast(URLImpl * url, CryptoContext& ctx, CryptoHash* hash)
 {
-  INK_DIGEST_CTX md5_ctx;
   char buffer[BUFSIZE];
   char *p;
-
-  ink_code_incr_md5_init(&md5_ctx);
 
   p = buffer;
   memcpy_tolower(p, url->m_ptr_scheme, url->m_len_scheme);
@@ -1614,21 +1630,19 @@ url_MD5_get_fast(URLImpl * url, INK_MD5 * md5)
   *p++ = ((char *) &port)[0];
   *p++ = ((char *) &port)[1];
 
-  ink_code_incr_md5_update(&md5_ctx, buffer, p - buffer);
-  ink_code_incr_md5_final((char *) md5, &md5_ctx);
+  ctx.update(buffer, p - buffer);
+  ctx.finalize(hash);
 }
 
 
 static inline void
-url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
+url_MD5_get_general(URLImpl * url, CryptoContext& ctx, CryptoHash& hash)
 {
-  INK_DIGEST_CTX md5_ctx;
-
   char buffer[BUFSIZE];
   char *p, *e;
   const char *strs[13], *ends[13];
   const char *t;
-  uint16_t port;
+  in_port_t port;
   int i, s;
 
   strs[0] = url->m_ptr_scheme;
@@ -1663,8 +1677,6 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
   p = buffer;
   e = buffer + BUFSIZE;
 
-  ink_code_incr_md5_init(&md5_ctx);
-
   for (i = 0; i < 13; i++) {
     if (strs[i]) {
       t = strs[i];
@@ -1678,29 +1690,26 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
         }
 
         if (p == e) {
-	  ink_code_incr_md5_update(&md5_ctx, buffer, BUFSIZE);
+          ctx.update(buffer, BUFSIZE);
           p = buffer;
         }
       }
     }
   }
 
-  if (p != buffer) {
-    ink_code_incr_md5_update(&md5_ctx, buffer, p - buffer);
-  }
+  if (p != buffer) ctx.update(buffer, p-buffer);
 
   port = url_canonicalize_port(url->m_url_type, url->m_port);
 
-  ink_code_incr_md5_update(&md5_ctx, (char *) &port, sizeof(port));
-  ink_code_incr_md5_final((char *) md5, &md5_ctx);
+  ctx.update(&port, sizeof(port));
+  ctx.finalize(hash);
+  Debug("amc", "hash 0x%" PRIx64 ":%" PRIx64, hash[0], hash[1]);
 }
 
-
-
-
 void
-url_MD5_get(URLImpl * url, INK_MD5 * md5)
+url_MD5_get(URLImpl * url, CryptoHash* hash)
 {
+  URLHashContext ctx;
   if ((url_hash_method != 0) &&
       (url->m_url_type == URL_TYPE_HTTP) &&
       ((url->m_len_user + url->m_len_password + url->m_len_params + url->m_len_query) == 0) &&
@@ -1710,15 +1719,14 @@ url_MD5_get(URLImpl * url, INK_MD5 * md5)
        url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == NULL) &&
       (memchr(url->m_ptr_path, '%', url->m_len_path) == NULL)) {
-    url_MD5_get_fast(url, md5);
-
+    url_MD5_get_fast(url, ctx, hash);
 #ifdef DEBUG
-    INK_MD5 md5_general;
-    url_MD5_get_general(url, &md5_general);
-    ink_assert(*md5 == md5_general);
+    CryptoHash md5_general;
+    url_MD5_get_general(url, ctx, md5_general);
+    ink_assert(*hash == md5_general);
 #endif
   } else {
-    url_MD5_get_general(url, md5);
+    url_MD5_get_general(url, ctx, *hash);
   }
 }
 
@@ -1730,23 +1738,23 @@ url_MD5_get(URLImpl * url, INK_MD5 * md5)
 void
 url_host_MD5_get(URLImpl * url, INK_MD5 * md5)
 {
-  INK_DIGEST_CTX md5_ctx;
-
-  ink_code_incr_md5_init(&md5_ctx);
+  MD5Context ctx;
 
   if (url->m_ptr_scheme) {
-    ink_code_incr_md5_update(&md5_ctx, url->m_ptr_scheme, url->m_len_scheme);
+    ctx.update(url->m_ptr_scheme, url->m_len_scheme);
   }
 
-  ink_code_incr_md5_update(&md5_ctx, "://", 3);
+  ctx.update("://", 3);
 
   if (url->m_ptr_host) {
-    ink_code_incr_md5_update(&md5_ctx, url->m_ptr_host, url->m_len_host);
+    ctx.update(url->m_ptr_host, url->m_len_host);
   }
 
-  ink_code_incr_md5_update(&md5_ctx, ":", 1);
+  ctx.update(":", 1);
 
+  // [amc] Why is this <int> and not <in_port_t>?
+  // Especially since it's in_port_t for url_MD5_get.
   int port = url_canonicalize_port(url->m_url_type, url->m_port);
-  ink_code_incr_md5_update(&md5_ctx, (char *) &port, sizeof(port));
-  ink_code_incr_md5_final((char *) md5, &md5_ctx);
+  ctx.update(&port, sizeof(port));
+  ctx.finalize(*md5);
 }

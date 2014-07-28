@@ -256,14 +256,14 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     }
     vector.clear(false);
     if (!write_vc) {
-      DDebug("cache_read_agg", "%p: key: %X writer alternate different: %d", this, first_key.word(1), alternate_index);
+      DDebug("cache_read_agg", "%p: key: %X writer alternate different: %d", this, first_key.slice32(1), alternate_index);
       od = NULL;
       return EVENT_RETURN;
     }
 
     DDebug("cache_read_agg",
           "%p: key: %X eKey: %d # alts: %d, ndx: %d, # writers: %d writer: %p",
-          this, first_key.word(1), write_vc->earliest_key.word(1),
+          this, first_key.slice32(1), write_vc->earliest_key.slice32(1),
           vector.count(), alternate_index, od->num_writers, write_vc);
   }
 #endif //HTTP_CACHE
@@ -287,7 +287,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   }
   cancel_trigger();
   intptr_t err = ECACHE_DOC_BUSY;
-  DDebug("cache_read_agg", "%p: key: %X In openReadFromWriter", this, first_key.word(1));
+  DDebug("cache_read_agg", "%p: key: %X In openReadFromWriter", this, first_key.slice32(1));
 #ifndef READ_WHILE_WRITER
   return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) -err);
 #else
@@ -325,7 +325,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     if (writer_done()) {
       MUTEX_RELEASE(lock);
       DDebug("cache_read_agg",
-            "%p: key: %X writer %p has left, continuing as normal read", this, first_key.word(1), write_vc);
+            "%p: key: %X writer %p has left, continuing as normal read", this, first_key.slice32(1), write_vc);
       od = NULL;
       write_vc = NULL;
       SET_HANDLER(&CacheVC::openReadStartHead);
@@ -353,13 +353,13 @@ CacheVC::openReadFromWriter(int event, Event * e)
     }
     DDebug("cache_read_agg",
           "%p: key: %X writer: closed:%d, fragment:%d, retry: %d",
-          this, first_key.word(1), write_vc->closed, write_vc->fragment, writer_lock_retry);
+          this, first_key.slice32(1), write_vc->closed, write_vc->fragment, writer_lock_retry);
     VC_SCHED_WRITER_RETRY();
   }
 
   CACHE_TRY_LOCK(writer_lock, write_vc->mutex, mutex->thread_holding);
   if (!writer_lock) {
-    DDebug("cache_read_agg", "%p: key: %X lock miss", this, first_key.word(1));
+    DDebug("cache_read_agg", "%p: key: %X lock miss", this, first_key.slice32(1));
     VC_SCHED_LOCK_RETRY();
   }
   MUTEX_RELEASE(lock);
@@ -370,7 +370,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   if (frag_type == CACHE_FRAG_TYPE_HTTP) {
     DDebug("cache_read_agg",
           "%p: key: %X http passed stage 1, closed: %d, frag: %d",
-          this, first_key.word(1), write_vc->closed, write_vc->fragment);
+          this, first_key.slice32(1), write_vc->closed, write_vc->fragment);
     if (!write_vc->alternate.valid())
       return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
     alternate.copy(&write_vc->alternate);
@@ -386,7 +386,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     } else {
       key = write_vc->update_key;
       ink_assert(write_vc->closed);
-      DDebug("cache_read_agg", "%p: key: %X writer header update", this, first_key.word(1));
+      DDebug("cache_read_agg", "%p: key: %X writer header update", this, first_key.slice32(1));
       // Update case (b) : grab doc_len from the writer's alternate
       doc_len = alternate.object_size_get();
       if (write_vc->update_key == cod->single_doc_key &&
@@ -417,7 +417,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     }
   } else {
 #endif //HTTP_CACHE
-    DDebug("cache_read_agg", "%p: key: %X non-http passed stage 1", this, first_key.word(1));
+    DDebug("cache_read_agg", "%p: key: %X non-http passed stage 1", this, first_key.slice32(1));
     key = write_vc->earliest_key;
 #ifdef HTTP_CACHE
   }
@@ -427,7 +427,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     last_collision = NULL;
     DDebug("cache_read_agg",
           "%p: key: %X closed: %d, fragment: %d, len: %d starting first fragment",
-          this, first_key.word(1), write_vc->closed, write_vc->fragment, (int)doc_len);
+          this, first_key.slice32(1), write_vc->closed, write_vc->fragment, (int)doc_len);
     MUTEX_RELEASE(writer_lock);
     // either a header + body update or a new document
     SET_HANDLER(&CacheVC::openReadStartEarliest);
@@ -444,7 +444,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   doc_len = write_vc->total_len;
   dir_clean(&first_dir);
   dir_clean(&earliest_dir);
-  DDebug("cache_read_agg", "%p: key: %X %X: single fragment read", this, first_key.word(1), key.word(0));
+  DDebug("cache_read_agg", "%p: key: %X %X: single fragment read", this, first_key.slice32(1), key.slice32(0));
   MUTEX_RELEASE(writer_lock);
   SET_HANDLER(&CacheVC::openReadFromWriterMain);
   CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
@@ -465,11 +465,11 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   if (ntodo <= 0)
     return EVENT_CONT;
   if (length < ((int64_t)doc_len) - vio.ndone) {
-    DDebug("cache_read_agg", "truncation %X", first_key.word(1));
+    DDebug("cache_read_agg", "truncation %X", first_key.slice32(1));
     if (is_action_tag_set("cache")) {
       ink_release_assert(false);
     }
-    Warning("Document %X truncated at %d of %d, reading from writer", first_key.word(1), (int)vio.ndone, (int)doc_len);
+    Warning("Document %X truncated at %d of %d, reading from writer", first_key.slice32(1), (int)vio.ndone, (int)doc_len);
     return calluser(VC_EVENT_ERROR);
   }
   /* its possible that the user did a do_io_close before
@@ -544,9 +544,9 @@ CacheVC::openReadReadDone(int event, Event * e)
       if (doc->magic != DOC_MAGIC) {
         char tmpstring[100];
         if (doc->magic == DOC_CORRUPT)
-          Warning("Middle: Doc checksum does not match for %s", key.string(tmpstring));
+          Warning("Middle: Doc checksum does not match for %s", key.toHexStr(tmpstring));
         else
-          Warning("Middle: Doc magic does not match for %s", key.string(tmpstring));
+          Warning("Middle: Doc magic does not match for %s", key.toHexStr(tmpstring));
 #if TS_USE_INTERIM_CACHE == 1
         if (dir_ininterim(&dir)) {
           dir_delete(&key, vol, &dir);
@@ -587,23 +587,23 @@ Lread:
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
 #endif
             DDebug("cache_read_agg", "%p: key: %X ReadRead complete: %d",
-                  this, first_key.word(1), (int)vio.ndone);
+                  this, first_key.slice32(1), (int)vio.ndone);
             doc_len = vio.ndone;
             goto Ldone;
           }
         }
         DDebug("cache_read_agg", "%p: key: %X ReadRead writer aborted: %d",
-              this, first_key.word(1), (int)vio.ndone);
+              this, first_key.slice32(1), (int)vio.ndone);
         goto Lerror;
       }
-      DDebug("cache_read_agg", "%p: key: %X ReadRead retrying: %d", this, first_key.word(1), (int)vio.ndone);
+      DDebug("cache_read_agg", "%p: key: %X ReadRead retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
       VC_SCHED_WRITER_RETRY(); // wait for writer
     }
     // fall through for truncated documents
   }
 Lerror:
   char tmpstring[100];
-  Warning("Document %s truncated", earliest_key.string(tmpstring));
+  Warning("Document %s truncated", earliest_key.toHexStr(tmpstring));
   return calluser(VC_EVENT_ERROR);
 Ldone:
   return calluser(VC_EVENT_EOS);
@@ -752,22 +752,22 @@ Lread: {
         while (dir_probe(&earliest_key, vol, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
             DDebug("cache_read_agg", "%p: key: %X ReadMain complete: %d",
-                  this, first_key.word(1), (int)vio.ndone);
+                  this, first_key.slice32(1), (int)vio.ndone);
             doc_len = vio.ndone;
             goto Leos;
           }
         }
         DDebug("cache_read_agg", "%p: key: %X ReadMain writer aborted: %d",
-              this, first_key.word(1), (int)vio.ndone);
+              this, first_key.slice32(1), (int)vio.ndone);
         goto Lerror;
       }
-      DDebug("cache_read_agg", "%p: key: %X ReadMain retrying: %d", this, first_key.word(1), (int)vio.ndone);
+      DDebug("cache_read_agg", "%p: key: %X ReadMain retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
       SET_HANDLER(&CacheVC::openReadMain);
       VC_SCHED_WRITER_RETRY();
     }
     if (is_action_tag_set("cache"))
       ink_release_assert(false);
-    Warning("Document %X truncated at %d of %d, missing fragment %X", first_key.word(1), (int)vio.ndone, (int)doc_len, key.word(1));
+    Warning("Document %X truncated at %d of %d, missing fragment %X", first_key.slice32(1), (int)vio.ndone, (int)doc_len, key.slice32(1));
     // remove the directory entry
     dir_delete(&earliest_key, vol, &earliest_dir);
   }
@@ -815,9 +815,9 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         ink_release_assert(false);
       }
       if (doc->magic == DOC_CORRUPT)
-        Warning("Earliest: Doc checksum does not match for %s", key.string(tmpstring));
+        Warning("Earliest: Doc checksum does not match for %s", key.toHexStr(tmpstring));
       else
-        Warning("Earliest : Doc magic does not match for %s", key.string(tmpstring));
+        Warning("Earliest : Doc magic does not match for %s", key.toHexStr(tmpstring));
       // remove the dir entry
       dir_delete(&key, vol, &dir);
       // try going through the directory entries again
@@ -911,7 +911,7 @@ Lread:
             od->move_resident_alt = 1;
             od->single_doc_key = doc1->key;
             dir_assign(&od->single_doc_dir, &dir);
-            dir_set_tag(&od->single_doc_dir, od->single_doc_key.word(2));
+            dir_set_tag(&od->single_doc_dir, od->single_doc_key.slice32(2));
           }
           SET_HANDLER(&CacheVC::openReadVecWrite);
           if ((ret = do_write_call()) == EVENT_RETURN)
@@ -1031,9 +1031,9 @@ CacheVC::openReadStartHead(int event, Event * e)
         ink_release_assert(false);
       }
       if (doc->magic == DOC_CORRUPT)
-        Warning("Head: Doc checksum does not match for %s", key.string(tmpstring));
+        Warning("Head: Doc checksum does not match for %s", key.toHexStr(tmpstring));
       else
-        Warning("Head : Doc magic does not match for %s", key.string(tmpstring));
+        Warning("Head : Doc magic does not match for %s", key.toHexStr(tmpstring));
       // remove the dir entry
       dir_delete(&key, vol, &dir);
       // try going through the directory entries again
@@ -1079,7 +1079,7 @@ CacheVC::openReadStartHead(int event, Event * e)
                "unmarshalled %d expecting %d in %d (base=%d, flen=%d) "
                "- vector n=%d size=%d"
                "first alt=%d[%s]"
-               , key.word(0)
+               , key.slice32(0)
                , uml, doc->hlen, doc->len, sizeofDoc, doc->_flen
                , vector.count(), alt_length
                , alt->m_magic
@@ -1104,7 +1104,7 @@ CacheVC::openReadStartHead(int event, Event * e)
       alternate_tmp = vector.get(alternate_index);
       if (!alternate_tmp->valid()) {
         if (buf) {
-          Note("OpenReadHead failed for cachekey %X : alternate inconsistency", key.word(0));
+          Note("OpenReadHead failed for cachekey %X : alternate inconsistency", key.slice32(0));
           dir_delete(&key, vol, &dir);
         }
         goto Ldone;

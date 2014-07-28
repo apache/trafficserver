@@ -636,9 +636,9 @@ PrefetchTransform::hash_add(char *s)
     Debug("PrefetchParserURLs", "Normalized URL: %s\n", s);
 
 
-  INK_MD5 md5;
-  md5.encodeBuffer(s, str_len);
-  index = md5.word(1) % HASH_TABLE_LENGTH;
+  INK_MD5 hash;
+  MD5Context().hash_immediate(hash, s, str_len);
+  index = hash.slice32(1) % HASH_TABLE_LENGTH;
 
   PrefetchUrlEntry **e = &hash_table[index];
   for (; *e; e = &(*e)->hash_link)
@@ -646,7 +646,7 @@ PrefetchTransform::hash_add(char *s)
       return NULL;
 
   *e = prefetchUrlEntryAllocator.alloc();
-  (*e)->init(ats_strdup(s), md5);
+  (*e)->init(ats_strdup(s), hash);
 
   return *e;
 }

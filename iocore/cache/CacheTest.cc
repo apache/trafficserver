@@ -446,7 +446,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
     vols[i].len = DEFAULT_STRIPE_SIZE;
     snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64,
              'a' + i, DEFAULT_SKIP, vols[i].len);
-    vols[i].hash_id_md5.encodeBuffer(buff, strlen(buff));
+    MD5Context().hash_immediate(vols[i].hash_id, buff, strlen(buff));
   }
 
   hr1.vol_hash_table = 0;
@@ -462,7 +462,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   sample->len = 1024ULL * 1024 * 1024 * (1024+128); // 1.1 TB
   snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64,
            'a' + sample_idx, DEFAULT_SKIP, sample->len);
-  sample->hash_id_md5.encodeBuffer(buff, strlen(buff));
+  MD5Context().hash_immediate(sample->hash_id, buff, strlen(buff));
   build_vol_hash_table(&hr2);
 
   // See what the difference is

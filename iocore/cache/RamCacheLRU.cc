@@ -76,7 +76,7 @@ void RamCacheLRU::resize_hashtable() {
     for (int64_t i = 0; i < nbuckets; i++) {
       RamCacheLRUEntry *e = 0;
       while ((e = bucket[i].pop()))
-        new_bucket[e->key.word(3) % anbuckets].push(e);
+        new_bucket[e->key.slice32(3) % anbuckets].push(e);
     }
     ats_free(bucket);
   }
@@ -104,32 +104,32 @@ int
 RamCacheLRU::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2) {
   if (!max_bytes)
     return 0;
-  uint32_t i = key->word(3) % nbuckets;
+  uint32_t i = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
       lru.remove(e);
       lru.enqueue(e);
       (*ret_data) = e->data;
-      DDebug("ram_cache", "get %X %d %d HIT", key->word(3), auxkey1, auxkey2);
+      DDebug("ram_cache", "get %X %d %d HIT", key->slice32(3), auxkey1, auxkey2);
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
       return 1;
     }
     e = e->hash_link.next;
   }
-  DDebug("ram_cache", "get %X %d %d MISS", key->word(3), auxkey1, auxkey2);
+  DDebug("ram_cache", "get %X %d %d MISS", key->slice32(3), auxkey1, auxkey2);
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
   return 0;
 }
 
 RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
   RamCacheLRUEntry *ret = e->hash_link.next;
-  uint32_t b = e->key.word(3) % nbuckets;
+  uint32_t b = e->key.slice32(3) % nbuckets;
   bucket[b].remove(e);
   lru.remove(e);
   bytes -= e->data->block_size();
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -e->data->block_size());
-  DDebug("ram_cache", "put %X %d %d FREED", e->key.word(3), e->auxkey1, e->auxkey2);
+  DDebug("ram_cache", "put %X %d %d FREED", e->key.slice32(3), e->auxkey1, e->auxkey2);
   e->data = NULL;
   THREAD_FREE(e, ramCacheLRUEntryAllocator, this_thread());
   objects--;
@@ -140,13 +140,13 @@ RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
 int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t auxkey1, uint32_t auxkey2) {
   if (!max_bytes)
     return 0;
-  uint32_t i = key->word(3) % nbuckets;
+  uint32_t i = key->slice32(3) % nbuckets;
   if (cache_config_ram_cache_use_seen_filter) {
-    uint16_t k = key->word(3) >> 16;
+    uint16_t k = key->slice32(3) >> 16;
     uint16_t kk = seen[i];
     seen[i] = k;
     if ((kk != (uint16_t)k)) {
-      DDebug("ram_cache", "put %X %d %d len %d UNSEEN", key->word(3), auxkey1, auxkey2, len);
+      DDebug("ram_cache", "put %X %d %d len %d UNSEEN", key->slice32(3), auxkey1, auxkey2, len);
       return 0;
     }
   }
@@ -181,7 +181,7 @@ int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint3
     else
       break;
   }
-  DDebug("ram_cache", "put %X %d %d INSERTED", key->word(3), auxkey1, auxkey2);
+  DDebug("ram_cache", "put %X %d %d INSERTED", key->slice32(3), auxkey1, auxkey2);
   if (objects > nbuckets) {
     ++ibuckets;
     resize_hashtable();
@@ -192,7 +192,7 @@ int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint3
 int RamCacheLRU::fixup(INK_MD5 * key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) {
   if (!max_bytes)
     return 0;
-  uint32_t i = key->word(3) % nbuckets;
+  uint32_t i = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == old_auxkey1 && e->auxkey2 == old_auxkey2) {

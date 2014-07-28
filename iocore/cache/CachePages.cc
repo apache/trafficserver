@@ -318,8 +318,8 @@ ShowCache::handleCacheEvent(int event, Event *e) {
         CHECK_SHOW(show("<P><TABLE border=1 width=100%%>"));
         CHECK_SHOW(show("<TR><TH bgcolor=\"#FFF0E0\" colspan=2>Doc</TH></TR>\n"));
         CHECK_SHOW(show("<TR><TD>Volume</td> <td>#%d - store='%s'</td></tr>\n", cache_vc->vol->cache_vol->vol_number, cache_vc->vol->path));
-        CHECK_SHOW(show("<TR><TD>first key</td> <td>%s</td></tr>\n", d->first_key.string(tmpstr)));
-        CHECK_SHOW(show("<TR><TD>key</td> <td>%s</td></tr>\n", d->key.string(tmpstr)));
+        CHECK_SHOW(show("<TR><TD>first key</td> <td>%s</td></tr>\n", d->first_key.toHexStr(tmpstr)));
+        CHECK_SHOW(show("<TR><TD>key</td> <td>%s</td></tr>\n", d->key.toHexStr(tmpstr)));
         CHECK_SHOW(show("<tr><td>sync_serial</td><td>%lu</tr>\n", d->sync_serial));
         CHECK_SHOW(show("<tr><td>write_serial</td><td>%lu</tr>\n", d->write_serial));
         CHECK_SHOW(show("<tr><td>header length</td><td>%lu</tr>\n", d->hlen));
@@ -371,7 +371,7 @@ ShowCache::handleCacheEvent(int event, Event *e) {
           } while (!done);
           CHECK_SHOW(show("</PRE></td></tr>\n"));
           CHECK_SHOW(show("<tr><td>Size</td><td>%" PRId64 "</td>\n", obj_size));
-          CHECK_SHOW(show("<tr><td>Key</td><td>%s</td>\n", obj_key.string(tmpstr)));
+          CHECK_SHOW(show("<tr><td>Key</td><td>%s</td>\n", obj_key.toHexStr(tmpstr)));
           t = obj->request_sent_time_get();
           ink_ctime_r(&t, tmpstr);
           CHECK_SHOW(show("<tr><td>Request sent time</td><td>%s</td></tr>\n", tmpstr));
@@ -418,7 +418,7 @@ ShowCache::lookup_url(int event, Event *e) {
   url.parse(&s, s + strlen(s));
   INK_MD5 md5;
   int len;
-  url.MD5_get(&md5);
+  url.hash_get(&md5);
   const char *hostname = url.host_get(&len);
   SET_HANDLER(&ShowCache::handleCacheEvent);
   Action *lookup_result = cacheProcessor.open_read(this, &md5, getClusterCacheLocal(&url, (char *)hostname), CACHE_FRAG_TYPE_HTTP, (char *) hostname, len);

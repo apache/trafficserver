@@ -46,6 +46,7 @@ libtsutil_la_SOURCES = \
   Bitops.cc \
   Bitops.h \
   Compatability.h \
+  Cryptohash.h \
   Diags.cc \
   Diags.h \
   DynArray.h \
@@ -70,6 +71,8 @@ libtsutil_la_SOURCES = \
   MatcherUtils.h \
   MimeTable.cc \
   MimeTable.h \
+  MMH.h \
+  MMH.cc \
   ParseRules.cc \
   ParseRules.h \
   Ptr.h \

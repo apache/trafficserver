@@ -1674,8 +1674,7 @@ RecursiveHttpGet::RecursiveHttpGetEvent(int event, Event * d)
           }
           // I think we're generating the cache key just to get a hash of the URL.
           // Used to use Cache::generate_key that no longer works with vary_on_user_agent
-          // isn't turned on. ToDo.
-          ue->_URLhandle.MD5_get(&ue->_url_md5);
+          ue->_URLhandle.hash_get(&ue->_url_md5);
 
           if (_CL->HashAdd(ue)) {
             // Entry already exists

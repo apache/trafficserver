@@ -3914,11 +3914,12 @@ TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure((void*) input) == TS_SUCCESS);
   sdk_assert(length > 0);
-
-  if (((CacheInfo *) key)->magic != CACHE_INFO_MAGIC_ALIVE)
+  CacheInfo* ci = reinterpret_cast<CacheInfo*>(key);
+  
+  if (ci->magic != CACHE_INFO_MAGIC_ALIVE)
     return TS_ERROR;
 
-  ((CacheInfo *) key)->cache_key.encodeBuffer((char *) input, length);
+  MD5Context().hash_immediate(ci->cache_key, input, length);
   return TS_SUCCESS;
 }
 
@@ -4890,8 +4891,8 @@ TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
     s->cache_info.lookup_url = &(s->cache_info.lookup_url_storage);
     l_url = s->cache_info.lookup_url;
   } else {
-    l_url->MD5_get(&md51);
-    new_url.MD5_get(&md52);
+    l_url->hash_get(&md51);
+    new_url.hash_get(&md52);
     if (md51 == md52)
       return TS_ERROR;
     o_url = &(s->cache_info.original_url);

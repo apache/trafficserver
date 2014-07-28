@@ -175,7 +175,7 @@ extern ClassAllocator<HttpServerSession> httpServerSessionAllocator;
 inline void
 HttpServerSession::attach_hostname(const char *hostname)
 {
-  if (INK_MD5::ZERO == hostname_hash) {
+  if (CRYPTO_HASH_ZERO == hostname_hash) {
     ink_code_md5((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
   }
 }

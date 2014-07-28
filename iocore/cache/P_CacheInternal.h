@@ -1020,7 +1020,7 @@ struct Cache
   int open(bool reconfigure, bool fix);
   int close();
 
-  Action *lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len);
+  Action *lookup(Continuation *cont, CacheKey *key, CacheFragType type, char const* hostname, int host_len);
   inkcoreapi Action *open_read(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int len);
   inkcoreapi Action *open_write(Continuation *cont, CacheKey *key,
                                 CacheFragType frag_type, int options = 0,
@@ -1055,7 +1055,7 @@ struct Cache
 
   int open_done();
 
-  Vol *key_to_vol(CacheKey *key, char *hostname, int host_len);
+  Vol *key_to_vol(CacheKey *key, char const* hostname, int host_len);
 
   Cache()
     : cache_read_done(0), total_good_nvol(0), total_nvol(0), ready(CACHE_INITIALIZING), cache_size(0),  // in store block size
@@ -1074,7 +1074,7 @@ Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 {
   INK_MD5 md5;
   int len;
-  url->MD5_get(&md5);
+  url->hash_get(&md5);
   const char *hostname = url->host_get(&len);
   return open_read(cont, &md5, request, params, type, (char *) hostname, len);
 }
@@ -1082,7 +1082,7 @@ Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 TS_INLINE void
 Cache::generate_key(INK_MD5 *md5, URL *url)
 {
-  url->MD5_get(md5);
+  url->hash_get(md5);
 }
 
 TS_INLINE Action *
@@ -1091,7 +1091,7 @@ Cache::open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 {
   (void) request;
   INK_MD5 url_md5;
-  url->MD5_get(&url_md5);
+  url->hash_get(&url_md5);
   int len;
   const char *hostname = url->host_get(&len);
 
@@ -1229,7 +1229,7 @@ CacheProcessor::lookup(Continuation *cont, URL *url, bool cluster_cache_local, b
 {
   (void) local_only;
   INK_MD5 md5;
-  url->MD5_get(&md5);
+  url->hash_get(&md5);
   int host_len = 0;
   const char *hostname = url->host_get(&host_len);
 

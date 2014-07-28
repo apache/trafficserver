@@ -28,6 +28,7 @@
 #include "HdrToken.h"
 #include "HdrHeap.h"
 #include "INK_MD5.h"
+#include "MMH.h"
 #include "MIME.h"
 
 #include "ink_apidefs.h"
@@ -86,6 +87,34 @@ struct URLImpl:public HdrHeapObjImpl
   void check_strings(HeapCheck *heaps, int num_heaps);
 };
 
+/// Crypto Hash context for URLs.
+/// @internal This just forwards on to another specific context but avoids
+/// putting that switch logic in multiple places.
+class URLHashContext : public CryptoContext {
+protected:
+  CryptoContext* _ctx; ///< Generic pointer to use for operations.
+  uint64_t _obj[32]; ///< Raw storage for instantiated context.
+public:
+  URLHashContext();
+  /// Update the hash with @a data of @a length bytes.
+  virtual bool update(void const* data, int length);
+  /// Finalize and extract the @a hash.
+  virtual bool finalize(CryptoHash& hash);
+
+  enum HashType { UNSPECIFIED, MD5, MMH }; ///< What type of hash we really are.
+  static HashType Setting;
+
+  /// For external checking.
+  static size_t const OBJ_SIZE = sizeof(_obj);
+};
+
+inline bool URLHashContext::update(void const* data, int length) {
+  return _ctx->update(data, length);
+}
+
+inline bool URLHashContext::finalize(CryptoHash& hash) {
+  return _ctx->finalize(hash);
+}
 
 extern const char *URL_SCHEME_FILE;
 extern const char *URL_SCHEME_FTP;
@@ -176,8 +205,8 @@ void url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
 const char *url_scheme_get(URLImpl *url, int *length);
-void url_MD5_get(URLImpl *url, INK_MD5 *md5);
-void url_host_MD5_get(URLImpl *url, INK_MD5 *md5);
+void url_MD5_get(URLImpl *url, CryptoHash *md5);
+void url_host_MD5_get(URLImpl *url, CryptoHash *md5);
 const char *url_scheme_set(HdrHeap *heap, URLImpl *url,
                            const char *value, int value_wks_idx, int length, bool copy_string);
 
@@ -249,8 +278,8 @@ public:
   char *string_get(Arena *arena, int *length = NULL);
   char *string_get_ref(int *length = NULL);
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = NULL);
-  void MD5_get(INK_MD5 *md5);
-  void host_MD5_get(INK_MD5 *md5);
+  void hash_get(CryptoHash *md5);
+  void host_hash_get(CryptoHash *md5);
 
   const char *scheme_get(int *length);
   int scheme_get_wksidx();
@@ -440,7 +469,7 @@ URL::string_get_buf(char *dstbuf, int dsbuf_size, int *length)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::MD5_get(INK_MD5 *md5)
+URL::hash_get(CryptoHash *md5)
 {
   ink_assert(valid());
   url_MD5_get(m_url_impl, md5);
@@ -450,7 +479,7 @@ URL::MD5_get(INK_MD5 *md5)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::host_MD5_get(INK_MD5 *md5)
+URL::host_hash_get(CryptoHash *md5)
 {
   ink_assert(valid());
   url_host_MD5_get(m_url_impl, md5);

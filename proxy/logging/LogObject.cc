@@ -337,10 +337,9 @@ uint64_t LogObject::compute_signature(LogFormat * format, char *filename, unsign
     ink_string_concatenate_strings(buffer, fl, ps, filename, flags & LogObject::BINARY ? "B" :
                                    (flags & LogObject::WRITES_TO_PIPE ? "P" : "A"), NULL);
 
-    INK_MD5 md5s;
-
-    md5s.encodeBuffer(buffer, buf_size - 1);
-    signature = md5s.fold();
+    CryptoHash hash;
+    MD5Context().hash_immediate(hash, buffer, buf_size - 1);
+    signature = hash.fold();
 
     ats_free(buffer);
   }

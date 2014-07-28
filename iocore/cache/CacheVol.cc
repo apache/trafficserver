@@ -438,7 +438,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     dir_assign(&od->first_dir, &dir);
     if (doc->total_len) {
       dir_assign(&od->single_doc_dir, &dir);
-      dir_set_tag(&od->single_doc_dir, doc->key.word(2));
+      dir_set_tag(&od->single_doc_dir, doc->key.slice32(2));
       od->single_doc_key = doc->key;
       od->move_resident_alt = 1;
     }

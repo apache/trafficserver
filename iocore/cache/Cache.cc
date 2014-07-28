@@ -116,7 +116,7 @@ ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 int CacheVC::size_to_init = -1;
-CacheKey zero_key(0, 0);
+CacheKey zero_key;
 #if TS_USE_INTERIM_CACHE == 1
 ClassAllocator<MigrateToInterimCache> migrateToInterimCacheAllocator("migrateToInterimCache");
 #endif
@@ -1114,7 +1114,7 @@ int
 Vol::db_check(bool /* fix ATS_UNUSED */ )
 {
   char tt[256];
-  printf("    Data for [%s]\n", hash_id);
+  printf("    Data for [%s]\n", hash_text);
   printf("        Length:          %" PRIu64 "\n", (uint64_t)len);
   printf("        Write Position:  %" PRIu64 "\n", (uint64_t) (header->write_pos - skip));
   printf("        Phase:           %d\n", (int)!!header->phase);
@@ -1212,7 +1212,7 @@ vol_dir_clear(Vol *d)
   vol_clear_init(d);
 
   if (pwrite(d->fd, d->raw_dir, dir_len, d->skip) < 0) {
-    Warning("unable to clear cache directory '%s'", d->hash_id);
+    Warning("unable to clear cache directory '%s'", d->hash_text);
     return -1;
   }
   return 0;
@@ -1242,13 +1242,13 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
   dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
   path = ats_strdup(s);
-  const size_t hash_id_size = strlen(s) + 32;
-  hash_id = (char *)ats_malloc(hash_id_size);
-  ink_strlcpy(hash_id, s, hash_id_size);
+  const size_t hash_text_size = strlen(s) + 32;
+  hash_text = (char *)ats_malloc(hash_text_size);
+  ink_strlcpy(hash_text, s, hash_text_size);
   const size_t s_size = strlen(s);
-  snprintf(hash_id + s_size, (hash_id_size - s_size), " %" PRIu64 ":%" PRIu64 "",
+  snprintf(hash_text + s_size, (hash_text_size - s_size), " %" PRIu64 ":%" PRIu64 "",
            (uint64_t)dir_skip, (uint64_t)blocks);
-  hash_id_md5.encodeBuffer(hash_id, strlen(hash_id));
+  MD5Context().hash_immediate(hash_id, hash_text, strlen(hash_text));
   len = blocks * STORE_BLOCK_SIZE;
   ink_assert(len <= MAX_VOL_SIZE);
   skip = dir_skip;
@@ -1286,7 +1286,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 #endif
 
   if (clear) {
-    Note("clearing cache directory '%s'", hash_id);
+    Note("clearing cache directory '%s'", hash_text);
     return clear_dir();
   }
 
@@ -1296,7 +1296,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   // try A
   off_t as = skip;
   if (is_debug_tag_set("cache_init"))
-    Note("reading directory '%s'", hash_id);
+    Note("reading directory '%s'", hash_text);
   SET_HANDLER(&Vol::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
@@ -1330,7 +1330,7 @@ Vol::handle_dir_clear(int event, void *data)
   if (event == AIO_EVENT_DONE) {
     op = (AIOCallback *) data;
     if ((size_t) op->aio_result != (size_t) op->aiocb.aio_nbytes) {
-      Warning("unable to clear cache directory '%s'", hash_id);
+      Warning("unable to clear cache directory '%s'", hash_text);
       fd = -1;
     }
 
@@ -1364,8 +1364,8 @@ Vol::handle_dir_read(int event, void *data)
   }
 
   if (header->magic != VOL_MAGIC || header->version.ink_major != CACHE_DB_MAJOR_VERSION || footer->magic != VOL_MAGIC) {
-    Warning("bad footer in cache directory for '%s', clearing", hash_id);
-    Note("clearing cache directory '%s'", hash_id);
+    Warning("bad footer in cache directory for '%s', clearing", hash_text);
+    Note("clearing cache directory '%s'", hash_text);
     clear_dir();
     return EVENT_DONE;
   }
@@ -1461,7 +1461,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
     if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
-      Warning("disk read error on recover '%s', clearing", hash_id);
+      Warning("disk read error on recover '%s', clearing", hash_text);
       goto Lclear;
     }
     if (io.aiocb.aio_offset == header->last_write_pos) {
@@ -1478,7 +1478,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
       while (done < to_check) {
         Doc *doc = (Doc *) (s + done);
         if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
-          Warning("no valid directory found while recovering '%s', clearing", hash_id);
+          Warning("no valid directory found while recovering '%s', clearing", hash_text);
           goto Lclear;
         }
         done += round_to_approx_size(doc->len);
@@ -1621,7 +1621,7 @@ Ldone:{
     recover_pos += EVACUATION_SIZE;   // safely cover the max write size
     if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
       Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
-      Warning("no valid directory found while recovering '%s', clearing", hash_id);
+      Warning("no valid directory found while recovering '%s', clearing", hash_text);
       goto Lclear;
     }
 
@@ -1728,7 +1728,7 @@ Vol::handle_header_read(int event, void *data)
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
       SET_HANDLER(&Vol::handle_dir_read);
       if (is_debug_tag_set("cache_init"))
-        Note("using directory A for '%s'", hash_id);
+        Note("using directory A for '%s'", hash_text);
       io.aiocb.aio_offset = skip;
       ink_assert(ink_aio_read(&io));
     }
@@ -1737,11 +1737,11 @@ Vol::handle_header_read(int event, void *data)
 
       SET_HANDLER(&Vol::handle_dir_read);
       if (is_debug_tag_set("cache_init"))
-        Note("using directory B for '%s'", hash_id);
+        Note("using directory B for '%s'", hash_text);
       io.aiocb.aio_offset = skip + vol_dirlen(this);
       ink_assert(ink_aio_read(&io));
     } else {
-      Note("no good directory, clearing '%s'", hash_id);
+      Note("no good directory, clearing '%s'", hash_text);
       clear_dir();
       delete init_info;
       init_info = 0;
@@ -1796,7 +1796,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
 
   if (event == EVENT_IMMEDIATE) {
     if (header->magic != VOL_MAGIC || header->version.ink_major != CACHE_DB_MAJOR_VERSION) {
-      Warning("bad header in cache directory for '%s', clearing", hash_id);
+      Warning("bad header in cache directory for '%s', clearing", hash_text);
       goto Lclear;
     } else if (header->sync_serial == 0) {
       io.aiocb.aio_buf = NULL;
@@ -1820,7 +1820,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
 
   } else if (event == AIO_EVENT_DONE) {
     if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
-      Warning("disk read error on recover '%s', clearing", hash_id);
+      Warning("disk read error on recover '%s', clearing", hash_text);
       goto Lclear;
     }
 
@@ -1832,7 +1832,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
       while (done < to_check) {
         Doc *doc = (Doc *) (s + done);
         if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
-          Warning("no valid directory found while recovering '%s', clearing", hash_id);
+          Warning("no valid directory found while recovering '%s', clearing", hash_text);
           goto Lclear;
         }
         done += round_to_approx_size(doc->len);
@@ -1939,7 +1939,7 @@ Ldone: {
     recover_pos += EVACUATION_SIZE;
     if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
       Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
-      Warning("no valid directory found while recovering '%s', clearing", hash_id);
+      Warning("no valid directory found while recovering '%s', clearing", hash_text);
       goto Lclear;
     }
 
@@ -2063,7 +2063,7 @@ build_vol_hash_table(CacheHostRecord *cp)
     forvol[i % num_vols]++;
   // seed random number generator
   for (int i = 0; i < num_vols; i++) {
-    uint64_t x = p[i]->hash_id_md5.fold();
+    uint64_t x = p[i]->hash_id.fold();
     rnd[i] = (unsigned int) x;
   }
   // initialize table to "empty"
@@ -2365,7 +2365,7 @@ CacheVC::handleReadDone(int event, Event *e)
       if (!io.ok()) {
         Debug("cache_disk_error", "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-              vol->hash_id, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+              vol->hash_text, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
               (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
@@ -2638,7 +2638,7 @@ LmemHit:
 }
 
 Action *
-Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
+Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char const* hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
@@ -2667,12 +2667,12 @@ Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostn
 Action *
 Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
 {
-  INK_MD5 md5;
+  CryptoHash id;
 
-  url->MD5_get(&md5);
+  url->hash_get(&id);
   int len = 0;
-  const char *hostname = url->host_get(&len);
-  return lookup(cont, &md5, type, (char *) hostname, len);
+  char const* hostname = url->host_get(&len);
+  return lookup(cont, &id, type, hostname, len);
 }
 
 int
@@ -3241,9 +3241,9 @@ rebuild_host_table(Cache *cache)
 
 // if generic_host_rec.vols == NULL, what do we do???
 Vol *
-Cache::key_to_vol(CacheKey *key, char *hostname, int host_len)
+Cache::key_to_vol(CacheKey *key, char const* hostname, int host_len)
 {
-  uint32_t h = (key->word(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
+  uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.vol_hash_table;
   CacheHostRecord *host_rec = &hosttable->gen_host_rec;
 
@@ -3487,23 +3487,23 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool
 Action *
 CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type)
 {
-  INK_MD5 md5;
+  CryptoHash id;
   int len = 0;
   const char *hostname;
 
-  url->MD5_get(&md5);
+  url->hash_get(&id);
   hostname = url->host_get(&len);
 
   Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %s", url->string_get_ref());
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     // Remove from cluster
-    return remove(cont, &md5, cluster_cache_local, frag_type, true, false, const_cast<char *>(hostname), len);
+    return remove(cont, &id, cluster_cache_local, frag_type, true, false, const_cast<char *>(hostname), len);
   }
 #endif
 
   // Remove from local cache only.
-  return caches[frag_type]->remove(cont, &md5, frag_type, true, false, const_cast<char*>(hostname), len);
+  return caches[frag_type]->remove(cont, &id, frag_type, true, false, const_cast<char*>(hostname), len);
 }
 
 CacheDisk*
