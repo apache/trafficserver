@@ -27,6 +27,7 @@
 
 #define XHEADER_X_CACHE_KEY   0x0004u
 #define XHEADER_X_MILESTONES  0x0008u
+#define XHEADER_X_CACHE       0x0010u
 
 static int XArgIndex = 0;
 static TSCont XInjectHeadersCont = NULL;
@@ -96,6 +97,47 @@ done:
   }
 
   TSfree(strval.ptr);
+}
+
+static void
+InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc dst = TS_NULL_MLOC;
+  int status;
+
+  static const char * names[] =
+  {
+    "miss" ,      // TS_CACHE_LOOKUP_MISS,
+    "hit-stale",  // TS_CACHE_LOOKUP_HIT_STALE,
+    "hit-fresh",  // TS_CACHE_LOOKUP_HIT_FRESH,
+    "skipped"     // TS_CACHE_LOOKUP_SKIPPED
+  };
+
+  TSDebug("xdebug", "attempting to inject X-Cache header");
+
+  // Create a new response header field.
+  dst = FindOrMakeHdrField(buffer, hdr, "X-Cache", lengthof("X-Cache"));
+  if (dst == TS_NULL_MLOC) {
+    goto done;
+  }
+
+  if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_ERROR) {
+    // If the cache lookup hasn't happened yes, TSHttpTxnCacheLookupStatusGet will fail.
+    TSReleaseAssert(
+      TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "none", 4) == TS_SUCCESS
+    );
+  } else {
+    const char * msg = (status < 0 || status >= (int)countof(names)) ? "unknown" : names[status];
+
+    TSReleaseAssert(
+      TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, msg, -1) == TS_SUCCESS
+    );
+  }
+
+done:
+  if (dst != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
 }
 
 static void
@@ -188,6 +230,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void * edata)
     InjectCacheKeyHeader(txn, buffer, hdr);
   }
 
+  if (xheaders & XHEADER_X_CACHE) {
+    InjectCacheHeader(txn, buffer, hdr);
+  }
+
   if (xheaders & XHEADER_X_MILESTONES) {
     InjectMilestonesHeader(txn, buffer, hdr);
   }
@@ -230,17 +276,23 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
         continue;
       }
 
-      if (strncasecmp("x-cache-key", value, vsize) == 0) {
+#define header_field_eq(name, vptr, vlen) (((int)lengthof(name) == vlen) && (strncasecmp(name, vptr, vlen) == 0))
+
+      if (header_field_eq("x-cache-key", value, vsize)) {
         xheaders |= XHEADER_X_CACHE_KEY;
-      } else if (strncasecmp("x-milestones", value, vsize) == 0) {
+      } else if (header_field_eq("x-milestones", value, vsize)) {
         xheaders |= XHEADER_X_MILESTONES;
-      } else if (strncasecmp("via", value, vsize) == 0) {
+      } else if (header_field_eq("x-cache", value, vsize)) {
+        xheaders |= XHEADER_X_CACHE;
+      } else if (header_field_eq("via", value, vsize)) {
         // If the client requests the Via header, enable verbose Via debugging for this transaction.
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, 3);
       } else {
         TSDebug("xdebug", "ignoring unrecognized debug tag '%.*s'", vsize, value);
       }
     }
+
+#undef header_field_eq
 
     // Get the next duplicate.
     next = TSMimeHdrFieldNextDup(buffer, hdr, field);
