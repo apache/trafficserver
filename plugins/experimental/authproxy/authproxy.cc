@@ -810,7 +810,7 @@ TSPluginInit(int argc, const char *argv[])
 {
     TSPluginRegistrationInfo info;
 
-    info.plugin_name = (char *)"AuthProxy";
+    info.plugin_name = (char *)"authproxy";
     info.vendor_name = (char *)"Apache Software Foundation";
     info.support_email = (char *)"dev@trafficserver.apache.org";
 

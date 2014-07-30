@@ -20,7 +20,7 @@
 #include <netinet/in.h>
 #include <memory>
 
-#define AuthLogDebug(fmt, ...) TSDebug("AuthProxy", "%s: " fmt, __func__, ##__VA_ARGS__)
+#define AuthLogDebug(fmt, ...) TSDebug("authproxy", "%s: " fmt, __func__, ##__VA_ARGS__)
 #define AuthLogError(fmt, ...) TSError(fmt, ##__VA_ARGS__)
 
 template <typename T>
