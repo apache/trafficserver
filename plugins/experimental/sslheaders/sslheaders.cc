@@ -21,6 +21,8 @@
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
+#include <memory>
+
 static void SslHdrExpand(SSL *, const SslHdrInstance::expansion_list&, TSMBuffer, TSMLoc);
 
 static int
@@ -273,7 +275,7 @@ TSRemapDeleteInstance(void * instance)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * rri)
+TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
 {
   SslHdrInstance * hdr = (SslHdrInstance *)instance;
 

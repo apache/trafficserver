@@ -115,7 +115,7 @@ bool
 SslHdrExpandX509Field(BIO * bio, X509 * x509, ExpansionField field)
 {
   // Rewind the BIO.
-  BIO_reset(bio);
+  (void)BIO_reset(bio);
 
   if (field < countof(expansions)) {
     expansions[field](x509, bio);
