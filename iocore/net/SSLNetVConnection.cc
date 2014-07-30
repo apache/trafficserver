@@ -648,6 +648,16 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
   int ret;
 
+#if TS_USE_TLS_SNI
+  if (options.sni_servername) {
+    if (SSL_set_tlsext_host_name(ssl, options.sni_servername)) {
+      Debug("ssl", "using SNI name '%s' for client handshake", options.sni_servername);
+    } else {
+      SSLError("failed to set SNI name '%s' for client handshake", options.sni_servername);
+    }
+  }
+#endif
+
   ret = SSL_connect(ssl);
   switch (SSL_get_error(ssl, ret)) {
   case SSL_ERROR_NONE:

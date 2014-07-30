@@ -1167,7 +1167,7 @@ url_parse_internet(HdrHeap* heap, URLImpl* url,
   char const* cur = *start;
   char const* base; // Base for host/port field.
   char const* bracket = 0; // marker for open bracket, if any.
-  ts::ConstBuffer user(0), passw(0), host(0), port(0);
+  ts::ConstBuffer user, passw, host, port;
   static size_t const MAX_COLON = 8; // max # of valid colons.
   size_t n_colon = 0;
   char const* last_colon = 0; // pointer to last colon seen.

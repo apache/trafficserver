@@ -246,10 +246,10 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) 
 }
 
 int
-ats_ip_pton(char const* text, sockaddr* ip) {
+ats_ip_pton(const ts::ConstBuffer& src, sockaddr* ip)
+{
   int zret = -1;
   ts::ConstBuffer addr, port;
-  ts::ConstBuffer src(text, strlen(text)+1);
 
   ats_ip_invalidate(ip);
   if (0 == ats_ip_parse(src, &addr, &port)) {

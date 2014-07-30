@@ -350,7 +350,7 @@ struct TextMod : public ControlBase::Modifier {
 
 };
 
-TextMod::TextMod() : text(0) {}
+TextMod::TextMod() : text() {}
 TextMod::~TextMod() {
   free(text.data());
 }
@@ -390,7 +390,7 @@ void MultiTextMod::set(char * value) {
   Tokenizer rangeTok(",");
   int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
   for(int i = 0; i < num_tok; i++){
-    ts::Buffer text(0);
+    ts::Buffer text;
     text.set(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
     this->text_vec.push_back(text);
   }

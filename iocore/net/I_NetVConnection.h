@@ -159,14 +159,42 @@ struct NetVCOptions {
 
   EventType etype;
 
+  char * sni_servername; // SSL SNI to origin
+
   /// Reset all values to defaults.
   void reset();
 
   void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags,
                       unsigned long _packet_mark = 0, unsigned long _packet_tos = 0);
 
-  NetVCOptions() {
+  NetVCOptions() : sni_servername(NULL) {
     reset();
+  }
+
+  ~NetVCOptions() {
+    ats_free(sni_servername);
+  }
+
+  void set_sni_servername(const char * name, size_t len) {
+    IpEndpoint ip;
+
+    ats_free(sni_servername);
+    sni_servername = NULL;
+    // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
+    if (ats_ip_pton(ts::ConstBuffer(name, len), &ip) != 0) {
+      sni_servername = ats_strndup(name, len);
+    }
+  }
+
+  NetVCOptions & operator=(const NetVCOptions & opt) {
+    if (&opt != this) {
+      ats_free(this->sni_servername);
+      memcpy(this, &opt, sizeof(opt));
+      if (opt.sni_servername) {
+        this->sni_servername = ats_strdup(opt.sni_servername);
+      }
+    }
+    return *this;
   }
 
   /// @name Debugging
@@ -174,6 +202,9 @@ struct NetVCOptions {
   /// Convert @a s to its string equivalent.
   static char const* toString(addr_bind_style s);
   //@}
+
+private:
+  NetVCOptions(const NetVCOptions&);
 };
 
 /**

@@ -53,7 +53,6 @@ namespace ts {
     size_t _size; ///< Size of memory chunk.
 
     /// Default constructor.
-    /// Elements are in uninitialized state.
     Buffer();
 
     /** Construct from pointer and size.
@@ -62,7 +61,7 @@ namespace ts {
      */
     Buffer(
       char* ptr, ///< Pointer to buffer.
-      size_t n = 0 ///< Size of buffer.
+      size_t n  ///< Size of buffer.
     );
     /** Construct from two pointers.
 	@note This presumes a half open range, (start, end]
@@ -143,7 +142,6 @@ namespace ts {
     size_t _size; ///< Size of memory chunk.
 
     /// Default constructor.
-    /// Elements are in uninitialized state.
     ConstBuffer();
 
     /** Construct from pointer and size.
@@ -152,7 +150,7 @@ namespace ts {
      */
     ConstBuffer(
       char const * ptr, ///< Pointer to buffer.
-      size_t n = 0///< Size of buffer.
+      size_t n ///< Size of buffer.
     );
     /** Construct from two pointers.
 	@note This presumes a half open range (start, end]
@@ -305,7 +303,7 @@ namespace ts {
   // ----------------------------------------------------------
   // Inline implementations.
 
-  inline Buffer::Buffer() { }
+  inline Buffer::Buffer() : _ptr(NULL), _size(0) { }
   inline Buffer::Buffer(char* ptr, size_t n) : _ptr(ptr), _size(n) { }
   inline Buffer& Buffer::set(char* ptr, size_t n) { _ptr = ptr; _size = n; return *this; }
   inline Buffer::Buffer(char* start, char* end) : _ptr(start), _size(end - start) { }
@@ -329,7 +327,7 @@ namespace ts {
   inline char * Buffer::data() const { return _ptr; }
   inline size_t Buffer::size() const { return _size; }
 
-  inline ConstBuffer::ConstBuffer() { }
+  inline ConstBuffer::ConstBuffer() : _ptr(NULL), _size(0) { }
   inline ConstBuffer::ConstBuffer(char const* ptr, size_t n) : _ptr(ptr), _size(n) { }
   inline ConstBuffer::ConstBuffer(char const* start, char const* end) : _ptr(start), _size(end - start) { }
   inline ConstBuffer::ConstBuffer(Buffer const& that) : _ptr(that._ptr), _size(that._size) { }
@@ -372,7 +370,7 @@ namespace ts {
   }
 
   inline ConstBuffer ConstBuffer::splitOn(char const* p) {
-    self zret(0); // default to empty return.
+    self zret; // default to empty return.
     if (this->contains(p)) {
       size_t n = p - _ptr;
       zret.set(_ptr, n);
@@ -391,7 +389,7 @@ namespace ts {
   }
 
   inline ConstBuffer ConstBuffer::after(char const* p) const {
-    return this->contains(p) ? self(p + 1, (_size-(p-_ptr))-1) : self(0);
+    return this->contains(p) ? self(p + 1, (_size-(p-_ptr))-1) : self();
   }
   inline ConstBuffer ConstBuffer::after(char c) const {
     return this->after(this->find(c));

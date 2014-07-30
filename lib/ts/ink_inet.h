@@ -953,7 +953,7 @@ inline char const* ats_ip_nptop(
     @return 0 on success, non-zero on failure.
 */
 int ats_ip_pton(
-  char const* text, ///< [in] text.
+  const ts::ConstBuffer& text, ///< [in] text.
   sockaddr* addr ///< [out] address
 );
 
@@ -972,14 +972,28 @@ inline int ats_ip_pton(
   char const* text, ///< [in] text.
   sockaddr_in6* addr ///< [out] address
 ) {
-  return ats_ip_pton(text, ats_ip_sa_cast(addr));
+  return ats_ip_pton(ts::ConstBuffer(text, strlen(text)), ats_ip_sa_cast(addr));
 }
 
 inline int ats_ip_pton(
-  char const* text, ///< [in] text.
+  const ts::ConstBuffer& text, ///< [in] text.
   IpEndpoint* addr ///< [out] address
 ) {
   return ats_ip_pton(text, &addr->sa);
+}
+
+inline int ats_ip_pton(
+  const char * text, ///< [in] text.
+  IpEndpoint* addr ///< [out] address
+) {
+  return ats_ip_pton(ts::ConstBuffer(text, strlen(text)), &addr->sa);
+}
+
+inline int ats_ip_pton(
+  const char * text, ///< [in] text.
+  sockaddr * addr ///< [out] address
+) {
+  return ats_ip_pton(ts::ConstBuffer(text, strlen(text)), addr);
 }
 
 /** Get the best address info for @a name.
