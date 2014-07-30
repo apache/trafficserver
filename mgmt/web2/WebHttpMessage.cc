@@ -31,7 +31,6 @@
 #include "TextBuffer.h"
 #include "MIME.h"
 #include "I_Version.h"
-#include "Main.h"
 
 /****************************************************************************
  *
@@ -460,7 +459,7 @@ httpResponse::writeHdr(SocketInfo socketD)
   // Record Server Name
   hdr.copyFrom(serverStr, strlen(serverStr));
   hdr.copyFrom(managerStr, strlen(managerStr));
-  hdr.copyFrom(appVersionInfo.VersionStr, strlen(appVersionInfo.VersionStr));
+  // XXX hdr.copyFrom(appVersionInfo.VersionStr, strlen(appVersionInfo.VersionStr));
   hdr.copyFrom("\r\n", 2);
 
   // Record refresh

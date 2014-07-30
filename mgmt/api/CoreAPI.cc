@@ -30,7 +30,6 @@
  ***************************************************************************/
 
 #include "ink_platform.h"
-#include "Main.h"
 #include "MgmtUtils.h"
 #include "LocalManager.h"
 #include "FileManager.h"
@@ -49,6 +48,8 @@
 
 // global variable
 CallbackTable *local_event_callbacks;
+
+extern FileManager *configFiles; // global in traffic_manager
 
 /*-------------------------------------------------------------------------
  * Init

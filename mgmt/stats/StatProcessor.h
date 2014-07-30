@@ -65,12 +65,12 @@ class StatProcessor
 {
 public:
 
-  StatProcessor();
+  explicit StatProcessor(FileManager * configFiles);
   ~StatProcessor();
 
   // Member Fuctions
   unsigned short processStat();
-  void rereadConfig();
+  void rereadConfig(FileManager * configFiles);
 
   LocalManager *m_lmgmt;
   overviewPage *m_overviewGenerator;

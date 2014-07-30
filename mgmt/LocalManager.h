@@ -34,7 +34,6 @@
 #ifndef _LOCAL_MANAGER_H
 #define _LOCAL_MANAGER_H
 
-#include "Main.h"
 #include "Alarms.h"
 #include "BaseManager.h"
 #include "ClusterCom.h"
@@ -44,10 +43,12 @@
 #include <wccp/Wccp.h>
 #endif
 
+class FileManager;
+
 class LocalManager: public BaseManager
 {
 public:
-  LocalManager(bool proxy_on);
+  explicit LocalManager(bool proxy_on);
 
   ~LocalManager()
   {
@@ -62,7 +63,7 @@ public:
   };
 
   void initAlarm();
-  void initCCom(int mcport, char *addr, int rsport);
+  void initCCom(const AppVersionInfo& version, FileManager * files, int mcport, char *addr, int rsport);
   void initMgmtProcessServer();
   void pollMgmtProcessServer();
   void handleMgmtMsgFromProcesses(MgmtMessageHdr * mh);
@@ -133,6 +134,7 @@ public:
 
   Alarms *alarm_keeper;
   VMap *virt_map;
+  FileManager *configFiles;
 
   ClusterCom *ccom;
 
@@ -148,6 +150,5 @@ private:
 };                              /* End class LocalManager */
 
 extern LocalManager *lmgmt;
-
 
 #endif /* _LOCAL_MANAGER_H */

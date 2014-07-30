@@ -41,6 +41,7 @@
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
 
+class AppVersionInfo;
 
 /***********************************************************************
  *
@@ -114,7 +115,7 @@ public:
   void signalAlarm(alarm_t t, const char * desc, const char * ip = NULL);
   void resolveAlarm(alarm_t a, char *ip = NULL);
 
-  void constructAlarmMessage(char *ip, char *message, int max);
+  void constructAlarmMessage(const AppVersionInfo& version,  char *ip, char *message, int max);
   void resetSeenFlag(char *ip);
   void clearUnSeen(char *ip);
 

@@ -38,30 +38,31 @@
 #include "TextBuffer.h"
 #include "MgmtSocket.h"
 
-#include "Main.h"
 #include "LocalManager.h"
 #include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "MgmtHashTable.h"
+#include "FileManager.h"
+
+static bool checkBackDoor(int req_fd, char *message);
 
 int MultiCastMessages = 0;
 long LastHighestDelta = -1L;
 
-
-void *
+static void *
 drainIncomingChannel_broadcast(void *arg)
 {
   char message[61440];
   fd_set fdlist;
-  void *ret = arg;
+  ClusterCom * ccom = (ClusterCom *)arg;
 
   time_t t;
   time_t last_multicast_receive_time = time(NULL);
   struct timeval tv;
 
   /* Avert race condition, thread spun during constructor */
-  while (!lmgmt->ccom || !lmgmt->ccom->init) {
+  while (lmgmt->ccom != ccom || !lmgmt->ccom->init) {
     mgmt_sleep_sec(1);
   }
 
@@ -71,34 +72,34 @@ drainIncomingChannel_broadcast(void *arg)
     // linux: set tv.tv_set in select() loop, since linux's select()
     // will update tv with the amount of time not slept (most other
     // implementations do not do this)
-    tv.tv_sec = lmgmt->ccom->mc_poll_timeout;             // interface not-responding timeout
+    tv.tv_sec = ccom->mc_poll_timeout;             // interface not-responding timeout
     tv.tv_usec = 0;
 
     memset(message, 0, 61440);
     FD_ZERO(&fdlist);
 
-    if (lmgmt->ccom->cluster_type != NO_CLUSTER) {
-      if (lmgmt->ccom->receive_fd > 0) {
-        FD_SET(lmgmt->ccom->receive_fd, &fdlist);       /* Multicast fd */
+    if (ccom->cluster_type != NO_CLUSTER) {
+      if (ccom->receive_fd > 0) {
+        FD_SET(ccom->receive_fd, &fdlist);       /* Multicast fd */
       }
     }
 
     mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &tv);
 
-    if (lmgmt->ccom->cluster_type != NO_CLUSTER) {
+    if (ccom->cluster_type != NO_CLUSTER) {
       // Multicast timeout considerations
-      if ((lmgmt->ccom->receive_fd < 0) || !FD_ISSET(lmgmt->ccom->receive_fd, &fdlist)) {
+      if ((ccom->receive_fd < 0) || !FD_ISSET(ccom->receive_fd, &fdlist)) {
         t = time(NULL);
         if ((t - last_multicast_receive_time) > (tv.tv_sec - 1)) {
           // Timeout on multicast receive channel, reset channel.
-          if (lmgmt->ccom->receive_fd > 0) {
-            close(lmgmt->ccom->receive_fd);
+          if (ccom->receive_fd > 0) {
+            close(ccom->receive_fd);
           }
-          lmgmt->ccom->receive_fd = -1;
+          ccom->receive_fd = -1;
           Debug("ccom", "Timeout, resetting multicast receive channel");
           if (lmgmt->ccom->establishReceiveChannel(0)) {
             Debug("ccom", "establishReceiveChannel failed");
-            lmgmt->ccom->receive_fd = -1;
+            ccom->receive_fd = -1;
           }
           last_multicast_receive_time = t;      // next action at next interval
         }
@@ -108,14 +109,15 @@ drainIncomingChannel_broadcast(void *arg)
     }
 
     /* Broadcast message */
-    if (lmgmt->ccom->cluster_type != NO_CLUSTER &&
-        lmgmt->ccom->receive_fd > 0 &&
-        FD_ISSET(lmgmt->ccom->receive_fd, &fdlist) &&
-        (lmgmt->ccom->receiveIncomingMessage(message, 61440) > 0)) {
-      lmgmt->ccom->handleMultiCastMessage(message);
+    if (ccom->cluster_type != NO_CLUSTER &&
+        ccom->receive_fd > 0 &&
+        FD_ISSET(ccom->receive_fd, &fdlist) &&
+        (ccom->receiveIncomingMessage(message, 61440) > 0)) {
+      ccom->handleMultiCastMessage(message);
     }
   }
-  return ret;
+
+  return NULL;
 }                               /* End drainIncomingChannel */
 
 /*
@@ -129,7 +131,7 @@ drainIncomingChannel(void *arg)
 {
   char message[61440];
   fd_set fdlist;
-  void *ret = arg;
+  ClusterCom * ccom = (ClusterCom *)arg;
   struct sockaddr_in cli_addr;
 
   // Fix for INKqa07688: There was a problem at Genuity where if you
@@ -162,7 +164,7 @@ drainIncomingChannel(void *arg)
   struct timeval tv;
 
   /* Avert race condition, thread spun during constructor */
-  while (!lmgmt->ccom || !lmgmt->ccom->init) {
+  while (lmgmt->ccom != ccom || !lmgmt->ccom->init) {
     mgmt_sleep_sec(1);
   }
 
@@ -172,22 +174,22 @@ drainIncomingChannel(void *arg)
     // linux: set tv.tv_set in select() loop, since linux's select()
     // will update tv with the amount of time not slept (most other
     // implementations do not do this)
-    tv.tv_sec = lmgmt->ccom->mc_poll_timeout;             // interface not-responding timeout
+    tv.tv_sec = ccom->mc_poll_timeout;             // interface not-responding timeout
     tv.tv_usec = 0;
 
     memset(message, 0, 61440);
     FD_ZERO(&fdlist);
 
-    if (lmgmt->ccom->cluster_type != NO_CLUSTER) {
-      FD_SET(lmgmt->ccom->reliable_server_fd, &fdlist);   /* TCP Server fd */
+    if (ccom->cluster_type != NO_CLUSTER) {
+      FD_SET(ccom->reliable_server_fd, &fdlist);   /* TCP Server fd */
     }
 
     mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &tv);
 
-    if (FD_ISSET(lmgmt->ccom->reliable_server_fd, &fdlist)) {
+    if (FD_ISSET(ccom->reliable_server_fd, &fdlist)) {
       /* Reliable(TCP) request */
       int clilen = sizeof(cli_addr);
-      int req_fd = mgmt_accept(lmgmt->ccom->reliable_server_fd, (struct sockaddr *) &cli_addr, &clilen);
+      int req_fd = mgmt_accept(ccom->reliable_server_fd, (struct sockaddr *) &cli_addr, &clilen);
       if (req_fd < 0) {
         mgmt_elog(stderr, errno, "[drainIncomingChannel] error accepting " "reliable connection\n");
         continue;
@@ -199,7 +201,7 @@ drainIncomingChannel(void *arg)
       }
 
       // In no cluster mode, the rsport should not be listening.
-      ink_release_assert(lmgmt->ccom->cluster_type != NO_CLUSTER);
+      ink_release_assert(ccom->cluster_type != NO_CLUSTER);
 
       /* Handle Request */
       if (mgmt_readline(req_fd, message, 61440) > 0) {
@@ -227,13 +229,13 @@ drainIncomingChannel(void *arg)
 
           mgmt_log("[drainIncomingChannel] Got unmap request: '%s'\n", message);
 
-          ink_mutex_acquire(&(lmgmt->ccom->mutex));   /* Grab the lock */
+          ink_mutex_acquire(&(ccom->mutex));   /* Grab the lock */
           if (lmgmt->virt_map->rl_unmap(msg_ip)) {    /* Requires lock */
             msg = "unmap: done";
           } else {
             msg = "unmap: failed";
           }
-          ink_mutex_release(&(lmgmt->ccom->mutex));   /* Release the lock */
+          ink_mutex_release(&(ccom->mutex));   /* Release the lock */
 
           mgmt_writeline(req_fd, msg, strlen(msg));
 
@@ -254,13 +256,13 @@ drainIncomingChannel(void *arg)
 
           if (lmgmt->run_proxy) {
 
-            ink_mutex_acquire(&(lmgmt->ccom->mutex)); /* Grab the lock */
+            ink_mutex_acquire(&(ccom->mutex)); /* Grab the lock */
             if (lmgmt->virt_map->rl_map(msg_ip)) {    /* Requires the lock */
               msg = "map: done";
             } else {
               msg = "map: failed";
             }
-            ink_mutex_release(&(lmgmt->ccom->mutex)); /* Release the lock */
+            ink_mutex_release(&(ccom->mutex)); /* Release the lock */
           } else {
             msg = "map: failed";
           }
@@ -286,7 +288,7 @@ drainIncomingChannel(void *arg)
             continue;
           }
 
-          if (configFiles->getRollbackObj(fname, &rb) &&
+          if (ccom->configFiles->getRollbackObj(fname, &rb) &&
               (rb->getCurrentVersion() == ver) && (rb->getVersion(ver, &buff) == OK_ROLLBACK)) {
             size_t bytes_written = 0;
             stat = true;
@@ -337,7 +339,8 @@ drainIncomingChannel(void *arg)
       close_socket(req_fd);
     }
   }
-  return ret;
+
+  return NULL;
 }                               /* End drainIncomingChannel */
 
 
@@ -479,8 +482,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   mismatchLog = ink_hash_table_create(InkHashTableKeyType_String);
 
   if (cluster_type != NO_CLUSTER) {
-    ink_thread_create(drainIncomingChannel_broadcast, 0);   /* Spin drainer thread */
-    ink_thread_create(drainIncomingChannel, 0);   /* Spin drainer thread */
+    ink_thread_create(drainIncomingChannel_broadcast, this);   /* Spin drainer thread */
+    ink_thread_create(drainIncomingChannel, this);   /* Spin drainer thread */
   }
   return;
 }                               /* End ClusterCom::ClusterCom */
@@ -499,6 +502,10 @@ ClusterCom::checkPeers(time_t * ticker)
   time_t t = time(NULL);
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
+
+  // Hack in the file manager in case the rollback needs to send a notification. This is definitely
+  // a hack, but it helps break the dependency on global FileManager in traffic_manager.
+  cluster_file_rb->configFiles = configFiles;
 
   if (cluster_type == NO_CLUSTER)
     return;
@@ -1373,7 +1380,7 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
   memset(message, 0, 61440);
   resolved_addr.s_addr = our_ip;
   ink_strlcpy(addr, inet_ntoa(resolved_addr), sizeof(addr));
-  lmgmt->alarm_keeper->constructAlarmMessage(addr, message, 61440);
+  lmgmt->alarm_keeper->constructAlarmMessage(appVersionInfo, addr, message, 61440);
   sendOutgoingMessage(message, strlen(message));
 
   /*
@@ -1416,7 +1423,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
 
   /* Insert the standard packet header */
   resolved_addr.s_addr = our_ip;
-  running_sum = constructSharedPacketHeader(message, inet_ntoa(resolved_addr), max);
+  running_sum = constructSharedPacketHeader(appVersionInfo, message, inet_ntoa(resolved_addr), max);
 
   if (packet_type == RECT_NODE) {
     ink_strlcpy(&message[running_sum], "type: stat\n", (max - running_sum));
@@ -1527,14 +1534,14 @@ ClusterCom::constructSharedStatPacket(char *message, int max)
  *   Inserts that information.  Returns the nubmer of bytes inserted
  */
 int
-ClusterCom::constructSharedPacketHeader(char *message, char *ip, int max)
+ClusterCom::constructSharedPacketHeader(const AppVersionInfo& version, char *message, char *ip, int max)
 {
   int running_sum = 0;
 
   /* Insert the IP Address of this node */
   /* Insert the name of this cluster for cluster-identification of mc packets */
   /* Insert the Traffic Server verison */
-  snprintf(message, max, "ip: %s\ncluster: %s\ntsver: %s\n", ip, lmgmt->proxy_name, appVersionInfo.VersionStr);
+  snprintf(message, max, "ip: %s\ncluster: %s\ntsver: %s\n", ip, lmgmt->proxy_name, version.VersionStr);
   running_sum = strlen(message);
   ink_release_assert(running_sum < max);
 
@@ -1558,7 +1565,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
 
   /* Insert the standard packet header */
   resolved_addr.s_addr = our_ip;
-  running_sum = constructSharedPacketHeader(message, inet_ntoa(resolved_addr), max);
+  running_sum = constructSharedPacketHeader(appVersionInfo, message, inet_ntoa(resolved_addr), max);
 
   ink_strlcpy(&message[running_sum], "type: files\n", (max - running_sum));
   running_sum += strlen("type: files\n");

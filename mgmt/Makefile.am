@@ -19,29 +19,9 @@
 
 SUBDIRS = cluster utils web2 stats api
 
-# This is for traffic_manager only (local manager)
-AM_CPPFLAGS = $(ink_with_modules_local) \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts \
-  -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy/shared \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/stats \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/web2 \
-  -I$(top_srcdir)/lib \
-  -I$(top_builddir)/lib
+noinst_LIBRARIES = libmgmt_p.a libmgmt_lm.a
 
-noinst_LIBRARIES = libmgmt_p.a
-
-bin_PROGRAMS = traffic_manager
-
-# Compile this for "process manager"
-libmgmt_p_a_CPPFLAGS = \
+AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
@@ -66,8 +46,7 @@ libmgmt_p_a_SOURCES = \
   RecordsConfig.cc \
   RecordsConfig.h
 
-traffic_manager_SOURCES = \
-  AddConfigFilesHere.cc \
+libmgmt_lm_a_SOURCES = \
   Alarms.cc \
   Alarms.h \
   BaseManager.cc \
@@ -76,8 +55,6 @@ traffic_manager_SOURCES = \
   FileManager.h \
   LocalManager.cc \
   LocalManager.h \
-  Main.cc \
-  Main.h \
   MgmtDefs.h \
   MultiFile.cc \
   MultiFile.h \
@@ -85,30 +62,4 @@ traffic_manager_SOURCES = \
   RecordsConfig.h \
   Rollback.cc \
   Rollback.h
-
-traffic_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @EXPAT_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
-traffic_manager_LDADD = \
-  cluster/libcluster.a \
-  stats/libstats.a \
-  web2/libweb.a \
-  api/libmgmtapilocal.a \
-  api/libtsmgmtshare.la \
-  utils/libutils_lm.a \
-  $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/lib/records/libreclocal.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/shared/liberror.a \
-  $(top_builddir)/proxy/shared/libdiagsconfig.a \
-  @LIBRESOLV@ @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
-  -lm
-
-# Must do it this way or the dependencies aren't detected.
-if BUILD_WCCP
-traffic_manager_LDADD += \
-  $(top_builddir)/lib/wccp/libwccp.a \
-  $(top_builddir)/lib/tsconfig/libtsconfig.la
-endif
-
-traffic_manager_LDADD += @OPENSSL_LIBS@
 

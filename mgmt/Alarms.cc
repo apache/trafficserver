@@ -388,7 +388,7 @@ Alarms::clearUnSeen(char *ip)
  * takes the current list of local alarms and builds an alarm message.
  */
 void
-Alarms::constructAlarmMessage(char *ip, char *message, int max)
+Alarms::constructAlarmMessage(const AppVersionInfo& version, char *ip, char *message, int max)
 {
   int n = 0, bsum = 0;
   char buf[4096];
@@ -399,7 +399,7 @@ Alarms::constructAlarmMessage(char *ip, char *message, int max)
     return;
   }
   // Insert the standard mcast packet header
-  n = ClusterCom::constructSharedPacketHeader(message, ip, max);
+  n = ClusterCom::constructSharedPacketHeader(version, message, ip, max);
 
   ink_mutex_acquire(&mutex);
   if (!((n + (int) strlen("type: alarm\n")) < max)) {

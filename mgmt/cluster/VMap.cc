@@ -30,7 +30,6 @@
  */
 #include "ink_platform.h"
 
-#include "Main.h"
 #include "LocalManager.h"
 #include "VMap.h"
 #include "MgmtUtils.h"
@@ -776,7 +775,7 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
     return;
   }
   // Insert the standard mcast packet header
-  n = ClusterCom::constructSharedPacketHeader(message, ip, max);
+  n = ClusterCom::constructSharedPacketHeader(appVersionInfo, message, ip, max);
 
   if (!((n + (int) strlen("type: vmap\n")) < max)) {
     if (max >= 1) {

@@ -38,6 +38,8 @@
 #include "TextBuffer.h"
 #include "List.h"
 
+class FileManager;
+
 #define ACTIVE_VERSION 0
 #define INVALID_VERSION -1
 
@@ -199,6 +201,8 @@ public:
   {
     return fileName;
   };
+
+  FileManager * configFiles; // Manager to notify on an update.
 
 private:
   Rollback(const Rollback &);

@@ -25,6 +25,7 @@
 #include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
+#include "MultiFile.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>

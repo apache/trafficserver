@@ -30,6 +30,7 @@
 #include "LocalManager.h"
 #include "MgmtSocket.h"
 #include "ink_cap.h"
+#include "FileManager.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -196,7 +197,7 @@ LocalManager::processRunning()
 }
 
 LocalManager::LocalManager(bool proxy_on)
-  : BaseManager(), run_proxy(proxy_on)
+  : BaseManager(), run_proxy(proxy_on), configFiles(NULL)
 {
   bool found;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
@@ -300,7 +301,7 @@ LocalManager::initAlarm()
  *   Function initializes cluster communication structure held by local manager.
  */
 void
-LocalManager::initCCom(int mcport, char *addr, int rsport)
+LocalManager::initCCom(const AppVersionInfo& version, FileManager * configFiles, int mcport, char *addr, int rsport)
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
   bool found;
@@ -350,6 +351,12 @@ LocalManager::initCCom(int mcport, char *addr, int rsport)
 
   ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, mcport, addr, rsport, rundir);
   virt_map = new VMap(intrName, ats_ip4_addr_cast(&cluster_ip), &lmgmt->ccom->mutex);
+
+  ccom->appVersionInfo = version;
+  ccom->configFiles = configFiles;
+
+  virt_map->appVersionInfo = version;
+
   virt_map->downAddrs();        // Just to be safe
   ccom->establishChannels();
   ats_free(intrName);
@@ -721,9 +728,8 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
       mgmt_elog(stderr, 0, "[LocalManager:sendMgmtMsgToProcesses] Unknown file change: '%s'\n", data_raw);
     }
     ink_assert(found);
-    if (!(configFiles->getRollbackObj(fname, &rb)) &&
+    if (!(configFiles && configFiles->getRollbackObj(fname, &rb)) &&
         (strcmp(data_raw, "proxy.config.cluster.cluster_configuration") != 0) &&
-        (strcmp(data_raw, "proxy.config.arm.acl_filename_master") != 0) &&
         (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0)) {
       mgmt_elog(stderr, 0, "[LocalManager::sendMgmtMsgToProcesses] "
                 "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");

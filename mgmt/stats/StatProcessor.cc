@@ -32,6 +32,7 @@
 
 #include "ink_config.h"
 #include "StatProcessor.h"
+#include "FileManager.h"
 
 #define STAT_CONFIG_FILE "stats.config.xml"
 
@@ -179,14 +180,14 @@ charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar * name, int /* l
 }
 
 
-StatProcessor::StatProcessor():m_lmgmt(NULL), m_overviewGenerator(NULL)
+StatProcessor::StatProcessor(FileManager * configFiles):m_lmgmt(NULL), m_overviewGenerator(NULL)
 {
-  rereadConfig();
+  rereadConfig(configFiles);
 }
 
 
 void
-StatProcessor::rereadConfig()
+StatProcessor::rereadConfig(FileManager * configFiles)
 {
   textBuffer *fileContent = NULL;
   Rollback *fileRB = NULL;

@@ -31,6 +31,7 @@
 #include "MgmtSocket.h"
 #include "ink_cap.h"
 #include "I_Layout.h"
+#include "FileManager.h"
 
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2
@@ -44,7 +45,7 @@ const char *RollbackStrings[] = { "Rollback Ok",
 };
 
 Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
-  : root_access_needed(root_access_needed_)
+  : configFiles(NULL), root_access_needed(root_access_needed_)
 {
   version_t highestSeen;        // the highest backup version
   ExpandingArray existVer(25, true);    // Exsisting versions
@@ -535,7 +536,7 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
   returnCode = OK_ROLLBACK;
 
   // Post the change to the config file manager
-  if (notifyChange) {
+  if (notifyChange && configFiles) {
     configFiles->fileChanged(fileName, incVersion);
   }
 

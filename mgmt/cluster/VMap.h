@@ -91,6 +91,8 @@ public:
   char vip_conf[PATH_NAME_MAX];
   char absolute_vipconf_binary[PATH_NAME_MAX];
 
+  AppVersionInfo appVersionInfo;
+
   int enabled;
   bool turning_off;             /* are we turning off VIP but haven't down'd the addr? */
   /* map_init has never been used, remove it to avoid coverity complain */

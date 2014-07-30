@@ -30,6 +30,7 @@
 #include "P_RecUtils.h"
 #include "P_RecFile.h"
 #include "LocalManager.h"
+#include "FileManager.h"
 
 static bool g_initialized = false;
 static bool g_message_initialized = false;
@@ -56,20 +57,14 @@ i_am_the_record_owner(RecT rec_type)
 }
 
 //-------------------------------------------------------------------------
-//
-// REC_BUILD_MGMT IMPLEMENTATION
-//
-//-------------------------------------------------------------------------
-#include "Main.h"
-
-
-//-------------------------------------------------------------------------
 // sync_thr
 //-------------------------------------------------------------------------
 static void *
-sync_thr(void * /* data */)
+sync_thr(void * data)
 {
   textBuffer *tb = new textBuffer(65536);
+  FileManager * configFiles = (FileManager *)data;
+
   Rollback *rb;
   bool inc_version;
   bool written;
@@ -177,9 +172,9 @@ RecLocalInitMessage()
 // RecLocalStart
 //-------------------------------------------------------------------------
 int
-RecLocalStart()
+RecLocalStart(FileManager * configFiles)
 {
-  ink_thread_create(sync_thr, NULL);
+  ink_thread_create(sync_thr, configFiles);
   ink_thread_create(config_update_thr, NULL);
 
   return REC_ERR_OKAY;

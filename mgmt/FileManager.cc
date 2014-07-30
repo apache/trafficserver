@@ -152,6 +152,7 @@ FileManager::addFile(const char *baseFileName, bool root_access_needed)
   fileBinding *newBind = new fileBinding;
 
   newBind->rb = new Rollback(baseFileName, root_access_needed);
+  newBind->rb->configFiles = this;
 
   ink_mutex_acquire(&accessLock);
   ink_hash_table_insert(bindings, baseFileName, newBind);

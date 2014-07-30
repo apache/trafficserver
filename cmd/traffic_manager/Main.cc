@@ -44,8 +44,6 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
-
-
 #include "StatProcessor.h"
 #include "P_RecLocal.h"
 #include "P_RecCore.h"
@@ -159,7 +157,6 @@ check_lockfile()
     exit(1);
   }
 }
-
 
 static void
 initSignalHandlers()
@@ -291,7 +288,6 @@ chdir_root()
   }
 }
 
-
 static void
 set_process_limits(int fds_throttle)
 {
@@ -395,7 +391,6 @@ main(int argc, char **argv)
   int  fds_throttle = -1;
   time_t ticker;
   ink_thread webThrId;
-
 
   // Set up the application version info
   appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION,
@@ -522,7 +517,6 @@ main(int argc, char **argv)
     }
   }
 
-
   // Bootstrap with LOG_DAEMON until we've read our configuration
   if (log_to_syslog) {
     openlog("traffic_manager", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
@@ -554,7 +548,6 @@ main(int argc, char **argv)
   url_init();
   mime_init();
   http_init();
-
 
 #if TS_HAS_WCCP
   Init_Errata_Logging();
@@ -634,13 +627,13 @@ main(int argc, char **argv)
 
   // Initialize the Config Object bindings before
   //   starting any other threads
-  configFiles = new FileManager();
+  lmgmt->configFiles = configFiles = new FileManager();
   initializeRegistry();
   configFiles->registerCallback(fileUpdated);
 
   // RecLocal's 'sync_thr' depends on 'configFiles', so we can't
   // stat the 'sync_thr' until 'configFiles' has been initialized.
-  RecLocalStart();
+  RecLocalStart(configFiles);
 
   /* Update cmd line overrides/environmental overrides/etc */
   if (tsArgs) {                 /* Passed command line args for proxy */
@@ -681,10 +674,9 @@ main(int argc, char **argv)
   }
 
   /* TODO: Do we really need to init cluster communication? */
-  lmgmt->initCCom(cluster_mcport, group_addr, cluster_rsport);       /* Setup cluster communication */
+  lmgmt->initCCom(appVersionInfo, configFiles, cluster_mcport, group_addr, cluster_rsport);       /* Setup cluster communication */
 
   lmgmt->initMgmtProcessServer();       /* Setup p-to-p process server */
-
 
   // Now that we know our cluster ip address, add the
   //   UI record for this machine
@@ -704,7 +696,7 @@ main(int argc, char **argv)
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 
-  statProcessor = new StatProcessor();
+  statProcessor = new StatProcessor(configFiles);
 
   for (;;) {
     lmgmt->processEventQueue();
@@ -792,7 +784,6 @@ main(int argc, char **argv)
 
 }                               /* End main */
 
-
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void
 SignalAlrmHandler(int /* sig ATS_UNUSED */, siginfo_t * t, void * /* c ATS_UNUSED */)
@@ -824,7 +815,6 @@ SignalAlrmHandler(int /* sig ATS_UNUSED */)
   return;
 }
 
-
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void
 SignalHandler(int sig, siginfo_t * t, void *c)
@@ -851,7 +841,6 @@ SignalHandler(int sig)
     }
   }
 #endif
-
 
   if (sig == SIGHUP) {
     sigHupNotifier = 1;
@@ -900,7 +889,6 @@ SignalHandler(int sig)
   mgmt_elog(stderr, 0, "[TrafficManager] ==> signal2 #%d\n", sig);
   _exit(sig);
 }                               /* End SignalHandler */
-
 
 // void SigChldHandler(int sig)
 //
@@ -1022,7 +1010,7 @@ fileUpdated(char *fname, bool incVersion)
 
   } else if (strcmp(fname, "stats.config.xml") == 0) {
     if (statProcessor) {
-      statProcessor->rereadConfig();
+      statProcessor->rereadConfig(configFiles);
     }
     mgmt_log(stderr, "[fileUpdated] stats.config.xml file has been modified\n");
   } else if (strcmp(fname, "congestion.config") == 0) {
@@ -1098,7 +1086,6 @@ runAsUser(char *userName)
 
     Debug("lm", "[runAsUser] Attempting to run as user '%s'\n", userName);
 
-
     if (userName == NULL || userName[0] == '\0') {
       mgmt_elog(stderr, 0, "[runAsUser] Fatal Error: proxy.config.admin.user_id is not set\n");
       _exit(1);
@@ -1135,7 +1122,6 @@ runAsUser(char *userName)
     uid = getuid();
     euid = geteuid();
 
-
     Debug("lm", "[runAsUser] Running with uid: '%d' euid: '%d'\n", uid, euid);
 
     if (uid != result->pw_uid && euid != result->pw_uid) {
@@ -1156,7 +1142,6 @@ runAsUser(char *userName)
 
   }
 }                               /* End runAsUser() */
-
 
 //  void extractConfigInfo(...)
 //

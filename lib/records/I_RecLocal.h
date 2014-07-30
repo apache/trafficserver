@@ -26,12 +26,14 @@
 
 #include "I_RecCore.h"
 
+class FileManager;
+
 //-------------------------------------------------------------------------
 // Initialization
 //-------------------------------------------------------------------------
 
 int RecLocalInit(Diags * diags = NULL);
 int RecLocalInitMessage();
-int RecLocalStart();
+int RecLocalStart(FileManager *);
 
 #endif
