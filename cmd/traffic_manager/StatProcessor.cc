@@ -30,7 +30,7 @@
  *
  ****************************************************************************/
 
-#include "ink_config.h"
+#include "libts.h"
 #include "StatProcessor.h"
 #include "FileManager.h"
 

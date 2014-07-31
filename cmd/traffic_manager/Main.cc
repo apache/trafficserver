@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "ink_platform.h"
+#include "libts.h"
 #include "ink_sys_control.h"
 
 #include "Main.h"
@@ -30,11 +29,11 @@
 #include "WebMgmtUtils.h"
 #include "WebIntrMain.h"
 #include "WebOverview.h"
+#include "ClusterCom.h"
+#include "VMap.h"
 #include "FileManager.h"
 #include "I_Layout.h"
 #include "I_Version.h"
-#include "ink_syslog.h"
-#include "ink_lockfile.h"
 #include "Diags.h"
 #include "DiagsConfig.h"
 #include "URL.h"

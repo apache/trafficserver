@@ -31,6 +31,8 @@
 #include "MgmtSocket.h"
 #include "ink_cap.h"
 #include "FileManager.h"
+#include "ClusterCom.h"
+#include "VMap.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -288,6 +290,18 @@ LocalManager::LocalManager(bool proxy_on)
   proxy_launch_pid = -1;
 
   return;
+}
+
+LocalManager::~LocalManager()
+{
+  delete alarm_keeper;
+  delete virt_map;
+  delete ccom;
+  ats_free(absolute_proxy_binary);
+  ats_free(proxy_name);
+  ats_free(proxy_binary);
+  ats_free(proxy_options);
+  ats_free(env_prep);
 }
 
 void

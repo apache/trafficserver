@@ -22,8 +22,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api \
   -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/lib/tsconfig \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/lib/records \

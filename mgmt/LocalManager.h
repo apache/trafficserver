@@ -36,31 +36,20 @@
 
 #include "Alarms.h"
 #include "BaseManager.h"
-#include "ClusterCom.h"
-#include "VMap.h"
 #include <records/I_RecHttp.h>
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
 #endif
 
 class FileManager;
+class ClusterCom;
+class VMap;
 
 class LocalManager: public BaseManager
 {
 public:
   explicit LocalManager(bool proxy_on);
-
-  ~LocalManager()
-  {
-    delete alarm_keeper;
-    delete virt_map;
-    delete ccom;
-    ats_free(absolute_proxy_binary);
-    ats_free(proxy_name);
-    ats_free(proxy_binary);
-    ats_free(proxy_options);
-    ats_free(env_prep);
-  };
+  ~LocalManager();
 
   void initAlarm();
   void initCCom(const AppVersionInfo& version, FileManager * files, int mcport, char *addr, int rsport);

@@ -29,9 +29,10 @@
  *
  ***************************************************************************/
 
-#include "ink_platform.h"
+#include "libts.h"
 #include "MgmtUtils.h"
 #include "LocalManager.h"
+#include "ClusterCom.h"
 #include "FileManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"

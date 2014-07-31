@@ -20,8 +20,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
   -I$(top_srcdir)/iocore/utils \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/lib \

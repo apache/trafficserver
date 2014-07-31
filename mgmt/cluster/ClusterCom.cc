@@ -40,6 +40,7 @@
 
 #include "LocalManager.h"
 #include "ClusterCom.h"
+#include "VMap.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "MgmtHashTable.h"

@@ -24,10 +24,10 @@
 
 #include "libts.h"
 #include "LocalManager.h"
+#include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "Alarms.h"
 #include "Diags.h"
-
 
 #include "P_RecCore.h"
 

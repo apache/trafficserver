@@ -32,6 +32,7 @@
 
 #include "LocalManager.h"
 #include "VMap.h"
+#include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "P_RecLocal.h"
 #include "I_Layout.h"
