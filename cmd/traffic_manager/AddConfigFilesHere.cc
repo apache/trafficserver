@@ -22,10 +22,12 @@
  */
 
 #include "ink_platform.h"
-#include "Main.h"
 #include "MgmtUtils.h"
 #include "ConfigParse.h"
 #include "Diags.h"
+#include "FileManager.h"
+
+extern FileManager *configFiles;
 
 /****************************************************************************
  *

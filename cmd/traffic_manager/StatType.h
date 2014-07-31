@@ -34,7 +34,6 @@
 #define	_STATTYPE_H_
 
 #include "StatXML.h"
-#include "Main.h"               // Debug()
 #include "WebMgmtUtils.h"
 
 #define BYTES_TO_MBIT_SCALE (8/1000000.0)

@@ -24,7 +24,6 @@
 #include "libts.h"
 #include "ink_sys_control.h"
 
-#include "Main.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "WebIntrMain.h"
@@ -55,24 +54,29 @@
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 #define DIAGS_LOG_FILENAME "manager.log"
 
+// These globals are still referenced directly by management API.
+LocalManager *lmgmt = NULL;
+FileManager *configFiles;
+
+static void fileUpdated(char *fname, bool incVersion);
+static void runAsUser(char *userName);
+static void printUsage(void);
+
 #if defined(freebsd)
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
 static void extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *fds_throttle);
 
-LocalManager *lmgmt = NULL;
-FileManager *configFiles;
-
-StatProcessor *statProcessor;   // Statistics Processors
-AppVersionInfo appVersionInfo;  // Build info for this application
+static StatProcessor *statProcessor;   // Statistics Processors
+static AppVersionInfo appVersionInfo;  // Build info for this application
 
 static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024] = "";
 static char action_tags[1024] = "";
 static bool proxy_on = true;
 
-char mgmt_path[PATH_NAME_MAX + 1];
+static char mgmt_path[PATH_NAME_MAX + 1];
 
 // By default, set the current directory as base
 static const char *recs_conf = "records.config";

@@ -34,8 +34,7 @@ AM_CPPFLAGS = \
 
 traffic_manager_SOURCES = \
   AddConfigFilesHere.cc \
-  Main.cc \
-  Main.h \
+  traffic_manager.cc \
   StatProcessor.cc \
   StatProcessor.h \
   StatType.cc \
