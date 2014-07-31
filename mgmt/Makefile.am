@@ -19,7 +19,7 @@
 
 SUBDIRS = cluster utils web2 api
 
-noinst_LIBRARIES = libmgmt_p.a libmgmt_lm.a
+noinst_LTLIBRARIES = libmgmt_p.la libmgmt_lm.la
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -35,31 +35,36 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
-libmgmt_p_a_SOURCES = \
+libmgmt_COMMON = \
   BaseManager.cc \
   BaseManager.h \
   MgmtDefs.h \
-  ProcessManager.cc \
-  ProcessManager.h \
-  ProxyConfig.cc \
-  ProxyConfig.h \
   RecordsConfig.cc \
   RecordsConfig.h
 
-libmgmt_lm_a_SOURCES = \
+libmgmt_p_la_SOURCES = \
+  $(libmgmt_COMMON) \
+  ProcessManager.cc \
+  ProcessManager.h \
+  ProxyConfig.cc \
+  ProxyConfig.h
+
+libmgmt_lm_la_SOURCES = \
+  $(libmgmt_COMMON) \
   Alarms.cc \
   Alarms.h \
-  BaseManager.cc \
-  BaseManager.h \
   FileManager.cc \
   FileManager.h \
   LocalManager.cc \
   LocalManager.h \
-  MgmtDefs.h \
   MultiFile.cc \
   MultiFile.h \
-  RecordsConfig.cc \
-  RecordsConfig.h \
   Rollback.cc \
   Rollback.h
 
+libmgmt_lm_la_LIBADD = \
+  cluster/libcluster.la \
+  utils/libutils_lm.la
+
+libmgmt_p_la_LIBADD = \
+  utils/libutils_p.la

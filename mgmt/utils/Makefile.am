@@ -34,9 +34,9 @@ AM_CPPFLAGS = \
 # header files used by other libraries
 EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
 
-noinst_LIBRARIES = libutils_lm.a libutils_p.a
+noinst_LTLIBRARIES = libutils_lm.la libutils_p.la
 
-libutils_lm_a_SOURCES = \
+libutils_lm_la_SOURCES = \
   ExpandingArray.cc \
   ExpandingArray.h \
   MgmtLocalCleanup.cc \
@@ -45,7 +45,7 @@ libutils_lm_a_SOURCES = \
   WebMgmtUtils.cc \
   WebMgmtUtils.h
 
-libutils_p_a_SOURCES = \
+libutils_p_la_SOURCES = \
   MgmtProcessCleanup.cc \
   MgmtUtils.cc \
   MgmtUtils.h

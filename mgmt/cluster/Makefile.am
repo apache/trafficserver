@@ -27,9 +27,9 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
-noinst_LIBRARIES = libcluster.a
+noinst_LTLIBRARIES = libcluster.la
 
-libcluster_a_SOURCES = \
+libcluster_la_SOURCES = \
   ClusterCom.cc \
   ClusterCom.h \
   VMap.cc \
