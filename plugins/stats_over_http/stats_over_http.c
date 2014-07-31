@@ -141,7 +141,7 @@ json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_
 
   switch(data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT(name, "%" PRIu64, datum->rec_counter); break;
+    APPEND_STAT_NUMERIC(name, "%" PRIu64, datum->rec_counter); break;
   case TS_RECORDDATATYPE_INT:
     APPEND_STAT_NUMERIC(name, "%" PRIu64, datum->rec_int); break;
   case TS_RECORDDATATYPE_FLOAT:
