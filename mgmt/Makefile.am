@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = cluster utils web2 stats api
+SUBDIRS = cluster utils web2 api
 
 noinst_LIBRARIES = libmgmt_p.a libmgmt_lm.a
 

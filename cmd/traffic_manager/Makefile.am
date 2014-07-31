@@ -27,7 +27,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/stats \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/lib \
@@ -36,13 +35,18 @@ AM_CPPFLAGS = \
 traffic_manager_SOURCES = \
   AddConfigFilesHere.cc \
   Main.cc \
-  Main.h
+  Main.h \
+  StatProcessor.cc \
+  StatProcessor.h \
+  StatType.cc \
+  StatType.h \
+  StatXML.cc \
+  StatXML.h
 
 traffic_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @EXPAT_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_manager_LDADD = \
   $(top_builddir)/mgmt/libmgmt_lm.a \
   $(top_builddir)/mgmt/cluster/libcluster.a \
-  $(top_builddir)/mgmt/stats/libstats.a \
   $(top_builddir)/mgmt/web2/libweb.a \
   $(top_builddir)/mgmt/api/libmgmtapilocal.a \
   $(top_builddir)/mgmt/api/libtsmgmtshare.la \
