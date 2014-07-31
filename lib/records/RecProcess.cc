@@ -47,7 +47,7 @@ static Event *config_update_cont_event;
 static Event *sync_cont_event;
 
 //-------------------------------------------------------------------------
-// i_am_the_record_owner, only used for librecprocess.a
+// i_am_the_record_owner, only used for librecords_p.a
 //-------------------------------------------------------------------------
 bool
 i_am_the_record_owner(RecT rec_type)

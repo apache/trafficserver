@@ -1,6 +1,6 @@
 /** @file
 
-  A small test and sample program for librecprocess.a
+  A small test and sample program for librecords_p.a
 
   @section license License
 

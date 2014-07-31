@@ -50,7 +50,7 @@ test_AIO_CXXFLAGS = \
 
 test_AIO_LDADD = \
   libinkaio.a \
-  $(top_builddir)/lib/records/librecprocess.a \
+  $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \

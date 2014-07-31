@@ -32,7 +32,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
-#
+
 traffic_manager_SOURCES = \
   AddConfigFilesHere.cc \
   Main.cc \
@@ -48,7 +48,7 @@ traffic_manager_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmtshare.la \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/lib/records/libreclocal.a \
+  $(top_builddir)/lib/records/librecords_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/proxy/shared/liberror.a \

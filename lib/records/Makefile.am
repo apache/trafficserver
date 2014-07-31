@@ -28,67 +28,47 @@ AM_CPPFLAGS = \
   -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib/ts
 
-noinst_LIBRARIES = libreclocal.a librecprocess.a librec4cop.a
+noinst_LIBRARIES = librecords_lm.a librecords_p.a librecords_cop.a
 
-libreclocal_a_SOURCES = \
+librecords_COMMON = \
   I_RecAlarms.h \
   I_RecCore.h \
   I_RecDefs.h \
   I_RecEvents.h \
+  I_RecHttp.h \
+  I_RecMutex.h \
+  I_RecSignals.h \
+  P_RecCore.cc \
+  P_RecCore.h \
+  P_RecDefs.h \
+  P_RecFile.h \
+  P_RecFile.h \
+  P_RecMessage.h \
+  P_RecTree.h \
+  P_RecUtils.h \
+  RecConfigParse.cc \
+  RecCore.cc \
+  RecDebug.cc \
+  RecFile.cc \
+  RecHttp.cc \
+  RecMessage.cc \
+  RecMutex.cc \
+  RecTree.cc \
+  RecUtils.cc
+
+librecords_lm_a_SOURCES = \
+  $(librecords_COMMON) \
   I_RecLocal.h \
-  I_RecMutex.h \
-  I_RecSignals.h \
-  P_RecFile.h \
-  P_RecCore.h \
-  P_RecCore.cc \
-  P_RecDefs.h \
   P_RecLocal.h \
-  P_RecMessage.h \
-  P_RecTree.h \
-  P_RecUtils.h \
-  P_RecFile.h \
-  RecFile.cc \
-  RecCore.cc \
-  RecLocal.cc \
-  RecMessage.cc \
-  RecMutex.cc \
-  RecTree.cc \
-  I_RecHttp.h \
-  RecHttp.cc \
-  RecUtils.cc \
-  RecDebug.cc \
-  RecConfigParse.cc
+  RecLocal.cc
 
-librecprocess_a_SOURCES = \
-  I_RecAlarms.h \
-  I_RecCore.h \
-  I_RecDefs.h \
-  I_RecEvents.h \
-  I_RecMutex.h \
+librecords_p_a_SOURCES = \
+  $(librecords_COMMON) \
   I_RecProcess.h \
-  I_RecSignals.h \
-  P_RecFile.h \
-  P_RecCore.h \
-  P_RecCore.cc \
-  P_RecDefs.h \
-  P_RecMessage.h \
   P_RecProcess.h \
-  P_RecTree.h \
-  P_RecUtils.h \
-  P_RecFile.h \
-  RecFile.cc \
-  RecCore.cc \
-  RecMessage.cc \
-  RecMutex.cc \
-  RecProcess.cc \
-  RecTree.cc \
-  I_RecHttp.h \
-  RecHttp.cc \
-  RecUtils.cc \
-  RecDebug.cc \
-  RecConfigParse.cc
+  RecProcess.cc
 
-librec4cop_a_SOURCES = \
+librecords_cop_a_SOURCES = \
   RecConfigParse.cc \
   RecFile.cc \
   RecDebug.cc
