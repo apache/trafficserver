@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2722] authproxy: Eliminate the DNS lookup state, just use the client
+   IP with TSHttpConnect.
+
+  *) [TS-2972] authproxy: Change the hook used, to always do the auth.
+
   *) [TS-698] Add IP filter to logging.
 
   *) [TS-3002] Add DSCP support to header_rewrite.
