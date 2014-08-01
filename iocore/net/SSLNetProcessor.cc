@@ -39,6 +39,7 @@ struct OCSPContinuation:public Continuation
 {
   int mainEvent(int /* event ATS_UNUSED */, Event *e)
   {
+    (void)e;
     ocsp_update();
 
     return EVENT_CONT;

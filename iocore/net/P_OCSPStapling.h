@@ -24,6 +24,7 @@
 
 #include <openssl/ssl.h>
 
+#ifdef sk_OPENSSL_STRING_pop
 #ifdef SSL_CTX_set_tlsext_status_cb
 #define HAVE_OPENSSL_OCSP_STAPLING 1
   void ssl_stapling_ex_init();
@@ -31,5 +32,6 @@
   void ocsp_update();
   int ssl_callback_ocsp_stapling(SSL *);
 #endif /* SSL_CTX_set_tlsext_status_cb */
+#endif /* sk_OPENSSL_STRING_pop */
 
 #endif /* __P_OCSPSTAPLING_H__ */
