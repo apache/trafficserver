@@ -43,6 +43,10 @@ int SSLConfig::configid = 0;
 int SSLCertificateConfig::configid = 0;
 int SSLConfigParams::ssl_maxrecord = 0;
 bool SSLConfigParams::ssl_allow_client_renegotiation = false;
+bool SSLConfigParams::ssl_ocsp_enabled = false;
+int SSLConfigParams::ssl_ocsp_cache_timeout = 3600;
+int SSLConfigParams::ssl_ocsp_request_timeout = 10;
+int SSLConfigParams::ssl_ocsp_update_period = 60;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> * sslCertUpdate;
@@ -248,6 +252,12 @@ SSLConfigParams::initialize()
 
   // SSL record size
   REC_EstablishStaticConfigInt32(ssl_maxrecord, "proxy.config.ssl.max_record_size");
+
+  // SSL OCSP Stapling configurations
+  REC_ReadConfigInt32(ssl_ocsp_enabled, "proxy.config.ssl.ocsp.enabled");
+  REC_EstablishStaticConfigInt32(ssl_ocsp_cache_timeout, "proxy.config.ssl.ocsp.cache_timeout");
+  REC_EstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
+  REC_EstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;

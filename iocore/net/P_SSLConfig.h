@@ -83,6 +83,11 @@ struct SSLConfigParams : public ConfigInfo
   static int ssl_maxrecord;
   static bool ssl_allow_client_renegotiation;
 
+  static bool ssl_ocsp_enabled;
+  static int  ssl_ocsp_cache_timeout;
+  static int  ssl_ocsp_request_timeout;
+  static int  ssl_ocsp_update_period;
+
   static init_ssl_ctx_func init_ssl_ctx_cb;
 
   void initialize();

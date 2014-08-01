@@ -72,6 +72,7 @@ libinknet_a_SOURCES = \
   P_SSLNextProtocolAccept.h \
   P_SSLNextProtocolSet.h \
   P_SSLUtils.h \
+  P_OCSPStapling.h \
   P_Socks.h \
   P_UDPConnection.h \
   P_UDPIOEvent.h \
@@ -93,6 +94,7 @@ libinknet_a_SOURCES = \
   SSLNextProtocolAccept.cc \
   SSLNextProtocolSet.cc \
   SSLUtils.cc \
+  OCSPStapling.cc \
   Socks.cc \
   UDPIOEvent.cc \
   UnixConnection.cc \

@@ -25,6 +25,7 @@
 #include "I_Layout.h"
 #include "I_RecHttp.h"
 #include "P_SSLUtils.h"
+#include "P_OCSPStapling.h"
 
 //
 // Global Data
@@ -33,6 +34,21 @@
 SSLNetProcessor   ssl_NetProcessor;
 NetProcessor&     sslNetProcessor = ssl_NetProcessor;
 EventType         SSLNetProcessor::ET_SSL;
+
+struct OCSPContinuation:public Continuation
+{
+  int mainEvent(int /* event ATS_UNUSED */, Event *e)
+  {
+    ocsp_update();
+
+    return EVENT_CONT;
+  }
+
+  OCSPContinuation():Continuation(new_ProxyMutex())
+  {
+    SET_HANDLER(&OCSPContinuation::mainEvent);
+  }
+};
 
 void
 SSLNetProcessor::cleanup(void)
@@ -55,7 +71,7 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
   // Acquire a SSLConfigParams instance *after* we start SSL up.
   SSLConfig::scoped_config params;
 
-  // Enable client regardless of config file setttings as remap file
+  // Enable client regardless of config file settings as remap file
   // can cause HTTP layer to connect using SSL. But only if SSL
   // initialization hasn't failed already.
   client_ctx = SSLInitClientContext(params);
@@ -66,14 +82,25 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
   // Initialize SSL statistics. This depends on an initial set of certificates being loaded above.
   SSLInitializeStatistics();
 
+  // Shouldn't this be handled the same as -1?
+  if (number_of_ssl_threads == 0) {
+    return -1;
+  }
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    EventType ET_OCSP = eventProcessor.spawn_event_threads(1, "ET_OCSP", stacksize);
+    eventProcessor.schedule_every(new OCSPContinuation(), HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);
+  }
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+
+
   if (number_of_ssl_threads == -1) {
     // We've disabled ET_SSL threads, so we will mark all ET_NET threads as having
     // ET_SSL thread capabilities and just keep on chugging.
     SSLDebug("Disabling ET_SSL threads (config is set to -1), using thread group ET_NET=%d", ET_NET);
     SSLNetProcessor::ET_SSL = ET_NET; // Set the event type for ET_SSL to be ET_NET.
     return 0;
-  } else if (number_of_ssl_threads < 1) {
-    return -1;
   }
 
   SSLNetProcessor::ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL", stacksize);

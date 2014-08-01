@@ -24,6 +24,7 @@
 #include "I_Layout.h"
 #include "P_Net.h"
 #include "ink_cap.h"
+#include "P_OCSPStapling.h"
 
 #include <string>
 #include <openssl/err.h>
@@ -549,6 +550,10 @@ SSLInitializeLibrary()
     SSLError("failed to create session ticket index");
   }
   ssl_session_ticket_index = (iRet == -1 ? 0 : iRet);
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+  ssl_stapling_ex_init();
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
   open_ssl_initialized = true;
 }
@@ -1333,6 +1338,22 @@ ssl_store_ssl_context(
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ticket_key_filename));
     ssl_context_enable_tickets(ctx, ticket_key_path);
   }
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Debug("ssl", "ssl ocsp stapling is enabled");
+    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+    if (!ssl_stapling_init_cert(ctx, (const char *)certpath)) {
+      Error("fail to configure SSL_CTX for OCSP Stapling info");
+    }
+  } else {
+    Debug("ssl", "ssl ocsp stapling is disabled");
+  }
+#else
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Error("fail to enable ssl ocsp stapling, this openssl version does not support it");
+  }
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of

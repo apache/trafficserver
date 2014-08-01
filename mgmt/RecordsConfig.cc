@@ -1302,6 +1302,23 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.ssl.allow_client_renegotiation", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   //##############################################################################
+  //#
+  //# OCSP (Online Certificate Status Protocol) Stapling Configuration
+  //#
+  //##############################################################################
+  //        # Enable OCSP stapling. Disabled by default.
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  //        # Number of seconds before an OCSP response expires in the stapling cache. 3600s (1 hour) by default.
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.cache_timeout", RECD_INT, "3600", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
+  ,
+  //        # Timeout for queries to OCSP responders. 10s by default.
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.request_timeout", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
+  ,
+  //        # Update period for stapling caches. 60s (1 min) by default.
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.update_period", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
+  ,
+  //##############################################################################
   //# ICP Configuration
   //##############################################################################
   //#       enabled=0 ICP disabled
