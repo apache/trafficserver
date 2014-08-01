@@ -35,6 +35,7 @@ SSLNetProcessor   ssl_NetProcessor;
 NetProcessor&     sslNetProcessor = ssl_NetProcessor;
 EventType         SSLNetProcessor::ET_SSL;
 
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
 struct OCSPContinuation:public Continuation
 {
   int mainEvent(int /* event ATS_UNUSED */, Event* /* e ATS_UNUSED */)
@@ -49,6 +50,7 @@ struct OCSPContinuation:public Continuation
     SET_HANDLER(&OCSPContinuation::mainEvent);
   }
 };
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
 void
 SSLNetProcessor::cleanup(void)
