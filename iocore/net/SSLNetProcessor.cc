@@ -37,9 +37,8 @@ EventType         SSLNetProcessor::ET_SSL;
 
 struct OCSPContinuation:public Continuation
 {
-  int mainEvent(int /* event ATS_UNUSED */, Event *e)
+  int mainEvent(int /* event ATS_UNUSED */, Event* /* e ATS_UNUSED */)
   {
-    (void)e;
     ocsp_update();
 
     return EVENT_CONT;
