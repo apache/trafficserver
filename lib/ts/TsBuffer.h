@@ -52,7 +52,7 @@ namespace ts {
     char * _ptr; ///< Pointer to base of memory chunk.
     size_t _size; ///< Size of memory chunk.
 
-    /// Default constructor.
+    /// Default constructor (empty buffer).
     Buffer();
 
     /** Construct from pointer and size.
@@ -65,13 +65,11 @@ namespace ts {
     );
     /** Construct from two pointers.
 	@note This presumes a half open range, (start, end]
-	@note Due to ambiguity issues do not invoke this with
-	@a start == 0.
     */
     Buffer(
-	   char* start, ///< First valid character.
-	   char* end ///< First invalid character.
-	   );
+     char* start, ///< First valid character.
+     char* end ///< First invalid character.
+    );
 
     /** Equality.
         @return @c true if @a that refers to the same memory as @a this,
@@ -129,10 +127,6 @@ namespace ts {
 
   /** A chunk of read only memory.
       A convenience class because we pass this kind of pair frequently.
-
-      @note The default construct leaves the object
-      uninitialized. This is for performance reasons. To construct an
-      empty @c Buffer use @c Buffer(0).
    */
   struct ConstBuffer {
     typedef ConstBuffer self; ///< Self reference type.
@@ -141,12 +135,10 @@ namespace ts {
     char const * _ptr; ///< Pointer to base of memory chunk.
     size_t _size; ///< Size of memory chunk.
 
-    /// Default constructor.
+    /// Default constructor (empty buffer).
     ConstBuffer();
 
     /** Construct from pointer and size.
-	@note Due to ambiguity issues do not call this with
-	two arguments if the first argument is 0.
      */
     ConstBuffer(
       char const * ptr, ///< Pointer to buffer.
@@ -158,12 +150,12 @@ namespace ts {
 	@a start == 0.
     */
     ConstBuffer(
-	   char const* start, ///< First valid character.
-	   char const* end ///< First invalid character.
-	   );
+      char const* start, ///< First valid character.
+      char const* end ///< First invalid character.
+    );
     /// Construct from writable buffer.
     ConstBuffer(
-        Buffer const& buffer ///< Buffer to copy.
+      Buffer const& buffer ///< Buffer to copy.
     );
 
     /** Equality.

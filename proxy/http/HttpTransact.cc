@@ -46,7 +46,6 @@
 #include "StatPages.h"
 #include "HttpClientSession.h"
 #include "I_Machine.h"
-#include "IPAllow.h"
 
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 #define RANGE_NUMBERS_LENGTH 60
