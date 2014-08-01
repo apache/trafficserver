@@ -39,7 +39,7 @@ extern char assert_fields_are_populated[((sizeof(fields)/sizeof(fields[0])) - NU
 bool
 SslHdrParseExpansion(const char * spec, SslHdrExpansion& exp)
 {
-  const char * sep = strchr(spec, '=');
+  const char * sep;
   const char * selector;
 
   // First, split on '=' to separate the header name from the SSL expansion.
