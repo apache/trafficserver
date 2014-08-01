@@ -103,10 +103,10 @@ URLHashContext::URLHashContext() {
   switch (Setting) {
   case UNSPECIFIED:
   case MD5:
-    _ctx = new(_obj) MD5Context;
+    new(_obj) MD5Context;
     break;
   case MMH:
-    _ctx = new(_obj) MMHContext;
+    new(_obj) MMHContext;
     break;
   default: ink_assert("Invalid global URL hash context");
   };

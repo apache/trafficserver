@@ -89,11 +89,9 @@ struct URLImpl:public HdrHeapObjImpl
 
 /// Crypto Hash context for URLs.
 /// @internal This just forwards on to another specific context but avoids
-/// putting that switch logic in multiple places.
+/// putting that switch logic in multiple places. The working context is put
+/// in to class local storage (@a _obj) via placement @a new.
 class URLHashContext : public CryptoContext {
-protected:
-  CryptoContext* _ctx; ///< Generic pointer to use for operations.
-  uint64_t _obj[32]; ///< Raw storage for instantiated context.
 public:
   URLHashContext();
   /// Update the hash with @a data of @a length bytes.
@@ -104,16 +102,19 @@ public:
   enum HashType { UNSPECIFIED, MD5, MMH }; ///< What type of hash we really are.
   static HashType Setting;
 
-  /// For external checking.
-  static size_t const OBJ_SIZE = sizeof(_obj);
+  /// Size of storage for placement @c new of hashing context.
+  static size_t const OBJ_SIZE = 256;
+
+protected:
+  char _obj[OBJ_SIZE]; ///< Raw storage for instantiated context.
 };
 
 inline bool URLHashContext::update(void const* data, int length) {
-  return _ctx->update(data, length);
+  return reinterpret_cast<CryptoContext*>(_obj)->update(data, length);
 }
 
 inline bool URLHashContext::finalize(CryptoHash& hash) {
-  return _ctx->finalize(hash);
+  return reinterpret_cast<CryptoContext*>(_obj)->finalize(hash);
 }
 
 extern const char *URL_SCHEME_FILE;
