@@ -140,14 +140,14 @@ done:
   }
 }
 
+struct milestone {
+  TSMilestonesType mstype;
+  const char * msname;
+};
+
 static void
 InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
-  struct milestone {
-    TSMilestonesType mstype;
-    const char * msname;
-  };
-
   // The set of milestones we can publish. Some milestones happen after
   // this hook, so we skip those ...
   static const milestone milestones[] = {
