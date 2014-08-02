@@ -34,6 +34,7 @@
 #include "ink_sock.h"
 #include "Diags.h"
 #include "MgmtUtils.h"
+#include "MgmtSocket.h"
 #include "CoreAPIShared.h"
 #include "NetworkUtilsLocal.h"
 
@@ -54,7 +55,7 @@ socket_flush(struct SocketInfo sock_info)
   char buf[MAX_BUF_SIZE];
 
   // check to see if anything to read; wait only for specified time
-  if (socket_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
   // read entire message
@@ -97,7 +98,7 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
   int ret, byte_read = 0;
 
   // check to see if anything to read; wait for specified time
-  if (socket_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
   // read until we fulfill the number
@@ -139,7 +140,7 @@ socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
   int ret, byte_wrote = 0;
 
   // makes sure the socket descriptor is writable
-  if (socket_write_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_write_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
   // read until we fulfill the number

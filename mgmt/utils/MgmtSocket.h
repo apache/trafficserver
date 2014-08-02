@@ -36,164 +36,62 @@
 // transient_error
 //-------------------------------------------------------------------------
 
-inline bool
-mgmt_transient_error()
-{
-  bool transient = false;
-  transient = (errno == EINTR);
-#ifdef ENOMEM
-  transient = transient || (errno == ENOMEM);
-#endif
-#ifdef ENOBUF
-  transient = transient || (errno == ENOBUF);
-#endif
-  return transient;
-}
+bool mgmt_transient_error();
 
 //-------------------------------------------------------------------------
-// system calls (based on implementation from UnixSocketManager)
+// system calls (based on implementation from UnixSocketManager);
 //-------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
 // mgmt_accept
 //-------------------------------------------------------------------------
 
-inline int
-mgmt_accept(int s, struct sockaddr *addr, int *addrlen)
-{
-  int r, retries;
-  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::accept(s, addr, (socklen_t *) addrlen);
-    if (r >= 0)
-      return r;
-    if (!mgmt_transient_error())
-      break;
-  }
-  return r;
-}
+int mgmt_accept(int s, struct sockaddr *addr, int *addrlen);
 
 //-------------------------------------------------------------------------
 // mgmt_fopen
 //-------------------------------------------------------------------------
 
-inline FILE *
-mgmt_fopen(const char *filename, const char *mode)
-{
-  FILE *f;
-  int retries;
-  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    // no leak here as f will be returned if it is > 0
-    // coverity[overwrite_var]
-    f =::fopen(filename, mode);
-    if (f > 0)
-      return f;
-    if (!mgmt_transient_error())
-      break;
-  }
-  return f;
-}
+FILE * mgmt_fopen(const char *filename, const char *mode);
 
 //-------------------------------------------------------------------------
 // mgmt_open
 //-------------------------------------------------------------------------
 
-inline int
-mgmt_open(const char *path, int oflag)
-{
-  int r, retries;
-  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::open(path, oflag);
-    if (r >= 0)
-      return r;
-    if (!mgmt_transient_error())
-      break;
-  }
-  return r;
-}
+int mgmt_open(const char *path, int oflag);
 
 //-------------------------------------------------------------------------
 // mgmt_open_mode
 //-------------------------------------------------------------------------
 
-inline int
-mgmt_open_mode(const char *path, int oflag, mode_t mode)
-{
-  int r, retries;
-  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::open(path, oflag, mode);
-    if (r >= 0)
-      return r;
-    if (!mgmt_transient_error())
-      break;
-  }
-  return r;
-}
+int mgmt_open_mode(const char *path, int oflag, mode_t mode);
 
 //-------------------------------------------------------------------------
 // mgmt_select
 //-------------------------------------------------------------------------
 
-inline int
-mgmt_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * errorfds, struct timeval *timeout)
-{
-  // Note: Linux select() has slight different semantics.  From the
-  // man page: "On Linux, timeout is modified to reflect the amount of
-  // time not slept; most other implementations do not do this."
-  // Linux select() can also return ENOMEM, so we espeically need to
-  // protect the call with the transient error retry loop.
-  // Fortunately, because of the Linux timeout handling, our
-  // mgmt_select call will still timeout correctly, rather than
-  // possibly extending our timeout period by up to
-  // MGMT_MAX_TRANSIENT_ERRORS times.
-#if defined(linux)
-  int r, retries;
-  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::select(nfds, readfds, writefds, errorfds, timeout);
-    if (r >= 0)
-      return r;
-    if (!mgmt_transient_error())
-      break;
-  }
-  return r;
-#else
-  return::select(nfds, readfds, writefds, errorfds, timeout);
-#endif
-}
+int mgmt_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * errorfds, struct timeval *timeout);
 
 //-------------------------------------------------------------------------
 // mgmt_sendto
 //-------------------------------------------------------------------------
 
-inline int
-mgmt_sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tolen)
-{
-  int r, retries;
-  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::sendto(fd, (char *) buf, len, flags, to, tolen);
-    if (r >= 0)
-      return r;
-    if (!mgmt_transient_error())
-      break;
-  }
-  return r;
-}
+int mgmt_sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tolen);
 
 //-------------------------------------------------------------------------
 // mgmt_socket
 //-------------------------------------------------------------------------
 
-inline int
-mgmt_socket(int domain, int type, int protocol)
-{
-  int r, retries;
-  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::socket(domain, type, protocol);
-    if (r >= 0)
-      return r;
-    if (!mgmt_transient_error())
-      break;
-  }
-  return r;
-}
+int mgmt_socket(int domain, int type, int protocol);
+
+//-------------------------------------------------------------------------
+// mgmt_write_timeout
+//-------------------------------------------------------------------------
+int mgmt_write_timeout(int fd, int sec, int usec);
+
+//-------------------------------------------------------------------------
+// mgmt_read_timeout
+//-------------------------------------------------------------------------
+int mgmt_read_timeout(int fd, int sec, int usec);
 
 #endif // _MGMT_SOCKET_H_

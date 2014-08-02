@@ -77,10 +77,6 @@ TSMgmtError readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeo
 TSMgmtError sendHTTPRequest(int sock, char *request, uint64_t timeout);
 int connectDirect(const char *host, int port, uint64_t timeout);
 
-// used by NetworkUtilRemote.cc and NetworkUtilLocal.cc
-int socket_read_timeout(int fd, int sec, int usec);
-int socket_write_timeout(int fd, int sec, int usec);
-
 // used for Events
 int get_event_id(const char *event_name);
 char *get_event_name(int id);

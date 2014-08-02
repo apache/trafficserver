@@ -1239,7 +1239,7 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */,
     URLImpl *url2 = url_create(heap);
     url_path_set(heap,url2,buf2,next_required_overflow_size, true);
 
-    tb.check(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size, "Checking the current rw heap is %d bytes", next_rw_heap_size);
+    tb.check(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size, "Checking the current rw heap is %d bytes", (int)next_rw_heap_size);
     tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
     tb.check(heap->m_ronly_heap[ronly_heap].m_heap_start != NULL, "Checking that we properly demoted the previous rw heap");
     for (int i = ronly_heap + 1; i < HDR_BUF_RONLY_HEAPS; ++i) {

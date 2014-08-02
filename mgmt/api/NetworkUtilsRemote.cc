@@ -347,7 +347,7 @@ connect_and_send(const char *msg, int msg_len)
     return err;
 
   // makes sure the descriptor is writable
-  if (socket_write_timeout(main_socket_fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_write_timeout(main_socket_fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
   // connection successfully established; resend msg
@@ -433,7 +433,7 @@ socket_write_conn(int fd, const char *msg_buf, int bytes)
   int ret, byte_wrote = 0;
 
   // makes sure the descriptor is writable
-  if (socket_write_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_write_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
   // write until we fulfill the number
@@ -1098,7 +1098,7 @@ parse_reply(int fd)
   int16_t ret_val;
 
   // check to see if anything to read; wait for specified time = 1 sec
-  if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
+  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
     return TS_ERR_NET_TIMEOUT;
   }
 
@@ -1132,7 +1132,7 @@ parse_reply_list(int fd, char **list)
   }
 
   // check to see if anything to read; wait for specified time
-  if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
 
@@ -1192,7 +1192,7 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
     return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
-  if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
+  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
     return TS_ERR_NET_TIMEOUT;
   }
 
@@ -1274,7 +1274,7 @@ parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_
   *rec_val = NULL;
 
   // check to see if anything to read; wait for specified time
-  if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { //time expired before ready to read
+  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { //time expired before ready to read
     return TS_ERR_NET_TIMEOUT;
   }
 
@@ -1371,7 +1371,7 @@ parse_record_set_reply(int fd, TSActionNeedT * action_need)
     return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
-  if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
 
@@ -1418,7 +1418,7 @@ parse_proxy_state_get_reply(int fd, TSProxyStateT * state)
     return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
-  if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
+  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
     return TS_ERR_NET_TIMEOUT;
   }
 
@@ -1454,7 +1454,7 @@ parse_event_active_reply(int fd, bool * is_active)
     return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
-  if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
+  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
 

@@ -33,15 +33,29 @@ AM_CPPFLAGS = \
 EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
 
 noinst_LTLIBRARIES = libutils_lm.la libutils_p.la
+check_PROGRAMS = test_marshall
+
+TESTS = $(check_PROGRAMS)
+
+libutils_COMMON = \
+  MgmtMarshall.cc \
+  MgmtMarshall.h \
+  MgmtSocket.cc \
+  MgmtSocket.h \
+  MgmtUtils.cc \
+  MgmtUtils.h
 
 libutils_lm_la_SOURCES = \
+  $(libutils_COMMON) \
   ExpandingArray.cc \
   ExpandingArray.h \
-  MgmtLocalCleanup.cc \
-  MgmtUtils.cc \
-  MgmtUtils.h
+  MgmtLocalCleanup.cc
 
 libutils_p_la_SOURCES = \
-  MgmtProcessCleanup.cc \
-  MgmtUtils.cc \
-  MgmtUtils.h
+  $(libutils_COMMON) \
+  MgmtProcessCleanup.cc
+
+test_marshall_SOURCES = test_marshall.cc
+test_marshall_LDADD = \
+  libutils_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la
