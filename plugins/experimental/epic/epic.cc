@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-#define __STDC_LIMIT_MACROS 1
-#define __STDC_FORMAT_MACROS 1
-
 #include <ts/ts.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,10 +29,7 @@
 #include <inttypes.h>
 #include <set>
 #include <string>
-
-#undef DEBUG
-
-#define unlikely(x) __builtin_expect(!!(x), 0)
+#include "ink_defs.h"
 
 #define debug_tag(tag, fmt, ...) do { \
   if (unlikely(TSIsDebugTagSet(tag))) { \
@@ -53,14 +47,8 @@
     TSError("epic:%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #endif
 
-template < typename T, unsigned N > static unsigned
-countof(const T(&)[N])
-{
-  return N;
-}
-
-static TSHRTime epic_period = 30ll;     /* 30sec default */
-static const char *epic_prefix = "/usr/local/epic/cache/eapi";
+static TSHRTime epic_period;
+static char * epic_prefix;
 
 #define GAUGE_METRIC_NAMES \
   "proxy.node.bandwidth_hit_ratio_avg_10s", \
@@ -493,6 +481,9 @@ TSPluginInit(int argc, const char *argv[])
     error("plugin registration failed");
   }
 
+  epic_period = 30ll;     /* 30sec default */
+  epic_prefix = TSstrdup("/usr/local/epic/cache/eapi");
+
   for (;;) {
     int opt = getopt_long(argc, (char *const *) argv, "p:d:", longopts, NULL);
 
@@ -502,7 +493,8 @@ TSPluginInit(int argc, const char *argv[])
 
     switch (opt) {
     case 'd':
-      epic_prefix = strdup(optarg);
+      TSfree(epic_prefix);
+      epic_prefix = TSstrdup(optarg);
       break;
     case 'p':
       epic_period = atoi(optarg);
