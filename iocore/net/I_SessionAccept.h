@@ -30,18 +30,14 @@
 class SessionAccept: public Continuation
 {
 public:
-  SessionAccept(ProxyMutex *amutex);
-  ~SessionAccept();
+  SessionAccept(ProxyMutex *amutex) : Continuation(amutex) {
+    SET_HANDLER(&SessionAccept::mainEvent);
+  }
+
+  ~SessionAccept() {
+  }
 
   virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
-
-  // Virtual function allows creation of an SSLNetAccept
-  // or NetAccept transparent to NetProcessor.
-  //
-  // This function should return a pointer
-  // of NetAccept or its subclass.
-  //
-  virtual void *createNetAccept();
 
 private:
   virtual int mainEvent(int event, void * netvc) = 0;

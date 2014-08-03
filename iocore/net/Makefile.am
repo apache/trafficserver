@@ -53,7 +53,6 @@ libinknet_a_SOURCES = \
   I_UDPPacket.h \
   Inline.cc \
   I_SessionAccept.h \
-  SessionAccept.cc \
   Net.cc \
   NetVConnection.cc \
   P_CompletionUtil.h \
