@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2986] Adding stats to TLS errors
+
   *) [TS-2977] Move traffic_manager under the cmd subdirectory.
 
   *) [TS-2971] Authproxy plugin has inconsistent debug symbol.
