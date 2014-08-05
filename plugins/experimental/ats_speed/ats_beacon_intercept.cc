@@ -213,6 +213,12 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
 
 static bool
 processRequest(InterceptCtx *cont_data) {
+  // OS: Looks like on 5.x we sometimes receive read complete / EOS events twice,
+  // which needs looking into. Probably this intercept is doing something it shouldn't
+  if (cont_data->output.buffer) { 
+    TSDebug("ats_speed", "Received read complete / EOS twice?!");
+    return true;
+  }
   string reply_header("HTTP/1.1 204 No Content\r\n");
   int body_size = static_cast<int>(cont_data->body.size());
   if (cont_data->req_content_len != body_size) {
@@ -246,7 +252,7 @@ processRequest(InterceptCtx *cont_data) {
           net_instaweb::RequestContextPtr(system_request_context))) {
     TSError("Beacon handling failure!");
   } else {
-    //TSDebug(DEBUG_TAG,  "Beacon post data processed OK: [%s]", beacon_data.c_str());
+    TSDebug(DEBUG_TAG,  "Beacon post data processed OK: [%s]", beacon_data.c_str());
   }
   
   cont_data->setupWrite();
@@ -329,7 +335,7 @@ txn_intercept(TSCont contp, TSEvent event, void *edata) {
     }
     delete cont_data;
     TSContDestroy(contp);
-  }
+  } 
 
   return 1;
 }
