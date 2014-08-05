@@ -69,6 +69,16 @@ enum SSL_Stats
   ssl_total_tickets_not_found_stat,
   ssl_total_tickets_renewed_stat,
 
+  /* error stats */
+  ssl_error_want_write,
+  ssl_error_want_read,
+  ssl_error_want_x509_lookup,
+  ssl_error_syscall,
+  ssl_error_read_eos,
+  ssl_error_zero_return,
+  ssl_error_ssl,
+  ssl_sni_name_set_failure,
+
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end = 300,
 

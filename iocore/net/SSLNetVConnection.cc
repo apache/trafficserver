@@ -140,22 +140,26 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
 
       case SSL_ERROR_WANT_WRITE:
         event = SSL_WRITE_WOULD_BLOCK;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(write)");
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(write)");
         break;
       case SSL_ERROR_WANT_READ:
         event = SSL_READ_WOULD_BLOCK;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
         break;
       case SSL_ERROR_WANT_X509_LOOKUP:
         event = SSL_READ_WOULD_BLOCK;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
         break;
       case SSL_ERROR_SYSCALL:
+        SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
         if (rres != 0) {
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -164,13 +168,15 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
         break;
       case SSL_ERROR_ZERO_RETURN:
         event = SSL_READ_EOS;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
+        SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
         break;
       case SSL_ERROR_SSL:
       default:
         event = SSL_READ_ERROR;
         ret = errno;
-        SSLErrorVC(sslvc, "[SSL_NetVConnection::ssl_read_from_net]");
+        SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net]");
         break;
       }                         // switch
       break;
@@ -432,28 +438,37 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     case SSL_ERROR_WANT_READ:
       needs |= EVENTIO_READ;
       r = -EAGAIN;
-      Debug("ssl", "SSL_write-SSL_ERROR_WANT_READ");
+      SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_READ");
       break;
     case SSL_ERROR_WANT_WRITE:
-    case SSL_ERROR_WANT_X509_LOOKUP:
+    case SSL_ERROR_WANT_X509_LOOKUP: {
+      if (SSL_ERROR_WANT_WRITE == err)
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
+      else if (SSL_ERROR_WANT_X509_LOOKUP == err)
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
+
       needs |= EVENTIO_WRITE;
       r = -EAGAIN;
-      Debug("ssl", "SSL_write-SSL_ERROR_WANT_WRITE");
+      Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_WRITE");
       break;
+    }
     case SSL_ERROR_SYSCALL:
       r = -errno;
-      Debug("ssl", "SSL_write-SSL_ERROR_SYSCALL");
+      SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_SYSCALL");
       break;
       // end of stream
     case SSL_ERROR_ZERO_RETURN:
       r = -errno;
-      Debug("ssl", "SSL_write-SSL_ERROR_ZERO_RETURN");
+      SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_ZERO_RETURN");
       break;
     case SSL_ERROR_SSL:
     default:
       r = -errno;
-      Debug("ssl", "SSL_write-SSL_ERROR_SSL");
-      SSLErrorVC(this, "SSL_write");
+      SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_SSL");
       break;
     }
     return (r);
@@ -653,7 +668,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     if (SSL_set_tlsext_host_name(ssl, options.sni_servername)) {
       Debug("ssl", "using SNI name '%s' for client handshake", options.sni_servername);
     } else {
-      SSLError("failed to set SNI name '%s' for client handshake", options.sni_servername);
+      Debug("ssl.error","failed to set SNI name '%s' for client handshake", options.sni_servername);
+      SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
     }
   }
 #endif
@@ -679,13 +695,18 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_WRITE");
+    SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
     return SSL_HANDSHAKE_WANT_WRITE;
 
   case SSL_ERROR_WANT_READ:
+    SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_READ");
     return SSL_HANDSHAKE_WANT_READ;
 
   case SSL_ERROR_WANT_X509_LOOKUP:
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, would block on read or write");
+    SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_X509_LOOKUP");
     break;
 
   case SSL_ERROR_WANT_ACCEPT:
@@ -695,12 +716,14 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     break;
 
   case SSL_ERROR_ZERO_RETURN:
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, EOS");
+    SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, EOS");
     return EVENT_ERROR;
 
   case SSL_ERROR_SYSCALL:
     err = errno;
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, syscall");
+    SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, syscall");
     return EVENT_ERROR;
     break;
 
@@ -708,7 +731,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
-    SSLErrorVC(this, "sslClientHandShakeEvent");
+    SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     return EVENT_ERROR;
     break;
 
