@@ -30,32 +30,8 @@
 #include "P_RecCore.h"
 #include "I_Layout.h"
 
-static bool g_message_initialized = false;
 static RecMessageRecvCb g_recv_cb = NULL;
 static void *g_recv_cookie = NULL;
-
-//-------------------------------------------------------------------------
-// RecMessageInit
-//-------------------------------------------------------------------------
-
-int
-RecMessageInit()
-{
-  if (g_message_initialized) {
-    return REC_ERR_OKAY;
-  }
-
-  /*
-   * g_mode_type should be initialized by
-   * RecLocalInit() or RecProcessInit() earlier.
-   */
-  ink_assert(g_mode_type != RECM_NULL);
-
-  RecMessageRegister();
-
-  g_message_initialized = true;
-  return REC_ERR_OKAY;
-}
 
 //-------------------------------------------------------------------------
 // RecMessageAlloc

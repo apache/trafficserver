@@ -32,8 +32,8 @@
 #include "LocalManager.h"
 #include "FileManager.h"
 
-static bool g_initialized = false;
-static bool g_message_initialized = false;
+// Marks whether the message handler has been initialized.
+static bool message_initialized_p = false;
 
 //-------------------------------------------------------------------------
 // i_am_the_record_owner, only used for libreclocal.a
@@ -115,12 +115,25 @@ config_update_thr(void * /* data */)
 
 
 //-------------------------------------------------------------------------
+// RecMessageInit
+//-------------------------------------------------------------------------
+void
+RecMessageInit()
+{
+  ink_assert(g_mode_type != RECM_NULL);
+  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, NULL);
+  message_initialized_p = true;
+}
+
+//-------------------------------------------------------------------------
 // RecLocalInit
 //-------------------------------------------------------------------------
 int
 RecLocalInit(Diags * _diags)
 {
-  if (g_initialized) {
+  static bool initialized_p = false;;
+
+  if (initialized_p) {
     return REC_ERR_OKAY;
   }
 
@@ -139,7 +152,7 @@ RecLocalInit(Diags * _diags)
      return REC_ERR_FAIL;
      }
    */
-  g_initialized = true;
+  initialized_p = true;
 
   return REC_ERR_OKAY;
 }
@@ -151,19 +164,18 @@ RecLocalInit(Diags * _diags)
 int
 RecLocalInitMessage()
 {
-  if (g_message_initialized) {
+  static bool initialized_p = false;
+
+  if (initialized_p) {
     return REC_ERR_OKAY;
   }
 
-  if (RecMessageInit() == REC_ERR_FAIL) {
-    return REC_ERR_FAIL;
-  }
-
+  RecMessageInit();
   if (RecMessageRegisterRecvCb(recv_message_cb, NULL)) {
     return REC_ERR_FAIL;
   }
 
-  g_message_initialized = true;
+  initialized_p = true;
 
   return REC_ERR_OKAY;
 }
@@ -194,12 +206,6 @@ RecSignalManager(int id, const char *, size_t)
    RecDebug(DL_Debug, "local manager dropping signal %d", id);
 }
 
-void
-RecMessageRegister()
-{
-  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, NULL);
-}
-
 //-------------------------------------------------------------------------
 // RecMessageSend
 //-------------------------------------------------------------------------
@@ -209,7 +215,7 @@ RecMessageSend(RecMessage * msg)
 {
   int msg_size;
 
-  if (!g_message_initialized)
+  if (!message_initialized_p)
     return REC_ERR_OKAY;
 
   // Make a copy of the record, but truncate it to the size actually used

@@ -35,8 +35,8 @@
 #include "mgmtapi.h"
 #include "ProcessManager.h"
 
-static bool g_initialized = false;
-static bool g_message_initialized = false;
+// Marks whether the message handler has been initialized.
+static bool message_initialized_p = false;
 static bool g_started = false;
 static EventNotify g_force_req_notify;
 static int g_rec_raw_stat_sync_interval_ms = REC_RAW_STAT_SYNC_INTERVAL_MS;
@@ -408,7 +408,9 @@ struct sync_cont: public Continuation
 int
 RecProcessInit(RecModeT mode_type, Diags *_diags)
 {
-  if (g_initialized) {
+  static bool initialized_p = false;
+
+  if (initialized_p) {
     return REC_ERR_OKAY;
   }
 
@@ -437,11 +439,19 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
    }
    */
 
-  g_initialized = true;
+  initialized_p = true;
 
   return REC_ERR_OKAY;
 }
 
+
+void
+RecMessageInit()
+{
+  ink_assert(g_mode_type != RECM_NULL);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, NULL);
+  message_initialized_p = true;
+}
 
 //-------------------------------------------------------------------------
 // RecProcessInitMessage
@@ -449,14 +459,13 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
 int
 RecProcessInitMessage(RecModeT mode_type)
 {
-  if (g_message_initialized) {
+  static bool initialized_p = false;
+
+  if (initialized_p) {
     return REC_ERR_OKAY;
   }
 
-  if (RecMessageInit() == REC_ERR_FAIL) {
-    return REC_ERR_FAIL;
-  }
-
+  RecMessageInit();
   if (RecMessageRegisterRecvCb(recv_message_cb__process, NULL)) {
     return REC_ERR_FAIL;
   }
@@ -468,7 +477,7 @@ RecProcessInitMessage(RecModeT mode_type)
     g_force_req_notify.unlock();
   }
 
-  g_message_initialized = true;
+  initialized_p = true;
 
   return REC_ERR_OKAY;
 }
@@ -902,12 +911,6 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
   return pmgmt->registerMgmtCallback(_signal, _fn, _data);
 }
 
-void
-RecMessageRegister()
-{
-  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, NULL);
-}
-
 //-------------------------------------------------------------------------
 // RecMessageSend
 //-------------------------------------------------------------------------
@@ -917,7 +920,7 @@ RecMessageSend(RecMessage * msg)
 {
   int msg_size;
 
-  if (!g_message_initialized)
+  if (!message_initialized_p)
     return REC_ERR_OKAY;
 
   // Make a copy of the record, but truncate it to the size actually used
