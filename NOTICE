@@ -61,3 +61,11 @@ Copyright (C) 2014 Comcast
 
 LuaJIT -- a Just-In-Time Compiler for Lua. http://luajit.org/
 Copyright (C) 2005-2014 Mike Pall. All rights reserved.
+
+~~~
+
+ats_speed - PageSpeed for ATS. Author: oschaaf@we-amp.com (Otto van der Schaaf)
+Copyright (C) 2013 We-Amp B.V.
+
+prepare_psol.sh, ats_message_handler.cc and ats_message_handler.h for ats_speed:
+Copyright (C) 2012 Google Inc.
