@@ -62,7 +62,10 @@ public:
   static void generate_and_set_squid_codes(HTTPHdr * header, char *via_string,
                                           HttpTransact::SquidLogInfo * squid_codes);
 
-  static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
+  // Removing handle_conditional_headers.  Functionality appears to be elsewhere (issue_revalidate)
+  // and the only condition when it does anything causes an assert to go 
+  // off
+  // static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param,
                                     HTTPHdr *header, HTTPWarningCode code,
                                     const char *warn_text = NULL, int warn_text_len = 0);

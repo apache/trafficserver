@@ -6005,6 +6005,17 @@ response_cacheable_indicated_by_cc(HTTPHdr* response)
 bool
 HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* response)
 {
+  // If the use_client_target_addr is specified but the client
+  // specified OS addr does not match any of trafficserver's looked up
+  // host addresses, do not allow cache.  This may cause DNS cache poisoning
+  // of other trafficserver clients. The flag is set in the 
+  // process_host_db_info method
+  if (!s->dns_info.lookup_validated
+    && s->client_info.is_transparent) {
+    DebugTxn("http_trans", "[is_response_cacheable] " "Lookup not validated.  Possible DNS cache poison.  Don't cache");
+    return false;
+  }
+
   // if method is not GET or HEAD, do not cache.
   // Note: POST is also cacheable with Expires or Cache-control.
   // but due to INKqa11567, we are not caching POST responses.
@@ -7647,7 +7658,12 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
   HttpTransactHeaders::remove_privacy_headers_from_request(s->http_config_param, s->txn_conf, outgoing_request);
   HttpTransactHeaders::add_global_user_agent_header_to_request(s->http_config_param, outgoing_request);
   handle_request_keep_alive_headers(s, outgoing_version, outgoing_request);
-  HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
+
+  // handle_conditional_headers appears to be obsolete.  Nothing happens
+  // unelss s->cache_info.action == HttpTransact::CACHE_DO_UPDATE.  In that
+  // case an assert will go off.  The functionality of this method
+  // (e.g., setting the if-modfied-since header occurs in issue_revalidate
+  //HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
 
   if (s->next_hop_scheme < 0)
     s->next_hop_scheme = URL_WKSIDX_HTTP;
