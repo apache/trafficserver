@@ -1500,7 +1500,7 @@ HttpConfig::reconfigure()
   params->no_dns_forward_to_parent = INT_TO_BOOL(m_master.no_dns_forward_to_parent);
   params->uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.uncacheable_requests_bypass_parent);
   params->no_origin_server_dns = INT_TO_BOOL(m_master.no_origin_server_dns);
-  params->use_client_target_addr = INT_TO_BOOL(m_master.use_client_target_addr);
+  params->use_client_target_addr = m_master.use_client_target_addr;
   params->use_client_source_port = INT_TO_BOOL(m_master.use_client_source_port);
   params->oride.maintain_pristine_host_hdr = INT_TO_BOOL(m_master.oride.maintain_pristine_host_hdr);
 

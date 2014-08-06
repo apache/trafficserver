@@ -2014,31 +2014,74 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
     ink_time_t now = ink_cluster_time();
     HostDBInfo *ret = NULL;
     t_state.dns_info.lookup_success = true;
+    t_state.dns_info.lookup_validated = true;
     if (r->round_robin) {
-      // Since the time elapsed between current time and client_request_time
-      // may be very large, we cannot use client_request_time to approximate
-      // current time when calling select_best_http().
-      HostDBRoundRobin *rr = r->rr();
-      ret = rr->select_best_http(&t_state.client_info.addr.sa, now, (int) t_state.txn_conf->down_server_timeout);
-
-      // set the srv target`s last_failure
-      if (t_state.dns_info.srv_lookup_success) {
-        uint32_t last_failure = 0xFFFFFFFF;
-        for (int i = 0; i < rr->rrcount && last_failure != 0; ++i) {
-          if (last_failure > rr->info[i].app.http_data.last_failure)
-            last_failure = rr->info[i].app.http_data.last_failure;
+      // if use_client_target_addr is set, make sure the client
+      // addr sits in the pool
+      if (t_state.http_config_param->use_client_target_addr == 1
+        && t_state.client_info.is_transparent
+        && t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
+      
+        HostDBRoundRobin *rr = r->rr();
+        sockaddr const* addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr();
+        if (rr && rr->find_ip(addr) == NULL) {
+          // The client specified server address does not appear 
+          // in the DNS pool
+          DebugSM("http", "use_client_target_addr == 1. Client specified address is not in the pool. Client address is not validated.");
+          t_state.dns_info.lookup_validated = false;
         }
+        // Even if we did find the client specified address in the pool,
+        // We want to make sure that that address is used and not some
+        // other address in the DNS set.
+        // Copy over the client information and give up on the lookup
+        ats_ip_copy(t_state.host_db_info.ip(), addr);
+        t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
+      } else {
+        // Since the time elapsed between current time and client_request_time
+        // may be very large, we cannot use client_request_time to approximate
+        // current time when calling select_best_http().
+        HostDBRoundRobin *rr = r->rr();
+        ret = rr->select_best_http(&t_state.client_info.addr.sa, now, (int) t_state.txn_conf->down_server_timeout);
 
-        if (last_failure != 0 && (uint32_t) (now - t_state.txn_conf->down_server_timeout) < last_failure) {
-          HostDBApplicationInfo app;
-          app.allotment.application1 = 0;
-          app.allotment.application2 = 0;
-          app.http_data.last_failure = last_failure;
-          hostDBProcessor.setby_srv(t_state.dns_info.lookup_name, 0, t_state.dns_info.srv_hostname, &app);
+        // set the srv target`s last_failure
+        if (t_state.dns_info.srv_lookup_success) {
+          uint32_t last_failure = 0xFFFFFFFF;
+          for (int i = 0; i < rr->rrcount && last_failure != 0; ++i) {
+            if (last_failure > rr->info[i].app.http_data.last_failure)
+              last_failure = rr->info[i].app.http_data.last_failure;
+          }
+
+          if (last_failure != 0 && (uint32_t) (now - t_state.txn_conf->down_server_timeout) < last_failure) {
+            HostDBApplicationInfo app;
+            app.allotment.application1 = 0;
+            app.allotment.application2 = 0;
+            app.http_data.last_failure = last_failure;
+            hostDBProcessor.setby_srv(t_state.dns_info.lookup_name, 0, t_state.dns_info.srv_hostname, &app);
+          }
         }
       }
     } else {
-      ret = r;
+      if (t_state.http_config_param->use_client_target_addr == 1
+        && t_state.client_info.is_transparent 
+        && t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
+        // Compare the client specified address against the looked up address
+        sockaddr const* addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr();
+        if (!ats_ip_addr_eq(addr, &r->data.ip.sa)) {
+          DebugSM("http", "use_client_target_addr == 1.  Comparing single addresses failed. Client address is not validated.");
+          t_state.dns_info.lookup_validated = false;
+        } 
+        // Regardless of whether the client address matches the DNS
+        // record or not, we want to use that address.  Therefore,
+        // we copy over the client address info and skip the assignment
+        // from the DNS cache
+        ats_ip_copy(t_state.host_db_info.ip(), addr);
+        t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
+
+        // Leave ret unassigned, so we don't overwrite the host_db_info
+      }
+      else {
+        ret = r;
+      }
     }
     if (ret) {
       t_state.host_db_info = *ret;
@@ -6876,7 +6919,7 @@ HttpSM::set_next_state()
         t_state.first_dns_lookup = false;
         call_transact_and_set_next_state(HttpTransact::HandleFiltering);
         break;
-      } else  if (t_state.http_config_param->use_client_target_addr
+      } else  if (t_state.http_config_param->use_client_target_addr == 2
         && !t_state.url_remap_success
         && t_state.parent_result.r != PARENT_SPECIFIED
         && t_state.client_info.is_transparent
@@ -6894,9 +6937,6 @@ HttpSM::set_next_state()
           DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.\n", ats_ip_ntop(addr, ipb, sizeof(ipb)));
         }
         ats_ip_copy(t_state.host_db_info.ip(), addr);
-        /* Since we won't know the server HTTP version (no hostdb lookup), we assume it matches the
-         * client request version. Seems to be the most correct thing to do in the transparent use-case.
-         */
         if (t_state.hdr_info.client_request.version_get() == HTTPVersion(0, 9))
           t_state.host_db_info.app.http_data.http_version =  HostDBApplicationInfo::HTTP_VERSION_09;
         else if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 0))

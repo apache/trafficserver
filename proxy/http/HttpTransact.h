@@ -784,11 +784,15 @@ public:
     bool srv_lookup_success;
     short srv_port;
     HostDBApplicationInfo srv_app;
+    /*** Set to true by default.  If use_client_target_address is set 
+     * to 1, this value will be set to false if the client address is 
+     * not in the DNS pool */
+    bool lookup_validated; 
 
     _DNSLookupInfo()
     : attempts(0), os_addr_style(OS_ADDR_TRY_DEFAULT),
         lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP),
-        srv_lookup_success(false), srv_port(0)
+        srv_lookup_success(false), srv_port(0), lookup_validated(true)
     {
       srv_hostname[0] = '\0';
       srv_app.allotment.application1 = 0;
@@ -1223,7 +1227,7 @@ public:
       }
       internal_msg_buffer_size = 0;
     }
-
+   
   }; // End of State struct.
 
   static void HandleBlindTunnel(State* s);
