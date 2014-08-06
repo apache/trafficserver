@@ -73,4 +73,10 @@ Copyright (C) 2012 Google Inc.
 ~~~
 
 collapsed_collapsing: Plugin for connection collapsing to origin
-Copyright (c) 2014 Yahoo! Inc.  All rights reserved.
+Copyright (C) 2014 Yahoo! Inc.  All rights reserved.
+
+~~~
+
+healthchecks: Plugin for ATS healthchecks.
+Copyright (C) 2012 Go Daddy Operating Company, LLC
+
