@@ -49,3 +49,4 @@ diags.log
 pm_to_blib
 MurmurHash3.cc
 MurmurHash3.h
+^ck$
