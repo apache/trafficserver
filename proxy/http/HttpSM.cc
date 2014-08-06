@@ -2800,6 +2800,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
       break;
     }
 
+    close_connection = true;
+
     ink_assert(p->vc_type == HT_HTTP_SERVER);
 
     if (is_http_server_eos_truncation(p)) {
