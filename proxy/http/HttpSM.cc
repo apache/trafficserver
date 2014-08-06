@@ -2768,6 +2768,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
 
   bool close_connection = false;
 
+  if (t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
+      server_entry->eos == false && plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+    close_connection = false;
+  } else {
+    close_connection = true;
+  }
+
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
@@ -2793,7 +2800,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
       break;
     }
 
-    close_connection = false;
     ink_assert(p->vc_type == HT_HTTP_SERVER);
 
     if (is_http_server_eos_truncation(p)) {
@@ -2833,13 +2839,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     p->read_success = true;
     t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
     t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
-
-    if (t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
-        server_entry->eos == false && plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
-      close_connection = false;
-    } else {
-      close_connection = true;
-    }
 
     if (p->do_dechunking || p->do_chunked_passthru) {
       if (p->chunked_handler.truncation) {
