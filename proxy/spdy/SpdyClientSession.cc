@@ -68,8 +68,10 @@ SpdyRequest::clear()
 {
   SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, spdy_sm->mutex->thread_holding);
 
-  if (fetch_sm)
+  if (fetch_sm) {
     TSFetchDestroy(fetch_sm);
+    fetch_sm = NULL;
+  }
 
   vector<pair<string, string> >().swap(headers);
 
@@ -359,12 +361,17 @@ spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fe
 {
   int ret;
   SpdyRequest *req = (SpdyRequest *)TSFetchUserDataGet(fetch_sm);
+
   SpdyNV spdy_nv(fetch_sm);
 
   Debug("spdy", "----spdylay_submit_syn_reply");
-  ret = spdylay_submit_syn_reply(sm->session,
+  if (sm->session) {
+    ret = spdylay_submit_syn_reply(sm->session,
                                  SPDYLAY_CTRL_FLAG_NONE, req->stream_id,
                                  spdy_nv.nv);
+  } else {
+    Error("spdy_process_fetch_header, sm->session NULL, sm_id %" PRId64 ", fetch_sm %p, stream_id %d, req_time %" PRId64 ", url %s", sm->sm_id, fetch_sm, req->stream_id, req->start_time, req->url.c_str());
+  }
 
   TSVIOReenable(sm->write_vio);
   return ret;
