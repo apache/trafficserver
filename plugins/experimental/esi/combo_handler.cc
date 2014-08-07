@@ -25,6 +25,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #include <time.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -190,6 +191,7 @@ static bool writeErrorResponse(InterceptData &int_data, int &n_bytes_written);
 static bool writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written);
 static void prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &resp_header_fields);
 static bool getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields);
+static int getMaxAge(TSMBuffer bufp, TSMLoc hdr_loc);
 static bool getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq);
 
 // libesi TLS key.
@@ -780,6 +782,8 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
   if (int_data.creq.status == TS_HTTP_STATUS_OK) {
     HttpDataFetcherImpl::ResponseData resp_data;
     TSMLoc field_loc;
+    int max_age = 0;
+    bool got_max_age = false;
     time_t expires_time;
     bool got_expires_time = false;
     int num_headers = HEADER_WHITELIST.size();
@@ -793,9 +797,22 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
          ++iter) {
       if (int_data.fetcher->getData(*iter, resp_data) && resp_data.status == TS_HTTP_STATUS_OK) {
         body_blocks.push_back(ByteBlock(resp_data.content, resp_data.content_len));
-        if (!got_content_type) {
-          got_content_type = getContentType(resp_data.bufp, resp_data.hdr_loc, resp_header_fields);
+        if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CONTENT_TYPE) == HEADER_WHITELIST.end()) {
+          if (!got_content_type) {
+            got_content_type = getContentType(resp_data.bufp, resp_data.hdr_loc, resp_header_fields);
+          }
         }
+
+        int curr_field_max_age = getMaxAge(resp_data.bufp, resp_data.hdr_loc);
+        if (curr_field_max_age > 0) {
+          if (!got_max_age) {
+            max_age = curr_field_max_age;
+            got_max_age = true;
+          } else if (curr_field_max_age < max_age) {
+            max_age = curr_field_max_age;
+          }
+        }
+
         field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, TS_MIME_FIELD_EXPIRES,
                                         TS_MIME_LEN_EXPIRES);
         if (field_loc != TS_NULL_MLOC) {
@@ -822,12 +839,25 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
 
           field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, header.c_str(), header.size());
           if (field_loc != TS_NULL_MLOC) {
-            int hdr_len = 0;
-            const char* hdr = TSMimeHdrFieldValueStringGet(resp_data.bufp, resp_data.hdr_loc, field_loc, 0, &hdr_len);
-            if (hdr) {
-              string hdr_value = string(hdr, hdr_len);
-              resp_header_fields.append(header + ": " + hdr_value + "\r\n");
-              flags_list[i] = 1;
+            bool values_added = false;
+            const char *value;
+            int value_len;
+            int n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
+            if ((n_values != TS_ERROR) && (n_values > 0)) {
+              for (int k = 0; k < n_values; k++) {
+                value = TSMimeHdrFieldValueStringGet(resp_data.bufp, resp_data.hdr_loc, field_loc, k, &value_len);
+                if (!values_added) {
+                  resp_header_fields.append(header + ": ");
+                  values_added = true;
+                } else {
+                  resp_header_fields.append(", ");
+                }
+                resp_header_fields.append(value, value_len);
+              }
+              if (values_added) {
+                resp_header_fields.append("\r\n");
+                flags_list[i] = 1;
+              }
             }
             TSHandleMLocRelease(resp_data.bufp, resp_data.hdr_loc, field_loc);
           }
@@ -840,13 +870,24 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
       }
     }
     if (int_data.creq.status == TS_HTTP_STATUS_OK) {
-      if (got_expires_time) {
-        if (expires_time <= 0) {
-          resp_header_fields.append("Expires: 0\r\n");
-        } else {
+      if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CACHE_CONTROL) == HEADER_WHITELIST.end()) {
+        if (got_max_age && max_age > 0) {
           char line_buf[128];
-          int line_size = strftime(line_buf, 128, "Expires: %a, %d %b %Y %T GMT\r\n", gmtime(&expires_time));
+          int line_size = sprintf(line_buf, "Cache-Control: max-age=%d, public\r\n", max_age);
           resp_header_fields.append(line_buf, line_size);
+        } else {
+          resp_header_fields.append("Cache-Control: max-age=315360000, public\r\n");  // set 10-years max-age
+        }
+      }
+      if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_EXPIRES) == HEADER_WHITELIST.end()) {
+        if (got_expires_time) {
+          if (expires_time <= 0) {
+            resp_header_fields.append("Expires: 0\r\n");
+          } else {
+            char line_buf[128];
+            int line_size = strftime(line_buf, 128, "Expires: %a, %d %b %Y %T GMT\r\n", gmtime(&expires_time));
+            resp_header_fields.append(line_buf, line_size);
+          }
         }
       }
       LOG_DEBUG("Prepared response header field\n%s", resp_header_fields.c_str());
@@ -895,28 +936,66 @@ getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
   return retval;
 }
 
-static const char INVARIANT_FIELD_LINES[] = { "Vary: Accept-Encoding\r\n"
-                                              "Cache-Control: max-age=315360000\r\n" };
+static int
+getMaxAge(TSMBuffer bufp, TSMLoc hdr_loc)
+{
+  int max_age = 0;
+  const char *value, *ptr;
+  int value_len = 0;
+
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
+  if (field_loc != TS_NULL_MLOC) {
+    int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    if ((n_values != TS_ERROR) && (n_values > 0)) {
+      for (int i = 0; i < n_values; i++) {
+        value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
+        ptr = value;
+        if (strncmp(value, TS_HTTP_VALUE_MAX_AGE, TS_HTTP_LEN_MAX_AGE) == 0) {
+          ptr += TS_HTTP_LEN_MAX_AGE;
+          while ((*ptr == ' ') || (*ptr == '\t')) {
+            ptr++;
+          }
+          if (*ptr == '=') {
+            ptr++;
+            max_age = atoi(ptr);
+          }
+          break;
+        }
+      }
+    }
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+  }
+
+  return max_age;
+}
+
+static const char INVARIANT_FIELD_LINES[] = { "Vary: Accept-Encoding\r\n" };
 static const char INVARIANT_FIELD_LINES_SIZE = sizeof(INVARIANT_FIELD_LINES) - 1;
 
 static bool
 writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
 {
-  if (TSIOBufferWrite(int_data.output.buffer, INVARIANT_FIELD_LINES,
-                       INVARIANT_FIELD_LINES_SIZE) == TS_ERROR) {
-    LOG_ERROR("Error while writing invariant fields");
-    return false;
+  if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_VARY) == HEADER_WHITELIST.end()) {
+    if (TSIOBufferWrite(int_data.output.buffer, INVARIANT_FIELD_LINES,
+          INVARIANT_FIELD_LINES_SIZE) == TS_ERROR) {
+      LOG_ERROR("Error while writing invariant fields");
+      return false;
+    }
+    n_bytes_written += INVARIANT_FIELD_LINES_SIZE;
   }
-  n_bytes_written += INVARIANT_FIELD_LINES_SIZE;
-  time_t time_now = static_cast<time_t>(TShrtime() / 1000000000); // it returns nanoseconds!
-  char last_modified_line[128];
-  int last_modified_line_size = strftime(last_modified_line, 128, "Last-Modified: %a, %d %b %Y %T GMT\r\n",
-                                         gmtime(&time_now));
-  if (TSIOBufferWrite(int_data.output.buffer, last_modified_line, last_modified_line_size) == TS_ERROR) {
-    LOG_ERROR("Error while writing last-modified fields");
-    return false;
+
+  if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_LAST_MODIFIED) == HEADER_WHITELIST.end()) {
+    time_t time_now = static_cast<time_t>(TShrtime() / 1000000000); // it returns nanoseconds!
+    char last_modified_line[128];
+    int last_modified_line_size = strftime(last_modified_line, 128, "Last-Modified: %a, %d %b %Y %T GMT\r\n",
+        gmtime(&time_now));
+    if (TSIOBufferWrite(int_data.output.buffer, last_modified_line, last_modified_line_size) == TS_ERROR) {
+      LOG_ERROR("Error while writing last-modified fields");
+      return false;
+    }
+    n_bytes_written += last_modified_line_size;
   }
-  n_bytes_written += last_modified_line_size;
+
   return true;
 }
 
