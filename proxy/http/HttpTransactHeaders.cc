@@ -31,9 +31,10 @@
 #include "I_Machine.h"
 
 bool
-HttpTransactHeaders::is_method_cacheable(int method)
+HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_param, const int method)
 {
-  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD);
+  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD ||
+          (http_config_param->cache_post_method == 1 && method == HTTP_WKSIDX_POST));
 }
 
 
