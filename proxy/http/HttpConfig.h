@@ -707,7 +707,6 @@ public:
   // cache control //
   ///////////////////
   MgmtByte cache_enable_default_vary_headers;
-  MgmtByte cache_post_method;
 
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
@@ -911,7 +910,6 @@ HttpConfigParams::HttpConfigParams()
     cache_vary_default_other(NULL),
     max_cache_open_write_retries(1),
     cache_enable_default_vary_headers(0),
-    cache_post_method(0),
     connect_ports_string(NULL),
     connect_ports(NULL),
     push_method_enabled(0),
