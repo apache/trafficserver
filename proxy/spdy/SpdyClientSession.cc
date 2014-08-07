@@ -359,7 +359,7 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
 static int
 spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fetch_sm)
 {
-  int ret;
+  int ret = -1;
   SpdyRequest *req = (SpdyRequest *)TSFetchUserDataGet(fetch_sm);
 
   SpdyNV spdy_nv(fetch_sm);
