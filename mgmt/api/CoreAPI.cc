@@ -287,7 +287,7 @@ Bounce(bool cluster)
  * this source or CoreAPIRemote.cc yields the same set of symbols).
  */
 TSMgmtError
-StorageDeviceCmdOffline(char const* dev)
+StorageDeviceCmdOffline(const char * dev)
 {
   lmgmt->signalEvent(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, dev);
   return TS_ERR_OKAY;
@@ -589,7 +589,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
  *                  version number above this one
  */
 TSMgmtError
-WriteFile(TSFileNameT file, char *text, int size, int version)
+WriteFile(TSFileNameT file, const char *text, int size, int version)
 {
   const char *fname;
   Rollback *file_rb;
@@ -648,7 +648,7 @@ WriteFile(TSFileNameT file, char *text, int size, int version)
  * of alarms in the current alarm processor
  */
 TSMgmtError
-EventSignal(char * /* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
+EventSignal(const char * /* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
 {
   //char *text;
   //int id;
@@ -668,7 +668,7 @@ EventSignal(char * /* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
 
  */
 TSMgmtError
-EventResolve(char *event_name)
+EventResolve(const char *event_name)
 {
   alarm_t a;
 
@@ -730,7 +730,7 @@ ActiveEventGetMlt(LLQ * active_events)
  * unresolved; otherwise sets *is_current to false.
  */
 TSMgmtError
-EventIsActive(char *event_name, bool * is_current)
+EventIsActive(const char *event_name, bool * is_current)
 {
   alarm_t a;
 
@@ -761,7 +761,7 @@ EventIsActive(char *event_name, bool * is_current)
  * stored in the the hashtable, not in the TM alarm processor model
  */
 TSMgmtError
-EventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data)
+EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data)
 {
   return cb_table_register(local_event_callbacks, event_name, func, data, NULL);
 
@@ -773,7 +773,7 @@ EventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data)
  * Removes the callback function from the local side CallbackTable
  */
 TSMgmtError
-EventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
+EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 {
   return cb_table_unregister(local_event_callbacks, event_name, func);
 }
@@ -782,7 +782,7 @@ EventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
  * Snapshots
  ***************************************************************************/
 TSMgmtError
-SnapshotTake(char *snapshot_name)
+SnapshotTake(const char * snapshot_name)
 {
   char *snapDirFromRecordsConf;
   bool found;
@@ -808,7 +808,7 @@ SnapshotTake(char *snapshot_name)
 }
 
 TSMgmtError
-SnapshotRestore(char *snapshot_name)
+SnapshotRestore(const char * snapshot_name)
 {
   char *snapDirFromRecordsConf;
   bool found;
@@ -834,7 +834,7 @@ SnapshotRestore(char *snapshot_name)
 }
 
 TSMgmtError
-SnapshotRemove(char *snapshot_name)
+SnapshotRemove(const char * snapshot_name)
 {
   char *snapDirFromRecordsConf;
   bool found;

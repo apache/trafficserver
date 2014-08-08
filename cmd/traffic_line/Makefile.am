@@ -30,7 +30,6 @@ traffic_line_SOURCES = \
 
 traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_line_LDADD = \
-  $(top_builddir)/mgmt/api/libtsmgmtshare.la \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBTCL@ @OPENSSL_LIBS@

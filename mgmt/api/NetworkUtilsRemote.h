@@ -32,28 +32,25 @@
  *
  ***************************************************************************/
 
-#ifndef _NETWORK_UTILS_H_
-#define _NETWORK_UTILS_H_
-
-#include "ink_defs.h"
-#include "ink_mutex.h"
+#ifndef _NETWORK_UTILS_REMOTE_H_
+#define _NETWORK_UTILS_REMOTE_H_
 
 #include "mgmtapi.h"
-#include "NetworkUtilsDefs.h"
+#include "NetworkMessage.h"
 #include "EventCallback.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
+extern int main_socket_fd;
+extern int event_socket_fd;
+extern CallbackTable *remote_event_callbacks;
 
-const int DEFAULT_STACK_SIZE = 1048576; // 1MB stack
+// From CoreAPIRemote.cc
+extern ink_thread ts_event_thread;
+extern TSInitOptionT ts_init_options;
 
 /**********************************************************************
  * Socket Helper Functions
  **********************************************************************/
 void set_socket_paths(const char *path);
-int socket_test(int fd);
 
 /* The following functions are specific for a client connection; uses
  * the client connection information stored in the variables in
@@ -63,47 +60,30 @@ TSMgmtError ts_connect(); /* TODO: update documenation, Renamed due to conflict 
 TSMgmtError disconnect();
 TSMgmtError reconnect();
 TSMgmtError reconnect_loop(int num_attempts);
-TSMgmtError connect_and_send(const char *msg, int msg_len);
+
 void *socket_test_thread(void *arg);
+void *event_poll_thread_main(void *arg);
+
+struct mgmtapi_sender : public mgmt_message_sender
+{
+  explicit mgmtapi_sender(int _fd) : fd(_fd) {}
+  virtual TSMgmtError send(void * msg, size_t msglen) const;
+
+  int fd;
+};
+
+#define MGMTAPI_SEND_MESSAGE(fd, optype, ...) send_mgmt_request(mgmtapi_sender(fd), (optype), __VA_ARGS__)
 
 /*****************************************************************************
  * Marshalling (create requests)
  *****************************************************************************/
-TSMgmtError send_request(int fd, OpType op);
-TSMgmtError send_request_name(int fd, OpType op, const char *name);
-TSMgmtError send_request_name_value(int fd, OpType op, const char *name, const char *value);
-TSMgmtError send_request_bool(int fd, OpType op, bool flag);
-
-TSMgmtError send_file_read_request(int fd, TSFileNameT file);
-TSMgmtError send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text);
-TSMgmtError send_record_get_request(int fd, const char *rec_name);
-TSMgmtError send_record_match_request(int fd, const char *rec_regex);
-
-TSMgmtError send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear);
 
 TSMgmtError send_register_all_callbacks(int fd, CallbackTable * cb_table);
 TSMgmtError send_unregister_all_callbacks(int fd, CallbackTable * cb_table);
 
-TSMgmtError send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg);
-
 /*****************************************************************************
  * Un-marshalling (parse responses)
  *****************************************************************************/
-TSMgmtError parse_reply(int fd);
-TSMgmtError parse_reply_list(int fd, char **list);
+TSMgmtError parse_generic_response(OpType optype, int fd);
 
-TSMgmtError parse_file_read_reply(int fd, int *version, int *size, char **text);
-
-TSMgmtError parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_name);
-TSMgmtError parse_record_set_reply(int fd, TSActionNeedT * action_need);
-
-TSMgmtError parse_proxy_state_get_reply(int fd, TSProxyStateT * state);
-
-TSMgmtError parse_event_active_reply(int fd, bool * is_active);
-TSMgmtError parse_event_notification(int fd, TSMgmtEvent * event);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#endif
+#endif /* _NETWORK_UTILS_REMOTE_H_ */

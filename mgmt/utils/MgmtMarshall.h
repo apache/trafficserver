@@ -26,6 +26,8 @@
 
 #include <stdarg.h>
 
+#define MAX_TIME_WAIT 60 // num secs for a timeout on a select call (remote only)
+
 // Simple message marshalling.
 //
 // MGMT_MARSHALL_INT

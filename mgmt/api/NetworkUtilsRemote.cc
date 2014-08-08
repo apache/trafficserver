@@ -21,17 +21,6 @@
   limitations under the License.
  */
 
-/*****************************************************************************
- * Filename: NetworkUtilsRemote.cc
- * Purpose: This file contains functions used by remote api client to
- *          marshal requests to TM and unmarshal replies from TM.
- *          Also stores the information about the client's current
- *          socket connection to Traffic Manager
- * Created: 8/9/00
- *
- *
- ***************************************************************************/
-
 #include "ink_config.h"
 #include "ink_defs.h"
 #include "ink_sock.h"
@@ -41,10 +30,10 @@
 #include "NetworkUtilsRemote.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
-#include "EventRegistration.h"
 #include "MgmtSocket.h"
+#include "MgmtMarshall.h"
 
-extern CallbackTable *remote_event_callbacks;
+CallbackTable *remote_event_callbacks;
 
 int main_socket_fd = -1;
 int event_socket_fd = -1;
@@ -53,11 +42,7 @@ int event_socket_fd = -1;
 char *main_socket_path = NULL;  // "<path>/mgmtapisocket"
 char *event_socket_path = NULL; // "<path>/eventapisocket"
 
-// From CoreAPIRemote.cc
-extern ink_thread ts_test_thread;
-extern ink_thread ts_event_thread;
-extern TSInitOptionT ts_init_options;
-
+static void * event_callback_thread(void * arg);
 
 /**********************************************************************
  * Socket Helper Functions
@@ -87,44 +72,22 @@ set_socket_paths(const char *path)
  *
  * purpose: performs socket write to check status of other end of connection
  * input: None
- * output: return   0 if other end of connection closed;
- *         return < 0 if socket write failed due to some other error
- *         return > 0 if socket write successful
- * notes: send the test msg: UNDEFINED_OP 0(=msg_len)
+ * output: return false if socket write failed due to some other error
+ *         return true if socket write successful
+ * notes: send the API_PING test msg
  **********************************************************************/
-int
+static bool
 socket_test(int fd)
 {
-  char msg[6];                  /* 6 = SIZE_OP + SIZE_LEN */
-  int16_t op;
-  int32_t msg_len = 0;
-  int ret, amount_read = 0;
+  MgmtMarshallInt optype = API_PING;
+  MgmtMarshallInt now = time(NULL);
 
-  // write the op
-  op = (int16_t) UNDEFINED_OP;
-  memcpy(msg, (void *) &op, SIZE_OP_T);
-
-  // write msg-len = 0
-  memcpy(msg + SIZE_OP_T, &msg_len, SIZE_LEN);
-
-  while (amount_read < 6) {
-    ret = write(fd, msg + amount_read, 6 - amount_read);
-    if (ret < 0) {
-      if (errno == EAGAIN)
-        continue;
-
-      if (errno == EPIPE || errno == ENOTCONN) {        // other socket end is closed
-        return 0;
-      }
-
-      return -1;
-    }
-    amount_read += ret;
+  if (MGMTAPI_SEND_MESSAGE(fd, API_PING, &optype, &now) == TS_ERR_OKAY) {
+    return true; // write was successful; connection still open
   }
 
-  return 1;                     // write was successful; connection still open
+  return false;
 }
-
 
 /***************************************************************************
  * connect
@@ -267,7 +230,7 @@ reconnect()
 
   // relaunch a new event thread since socket_fd changed
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
-    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd, 0, DEFAULT_STACK_SIZE);
+    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd);
     // reregister the callbacks on the TM side for this new client connection
     if (remote_event_callbacks) {
       err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
@@ -335,11 +298,10 @@ reconnect_loop(int num_attempts)
  * which is not open; which will by default terminate the process;
  * client needs to "ignore" the SIGPIPE signal
  **************************************************************************/
-TSMgmtError
-connect_and_send(const char *msg, int msg_len)
+static TSMgmtError
+main_socket_reconnect()
 {
   TSMgmtError err;
-  int total_wrote = 0, ret;
 
   // connects to TM and does all necessary event updates required
   err = reconnect();
@@ -350,115 +312,68 @@ connect_and_send(const char *msg, int msg_len)
   if (mgmt_write_timeout(main_socket_fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
-  // connection successfully established; resend msg
-  // socket_fd should be new fd
-  while (total_wrote < msg_len) {
-    ret = write(main_socket_fd, msg + total_wrote, msg_len - total_wrote);
-
-    if (ret == 0) {
-      return TS_ERR_NET_EOF;
-    }
-
-    if (ret < 0) {
-      if (errno == EAGAIN)
-        continue;
-      else if (errno == EPIPE || errno == ENOTCONN) {
-        // clean-up sockets
-        close(main_socket_fd);
-        close(event_socket_fd);
-        main_socket_fd = -1;
-        event_socket_fd = -1;
-
-        return TS_ERR_NET_ESTABLISH;   // can't establish connection
-
-      } else
-        return TS_ERR_NET_WRITE;       // general socket writing error
-
-    }
-
-    total_wrote += ret;
-  }
 
   return TS_ERR_OKAY;
 }
 
 static TSMgmtError
-socket_read_conn(int fd, uint8_t * buf, size_t needed)
+socket_write_conn(int fd, const void * msg_buf, size_t bytes)
 {
-  size_t consumed = 0;
-  ssize_t ret;
-
-  while (needed > consumed) {
-    ret = read(fd, buf, needed - consumed);
-
-    if (ret < 0) {
-      if (errno == EAGAIN) {
-        continue;
-      } else {
-        return TS_ERR_NET_READ;
-      }
-    }
-
-    if (ret == 0) {
-      return TS_ERR_NET_EOF;
-    }
-
-    buf += ret;
-    consumed += ret;
-  }
-
-  return TS_ERR_OKAY;
-}
-
-/**************************************************************************
- * socket_write_conn
- *
- * purpose: guarantees writing of n bytes; if connection error, tries
- *          reconnecting to TM again (in case TM was restarted)
- * input:   fd to write to, buffer to write from & number of bytes to write
- * output:  TS_ERR_xx
- * note:   EPIPE - this happens if client makes a call after stopping then
- *         starting TM again.
- *         ENOTCONN - this happens if the client tries to make a call after
- *         stopping TM, but before starting it; then restarts TM and makes a
- *          new call
- * In the send_xx_request function, use a special socket writing function
- * which calls connect_and_send() instead of just the basic connect():
- * 1) if the write returns EPIPE error, then call connect_and_send()
- * 2) return the value returned from EPIPE
- *************************************************************************/
-static TSMgmtError
-socket_write_conn(int fd, const char *msg_buf, int bytes)
-{
-  int ret, byte_wrote = 0;
+  size_t byte_wrote = 0;
 
   // makes sure the descriptor is writable
   if (mgmt_write_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
     return TS_ERR_NET_TIMEOUT;
   }
+
   // write until we fulfill the number
   while (byte_wrote < bytes) {
-    ret = write(fd, msg_buf + byte_wrote, bytes - byte_wrote);
+    ssize_t ret = write(fd, (const char *)msg_buf + byte_wrote, bytes - byte_wrote);
 
     if (ret == 0) {
       return TS_ERR_NET_EOF;
     }
 
     if (ret < 0) {
-      if (errno == EAGAIN)
+      if (mgmt_transient_error()) {
         continue;
-
-      else if (errno == EPIPE || errno == ENOTCONN) {   // other socket end is closed
-        // clean-up of sockets is done in reconnect()
-        return connect_and_send(msg_buf, bytes);
-      } else
+      } else {
         return TS_ERR_NET_WRITE;
+      }
     }
+
     // we are all good here
     byte_wrote += ret;
   }
 
   return TS_ERR_OKAY;
+}
+
+TSMgmtError
+mgmtapi_sender::send(void * msg, size_t msglen) const
+{
+  const unsigned tries = 5;
+  TSMgmtError err;
+
+  for (unsigned i = 0; i < tries; ++i) {
+    err = socket_write_conn(this->fd, msg, msglen);
+    if (err == TS_ERR_OKAY) {
+      return err;
+    }
+
+    // clean-up sockets
+    close(main_socket_fd);
+    close(event_socket_fd);
+    main_socket_fd = -1;
+    event_socket_fd = -1;
+
+    err = main_socket_reconnect();
+    if (err != TS_ERR_OKAY) {
+      return err;
+    }
+  }
+
+  return TS_ERR_NET_ESTABLISH;   // can't establish connection
 }
 
 /**********************************************************************
@@ -488,7 +403,7 @@ socket_test_thread(void *)
 {
   // loop until client process dies
   while (1) {
-    if (main_socket_fd == -1 || socket_test(main_socket_fd) <= 0) {
+    if (main_socket_fd == -1 || !socket_test(main_socket_fd)) {
       // ASSUMES that in between the time the socket_test is made
       // and this reconnect call is made, the main_socket_fd remains
       // the same (eg. no one else called reconnect to TM successfully!!
@@ -512,387 +427,6 @@ socket_test_thread(void *)
 /**********************************************************************
  * MARSHALL REQUESTS
  **********************************************************************/
-/**********************************************************************
- * send_request
- *
- * purpose: sends file read request to Traffic Manager
- * input:   fd - file descriptor to use to send to
- *          op - the type of OpType request sending
- * output:  TS_ERR_xx
- * notes:  used by operations which don't need to send any additional
- *         parameters
- * format: <OpType> <msg_len=0>
- **********************************************************************/
-TSMgmtError
-send_request(int fd, OpType op)
-{
-  int16_t op_t;
-  int32_t msg_len;
-  char msg_buf[SIZE_OP_T + SIZE_LEN];
-  TSMgmtError err;
-
-  // fill in op type
-  op_t = (int16_t) op;
-  memcpy(msg_buf, &op_t, SIZE_OP_T);
-
-  // fill in msg_len == 0
-  msg_len = 0;
-  memcpy(msg_buf + SIZE_OP_T, &msg_len, SIZE_LEN);
-
-  // send message
-  err = socket_write_conn(fd, msg_buf, SIZE_OP_T + SIZE_LEN);
-  return err;
-}
-
-/**********************************************************************
- * send_request_name (helper fn)
- *
- * purpose: sends generic  request with one string argument name
- * input: fd - file descriptor to use
- *        op - .
- * output: TS_ERR_xx
- * note: format: <OpType> <str_len> <string>
- **********************************************************************/
-TSMgmtError
-send_request_name(int fd, OpType op, const char *name)
-{
-  char *msg_buf;
-  int16_t op_t;
-  int32_t msg_len;
-  int total_len;
-  TSMgmtError err;
-
-  if (name == NULL) {           //reg callback for all events when op==EVENT_REG_CALLBACK
-    msg_len = 0;
-  } else {
-    msg_len = (int32_t) strlen(name);
-  }
-
-  total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
-
-  // fill in op type
-  op_t = (int16_t) op;
-  memcpy(msg_buf, (void *) &op_t, SIZE_OP_T);
-
-  // fill in msg_len
-  memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
-
-  // fill in name (if NOT NULL)
-  if (name)
-    memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, name, msg_len);
-
-
-  // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  ats_free(msg_buf);
-  return err;
-}
-
-/**********************************************************************
- * send_request_name_value (helper fn)
- *
- * purpose: sends generic request with 2 str arguments; a name-value pair
- * input: fd - file descriptor to use
- *        op - Op type
- * output: TS_ERR_xx
- * note: format: <OpType> <name-len> <val-len> <name> <val>
- **********************************************************************/
-TSMgmtError
-send_request_name_value(int fd, OpType op, const char *name, const char *value)
-{
-  char *msg_buf;
-  int msg_pos = 0, total_len;
-  int32_t msg_len, name_len, val_size;    // these are written to msg
-  int16_t op_t;
-  TSMgmtError err;
-
-  if (!name || !value)
-    return TS_ERR_PARAMS;
-
-  // set the sizes
-  name_len = strlen(name);
-  val_size = strlen(value);
-  msg_len = (SIZE_LEN * 2) + name_len + val_size;
-  total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *)ats_malloc(sizeof(char) * (total_len));
-
-  // fill in op type
-  op_t = (int16_t) op;
-  memcpy(msg_buf + msg_pos, (void *) &op_t, SIZE_OP_T);
-  msg_pos += SIZE_OP_T;
-
-  // fill in msg length
-  memcpy(msg_buf + msg_pos, (void *) &msg_len, SIZE_LEN);
-  msg_pos += SIZE_LEN;
-
-  // fill in record name length
-  memcpy(msg_buf + msg_pos, (void *) &name_len, SIZE_LEN);
-  msg_pos += SIZE_LEN;
-
-  // fill in record value length
-  memcpy(msg_buf + msg_pos, (void *) &val_size, SIZE_LEN);
-  msg_pos += SIZE_LEN;
-
-  // fill in record name
-  memcpy(msg_buf + msg_pos, name, name_len);
-  msg_pos += name_len;
-
-  // fill in record value
-  memcpy(msg_buf + msg_pos, value, val_size);
-
-  // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  ats_free(msg_buf);
-  return err;
-}
-
-/**********************************************************************
- * send_request_bool (helper)
- *
- * purpose: sends a simple op with a boolean flag argument
- * input: fd      - file descriptor to use
- *        flag    - boolean flag
- * output: TS_ERR_xx
- **********************************************************************/
-TSMgmtError
-send_request_bool(int fd, OpType op, bool flag)
-{
-  char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_BOOL];
-  int16_t flag_t;
-  int32_t msg_len;
-
-  // Fill in the operator
-  memcpy(msg_buf, (void *) &op, SIZE_OP_T);
-
-  // fill in msg_len = SIZE_BOOL
-  msg_len = (int32_t) SIZE_BOOL;
-  memcpy(msg_buf + SIZE_OP_T, (void *)&msg_len, SIZE_LEN);
-
-  // Fill in the argument (the boolean flag)
-  flag_t = flag ? 1 : 0;
-  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &flag_t, SIZE_BOOL);
-
-  // send message
-  return socket_write_conn(fd, msg_buf, SIZE_OP_T + SIZE_LEN + SIZE_BOOL);
-}
-
-/**********************************************************************
- * send_file_read_request
- *
- * purpose: sends file read request to Traffic Manager
- * input:   fd - file descriptor to use to send to
- *          file - file to read
- * output:  TS_ERR_xx
- * notes:   first must create the message and then send it across network
- *          msg format = <OpType> <msg_len> <TSFileNameT>
- **********************************************************************/
-TSMgmtError
-send_file_read_request(int fd, TSFileNameT file)
-{
-  char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_FILE_T];
-  int msg_pos = 0;
-  int32_t msg_len = (int32_t) SIZE_FILE_T;  //marshalled values
-  int16_t op, file_t;
-
-  // fill in op type
-  op = (int16_t) FILE_READ;
-  memcpy(msg_buf + msg_pos, &op, SIZE_OP_T);
-  msg_pos += SIZE_OP_T;
-
-  // fill in msg length
-  memcpy(msg_buf + msg_pos, &msg_len, SIZE_LEN);
-  msg_pos += SIZE_LEN;
-
-  // fill in file type
-  file_t = (int16_t) file;
-  memcpy(msg_buf + msg_pos, &file_t, SIZE_FILE_T);
-
-  // send message
-  return socket_write_conn(fd, msg_buf, SIZE_OP_T + SIZE_LEN + SIZE_FILE_T);
-}
-
-/**********************************************************************
- * send_file_write_request
- *
- * purpose: sends file write request to Traffic Manager
- * input: fd - file descriptor to use
- *        file - file to read
- *        text - new text to write to specified file
- *        size - length of the text
- *        ver  - version of the file to be written
- * output: TS_ERR_xx
- * notes: format - FILE_WRITE <msg_len> <file_type> <file_ver> <file_size> <text>
- **********************************************************************/
-TSMgmtError
-send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text)
-{
-  char *msg_buf;
-  int msg_pos = 0, total_len;
-  int32_t msg_len, f_size;        //marshalled values
-  int16_t op, file_t, f_ver;
-  TSMgmtError err;
-
-  if (!text)
-    return TS_ERR_PARAMS;
-
-  msg_len = SIZE_FILE_T + SIZE_VER + SIZE_LEN + size;
-  total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
-
-  // fill in op type
-  op = (int16_t) FILE_WRITE;
-  memcpy(msg_buf + msg_pos, &op, SIZE_OP_T);
-  msg_pos += SIZE_OP_T;
-
-  // fill in msg length
-  memcpy(msg_buf + msg_pos, &msg_len, SIZE_LEN);
-  msg_pos += SIZE_LEN;
-
-  // fill in file type
-  file_t = (int16_t) file;
-  memcpy(msg_buf + msg_pos, &file_t, SIZE_FILE_T);
-  msg_pos += SIZE_FILE_T;
-
-  // fill in file version
-  f_ver = (int16_t) ver;
-  memcpy(msg_buf + msg_pos, &f_ver, SIZE_VER);
-  msg_pos += SIZE_VER;
-
-  // fill in file size
-  f_size = (int32_t) size;        //typecase to be safe
-  memcpy(msg_buf + msg_pos, &f_size, SIZE_LEN);
-  msg_pos += SIZE_LEN;
-
-  // fill in text of file
-  memcpy(msg_buf + msg_pos, text, size);
-
-  // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  ats_free(msg_buf);
-  return err;
-}
-
-static TSMgmtError
-send_record_get_x_request(OpType optype, int fd, const char *rec_name)
-{
-  char *msg_buf;
-  int msg_pos = 0, total_len;
-  int16_t op = (int16_t)optype;
-  int32_t msg_len;
-  TSMgmtError err;
-
-  ink_assert(op == RECORD_GET || op == RECORD_MATCH_GET);
-
-  if (!rec_name) {
-    return TS_ERR_PARAMS;
-  }
-
-  total_len = SIZE_OP_T + SIZE_LEN + strlen(rec_name);
-  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
-
-  // fill in op type
-  memcpy(msg_buf + msg_pos, (void *) &op, SIZE_OP_T);
-  msg_pos += SIZE_OP_T;
-
-  // fill in msg length
-  msg_len = (int32_t) strlen(rec_name);
-  memcpy(msg_buf + msg_pos, (void *) &msg_len, SIZE_LEN);
-  msg_pos += SIZE_LEN;
-
-  // fill in record name
-  memcpy(msg_buf + msg_pos, rec_name, strlen(rec_name));
-
-  // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  ats_free(msg_buf);
-  return err;
-}
-
-/**********************************************************************
- * send_record_get_request
- *
- * purpose: sends request to get record value from Traffic Manager
- * input: fd       - file descriptor to use
- *        rec_name - name of record to retrieve value for
- * output: TS_ERR_xx
- * format: RECORD_GET <msg_len> <rec_name>
- **********************************************************************/
-TSMgmtError
-send_record_get_request(int fd, const char *rec_name)
-{
-  return send_record_get_x_request(RECORD_GET, fd, rec_name);
-}
-
-/**********************************************************************
- * send_record_match_request
- *
- * purpose: sends request to get a list of matching record values from Traffic Manager
- * input: fd       - file descriptor to use
- *        rec_name - regex to match against record names
- * output: TS_ERR_xx
- * format: sequence of RECORD_GET <msg_len> <rec_name>
- **********************************************************************/
-TSMgmtError
-send_record_match_request(int fd, const char *rec_regex)
-{
-  return send_record_get_x_request(RECORD_MATCH_GET, fd, rec_regex);
-}
-
-/*------ control functions -------------------------------------------*/
-/**********************************************************************
- * send_proxy_state_get_request
- *
- * purpose: sends request to get the proxy state (on/off)
- * input: fd       - file descriptor to use
- * output: TS_ERR_xx
- * note: format: PROXY_STATE_GET 0(=msg_len)
- **********************************************************************/
-TSMgmtError
-send_proxy_state_get_request(int fd)
-{
-  TSMgmtError err;
-
-  err = send_request(fd, PROXY_STATE_GET);
-  return err;
-}
-
-/**********************************************************************
- * send_proxy_state_set_request
- *
- * purpose: sends request to set the proxy state (on/off)
- * input: fd    - file descriptor to use
- *        state - TS_PROXY_ON, TS_PROXY_OFF
- * output: TS_ERR_xx
- * note: format: PROXY_STATE_SET  <msg_len> <TSProxyStateT> <TSCacheClearT>
- **********************************************************************/
-TSMgmtError
-send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear)
-{
-  char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T];
-  int16_t op, state_t, cache_t;
-  int32_t msg_len;
-
-  // fill in op type
-  op = (int16_t) PROXY_STATE_SET;
-  memcpy(msg_buf, (void *) &op, SIZE_OP_T);
-
-  // fill in msg_len
-  msg_len = (int32_t) (SIZE_PROXY_T + SIZE_TS_ARG_T);
-  memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
-
-  // fill in proxy state
-  state_t = (int16_t) state;
-  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &state_t, SIZE_PROXY_T);
-
-  // fill in cache clearing option
-  cache_t = (int16_t) clear;
-  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T, (void *) &cache_t, SIZE_TS_ARG_T);
-
-  // send message
-  return socket_write_conn(fd, msg_buf, SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T);
-}
-
 
 /*------ events -------------------------------------------------------*/
 
@@ -904,11 +438,8 @@ send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear)
  *          registered for each event
  * input: None
  * output: return TS_ERR_OKAY only if ALL events sent okay
- * notes: could create a function which just sends a list of all the events to
- * reregister; but actually just reuse the function
- * send_request_name(EVENT_REG_CALLBACK) and call it for each event
  * 1) get list of all events with callbacks
- * 2) for each event, call send_request_name
+ * 2) for each event, send a EVENT_REG_CALLBACK message
  **********************************************************************/
 TSMgmtError
 send_register_all_callbacks(int fd, CallbackTable * cb_table)
@@ -920,19 +451,22 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
   events_with_cb = get_events_with_callbacks(cb_table);
   // need to check that the list has all the events registered
   if (!events_with_cb) {        // all events have registered callback
-    err = send_request_name(fd, EVENT_REG_CALLBACK, NULL);
+    MgmtMarshallInt optype = EVENT_REG_CALLBACK;
+    MgmtMarshallString event_name = NULL;
+
+    err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
     if (err != TS_ERR_OKAY)
       return err;
   } else {
-    char *event_name;
-    int event_id;
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and send request for each event
     for (int i = 0; i < num_events; i++) {
-      event_id = *(int *) dequeue(events_with_cb);
-      event_name = (char *) get_event_name(event_id);
+      MgmtMarshallInt optype = EVENT_REG_CALLBACK;
+      MgmtMarshallInt event_id = *(int *) dequeue(events_with_cb);
+      MgmtMarshallString event_name = (char *) get_event_name(event_id);
+
       if (event_name) {
-        err = send_request_name(fd, EVENT_REG_CALLBACK, event_name);
+        err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
         ats_free(event_name);      // free memory
         if (err != TS_ERR_OKAY) {
           send_err = err;       // save the type of send error
@@ -960,14 +494,10 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
  *          callbacks registered for that event
  * input: None
  * output: TS_ERR_OKAY only if all send requests are okay
- * notes: could create a function which just sends a list of all the events to
- * unregister; but actually just reuse the function
- * send_request_name(EVENT_UNREG_CALLBACK) and call it for each event
  **********************************************************************/
 TSMgmtError
 send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
 {
-  char *event_name;
   int event_id;
   LLQ *events_with_cb;          // list of events with at least one callback
   int reg_callback[NUM_EVENTS];
@@ -995,8 +525,10 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
   // send message to TM to mark unregister
   for (int k = 0; k < NUM_EVENTS; k++) {
     if (reg_callback[k] == 0) { // event has no registered callbacks
-      event_name = get_event_name(k);
-      err = send_request_name(fd, EVENT_UNREG_CALLBACK, event_name);
+      MgmtMarshallInt optype = EVENT_UNREG_CALLBACK;
+      MgmtMarshallString event_name = get_event_name(k);
+
+      err = MGMTAPI_SEND_MESSAGE(fd, EVENT_UNREG_CALLBACK, &optype, &event_name);
       ats_free(event_name);
       if (err != TS_ERR_OKAY) {
         send_err = err;         //save the type of the sending error
@@ -1015,545 +547,165 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
 }
 
 /**********************************************************************
- * send_diags_msg
- *
- * purpose: sends the diag msg across along with they diag msg type
- * input: mode - type of diags msg
- *        msg  - the diags msg
- * output: TS_ERR_xx
- * note: format: <OpType> <msg_len> <TSDiagsT> <diag_msg_len> <diag_msg>
- **********************************************************************/
-TSMgmtError
-send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg)
-{
-  char *msg_buf;
-  int16_t op_t, diag_t;
-  int32_t msg_len, diag_msg_len;
-  int total_len;
-  TSMgmtError err;
-
-  if (!diag_msg)
-    return TS_ERR_PARAMS;
-
-  diag_msg_len = (int32_t) strlen(diag_msg);
-  msg_len = SIZE_DIAGS_T + SIZE_LEN + diag_msg_len;
-  total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
-
-  // fill in op type
-  op_t = (int16_t) DIAGS;
-  memcpy(msg_buf, (void *) &op_t, SIZE_OP_T);
-
-  // fill in entire msg len
-  memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
-
-  // fill in TSDiagsT
-  diag_t = (int16_t) mode;
-  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &diag_t, SIZE_DIAGS_T);
-
-  // fill in diags msg_len
-  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_DIAGS_T, (void *) &diag_msg_len, SIZE_LEN);
-
-  // fill in diags msg
-  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_DIAGS_T + SIZE_LEN, diag_msg, diag_msg_len);
-
-  // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  ats_free(msg_buf);
-  return err;
-}
-
-
-/**********************************************************************
  * UNMARSHAL REPLIES
  **********************************************************************/
 
-/* Error handling implementation:
- * All the parsing functions which parse the reply returned from local side
- * also must read the TSERror return value sent from local side; this return
- * value is the same value that will be returned by the parsing function.
- * ALL PARSING FUNCTIONS MUST FIRST CHECK that the retval is TS_ERR_OKAY;
- * if it is not, then DON"T PARSE THE REST OF THE REPLY!!
- */
-
-/* Reading replies:
- * The reading is done in while loop in the parse_xx_reply functions;
- * need to add a timeout so that the function is not left looping and
- * waiting if a msg isn't sent to the socket from local side (eg. TM died)
- */
-
-/**********************************************************************
- * parse_reply
- *
- * purpose: parses a reply from traffic manager. return that error
- * input: fd
- * output: errors on error or fill up class with response &
- *         return TS_ERR_xx
- * notes: only returns an TSMgmtError
- **********************************************************************/
 TSMgmtError
-parse_reply(int fd)
+parse_generic_response(OpType optype, int fd)
 {
-  TSMgmtError ret;
-  int16_t ret_val;
+  TSMgmtError err;
+  MgmtMarshallInt ival;
+  MgmtMarshallData data = { NULL, 0 };
 
-  // check to see if anything to read; wait for specified time = 1 sec
-  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
-    return TS_ERR_NET_TIMEOUT;
+  err = recv_mgmt_message(fd, data);
+  if (err != TS_ERR_OKAY) {
+    return err;
   }
 
-  ret = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
-  if (ret != TS_ERR_OKAY) {
-    return ret;
+  err = recv_mgmt_response(data.ptr, data.len, optype, &ival);
+  ats_free(data.ptr);
+
+  if (err != TS_ERR_OKAY) {
+    return err;
   }
 
-  return (TSMgmtError) ret_val;
+  return (TSMgmtError)ival;
 }
 
 /**********************************************************************
- * parse_reply_list
+ * event_poll_thread_main
  *
- * purpose: parses a TM reply to a request to get a list of string tokens
- * input: fd - socket to read
- *        list - will contain delimited string list of tokens
- * output: TS_ERR_xx
- * notes:
- * format: <TSMgmtError> <string_list_len> <delimited_string_list>
+ * purpose: thread listens on the client's event socket connection;
+ *          only reads from the event_socket connection and
+ *          processes EVENT_NOTIFY messages; each time client
+ *          makes new event-socket connection to TM, must launch
+ *          a new event_poll_thread_main thread
+ * input:   arg - contains the socket_fd to listen on
+ * output:  NULL - if error
+ * notes:   each time the client's socket connection to TM is reset
+ *          a new thread will be launched as old one dies; there are
+ *          only two places where a new thread is created:
+ *          1) when client first connects (TSInit call)
+ *          2) client reconnects() due to a TM restart
+ * Uses blocking socket; so blocks until receives an event notification.
+ * Shouldn't need to use select since only waiting for a notification
+ * message from event_callback_main thread!
  **********************************************************************/
-TSMgmtError
-parse_reply_list(int fd, char **list)
+void *
+event_poll_thread_main(void *arg)
 {
-  int16_t ret_val;
-  int32_t list_size;
-  TSMgmtError err_t;
+  int sock_fd;
 
-  if (!list) {
-    return TS_ERR_PARAMS;
-  }
+  sock_fd = *((int *) arg);     // should be same as event_socket_fd
 
-  // check to see if anything to read; wait for specified time
-  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
-    return TS_ERR_NET_TIMEOUT;
-  }
+  // the sock_fd is going to be the one we listen for events on
+  while (1) {
+    TSMgmtError ret;
+    TSMgmtEvent * event = NULL;
 
-  // get the return value (TSMgmtError type)
-  err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
+    MgmtMarshallData reply = { NULL, 0 };
+    MgmtMarshallInt optype;
+    MgmtMarshallString name = NULL;
+    MgmtMarshallString desc = NULL;
 
-  // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSMgmtError) ret_val;
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // now get size of string event list
-  err_t = socket_read_conn(fd, (uint8_t *)&list_size, SIZE_LEN);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // get the delimited event list string
-  *list = (char *)ats_malloc(sizeof(char) * (list_size + 1));
-  err_t = socket_read_conn(fd, (uint8_t *)(*list), list_size);
-  if (err_t != TS_ERR_OKAY) {
-    ats_free(*list);
-    *list = NULL;
-    return err_t;
-  }
-
-  // add end of string to end of the record value
-  ((char *) (*list))[list_size] = '\0';
-  return err_t;
-}
-
-
-/**********************************************************************
- * parse_file_read_reply
- *
- * purpose: parses a file read reply from traffic manager.
- * input: fd
- *        ver -
- *        size - size of text
- *        text -
- * output: errors on error or fill up class with response &
- *         return TS_ERR_xx
- * notes: reply format = <TSMgmtError> <file_version> <file_size> <text>
- **********************************************************************/
-TSMgmtError
-parse_file_read_reply(int fd, int *ver, int *size, char **text)
-{
-  int32_t f_size;
-  int16_t ret_val, f_ver;
-  TSMgmtError err_t;
-
-  if (!ver || !size || !text)
-    return TS_ERR_PARAMS;
-
-  // check to see if anything to read; wait for specified time
-  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
-    return TS_ERR_NET_TIMEOUT;
-  }
-
-  // get the error return value
-  err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSMgmtError) ret_val;
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // now get file version
-  err_t = socket_read_conn(fd, (uint8_t *)&f_ver, SIZE_VER);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  *ver = (int) f_ver;
-
-  // now get file size
-  err_t = socket_read_conn(fd, (uint8_t *)&f_size, SIZE_LEN);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  *size = (int) f_size;
-
-  // check size before reading text
-  if ((*size) <= 0) {
-    *text = ats_strndup("", 1);                 // set to empty string
-    return TS_ERR_OKAY;
-  }
-
-  // now we got the size, we can read everything into our msg * then parse it
-  *text = (char *)ats_malloc(sizeof(char) * (f_size + 1));
-  err_t = socket_read_conn(fd, (uint8_t *)(*text), f_size);
-  if (err_t != TS_ERR_OKAY) {
-    ats_free(*text);
-    *text = NULL;
-    return err_t;
-  }
-
-  (*text)[f_size] = '\0';     // end the string
-  return TS_ERR_OKAY;
-}
-
-/**********************************************************************
- * parse_record_get_reply
- *
- * purpose: parses a record_get reply from traffic manager.
- * input: fd
- *        retval   -
- *        rec_type - the type of the record
- *        rec_value - the value of the record in string format
- * output: errors on error or fill up class with response &
- *         return SUCC
- * notes: reply format = <TSMgmtError> <val_size> <name_size> <rec_type> <record_value> <record_name>
- * Zero-length values and names are supported. If the size field is 0, the corresponding
- * value field is not transmitted.
- * It's the responsibility of the calling function to conver the rec_value
- * based on the rec_type!!
- **********************************************************************/
-TSMgmtError
-parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val, char **rec_name)
-{
-  int16_t ret_val, rec_t;
-  int32_t val_size, name_size;
-  TSMgmtError err_t;
-
-  if (!rec_type || !rec_val) {
-    return TS_ERR_PARAMS;
-  }
-
-  *rec_name = NULL;
-  *rec_val = NULL;
-
-  // check to see if anything to read; wait for specified time
-  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { //time expired before ready to read
-    return TS_ERR_NET_TIMEOUT;
-  }
-
-  // get the return value (TSMgmtError type)
-  err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSMgmtError) ret_val;
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  // now get size of record_value
-  err_t = socket_read_conn(fd, (uint8_t *)&val_size, SIZE_LEN);
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  // now get size of record name
-  err_t = socket_read_conn(fd, (uint8_t *)&name_size, SIZE_LEN);
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  // get the record type
-  err_t = socket_read_conn(fd, (uint8_t *)&rec_t, SIZE_REC_T);
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  *rec_type = (TSRecordT) rec_t;
-
-  // get record value (if there is one)
-  if (val_size) {
-    if (*rec_type == TS_REC_STRING) {
-      *rec_val = ats_malloc(sizeof(char) * (val_size + 1));
-    } else {
-      *rec_val = ats_malloc(sizeof(char) * (val_size));
+    // possible sock_fd is invalid if TM restarts and client reconnects
+    if (sock_fd < 0) {
+      break;
     }
 
-    err_t = socket_read_conn(fd, (uint8_t *)(*rec_val), val_size);
-    if (err_t != TS_ERR_OKAY) {
-      goto fail;
+    // Just wait until we get an event or error. The 0 return from select(2)
+    // means we timed out ...
+    if (mgmt_read_timeout(main_socket_fd, MAX_TIME_WAIT, 0) == 0) {
+      continue;
     }
 
-    // add end of string to end of the record value
-    if (*rec_type == TS_REC_STRING) {
-      ((char *) (*rec_val))[val_size] = '\0';
-    }
-  }
-
-  // get the record name (if there is one)
-  if (name_size) {
-    *rec_name = (char *)ats_malloc(sizeof(char) * (name_size + 1));
-    err_t = socket_read_conn(fd, (uint8_t *)(*rec_name), name_size);
-    if (err_t != TS_ERR_OKAY) {
-      goto fail;
+    ret = recv_mgmt_message(main_socket_fd, reply);
+    if (ret != TS_ERR_OKAY) {
+      break;
     }
 
-    (*rec_name)[name_size] = '\0';
+    ret = recv_mgmt_request(reply.ptr, reply.len, EVENT_NOTIFY, &optype, &name, &desc);
+    ats_free(reply.ptr);
+
+    if (ret != TS_ERR_OKAY) {
+      ats_free(name);
+      ats_free(desc);
+      break;
+    }
+
+    ink_assert(optype == EVENT_NOTIFY);
+
+    // The new event takes ownership of the message strings.
+    event = TSEventCreate();
+    event->name = name;
+    event->id = get_event_id(name);
+    event->description = desc;
+
+    // got event notice; spawn new thread to handle the event's callback functions
+    ink_thread_create(event_callback_thread, (void *)event);
   }
 
-  return TS_ERR_OKAY;
-
-fail:
-  ats_free(*rec_val);
-  ats_free(*rec_name);
-  *rec_val = NULL;
-  *rec_name = NULL;
-  return err_t;
+  ink_thread_exit(NULL);
+  return NULL;
 }
 
 /**********************************************************************
- * parse_record_set_reply
+ * event_callback_thread
  *
- * purpose: parses a record_set reply from traffic manager.
- * input: fd
- *        action_need - will contain the type of action needed from the set
- * output: TS_ERR_xx
- * notes: reply format = <TSMgmtError> <val_size> <rec_type> <record_value>
- * It's the responsibility of the calling function to conver the rec_value
- * based on the rec_type!!
+ * purpose: Given an event, determines and calls the registered cb functions
+ *          in the CallbackTable for remote events
+ * input: arg - should be an TSMgmtEvent with the event info sent from TM msg
+ * output: returns when done calling all the callbacks
+ * notes: None
  **********************************************************************/
-TSMgmtError
-parse_record_set_reply(int fd, TSActionNeedT * action_need)
+static void *
+event_callback_thread(void *arg)
 {
-  int16_t ret_val, action_t;
-  TSMgmtError err_t;
+  TSMgmtEvent *event_notice;
+  EventCallbackT *event_cb;
+  int index;
 
-  if (!action_need)
-    return TS_ERR_PARAMS;
+  event_notice = (TSMgmtEvent *) arg;
+  index = (int) event_notice->id;
+  LLQ *func_q;                  // list of callback functions need to call
 
-  // check to see if anything to read; wait for specified time
-  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
-    return TS_ERR_NET_TIMEOUT;
+  func_q = create_queue();
+  if (!func_q) {
+    if (event_notice)
+      TSEventDestroy(event_notice);
+    return NULL;
   }
 
-  // get the return value (TSMgmtError type)
-  err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
+  // obtain lock
+  ink_mutex_acquire(&remote_event_callbacks->event_callback_lock);
+
+  TSEventSignalFunc cb;
+
+  // check if we have functions to call
+  if (remote_event_callbacks->event_callback_l[index] && (!queue_is_empty(remote_event_callbacks->event_callback_l[index]))) {
+    int queue_depth = queue_len(remote_event_callbacks->event_callback_l[index]);
+
+    for (int i = 0; i < queue_depth; i++) {
+      event_cb = (EventCallbackT *) dequeue(remote_event_callbacks->event_callback_l[index]);
+      cb = event_cb->func;
+      enqueue(remote_event_callbacks->event_callback_l[index], event_cb);
+      enqueue(func_q, (void *) cb);     // add callback function only to list
+    }
+  }
+  // release lock
+  ink_mutex_release(&remote_event_callbacks->event_callback_lock);
+
+  // execute the callback function
+  while (!queue_is_empty(func_q)) {
+    cb = (TSEventSignalFunc) dequeue(func_q);
+    (*cb) (event_notice->name, event_notice->description, event_notice->priority, NULL);
   }
 
-  // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSMgmtError) ret_val;
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
+  // clean up event notice
+  TSEventDestroy(event_notice);
+  delete_queue(func_q);
 
-  // now get the action needed
-  err_t = socket_read_conn(fd, (uint8_t *)&action_t, SIZE_ACTION_T);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  *action_need = (TSActionNeedT) action_t;
-  return err_t;
-}
-
-
-/**********************************************************************
- * parse_proxy_state_get_reply
- *
- * purpose: parses a TM reply to a PROXY_STATE_GET request
- * input: fd
- *        state - will contain the state of the proxy
- * output: TS_ERR_xx
- * notes: function is DIFFERENT becuase it has NO TSMgmtError at head of msg
- * format: <TSProxyStateT>
- **********************************************************************/
-TSMgmtError
-parse_proxy_state_get_reply(int fd, TSProxyStateT * state)
-{
-  TSMgmtError err_t;
-  int16_t state_t;
-
-  if (!state)
-    return TS_ERR_PARAMS;
-
-  // check to see if anything to read; wait for specified time
-  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
-    return TS_ERR_NET_TIMEOUT;
-  }
-
-  // now get proxy state
-  err_t = socket_read_conn(fd, (uint8_t *)&state_t, SIZE_PROXY_T);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  *state = (TSProxyStateT) state_t;
-  return TS_ERR_OKAY;
-}
-
-/*------------- events ---------------------------------------------*/
-
-/**********************************************************************
- * parse_event_active_reply
- *
- * purpose: parses a TM reply to a request to get status of an event
- * input: fd - socket to read
- *        is_active - set to true if event is active; false otherwise
- * output: TS_ERR_xx
- * notes:
- * format: reply format = <TSMgmtError> <bool>
- **********************************************************************/
-TSMgmtError
-parse_event_active_reply(int fd, bool * is_active)
-{
-  int16_t ret_val, active;
-  TSMgmtError err_t;
-
-  if (!is_active)
-    return TS_ERR_PARAMS;
-
-  // check to see if anything to read; wait for specified time
-  if (mgmt_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
-    return TS_ERR_NET_TIMEOUT;
-  }
-
-  // get the return value (TSMgmtError type)
-  err_t = socket_read_conn(fd, (uint8_t *)&ret_val, SIZE_ERR_T);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // if !TS_ERR_OKAY, stop reading rest of msg
-  err_t = (TSMgmtError) ret_val;
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // now get the boolean
-  err_t = socket_read_conn(fd, (uint8_t *)&active, SIZE_BOOL);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  *is_active = (bool) active;
-  return err_t;
-}
-
-/**********************************************************************
- * parse_event_notification
- *
- * purpose: parses the event notification message from TM when an event
- *          is signalled; stores the event info in the TSMgmtEvent
- * input: fd - socket to read
- *        event - where the event info from msg is stored
- * output:TS_ERR_OKAY, TS_ERR_NET_READ, TS_ERR_NET_EOF, TS_ERR_PARAMS
- * notes:
- * format: <OpType> <event_name_len> <event_name> <desc_len> <desc>
- **********************************************************************/
-TSMgmtError
-parse_event_notification(int fd, TSMgmtEvent * event)
-{
-  OpType msg_type;
-  int16_t type_op;
-  int32_t msg_len;
-  char *event_name = NULL, *desc = NULL;
-  TSMgmtError err_t;
-
-  if (!event)
-    return TS_ERR_PARAMS;
-
-  // read the operation type; should be EVENT_NOTIFY
-  err_t = socket_read_conn(fd, (uint8_t *)&type_op, SIZE_OP_T);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // got the message type; the msg_type should be EVENT_NOTIFY
-  msg_type = (OpType) type_op;
-  if (msg_type != EVENT_NOTIFY) {
-    return TS_ERR_FAIL;
-  }
-
-  // read in event name length
-  err_t = socket_read_conn(fd, (uint8_t *)&msg_len, SIZE_LEN);
-  if (err_t != TS_ERR_OKAY) {
-    return err_t;
-  }
-
-  // read the event name
-  event_name = (char *)ats_malloc(sizeof(char) * (msg_len + 1));
-  err_t = socket_read_conn(fd, (uint8_t *)event_name, msg_len);
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  event_name[msg_len] = '\0';   // end the string
-
-  // read in event description length
-  err_t = socket_read_conn(fd, (uint8_t *)&msg_len, SIZE_LEN);
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  // read the event description
-  desc = (char *)ats_malloc(sizeof(char) * (msg_len + 1));
-  err_t = socket_read_conn(fd, (uint8_t *)desc, msg_len);
-  if (err_t != TS_ERR_OKAY) {
-    goto fail;
-  }
-
-  desc[msg_len] = '\0';         // end the string
-
-  // fill in event info
-  event->name = event_name;
-  event->id = (int) get_event_id(event_name);
-  event->description = desc;
-
-  return TS_ERR_OKAY;
-
-fail:
-  ats_free(event_name);
-  ats_free(desc);
-  return err_t;
+  // all done!
+  ink_thread_exit(NULL);
+  return NULL;
 }

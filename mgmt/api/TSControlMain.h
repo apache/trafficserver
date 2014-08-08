@@ -33,44 +33,14 @@
 #ifndef TS_CONTROL_MAIN_H
 #define TS_CONTROL_MAIN_H
 
-#include "WebUtils.h"           // for SocketInfo
 #include "mgmtapi.h"
-#include "NetworkUtilsDefs.h"
 
 typedef struct
 {
-  SocketInfo sock_info;
+  int fd;
   struct sockaddr *adr;
 } ClientT;
 
-ClientT *create_client();
-void delete_client(ClientT * client);
-
 void *ts_ctrl_main(void *arg);
-
-TSMgmtError handle_record_get(struct SocketInfo sock_info, char *req);
-TSMgmtError handle_record_match(struct SocketInfo sock_info, char *req);
-TSMgmtError handle_record_set(struct SocketInfo sock_info, char *req);
-
-TSMgmtError handle_file_read(struct SocketInfo sock_info, char *req);
-TSMgmtError handle_file_write(struct SocketInfo sock_info, char *req);
-
-TSMgmtError handle_proxy_state_get(struct SocketInfo sock_info);
-TSMgmtError handle_proxy_state_set(struct SocketInfo sock_info, char *req);
-TSMgmtError handle_reconfigure(struct SocketInfo sock_info);
-TSMgmtError handle_restart(struct SocketInfo sock_info, char *req, bool bounce);
-TSMgmtError handle_storage_device_cmd_offline(struct SocketInfo sock_info, char *req);
-
-TSMgmtError handle_event_resolve(struct SocketInfo sock_info, char *req);
-TSMgmtError handle_event_get_mlt(struct SocketInfo sock_info);
-TSMgmtError handle_event_active(struct SocketInfo sock_info, char *req);
-
-TSMgmtError handle_snapshot(struct SocketInfo sock_info, char *req, OpType op);
-TSMgmtError handle_snapshot_get_mlt(struct SocketInfo sock_info);
-
-TSMgmtError handle_diags(struct SocketInfo sock_info, char *req);
-
-TSMgmtError handle_stats_reset(struct SocketInfo sock_info, char *req, OpType op);
-
 
 #endif

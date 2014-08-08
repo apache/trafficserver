@@ -26,65 +26,66 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
-noinst_LIBRARIES = libmgmtapilocal.a
-libmgmtapilocal_a_SOURCES = \
-  CfgContextDefs.h \
-  CoreAPI.cc \
-  EventControlMain.cc \
-  EventControlMain.h \
-  NetworkUtilsDefs.h \
-  NetworkUtilsLocal.cc \
-  NetworkUtilsLocal.h \
-  TSControlMain.cc \
-  TSControlMain.h
+noinst_LTLIBRARIES = libmgmtapilocal.la libmgmtapi.la
+lib_LTLIBRARIES = libtsmgmt.la
 
-lib_LTLIBRARIES = libtsmgmtshare.la libtsmgmt.la
-libtsmgmtshare_la_SOURCES = \
+libmgmtapi_la_SOURCES = \
   CfgContextImpl.cc \
   CfgContextImpl.h \
   CfgContextManager.cc \
   CfgContextManager.h \
   CfgContextUtils.cc \
   CfgContextUtils.h \
+  CoreAPI.h \
   CoreAPIShared.cc \
   CoreAPIShared.h \
   EventCallback.cc \
   EventCallback.h \
   GenericParser.cc \
   GenericParser.h \
-  include/mgmtapi.h \
-  CoreAPI.h \
-  INKMgmtAPI.cc
+  INKMgmtAPI.cc \
+  NetworkMessage.cc \
+  NetworkMessage.h \
+  include/mgmtapi.h
 
 if BUILD_TESTS
   noinst_PROGRAMS = traffic_api_cli_remote
 endif
 
-libtsmgmtshare_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
-
-libtsmgmt_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
-libtsmgmt_la_LIBADD = @LIBOBJS@ \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  libtsmgmtshare.la
+libmgmtapilocal_la_SOURCES = \
+  CfgContextDefs.h \
+  CoreAPI.cc \
+  EventControlMain.cc \
+  EventControlMain.h \
+  NetworkUtilsLocal.cc \
+  NetworkUtilsLocal.h \
+  TSControlMain.cc \
+  TSControlMain.h
 
 libtsmgmt_la_SOURCES = \
   CoreAPIRemote.cc \
-  EventRegistration.cc \
-  EventRegistration.h \
   NetworkUtilsRemote.cc \
   NetworkUtilsRemote.h
+
+libmgmtapilocal_la_LIBADD = \
+  libmgmtapi.la \
+  $(top_builddir)/lib/ts/libtsutil.la
+
+libtsmgmt_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
+libtsmgmt_la_LIBADD = @LIBOBJS@ \
+  libmgmtapi.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/mgmt/utils/libutils_p.la
 
 if BUILD_TESTS
   traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
 endif
 
 traffic_api_cli_remote_LDADD = \
-  libtsmgmtshare.la \
   libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTCL@ @OPENSSL_LIBS@

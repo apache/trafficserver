@@ -35,15 +35,10 @@
 #include "CfgContextDefs.h"
 #include "Tokenizer.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
-
 TSMgmtError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
 TSMgmtError Terminate();
 
-void Diags(TSDiagsT mode, const char *fmt, va_list ap);
+void Diags(TSDiagsT mode, const char * fmt, va_list ap);
 
 /***************************************************************************
  * Control Operations
@@ -54,52 +49,48 @@ TSMgmtError ProxyStateSet(TSProxyStateT state, TSCacheClearT clear);
 TSMgmtError Reconfigure();         // TS reread config files
 TSMgmtError Restart(bool cluster); //restart TM
 TSMgmtError Bounce(bool cluster);  //restart traffic_server
-TSMgmtError StorageDeviceCmdOffline(char const* dev); // Storage device operation.
+TSMgmtError StorageDeviceCmdOffline(const char * dev); // Storage device operation.
 
 /***************************************************************************
  * Record Operations
  ***************************************************************************/
 /* For remote implementation of this interface, these functions will have
    to marshal/unmarshal and send request across the network */
-TSMgmtError MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele);
+TSMgmtError MgmtRecordGet(const char * rec_name, TSRecordEle * rec_ele);
 
-TSMgmtError MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need);
-TSMgmtError MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_need);
-TSMgmtError MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need);
-TSMgmtError MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * action_need);
-TSMgmtError MgmtRecordSetString(const char *rec_name, const char*string_val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSet(const char * rec_name, const char *val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSetInt(const char * rec_name, MgmtInt int_val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSetCounter(const char * rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need);
+TSMgmtError MgmtRecordSetFloat(const char * rec_name, MgmtFloat float_val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSetString(const char * rec_name, const char * string_val, TSActionNeedT * action_need);
 TSMgmtError MgmtRecordGetMatching(const char * regex, TSList rec_vals);
 
 
 /***************************************************************************
  * File Operations
  ***************************************************************************/
-TSMgmtError ReadFile(TSFileNameT file, char **text, int *size, int *version);
-TSMgmtError WriteFile(TSFileNameT file, char *text, int size, int version);
+TSMgmtError ReadFile(TSFileNameT file, char ** text, int * size, int *version);
+TSMgmtError WriteFile(TSFileNameT file, const char * text, int size, int version);
 
 /***************************************************************************
  * Events
  ***************************************************************************/
 
-TSMgmtError EventSignal(char *event_name, va_list ap);
-TSMgmtError EventResolve(char *event_name);
+TSMgmtError EventSignal(const char * event_name, va_list ap);
+TSMgmtError EventResolve(const char * event_name);
 TSMgmtError ActiveEventGetMlt(LLQ * active_events);
-TSMgmtError EventIsActive(char *event_name, bool * is_current);
-TSMgmtError EventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data);
-TSMgmtError EventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
+TSMgmtError EventIsActive(const char * event_name, bool * is_current);
+TSMgmtError EventSignalCbRegister(const char * event_name, TSEventSignalFunc func, void *data);
+TSMgmtError EventSignalCbUnregister(const char * event_name, TSEventSignalFunc func);
 
 /***************************************************************************
  * Snapshots
  ***************************************************************************/
-TSMgmtError SnapshotTake(char *snapshot_name);
-TSMgmtError SnapshotRestore(char *snapshot_name);
-TSMgmtError SnapshotRemove(char *snapshot_name);
+TSMgmtError SnapshotTake(const char * snapshot_name);
+TSMgmtError SnapshotRestore(const char * snapshot_name);
+TSMgmtError SnapshotRemove(const char * snapshot_name);
 TSMgmtError SnapshotGetMlt(LLQ * snapshots);
 
 TSMgmtError StatsReset(bool cluster, const char* name = NULL);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
 #endif

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Network message marshalling.
 
   @section license License
 
@@ -21,38 +21,15 @@
   limitations under the License.
  */
 
-/***************************************************************************
- * NetworkUtilsDefs.h
- *
- * contains general definitions used by both NetworkUtilsRemote and
- * NetworkUtilsLocal
- *
- *
- ***************************************************************************/
+#ifndef _NETWORK_MESSAGE_H_
+#define _NETWORK_MESSAGE_H_
 
-#ifndef _NETWORK_UTILS_DEFS_H_
-#define _NETWORK_UTILS_DEFS_H_
+#include "MgmtMarshall.h"
 
 #define REMOTE_DELIM ':'
 #define REMOTE_DELIM_STR ":"
 
 #define MAX_CONN_TRIES 10       // maximum number of attemps to reconnect to TM
-#define MAX_TIME_WAIT  60       // num secs for a timeout on a select call (remote only)
-
-// measure in bytes used in construcing network messages
-#define SIZE_OP_T     2         // num bytes used to specify OpType
-#define SIZE_FILE_T   2         // num bytes used to specify INKFileNameT
-#define SIZE_LEN      4         // max num bytes used to specify length of anything
-#define SIZE_ERR_T    2         // num bytes used to specify INKError return value
-#define SIZE_VER      2         // num bytes used to specify file version
-#define SIZE_REC_T    2         // num bytes used to specify INKRecordT
-#define SIZE_PROXY_T  2         // num bytes used to specify INKProxyStateT
-#define SIZE_TS_ARG_T 2         // num bytes used to specify INKCacheClearT
-#define SIZE_DIAGS_T  2         // num bytes used to specify INKDiagsT
-#define SIZE_BOOL     2
-#define SIZE_ACTION_T 2         // num bytes used to specify INKActionNeedT
-#define SIZE_EVENT_ID 2         // num bytes used to specify event_id
-
 
 // the possible operations or msg types sent from remote client to TM
 typedef enum
@@ -81,7 +58,32 @@ typedef enum
   STATS_RESET_CLUSTER,
   STORAGE_DEVICE_CMD_OFFLINE,
   RECORD_MATCH_GET,
+  API_PING,
   UNDEFINED_OP /* This must be last */
 } OpType;
 
-#endif
+struct mgmt_message_sender
+{
+    virtual TSMgmtError send(void * msg, size_t msglen) const = 0;
+};
+
+// Marshall and send a request, prefixing the message length as a MGMT_MARSHALL_INT.
+TSMgmtError send_mgmt_request(const mgmt_message_sender& snd, OpType optype, ...);
+TSMgmtError send_mgmt_request(int fd, OpType optype, ...);
+
+// Parse a request message from a buffer.
+TSMgmtError recv_mgmt_request(void * buf, size_t buflen, OpType optype, ...);
+
+// Marshall and send a response, prefixing the message length as a MGMT_MARSHALL_INT.
+TSMgmtError send_mgmt_response(int fd, OpType optype, ...);
+
+// Parse a response message from a buffer.
+TSMgmtError recv_mgmt_response(void * buf, size_t buflen, OpType optype, ...);
+
+// Pull a management message (either request or response) off the wire.
+TSMgmtError recv_mgmt_message(int fd, MgmtMarshallData& msg);
+
+// Extract the first MGMT_MARSHALL_INT from the buffered message. This is the OpType.
+OpType extract_mgmt_request_optype(void * msg, size_t msglen);
+
+#endif /* _NETWORK_MESSAGE_H_ */

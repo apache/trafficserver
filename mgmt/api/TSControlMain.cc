@@ -30,19 +30,22 @@
  *
  ***************************************************************************/
 
+#include "mgmtapi.h"
 #include "libts.h"
 #include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "MgmtSocket.h"
+#include "NetworkMessage.h"
 #include "TSControlMain.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 #include "NetworkUtilsLocal.h"
-#include "NetworkUtilsDefs.h"
 
-#define TIMEOUT_SECS 1;         // the num secs for select timeout
+#define TIMEOUT_SECS 1         // the num secs for select timeout
 
-InkHashTable *accepted_con;     // a list of all accepted client connections
+static InkHashTable *accepted_con;     // a list of all accepted client connections
+
+static TSMgmtError handle_control_message(int fd, void * msg, size_t msglen);
 
 /*********************************************************************
  * create_client
@@ -52,7 +55,7 @@ InkHashTable *accepted_con;     // a list of all accepted client connections
  * output: ClientT
  * note: created for each accepted client connection
  *********************************************************************/
-ClientT *
+static ClientT *
 create_client()
 {
   ClientT *ele = (ClientT *)ats_malloc(sizeof(ClientT));
@@ -68,7 +71,7 @@ create_client()
  * input: client - the ClientT to free
  * output:
  *********************************************************************/
-void
+static void
 delete_client(ClientT * client)
 {
   if (client) {
@@ -86,14 +89,14 @@ delete_client(ClientT * client)
  * input: client - the ClientT to remove
  * output:
  *********************************************************************/
-void
+static void
 remove_client(ClientT * client, InkHashTable * table)
 {
   // close client socket
-  close_socket(client->sock_info.fd);       // close client socket
+  close_socket(client->fd);       // close client socket
 
   // remove client binding from hash table
-  ink_hash_table_delete(table, (char *) &client->sock_info.fd);
+  ink_hash_table_delete(table, (char *) &client->fd);
 
   // free ClientT
   delete_client(client);
@@ -114,10 +117,8 @@ void *
 ts_ctrl_main(void *arg)
 {
   int ret;
-  OpType op_t;                  // operation type for a request; NetworkUtilsDefs.h
   int *socket_fd;
   int con_socket_fd;            // main socket for listening to new connections
-  char *req = NULL;             // the request msg sent over from client (not include header)
 
   socket_fd = (int *) arg;
   con_socket_fd = *socket_fd;
@@ -127,6 +128,7 @@ ts_ctrl_main(void *arg)
   if (!accepted_con) {
     return NULL;
   }
+
   // now we can start listening, accepting connections and servicing requests
   int new_con_fd;               // new socket fd when accept connection
 
@@ -156,9 +158,9 @@ ts_ctrl_main(void *arg)
     // iterate through all entries in hash table
     while (con_entry) {
       client_entry = (ClientT *) ink_hash_table_entry_value(accepted_con, con_entry);
-      if (client_entry->sock_info.fd >= 0) {    // add fd to select set
-        FD_SET(client_entry->sock_info.fd, &selectFDs);
-        Debug("ts_main", "[ts_ctrl_main] add fd %d to select set\n", client_entry->sock_info.fd);
+      if (client_entry->fd >= 0) {    // add fd to select set
+        FD_SET(client_entry->fd, &selectFDs);
+        Debug("ts_main", "[ts_ctrl_main] add fd %d to select set\n", client_entry->fd);
       }
       con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
     }
@@ -179,9 +181,8 @@ ts_ctrl_main(void *arg)
           Debug("ts_main", "[ts_ctrl_main] can't allocate new ClientT\n");
         } else {                // accept connection
           new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
-          new_client_con->sock_info.fd = new_con_fd;
-          new_client_con->sock_info.SSLcon = NULL;
-          ink_hash_table_insert(accepted_con, (char *) &new_client_con->sock_info.fd, new_client_con);
+          new_client_con->fd = new_con_fd;
+          ink_hash_table_insert(accepted_con, (char *) &new_client_con->fd, new_client_con);
           Debug("ts_main", "[ts_ctrl_main] Add new client connection \n");
         }
       }                         // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
@@ -194,113 +195,31 @@ ts_ctrl_main(void *arg)
           Debug("ts_main", "[ts_ctrl_main] We have a remote client request!\n");
           client_entry = (ClientT *) ink_hash_table_entry_value(accepted_con, con_entry);
           // got information; check
-          if (client_entry->sock_info.fd && FD_ISSET(client_entry->sock_info.fd, &selectFDs)) {
-            // SERVICE REQUEST - read the op and message into a buffer
-            // clear the fields first
-            op_t = UNDEFINED_OP;
-            ret = preprocess_msg(client_entry->sock_info, (OpType *) & op_t, &req);
+          if (client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs)) {
+            void * req = NULL;
+            size_t reqlen;
+
+            ret = preprocess_msg(client_entry->fd, &req, &reqlen);
             if (ret == TS_ERR_NET_READ || ret == TS_ERR_NET_EOF) {
               // occurs when remote API client terminates connection
-              Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d \n", client_entry->sock_info.fd);
+              Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d \n", client_entry->fd);
               remove_client(client_entry, accepted_con);
               // get next client connection (if any)
               con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
               continue;
             }
 
-            // determine which handler function to call based on operation
-            switch (op_t) {
-            case RECORD_GET:
-              ret = handle_record_get(client_entry->sock_info, req);
-              break;
-
-            case RECORD_MATCH_GET:
-              ret = handle_record_match(client_entry->sock_info, req);
-              break;
-
-            case RECORD_SET:
-              ret = handle_record_set(client_entry->sock_info, req);
-              break;
-
-            case FILE_READ:
-              ret = handle_file_read(client_entry->sock_info, req);
-              break;
-
-            case FILE_WRITE:
-              ret = handle_file_write(client_entry->sock_info, req);
-              break;
-
-            case PROXY_STATE_GET:
-              ret = handle_proxy_state_get(client_entry->sock_info);
-              break;
-
-            case PROXY_STATE_SET:
-              ret = handle_proxy_state_set(client_entry->sock_info, req);
-              break;
-
-            case RECONFIGURE:
-              ret = handle_reconfigure(client_entry->sock_info);
-              break;
-
-            case RESTART:
-              ret = handle_restart(client_entry->sock_info, req, false);
-              break;
-
-            case BOUNCE:
-              ret = handle_restart(client_entry->sock_info, req, true);
-              break;
-
-            case STORAGE_DEVICE_CMD_OFFLINE:
-              ret = handle_storage_device_cmd_offline(client_entry->sock_info, req);
-              break;
-
-            case EVENT_RESOLVE:
-              ret = handle_event_resolve(client_entry->sock_info, req);
-              break;
-
-            case EVENT_GET_MLT:
-              ret = handle_event_get_mlt(client_entry->sock_info);
-              break;
-
-            case EVENT_ACTIVE:
-              ret = handle_event_active(client_entry->sock_info, req);
-              break;
-
-            case SNAPSHOT_TAKE:
-            case SNAPSHOT_RESTORE:
-            case SNAPSHOT_REMOVE:
-              ret = handle_snapshot(client_entry->sock_info, req, op_t);
-              break;
-
-            case SNAPSHOT_GET_MLT:
-              ret = handle_snapshot_get_mlt(client_entry->sock_info);
-              break;
-
-            case DIAGS:
-              ret = handle_diags(client_entry->sock_info, req);
-              break;
-
-            case STATS_RESET_CLUSTER:
-            case STATS_RESET_NODE:
-              ret = handle_stats_reset(client_entry->sock_info, req, op_t);
-              break;
-
-            case UNDEFINED_OP:
-            default:
-              break;
-
-            }                   // end switch (op_t)
-
+            ret = handle_control_message(client_entry->fd, req, reqlen);
             ats_free(req);
 
-            if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-              Debug("ts_main", "[ts_ctrl_main] ERROR: sending response for message op %d\n", (int)op_t);
+            if (ret != TS_ERR_OKAY) {
+              Debug("ts_main", "[ts_ctrl_main] ERROR: sending response for message (%d)", ret);
               remove_client(client_entry, accepted_con);
               con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
               continue;
             }
 
-          }                     // end if(client_entry->sock_info.fd && FD_ISSET(client_entry->sock_info.fd, &selectFDs))
+          }                     // end if(client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs))
 
           con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
         }                       // end while (con_entry)
@@ -318,10 +237,10 @@ ts_ctrl_main(void *arg)
   con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
   while (con_entry) {
     client_entry = (ClientT *) ink_hash_table_entry_value(accepted_con, con_entry);
-    if (client_entry->sock_info.fd >= 0) {
-      close_socket(client_entry->sock_info.fd);     // close socket
+    if (client_entry->fd >= 0) {
+      close_socket(client_entry->fd);     // close socket
     }
-    ink_hash_table_delete(accepted_con, (char *) &client_entry->sock_info.fd);  // remove binding
+    ink_hash_table_delete(accepted_con, (char *) &client_entry->fd);  // remove binding
     delete_client(client_entry);        // free ClientT
     con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
   }
@@ -337,14 +256,31 @@ ts_ctrl_main(void *arg)
  --------------------------------------------------------------------------*/
 /* NOTE: all the handle_xx functions basically, take the request, parse it,
  * and send a reply back to the remote client. So even if error occurs,
- * each handle functions MUST SEND A REPLY BACK!! If an error occurs during
- * parsing the request, or while doing the API call, then must send reply back
- * with only the error return value in the msg!!! It's important that if
- * an error does occur, the "send_reply" function is used; otherwise the socket
- * will get written with too much extraneous stuff; the remote side will
- * only read the TSMgmtError type since that's all it expects to be in the message
- * (for an TSMgmtError != TS_ERR_OKAY).
+ * each handler functions MUST SEND A REPLY BACK!!
  */
+
+static TSMgmtError
+send_record_get_error(int fd, TSMgmtError ecode)
+{
+  MgmtMarshallInt err = ecode;
+  MgmtMarshallInt type = TS_REC_UNDEFINED;
+  MgmtMarshallString name = NULL;
+  MgmtMarshallData value = { NULL, 0 };
+
+  return send_mgmt_response(fd, RECORD_GET, &err, &type, &name, &value);
+}
+
+static TSMgmtError
+send_record_get_response(int fd, TSRecordT rec_type, const char * rec_name, const void * rec_data, size_t data_len)
+{
+  MgmtMarshallInt err = TS_ERR_OKAY;
+  MgmtMarshallInt type = rec_type;
+  MgmtMarshallString name = const_cast<MgmtMarshallString>(rec_name);
+  MgmtMarshallData value = { const_cast<void *>(rec_data), data_len };
+
+
+  return send_mgmt_response(fd, RECORD_GET, &err, &type, &name, &value);
+}
 
 /**************************************************************************
  * handle_record_get
@@ -356,59 +292,65 @@ ts_ctrl_main(void *arg)
  * output: SUCC or ERR
  * note:
  *************************************************************************/
-TSMgmtError
-handle_record_get(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_record_get(int fd, void * req, size_t reqlen)
 {
   TSMgmtError ret;
   TSRecordEle *ele;
+  MgmtMarshallInt optype;
+  MgmtMarshallString name;
 
-  // parse msg - don't really need since the request itself is the record name
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_FAIL);
-    return ret;
+  ret = recv_mgmt_request(req, reqlen, RECORD_GET, &optype, &name);
+  if (ret != TS_ERR_OKAY) {
+    return send_record_get_error(fd, ret);
   }
+
+  if (strlen(name) == 0) {
+    ats_free(name);
+    return send_record_get_error(fd, TS_ERR_FAIL);
+  }
+
   // call CoreAPI call on Traffic Manager side
   ele = TSRecordEleCreate();
-  ret = MgmtRecordGet(req, ele);
+  ret = MgmtRecordGet(name, ele);
+  ats_free(name);
+
   if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
     TSRecordEleDestroy(ele);
-    return ret;
+    return send_record_get_error(fd, ret);
   }
+
   // create and send reply back to client
   switch (ele->rec_type) {
   case TS_REC_INT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->valueT.int_val), sizeof(TSInt), ele->rec_type, ele->rec_name);
+    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name,  &(ele->valueT.int_val), sizeof(TSInt));
     break;
   case TS_REC_COUNTER:
-    ret = send_record_get_reply(sock_info, ret, &(ele->valueT.counter_val), sizeof(TSCounter),
-                                ele->rec_type, ele->rec_name);
+    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, &(ele->valueT.counter_val), sizeof(TSCounter));
     break;
   case TS_REC_FLOAT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->valueT.float_val), sizeof(TSFloat), ele->rec_type, ele->rec_name);
+    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, &(ele->valueT.float_val), sizeof(TSFloat));
     break;
   case TS_REC_STRING:
-    ret = send_record_get_reply(sock_info, ret, ele->valueT.string_val, strlen(ele->valueT.string_val),
-                                ele->rec_type, ele->rec_name);
+    // Make sure to send the NULL in the string value response.
+    if (ele->valueT.string_val) {
+      ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, ele->valueT.string_val, strlen(ele->valueT.string_val) + 1);
+    } else {
+      ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, "NULL", countof("NULL"));
+    }
     break;
   default:                     // invalid record type
-    ret = send_reply(sock_info, TS_ERR_FAIL);
     TSRecordEleDestroy(ele);
-    return ret;
+    return send_record_get_error(fd, TS_ERR_FAIL);
   }
 
-  if (ret != TS_ERR_OKAY) {    // error sending reply
-    ret = send_reply(sock_info, ret);
-  }
-
-  TSRecordEleDestroy(ele);     // free any memory allocated by CoreAPI call
-
+  TSRecordEleDestroy(ele);
   return ret;
 }
 
 struct record_match_state {
-  TSMgmtError     err;
-  SocketInfo  sock;
+  TSMgmtError err;
+  int         fd;
   DFA         regex;
 };
 
@@ -424,21 +366,22 @@ send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const 
   if (match->regex.match(name) >= 0) {
     switch (data_type) {
     case RECD_INT:
-      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_int), sizeof(TSInt), TS_REC_INT, name);
+      match->err = send_record_get_response(match->fd, TS_REC_INT, name, &(rec_val->rec_int), sizeof(TSInt));
       break;
     case RECD_COUNTER:
-      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_counter), sizeof(TSCounter), TS_REC_COUNTER, name);
+      match->err = send_record_get_response(match->fd, TS_REC_COUNTER, name, &(rec_val->rec_counter), sizeof(TSCounter));
       break;
     case RECD_STRING:
-      // For NULL string parameters, end the literal "NULL" to match the behavior of MgmtRecordGet().
+      // For NULL string parameters, end the literal "NULL" to match the behavior of MgmtRecordGet(). Make sure to send
+      // the trailing NULL.
       if (rec_val->rec_string) {
-        match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, rec_val->rec_string, strlen(rec_val->rec_string), TS_REC_STRING, name);
+        match->err = send_record_get_response(match->fd, TS_REC_STRING, name, rec_val->rec_string, strlen(rec_val->rec_string) + 1);
       } else {
-        match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, (void *)"NULL", strlen("NULL"), TS_REC_STRING, name);
+        match->err = send_record_get_response(match->fd, TS_REC_STRING, name, "NULL", countof("NULL"));
       }
       break;
     case RECD_FLOAT:
-      match->err = send_record_get_reply(match->sock, TS_ERR_OKAY, &(rec_val->rec_float), sizeof(TSFloat), TS_REC_FLOAT, name);
+      match->err = send_record_get_response(match->fd, TS_REC_FLOAT, name, &(rec_val->rec_float), sizeof(TSFloat));
       break;
     default:
       break; // skip it
@@ -446,31 +389,39 @@ send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const 
   }
 }
 
-TSMgmtError
-handle_record_match(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_record_match(int fd, void * req, size_t reqlen)
 {
   TSMgmtError ret;
   record_match_state match;
+  MgmtMarshallInt optype;
+  MgmtMarshallString name;
 
-  // parse msg - don't really need since the request itself is the regex itself
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_FAIL);
-    return ret;
+  ret = recv_mgmt_request(req, reqlen, RECORD_MATCH_GET, &optype, &name);
+  if (ret != TS_ERR_OKAY) {
+    return send_record_get_error(fd, ret);
   }
 
-  if (match.regex.compile(req, RE_CASE_INSENSITIVE) != 0) {
-    ret = send_reply(sock_info, TS_ERR_FAIL);
-    return ret;
+  if (strlen(name) == 0) {
+    ats_free(name);
+    return send_record_get_error(fd, TS_ERR_FAIL);
   }
+
+  if (match.regex.compile(name, RE_CASE_INSENSITIVE) != 0) {
+    ats_free(name);
+    return send_record_get_error(fd, TS_ERR_FAIL);
+  }
+
+  ats_free(name);
 
   match.err = TS_ERR_OKAY;
-  match.sock = sock_info;
+  match.fd = fd;
 
   RecDumpRecords(RECT_NULL, send_record_match, &match);
 
   // If successful, send a list terminator.
   if (match.err == TS_ERR_OKAY) {
-    return send_record_get_reply(sock_info, TS_ERR_OKAY, NULL, 0, TS_REC_UNDEFINED, NULL);
+    return send_record_get_response(fd, TS_REC_UNDEFINED, NULL, NULL, 0);
   }
 
   return match.err;
@@ -480,117 +431,113 @@ handle_record_match(struct SocketInfo sock_info, char *req)
  * handle_record_set
  *
  * purpose: handles a set request sent by the client
- * input: sock_info
  * output: SUCC or ERR
  * note: request format = <record name>DELIMITER<record_value>
  *************************************************************************/
-TSMgmtError
-handle_record_set(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_record_set(int fd, void * req, size_t reqlen)
 {
-  char *name, *val;
   TSMgmtError ret;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
+  MgmtMarshallInt optype;
+  MgmtMarshallString name = NULL;
+  MgmtMarshallString value = NULL;
 
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;
-  }
-  // parse request msg
-  ret = parse_request_name_value(req, &name, &val);
+  ret = recv_mgmt_request(req, reqlen, RECORD_SET, &optype, &name, &value);
   if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    ats_free(name);
-    return ret;
+    ret = TS_ERR_FAIL;
+    goto fail;
   }
+
+  if (strlen(name) == 0) {
+    ret = TS_ERR_PARAMS;
+    goto fail;
+  }
+
   // call CoreAPI call on Traffic Manager side
-  ret = MgmtRecordSet(name, val, &action);
+  ret = MgmtRecordSet(name, value, &action);
+
+fail:
   ats_free(name);
-  ats_free(val);
+  ats_free(value);
 
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    return ret;
-  }
-  // create and send reply back to client
-  ret = send_record_set_reply(sock_info, ret, action);
-
-  return ret;
+  MgmtMarshallInt err = ret;
+  MgmtMarshallInt act = action;
+  return send_mgmt_response(fd, RECORD_SET, &err, &act);
 }
 
 /**************************************************************************
  * handle_file_read
  *
  * purpose: handles request to read a file
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: SUCC or ERR
  * note: None
  *************************************************************************/
-TSMgmtError
-handle_file_read(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_file_read(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
   int size, version;
-  TSFileNameT file;
   char *text;
 
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;
-  }
-  // first parse the message to retrieve needed data
-  ret = parse_file_read_request(req, &file);
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    return ret;
-  }
-  // make CoreAPI call on Traffic Manager side
-  ret = ReadFile(file, &text, &size, &version);
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    return ret;
-  }
-  // marshal the file info message that can be returned to client
-  ret = send_file_read_reply(sock_info, ret, version, size, text);
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-  }
-  ats_free(text);                // free memory allocated by ReadFile
+  MgmtMarshallInt optype;
+  MgmtMarshallInt fid;
 
-  return ret;
+  MgmtMarshallInt err;
+  MgmtMarshallInt vers = 0;
+  MgmtMarshallData data = { NULL, 0 };
+
+  err = recv_mgmt_request(req, reqlen, FILE_READ, &optype, &fid);
+  if (err != TS_ERR_OKAY) {
+    return send_mgmt_response(fd, FILE_READ, &err, &version, &data);
+  }
+
+  // make CoreAPI call on Traffic Manager side
+  err = ReadFile((TSFileNameT)fid , &text, &size, &version);
+  if (err == TS_ERR_OKAY) {
+    vers = version;
+    data.ptr = text;
+    data.len = size;
+  }
+
+  err = send_mgmt_response(fd, FILE_READ, &err, &vers, &data);
+
+  ats_free(text);                // free memory allocated by ReadFile
+  return (TSMgmtError)err;
 }
 
 /**************************************************************************
  * handle_file_write
  *
  * purpose: handles request to write a file
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: SUCC or ERR
  * note: None
  *************************************************************************/
-TSMgmtError
-handle_file_write(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_file_write(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
-  int size, version;
-  TSFileNameT file;
-  char *text;
+  MgmtMarshallInt   optype;
+  MgmtMarshallInt   fid;
+  MgmtMarshallInt   vers;
+  MgmtMarshallData  data = { NULL, 0 };
 
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;
+  MgmtMarshallInt   err;
+
+  err = recv_mgmt_request(req, reqlen, FILE_WRITE, &optype, &fid, &vers, &data);
+  if (err != TS_ERR_OKAY) {
+    goto done;
   }
-  // first parse the message
-  ret = parse_file_write_request(req, &file, &version, &size, &text);
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    return ret;
+
+  if (data.ptr == NULL) {
+    err = TS_ERR_PARAMS;
+    goto done;
   }
+
   // make CoreAPI call on Traffic Manager side
-  ret = WriteFile(file, text, size, version);
-  ret = send_reply(sock_info, ret);
-  ats_free(text);                // free memory allocated by parsing fn.
+  err = WriteFile((TSFileNameT)fid, (const char *)data.ptr, data.len, vers);
 
-  return ret;
+done:
+  ats_free(data.ptr);
+  return send_mgmt_response(fd, FILE_WRITE, &err);
 }
 
 
@@ -598,186 +545,174 @@ handle_file_write(struct SocketInfo sock_info, char *req)
  * handle_proxy_state_get
  *
  * purpose: handles request to get the state of the proxy (TS)
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSMgmtError
-handle_proxy_state_get(struct SocketInfo sock_info)
+static TSMgmtError
+handle_proxy_state_get(int fd, void * req, size_t reqlen)
 {
-  TSProxyStateT state;
-  TSMgmtError ret;
+  MgmtMarshallInt optype;
+  MgmtMarshallInt err;
+  MgmtMarshallInt state = TS_PROXY_UNDEFINED;
 
-  // make coreAPI call on local side
-  state = ProxyStateGet();
+  err = recv_mgmt_request(req, reqlen, PROXY_STATE_GET, &optype);
+  if (err == TS_ERR_OKAY) {
+    state = ProxyStateGet();
+  }
 
-  // send reply back
-  ret = send_proxy_state_get_reply(sock_info, state);
-
-  return ret;                   //shouldn't get here
+  return send_mgmt_response(fd, PROXY_STATE_GET, &err, &state);
 }
 
 /**************************************************************************
  * handle_proxy_state_set
  *
  * purpose: handles the request to set the state of the proxy (TS)
- * input: struct SocketInfo sock_info - the socket to use to talk to client
- *        req - indicates which state to set it to (on/off?) and specifies
- *        what to set the ts options too (optional)
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSMgmtError
-handle_proxy_state_set(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_proxy_state_set(int fd, void * req, size_t reqlen)
 {
-  TSProxyStateT state;
-  TSCacheClearT clear;
-  TSMgmtError ret;
+  MgmtMarshallInt optype;
+  MgmtMarshallInt state;
+  MgmtMarshallInt clear;
 
-  if (!req) {
-    ret = TS_ERR_FAIL;
-    goto END;
-  }
-  // the req should specify the state and any cache clearing options
-  ret = parse_proxy_state_request(req, &state, &clear);
-  if (ret != TS_ERR_OKAY) {
-    goto END;
+  MgmtMarshallInt err;
+
+  err = recv_mgmt_request(req, reqlen, PROXY_STATE_SET, &optype, &state, &clear);
+  if (err != TS_ERR_OKAY) {
+    return send_mgmt_response(fd, PROXY_STATE_SET, &err);
   }
 
-  ret = ProxyStateSet(state, clear);
-
-END:
-  ret = send_reply(sock_info, ret);
-  return ret;
+  err = ProxyStateSet((TSProxyStateT)state, (TSCacheClearT)clear);
+  return send_mgmt_response(fd, PROXY_STATE_SET, &err);
 }
 
 /**************************************************************************
  * handle_reconfigure
  *
  * purpose: handles request to reread the config files
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSMgmtError
-handle_reconfigure(struct SocketInfo sock_info)
+static TSMgmtError
+handle_reconfigure(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
+  MgmtMarshallInt err;
+  MgmtMarshallInt optype;
 
-  // make local side coreAPI call
-  ret = Reconfigure();
+  err = recv_mgmt_request(req, reqlen, RECONFIGURE, &optype);
+  if (err == TS_ERR_OKAY) {
+    err = Reconfigure();
+  }
 
-  ret = send_reply(sock_info, ret);
-  return ret;
+  return send_mgmt_response(fd, RECONFIGURE, &err);
 }
 
 /**************************************************************************
  * handle_restart
  *
  * purpose: handles request to restart TM and TS
- * input: struct SocketInfo sock_info - the socket to use to talk to client
- *        req - indicates if restart should be cluster wide or not
- *        bounce - indicate if the restart is a traffic_server bounce only
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSMgmtError
-handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
+static TSMgmtError
+handle_restart(int fd, void * req, size_t reqlen)
 {
-  int16_t cluster;
-  TSMgmtError ret;
+  MgmtMarshallInt optype;
+  MgmtMarshallInt cluster;
+  MgmtMarshallInt err;
 
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;                 // shouldn't get here
+  err = recv_mgmt_request(req, reqlen, RESTART, &optype, &cluster);
+  if (err == TS_ERR_OKAY) {
+    bool bounce = (optype == BOUNCE);
+
+    // cluster == 0 means no cluster
+    if (bounce)
+      err = Bounce(0 != cluster);
+    else
+      err = Restart(0 != cluster);
   }
-  // the req should be a boolean value - typecase it
-  memcpy(&cluster, req, SIZE_BOOL);
 
-  // cluster == 0 means no cluster
-  if (bounce)
-    ret = Bounce(0 != cluster);
-  else
-    ret = Restart(0 != cluster);
-
-  ret = send_reply(sock_info, ret);
-  return ret;
+  return send_mgmt_response(fd, RESTART, &err);
 }
 
 /**************************************************************************
  * handle_storage_device_cmd_offline
  *
  * purpose: handle storage offline command.
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-TSMgmtError
-handle_storage_device_cmd_offline(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_storage_device_cmd_offline(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret = TS_ERR_OKAY;
+  MgmtMarshallInt optype;
+  MgmtMarshallString name = NULL;
+  MgmtMarshallInt err;
 
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;                 // shouldn't get here
+  err = recv_mgmt_request(req, reqlen, STORAGE_DEVICE_CMD_OFFLINE, &optype, &name);
+  if (err == TS_ERR_OKAY) {
+    // forward to server
+    lmgmt->signalEvent(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, name);
   }
-  // forward to server
-  lmgmt->signalEvent(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, req);
-  ret = send_reply(sock_info, ret);
-  return ret;
+
+  return send_mgmt_response(fd, STORAGE_DEVICE_CMD_OFFLINE, &err);
 }
 
 /**************************************************************************
  * handle_event_resolve
  *
  * purpose: handles request to resolve an event
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSMgmtError
-handle_event_resolve(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_event_resolve(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
+  MgmtMarshallInt optype;
+  MgmtMarshallString name = NULL;
+  MgmtMarshallInt err;
 
-  // parse msg - don't really need since the request itself is the record name
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;                 // shouldn't get here
+  err = recv_mgmt_request(req, reqlen, EVENT_RESOLVE, &optype, &name);
+  if (err == TS_ERR_OKAY) {
+    err = EventResolve(name);
   }
-  // call CoreAPI call on Traffic Manager side; req == event_name
-  ret = EventResolve(req);
-  ret = send_reply(sock_info, ret);
 
-  return ret;
+  ats_free(name);
+  return send_mgmt_response(fd, EVENT_RESOLVE, &err);
 }
 
 /**************************************************************************
  * handle_event_get_mlt
  *
  * purpose: handles request to get list of active events
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSMgmtError
-handle_event_get_mlt(struct SocketInfo sock_info)
+static TSMgmtError
+handle_event_get_mlt(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
-  LLQ *event_list;
+  LLQ *event_list = create_queue();
   char buf[MAX_BUF_SIZE];
   char *event_name;
   int buf_pos = 0;
 
-  event_list = create_queue();
+  MgmtMarshallInt optype;
+  MgmtMarshallInt err;
+  MgmtMarshallString list = NULL;
+
+  err = recv_mgmt_request(req, reqlen, EVENT_GET_MLT, &optype);
+  if (err != TS_ERR_OKAY) {
+    goto done;
+  }
 
   // call CoreAPI call on Traffic Manager side; req == event_name
-  ret = ActiveEventGetMlt(event_list);
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    delete_queue(event_list);
-    return ret;
+  err = ActiveEventGetMlt(event_list);
+  if (err != TS_ERR_OKAY) {
+    goto done;
   }
+
   // iterate through list and put into a delimited string list
   memset(buf, 0, MAX_BUF_SIZE);
   while (!queue_is_empty(event_list)) {
@@ -790,41 +725,49 @@ handle_event_get_mlt(struct SocketInfo sock_info)
   }
   buf[buf_pos] = '\0';          //end the string
 
-  ret = send_reply_list(sock_info, ret, buf);
+  // Point the send list to the filled buffer.
+  list = buf;
 
+done:
   delete_queue(event_list);
-  return ret;
+  return send_mgmt_response(fd, EVENT_GET_MLT, &err, &list);
 }
 
 /**************************************************************************
  * handle_event_active
  *
  * purpose: handles request to resolve an event
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSMgmtError
-handle_event_active(struct SocketInfo sock_info, char *req)
+static TSMgmtError
+handle_event_active(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
   bool active;
+  MgmtMarshallInt optype;
+  MgmtMarshallString name = NULL;
 
-  // parse msg - don't really need since the request itself is the record name
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;                 // shouldn't get here
-  }
-  // call CoreAPI call on Traffic Manager side; req == event_name
-  ret = EventIsActive(req, &active);
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    return ret;                 //shouldn't get here
+  MgmtMarshallInt err;
+  MgmtMarshallInt bval = 0;
+
+  err = recv_mgmt_request(req, reqlen, EVENT_ACTIVE, &optype);
+  if (err != TS_ERR_OKAY) {
+    goto done;
   }
 
-  ret = send_event_active_reply(sock_info, ret, active);
+  if (strlen(name) == 0) {
+    err = TS_ERR_PARAMS;
+    goto done;
+  }
 
-  return ret;
+  err = EventIsActive(name, &active);
+  if (err == TS_ERR_OKAY) {
+    bval = active ? 1 : 0;
+  }
+
+done:
+  ats_free(name);
+  return send_mgmt_response(fd, EVENT_ACTIVE, &err, &bval);
 }
 
 
@@ -832,66 +775,77 @@ handle_event_active(struct SocketInfo sock_info, char *req)
  * handle_snapshot
  *
  * purpose: handles request to take/remove/restore a snapshot
- * input: struct SocketInfo sock_info - the socket to use to talk to client
- *        req - the snapshot name
- *        op  - SNAPSHOT_TAKE, SNAPSHOT_REMOVE, or SNAPSHOT_RESTORE
  * output: TS_ERR_xx
  *************************************************************************/
-TSMgmtError
-handle_snapshot(struct SocketInfo sock_info, char *req, OpType op)
+static TSMgmtError
+handle_snapshot(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
+  MgmtMarshallInt optype;
+  MgmtMarshallString name = NULL;
 
-  if (!req) {
-    ret = send_reply(sock_info, TS_ERR_PARAMS);
-    return ret;
+  MgmtMarshallInt err;
+
+  err = recv_mgmt_request(req, reqlen, SNAPSHOT_TAKE, &optype, &name);
+  if (err != TS_ERR_OKAY) {
+    goto done;
   }
-  // call CoreAPI call on Traffic Manager side; req == snap_name
-  switch (op) {
+
+  if (strlen(name) == 0) {
+    err = TS_ERR_PARAMS;
+    goto done;
+  }
+
+  // call CoreAPI call on Traffic Manager side
+  switch (optype) {
   case SNAPSHOT_TAKE:
-    ret = SnapshotTake(req);
+    err = SnapshotTake(name);
     break;
   case SNAPSHOT_RESTORE:
-    ret = SnapshotRestore(req);
+    err = SnapshotRestore(name);
     break;
   case SNAPSHOT_REMOVE:
-    ret = SnapshotRemove(req);
+    err = SnapshotRemove(name);
     break;
   default:
-    ret = TS_ERR_FAIL;
+    err = TS_ERR_FAIL;
     break;
   }
 
-  ret = send_reply(sock_info, ret);
-  return ret;
+done:
+  ats_free(name);
+  return send_mgmt_response(fd, (OpType)optype, &err);
 }
 
 /**************************************************************************
  * handle_snapshot_get_mlt
  *
  * purpose: handles request to get list of snapshots
- * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-TSMgmtError
-handle_snapshot_get_mlt(struct SocketInfo sock_info)
+static TSMgmtError
+handle_snapshot_get_mlt(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
-  LLQ *snap_list;
+  LLQ *snap_list = create_queue();
   char buf[MAX_BUF_SIZE];
   char *snap_name;
   int buf_pos = 0;
 
-  snap_list = create_queue();
+  MgmtMarshallInt optype;
+  MgmtMarshallInt err;
+  MgmtMarshallString list = NULL;
+
+  err = recv_mgmt_request(req, reqlen, SNAPSHOT_GET_MLT, &optype);
+  if (err != TS_ERR_OKAY) {
+    goto done;
+  }
 
   // call CoreAPI call on Traffic Manager side; req == event_name
-  ret = SnapshotGetMlt(snap_list);
-  if (ret != TS_ERR_OKAY) {
-    ret = send_reply(sock_info, ret);
-    delete_queue(snap_list);
-    return ret;
+  err = SnapshotGetMlt(snap_list);
+  if (err != TS_ERR_OKAY) {
+    goto done;
   }
+
   // iterate through list and put into a delimited string list
   memset(buf, 0, MAX_BUF_SIZE);
   while (!queue_is_empty(snap_list)) {
@@ -904,10 +858,12 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
   }
   buf[buf_pos] = '\0';          //end the string
 
-  ret = send_reply_list(sock_info, ret, buf);
+  // Point the send list to the filled buffer.
+  list = buf;
 
+done:
   delete_queue(snap_list);
-  return ret;
+  return send_mgmt_response(fd, SNAPSHOT_GET_MLT, &err, &list);
 }
 
 
@@ -915,27 +871,25 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
  * handle_diags
  *
  * purpose: handles diags request
- * input: struct SocketInfo sock_info - the socket to use to talk to client
- *        req - the diag message (already formatted with arguments)
  * output: TS_ERR_xx
  *************************************************************************/
-TSMgmtError
-handle_diags(struct SocketInfo /* sock_info ATS_UNUSED */, char *req)
+static TSMgmtError
+handle_diags(int /* fd */, void * req, size_t reqlen)
 {
   TSMgmtError ret;
-  TSDiagsT mode;
-  char *diag_msg = NULL;
   DiagsLevel level;
 
-  if (!req)
-    goto Lerror;
+  MgmtMarshallInt optype; 
+  MgmtMarshallInt mode;
+  MgmtMarshallString msg = NULL;
 
-  ret = parse_diags_request(req, &mode, &diag_msg);
-  if (ret != TS_ERR_OKAY)
-    goto Lerror;
+  ret = recv_mgmt_request(req, reqlen, DIAGS, &optype, &mode, &msg);
+  if (ret != TS_ERR_OKAY) {
+    ats_free(msg);
+    return ret;
+  }
 
-
-  switch (mode) {
+  switch ((TSDiagsT)mode) {
   case TS_DIAG_DIAG:
     level = DL_Diag;
     break;
@@ -968,32 +922,98 @@ handle_diags(struct SocketInfo /* sock_info ATS_UNUSED */, char *req)
   }
 
   if (diags) {
-    diags->print("TSMgmtAPI", DTA(level), "%s", diag_msg);
-    ats_free(diag_msg);
-    return TS_ERR_OKAY;
+    diags->print("TSMgmtAPI", DTA(level), "%s", msg);
   }
 
-Lerror:
-  ats_free(diag_msg);
-  return TS_ERR_FAIL;
+  ats_free(msg);
+  return TS_ERR_OKAY;
 }
 
 /**************************************************************************
  * handle_stats_reset
  *
  * purpose: handles request to reset statistics to default values
- * input: struct SocketInfo sock_info - the socket to use to talk to client
- *        req - should be NULL
- *        op - reset type (cluster or node)
  * output: TS_ERR_xx
  *************************************************************************/
-TSMgmtError
-handle_stats_reset(struct SocketInfo sock_info, char *req, OpType op)
+static TSMgmtError
+handle_stats_reset(int fd, void * req, size_t reqlen)
 {
-  TSMgmtError ret;
+  MgmtMarshallInt optype; 
+  MgmtMarshallString name = NULL;
+  MgmtMarshallInt err;
 
-  ret = StatsReset(op == STATS_RESET_CLUSTER, req);
-  ret = send_reply(sock_info, ret);
+  err = recv_mgmt_request(req, reqlen, STATS_RESET_NODE, &optype, &name);
+  if (err != TS_ERR_OKAY) {
+    err = StatsReset(optype == STATS_RESET_CLUSTER, name);
+  }
 
-  return ret;
+  ats_free(name);
+  return send_mgmt_response(fd, (OpType)optype, &err);
+}
+
+/**************************************************************************
+ * handle_api_ping
+ *
+ * purpose: handles the API_PING messaghat is sent by API clients to keep
+ *    the management socket alive
+ * output: TS_ERR_xx. There is no response message.
+ *************************************************************************/
+static TSMgmtError
+handle_api_ping(int /* fd */, void * req, size_t reqlen)
+{
+  MgmtMarshallInt optype;
+  MgmtMarshallInt stamp;
+
+  return recv_mgmt_request(req, reqlen, API_PING, &optype, &stamp);
+}
+
+typedef TSMgmtError (*control_message_handler)(int, void *, size_t);
+
+static const control_message_handler handlers[] = {
+  handle_file_read,                   // FILE_READ
+  handle_file_write,                  // FILE_WRITE
+  handle_record_set,                  // RECORD_SET
+  handle_record_get,                  // RECORD_GET
+  handle_proxy_state_get,             // PROXY_STATE_GET
+  handle_proxy_state_set,             // PROXY_STATE_SET
+  handle_reconfigure,                 // RECONFIGURE
+  handle_restart,                     // RESTART
+  handle_restart,                     // BOUNCE
+  handle_event_resolve,               // EVENT_RESOLVE
+  handle_event_get_mlt,               // EVENT_GET_MLT
+  handle_event_active,                // EVENT_ACTIVE
+  NULL,                               // EVENT_REG_CALLBACK
+  NULL,                               // EVENT_UNREG_CALLBACK
+  NULL,                               // EVENT_NOTIFY
+  handle_snapshot,                    // SNAPSHOT_TAKE
+  handle_snapshot,                    // SNAPSHOT_RESTORE
+  handle_snapshot,                    // SNAPSHOT_REMOVE
+  handle_snapshot_get_mlt,            // SNAPSHOT_GET_MLT
+  handle_diags,                       // DIAGS
+  handle_stats_reset,                 // STATS_RESET_NODE
+  handle_stats_reset,                 // STATS_RESET_CLUSTER
+  handle_storage_device_cmd_offline,  // STORAGE_DEVICE_CMD_OFFLINE
+  handle_record_match,                // RECORD_MATCH_GET
+  handle_api_ping                     // API_PING
+};
+
+static TSMgmtError
+handle_control_message(int fd, void * req, size_t reqlen)
+{
+  OpType optype = extract_mgmt_request_optype(req, reqlen);
+
+  if (optype < 0 || optype >= countof(handlers)) {
+    goto fail;
+  }
+
+  if (handlers[optype] == NULL) {
+    goto fail;
+  }
+
+  Debug("ts_main", "handling message type=%d ptr=%p len=%zu on fd=%d", optype, req, reqlen, fd);
+  return handlers[optype](fd, req, reqlen);
+
+fail:
+  mgmt_elog(0, "%s: missing handler for type %d control message\n", __func__, (int)optype);
+  return TS_ERR_PARAMS;
 }
