@@ -80,3 +80,7 @@ Copyright (C) 2014 Yahoo! Inc.  All rights reserved.
 healthchecks: Plugin for ATS healthchecks.
 Copyright (C) 2012 Go Daddy Operating Company, LLC
 
+~~~
+
+lib/ts/HashFNV.cc contains code derived from code at http://www.isthe.com/chongo/tech/comp/fnv/
+It is public domain and has no copyright.

@@ -54,6 +54,8 @@ libtsutil_la_SOURCES = \
   EventNotify.h \
   Hash.cc \
   Hash.h \
+  HashFNV.cc \
+  HashFNV.h \
   HostLookup.cc \
   HostLookup.h \
   INK_MD5.h \

@@ -82,6 +82,7 @@
 #include "DynArray.h"
 #include "EventNotify.h"
 #include "Hash.h"
+#include "HashFNV.h"
 #include "I_Version.h"
 #include "InkPool.h"
 #include "List.h"
