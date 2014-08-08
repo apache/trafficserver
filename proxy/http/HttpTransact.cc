@@ -454,11 +454,12 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr* request, HTTPHdr* response
 
 
 inline static bool
-does_method_require_cache_copy_deletion(int method)
+does_method_require_cache_copy_deletion(const HttpConfigParams *http_config_param, const int method)
 {
   return ((method != HTTP_WKSIDX_GET) &&
           (method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_PURGE ||
-           method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_POST));
+           method == HTTP_WKSIDX_PUT ||
+           (http_config_param->cache_post_method != 1 && method == HTTP_WKSIDX_POST)));
 }
 
 
@@ -2265,7 +2266,7 @@ HttpTransact::issue_revalidate(State* s)
     // request to the server. is_cache_response_returnable will ensure
     // that we forward the request. We now specify what the cache
     // action should be when the response is received.
-    if (does_method_require_cache_copy_deletion(s->method)) {
+    if (does_method_require_cache_copy_deletion(s->http_config_param, s->method)) {
       s->cache_info.action = CACHE_PREPARE_TO_DELETE;
       DebugTxn("http_seq", "[HttpTransact::issue_revalidate] cache action: DELETE");
     } else {
@@ -3038,7 +3039,7 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
   }
   // We do a cache lookup for DELETE and PUT requests as well.
   // We must, however, not cache the responses to these requests.
-  if (does_method_require_cache_copy_deletion(s->method) && s->api_req_cacheable == false) {
+  if (does_method_require_cache_copy_deletion(s->http_config_param, s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else if ((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
              s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED) {
@@ -5747,7 +5748,7 @@ HttpTransact::is_cache_response_returnable(State* s)
     return false;
   }
 
-  if (!HttpTransactHeaders::is_method_cacheable(s->method) && s->api_resp_cacheable == false) {
+  if (!HttpTransactHeaders::is_method_cacheable(s->http_config_param, s->method) && s->api_resp_cacheable == false) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
     return false;
@@ -6022,7 +6023,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   // Basically, the problem is the resp for POST url1 req should not
   // be served to a GET url1 request, but we just match URL not method.
   int req_method = request->method_get_wksidx();
-  if (!(HttpTransactHeaders::is_method_cacheable(req_method)) && s->api_req_cacheable == false) {
+  if (!(HttpTransactHeaders::is_method_cacheable(s->http_config_param, req_method)) && s->api_req_cacheable == false) {
     DebugTxn("http_trans", "[is_response_cacheable] " "only GET, and some HEAD and POST are cachable");
     return false;
   }
