@@ -51,3 +51,4 @@ MurmurHash3.cc
 MurmurHash3.h
 ^ck$
 HashFNV.cc
+HashSip.cc
