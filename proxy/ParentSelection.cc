@@ -336,6 +336,8 @@ ParentConfigParams::recordRetrySuccess(ParentResult * result)
   ink_assert((int) (result->last_parent) < result->rec->num_parents);
   pRec = result->rec->parents + result->last_parent;
 
+  pRec->available = true;
+
   ink_atomic_swap(&pRec->failedAt, (time_t)0);
   int old_count = ink_atomic_swap(&pRec->failCount, 0);
 
@@ -399,6 +401,7 @@ ParentConfigParams::markParentDown(ParentResult * result)
 
   if (new_fail_count > 0 && new_fail_count == FailThreshold) {
     Note("http parent proxy %s:%d marked down", pRec->hostname, pRec->port);
+    pRec->available = false;
   }
 }
 
@@ -483,6 +486,9 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RequestData * r
   bool parentUp = false;
   bool parentRetry = false;
   bool bypass_ok = (go_direct == true && config->DNS_ParentOnly == 0);
+  char *url, *path = NULL;
+  ATSHash64Sip24 hash;
+  pRecord *prtmp = NULL;
 
   HttpRequestData *request_info = (HttpRequestData *) rdata;
 
@@ -506,13 +512,33 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RequestData * r
       case P_HASH_ROUND_ROBIN:
         // INKqa12817 - make sure to convert to host byte order
         // Why was it important to do host order here?  And does this have any
-        // impact with the transition to IPv6?  The IPv4 functionality is 
+        // impact with the transition to IPv6?  The IPv4 functionality is
         // preserved for now anyway as ats_ip_hash returns the 32-bit address in
         // that case.
         if (rdata->get_client_ip() != NULL) {
             cur_index = ntohl(ats_ip_hash(rdata->get_client_ip())) % num_parents;
         } else {
             cur_index = 0;
+        }
+        break;
+      case P_CONSISTENT_HASH:
+        url = rdata->get_string();
+        path = strstr(url + 7, "/");
+        if (path) {
+          prtmp = (pRecord *) chash->lookup(path, &(result->chashIter), NULL, (ATSHash64 *) &hash);
+          if (prtmp) {
+            cur_index = prtmp->idx;
+            result->foundParents[cur_index] = true;
+            result->start_parent++;
+          } else {
+            Error("Consistent Hash loopup returned NULL");
+            cur_index = ink_atomic_increment((int32_t *) & rr_next, 1);
+            cur_index = cur_index % num_parents;
+          }
+        } else {
+          Error("Could not find path in URL: %s",url);
+          cur_index = ink_atomic_increment((int32_t *) & rr_next, 1);
+          cur_index = cur_index % num_parents;
         }
         break;
       case P_NO_ROUND_ROBIN:
@@ -523,19 +549,38 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RequestData * r
       }
     }
   } else {
-    // Move to next parent due to failure
-    cur_index = (result->last_parent + 1) % num_parents;
-
-    // Check to see if we have wrapped around
-    if ((unsigned int) cur_index == result->start_parent) {
-      // We've wrapped around so bypass if we can
-      if (bypass_ok == true) {
-        goto NO_PARENTS;
-      } else {
-        // Bypass disabled so keep trying, ignoring whether we think
-        //   a parent is down or not
-      FORCE_WRAP_AROUND:
+    if (round_robin == P_CONSISTENT_HASH) {
+      if (result->start_parent == (unsigned int) num_parents) {
         result->wrap_around = true;
+        result->start_parent = 0;
+        memset(result->foundParents, 0, sizeof(result->foundParents));
+        url = rdata->get_string();
+        path = strstr(url + 7, "/");
+      }
+
+      do {
+        prtmp = (pRecord *) chash->lookup(path, &(result->chashIter), NULL, (ATSHash64 *) &hash);
+        path = NULL;
+      } while (result->foundParents[prtmp->idx]);
+
+      cur_index = prtmp->idx;
+      result->foundParents[cur_index] = true;
+      result->start_parent++;
+    } else {
+      // Move to next parent due to failure
+      cur_index = (result->last_parent + 1) % num_parents;
+
+      // Check to see if we have wrapped around
+      if ((unsigned int) cur_index == result->start_parent) {
+        // We've wrapped around so bypass if we can
+        if (bypass_ok == true) {
+          goto NO_PARENTS;
+        } else {
+          // Bypass disabled so keep trying, ignoring whether we think
+          //   a parent is down or not
+        FORCE_WRAP_AROUND:
+          result->wrap_around = true;
+        }
       }
     }
   }
@@ -575,9 +620,28 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RequestData * r
       return;
     }
 
-    cur_index = (cur_index + 1) % num_parents;
+    if (round_robin == P_CONSISTENT_HASH) {
+      if (result->start_parent == (unsigned int) num_parents) {
+        result->wrap_around = false;
+        result->start_parent = 0;
+        memset(result->foundParents, 0, sizeof(result->foundParents));
+        url = rdata->get_string();
+        path = strstr(url + 7, "/");
+      }
 
-  } while ((unsigned int) cur_index != result->start_parent);
+      do {
+        prtmp = (pRecord *) chash->lookup(path, &(result->chashIter), NULL, (ATSHash64 *) &hash);
+        path = NULL;
+      } while (result->foundParents[prtmp->idx]);
+
+      cur_index = prtmp->idx;
+      result->foundParents[cur_index] = true;
+      result->start_parent++;
+    } else {
+      cur_index = (cur_index + 1) % num_parents;
+    }
+
+  } while ((round_robin == P_CONSISTENT_HASH ? result->wrap_around : ((unsigned int) cur_index != result->start_parent)));
 
   // We can't bypass so retry, taking any parent that we can
   if (bypass_ok == false) {
@@ -613,8 +677,9 @@ ParentRecord::ProcessParents(char *val)
   int numTok;
   const char *current;
   int port;
-  char *tmp;
+  char *tmp, *tmp2;
   const char *errPtr;
+  float weight = 1.0;
 
   if (parents != NULL) {
     return "Can not specify more than one set of parents";
@@ -646,10 +711,26 @@ ParentRecord::ProcessParents(char *val)
       errPtr = "Malformed parent port";
       goto MERROR;
     }
+
+    // See if there is an optional parent weight
+    tmp2 = (char *) strchr(current, '|');
+
+    if (tmp2) {
+      if (sscanf(tmp2 + 1, "%f", &weight) != 1) {
+        errPtr = "Malformed parent weight";
+        goto MERROR;
+      }
+    }
+
     // Make sure that is no garbage beyond the parent
-    //   port
-    char *scan = tmp + 1;
-    for (; *scan != '\0' && ParseRules::is_digit(*scan); scan++);
+    //   port or weight
+    char *scan;
+    if (tmp2) {
+      scan = tmp2 + 1;
+    } else {
+      scan = tmp + 1;
+    }
+    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || *scan == '.'); scan++);
     for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++);
     if (*scan != '\0') {
       errPtr = "Garbage trailing entry or invalid separator";
@@ -670,6 +751,10 @@ ParentRecord::ProcessParents(char *val)
     this->parents[i].port = port;
     this->parents[i].failedAt = 0;
     this->parents[i].scheme = scheme;
+    this->parents[i].idx = i;
+    this->parents[i].name = this->parents[i].hostname;
+    this->parents[i].available = true;
+    this->parents[i].weight = weight;
   }
 
   num_parents = numTok;
@@ -715,6 +800,21 @@ ParentRecord::DefaultInit(char *val)
   }
 }
 
+void
+ParentRecord::buildConsistentHash(void) {
+  ATSHash64Sip24 hash;
+  int i;
+
+  if (chash) {
+    return;
+  }
+
+  chash = new ATSConsistentHash();
+
+  for (i = 0; i < num_parents; i++) {
+    chash->insert(&(this->parents[i]), this->parents[i].weight, (ATSHash64 *) &hash);
+  }
+}
 
 // char* ParentRecord::Init(matcher_line* line_info)
 //
@@ -755,6 +855,11 @@ ParentRecord::Init(matcher_line * line_info)
         round_robin = P_STRICT_ROUND_ROBIN;
       } else if (strcasecmp(val, "false") == 0) {
         round_robin = P_NO_ROUND_ROBIN;
+      } else if (strcasecmp(val, "consistent_hash") == 0) {
+        round_robin = P_CONSISTENT_HASH;
+        if (this->parents != NULL) {
+          buildConsistentHash();
+        }
       } else {
         round_robin = P_NO_ROUND_ROBIN;
         errPtr = "invalid argument to round_robin directive";
@@ -763,6 +868,9 @@ ParentRecord::Init(matcher_line * line_info)
     } else if (strcasecmp(label, "parent") == 0) {
       errPtr = ProcessParents(val);
       used = true;
+      if (round_robin == P_CONSISTENT_HASH) {
+        buildConsistentHash();
+      }
     } else if (strcasecmp(label, "go_direct") == 0) {
       if (strcasecmp(val, "false") == 0) {
         go_direct = false;
@@ -833,6 +941,9 @@ ParentRecord::UpdateMatch(ParentResult * result, RequestData * rdata)
 
 ParentRecord::~ParentRecord()
 {
+  if (chash) {
+    delete chash;
+  }
   ats_free(parents);
 }
 
