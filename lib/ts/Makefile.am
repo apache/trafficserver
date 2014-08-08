@@ -52,6 +52,8 @@ libtsutil_la_SOURCES = \
   DynArray.h \
   EventNotify.cc \
   EventNotify.h \
+  Hash.cc \
+  Hash.h \
   HostLookup.cc \
   HostLookup.h \
   INK_MD5.h \
