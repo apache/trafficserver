@@ -83,6 +83,7 @@
 #include "EventNotify.h"
 #include "Hash.h"
 #include "HashFNV.h"
+#include "HashMD5.h"
 #include "I_Version.h"
 #include "InkPool.h"
 #include "List.h"

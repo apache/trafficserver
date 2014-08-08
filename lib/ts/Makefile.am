@@ -56,6 +56,8 @@ libtsutil_la_SOURCES = \
   Hash.h \
   HashFNV.cc \
   HashFNV.h \
+  HashMD5.cc \
+  HashMD5.h \
   HostLookup.cc \
   HostLookup.h \
   INK_MD5.h \
