@@ -79,6 +79,7 @@
 #include "Arena.h"
 #include "Bitops.h"
 #include "Compatability.h"
+#include "ConsistentHash.h"
 #include "DynArray.h"
 #include "EventNotify.h"
 #include "Hash.h"

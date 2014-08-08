@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2332] Add Consistent Hash class.
+
   *) [TS-1800] Create one hashing infrastructure.
 
   *) [TS-2860] Add AArch64 support.

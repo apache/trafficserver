@@ -47,6 +47,8 @@ libtsutil_la_SOURCES = \
   Bitops.h \
   Compatability.h \
   Cryptohash.h \
+  ConsistentHash.cc \
+  ConsistentHash.h \
   Diags.cc \
   Diags.h \
   DynArray.h \
