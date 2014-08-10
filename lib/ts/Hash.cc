@@ -22,27 +22,32 @@
 #include "Hash.h"
 #include <cstring>
 
-ATSHashBase::~ATSHashBase() {
+ATSHashBase::~ATSHashBase()
+{
 }
 
 bool
-ATSHash::operator==(const ATSHash & other) const {
-    if (this->size() != other.size()) {
-        return false;
-    }
-    if (memcmp(this->get(), other.get(), this->size()) == 0) {
-        return true;
-    } else {
-        return false;
-    }
+ATSHash::operator==(const ATSHash & other) const
+{
+  if (this->size() != other.size())
+  {
+    return false;
+  }
+  if (memcmp(this->get(), other.get(), this->size()) == 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool
-ATSHash32::operator==(const ATSHash32 & other) const {
-    return this->get() == other.get();
+ATSHash32::operator==(const ATSHash32 & other) const
+{
+  return this->get() == other.get();
 }
 
 bool
-ATSHash64::operator==(const ATSHash64 & other) const {
-    return this->get() == other.get();
+ATSHash64::operator==(const ATSHash64 & other) const
+{
+  return this->get() == other.get();
 }

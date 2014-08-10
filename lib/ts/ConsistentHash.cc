@@ -28,155 +28,161 @@
 #include <cstdio>
 
 std::ostream &
-operator << (std::ostream & os, ATSConsistentHashNode & thing) {
-    return os << thing.name;
+operator << (std::ostream & os, ATSConsistentHashNode & thing)
+{
+  return os << thing.name;
 }
 
-ATSConsistentHash::ATSConsistentHash(int r, ATSHash64 *h) : replicas(r), hash(h) {
+ATSConsistentHash::ATSConsistentHash(int r, ATSHash64 *h) : replicas(r), hash(h)
+{
 }
 
 void
-ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *h) {
-    int i;
-    char numstr[256];
-    ATSHash64 *thash;
-    std::ostringstream string_stream;
-    std::string std_string;
+ATSConsistentHash::insert(ATSConsistentHashNode * node, float weight, ATSHash64 *h)
+{
+  int i;
+  char numstr[256];
+  ATSHash64 *thash;
+  std::ostringstream string_stream;
+  std::string std_string;
 
-    if (h) {
-        thash = h;
-    } else if (hash) {
-        thash = hash;
-    } else {
-        return;
-    }
+  if (h) {
+    thash = h;
+  } else if (hash) {
+    thash = hash;
+  } else {
+    return;
+  }
 
-    string_stream << *node;
-    std_string = string_stream.str();
+  string_stream << *node;
+  std_string = string_stream.str();
 
-    for (i = 0; i < (int) roundf(replicas * weight); i++) {
-        snprintf(numstr, 256, "%d-", i);
-        thash->update(numstr, strlen(numstr));
-        thash->update(std_string.c_str(), strlen(std_string.c_str()));
-        thash->final();
-        NodeMap.insert(std::pair<uint64_t,ATSConsistentHashNode*>(thash->get(), node));
-        thash->clear();
-    }
+  for (i = 0; i < (int) roundf(replicas * weight); i++) {
+    snprintf(numstr, 256, "%d-", i);
+    thash->update(numstr, strlen(numstr));
+    thash->update(std_string.c_str(), strlen(std_string.c_str()));
+    thash->final();
+    NodeMap.insert(std::pair<uint64_t, ATSConsistentHashNode *>(thash->get(), node));
+    thash->clear();
+  }
 }
 
-ATSConsistentHashNode*
-ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h) {
-    uint64_t url_hash;
-    ATSConsistentHashIter NodeMapIterUp, *iter;
-    ATSHash64 *thash;
-    bool *wptr, wrapped = false;
+ATSConsistentHashNode *
+ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+{
+  uint64_t url_hash;
+  ATSConsistentHashIter NodeMapIterUp, *iter;
+  ATSHash64 *thash;
+  bool *wptr, wrapped = false;
 
-    if (h) {
-        thash = h;
-    } else if (hash) {
-        thash = hash;
-    } else {
-        return NULL;
-    }
+  if (h) {
+    thash = h;
+  } else if (hash) {
+    thash = hash;
+  } else {
+    return NULL;
+  }
 
-    if (w) {
-        wptr = w;
-    } else {
-        wptr = &wrapped;
-    }
+  if (w) {
+    wptr = w;
+  } else {
+    wptr = &wrapped;
+  }
 
-    if (i) {
-        iter = i;
-    } else {
-        iter = &NodeMapIterUp;
-    }
+  if (i) {
+    iter = i;
+  } else {
+    iter = &NodeMapIterUp;
+  }
 
-    if (url) {
-        thash->update(url, strlen(url));
-        thash->final();
-        url_hash = thash->get();
-        thash->clear();
+  if (url) {
+    thash->update(url, strlen(url));
+    thash->final();
+    url_hash = thash->get();
+    thash->clear();
 
-        *iter = NodeMap.lower_bound(url_hash);
-
-        if (*iter == NodeMap.end()) {
-            *wptr = true;
-            *iter = NodeMap.begin();
-        }
-
-    } else {
-        (*iter)++;
-    }
-
-    if (!(*wptr) && *iter == NodeMap.end()) {
-        *wptr = true;
-        *iter = NodeMap.begin();
-    }
-
-    if (*wptr && *iter == NodeMap.end()) {
-        return NULL;
-    }
-
-    return (*iter)->second;
-}
-
-ATSConsistentHashNode*
-ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h) {
-    uint64_t url_hash;
-    ATSConsistentHashIter NodeMapIterUp, *iter;
-    ATSHash64 *thash;
-    bool *wptr, wrapped = false;
-
-    if (h) {
-        thash = h;
-    } else if (hash) {
-        thash = hash;
-    } else {
-        return NULL;
-    }
-
-    if (w) {
-        wptr = w;
-    } else {
-        wptr = &wrapped;
-    }
-
-    if (i) {
-        iter = i;
-    } else {
-        iter = &NodeMapIterUp;
-    }
-
-    if (url) {
-        thash->update(url, strlen(url));
-        thash->final();
-        url_hash = thash->get();
-        thash->clear();
-
-        *iter = NodeMap.lower_bound(url_hash);
-    }
+    *iter = NodeMap.lower_bound(url_hash);
 
     if (*iter == NodeMap.end()) {
-        *wptr = true;
-        *iter = NodeMap.begin();
+      *wptr = true;
+      *iter = NodeMap.begin();
     }
 
-    while (!(*iter)->second->available) {
-        (*iter)++;
+  } else {
+    (*iter)++;
+  }
 
-        if (!(*wptr) && *iter == NodeMap.end()) {
-            *wptr = true;
-            *iter = NodeMap.begin();
-        } else if (*wptr && *iter == NodeMap.end()) {
-            return NULL;
-        }
-    }
+  if (!(*wptr) && *iter == NodeMap.end()) {
+    *wptr = true;
+    *iter = NodeMap.begin();
+  }
 
-    return (*iter)->second;
+  if (*wptr && *iter == NodeMap.end()) {
+    return NULL;
+  }
+
+  return (*iter)->second;
 }
 
-ATSConsistentHash::~ATSConsistentHash() {
-    if (hash) {
-        delete hash;
+ATSConsistentHashNode *
+ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+{
+  uint64_t url_hash;
+  ATSConsistentHashIter NodeMapIterUp, *iter;
+  ATSHash64 *thash;
+  bool *wptr, wrapped = false;
+
+  if (h) {
+    thash = h;
+  } else if (hash) {
+    thash = hash;
+  } else {
+    return NULL;
+  }
+
+  if (w) {
+    wptr = w;
+  } else {
+    wptr = &wrapped;
+  }
+
+  if (i) {
+    iter = i;
+  } else {
+    iter = &NodeMapIterUp;
+  }
+
+  if (url) {
+    thash->update(url, strlen(url));
+    thash->final();
+    url_hash = thash->get();
+    thash->clear();
+
+    *iter = NodeMap.lower_bound(url_hash);
+  }
+
+  if (*iter == NodeMap.end()) {
+    *wptr = true;
+    *iter = NodeMap.begin();
+  }
+
+  while (!(*iter)->second->available) {
+    (*iter)++;
+
+    if (!(*wptr) && *iter == NodeMap.end()) {
+      *wptr = true;
+      *iter = NodeMap.begin();
+    } else if (*wptr && *iter == NodeMap.end()) {
+      return NULL;
     }
+  }
+
+  return (*iter)->second;
+}
+
+ATSConsistentHash::~ATSConsistentHash()
+{
+  if (hash) {
+    delete hash;
+  }
 }

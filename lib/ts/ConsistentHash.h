@@ -33,14 +33,14 @@
 
 struct ATSConsistentHashNode
 {
-    bool available;
-    char *name;
+  bool available;
+  char *name;
 };
 
 std::ostream &
 operator<< (std::ostream & os, ATSConsistentHashNode & thing);
 
-typedef std::map<uint64_t,ATSConsistentHashNode*>::iterator ATSConsistentHashIter;
+typedef std::map<uint64_t, ATSConsistentHashNode *>::iterator ATSConsistentHashIter;
 
 /*
   TSConsistentHash requires a TSHash64 object
@@ -50,16 +50,16 @@ typedef std::map<uint64_t,ATSConsistentHashNode*>::iterator ATSConsistentHashIte
 
 struct ATSConsistentHash
 {
-    ATSConsistentHash(int r = 1024, ATSHash64 *h = NULL);
-    void insert(ATSConsistentHashNode *node, float weight = 1.0, ATSHash64 *h = NULL);
-    ATSConsistentHashNode *lookup(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
-    ATSConsistentHashNode *lookup_available(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
-    ~ATSConsistentHash();
+  ATSConsistentHash(int r = 1024, ATSHash64 *h = NULL);
+  void insert(ATSConsistentHashNode *node, float weight = 1.0, ATSHash64 *h = NULL);
+  ATSConsistentHashNode *lookup(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
+  ATSConsistentHashNode *lookup_available(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
+  ~ATSConsistentHash();
 
 private:
-    int replicas;
-    ATSHash64 *hash;
-    std::map<uint64_t, ATSConsistentHashNode*> NodeMap;
+  int replicas;
+  ATSHash64 *hash;
+  std::map<uint64_t, ATSConsistentHashNode *> NodeMap;
 };
 
 #endif
