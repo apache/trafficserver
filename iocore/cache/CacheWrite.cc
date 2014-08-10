@@ -754,6 +754,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->doc_type = vc->frag_type;
     doc->v_major = CACHE_DB_MAJOR_VERSION;
     doc->v_minor = CACHE_DB_MINOR_VERSION;
+    doc->unused = 0; // force this for forward compatibility.
     doc->total_len = vc->total_len;
     doc->first_key = vc->first_key;
     doc->sync_serial = vol->header->sync_serial;

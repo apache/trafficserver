@@ -168,7 +168,7 @@ const Version version = {
   {CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION},     // cacheDB
   {CACHE_DIR_MAJOR_VERSION, CACHE_DIR_MINOR_VERSION},   // cacheDir
   {CLUSTER_MAJOR_VERSION, CLUSTER_MINOR_VERSION},       // current clustering
-  {MIN_CLUSTER_MAJOR_VERSION, MIN_CLUSTER_MINOR_VERSION},       // min clustering
+  {MIN_CLUSTER_MAJOR_VERSION, MIN_CLUSTER_MINOR_VERSION}       // min clustering
 };
 
 static const ArgumentDescription argument_descriptions[] = {
