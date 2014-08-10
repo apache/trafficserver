@@ -19,6 +19,9 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+#include "ink_defs.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +58,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int argc ATS_UNUSED, char* argv[], void** ih, char* errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
   int dscp;
   DscpRemapInstance* di;
@@ -78,7 +81,7 @@ TSRemapDeleteInstance(void* ih)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri ATS_UNUSED)
 {
   int sockfd;
   DscpRemapInstance* di = static_cast<DscpRemapInstance*>(ih);
