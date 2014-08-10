@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.2
 
+  *) [TS-2055] limit access to synthetic healthcheck
+
   *) [TS-2931] Plugin metrics fail after a crash.
 
   *) [TS-2776] Core dump inside openssl library
