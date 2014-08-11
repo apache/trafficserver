@@ -27,9 +27,9 @@ improves cache efficiency and speeds up users' downloads.
 It takes standard headers and knowledge about objects in the cache and
 potentially rewrites those headers so that a client will use a URL
 that's already cached instead of one that isn't.  The headers are
-specified in :rfc:`6249` (Metalink/HTTP: Mirrors and Hashes) and
-:rfc:`3230` (Instance Digests in HTTP) and are sent by various
-download redirectors or content distribution networks.
+specified in RFC 6249 (Metalink/HTTP: Mirrors and Hashes) and RFC 3230
+(Instance Digests in HTTP) and are sent by various download
+redirectors or content distribution networks.
 
 A lot of download sites distribute the same files from many different
 mirrors and users don't know which mirrors are already cached.  These
@@ -107,7 +107,7 @@ headers.
 
 The :mailheader:`Digest: SHA-256=...` header is also more efficient
 than :mailheader:`Link: <...>; rel=duplicate` headers because it
-involves a constant number of cache lookups.  :rfc:`6249` requires a
+involves a constant number of cache lookups.  RFC 6249 requires a
 :mailheader:`Digest: SHA-256=...` header or :mailheader:`Link: <...>;
 rel=duplicate` headers MUST be ignored:
 

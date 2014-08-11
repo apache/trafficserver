@@ -91,7 +91,7 @@ ssl_ca_name=FILENAME (optional)
   :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
 
 ssl_ticket_enabled=1|0 (optional)
-  Enable :rfc:`5077` stateless TLS session tickets. To support this,
+  Enable RFC 5077 stateless TLS session tickets. To support this,
   OpenSSL should be upgraded to version 0.9.8f or higher. This
   option must be set to `0` to disable session ticket support.
 
