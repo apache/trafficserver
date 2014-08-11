@@ -34,3 +34,9 @@ Description
 .. note::
 
    The change takes effect immediately
+
+
+See Also
+--------
+
+:ts:cv:`proxy.config.net.sock_packet_mark_in` and TS-1090

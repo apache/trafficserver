@@ -36,3 +36,9 @@ Description
    The change takes effect immediately, if no OS connection has been
    made, then this sets the mark that will be used IF an OS connection
    is established
+
+
+See Also
+--------
+
+:ts:cv:`proxy.config.net.sock_packet_mark_out` and TS-1090

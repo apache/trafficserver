@@ -38,3 +38,9 @@ Description
    TOS is deprecated and replaced by DSCP, this is still used to set
    DSCP however the first 2 bits of this value will be ignored as they
    now belong to the ECN field.
+
+
+See Also
+--------
+
+:ts:cv:`proxy.config.net.sock_packet_tos_in` and TS-1090
