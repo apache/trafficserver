@@ -99,7 +99,7 @@ to be initialized and therefore does not work if called from :func:`TSPluginInit
 History
 =======
 
-Lifecycle hooks were introduced to solve process initialization ordering issues (`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_). Different API calls required
+Lifecycle hooks were introduced to solve process initialization ordering issues (TS-1487). Different API calls required
 different modules of Traffic Server to be initialized for the call to work, but others did not work that late in initialization, which was problematic because all of them could effectively only be called from :func:`TSPluginInit` . The
 solution was to move :func:`TSPluginInit` as early as possible in the process initialization and provide hooks for API
 calls that needed to be invoked later which served essentially as additional pluging initialization points.

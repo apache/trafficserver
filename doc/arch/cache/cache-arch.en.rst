@@ -848,7 +848,7 @@ While this procedure is determinstic it is sensitive to initial conditions, incl
    are in the ram cache.
 
 .. [#] This linked list is mostly ignored in later processing, causing all but one file or directory storage units on
-   the same device to be ignored. See `TS-1869 <https://issues.apache.org/jira/browse/TS-1869>`_.
+   the same device to be ignored. See TS-1869.
 
 .. [#] It is unclear to me how that can happen, as the offsets are computed later and should all be zero at the time the
    spans are coalesced, and as far as I can tell the sort / coalesce is only done during initialization.
