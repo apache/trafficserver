@@ -77,7 +77,6 @@ maintainance_mode()
   return (command_flag ? true : false);
 }
 
-extern const Version version;
 extern AppVersionInfo appVersionInfo;
 
 #endif /* _Main_h_ */
