@@ -40,52 +40,18 @@
 // Global
 Store theStore;
 
-int
-Store::getVolume(char* line)
-{
-  if (!line) {
-    return 0;
-  }
-
-  int v = 0;
-  char* str = strstr(line, vol_str);
-  char* vol_start = str;
-
-  if (!str) {
-    return 0;
-  }
-
-  while (*str && !ParseRules::is_digit(*str))
-    str++;
-  v = ink_atoi(str);
-
-  while (*str && ParseRules::is_digit(*str))
-    str++;
-  while(*str) {
-    *vol_start = *str;
-    vol_start++;
-    str++;
-  }
-  *vol_start = 0;
-  Debug("cache_init", "returning %d and '%s'", v, line);
-
-  if (v < 0) {
-    return 0;
-  }
-
-  return v;
-}
-
-
 //
 // Store
 //
+
+char const Store::VOLUME_KEY[] = "volume";
+char const Store::HASH_SEED_KEY[] = "seed";
+
 Ptr<ProxyMutex> tmp_p;
-Store::Store():n_disks(0), disk(NULL),
+Store::Store():n_disks(0), disk(NULL)
 #if TS_USE_INTERIM_CACHE == 1
-  n_interim_disks(0), interim_disk(NULL),
+              ,n_interim_disks(0), interim_disk(NULL)
 #endif
-  vol_str("volume=")
 {
 }
 
@@ -234,6 +200,18 @@ Span::path(char *filename, int64_t * aoffset, char *buf, int buflen)
 }
 
 void
+Span::hash_seed_string_set(char const* s)
+{
+  hash_seed_string = s ? ats_strdup(s) : NULL;
+}
+
+void
+Span::volume_number_set(int n)
+{
+  forced_volume_num = n;
+}
+
+void
 Store::delete_all()
 {
   for (unsigned i = 0; i < n_disks; i++) {
@@ -252,7 +230,6 @@ Store::~Store()
 
 Span::~Span()
 {
-  ats_free(pathname);
   if (link.next)
     delete link.next;
 }
@@ -320,46 +297,57 @@ Store::read_config(int fd)
   }
   // For each line
 
-  char line[256];
-  while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
+  char line[1024];
+  int len;
+  while ((len = ink_file_fd_readline(fd, sizeof(line), line)) > 0) {
+    char const* path;
+    char const* seed = 0;
     // update lines
 
-    line[sizeof(line) - 1] = 0;
-    ln++;
+    ++ln;
+
+    // Because the SimpleTokenizer is a bit too simple, we have to normalize whitespace.
+    for ( char *spot = line, *limit = line+len ; spot < limit ; ++spot )
+      if (ParseRules::is_space(*spot)) *spot = ' '; // force whitespace to literal space.
+
+    SimpleTokenizer tokens(line, ' ', SimpleTokenizer::OVERWRITE_INPUT_STRING);
 
     // skip comments and blank lines
-
-    if (*line == '#')
+    path = tokens.getNext();
+    if (0 == path || '#' == path[0])
       continue;
-    char *n = line;
-    n += strspn(n, " \t\n");
-    if (!*n)
-      continue;
-
-   int volume_id = getVolume(n);
 
     // parse
-    Debug("cache_init", "Store::read_config: \"%s\"", n);
+    Debug("cache_init", "Store::read_config: \"%s\"", path);
 
-    char *e = strpbrk(n, " \t\n");
-    int len = e ? e - n : strlen(n);
-    (void) len;
     int64_t size = -1;
-    while (e && *e && !ParseRules::is_digit(*e))
-      e++;
-    if (e && *e) {
-      if ((size = ink_atoi64(e)) <= 0) {
-        err = "error parsing size";
-        goto Lfail;
+    int volume_num = -1;
+    char const* e;
+    while (0 != (e = tokens.getNext())) {
+      if (ParseRules::is_digit(*e)) {
+        if ((size = ink_atoi64(e)) <= 0) {
+          err = "error parsing size";
+          goto Lfail;
+        }
+      } else if (0 == strncasecmp(HASH_SEED_KEY, e, sizeof(HASH_SEED_KEY)-1)) {
+        e += sizeof(HASH_SEED_KEY) - 1;
+        if ('=' == *e) ++e;
+        if (*e && !ParseRules::is_space(*e))
+          seed = e;
+      } else if (0 == strncasecmp(VOLUME_KEY, e, sizeof(VOLUME_KEY)-1)) {
+        e += sizeof(VOLUME_KEY) - 1;
+        if ('=' == *e) ++e;
+        if (!*e || !ParseRules::is_digit(*e) || 0 >= (volume_num = ink_atoi(e))) {
+          err = "error parsing volume number";
+          goto Lfail;
+        }
       }
     }
 
-    n[len] = 0;
-    char *pp = Layout::get()->relative(n);
+    char *pp = Layout::get()->relative(path);
     ns = new Span;
-    ns->vol_num = volume_id;
-    Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), ns->vol_num=%d",
-      pp, size, ns->vol_num);
+    Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s",
+          pp, size, volume_num, seed ? " seed=" : "", seed ? seed : "");
     if ((err = ns->init(pp, size))) {
       RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", pp, err);
       Debug("cache_init", "Store::read_config - could not initialize storage \"%s\" [%s]", pp, err);
@@ -369,6 +357,10 @@ Store::read_config(int fd)
     }
     ats_free(pp);
     n_dsstore++;
+
+    // Set side values if present.
+    if (seed) ns->hash_seed_string_set(seed);
+    if (volume_num > 0) ns->volume_number_set(volume_num);
 
     // new Span
     {
@@ -454,7 +446,7 @@ Store::write_config_data(int fd)
   for (unsigned i = 0; i < n_disks; i++)
     for (Span * sd = disk[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
-      snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname, (int64_t) sd->blocks * (int64_t) STORE_BLOCK_SIZE);
+      snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname.get(), (int64_t) sd->blocks * (int64_t) STORE_BLOCK_SIZE);
       if (ink_file_fd_writestring(fd, buf) == -1)
         return (-1);
     }
@@ -574,7 +566,7 @@ Span::init(char *an, int64_t size)
     offset = 1;
   }
 
-  Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", pathname, hw_sector_size, size, blocks, disk_id, file_pathname);
+  Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", pathname.get(), hw_sector_size, size, blocks, disk_id, file_pathname);
 
 Lfail:
   return err;
@@ -822,7 +814,7 @@ Span::init(char *filename, int64_t size)
       if (!file_pathname)
         if (size <= 0)
           return "When using directories for cache storage, you must specify a size\n";
-      Debug("cache_init", "Span::init - mapped file \"%s\", %" PRId64 "", pathname, size);
+      Debug("cache_init", "Span::init - mapped file \"%s\", %" PRId64 "", pathname.get(), size);
     }
     blocks = size / STORE_BLOCK_SIZE;
   }
@@ -860,10 +852,7 @@ try_alloc(Store & target, Span * source, unsigned int start_blocks, bool one_onl
         a = blocks;
       Span *d = new Span(*source);
 
-      d->pathname = ats_strdup(source->pathname);
       d->blocks = a;
-      d->file_pathname = source->file_pathname;
-      d->offset = source->offset;
       d->link.next = ds;
 
       if (d->file_pathname)
@@ -935,7 +924,6 @@ Store::try_realloc(Store & s, Store & diff)
                 goto Lfound;
               } else {
                 Span *x = new Span(*d);
-                x->pathname = ats_strdup(x->pathname);
                 // d will be the first vol
                 d->blocks = sd->offset - d->offset;
                 d->link.next = x;
@@ -988,7 +976,7 @@ Span::write(int fd)
 {
   char buf[32];
 
-  if (ink_file_fd_writestring(fd, (char *) (pathname ? pathname : ")")) == -1)
+  if (ink_file_fd_writestring(fd, (pathname ? pathname.get() : ")")) == -1)
     return (-1);
   if (ink_file_fd_writestring(fd, "\n") == -1)
     return (-1);
@@ -1156,9 +1144,8 @@ Span *
 Span::dup()
 {
   Span *ds = new Span(*this);
-  ds->pathname = ats_strdup(pathname);
-  if (ds->link.next)
-    ds->link.next = ds->link.next->dup();
+  if (this->link.next)
+    ds->link.next = this->link.next->dup();
   return ds;
 }
 

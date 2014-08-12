@@ -43,20 +43,23 @@
 //
 struct Span
 {
-  char *pathname;
   int64_t blocks;
-  int hw_sector_size;
-  bool file_pathname;           // the pathname is a file
-  bool isRaw;
   int64_t offset;                 // used only if (file == true)
+  int hw_sector_size;
   int alignment;
   int disk_id;
-  int vol_num;
-  LINK(Span, link);
-
+  int forced_volume_num;  ///< Force span in to specific volume.
 private:
     bool is_mmapable_internal;
 public:
+  bool file_pathname;           // the pathname is a file
+  bool isRaw;
+  // v- used as a magic location for copy constructor.
+  // we memcpy everything before this member and do explicit assignment for the rest.
+  ats_scoped_str pathname;
+  ats_scoped_str hash_seed_string; ///< Used to seed the stripe assignment hash.
+  SLINK(Span, link);
+
   bool is_mmapable() { return is_mmapable_internal; }
   void set_mmapable(bool s) { is_mmapable_internal = s; }
   int64_t size() { return blocks * STORE_BLOCK_SIZE; }
@@ -84,6 +87,7 @@ public:
   int write(int fd);
   int read(int fd);
 
+  /// Duplicate this span and all chained spans.
   Span *dup();
   int64_t end() { return offset + blocks; }
 
@@ -94,10 +98,33 @@ public:
            int64_t * offset,      // for file, start offset (unsupported)
            char *buf, int buflen);      // where to store the path
 
+  /// Set the hash seed string.
+  void hash_seed_string_set(char const* s);
+  /// Set the volume number.
+  void volume_number_set(int n);
+
   Span()
-    : pathname(NULL), blocks(0), hw_sector_size(DEFAULT_HW_SECTOR_SIZE), file_pathname(false),
-      isRaw(true), offset(0), alignment(0), disk_id(0), is_mmapable_internal(false)
+    : blocks(0)
+    , offset(0)
+    , hw_sector_size(DEFAULT_HW_SECTOR_SIZE)
+    , alignment(0)
+    , disk_id(0)
+    , forced_volume_num(-1)
+    , is_mmapable_internal(false)
+    , file_pathname(false)
+    , isRaw(true)
   { }
+
+  /// Copy constructor.
+  /// @internal Prior to this implementation handling the char* pointers was done manual
+  /// at every call site. We also need this because we have ats_scoped_str members.
+  Span(Span const& that) {
+    memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span*>(0)->pathname)));
+    if (that.pathname) pathname = ats_strdup(that.pathname);
+    if (that.hash_seed_string) hash_seed_string = ats_strdup(that.hash_seed_string);
+    link.next = NULL;
+  }
+
   ~Span();
 };
 
@@ -180,9 +207,10 @@ struct Store
   //
   const char *read_config(int fd = -1);
   int write_config_data(int fd);
-private:
-  char const * const vol_str;
-  int getVolume(char* line);
+
+  /// Additional configuration key values.
+  static char const VOLUME_KEY[];
+  static char const HASH_SEED_KEY[];
 };
 
 extern Store theStore;

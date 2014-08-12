@@ -319,7 +319,7 @@ Vol::aggWriteDone(int event, Event *e)
     header->write_pos += io.aiocb.aio_nbytes;
     ink_assert(header->write_pos >= start);
     DDebug("cache_agg", "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "\n",
-          hash_text, header->write_pos, header->last_write_pos);
+          hash_text.get(), header->write_pos, header->last_write_pos);
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos)
       periodic_scan();
@@ -330,7 +330,7 @@ Vol::aggWriteDone(int event, Event *e)
     // for fragments is this aggregation buffer
     Debug("cache_disk_error", "Write error on disk %s\n \
               write range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-          hash_text, (uint64_t)io.aiocb.aio_offset,
+          hash_text.get(), (uint64_t)io.aiocb.aio_offset,
           (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
           (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
           (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);

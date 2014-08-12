@@ -414,7 +414,7 @@ void dir_clean_interimvol(InterimCacheVol *d);
 struct Vol: public Continuation
 {
   char *path;
-  char *hash_text;
+  ats_scoped_str hash_text;
   CryptoHash hash_id;
   int fd;
 

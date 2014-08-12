@@ -1015,13 +1015,13 @@ sync_cache_dir_on_shutdown(void)
     Vol *d = gvol[i];
 
     if (DISK_BAD(d->disk)) {
-      Debug("cache_dir_sync", "Dir %s: ignoring -- bad disk", d->hash_text);
+      Debug("cache_dir_sync", "Dir %s: ignoring -- bad disk", d->hash_text.get());
       continue;
     }
     size_t dirlen = vol_dirlen(d);
     ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
     if (!d->header->dirty && !d->dir_sync_in_progress) {
-      Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_text);
+      Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_text.get());
       continue;
     }
     // recompute hit_evacuate_window
@@ -1032,7 +1032,7 @@ sync_cache_dir_on_shutdown(void)
     // dont worry about the cachevc s in the agg queue
     // directories have not been inserted for these writes
     if (d->agg_buf_pos) {
-      Debug("cache_dir_sync", "Dir %s: flushing agg buffer first", d->hash_text);
+      Debug("cache_dir_sync", "Dir %s: flushing agg buffer first", d->hash_text.get());
 
       // set write limit
       d->header->agg_pos = d->header->write_pos + d->agg_buf_pos;
@@ -1054,7 +1054,7 @@ sync_cache_dir_on_shutdown(void)
     for (int i = 0; i < d->num_interim_vols; i++) {
       InterimCacheVol *sv = &(d->interim_vols[i]);
       if (sv->agg_buf_pos) {
-        Debug("cache_dir_sync", "Dir %s: flushing agg buffer first to interim", d->hash_text);
+        Debug("cache_dir_sync", "Dir %s: flushing agg buffer first to interim", d->hash_text.get());
         sv->header->agg_pos = sv->header->write_pos + sv->agg_buf_pos;
 
         int r = pwrite(sv->fd, sv->agg_buffer, sv->agg_buf_pos, sv->header->write_pos);
@@ -1096,7 +1096,7 @@ sync_cache_dir_on_shutdown(void)
     off_t start = d->skip + (B ? dirlen : 0);
     B = pwrite(d->fd, buf, dirlen, start);
     ink_assert(B == dirlen);
-    Debug("cache_dir_sync", "done syncing dir for vol %s", d->hash_text);
+    Debug("cache_dir_sync", "done syncing dir for vol %s", d->hash_text.get());
   }
   Debug("cache_dir_sync", "sync done");
   if (buf)
@@ -1131,7 +1131,7 @@ Lrestart:
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
     if (io.aio_result != (int64_t)io.aiocb.aio_nbytes) {
-      Warning("vol write error during directory sync '%s'", gvol[vol]->hash_text);
+      Warning("vol write error during directory sync '%s'", gvol[vol]->hash_text.get());
       event = EVENT_NONE;
       goto Ldone;
     }
@@ -1164,11 +1164,11 @@ Lrestart:
          The dirty bit it set in dir_insert, dir_overwrite and dir_delete_entry
        */
       if (!d->header->dirty) {
-        Debug("cache_dir_sync", "Dir %s not dirty", d->hash_text);
+        Debug("cache_dir_sync", "Dir %s not dirty", d->hash_text.get());
         goto Ldone;
       }
       if (d->is_io_in_progress() || d->agg_buf_pos) {
-        Debug("cache_dir_sync", "Dir %s: waiting for agg buffer", d->hash_text);
+        Debug("cache_dir_sync", "Dir %s: waiting for agg buffer", d->hash_text.get());
         d->dir_sync_waiting = 1;
         if (!d->is_io_in_progress())
           d->aggWrite(EVENT_IMMEDIATE, 0);
@@ -1182,7 +1182,7 @@ Lrestart:
 #endif
         return EVENT_CONT;
       }
-      Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", d->header->write_pos, d->hash_text);
+      Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", d->header->write_pos, d->hash_text.get());
       d->header->dirty = 0;
       if (buflen < dirlen) {
         if (buf)
@@ -1276,7 +1276,7 @@ Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this para
     free += dir_freelist_length(this, s);
   }
   int total = buckets * segments * DIR_DEPTH;
-  printf("    Directory for [%s]\n", hash_text);
+  printf("    Directory for [%s]\n", hash_text.get());
   printf("        Bytes:     %d\n", total * SIZEOF_DIR);
   printf("        Segments:  %" PRIu64 "\n", (uint64_t)segments);
   printf("        Buckets:   %" PRIu64 "\n", (uint64_t)buckets);

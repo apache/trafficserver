@@ -21,23 +21,31 @@ storage.config
 
 .. configfile:: storage.config
 
-The :file:`storage.config` file (by default, located in 
+The :file:`storage.config` file (by default, located in
 ``/opt/trafficserver/etc/trafficserver/``) lists all the files, directories, and/or
 hard disk partitions that make up the Traffic Server cache. After you
-modify the :file:`storage.config` file, you must restart Traffic Server.
+modify the :file:`storage.config` file the new settings will not be effective until Traffic Server is restarted.
 
 Format
 ======
 
-The format of the :file:`storage.config` file is::
+The format of the :file:`storage.config` file is a series of lines of the form
 
-   pathname size volume=volume_number
+   *pathname* *size* [ ``volume=``\ *number* ] [ ``seed=``\ *string* ]
 
-where :arg:`pathname` is the name of a partition, directory or file, :arg:`size`
-is the size of the named partition, directory or file (in bytes), and
-:arg:`volume` is the volume number that is used in :file:`volume.config`
-and :file:`hosting.config`. You must specify a size for directories or
-files; size is optional for raw partitions. :arg:`volume` is optional.
+where :arg:`pathname` is the name of a partition, directory or file, :arg:`size` is the size of the named partition,
+directory or file (in bytes), and :arg:`volume` is the volume number used in the files :file:`volume.config` and
+:file:`hosting.config`. :arg:`seed` is used for seeding the :ref:`assignment-table`. You must specify a size for
+directories or files; size is optional for raw partitions. :arg:`volume` is optional and :arg:`seed` are optional.
+
+.. note::
+
+   The :arg:`volume` option is independent of the :arg:`seed` option and either can be used with or without the other,
+   and their ordering on the line is irrelevant.
+
+.. note::
+
+   If the :arg:`seed` option is used every use must have a unique value for :arg:`string`.
 
 You can use any partition of any size. For best performance:
 
@@ -67,6 +75,22 @@ supported. They include
    - ``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)
    - ``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)
 
+.. _assignment-table:
+
+Assignment Table
+----------------
+
+Each storage element defined in :file:`storage.config` is divided in to :term:`stripes`. The assignment table maps from
+an object URL to a specific stripe. The table is initialized based on a pseudo-random process which is seeded by hashing
+a string for each stripe. This string is composed of a seed string, an offset (the start of the stripe on the storage
+element) and the length of the stripe. By default the path for the storage is used as the seed string. This ensures that
+each stripe has a unique string for the assignment hash. This does make the assignment table very sensitive to the path
+for the storage elements and changing even one can have a cascading effect which will effectively clear most of the cache.
+This can be problem when drives fail and a system reboot causes the path names to change.
+
+The :arg:`seed` option can be used to create a fixed string that an administrator can use to keep the assignment table
+consistent even if a device has a changed path. This value of the option is used instead of the path as the seed string
+for the assignment table hash.
 
 Examples
 ========
@@ -90,7 +114,7 @@ cache file with::
 .. note::
     When using on-filesystem cache disk storage, you can only have one such
     directory specified. This will be address in a future version.
-   
+
 
 Solaris Example
 ---------------
@@ -124,6 +148,17 @@ In order to apply these settings, trigger a reload with :manpage:`udevadm(8)`:::
 
    udevadm trigger --subsystem-match=block
 
+As an implementation note, modern Linux supports `alternative symlinked names for disk devices
+<https://wiki.archlinux.org/index.php/persistent_block_device_naming>`_ in the ``/dev/disk`` directory structure. As
+noted for the :ref:`assignment-table` the path used for the disk can effect the cache if it changes. This can be
+ameloriated in some cases by using one of the alternate paths in via ``/dev/disk``. Note that if the ``by-id`` style is
+used, replacing a failed drive will cause that path to change because the new drive will have a different physical ID.
+
+If this is not sufficient then the :arg:`seed` argument should be used to create a more permanent assignment table. An
+example would be::
+
+   /dev/sde seed=cache.disk.0
+   /dev/sdg seed=cache.disk.1
 
 FreeBSD Example
 ---------------
@@ -143,4 +178,3 @@ following rules are stored in :manpage:`devfs.conf(5)`::
 
    # Assign /dev/ada1 and /dev/ada2 to the tserver user
    own    ada[12]  tserver:tserver
-

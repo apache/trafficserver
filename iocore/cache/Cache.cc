@@ -739,10 +739,14 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        gdisks[gndisks] = new CacheDisk();
-        gdisks[gndisks]->forced_volume_num = sd->vol_num;
-        Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
         int sector_size = sd->hw_sector_size;
+
+        gdisks[gndisks] = new CacheDisk();
+        gdisks[gndisks]->forced_volume_num = sd->forced_volume_num;
+        if (sd->hash_seed_string)
+          gdisks[gndisks]->hash_seed_string = ats_strdup(sd->hash_seed_string);
+
+        Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
 
         if (sector_size < cache_config_force_sector_size)
           sector_size = cache_config_force_sector_size;
@@ -1133,7 +1137,7 @@ int
 Vol::db_check(bool /* fix ATS_UNUSED */ )
 {
   char tt[256];
-  printf("    Data for [%s]\n", hash_text);
+  printf("    Data for [%s]\n", hash_text.get());
   printf("        Length:          %" PRIu64 "\n", (uint64_t)len);
   printf("        Write Position:  %" PRIu64 "\n", (uint64_t) (header->write_pos - skip));
   printf("        Phase:           %d\n", (int)!!header->phase);
@@ -1231,7 +1235,7 @@ vol_dir_clear(Vol *d)
   vol_clear_init(d);
 
   if (pwrite(d->fd, d->raw_dir, dir_len, d->skip) < 0) {
-    Warning("unable to clear cache directory '%s'", d->hash_text);
+    Warning("unable to clear cache directory '%s'", d->hash_text.get());
     return -1;
   }
   return 0;
@@ -1259,15 +1263,18 @@ Vol::clear_dir()
 int
 Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
-  dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
-  path = ats_strdup(s);
-  const size_t hash_text_size = strlen(s) + 32;
-  hash_text = (char *)ats_malloc(hash_text_size);
-  ink_strlcpy(hash_text, s, hash_text_size);
-  const size_t s_size = strlen(s);
-  snprintf(hash_text + s_size, (hash_text_size - s_size), " %" PRIu64 ":%" PRIu64 "",
+  char* seed_str = disk->hash_seed_string ? disk->hash_seed_string : s;
+  const size_t hash_seed_size = strlen(seed_str);
+  const size_t hash_text_size = hash_seed_size + 32;
+
+  hash_text = static_cast<char *>(ats_malloc(hash_text_size));
+  ink_strlcpy(hash_text, seed_str, hash_text_size);
+  snprintf(hash_text + hash_seed_size, (hash_text_size - hash_seed_size), " %" PRIu64 ":%" PRIu64 "",
            (uint64_t)dir_skip, (uint64_t)blocks);
   MD5Context().hash_immediate(hash_id, hash_text, strlen(hash_text));
+
+  dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
+  path = ats_strdup(s);
   len = blocks * STORE_BLOCK_SIZE;
   ink_assert(len <= MAX_VOL_SIZE);
   skip = dir_skip;
@@ -1305,7 +1312,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 #endif
 
   if (clear) {
-    Note("clearing cache directory '%s'", hash_text);
+    Note("clearing cache directory '%s'", hash_text.get());
     return clear_dir();
   }
 
@@ -1315,7 +1322,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   // try A
   off_t as = skip;
   if (is_debug_tag_set("cache_init"))
-    Note("reading directory '%s'", hash_text);
+    Note("reading directory '%s'", hash_text.get());
   SET_HANDLER(&Vol::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
@@ -1349,7 +1356,7 @@ Vol::handle_dir_clear(int event, void *data)
   if (event == AIO_EVENT_DONE) {
     op = (AIOCallback *) data;
     if ((size_t) op->aio_result != (size_t) op->aiocb.aio_nbytes) {
-      Warning("unable to clear cache directory '%s'", hash_text);
+      Warning("unable to clear cache directory '%s'", hash_text.get());
       fd = -1;
     }
 
@@ -1385,8 +1392,8 @@ Vol::handle_dir_read(int event, void *data)
   if (!(header->magic == VOL_MAGIC &&  footer->magic == VOL_MAGIC &&
         CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version.ink_major &&  header->version.ink_major <= CACHE_DB_MAJOR_VERSION
     )) {
-    Warning("bad footer in cache directory for '%s', clearing", hash_text);
-    Note("clearing cache directory '%s'", hash_text);
+    Warning("bad footer in cache directory for '%s', clearing", hash_text.get());
+    Note("clearing cache directory '%s'", hash_text.get());
     clear_dir();
     return EVENT_DONE;
   }
@@ -1482,7 +1489,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
     if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
-      Warning("disk read error on recover '%s', clearing", hash_text);
+      Warning("disk read error on recover '%s', clearing", hash_text.get());
       goto Lclear;
     }
     if (io.aiocb.aio_offset == header->last_write_pos) {
@@ -1499,7 +1506,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
       while (done < to_check) {
         Doc *doc = (Doc *) (s + done);
         if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
-          Warning("no valid directory found while recovering '%s', clearing", hash_text);
+          Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
           goto Lclear;
         }
         done += round_to_approx_size(doc->len);
@@ -1642,7 +1649,7 @@ Ldone:{
     recover_pos += EVACUATION_SIZE;   // safely cover the max write size
     if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
       Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
-      Warning("no valid directory found while recovering '%s', clearing", hash_text);
+      Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
       goto Lclear;
     }
 
@@ -1749,7 +1756,7 @@ Vol::handle_header_read(int event, void *data)
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
       SET_HANDLER(&Vol::handle_dir_read);
       if (is_debug_tag_set("cache_init"))
-        Note("using directory A for '%s'", hash_text);
+        Note("using directory A for '%s'", hash_text.get());
       io.aiocb.aio_offset = skip;
       ink_assert(ink_aio_read(&io));
     }
@@ -1758,11 +1765,11 @@ Vol::handle_header_read(int event, void *data)
 
       SET_HANDLER(&Vol::handle_dir_read);
       if (is_debug_tag_set("cache_init"))
-        Note("using directory B for '%s'", hash_text);
+        Note("using directory B for '%s'", hash_text.get());
       io.aiocb.aio_offset = skip + vol_dirlen(this);
       ink_assert(ink_aio_read(&io));
     } else {
-      Note("no good directory, clearing '%s'", hash_text);
+      Note("no good directory, clearing '%s'", hash_text.get());
       clear_dir();
       delete init_info;
       init_info = 0;
@@ -2467,7 +2474,7 @@ CacheVC::handleReadDone(int event, Event *e)
       if (!io.ok()) {
         Debug("cache_disk_error", "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-              vol->hash_text, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+              vol->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
               (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
@@ -2494,7 +2501,7 @@ CacheVC::handleReadDone(int event, Event *e)
         doc = reinterpret_cast<Doc*>(buf->data()); // buf may be a new copy 
       } else {
         Debug("cache_bc", "Upgrade of fragment failed - disk %s - doc id = %" PRIx64 ":%" PRIx64 "\n"
-              , vol->hash_text, read_key->slice64(0), read_key->slice64(1));
+              , vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
         doc->magic = DOC_CORRUPT;
         // Should really trash the directory entry for this, as it's never going to work in the future.
         // Or does that happen later anyway?

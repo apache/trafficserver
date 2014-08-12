@@ -257,6 +257,12 @@ public:
   operator value_type () const {
     return _r;
   }
+  /// Explicit conversion to resource type.
+  /// @note Syntactic sugar for @c static_cast<value_type>(instance). Required when passing to var arg function
+  /// as automatic conversion won't be done.
+  value_type get() const {
+    return _r;
+  }
 
   /** Release resource from this container.
       After this call, the resource will @b not cleaned up when this container is destructed.
