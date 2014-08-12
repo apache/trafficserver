@@ -35,10 +35,12 @@
 
 namespace net_instaweb {
 
-AtsProcessContext::AtsProcessContext() {
+  AtsProcessContext::AtsProcessContext() : ProcessContext() {
   AtsThreadSystem* ts = new AtsThreadSystem();
   message_handler_.reset(new AtsMessageHandler(ts->NewMutex()));
-  driver_factory_.reset(new AtsRewriteDriverFactory(ts));
+  driver_factory_.reset(
+    new AtsRewriteDriverFactory(
+      *this, ts, ""/*hostname, not used*/, -1/*port, not used*/));
   server_context_ = driver_factory()->MakeAtsServerContext();
 
   AtsRewriteOptions* root_options_ = (AtsRewriteOptions*)driver_factory_->default_options();

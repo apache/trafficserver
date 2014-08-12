@@ -40,7 +40,7 @@
 #include "net/instaweb/system/public/system_request_context.h"
 
 #include "net/instaweb/util/public/string_writer.h"
-#include "net/instaweb/system/public/handlers.h"
+
 
 using namespace net_instaweb;
 
@@ -145,6 +145,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
         SystemRequestContext* system_request_context = 
             new SystemRequestContext(server_context->thread_system()->NewMutex(),
                                      server_context->timer(),
+				     "www.foo.com",// TODO(oschaaf): compute these
                                      80,
                                      "127.0.0.1");
 
@@ -278,36 +279,14 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   const char* error_message = NULL;
   StringPiece request_uri_path = ctx->gurl->PathAndLeaf();  
   
-  if (ctx->gurl->PathSansQuery() == "/robots.txt") {
+  if (false && ctx->gurl->PathSansQuery() == "/robots.txt") {
     content_type = kContentTypeText;
     writer.Write("User-agent: *\n", server_context->message_handler());
     writer.Write("Disallow: /\n", server_context->message_handler());
-  } else if (ctx->gurl->PathSansQuery() == "/pagespeed_message") {    
-    // TODO(oschaaf)... let's wait for a bit with this one.
-  } else if (ctx->gurl->PathSansQuery() == "/pagespeed_statistics" || ctx->gurl->PathSansQuery() == "/pagespeed_global_statistics") {
-    error_message = StatisticsHandler(
-        factory,
-        server_context,
-        NULL,  // No SPDY-specific config in ats_pagespeed.
-        !factory->use_per_vhost_statistics() || StringCaseStartsWith(
-            request_uri_path, "/pagespeed_global_statistics"),
-        StringPiece(ctx->gurl->Query().as_string().c_str()),
-        &content_type,
-        &writer,
-        server_context->message_handler());
-  } else if (ctx->gurl->PathSansLeaf() == "/ats_speed_static/") {
-    StringPiece file_contents;
-    if (server_context->static_asset_manager()->GetAsset(
-            request_uri_path.substr(
-                strlen("/ats_speed_static/")),
-            &file_contents, &content_type, &cache_control)) {
-      file_contents.CopyToString(&output);
-    } else {
-      error_message = "Static asset not found";
-    }    
-  }  else if (ctx->gurl->PathSansQuery() == "/pagespeed_console") {
-    ConsoleHandler(server_context, server_context->config(), &writer, server_context->message_handler());
-  } else { 
+  }
+ 
+  // TODO(oschaaf): /pagespeed_admin handling
+  else { 
     // Optimized resource are highly cacheable (1 year expiry)
     // TODO(oschaaf): configuration
     TSHttpTxnRespCacheableSet(txn, 1);
