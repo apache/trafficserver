@@ -60,9 +60,13 @@
 namespace net_instaweb {
 
 
-  AtsRewriteDriverFactory::AtsRewriteDriverFactory(AtsThreadSystem* thread_system)
-    // TODO(oschaaf): fix hostname/port (?)
-      : SystemRewriteDriverFactory(thread_system, new PthreadSharedMem(), StringPiece("foohost"), 8080)
+  AtsRewriteDriverFactory::AtsRewriteDriverFactory(
+						   const ProcessContext& process_context,
+						   AtsThreadSystem* thread_system,
+						   StringPiece hostname, int port)
+    : SystemRewriteDriverFactory(process_context, 
+				 thread_system, NULL /*default shared mem runtime*/,
+				 "" /*hostname, not used*/, -1/*port, not used*/)
       , ats_message_handler_(new AtsMessageHandler(thread_system->NewMutex()))
       , ats_html_parse_message_handler_(new AtsMessageHandler(thread_system->NewMutex()))
       , use_per_vhost_statistics_(false)
@@ -143,6 +147,12 @@ namespace net_instaweb {
     AtsRewriteOptions* options = new AtsRewriteOptions(thread_system());
     options->SetRewriteLevel(RewriteOptions::kCoreFilters);
     return options;
+  }
+
+  ServerContext* AtsRewriteDriverFactory::NewDecodingServerContext() {
+    ServerContext* sc = new AtsServerContext(this);
+    InitStubDecodingServerContext(sc);
+    return sc;
   }
 
   void AtsRewriteDriverFactory::InitStats(Statistics* statistics) {

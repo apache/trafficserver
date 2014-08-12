@@ -52,7 +52,9 @@ namespace net_instaweb {
 
 class AtsRewriteDriverFactory : public SystemRewriteDriverFactory { 
  public:
-  explicit AtsRewriteDriverFactory(AtsThreadSystem* thread_system);
+  explicit AtsRewriteDriverFactory(const ProcessContext& process_context,
+				   AtsThreadSystem* thread_system,
+				   StringPiece hostname, int port);
   virtual ~AtsRewriteDriverFactory();
 
   virtual Hasher* NewHasher();
@@ -62,6 +64,7 @@ class AtsRewriteDriverFactory : public SystemRewriteDriverFactory {
   virtual Timer* DefaultTimer();
   virtual NamedLockManager* DefaultLockManager();
   virtual RewriteOptions* NewRewriteOptions();
+  virtual ServerContext* NewDecodingServerContext();
 
   virtual bool UseBeaconResultsInFilters() const {
     return true;

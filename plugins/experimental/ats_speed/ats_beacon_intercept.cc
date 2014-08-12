@@ -249,6 +249,8 @@ processRequest(InterceptCtx *cont_data) {
   SystemRequestContext* system_request_context = 
       new SystemRequestContext(server_context->thread_system()->NewMutex(),
                                server_context->timer(),
+			       // TODO(oschaaf): determine these for real.
+			       "www.foo.com",
                                80,
                                "127.0.0.1");
   

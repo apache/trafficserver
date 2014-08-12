@@ -52,7 +52,6 @@ void AtsRewriteOptions::Init() {
   DCHECK(ats_properties_ != NULL)
       << "Call AtsRewriteOptions::Initialize() before construction";
   InitializeOptions(ats_properties_);
-  statistics_handler_path_.set_default("/pagespeed_global_statistics");
 }
 
 void AtsRewriteOptions::AddProperties() {

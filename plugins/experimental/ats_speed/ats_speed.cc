@@ -42,7 +42,6 @@
 #include "ats_speed.h"
 
 #include "ats_config.h"
-#include "ats_demo_filter.h"
 #include "ats_header_utils.h"
 #include "ats_rewrite_options.h"
 #include "ats_log_message_handler.h"
@@ -70,8 +69,8 @@
 #include "net/instaweb/rewriter/public/process_context.h"
 #include "net/instaweb/rewriter/public/resource_fetch.h"
 #include "net/instaweb/rewriter/public/rewrite_driver.h"
+#include "net/instaweb/rewriter/public/rewrite_query.h"
 #include "net/instaweb/rewriter/public/static_asset_manager.h"
-#include "net/instaweb/system/public/handlers.h"
 #include "net/instaweb/public/global_constants.h"
 #include "net/instaweb/public/version.h"
 #include "net/instaweb/util/public/google_message_handler.h"
@@ -196,11 +195,9 @@ RewriteOptions* ps_determine_request_options(
   // make cache key consistent for both lookup and storing in cache.
   //
   // Sets option from request headers and url.
-  ServerContext::OptionsBoolPair query_options_success =
-      server_context->GetQueryOptions(url, request_headers,
-                                      response_headers);
-  bool get_query_options_success = query_options_success.second;
-  if (!get_query_options_success) {
+  RewriteQuery rewrite_query;
+  if (!server_context->GetQueryOptions(url, request_headers,
+				       response_headers, &rewrite_query)) {
     // Failed to parse query params or request headers.  Treat this as if there
     // were no query params given.
     TSError("ps_route rerquest: parsing headers or query params failed.");
@@ -209,7 +206,7 @@ RewriteOptions* ps_determine_request_options(
 
   // Will be NULL if there aren't any options set with query params or in
   // headers.
-  return query_options_success.first;
+  return rewrite_query.ReleaseOptions();
 }
 
 bool ps_determine_options(ServerContext* server_context,
@@ -456,6 +453,7 @@ ats_transform_init(TSCont contp, TransformCtx * ctx)
   SystemRequestContext* system_request_context = 
     new SystemRequestContext(server_context->thread_system()->NewMutex(),
 			     server_context->timer(),
+			     "www.foo.com",
 			     80,
 			     "127.0.0.1");
 

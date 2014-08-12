@@ -52,19 +52,20 @@ INC =-I$(MOD_PAGESPEED_DIR)\
  -I$(MOD_PAGESPEED_DIR)out/$(BUILDTYPE)/obj/gen\
  -I$(MOD_PAGESPEED_DIR)out/$(BUILDTYPE)/obj/gen/protoc_out/instaweb
 
-PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a $(PAGESPEED_OUT)libserf.a $(PAGESPEED_OUT)libaprutil.a $(PAGESPEED_OUT)libapr.a
+PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a 
+#PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a $(PAGESPEED_OUT)libserf.a $(PAGESPEED_OUT)libaprutil.a $(PAGESPEED_OUT)libapr.a
 
 %.so: psol %.cc
 # https://github.com/pagespeed/ngx_pagespeed/issues/433: it would be nice to have -Wall -Werror, only suppressing when needed.
-	g++ $(INC) -shared -o ats_speed.so -g -pipe -O3 -fpic $(MOD_PAGESPEED_DIR)/out/$(BUILDTYPE)/obj/gen/data2c_out/instaweb/net/instaweb/apache/install/mod_pagespeed_example/*.cc $(MOD_PAGESPEED_DIR)/net/instaweb/system/*.cc  *.cc -lstdc++ -lstdc++  -lpthread $(PSOL_LIBS) -lrt
+	g++ $(INC) -shared -o ats_speed.so -g -pipe -O3 -fpic *.cc -lstdc++ -lstdc++  -lpthread $(PSOL_LIBS) -lrt
 
 all: psol gzip/gzip.so ats_speed.so
 
-1.7.30.4.tar.gz:
-	wget --no-check-certificate https://dl.google.com/dl/page-speed/psol/1.7.30.4.tar.gz
+1.8.31.4.tar.gz:
+	wget --no-check-certificate https://dl.google.com/dl/page-speed/psol/1.8.31.4.tar.gz
 
-psol/: 1.7.30.4.tar.gz
-	tar -xzvf 1.7.30.4.tar.gz
+psol/: 1.8.31.4.tar.gz
+	tar -xzvf 1.8.31.4.tar.gz
 
 gzip/gzip.so:
 	cd gzip && make

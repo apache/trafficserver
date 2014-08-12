@@ -27,6 +27,7 @@
 #include "net/instaweb/util/public/google_message_handler.h"
 #include "net/instaweb/util/public/message_handler.h"
 #include "net/instaweb/util/public/scoped_ptr.h"
+#include "net/instaweb/rewriter/public/process_context.h"
 
 namespace net_instaweb {
 
@@ -34,7 +35,7 @@ class AtsRewriteDriverFactory;
 class ProxyFetchFactory;
 class AtsServerContext;
 
-class AtsProcessContext {
+class AtsProcessContext : ProcessContext {
  public:
   explicit AtsProcessContext();
   virtual ~AtsProcessContext();
