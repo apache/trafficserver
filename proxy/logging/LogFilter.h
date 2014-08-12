@@ -26,6 +26,7 @@
 #define LOG_FILTER_H
 
 #include "libts.h"
+#include "IpMap.h"
 #include "LogAccess.h"
 #include "LogField.h"
 #include "LogFormat.h"
@@ -45,6 +46,7 @@ public:
   {
     INT_FILTER = 0,
     STRING_FILTER,
+    IP_FILTER,
     N_TYPES
   };
 
@@ -190,6 +192,44 @@ private:
   // -- member functions that are not allowed --
   LogFilterInt();
   LogFilterInt & operator=(LogFilterInt & rhs);
+};
+
+/*-------------------------------------------------------------------------
+  LogFilterIP
+  
+  Filter for IP fields using IpAddr.
+  -------------------------------------------------------------------------*/
+class LogFilterIP:public LogFilter
+{
+public:
+  LogFilterIP(const char *name, LogField * field, Action a, Operator o, IpAddr value);
+  LogFilterIP(const char *name, LogField * field, Action a, Operator o, size_t num_values,  IpAddr* value);
+  LogFilterIP(const char *name, LogField * field, Action a, Operator o, char *values);
+  LogFilterIP(const LogFilterIP & rhs);
+  ~LogFilterIP();
+
+  bool operator==(LogFilterIP & rhs);
+
+  virtual bool toss_this_entry(LogAccess * lad);
+  virtual bool wipe_this_entry(LogAccess * lad);
+  void display(FILE * fd = stdout);
+  void display_as_XML(FILE * fd = stdout);
+
+private:
+  IpMap m_map;
+
+  /// Initialization common to all constructors.
+  void init();
+
+  void displayRanges(FILE* fd);
+  void displayRange(FILE* fd, IpMap::iterator const& iter);
+
+  // Checks for a match on this filter.
+  bool is_match(LogAccess* lad);
+  
+  // -- member functions that are not allowed --
+  LogFilterIP();
+  LogFilterIP & operator=(LogFilterIP & rhs);
 };
 
 bool filters_are_equal(LogFilter * filt1, LogFilter * filt2);

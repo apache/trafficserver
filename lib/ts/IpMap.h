@@ -250,7 +250,6 @@ namespace ts { namespace detail {
     of disjoint ranges. Marking and unmarking can take O(log n) and
     may require memory allocation / deallocation although this is
     minimized.
-
 */
 
 class IpMap {
@@ -305,8 +304,8 @@ public:
     /// Default constructor.
     iterator() : _tree(0), _node(0) {}
 
-    reference operator* (); //!< value operator
-    pointer operator -> (); //!< dereference operator
+    reference operator* () const; //!< value operator
+    pointer operator -> () const; //!< dereference operator
     self& operator++(); //!< next node (prefix)
     self operator++(int); //!< next node (postfix)
     self& operator--(); ///< previous node (prefix)
@@ -322,8 +321,8 @@ public:
     bool operator!=(self const& that) const { return ! (*this == that); }
   private:
     /// Construct a valid iterator.
-    iterator(IpMap* tree, Node* node) : _tree(tree), _node(node) {}
-      IpMap* _tree; ///< Container.
+    iterator(IpMap const* tree, Node* node) : _tree(tree), _node(node) {}
+      IpMap const* _tree; ///< Container.
       Node* _node; //!< Current node.
     };
 
@@ -351,6 +350,17 @@ public:
     void* data = 0 ///< Client data.
   );
 
+  /** Mark a range.
+      All addresses in the range [ @a min , @a max ] are marked with @a data.
+      @note Convenience overload for IPv4 addresses.
+      @return This object.
+  */
+  self& mark(
+    IpAddr const& min, ///< Minimum address (network order).
+    IpAddr const& max, ///< Maximum address (network order).
+    void* data = 0 ///< Client data.
+  );
+
   /** Mark an IPv4 address @a addr with @a data.
       This is equivalent to calling @c mark(addr, addr, data).
       @note Convenience overload for IPv4 addresses.
@@ -372,7 +382,7 @@ public:
     void* data = 0 ///< Client data.
   );
 
-  /** Mark an IPv6 address @a addr with @a data.
+  /** Mark an address @a addr with @a data.
       This is equivalent to calling @c mark(addr, addr, data).
       @note Convenience overload.
       @return This object.
@@ -410,7 +420,8 @@ public:
       range that are @b not present in the map are added. No
       previously present address is changed.
 
-      @note This is useful for filling in first match tables.
+      @note This is useful for filling in first match tables because @a data for already present
+      addresses is not changed.
 
       @return This object.
   */
@@ -456,8 +467,29 @@ public:
     void **ptr = 0 ///< Client data return.
   ) const;
 
+  /** Test for membership.
+
+      @note Convenience overload for @c IpEndpoint.
+
+      @return @c true if the address is in the map, @c false if not.
+      If the address is in the map and @a ptr is not @c NULL, @c *ptr
+      is set to the client data for the address.
+  */
   bool contains(
     IpEndpoint const* target, ///< Search target (network order).
+    void **ptr = 0 ///< Client data return.
+  ) const;
+
+  /** Test for membership.
+
+      @note Convenience overload for @c IpAddr.
+
+      @return @c true if the address is in the map, @c false if not.
+      If the address is in the map and @a ptr is not @c NULL, @c *ptr
+      is set to the client data for the address.
+  */
+  bool contains(
+    IpAddr const& target, ///< Search target (network order).
     void **ptr = 0 ///< Client data return.
   ) const;
 
@@ -469,9 +501,9 @@ public:
   self& clear();
 
   /// Iterator for first element.
-  iterator begin();
+  iterator begin() const;
   /// Iterator past last element.
-  iterator end();
+  iterator end() const;
   /// @return Number of distinct ranges in the map.
   size_t getCount() const;
 
@@ -501,6 +533,13 @@ inline IpMap& IpMap::mark(in_addr_t addr, void* data) {
   return this->mark(addr, addr, data);
 }
 
+inline IpMap& IpMap::mark(IpAddr const& min, IpAddr const& max, void* data) {
+  IpEndpoint x,y;
+  x.assign(min);
+  y.assign(max);
+  return this->mark(&x.sa, &y.sa, data);
+}
+
 inline IpMap& IpMap::mark(IpEndpoint const* addr, void* data) {
   return this->mark(&addr->sa, &addr->sa, data);
 }
@@ -521,8 +560,15 @@ inline bool IpMap::contains(IpEndpoint const* target, void** ptr) const {
   return this->contains(&target->sa, ptr);
 }
 
+inline bool
+IpMap::contains(IpAddr const& addr, void** ptr) const {
+  IpEndpoint ip;
+  ip.assign(addr);
+  return this->contains(&ip.sa, ptr);
+}
+
 inline IpMap::iterator
-IpMap::end() {
+IpMap::end() const {
   return iterator(this, 0);
 }
 
@@ -546,12 +592,12 @@ IpMap::iterator::operator == (iterator const& that) const {
 }
 
 inline IpMap::iterator::reference
-IpMap::iterator::operator * () {
+IpMap::iterator::operator * () const {
   return *_node;
 }
 
 inline IpMap::iterator::pointer
-IpMap::iterator::operator -> () {
+IpMap::iterator::operator -> () const {
   return _node;
 }
 
