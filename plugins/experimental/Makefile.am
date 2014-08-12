@@ -22,7 +22,6 @@ SUBDIRS = \
  channel_stats \
  collapsed_connection \
  custom_redirect \
- dscp_remap \
  epic \
  escalate \
  esi \

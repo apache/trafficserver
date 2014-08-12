@@ -54,7 +54,7 @@ Copyright (c) 2013 LinkedIn
 
 ~~~
 
-remap_stats, url_sig and dscp_remap plugins developed by Comcast.
+remap_stats and url_sig plugins developed by Comcast.
 Copyright (C) 2014 Comcast
 
 ~~~
