@@ -116,7 +116,6 @@ only be evaluated if the condition(s) are met::
   cond %{TOHOST} operand                        [condition_flags]
   cond %{FROMHOST} operand                      [condition_flags]
   cond %{PATH} operand                          [condition_flags]
-  cond %{PARAMS} operand                        [condition_flags]
   cond %{QUERY} operand                         [condition_flags]
   cond %{INTERNAL-TRANSACTION}                  [condition_flags]
   cond %{CLIENT-IP}                             [condition_flags]
