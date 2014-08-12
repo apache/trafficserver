@@ -280,4 +280,23 @@ private:
   int _counter;
 };
 
+class OperatorSetConnDSCP : public Operator
+{
+public:
+  OperatorSetConnDSCP()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConnDSCP");
+  }
+  void initialize(Parser& p);
+
+protected:
+  void initialize_hooks();
+  void exec(const Resources& res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetConnDSCP);
+
+  Value _ds_value;
+};
+
 #endif // __OPERATORS_H

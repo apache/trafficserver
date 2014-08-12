@@ -543,3 +543,27 @@ OperatorCounter::exec(const Resources& /* ATS_UNUSED res */) const
   TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on counter %s", _counter_name.c_str());
   TSStatIntIncrement(_counter, 1);
 }
+
+//OperatorSetConnDSCP
+void
+OperatorSetConnDSCP::initialize(Parser& p)
+{
+  Operator::initialize(p);
+
+  _ds_value.set_value(p.get_arg());
+}
+
+void
+OperatorSetConnDSCP::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+void
+OperatorSetConnDSCP::exec(const Resources& res) const
+{
+  if (res.txnp) {
+    TSHttpTxnClientPacketTosSet(res.txnp, _ds_value.get_int_value());
+  }
+}

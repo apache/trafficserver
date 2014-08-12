@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-3002] Add DSCP support to header_rewrite.
+
   *) [TS-2999] Add dscp_remap plugin to experimental plugins.
 
   *) [TS-2564] Cherry pick for full cache compatibility.
