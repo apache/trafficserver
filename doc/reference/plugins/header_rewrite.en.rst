@@ -111,7 +111,6 @@ only be evaluated if the condition(s) are met::
   cond %{COOKIE:cookie-name} operand            [condition_flags]
   cond %{CLIENT-HEADER:header-name} operand     [condition_flags]
   cond %{PROTOCOL} operand                      [condition_flags]
-  cond %{PORT} operand                          [condition_flags]
   cond %{HOST} operand                          [condition_flags]
   cond %{TOHOST} operand                        [condition_flags]
   cond %{FROMHOST} operand                      [condition_flags]
