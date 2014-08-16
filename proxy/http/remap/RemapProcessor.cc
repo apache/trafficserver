@@ -285,6 +285,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
     }
   }
 
+  request_header->mark_target_dirty();
+
   return remap_found;
 }
 

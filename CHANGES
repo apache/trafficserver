@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 5.1.0
 
   *) [TS-2722] authproxy: Eliminate the DNS lookup state, just use the client
+
+  *) [TS-2933] Fix post remap and effective URL.
    IP with TSHttpConnect.
 
   *) [TS-2972] authproxy: Change the hook used, to always do the auth.
