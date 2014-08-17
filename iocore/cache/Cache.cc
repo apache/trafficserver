@@ -743,8 +743,8 @@ CacheProcessor::start_internal(int flags)
 
         gdisks[gndisks] = new CacheDisk();
         gdisks[gndisks]->forced_volume_num = sd->forced_volume_num;
-        if (sd->hash_seed_string)
-          gdisks[gndisks]->hash_seed_string = ats_strdup(sd->hash_seed_string);
+        if (sd->hash_base_string)
+          gdisks[gndisks]->hash_base_string = ats_strdup(sd->hash_base_string);
 
         Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
 
@@ -1263,7 +1263,7 @@ Vol::clear_dir()
 int
 Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
-  char* seed_str = disk->hash_seed_string ? disk->hash_seed_string : s;
+  char* seed_str = disk->hash_base_string ? disk->hash_base_string : s;
   const size_t hash_seed_size = strlen(seed_str);
   const size_t hash_text_size = hash_seed_size + 32;
 

@@ -57,7 +57,7 @@ public:
   // v- used as a magic location for copy constructor.
   // we memcpy everything before this member and do explicit assignment for the rest.
   ats_scoped_str pathname;
-  ats_scoped_str hash_seed_string; ///< Used to seed the stripe assignment hash.
+  ats_scoped_str hash_base_string; ///< Used to seed the stripe assignment hash.
   SLINK(Span, link);
 
   bool is_mmapable() { return is_mmapable_internal; }
@@ -99,7 +99,7 @@ public:
            char *buf, int buflen);      // where to store the path
 
   /// Set the hash seed string.
-  void hash_seed_string_set(char const* s);
+  void hash_base_string_set(char const* s);
   /// Set the volume number.
   void volume_number_set(int n);
 
@@ -121,7 +121,7 @@ public:
   Span(Span const& that) {
     memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span*>(0)->pathname)));
     if (that.pathname) pathname = ats_strdup(that.pathname);
-    if (that.hash_seed_string) hash_seed_string = ats_strdup(that.hash_seed_string);
+    if (that.hash_base_string) hash_base_string = ats_strdup(that.hash_base_string);
     link.next = NULL;
   }
 
@@ -210,7 +210,7 @@ struct Store
 
   /// Additional configuration key values.
   static char const VOLUME_KEY[];
-  static char const HASH_SEED_KEY[];
+  static char const HASH_BASE_STRING_KEY[];
 };
 
 extern Store theStore;

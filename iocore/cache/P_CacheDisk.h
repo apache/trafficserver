@@ -106,7 +106,7 @@ struct CacheDisk: public Continuation
 
   // Extra configuration values
   int forced_volume_num; ///< Volume number for this disk.
-  ats_scoped_str hash_seed_string; ///< Base string for hash seed.
+  ats_scoped_str hash_base_string; ///< Base string for hash seed.
  
   CacheDisk()
     : Continuation(new_ProxyMutex()), header(NULL),

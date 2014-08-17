@@ -45,7 +45,7 @@ Store theStore;
 //
 
 char const Store::VOLUME_KEY[] = "volume";
-char const Store::HASH_SEED_KEY[] = "seed";
+char const Store::HASH_BASE_STRING_KEY[] = "id";
 
 Ptr<ProxyMutex> tmp_p;
 Store::Store():n_disks(0), disk(NULL)
@@ -200,9 +200,9 @@ Span::path(char *filename, int64_t * aoffset, char *buf, int buflen)
 }
 
 void
-Span::hash_seed_string_set(char const* s)
+Span::hash_base_string_set(char const* s)
 {
-  hash_seed_string = s ? ats_strdup(s) : NULL;
+  hash_base_string = s ? ats_strdup(s) : NULL;
 }
 
 void
@@ -329,8 +329,8 @@ Store::read_config(int fd)
           err = "error parsing size";
           goto Lfail;
         }
-      } else if (0 == strncasecmp(HASH_SEED_KEY, e, sizeof(HASH_SEED_KEY)-1)) {
-        e += sizeof(HASH_SEED_KEY) - 1;
+      } else if (0 == strncasecmp(HASH_BASE_STRING_KEY, e, sizeof(HASH_BASE_STRING_KEY)-1)) {
+        e += sizeof(HASH_BASE_STRING_KEY) - 1;
         if ('=' == *e) ++e;
         if (*e && !ParseRules::is_space(*e))
           seed = e;
@@ -347,7 +347,7 @@ Store::read_config(int fd)
     char *pp = Layout::get()->relative(path);
     ns = new Span;
     Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s",
-          pp, size, volume_num, seed ? " seed=" : "", seed ? seed : "");
+          pp, size, volume_num, seed ? " id=" : "", seed ? seed : "");
     if ((err = ns->init(pp, size))) {
       RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", pp, err);
       Debug("cache_init", "Store::read_config - could not initialize storage \"%s\" [%s]", pp, err);
@@ -359,7 +359,7 @@ Store::read_config(int fd)
     n_dsstore++;
 
     // Set side values if present.
-    if (seed) ns->hash_seed_string_set(seed);
+    if (seed) ns->hash_base_string_set(seed);
     if (volume_num > 0) ns->volume_number_set(volume_num);
 
     // new Span

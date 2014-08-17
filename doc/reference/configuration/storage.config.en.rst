@@ -31,12 +31,13 @@ Format
 
 The format of the :file:`storage.config` file is a series of lines of the form
 
-   *pathname* *size* [ ``volume=``\ *number* ] [ ``seed=``\ *string* ]
+   *pathname* *size* [ ``volume=``\ *number* ] [ ``id=``\ *string* ]
 
-where :arg:`pathname` is the name of a partition, directory or file, :arg:`size` is the size of the named partition,
-directory or file (in bytes), and :arg:`volume` is the volume number used in the files :file:`volume.config` and
-:file:`hosting.config`. :arg:`seed` is used for seeding the :ref:`assignment-table`. You must specify a size for
-directories or files; size is optional for raw partitions. :arg:`volume` is optional and :arg:`seed` are optional.
+where :arg:`pathname` is the name of a partition, directory or file, :arg:`size` is the size of the
+named partition, directory or file (in bytes), and :arg:`volume` is the volume number used in the
+files :file:`volume.config` and :file:`hosting.config`. :arg:`id` is used for seeding the
+:ref:`assignment-table`. You must specify a size for directories or files; size is optional for raw
+partitions. :arg:`volume` and arg:`seed` are optional.
 
 .. note::
 
@@ -45,7 +46,7 @@ directories or files; size is optional for raw partitions. :arg:`volume` is opti
 
 .. note::
 
-   If the :arg:`seed` option is used every use must have a unique value for :arg:`string`.
+   If the :arg:`id` option is used every use must have a unique value for :arg:`string`.
 
 You can use any partition of any size. For best performance:
 
@@ -80,17 +81,18 @@ supported. They include
 Assignment Table
 ----------------
 
-Each storage element defined in :file:`storage.config` is divided in to :term:`stripes`. The assignment table maps from
-an object URL to a specific stripe. The table is initialized based on a pseudo-random process which is seeded by hashing
-a string for each stripe. This string is composed of a seed string, an offset (the start of the stripe on the storage
-element) and the length of the stripe. By default the path for the storage is used as the seed string. This ensures that
-each stripe has a unique string for the assignment hash. This does make the assignment table very sensitive to the path
-for the storage elements and changing even one can have a cascading effect which will effectively clear most of the cache.
-This can be problem when drives fail and a system reboot causes the path names to change.
+Each storage element defined in :file:`storage.config` is divided in to :term:`stripes`. The
+assignment table maps from an object URL to a specific stripe. The table is initialized based on a
+pseudo-random process which is seeded by hashing a string for each stripe. This string is composed
+of a base string, an offset (the start of the stripe on the storage element), and the length of the
+stripe. By default the path for the storage is used as the base string. This ensures that each
+stripe has a unique string for the assignment hash. This does make the assignment table very
+sensitive to the path for the storage elements and changing even one can have a cascading effect
+which will effectively clear most of the cache. This can be problem when drives fail and a system
+reboot causes the path names to change.
 
-The :arg:`seed` option can be used to create a fixed string that an administrator can use to keep the assignment table
-consistent even if a device has a changed path. This value of the option is used instead of the path as the seed string
-for the assignment table hash.
+The :arg:`id` option can be used to create a fixed string that an administrator can use to keep the
+assignment table consistent by maintaing the mapping from physical device to base string even in the presence of hardware changes and failures.
 
 Examples
 ========
@@ -149,16 +151,17 @@ In order to apply these settings, trigger a reload with :manpage:`udevadm(8)`:::
    udevadm trigger --subsystem-match=block
 
 As an implementation note, modern Linux supports `alternative symlinked names for disk devices
-<https://wiki.archlinux.org/index.php/persistent_block_device_naming>`_ in the ``/dev/disk`` directory structure. As
-noted for the :ref:`assignment-table` the path used for the disk can effect the cache if it changes. This can be
-ameloriated in some cases by using one of the alternate paths in via ``/dev/disk``. Note that if the ``by-id`` style is
-used, replacing a failed drive will cause that path to change because the new drive will have a different physical ID.
+<https://wiki.archlinux.org/index.php/persistent_block_device_naming>`_ in the ``/dev/disk``
+directory structure. As noted for the :ref:`assignment-table` the path used for the disk can effect
+the cache if it changes. This can be ameloriated in some cases by using one of the alternate paths
+in via ``/dev/disk``. Note that if the ``by-id`` style is used, replacing a failed drive will cause
+that path to change because the new drive will have a different physical ID. The original hash string can be kept by adding :arg:`id` with the original path to the storage line.
 
-If this is not sufficient then the :arg:`seed` argument should be used to create a more permanent assignment table. An
+If this is not sufficient then the :arg:`id` argument should be used to create a more permanent assignment table. An
 example would be::
 
-   /dev/sde seed=cache.disk.0
-   /dev/sdg seed=cache.disk.1
+   /dev/sde id=cache.disk.0
+   /dev/sdg id=cache.disk.1
 
 FreeBSD Example
 ---------------
