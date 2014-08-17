@@ -287,6 +287,7 @@ sig_fatal(int signum)
 #if defined(solaris)
   }
 #endif
+  ink_stack_trace_dump();
   cop_log_trace("Leaving sig_fatal(%d)\n", signum);
   abort();
 }
