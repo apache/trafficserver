@@ -39,9 +39,7 @@ libutils_lm_la_SOURCES = \
   ExpandingArray.h \
   MgmtLocalCleanup.cc \
   MgmtUtils.cc \
-  MgmtUtils.h \
-  WebMgmtUtils.cc \
-  WebMgmtUtils.h
+  MgmtUtils.h
 
 libutils_p_la_SOURCES = \
   MgmtProcessCleanup.cc \

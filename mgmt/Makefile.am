@@ -60,7 +60,9 @@ libmgmt_lm_la_SOURCES = \
   MultiFile.cc \
   MultiFile.h \
   Rollback.cc \
-  Rollback.h
+  Rollback.h \
+  WebMgmtUtils.cc \
+  WebMgmtUtils.h
 
 libmgmt_lm_la_LIBADD = \
   cluster/libcluster.la \
