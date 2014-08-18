@@ -239,7 +239,7 @@ stapling_check_response(certinfo *cinf, OCSP_RESPONSE *rsp)
 }
 
 static OCSP_RESPONSE *
-query_responder(BIO *b, char *path, OCSP_REQUEST *req, int req_timeout)
+query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeout)
 {
   ink_hrtime start, end;
   OCSP_RESPONSE *resp = NULL;
@@ -249,7 +249,10 @@ query_responder(BIO *b, char *path, OCSP_REQUEST *req, int req_timeout)
   start = ink_get_hrtime();
   end = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
 
-  ctx = OCSP_sendreq_new(b, path, req, -1);
+  ctx = OCSP_sendreq_new(b, path, NULL, -1);
+  OCSP_REQ_CTX_add1_header(ctx, "Host", host);
+  OCSP_REQ_CTX_set1_req(ctx, req);
+
   do {
     rv = OCSP_sendreq_nbio(&resp, ctx);
     ink_hrtime_sleep(HRTIME_MSECONDS(1));
@@ -281,7 +284,7 @@ process_responder(OCSP_REQUEST *req,
     Debug("ssl", "process_responder: fail to connect to OCSP respond server");
     goto end;
   }
-  resp = query_responder(cbio, path, req, req_timeout);
+  resp = query_responder(cbio, host, path, req, req_timeout);
 
 end:
   if (cbio)
