@@ -73,9 +73,6 @@
 #include <ts/ink_inet.h>
 #include <resolv.h>
 #include <arpa/nameser.h>
-#ifdef HAVE_NET_PPP_DEFS_H
-#include <net/ppp_defs.h>
-#endif
 
 #if defined(openbsd)
 #define NS_INT16SZ          INT16SZ
