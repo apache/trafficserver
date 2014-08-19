@@ -178,6 +178,10 @@ const Url &AsyncHttpFetch::getRequestUrl() const {
   return state_->request_.getUrl();
 }
 
+const string &AsyncHttpFetch::getRequestBody() const {
+  return state_->request_body_;
+}
+
 const Response &AsyncHttpFetch::getResponse() const {
   return state_->response_;
 }

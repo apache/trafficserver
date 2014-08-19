@@ -71,6 +71,11 @@ public:
   const Url &getRequestUrl() const;
 
   /**
+   * @return Non-mutable reference to the request body.
+   */
+  const std::string &getRequestBody() const;
+
+  /**
    * Used to extract the response after request completion. 
    *
    * @return Non-mutable reference to the response.
