@@ -194,14 +194,14 @@ HeaderFieldName HeaderField::name() const {
 }
 
 std::string HeaderField::values(const char *join) {
-  std::ostringstream oss;
-  int count = size();
+  std::string ret; 
   for(header_field_value_iterator it = begin(); it != end(); ++it) {
-    oss << (*it);
-    if (--count > 0)
-      oss << join;
+    if (ret.size()) {
+      ret.append(join);
+    }
+    ret.append(*it);
   }
-  return oss.str();
+  return ret;
 }
 
 std::string HeaderField::values(const std::string &join) {
@@ -472,14 +472,11 @@ Headers::size_type Headers::count(const std::string &key) {
 
 std::string Headers::values(const std::string &key, const char *join) {
   std::string ret;
-  Headers::size_type num_header_fields = count(key);
-  ret.reserve(128 * num_header_fields);
-
   for (header_field_iterator it = find(key); it != end(); it.nextDup()) {
-    ret.append((*it).values(join));
-    if (--num_header_fields > 0) {
+    if (ret.size()) {
       ret.append(join);
     }
+    ret.append((*it).values(join));
   }
 
   return ret;

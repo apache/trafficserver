@@ -106,6 +106,7 @@ public:
     cout << "Joining on a non-existant header gives: " << client_request_headers.values("i_dont_exist") << endl;
     cout << "Joining the accept encoding header gives: " << client_request_headers.values("accept-encoding") << endl;
     cout << "Joining the accept encoding header with space gives: " << client_request_headers.values("accept-encoding", ' ') << endl;
+    cout << "Joining the accept encoding header with long join string gives: " << client_request_headers.values("accept-encoding", "--join-string--") << endl;
 
     transaction.resume();
   }
