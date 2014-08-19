@@ -30,8 +30,8 @@
 #define ATS_COLLAPSED_CONNECTION_PLUGIN_H_
 
 #define PLUGIN_NAME     "collapsed_connection"
-#define PLUGIN_VENDOR   "Yahoo! Inc"
-#define PLUGIN_SUPPORT  "yzlai@yahoo-inc.com"
+#define PLUGIN_VENDOR   "Apache Software Foundation"
+#define PLUGIN_SUPPORT  "dev@trafficserver.apache.org"
 
 #define DEFAULT_INSERT_LOCK_RETRY_TIME  10
 #define DEFAULT_MAX_LOCK_RETRY_TIMEOUT  2000

@@ -560,8 +560,8 @@ TSPluginInit (int argc, const char *argv[])
     }
 
     info.plugin_name = LOG_PREFIX;
-    info.vendor_name = "Comcast";
-    info.support_email = "sorber@apache.org";
+    info.vendor_name = "Apache Software Foundation";
+    info.support_email = "dev@trafficserver.apache.org";
 
     if (TSPluginRegister(TS_SDK_VERSION_3_0 , &info) != TS_SUCCESS)
     {
