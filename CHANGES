@@ -1,8 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
-  *) [TS-2095] autoconf warnings related to unordered_map
-
   *) [TS-2902] Allow POST requests without a Content-Length header
 
   *) [TS-2423] Add option for server sessions that use auth headers that can
