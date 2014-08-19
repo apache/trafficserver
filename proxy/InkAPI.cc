@@ -7818,6 +7818,7 @@ _conf_to_memberp(TSOverridableConfigKey conf,
     break;
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = &overridableHttpConfig->post_check_content_length_enabled;
+    break;
   case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &overridableHttpConfig->global_user_agent_header;

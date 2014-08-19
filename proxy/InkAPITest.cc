@@ -7417,6 +7417,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.cache.open_read_retry_time",
   "proxy.config.http.cache.max_open_read_retries",
   "proxy.config.http.cache.range.write",
+  "proxy.config.http.post.check.content_length.enabled",
   "proxy.config.http.global_user_agent_header",
 };
 
