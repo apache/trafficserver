@@ -582,6 +582,9 @@ AX_CXX_COMPILE_STDCXX_11( [noext], [enable_cxx_11_support=yes], [
 AM_CONDITIONAL([BUILD_HAVE_CXX_11], [ test "x${enable_cxx_11_support}" = "xyes" ])
 if test "x${enable_cxx_11_support}" = "xyes" ; then
   AC_DEFINE(HAVE_CXX_11, 1, [Whether the compiler support C++11])
+  if test "x$ax_cv_c_compiler_vendor" = "xgnu"; then
+    TS_ADDTO(CPPFLAGS, [-std=c++11])
+  fi
 fi
 
 # While we are in C++ mode, check for the GNU hash_map extension.
