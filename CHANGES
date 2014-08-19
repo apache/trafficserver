@@ -6,17 +6,16 @@ Changes with Apache Traffic Server 5.1.0
   *) [TS-2902] Allow POST requests without a Content-Length header.
 
   *) [TS-2423] Add option for server sessions that use auth headers that can
-   be placed into the shared pool
+   be placed into the shared pool.
 
-  *) [TS-2635] remove unused include <net/ppp_defs.h>
+  *) [TS-2635] remove unused include <net/ppp_defs.h>.
 
   *) [TS-3001] GlobalSign responds 403 when OCSP request posted without Host
-   header
+   header.
 
-  *) [TS-2722] authproxy: Eliminate the DNS lookup state, just use the client
+  *) [TS-2722] authproxy: Eliminate the DNS lookup state, just use the client.
 
   *) [TS-2933] Fix post remap and effective URL.
-   IP with TSHttpConnect.
 
   *) [TS-2972] authproxy: Change the hook used, to always do the auth.
 
@@ -28,7 +27,7 @@ Changes with Apache Traffic Server 5.1.0
 
   *) [TS-2362] Make cache backwards compatible to 3.2.0.
 
-  *) [TS-2357] Add option to cache POST requests
+  *) [TS-2357] Add option to cache POST requests.
 
   *) [TS-2996] Add consistent hash method to parent selection.
 
@@ -40,11 +39,11 @@ Changes with Apache Traffic Server 5.1.0
 
   *) [TS-2916] set response header properly for combo_handler plugin.
 
-  *) [TS-2883] Core dump in TSFetchCreate()
+  *) [TS-2883] Core dump in TSFetchCreate().
 
-  *) [TS-2991] SessionManager incorrectly releasing sessions back to pool
+  *) [TS-2991] SessionManager incorrectly releasing sessions back to pool.
 
-  *) [TS-2986] Adding stats to TLS errors
+  *) [TS-2986] Adding stats to TLS errors.
 
   *) [TS-2977] Move traffic_manager under the cmd subdirectory.
 
@@ -67,15 +66,16 @@ Changes with Apache Traffic Server 5.1.0
    status codes.
 
   *) [TS-2939] Metalink: Fix crash when checking the digest of a file
-   that wasn't cacheable
+   that wasn't cacheable.
 
   *) [TS-2922] Support the new ppc64le platform. Author: Breno Leitao
 
   *) [TS-2944] Remove the proxy.config.http.record_tcp_mem_hit configuration variable.
 
-  *) [TS-2924] Configurable client's ssl protocols and cipher suite
+  *) [TS-2924] Configurable client's ssl protocols and cipher suite.
 
-  *) [TS-2915] SEGV occurs when POST request was posted without Expect: 100-continue header
+  *) [TS-2915] SEGV occurs when POST request was posted without Expect:
+   100-continue header.
 
   *) [TS-2940] Fix varargs corruption when logging fatal errors.
 
@@ -83,7 +83,7 @@ Changes with Apache Traffic Server 5.1.0
 
   *) [TS-2930] missing hostname in ts.client_request.get_url() for lua plugin.
 
-  *) [TS-2934] Default remap rule will remap synthetic test
+  *) [TS-2934] Default remap rule will remap synthetic test.
 
   *) [TS-2904] Add Via header decoder option to traffic_line.
    Author: Meera Mosale Nataraja <mechins@gmail.com>
@@ -94,31 +94,32 @@ Changes with Apache Traffic Server 5.1.0
 
   *) [TS-2649] Use SSL certificate chain loading everywhere.
 
-  *) [TS-2780] Core dump in SpdyRequest::clear() in production testing of SPDY
+  *) [TS-2780] Core dump in SpdyRequest::clear() in production testing of SPDY.
 
-  *) [TS-2929] SPDY should allow arbitrary methods
+  *) [TS-2929] SPDY should allow arbitrary methods.
 
   *) [TS-2921] Fix build failure from TS-2893.
    Author: Ryo Okubo <rokubo@yahoo-corp.jp>
 
-  *) [TS-2893: improved support for ECDSA certificates
+  *) [TS-2893: improved support for ECDSA certificates.
    Author: Wei Sun <sunwei@yahoo-inc.com>
 
   *) [TS-2919] Omit git contol files from tarball releases.
 
-  *) [TS-2906] SPDY incorrectly marks streams as internal requests
+  *) [TS-2906] SPDY incorrectly marks streams as internal requests.
 
-  *) [TS-2574] Sharing server sessions per thread doesn't work when doing https to http
+  *) [TS-2574] Sharing server sessions per thread doesn't work when doing
+   https to http.
 
   *) [TS-2689] Remove extraneous TSfree that caused segfault.
 
-  *) [TS-2892] Keep alive post out enabled by default
+  *) [TS-2892] Keep alive post out enabled by default.
 
-  *) [TS-2889] Crash in FetchSM related to spdy FetchSM changes in 5.0.x
+  *) [TS-2889] Crash in FetchSM related to spdy FetchSM changes in 5.0.x.
 
   *) [TS-2891] Fix casting bug in remap_stats.
 
-  *) [TS-2879] Remap errors and redirects should honor keep-alive
+  *) [TS-2879] Remap errors and redirects should honor keep-alive.
 
   *) [TS-2236] Remove trailing null in response body set by fabricate_with_old_api.
    Author: Thach Tran <tranngocthachs@gmail.com>
@@ -128,8 +129,8 @@ Changes with Apache Traffic Server 5.1.0
 
 Changes with Apache Traffic Server 5.0.0
 
-  *) [TS-2885] Change LuaJIT to build statically, and add --disable-luajit. This
-   is an option that will eventually be removed as we make LuaJIT mandatory.
+  *) [TS-2885] Change LuaJIT to build statically, add --disable-luajit. This
+  is an option that will eventually be removed as we make LuaJIT mandatory. 
 
   *) [TS-2886] Fix regression where body factory is not used.
 
@@ -148,18 +149,18 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2870] Update SPDY defaults to better match our other defaults.
 
-  *) [TS-2868] Error setting HSTS max age with traffic_line
+  *) [TS-2868] Error setting HSTS max age with traffic_line.
 
-  *) [TS-2776] Core dump inside openssl library
+  *) [TS-2776] Core dump inside openssl library.
 
-  *) [TS-2845] Commit e6b9cb533 causes problems with stats_over_http
+  *) [TS-2845] Commit e6b9cb533 causes problems with stats_over_http.
 
   *) [TS-1981] Url remap and IPAllow method filtering is broken with non-wks method
-      and add support for arbitrary methods
+   and add support for arbitrary methods.
 
-  *) [TS-2865] Fix warnings in collapsed connection plugin
+  *) [TS-2865] Fix warnings in collapsed connection plugin.
 
-  *) [TS-2580] SSL Connection reset by peer errors in 4.2.0-rc0
+  *) [TS-2580] SSL Connection reset by peer errors in 4.2.0-rc0.
 
   *) [TS-2783] Update documentation defaults, and fix RecordsConfig.cc.
 
@@ -176,15 +177,15 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-2858] Build failures on OmniOS. Also add some LuaJIT flags as per
    Theo's and Daniel's recommendations.
 
-  *) [TS-2857] Cleanup SPDY and SSL stat names
+  *) [TS-2857] Cleanup SPDY and SSL stat names.
 
   *) [TS-2856] Remove proxy.config.spdy.verbose_in and use diags instead
 
-  *) [TS-2391] Traffic Server tries to reverse resolve 127.0.0.1
+  *) [TS-2391] Traffic Server tries to reverse resolve 127.0.0.1.
 
-  *) [TS-2837] Dangling pointer in URLImpl which may cause core dump
+  *) [TS-2837] Dangling pointer in URLImpl which may cause core dump.
 
-  *) [TS-2842] Can't set SPDY inactivity timeout with traffic_line
+  *) [TS-2842] Can't set SPDY inactivity timeout with traffic_line.
 
   *) [TS-2618] IOBufferBlock::realloc()'s bounds check is wrong.
 
@@ -194,7 +195,7 @@ Changes with Apache Traffic Server 5.0.0
    Author: Masakazu Kitajo <m4sk17@gmail.com>
 
   *) [TS-2820] Add check to Transformations in C++ api to prevent closing
-      connections twice.
+   connections twice.
 
   *) [TS-2804] Add regex_revalidate plugin to explerimental plugins directory.
 
