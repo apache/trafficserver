@@ -19,7 +19,8 @@
 TS_PLUGIN_LDFLAGS = \
   -module \
   -shared \
-  -avoid-version
+  -avoid-version \
+  -export-symbols-regex '^(TSRemapInit|TSRemapDone|TSRemapDoRemap|TSRemapNewInstance|TSRemapDeleteInstance|TSRemapOSResponse|TSPluginInit)$$'
 
 TS_PLUGIN_CPPFLAGS = \
   -D__STDC_LIMIT_MACROS=1 \
