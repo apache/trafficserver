@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+
+  *) [TS-2913] Missing body factory template for permanent redirects.
+
   *) [TS-2279] Update range for proxy.config.exec_thread.affinity.
 
   *) [TS-3004] Update vendor_name and support_email in ats_speed plugin.

@@ -34,6 +34,7 @@ dist_bodyfactory_DATA = \
   interception\#no_host \
   README \
   redirect\#moved_temporarily \
+  redirect\#moved_permanently \
   request\#cycle_detected \
   request\#no_content_length \
   request\#invalid_content_length \
