@@ -1,9 +1,13 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2423] Add option for server sessions that use auth headers that can
+   be placed into the shared pool
+
   *) [TS-2635] remove unused include <net/ppp_defs.h>
 
-  *) [TS-3001] GlobalSign responds 403 when OCSP request posted without Host header
+  *) [TS-3001] GlobalSign responds 403 when OCSP request posted without Host
+   header
 
   *) [TS-2722] authproxy: Eliminate the DNS lookup state, just use the client
 

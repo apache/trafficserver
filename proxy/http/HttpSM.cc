@@ -5629,9 +5629,10 @@ HttpSM::setup_server_send_request()
     hdr_length += server_entry->write_buffer->write(t_state.internal_msg_buffer, msg_len);
     server_request_body_bytes = msg_len;
   }
+
   // If we are sending authorizations headers, mark the connection private
-  if (t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION
-					       | MIME_PRESENCE_WWW_AUTHENTICATE)) {
+  if (t_state.txn_conf->auth_server_session_private == 1 &&
+      t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION | MIME_PRESENCE_WWW_AUTHENTICATE)) {
       server_session->private_session = true;
       DebugSM("http_ss", "Setting server session to private for authorization header");
   }

@@ -395,7 +395,7 @@ struct OverridableHttpConfigParams {
       keep_alive_enabled_in(1), keep_alive_enabled_out(1), keep_alive_post_out(1),
       server_session_sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
       server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
-      fwd_proxy_auth_to_parent(0), insert_age_in_response(1),
+      auth_server_session_private(1), fwd_proxy_auth_to_parent(0), insert_age_in_response(1),
       anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
       anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
       proxy_response_server_enabled(1), proxy_response_hsts_max_age(-1), proxy_response_hsts_include_subdomains(0),
@@ -452,6 +452,7 @@ struct OverridableHttpConfigParams {
   MgmtByte server_session_sharing_match;
   MgmtByte server_session_sharing_pool;
   //  MgmtByte share_server_sessions;
+  MgmtByte auth_server_session_private;
   MgmtByte fwd_proxy_auth_to_parent;
 
   MgmtByte insert_age_in_response;
