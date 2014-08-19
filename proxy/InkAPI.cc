@@ -7816,6 +7816,9 @@ _conf_to_memberp(TSOverridableConfigKey conf,
   case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
     ret = &overridableHttpConfig->cache_range_write;
     break;
+  case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
+    ret = &overridableHttpConfig->post_check_content_length_enabled;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -8382,8 +8385,16 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 51:
-    if (!strncmp(name, "proxy.config.http.keep_alive_no_activity_timeout_in", length))
-      cnf = TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN;
+    switch (name[length-1]) {
+    case 'n':
+      if (!strncmp(name, "proxy.config.http.keep_alive_no_activity_timeout_in", length))
+        cnf = TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN;
+      break;
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.post.check.content_length.enabled", length))
+        cnf = TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED;
+      break;
+    }
     break;
 
   case 52:

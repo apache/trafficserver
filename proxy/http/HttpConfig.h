@@ -409,7 +409,7 @@ struct OverridableHttpConfigParams {
       negative_caching_lifetime(1800), negative_revalidating_lifetime(1800),
       sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
       sock_packet_mark_out(0), sock_packet_tos_out(0), server_tcp_init_cwnd(0),
-      request_hdr_max_size(131072), response_hdr_max_size(131072),
+      request_hdr_max_size(131072), response_hdr_max_size(131072), post_check_content_length_enabled(1),
       cache_heuristic_min_lifetime(3600), cache_heuristic_max_lifetime(86400),
       cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(31536000), cache_max_stale_age(604800),
       keep_alive_no_activity_timeout_in(115), keep_alive_no_activity_timeout_out(120),
@@ -541,6 +541,11 @@ struct OverridableHttpConfigParams {
   ///////////////
   MgmtInt request_hdr_max_size;
   MgmtInt response_hdr_max_size;
+
+  ////////////////////////
+  // Check Post request //
+  ////////////////////////
+  MgmtByte post_check_content_length_enabled;
 
   /////////////////////
   // cache variables //
