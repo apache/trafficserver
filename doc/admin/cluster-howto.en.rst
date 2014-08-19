@@ -148,6 +148,15 @@ Deleting Nodes from a Cluster
 To delete a node from the Traffic Server cluster, just roll back
 :ts:cv:`proxy.local.cluster.type` to the default value 3 and reload.
 
+Common issues for Cluster setup
+===============================
+
+1. The Cluster member auto discovery is build upon from multi-casting of the UDP,
+   so imposible to setup where multi-casting is not avaliable, such as AWS EC2.
+
+2. The Cluster will depend on some internal ports: 8088 8089 and 8086, you should
+   make sure the firewall will not ban them.
+
 Performance tweak for busy Cluster
 ==================================
 
