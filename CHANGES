@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-3004] Update vendor_name and support_email in ats_speed plugin.
+
   *) [TS-2947] Make the setting proxy.config.http.global_user_agent_header.
 
   *) [TS-2902] Allow POST requests without a Content-Length header.
