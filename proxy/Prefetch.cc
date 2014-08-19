@@ -1857,7 +1857,7 @@ PrefetchBlaster::initCacheLookupConfig()
   //The look up parameters are intialized in the same as it is done
   //in HttpSM::init(). Any changes there should come in here.
   HttpConfigParams *http_config_params = HttpConfig::acquire();
-  cache_lookup_config.cache_global_user_agent_header = http_config_params->global_user_agent_header ? true : false;
+  cache_lookup_config.cache_global_user_agent_header = http_config_params->oride.global_user_agent_header ? true : false;
   cache_lookup_config.cache_enable_default_vary_headers =
     http_config_params->cache_enable_default_vary_headers ? true : false;
   cache_lookup_config.cache_vary_default_text = http_config_params->cache_vary_default_text;

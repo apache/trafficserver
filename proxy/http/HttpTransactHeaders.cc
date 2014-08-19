@@ -966,20 +966,20 @@ HttpTransactHeaders::remove_host_name_from_url(HTTPHdr *outgoing_request)
 
 
 void
-HttpTransactHeaders::add_global_user_agent_header_to_request(HttpConfigParams *http_config_param, HTTPHdr *header)
+HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
-  if (http_config_param->global_user_agent_header) {
+  if (http_txn_conf->global_user_agent_header) {
     MIMEField *ua_field;
 
-    Debug("http_trans", "Adding User-Agent: %s", http_config_param->global_user_agent_header);
+    Debug("http_trans", "Adding User-Agent: %s", http_txn_conf->global_user_agent_header);
     if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == NULL) {
       if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != NULL))
         header->field_attach(ua_field);
     }
     // This will remove any old string (free it), and set our User-Agent.
     if (likely(ua_field))
-      header->field_value_set(ua_field, http_config_param->global_user_agent_header,
-                              http_config_param->global_user_agent_header_size);
+      header->field_value_set(ua_field, http_txn_conf->global_user_agent_header,
+                              http_txn_conf->global_user_agent_header_size);
   }
 }
 

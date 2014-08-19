@@ -84,7 +84,7 @@ public:
   static void remove_conditional_headers(HTTPHdr * outgoing);
   static void remove_100_continue_headers(HttpTransact::State *s, HTTPHdr * outgoing);
   static void remove_host_name_from_url(HTTPHdr * outgoing_request);
-  static void add_global_user_agent_header_to_request(HttpConfigParams *http_config_param, HTTPHdr * header);
+  static void add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);
   static void add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);
   static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
                                                   OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);

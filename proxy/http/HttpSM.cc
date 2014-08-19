@@ -399,7 +399,7 @@ HttpSM::init()
 
   // update the cache info config structure so that
   // selection from alternates happens correctly.
-  t_state.cache_info.config.cache_global_user_agent_header = t_state.http_config_param->global_user_agent_header ? true : false;
+  t_state.cache_info.config.cache_global_user_agent_header = t_state.txn_conf->global_user_agent_header ? true : false;
   t_state.cache_info.config.ignore_accept_mismatch = t_state.http_config_param->ignore_accept_mismatch;
   t_state.cache_info.config.ignore_accept_language_mismatch = t_state.http_config_param->ignore_accept_language_mismatch ;
   t_state.cache_info.config.ignore_accept_encoding_mismatch = t_state.http_config_param->ignore_accept_encoding_mismatch;

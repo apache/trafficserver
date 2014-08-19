@@ -1339,8 +1339,10 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.anonymize_remove_client_ip, "proxy.config.http.anonymize_remove_client_ip");
   HttpEstablishStaticConfigByte(c.oride.anonymize_insert_client_ip, "proxy.config.http.anonymize_insert_client_ip");
   HttpEstablishStaticConfigStringAlloc(c.anonymize_other_header_list, "proxy.config.http.anonymize_other_header_list");
-  HttpEstablishStaticConfigStringAlloc(c.global_user_agent_header, "proxy.config.http.global_user_agent_header");
-  c.global_user_agent_header_size = c.global_user_agent_header ? strlen(c.global_user_agent_header) : 0;
+
+  HttpEstablishStaticConfigStringAlloc(c.oride.global_user_agent_header, "proxy.config.http.global_user_agent_header");
+  c.oride.global_user_agent_header_size = c.oride.global_user_agent_header ?
+    strlen(c.oride.global_user_agent_header) : 0;
 
   HttpEstablishStaticConfigByte(c.oride.proxy_response_server_enabled, "proxy.config.http.response_server_enabled");
   HttpEstablishStaticConfigStringAlloc(c.oride.proxy_response_server_string, "proxy.config.http.response_server_str");
@@ -1597,9 +1599,9 @@ HttpConfig::reconfigure()
   params->oride.anonymize_insert_client_ip = INT_TO_BOOL(m_master.oride.anonymize_insert_client_ip);
   params->anonymize_other_header_list = ats_strdup(m_master.anonymize_other_header_list);
 
-  params->global_user_agent_header = ats_strdup(m_master.global_user_agent_header);
-  params->global_user_agent_header_size = params->global_user_agent_header ?
-    strlen(params->global_user_agent_header) : 0;
+  params->oride.global_user_agent_header = ats_strdup(m_master.oride.global_user_agent_header);
+  params->oride.global_user_agent_header_size = params->oride.global_user_agent_header ?
+    strlen(params->oride.global_user_agent_header) : 0;
 
   params->oride.proxy_response_server_string = ats_strdup(m_master.oride.proxy_response_server_string);
   params->oride.proxy_response_server_string_len = params->oride.proxy_response_server_string ?

@@ -7818,6 +7818,9 @@ _conf_to_memberp(TSOverridableConfigKey conf,
     break;
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = &overridableHttpConfig->post_check_content_length_enabled;
+  case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
+    typ = OVERRIDABLE_TYPE_STRING;
+    ret = &overridableHttpConfig->global_user_agent_header;
     break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
@@ -7975,7 +7978,6 @@ TSReturnCode
 TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char* value, int length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
   if (length == -1)
     length = strlen(value);
@@ -7986,8 +7988,22 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    s->t_state.txn_conf->proxy_response_server_string = const_cast<char*>(value); // The "core" likes non-const char*
-    s->t_state.txn_conf->proxy_response_server_string_len = length;
+    if (value && length > 0) {
+      s->t_state.txn_conf->proxy_response_server_string = const_cast<char*>(value); // The "core" likes non-const char*
+      s->t_state.txn_conf->proxy_response_server_string_len = length;
+    } else {
+      s->t_state.txn_conf->proxy_response_server_string = NULL;
+      s->t_state.txn_conf->proxy_response_server_string_len = 0;
+    }
+    break;
+  case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
+    if (value && length > 0) {
+      s->t_state.txn_conf->global_user_agent_header = const_cast<char*>(value); // The "core" likes non-const char*
+      s->t_state.txn_conf->global_user_agent_header_size = length;
+    } else {
+      s->t_state.txn_conf->global_user_agent_header = NULL;
+      s->t_state.txn_conf->global_user_agent_header_size = 0;
+    }
     break;
   default:
     return TS_ERROR;
@@ -8011,6 +8027,10 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     *value = sm->t_state.txn_conf->proxy_response_server_string;
     *length = sm->t_state.txn_conf->proxy_response_server_string_len;
+    break;
+  case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
+    *value = sm->t_state.txn_conf->global_user_agent_header;
+    *length = sm->t_state.txn_conf->global_user_agent_header_size;
     break;
   default:
     return TS_ERROR;
@@ -8222,6 +8242,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'r':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_referer", length))
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER;
+      else if (!strncmp(name, "proxy.config.http.global_user_agent_header", length)) {
+        cnf = TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER;
+        typ = TS_RECORDDATATYPE_STRING;
+      }
       break;
     case 't':
       if (!strncmp(name, "proxy.config.net.sock_recv_buffer_size_out", length))

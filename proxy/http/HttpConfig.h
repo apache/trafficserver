@@ -425,6 +425,7 @@ struct OverridableHttpConfigParams {
 
       // Strings / floats must come last
       proxy_response_server_string(NULL), proxy_response_server_string_len(0),
+      global_user_agent_header(NULL), global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005),
       background_fill_threshold(0.5)
   { }
@@ -602,6 +603,12 @@ struct OverridableHttpConfigParams {
   char *proxy_response_server_string; // This does not get free'd by us!
   size_t proxy_response_server_string_len; // Updated when server_string is set.
 
+  ///////////////////////////////////////////////////////////////////
+  // Global User Agent header                                                 //
+  ///////////////////////////////////////////////////////////////////
+  char *global_user_agent_header; // This does not get free'd by us!
+  size_t global_user_agent_header_size; // Updated when user_agent is set.
+
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
@@ -687,12 +694,6 @@ public:
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
   char *anonymize_other_header_list;
-
-  ///////////////////////////////////////////////////////////////////
-  // Global User Agent                                             //
-  ///////////////////////////////////////////////////////////////////
-  char *global_user_agent_header;
-  size_t global_user_agent_header_size;
 
   MgmtByte enable_http_stats; // Can be "slow"
 
@@ -907,8 +908,6 @@ HttpConfigParams::HttpConfigParams()
     per_parent_connect_attempts(2),
     parent_connect_timeout(30),
     anonymize_other_header_list(NULL),
-    global_user_agent_header(NULL),
-    global_user_agent_header_size(0),
     enable_http_stats(1),
     icp_enabled(0),
     stale_icp_enabled(0),
@@ -951,8 +950,8 @@ HttpConfigParams::~HttpConfigParams()
   ats_free(proxy_response_via_string);
   ats_free(url_expansions_string);
   ats_free(anonymize_other_header_list);
-  ats_free(global_user_agent_header);
   ats_free(oride.proxy_response_server_string);
+  ats_free(oride.global_user_agent_header);
   ats_free(cache_vary_default_text);
   ats_free(cache_vary_default_images);
   ats_free(cache_vary_default_other);
