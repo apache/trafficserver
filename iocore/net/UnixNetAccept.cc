@@ -275,6 +275,18 @@ NetAccept::do_blocking_accept(EThread * t)
       return -1;
     }
 
+#if TS_HAS_SO_MARK
+      if (packet_mark != 0) {
+        safe_setsockopt(con.fd, SOL_SOCKET, SO_MARK, reinterpret_cast<char *>(&packet_mark), sizeof(uint32_t));
+      }
+#endif
+
+#if TS_HAS_IP_TOS
+      if (packet_tos != 0) {
+        safe_setsockopt(con.fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+      }
+#endif
+
     // Use 'NULL' to Bypass thread allocator
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(NULL);
     if (!vc) {
