@@ -271,6 +271,7 @@ spdy_recv_callback(spdylay_session * /*session*/, uint8_t *buf, size_t length,
 static void
 spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
 {
+  bool acceptEncodingRecvd = false;
   // validate request headers
   for(size_t i = 0; i < req->headers.size(); ++i) {
     const std::string &field = req->headers[i].first;
@@ -286,12 +287,19 @@ spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
       req->version = value;
     else if(field == ":host")
       req->host = value;
+    else if(field == "accept-encoding")
+      acceptEncodingRecvd = true;
   }
 
   if(!req->path.size()|| !req->method.size() || !req->scheme.size()
      || !req->version.size() || !req->host.size()) {
     spdy_prepare_status_response_and_clean_request(sm, req->stream_id, STATUS_400);
     return;
+  }
+
+  if (!acceptEncodingRecvd) {
+    Debug("spdy", "Accept-Encoding header not received, adding gzip for method %s", req->method.c_str());
+    req->headers.push_back(make_pair("accept-encoding", "gzip, deflate"));
   }
 
   spdy_fetcher_launch(req);
