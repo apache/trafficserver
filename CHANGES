@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2912] Don't clear stale object on HEAD request.
+
   *) [TS-2905] Change IP logging to print '0' instead of error text.
 
   *) [TS-2982] Interim cache compile errors.

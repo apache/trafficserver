@@ -151,7 +151,8 @@ is_request_conditional(HTTPHdr* header)
   uint64_t mask = (MIME_PRESENCE_IF_UNMODIFIED_SINCE |
                  MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
                  MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
-  return (header->presence(mask) && (header->method_get_wksidx() == HTTP_WKSIDX_GET));
+  return (header->presence(mask) && (header->method_get_wksidx() == HTTP_WKSIDX_GET ||
+			  header->method_get_wksidx() == HTTP_WKSIDX_HEAD));
 }
 
 static inline bool
@@ -2321,7 +2322,8 @@ HttpTransact::issue_revalidate(State* s)
     //   (or is method that we don't conditionalize but lookup the
     //    cache on like DELETE)
     if (c_resp->get_last_modified() > 0 &&
-        s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET && s->range_setup == RANGE_NONE) {
+        (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
+		s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) && s->range_setup == RANGE_NONE) {
       // make this a conditional request
       int length;
       const char *str = c_resp->value_get(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED, &length);
@@ -2331,7 +2333,9 @@ HttpTransact::issue_revalidate(State* s)
         DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
     }
     // if Etag exists, also add if-non-match header
-    if (c_resp->presence(MIME_PRESENCE_ETAG) && s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET) {
+    if (c_resp->presence(MIME_PRESENCE_ETAG) &&
+			(s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
+			 s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD)) {
       int length;
       const char *etag = c_resp->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &length);
       if ((length >= 2) && (etag[0] == 'W') && (etag[1] == '/')) {
