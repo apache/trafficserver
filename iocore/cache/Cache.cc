@@ -1824,7 +1824,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
 
   if (event == EVENT_IMMEDIATE) {
     if (header->magic != VOL_MAGIC || header->version.ink_major != CACHE_DB_MAJOR_VERSION) {
-      Warning("bad header in cache directory for '%s', clearing", hash_text);
+      Warning("bad header in cache directory for '%s', clearing", hash_text.get());
       goto Lclear;
     } else if (header->sync_serial == 0) {
       io.aiocb.aio_buf = NULL;
@@ -1848,7 +1848,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
 
   } else if (event == AIO_EVENT_DONE) {
     if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
-      Warning("disk read error on recover '%s', clearing", hash_text);
+      Warning("disk read error on recover '%s', clearing", hash_text.get());
       goto Lclear;
     }
 
@@ -1860,7 +1860,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
       while (done < to_check) {
         Doc *doc = (Doc *) (s + done);
         if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
-          Warning("no valid directory found while recovering '%s', clearing", hash_text);
+          Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
           goto Lclear;
         }
         done += round_to_approx_size(doc->len);
@@ -1967,7 +1967,7 @@ Ldone: {
     recover_pos += EVACUATION_SIZE;
     if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
       Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
-      Warning("no valid directory found while recovering '%s', clearing", hash_text);
+      Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
       goto Lclear;
     }
 

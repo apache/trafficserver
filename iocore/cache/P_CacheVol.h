@@ -337,7 +337,7 @@ struct MigrateToInterimCache
 
 struct InterimCacheVol: public Continuation
 {
-  char *hash_id;
+  ats_scoped_str hash_text;
   InterimVolHeaderFooter *header;
 
   off_t recover_pos;
@@ -381,9 +381,12 @@ struct InterimCacheVol: public Continuation
   }
 
   void init(off_t s, off_t l, CacheDisk *interim, Vol *v, InterimVolHeaderFooter *hptr) {
-    const size_t hash_id_size = strlen(interim->path) + 32;
-    hash_id = (char *)ats_malloc(hash_id_size);
-    snprintf(hash_id, hash_id_size, "%s %" PRIu64 ":%" PRIu64 "", interim->path, s, l);
+    char* seed_str = interim->hash_base_string ? interim->hash_base_string : interim->path;
+    const size_t hash_seed_size = strlen(seed_str);
+    const size_t hash_text_size = hash_seed_size + 32;
+
+    hash_text = static_cast<char *>(ats_malloc(hash_text_size));
+    snprintf(hash_text, hash_text_size, "%s %" PRIu64 ":%" PRIu64 "", seed_str, s, l);
 
     skip = start = s;
     len = l;
@@ -488,17 +491,17 @@ struct Vol: public Continuation
   }
 
   void set_migrate_in_progress(MigrateToInterimCache *m) {
-    uint32_t indx = m->key.word(3) % MIGRATE_BUCKETS;
+    uint32_t indx = m->key.slice32(3) % MIGRATE_BUCKETS;
     mig_hash[indx].enqueue(m);
   }
 
   void set_migrate_failed(MigrateToInterimCache *m) {
-    uint32_t indx = m->key.word(3) % MIGRATE_BUCKETS;
+    uint32_t indx = m->key.slice32(3) % MIGRATE_BUCKETS;
     mig_hash[indx].remove(m);
   }
 
   void set_migrate_done(MigrateToInterimCache *m) {
-    uint32_t indx = m->key.word(3) % MIGRATE_BUCKETS;
+    uint32_t indx = m->key.slice32(3) % MIGRATE_BUCKETS;
     mig_hash[indx].remove(m);
     history.remove_key(&m->key);
   }
