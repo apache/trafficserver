@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2584] Remove assert for negatively cached transformed objects.
+
+  *) [TS-3001] GlobalSign responds 403 when OCSP request posted without Host header
 
   *) [TS-2913] Missing body factory template for permanent redirects.
 

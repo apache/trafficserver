@@ -4794,11 +4794,14 @@ HttpTransact::set_headers_for_cache_write(State* s, HTTPInfo* cache_info, HTTPHd
     request->url_set(s->hdr_info.client_request.url_get());
   }
   cache_info->request_set(request);
-  if (!s->negative_caching)
+  /* Why do we check the negative caching case? No one knows. This used to assert if the cache_info
+     response wasn't already valid, which broke negative caching when a transform is active. Why it
+     wasn't OK to pull in the @a response explicitly passed in isn't clear and looking at the call
+     sites yields no insight. So the assert is removed and we keep the behavior that if the response
+     in @a cache_info is already set, we don't override it.
+  */
+  if (!s->negative_caching || !cache_info->response_get()->valid())
     cache_info->response_set(response);
-  else {
-    ink_assert(cache_info->response_get()->valid());
-  }
 
   if (s->api_server_request_body_set)
     cache_info->request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
