@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-3026] SPDY not forwarding Accept-Encoding for FF
+
   *) [TS-2995] Apply TOS/SO marks to client connection in all accept cases.
 
   *) [TS-2912] Don't clear stale object on HEAD request.
