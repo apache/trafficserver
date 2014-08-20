@@ -815,7 +815,9 @@ int
 LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
   LogFieldIpStorage data;
   int len = sizeof(data._ip);
-  if (ats_is_ip4(ip)) {
+  if (NULL == ip) {
+    data._ip._family = AF_UNSPEC;
+  } else if (ats_is_ip4(ip)) {
     if (dest) {
       data._ip4._family = AF_INET;
       data._ip4._addr = ats_ip4_addr_cast(ip);
@@ -1211,9 +1213,18 @@ int
 LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 {
   IpEndpoint ip;
+  int zret = -1;
 
-  unmarshal_ip(buf, &ip);
-  return ats_ip_ntop(&ip, dest, len) ? static_cast<int>(::strlen(dest)) : -1;
+  if (len > 0) {
+    unmarshal_ip(buf, &ip);
+    if (!ats_is_ip(&ip)) {
+      *dest = '0';
+      zret = 1;
+    } else if (ats_ip_ntop(&ip, dest, len)) {
+      zret = static_cast<int>(::strlen(dest));
+    }
+  }
+  return zret;
 }
 
 /*-------------------------------------------------------------------------
@@ -1227,9 +1238,19 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
 {
+  int zret = -1;
   IpEndpoint ip;
-  unmarshal_ip(buf, &ip);
-  return ats_ip_to_hex(&ip.sa, dest, len);
+
+  if (len > 0) {
+    unmarshal_ip(buf, &ip);
+    if (!ats_is_ip(&ip)) {
+      *dest = '0';
+      zret = 1;
+    } else {
+      zret = ats_ip_to_hex(&ip.sa, dest, len);
+    }
+  }
+  return zret;
 }
 
 /*-------------------------------------------------------------------------

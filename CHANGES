@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2905] Change IP logging to print '0' instead of error text.
+
   *) [TS-2982] Interim cache compile errors.
 
   *) [TS-2584] Remove assert for negatively cached transformed objects.
