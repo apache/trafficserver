@@ -22,7 +22,7 @@
 */
 
 #include "ats_beacon_intercept.h"
-#include "ats_speed.h"
+#include "ats_pagespeed.h"
 #include "ats_server_context.h"
 
 #include "net/instaweb/system/public/system_request_context.h"
@@ -35,7 +35,7 @@
 using std::string;
 using namespace net_instaweb;
 
-#define DEBUG_TAG "ats_speed_beacon"
+#define DEBUG_TAG "ats_pagespeed_beacon"
 
 struct InterceptCtx {
   TSVConn net_vc;
@@ -222,7 +222,7 @@ processRequest(InterceptCtx *cont_data) {
   // OS: Looks like on 5.x we sometimes receive read complete / EOS events twice,
   // which needs looking into. Probably this intercept is doing something it shouldn't
   if (cont_data->output.buffer) { 
-    TSDebug("ats_speed", "Received read complete / EOS twice?!");
+    TSDebug("ats_pagespeed", "Received read complete / EOS twice?!");
     return true;
   }
   string reply_header("HTTP/1.1 204 No Content\r\n");

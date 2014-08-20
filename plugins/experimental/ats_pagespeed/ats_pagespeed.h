@@ -21,8 +21,8 @@
     limitations under the License.
 */
 
-#ifndef ATS_SPEED_H_
-#define ATS_SPEED_H_
+#ifndef ATS_PAGESPEED_H_
+#define ATS_PAGESPEED_H_
 
 #include <string>
 
@@ -99,4 +99,4 @@ void copy_request_headers_to_psol(TSMBuffer bufp, TSMLoc hdr_loc, net_instaweb::
 // You will own options returned by this:
 net_instaweb::AtsRewriteOptions* get_host_options(const StringPiece& host);
 
-#endif /* ATS_SPEED_H_ */
+#endif /* ATS_PAGESPEED_H_ */

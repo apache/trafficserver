@@ -57,9 +57,9 @@ PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a
 
 %.so: psol %.cc
 # https://github.com/pagespeed/ngx_pagespeed/issues/433: it would be nice to have -Wall -Werror, only suppressing when needed.
-	g++ $(INC) -shared -o ats_speed.so -g -pipe -O3 -fpic *.cc -lstdc++ -lstdc++  -lpthread $(PSOL_LIBS) -lrt
+	g++ $(INC) -shared -o ats_pagespeed.so -g -pipe -O3 -fpic *.cc -lstdc++ -lstdc++  -lpthread $(PSOL_LIBS) -lrt
 
-all: psol gzip/gzip.so ats_speed.so
+all: psol gzip/gzip.so ats_pagespeed.so
 
 1.8.31.4.tar.gz:
 	wget --no-check-certificate https://dl.google.com/dl/page-speed/psol/1.8.31.4.tar.gz
@@ -71,7 +71,7 @@ gzip/gzip.so:
 	cd gzip && make
 
 install: all
-	$(TSXS) -i -o ats_speed.so
+	$(TSXS) -i -o ats_pagespeed.so
 	cd gzip && make install
 
 cleanpsol:

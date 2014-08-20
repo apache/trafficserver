@@ -11,10 +11,10 @@ sometimes gets induced when synchronising ATS's and PSOL's thread pools.
 
 After that, update ATS's plugin.config with:
 ```
-ats_speed.so                                                                                 
+ats_pagespeed.so                                                                                 
 gzip.so /usr/local/etc/trafficserver/gzip.config  
 ````
-gzip.so also is build with ats_speed, as it currently is a slightly
+gzip.so also is build with ats_pagespeed, as it currently is a slightly
 modified version of the official one from the ATS repository.
 
 There are some hard-coded things in the plugin, these directories should exist:

@@ -26,8 +26,8 @@
 set -u  # check for undefined variables
 set -e  # exit on failed commands
 
-if [ "$(basename "$PWD")" != "ats_speed" ] ; then
-  echo "$(basename $0) must be invoked from the ats_speed directory"
+if [ "$(basename "$PWD")" != "ats_pagespeed" ] ; then
+  echo "$(basename $0) must be invoked from the ats_pagespeed directory"
   exit 1
 fi
 

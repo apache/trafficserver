@@ -36,12 +36,12 @@ INC =-I$(MOD_PAGESPEED_DIR)\
 PSOL_LIBS = $(MOD_PAGESPEED_DIR)net/instaweb/automatic/pagespeed_automatic.a
 
 %.so: %.cc
-	g++ $(INC) -shared -o ats_speed.so -g -pipe -Wall -Werror -O3 -fpic *.cc -lstdc++  -lpthread -lrt $(PSOL_LIBS)
+	g++ $(INC) -shared -o ats_pagespeed.so -g -pipe -Wall -Werror -O3 -fpic *.cc -lstdc++  -lpthread -lrt $(PSOL_LIBS)
 
-all: gzip/gzip.so ats_speed.so
+all: gzip/gzip.so ats_pagespeed.so
 
 install: all
-	$(TSXS) -i -o ats_speed.so 
+	$(TSXS) -i -o ats_pagespeed.so 
 	cp gzip/gzip.so ./
 	$(TSXS) -i -o zip.so 
 
