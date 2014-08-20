@@ -32,7 +32,7 @@
 #include "ats_rewrite_driver_factory.h"
 #include "ats_rewrite_options.h"
 #include "ats_server_context.h"
-#include "ats_speed.h"
+#include "ats_pagespeed.h"
 
 #include "net/instaweb/http/public/request_context.h"
 #include "net/instaweb/rewriter/public/resource_fetch.h"

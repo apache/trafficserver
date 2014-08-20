@@ -28,7 +28,7 @@
 
 #include <ts/ts.h>
 
-#include "ats_speed.h"
+#include "ats_pagespeed.h"
 
 #include "net/instaweb/http/public/async_fetch.h"
 #include "net/instaweb/http/public/headers.h"

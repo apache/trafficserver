@@ -39,7 +39,7 @@
 #include <set>
 
 
-#include "ats_speed.h"
+#include "ats_pagespeed.h"
 
 #include "ats_config.h"
 #include "ats_header_utils.h"
@@ -91,7 +91,7 @@
 using namespace net_instaweb;
 
 static AtsProcessContext* ats_process_context;
-static const char* DEBUG_TAG = "ats_speed_transform";
+static const char* DEBUG_TAG = "ats_pagespeed_transform";
 static int TXN_INDEX_ARG;
 static int TXN_INDEX_OWNED_ARG;
 static int TXN_INDEX_OWNED_ARG_SET;
@@ -644,7 +644,7 @@ ats_transform_do(TSCont contp)
 
 
 static int
-ats_speed_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
+ats_pagespeed_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (TSVConnClosedGet(contp)) {
     //ats_ctx_destroy((TransformCtx*)TSContDataGet(contp));
@@ -678,7 +678,7 @@ ats_speed_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 }
 
 static void
-ats_speed_transform_add(TSHttpTxn txnp)
+ats_pagespeed_transform_add(TSHttpTxn txnp)
 {
   TransformCtx* ctx = get_transaction_context(txnp);
   CHECK(ctx);
@@ -693,7 +693,7 @@ ats_speed_transform_add(TSHttpTxn txnp)
 
   TSVConn connp;
 
-  connp = TSTransformCreate(ats_speed_transform, txnp);
+  connp = TSTransformCreate(ats_pagespeed_transform, txnp);
   TSContDataSet(connp, ctx);
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
@@ -745,13 +745,13 @@ handle_read_request_header(TSHttpTxn txnp) {
                    || ctx->gurl->PathSansQuery() == "/pagespeed_statistics"
                    || ctx->gurl->PathSansQuery() == "/pagespeed_global_statistics"
                    || ctx->gurl->PathSansQuery() == "/pagespeed_console"
-                   || ctx->gurl->PathSansLeaf() == "/ats_speed_static/"
+                   || ctx->gurl->PathSansLeaf() == "/ats_pagespeed_static/"
                    || ctx->gurl->PathSansQuery() == "/robots.txt"
                    ) {
           ctx->resource_request = true;
           TSHttpTxnArgSet(txnp, TXN_INDEX_OWNED_ARG, &TXN_INDEX_OWNED_ARG_UNSET);
         }
-        else if (StringCaseEqual(gurl.PathSansQuery() ,"/ats_speed_beacon")) {
+        else if (StringCaseEqual(gurl.PathSansQuery() ,"/ats_pagespeed_beacon")) {
           ctx->beacon_request = true;
           TSHttpTxnArgSet(txnp, TXN_INDEX_OWNED_ARG, &TXN_INDEX_OWNED_ARG_UNSET);
           hook_beacon_intercept(txnp);
@@ -952,7 +952,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     TSDebug(DEBUG_TAG, "Will optimize [%s]", ctx->url_string->c_str());
     ctx->html_rewrite = true;
     set_header(response_header_buf,response_header_loc,"@gzip_nocache","0");
-    ats_speed_transform_add(txn);
+    ats_pagespeed_transform_add(txn);
   }
 
   TSHandleMLocRelease(response_header_buf, TS_NULL_MLOC, response_header_loc);    
@@ -964,7 +964,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 bool RegisterPlugin() {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"ats_speed";
+  info.plugin_name = (char *)"ats_pagespeed";
   info.vendor_name = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
@@ -1064,10 +1064,10 @@ config_notification_callback(void *data)
 
 void TSPluginInit(int argc, const char *argv[]) {
   if (RegisterPlugin() == true) {
-    if (TSHttpArgIndexReserve("ats_speed", "Stores the transaction context", &TXN_INDEX_ARG) != TS_SUCCESS) {
+    if (TSHttpArgIndexReserve("ats_pagespeed", "Stores the transaction context", &TXN_INDEX_ARG) != TS_SUCCESS) {
       CHECK(false) << "failed to reserve an argument index";
     }
-    if (TSHttpArgIndexReserve("ats_speed", "Stores the transaction context", &TXN_INDEX_OWNED_ARG) != TS_SUCCESS) {
+    if (TSHttpArgIndexReserve("ats_pagespeed", "Stores the transaction context", &TXN_INDEX_OWNED_ARG) != TS_SUCCESS) {
       CHECK(false) << "failed to reserve an argument index";
     }
 

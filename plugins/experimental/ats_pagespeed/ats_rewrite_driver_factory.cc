@@ -73,7 +73,7 @@ namespace net_instaweb {
       , threads_started_(false)
   {
     InitializeDefaultOptions();
-    default_options()->set_beacon_url("/ats_speed_beacon");
+    default_options()->set_beacon_url("/ats_pagespeed_beacon");
     default_options()->set_enabled(RewriteOptions::kEnabledOn);
     default_options()->SetRewriteLevel(RewriteOptions::kCoreFilters);
     
@@ -115,7 +115,7 @@ namespace net_instaweb {
   }
 
   void AtsRewriteDriverFactory::InitStaticAssetManager(StaticAssetManager* static_js_manager) {
-    static_js_manager->set_library_url_prefix("/ats_speed_static/");
+    static_js_manager->set_library_url_prefix("/ats_pagespeed_static/");
   }
 
   Hasher* AtsRewriteDriverFactory::NewHasher() {
@@ -177,7 +177,7 @@ namespace net_instaweb {
 net_instaweb::QueuedWorkerPool* AtsRewriteDriverFactory::CreateWorkerPool(net_instaweb::RewriteDriverFactory::WorkerPoolCategory pool,
                                                                           StringPiece name) {
   int tc = 8;
-  TSDebug("ats_speed", "Created new QueuedWorkerPool of type %d named '%s' of size %d", pool, name.data(), tc);
+  TSDebug("ats_pagespeed", "Created new QueuedWorkerPool of type %d named '%s' of size %d", pool, name.data(), tc);
   net_instaweb::QueuedWorkerPool *q_pool = new net_instaweb::QueuedWorkerPool(tc, name, thread_system());
   return q_pool;
 }
