@@ -72,6 +72,11 @@ The following list describes Traffic Server custom logging fields.
 ``chih``
     The IP address of the client's host machine in hexadecimal.
 
+``chm``
+    The cache medium the HIT was served from. If it was a RAM cache HIT
+    the value is 'ram'. For a HIT (see ``crc``) with a ``chm`` value of
+    ``-`` the medium was disk cache.
+
 ``chp``
     The port number of the client's host machine.
 
