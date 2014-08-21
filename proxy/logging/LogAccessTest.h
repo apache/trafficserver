@@ -90,6 +90,7 @@ public:
   // other fields
   //
   virtual int marshal_transfer_time_ms(char *); // INT
+  virtual int marshal_cache_hit_medium(char *); // STR
 
   //
   // named fields from within a http header

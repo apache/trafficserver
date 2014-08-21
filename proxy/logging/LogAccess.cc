@@ -837,6 +837,13 @@ LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
   return INK_ALIGN_DEFAULT(len);
 }
 
+int
+LogAccess::marshal_cache_hit_medium(LogField::Container /* container ATS_UNUSED */,
+                                     char * /* field ATS_UNUSED */, char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
 inline int
 LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
 {

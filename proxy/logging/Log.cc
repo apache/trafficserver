@@ -877,6 +877,13 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "etype", field);
 
+  field = new LogField("cache_hit_medium", "chm",
+                       LogField::STRING,
+                       &LogAccess::marshal_cache_hit_medium,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "chm", field);
+
   init_status |= FIELDS_INITIALIZED;
 }
 
