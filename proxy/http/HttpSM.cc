@@ -680,6 +680,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
       t_state.transparent_passthrough = true;
       http_parser_clear(&http_parser);
 
+      // Turn off read eventing until we get the
+      // blind tunnel infrastructure set up
+      ua_session->get_netvc()->do_io_read(this, 0, NULL);
+
       /* establish blind tunnel */
       setup_blind_tunnel_port();
       return 0;

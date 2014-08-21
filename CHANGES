@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 5.1.0
+Changes with Apache Traffic Server 5.2.0
+
+  *) [TS-2970] Prevent asserts with transparent pass through.
 
   *) [TS-2995] Apply TOS/SO marks to client connection in all accept cases.
 
