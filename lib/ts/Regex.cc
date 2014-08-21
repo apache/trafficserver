@@ -43,20 +43,25 @@ DFA::~DFA()
 }
 
 dfa_pattern *
-DFA::build(const char *pattern, REFlags flags)
+DFA::build(const char *pattern, unsigned flags)
 {
   const char *error;
   int erroffset;
   dfa_pattern* ret;
+  int options = PCRE_ANCHORED;
 
   ret = (dfa_pattern*)ats_malloc(sizeof(dfa_pattern));
   ret->_p = NULL;
 
-  if (flags & RE_CASE_INSENSITIVE)
-    ret->_re = pcre_compile(pattern, PCRE_CASELESS|PCRE_ANCHORED, &error, &erroffset, NULL);
-  else
-    ret->_re = pcre_compile(pattern, PCRE_ANCHORED, &error, &erroffset, NULL);
+  if (flags & RE_CASE_INSENSITIVE) {
+    options |= PCRE_CASELESS;
+  }
 
+  if (flags & RE_UNANCHORED) {
+    options &= ~PCRE_ANCHORED;
+  }
+
+  ret->_re = pcre_compile(pattern, options, &error, &erroffset, NULL);
   if (error) {
     ats_free(ret);
     return NULL;
@@ -75,7 +80,7 @@ DFA::build(const char *pattern, REFlags flags)
   return ret;
 }
 
-int DFA::compile(const char *pattern, REFlags flags) {
+int DFA::compile(const char *pattern, unsigned flags) {
   ink_assert(_my_patterns == NULL);
   _my_patterns = build(pattern,flags);
   if (_my_patterns)
@@ -85,7 +90,7 @@ int DFA::compile(const char *pattern, REFlags flags) {
 }
 
 int
-DFA::compile(const char **patterns, int npatterns, REFlags flags)
+DFA::compile(const char **patterns, int npatterns, unsigned flags)
 {
   const char *pattern;
   dfa_pattern *ret = NULL;

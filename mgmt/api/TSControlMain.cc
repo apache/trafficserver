@@ -407,7 +407,7 @@ handle_record_match(int fd, void * req, size_t reqlen)
     return send_record_get_error(fd, TS_ERR_FAIL);
   }
 
-  if (match.regex.compile(name, RE_CASE_INSENSITIVE) != 0) {
+  if (match.regex.compile(name, RE_CASE_INSENSITIVE | RE_UNANCHORED) != 0) {
     ats_free(name);
     return send_record_get_error(fd, TS_ERR_FAIL);
   }
