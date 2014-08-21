@@ -79,10 +79,6 @@ fail:
 bool
 SSLNextProtocolSet::advertiseProtocols(const unsigned char ** out, unsigned * len) const
 {
-  if (!npn && !this->endpoints.empty()) {
-    create_npn_advertisement(this->endpoints, &npn, &npnsz);
-  }
-
   if (npn && npnsz) {
     *out = npn;
     *len = npnsz;
@@ -97,13 +93,6 @@ SSLNextProtocolSet::registerEndpoint(const char * proto, Continuation * ep)
 {
   size_t len = strlen(proto);
 
-  // Once we start advertising, the set is closed. We need to hand an immutable
-  // string down into OpenSSL, and there is no mechanism to tell us when it's
-  // done with it so we have to keep it forever.
-  if (this->npn) {
-    return false;
-  }
-
   // Both ALPN and NPN only allow 255 bytes of protocol name.
   if (len > 255) {
     return false;
@@ -111,6 +100,15 @@ SSLNextProtocolSet::registerEndpoint(const char * proto, Continuation * ep)
 
   if (!findEndpoint((const unsigned char *)proto, len)) {
     this->endpoints.push(new NextProtocolEndpoint(proto, ep));
+
+    if (npn) {
+      ats_free(npn);
+      npn = NULL;
+      npnsz = 0;
+    }
+
+    create_npn_advertisement(this->endpoints, &npn, &npnsz);
+
     return true;
   }
 
