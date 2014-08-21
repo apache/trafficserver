@@ -1992,8 +1992,6 @@ AS_IF([test "x$enable_cppapi" = xyes], [
   lib/atscppapi/src/Makefile
 ])])
 
-AC_CONFIG_SUBDIRS([lib/ck])
-
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
 
