@@ -4,20 +4,20 @@ Changes with Apache Traffic Server 5.2.0
   *) [TS-3027] Add hashed intermediate SSL certificate support.
    Author: Steven Feltner <steven.feltner@gmail.com>
 
-  *) [TS-2970] Fix assertions with transparent pass through.
-   Author: Susan Hinrichs <shinrich@network-geographics.com>
-
-  *) [TS-2954] Protect against DNS cache poisoning when
-   proxy.config.http.use_client_target_addr is enabled.
-   Author: Susan Hinrichs <shinrich@network-geographics.com>
-
   *) [TS-3031] Race condition in SSLNextProtocolSet::advertiseProtocols
 
   *) [TS-2983] Fix protocol probe to not skip data.
 
-  *) [TS-2970] Prevent asserts with transparent pass through.
-
   *) [TS-3026] SPDY not forwarding Accept-Encoding for FF
+
+  *) [TS-2970] Fix assertions with transparent pass through.
+   Author: Susan Hinrichs <shinrich@network-geographics.com>
+
+Changes with Apache Traffic Server 5.1.0
+
+  *) [TS-2954] Protect against DNS cache poisoning when
+   proxy.config.http.use_client_target_addr is enabled.
+   Author: Susan Hinrichs <shinrich@network-geographics.com>
 
   *) [TS-2995] Apply TOS/SO marks to client connection in all accept cases.
 
