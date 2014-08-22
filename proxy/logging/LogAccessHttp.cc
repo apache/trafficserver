@@ -1293,10 +1293,10 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
 int
 LogAccessHttp::marshal_cache_hit_medium(char *buf)
 {
-  char *str = NULL;
+  const char *str = NULL;
   int len = INK_MIN_ALIGN;
    if (m_http_sm->t_state.cache_info.is_ram_cache_hit) {
-    str = “ram";
+    str = "ram";
     len = LogAccess::strlen(str);
   }
 

@@ -838,8 +838,7 @@ LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
 }
 
 int
-LogAccess::marshal_cache_hit_medium(LogField::Container /* container ATS_UNUSED */,
-                                     char * /* field ATS_UNUSED */, char *buf)
+LogAccess::marshal_cache_hit_medium(char *buf)
 {
   DEFAULT_STR_FIELD;
 }
