@@ -294,6 +294,7 @@ CONFIG proxy.config.diags.show_location INT 1
 EOF
 
   msg bootstrapped Traffic Server into $TSQA_ROOT
+  tsexec traffic_layout
 }
 
 # vim: set sw=2 ts=2 et :

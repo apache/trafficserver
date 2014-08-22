@@ -1862,6 +1862,7 @@ AC_CONFIG_FILES([
   Makefile
   cmd/Makefile
   cmd/traffic_cop/Makefile
+  cmd/traffic_layout/Makefile
   cmd/traffic_line/Makefile
   cmd/traffic_manager/Makefile
   cmd/traffic_top/Makefile

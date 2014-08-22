@@ -1181,6 +1181,27 @@ RecConfigReadConfigPath(const char * file_variable, const char * default_value)
 }
 
 //-------------------------------------------------------------------------
+// RecConfigReadPrefixPath
+//-------------------------------------------------------------------------
+char *
+RecConfigReadPrefixPath(const char * file_variable, const char * default_value)
+{
+  char buf[PATH_NAME_MAX + 1];
+
+  buf[0] = '\0';
+  RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative_to(Layout::get()->prefix, buf);
+  }
+
+  if (default_value) {
+    return Layout::get()->relative_to(Layout::get()->prefix, default_value);
+  }
+
+  return NULL;
+}
+
+//-------------------------------------------------------------------------
 // RecConfigReadPersistentStatsPath
 //-------------------------------------------------------------------------
 char *

@@ -66,6 +66,9 @@ char * RecConfigReadBinDir();
 // value, NULL is returned. The caller MUST release the result with ats_free().
 char * RecConfigReadConfigPath(const char * file_variable, const char * default_value = NULL);
 
+// This is the same as RecConfigReadConfigPath, except it makes the paths relative to $PREFIX.
+char * RecConfigReadPrefixPath(const char * file_variable, const char * default_value = NULL);
+
 // Return a copy of the persistent stats file. This is $RUNTIMEDIR/records.snap.
 // The caller MUST release the result with ats_free().
 char * RecConfigReadPersistentStatsPath();

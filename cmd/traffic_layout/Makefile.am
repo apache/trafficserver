@@ -15,9 +15,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
-  traffic_cop \
-  traffic_layout \
-  traffic_line \
-  traffic_manager \
-  traffic_top
+bin_PROGRAMS = traffic_layout
+
+AM_CPPFLAGS = \
+  $(iocore_include_dirs) \
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib \
+  -I$(top_srcdir)/lib/ts \
+  -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/utils
+
+traffic_layout_SOURCES = \
+  traffic_layout.cc
+
+traffic_layout_LDADD = \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  $(top_builddir)/lib/ts/libtsutil.la

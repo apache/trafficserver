@@ -1739,14 +1739,8 @@ TSPluginDirGet(void)
   static char path[PATH_NAME_MAX + 1] = "";
 
   if (*path == '\0') {
-    char *plugin_dir = NULL;
-    RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", &plugin_dir);
-    if (!plugin_dir) {
-      Error("Unable to read proxy.config.plugin.plugin_dir");
-      return NULL;
-    }
-    Layout::relative_to(path, sizeof(path),
-                        Layout::get()->prefix, plugin_dir);
+    char * plugin_dir = RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
+    ink_strlcpy(path, plugin_dir, sizeof(path));
     ats_free(plugin_dir);
   }
 
