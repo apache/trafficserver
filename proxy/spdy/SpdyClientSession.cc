@@ -420,10 +420,11 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
       unsigned char digest[MD5_DIGEST_LENGTH];
       if (is_debug_tag_set("spdy")) {
         MD5_Final(digest, &req->recv_md5);
-        Debug("spdy", "----recv md5sum: ");
+        char md5_strbuf[MD5_DIGEST_LENGTH * 2 + 1];
         for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
-          Debug("spdy", "%02x", digest[i]);
+          snprintf(md5_strbuf + (i * 2), 3 /* null byte counts towards the limit */, "%02x", digest[i]);
         }
+        Debug("spdy", "----recv md5sum: %s", md5_strbuf);
       }
       *eof = 1;
       sm->cleanup_request(stream_id);
