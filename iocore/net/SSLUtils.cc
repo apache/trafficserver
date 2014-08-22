@@ -1069,6 +1069,27 @@ SSLInitServerContext(
       goto fail;
     }
   }
+
+  // SSL_CTX_load_verify_locations() builds the cert chain from the
+  // serverCACertFilename if that is not NULL.  Otherwise, it uses the hashed
+  // symlinks in serverCACertPath.
+  //
+  // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
+  //     AND
+  // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
+  //     are configured
+  //   pass that file as the chain (include all certs in that file)
+  // else if proxy.config.ssl.CA.cert.path is configured (and
+  //       proxy.config.ssl.CA.cert.filename is NULL)
+  //   use the hashed symlinks in that directory to build the chain
+  if (!sslMultCertSettings.ca && params->serverCACertPath != NULL) {
+    if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
+        (!SSL_CTX_set_default_verify_paths(ctx))) {
+      SSLError("invalid CA Certificate file or CA Certificate path");
+      goto fail;
+    }
+  }
+
   if (params->clientCertLevel != 0) {
 
     if (params->serverCACertFilename != NULL && params->serverCACertPath != NULL) {
