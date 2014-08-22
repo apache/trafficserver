@@ -2081,6 +2081,19 @@ SSL Termination
        authenticated during the SSL handshake. Clients without a
        certificate are not allowed to access Traffic Server.
 
+.. ts:cv:: CONFIG proxy.config.ssl.number.threads INT 0
+
+   Sets the number of SSL threads to use, this defaults to 0 (autoconfigure).
+    
+   -  ``0`` = autoconfigure, this will allow Traffic Server to determine
+      the appropriate number of threads
+   
+   -  ``-1`` = disable, this makes ET_NET threads behave like ET_SSL threads
+      Note: this does not disable SSL, it simply allows another thread pool
+      to assist in SSL tasks without dedicated SSL threads.
+   
+   -  ``>0`` = Use a non-zero number of SSL threads
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
 
    The location of the :file:`ssl_multicert.config` file, relative
