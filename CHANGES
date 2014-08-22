@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3027] Add hashed intermediate SSL certificate support.
+   Author: Steven Feltner <steven.feltner@gmail.com>
+
   *) [TS-2970] Fix assertions with transparent pass through.
    Author: Susan Hinrichs <shinrich@network-geographics.com>
 
