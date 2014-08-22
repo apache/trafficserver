@@ -58,19 +58,20 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 {
   static const size_t minimum_read_size = 1;
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  IOBufferReader *  reader;
 
   explicit
   ProtocolProbeTrampoline(const ProtocolProbeSessionAccept * probe, ProxyMutex * mutex)
     : Continuation(mutex), probeParent(probe)
   {
     this->iobuf = new_MIOBuffer(buffer_size_index);
+    reader = iobuf->alloc_reader(); // reader must be allocated only on a new MIOBuffer.
     SET_HANDLER(&ProtocolProbeTrampoline::ioCompletionEvent);
   }
 
   int ioCompletionEvent(int event, void * edata)
   {
     VIO *             vio;
-    IOBufferReader *  reader;
     NetVConnection *  netvc;
     ProtoGroupKey  key = N_PROTO_GROUPS; // use this as an invalid value.
 
@@ -92,7 +93,6 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       return EVENT_ERROR;
     }
 
-    reader = iobuf->alloc_reader();
     ink_assert(netvc != NULL);
 
     if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
