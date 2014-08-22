@@ -1,7 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
-  *) [TS-2983] Fix protocol probe to not skip data.
+  *) [TS-3027] Add hashed intermediate SSL certificate support.
+   Author: Steven Feltner <steven.feltner@gmail.com>
 
   *) [TS-2983] Fix protocol probe to not skip data.
 
