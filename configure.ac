@@ -47,8 +47,6 @@ AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-AC_DISABLE_STATIC
-
 # Libtool versioning uses different conventions on different
 # platforms.  At least on FreeBSD, libtool uses an overly complex
 # convention that attempts to solve problems that most people just
@@ -224,15 +222,17 @@ AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 #
 # Force some static linkage (for testing / development only)
 #
-AC_MSG_CHECKING([whether to build some static libts (dev only)])
-AC_ARG_ENABLE([static-libts],
-  [AS_HELP_STRING([--enable-static-libts],[build some static libts (dev only)])],
-  [],
-  [enable_static_libts=no]
+AC_MSG_CHECKING([whether to build a static traffic_server binary])
+AC_ARG_ENABLE([static-proxy], [AS_HELP_STRING([--enable-static-proxy],[build a static traffic_server binary])], [
+    AC_ENABLE_STATIC
+  ], [
+    AC_DISABLE_STATIC
+    enable_static_proxy=no
+  ]
 )
-AC_MSG_RESULT([$enable_static_libts])
-TS_ARG_ENABLE_VAR([has],[static-libts])
-AM_CONDITIONAL([STATIC_LIBTS], [test 0 -ne $has_static_libts])
+AC_MSG_RESULT([$enable_static_proxy])
+TS_ARG_ENABLE_VAR([has],[static-proxy])
+AM_CONDITIONAL([BUILD_STATIC_PROXY], [test 0 -ne $has_static_proxy])
 
 #
 # Remote Coverity Prevent commit

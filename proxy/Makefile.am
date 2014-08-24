@@ -122,12 +122,6 @@ LUAJIT = \
   lj_vmevent.o \
   lj_vmmath.o
 
-if STATIC_LIBTS
-    which_libts = $(top_builddir)/lib/ts/.libs/libtsutil.a
-else
-    which_libts = $(top_builddir)/lib/ts/libtsutil.la
-endif
-
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
 traffic_server_SOURCES = \
@@ -192,6 +186,11 @@ if BUILD_TESTS
 endif
 
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
+if BUILD_STATIC_PROXY
+traffic_server_LDFLAGS += -all-static
+endif
+
 traffic_server_LDADD = \
   http/libhttp.a \
   http2/libhttp2.a \
@@ -218,7 +217,7 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(which_libts) \
+  $(top_builddir)/lib/ts/libtsutil.la \
   @HWLOC_LIBS@ \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
