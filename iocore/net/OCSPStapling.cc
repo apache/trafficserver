@@ -23,6 +23,7 @@
 #include "P_OCSPStapling.h"
 #include "P_Net.h"
 #include "P_SSLConfig.h"
+#include "P_SSLUtils.h"
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
 
@@ -105,12 +106,12 @@ bool
 ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
 {
   certinfo *cinf;
-  X509 *cert = NULL;
-  X509 *issuer = NULL;
+  scoped_X509 cert;
+  scoped_X509 issuer;
   STACK_OF(OPENSSL_STRING) *aia = NULL;
-  BIO *bio = BIO_new_file(certfile, "r");
+  scoped_BIO bio(BIO_new_file(certfile, "r"));
 
-  cert = PEM_read_bio_X509_AUX(bio, NULL, NULL, NULL);
+  cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (!cert) {
     Debug("ssl", "can not read cert from certfile %s!", certfile);
     return false;
@@ -145,7 +146,6 @@ ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
   }
 
   cinf->cid = OCSP_cert_to_id(NULL, cert, issuer);
-  X509_free(issuer);
   if (!cinf->cid)
     return false;
   X509_digest(cert, EVP_sha1(), cinf->idx, NULL);
