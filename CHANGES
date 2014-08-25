@@ -1,6 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.0
 
+  *) [TS-2993] Update ats_pagespeed towards PSOL 1.8.31.4-stable.
+
+  *) [TS-3005] Rename pagespeed plugin: ats_speed -> ats_pagespeed.
+
+  *) [TS-3003] Remove overwriting of robots.txt in ats_pagespeed.
+
+  *) [TS-2926] IP Clearance for ats_speed - PageSpeed optimization plugin.
+
   *) [TS-3027] Add hashed intermediate SSL certificate support.
    Author: Steven Feltner <steven.feltner@gmail.com>
 
