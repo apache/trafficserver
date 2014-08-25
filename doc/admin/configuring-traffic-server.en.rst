@@ -32,8 +32,7 @@ Configure Traffic Server Using Traffic Line
 ===========================================
 
 Traffic Line enables you to quickly and easily change your Traffic
-Server configuration via command-line interface. Alternatively, you can
-also use :program:`traffic_shell` to configure Traffic Server.
+Server configuration via command-line interface.
 
 View Configuration Options in Traffic Line
 ------------------------------------------

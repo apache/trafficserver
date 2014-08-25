@@ -27,7 +27,6 @@ man_pages = [
   ('reference/commands/traffic_logstats.en', 'traffic_logstats', u'Traffic Server analyzer', None, '8'),
   ('reference/commands/traffic_manager.en', 'traffic_manager', u'Traffic Server process manager', None, '8'),
   ('reference/commands/traffic_server.en', 'traffic_server', u'Traffic Server', None, '8'),
-  ('reference/commands/traffic_shell.en', 'traffic_shell', u'Traffic Server shell', None, '8'),
 
   ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
   ('reference/commands/traffic_top.en','traffic_top', u'Display Traffic Server statistics', None, '1'),

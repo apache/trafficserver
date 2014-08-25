@@ -42,7 +42,6 @@ performance and analyze network traffic:
    method of viewing Traffic Server performance and network traffic
    information; refer to `Starting Traffic Shell <../getting-started#StartTrafficShell>`_.
 
-.. XXX: *someone* seems to have deleted the traffic_shell docs, I'm suspecting igalic, btw. // igalic
 
 Working with Traffic Manager Alarms
 ===================================
