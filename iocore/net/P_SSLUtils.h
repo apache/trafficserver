@@ -131,4 +131,23 @@ void SSLDebugBufferPrint(const char * tag, const char * buffer, unsigned buflen,
 // Load the SSL certificate configuration.
 bool SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup * lookup);
 
+namespace ssl { namespace detail {
+  struct SCOPED_X509_TRAITS {
+    typedef X509* value_type;
+    static value_type initValue() { return NULL; }
+    static bool isValid(value_type x) { return x != NULL; }
+    static void destroy(value_type x) { X509_free(x); }
+  };
+
+  struct SCOPED_BIO_TRAITS {
+    typedef BIO* value_type;
+    static value_type initValue() { return NULL; }
+    static bool isValid(value_type x) { return x != NULL; }
+    static void destroy(value_type x) { BIO_free(x); }
+  };
+/* namespace ssl */ } /* namespace detail */ }
+
+typedef ats_scoped_resource<ssl::detail::SCOPED_X509_TRAITS>  scoped_X509;
+typedef ats_scoped_resource<ssl::detail::SCOPED_BIO_TRAITS>   scoped_BIO;
+
 #endif /* __P_SSLUTILS_H__ */

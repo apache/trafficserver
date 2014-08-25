@@ -120,28 +120,6 @@ static bool open_ssl_initialized = false;
 RecRawStatBlock *ssl_rsb = NULL;
 static InkHashTable *ssl_cipher_name_table = NULL;
 
-struct ats_file_bio
-{
-  ats_file_bio(const char * path, const char * mode)
-    : bio(BIO_new_file(path, mode)) {
-  }
-
-  ~ats_file_bio() {
-    (void)BIO_set_close(bio, BIO_CLOSE);
-    BIO_free(bio);
-  }
-
-  operator bool() const {
-    return bio != NULL;
-  }
-
-  BIO * bio;
-
-private:
-  ats_file_bio(const ats_file_bio&);
-  ats_file_bio& operator=(const ats_file_bio&);
-};
-
 /* Using pthread thread ID and mutex functions directly, instead of
  * ATS this_ethread / ProxyMutex, so that other linked libraries
  * may use pthreads and openssl without confusing us here. (TS-2271).
@@ -172,14 +150,10 @@ static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
 {
   X509 *cert;
-  ats_file_bio bio(chainfile, "r");
-
-  if (!bio) {
-    return false;
-  }
+  scoped_BIO bio(BIO_new_file(chainfile, "r"));
 
   for (;;) {
-    cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
+    cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
 
     if (!cert) {
       // No more the certificates in this file.
@@ -1254,9 +1228,9 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 {
   X509_NAME *   subject = NULL;
   X509 *        cert;
-  ats_file_bio  bio(certfile, "r");
+  scoped_BIO    bio(BIO_new_file(certfile, "r"));
 
-  cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
+  cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (NULL == cert) {
     return;
   }
