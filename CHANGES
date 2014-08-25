@@ -1,6 +1,16 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3042] Fix the option to build a static traffic_server binary.
+
+  *) [TS-3041] Add a traffic_layout tool to to show the installed
+   and configured file locations.
+
+  *) [TS-3034] Use an unanchored regex match in traffic_line -m.
+
+  *) [TS-3033] Reimplement the management protocol to use a generic
+   message initial marshalling format.
+
   *) [TS-3027] Add hashed intermediate SSL certificate support.
    Author: Steven Feltner <steven.feltner@gmail.com>
 
