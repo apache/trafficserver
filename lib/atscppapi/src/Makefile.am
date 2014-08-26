@@ -16,8 +16,6 @@
 #  limitations under the License.
 
 TS_PLUGIN_CPPFLAGS = \
-  -D__STDC_LIMIT_MACROS=1 \
-  -D__STDC_FORMAT_MACROS=1 \
   -I$(top_srcdir)/proxy/api \
   -I$(top_builddir)/lib/ts \
   -I$(top_srcdir)/lib/ts

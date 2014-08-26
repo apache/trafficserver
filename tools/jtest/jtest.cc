@@ -45,10 +45,6 @@
 #include <limits.h>
 #include <sys/mman.h>
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS 1
-#endif
-
 #include <inttypes.h>
 
 #include <time.h>

@@ -24,8 +24,6 @@
 #ifndef _GZIP_MISC_H_
 #define _GZIP_MISC_H_
 
-#define __STDC_LIMIT_MACROS
-#define __STDC_CONSTANT_MACROS
 #include <stdint.h>
 #include <zlib.h>
 #include <ts/ts.h>

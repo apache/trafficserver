@@ -29,18 +29,12 @@
 #include <stddef.h>
 
 #ifdef HAVE_STDINT_H
-# ifndef __STDC_LIMIT_MACROS
-#  define __STDC_LIMIT_MACROS 1
-# endif
 # include <stdint.h>
 #else
 // TODO: Add "standard" int types?
 #endif
 
 #ifdef HAVE_INTTYPES_H
-# ifndef __STDC_FORMAT_MACROS
-#  define __STDC_FORMAT_MACROS 1
-# endif
 # include <inttypes.h>
 #else
 // TODO: add PRI*64 stuff?

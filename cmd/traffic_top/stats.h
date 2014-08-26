@@ -21,8 +21,6 @@
     limitations under the License.
 */
 
-#define __STDC_FORMAT_MACROS 1
-
 #include <curl/curl.h>
 #include <map>
 #include <string>

@@ -1037,7 +1037,8 @@ else
 fi
 TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
 TS_ADDTO(CPPFLAGS, [-D_REENTRANT])
-
+TS_ADDTO(CPPFLAGS, [-D__STDC_LIMIT_MACROS=1])
+TS_ADDTO(CPPFLAGS, [-D__STDC_FORMAT_MACROS=1])
 
 AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
 

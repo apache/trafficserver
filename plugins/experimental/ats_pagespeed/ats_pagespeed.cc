@@ -22,9 +22,6 @@
 */
 
 // TODO(oschaaf): remove what isn't used
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>

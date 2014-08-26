@@ -21,10 +21,6 @@
   limitations under the License.
  */
 
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS 1
-#endif
-
 #include <ts/ts.h>
 #include <stdlib.h>
 #include <errno.h>
