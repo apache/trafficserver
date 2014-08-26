@@ -128,7 +128,7 @@ message_listen(int& port)
   }
 
   sa.setToAnyAddr(AF_INET);
-  if (bind(fd, &sa.sa, sizeof(sa)) == -1) {
+  if (bind(fd, &sa.sa, sizeof(sa.sin)) == -1) {
     goto fail;
   }
 
