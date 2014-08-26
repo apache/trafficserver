@@ -64,7 +64,8 @@ typedef enum
 
 struct mgmt_message_sender
 {
-    virtual TSMgmtError send(void * msg, size_t msglen) const = 0;
+  virtual TSMgmtError send(void * msg, size_t msglen) const = 0;
+  virtual ~mgmt_message_sender() { };
 };
 
 // Marshall and send a request, prefixing the message length as a MGMT_MARSHALL_INT.
