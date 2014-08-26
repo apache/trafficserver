@@ -238,7 +238,7 @@ struct HttpTunnelProducer
       @return The actual backlog or a number at least @a limit.
    */
   uint64_t backlog(
-		   uint64_t limit = INTU64_MAX ///< More than this is irrelevant
+		   uint64_t limit = UINT64_MAX ///< More than this is irrelevant
 		   );
   /// Check if producer is original (to ATS) source of data.
   /// @return @c true if this producer is the source of bytes from outside ATS.

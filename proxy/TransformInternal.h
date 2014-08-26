@@ -77,7 +77,7 @@ public:
   /** Compute the backlog.
       @return The actual backlog, or a value at least @a limit.
   */
-  virtual uint64_t backlog(uint64_t limit = INTU64_MAX);
+  virtual uint64_t backlog(uint64_t limit = UINT64_MAX);
 
 public:
   VConnection * m_transform;

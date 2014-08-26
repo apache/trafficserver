@@ -78,7 +78,7 @@ class TransformVCChain : public VConnection
       @a limit. The default is to accurately compute the backlog.
   */
   virtual uint64_t backlog(
-			   uint64_t limit = INTU64_MAX ///< Maximum value of interest
+			   uint64_t limit = UINT64_MAX ///< Maximum value of interest
 			  ) = 0;
 };
 

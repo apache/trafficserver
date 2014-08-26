@@ -16,12 +16,13 @@
  * limitations under the License.
  */
 
+#include "ink_defs.h"
+#include "ink_thread.h"
+#include "ink_inet.h"
+
 #include <ts/TestBox.h>
 #include <MgmtMarshall.h>
 #include <MgmtSocket.h>
-
-#include "ink_thread.h"
-#include "ink_inet.h"
 
 #define CHECK_EQ(expr, len) do { \
   MgmtMarshallInt rcvd = static_cast<MgmtMarshallInt>(expr); \
@@ -231,13 +232,13 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest * t, int /* atype ATS_UNUSED */,
 
   // Marshall some integral types.
   mint = -156;
-  mlong = INTU32_MAX;
+  mlong = UINT32_MAX;
   CHECK_EQ(mgmt_message_marshall(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
   CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
   CHECK_EQ(mgmt_message_parse(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
   CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
   CHECK_VALUE(mint, -156, "%" PRId32);
-  CHECK_VALUE(mlong, static_cast<MgmtMarshallLong>(INTU32_MAX), "%" PRId64);
+  CHECK_VALUE(mlong, static_cast<MgmtMarshallLong>(UINT32_MAX), "%" PRId64);
 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {

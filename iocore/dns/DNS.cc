@@ -920,7 +920,7 @@ DNSHandler::get_query_id()
   q2 = q1 = (uint16_t)(generator.random() & 0xFFFF);
   if (query_id_in_use(q2)) {
     uint16_t i = q2>>6;
-    while (qid_in_flight[i] == INTU64_MAX) {
+    while (qid_in_flight[i] == UINT64_MAX) {
       if (++i ==  sizeof(qid_in_flight)/sizeof(uint64_t)) {
         i = 0;
       }
