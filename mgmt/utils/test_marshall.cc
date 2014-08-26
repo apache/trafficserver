@@ -24,8 +24,8 @@
 #include "ink_inet.h"
 
 #define CHECK_EQ(expr, len) do { \
-  MgmtMarshallInt rcvd = (MgmtMarshallInt)(expr); \
-  box.check(rcvd == len, "%s returned length %d, expected %d", #expr, rcvd, (MgmtMarshallInt)(len)); \
+  MgmtMarshallInt rcvd = static_cast<MgmtMarshallInt>(expr); \
+  box.check(rcvd == static_cast<MgmtMarshallInt>(len), "%s returned length %d, expected %d", #expr, rcvd, static_cast<MgmtMarshallInt>(len)); \
 } while (0)
 
 #define CHECK_VALUE(value, expect, fmt) do { \
@@ -117,11 +117,7 @@ message_connect_channel(RegressionTest * t, int listenfd, int clientfd, int serv
 static int
 message_listen(int& port)
 {
-  union {
-    struct sockaddr sa;
-    struct sockaddr_in in;
-    struct sockaddr_storage storage;
-  } sa;
+  IpEndpoint sa;
   socklen_t slen;
   int fd;
 
@@ -130,12 +126,8 @@ message_listen(int& port)
     goto fail;
   }
 
-  ink_zero(sa);
-  sa.in.sin_family = AF_INET;
-  sa.in.sin_addr.s_addr = htonl(INADDR_ANY);
-  sa.in.sin_len = sizeof(sockaddr_in);
-
-  if (bind(fd, &sa.sa, sizeof(sa.in)) == -1) {
+  sa.setToAnyAddr(AF_INET);
+  if (bind(fd, &sa.sa, sizeof(sa)) == -1) {
     goto fail;
   }
 
@@ -239,13 +231,13 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest * t, int /* atype ATS_UNUSED */,
 
   // Marshall some integral types.
   mint = -156;
-  mlong = UINT32_MAX;
+  mlong = INTU32_MAX;
   CHECK_EQ(mgmt_message_marshall(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
   CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
   CHECK_EQ(mgmt_message_parse(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
   CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
   CHECK_VALUE(mint, -156, "%" PRId32);
-  CHECK_VALUE(mlong, (MgmtMarshallLong)UINT32_MAX, "%" PRId64);
+  CHECK_VALUE(mlong, static_cast<MgmtMarshallLong>(INTU32_MAX), "%" PRId64);
 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
