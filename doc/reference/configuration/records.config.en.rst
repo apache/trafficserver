@@ -830,12 +830,12 @@ HTTP Connection Timeouts
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
    :reloadable:
 
-   Specifies how long Traffic Server keeps connections to clients open for a subsequent request after a transaction ends.
+   Specifies how long Traffic Server keeps connections to clients open for a subsequent request after a transaction ends. A value of 0 will keep disable the no activity timeout.
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
    :reloadable:
 
-   Specifies how long Traffic Server keeps connections to origin servers open for a subsequent transfer of data after a transaction ends.
+   Specifies how long Traffic Server keeps connections to origin servers open for a subsequent transfer of data after a transaction ends. A value of 0 will keep disable the no activity timeout.
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
    :reloadable:
