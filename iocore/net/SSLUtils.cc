@@ -99,8 +99,11 @@ struct ssl_user_config
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
-#  define HAVE_OPENSSL_SESSION_TICKETS 1
-   static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
+
+#define HAVE_OPENSSL_SESSION_TICKETS 1
+
+static void session_ticket_free(void *, void *, CRYPTO_EX_DATA *, int, long, void *);
+static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
 #endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct ssl_ticket_key_t
@@ -110,7 +113,7 @@ struct ssl_ticket_key_t
   unsigned char aes_key[16];
 };
 
-static int ssl_session_ticket_index = 0;
+static int ssl_session_ticket_index = -1;
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
@@ -545,11 +548,10 @@ SSLInitializeLibrary()
     CRYPTO_set_id_callback(SSL_pthreads_thread_id);
   }
 
-  int iRet = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
-  if (iRet == -1) {
+  ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, session_ticket_free);
+  if (ssl_session_ticket_index == -1) {
     SSLError("failed to create session ticket index");
   }
-  ssl_session_ticket_index = (iRet == -1 ? 0 : iRet);
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
   ssl_stapling_ex_init();
@@ -1556,6 +1558,15 @@ SSLParseCertificateConfiguration(
 }
 
 #if HAVE_OPENSSL_SESSION_TICKETS
+
+static void
+session_ticket_free(void * /*parent*/, void * ptr, CRYPTO_EX_DATA * /*ad*/,
+    int /*idx*/, long /*argl*/, void * /*argp*/)
+{
+  ssl_ticket_key_t * key = (ssl_ticket_key_t *)ptr;
+  delete key;
+}
+
 /*
  * RFC 5077. Create session ticket to resume SSL session without requiring session-specific state at the TLS server.
  * Specifically, it distributes the encrypted session-state information to the client in the form of a ticket and
@@ -1608,12 +1619,5 @@ ssl_callback_session_ticket(
 void
 SSLReleaseContext(SSL_CTX * ctx)
 {
-  ssl_ticket_key_t * ssl_ticket_key = (ssl_ticket_key_t *)SSL_CTX_get_ex_data(ctx, ssl_session_ticket_index);
-
-  // Free the ticket if this is the last reference.
-  if (ctx->references == 1 && ssl_ticket_key) {
-     delete ssl_ticket_key;
-  }
-
   SSL_CTX_free(ctx);
 }
