@@ -109,8 +109,6 @@ rc/trafficserver.conf
 rc/trafficserver.service
 
 proxy/api/include/ts
-example/app-template/tsapp
-example/app-template/records.config
 
 */.libs
 */*/.libs
