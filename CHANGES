@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3048]: Remove hard coded directory in TSPluginDirGet() regression.
+   Author: Steven Feltner <steven.feltner@gmail.com>
+
   *) [TS-3047] The Makefile.am for traffic_top is inconsistent with the rest
    of the build system.
 
