@@ -613,10 +613,9 @@ HttpTransact::HandleBlindTunnel(State* s)
   HTTPVersion ver(0, 9);
   s->hdr_info.client_request.version_set(ver);
 
-  struct in_addr dest_addr;
-  dest_addr.s_addr = s->state_machine->ua_session->get_netvc()->get_local_ip();
+  char new_host[INET6_ADDRSTRLEN];
+  ats_ip_ntop(s->state_machine->ua_session->get_netvc()->get_local_addr(), new_host, sizeof(new_host));
 
-  char *new_host = inet_ntoa(dest_addr);
   s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
   s->hdr_info.client_request.url_get()->port_set(s->state_machine->ua_session->get_netvc()->get_local_port());
 
