@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3020] Blind Tunnel fake request URL is IPv4 only.
+   Author: Patrick McGleenon <Patrick.McGleenon@openwave.com>
+
   *) [TS-2561] Remove example/app-template, it's no longer supported.
 
   *) [TS-3048]: Remove hard coded directory in TSPluginDirGet() regression.
