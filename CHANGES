@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3047] The Makefile.am for traffic_top is inconsistent with the rest
+   of the build system.
+
   *) [TS-3042] Fix the option to build a static traffic_server binary.
 
   *) [TS-3041] Add a traffic_layout tool to show the installed
