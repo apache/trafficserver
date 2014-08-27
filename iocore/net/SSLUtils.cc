@@ -548,10 +548,12 @@ SSLInitializeLibrary()
     CRYPTO_set_id_callback(SSL_pthreads_thread_id);
   }
 
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
   ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, session_ticket_free);
   if (ssl_session_ticket_index == -1) {
     SSLError("failed to create session ticket index");
   }
+#endif
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
   ssl_stapling_ex_init();
