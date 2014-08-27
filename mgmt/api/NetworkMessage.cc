@@ -96,7 +96,7 @@ static const struct NetCmdOperation responses[] = {
 };
 
 #define GETCMD(ops, optype, cmd) do { \
-  if (optype < 0 || optype >= countof(ops)) { return TS_ERR_PARAMS; } \
+  if (optype < 0 || static_cast<unsigned>(optype) >= countof(ops)) { return TS_ERR_PARAMS; } \
   if (ops[optype].nfields == 0) { return TS_ERR_PARAMS; } \
   cmd = &ops[optype]; \
 } while (0);
