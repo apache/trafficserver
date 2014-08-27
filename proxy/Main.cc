@@ -980,9 +980,6 @@ ShowStats():Continuation(NULL),
 };
 
 
-// TODO: How come this is never used ??
-static int syslog_facility = LOG_DAEMON;
-
 // static void syslog_log_configure()
 //
 //   Reads the syslog configuration variable
@@ -993,21 +990,24 @@ static int syslog_facility = LOG_DAEMON;
 static void
 syslog_log_configure()
 {
-  char *facility_str = NULL;
-  int facility;
+  bool found = false;
+  char sys_var[] = "proxy.config.syslog_facility";
+  char *facility_str = REC_readString(sys_var, &found);
 
-  REC_ReadConfigStringAlloc(facility_str, "proxy.config.syslog_facility");
+  if (found) {
+    int facility = facility_string_to_int(facility_str);
 
-  if (facility_str == NULL || (facility = facility_string_to_int(facility_str)) < 0) {
-    syslog(LOG_WARNING, "Bad or missing syslog facility.  " "Defaulting to LOG_DAEMON");
+    ats_free(facility_str);
+    if (facility < 0) {
+      syslog(LOG_WARNING, "Bad syslog facility in records.config. Keeping syslog at LOG_DAEMON");
+    } else {
+      Debug("server", "Setting syslog facility to %d\n", facility);
+      closelog();
+      openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
+    }
   } else {
-    syslog_facility = facility;
-    closelog();
-    openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
+    syslog(LOG_WARNING, "Missing syslog facility config %s. Keeping syslog at LOG_DAEMON", sys_var);
   }
-  // TODO: Not really, what's up with this?
-  Debug("server", "Setting syslog facility to %d\n", syslog_facility);
-  ats_free(facility_str);
 }
 
 static void
