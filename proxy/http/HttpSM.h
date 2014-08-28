@@ -44,6 +44,20 @@
 #include "HdrUtils.h"
 //#include "AuthHttpAdapter.h"
 
+#ifdef TS_USE_UUID
+  #ifdef TS_USE_BOOST_UUID
+    #include <boost/uuid/uuid.hpp>
+    #include <boost/uuid/uuid_generators.hpp>
+    #include <boost/uuid/uuid_io.hpp>
+
+    using namespace boost;
+    using namespace boost::uuid;
+  #else // TS_USE_OSSP_UUID
+    #include <uuid.h>
+  #endif
+#endif
+
+
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
  * are actually required.
  * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
@@ -218,11 +232,11 @@ public:
   // setup Range transfomration if so.
   // return true when the Range is unsatisfiable
   void do_range_setup_if_necessary();
-  
+
   void do_range_parse(MIMEField *range_field);
   void calculate_output_cl(int64_t, int64_t);
   void parse_range_and_compare(MIMEField*, int64_t);
-  
+
   // Called by transact to prevent reset problems
   //  failed PUSH requests
   void set_ua_half_close_flag();
@@ -532,6 +546,20 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
+
+#ifdef TS_USE_UUID
+  const char *get_uuid(void) const;
+
+protected:
+  RecInt      use_uuid;
+  std::string id;
+
+  #ifdef TS_USE_BOOST_UUID
+    boost::uuids::basic_random_generator<boost::mt19937> gen;
+  #else //TS_USE_OSSP_UUID
+    uuid_t *_uuid;
+  #endif
+#endif
 };
 
 //Function to get the cache_sm object - YTS Team, yamsat

@@ -8591,3 +8591,14 @@ TSHttpEventNameLookup(TSEvent event)
 {
   return HttpDebugNames::get_event_name(static_cast<int>(event));
 }
+
+const char*
+TSHttpTxnGetUUID(TSHttpTxn txnp)
+{
+  HttpSM * sm = (HttpSM *) txnp;
+
+  if ( txnp == NULL || sm->magic != HTTP_SM_MAGIC_ALIVE )
+    return "ERROR";
+
+  return sm->get_uuid();
+}
