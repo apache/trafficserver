@@ -36,7 +36,7 @@ The format of the :file:`storage.config` file is a series of lines of the form
 where :arg:`pathname` is the name of a partition, directory or file, :arg:`size` is the size of the
 named partition, directory or file (in bytes), and :arg:`volume` is the volume number used in the
 files :file:`volume.config` and :file:`hosting.config`. :arg:`id` is used for seeding the
-:ref:`assignment-table`. You must specify a size for directories or files; size is optional for raw
+:ref:`assignment-table`. You must specify a size for directories; size is optional for files and raw
 partitions. :arg:`volume` and arg:`seed` are optional.
 
 .. note::

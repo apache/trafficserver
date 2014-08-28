@@ -20,10 +20,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "ink_config.h"
-#include "ink_file.h"
+
+#include "libts.h"
 #include "I_Layout.h"
-#include "I_Version.h"
 
 #define PROGRAM_NAME        "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE  65536

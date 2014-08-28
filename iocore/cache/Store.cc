@@ -25,20 +25,9 @@
 #include "P_Cache.h"
 #include "I_Layout.h"
 
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
+#if HAVE_LINUX_MAJOR_H
+#include <linux/major.h>
 #endif
-
-#if HAVE_SYS_DISK_H
-#include <sys/disk.h>
-#endif
-
-#if HAVE_SYS_DISKLABEL_H
-#include <sys/disklabel.h>
-#endif
-
-// Global
-Store theStore;
 
 //
 // Store
@@ -47,18 +36,35 @@ Store theStore;
 char const Store::VOLUME_KEY[] = "volume";
 char const Store::HASH_BASE_STRING_KEY[] = "id";
 
+static span_error_t
+make_span_error(int error)
+{
+  switch (error) {
+  case ENOENT: return SPAN_ERROR_NOT_FOUND;
+  case EPERM: /* fallthru */
+  case EACCES: return SPAN_ERROR_NO_ACCESS;
+  default: return SPAN_ERROR_UNKNOWN;
+  }
+}
+
+static const char *
+span_file_typename(mode_t st_mode)
+{
+  switch (st_mode & S_IFMT) {
+  case S_IFBLK: return "block device";
+  case S_IFCHR: return "character device";
+  case S_IFDIR: return "directory";
+  case S_IFREG: return "file";
+  default: return "<unsupported>";
+  }
+}
+
 Ptr<ProxyMutex> tmp_p;
 Store::Store():n_disks(0), disk(NULL)
 #if TS_USE_INTERIM_CACHE == 1
               ,n_interim_disks(0), interim_disk(NULL)
 #endif
 {
-}
-
-int
-initialize_store()
-{
-  return theStore.read_config()? -1 : 0;
 }
 
 void
@@ -182,6 +188,28 @@ Store::sort()
   }
 }
 
+const char *
+Span::errorstr(span_error_t serr)
+{
+  switch (serr) {
+  case SPAN_ERROR_OK:
+    return "no error";
+  case SPAN_ERROR_NOT_FOUND:
+    return "file not found";
+  case SPAN_ERROR_NO_ACCESS:
+    return "unable to access file";
+  case SPAN_ERROR_MISSING_SIZE:
+    return "missing size specification";
+  case SPAN_ERROR_UNSUPPORTED_DEVTYPE:
+    return "unsupported cache file type";
+  case SPAN_ERROR_MEDIA_PROBE:
+    return "failed to probe device geometry";
+  case SPAN_ERROR_UNKNOWN: /* fallthru */
+  default:
+    return "unknown error";
+  }
+}
+
 int
 Span::path(char *filename, int64_t * aoffset, char *buf, int buflen)
 {
@@ -234,7 +262,7 @@ Span::~Span()
     delete link.next;
 }
 
-inline int
+static int
 get_int64(int fd, int64_t & data)
 {
   char buf[PATH_NAME_MAX + 1];
@@ -274,7 +302,7 @@ Lagain:
 }
 
 const char *
-Store::read_config(int fd)
+Store::read_config()
 {
   int n_dsstore = 0;
   int ln = 0;
@@ -282,19 +310,16 @@ Store::read_config(int fd)
   const char *err = NULL;
   Span *sd = NULL, *cur = NULL;
   Span *ns;
+  ats_scoped_fd fd;
+  ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
 
-  // Get pathname if not checking file
-
+  Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
+  fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
-    ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
-
-    Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
-    fd = ::open(storage_path, O_RDONLY);
-    if (fd < 0) {
-      err = "error on open";
-      goto Lfail;
-    }
+    err = "error on open";
+    goto Lfail;
   }
+
   // For each line
 
   char line[1024];
@@ -384,12 +409,10 @@ Store::read_config(int fd)
   }
   sd = 0; // these are all used.
   sort();
-  ::close(fd);
   return NULL;
 
 Lfail:
   // Do clean up.
-  ::close(fd);
   if (sd)
     delete sd;
 
@@ -441,7 +464,7 @@ Store::read_interim_config() {
 #endif
 
 int
-Store::write_config_data(int fd)
+Store::write_config_data(int fd) const
 {
   for (unsigned i = 0; i < n_disks; i++)
     for (Span * sd = disk[i]; sd; sd = sd->link.next) {
@@ -453,378 +476,144 @@ Store::write_config_data(int fd)
   return 0;
 }
 
-#if defined(freebsd) || defined(darwin) || defined(openbsd)
-
 const char *
-Span::init(char *an, int64_t size)
+Span::init(const char * path, int64_t size)
 {
-  int devnum = 0;
-  const char *err = NULL;
-  int ret = 0;
+  struct stat     sbuf;
+  struct statvfs  vbuf;
+  span_error_t    serr;
+  ink_device_geometry geometry;
 
-  is_mmapable_internal = true;
-
-  // handle symlinks
-
-  char *n = NULL;
-  int n_len = 0;
-  char real_n[PATH_NAME_MAX];
-
-  if ((n_len = readlink(an, real_n, sizeof(real_n) - 1)) > 0) {
-    real_n[n_len] = 0;
-    if (*real_n != '/') {
-      char *rs = strrchr(an, '/');
-      int l = 2;
-      const char *ann = "./";
-
-      if (rs) {
-        ann = an;
-        l = (rs - an) + 1;
-      }
-      memmove(real_n + l, real_n, strlen(real_n) + 1);
-      memcpy(real_n, ann, l);
-    }
-    n = real_n;
-  } else {
-    n = an;
-  }
-
-  // stat the file system
-
-  struct stat s;
-  if ((ret = stat(n, &s)) < 0) {
-    Warning("unable to stat '%s': %d %d, %s", n, ret, errno, strerror(errno));
-    return "error stat of file";
-  }
-
-  ats_scoped_fd fd(socketManager.open(n, O_RDONLY));
+  ats_scoped_fd fd(socketManager.open(path, O_RDONLY));
   if (!fd) {
-    Warning("unable to open '%s': %s", n, strerror(errno));
-    return "unable to open";
+    serr = make_span_error(errno);
+    Warning("unable to open '%s': %s", path, strerror(errno));
+    goto fail;
   }
 
-  struct statvfs fs;
-  if ((ret = fstatvfs(fd, &fs)) < 0) {
-    Warning("unable to statvfs '%s': %d %d, %s", n, ret, errno, strerror(errno));
-    return "unable to statvfs";
+  if (fstat(fd, &sbuf) == -1) {
+    serr = make_span_error(errno);
+    Warning("unable to stat '%s': %s (%d)", path, strerror(errno), errno);
+    goto fail;
   }
 
-  hw_sector_size = fs.f_bsize;
-  int64_t fsize = (int64_t) fs.f_blocks * (int64_t) fs.f_bsize;
+  if (fstatvfs(fd, &vbuf) == -1) {
+    serr = make_span_error(errno);
+    Warning("unable to statvfs '%s': %s (%d)", path, strerror(errno), errno);
+    goto fail;
+  }
 
-  switch ((s.st_mode & S_IFMT)) {
-
-  case S_IFBLK:{
-  case S_IFCHR:
-    // These IOCTLs are standard across the BSD family; Darwin has a different set though.
-#if defined(DIOCGMEDIASIZE) && defined(DIOCGSECTORSIZE)
-      if (ioctl(fd, DIOCGMEDIASIZE, &size) < 0) {
-        Warning("unable to get disk information for '%s': %s", n, strerror(errno));
-        err = "unable to get label information";
-        goto Lfail;
-      }
-      if (ioctl(fd, DIOCGSECTORSIZE, &hw_sector_size) < 0) {
-        Warning("unable to get disk information for '%s': %s", n, strerror(errno));
-        err = "unable to get label information";
-        goto Lfail;
-      }
-      devnum = s.st_rdev;
-      break;
-#else
-      Warning("unable to get disk information for '%s': %s", n, strerror(errno));
-      err = "no raw disk support on this platform";
-      goto Lfail;
-#endif
+  // Directories require an explicit size parameter. For device nodes and files, we use
+  // the existing size.
+  if (S_ISDIR(sbuf.st_mode)) {
+    if (size <= 0) {
+      Warning("cache %s '%s' requires a size > 0", span_file_typename(sbuf.st_mode), path);
+      serr = SPAN_ERROR_MISSING_SIZE;
+      goto fail;
     }
-  case S_IFDIR:
-  case S_IFREG:
-    if (size <= 0 || size > fsize) {
-      Warning("bad or missing size for '%s': size %" PRId64 " fsize %" PRId64 "", n, (int64_t) size, fsize);
-      err = "bad or missing size";
-      goto Lfail;
-    }
-    devnum = s.st_dev;
-    break;
-
-  default:
-    Warning("unknown file type '%s': %d", n, s.st_mode);
-    return "unknown file type";
-    break;
   }
 
-  disk_id = devnum;
+  // Should regular files use the IO size (vbuf.f_bsize), or the
+  // fundamental filesystem block size (vbuf.f_frsize)? That depends
+  // on whether we are using that block size for performance or for
+  // reliability.
 
-  pathname = ats_strdup(an);
-  // igalic: blocks = size / hw_sector_size; was wrong TS-1707
-  // This code needs refactoring to unify the code-paths which are equal across platforms.
-  blocks = size / STORE_BLOCK_SIZE;
-  file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
-
-  // This is so FreeBSD admins don't worry about our malicious code creating boot sector viruses:
-  if (((s.st_mode & S_IFMT) == S_IFBLK) || ((s.st_mode & S_IFMT) == S_IFCHR)) {
-    blocks--;
-    offset = 1;
-  }
-
-  Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", pathname.get(), hw_sector_size, size, blocks, disk_id, file_pathname);
-
-Lfail:
-  return err;
-}
-
-#endif
-
-#if defined(solaris)
-
-const char *
-Span::init(char *filename, int64_t size)
-{
-  int devnum = 0;
-  const char *err = NULL;
-  int ret = 0;
-
-  //
-  // All file types on Solaris can be mmaped
-  //
-  is_mmapable_internal = true;
-
-  ats_scoped_fd fd(socketManager.open(filename, O_RDONLY));
-  if (!fd) {
-    Warning("unable to open '%s': %s", filename, strerror(errno));
-    return "unable to open";
-  }
-
-  // stat the file system
-  struct stat s;
-  if ((ret = fstat(fd, &s)) < 0) {
-    Warning("unable to fstat '%s': %d %d, %s", filename, ret, errno, strerror(errno));
-    err = "unable to fstat";
-    goto Lfail;
-  }
-
-
-  switch ((s.st_mode & S_IFMT)) {
-
+  switch (sbuf.st_mode & S_IFMT) {
   case S_IFBLK:
   case S_IFCHR:
-    devnum = s.st_rdev;
-    // maybe we should use lseek(fd, 0, SEEK_END) here (it is portable)
-    size = (int64_t) s.st_size;
-    hw_sector_size = s.st_blksize;
-    break;
-  case S_IFDIR:
-  case S_IFREG:
-    int64_t fsize;
-    struct statvfs fs;
-    if ((ret = fstatvfs(fd, &fs)) < 0) {
-      Warning("unable to statvfs '%s': %d %d, %s", filename, ret, errno, strerror(errno));
-      err = "unable to statvfs";
-      goto Lfail;
-    }
-
-    hw_sector_size = fs.f_bsize;
-    fsize = (int64_t) fs.f_blocks * (int64_t) hw_sector_size;
-
-    if (size <= 0 || size > fsize) {
-      Warning("bad or missing size for '%s': size %" PRId64 " fsize %" PRId64 "", filename, (int64_t) size, fsize);
-      err = "bad or missing size";
-      goto Lfail;
-    }
-
-    devnum = s.st_dev;
-    break;
-
-  default:
-    Warning("unknown file type '%s': %" PRId64 "", filename, (int64_t)(s.st_mode));
-    err = "unknown file type";
-    goto Lfail;
-  }
-
-  // estimate the disk SOLARIS specific
-  if ((devnum >> 16) == 0x80) {
-    disk_id = (devnum >> 3) & 0x3F;
-  } else {
-    disk_id = devnum;
-  }
-
-  pathname = ats_strdup(filename);
-  // is this right Seems like this should be size / hw_sector_size
-  // igalic: No. See TS-1707
-  blocks = size / STORE_BLOCK_SIZE;
-  file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
-
-  Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", filename, hw_sector_size, size, blocks, disk_id, file_pathname);
-
-Lfail:
-  return err;
-}
-#endif
 
 #if defined(linux)
-#include <unistd.h>             /* for close() */
-#include <sys/ioctl.h>
-#include <linux/hdreg.h>        /* for struct hd_geometry */
-#include <linux/fs.h>           /* for BLKGETSIZE.  sys/mount.h is another candidate */
-
-
-const char *
-Span::init(char *filename, int64_t size)
-{
-  int devnum = 0, arg = 0;
-  int ret = 0, is_disk = 0;
-  uint64_t heads, sectors, cylinders, adjusted_sec;
-  ats_scoped_fd fd;
-
-  /* Fetch file type */
-  struct stat stat_buf;
-  Debug("cache_init", "Span::init(\"%s\",%" PRId64 ")", filename, size);
-  if ((ret = stat(filename, &stat_buf)) < 0) {
-    Warning("unable to stat '%s': %d %d, %s", filename, ret, errno, strerror(errno));
-    return "cannot stat file";
-  }
-  switch (stat_buf.st_mode & S_IFMT) {
-  case S_IFBLK:
-  case S_IFCHR:
-    devnum = stat_buf.st_rdev;
-    Debug("cache_init", "Span::init - %s - devnum = %d",
-          ((stat_buf.st_mode & S_IFMT) == S_IFBLK) ? "S_IFBLK" : "S_IFCHR", devnum);
-    break;
-  case S_IFDIR:
-    devnum = stat_buf.st_dev;
-    file_pathname = 0;
-    Debug("cache_init", "Span::init - S_IFDIR - devnum = %d", devnum);
-    break;
-  case S_IFREG:
-    devnum = stat_buf.st_dev;
-    file_pathname = 1;
-    size = stat_buf.st_size;
-    Debug("cache_init", "Span::init - S_IFREG - devnum = %d", devnum);
-    break;
-  default:
-    break;
-  }
-
-  fd = socketManager.open(filename, O_RDONLY);
-  if (!fd) {
-    Warning("unable to open '%s': %s", filename, strerror(errno));
-    return "unable to open";
-  }
-  Debug("cache_init", "Span::init - socketManager.open(\"%s\", O_RDONLY) = %d", filename, (int)fd);
-
-  adjusted_sec = 1;
-#ifdef BLKPBSZGET
-  if (ioctl(fd, BLKPBSZGET, &arg) == 0)
-#else
-  if (ioctl(fd, BLKSSZGET, &arg) == 0)
-#endif
-  {
-    hw_sector_size = arg;
-    is_disk = 1;
-    adjusted_sec = hw_sector_size / 512;
-    Debug("cache_init", "Span::init - %s hw_sector_size=%d is_disk=%d adjusted_sec=%" PRId64,
-          filename, hw_sector_size, is_disk, adjusted_sec);
-  }
-
-  alignment = 0;
-#ifdef BLKALIGNOFF
-  if (ioctl(fd, BLKALIGNOFF, &arg) == 0) {
-    alignment = arg;
-    Debug("cache_init", "Span::init - %s alignment = %d", filename, alignment);
-  }
+    if (major(sbuf.st_rdev) == RAW_MAJOR && minor(sbuf.st_rdev) == 0) {
+      Warning("cache %s '%s' is the raw device control interface", span_file_typename(sbuf.st_mode), path);
+      serr = SPAN_ERROR_UNSUPPORTED_DEVTYPE;
+      goto fail;
+    }
 #endif
 
-  if (is_disk) {
-    uint32_t ioctl_sectors = 0;
-    uint64_t ioctl_bytes = 0;
-    uint64_t physsectors = 0;
+    if (!ink_file_get_geometry(fd, geometry)) {
+      serr = make_span_error(errno);
 
-    /* Disks cannot be mmapped */
-    is_mmapable_internal = false;
-
-    if (!ioctl(fd, BLKGETSIZE64, &ioctl_bytes)) {
-      heads = 1;
-      cylinders = 1;
-      physsectors = ioctl_bytes / hw_sector_size;
-      sectors = physsectors;
-    } else if (!ioctl(fd, BLKGETSIZE, &ioctl_sectors)) {
-      heads = 1;
-      cylinders = 1;
-      physsectors = ioctl_sectors;
-      sectors = physsectors / adjusted_sec;
-    } else {
-      struct hd_geometry geometry;
-      if (!ioctl(fd, HDIO_GETGEO, &geometry)) {
-        heads = geometry.heads;
-        sectors = geometry.sectors;
-        cylinders = geometry.cylinders;
-        cylinders /= adjusted_sec;      /* do not round up */
+      if (errno == ENOTSUP) {
+        Warning("failed to query disk geometry for '%s', no raw device support", path);
       } else {
-        /* Almost certainly something other than a disk device. */
-        Warning("unable to get geometry '%s': %d %s", filename, errno, strerror(errno));
-        return ("unable to get geometry");
+        Warning("failed to query disk geometry for '%s', %s (%d)", path, strerror(errno), errno);
+      }
+
+      goto fail;
+    }
+
+    this->disk_id[0] = 0;
+    this->disk_id[1] = sbuf.st_rdev;
+    this->file_pathname = true;
+    this->hw_sector_size = geometry.blocksz;
+    this->alignment = geometry.alignsz;
+    this->blocks = geometry.totalsz / STORE_BLOCK_SIZE;
+
+    break;
+
+  case S_IFDIR:
+    if ((int64_t)(vbuf.f_frsize * vbuf.f_bavail) < size) {
+      Warning("not enough free space for cache %s '%s'", span_file_typename(sbuf.st_mode), path);
+      // Just warn for now; let the cache open fail later.
+    }
+
+    // The cache initialization code in Cache.cc takes care of creating the actual cache file, naming it and making
+    // it the right size based on the "file_pathname" flag. That's something that we should clean up in the future.
+    this->file_pathname = false;
+
+    this->disk_id[0] = sbuf.st_dev;
+    this->disk_id[1] = sbuf.st_ino;
+    this->hw_sector_size = vbuf.f_bsize;
+    this->alignment = 0;
+    this->blocks = size / STORE_BLOCK_SIZE;
+    break;
+
+  case S_IFREG:
+    if (size > 0 && sbuf.st_size < size) {
+      int64_t needed = size - sbuf.st_size;
+      if ((int64_t)(vbuf.f_frsize * vbuf.f_bavail) < needed) {
+        Warning("not enough free space for cache %s '%s'", span_file_typename(sbuf.st_mode), path);
+        // Just warn for now; let the cache open fail later.
       }
     }
 
-    blocks = heads * sectors * cylinders;
+    this->disk_id[0] = sbuf.st_dev;
+    this->disk_id[1] = sbuf.st_ino;
+    this->file_pathname = true;
+    this->hw_sector_size = vbuf.f_bsize;
+    this->alignment = 0;
+    this->blocks = sbuf.st_size / STORE_BLOCK_SIZE;
 
-    if (size > 0 && blocks * hw_sector_size != size) {
-      Warning("Warning: you specified a size of %" PRId64 " for %s,\n", size, filename);
-      Warning("but the device size is %" PRId64 ". Using minimum of the two.\n", (int64_t)blocks * (int64_t)hw_sector_size);
-      if ((int64_t)blocks * (int64_t)hw_sector_size < size)
-        size = (int64_t)blocks * (int64_t)hw_sector_size;
-    } else {
-      size = (int64_t)blocks * (int64_t)hw_sector_size;
-    }
+    break;
 
-    /* I don't know why I'm redefining blocks to be something that is quite
-     * possibly something other than the actual number of blocks, but the
-     * code for other arches seems to.  Revisit this, perhaps. */
-    // igalic: No. See TS-1707
-    blocks = size / STORE_BLOCK_SIZE;
-
-    Debug("cache_init", "Span::init physical sectors %" PRId64 " total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "",
-          physsectors, hw_sector_size * physsectors, size, blocks);
-
-    pathname = ats_strdup(filename);
-    file_pathname = 1;
-  } else {
-    Debug("cache_init", "Span::init - is_disk = %d, raw device = %s", is_disk, (major(devnum) == 162) ? "yes" : "no");
-    if (major(devnum) == 162) {
-      /* Oh, a raw device, how cute. */
-
-      if (minor(devnum) == 0)
-        return "The raw device control file (usually /dev/raw; major 162, minor 0) is not a valid cache location.\n";
-
-      is_mmapable_internal = false;     /* I -think- */
-      file_pathname = 1;
-      pathname = ats_strdup(filename);
-      isRaw = 1;
-
-      if (size <= 0)
-        return "When using raw devices for cache storage, you must specify a size\n";
-    } else {
-      /* Files can be mmapped */
-      is_mmapable_internal = true;
-
-      /* The code for other arches seems to want to dereference symlinks, but I
-       * don't particularly understand that behaviour, so I'll just ignore it.
-       * :) */
-
-      pathname = ats_strdup(filename);
-      if (!file_pathname)
-        if (size <= 0)
-          return "When using directories for cache storage, you must specify a size\n";
-      Debug("cache_init", "Span::init - mapped file \"%s\", %" PRId64 "", pathname.get(), size);
-    }
-    blocks = size / STORE_BLOCK_SIZE;
+  default:
+    serr = SPAN_ERROR_UNSUPPORTED_DEVTYPE;
+    goto fail;
   }
 
-  disk_id = devnum;
+  // The actual size of a span always trumps the configured size.
+  if (size > 0 && this->size() != size) {
+    int64_t newsz = MIN(size, this->size());
+
+    Note("cache %s '%s' is %" PRId64 " bytes, but the configured size is %" PRId64 " bytes, using the minimum",
+      span_file_typename(sbuf.st_mode), path, this->size(), size);
+
+    this->blocks = newsz / STORE_BLOCK_SIZE;
+  }
+
+  // A directory span means we will end up with a file, otherwise, we get what we asked for.
+  this->set_mmapable(ink_file_is_mmappable(S_ISDIR(sbuf.st_mode) ? (mode_t)S_IFREG : sbuf.st_mode));
+  this->pathname = ats_strdup(path);
+
+  Debug("cache_init", "initialized span '%s'", this->pathname.get());
+  Debug("cache_init", "hw_sector_size=%d, size=%" PRId64 ", blocks=%" PRId64 ", disk_id=%" PRId64 "/%" PRId64 ", file_pathname=%d",
+    this->hw_sector_size, this->size(), this->blocks, this->disk_id[0], this->disk_id[1], this->file_pathname);
 
   return NULL;
-}
-#endif
 
+fail:
+  return Span::errorstr(serr);
+}
 
 
 void
@@ -972,7 +761,7 @@ Store::alloc(Store & s, unsigned int blocks, bool one_only, bool mmapable)
 }
 
 int
-Span::write(int fd)
+Span::write(int fd) const
 {
   char buf[32];
 
@@ -1001,7 +790,7 @@ Span::write(int fd)
 }
 
 int
-Store::write(int fd, char *name)
+Store::write(int fd, const char *name) const
 {
   char buf[32];
 
@@ -1166,7 +955,7 @@ Store::clear(char *filename, bool clear_dirs)
   memset(z, 0, STORE_BLOCK_SIZE);
   for (unsigned i = 0; i < n_disks; i++) {
     Span *ds = disk[i];
-    for (int j = 0; j < disk[i]->paths(); j++) {
+    for (unsigned j = 0; j < disk[i]->paths(); j++) {
       char path[PATH_NAME_MAX + 1];
       Span *d = ds->nth(j);
       if (!clear_dirs && !d->file_pathname)

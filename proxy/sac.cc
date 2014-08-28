@@ -21,10 +21,8 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "ink_file.h"
+#include "libts.h"
 #include "I_Layout.h"
-#include "I_Version.h"
 #include "P_Net.h"
 
 #define PROGRAM_NAME  "traffic_sac"

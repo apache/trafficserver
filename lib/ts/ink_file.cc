@@ -27,6 +27,36 @@
 #include <sys/stat.h>
 #endif
 
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+
+#if HAVE_SYS_DISK_H
+#include <sys/disk.h>
+#endif
+
+#if HAVE_SYS_DISKLABEL_H
+#include <sys/disklabel.h>
+#endif
+
+#if HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+
+#if HAVE_LINUX_HDREG_H
+#include <linux/hdreg.h>        /* for struct hd_geometry */
+#endif
+
+#if HAVE_LINUX_FS_H
+#include <linux/fs.h>           /* for BLKGETSIZE.  sys/mount.h is another candidate */
+#endif
+
+typedef union {
+  uint64_t  u64;
+  uint32_t  u32;
+  off_t     off;
+} ioctl_arg_t;
+
 int
 ink_fputln(FILE * stream, const char *s)
 {
@@ -369,4 +399,106 @@ ink_file_is_directory(const char * path)
   }
 
   return S_ISDIR(sbuf.st_mode);
+}
+
+bool
+ink_file_is_mmappable(mode_t st_mode)
+{
+  // Regular files are always ok;
+  if (S_ISREG(st_mode)) {
+    return true;
+  }
+
+#if defined(linux)
+  // Disks cannot be mmapped.
+  if (S_ISBLK(st_mode)) {
+    return false;
+  }
+
+  // At least some character devices can be mmapped. But should you?
+  if (S_ISCHR(st_mode)) {
+    return true;
+  }
+#endif
+
+#if defined(solaris)
+  // All file types on Solaris can be mmap(2)'ed.
+  return true;
+#endif
+
+  return false;
+
+}
+
+bool
+ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry& geometry)
+{
+  ink_zero(geometry);
+
+#if defined(freebsd) || defined(darwin) || defined(openbsd)
+  ioctl_arg_t arg ATS_UNUSED;
+
+  // These IOCTLs are standard across the BSD family; Darwin has a different set though.
+#if defined(DIOCGMEDIASIZE)
+  if (ioctl(fd, DIOCGMEDIASIZE, &arg.off) == 0) {
+    geometry.totalsz = arg.off;
+  }
+#endif
+
+#if defined(DIOCGSECTORSIZE)
+  if (ioctl(fd, DIOCGSECTORSIZE, &arg.u32) == 0) {
+    geometry.blocksz = sector_size;
+  }
+#endif
+
+#if !defined(DIOCGMEDIASIZE) || !defined(DIOCGSECTORSIZE)
+  errno = ENOTSUP;
+#endif
+
+#elif defined(solaris)
+  struct stat sbuf;
+
+  if (fstat(fd, &sbuf) == 0) {
+    geometry.totalsz = sbuf.st_size;
+    geometry.blocksz = sbuf.st_blksize;
+  }
+
+#elif defined(linux)
+  ioctl_arg_t arg;
+
+  // The following set of ioctls work for both block and character devices. You can use the
+  // test_geometry program to test what happens for any specific use case or kernel.
+
+  // BLKGETSIZE64 gets the block device size in bytes.
+  if (ioctl(fd, BLKGETSIZE64, &arg.u64) == 0) {
+    geometry.totalsz = arg.u64;
+  }
+
+  // BLKSSZGET gets the logical block size in bytes.
+  if (ioctl(fd, BLKSSZGET, &arg.u32) == 0) {
+    geometry.blocksz = arg.u32;
+  }
+
+#if defined(BLKALIGNOFF)
+  // BLKALIGNOFF gets the number of bytes needed to align the I/Os to the block device with
+  // and underlying block devices. This might be non-zero when you are using a logical volume
+  // backed by JBOD or RAID device(s). BLKALIGNOFF was addeed in 2.6.32, so it's not present in
+  // RHEL 5.
+  if (ioctl(fd, BLKALIGNOFF, &arg.u32) == 0) {
+    geometry.alignsz = arg.u32;
+  }
+#endif
+
+#else /* No raw device support on this platform. */
+
+  errno = ENOTSUP;
+  return false;
+
+#endif
+
+  if (geometry.totalsz == 0 || geometry.blocksz == 0) {
+    return false;
+  }
+
+  return true;
 }

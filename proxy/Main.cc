@@ -486,16 +486,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 
   hostdb_current_interval = (ink_get_based_hrtime() / HRTIME_MINUTE);
 
-//#ifndef INK_NO_ACC
-//  acc.clear_cache();
-//#endif
-
-  const char *err = NULL;
-  theStore.delete_all();
-  if ((err = theStore.read_config())) {
-    printf("%s, %s failed\n", err, n);
-    return CMD_FAILED;
-  }
   printf("Host Database\n");
   HostDBCache hd;
   if (hd.start(fix) < 0) {
@@ -545,15 +535,6 @@ cmd_clear(char *cmd)
     Note("Clearing HostDB Configuration");
     if (unlink(config) < 0)
       Note("unable to unlink %s", (const char *)config);
-  }
-
-  if (c_all || c_cache) {
-    const char *err = NULL;
-    theStore.delete_all();
-    if ((err = theStore.read_config())) {
-      printf("%s, CLEAR failed\n", err);
-      return CMD_FAILED;
-    }
   }
 
   if (c_hdb || c_all) {
@@ -1440,10 +1421,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // Sanity checks
   check_fd_limit();
   command_flag = command_flag || *command_string;
-
-  // Set up store
-  if (!command_flag && initialize_store())
-    ProcessFatal("unable to initialize storage, (Re)Configuration required\n");
 
   // Alter the frequecies at which the update threads will trigger
 #define SET_INTERVAL(scope, name, var) do { \

@@ -661,7 +661,7 @@ CacheProcessor::start_internal(int flags)
         if (sector_size < cache_config_force_sector_size)
           sector_size = cache_config_force_sector_size;
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
-          Warning("bad hardware sector size %d, resetting to %d", sector_size, STORE_BLOCK_SIZE);
+          Note("resetting hardware sector size from %d to %d", sector_size, STORE_BLOCK_SIZE);
           sector_size = STORE_BLOCK_SIZE;
         }
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset * STORE_BLOCK_SIZE < START_POS ? START_POS + sd->alignment :
@@ -748,12 +748,18 @@ CacheProcessor::start_internal(int flags)
 
         Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
 
-        if (sector_size < cache_config_force_sector_size)
+        if (sector_size < cache_config_force_sector_size) {
           sector_size = cache_config_force_sector_size;
+        }
+
+        // It's actually common that the hardware I/O size is larger than the store block size as
+        // storage systems increasingly want larger I/Os. For example, on OS X, the filesystem block
+        // size is always reported as 1MB.
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
-          Warning("bad hardware sector size %d, resetting to %d", sector_size, STORE_BLOCK_SIZE);
+          Note("resetting hardware sector size from %d to %d", sector_size, STORE_BLOCK_SIZE);
           sector_size = STORE_BLOCK_SIZE;
         }
+
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
         blocks = blocks - (skip >> STORE_BLOCK_SHIFT);
 #if AIO_MODE == AIO_MODE_NATIVE

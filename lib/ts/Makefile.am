@@ -21,7 +21,7 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_atomic test_freelist test_arena test_List test_Map test_Vec
+check_PROGRAMS = test_atomic test_freelist test_arena test_List test_Map test_Vec test_geometry
 TESTS = $(check_PROGRAMS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/lib
@@ -216,6 +216,10 @@ test_Map_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 test_Vec_SOURCES = test_Vec.cc
 test_Vec_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
 test_Vec_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
+test_geometry_SOURCES = test_geometry.cc
+test_geometry_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
+test_geometry_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

@@ -1523,6 +1523,7 @@ AC_SUBST(ifaddrsh)
 AC_SUBST(readline_readlineh)
 
 TS_FLAG_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
+TS_FLAG_HEADERS([linux/hdreg.h linux/fs.h linux/major.h])
 
 TS_FLAG_HEADERS([sys/sysctl.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H

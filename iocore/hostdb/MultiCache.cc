@@ -232,7 +232,7 @@ MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t& total_lengt
     if (blocks - target > following)
       target = blocks - following;
     Span *ds = store->disk[i];
-    for (int j = 0; j < store->disk[i]->paths(); j++) {
+    for (unsigned j = 0; j < store->disk[i]->paths(); j++) {
       Span *d = ds->nth(j);
 
       ink_assert(d->is_mmapable());
@@ -307,7 +307,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     goto Lalloc;
   for (unsigned i = 0; i < store->n_disks; i++) {
     Span *ds = store->disk[i];
-    for (int j = 0; j < store->disk[i]->paths(); j++) {
+    for (unsigned j = 0; j < store->disk[i]->paths(); j++) {
       char path[PATH_NAME_MAX + 1];
       Span *d = ds->nth(j);
       int r = d->path(filename, NULL, path, PATH_NAME_MAX);
