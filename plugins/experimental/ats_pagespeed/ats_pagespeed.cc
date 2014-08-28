@@ -129,6 +129,12 @@ ats_ctx_alloc()
   ctx->alive = 0xaaaa;
   ctx->options = NULL;
   ctx->to_host = NULL;
+  ctx->in_place = false;
+  ctx->driver = NULL;
+  ctx->record_in_place = false;
+  ctx->recorder = NULL;
+  ctx->ipro_response_headers = NULL;
+  ctx->serve_in_place = false;
   return ctx;
 }
 
@@ -180,6 +186,20 @@ ats_ctx_destroy(TransformCtx * ctx)
     delete ctx->to_host;
     ctx->to_host = NULL;
   }
+  if (ctx->driver != NULL) { 
+    ctx->driver->Cleanup();
+    ctx->driver = NULL;
+  }
+  if (ctx->recorder != NULL) { 
+    ctx->recorder->Fail();
+    ctx->recorder->DoneAndSetHeaders(NULL);  // Deletes recorder.
+    ctx->recorder = NULL;
+  }
+  if (ctx->ipro_response_headers != NULL) { 
+    delete ctx->ipro_response_headers;
+    ctx->ipro_response_headers = NULL;
+  }
+
   TSfree(ctx);
 }
 
@@ -436,7 +456,7 @@ ats_transform_init(TSCont contp, TransformCtx * ctx)
     TSError("Error TSHttpTxnClientReqGet");
     return;
   }
-  
+
   AtsServerContext* server_context = ats_process_context->server_context();
   if (server_context->IsPagespeedResource(*ctx->gurl)) {
     CHECK(false) << "PageSpeed resource should not get here!";
@@ -445,6 +465,11 @@ ats_transform_init(TSCont contp, TransformCtx * ctx)
   downstream_conn = TSTransformOutputVConnGet(contp);
   ctx->downstream_buffer = TSIOBufferCreate();
   ctx->downstream_vio = TSVConnWrite(downstream_conn, contp, TSIOBufferReaderAlloc(ctx->downstream_buffer), INT64_MAX);
+  if (ctx->recorder != NULL) {
+    TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return;
+  }
 
   // TODO(oschaaf): fix host/ip(?)
   SystemRequestContext* system_request_context = 
@@ -527,6 +552,7 @@ ats_transform_init(TSCont contp, TransformCtx * ctx)
 static void
 ats_transform_one(TransformCtx * ctx, TSIOBufferReader upstream_reader, int amount)
 {
+  TSDebug("ats-speed", "transform_one()");
   TSIOBufferBlock downstream_blkp;
   const char *upstream_buffer;
   int64_t upstream_length;
@@ -551,7 +577,11 @@ ats_transform_one(TransformCtx * ctx, TSIOBufferReader upstream_reader, int amou
     TSDebug("ats-speed", "transform!");
     // TODO(oschaaf): use at least the message handler from the server conrtext here?
     if (ctx->inflater == NULL) {
-      ctx->proxy_fetch->Write(StringPiece((char*)upstream_buffer, upstream_length), ats_process_context->message_handler());
+      if (ctx->recorder != NULL) { 
+        ctx->recorder->Write(StringPiece((char*)upstream_buffer, upstream_length), ats_process_context->message_handler());
+      } else {
+        ctx->proxy_fetch->Write(StringPiece((char*)upstream_buffer, upstream_length), ats_process_context->message_handler());
+      }
     } else {
       char buf[net_instaweb::kStackBufferSize];
       
@@ -563,8 +593,13 @@ ats_transform_one(TransformCtx * ctx, TSIOBufferReader upstream_reader, int amou
         if (num_inflated_bytes < 0) {
           TSError("Corrupted inflation");
         } else if (num_inflated_bytes > 0) {
-          ctx->proxy_fetch->Write(StringPiece(buf, num_inflated_bytes),
-                                   ats_process_context->message_handler());
+          if (ctx->recorder != NULL ) { 
+            ctx->recorder->Write(StringPiece(buf, num_inflated_bytes),
+                                    ats_process_context->message_handler());
+          } else  {
+            ctx->proxy_fetch->Write(StringPiece(buf, num_inflated_bytes),
+                                    ats_process_context->message_handler());
+          }
         }
       }
     }
@@ -583,8 +618,15 @@ ats_transform_finish(TransformCtx * ctx)
 {
   if (ctx->state == transform_state_output) {
     ctx->state = transform_state_finished;
-    ctx->proxy_fetch->Done(true);
-    ctx->proxy_fetch = NULL;
+    if (ctx->recorder != NULL ) { 
+      TSDebug("ats-speed", "ipro recording finished");
+      ctx->recorder->DoneAndSetHeaders(ctx->ipro_response_headers);
+      ctx->recorder = NULL;
+    } else { 
+      TSDebug("ats-speed", "proxy fetch finished");
+      ctx->proxy_fetch->Done(true);
+      ctx->proxy_fetch = NULL;
+    }
   }
 }
 
@@ -621,6 +663,10 @@ ats_transform_do(TSCont contp)
     }
 
     if (upstream_todo > 0) {
+      if (ctx->recorder != NULL) {
+	ctx->downstream_length += upstream_todo;
+        TSIOBufferCopy(TSVIOBufferGet(ctx->downstream_vio), TSVIOReaderGet(upstream_vio), upstream_todo, 0);
+      }
       ats_transform_one(ctx, TSVIOReaderGet(upstream_vio), upstream_todo);
       TSVIONDoneSet(upstream_vio, TSVIONDoneGet(upstream_vio) + upstream_todo);
     }
@@ -634,6 +680,11 @@ ats_transform_do(TSCont contp)
       TSContCall(TSVIOContGet(upstream_vio), TS_EVENT_VCONN_WRITE_READY, upstream_vio);
     }
   } else {
+    // When not recording, the base fetch will re-enable from the PSOL callback.
+    if (ctx->recorder != NULL) {
+      TSVIONBytesSet(ctx->downstream_vio, ctx->downstream_length);
+      TSVIOReenable(ctx->downstream_vio);
+    }
     ats_transform_finish(ctx);
     TSContCall(TSVIOContGet(upstream_vio), TS_EVENT_VCONN_WRITE_COMPLETE, upstream_vio);
   }
@@ -643,6 +694,7 @@ ats_transform_do(TSCont contp)
 static int
 ats_pagespeed_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
+  TSDebug("ats-speed", "ats_pagespeed_transform()");
   if (TSVConnClosedGet(contp)) {
     //ats_ctx_destroy((TransformCtx*)TSContDataGet(contp));
     TSContDestroy(contp);
@@ -680,12 +732,14 @@ ats_pagespeed_transform_add(TSHttpTxn txnp)
   TransformCtx* ctx = get_transaction_context(txnp);
   CHECK(ctx);
   if (ctx->transform_added) { // Happens with a stale cache hit
+    TSDebug("ats-speed", "transform not added due to already being added");
     return;
   } else {
+    TSDebug("ats-speed", "transform added");
     ctx->transform_added = true;
   }
-
-  TSHttpTxnUntransformedRespCache(txnp, 1);
+  
+  TSHttpTxnUntransformedRespCache(txnp, ctx->recorder == NULL ? 1 : 0);
   TSHttpTxnTransformedRespCache(txnp, 0);
 
   TSVConn connp;
@@ -695,8 +749,6 @@ ats_pagespeed_transform_add(TSHttpTxn txnp)
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
 
-// Returns true if a server intercept was set up
-// Which means we should not attempt any further transformation
 void
 handle_read_request_header(TSHttpTxn txnp) {
   TSMBuffer reqp = NULL;
@@ -719,6 +771,8 @@ handle_read_request_header(TSHttpTxn txnp) {
  
       ctx->url_string = new GoogleString(url, url_length);
       ctx->gurl = new GoogleUrl(*(ctx->url_string));
+
+
       if (!ctx->gurl->IsWebValid()) {
         TSDebug("ats-speed", "URL != WebValid(): %s", ctx->url_string->c_str());
       } else {
@@ -730,6 +784,7 @@ handle_read_request_header(TSHttpTxn txnp) {
         GoogleString user_agent = get_header(reqp, hdr_loc, "User-Agent");
         ctx->user_agent = new GoogleString(user_agent);
         ctx->server_context = ats_process_context->server_context();
+      TSDebug("ats-speed", "static asset prefix: %s", ((AtsRewriteDriverFactory*)ctx->server_context->factory())->static_asset_prefix().c_str());
         if (user_agent.find(kModPagespeedSubrequestUserAgent) != user_agent.npos) {
           ctx->mps_user_agent = true;
         }
@@ -738,13 +793,8 @@ handle_read_request_header(TSHttpTxn txnp) {
             ctx->resource_request = true;
             TSHttpTxnArgSet(txnp, TXN_INDEX_OWNED_ARG, &TXN_INDEX_OWNED_ARG_UNSET);
           }
-        } else if (ctx->gurl->PathSansQuery() == "/pagespeed_message"
-                   || ctx->gurl->PathSansQuery() == "/pagespeed_statistics"
-                   || ctx->gurl->PathSansQuery() == "/pagespeed_global_statistics"
-                   || ctx->gurl->PathSansQuery() == "/pagespeed_console"
-                   || ctx->gurl->PathSansLeaf() == "/ats_pagespeed_static/"
-                   || ctx->gurl->PathSansQuery() == "/robots.txt"
-                   ) {
+        } else if ( ctx->gurl->PathSansLeaf() == 
+                    ((AtsRewriteDriverFactory*)ctx->server_context->factory())->static_asset_prefix()) {
           ctx->resource_request = true;
           TSHttpTxnArgSet(txnp, TXN_INDEX_OWNED_ARG, &TXN_INDEX_OWNED_ARG_UNSET);
         }
@@ -752,7 +802,80 @@ handle_read_request_header(TSHttpTxn txnp) {
           ctx->beacon_request = true;
           TSHttpTxnArgSet(txnp, TXN_INDEX_OWNED_ARG, &TXN_INDEX_OWNED_ARG_UNSET);
           hook_beacon_intercept(txnp);
-        }
+        } else {
+          AtsServerContext* server_context = ctx->server_context;
+          // TODO(oschaaf): fix host/ip(?)
+          SystemRequestContext* system_request_context = 
+              new SystemRequestContext(server_context->thread_system()->NewMutex(),
+                                       server_context->timer(),
+                                       "www.foo.com",
+                                       80,
+                                       "127.0.0.1");
+          
+          ctx->base_fetch = new AtsBaseFetch(server_context, RequestContextPtr(system_request_context),
+                                             ctx->downstream_vio, ctx->downstream_buffer, false);
+          
+          
+          RewriteOptions* options = NULL;
+          RequestHeaders* request_headers = new RequestHeaders();
+          ctx->base_fetch->SetRequestHeadersTakingOwnership(request_headers);
+          copy_request_headers_to_psol(reqp, hdr_loc, request_headers);
+          
+          //TSHttpStatus status = TSHttpHdrStatusGet(bufp, hdr_loc);
+          // TODO(oschaaf): http version
+          //ctx->base_fetch->response_headers()->set_status_code(status);
+          //copy_response_headers_to_psol(bufp, hdr_loc, ctx->base_fetch->response_headers());
+          //ctx->base_fetch->response_headers()->ComputeCaching();
+          const char* host = ctx->gurl->HostAndPort().as_string().c_str();
+          //request_headers->Lookup1(HttpAttributes::kHost);
+          if (host != NULL && strlen(host) > 0) {
+            ctx->options = get_host_options(host);
+          }
+          bool ok = ps_determine_options(server_context,
+                                         ctx->options,
+                                         request_headers,
+                                         ctx->base_fetch->response_headers(),
+                                         &options,
+                                         ctx->gurl);
+
+          // Take ownership of custom_options.
+          scoped_ptr<RewriteOptions> custom_options(options);
+          
+          if (!ok) {
+            TSError("Failure while determining request options for psol");
+            options = server_context->global_options();
+          } else {
+            // ps_determine_options modified url, removing any ModPagespeedFoo=Bar query
+            // parameters.  Keep url_string in sync with url.
+            ctx->gurl->Spec().CopyToString(ctx->url_string);
+          }
+          
+          if (options->in_place_rewriting_enabled() &&
+              options->enabled() &&
+              options->IsAllowed(ctx->gurl->Spec())) {
+            RewriteDriver* driver;
+            if (custom_options.get() == NULL) {
+              driver = server_context->NewRewriteDriver(ctx->base_fetch->request_context());
+            } else {
+              driver = server_context->NewCustomRewriteDriver(custom_options.release(), ctx->base_fetch->request_context());
+            }
+
+            if (!user_agent.empty()) {
+              driver->SetUserAgent(ctx->user_agent->c_str());
+            }
+            driver->SetRequestHeaders(*ctx->base_fetch->request_headers());
+            ctx->driver = driver;
+            ctx->server_context->message_handler()->Message(
+                kInfo, "Trying to serve rewritten resource in-place: %s",
+                ctx->url_string->c_str());
+            
+            ctx->in_place = true;
+            ctx->base_fetch->set_handle_error(false);
+            ctx->base_fetch->set_is_ipro(true);
+            //ctx->driver->FetchInPlaceResource(
+            //    *ctx->gurl, false /* proxy_mode */, ctx->base_fetch);
+          }
+	}
       }
       TSfree((void*)url);
     } // gurl->IsWebValid() == true
@@ -760,7 +883,6 @@ handle_read_request_header(TSHttpTxn txnp) {
   } else {
     DCHECK(false) << "Could not get client request header\n";
   }
-  
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
@@ -804,7 +926,9 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     // ctx here - the interceptor does.
     
     if (ctx != NULL) {
-      bool is_owned = TSHttpTxnArgGet(txn, TXN_INDEX_OWNED_ARG) == &TXN_INDEX_OWNED_ARG_SET;
+      bool is_owned = TSHttpTxnArgGet(txn, TXN_INDEX_OWNED_ARG) == &TXN_INDEX_OWNED_ARG_SET
+                      //TODO(oschaaf): rewrite this.
+                      && !ctx->serve_in_place;
       if (is_owned) {
         ats_ctx_destroy(ctx);
       }
@@ -845,6 +969,11 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   TransformCtx* ctx = get_transaction_context(txn);
   if (ctx == NULL) {
       // TODO(oschaaf): document how and when this happens.
+    TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+    return 0;
+  }
+  if (ctx->serve_in_place) { 
+    TSHttpTxnArgSet(txn, TXN_INDEX_OWNED_ARG, &TXN_INDEX_OWNED_ARG_UNSET);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
   }
@@ -917,16 +1046,61 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       return 0;
     }
   }
+
   if (ok) { 
     StringPiece s_content_type = get_header(response_header_buf, response_header_loc, "Content-Type");
     const net_instaweb::ContentType* content_type =
         net_instaweb::MimeTypeToContentType(s_content_type);
 
-    if ((content_type == NULL || !content_type->IsHtmlLike())) {
+    if (ctx->record_in_place && content_type != NULL) { 
+      GoogleString cache_url = *ctx->url_string;
+      ctx->server_context->rewrite_stats()->ipro_not_in_cache()->Add(1);
+      ctx->server_context->message_handler()->Message(
+          kInfo,
+          "Could not rewrite resource in-place "
+          "because URL is not in cache: %s",
+         cache_url.c_str());
+      const SystemRewriteOptions* options = SystemRewriteOptions::DynamicCast(
+          ctx->driver->options());
+      RequestHeaders request_headers;
+      //copy_request_headers_from_ngx(r, &request_headers);
+      // This URL was not found in cache (neither the input resource nor
+      // a ResourceNotCacheable entry) so we need to get it into cache
+      // (or at least a note that it cannot be cached stored there).
+      // We do that using an Apache output filter.
+      // TODO(oschaaf): fix host/ip(?)
+      SystemRequestContext* system_request_context = 
+          new SystemRequestContext(ctx->server_context->thread_system()->NewMutex(),
+                                   ctx->server_context->timer(),
+                                   "www.foo.com",
+                                   80,
+                                   "127.0.0.1");
+
+      ctx->recorder = new InPlaceResourceRecorder(
+          RequestContextPtr(system_request_context),
+          cache_url,
+          ctx->driver->CacheFragment(),
+          request_headers.GetProperties(),
+          options->respect_vary(),
+          options->ipro_max_response_bytes(),
+          options->ipro_max_concurrent_recordings(),
+          options->implicit_cache_ttl_ms(),
+          ctx->server_context->http_cache(),
+          ctx->server_context->statistics(),
+          ctx->server_context->message_handler());
+      // TODO(oschaaf): does this make sense for ats? perhaps we don't need it.
+      ctx->ipro_response_headers = new ResponseHeaders();
+      ctx->ipro_response_headers->set_status_code(status);
+      copy_response_headers_to_psol(response_header_buf, response_header_loc, ctx->ipro_response_headers);
+      ctx->ipro_response_headers->ComputeCaching();
+
+      ctx->recorder->ConsiderResponseHeaders(
+          InPlaceResourceRecorder::kPreliminaryHeaders, ctx->ipro_response_headers);
+    } else if ((content_type == NULL || !content_type->IsHtmlLike())) {
       ok = false;
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
       return 0;
-    }
+    } 
   }
   
   if (ok) {
@@ -946,8 +1120,15 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       ctx->inflater = new GzipInflater(inflate_type);
       ctx->inflater->Init();
     }
-    TSDebug(DEBUG_TAG, "Will optimize [%s]", ctx->url_string->c_str());
-    ctx->html_rewrite = true;
+    ctx->html_rewrite = ctx->recorder == NULL;
+    if (ctx->html_rewrite) {
+      TSDebug(DEBUG_TAG, "Will optimize [%s]", ctx->url_string->c_str());
+    } else if (ctx->recorder != NULL)  {
+      TSDebug(DEBUG_TAG, "Will record in place: [%s]", ctx->url_string->c_str());
+    } else { 
+      CHECK(false) << "At this point, adding a transform makes no sense";
+    }
+
     set_header(response_header_buf,response_header_loc,"@gzip_nocache","0");
     ats_pagespeed_transform_add(txn);
   }

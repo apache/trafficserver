@@ -24,6 +24,46 @@
 #ifndef ATS_RESOURCE_INTERCEPT_H
 #define ATS_RESOURCE_INTERCEPT_H
 
+#include <string>
+
+#include <ts/ts.h>
+
+
+#include "net/instaweb/http/public/async_fetch.h"
+#include "net/instaweb/http/public/headers.h"
+#include "net/instaweb/util/public/string_util.h"
+#include "net/instaweb/util/public/string.h"
+
+#include "ats_pagespeed.h"
+
+using namespace net_instaweb;
+
+struct InterceptCtx
+{
+  TSVConn vconn;
+  TSIOBuffer req_buffer;
+  TSIOBufferReader req_reader;
+  TSIOBuffer resp_buffer;
+  TSIOBufferReader resp_reader;
+  GoogleString* response;
+  TransformCtx* request_ctx;
+  RequestHeaders* request_headers;
+  
+  InterceptCtx()
+      : vconn(NULL)
+      , req_buffer(NULL)
+      , req_reader(NULL)
+      , resp_buffer(NULL)
+      , resp_reader(NULL)
+      , response( new GoogleString() )
+      , request_ctx(NULL)
+      , request_headers(NULL)
+  {
+  };
+};
+
 void setup_resource_intercept();
+static int
+resource_intercept(TSCont cont, TSEvent event, void *edata);
 
 #endif // ATS_INTERCEPT_H

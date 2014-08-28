@@ -114,9 +114,9 @@ namespace net_instaweb {
     STLDeleteElements(&uninitialized_server_contexts_);
   }
 
-  void AtsRewriteDriverFactory::InitStaticAssetManager(StaticAssetManager* static_js_manager) {
-    static_js_manager->set_library_url_prefix("/ats_pagespeed_static/");
-  }
+  //void AtsRewriteDriverFactory::InitStaticAssetManager(StaticAssetManager* static_js_manager) {
+    //    //static_js_manager->set_library_url_prefix("/ats_pagespeed_static/");
+    //}
 
   Hasher* AtsRewriteDriverFactory::NewHasher() {
     return new MD5Hasher;

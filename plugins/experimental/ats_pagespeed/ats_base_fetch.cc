@@ -26,7 +26,9 @@
 #include <ts/ts.h>
 
 #include "ats_server_context.h"
+#include "ats_resource_intercept.h"
 
+#include "net/instaweb/http/public/cache_url_async_fetcher.h"
 #include "net/instaweb/util/public/string_util.h"
 #include "net/instaweb/util/public/string_writer.h"
 #include "net/instaweb/util/public/google_message_handler.h"
@@ -43,11 +45,17 @@ AtsBaseFetch::AtsBaseFetch(AtsServerContext* server_context,
   done_called_(false),
   last_buf_sent_(false),
   references_(2),
+  // downstream_vio is NULL for the IPRO lookup
   downstream_vio_(downstream_vio),
   downstream_buffer_(downstream_buffer),
   is_resource_fetch_(is_resource_fetch),
   downstream_length_(0),
-  txn_mutex_(TSVIOMutexGet(downstream_vio)) {
+  txn_mutex_(downstream_vio ? TSVIOMutexGet(downstream_vio) : NULL),
+  // TODO(oschaaf): check and use handle_error_.
+  handle_error_(false),
+  is_ipro_(false),
+  ctx_(NULL),
+  ipro_callback_(NULL) {
   buffer_.reserve(1024 * 32);
 }
 
@@ -85,7 +93,7 @@ void AtsBaseFetch::HandleHeadersComplete() {
   // This implies that we can't support convert_meta_tags
   TSDebug("ats-speed", "HeadersComplete()!");
   // For resource fetches, we need to output the headers in raw HTTP format.
-  if (is_resource_fetch_) {
+  if (is_resource_fetch_ || is_ipro_) {
     GoogleMessageHandler mh;
     GoogleString s;
     StringWriter string_writer(&s);
@@ -96,6 +104,11 @@ void AtsBaseFetch::HandleHeadersComplete() {
 }
 
 void AtsBaseFetch::ForwardData(const StringPiece& sp, bool reenable, bool last) {
+  if (is_ipro_) { 
+    TSDebug("ats-speed", "ipro forwarddata: %.*s", (int)sp.size(), sp.data());
+    buffer_.append(sp.data(), sp.size());
+    return;
+  }
   TSIOBufferBlock downstream_blkp;
   char *downstream_buffer;
   int64_t downstream_length;
@@ -123,15 +136,83 @@ void AtsBaseFetch::ForwardData(const StringPiece& sp, bool reenable, bool last) 
   Unlock();
 }
 
-void AtsBaseFetch::HandleDone(bool success) {
+void AtsBaseFetch::HandleDone(bool success) {  
+  // When this is an IPRO lookup:
+  // if we've got a 200 result, store the data and setup an intercept
+  // to write it out. 
+  // Regardless, re-enable the transaction at this point.
+
+  //TODO(oschaaf): what about no success?
+  if (is_ipro_) { 
+    TSDebug("ats-speed", "ipro lookup base fetch done()");
+    done_called_ = true;
+
+    int status_code = response_headers()->status_code();
+    bool status_ok = (status_code != 0) && (status_code < 400);
+    if (status_code == CacheUrlAsyncFetcher::kNotInCacheStatus) { 
+      TSDebug("ats-speed", "ipro lookup base fetch -> not found in cache");
+      ctx_->record_in_place = true;
+      TSHttpTxnReenable(ctx_->txn, TS_EVENT_HTTP_CONTINUE);
+      ctx_ = NULL;
+      DecrefAndDeleteIfUnreferenced();
+      return;
+    } else if (!status_ok) { 
+      TSDebug("ats-speed", "ipro lookup base fetch -> ipro cache entry says not applicable");
+      TSHttpTxnReenable(ctx_->txn, TS_EVENT_HTTP_CONTINUE);
+      ctx_ = NULL;
+      DecrefAndDeleteIfUnreferenced();
+      return;
+    }
+    ctx_->serve_in_place = true;
+    TransformCtx* ctx = ctx_;
+    TSHttpTxn txn = ctx_->txn;
+    // TODO(oschaaf): deduplicate with code that hooks the resource intercept
+    TSHttpTxnServerRespNoStoreSet(txn, 1);
+
+    TSMBuffer reqp;
+    TSMLoc req_hdr_loc;
+    if (TSHttpTxnClientReqGet(ctx->txn, &reqp, &req_hdr_loc) != TS_SUCCESS) {
+      TSError("Error TSHttpTxnClientReqGet for resource!");
+      ctx_ = NULL;
+      DecrefAndDeleteIfUnreferenced();
+      TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+      return;
+    }
+    
+    TSCont interceptCont = TSContCreate((int (*)(tsapi_cont*, TSEvent, void*))ipro_callback_, TSMutexCreate());
+    InterceptCtx *intercept_ctx = new InterceptCtx();
+    intercept_ctx->request_ctx = ctx;
+    intercept_ctx->request_headers = new RequestHeaders();
+    intercept_ctx->response->append(buffer_);
+    copy_request_headers_to_psol(reqp, req_hdr_loc, intercept_ctx->request_headers);
+    TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
+
+    
+    TSContDataSet(interceptCont, intercept_ctx);
+    // TODO(oschaaf): when we serve an IPRO optimized asset, that will be handled
+    // by the resource intercept. Which means we should set TXN_INDEX_OWNED_ARG to
+    // unset (the intercept now own the context.
+    TSHttpTxnServerIntercept(interceptCont, txn);
+    // TODO(oschaaf): I don't think we need to lock here, but double check that
+    // to make sure.
+    ctx_->base_fetch = NULL;
+    ctx_ = NULL;
+    DecrefAndDeleteIfUnreferenced();
+    TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+    return;
+  }
+
+
+  TSDebug("ats-speed", "Done()!");
   CHECK(!done_called_);
   CHECK(downstream_vio_);
-  TSDebug("ats-speed", "Done()!");
-
   Lock();
   done_called_ = true;
   ForwardData("", true, true);
+  
   DecrefAndDeleteIfUnreferenced();
+  // TODO(oschaaf): we aren't safe to touch the associated mutex,
+  // right? FIX.
   Unlock();
 }
 

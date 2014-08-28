@@ -36,6 +36,7 @@
 
 #include "net/instaweb/http/public/request_context.h"
 #include "net/instaweb/rewriter/public/resource_fetch.h"
+#include "net/instaweb/rewriter/public/rewrite_driver.h"
 #include "net/instaweb/rewriter/public/static_asset_manager.h"
 #include "net/instaweb/system/public/system_request_context.h"
 
@@ -43,30 +44,6 @@
 
 
 using namespace net_instaweb;
-
-struct InterceptCtx
-{
-  TSVConn vconn;
-  TSIOBuffer req_buffer;
-  TSIOBufferReader req_reader;
-  TSIOBuffer resp_buffer;
-  TSIOBufferReader resp_reader;
-  GoogleString* response;
-  TransformCtx* request_ctx;
-  RequestHeaders* request_headers;
-  
-  InterceptCtx()
-      : vconn(NULL)
-      , req_buffer(NULL)
-      , req_reader(NULL)
-      , resp_buffer(NULL)
-      , resp_reader(NULL)
-      , response( new GoogleString() )
-      , request_ctx(NULL)
-      , request_headers(NULL)
-  {
-  };
-};
 
 static void
 shutdown (TSCont cont, InterceptCtx * intercept_ctx) {
@@ -111,6 +88,7 @@ shutdown (TSCont cont, InterceptCtx * intercept_ctx) {
 static int
 resource_intercept(TSCont cont, TSEvent event, void *edata)
 {
+  TSDebug("ats-speed", "resource_intercept event: %d", (int)event);
   InterceptCtx *intercept_ctx = static_cast<InterceptCtx *>(TSContDataGet(cont));
   bool shutDown = false;
 
@@ -156,7 +134,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
             intercept_ctx->request_headers);
 
         RewriteOptions* options = NULL;
-         
+
         //const char* host = intercept_ctx->request_headers->Lookup1(HttpAttributes::kHost);
         const char* host = intercept_ctx->request_ctx->gurl->HostAndPort().as_string().c_str();
         if (host != NULL && strlen(host) > 0) {
@@ -192,6 +170,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
       } else {
         int64_t numBytesToWrite, numBytesWritten;
         numBytesToWrite = intercept_ctx->response->size();
+	TSDebug("ats-speed", "resource intercept writing out a %d bytes response", (int)numBytesToWrite);
         numBytesWritten = TSIOBufferWrite(intercept_ctx->resp_buffer,
                                           intercept_ctx->response->c_str(), numBytesToWrite);
         
@@ -248,8 +227,15 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   if (ctx == NULL) {
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
-  }
-  if (!ctx->resource_request) {
+  } else if (ctx->in_place && !cache_hit(txn) && !ctx->resource_request) { 
+    ctx->base_fetch->set_ctx(ctx);
+    ctx->base_fetch->set_ipro_callback((void*)resource_intercept);
+    ctx->driver->FetchInPlaceResource(
+        *ctx->gurl, false /* proxy_mode */, ctx->base_fetch);
+    // wait for the lookup to complete. we'll know what to do
+    // when the lookup completes.
+    return 0;
+  } else if (!ctx->resource_request) {
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;    
   }
@@ -283,10 +269,18 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     content_type = kContentTypeText;
     writer.Write("User-agent: *\n", server_context->message_handler());
     writer.Write("Disallow: /\n", server_context->message_handler());
-  }
- 
+  } else if (ctx->gurl->PathSansLeaf() == factory->static_asset_prefix()) {
+    StringPiece file_contents;
+    if (server_context->static_asset_manager()->GetAsset(
+	    request_uri_path.substr(factory->static_asset_prefix().length()),
+            &file_contents, &content_type, &cache_control)) {
+      file_contents.CopyToString(&output);
+    } else {
+      error_message = "Static asset not found";
+    }
+
   // TODO(oschaaf): /pagespeed_admin handling
-  else { 
+  } else { 
     // Optimized resource are highly cacheable (1 year expiry)
     // TODO(oschaaf): configuration
     TSHttpTxnRespCacheableSet(txn, 1);

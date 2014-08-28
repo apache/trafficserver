@@ -56,7 +56,11 @@ public:
   
   virtual ~AtsBaseFetch();
   void Release();
-private:
+  void set_handle_error(bool x) { handle_error_ = x; }
+  void set_is_ipro(bool x) { is_ipro_ = x; }
+  void set_ctx(TransformCtx* x) { ctx_ = x; }
+  void set_ipro_callback(void* fp) { ipro_callback_ = fp; }
+ private:
   virtual bool HandleWrite(const StringPiece& sp, net_instaweb::MessageHandler* handler);
   virtual bool HandleFlush( net_instaweb::MessageHandler* handler);
   virtual void HandleHeadersComplete();
@@ -80,6 +84,12 @@ private:
 
   // We don't own this mutex
   TSMutex txn_mutex_;
+  bool handle_error_;
+  bool is_ipro_;
+  // will be used by ipro to reenable the transaction on lookup completion
+  TransformCtx* ctx_;
+  // function pointer to ipro transform callback
+  void* ipro_callback_;
 };
 
 } /* ats_pagespeed */

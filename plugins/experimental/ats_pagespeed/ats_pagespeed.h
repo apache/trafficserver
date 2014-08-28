@@ -38,7 +38,9 @@ class AtsBaseFetch;
 class AtsRewriteOptions;
 class AtsServerContext;
 class GzipInflater;
+class InPlaceResourceRecorder;
 class ProxyFetch;
+class RewriteDriver;
 class RewriteOptions;
 class RequestHeaders;
 class ResponseHeaders;
@@ -63,6 +65,8 @@ typedef struct
   net_instaweb::AtsBaseFetch* base_fetch;
   net_instaweb::ProxyFetch* proxy_fetch;
   net_instaweb::GzipInflater* inflater;
+  //driver is used for IPRO flow only
+  net_instaweb::RewriteDriver* driver;
 
   bool write_pending;
   bool fetch_done;
@@ -80,6 +84,11 @@ typedef struct
   net_instaweb::AtsRewriteOptions* options;
   // TODO: Use GoogleString*
   std::string* to_host;
+  bool in_place;
+  bool record_in_place;
+  net_instaweb::InPlaceResourceRecorder* recorder;
+  net_instaweb::ResponseHeaders* ipro_response_headers;
+  bool serve_in_place;
 } TransformCtx;
 
 TransformCtx* get_transaction_context(TSHttpTxn txnp);
