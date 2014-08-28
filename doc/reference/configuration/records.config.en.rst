@@ -2397,28 +2397,28 @@ Sockets
    Set the packet mark on traffic destined for the client
    (the packets that make up a client response).
 
-   .. seealso:: :c:func:`TSHttpTxnClientPacketMarkSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_mark_out INT 0x0
 
    Set the packet mark on traffic destined for the origin
    (the packets that make up an origin request).
 
-   .. seealso:: :c:func:`TSHttpTxnServerPacketMarkSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_tos_in INT 0x0
 
-   Set the TOS/DSCP field on packets sent to the client
+   Set the ToS/DiffServ Field on packets sent to the client
    (the packets that make up a client response).
 
-   .. seealso:: :c:func:`TSHttpTxnClientPacketTosSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_tos_out INT 0x0
 
-   Set the TOS/DSCP field on packets sent to the origin
+   Set the ToS/DiffServ Field on packets sent to the origin
    (the packets that make up an origin request).
 
-   .. seealso:: :c:func:`TSHttpTxnServerPacketTosSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
 
@@ -2459,3 +2459,6 @@ Sockets
    Turn on or off support for HTTP proxying. This is rarely used, the one
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
+
+.. _Traffic Shaping:
+                 https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping

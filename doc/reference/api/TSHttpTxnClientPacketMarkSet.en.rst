@@ -39,4 +39,7 @@ Description
 See Also
 --------
 
-:ts:cv:`proxy.config.net.sock_packet_mark_in` and TS-1090
+`Traffic Shaping`_
+
+.. _Traffic Shaping:
+                 https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
