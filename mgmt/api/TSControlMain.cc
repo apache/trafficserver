@@ -1002,7 +1002,7 @@ handle_control_message(int fd, void * req, size_t reqlen)
 {
   OpType optype = extract_mgmt_request_optype(req, reqlen);
 
-  if (optype < 0 || optype >= countof(handlers)) {
+  if (optype < 0 || static_cast<unsigned>(optype) >= countof(handlers)) {
     goto fail;
   }
 
