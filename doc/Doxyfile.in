@@ -478,8 +478,8 @@ INPUT                  = @abs_top_srcdir@/doc/mainpage.doc \
                          @abs_top_srcdir@/lib/ts \
                          @abs_top_srcdir@/lib/tsconfig \
                          @abs_top_srcdir@/lib/records \
-                         @abs_top_srcdir@/proxy \
-                         @abs_top_srcdir@/test
+			 @abs_top_srcdir@/lib/atscppapi/src/include/atscppapi \
+                         @abs_top_srcdir@/proxy
 
 # This tag can be used to specify the character encoding of the source files that 
 # doxygen parses. Internally doxygen uses the UTF-8 encoding, which is also the default 
